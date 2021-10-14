@@ -55,6 +55,7 @@ public class EncodingTest {
     private static void startServer(int port) throws Exception {
         webServer = WebServer.builder()
                 .port(port)
+                .host("localhost")
                 .routing(Routing.builder()
                                  .get("/foo", (req, res) -> res.send("It works!"))
                                  .get("/foo/{bar}", (req, res) -> res.send(req.path().param("bar")))
@@ -65,7 +66,7 @@ public class EncodingTest {
                 .toCompletableFuture()
                 .get(10, TimeUnit.SECONDS);
 
-        LOGGER.info("Started server at: https://localhost:" + webServer.port());
+        LOGGER.info("Started server at: http://localhost:" + webServer.port());
     }
 
     /**

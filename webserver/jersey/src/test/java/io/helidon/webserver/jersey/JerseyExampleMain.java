@@ -113,7 +113,7 @@ public final class JerseyExampleMain {
                                                  return null;
                                              });
                                  }))
-                .bindAddress(InetAddress.getLoopbackAddress())
+                .host("localhost")
                 .update(it -> {
                     if (!testing) {
                         // in case we're running as main an not in test, run on a fixed port

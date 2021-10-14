@@ -57,6 +57,7 @@ public final class Main {
 
     static CompletionStage<WebServer> startBuilderBasedServer(Config config) {
         return WebServer.builder()
+                .host("localhost")
                 .config(config)
                 .routing(routing())
                 // now let's configure TLS
@@ -70,6 +71,7 @@ public final class Main {
 
     static CompletionStage<WebServer> startConfigBasedServer(Config config) {
         return WebServer.builder()
+                .host("localhost")
                 .config(config)
                 .routing(routing())
                 .build()

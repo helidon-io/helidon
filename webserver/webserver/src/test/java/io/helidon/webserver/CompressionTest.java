@@ -70,6 +70,7 @@ public class CompressionTest {
      */
     private static void startServer(int port) throws Exception {
         webServer = WebServer.builder()
+                .host("localhost")
                 .port(port)
                 .routing(Routing.builder()
                         .get("/compressed", (req, res) -> {
@@ -89,7 +90,7 @@ public class CompressionTest {
                 .keepAlive(true)
                 .build();
 
-        LOGGER.info("Started server at: https://localhost:" + webServer.port());
+        LOGGER.info("Started server at: http://localhost:" + webServer.port());
     }
 
     /**

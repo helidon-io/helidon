@@ -68,6 +68,7 @@ public final class OciObjectStorageMain {
                 .build();
 
         WebServer.builder()
+                .host("localhost")
                 .config(config.get("server"))
                 .routing(Routing.builder()
                                  .register(health)

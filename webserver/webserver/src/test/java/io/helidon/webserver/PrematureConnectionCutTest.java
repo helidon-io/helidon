@@ -56,6 +56,7 @@ public class PrematureConnectionCutTest {
         try {
             webServer = WebServer.builder()
                     .port(0)
+                    .host("localhost")
                     .routing(Routing.builder()
                             .post((req, res) -> req.content()
                                     .as(InputStream.class)
@@ -109,7 +110,7 @@ public class PrematureConnectionCutTest {
      * Force Netty to avoid auto close and wait for content with fake content-length
      */
     private void incomplete100Call(WebServer webServer) throws Exception {
-        try (Socket socket = new Socket(InetAddress.getLocalHost(), webServer.port())) {
+        try (Socket socket = new Socket("localhost", webServer.port())) {
             PrintWriter pw = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8));
             pw.println("POST / HTTP/1.1");
             pw.println("Host: 127.0.0.1");

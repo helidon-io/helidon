@@ -139,6 +139,7 @@ public class BackpressureTest {
         WebServer webServer = null;
         try {
             webServer = WebServer.builder()
+                    .host("localhost")
                     .routing(Routing.builder()
                             .get("/", (req, res) -> res.send(dataChunkMulti))
                             .build())

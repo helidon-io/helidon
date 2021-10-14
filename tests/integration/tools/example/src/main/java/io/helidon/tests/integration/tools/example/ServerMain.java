@@ -68,6 +68,7 @@ public class ServerMain {
                 .build();
 
         final WebServer server = WebServer.builder()
+                .host("localhost")
                 .routing(routing)
                 .config(config.get("server"))
                 .addMediaSupport(JsonpSupport.create())

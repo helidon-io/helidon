@@ -57,6 +57,7 @@ public class ServerBuilderMain {
                 .tls(tlsConfig())
                 .build();
         Single<WebServer> webServer = WebServer.builder()
+                .host("localhost")
                 .port(unsecured)
                 .routing(createPlainRouting())
                 .addSocket(socketConf, createMtlsRouting())

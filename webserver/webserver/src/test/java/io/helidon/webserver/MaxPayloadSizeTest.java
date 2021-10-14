@@ -73,6 +73,7 @@ public class MaxPayloadSizeTest {
     private static void startServer(int port) throws Exception {
         webServer = WebServer.builder()
                 .port(port)
+                .host("localhost")
                 .routing(Routing.builder()
                         .post("/maxpayload", (req, res) -> {
                             req.content().subscribe(new Flow.Subscriber<>() {
@@ -110,7 +111,7 @@ public class MaxPayloadSizeTest {
                 .keepAlive(true)
                 .build();
 
-        LOGGER.info("Started server at: https://localhost:" + webServer.port());
+        LOGGER.info("Started server at: http://localhost:" + webServer.port());
     }
 
     /**

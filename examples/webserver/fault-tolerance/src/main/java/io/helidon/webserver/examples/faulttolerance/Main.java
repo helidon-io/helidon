@@ -47,6 +47,7 @@ public final class Main {
 
     static Single<WebServer> startServer(int port) {
         return WebServer.builder()
+                .host("localhost")
                 .routing(routing())
                 .port(port)
                 .build()

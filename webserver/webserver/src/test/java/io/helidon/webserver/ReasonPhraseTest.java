@@ -42,6 +42,7 @@ class ReasonPhraseTest {
     static void createWebServer() {
         LogConfig.configureRuntime();
         server = WebServer.builder()
+                .host("localhost")
                 .routing(Routing.builder()
                                  .get("/default", ReasonPhraseTest::defaultCode)
                                  .get("/custom", ReasonPhraseTest::customCode))

@@ -67,7 +67,7 @@ public class NettyWebServerTest {
     static void main(String[] args) throws InterruptedException {
         WebServer webServer = WebServer.builder()
                 .port(8080)
-                .bindAddress(InetAddress.getLoopbackAddress())
+                .host("localhost")
                 .routing(routing((breq, bres) -> {
                     SubmissionPublisher<DataChunk> responsePublisher = new SubmissionPublisher<>(ForkJoinPool.commonPool(), 1024);
                     responsePublisher.subscribe(bres);
@@ -149,6 +149,7 @@ public class NettyWebServerTest {
     @Test
     public void testMultiplePortsSuccessStart() {
         WebServer webServer = WebServer.builder()
+                .host("localhost")
                 .addSocket(SocketConfiguration.create("1"))
                 .addSocket(SocketConfiguration.create("2"))
                 .addSocket(SocketConfiguration.create("3"))
@@ -182,6 +183,7 @@ public class NettyWebServerTest {
     public void testMultiplePortsAllTheSame() throws Exception {
         int samePort = 9999;
         WebServer webServer = WebServer.builder()
+                .host("localhost")
                 .port(samePort)
                 .addSocket(SocketConfiguration.builder().port(samePort).name("third"))
                 .build();
@@ -193,6 +195,7 @@ public class NettyWebServerTest {
     public void testManyPortsButTwoTheSame() throws Exception {
         int samePort = 9999;
         WebServer webServer = WebServer.builder()
+                .host("localhost")
                 .port(samePort)
                 .addSocket(SocketConfiguration.create("1"))
                 .addSocket(SocketConfiguration.builder()
@@ -234,6 +237,7 @@ public class NettyWebServerTest {
     public void unpairedRoutingCausesAFailure() throws Exception {
         try {
             WebServer webServer = WebServer.builder()
+                    .host("localhost")
                     .addSocket(SocketConfiguration.create("matched"))
                     .addNamedRouting("unmatched-first", Routing.builder())
                     .addNamedRouting("matched", Routing.builder())
@@ -250,6 +254,7 @@ public class NettyWebServerTest {
     @Test
     public void additionalPairedRoutingsDoWork() {
         WebServer webServer = WebServer.builder()
+                .host("localhost")
                 .addSocket(SocketConfiguration.create("matched"))
                 .addNamedRouting("matched", Routing.builder())
                 .build();
@@ -260,6 +265,7 @@ public class NettyWebServerTest {
     @Test
     public void additionalCoupledPairedRoutingsDoWork() {
         WebServer webServer = WebServer.builder()
+                .host("localhost")
                 .addSocket(SocketConfiguration.builder()
                                    .name("matched")
                                    .build(),

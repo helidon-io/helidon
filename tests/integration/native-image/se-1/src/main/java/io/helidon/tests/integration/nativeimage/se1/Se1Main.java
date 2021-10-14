@@ -71,6 +71,7 @@ public final class Se1Main {
 
         // Get webserver config from the "server" section of application.yaml
         WebServer server = WebServer.builder()
+                .host("localhost")
                 .routing(createRouting(config))
                 .config(config.get("server"))
                 .tracer(TracerBuilder.create(config.get("tracing")).build())

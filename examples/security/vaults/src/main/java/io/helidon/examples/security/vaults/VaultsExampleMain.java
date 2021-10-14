@@ -54,6 +54,7 @@ public final class VaultsExampleMain {
         Security security = Security.create(config.get("security"));
 
         WebServer server = WebServer.builder()
+                .host("localhost")
                 .config(config.get("server"))
                 .routing(Routing.builder()
                                  .register("/secrets", new SecretsService(security))

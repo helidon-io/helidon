@@ -33,6 +33,7 @@ class Gh377 {
     @Test
     void testRestart() {
         WebServer webServer = WebServer.builder()
+                .host("localhost")
                 .routing(Routing.builder()
                                  .get("/", (req, res) -> res.send("Hello World"))
                                  .build())

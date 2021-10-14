@@ -72,14 +72,14 @@ public class ServerConfigurationTest {
                 .receiveBufferSize(30)
                 .timeout(40)
                 .workersCount(50)
-                .bindAddress(InetAddress.getLocalHost())
+                .host("localhost")
                 .build();
         assertThat(config.port(), is(10));
         assertThat(config.backlog(), is(20));
         assertThat(config.receiveBufferSize(), is(30));
         assertThat(config.timeoutMillis(), is(40));
         assertThat(config.workersCount(), is(50));
-        assertThat(config.bindAddress(), is(InetAddress.getLocalHost()));
+        assertThat(config.bindAddress(), is(InetAddress.getLoopbackAddress()));
     }
 
     @Test

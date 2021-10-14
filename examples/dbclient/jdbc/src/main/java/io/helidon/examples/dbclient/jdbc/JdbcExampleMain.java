@@ -63,6 +63,7 @@ public final class JdbcExampleMain {
 
         // Prepare routing for the server
         WebServer server = WebServer.builder()
+                .host("localhost")
                 .routing(createRouting(config))
                 // Get webserver config from the "server" section of application.yaml
                 .config(config.get("server"))

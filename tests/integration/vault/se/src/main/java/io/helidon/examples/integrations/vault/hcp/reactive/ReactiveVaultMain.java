@@ -84,6 +84,7 @@ public final class ReactiveVaultMain {
         // we use await for webserver, as we do not care if we block the main thread - it is not used
         // for anything
         WebServer webServer = WebServer.builder()
+                .host("localhost")
                 .config(config.get("server"))
                 .routing(Routing.builder()
                                  .register("/cubbyhole", new CubbyholeService(sys, tokenVault.secrets(CubbyholeSecretsRx.ENGINE)))

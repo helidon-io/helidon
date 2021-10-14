@@ -50,6 +50,7 @@ public final class Main {
 
         // Get webserver config from the "server" section of application.yaml
         WebServer.Builder builder = WebServer.builder()
+                .host("localhost")
                 .tracer(tracer);
 
         return startIt(config, builder);
@@ -66,7 +67,7 @@ public final class Main {
 
         // Get webserver config from the "server" section of application.yaml
 
-        WebServer.Builder builder = WebServer.builder();
+        WebServer.Builder builder = WebServer.builder().host("localhost");
 
         return startIt(config, builder);
     }

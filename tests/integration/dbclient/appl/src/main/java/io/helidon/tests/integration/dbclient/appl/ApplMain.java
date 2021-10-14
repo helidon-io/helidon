@@ -124,6 +124,7 @@ public class ApplMain {
 
         // Prepare routing for the server
         final WebServer.Builder serverBuilder = WebServer.builder()
+                .host("localhost")
                 .routing(routing)
                 // Get webserver config from the "server" section of application.yaml
                 .config(config.get("server"));

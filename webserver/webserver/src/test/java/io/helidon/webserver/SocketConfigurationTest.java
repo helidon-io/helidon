@@ -51,6 +51,7 @@ public class SocketConfigurationTest {
     @Test
     void testNoName() {
         Assertions.assertThrows(ConfigException.class, () -> WebServer.builder()
+                .host("localhost")
                 .config(noname)
                 .build());
     }
@@ -68,6 +69,7 @@ public class SocketConfigurationTest {
     @Test
     void testRunnableConfig() throws ExecutionException, InterruptedException {
         WebServer server = WebServer.builder()
+                .host("localhost")
                 .config(runnable)
                 .build()
                 .start()
@@ -121,6 +123,7 @@ public class SocketConfigurationTest {
 
     private void validateConfiguration(String type, Config config) {
         WebServer server = WebServer.builder()
+                .host("localhost")
                 .config(config)
                 .build();
 

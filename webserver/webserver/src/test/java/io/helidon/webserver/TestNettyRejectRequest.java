@@ -49,6 +49,7 @@ public class TestNettyRejectRequest {
     @BeforeAll
     public static void createAndStartServer() throws Exception {
         server = WebServer.builder()
+                .host("localhost")
                 .routing(Routing.builder()
                         .get((req, res) -> {
                             res.send("test");

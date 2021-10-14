@@ -45,6 +45,7 @@ public class Main {
      */
     public static void main(String[] args) {
         WebServer server = WebServer.builder()
+                .host("localhost")
                 .routing(Routing.builder()
                                  .register(GraphQlSupport.create(buildSchema()))
                                  .build())

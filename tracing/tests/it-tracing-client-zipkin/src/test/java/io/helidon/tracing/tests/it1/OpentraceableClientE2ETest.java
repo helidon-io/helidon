@@ -79,6 +79,7 @@ public class OpentraceableClientE2ETest {
 
     private static WebServer startWebServer() throws InterruptedException, ExecutionException, TimeoutException {
         return WebServer.builder()
+                        .host("localhost")
                         .routing(Routing.builder()
                                  .any((req, res) -> res.send("OK")))
                         .tracer(tracer("test-server"))

@@ -54,7 +54,7 @@ public class SocketHttpClient implements AutoCloseable {
      * @throws IOException in case of an error
      */
     public SocketHttpClient(WebServer webServer) throws IOException {
-        socket = new Socket(InetAddress.getLocalHost(), webServer.port());
+        socket = new Socket("localhost", webServer.port());
     }
 
     /**

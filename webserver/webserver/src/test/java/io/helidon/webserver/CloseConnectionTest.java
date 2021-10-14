@@ -49,11 +49,10 @@ public class CloseConnectionTest {
     @BeforeEach
     void setUp() throws UnknownHostException {
         closedConnectionFuture = new CompletableFuture<>();
-        InetAddress localHost = InetAddress.getLocalHost();
         webServer = WebServer
                 .builder()
                 .port(0)
-                .bindAddress(localHost)
+                .host("localhost")
                 .routing(Routing.builder()
                         .get((req, res) -> {
                             res.send(Multi

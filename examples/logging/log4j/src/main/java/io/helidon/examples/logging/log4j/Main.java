@@ -72,6 +72,7 @@ public final class Main {
         Contexts.runInContext(Context.create(), Main::logging);
 
         WebServer.builder()
+                .host("localhost")
                 .routing(Routing.builder()
                                  .get("/", (req, res) -> {
                                      HelidonMdc.set("name", String.valueOf(req.requestId()));

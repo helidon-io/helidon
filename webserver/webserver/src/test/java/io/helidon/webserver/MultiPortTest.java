@@ -144,6 +144,7 @@ public class MultiPortTest {
                         .get("/variable", (req, res) -> res.send("Variable 8443"))
 
                         .build())
+                .host("localhost")
                 .tls(webServerTls)
                 .addSocket(SocketConfiguration.create("plain"))
                 .addNamedRouting("plain",
@@ -266,6 +267,7 @@ public class MultiPortTest {
     public void compositeFromConfig() throws Exception {
         Config config = Config.create(ConfigSources.classpath("multiport/application.yaml"));
         webServer = WebServer.builder()
+                .host("localhost")
                 .routing(Routing.builder()
                                  .get("/", (req, res) -> res.send("Plain!")))
                 .config(config.get("webserver"))

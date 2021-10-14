@@ -57,6 +57,7 @@ public final class Main {
         Config config = Config.create();
 
         WebServer server = WebServer.builder()
+                .host("localhost")
                 .tracer(TracerBuilder.create(config.get("tracing")))
                 .routing(createRouting(config))
                 .config(config.get("server"))

@@ -77,6 +77,7 @@ public class MicrometerEndpointTests {
 
         try {
             webServer = WebServer.builder()
+                    .host("localhost")
                     .port(-1)
                     .routing(prepareRouting(micrometerSupportSupplier))
                     .build()

@@ -61,6 +61,7 @@ public class HttpPipelineTest {
         webServer = WebServer.builder()
                 .experimental(ExperimentalConfiguration.builder().http2(
                         Http2Configuration.builder().enable(true).build()).build())
+                .host("localhost")
                 .port(port)
                 .routing(Routing.builder()
                         .put("/", (req, res) -> {
@@ -84,7 +85,7 @@ public class HttpPipelineTest {
                 .toCompletableFuture()
                 .get(10, TimeUnit.SECONDS);
 
-        LOGGER.info("Started server at: https://localhost:" + webServer.port());
+        LOGGER.info("Started server at: http://localhost:" + webServer.port());
     }
 
     /**

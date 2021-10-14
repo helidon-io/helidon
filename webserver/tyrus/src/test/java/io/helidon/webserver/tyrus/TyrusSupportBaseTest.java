@@ -51,8 +51,7 @@ public class TyrusSupportBaseTest {
             return webServer;
         }
 
-        WebServer.Builder builder = WebServer.builder()
-                .bindAddress(InetAddress.getLoopbackAddress());
+        WebServer.Builder builder = WebServer.builder().host("localhost");
 
 
         if (!testing) {

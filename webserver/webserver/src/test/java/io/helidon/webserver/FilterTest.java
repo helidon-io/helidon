@@ -55,6 +55,7 @@ public class FilterTest {
     private static void startServer(int port) {
         webServer = WebServer.builder()
                 .port(port)
+                .host("localhost")
                 .routing(Routing.builder().any((req, res) -> {
                     res.headers().add(Http.Header.TRANSFER_ENCODING, "chunked");
                     req.next();
@@ -95,7 +96,7 @@ public class FilterTest {
                 .start()
                 .await(10, TimeUnit.SECONDS);
 
-        LOGGER.info("Started server at: https://localhost:" + webServer.port());
+        LOGGER.info("Started server at: http://localhost:" + webServer.port());
     }
 
     @BeforeAll

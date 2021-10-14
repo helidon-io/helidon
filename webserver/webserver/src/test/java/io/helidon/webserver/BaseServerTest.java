@@ -47,6 +47,7 @@ class BaseServerTest {
 
     protected static void startServer(int port, Routing routing) throws Exception {
         webServer = WebServer.builder()
+                .host("localhost")
                 .port(port)
                 .routing(routing)
                 .build()
@@ -60,6 +61,6 @@ class BaseServerTest {
                 .keepAlive(true)
                 .build();
 
-        LOGGER.info("Started server at: https://localhost:" + webServer.port());
+        LOGGER.info("Started server at: http://localhost:" + webServer.port());
     }
 }
