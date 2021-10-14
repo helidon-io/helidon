@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,28 +25,28 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
-class MultiLoggingPublisher<T> implements Multi<T> {
+class LoggingPublisher<T> implements Flow.Publisher<T> {
 
-    private static final Logger LOGGER = Logger.getLogger(MultiLoggingPublisher.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(LoggingPublisher.class.getName());
 
     private static final AtomicLong LOG_ID = new AtomicLong();
 
     private final String caller;
     private final String loggerName;
     private final String methodName;
-    private final Multi<T> source;
+    private final Flow.Publisher<T> source;
     private final Level level;
 
-    MultiLoggingPublisher(final Multi<T> source, Level level, String loggerName) {
+    LoggingPublisher(final Flow.Publisher<T> source, Level level, String loggerName) {
         Objects.requireNonNull(loggerName);
         this.source = source;
         this.level = level;
         this.loggerName = loggerName;
-        caller = Multi.class.getName();
+        caller = resolveCaller(source);
         methodName = "log()";
     }
 
-    MultiLoggingPublisher(final Multi<T> source, Level level, boolean trace) {
+    LoggingPublisher(final Flow.Publisher<T> source, Level level, boolean trace) {
         this.source = source;
         this.level = level;
         if (trace) {
@@ -59,9 +59,17 @@ class MultiLoggingPublisher<T> implements Multi<T> {
                 return;
             }
         }
-        caller = Multi.class.getName();
+        caller = resolveCaller(source);
         methodName = "log()";
         loggerName = Multi.class.getSimpleName() + ".log(" + LOG_ID.incrementAndGet() + ")";
+    }
+
+    private String resolveCaller(Flow.Publisher<T> source) {
+        if (source instanceof NamedOperator) {
+            return ((NamedOperator) source).operatorName();
+        } else {
+            return source.getClass().getSimpleName();
+        }
     }
 
     private Optional<StackWalker.StackFrame> findCaller() {
@@ -71,7 +79,7 @@ class MultiLoggingPublisher<T> implements Multi<T> {
                 .findFirst());
     }
 
-    private void log(Supplier<String> msgSupplier) {
+    void log(Supplier<String> msgSupplier) {
         if (!LOGGER.isLoggable(level)) {
             return;
         }
@@ -82,27 +90,27 @@ class MultiLoggingPublisher<T> implements Multi<T> {
         LOGGER.log(record);
     }
 
-    private void logCancel() {
+    void logCancel() {
         log(() -> " ⇗ cancel()");
     }
 
-    private void logOnComplete() {
+    void logOnComplete() {
         log(() -> " ⇘ onComplete()");
     }
 
-    private void logRequest(long n) {
+    void logRequest(long n) {
         log(() -> " ⇗ request(" + (n == Long.MAX_VALUE ? "Long.MAX_VALUE" : n) + ")");
     }
 
-    private void logOnError(Throwable throwable) {
+    void logOnError(Throwable throwable) {
         log(() -> " ⇘ onError(" + throwable + ")");
     }
 
-    private void logOnSubscribe(Flow.Subscription subscription) {
+    void logOnSubscribe(Flow.Subscription subscription) {
         log(() -> " ⇘ onSubscribe(...)");
     }
 
-    private void logOnNext(T item) {
+    void logOnNext(T item) {
         log(() -> " ⇘ onNext(" + item + ")");
     }
 
