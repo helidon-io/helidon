@@ -20,11 +20,10 @@ package io.helidon.messaging.connectors.kafka;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
-import org.apache.kafka.common.security.oauthbearer.internals.expiring.ExpiringCredentialRefreshingLogin;
-
 import com.oracle.svm.core.annotate.Alias;
 import com.oracle.svm.core.annotate.RecomputeFieldValue;
 import com.oracle.svm.core.annotate.TargetClass;
+import org.apache.kafka.common.security.oauthbearer.internals.expiring.ExpiringCredentialRefreshingLogin;
 
 @TargetClass(ExpiringCredentialRefreshingLogin.class)
 @SuppressWarnings("checkstyle:StaticVariableName")
