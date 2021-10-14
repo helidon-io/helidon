@@ -103,14 +103,16 @@ class NettyWebServer implements WebServer {
      * @param config a server configuration instance
      * @param routing       a default routing instance
      * @param namedRoutings the named routings of the configured additional server sockets. If there is no
-     *                      named routing for a given named additional server socket configuration, a default
-     *                      routing is used.
+ *                      named routing for a given named additional server socket configuration, a default
+     * @param badRequestHandler handler for bad requests to customize response
      */
     NettyWebServer(ServerConfiguration config,
                    Routing routing,
                    Map<String, Routing> namedRoutings,
                    MessageBodyWriterContext writerContext,
-                   MessageBodyReaderContext readerContext) {
+                   MessageBodyReaderContext readerContext,
+                   BadRequestHandler badRequestHandler) {
+
         Set<Map.Entry<String, SocketConfiguration>> sockets = config.sockets().entrySet();
 
         HelidonFeatures.print(HelidonFlavor.SE,
@@ -150,7 +152,8 @@ class NettyWebServer implements WebServer {
             HttpInitializer childHandler = new HttpInitializer(soConfig,
                                                                sslContext,
                                                                namedRoutings.getOrDefault(name, routing),
-                                                               this);
+                                                               this,
+                                                               badRequestHandler);
             initializers.put(name, childHandler);
             bootstrap.group(bossGroup, workerGroup)
                      .channelFactory(serverChannelFactory())

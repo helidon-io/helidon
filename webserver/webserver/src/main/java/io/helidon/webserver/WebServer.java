@@ -41,6 +41,7 @@ import io.helidon.media.common.MessageBodyStreamWriter;
 import io.helidon.media.common.MessageBodyWriter;
 import io.helidon.media.common.MessageBodyWriterContext;
 import io.helidon.media.common.ParentingMediaContextBuilder;
+import io.helidon.webserver.BadRequestHandler.TransportResponse;
 
 import io.opentracing.Tracer;
 
@@ -376,6 +377,7 @@ public interface WebServer {
         private Transport transport;
         private MessageBodyReaderContext readerContext;
         private MessageBodyWriterContext writerContext;
+        private BadRequestHandler badRequestHandler;
 
         private Builder() {
             readerContext = MessageBodyReaderContext.create(DEFAULT_MEDIA_SUPPORT.readerContext());
@@ -391,12 +393,17 @@ public interface WebServer {
          */
         @Override
         public WebServer build() {
-            if (null == defaultRouting) {
+            if (defaultRouting == null) {
                 LOGGER.warning("Creating a web server with no default routing configured.");
                 defaultRouting = Routing.builder().build();
             }
-            if (null == explicitConfig) {
+            if (explicitConfig == null) {
                 explicitConfig = configurationBuilder.build();
+            }
+            if (badRequestHandler == null) {
+                badRequestHandler = (request, throwable) -> TransportResponse.builder()
+                        .entity(throwable.getMessage())
+                        .build();
             }
 
             String unpairedRoutings =
@@ -412,7 +419,8 @@ public interface WebServer {
                                                   defaultRouting,
                                                   routings,
                                                   writerContext,
-                                                  readerContext);
+                                                  readerContext,
+                                                  badRequestHandler);
 
             if (defaultRouting instanceof RequestRouting) {
                 ((RequestRouting) defaultRouting).fireNewWebServer(result);
@@ -822,6 +830,24 @@ public interface WebServer {
         @ConfiguredOption(key = "features.print-details", value = "false")
         public Builder printFeatureDetails(boolean shouldPrint) {
             configurationBuilder.printFeatureDetails(shouldPrint);
+            return this;
+        }
+
+        /**
+         * Provide a custom handler for bad requests.
+         * The handler can customize status, headers and message.
+         * <p>
+         * Examples of bad request:
+         * <ul>
+         *     <li>Invalid character in path</li>
+         *     <li>Content-Length header set to a non-integer value</li>
+         *     <li>Invalid first line of the HTTP request</li>
+         * </ul>
+         * @param badRequestHandler custom handler to use
+         * @return updated builder
+         */
+        public Builder badRequestHandler(BadRequestHandler badRequestHandler) {
+            this.badRequestHandler = badRequestHandler;
             return this;
         }
     }
