@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -154,7 +154,10 @@ final class CdiExecutableMethod extends AbstractExecutableMethod {
         for (String miAnnotationName : miAnnotationNames) {
             try {
                 Annotation annotation = miAnnotated.synthesize((Class<? extends Annotation>) Class.forName(miAnnotationName));
-                annotations.put(annotation.annotationType(), annotation);
+                if (annotation != null) {
+                    // annotation is present
+                    annotations.put(annotation.annotationType(), annotation);
+                }
             } catch (Throwable ignored) {
                 // this annotation is not on the classpath, we can ignore it
             }
