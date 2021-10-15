@@ -16,7 +16,8 @@
 package io.helidon.metrics;
 
 import io.helidon.metrics.api.MetricsSettings;
-import io.helidon.metrics.api.spi.MetricsSupportProvider;
+import io.helidon.metrics.serviceapi.spi.MetricsSupportProvider;
+import io.helidon.servicecommon.rest.RestServiceSettings;
 
 /**
  * Provider which furnishes a builder for {@link MetricsSupport} instances.
@@ -29,8 +30,8 @@ public class MetricsSupportProviderImpl implements MetricsSupportProvider<Metric
     }
 
     @Override
-    public MetricsSupport create(MetricsSettings metricsSettings) {
-        // Don't use create because that delegates to the API MetricsSupport class which would deledate right back here.
-        return new MetricsSupport(metricsSettings);
+    public MetricsSupport create(MetricsSettings metricsSettings, RestServiceSettings restServiceSettings) {
+        // Don't use create because that delegates to the API MetricsSupport class which would delegate right back here.
+        return new MetricsSupport(metricsSettings, restServiceSettings);
     }
 }

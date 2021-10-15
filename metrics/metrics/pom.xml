@@ -56,7 +56,7 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.metrics</groupId>
-            <artifactId>helidon-metrics-minimal</artifactId>
+            <artifactId>helidon-metrics-service-api</artifactId>
         </dependency>
         <dependency>
             <groupId>org.eclipse.microprofile.metrics</groupId>
@@ -81,6 +81,10 @@
         <dependency>
             <groupId>io.helidon.service-common</groupId>
             <artifactId>helidon-service-common-rest</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.metrics</groupId>
+            <artifactId>helidon-metrics-service-api</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.webclient</groupId>

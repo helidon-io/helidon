@@ -53,8 +53,9 @@ import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.metrics.api.KeyPerformanceIndicatorMetricsSettings;
 import io.helidon.metrics.api.MetricsSettings;
 import io.helidon.metrics.api.RegistryFactory;
-import io.helidon.metrics.minimal.MinimalMetricsSupport;
+import io.helidon.metrics.serviceapi.MinimalMetricsSupport;
 import io.helidon.servicecommon.rest.HelidonRestServiceSupport;
+import io.helidon.servicecommon.rest.RestServiceSettings;
 import io.helidon.webserver.Handler;
 import io.helidon.webserver.KeyPerformanceIndicatorSupport;
 import io.helidon.webserver.RequestHeaders;
@@ -97,7 +98,7 @@ import org.eclipse.microprofile.metrics.MetricRegistry;
  * }</pre>
  */
 public final class MetricsSupport extends HelidonRestServiceSupport
-        implements io.helidon.metrics.api.MetricsSupport {
+        implements io.helidon.metrics.serviceapi.MetricsSupport {
 
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
     private static final String SERVICE_NAME = "Metrics";
@@ -116,8 +117,8 @@ public final class MetricsSupport extends HelidonRestServiceSupport
         this.metricsSettings = builder.metricsSettingsBuilder.build();
     }
 
-    protected MetricsSupport(MetricsSettings metricsSettings) {
-        super(LOGGER, metricsSettings.restServiceSettings(), SERVICE_NAME);
+    protected MetricsSupport(MetricsSettings metricsSettings, RestServiceSettings restServiceSettings) {
+        super(LOGGER, restServiceSettings, SERVICE_NAME);
         rf = RegistryFactory.getInstance(metricsSettings);
         this.metricsSettings = metricsSettings;
     }
@@ -129,17 +130,19 @@ public final class MetricsSupport extends HelidonRestServiceSupport
      * metrics enabled)
      */
     public static MetricsSupport create() {
-        return (MetricsSupport) io.helidon.metrics.api.MetricsSupport.create();
+        return (MetricsSupport) io.helidon.metrics.serviceapi.MetricsSupport.create();
     }
 
     /**
      * Create an instance to be registered with Web Server with the specific metrics settings.
      *
      * @param metricsSettings metrics settings to use for initializing metrics
+     * @param restServiceSettings REST service settings for managing the endpoint
+     *
      * @return a new instance built with the specified metrics settings
      */
-    public static MetricsSupport create(MetricsSettings metricsSettings) {
-        return (MetricsSupport) io.helidon.metrics.api.MetricsSupport.create(metricsSettings);
+    public static MetricsSupport create(MetricsSettings metricsSettings, RestServiceSettings restServiceSettings) {
+        return (MetricsSupport) io.helidon.metrics.serviceapi.MetricsSupport.create(metricsSettings, restServiceSettings);
     }
 
     /**
@@ -151,7 +154,10 @@ public final class MetricsSupport extends HelidonRestServiceSupport
      * @return a new instance configured withe config provided
      */
     public static MetricsSupport create(Config config) {
-        return create(MetricsSettings.create(config));
+        return create(MetricsSettings.create(config),
+                      io.helidon.metrics.serviceapi.MetricsSupport.defaultedMetricsRestServiceSettingsBuilder()
+                              .config(config)
+                              .build());
     }
 
     static JsonObjectBuilder createMergingJsonObjectBuilder(JsonObjectBuilder delegate) {
@@ -359,6 +365,7 @@ public final class MetricsSupport extends HelidonRestServiceSupport
      * @param routingName name of the routing (may be null)
      * @param rules routing builder or routing rules
      */
+    @Override
     public void configureVendorMetrics(String routingName,
                                        Routing.Rules rules) {
         String metricPrefix = metricsNamePrefix(routingName);
@@ -566,7 +573,7 @@ public final class MetricsSupport extends HelidonRestServiceSupport
      * A fluent API builder to build instances of {@link MetricsSupport}.
      */
     public static class Builder extends HelidonRestServiceSupport.Builder<MetricsSupport, Builder>
-            implements io.helidon.metrics.api.MetricsSupport.Builder<MetricsSupport> {
+            implements io.helidon.metrics.serviceapi.MetricsSupport.Builder<MetricsSupport> {
 
         private Supplier<RegistryFactory> registryFactory;
         private MetricsSettings.Builder metricsSettingsBuilder = MetricsSettings.builder();
