@@ -376,6 +376,7 @@ public interface WebServer {
         private Transport transport;
         private MessageBodyReaderContext readerContext;
         private MessageBodyWriterContext writerContext;
+        private DirectHandlers.Builder directHandlers = DirectHandlers.builder();
 
         private Builder() {
             readerContext = MessageBodyReaderContext.create(DEFAULT_MEDIA_SUPPORT.readerContext());
@@ -391,11 +392,11 @@ public interface WebServer {
          */
         @Override
         public WebServer build() {
-            if (null == defaultRouting) {
+            if (defaultRouting == null) {
                 LOGGER.warning("Creating a web server with no default routing configured.");
                 defaultRouting = Routing.builder().build();
             }
-            if (null == explicitConfig) {
+            if (explicitConfig == null) {
                 explicitConfig = configurationBuilder.build();
             }
 
@@ -412,7 +413,8 @@ public interface WebServer {
                                                   defaultRouting,
                                                   routings,
                                                   writerContext,
-                                                  readerContext);
+                                                  readerContext,
+                                                  directHandlers.build());
 
             if (defaultRouting instanceof RequestRouting) {
                 ((RequestRouting) defaultRouting).fireNewWebServer(result);
@@ -822,6 +824,28 @@ public interface WebServer {
         @ConfiguredOption(key = "features.print-details", value = "false")
         public Builder printFeatureDetails(boolean shouldPrint) {
             configurationBuilder.printFeatureDetails(shouldPrint);
+            return this;
+        }
+
+        /**
+         * Provide a custom handler for events that bypass routing.
+         * The handler can customize status, headers and message.
+         * <p>
+         * Examples of bad request ({@link DirectHandler.EventType#BAD_REQUEST}:
+         * <ul>
+         *     <li>Invalid character in path</li>
+         *     <li>Content-Length header set to a non-integer value</li>
+         *     <li>Invalid first line of the HTTP request</li>
+         * </ul>
+         * @param handler direct handler to use
+         * @param types event types to handle with the provided handler
+         * @return updated builder
+         */
+        public Builder directHandler(DirectHandler handler, DirectHandler.EventType... types) {
+            for (DirectHandler.EventType type : types) {
+                directHandlers.addHandler(type, handler);
+            }
+
             return this;
         }
     }
