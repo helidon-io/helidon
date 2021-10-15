@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.integrations.cdi.jpa;
+package io.helidon.integrations.jdbc;
 
 import java.sql.Array;
 import java.sql.Blob;
@@ -36,7 +36,10 @@ import java.util.Objects;
 import java.util.Properties;
 import java.util.concurrent.Executor;
 
-class DelegatingConnection implements Connection {
+/**
+ * A {@link Connection} that delegates to another {@link Connection}.
+ */
+public class DelegatingConnection implements Connection {
 
     private final Connection delegate;
 

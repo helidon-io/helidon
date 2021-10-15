@@ -126,6 +126,11 @@
             <artifactId>helidon-integrations-cdi-reference-counted-context</artifactId>
             <scope>compile</scope>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.integrations.jta</groupId>
+            <artifactId>helidon-integrations-jta-jdbc</artifactId>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
 
     <build>

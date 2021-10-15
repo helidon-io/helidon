@@ -24,20 +24,29 @@
  *
  * @see io.helidon.integrations.cdi.jpa.PersistenceUnitInfoBean
  */
+@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.integrations.cdi.jpa {
+
     requires java.xml.bind;
-    requires java.transaction;
-    requires java.annotation;
-    requires jakarta.activation;
-    requires java.sql;
-    requires java.persistence;
-    requires jakarta.interceptor.api;
-    requires jakarta.inject.api;
-    requires jakarta.enterprise.cdi.api;
-    requires io.helidon.integrations.cdi.referencecountedcontext;
+
+    requires jakarta.inject.api; // automatic module
+    requires jakarta.interceptor.api; // automatic module
+
     requires io.helidon.integrations.cdi.delegates;
+    requires io.helidon.integrations.cdi.referencecountedcontext;
+
+    requires transitive jakarta.enterprise.cdi.api; // automatic module
+    requires transitive java.annotation; // automatic module
+    requires transitive java.persistence; // automatic module
+    requires transitive java.sql;
+
+    // JTA is optional at runtime, as well as the modules that support
+    // it.
+    requires static java.transaction; // automatic module
+    requires static io.helidon.integrations.jta.jdbc;
 
     exports io.helidon.integrations.cdi.jpa;
+    exports io.helidon.integrations.cdi.jpa.jaxb;
 
     provides javax.enterprise.inject.spi.Extension with io.helidon.integrations.cdi.jpa.JpaExtension;
 }

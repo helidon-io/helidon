@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,13 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.integrations.cdi.jpa;
+package io.helidon.integrations.jdbc;
 
 import java.sql.SQLException;
 
 import javax.sql.DataSource;
 
-abstract class AbstractDataSource extends AbstractCommonDataSource implements DataSource {
+/**
+ * A skeletal implementation of the {@link DataSource} interface.
+ */
+public abstract class AbstractDataSource extends AbstractCommonDataSource implements DataSource {
 
     protected AbstractDataSource() {
         super();
