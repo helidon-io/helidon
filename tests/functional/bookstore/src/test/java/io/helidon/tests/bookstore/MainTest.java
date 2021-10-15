@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -44,7 +45,6 @@ import com.oracle.bedrock.runtime.LocalPlatform;
 import com.oracle.bedrock.runtime.console.CapturingApplicationConsole;
 import com.oracle.bedrock.runtime.options.Arguments;
 import com.oracle.bedrock.runtime.options.Console;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -61,35 +61,91 @@ class MainTest {
     private static String appJarPathSE = System.getProperty("app.jar.path.se", "please-set-app.jar.path.se");
     private static String appJarPathMP = System.getProperty("app.jar.path.mp", "please-set-app.jar.path.mp");
 
-    private static Application application;
-    private static LocalPlatform localPlatform = LocalPlatform.get();
-    private static int port = localPlatform.getAvailablePorts().next();
-    private static URL healthUrl;
-    private static WebClient webClient;
-
+    private static final LocalPlatform localPlatform = LocalPlatform.get();
     private static final String MODULE_NAME_MP = "io.helidon.tests.apps.bookstore.mp";
     private static final String MODULE_NAME_SE = "io.helidon.tests.apps.bookstore.se";
     private static final Logger LOGGER = Logger.getLogger(MainTest.class.getName());
 
-    @BeforeAll
-    static void setup() throws Exception {
-        LOGGER.info("Using port number" + port);
-        healthUrl = new URL("http://localhost:" + port + "/health");
-        appJarPathSE = Paths.get(appJarPathSE).normalize().toString();
-        appJarPathMP = Paths.get(appJarPathMP).normalize().toString();
-        webClient = WebClient.builder()
-                .baseUri("http://localhost:" + port)
-                .addMediaSupport(JsonpSupport.create())
-                .build();
+    /**
+     * Representation of a Helidon application. Encapsulates the
+     * port number the application is running on and the Bedrock
+     * Application class.
+     */
+    static class HelidonApplication {
+        final private Application application;
+        final private int port;
+
+        HelidonApplication(Application application, int port) {
+            this.application = application;
+            this.port = port;
+        }
+
+        void stop() throws Exception {
+            application.close();
+            waitForApplicationDown();
+        }
+
+        URL getHealthUrl() throws MalformedURLException {
+            return new URL("http://localhost:" + this.port + "/health");
+        }
+
+        URL getBaseUrl() throws MalformedURLException {
+            return new URL("http://localhost:" + this.port);
+        }
+
+        void waitForApplicationDown() throws Exception {
+            waitForApplication(false);
+        }
+
+        void waitForApplicationUp() throws Exception {
+            waitForApplication(true);
+        }
+
+        /**
+         * Wait for the application to be up or down.
+         *
+         * @param toBeUp true if waiting to come up, false if waiting to go down
+         * @throws Exception on a failure
+         */
+        private void waitForApplication(boolean toBeUp) throws Exception {
+            long timeout = 15 * 1000; // 15 seconds should be enough to start/stop the server
+            long now = System.currentTimeMillis();
+            String operation = (toBeUp ? "start" : "stop");
+            URL url = getHealthUrl();
+            LOGGER.info("Waiting for application to " + operation);
+
+            HttpURLConnection conn = null;
+            int responseCode;
+            do {
+                Thread.sleep(500);
+                if ((System.currentTimeMillis() - now) > timeout) {
+                    Assertions.fail("Application failed to " + operation);
+                }
+                try {
+                    conn = (HttpURLConnection) url.openConnection();
+                    conn.setConnectTimeout(500);
+                    responseCode = conn.getResponseCode();
+                    if (toBeUp && responseCode != 200) {
+                        LOGGER.info("Waiting for application to " + operation + ": Bad health response  " + responseCode);
+                    }
+                } catch (Exception ex) {
+                    if (toBeUp) {
+                        LOGGER.info("Waiting for application to " + operation + ": Unable to connect to " + url.toString() + ": " + ex);
+                    }
+                    responseCode = -1;
+                }
+                if (conn != null) {
+                    conn.disconnect();
+                }
+            } while ((toBeUp && responseCode != 200) || (!toBeUp && responseCode != -1));
+            LOGGER.info("Application " + operation + " successful" );
+        }
     }
 
-    @AfterEach
-    void stopTheApplication() throws Exception {
-        if (application != null) {
-            application.close();
-        }
-        application = null;
-        waitForApplicationDown();
+    @BeforeAll
+    static void setup() {
+        appJarPathSE = Paths.get(appJarPathSE).normalize().toString();
+        appJarPathMP = Paths.get(appJarPathMP).normalize().toString();
     }
 
     /**
@@ -97,12 +153,15 @@ class MainTest {
      *
      * @param appJarPath    Path to jar file with application
      * @param javaArgs      Additional java arguments to pass
-     * @throws Exception
+     * @throws Exception    Error starting the application
      */
-    void startTheApplication(String appJarPath, List<String> javaArgs) throws Exception {
-        Arguments args = toArguments(appJarPath, javaArgs, null);
-        application = localPlatform.launch("java", args);
-        waitForApplicationUp();
+    HelidonApplication startTheApplication(String appJarPath, List<String> javaArgs) throws Exception {
+        int port = localPlatform.getAvailablePorts().next();
+        Arguments args = toArguments(appJarPath, javaArgs, null, port);
+        Application application = localPlatform.launch("java", args);
+        HelidonApplication helidonApplication = new HelidonApplication(application, port);
+        helidonApplication.waitForApplicationUp();
+        return helidonApplication;
     }
 
     /**
@@ -111,12 +170,15 @@ class MainTest {
      * @param appJarPath    Path to jar file with application
      * @param javaArgs      Additional java arguments to pass
      * @param moduleName    Name of application's module that contains Main
-     * @throws Exception
+     * @throws Exception    Error starting the application
      */
-    void startTheApplicationModule(String appJarPath, List<String> javaArgs, String moduleName) throws Exception {
-        Arguments args = toArguments(appJarPath, javaArgs, moduleName);
-        application = localPlatform.launch("java", args);
-        waitForApplicationUp();
+    HelidonApplication startTheApplicationModule(String appJarPath, List<String> javaArgs, String moduleName) throws Exception {
+        int port = localPlatform.getAvailablePorts().next();
+        Arguments args = toArguments(appJarPath, javaArgs, moduleName, port);
+        Application application = localPlatform.launch("java", args);
+        HelidonApplication helidonApplication = new HelidonApplication(application, port);
+        helidonApplication.waitForApplicationUp();
+        return helidonApplication;
     }
 
     @Test
@@ -130,9 +192,10 @@ class MainTest {
     }
 
     private void runExitOnStartedTest(String edition) throws Exception {
-        Arguments args = toArguments(editionToJarPath(edition), List.of("-Dexit.on.started=!"), null);
+        int port = localPlatform.getAvailablePorts().next();
+        Arguments args = toArguments(editionToJarPath(edition), List.of("-Dexit.on.started=!"), null, port);
         CapturingApplicationConsole console = new CapturingApplicationConsole();
-        application = localPlatform.launch("java", args, Console.of(console));
+        Application application = localPlatform.launch("java", args, Console.of(console));
         Queue<String> stdOut = console.getCapturedOutputLines();
         long maxTime = System.currentTimeMillis() + (10 * 1000);
         do {
@@ -148,6 +211,7 @@ class MainTest {
                                 + "stdOut: " + stdOut + eol
                                 + eol
                                 + " stdErr: " + console.getCapturedErrorLines());
+        application.close();
     }
 
     @Test
@@ -220,7 +284,11 @@ class MainTest {
             systemPropertyArgs.add("-Dapp.json-library=" + jsonLibrary);
         }
 
-        startTheApplication(editionToJarPath(edition), systemPropertyArgs);
+        HelidonApplication application = startTheApplication(editionToJarPath(edition), systemPropertyArgs);
+        WebClient webClient = WebClient.builder()
+                .baseUri(application.getBaseUrl())
+                .addMediaSupport(JsonpSupport.create())
+                .build();
 
         webClient.get()
                 .path("/books")
@@ -264,6 +332,8 @@ class MainTest {
                 .thenAccept(it -> assertThat("HTTP response delete book", it.status(), is(Http.Status.OK_200)))
                 .toCompletableFuture()
                 .get();
+
+        application.stop();
     }
 
     /**
@@ -284,11 +354,18 @@ class MainTest {
             systemPropertyArgs.add("-Dapp.json-library=" + jsonLibrary);
         }
 
+        HelidonApplication application;
+
         if (useModules) {
-            startTheApplicationModule(editionToJarPath(edition), systemPropertyArgs, editionToModuleName(edition));
+            application = startTheApplicationModule(editionToJarPath(edition), systemPropertyArgs, editionToModuleName(edition));
         } else {
-            startTheApplication(editionToJarPath(edition), systemPropertyArgs);
+            application = startTheApplication(editionToJarPath(edition), systemPropertyArgs);
         }
+
+        WebClient webClient = WebClient.builder()
+                .baseUri(application.getBaseUrl())
+                .addMediaSupport(JsonpSupport.create())
+                .build();
 
         // Get Prometheus style metrics
         webClient.get()
@@ -342,13 +419,19 @@ class MainTest {
                 })
                 .toCompletableFuture()
                 .get();
+
+        application.stop();
     }
 
     @ParameterizedTest
     @ValueSource(strings = {"se", "mp"})
     void routing(String edition) throws Exception {
 
-        startTheApplication(editionToJarPath(edition), Collections.emptyList());
+        HelidonApplication application = startTheApplication(editionToJarPath(edition), Collections.emptyList());
+        WebClient webClient = WebClient.builder()
+                .baseUri(application.getBaseUrl())
+                .addMediaSupport(JsonpSupport.create())
+                .build();
 
         webClient.get()
                 .accept(MediaType.APPLICATION_JSON)
@@ -373,6 +456,8 @@ class MainTest {
                 .thenAccept(it -> assertThat("Checking encode URL response", it.status(), is(Http.Status.NOT_FOUND_404)))
                 .toCompletableFuture()
                 .get();
+
+        application.stop();
     }
 
     private JsonObject getBookAsJsonObject() throws IOException {
@@ -384,58 +469,7 @@ class MainTest {
         }
     }
 
-    private void waitForApplicationUp() throws Exception {
-        waitForApplication(healthUrl, true);
-    }
-
-    private void waitForApplicationDown() throws Exception {
-        waitForApplication(healthUrl, false);
-    }
-
-    /**
-     * Wait for the application to be up or down.
-     *
-     * @param url    URL to ping. URL should return 200 when application is up.
-     * @param toBeUp true if waiting to come up, false if waiting to go down
-     * @throws Exception on a failure
-     */
-    private void waitForApplication(URL url, boolean toBeUp) throws Exception {
-        long timeout = 15 * 1000; // 15 seconds should be enough to start/stop the server
-        long now = System.currentTimeMillis();
-        String operation = (toBeUp ? "start" : "stop");
-
-        HttpURLConnection conn = null;
-        int responseCode;
-        do {
-            LOGGER.info("Waiting for application to " + operation);
-            if ((System.currentTimeMillis() - now) > timeout) {
-                Assertions.fail("Application failed to " + operation);
-            }
-            try {
-                conn = (HttpURLConnection) url.openConnection();
-                conn.setConnectTimeout(500);
-                responseCode = conn.getResponseCode();
-                if (toBeUp && responseCode != 200) {
-                    LOGGER.info("Application returned bad health response  " + responseCode);
-                }
-            } catch (Exception ex) {
-                if (toBeUp) {
-                    LOGGER.info("Failed to connect to application at " + url.toString() + ": " + ex.toString());
-                }
-                responseCode = -1;
-            }
-            if (conn != null) {
-                conn.disconnect();
-            }
-            Thread.sleep(500);
-        } while ((toBeUp && responseCode != 200) || (!toBeUp && responseCode != -1));
-    }
-
-    private static Arguments toArguments(String appJarPath, List<String> javaArgs, String moduleName) {
-        if (application != null) {
-            Assertions.fail("Can't start the application, it is already running");
-        }
-
+    private static Arguments toArguments(String appJarPath, List<String> javaArgs, String moduleName, int port) {
         List<String> startArgs = new ArrayList<>(javaArgs);
         startArgs.add("-Dserver.port=" + port);
 
