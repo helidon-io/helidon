@@ -13,25 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-import io.helidon.metrics.api.spi.RegistryFactoryProvider;
-
 /**
- * Helidon metrics API.
+ * Service provider interfaces for locating implementations of the metrics support service.
  */
-module io.helidon.metrics.api {
-
-    requires java.logging;
-
-    requires io.helidon.common.http;
-    requires io.helidon.common.serviceloader;
-    requires transitive io.helidon.config;
-
-    requires transitive microprofile.metrics.api;
-    requires io.helidon.config.metadata;
-
-    exports io.helidon.metrics.api;
-    exports io.helidon.metrics.api.spi;
-
-    uses RegistryFactoryProvider;
-}
+package io.helidon.metrics.serviceapi.spi;

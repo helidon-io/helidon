@@ -35,6 +35,6 @@
         <module>trace-exemplar</module>
         <module>jaeger</module>
         <module>api</module>
-        <module>minimal</module>
+        <module>service-api</module>
     </modules>
 </project>

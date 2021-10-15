@@ -13,15 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.metrics.api.spi;
+package io.helidon.metrics.serviceapi.spi;
 
 import io.helidon.metrics.api.MetricsSettings;
-import io.helidon.metrics.api.MetricsSupport;
+import io.helidon.metrics.serviceapi.MetricsSupport;
+import io.helidon.servicecommon.rest.RestServiceSettings;
 
 /**
- * Provider behavior for {@link io.helidon.metrics.api.MetricsSupport.Builder} instances (and, indirectly, for {@link io.helidon.metrics.api.MetricsSupport} instances).
+ * Provider behavior for {@link io.helidon.metrics.serviceapi.MetricsSupport.Builder} instances (and, indirectly, for {@link io.helidon.metrics.serviceapi.MetricsSupport} instances).
  *
- * @param <T> implementation type of {@link io.helidon.metrics.api.MetricsSupport}
+ * @param <T> implementation type of {@link io.helidon.metrics.serviceapi.MetricsSupport}
  */
 public interface MetricsSupportProvider<T extends MetricsSupport> {
 
@@ -35,8 +36,9 @@ public interface MetricsSupportProvider<T extends MetricsSupport> {
      * Create a new instance of the specific type of {@link MetricsSupport}.
      *
      * @param metricsSettings metrics settings to use in creating the {@code MetricsSupport} instance
+     * @param restServiceSettings REST service settings to control the service endpoint
+     *
      * @return the new {@code MetricsSupport} instance
      */
-    T create(MetricsSettings metricsSettings);
-
+    T create(MetricsSettings metricsSettings, RestServiceSettings restServiceSettings);
 }

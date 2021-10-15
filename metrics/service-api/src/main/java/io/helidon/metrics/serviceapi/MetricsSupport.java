@@ -13,9 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.metrics.api;
+package io.helidon.metrics.serviceapi;
 
 import io.helidon.config.Config;
+import io.helidon.config.metadata.ConfiguredOption;
+import io.helidon.metrics.api.MetricsSettings;
+import io.helidon.servicecommon.rest.RestServiceSettings;
 import io.helidon.servicecommon.rest.RestServiceSupport;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.Service;
@@ -33,8 +36,9 @@ import io.helidon.webserver.Service;
  *        .register(MetricsSupport.create())
  * }</pre>
  * <p>
- * This class supports finer-grained settings using {@link MetricsSettings} and Helidon Config via
- * {@link #create(MetricsSettings)}.
+ * This class supports finer-grained settings using {@link io.helidon.metrics.api.MetricsSettings} and
+ * {@link io.helidon.servicecommon.rest.RestServiceSettings} and Helidon Config via
+ * {@link #create(io.helidon.metrics.api.MetricsSettings, io.helidon.servicecommon.rest.RestServiceSettings)}.
  * <p>
  * During request handling the application metrics registry is then available as follows:
  * <pre>{@code
@@ -56,10 +60,12 @@ public interface MetricsSupport extends RestServiceSupport, Service {
      * Creates a new {@code MetricsSupport} instance using the specified metrics settings.
      *
      * @param metricsSettings metrics settings to use in initializing the metrics support
+     * @param restServiceSettings REST service settings for the metrics endpoint
+     *
      * @return new metrics support using specified metrics settings
      */
-    static MetricsSupport create(MetricsSettings metricsSettings) {
-        return MetricsSupportManager.create(metricsSettings);
+    static MetricsSupport create(MetricsSettings metricsSettings, RestServiceSettings restServiceSettings) {
+        return MetricsSupportManager.create(metricsSettings, restServiceSettings);
     }
 
     /**
@@ -69,7 +75,15 @@ public interface MetricsSupport extends RestServiceSupport, Service {
      * @return new metrics support instance using the provided configuration
      */
     static MetricsSupport create(Config config) {
-        return MetricsSupportManager.create(MetricsSettings.create(config));
+        return MetricsSupportManager.create(MetricsSettings.create(config),
+                                            defaultedMetricsRestServiceSettingsBuilder()
+                                                    .config(config)
+                                                    .build());
+    }
+
+    static RestServiceSettings.Builder defaultedMetricsRestServiceSettingsBuilder() {
+        return RestServiceSettings.builder()
+                .webContext(MetricsSettings.Builder.DEFAULT_CONTEXT);
     }
 
     /**
@@ -96,14 +110,12 @@ public interface MetricsSupport extends RestServiceSupport, Service {
      * Sets up vendor metrics routing using the specified routing name and routing builder.
      *
      * @param routingName routing name to use in setting up the vendor metrics
-     * @param routingBuilder routing builder to modify
+     * @param routingRules routing rules to modify
      */
-    default void configureVendorMetrics(String routingName, Routing.Builder routingBuilder) {
-    }
+    void configureVendorMetrics(String routingName, Routing.Rules routingRules);
 
     @Override
-    default void update(Routing.Rules rules) {
-    }
+    void update(Routing.Rules rules);
 
     /**
      * Builder for {@code MetricsSupport}.
@@ -129,5 +141,15 @@ public interface MetricsSupport extends RestServiceSupport, Service {
          * @return updated builder
          */
         Builder<T> metricsSettings(MetricsSettings.Builder metricsSettingsBuilder);
+
+        /**
+         * Set the REST service settings.
+         *
+         * @param restServiceSettingsBuilder REST service settings to use
+         * @return updated builder
+         */
+        @ConfiguredOption(mergeWithParent = true,
+                          kind = ConfiguredOption.Kind.MAP)
+        Builder<T> restServiceSettings(RestServiceSettings.Builder restServiceSettingsBuilder);
     }
 }

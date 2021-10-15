@@ -16,20 +16,17 @@
 package io.helidon.metrics.api;
 
 import io.helidon.config.Config;
-import io.helidon.servicecommon.core.RestServiceSettings;
 
 class MetricsSettingsImpl implements MetricsSettings {
 
     private final boolean isEnabled;
     private final KeyPerformanceIndicatorMetricsSettings kpiMetricsSettings;
     private final BaseMetricsSettings baseMetricsSettings;
-    private final RestServiceSettings restServiceSettings;
 
     private MetricsSettingsImpl(MetricsSettingsImpl.Builder builder) {
         isEnabled = builder.isEnabled;
         kpiMetricsSettings = builder.kpiMetricsSettingsBuilder.build();
         baseMetricsSettings = builder.baseMetricsSettingsBuilder.build();
-        restServiceSettings = builder.restServiceSettingsBuilder.build();
     }
 
     @Override
@@ -47,19 +44,12 @@ class MetricsSettingsImpl implements MetricsSettings {
         return baseMetricsSettings;
     }
 
-    @Override
-    public RestServiceSettings restServiceSettings() {
-        return restServiceSettings;
-    }
-
     static class Builder implements MetricsSettings.Builder {
 
         private boolean isEnabled = true;
         private KeyPerformanceIndicatorMetricsSettings.Builder kpiMetricsSettingsBuilder =
                 KeyPerformanceIndicatorMetricsSettings.builder();
         private BaseMetricsSettings.Builder baseMetricsSettingsBuilder = BaseMetricsSettings.builder();
-        private RestServiceSettings.Builder restServiceSettingsBuilder = RestServiceSettings.builder()
-                .webContext(DEFAULT_CONTEXT);
 
         protected Builder() {
         }
@@ -90,7 +80,6 @@ class MetricsSettingsImpl implements MetricsSettings {
 
         @Override
         public Builder config(Config metricsSettingsConfig) {
-            restServiceSettingsBuilder.config(metricsSettingsConfig);
             baseMetricsSettingsBuilder.config(metricsSettingsConfig.get(BaseMetricsSettings.Builder.BASE_METRICS_CONFIG_KEY));
             kpiMetricsSettingsBuilder.config(metricsSettingsConfig
                                                      .get(KeyPerformanceIndicatorMetricsSettings.Builder
@@ -105,12 +94,6 @@ class MetricsSettingsImpl implements MetricsSettings {
         public Builder keyPerformanceIndicatorSettings(
                 KeyPerformanceIndicatorMetricsSettings.Builder kpiMetricsSettings) {
             this.kpiMetricsSettingsBuilder = kpiMetricsSettings;
-            return this;
-        }
-
-        @Override
-        public MetricsSettings.Builder restServiceSettings(RestServiceSettings.Builder restServiceSettingsBuilder) {
-            this.restServiceSettingsBuilder = restServiceSettingsBuilder;
             return this;
         }
     }

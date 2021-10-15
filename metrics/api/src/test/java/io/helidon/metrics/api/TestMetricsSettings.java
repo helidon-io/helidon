@@ -89,15 +89,4 @@ public class TestMetricsSettings {
                    metricsSettings.keyPerformanceIndicatorSettings().longRunningRequestThresholdMs(),
                    is(789L));
     }
-
-    @Test
-    void testRESTSettings() {
-        MetricsSettings metricsSettings = MetricsSettings.builder().config(withRESTSettings).build();
-        assertThat("top-level metrics enabled", metricsSettings.isEnabled(), is(true));
-        assertThat("KPI settings extended",
-                   metricsSettings.keyPerformanceIndicatorSettings().isExtended(),
-                   is(false));
-        assertThat("Configured routing", metricsSettings.restServiceSettings().routing(), is("my-routing"));
-        assertThat("Configured web-context", metricsSettings.restServiceSettings().webContext(), is("/mycontext"));
-    }
 }

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.metrics.api;
+package io.helidon.metrics.serviceapi;
 
 import java.util.ServiceLoader;
 import java.util.logging.Level;
@@ -21,7 +21,9 @@ import java.util.logging.Logger;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
-import io.helidon.metrics.api.spi.MetricsSupportProvider;
+import io.helidon.metrics.api.MetricsSettings;
+import io.helidon.metrics.serviceapi.spi.MetricsSupportProvider;
+import io.helidon.servicecommon.rest.RestServiceSettings;
 
 /**
  * Loads the highest-priority implementation of {@link MetricsSupportProvider} via service loading or, if none is found, uses a
@@ -43,7 +45,7 @@ class MetricsSupportManager {
 
     private static MetricsSupportProvider<?> loadMetricsSupportProvider() {
         MetricsSupportProvider<?> provider = HelidonServiceLoader.builder(ServiceLoader.load(MetricsSupportProvider.class))
-                .addService(new LastChanceMetricsSupportProvider(), Integer.MAX_VALUE)
+                .addService(new MinimalMetricsSupportProviderImpl(), Integer.MAX_VALUE)
                 .build()
                 .asList()
                 .get(0);
@@ -53,27 +55,17 @@ class MetricsSupportManager {
 
     static MetricsSupport create() {
         return LAZY_PROVIDER.get().builder()
+                .restServiceSettings(MetricsSupport.defaultedMetricsRestServiceSettingsBuilder())
                 .build();
     }
 
     static MetricsSupport.Builder<?> builder() {
-        return LAZY_PROVIDER.get().builder();
+        return LAZY_PROVIDER.get()
+                .builder()
+                .restServiceSettings(MetricsSupport.defaultedMetricsRestServiceSettingsBuilder());
     }
 
-    static MetricsSupport create(MetricsSettings metricsSettings) {
-        return LAZY_PROVIDER.get().create(metricsSettings);
-    }
-
-    private static class LastChanceMetricsSupportProvider implements MetricsSupportProvider<LastChanceMetricsSupport> {
-
-        @Override
-        public MetricsSupport.Builder<LastChanceMetricsSupport> builder() {
-            return new LastChanceMetricsSupport.Builder();
-        }
-
-        @Override
-        public LastChanceMetricsSupport create(MetricsSettings metricsSettings) {
-            return LastChanceMetricsSupport.create(metricsSettings);
-        }
+    static MetricsSupport create(MetricsSettings metricsSettings, RestServiceSettings restServiceSettings) {
+        return LAZY_PROVIDER.get().create(metricsSettings, restServiceSettings);
     }
 }

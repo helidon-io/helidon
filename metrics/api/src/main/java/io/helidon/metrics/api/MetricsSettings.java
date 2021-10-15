@@ -18,7 +18,6 @@ package io.helidon.metrics.api;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.servicecommon.core.RestServiceSettings;
 
 /**
  * Settings which control behavior for metrics overall.
@@ -86,12 +85,6 @@ public interface MetricsSettings {
      * @return the base metrics settings
      */
     BaseMetricsSettings baseMetricsSettings();
-
-    /**
-     *
-     * @return the REST service settings
-     */
-    RestServiceSettings restServiceSettings();
 
     /**
      * Builder for {@code MetricsSettings}.
@@ -162,15 +155,5 @@ public interface MetricsSettings {
         @ConfiguredOption(key = BASE_CONFIG_KEY,
                           kind = ConfiguredOption.Kind.MAP)
         Builder baseMetricsSettings(BaseMetricsSettings.Builder baseMetricsSettingsBuilder);
-
-        /**
-         * Set the REST service settings.
-         *
-         * @param restServiceSettingsBuilder REST service settings to use
-         * @return updated builder
-         */
-        @ConfiguredOption(mergeWithParent = true,
-                          kind = ConfiguredOption.Kind.MAP)
-        Builder restServiceSettings(RestServiceSettings.Builder restServiceSettingsBuilder);
     }
 }

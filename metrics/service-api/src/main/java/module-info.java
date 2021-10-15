@@ -12,26 +12,21 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
-
-import io.helidon.metrics.api.spi.RegistryFactoryProvider;
-
 /**
- * Helidon metrics API.
+ * API, SPI, and minimal implementation of metrics service.
  */
-module io.helidon.metrics.api {
+module io.helidon.metrics.serviceapi {
 
     requires java.logging;
 
-    requires io.helidon.common.http;
     requires io.helidon.common.serviceloader;
-    requires transitive io.helidon.config;
-
-    requires transitive microprofile.metrics.api;
+    requires io.helidon.webserver;
     requires io.helidon.config.metadata;
+    requires io.helidon.servicecommon.rest;
+    requires io.helidon.metrics.api;
 
-    exports io.helidon.metrics.api;
-    exports io.helidon.metrics.api.spi;
-
-    uses RegistryFactoryProvider;
+    exports io.helidon.metrics.serviceapi;
+    exports io.helidon.metrics.serviceapi.spi;
 }
