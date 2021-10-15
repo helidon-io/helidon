@@ -126,6 +126,12 @@ final class PathPattern {
                         paramCounter++;
                     }
                     break;
+                case '*':
+                    if (!optionalSequence) {
+                        isRegexp = true;
+                        regexp.append(".*?");
+                    }
+                    break;
                 default:
                         shouldContinue = false;
                 }
