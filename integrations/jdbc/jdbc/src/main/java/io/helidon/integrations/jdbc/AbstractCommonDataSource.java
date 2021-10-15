@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.integrations.cdi.jpa;
+package io.helidon.integrations.jdbc;
 
 import java.io.PrintWriter;
 import java.sql.SQLException;
@@ -22,7 +22,11 @@ import java.util.logging.Logger;
 
 import javax.sql.CommonDataSource;
 
-abstract class AbstractCommonDataSource implements CommonDataSource {
+/**
+ * A skeletal implementation of the {@link CommonDataSource}
+ * interface.
+ */
+public abstract class AbstractCommonDataSource implements CommonDataSource {
 
     private int loginTimeout;
 

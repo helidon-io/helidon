@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.integrations.cdi.jpa;
+package io.helidon.integrations.jdbc;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -34,7 +34,7 @@ import java.sql.SQLException;
  *
  * @see #close()
  */
-class ConditionallyCloseableConnection extends DelegatingConnection {
+public class ConditionallyCloseableConnection extends DelegatingConnection {
 
 
     /*
@@ -73,7 +73,7 @@ class ConditionallyCloseableConnection extends DelegatingConnection {
      *
      * @see #setCloseable(boolean)
      */
-    ConditionallyCloseableConnection(final Connection delegate) {
+    public ConditionallyCloseableConnection(final Connection delegate) {
         this(delegate, true);
     }
 
@@ -94,7 +94,7 @@ class ConditionallyCloseableConnection extends DelegatingConnection {
      *
      * @see DelegatingConnection#DelegatingConnection(Connection)
      */
-    ConditionallyCloseableConnection(final Connection delegate, final boolean closeable) {
+    public ConditionallyCloseableConnection(final Connection delegate, final boolean closeable) {
         super(delegate);
         this.setCloseable(closeable);
     }
@@ -109,33 +109,20 @@ class ConditionallyCloseableConnection extends DelegatingConnection {
      * Overrides the {@link DelegatingConnection#close()} method so
      * that when it is invoked this {@link
      * ConditionallyCloseableConnection} is {@linkplain
-     * Connection#close() closed} only if {@linkplain
-     * Connection#isClosed() it is not already closed} and if it
-     * {@linkplain #isCloseable() is closeable} and if the {@link
-     * #reset()} method completes normally.
+     * Connection#close() closed} only if it {@linkplain
+     * #isCloseable() is closeable}.
      *
-     * <p>If the {@link DelegatingConnection#close()} method is
-     * invoked successfully, then the {@link #closed()} method is
-     * called.</p>
+     * <p>Overrides should normally call {@code super.close()} as part
+     * of their implementation.<p>
      *
      * @exception SQLException if an error occurs
      *
-     * @see #isClosed()
-     *
      * @see #isCloseable()
-     *
-     * @see #reset()
-     *
-     * @see #closed()
      */
     @Override
     public void close() throws SQLException {
         if (this.isCloseable()) {
-            assert !this.isClosed();
-            this.reset();
             super.close();
-            this.closed();
-            assert this.isClosed();
         }
     }
 
@@ -187,48 +174,6 @@ class ConditionallyCloseableConnection extends DelegatingConnection {
      */
     public final void setCloseable(final boolean closeable) {
         this.closeable = closeable;
-    }
-
-    /**
-     * Called immediately before an actual {@link Connection#close()}
-     * operation is actually going to take place.
-     *
-     * <p>The default implementation of this method calls {@link
-     * #setCloseable(boolean)} with {@code true} as a parameter value
-     * ensuring that the actual {@link Connection#close()} operation
-     * will not be blocked or reimplemented in any way.</p>
-     *
-     * <p>Overrides must not call the {@link #close()} method or
-     * undefined behavior will result.</p>
-     *
-     * @exception SQLException if an error occurs
-     *
-     * @see #close()
-     */
-    protected void reset() throws SQLException {
-        this.setCloseable(true);
-    }
-
-    /**
-     * Called immediately after an actual {@link Connection#close()}
-     * operation has actually completed successfully.
-     *
-     * <p>The default implementation of this method does nothing.</p>
-     *
-     * <p>Overrides must not call the {@link #close()} method or
-     * undefined behavior will result.</p>
-     *
-     * <p>It is guaranteed that from within this method {@link
-     * #isClosed()} will return {@code true}.</p>
-     *
-     * @exception SQLException if an error occurs
-     *
-     * @see #close()
-     *
-     * @see #isClosed()
-     */
-    protected void closed() throws SQLException {
-
     }
 
 }

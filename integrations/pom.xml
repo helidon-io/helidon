@@ -44,6 +44,8 @@
         <module>cdi</module>
         <module>graal</module>
         <module>db</module>
+        <module>jdbc</module>
+        <module>jta</module>
         <module>micronaut</module>
         <module>neo4j</module>
         <module>micrometer</module>

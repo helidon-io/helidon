@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.integrations.cdi.jpa;
+package io.helidon.integrations.jta.jdbc;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -21,33 +21,37 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.BooleanSupplier;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
-import javax.enterprise.inject.Vetoed;
 import javax.sql.DataSource;
 import javax.transaction.Status;
 import javax.transaction.Synchronization;
-import javax.transaction.SystemException;
-import javax.transaction.TransactionManager;
+
+import io.helidon.integrations.jdbc.AbstractDataSource;
+import io.helidon.integrations.jdbc.ConditionallyCloseableConnection;
 
 /**
  * An {@link AbstractDataSource} and a {@link Synchronization} that
  * wraps another {@link DataSource} that is known to not behave
  * correctly in the presence of JTA transaction management, such as
  * one supplied by any of several freely and commercially available
- * connection pools.
+ * connection pools, and that makes such a non-JTA-aware {@link
+ * DataSource} behave as sensibly as possible in the presence of a
+ * JTA-managed transaction.
  *
  * <h2>Thread Safety</h2>
  *
  * <p>Instances of this class are safe for concurrent use by multiple
  * threads.  No such guarantee obviously can be made about the {@link
- * DataSource} wrapped any given instance of this class.</p>
+ * DataSource} wrapped by any given instance of this class.</p>
  *
  * <p>Note that the JDBC specification places no requirement on any
  * implementor to make any implementations of any JDBC constructs
  * thread-safe.</p>
  */
-@Vetoed
-final class JtaDataSource extends AbstractDataSource implements Synchronization {
+public final class JtaDataSource extends AbstractDataSource implements Synchronization {
 
 
     /*
@@ -57,8 +61,7 @@ final class JtaDataSource extends AbstractDataSource implements Synchronization 
 
     private static final Object UNAUTHENTICATED_CONNECTION_IDENTIFIER = new Object();
 
-    private static final ThreadLocal<? extends Map<JtaDataSource, Map<Object, TransactionSpecificConnection>>>
-        CONNECTION_STORAGE =
+    private static final ThreadLocal<? extends Map<JtaDataSource, Map<Object, TransactionSpecificConnection>>> CONNECTIONS_TL =
         ThreadLocal.withInitial(() -> new HashMap<>());
 
 
@@ -67,11 +70,9 @@ final class JtaDataSource extends AbstractDataSource implements Synchronization 
      */
 
 
-    private final DataSource delegate;
+    private final Supplier<? extends DataSource> delegateSupplier;
 
-    private final String dataSourceName;
-
-    private final TransactionManager transactionManager;
+    private final BooleanSupplier transactionIsActiveSupplier;
 
 
     /*
@@ -79,13 +80,45 @@ final class JtaDataSource extends AbstractDataSource implements Synchronization 
      */
 
 
-    JtaDataSource(final DataSource delegate,
-                  final String dataSourceName,
-                  final TransactionManager transactionManager) {
+    /**
+     * Creates a new {@link JtaDataSource}.
+     *
+     * @param dataSource the {@link DataSource} instance to which
+     * operations will be delegated; must not be {@code null}
+     *
+     * @param transactionIsActiveSupplier a {@link BooleanSupplier}
+     * that returns {@code true} only if the current transaction, if
+     * any, is active; must not be {@code null}
+     *
+     * @exception NullPointerException if either parameter is {@code
+     * null}
+     *
+     * @see #JtaDataSource(Supplier, BooleanSupplier)
+     */
+    public JtaDataSource(final DataSource dataSource,
+                         final BooleanSupplier transactionIsActiveSupplier) {
+        this(() -> dataSource, transactionIsActiveSupplier);
+    }
+
+    /**
+     * Creates a new {@link JtaDataSource}.
+     *
+     * @param delegateSupplier a {@link Supplier} of {@link
+     * DataSource} instances to which operations will be delegated;
+     * must not be {@code null}
+     *
+     * @param transactionIsActiveSupplier an {@link BooleanSupplier} that
+     * returns {@code true} only if the current transaction, if any, is
+     * active; must not be {@code null}
+     *
+     * @exception NullPointerException if either parameter is {@code
+     * null}
+     */
+    public JtaDataSource(final Supplier<? extends DataSource> delegateSupplier,
+                         final BooleanSupplier transactionIsActiveSupplier) {
         super();
-        this.delegate = Objects.requireNonNull(delegate);
-        this.dataSourceName = dataSourceName;
-        this.transactionManager = Objects.requireNonNull(transactionManager);
+        this.delegateSupplier = Objects.requireNonNull(delegateSupplier, "delegateSupplier");
+        this.transactionIsActiveSupplier = Objects.requireNonNull(transactionIsActiveSupplier, "transactionIsActiveSupplier");
     }
 
 
@@ -95,10 +128,42 @@ final class JtaDataSource extends AbstractDataSource implements Synchronization 
 
 
     /**
+     * If there is an active transaction, registers this {@link
+     * JtaDataSource} with the supplied registrar, which is most
+     * commonly&mdash;but is not required to be&mdash;a reference to
+     * the {@link
+     * javax.transaction.TransactionSynchronizationRegistry#registerInterposedSynchronization(Synchronization)}
+     * method.
+     *
+     * <p>If there is no currently active transaction, no action is taken.</p>
+     *
+     * @param registrar a {@link Consumer} that may {@linkplain
+     * Consumer#accept(Object) accept} this {@link JtaDataSource} if
+     * there is a currently active transaction; must not be {@code
+     * null}
+     *
+     * @return {@code true} if registration occurred; {@code false}
+     * otherwise
+     *
+     * @exception NullPointerException if {@code registrar} is {@code null}
+     *
+     * @exception RuntimeException if the supplied {@code registrar}'s
+     * {@link Consumer#accept(Object) accept} method throws a {@link
+     * RuntimeException}
+     */
+    public boolean registerWith(final Consumer<? super Synchronization> registrar) {
+        if (this.transactionIsActiveSupplier.getAsBoolean()) {
+            registrar.accept(this);
+            return true;
+        }
+        return false;
+    }
+
+    /**
      * Implements the {@link Synchronization#beforeCompletion()}
      * method to do nothing.
      */
-    @Override
+    @Override // Synchronization
     public void beforeCompletion() {
 
     }
@@ -117,7 +182,7 @@ final class JtaDataSource extends AbstractDataSource implements Synchronization 
      * neither {@link Status#STATUS_COMMITTED} nor {@link
      * Status#STATUS_ROLLEDBACK}
      */
-    @Override
+    @Override // Synchronization
     public void afterCompletion(final int status) {
         // Validate the status coming in, but make sure that no matter
         // what we remove any transaction-specific connections from
@@ -149,21 +214,17 @@ final class JtaDataSource extends AbstractDataSource implements Synchronization 
         // Connections out in the world will not participate in future
         // JTA transactions, even if such transactions are started on
         // this thread.
-        @SuppressWarnings("unchecked")
-        final Map<?, ? extends TransactionSpecificConnection> myThreadLocalConnectionMap =
-            (Map<?, ? extends TransactionSpecificConnection>) CONNECTION_STORAGE.get().get(this);
-
-        if (myThreadLocalConnectionMap != null && !myThreadLocalConnectionMap.isEmpty()) {
-            final Collection<? extends TransactionSpecificConnection> myConnections = myThreadLocalConnectionMap.values();
-            assert myConnections != null;
+        final Map<?, ? extends TransactionSpecificConnection> extantConnectionsMap = CONNECTIONS_TL.get().get(this);
+        if (extantConnectionsMap != null) {
+            final Collection<? extends TransactionSpecificConnection> extantConnections = extantConnectionsMap.values();
             try {
-                if (badStatusException != null) {
-                    throw badStatusException;
+                if (badStatusException == null) {
+                    complete(extantConnections, consumer);
                 } else {
-                    complete(myConnections, consumer);
+                    throw badStatusException;
                 }
             } finally {
-                myConnections.clear();
+                extantConnections.clear();
             }
         }
     }
@@ -196,65 +257,69 @@ final class JtaDataSource extends AbstractDataSource implements Synchronization 
      * active for that behavior).</p>
      *
      * @param connections an {@link Iterable} of {@link
-     * TransactionSpecificConnection} instances; may be {@code null}
-     * in which case no action will be taken
+     * TransactionSpecificConnection} instances; must not be {@code
+     * null}
      *
      * @param consumer a {@link CheckedConsumer} that will be invoked
      * on each connection, even in the presence of exceptional
-     * conditions; may be {@code null}
+     * conditions; must not be {@code null}
+     *
+     * @exception NullPointerException if {@code connections} or
+     * {@code consumer} is {@code null}
      *
      * @exception IllegalStateException if an error occurs
      */
     private static void complete(final Iterable<? extends TransactionSpecificConnection> connections,
                                  final CheckedConsumer<? super Connection> consumer) {
-        if (connections != null) {
-            RuntimeException runtimeException = null;
-            for (final TransactionSpecificConnection connection : connections) {
+        RuntimeException runtimeException = null;
+        for (final TransactionSpecificConnection connection : connections) {
+            try {
+                consumer.accept(connection);
+            } catch (final RuntimeException exception) {
+                if (runtimeException == null) {
+                    runtimeException = exception;
+                } else {
+                    runtimeException.addSuppressed(exception);
+                }
+            } catch (final Exception exception) {
+                if (runtimeException == null) {
+                    runtimeException = new IllegalStateException(exception.getMessage(), exception);
+                } else {
+                    runtimeException.addSuppressed(exception);
+                }
+            } finally {
                 try {
-                    if (consumer != null) {
-                        consumer.accept(connection);
-                    }
+                    connection.restoreAutoCommit();
                 } catch (final RuntimeException exception) {
                     if (runtimeException == null) {
                         runtimeException = exception;
                     } else {
                         runtimeException.addSuppressed(exception);
                     }
-                } catch (final Exception exception) {
+                } catch (final SQLException sqlException) {
                     if (runtimeException == null) {
-                        runtimeException = new IllegalStateException(exception.getMessage(), exception);
+                        runtimeException = new IllegalStateException(sqlException.getMessage(), sqlException);
                     } else {
-                        runtimeException.addSuppressed(exception);
+                        runtimeException.addSuppressed(sqlException);
                     }
                 } finally {
+                    connection.setCloseable(true);
                     try {
-                        connection.restoreAutoCommit();
+                        if (connection.isCloseCalled()) {
+                            connection.close();
+                        }
                     } catch (final SQLException sqlException) {
                         if (runtimeException == null) {
                             runtimeException = new IllegalStateException(sqlException.getMessage(), sqlException);
                         } else {
                             runtimeException.addSuppressed(sqlException);
                         }
-                    } finally {
-                        connection.setCloseable(true);
-                        try {
-                            if (connection.isCloseCalled()) {
-                                connection.close();
-                                assert connection.isClosed();
-                            }
-                        } catch (final SQLException sqlException) {
-                            if (runtimeException == null) {
-                                runtimeException = new IllegalStateException(sqlException.getMessage(), sqlException);
-                            } else {
-                                runtimeException.addSuppressed(sqlException);
-                            }
-                        }
                     }
                 }
             }
-            if (runtimeException != null) {
-                throw runtimeException;
-            }
+        }
+        if (runtimeException != null) {
+            throw runtimeException;
         }
     }
 
@@ -308,21 +373,21 @@ final class JtaDataSource extends AbstractDataSource implements Synchronization 
      *
      * </ul>
      *
-     * @param username the username to use to acquire an underlying
-     * {@link Connection}; may be {@code null}
+     * @return a non-{@code null} {@link Connection}
      *
-     * @param password the password to use to acquire an underlying
-     * {@link Connection}; may be {@code null}
+     * @exception SQLException if an error occurs
      *
-     * @param useZeroArgumentForm whether the underlying {@link
-     * DataSource}'s {@link DataSource#getConnection()} method should
-     * be called
+     * @exception RuntimeException if the {@link BooleanSupplier}
+     * supplied at construction time that reports a transaction's
+     * status throws a {@link RuntimeException}, or if the {@link
+     * Supplier} supplied at construction time that retrieves a
+     * delegate {@link DataSource} throws a {@link RuntimeException}
      *
      * @see DataSource#getConnection()
      *
      * @see DataSource#getConnection(String, String)
      */
-    @Override
+    @Override // AbstractDataSource
     public Connection getConnection() throws SQLException {
         return this.getConnection(null, null, true);
     }
@@ -387,11 +452,17 @@ final class JtaDataSource extends AbstractDataSource implements Synchronization 
      *
      * @exception SQLException if an error occurs
      *
+     * @exception RuntimeException if the {@link BooleanSupplier}
+     * supplied at construction time that reports a transaction's
+     * status throws a {@link RuntimeException}, or if the {@link
+     * Supplier} supplied at construction time that retrieves a
+     * delegate {@link DataSource} throws a {@link RuntimeException}
+     *
      * @see DataSource#getConnection()
      *
      * @see DataSource#getConnection(String, String)
      */
-    @Override
+    @Override // AbstractDataSource
     public Connection getConnection(final String username, final String password) throws SQLException {
         return this.getConnection(username, password, false);
     }
@@ -460,6 +531,12 @@ final class JtaDataSource extends AbstractDataSource implements Synchronization 
      *
      * @exception SQLException if an error occurs
      *
+     * @exception RuntimeException if the {@link BooleanSupplier}
+     * supplied at construction time that reports a transaction's
+     * status throws a {@link RuntimeException}, or if the {@link
+     * Supplier} supplied at construction time that retrieves a
+     * delegate {@link DataSource} throws a {@link RuntimeException}
+     *
      * @see DataSource#getConnection()
      *
      * @see DataSource#getConnection(String, String)
@@ -469,45 +546,46 @@ final class JtaDataSource extends AbstractDataSource implements Synchronization 
                                      final boolean useZeroArgumentForm)
         throws SQLException {
         final Connection returnValue;
-        int status = -1;
-        try {
-            status = this.transactionManager.getStatus();
-        } catch (final SystemException exception) {
-            throw new SQLException(exception.getMessage(), exception);
-        }
-        if (status == Status.STATUS_ACTIVE) {
-            final Map<JtaDataSource, Map<Object, TransactionSpecificConnection>> connectionStorageMap = CONNECTION_STORAGE.get();
-            assert connectionStorageMap != null;
-            Map<Object, TransactionSpecificConnection> myConnectionMap = connectionStorageMap.get(this);
-            if (myConnectionMap == null) {
-                myConnectionMap = new HashMap<>();
-                connectionStorageMap.put(this, myConnectionMap);
-            }
-            assert myConnectionMap != null;
+        if (this.transactionIsActiveSupplier.getAsBoolean()) {
+            final Map<Object, TransactionSpecificConnection> extantConnections =
+                CONNECTIONS_TL.get().computeIfAbsent(this, k -> new HashMap<>());
             final Object id;
             if (useZeroArgumentForm) {
                 id = UNAUTHENTICATED_CONNECTION_IDENTIFIER;
             } else {
                 id = new AuthenticatedConnectionIdentifier(username, password);
             }
-            TransactionSpecificConnection tsc = myConnectionMap.get(id);
+            TransactionSpecificConnection tsc = extantConnections.get(id);
             if (tsc == null) {
                 if (useZeroArgumentForm) {
-                    tsc = new TransactionSpecificConnection(this.delegate.getConnection());
+                    tsc = new TransactionSpecificConnection(this.delegateSupplier.get().getConnection());
                 } else {
-                    tsc = new TransactionSpecificConnection(this.delegate.getConnection(username, password));
+                    tsc = new TransactionSpecificConnection(this.delegateSupplier.get().getConnection(username, password));
                 }
-                myConnectionMap.put(id, tsc);
+                extantConnections.put(id, tsc);
             } else {
                 tsc.setCloseCalled(false);
             }
             returnValue = tsc;
         } else if (useZeroArgumentForm) {
-            returnValue = this.delegate.getConnection();
+            returnValue = this.delegateSupplier.get().getConnection();
         } else {
-            returnValue = this.delegate.getConnection(username, password);
+            returnValue = this.delegateSupplier.get().getConnection(username, password);
         }
         return returnValue;
+    }
+
+    /**
+     * A method conforming to the {@link Consumer} contract, used in
+     * this class only via a method reference, that deliberately does
+     * nothing.
+     *
+     * @param ignored ignored
+     *
+     * @see Consumer#accept(Object)
+     */
+    private static void sink(final Object ignored) {
+
     }
 
 
@@ -517,8 +595,8 @@ final class JtaDataSource extends AbstractDataSource implements Synchronization 
 
 
     /**
-     * A functional interface that processes a payload and may throw
-     * an {@link Exception} as a result.
+     * A functional interface that accepts a payload and may throw an
+     * {@link Exception} as a result.
      *
      * @param <T> the type of payload
      *
@@ -528,9 +606,9 @@ final class JtaDataSource extends AbstractDataSource implements Synchronization 
     private interface CheckedConsumer<T> {
 
         /**
-         * Processes the supplied payload in some way.
+         * Accepts the supplied payload in some way.
          *
-         * @param payload the object to process; may be {@code null}
+         * @param payload the object to accept; may be {@code null}
          *
          * @exception Exception if an error occurs
          */
@@ -538,6 +616,11 @@ final class JtaDataSource extends AbstractDataSource implements Synchronization 
 
     }
 
+    /**
+     * A {@link ConditionallyCloseableConnection} that tracks when the
+     * {@link #close()} method has been called and that handles
+     * auto-commit gracefully.
+     */
     private static final class TransactionSpecificConnection extends ConditionallyCloseableConnection {
 
         private final boolean oldAutoCommit;
@@ -546,7 +629,6 @@ final class JtaDataSource extends AbstractDataSource implements Synchronization 
 
         private TransactionSpecificConnection(final Connection delegate) throws SQLException {
             super(delegate, false /* not closeable */);
-            assert !this.isCloseable();
             this.oldAutoCommit = this.getAutoCommit();
             this.setAutoCommit(false);
         }
@@ -555,7 +637,7 @@ final class JtaDataSource extends AbstractDataSource implements Synchronization 
             this.setAutoCommit(this.oldAutoCommit);
         }
 
-        @Override
+        @Override // ConditionallyCloseableConnection
         public void close() throws SQLException {
             this.setCloseCalled(true);
             super.close();
@@ -577,46 +659,26 @@ final class JtaDataSource extends AbstractDataSource implements Synchronization 
 
         private final String password;
 
-        private final int hashCode;
-
         private AuthenticatedConnectionIdentifier(final String username,
                                                   final String password) {
             super();
             this.username = username;
             this.password = password;
-            int hashCode = 17;
-            int c = username == null ? 0 : username.hashCode();
-            hashCode = 37 * hashCode + c;
-            c = password == null ? 0 : password.hashCode();
-            this.hashCode = 37 * hashCode + c;
         }
 
-        @Override
+        @Override // Object
         public int hashCode() {
-            return this.hashCode;
+            return Objects.hash(this.username, this.password);
         }
 
-        @Override
+        @Override // Object
         public boolean equals(final Object other) {
             if (other == this) {
                 return true;
-            } else if (other instanceof AuthenticatedConnectionIdentifier) {
+            } else if (other != null && other.getClass().equals(AuthenticatedConnectionIdentifier.class)) {
                 final AuthenticatedConnectionIdentifier her = (AuthenticatedConnectionIdentifier) other;
-                if (this.username == null) {
-                    if (her.username != null) {
-                        return false;
-                    }
-                } else if (!this.username.equals(her.username)) {
-                    return false;
-                }
-                if (this.password == null) {
-                    if (her.password != null) {
-                        return false;
-                    }
-                } else if (!this.password.equals(her.password)) {
-                    return false;
-                }
-                return true;
+                return Objects.equals(this.username, her.username)
+                    && Objects.equals(this.password, her.password);
             } else {
                 return false;
             }
