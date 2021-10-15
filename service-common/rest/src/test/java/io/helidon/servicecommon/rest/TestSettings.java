@@ -20,6 +20,7 @@ import java.util.Map;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -50,5 +51,25 @@ public class TestSettings {
                 .build();
         assertThat("Routing from override", settingsWithOverride.routing(), is(OVERRIDING_ROUTING_VALUE));
         assertThat("Web context from config w/o override", settingsWithOverride.webContext(), is(WEB_CONTEXT_VALUE));
+    }
+
+    @Test
+    void testNullChecking() {
+
+        Assertions.assertThrows(NullPointerException.class, () ->
+                                        RestServiceSettings.builder()
+                                                .routing("some-routing")
+                                                .build(),
+                                "null web-context was not detected");
+    }
+
+    @Test
+    void testBlankChecking() {
+        Assertions.assertThrows(IllegalArgumentException.class, () ->
+                                        RestServiceSettings.builder()
+                                                .routing("some-routing")
+                                                .webContext("")
+                                                .build(),
+                                "blank web-context was not detected");
     }
 }

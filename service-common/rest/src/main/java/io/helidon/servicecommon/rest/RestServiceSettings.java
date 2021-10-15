@@ -36,6 +36,16 @@ public interface RestServiceSettings {
     }
 
     /**
+     * Creates a new instance using values from the provided config.
+     *
+     * @param config {@code Config} node possibly containing REST service settings
+     * @return new initialized settings
+     */
+    static RestServiceSettings create(Config config) {
+        return builder().config(config).build();
+    }
+
+    /**
      * Creates a builder to construct a new instance.
      *
      * @return new builder with defaulted settings
@@ -110,6 +120,14 @@ public interface RestServiceSettings {
         @ConfiguredOption(key = CorsEnabledServiceHelper.CORS_CONFIG_KEY,
                           kind = ConfiguredOption.Kind.MAP)
         Builder crossOriginConfig(CrossOriginConfig.Builder crossOriginConfigBuilder);
+
+        /**
+         * Sets the cross-origin settings from existing settings (not from a builder).
+         *
+         * @param crossOriginConfig existing cross-origin settings
+         * @return updated builder
+         */
+        Builder crossOriginConfig(CrossOriginConfig crossOriginConfig);
 
         /**
          * Updates settings using the provided {@link io.helidon.config.Config} node for the service of interest.

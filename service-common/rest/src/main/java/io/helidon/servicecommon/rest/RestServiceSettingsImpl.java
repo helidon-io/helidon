@@ -15,6 +15,8 @@
  */
 package io.helidon.servicecommon.rest;
 
+import java.util.Objects;
+
 import io.helidon.config.Config;
 import io.helidon.webserver.cors.CrossOriginConfig;
 
@@ -28,7 +30,10 @@ class RestServiceSettingsImpl implements RestServiceSettings {
     private final CrossOriginConfig crossOriginConfig;
 
     private RestServiceSettingsImpl(Builder builder) {
-        this.webContext = builder.webContext;
+        webContext = Objects.requireNonNull(builder.webContext, "webContext cannot be null");
+        if (webContext.isBlank()) {
+            throw new IllegalArgumentException("webContext cannot be blank");
+        }
         this.routing = builder.routing;
         crossOriginConfig = builder.crossOriginConfigBuilder.build();
     }
@@ -84,6 +89,12 @@ class RestServiceSettingsImpl implements RestServiceSettings {
         @Override
         public RestServiceSettings.Builder crossOriginConfig(CrossOriginConfig.Builder crossOriginConfigBuilder) {
             this.crossOriginConfigBuilder = crossOriginConfigBuilder;
+            return this;
+        }
+
+        @Override
+        public RestServiceSettings.Builder crossOriginConfig(CrossOriginConfig crossOriginConfig) {
+            crossOriginConfigBuilder = CrossOriginConfig.builder(crossOriginConfig);
             return this;
         }
 

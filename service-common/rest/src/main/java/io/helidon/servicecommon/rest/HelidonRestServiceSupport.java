@@ -56,17 +56,13 @@ public abstract class HelidonRestServiceSupport implements RestServiceSupport {
      * @param serviceName name of the service
      */
     protected HelidonRestServiceSupport(Logger logger, Builder<?, ?> builder, String serviceName) {
-        this(logger, builder.restServiceSettingsBuilder.build().webContext(), serviceName, builder.crossOriginConfig);
+        this(logger, builder.restServiceSettingsBuilder.build(), serviceName);
     }
 
-    protected HelidonRestServiceSupport(Logger logger, RestServiceSettings serviceSettings, String serviceName) {
-        this(logger, serviceSettings.webContext(), serviceName, serviceSettings.crossOriginConfig());
-    }
-
-    private HelidonRestServiceSupport(Logger logger, String context, String serviceName, CrossOriginConfig crossOriginConfig) {
+    protected HelidonRestServiceSupport(Logger logger, RestServiceSettings restServiceSettings, String serviceName) {
         this.logger = logger;
-        this.context = (context.startsWith("/") ? "" : "/") + context;
-        corsEnabledServiceHelper = CorsEnabledServiceHelper.create(serviceName, crossOriginConfig);
+        corsEnabledServiceHelper = CorsEnabledServiceHelper.create(serviceName, restServiceSettings.crossOriginConfig());
+        context = (restServiceSettings.webContext().startsWith("/") ? "" : "/") + restServiceSettings.webContext();
     }
 
     /**
@@ -151,7 +147,6 @@ public abstract class HelidonRestServiceSupport implements RestServiceSupport {
 
         private final Class<B> builderClass;
         private Config config = Config.empty();
-        private CrossOriginConfig crossOriginConfig = CrossOriginConfig.create();
         private RestServiceSettings.Builder restServiceSettingsBuilder = RestServiceSettings.builder();
 
         protected Builder(Class<B> builderClass, String defaultContext) {
@@ -221,7 +216,18 @@ public abstract class HelidonRestServiceSupport implements RestServiceSupport {
          */
         public B crossOriginConfig(CrossOriginConfig crossOriginConfig) {
             Objects.requireNonNull(crossOriginConfig, "CrossOriginConfig must be non-null");
-            this.crossOriginConfig = crossOriginConfig;
+            restServiceSettingsBuilder.crossOriginConfig(crossOriginConfig);
+            return me();
+        }
+
+        /**
+         * Sets the builder for the REST service settings.
+         *
+         * @param restServiceSettingsBuilder builder for REST service settings
+         * @return updated builder
+         */
+        public B restServiceSettings(RestServiceSettings.Builder restServiceSettingsBuilder) {
+            this.restServiceSettingsBuilder = restServiceSettingsBuilder;
             return me();
         }
 
