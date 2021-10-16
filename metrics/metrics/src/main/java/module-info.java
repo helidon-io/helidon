@@ -40,4 +40,5 @@ module io.helidon.metrics {
     provides io.helidon.metrics.serviceapi.spi.MetricsSupportProvider with io.helidon.metrics.MetricsSupportProviderImpl;
 
     uses io.helidon.metrics.ExemplarService;
+    uses io.helidon.metrics.serviceapi.spi.MetricsSupportProvider;
 }

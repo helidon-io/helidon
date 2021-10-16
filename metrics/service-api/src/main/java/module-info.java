@@ -29,4 +29,6 @@ module io.helidon.metrics.serviceapi {
 
     exports io.helidon.metrics.serviceapi;
     exports io.helidon.metrics.serviceapi.spi;
+
+    uses io.helidon.metrics.serviceapi.spi.MetricsSupportProvider;
 }
