@@ -81,6 +81,12 @@ public interface MetricsSupport extends RestServiceSupport, Service {
                                                     .build());
     }
 
+    /**
+     * Prepares a {@link io.helidon.servicecommon.rest.RestServiceSettings.Builder} instance for metrics with the default
+     * settings.
+     *
+     * @return the prepared builder
+     */
     static RestServiceSettings.Builder defaultedMetricsRestServiceSettingsBuilder() {
         return RestServiceSettings.builder()
                 .webContext(MetricsSettings.Builder.DEFAULT_CONTEXT);
