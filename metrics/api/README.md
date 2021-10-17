@@ -7,16 +7,17 @@ metrics-dependent component to be metrics-capable instead.
 Developers of new metrics-capable components should see the Helidon SE metrics guide (part 2) on developing metrics-capable compoments.
 
 ## Overview
-Helidon SE provides two related metrics components:
-* `helidon-metrics` - The full-featured implementation of Helidon SE metrics.
+Helidon SE provides these related metrics components:
+* `helidon-metrics` - The full-featured implementation of Helidon SE metrics and the support for the web service endpoint `/metrics`.
 * `helidon-metrics-api` - 
   New component, containing the public interface to Helidon SE metrics for Helidon SE apps and 
   components.
   This component also includes "no-op" implementations of those interfaces which allow 
   apps and components to create, register, look-up, and remove metrics in metrics registries.
   The implementations of metric types (counters, timers, etc.) in this component _do not update_.
+* `helidon-metrics-service-api` - New component, containing the public interface to support for the metrics endpoint.
 
-The new module contains interfaces for `RegistryFactory` and 
+The `helidon-metrics-api` module contains interfaces for `RegistryFactory` and 
 `MetricsSupport` which are API-compatible with their counterpart classes in `helidon-metrics`. 
 With minimal coding changes, components can be converted to become metrics-capable.
 
@@ -25,7 +26,7 @@ With minimal coding changes, components can be converted to become metrics-capab
 See `docs/se/guides/_metrics-capable-components.adoc` (the public documentation).
 
 ### Change `pom.xml`
-Change the `pom.xml` to depend on `helidon-metrics-api` instead of `helidon-metrics`.
+Change the `pom.xml` of the component to depend on `helidon-metrics-api` instead of `helidon-metrics`.
     
    ```
    <dependency>
@@ -53,7 +54,7 @@ The interfaces in the new module are API-compatible with their counterparts in `
        return this;
    }
    ```
-3. Add or augment a setter for `Config` so it includes this or the equivalent:
+3. Add or augment a setter for `Config` so it includes the following code or the equivalent:
    ```
    public Builder config(Config componentConfig) {
    ...
@@ -73,6 +74,7 @@ The interfaces in the new module are API-compatible with their counterparts in `
    ```
    MetricRegistry appRegistry = rf.getRegistry(MetricRegistry.Type.APPLICATION);
    ```
+
 ### Use the saved registries   
 Expose those registries to the rest of your component and use them however your component requires.
 
@@ -90,6 +92,8 @@ Consider enhancing your component's documentation to cover these topics.
 
 2. Packaging
 
-   Your component cannot update live metrics unless the Helidon metrics implementation in `helidon-metrics` is on the path at runtime. Your own component depends on the API, not the implementation. Whoever uses your component in an app or packages and deploys your component needs to be aware that--if they want metrics to work--they need to make sure the metrics  implementation is available at runtime. As long as _some_ Maven artifact in the stack has a runtime or stronger dependency on `helidon-metrics`, then metrics will work. 
+   Your component cannot update live metrics unless the Helidon metrics implementation in `helidon-metrics` is on the path at runtime. Your own component depends on the API, not the full metrics implementation in `helidon-metrics`. 
+   
+   Whoever uses your component in an app or packages and deploys your component needs to be aware that--if they want metrics to work--they need to make sure the metrics  implementation is available at runtime. As long as _some_ Maven artifact in the stack has a runtime or stronger dependency on `helidon-metrics` (and if metrics is enabled via config or settings), then Helidon can activate the full-featured metrics. 
 
   The public doc contains a section about this. Your component's doc can link to that.
