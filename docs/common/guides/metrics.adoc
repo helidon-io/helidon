@@ -187,7 +187,7 @@ You can control how metrics behaves in several ways by adding a `metrics` sectio
 
 // tag::enabling-disabling-whole-intro[]
 ==== Enabling and Disabling Metrics as a Whole
-By default, if your application depends on the Helidon metrics Maven module then metrics are enabled.
+By default, if your application depends on the `helidon-metrics` Maven module then full-featured metrics are enabled.
 You can disable metrics entirely using configuration:
 [source,properties]
 .Configuration properties file disabling metrics

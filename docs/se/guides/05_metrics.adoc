@@ -99,7 +99,7 @@ A Helidon SE application can disable metrics programmatically.
 .Disable all metrics behavior
 ----
 import io.helidon.metrics.api.MetricsSettings;
-import io.helidon.metrics.api.MetricsSupport;
+import io.helidon.metrics.serviceapi.MetricsSupport;
 import io.helidon.metrics.api.RegistryFactory;
 ...
 
@@ -129,7 +129,7 @@ Your Helidon SE application can also control the KPI settings programmatically.
 ----
 import io.helidon.metrics.api.KeyPerformanceIndicatorMetricsSettings;
 import io.helidon.metrics.api.MetricsSettings;
-import io.helidon.metrics.api.MetricsSupport;
+import io.helidon.metrics.serviceapi.MetricsSupport;
 import io.helidon.metrics.api.RegistryFactory;
 ...
 
