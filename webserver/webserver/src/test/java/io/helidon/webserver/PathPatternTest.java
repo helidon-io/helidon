@@ -232,6 +232,8 @@ public class PathPatternTest {
         assertMatch("/foo/bar", "/foo*");
         assertMatch("/foo/bar", "/foo/*");
         assertMatch("/foo/bar", "/foo/ba*");
+        assertMatch("/foo/bar", "/foo[/*]");
+        assertMatch("/foo/bar", "/foo[/ba*]");
         assertMatch("/foo/bar/baz", "/foo/*");
         assertMatch("/foo/bar/baz", "/foo/ba*");
         assertMatch("/foo/bar/baz", "/foo/*/*");

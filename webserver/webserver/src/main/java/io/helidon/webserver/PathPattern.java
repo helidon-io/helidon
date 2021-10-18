@@ -127,10 +127,8 @@ final class PathPattern {
                     }
                     break;
                 case '*':
-                    if (!optionalSequence) {
-                        isRegexp = true;
-                        regexp.append(".*?");
-                    }
+                    isRegexp = true;
+                    regexp.append(".*?");
                     break;
                 default:
                         shouldContinue = false;
