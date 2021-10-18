@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2021 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -85,6 +85,7 @@ You can use *path pattern* instead of _path_ with the following syntax:
 * `/foo/{+var}` - Convenience shortcut for {var:.+}. A matcher is not a true URI template (as defined by RFC) but this convenience is in sync with the Apiary templates
 * `/foo/{+}` - Convenience shortcut for unnamed segment with regular expression {:.+}
 * `/foo[/bar]` - An optional block, which translates to the `/foo(/bar)?` regular expression
+* `/*` or `/foo*` - `*` Wildcard character can be matched with any number of characters.
 
 
 IMPORTANT: Path (matcher) routing is *exact*. For example, a `/foo/bar` request is *not* routed to `.post('/foo', ...)`.
