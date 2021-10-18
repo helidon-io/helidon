@@ -129,9 +129,9 @@ Whoever packages and deploys your application or component can control what code
 is enabled or not.
 As a result, wherever possible, construct your modules which use metrics so that they do not make decisions based on the values of metrics;
 that is, design them to be metrics-capable, _not_ metrics-dependent.
-Doing so allows the code to operate regardless of whether the full-featured metrics implementation is active at runtime.
+Doing so allows your code to operate regardless of whether the full-featured metrics implementation is active at runtime.
 
-=== Using the Appropriate Dependencies
+=== Declaring Dependencies
 . Include this dependency:
 +
 [source,xml]
@@ -139,16 +139,30 @@ Doing so allows the code to operate regardless of whether the full-featured metr
 ----
 <dependency>
     <groupId>io.helidon.metrics</groupId>
-    <artifactId>helidon-metrics-api</artifactId> <!--1-->
+    <artifactId>helidon-metrics-api</artifactId>
 </dependency>
 ----
-<1> This module defines the metrics API: `RegistryFactory`, `MetricRegistry`, and the various metrics themselves.
+This module defines the metrics API: `RegistryFactory`, `MetricRegistry`, and the various metrics themselves.
 
-. If you are writing a Helidon SE application, declare an explicit runtime dependency on the full-featured metrics
+. If you are writing a Helidon SE application:
+.. To permit the use of the built-in metrics web service support for the `/metrics` endpoint, add this dependency:
++
+[source,xml]
+.Dependency for metrics web service support
+----
+<dependency>
+    <groupId>io.helidon.metrics</groupId>
+    <artifactId>helidon-metrics-service-api</artifactId>
+</dependency>
+----
+This module defines the metrics web service API: `MetricsSupport`.
++
+Use the `MetricsSupport` interface from `helidon-metrics-service-api` in your SE app initialization code to create a service you can register with the web server. (See the example <<techniques_for_SE,below>>.)
+.. Declare an explicit runtime dependency on the full-featured metrics
 implementation to ensure its availability when your app executes:
 +
 [source,xml]
-.Dependency to ensure full metrics implementation is available
+.Dependency to ensure full metrics and metrics service implementations are available
 ----
 <dependency>
     <groupId>io.helidon.metrics</groupId>
@@ -156,20 +170,6 @@ implementation to ensure its availability when your app executes:
     <scope>runtime</scope>
 </dependency>
 ----
-. If you are writing a Helidon SE application and want it to include the built-in metrics web service support for the `/metrics` endpoint, add this dependency:
-+
-[source,xml]
-.Dependency for metrics web service support
-----
-<dependency>
-    <groupId>io.helidon.metrics</groupId>
-    <artifactId>helidon-metrics-service-api</artifactId> <!--1-->
-</dependency>
-----
-<1> `helidon-metrics-service-api` defines the metrics web service API: `MetricsSupport`.
-+
-The `helidon-metrics` component also contains the full implementation of the metrics web service.
-Use the `MetricsSupport` interface from `helidon-metrics-service-api` in your SE app initialization code to create a service you can register with the web server.
 
 === Writing the Metrics-capable Code
 
@@ -241,7 +241,7 @@ Helidon returns either a full-featured `RegistryFactory` or a minimal one, depen
 * whether metrics overall is enabled or disabled, and
 * whether the component metrics settings requests enabled or disabled metrics.
 
-
+[[techniques_for_SE,SE Application Techniques]]
 ==== Techniques for an _SE Application_
 Write your _SE application_ similarly, but do not use the `ComponentMetricsSettings`.
 Instead, build a `MetricsSettings` object from the configuration.
