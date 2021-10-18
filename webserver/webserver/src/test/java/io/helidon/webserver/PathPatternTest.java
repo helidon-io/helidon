@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -32,7 +31,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 /**
  * The PathTemplateTest.
  */
-@Disabled
 public class PathPatternTest {
 
     private String normalize(String path) {
@@ -227,6 +225,22 @@ public class PathPatternTest {
         assertPrefixMatchWithParams("/foo/bar/baz", "/foo/{+var}", "/", "var", "bar/baz");
         assertMatchWithParams("/foo/bar/baz/xxx", "/foo/{+var}/xxx", "var", "bar/baz");
         assertMatchWithParams("/foo/bar/baz/xxx", "/foo/{+}/xxx");
+    }
+
+    @Test
+    public void testWildCard() throws Exception {
+        assertMatch("/foo/bar", "/foo*");
+        assertMatch("/foo/bar", "/foo/*");
+        assertMatch("/foo/bar", "/foo/ba*");
+        assertMatch("/foo/bar", "/foo[/*]");
+        assertMatch("/foo/bar", "/foo[/ba*]");
+        assertMatch("/foo/bar/baz", "/foo/*");
+        assertMatch("/foo/bar/baz", "/foo/ba*");
+        assertMatch("/foo/bar/baz", "/foo/*/*");
+        assertMatch("/foo/bar/baz", "/foo/*/b*");
+        assertNotMatch("/foobar", "/foo/*");
+        assertMatchWithParams("/foo/bar/baz", "/foo[/{var}]/*", "var", "bar");
+        assertMatchWithParams("/foo/bar/baz", "/foo/*[/{var}]", "var", "baz");
     }
 
     @Test
