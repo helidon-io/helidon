@@ -20,10 +20,10 @@ package io.helidon.microprofile.lra;
 import java.net.URI;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -130,7 +130,7 @@ public class LoadBalancedCoordinatorTest {
 
     private static final long TIMEOUT_SEC = 10L;
 
-    private final Map<String, CompletableFuture<URI>> completionMap = new HashMap<>();
+    private final Map<String, CompletableFuture<?>> completionMap = new ConcurrentHashMap<>();
 
     @Inject
     BeanManager beanManager;
@@ -150,13 +150,14 @@ public class LoadBalancedCoordinatorTest {
     }
 
     @SuppressWarnings("unchecked")
-    public synchronized <T> CompletableFuture<T> getCompletable(String key, URI lraId) {
-        String combinedKey = key + Optional.ofNullable(lraId).map(URI::toASCIIString).orElse("");
-        completionMap.putIfAbsent(combinedKey, new CompletableFuture<>());
-        return (CompletableFuture<T>) completionMap.get(combinedKey);
+    public <T> CompletableFuture<T> getCompletable(String key, URI lraId) {
+        return (CompletableFuture<T>) completionMap.computeIfAbsent(Optional.ofNullable(lraId)
+                .map(URI::toASCIIString)
+                .map(s -> s + key)
+                .orElse(key), s -> new CompletableFuture<>());
     }
 
-    public synchronized <T> CompletableFuture<T> getCompletable(String key) {
+    public <T> CompletableFuture<T> getCompletable(String key) {
         return getCompletable(key, null);
     }
 
