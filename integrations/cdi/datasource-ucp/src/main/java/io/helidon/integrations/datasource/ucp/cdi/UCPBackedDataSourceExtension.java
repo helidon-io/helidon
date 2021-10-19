@@ -261,7 +261,7 @@ public class UCPBackedDataSourceExtension extends AbstractDataSourceExtension {
                 }
             }
         }
-        final Instance<SSLContext> sslContextInstance = instance.select(SSLContext.class);
+        final Instance<SSLContext> sslContextInstance = instance.select(SSLContext.class, dataSourceName);
         if (!sslContextInstance.isUnsatisfied()) {
             returnValue.setSSLContext(sslContextInstance.get());
         }
