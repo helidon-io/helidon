@@ -70,7 +70,6 @@ public class PlainTest {
     private static void startServer(int port) {
         webServer = WebServer.builder()
                 .host("localhost")
-                .port(port)
                 .routing(Routing.builder().any((req, res) -> {
                             res.headers().add(Http.Header.TRANSFER_ENCODING, "chunked");
                             req.next();
