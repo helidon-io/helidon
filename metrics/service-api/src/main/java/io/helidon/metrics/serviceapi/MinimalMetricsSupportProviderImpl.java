@@ -15,8 +15,6 @@
  */
 package io.helidon.metrics.serviceapi;
 
-import javax.annotation.Priority;
-
 import io.helidon.metrics.api.MetricsSettings;
 import io.helidon.metrics.serviceapi.spi.MetricsSupportProvider;
 import io.helidon.servicecommon.rest.RestServiceSettings;
