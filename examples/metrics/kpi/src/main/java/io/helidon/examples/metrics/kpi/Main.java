@@ -30,6 +30,10 @@ import io.helidon.webserver.WebServer;
  */
 public final class Main {
 
+    static final String USE_CONFIG_PROPERTY_NAME = "useConfig";
+
+    static final boolean USE_CONFIG = Boolean.getBoolean(USE_CONFIG_PROPERTY_NAME);
+
     /**
      * Cannot be instantiated.
      */
@@ -92,7 +96,7 @@ public final class Main {
          * in one example, how to code each approach. Normally, you would choose one
          * approach to use in an application.
          */
-        MetricsSupport metricsSupport = Boolean.getBoolean("useConfig")
+        MetricsSupport metricsSupport = USE_CONFIG
                 ? metricsSupportWithConfig(config.get("metrics"))
                 : metricsSupportWithoutConfig();
 

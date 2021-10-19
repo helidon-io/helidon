@@ -13,25 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.metrics;
+package io.helidon.metrics.serviceapi;
 
-class KeyPerformanceIndicatorMetricsSettingsImpl implements KeyPerformanceIndicatorMetricsSettings {
+import io.helidon.metrics.api.MetricsSettings;
+import io.helidon.metrics.serviceapi.spi.MetricsSupportProvider;
+import io.helidon.servicecommon.rest.RestServiceSettings;
 
-    private final boolean isExtended;
-    private final long longRunningRequestThresholdMs;
+/**
+ * Provider of minimal web support for metrics.
+ */
+class MinimalMetricsSupportProviderImpl implements MetricsSupportProvider<MinimalMetricsSupport> {
 
-    KeyPerformanceIndicatorMetricsSettingsImpl(Builder builder) {
-        this.isExtended = builder.isExtended();
-        this.longRunningRequestThresholdMs = builder.longRunningRequestThresholdMs();
+    @Override
+    public MetricsSupport.Builder<MinimalMetricsSupport> builder() {
+        return MinimalMetricsSupport.builder();
     }
 
     @Override
-    public boolean isExtended() {
-        return isExtended;
-    }
-
-    @Override
-    public long longRunningRequestThresholdMs() {
-        return longRunningRequestThresholdMs;
+    public MinimalMetricsSupport create(MetricsSettings metricsSettings, RestServiceSettings restServiceSettings) {
+        return MinimalMetricsSupport.create(restServiceSettings);
     }
 }

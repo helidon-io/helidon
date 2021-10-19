@@ -38,7 +38,7 @@ include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 [source,xml]
 ----
     <dependency>
-        <groupId>io.helidon.metrics</groupId>
+        <groupId>io.helidon.metrics.api</groupId>
         <artifactId>helidon-metrics</artifactId>
     </dependency>
 ----
@@ -48,7 +48,7 @@ To enable Metrics, register it with the WebServer.
 
 [source,java]
 ----
-import io.helidon.metrics.MetricsSupport;
+import io.helidon.metrics.api.MetricsSupport;
 //...
 
 Routing.builder()
@@ -62,7 +62,7 @@ Then you can use metrics in your service.
 [source,java]
 .Define and use a Metrics Counter
 ----
-import io.helidon.metrics.RegistryFactory;
+import io.helidon.metrics.api.RegistryFactory;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 //...

@@ -50,7 +50,12 @@ import io.helidon.config.Config;
 import io.helidon.config.DeprecatedConfig;
 import io.helidon.media.common.MessageBodyWriter;
 import io.helidon.media.jsonp.JsonpSupport;
+import io.helidon.metrics.api.KeyPerformanceIndicatorMetricsSettings;
+import io.helidon.metrics.api.MetricsSettings;
+import io.helidon.metrics.api.RegistryFactory;
+import io.helidon.metrics.serviceapi.MinimalMetricsSupport;
 import io.helidon.servicecommon.rest.HelidonRestServiceSupport;
+import io.helidon.servicecommon.rest.RestServiceSettings;
 import io.helidon.webserver.Handler;
 import io.helidon.webserver.KeyPerformanceIndicatorSupport;
 import io.helidon.webserver.RequestHeaders;
@@ -61,11 +66,6 @@ import io.helidon.webserver.ServerResponse;
 import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-
-import static io.helidon.metrics.KeyPerformanceIndicatorMetricsSettings.Builder.KEY_PERFORMANCE_INDICATORS_CONFIG_KEY;
-import static io.helidon.metrics.KeyPerformanceIndicatorMetricsSettings.Builder.KEY_PERFORMANCE_INDICATORS_EXTENDED_CONFIG_KEY;
-import static io.helidon.metrics.KeyPerformanceIndicatorMetricsSettings.Builder.LONG_RUNNING_REQUESTS_CONFIG_KEY;
-import static io.helidon.metrics.KeyPerformanceIndicatorMetricsSettings.Builder.LONG_RUNNING_REQUESTS_THRESHOLD_CONFIG_KEY;
 
 /**
  * Support for metrics for Helidon Web Server.
@@ -97,24 +97,30 @@ import static io.helidon.metrics.KeyPerformanceIndicatorMetricsSettings.Builder.
  *  req.context().get(MetricRegistry.class).ifPresent(reg -> reg.counter("myCounter").inc());
  * }</pre>
  */
-public final class MetricsSupport extends HelidonRestServiceSupport {
+public final class MetricsSupport extends HelidonRestServiceSupport
+        implements io.helidon.metrics.serviceapi.MetricsSupport {
 
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
-    private static final String DEFAULT_CONTEXT = "/metrics";
     private static final String SERVICE_NAME = "Metrics";
 
     private static final MessageBodyWriter<JsonStructure> JSONP_WRITER = JsonpSupport.writer();
 
     private final RegistryFactory rf;
 
-    private static KeyPerformanceIndicatorMetricsSettings kpiSettings;
+    private final MetricsSettings metricsSettings;
 
     private static final Logger LOGGER = Logger.getLogger(MetricsSupport.class.getName());
 
     protected MetricsSupport(Builder builder) {
         super(LOGGER, builder, SERVICE_NAME);
         this.rf = builder.registryFactory.get();
-        kpiSettings = builder.kpiSettingsBuilder.build();
+        this.metricsSettings = builder.metricsSettingsBuilder.build();
+    }
+
+    protected MetricsSupport(MetricsSettings metricsSettings, RestServiceSettings restServiceSettings) {
+        super(LOGGER, restServiceSettings, SERVICE_NAME);
+        rf = RegistryFactory.getInstance(metricsSettings);
+        this.metricsSettings = metricsSettings;
     }
 
     /**
@@ -124,7 +130,19 @@ public final class MetricsSupport extends HelidonRestServiceSupport {
      * metrics enabled)
      */
     public static MetricsSupport create() {
-        return MetricsSupport.builder().build();
+        return (MetricsSupport) io.helidon.metrics.serviceapi.MetricsSupport.create();
+    }
+
+    /**
+     * Create an instance to be registered with Web Server with the specific metrics settings.
+     *
+     * @param metricsSettings metrics settings to use for initializing metrics
+     * @param restServiceSettings REST service settings for managing the endpoint
+     *
+     * @return a new instance built with the specified metrics settings
+     */
+    public static MetricsSupport create(MetricsSettings metricsSettings, RestServiceSettings restServiceSettings) {
+        return (MetricsSupport) io.helidon.metrics.serviceapi.MetricsSupport.create(metricsSettings, restServiceSettings);
     }
 
     /**
@@ -136,7 +154,10 @@ public final class MetricsSupport extends HelidonRestServiceSupport {
      * @return a new instance configured withe config provided
      */
     public static MetricsSupport create(Config config) {
-        return builder().config(config).build();
+        return create(MetricsSettings.create(config),
+                      io.helidon.metrics.serviceapi.MetricsSupport.defaultedMetricsRestServiceSettingsBuilder()
+                              .config(config)
+                              .build());
     }
 
     static JsonObjectBuilder createMergingJsonObjectBuilder(JsonObjectBuilder delegate) {
@@ -144,8 +165,8 @@ public final class MetricsSupport extends HelidonRestServiceSupport {
     }
 
     // For testing
-    static KeyPerformanceIndicatorMetricsSettings keyPerformanceIndicatorMetricsConfig() {
-        return kpiSettings;
+    KeyPerformanceIndicatorMetricsSettings keyPerformanceIndicatorMetricsConfig() {
+        return metricsSettings.keyPerformanceIndicatorSettings();
     }
 
     /**
@@ -171,7 +192,6 @@ public final class MetricsSupport extends HelidonRestServiceSupport {
     private static String metricsNamePrefix(String routingName) {
         return (null == routingName ? "" : routingName + ".") + KeyPerformanceIndicatorMetricsImpls.METRICS_NAME_PREFIX + ".";
     }
-
 
     private static void getAll(ServerRequest req, ServerResponse res, Registry registry) {
         if (registry.empty()) {
@@ -307,20 +327,20 @@ public final class MetricsSupport extends HelidonRestServiceSupport {
             final HelidonMetric metric = entry.getValue();
             final List<MetricID> sameNamedIDs = registry.metricIDsForName(metricID.getName());
             metric.jsonMeta(builder, sameNamedIDs);
-                }, registry);
+        }, registry);
     }
 
     private static JsonObject toJson(Function<Registry, JsonObject> fn, Registry... registries) {
         return Arrays.stream(registries)
                 .filter(r -> !r.empty())
                 .collect(JSON::createObjectBuilder,
-                        (builder, registry) -> accumulateJson(builder, registry, fn),
-                        JsonObjectBuilder::addAll)
+                         (builder, registry) -> accumulateJson(builder, registry, fn),
+                         JsonObjectBuilder::addAll)
                 .build();
     }
 
     private static void accumulateJson(JsonObjectBuilder builder, Registry registry,
-            Function<Registry, JsonObject> fn) {
+                                       Function<Registry, JsonObject> fn) {
         builder.add(registry.type(), fn.apply(registry));
     }
 
@@ -331,8 +351,8 @@ public final class MetricsSupport extends HelidonRestServiceSupport {
         return registry.stream()
                 .sorted(Comparator.comparing(Map.Entry::getKey))
                 .collect(() -> new MergingJsonObjectBuilder(JSON.createObjectBuilder()),
-                        accumulator,
-                        JsonObjectBuilder::addAll
+                         accumulator,
+                         JsonObjectBuilder::addAll
                 )
                 .build();
     }
@@ -345,11 +365,15 @@ public final class MetricsSupport extends HelidonRestServiceSupport {
      * @param routingName name of the routing (may be null)
      * @param rules routing builder or routing rules
      */
+    @Override
     public void configureVendorMetrics(String routingName,
-            Routing.Rules rules) {
+                                       Routing.Rules rules) {
         String metricPrefix = metricsNamePrefix(routingName);
 
-        KeyPerformanceIndicatorSupport.Metrics kpiMetrics = KeyPerformanceIndicatorMetricsImpls.get(metricPrefix, kpiSettings);
+        KeyPerformanceIndicatorSupport.Metrics kpiMetrics =
+                KeyPerformanceIndicatorMetricsImpls.get(metricPrefix,
+                                                        metricsSettings
+                                                                .keyPerformanceIndicatorSettings());
 
         rules.any((req, res) -> {
             KeyPerformanceIndicatorSupport.Context kpiContext = kpiContext(req);
@@ -384,19 +408,37 @@ public final class MetricsSupport extends HelidonRestServiceSupport {
      */
     @Override
     protected void postConfigureEndpoint(Routing.Rules defaultRules, Routing.Rules serviceEndpointRoutingRules) {
+        // If metrics are disabled, the RegistryFactory will be the no-op, not the full-featured one.
+        if (rf instanceof io.helidon.metrics.RegistryFactory) {
+            io.helidon.metrics.RegistryFactory fullRF = (io.helidon.metrics.RegistryFactory) rf;
+            Registry app = fullRF.getARegistry(MetricRegistry.Type.APPLICATION);
+
+            // register the metric registry and factory to be available to all
+            MetricsContextHandler metricsContextHandler = new MetricsContextHandler(app, rf);
+            defaultRules.any(metricsContextHandler);
+            if (defaultRules != serviceEndpointRoutingRules) {
+                serviceEndpointRoutingRules.any(metricsContextHandler);
+            }
+
+            configureVendorMetrics(null, defaultRules);
+        }
+        prepareMetricsEndpoints(context(), serviceEndpointRoutingRules);
+    }
+
+    @Override
+    public void prepareMetricsEndpoints(String endpointContext, Routing.Rules serviceEndpointRoutingRules) {
+        if (rf instanceof io.helidon.metrics.RegistryFactory) {
+            setUpFullFeaturedEndpoint(serviceEndpointRoutingRules, (io.helidon.metrics.RegistryFactory) rf);
+        } else {
+            MinimalMetricsSupport.createEndpointForDisabledMetrics(endpointContext, serviceEndpointRoutingRules);
+        }
+    }
+
+    private void setUpFullFeaturedEndpoint(Routing.Rules serviceEndpointRoutingRules,
+                                           io.helidon.metrics.RegistryFactory rf) {
         Registry base = rf.getARegistry(MetricRegistry.Type.BASE);
         Registry vendor = rf.getARegistry(MetricRegistry.Type.VENDOR);
         Registry app = rf.getARegistry(MetricRegistry.Type.APPLICATION);
-
-        // register the metric registry and factory to be available to all
-        MetricsContextHandler metricsContextHandler = new MetricsContextHandler(app, rf);
-        defaultRules.any(metricsContextHandler);
-        if (defaultRules != serviceEndpointRoutingRules) {
-            serviceEndpointRoutingRules.any(metricsContextHandler);
-        }
-
-        configureVendorMetrics(null, defaultRules);
-
         // routing to root of metrics
         serviceEndpointRoutingRules.get(context(), (req, res) -> getMultiple(req, res, base, app, vendor))
                 .options(context(), (req, res) -> optionsMultiple(req, res, base, app, vendor));
@@ -531,21 +573,19 @@ public final class MetricsSupport extends HelidonRestServiceSupport {
      * A fluent API builder to build instances of {@link MetricsSupport}.
      */
     public static class Builder extends HelidonRestServiceSupport.Builder<MetricsSupport, Builder>
-            implements io.helidon.common.Builder<MetricsSupport> {
+            implements io.helidon.metrics.serviceapi.MetricsSupport.Builder<MetricsSupport> {
 
         private Supplier<RegistryFactory> registryFactory;
-        private KeyPerformanceIndicatorMetricsSettings.Builder kpiSettingsBuilder =
-                KeyPerformanceIndicatorMetricsSettings.builder();
+        private MetricsSettings.Builder metricsSettingsBuilder = MetricsSettings.builder();
 
         protected Builder() {
-            super(Builder.class, DEFAULT_CONTEXT);
+            super(Builder.class, MetricsSettings.Builder.DEFAULT_CONTEXT);
         }
 
         @Override
         protected Config webContextConfig(Config config) {
             // align with health checks
             return DeprecatedConfig.get(config, "web-context", "context");
-
         }
 
         @Override
@@ -553,11 +593,16 @@ public final class MetricsSupport extends HelidonRestServiceSupport {
             return build(MetricsSupport::new);
         }
 
-        protected <T extends MetricsSupport> T build(Function<Builder, T> factory) {
+        protected MetricsSupport build(Function<Builder, MetricsSupport> factory) {
             if (null == registryFactory) {
-                registryFactory = () -> RegistryFactory.getInstance(config());
+                registryFactory = () -> RegistryFactory.getInstance(MetricsSettings.create(config()));
             }
-            return factory.apply(this);
+            MetricsSupport result = factory.apply(this);
+            if (!result.metricsSettings.baseMetricsSettings().isEnabled()) {
+                LOGGER.finest("Metrics support for base metrics is disabled in settings");
+            }
+
+            return result;
         }
 
         /**
@@ -567,20 +612,25 @@ public final class MetricsSupport extends HelidonRestServiceSupport {
          * @return updated builder instance
          * @see KeyPerformanceIndicatorMetricsSettings.Builder Details about key
          * performance metrics configuration
+         * @deprecated Use {@link #metricsSettings(MetricsSettings.Builder)} instead
          */
+        @Deprecated
         public Builder config(Config config) {
             super.config(config);
-            if (!config.get(BaseRegistry.BASE_ENABLED_KEY).asBoolean().orElse(true)) {
-                LOGGER.finest("Metrics support for base metrics is disabled in configuration");
-            }
-            config.get(KEY_PERFORMANCE_INDICATORS_CONFIG_KEY).ifExists(this::keyPerformanceIndicatorsMetricsConfig);
+            metricsSettingsBuilder.config(config);
+            return this;
+        }
+
+        @Override
+        public Builder metricsSettings(MetricsSettings.Builder metricsSettingsBuilder) {
+            this.metricsSettingsBuilder = metricsSettingsBuilder;
             return this;
         }
 
         /**
          * If you want to have multiple registry factories with different
          * endpoints, you may create them using
-         * {@link RegistryFactory#create(io.helidon.config.Config)} or
+         * {@link RegistryFactory#create(MetricsSettings)} or
          * {@link RegistryFactory#create()} and create multiple
          * {@link io.helidon.metrics.MetricsSupport} instances with different
          * {@link #webContext(String)} contexts}.
@@ -603,9 +653,13 @@ public final class MetricsSupport extends HelidonRestServiceSupport {
          *
          * @param builder for the KPI metrics settings
          * @return updated builder instance
+         * @deprecated Use {@link #metricsSettings(MetricsSettings.Builder)} with
+         * {@link MetricsSettings.Builder#keyPerformanceIndicatorSettings(KeyPerformanceIndicatorMetricsSettings.Builder)}
+         * instead.
          */
+        @Deprecated
         public Builder keyPerformanceIndicatorsMetricsSettings(KeyPerformanceIndicatorMetricsSettings.Builder builder) {
-            this.kpiSettingsBuilder = builder;
+            this.metricsSettingsBuilder.keyPerformanceIndicatorSettings(builder);
             return this;
         }
 
@@ -614,19 +668,14 @@ public final class MetricsSupport extends HelidonRestServiceSupport {
          *
          * @param kpiConfig Config node containing extended KPI metrics config
          * @return updated builder instance
+         * @deprecated Use {@link #metricsSettings(MetricsSettings.Builder)} with
+         * {@link MetricsSettings.Builder#keyPerformanceIndicatorSettings(KeyPerformanceIndicatorMetricsSettings.Builder)}
+         * instead.
          */
+        @Deprecated
         public Builder keyPerformanceIndicatorsMetricsConfig(Config kpiConfig) {
-            kpiConfig.get(KEY_PERFORMANCE_INDICATORS_EXTENDED_CONFIG_KEY)
-                    .asBoolean()
-                    .ifPresent(kpiSettingsBuilder::extended);
-
-            Config longRunningRequestsConfig =
-                    kpiConfig.get(LONG_RUNNING_REQUESTS_CONFIG_KEY);
-            longRunningRequestsConfig.get(LONG_RUNNING_REQUESTS_THRESHOLD_CONFIG_KEY)
-                    .asLong()
-                    .ifPresent(kpiSettingsBuilder::longRunningRequestThresholdMs);
-
-            return this;
+            return keyPerformanceIndicatorsMetricsSettings(
+                    KeyPerformanceIndicatorMetricsSettings.builder().config(kpiConfig));
         }
     }
 

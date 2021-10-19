@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 /**
  * Helidon Metrics implementation.
  */
@@ -23,6 +22,8 @@ module io.helidon.metrics {
     requires io.helidon.common;
     requires io.helidon.common.serviceloader;
     requires io.helidon.webserver.cors;
+    requires transitive io.helidon.metrics.api;
+    requires transitive io.helidon.metrics.serviceapi;
 
     requires transitive microprofile.metrics.api;
     requires java.management;
@@ -35,5 +36,9 @@ module io.helidon.metrics {
 
     exports io.helidon.metrics;
 
+    provides io.helidon.metrics.api.spi.RegistryFactoryProvider with io.helidon.metrics.RegistryFactoryProviderImpl;
+    provides io.helidon.metrics.serviceapi.spi.MetricsSupportProvider with io.helidon.metrics.MetricsSupportProviderImpl;
+
     uses io.helidon.metrics.ExemplarService;
+    uses io.helidon.metrics.serviceapi.spi.MetricsSupportProvider;
 }

@@ -38,6 +38,7 @@ import javax.json.JsonBuilderFactory;
 import javax.json.JsonObjectBuilder;
 
 import io.helidon.metrics.Sample.Derived;
+import io.helidon.metrics.api.AbstractMetric;
 
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricID;
@@ -47,7 +48,7 @@ import org.eclipse.microprofile.metrics.Tag;
 /**
  * Base for our implementations of various metrics.
  */
-abstract class MetricImpl implements HelidonMetric {
+abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
     static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
 
     private static final Logger LOGGER = Logger.getLogger(MetricImpl.class.getName());
@@ -122,15 +123,11 @@ abstract class MetricImpl implements HelidonMetric {
         return result;
     }
 
-    private final String registryType;
-    private final Metadata metadata;
-
     // Efficient check from interceptors to see if the metric is still valid
     private boolean isDeleted;
 
     MetricImpl(String registryType, Metadata metadata) {
-        this.metadata = metadata;
-        this.registryType = registryType;
+        super(registryType, metadata);
     }
 
     private static void addByteConverter(String metricUnit, long toByteRatio) {
@@ -149,19 +146,14 @@ abstract class MetricImpl implements HelidonMetric {
 
     @Override
     public String getName() {
-        return metadata.getName();
-    }
-
-    @Override
-    public Metadata metadata() {
-        return metadata;
+        return metadata().getName();
     }
 
     @Override
     public String toString() {
         return getClass().getSimpleName() + "{"
-                + "registryType='" + registryType + '\''
-                + ", metadata=" + metadata
+                + "registryType='" + registryType() + '\''
+                + ", metadata=" + metadata()
                 + toStringDetails()
                 + '}';
     }
@@ -171,10 +163,10 @@ abstract class MetricImpl implements HelidonMetric {
         JsonObjectBuilder metaBuilder =
                 new MetricsSupport.MergingJsonObjectBuilder(JSON.createObjectBuilder());
 
-        addNonEmpty(metaBuilder, "unit", metadata.getUnit().orElse(null));
-        addNonEmpty(metaBuilder, "type", metadata.getType());
-        addNonEmpty(metaBuilder, "description", metadata.getDescription().orElse(null));
-        addNonEmpty(metaBuilder, "displayName", metadata.getDisplayName());
+        addNonEmpty(metaBuilder, "unit", metadata().getUnit().orElse(null));
+        addNonEmpty(metaBuilder, "type", metadata().getType());
+        addNonEmpty(metaBuilder, "description", metadata().getDescription().orElse(null));
+        addNonEmpty(metaBuilder, "displayName", metadata().getDisplayName());
         if (metricIDs != null) {
             for (MetricID metricID : metricIDs) {
                 boolean tagAdded = false;
@@ -193,12 +185,7 @@ abstract class MetricImpl implements HelidonMetric {
 
     @Override
     public boolean isDeleted() {
-        return isDeleted;
-    }
-
-    @Override
-    public void markAsDeleted() {
-        isDeleted = true;
+        return super.isDeleted();
     }
 
     static String jsonFullKey(String baseName, MetricID metricID) {
@@ -244,7 +231,7 @@ abstract class MetricImpl implements HelidonMetric {
         sb.append("# HELP ")
                 .append(nameWithUnits)
                 .append(" ")
-                .append(metadata.getDescription().orElse(""))
+                .append(metadata().getDescription().orElse(""))
                 .append('\n');
     }
 
@@ -252,7 +239,7 @@ abstract class MetricImpl implements HelidonMetric {
     public void prometheusData(StringBuilder sb, MetricID metricID, boolean withHelpType) {
         String nameWithUnits = prometheusNameWithUnits(metricID);
         if (withHelpType) {
-            prometheusType(sb, nameWithUnits, metadata.getType());
+            prometheusType(sb, nameWithUnits, metadata().getType());
             prometheusHelp(sb, nameWithUnits);
         }
         sb.append(nameWithUnits).append(prometheusTags(metricID.getTags())).append(" ").append(prometheusValue()).append('\n');
@@ -264,10 +251,6 @@ abstract class MetricImpl implements HelidonMetric {
     }
 
     public abstract String prometheusValue();
-
-    String registryType() {
-        return registryType;
-    }
 
     protected final void prometheusQuantile(StringBuilder sb,
             PrometheusName name,
@@ -406,7 +389,7 @@ abstract class MetricImpl implements HelidonMetric {
     }
 
     final String prometheusName(String name) {
-        return prometheusClean(name, registryType + "_");
+        return prometheusClean(name, registryType() + "_");
     }
 
     static String prometheusClean(String name, String prefix) {
@@ -460,7 +443,7 @@ abstract class MetricImpl implements HelidonMetric {
 
     // for Gauge and Histogram - must convert
     Units getUnits() {
-        String unit = metadata.getUnit().get();
+        String unit = metadata().getUnit().get();
         if ((null == unit) || unit.isEmpty() || MetricUnits.NONE.equals(unit)) {
             return new Units(null);
         }

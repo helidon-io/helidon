@@ -1,0 +1,364 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2021 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Helidon SE Metrics-Capable Components Guide
+:h1Prefix: SE
+:description: Helidon metrics-capable components
+:keywords: helidon, metrics, metrics-capable, microprofile, guide
+:common-page-prefix-inc: ../../shared/common_prereqs/common_prereqs.adoc
+:common-guides: ../../common/guides
+:metrics-common: {common-guides}/metrics.adoc
+:javadoc-base-url-api: {javadoc-base-url}io.helidon.metrics.api/io/helidon/metrics/api
+:metrics-support-builder-javadoc: {javadoc-base-url-api}/MetricsSupport.Builder.html
+:lower-case-flavor: se
+:intro-project-name: {h1Prefix}
+:chk: icon:check[]
+:x: icon:times[]
+
+
+This guide explains Helidon SE metrics-capable components and applications and describes how to create and control them.
+
+== Introduction
+Think of Helidon metrics in three related but different parts:
+
+* The Helidon metrics API allows your code to register, look-up, remove, and update metrics using
+the `RegistryFactory`, `MetricRegistry`, and individual metrics interfaces.
+* Helidon provides two implementations of the Helidon metrics API and selects which one to use at runtime,
+based on what components are present on the runtime path and whether metrics is configured to be enabled or disabled.
+* The built-in Helidon metrics web service supports the `/metrics` endpoints by which clients can retrieve metadata and
+values of the registered metrics. Helidon MP apps which use metrics enable the metrics service by default.
+Your Helidon SE app provides this feature (if at all) by explicitly using the `MetricsSupport` interface.
+
+By far most Helidon applications are web apps and choose to expose the built-in metrics web service.
+But by separating the parts of metrics this way,
+Helidon allows non-web apps to work with metrics as well, just without the web service support.
+
+As you plan and write Helidon components and applications,
+you make some choices about exactly how your code will use metrics.
+This guide gives some background information,
+describes the choices you face, explains their ramifications, and provides some code examples.
+
+== Categorizing Metrics Usage
+We can place each Helidon component and Helidon application into one of three categories based on how it relies on metrics.
+The type of module dictates the compile-time dependency you declare in the project `pom.xml`.
+
+.Types of Metrics Usage
+[cols="1,1,6"]
+|===
+|Registers, updates, removes metrics? |Refers to metrics values? |Category
+
+|{x}
+|{x}
+|metrics-independent
+
+|{chk}
+|{x}
+|metrics-capable
+
+|{chk}
+|{chk}
+|metrics-dependent
+|===
+
+Whenever possible, if your component or app uses metrics write it as metrics-capable code.
+
+== Understanding the Two Metrics Implementations
+Helidon provides two metrics implementations.
+
+* _Full-featured_ metrics allows registering, removing, and updating metrics and observing metrics' changing values.
+The `helidon-metrics` component contains full-featured metrics.
+* _Minimal_ metrics supports registering, removing, and updating metrics.
+The metrics objects provided by the minimal implementation are no-ops: their values never change.
+The minimal implementation is part of the `helidon-metrics-api` component.
+
+Any code compiled with `helidon-metrics-api` can assume that the runtime path will include the minimal implementation.
+
+Both implementations support all the operations of the `RegistryFactory` and the `MetricRegistry`.
+The full implementation provides fully-functional metrics instances (counters, timers, etc.).
+In the minimal implementations, metrics do not update their values.
+
+For Helidon to use the full implementation, two conditions must hold:
+
+* The `helidon-metrics` component must be on the runtime path.
+* Metrics must be enabled, using either a builder or configuration. (Enabled is the default.)
+
+Otherwise, provided that the runtime path includes `helidon-metrics-api`, Helidon activates the minimal implementation.
+
+== Understanding the Two Metrics Service Implementations
+Helidon includes two implementations of support for the metrics web service endpoint `/metrics`
+(or whatever context value is configured).
+
+The full-service implementation sends responses which describe the metadata and current values for the metrics registered in
+metric registries. The `helidon-metrics` component contains this implementation.
+
+The `helidon-metrics-service-api` component contains the API for the metrics web service support (the `MetricsSupport` interface) and also
+a minimal implementation. This implementation simply responds with `404` and an explanatory message that metrics are disabled.
+
+Any code compiled with `helidon-metrics-service-api` can assume that the runtime path will contain the minimal implementation.
+
+Helidon activates the full implementation if the runtime path includes the full implementation _and_ metrics is configured as enabled;
+Helidon uses the minimal implementation otherwise.
+
+== Enabling and Disabling Metrics
+Using either builder-style settings or configuration, your component or Helidon SE application can let end users control
+at runtime whether Helidon should use full-featured metrics. Helidon MP applications always permit such control via configuration.
+
+If an end user sets the config value `metrics.enabled` to `false`, then Helidon activates the minimal metrics and metrics service implementations
+provided they are in the runtime path.
+
+Further, users can set `component-name.metrics.enabled` to `false` which disables metrics for just that component
+so long as the component supports that setting and acts on it correctly.
+
+== Designing and Writing Metrics-capable Applications and Components
+Whoever packages and deploys your application or component can control what code will be on the runtime path and whether metrics
+is enabled or not.
+As a result, wherever possible, construct your modules which use metrics so that they do not make decisions based on the values of metrics;
+that is, design them to be metrics-capable, _not_ metrics-dependent.
+Doing so allows your code to operate regardless of whether the full-featured metrics implementation is active at runtime.
+
+=== Declaring Dependencies
+. Include this dependency:
++
+[source,xml]
+.Dependency for Helidon metrics API
+----
+<dependency>
+    <groupId>io.helidon.metrics</groupId>
+    <artifactId>helidon-metrics-api</artifactId>
+</dependency>
+----
+This module defines the metrics API: `RegistryFactory`, `MetricRegistry`, and the various metrics themselves.
+
+. If you are writing a Helidon SE application:
+.. To permit the use of the built-in metrics web service support for the `/metrics` endpoint, add this dependency:
++
+[source,xml]
+.Dependency for metrics web service support
+----
+<dependency>
+    <groupId>io.helidon.metrics</groupId>
+    <artifactId>helidon-metrics-service-api</artifactId>
+</dependency>
+----
+This module defines the metrics web service API: `MetricsSupport`.
++
+Use the `MetricsSupport` interface from `helidon-metrics-service-api` in your SE app initialization code to create a service you can register with the web server. (See the example <<techniques_for_SE,below>>.)
+.. Declare an explicit runtime dependency on the full-featured metrics
+implementation to ensure its availability when your app executes:
++
+[source,xml]
+.Dependency to ensure full metrics and metrics service implementations are available
+----
+<dependency>
+    <groupId>io.helidon.metrics</groupId>
+    <artifactId>helidon-metrics</artifactId>
+    <scope>runtime</scope>
+</dependency>
+----
+
+=== Writing the Metrics-capable Code
+
+
+==== Techniques for _Non-application Components_
+Write your _non-application_ component to accept component-specific configuration that includes an optional `metrics` section
+which can include an optional `enabled` setting. Helidon defaults the value to `true`.
+The following example shows one way to accomplish this:
+
+.Example code to support disabling metrics usage in a component
+[source,java]
+----
+import io.helidon.config.Config;
+import io.helidon.metrics.api.ComponentMetricsSettings;
+import io.helidon.metrics.api.MetricsSettings;
+import io.helidon.metrics.api.RegistryFactory;
+
+import org.eclipse.microprofile.metrics.MetricRegistry;
+
+public class UtilComponent {
+
+    private final MetricRegistry metricRegistry; // <1>
+
+    public static class Builder implements io.helidon.common.Builder<UtilComponent> { // <2>
+        private ComponentMetricsSettings.Builder componentMetricsSettingsBuilder = ComponentMetricsSettings.builder();
+
+        public Builder componentMetricsSettings(ComponentMetricsSettings.Builder componentMetricsSettingsBuilder) { // <3>
+            this.componentMetricsSettingsBuilder = componentMetricsSettingsBuilder;
+            return this;
+        }
+
+        public Builder config(Config componentConfig) { // <4>
+            componentConfig
+                .get(ComponentMetricsSettings.Builder.METRICS_CONFIG_KEY)
+                .as(ComponentMetricsSettings::create)
+                .ifPresent(this::componentMetricsSettings);
+            return this;
+        }
+
+        public UtilComponent build() {
+            return new UtilComponent(this);
+        }
+
+        ...
+    }
+
+    private UtilComponent(Builder builder) {
+        ...
+        metricRegistry = RegistryFactory
+                .getInstance(builder.componentMetricsSettingsBuilder.build())
+                .getRegistry(MetricRegistry.Type.VENDOR); // <5>
+    }
+
+    MetricRegistry metricRegistry() { // <6>
+        return metricRegistry;
+    }
+}
+----
+<1> Other code in the component uses this metric registry for registering, looking up, and removing metrics.
+<2> Applications which use instances of `MyComponent` use this `Builder` to set up and create those instances.
+<3> Applications which layer on your component invoke this method to set up the component-level metrics behavior they want your component to use.
+<4> If an application supports configuration, it passes the util config to this method.
+<5> The constructor for your component obtains the `MetricRegistry` which the rest of your component will use.
+<6> Provides easy access to the `MetricRegistry` which the component's metrics code should use.
+
+Helidon returns either a full-featured `RegistryFactory` or a minimal one, depending on:
+
+* whether the full-featured metrics implementation is on the runtime path,
+* whether metrics overall is enabled or disabled, and
+* whether the component metrics settings requests enabled or disabled metrics.
+
+[[techniques_for_SE,SE Application Techniques]]
+==== Techniques for an _SE Application_
+Write your _SE application_ similarly, but do not use the `ComponentMetricsSettings`.
+Instead, build a `MetricsSettings` object from the configuration.
+
+.Example code to support disabling metrics usage in a component
+[source,java]
+----
+import io.helidon.config.Config;
+import io.helidon.metrics.api.MetricsSettings;
+import io.helidon.metrics.api.RegistryFactory;
+import io.helidon.webserver.WebServer;
+
+
+import org.eclipse.microprofile.metrics.MetricRegistry;
+
+public class MyApp {
+
+    private static MetricsSettings metricsSettings;
+    static MetricRegistry metricRegistry;
+
+    public static void main(final String[] args) {
+        startServer();
+    }
+
+    static Single<WebServer> startServer() {
+        ...
+        Config config = Config.create();
+
+        metricsSettings = MetricsSettings.builder() // <1>
+                .config(config)
+                .build();
+
+        metricRegistry = RegistryFactory.getInstance(metricsSettings) // <2>
+                .getRegistry(MetricRegistry.Type.APPLICATION);
+
+        WebServer server = WebServer.builder(createRouting(config)) // <3>
+                .config(config.get("server"))
+                .addMediaSupport(JsonpSupport.create())
+                .build();
+
+        ...
+    }
+
+    private static Routing createRouting(Config config) {
+
+        RestServiceSettings restServiceSettings = RestServiceSettings.create(config); // <4>
+
+        MetricsSupport metricsSupport = MetricsSupport.create(metricsSettings, restServiceSettings); // <5>
+        GreetService greetService = new GreetService(config);
+
+        return Routing.builder()
+                .register(metricsSupport)                  // <6>
+                .register("/greet", greetService)
+                .build();
+    }
+
+}
+----
+<1> Create and save `MetricsSettings` from config.
+<2> Use `MetricsSettings` to get a suitable `RegistryFactory`, and use that to get the application registry.
+<3> Pass `config` to `createRouting` which returns the `Routing` to initialize the web server.
+<4> Use the `config` to create `RestServiceSettings` which controls the routing name, web context, and CORS set-up for the
+metrics endpoint.
+<5> Create the `MetricsSupport` instance using the metrics and REST service settings.
+<6> Add the properly initialized `MetricsSupport` instance as a service to the routing, along with the app's own service.
+
+Helidon uses the `enabled` value from `MetricsSettings` in building both the `RegistryFactory` and the `MetricsSupport`.
+
+==== Techniques for a Helidon MP Application
+
+The Helidon MP metrics implementation depends on the metrics and metrics service APIs as well as `helidon-metrics` which contains the full implementation of each.
+Therefore, by default, Helidon MP applications have full-featured metrics and endpoint support.
+
+Application code can `@Inject` the `RegistryFactory` and `MetricRegistry` instances.
+Helidon MP itself uses metrics settings in the configuration to make the correct `RegistryFactory` and `MetricRegistry` instances available at injection sites.
+
+Helidon's MicroProfile metrics component `helidon-microprofile-metrics` has its own runtime dependency on the minimal implementation,
+so that implementation, at least, is available at runtime.
+
+By default, Helidon MP applications use the full implementation, because Helidon's MP metrics depends also on the full metrics implementation.
+That said, a developer of a Helidon MP app _can_ explicitly exclude the dependency on the full implementation:
+[source,xml]
+.Explicit exclusion of `helidon-metrics`
+----
+<dependency>
+    <groupId>io.helidon.microprofile.bundles</groupId>
+    <artifactId>helidon-microprofile</artifactId>
+    <exclusions>
+        <exclusion>
+            <groupId>io.helidon.metrics</groupId>
+            <artifactId>helidon-metrics</artifactId>
+        </exclusion>
+    </exclusions>
+</dependency>
+----
+
+In the resulting Helidon MP application, Helidon will use the minimal metrics and metrics support implementations.
+
+
+==== An Example: Docker Images
+Here is an example showing how useful metrics-capable code can be.
+
+You (or others) could assemble a Docker image with your metrics-capable app as its top layer, built on a layer containing several Helidon modules including the full metrics implementation.
+When that Docker image runs, your app will run with full-featured metrics support.
+
+Separately, someone could build a similar Docker image which _does not_ include the Helidon metrics implementation.
+In this Docker image, your app will run successfully but will not incur the overhead of actually updating the metrics it uses.
+
+Users can create different Docker images, some with full metrics support and some without,
+which all use a single version of your metrics-capable app which runs in either environment without change.
+
+
+== Advantages of Writing Metrics-capable Components
+By writing a metrics-capable component, you give packagers and deployers of your code the flexibility to include or exclude
+the full metrics implementation as they see fit.
+
+Because your one module works correctly in either environment:
+
+* You benefit by writing and maintaining a single module, not two: one that is metrics-independent and one that is metrics-dependent (or, perhaps, a second add-on module that mixes in the metrics behavior).
+* The consumers of your app benefit by not needing to understand and choose between two different implementations of your module, or having to add both your main module and an  optional add-on which adds metrics support to your module.

@@ -90,6 +90,8 @@ backend:
               items:
                 - includes:
                     - "se/guides/*.adoc"
+                  excludes:
+                    - "se/guides/_*.adoc"
             - title: "Config"
               pathprefix: "/se/config"
               glyph:

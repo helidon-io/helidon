@@ -142,9 +142,9 @@ public class TestServer {
 
     @Test
     void checkKPIDisabledByDefault() {
-        boolean isKPIEnabled = MetricsSupport.keyPerformanceIndicatorMetricsConfig().isExtended();
+        boolean isKPIEnabled = metricsSupport.keyPerformanceIndicatorMetricsConfig().isExtended();
 
-        MetricRegistry vendorRegistry = RegistryFactory.getInstance()
+        MetricRegistry vendorRegistry = io.helidon.metrics.api.RegistryFactory.getInstance()
                 .getRegistry(MetricRegistry.Type.VENDOR);
 
         Optional<ConcurrentGauge> inflightRequests =

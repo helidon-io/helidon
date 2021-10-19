@@ -22,6 +22,7 @@ import java.util.concurrent.TimeoutException;
 import io.helidon.common.http.MediaType;
 import io.helidon.common.reactive.Single;
 import io.helidon.media.jsonp.JsonpSupport;
+import io.helidon.metrics.api.KeyPerformanceIndicatorMetricsSettings;
 import io.helidon.webclient.WebClient;
 import io.helidon.webserver.WebServer;
 
@@ -69,9 +70,9 @@ class TestServerWithKeyPerformanceIndicatorMetrics {
     @Test
     void checkInflightRequests() throws InterruptedException, ExecutionException {
 
-        boolean isKPIEnabled = MetricsSupport.keyPerformanceIndicatorMetricsConfig().isExtended();
+        boolean isKPIEnabled = metricsSupport.keyPerformanceIndicatorMetricsConfig().isExtended();
 
-        MetricRegistry vendorRegistry = RegistryFactory.getInstance()
+        MetricRegistry vendorRegistry = io.helidon.metrics.api.RegistryFactory.getInstance()
                 .getRegistry(MetricRegistry.Type.VENDOR);
 
         Optional<ConcurrentGauge> inflightRequests =

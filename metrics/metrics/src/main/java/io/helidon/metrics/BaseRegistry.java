@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,8 @@ import java.lang.management.RuntimeMXBean;
 import java.lang.management.ThreadMXBean;
 import java.util.List;
 
-import io.helidon.config.Config;
+import io.helidon.metrics.api.BaseMetricsSettings;
+import io.helidon.metrics.api.MetricsSettings;
 
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
@@ -47,14 +48,13 @@ import org.eclipse.microprofile.metrics.Tag;
  * (section 4.5 of the spec).</li>
  * </ul>
  *
- * Each metric can be disabled by using the following configuration property:
+ * Each metric can be disabled using {@link BaseMetricsSettings.Builder#enableBaseMetric(String, boolean)} or by using the
+ * equivalent configuration property
  * {@code helidon.metrics.base.${metric_name}.enabled=false}. Further, to suppress
- * all base metrics set {@code helidon.metrics.base.enabled=false}.
+ * all base metrics use {@link BaseMetricsSettings.Builder#enabled(boolean)} or set the equivalent config property
+ * {@code {{@value BaseMetricsSettings.Builder#}}metrics.base.enabled=false}.
  */
 final class BaseRegistry extends Registry {
-
-    private static final String CONFIG_METRIC_ENABLED_BASE = "base.";
-    static final String BASE_ENABLED_KEY = CONFIG_METRIC_ENABLED_BASE + "enabled";
 
     private static final Metadata MEMORY_USED_HEAP = Metadata.builder()
             .withName("memory.usedHeap")
@@ -201,18 +201,18 @@ final class BaseRegistry extends Registry {
             .withUnit(MetricUnits.NONE)
             .build();
 
-    private final Config config;
+    private final MetricsSettings metricsSettings;
 
-    private BaseRegistry(Config config) {
+    private BaseRegistry(MetricsSettings metricsSettings) {
         super(Type.BASE);
-        this.config = config;
+        this.metricsSettings = metricsSettings;
     }
 
-    public static Registry create(Config config) {
+    public static Registry create(MetricsSettings metricsSettings) {
 
-        BaseRegistry result = new BaseRegistry(config);
+        BaseRegistry result = new BaseRegistry(metricsSettings);
 
-        if (!config.get(BASE_ENABLED_KEY).asBoolean().orElse(true)) {
+        if (!metricsSettings.baseMetricsSettings().isEnabled()) {
             return result;
         }
         MemoryMXBean memoryBean = ManagementFactory.getMemoryMXBean();
@@ -280,7 +280,7 @@ final class BaseRegistry extends Registry {
     }
 
     private static void register(BaseRegistry registry, Metadata meta, Metric metric, Tag... tags) {
-        if (registry.config.get(CONFIG_METRIC_ENABLED_BASE + meta.getName() + ".enabled").asBoolean().orElse(true)) {
+        if (registry.metricsSettings.baseMetricsSettings().isBaseMetricEnabled(meta.getName())) {
             registry.register(meta, metric, tags);
         }
     }

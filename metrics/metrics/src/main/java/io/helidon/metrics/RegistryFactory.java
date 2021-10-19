@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.util.EnumMap;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.config.Config;
+import io.helidon.metrics.api.MetricsSettings;
 
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricRegistry.Type;
@@ -41,20 +42,19 @@ import org.eclipse.microprofile.metrics.MetricRegistry.Type;
  */
 // this class is not immutable, as we may need to update registries with configuration post creation
 // see Github issue #360
-public final class RegistryFactory {
-    private static final RegistryFactory INSTANCE = create();
+public class RegistryFactory implements io.helidon.metrics.api.RegistryFactory {
 
     private final EnumMap<Type, Registry> registries = new EnumMap<>(Type.class);
-    private final AtomicReference<Config> config;
+    private final AtomicReference<MetricsSettings> metricsSettings;
 
-    private RegistryFactory(Config config) {
-        Registry registry = Registry.create(Type.APPLICATION);
-        registries.put(Type.APPLICATION, registry);
+    protected RegistryFactory(MetricsSettings metricsSettings, Registry appRegistry, Registry vendorRegistry) {
+        this.metricsSettings = new AtomicReference<>(metricsSettings);
+        registries.put(Type.APPLICATION, appRegistry);
+        registries.put(Type.VENDOR, vendorRegistry);
+    }
 
-        registry = Registry.create(Type.VENDOR);
-        registries.put(Type.VENDOR, registry);
-
-        this.config = new AtomicReference<>(config);
+    private RegistryFactory(MetricsSettings metricsSettings) {
+        this(metricsSettings, Registry.create(Type.APPLICATION), Registry.create(Type.VENDOR));
     }
 
 
@@ -64,9 +64,11 @@ public final class RegistryFactory {
      * {@link org.eclipse.microprofile.metrics.MetricRegistry.Type#BASE} metrics.
      *
      * @return a new registry factory
+     * @deprecated Use {@link io.helidon.metrics.api.RegistryFactory#create()}
      */
+    @Deprecated
     public static RegistryFactory create() {
-        return create(Config.empty());
+        return RegistryFactory.class.cast(io.helidon.metrics.api.RegistryFactory.create());
     }
 
     /**
@@ -76,18 +78,26 @@ public final class RegistryFactory {
      *
      * @param config configuration to use
      * @return a new registry factory
+     * @deprecated Use {@link io.helidon.metrics.api.RegistryFactory#create(Config)}
      */
+    @Deprecated
     public static RegistryFactory create(Config config) {
-        return new RegistryFactory(config);
+        return RegistryFactory.class.cast(io.helidon.metrics.api.RegistryFactory.create(config));
+    }
+
+    static RegistryFactory create(MetricsSettings metricsSettings) {
+        return new RegistryFactory(metricsSettings);
     }
 
     /**
      * Get a singleton instance of the registry factory.
      *
      * @return registry factory singleton
+     * @deprecated Use {@link io.helidon.metrics.api.RegistryFactory#getInstance()}
      */
+    @Deprecated
     public static RegistryFactory getInstance() {
-        return INSTANCE;
+        return RegistryFactory.class.cast(io.helidon.metrics.api.RegistryFactory.getInstance());
     }
 
     /**
@@ -96,10 +106,11 @@ public final class RegistryFactory {
      *
      * @param config configuration of the registry factory used to update behavior of the instance returned
      * @return registry factory singleton
+     * @deprecated Use {@link io.helidon.metrics.api.RegistryFactory#getInstance(MetricsSettings)}
      */
+    @Deprecated
     public static RegistryFactory getInstance(Config config) {
-        INSTANCE.update(config);
-        return INSTANCE;
+        return RegistryFactory.class.cast(io.helidon.metrics.api.RegistryFactory.getInstance(config));
     }
 
     Registry getARegistry(Type type) {
@@ -117,6 +128,7 @@ public final class RegistryFactory {
      * @param type type of registry
      * @return MetricRegistry for the type defined.
      */
+    @Override
     public MetricRegistry getRegistry(Type type) {
         if (type == Type.BASE) {
             ensureBase();
@@ -124,13 +136,14 @@ public final class RegistryFactory {
         return registries.get(type);
     }
 
-    private void update(Config config) {
-        this.config.set(config);
+    @Override
+    public void update(MetricsSettings metricsSettings) {
+        this.metricsSettings.set(metricsSettings);
     }
 
     private synchronized void ensureBase() {
         if (null == registries.get(Type.BASE)) {
-            Registry registry = BaseRegistry.create(config.get());
+            Registry registry = BaseRegistry.create(metricsSettings.get());
             registries.put(Type.BASE, registry);
         }
     }
