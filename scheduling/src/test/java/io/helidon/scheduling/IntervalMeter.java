@@ -17,8 +17,6 @@
 
 package io.helidon.scheduling;
 
-import org.hamcrest.Matchers;
-
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -26,7 +24,10 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
+
+import org.hamcrest.Matchers;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -36,6 +37,7 @@ public class IntervalMeter extends CopyOnWriteArrayList<IntervalMeter.Interval> 
     volatile boolean active = true;
     List<Consumer<Interval>> endCallbacks = new ArrayList<>();
     volatile int finishedIntervalCount = 0;
+    ReentrantLock lock = new ReentrantLock();
 
     Interval start() {
         if (!active) {
@@ -48,9 +50,12 @@ public class IntervalMeter extends CopyOnWriteArrayList<IntervalMeter.Interval> 
 
     IntervalMeter awaitTill(int intervalCount, long timeout, TimeUnit timeUnit) {
         CountDownLatch latch;
-        synchronized (this) {
+        try {
+            lock.lock();
             latch = new CountDownLatch(intervalCount - finishedIntervalCount);
             endCallbacks.add(i -> latch.countDown());
+        } finally {
+            lock.unlock();
         }
         try {
             if (!latch.await(timeout, timeUnit)) {
@@ -64,65 +69,66 @@ public class IntervalMeter extends CopyOnWriteArrayList<IntervalMeter.Interval> 
         return this;
     }
 
-    synchronized IntervalMeter assertStarted(int count) {
-        assertThat(this.size(), Matchers.equalTo(count));
-        return this;
-    }
+    IntervalMeter assertNonConcurrent() {
+        try {
+            lock.lock();
+            this.forEach(interval1 -> {
+                this.forEach(interval2 -> {
+                    if (interval1 == interval2) {
+                        return;
+                    }
 
-    synchronized IntervalMeter assertEnded(int count) {
-        assertThat(this.finishedIntervalCount, Matchers.equalTo(count));
-        return this;
-    }
+                    if (interval1.startTime().isAfter(interval2.startTime())
+                            && interval1.startTime().isBefore(interval2.endTime())) {
+                        fail("Interval ovelap");
+                    }
 
-    synchronized IntervalMeter assertNonConcurrent(){
-        this.forEach(interval1 -> {
-            this.forEach(interval2 -> {
-                if(interval1 == interval2){
-                    return;
-                }
-
-                if(interval1.startTime().isAfter(interval2.startTime())
-                        && interval1.startTime().isBefore(interval2.endTime())){
-                    fail("Interval ovelap");
-                }
-
-                if(interval1.startTime().isBefore(interval2.startTime())
-                        && interval1.endTime().isAfter(interval2.endTime())){
-                    fail("Interval ovelap");
-                }
+                    if (interval1.startTime().isBefore(interval2.startTime())
+                            && interval1.endTime().isAfter(interval2.endTime())) {
+                        fail("Interval ovelap");
+                    }
+                });
             });
-        });
-        return this;
+            return this;
+        } finally {
+            lock.unlock();
+        }
     }
 
-    synchronized IntervalMeter assertAverageDuration(Duration expectedDuration, Duration errorMargin) {
-        Duration sum = Duration.ZERO;
-        Instant lastStart = null;
-        for (Interval interval : this) {
-            if (lastStart != null) {
-                sum = sum.plus(Duration.between(lastStart, interval.startTime()));
+    IntervalMeter assertAverageDuration(Duration expectedDuration, Duration errorMargin) {
+        try {
+            lock.lock();
+
+            Duration sum = Duration.ZERO;
+            Instant lastStart = null;
+            for (Interval interval : this) {
+                if (lastStart != null) {
+                    sum = sum.plus(Duration.between(lastStart, interval.startTime()));
+                }
+                lastStart = interval.startTime();
             }
-            lastStart = interval.startTime();
-        }
-        Duration average = sum.dividedBy(this.finishedIntervalCount-1);
-        int comparisonResult = average.compareTo(expectedDuration);
-        if (comparisonResult == 0) {
+            Duration average = sum.dividedBy(this.finishedIntervalCount - 1);
+            int comparisonResult = average.compareTo(expectedDuration);
+            if (comparisonResult == 0) {
+                return this;
+            }
+
+            Duration difference;
+
+            if (comparisonResult < 0) {
+                difference = expectedDuration.minus(average);
+            } else {
+                difference = average.minus(average);
+            }
+
+            assertThat("Average duration " + average
+                    + " between invocations is not within the error margin "
+                    + errorMargin
+                    + " from expected " + expectedDuration, difference.compareTo(errorMargin) <= 0);
             return this;
+        } finally {
+            lock.unlock();
         }
-
-        Duration difference;
-
-        if (comparisonResult < 0) {
-            difference = expectedDuration.minus(average);
-        } else {
-            difference = average.minus(average);
-        }
-
-        assertThat("Average duration " + average
-                + " between invocations is not within the error margin "
-                + errorMargin
-                + " from expected " + expectedDuration, difference.compareTo(errorMargin) <= 0);
-        return this;
     }
 
     public interface Interval {
@@ -140,7 +146,7 @@ public class IntervalMeter extends CopyOnWriteArrayList<IntervalMeter.Interval> 
         void end();
     }
 
-    public static class IntervalImpl implements Interval {
+    public class IntervalImpl implements Interval {
         private final Instant start;
         private final IntervalMeter meter;
 
@@ -182,11 +188,16 @@ public class IntervalMeter extends CopyOnWriteArrayList<IntervalMeter.Interval> 
             return this;
         }
 
-        public synchronized void end() {
-            end = Instant.now();
-            duration = Duration.between(start, end);
-            meter.finishedIntervalCount++;
-            meter.endCallbacks.forEach(c -> c.accept(this));
+        public void end() {
+            try {
+                IntervalMeter.this.lock.lock();
+                end = Instant.now();
+                duration = Duration.between(start, end);
+                meter.finishedIntervalCount++;
+                meter.endCallbacks.forEach(c -> c.accept(this));
+            } finally {
+                IntervalMeter.this.lock.unlock();
+            }
         }
     }
 
