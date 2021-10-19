@@ -734,9 +734,6 @@ curl -H "Accept: application/json"  http://localhost:8080/metrics/application
 
 include::{metrics-common}[tag=k8s-and-prometheus-integration]
 
-=== Advanced Topic: Metrics-capable Applications and Components
-Metrics-capable components are written to register and update metrics but can work even if the Helidon metrics implementation _is not_ on the runtime path. Please see this additional section on <<se/guides/_metrics-capable-components.adoc,Metrics-capable components>> which describes this feature.
-
 === Summary
 
 This guide demonstrated how to use metrics in a Helidon SE application using various combinations of
