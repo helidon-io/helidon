@@ -24,8 +24,7 @@ import io.helidon.servicecommon.rest.RestServiceSettings;
 /**
  * Provider of minimal web support for metrics.
  */
-@Priority(Integer.MAX_VALUE)
-public class MinimalMetricsSupportProviderImpl implements MetricsSupportProvider<MinimalMetricsSupport> {
+class MinimalMetricsSupportProviderImpl implements MetricsSupportProvider<MinimalMetricsSupport> {
 
     @Override
     public MetricsSupport.Builder<MinimalMetricsSupport> builder() {

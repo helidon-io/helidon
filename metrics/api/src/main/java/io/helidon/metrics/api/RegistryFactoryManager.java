@@ -71,7 +71,7 @@ class RegistryFactoryManager {
                 .build()
                 .asList()
                 .get(0);
-        LOGGER.log(Level.INFO, "Metrics registry factory provider: {0}", provider.getClass().getName());
+        LOGGER.log(Level.FINE, "Metrics registry factory provider: {0}", provider.getClass().getName());
         return provider;
     }
 

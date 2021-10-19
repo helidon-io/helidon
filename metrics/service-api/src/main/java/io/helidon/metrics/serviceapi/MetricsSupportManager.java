@@ -49,7 +49,7 @@ class MetricsSupportManager {
                 .build()
                 .asList()
                 .get(0);
-        LOGGER.log(Level.INFO, "MetricsSupport provider: {0}", provider.getClass().getName());
+        LOGGER.log(Level.FINE, "MetricsSupport provider: {0}", provider.getClass().getName());
         return provider;
     }
 
