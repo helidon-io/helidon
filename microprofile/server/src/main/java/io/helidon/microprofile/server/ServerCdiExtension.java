@@ -83,7 +83,6 @@ public class ServerCdiExtension implements Extension {
 
     // build time
     private WebServer.Builder serverBuilder = WebServer.builder()
-            .host("localhost")
             .port(7001);
 
     private Routing.Builder routingBuilder = Routing.builder();
