@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,12 +27,20 @@ import javax.sql.DataSource;
 
 import io.helidon.microprofile.server.Server;
 
+import oracle.ucp.jdbc.PoolDataSource;
+import oracle.ucp.jdbc.PoolDataSourceImpl;
+
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
+import org.jboss.weld.proxy.WeldClientProxy;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ApplicationScoped
 class TestDataSourceAcquisition {
@@ -40,9 +48,9 @@ class TestDataSourceAcquisition {
     @Inject
     @Named("test")
     private DataSource test;
-    
+
     private Server server;
-    
+
     TestDataSourceAcquisition() {
         super();
     }
@@ -74,6 +82,9 @@ class TestDataSourceAcquisition {
     private void onStartup(@Observes @Initialized(ApplicationScoped.class) final Object event) throws SQLException {
         assertNotNull(this.test);
         assertNotNull(this.test.toString());
+        final PoolDataSourceImpl contextualInstance =
+            (PoolDataSourceImpl) ((WeldClientProxy) this.test).getMetadata().getContextualInstance();
+        assertEquals("A test datasource", contextualInstance.getDescription());
         Connection connection = null;
         try {
             connection = this.test.getConnection();
@@ -85,9 +96,16 @@ class TestDataSourceAcquisition {
         }
     }
 
+    private void configure(@Observes @Named("test") final PoolDataSource pds) throws SQLException {
+        assertEquals("fred", pds.getServiceName());
+        assertNull(pds.getDescription());
+        assertFalse(pds.getClass().isSynthetic());
+        pds.setDescription("A test datasource");
+    }
+
     @Test
     void testDataSourceAcquisition() {
 
     }
-  
+
 }
