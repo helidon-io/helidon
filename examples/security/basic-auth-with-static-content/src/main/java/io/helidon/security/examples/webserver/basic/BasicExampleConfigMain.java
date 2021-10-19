@@ -62,7 +62,6 @@ public final class BasicExampleConfigMain {
                 .build();
 
         return WebServer.builder()
-                .host("localhost")
                 .config(config.get("server"))
                 .routing(routing)
                 .build()

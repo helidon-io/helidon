@@ -57,7 +57,6 @@ public final class Main {
         Config config = Config.create();
 
         WebServer server = WebServer.builder()
-                .host("localhost")
                 .routing(createRouting(config))
                 .config(config.get("server"))
                 .addMediaSupport(JsonpSupport.create())

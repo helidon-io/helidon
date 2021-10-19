@@ -27,7 +27,6 @@ import java.util.Collections;
  * WebServer example usage:
  * <pre><code>
  * WebServer.builder()
- *          .host("localhost")
  *          .addMediaSupport(JsonbSupport.create())
  *          .build();
  * </code></pre>

@@ -86,7 +86,6 @@ public final class BasicExampleBuilderMain {
                 .build();
 
         return WebServer.builder()
-                .host("localhost")
                 .routing(routing)
                 // uncomment to use an explicit port
                 //.port(8080)

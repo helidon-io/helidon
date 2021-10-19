@@ -57,7 +57,6 @@ public final class OciAtpMain {
         // Prepare routing for the server
         WebServer server = WebServer.builder()
                 .config(config.get("server"))
-                .host("localhost")
                 .routing(Routing.builder()
                                  .register("/atp", new AtpService(autonomousDbRx, config)))
                 .build();
