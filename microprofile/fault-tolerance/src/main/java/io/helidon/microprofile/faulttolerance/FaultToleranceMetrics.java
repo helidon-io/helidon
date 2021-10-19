@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,11 @@
 package io.helidon.microprofile.faulttolerance;
 
 import java.lang.reflect.Method;
+import java.util.concurrent.locks.ReentrantLock;
 
 import javax.enterprise.inject.spi.CDI;
+
+import io.helidon.common.LazyValue;
 
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
@@ -40,7 +43,9 @@ class FaultToleranceMetrics {
 
     static final String METRIC_NAME_TEMPLATE = "ft.%s.%s.%s";
 
-    private static MetricRegistry metricRegistry;
+    private static final ReentrantLock LOCK = new ReentrantLock();
+    private static final LazyValue<MetricRegistry> METRIC_REGISTRY = LazyValue.create(
+            () -> CDI.current().select(MetricRegistry.class).get());
 
     private FaultToleranceMetrics() {
     }
@@ -49,11 +54,8 @@ class FaultToleranceMetrics {
         return getMetricRegistry() != null;
     }
 
-    static synchronized MetricRegistry getMetricRegistry() {
-        if (metricRegistry == null) {
-            metricRegistry = CDI.current().select(MetricRegistry.class).get();
-        }
-        return metricRegistry;
+    static MetricRegistry getMetricRegistry() {
+        return METRIC_REGISTRY.get();
     }
 
     @SuppressWarnings("unchecked")
@@ -65,16 +67,16 @@ class FaultToleranceMetrics {
     }
 
     static Counter getCounter(Method method, String name) {
-        return (Counter) getMetric(method, name);
+        return getMetric(method, name);
     }
 
     static Histogram getHistogram(Method method, String name) {
-        return (Histogram) getMetric(method, name);
+        return getMetric(method, name);
     }
 
     @SuppressWarnings("unchecked")
     static <T> Gauge<T> getGauge(Method method, String name) {
-        return (Gauge<T>) getMetric(method, name);
+        return getMetric(method, name);
     }
 
     static long getCounter(Object bean, String methodName, String name,
@@ -348,19 +350,24 @@ class FaultToleranceMetrics {
      * @return The gauge created or existing if already created.
      */
     @SuppressWarnings("unchecked")
-    static synchronized <T> Gauge<T> registerGauge(Method method, String metricName, String description, Gauge<T> gauge) {
-        MetricID metricID = newMetricID(String.format(METRIC_NAME_TEMPLATE,
-                method.getDeclaringClass().getName(),
-                method.getName(),
-                metricName));
-        Gauge<T> existing = getMetricRegistry().getGauges().get(metricID);
-        if (existing == null) {
-            getMetricRegistry().register(
-                    newMetadata(metricID.getName(), metricID.getName(), description, MetricType.GAUGE, MetricUnits.NANOSECONDS,
-                            true),
-                    gauge);
+    static <T> Gauge<T> registerGauge(Method method, String metricName, String description, Gauge<T> gauge) {
+        LOCK.lock();
+        try {
+            MetricID metricID = newMetricID(String.format(METRIC_NAME_TEMPLATE,
+                    method.getDeclaringClass().getName(),
+                    method.getName(),
+                    metricName));
+            Gauge<T> existing = getMetricRegistry().getGauges().get(metricID);
+            if (existing == null) {
+                getMetricRegistry().register(
+                        newMetadata(metricID.getName(), metricID.getName(), description, MetricType.GAUGE,
+                                MetricUnits.NANOSECONDS, true),
+                        gauge);
+            }
+            return existing;
+        } finally {
+            LOCK.unlock();
         }
-        return existing;
     }
 
     private static MetricID newMetricID(String name) {
