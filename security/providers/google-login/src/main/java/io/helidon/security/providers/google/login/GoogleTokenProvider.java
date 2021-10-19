@@ -54,8 +54,8 @@ import com.google.api.client.googleapis.GoogleUtils;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.gson.GsonFactory;
 import com.google.api.client.json.JsonFactory;
-import com.google.api.client.json.jackson2.JacksonFactory;
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
 import io.opentracing.Tracer;
@@ -95,7 +95,7 @@ public final class GoogleTokenProvider extends SynchronousProvider implements Au
         this.realm = builder.realm;
         this.tokenHandler = builder.tokenHandler;
         this.outboundConfig = (builder.outboundConfig == null) ? OutboundConfig.builder().build() : builder.outboundConfig;
-        this.jsonFactory = JacksonFactory.getDefaultInstance();
+        this.jsonFactory = GsonFactory.getDefaultInstance();
 
         if (null == builder.verifier) {
             // not covered by unit tests, as this creates a component connecting to internet
