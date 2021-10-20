@@ -37,11 +37,17 @@ created automatically. This _synthetic_ subclass shall include all resource and 
 classes discovered by Helidon. Most Helidon applications should simply rely on this mechanism
 in accordance to convention over configuration practices.
 
-== Discovery of JAX-RS beans
+== Discovery of JAX-RS Beans
 
-With the help of CDI, Helidon scans for JAX-RS `Application` subclasses in your Helidon application.
-If none are found, a synthetic application will be created by gathering all resources and providers
-found during the discovery phase.
+CDI scanning is controlled by the `bean-discovery-mode` attribute in `beans.xml` files &mdash;
+the default value for this attribute is `annotated`. In the default mode, CDI scans for beans
+decorated by bean-defining annotations such as `@ApplicationScoped`, `@RequestScoped`, etc.
+
+With the help of CDI, Helidon looks for JAX-RS `Application` subclasses in your
+Helidon application. If none are found, a synthetic application will be created by gathering all
+resources and providers found during the discovery phase. Note that if your `Application`
+subclass has no bean-defining annotations, and bean discovery is set to the default `annotated`
+value, it will be ignored.
 
 The discovery phase is carried out as follows (in no particular order):
 
@@ -50,18 +56,21 @@ The discovery phase is carried out as follows (in no particular order):
 3. Collect all beans annotated with `@Provider`
 
 If no `Application` subclasses are found, create a _synthetic_ `Application` subclass that includes
-all beans gathered in steps (2) and (3) and set the application path to be "/" &mdash;this is path
+all beans gathered in steps (2) and (3) and set the application path to be "/" &mdash;this is the path
 normally defined using the `@ApplicationPath` annotation. If one or more
 `Application` subclasses are found, use those subclasses (and their application paths) and discard
 the collections in steps (2) and (3), in favor of calling the corresponding methods provided by
 the subclasses.
 
-== Access to Application instances
+NOTE: Helidon treats `@Path` and `@Provided` as bean-definining annotations but, as stated above,
+`Application` subclasses may require additional annotations depending on the discovery mode.
+
+== Access to Application Instances
 
 JAX-RS provides access to the `Application` subclass instance via injection using `@Context`. This form
 of access is still supported in Helidon but is insufficient if two or more subclasses are present.
 Given that support for two or more `Application` subclasses is a Helidon extension, a new mechanism
-is provided via a `ServerRequest` 's context as shown next.
+is provided via the `ServerRequest` 's context object as shown next.
 
 [source,java]
 ----
@@ -78,6 +87,6 @@ public class MyResource {
 }
 ----
 
-Note that this approach effectively moves the scope of `Application` subclass instances to
+This approach effectively moves the scope of `Application` subclass instances to
 request scope in order to access the correct subclass for the resource method being
 executed.
