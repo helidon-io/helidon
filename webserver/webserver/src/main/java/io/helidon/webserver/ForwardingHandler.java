@@ -33,9 +33,7 @@ import javax.net.ssl.SSLEngine;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
-import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
-import io.helidon.common.reactive.Multi;
 import io.helidon.logging.common.HelidonMdc;
 import io.helidon.webserver.ByteBufRequestChunk.DataChunkHoldingQueue;
 import io.helidon.webserver.DirectHandler.TransportResponse;
@@ -63,8 +61,6 @@ import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
 import io.netty.handler.codec.http2.Http2Error;
 import io.netty.handler.codec.http2.Http2Exception;
-import io.netty.util.concurrent.Future;
-import io.netty.util.concurrent.GenericFutureListener;
 
 import static io.helidon.webserver.HttpInitializer.CLIENT_CERTIFICATE_NAME;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
@@ -100,6 +96,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
 
     private CompletableFuture<ChannelFutureListener> requestEntityAnalyzed;
     private CompletableFuture<?> prevRequestFuture;
+    private ChannelFutureListener closeChannelListener;
     private boolean lastContent;
     private boolean hadContentAlready;
 
@@ -330,19 +327,19 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
         RequestContext requestContextRef = requestContext;
 
         // Watch for prematurely closed channel
-        GenericFutureListener<? extends Future<? super Void>> closeChannelListener = f -> {
+        ChannelFutureListener previousCloseChannelListener = closeChannelListener;
+        closeChannelListener = f -> {
             if (!publisher.isCompleted()) {
                 requestContextRef.fail(new IllegalStateException("Channel closed prematurely by other side!", f.cause()));
             }
         };
 
-        ctx.channel()
-                .closeFuture()
-                .addListener(closeChannelListener);
+        ctx.channel().closeFuture().addListener(closeChannelListener);
 
-        Multi<DataChunk> dataChunkStream = Multi.create(publisher)
-                // Clean up close channel listener to avoid memory leak with keep-alive
-                .onTerminate(() -> ctx.channel().closeFuture().removeListener(closeChannelListener));
+        if (previousCloseChannelListener != null) {
+            // Clean up close channel listener to avoid memory leak with keep-alive
+            ctx.channel().closeFuture().removeListener(previousCloseChannelListener);
+        }
 
         // Creates an indirect reference between publisher and queue so that when
         // publisher is ready for collection, we have access to queue by calling its
@@ -375,7 +372,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
         // If a problem with the request URI, return 400 response
         BareRequestImpl bareRequest;
         try {
-            bareRequest = new BareRequestImpl((HttpRequest) msg, dataChunkStream, webServer, ctx, sslEngine, requestId);
+            bareRequest = new BareRequestImpl((HttpRequest) msg, publisher, webServer, ctx, sslEngine, requestId);
         } catch (IllegalArgumentException e) {
             send400BadRequest(ctx, request, e);
             return true;
