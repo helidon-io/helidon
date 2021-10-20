@@ -24,7 +24,6 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.BooleanSupplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -72,9 +71,6 @@ class BareResponseImpl implements BareResponse {
     private final CompletableFuture<BareResponse> responseFuture;
     private final CompletableFuture<BareResponse> headersFuture;
     private final RequestContext requestContext;
-    private final BooleanSupplier requestContentConsumed;
-    private final BooleanSupplier contentRequested;
-    private final BooleanSupplier contentRequestCancelled;
     private final long requestId;
     private final String http2StreamId;
     private final HttpHeaders requestHeaders;
@@ -96,8 +92,6 @@ class BareResponseImpl implements BareResponse {
      * @param ctx the channel handler context
      * @param request the request
      * @param requestContext request context
-     * @param requestContentConsumed whether the request content is consumed
-     * @param contentRequested whether the request content has been requested
      * @param prevRequestChunk Future that represents previous request completion for HTTP pipelining
      * @param requestEntityAnalyzed connection closing listener after entity analysis
      * @param requestId the correlation ID that is added to the log statements
@@ -105,16 +99,10 @@ class BareResponseImpl implements BareResponse {
     BareResponseImpl(ChannelHandlerContext ctx,
                      HttpRequest request,
                      RequestContext requestContext,
-                     BooleanSupplier requestContentConsumed,
-                     BooleanSupplier contentRequested,
-                     BooleanSupplier contentRequestCancelled,
                      CompletableFuture<?> prevRequestChunk,
                      CompletableFuture<ChannelFutureListener> requestEntityAnalyzed,
                      long requestId) {
         this.requestContext = requestContext;
-        this.requestContentConsumed = requestContentConsumed;
-        this.contentRequested = contentRequested;
-        this.contentRequestCancelled = contentRequestCancelled;
         this.requestEntityAnalyzed = requestEntityAnalyzed;
         this.responseFuture = new CompletableFuture<>();
         this.headersFuture = new CompletableFuture<>();
@@ -205,9 +193,9 @@ class BareResponseImpl implements BareResponse {
         // http://www.w3.org/Protocols/HTTP/1.1/draft-ietf-http-v11-spec-01.html#Connection
         // If already set (e.g. WebSocket upgrade), do not override
         if (keepAlive) {
-            if (!requestContentConsumed.getAsBoolean()) {
+            if (!requestContext.requestCompleted()) {
                 LOGGER.finer(() -> log("Request content not fully read with keep-alive: true", ctx));
-                if (!contentRequested.getAsBoolean() || contentRequestCancelled.getAsBoolean()) {
+                if (!requestContext.hasRequests() || requestContext.requestCancelled()) {
                     requestEntityAnalyzed = requestEntityAnalyzed.thenApply(listener -> {
                         if (listener.equals(ChannelFutureListener.CLOSE)) {
                             response.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.CLOSE);

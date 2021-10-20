@@ -421,9 +421,6 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                 new BareResponseImpl(ctx,
                                      request,
                                      requestContext,
-                                     publisher::isCompleted,
-                                     publisher::hasRequests,
-                                     publisher::isCancelled,
                                      prevRequestFuture,
                                      requestEntityAnalyzed,
                                      requestId);
