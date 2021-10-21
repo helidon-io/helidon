@@ -508,8 +508,10 @@ public final class MetricsSupport extends HelidonRestServiceSupport
     static JsonObject jsonDataByName(Registry registry, String metricName) {
         JsonObjectBuilder builder = new MetricsSupport.MergingJsonObjectBuilder(JSON.createObjectBuilder());
         for (Map.Entry<MetricID, HelidonMetric> metricEntry : registry.getMetricsByName(metricName)) {
-            metricEntry.getValue()
-                    .jsonData(builder, metricEntry.getKey());
+            HelidonMetric metric = metricEntry.getValue();
+            if (registry.isMetricEnabled(metricName)) {
+                metric.jsonData(builder, metricEntry.getKey());
+            }
         }
         return builder.build();
     }
@@ -518,8 +520,10 @@ public final class MetricsSupport extends HelidonRestServiceSupport
         final StringBuilder sb = new StringBuilder();
         boolean isFirst = true;
         for (Map.Entry<MetricID, HelidonMetric> metricEntry : registry.getMetricsByName(metricName)) {
-            metricEntry.getValue()
-                    .prometheusData(sb, metricEntry.getKey(), isFirst);
+            HelidonMetric metric = metricEntry.getValue();
+            if (registry.isMetricEnabled(metricName)) {
+                metric.prometheusData(sb, metricEntry.getKey(), isFirst);
+            }
             isFirst = false;
         }
         return sb.toString();
