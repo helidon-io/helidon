@@ -19,6 +19,8 @@ import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 
+import org.eclipse.microprofile.metrics.MetricRegistry;
+
 /**
  * Settings which control behavior for metrics overall.
  * <p>
@@ -87,6 +89,23 @@ public interface MetricsSettings {
     BaseMetricsSettings baseMetricsSettings();
 
     /**
+     * Reports whether the specified metric is enabled in the indicated registry type.
+     *
+     * @param registryType which registry type to check
+     * @param metricName name of the metric to check
+     * @return true if metrics overall is enabled and if the metric is enabled in the specified registry; false otherwise
+     */
+    boolean isMetricEnabled(MetricRegistry.Type registryType, String metricName);
+
+    /**
+     * Returns the {@link RegistrySettings} for the indicated registry type.
+     *
+     * @param registryType registry type of interest
+     * @return {@code RegistrySettings} for the selected type
+     */
+    RegistrySettings registrySettings(MetricRegistry.Type registryType);
+
+    /**
      * Builder for {@code MetricsSettings}.
      */
     @Configured(prefix = Builder.METRICS_CONFIG_KEY)
@@ -106,6 +125,11 @@ public interface MetricsSettings {
          * Config key within the config {@code metrics} section controlling the base registry.
          */
         String BASE_CONFIG_KEY = "base";
+
+        /**
+         * Config key within the config {@code metrics} section containing settings for individual registries.
+         */
+        String REGISTRIES_CONFIG_KEY = "registries";
 
         /**
          * Default web context for the metrics endpoint.
@@ -155,5 +179,17 @@ public interface MetricsSettings {
         @ConfiguredOption(key = BASE_CONFIG_KEY,
                           kind = ConfiguredOption.Kind.MAP)
         Builder baseMetricsSettings(BaseMetricsSettings.Builder baseMetricsSettingsBuilder);
+
+        /**
+         * Sets the registry settings for the specified registry type.
+         *
+         * @param registryType type of registry for which to assign settings
+         * @param registrySettings assigned registry settings
+         * @return updated builder
+         */
+        @ConfiguredOption(key = REGISTRIES_CONFIG_KEY,
+                          kind = ConfiguredOption.Kind.LIST,
+                          type = RegistrySettings.class)
+        Builder registrySettings(MetricRegistry.Type registryType, RegistrySettings registrySettings);
     }
 }
