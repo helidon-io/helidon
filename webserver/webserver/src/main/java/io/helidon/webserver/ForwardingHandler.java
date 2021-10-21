@@ -16,6 +16,7 @@
 
 package io.helidon.webserver;
 
+import java.io.IOException;
 import java.lang.ref.ReferenceQueue;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -96,7 +97,6 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
 
     private CompletableFuture<ChannelFutureListener> requestEntityAnalyzed;
     private CompletableFuture<?> prevRequestFuture;
-    private ChannelFutureListener closeChannelListener;
     private boolean lastContent;
     private boolean hadContentAlready;
 
@@ -279,6 +279,15 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
         }
     }
 
+    @Override
+    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+        super.channelInactive(ctx);
+        // Watch for prematurely closed channel
+        if (requestContext != null) {
+            requestContext.fail(new IOException("Channel closed prematurely by other side!"));
+        }
+    }
+
     @SuppressWarnings("checkstyle:methodlength")
     private boolean channelReadHttpRequest(ChannelHandlerContext ctx, Context requestScope, Object msg) {
         hadContentAlready = false;
@@ -325,21 +334,6 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
 
         // Closure local variables that cache mutable instance variables
         RequestContext requestContextRef = requestContext;
-
-        // Watch for prematurely closed channel
-        ChannelFutureListener previousCloseChannelListener = closeChannelListener;
-        closeChannelListener = f -> {
-            if (!publisher.isCompleted()) {
-                requestContextRef.fail(new IllegalStateException("Channel closed prematurely by other side!", f.cause()));
-            }
-        };
-
-        ctx.channel().closeFuture().addListener(closeChannelListener);
-
-        if (previousCloseChannelListener != null) {
-            // Clean up close channel listener to avoid memory leak with keep-alive
-            ctx.channel().closeFuture().removeListener(previousCloseChannelListener);
-        }
 
         // Creates an indirect reference between publisher and queue so that when
         // publisher is ready for collection, we have access to queue by calling its
