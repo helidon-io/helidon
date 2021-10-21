@@ -55,6 +55,7 @@ public class PrematureConnectionCutTest {
         WebServer webServer = null;
         try {
             webServer = WebServer.builder()
+                    .host("localhost")
                     .port(0)
                     .routing(Routing.builder()
                             .post((req, res) -> req.content()

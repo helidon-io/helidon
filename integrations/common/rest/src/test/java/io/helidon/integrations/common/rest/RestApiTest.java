@@ -60,6 +60,7 @@ class RestApiTest {
     @BeforeAll
     static void initClass() {
         webServer = WebServer.builder()
+                .host("localhost")
                 .routing(Routing.builder().register("/api", new TestApiService()))
                 .addMediaSupport(JsonpSupport.create())
                 .build()
