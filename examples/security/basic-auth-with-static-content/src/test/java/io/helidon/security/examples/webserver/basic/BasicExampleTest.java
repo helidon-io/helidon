@@ -16,7 +16,6 @@
 
 package io.helidon.security.examples.webserver.basic;
 
-import java.net.URI;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
