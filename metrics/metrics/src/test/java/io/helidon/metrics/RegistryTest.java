@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,8 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
+import io.helidon.metrics.api.RegistrySettings;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
@@ -48,7 +50,7 @@ public class RegistryTest {
 
     @BeforeAll
     static void createInstance() {
-        registry = new Registry(MetricRegistry.Type.BASE);
+        registry = new Registry(MetricRegistry.Type.BASE, RegistrySettings.create());
     }
 
     @Test
