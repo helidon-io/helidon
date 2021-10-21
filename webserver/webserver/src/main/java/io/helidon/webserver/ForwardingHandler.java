@@ -16,6 +16,7 @@
 
 package io.helidon.webserver;
 
+import java.io.IOException;
 import java.lang.ref.ReferenceQueue;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -278,6 +279,15 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
         }
     }
 
+    @Override
+    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+        super.channelInactive(ctx);
+        // Watch for prematurely closed channel
+        if (requestContext != null) {
+            requestContext.fail(new IOException("Channel closed prematurely by other side!"));
+        }
+    }
+
     @SuppressWarnings("checkstyle:methodlength")
     private boolean channelReadHttpRequest(ChannelHandlerContext ctx, Context requestScope, Object msg) {
         hadContentAlready = false;
@@ -321,16 +331,6 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
         DataChunkHoldingQueue queue = new DataChunkHoldingQueue();
         HttpRequestScopedPublisher publisher = new HttpRequestScopedPublisher(queue);
         requestContext = new RequestContext(publisher, request, requestScope);
-
-        // Watch for prematurely closed channel
-        ctx.channel().closeFuture()
-                .addListener(f -> {
-                    if (requestContext != null && !publisher.isCompleted()) {
-                        IllegalStateException e =
-                                new IllegalStateException("Channel closed prematurely by other side!", f.cause());
-                        failPublisher(e);
-                    }
-                });
 
         // Closure local variables that cache mutable instance variables
         RequestContext requestContextRef = requestContext;
@@ -412,9 +412,6 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                 new BareResponseImpl(ctx,
                                      request,
                                      requestContext,
-                                     publisher::isCompleted,
-                                     publisher::hasRequests,
-                                     publisher::isCancelled,
                                      prevRequestFuture,
                                      requestEntityAnalyzed,
                                      requestId);
