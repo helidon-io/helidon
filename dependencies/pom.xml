@@ -40,7 +40,6 @@
         <version.lib.activemq>5.16.0</version.lib.activemq>
         <version.lib.animal-sniffer>1.18</version.lib.animal-sniffer>
         <version.lib.annotation-api>1.3.5</version.lib.annotation-api>
-        <version.lib.apache-httpclient>4.5.13</version.lib.apache-httpclient>
         <version.lib.brave-opentracing>1.0.0</version.lib.brave-opentracing>
         <version.lib.cdi-api>2.0.2</version.lib.cdi-api>
         <version.lib.reactivestreams>1.0.3</version.lib.reactivestreams>
@@ -54,7 +53,8 @@
         <version.lib.el-impl>3.0.4</version.lib.el-impl>
         <version.lib.etcd4j>2.18.0</version.lib.etcd4j>
         <version.lib.failsafe>2.3.1</version.lib.failsafe>
-        <version.lib.google-api-client>1.30.11</version.lib.google-api-client>
+        <version.lib.google-api-client>1.32.2</version.lib.google-api-client>
+        <version.lib.google-oauth-client>1.32.1</version.lib.google-oauth-client>
         <version.lib.google-error-prone>2.3.3</version.lib.google-error-prone>
         <version.lib.graalvm>21.1.0</version.lib.graalvm>
         <version.lib.graphql-java>15.0</version.lib.graphql-java>
@@ -535,36 +535,32 @@
 
             <!-- Security related -->
             <dependency>
-                <!-- Use this version instead of the one in google-api-client -->
-                <groupId>org.apache.httpcomponents</groupId>
-                <artifactId>httpclient</artifactId>
-                <version>${version.lib.apache-httpclient}</version>
-            </dependency>
-            <dependency>
                 <!-- Google APIs -->
                 <groupId>com.google.api-client</groupId>
                 <artifactId>google-api-client</artifactId>
                 <version>${version.lib.google-api-client}</version>
                 <exclusions>
+                    <!-- For depenedency convergence. Defer to newer version from google-http-client -->
                     <exclusion>
-                        <!-- must use current version -->
                         <groupId>org.apache.httpcomponents</groupId>
                         <artifactId>httpclient</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <!-- must use guava artifactId -->
-                        <groupId>com.google.guava</groupId>
-                        <artifactId>guava-jdk5</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <!-- must use current version -->
-                        <groupId>com.fasterxml.jackson.core</groupId>
-                        <artifactId>jackson-core</artifactId>
                     </exclusion>
                     <exclusion>
                         <!-- should be optional -->
                         <groupId>com.google.code.findbugs</groupId>
                         <artifactId>jsr305</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <!-- For dependency converge only -->
+            <dependency>
+                <groupId>com.google.oauth-client</groupId>
+                <artifactId>google-oauth-client</artifactId>
+                <version>${version.lib.google-oauth-client}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.google.http-client</groupId>
+                        <artifactId>google-http-client</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
