@@ -15,9 +15,12 @@
  */
 package io.helidon.examples.dbclient.common;
 
+import io.helidon.common.Reflected;
+
 /**
  * POJO representing a very simplified Pokemon.
  */
+@Reflected
 public class Pokemon {
     private String name;
     private String type;
