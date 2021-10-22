@@ -36,6 +36,8 @@ module io.helidon.messaging.connectors.kafka {
     requires static svm;
     requires java.security.sasl;
     requires transitive org.slf4j;
+    // To allow KerberosLoginSubstitution
+    requires java.security.jgss;
 
     exports io.helidon.messaging.connectors.kafka;
 }

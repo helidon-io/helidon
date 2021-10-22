@@ -90,7 +90,7 @@
         <version.lib.jsonp-impl>1.1.6</version.lib.jsonp-impl>
         <version.lib.junit4>4.13.1</version.lib.junit4>
         <version.lib.junit>5.7.0</version.lib.junit>
-        <version.lib.kafka>2.5.0</version.lib.kafka>
+        <version.lib.kafka>2.8.1</version.lib.kafka>
         <version.lib.log4j>2.13.3</version.lib.log4j>
         <version.lib.logback>1.2.3</version.lib.logback>
         <version.lib.mariadb-java-client>2.6.2</version.lib.mariadb-java-client>
