@@ -8,10 +8,10 @@ This defines the dependencies used by Helidon native image feature used during n
 ## Docker images
 In `etc/dockerfiles`, update the version:
 
-1. `build.sh` - update the `GRAALVM_VERSION` variable to the desired version
+1. `scripts/include/pipeline-env.sh` - update the `GRAALVM_VERSION` variable to the desired version
 2. `Dockerfile.jdk11-graalvm` update the curl command to point to the correct tar
 3. `Dockerfile.jdk11-graalvm-maven` update the `FROM` command to use the latest image
-4. Run `build.sh` to create the docker images and push them to docker hub
+4. Run `build.sh --push` to create the docker images and push them to docker hub
 
 ## Examples
 Fix `Dockerfile.native` and `README.md` in all examples that have them.
