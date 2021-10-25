@@ -59,7 +59,7 @@ pipeline {
                 label "linux"
               }
               steps {
-                sh 'etc/scripts/test-oci.sh'
+                sh './etc/scripts/test-oci.sh'
               }
             }
           }
