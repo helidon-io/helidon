@@ -329,6 +329,7 @@ public class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>> {
      * @param config configuration to load from
      * @return updated builder instance
      */
+    @SuppressWarnings("unchecked")
     public static <K, V> KafkaPublisher<K, V> create(Config config) {
         return (KafkaPublisher<K, V>) builder().config(config).build();
     }

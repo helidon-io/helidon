@@ -69,8 +69,31 @@ class RequestContext {
         return scope;
     }
 
+    /**
+     * Has been request content stream requested.
+     *
+     * @return true if requested
+     */
     boolean hasRequests() {
         return publisher.hasRequests();
+    }
+
+    /**
+     * Is request content cancelled.
+     *
+     * @return true if cancelled
+     */
+    boolean requestCancelled() {
+        return publisher.isCancelled();
+    }
+
+    /**
+     * Is request content consumed.
+     *
+     * @return true if consumed
+     */
+    boolean requestCompleted() {
+        return publisher.isCompleted();
     }
 
     void responseCompleted(boolean responseCompleted) {
