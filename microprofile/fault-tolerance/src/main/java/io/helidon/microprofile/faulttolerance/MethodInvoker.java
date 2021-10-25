@@ -26,6 +26,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 
 import javax.interceptor.InvocationContext;
@@ -140,8 +141,7 @@ class MethodInvoker implements FtSupplier<Object> {
     private final RequestScopeHelper requestScopeHelper;
 
     /**
-     * State associated with a method in {@code METHOD_STATES}. This include the
-     * FT handler created for the method.
+     * State associated with a method in {@code METHOD_STATES}.
      */
     private static class MethodState {
         private Retry retry;
@@ -153,12 +153,13 @@ class MethodInvoker implements FtSupplier<Object> {
         private long breakerTimerClosed;
         private long breakerTimerHalfOpen;
         private long startNanos;
+        private final ReentrantLock lock = new ReentrantLock();
     }
 
     /**
      * FT handler for this invoker.
      */
-    private FtHandlerTyped<Object> handler;
+    private final FtHandlerTyped<Object> handler;
 
     /**
      * A key used to lookup {@code MethodState} instances, which include FT handlers.
@@ -622,9 +623,12 @@ class MethodInvoker implements FtSupplier<Object> {
         handlerStartNanos = System.nanoTime();
 
         if (introspector.hasCircuitBreaker()) {
-            synchronized (method) {
+            methodState.lock.lock();
+            try {
                 // Breaker state may have changed since we recorded it last
                 methodState.lastBreakerState = methodState.breaker.state();
+            } finally {
+                methodState.lock.unlock();
             }
         }
     }
@@ -639,7 +643,8 @@ class MethodInvoker implements FtSupplier<Object> {
             return;
         }
 
-        synchronized (method) {
+        methodState.lock.lock();
+        try {
             // Calculate execution time
             long executionTime = System.nanoTime() - handlerStartNanos;
 
@@ -739,6 +744,8 @@ class MethodInvoker implements FtSupplier<Object> {
             if (cause != null) {
                 getCounter(method, INVOCATIONS_FAILED_TOTAL).inc();
             }
+        } finally {
+            methodState.lock.unlock();
         }
     }
 
