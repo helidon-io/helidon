@@ -26,6 +26,7 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
@@ -432,7 +433,8 @@ public interface IoMulti {
      */
     final class OutputStreamMultiBuilder implements Builder<OutputStreamMulti> {
 
-        private final OutputStreamMulti streamMulti = new OutputStreamMulti();
+        private Duration timeout;
+        private BiConsumer<Long, Long> consumer;
 
         private OutputStreamMultiBuilder() {
         }
@@ -446,7 +448,7 @@ public interface IoMulti {
          * @return this builder
          */
         public OutputStreamMultiBuilder timeout(long timeout, TimeUnit unit) {
-            streamMulti.timeout(TimeUnit.MILLISECONDS.convert(timeout, unit));
+            this.timeout = Duration.of(timeout, unit.toChronoUnit());
             return this;
         }
 
@@ -463,13 +465,20 @@ public interface IoMulti {
          * @return this builder
          */
         public OutputStreamMultiBuilder onRequest(BiConsumer<Long, Long> requestCallback) {
-            streamMulti.onRequest(requestCallback);
+            this.consumer = requestCallback;
             return this;
         }
 
         @Override
         public OutputStreamMulti build() {
-            return streamMulti;
+            OutputStreamMulti response = new OutputStreamMulti();
+            if (consumer != null) {
+                response.onRequest(consumer);
+            }
+            if (timeout != null) {
+                response.timeout(timeout);
+            }
+            return response;
         }
     }
 }
