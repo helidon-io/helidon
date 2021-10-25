@@ -268,7 +268,7 @@ public final class OidcSupport implements Service {
         FormParams.Builder form = FormParams.builder()
                 .add("grant_type", "authorization_code")
                 .add("code", code)
-                .add("redirect_uri", oidcConfig.redirectUriWithHost());
+                .add("redirect_uri", redirectUri(req));
 
         WebClientRequestBuilder post = webClient.post()
                 .uri(oidcConfig.tokenEndpointUri())
@@ -285,6 +285,17 @@ public final class OidcSupport implements Service {
                                     (t, message) -> processError(res, t, message))
                 .ignoreElement();
 
+    }
+
+    private String redirectUri(ServerRequest req) {
+        Optional<String> host = req.headers().first("host");
+
+        if (host.isPresent()) {
+            String scheme = req.isSecure() ? "https" : "http";
+            return oidcConfig.redirectUriWithHost(scheme + "://" + host.get());
+        } else {
+            return oidcConfig.redirectUriWithHost();
+        }
     }
 
     private String processJsonResponse(ServerRequest req, ServerResponse res, JsonObject json) {

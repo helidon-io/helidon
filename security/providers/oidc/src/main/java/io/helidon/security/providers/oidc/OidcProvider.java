@@ -357,12 +357,14 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
             scopeString = URLEncoder.encode(scopes.toString(), StandardCharsets.UTF_8);
 
             String authorizationEndpoint = oidcConfig.authorizationEndpointUri();
-
             String nonce = UUID.randomUUID().toString();
+            String redirectUri = redirectUri(providerRequest.env());
+
+
             StringBuilder queryString = new StringBuilder("?");
             queryString.append("client_id=").append(oidcConfig.clientId()).append("&");
             queryString.append("response_type=code&");
-            queryString.append("redirect_uri=").append(oidcConfig.redirectUriWithHost()).append("&");
+            queryString.append("redirect_uri=").append(redirectUri).append("&");
             queryString.append("scope=").append(scopeString).append("&");
             queryString.append("nonce=").append(nonce).append("&");
             queryString.append("state=").append(encodeState(state));
@@ -378,6 +380,17 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
         } else {
             return errorResponseNoRedirect(code, description, status);
         }
+    }
+
+    private String redirectUri(SecurityEnvironment env) {
+        for (Map.Entry<String, List<String>> entry : env.headers().entrySet()) {
+            if (entry.getKey().equalsIgnoreCase("host") && !entry.getValue().isEmpty()) {
+                String firstHost = entry.getValue().get(0);
+                return oidcConfig.redirectUriWithHost(env.transport() + "://" + firstHost);
+            }
+        }
+
+        return oidcConfig.redirectUriWithHost();
     }
 
     private CompletionStage<AuthenticationResponse> failOrAbstain(String message) {
