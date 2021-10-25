@@ -16,6 +16,7 @@
 
 package io.helidon.security.providers.oidc;
 
+import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -215,7 +216,7 @@ public final class OidcSupport implements Service {
                     StringBuilder sb = new StringBuilder(oidcConfig.logoutEndpointUri()
                                                                  + "?id_token_hint="
                                                                  + idToken
-                                                                 + "&post_logout_redirect_uri=" + oidcConfig.postLogoutUri());
+                                                                 + "&post_logout_redirect_uri=" + postLogoutUri(req));
 
                     req.queryParams().first("state")
                             .ifPresent(it -> sb.append("&state=").append(it));
@@ -287,6 +288,23 @@ public final class OidcSupport implements Service {
 
     }
 
+    private Object postLogoutUri(ServerRequest req) {
+        URI uri = oidcConfig.postLogoutUri();
+        if (uri.getHost() != null) {
+            return uri.toString();
+        }
+        String path = uri.getPath();
+        path = path.startsWith("/") ? path : "/" + path;
+        Optional<String> host = req.headers().first("host");
+        if (host.isPresent()) {
+            String scheme = req.isSecure() ? "https" : "http";
+            return scheme + "://" + host.get() + path;
+        } else {
+            LOGGER.warning("Request without Host header received, yet post logout URI does not define a host");
+            return oidcConfig.toString();
+        }
+    }
+
     private String redirectUri(ServerRequest req) {
         Optional<String> host = req.headers().first("host");
 
@@ -321,7 +339,7 @@ public final class OidcSupport implements Service {
                         if (idToken != null && oidcConfig.logoutEnabled()) {
                             idTokenCookieHandler.createCookie(idToken)
                                     .forSingle(it -> {
-                                        headers.addCookie(builder.build());
+                                        headers.addCookie(it.build());
                                         res.send();
                                     })
                                     .exceptionallyAccept(t -> sendError(res, t));

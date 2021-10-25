@@ -1925,7 +1925,8 @@ public final class OidcConfig {
          * Note that the URI should not contain any query parameters. You can obtain state using the
          * state query parameter that must be provided to {@link #logoutUri(String)}.
          *
-         * @param uri this will be used by the OIDC server to redirect user to once logout is done
+         * @param uri this will be used by the OIDC server to redirect user to once logout is done, can define just path,
+         *            in which case the scheme, host and port will be taken from request.
          * @return updated builder instance
          */
         public Builder postLogoutUri(URI uri) {
