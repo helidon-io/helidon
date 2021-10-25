@@ -23,6 +23,9 @@ pipeline {
   }
   environment {
     NPM_CONFIG_REGISTRY = credentials('npm-registry')
+    OCI_TEST_API_PRIVATE_KEY = credentials('oci-test-helidonrobot-private-key')
+    OCI_TEST_USER_OCID = credentials('oci-test-helidonrobot-user-ocid')
+    OCI_TEST_TENANCY_OCID = credentials('oci-test-tenancy-ocid')
   }
   stages {
     stage('default') {
@@ -51,42 +54,12 @@ pipeline {
         }
         stage('integration-tests') {
           stages {
-            stage('test-vault') {
-              agent {
-                kubernetes {
-                  inheritFrom 'k8s-slave'
-                  yamlFile 'etc/pods/vault.yaml'
-                  yamlMergeStrategy merge()
-                }
-              }
-              steps {
-                sh './etc/scripts/test-integ-vault.sh'
-                archiveArtifacts artifacts: "**/target/surefire-reports/*.txt"
-                junit testResults: '**/target/surefire-reports/*.xml'
-              }
-            }
-            stage('test-packaging-jar'){
+            stage('test-oci'){
               agent {
                 label "linux"
               }
               steps {
-                sh 'etc/scripts/test-packaging-jar.sh'
-              }
-            }
-            stage('test-packaging-jlink'){
-              agent {
-                label "linux"
-              }
-              steps {
-                sh 'etc/scripts/test-packaging-jlink.sh'
-              }
-            }
-            stage('test-packaging-native'){
-              agent {
-                label "linux"
-              }
-              steps {
-                sh 'etc/scripts/test-packaging-native.sh'
+                sh 'etc/scripts/test-oci.sh'
               }
             }
           }
