@@ -341,7 +341,7 @@ public final class OidcConfig {
     private final WebTarget tokenEndpoint;
     private final URI tokenEndpointUri;
     private final String scopeAudience;
-    private final String redirectUriWithHost;
+    private final String frontendUri;
     private final boolean useHeader;
     private final TokenHandler headerHandler;
     private final String authorizationEndpointUri;
@@ -374,6 +374,7 @@ public final class OidcConfig {
         this.useCookie = builder.useCookie;
         this.useParam = builder.useParam;
         this.paramName = builder.paramName;
+        this.frontendUri = builder.frontendUri;
         this.redirectUri = builder.redirectUri;
         this.logoutUri = builder.logoutUri;
         this.logoutEnabled = builder.logoutEnabled;
@@ -438,9 +439,7 @@ public final class OidcConfig {
             }
         }
         LOGGER.finest(() -> "OIDC Scope audience: " + scopeAudience);
-
-        this.redirectUriWithHost = builder.frontendUri + builder.redirectUri;
-        LOGGER.finest(() -> "Redirect URI with host: " + redirectUriWithHost);
+        LOGGER.finest(() -> "Redirect URI with host: " + frontendUri + redirectUri);
     }
 
     /**
@@ -734,7 +733,24 @@ public final class OidcConfig {
      * @see Builder#redirectUri(String)
      */
     public String redirectUriWithHost() {
-        return redirectUriWithHost;
+        if (frontendUri == null) {
+            throw new SecurityException("Frontend URI is not defined");
+        }
+        return frontendUri + redirectUri;
+    }
+
+    /**
+     * Redirect URI with host information taken from request,
+     *  unless an explicit frontend uri is defined in configuration.
+     *
+     * @param frontendUri the frontend uri
+     * @return redirect URI
+     */
+    public String redirectUriWithHost(String frontendUri) {
+        if (this.frontendUri != null) {
+            return redirectUriWithHost();
+        }
+        return frontendUri + this.redirectUri;
     }
 
     /**
