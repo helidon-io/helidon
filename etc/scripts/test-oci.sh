@@ -48,11 +48,11 @@ user=${OCI_TEST_USER_OCID}
 fingerprint=$(fingerprints ${OCI_TEST_API_PRIVATE_KEY})
 key_file=${OCI_TEST_API_PRIVATE_KEY}
 tenancy=${OCI_TEST_TENANCY_OCID}
-region=us-phoenix-1
+region=us-ashburn-1
 EOF
 
 cat ~/.oci/config
 
-cat ${OCI_TEST_API_PRIVATE_KEY}
+sleep 10m
 
 mvn ${MAVEN_ARGS} --version
