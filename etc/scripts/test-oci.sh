@@ -52,7 +52,8 @@ region=us-phoenix-1
 EOF
 chmod go-rw ~/.oci/config
 cat ~/.oci/config
-cat ${OCI_TEST_API_PRIVATE_KEY}
+
 chmod go-rw ${OCI_TEST_API_PRIVATE_KEY}
+cat ${OCI_TEST_API_PRIVATE_KEY}
 
 mvn ${MAVEN_ARGS} --version
