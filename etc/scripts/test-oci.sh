@@ -21,8 +21,6 @@
 # Load pipeline environment setup and define WS_DIR
 . $(dirname -- "${SCRIPT_PATH}")/includes/pipeline-env.sh "${SCRIPT_PATH}" '../..'
 
-echo "ws dir = ${WS_DIR}"
-
 # Setup error handling using default settings (defined in includes/error_handlers.sh)
 error_trap_setup
 
@@ -50,6 +48,9 @@ key_file=${OCI_TEST_API_PRIVATE_KEY}
 tenancy=${OCI_TEST_TENANCY_OCID}
 region=us-ashburn-1
 EOF
+
+chmod go-rw ~/.oci/config
+chmod go-rw ${OCI_API_PRIVATE_KEY}
 
 cat ~/.oci/config
 

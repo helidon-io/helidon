@@ -23,9 +23,6 @@ pipeline {
   }
   environment {
     NPM_CONFIG_REGISTRY = credentials('npm-registry')
-    OCI_TEST_API_PRIVATE_KEY = credentials('oci-test-helidonrobot-private-key')
-    OCI_TEST_USER_OCID = credentials('oci-test-helidonrobot-user-ocid')
-    OCI_TEST_TENANCY_OCID = credentials('oci-test-tenancy-ocid')
   }
   stages {
     stage('default') {
@@ -57,6 +54,11 @@ pipeline {
             stage('test-oci'){
               agent {
                 label "linux"
+              }
+              environment {
+                OCI_TEST_API_PRIVATE_KEY = credentials('oci-test-helidonrobot-private-key')
+                OCI_TEST_USER_OCID = credentials('oci-test-helidonrobot-user-ocid')
+                OCI_TEST_TENANCY_OCID = credentials('oci-test-tenancy-ocid')
               }
               steps {
                 sh './etc/scripts/test-oci.sh'
