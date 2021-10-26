@@ -50,8 +50,8 @@ public class IntervalMeter extends CopyOnWriteArrayList<IntervalMeter.Interval> 
 
     IntervalMeter awaitTill(int intervalCount, long timeout, TimeUnit timeUnit) {
         CountDownLatch latch;
+        lock.lock();
         try {
-            lock.lock();
             latch = new CountDownLatch(intervalCount - finishedIntervalCount);
             endCallbacks.add(i -> latch.countDown());
         } finally {
@@ -70,8 +70,8 @@ public class IntervalMeter extends CopyOnWriteArrayList<IntervalMeter.Interval> 
     }
 
     IntervalMeter assertNonConcurrent() {
+        lock.lock();
         try {
-            lock.lock();
             this.forEach(interval1 -> {
                 this.forEach(interval2 -> {
                     if (interval1 == interval2) {
@@ -96,8 +96,8 @@ public class IntervalMeter extends CopyOnWriteArrayList<IntervalMeter.Interval> 
     }
 
     IntervalMeter assertAverageDuration(Duration expectedDuration, Duration errorMargin) {
+        lock.lock();
         try {
-            lock.lock();
 
             Duration sum = Duration.ZERO;
             Instant lastStart = null;
