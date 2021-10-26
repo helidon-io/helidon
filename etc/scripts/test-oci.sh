@@ -50,7 +50,7 @@ region=us-ashburn-1
 EOF
 
 chmod go-rw ~/.oci/config
-chmod go-rw ${OCI_API_PRIVATE_KEY}
+chmod go-rw ${OCI_TEST_API_PRIVATE_KEY}
 
 cat ~/.oci/config
 
