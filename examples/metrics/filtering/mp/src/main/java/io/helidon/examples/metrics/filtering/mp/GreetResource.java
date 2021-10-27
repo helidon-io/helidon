@@ -25,7 +25,6 @@ import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
-import javax.ws.rs.OPTIONS;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -100,7 +99,7 @@ public class GreetResource {
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @Counted(name =COUNTER_FOR_PERSONALIZED_GREETINGS, absolute = true)
+    @Counted(name = COUNTER_FOR_PERSONALIZED_GREETINGS, absolute = true)
     public Response updateGreeting(JsonObject jsonObject) {
 
         if (!jsonObject.containsKey("greeting")) {

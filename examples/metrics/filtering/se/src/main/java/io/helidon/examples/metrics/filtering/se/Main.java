@@ -25,7 +25,6 @@ import io.helidon.metrics.api.MetricsSettings;
 import io.helidon.metrics.api.RegistryFactory;
 import io.helidon.metrics.api.RegistryFilterSettings;
 import io.helidon.metrics.api.RegistrySettings;
-import io.helidon.servicecommon.rest.RestServiceSettings;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 
