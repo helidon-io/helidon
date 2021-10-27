@@ -26,7 +26,7 @@ This is a minor release of Helidon. It contains bug fixes and enhancements. Some
 2.4.0 is API compatible with 2.3.0. There has been a change that might impact a small number of our users:
 
 * `YamlMpConfigSource` has been moved to module `io.helidon.config:helidon-config-yaml-mp`. This is due to wrong JPMS definition where we could not provide a service of an optional dependency. To fix the dependency graph (so we do not depend on MP config from SE config), we had to create a new module.
-If you use this class directly, please update your dependencies (this may not be required, as it is on classpath of all MP applications), and change the package to `io.helidon.config.yaml.mp`.
+  If you use this class directly, please update your dependencies (this may not be required, as it is on classpath of all MP applications), and change the package to `io.helidon.config.yaml.mp`.
 
 ### Thanks!
 
@@ -34,8 +34,8 @@ Thanks to the following community members for contributing fixes or enhancements
 
 * @MicroStream
 * @Captain1653
-* @duplexsystem 
-* @zimmi 
+* @duplexsystem
+* @zimmi
 
 ### CHANGES
 
@@ -229,24 +229,6 @@ This is a bug fix release of Helidon. It contains bug fixes. We recommend all He
 - Grpc: Enable DataFetchingEnvironment as part of @GraphQLApi @Query methods [3428](https://github.com/oracle/helidon/pull/3428)
 - Build-tools: upgrade to build-tools 2.2.4: fixes issues with jlink, devloop, maven 3.8 and Windows [3465](https://github.com/oracle/helidon/pull/3465)
 
-## [2.3.4]
-
-This is a bug fix release of Helidon. It contains bug fixes. We recommend all Helidon 2.x users upgrade to this release.
-
-### Compatibility
-
-2.3.4 is API compatible with 2.3.0.
-
-### CHANGES
-- WebServer: Fix issue when Netty server hangs when under load. [3435](https://github.com/oracle/helidon/pull/3435)
-- WebServer: Fix race condition when analysing whether entity is fully read [3434](https://github.com/oracle/helidon/pull/3434)
-- Webclient: Relativize request URI if host is in no-host list, in addition to the no-proxy case. [3442](https://github.com/oracle/helidon/pull/3478)
-- Tracing: Using Jersey context rather then Helidon context. [3436](https://github.com/oracle/helidon/pull/3436)
-- Metrics: PeriodicExecutor can incorrectly log warning message; and warning text can be wrong [3433](https://github.com/oracle/helidon/pull/3433)
-- Metrics: native-image build fails due to metrics performance optimization [3433](https://github.com/oracle/helidon/pull/3433)
-- Grpc: Enable DataFetchingEnvironment as part of @GraphQLApi @Query methods [3428](https://github.com/oracle/helidon/pull/3428)
-- Build-tools: upgrade to build-tools 2.2.4: fixes issues with jlink, devloop, maven 3.8 and Windows [3465](https://github.com/oracle/helidon/pull/3465)
-
 ## [2.3.3]
 
 This is a bug fix release of Helidon. It contains bug and performance fixes. We recommend all Helidon 2.x users upgrade to this release.
@@ -375,7 +357,7 @@ to the module `Helidon Common`. Due to that action, import has changed from
 * gRPC native image support
 * Reloadable WebServer TLS certificates
 * New metric: Exemplars
-* Scheduling feature to schedule periodic tasks 
+* Scheduling feature to schedule periodic tasks
 * Performance improvements for JAX-RS applications with large number of concurrent connections
 
 Experimental features are tested, supported and ready for use. But their APIs are subject to change.
@@ -394,7 +376,7 @@ in Helidon 3.0. If you need to use the JavaMarshaller you can re-enable it by se
 `grpc.marshaller.java.enabled` configuration property to true.
 
 
-### CHANGES    
+### CHANGES
 
 - Config: Meta-Configuration support for Helidon MP. [2767](https://github.com/oracle/helidon/pull/2767)
 - Config: Support for custom default config file suffixes [2717](https://github.com/oracle/helidon/pull/2717)
@@ -483,10 +465,10 @@ This upgrade is recommended for all users of Helidon 2.
 
 2.2.2 is API compatible with 2.2.0.
 
-### CHANGES    
+### CHANGES
 
 - WebClient: keep-alive minor improvements [2882](https://github.com/oracle/helidon/pull/2882)
-- WebClient: Keep alive default value changed to true [2775](https://github.com/oracle/helidon/pull/2775) 
+- WebClient: Keep alive default value changed to true [2775](https://github.com/oracle/helidon/pull/2775)
 - Security: Obtain the actual class when instance is injected by the CDI [2897](https://github.com/oracle/helidon/pull/2897)
 - MicroProfile Server: Remove standard output. [2780](https://github.com/oracle/helidon/pull/2780)
 - Metrics: Avoid NaN values causing problems in metrics output [2812](https://github.com/oracle/helidon/pull/2812)
@@ -504,7 +486,7 @@ This upgrade is recommended for all users of Helidon 2.
 
 2.2.1 is API compatible with 2.2.0.
 
-### CHANGES    
+### CHANGES
 
 - Config: Fix issue with null value in JSON. [2723](https://github.com/oracle/helidon/pull/2723)
 - Config: Fix null array values in HOCON/JSON config parser. [2731](https://github.com/oracle/helidon/pull/2731)
@@ -544,14 +526,14 @@ This upgrade is recommended for all users of Helidon 2.
 - Experimental: Graph QL Support  [2504](https://github.com/oracle/helidon/pull/2504)
 - Experimental: Loom (VirtualThread) support in Helidon MP [2417](https://github.com/oracle/helidon/pull/2417)
 
-Experimental features are ready for use, but their APIs should be considered unstable and 
-subject to change. 
+Experimental features are ready for use, but their APIs should be considered unstable and
+subject to change.
 
 ### Compatibility
 
 2.2.0 is API compatible with 2.1.0.
 
-### CHANGES    
+### CHANGES
 
 - WebServer: Support for a max payload limit on client requests [2491](https://github.com/oracle/helidon/pull/2491)
 - WebServer: Add a shutdown hook to executor service in JerseySupport [2505](https://github.com/oracle/helidon/pull/2505)
@@ -636,8 +618,8 @@ behavioral changes:
 - Custom jlink images produced by the helidon-mave-plugin now have a -jri suffix.
   So the path to start your application looks something like:
   target/helidon-quickstart-se-jri/bin/start
-    
-### CHANGES    
+
+### CHANGES
 
 - Config: Git config native-image support [2400](https://github.com/oracle/helidon/pull/2400)
 - Config: Injection of web target with correct endpoint. [2380](https://github.com/oracle/helidon/pull/2380)
@@ -698,7 +680,7 @@ behavioral changes:
 This release upgrades MicroProfile support to Health 2.2 and Metrics 2.3.2.
 
 This release contains experimental support for fault tolerance APIs in Helidon SE. These
-APIs are unstable and will likely change in future releases. 
+APIs are unstable and will likely change in future releases.
 
 ### Changes
 
@@ -814,7 +796,7 @@ The following are early access features that are ready for developer use:
 - MicroProfile Reactive Streams Messaging
 - The Helidon CLI for creating new projects and fast iterative development
 
-For more information see our documentation at 
+For more information see our documentation at
 [Helidon 2.0.0 Documentation ](https://helidon.io/docs/v2/#/about/01_overview)
 
 ### Changes
@@ -846,7 +828,7 @@ Changes between 2.0.0-RC2 and 2.0.0:
 
 ### Backward incompatible changes
 
-In order to stay current with dependencies and also refine our APIs we have 
+In order to stay current with dependencies and also refine our APIs we have
 introduced some backward incompatible changes in this release. For details
 see the
 [Helidon 2.0 MP Migration Guide](https://helidon.io/docs/v2/#/mp/guides/15_migration)
@@ -1018,7 +1000,7 @@ Class configuration names for TLS are now aligned between WebClient and WebServe
 
 #### Thank You!
 
-Thanks to community members [dansiviter](https://github.com/dansiviter) and [graemerocher](https://github.com/graemerocher) 
+Thanks to community members [dansiviter](https://github.com/dansiviter) and [graemerocher](https://github.com/graemerocher)
 for their contributions to this release.
 
 ## [2.0.0-RC1]
@@ -1030,7 +1012,7 @@ This is the first release candidate of Helidon 2.0.
 ### Notable New Features
 
 This release primarily focuses on finalizing APIs for 2.0. It also includes a number
-of performance and bug fixes. We expect APIs to be pretty stable between this 
+of performance and bug fixes. We expect APIs to be pretty stable between this
 release and the final 2.0.0 release.
 
 ### Changes
@@ -1134,20 +1116,20 @@ classes, we felt that in this case the change was warranted and acceptable, for 
    to improve both internal API consistency and readability
 
 We apologize for the inconvenience, but we do feel that the impact of the changes is minimal
-and that the changes will be beneficial in the long run.     
+and that the changes will be beneficial in the long run.
 
 #### Internal `helidon-common-metrics` and Related Classes Removed
 Later releases of Helidon 1.x included the `helidon-common-metrics` component and related
-classes which provided a common interface to ease the transition from MicroProfile 
-Metrics 1.x to 2.x. 
-Although intended for use only by Helidon subsystems rather than 
-by developers and users, the component and its contents had to be public so multiple Helidon 
-subsystems could use them. 
+classes which provided a common interface to ease the transition from MicroProfile
+Metrics 1.x to 2.x.
+Although intended for use only by Helidon subsystems rather than
+by developers and users, the component and its contents had to be public so multiple Helidon
+subsystems could use them.
 Therefore, user code might have used these elements.
 
-This release removes this common interface and associated classes. 
-Any user code that used these internal classes can use the corresponding supported classes in 
-`io.helidon.metrics:helidon-metrics` and MicroProfile Metrics 2.0 instead. 
+This release removes this common interface and associated classes.
+Any user code that used these internal classes can use the corresponding supported classes in
+`io.helidon.metrics:helidon-metrics` and MicroProfile Metrics 2.0 instead.
 
 |Helidon Artifact |Interfaces/Classes |
 |--------------|----------------|
@@ -1277,67 +1259,67 @@ significant contributions to our reactive support.
 ### Backward incompatible changes
 
 #### Removal of processor-like operators
-The formerly public `Flow.Processor` implementations performing common operations have been removed. 
+The formerly public `Flow.Processor` implementations performing common operations have been removed.
 Users should use the respective operators from `Single` and `Multi` instead:
 
 ```java
 // before
 Flow.Publisher<Integer> source = ...
-MappingProcessor<Integer, String> mapper = new MappingProcessor<>(Integer::toString);
-source.subscribe(mapper);
-mapper.subscribe(subscriber);
+        MappingProcessor<Integer, String> mapper = new MappingProcessor<>(Integer::toString);
+        source.subscribe(mapper);
+        mapper.subscribe(subscriber);
 
 // after
-Flow.Publisher<Integer> source = ...
-Multi.from(source)
-     .map(Integer::toString)
-     .subscribe(subscriber)
+        Flow.Publisher<Integer> source = ...
+        Multi.from(source)
+        .map(Integer::toString)
+        .subscribe(subscriber)
 ```
 
 #### Removal of Flows
-The class was providing basic `Flow.Publisher` implementations. Users should pick one of the static methods of 
-`Single` or `Multi` instead, which provide the additional benefits of having fluent operators available to them for 
+The class was providing basic `Flow.Publisher` implementations. Users should pick one of the static methods of
+`Single` or `Multi` instead, which provide the additional benefits of having fluent operators available to them for
 assembling reactive flows conveniently:
 ```java
 // before
 Flow.Publisher<Integer> just = Flows.singletonPublisher(1);
-Flow.Publisher<Object> empty = Flows.emptyPublisher();
+        Flow.Publisher<Object> empty = Flows.emptyPublisher();
 
 // after
-Multi<Integer> just1 = Multi.singleton(1);
-Single<Integer> just2 = Single.just(1);
+        Multi<Integer> just1 = Multi.singleton(1);
+        Single<Integer> just2 = Single.just(1);
 
-Multi<Object> empty1 = Multi.empty();
-Single<Object> empty2 = Single.empty();
+        Multi<Object> empty1 = Multi.empty();
+        Single<Object> empty2 = Single.empty();
 ```
 
 #### MediaSupport refactored
-The `MediaSupport` class has been used as holder object of media operator contexts. Now, the name has changed to `MediaContext`, 
+The `MediaSupport` class has been used as holder object of media operator contexts. Now, the name has changed to `MediaContext`,
 and`MediaSupport` will be the name given to the interface which defines media support for given type (readers, writers etc.)  
-The Classes `JsonProcessing`, `JsonBinding` and `Jackson` are now renamed to `JsonpSupport`, `JsonbSupport` and `JacksonSupport` 
+The Classes `JsonProcessing`, `JsonBinding` and `Jackson` are now renamed to `JsonpSupport`, `JsonbSupport` and `JacksonSupport`
 and are implementing the `MediaSupport` interface.
 
 ```java
 //before
 JsonProcessing jsonProcessing = new JsonProcessing();
-MediaSupport mediaSupport = MediaSupport.builder()
-    .registerReader(jsonProcessing.newReader())
-    .registerWriter(jsonProcessing.newWriter())
-    .build();
+        MediaSupport mediaSupport = MediaSupport.builder()
+        .registerReader(jsonProcessing.newReader())
+        .registerWriter(jsonProcessing.newWriter())
+        .build();
 
-WebServer.builder()
-    .mediaSupport(mediaSupport)
-    .build();
+        WebServer.builder()
+        .mediaSupport(mediaSupport)
+        .build();
 
 //after
-WebServer.builder()
-    .addMediaSupport(JsonpSupport.create()) //registers reader and writer for Json-P
-    .build()
+        WebServer.builder()
+        .addMediaSupport(JsonpSupport.create()) //registers reader and writer for Json-P
+        .build()
 ```
 
 #### Also See M1 and M2 Notes
 
-## [2.0.0-M2] 
+## [2.0.0-M2]
 
 ### Notes
 
@@ -1464,7 +1446,7 @@ Configuration has been updated to use the new `Resource` approach:
 
 1. `tls-cert.resource` is the new key for certificate
 2. `tls-key.resource` is the new key for private key
-3. `tl-ca-cert` is the the new key for certificate 
+3. `tl-ca-cert` is the the new key for certificate
 
 ##### KeyConfig
 
@@ -1503,7 +1485,7 @@ ssl:
       resource.resource-path: "keystore/public_key_cert.pem"
 ```
 
-## [2.0.0-M1] 
+## [2.0.0-M1]
 
 ### Notes
 
@@ -1568,7 +1550,7 @@ Notable changes:
 
 ### Backward incompatible changes
 
-In order to stay current with dependencies, and also refine our APIs we have 
+In order to stay current with dependencies, and also refine our APIs we have
 introduced some backward incompatible changes in this release. Most of the changes
 are mechanical in nature: changing package names, changing GAV coordinates, etc.
 Here are the details:
@@ -1587,14 +1569,14 @@ Here are the details:
 
 #### Tracing
 - We have upgraded to OpenTracing version 0.33.0 that is not backward compatible, the following breaking changes exist
-    (these are OpenTracing changes, not Helidon changes):
+  (these are OpenTracing changes, not Helidon changes):
     1. `TextMapExtractAdapter` and `TextMapInjectAdapter` are now `TextMapAdapter`
     2. module name changed from `opentracing.api` to `io.opentracing.api` (same for `noop` and `util`)
     3. `SpanBuilder` no longer has `startActive` method, you need to use `Tracer.activateSpan(Span)`
-    4. `ScopeManager.activate(Span, boolean)` is replaced by `ScopeManager.activate(Span)` - second parameter is now always 
-            `false`
+    4. `ScopeManager.activate(Span, boolean)` is replaced by `ScopeManager.activate(Span)` - second parameter is now always
+       `false`
     5. `Scope ScopeManager.active()` is removed - replaced by `Span Tracer.activeSpan()`
-- If you use the `TracerBuilder` abstraction in Helidon and have no custom Spans, there is no change required    
+- If you use the `TracerBuilder` abstraction in Helidon and have no custom Spans, there is no change required
 
 #### Config
 
@@ -1606,57 +1588,57 @@ When using MP Config through the API, there are no backward incompatible changes
 The following changes are relevant when using Helidon Config:
 
 1. File watching is now done through a `ChangeWatcher` - use of `PollingStrategies.watch()` needs to be refactored to
-    `FileSystemWatcher.create()` and the method to configure it on config source builder has changed to 
-    `changeWatcher(ChangeWatcher)`
+   `FileSystemWatcher.create()` and the method to configure it on config source builder has changed to
+   `changeWatcher(ChangeWatcher)`
 2. Methods on `ConfigSources` now return specific builders (they use to return `AbstractParsableConfigSource.Builder` with
-    a complex type declaration). If you store such a builder in a variable, either change it to the correct type, or use `var`
+   a complex type declaration). If you store such a builder in a variable, either change it to the correct type, or use `var`
 3. Some APIs were cleaned up to be aligned with the development guidelines of Helidon. When using Git config source, or etcd
-    config source, the factory methods moved to the config source itself, and the builder now accepts all configuration
-    options through methods
+   config source, the factory methods moved to the config source itself, and the builder now accepts all configuration
+   options through methods
 4. The API of config source builders has been cleaned, so now only methods that are relevant to a specific config source type
-    can be invoked on such a builder. Previously you could configure a polling strategy on a source that did not support 
-    polling
-5. There is a small change in behavior of Helidon Config vs. MicroProfile config: 
-    The MP TCK require that system properties are fully mutable (e.g. as soon as the property is changed, it
-    must be used), so MP Config methods work in this manner (with a certain performance overhead).
-    Helidon Config treats System properties as a mutable config source, with a (optional) time based polling strategy. So
-    the change is reflected as well, though not immediately (this is only relevant if you use change notifications). 
-6. `CompositeConfigSource` has been removed from `Config`. If you need to configure `MerginStrategy`, you can do it now on 
-    `Config` `Builder`
+   can be invoked on such a builder. Previously you could configure a polling strategy on a source that did not support
+   polling
+5. There is a small change in behavior of Helidon Config vs. MicroProfile config:
+   The MP TCK require that system properties are fully mutable (e.g. as soon as the property is changed, it
+   must be used), so MP Config methods work in this manner (with a certain performance overhead).
+   Helidon Config treats System properties as a mutable config source, with a (optional) time based polling strategy. So
+   the change is reflected as well, though not immediately (this is only relevant if you use change notifications).
+6. `CompositeConfigSource` has been removed from `Config`. If you need to configure `MerginStrategy`, you can do it now on
+   `Config` `Builder`
 
 ##### Helidon SE Config Extensibility
 
 1. Meta configuration has been refactored to be done through `ServiceLoader` services. If you created
-a custom `ConfigSource`, `PollingStrategy` or `RetryPolicy`, please have a look at the new documentation.
+   a custom `ConfigSource`, `PollingStrategy` or `RetryPolicy`, please have a look at the new documentation.
 2. To implement a custom config source, you need to choose appropriate (new) interface(s) to implement. This is the choice:
-    From "how we obtain the source of data" point of view:
+   From "how we obtain the source of data" point of view:
     * `ParsableSource` - for sources that provide bytes (used to be reader, now `InputStream`)
     * `NodeConfigSource` - for sources that provide a tree structure directly
     * `LazyConfigSource` - for sources that cannot read the full config tree in advance
-    From mutability point of view (immutable config sources can ignore this):
+      From mutability point of view (immutable config sources can ignore this):
     * `PollableSource` - a config source that is capable of identifying a change based on a data "stamp"
     * `WatchableSource` - a config source using a target that can be watched for changes without polling (such as `Path`)
-    * `EventConfigSource` - a config source that can trigger change events on its own 
+    * `EventConfigSource` - a config source that can trigger change events on its own
 3. `AbstractConfigSource` and `AbstractConfigSourceBuilder` are now in package `io.helidon.config`
-4. `ConfigContext` no longer contains method to obtain a `ConfigParser`, as this is no longer responsibility of 
-    a config source
+4. `ConfigContext` no longer contains method to obtain a `ConfigParser`, as this is no longer responsibility of
+   a config source
 5.  Do not throw an exception when config source does not exist, just return
     an empty `Optional` from `load` method, or `false` from `exists()` method
 6.  Overall change support is handled by the config module and is no longer the responsibility
     of the config source, just implement appropriate SPI methods if changes are supported,
     such as `PollableSource.isModified(Object stamp)`
- 
+
 
 #### Metrics
-Helidon now supports only MicroProfile Metrics 2.x. Modules for Metrics 1.x were removed, and 
+Helidon now supports only MicroProfile Metrics 2.x. Modules for Metrics 1.x were removed, and
 modules for 2.x were renamed from `metrics2` to `metrics`.
 
 #### Security
 
 - When OIDC provider is configured to use cookie (default configuration) to carry authentication information,
-    the cookie `Same-Site` is now set to `Lax` (used to be `Strict`). This is to prevent infinite redirects, as 
-    browsers would refuse to set the cookie on redirected requests (due to this setting).
-    Only in case the frontend host and identity host match, we leave `Strict` as the default
+  the cookie `Same-Site` is now set to `Lax` (used to be `Strict`). This is to prevent infinite redirects, as
+  browsers would refuse to set the cookie on redirected requests (due to this setting).
+  Only in case the frontend host and identity host match, we leave `Strict` as the default
 
 
 #### Microprofile Bundles
@@ -1664,38 +1646,38 @@ We have removed all versioned MP bundles (i.e. `helidon-microprofile-x.x`, and i
 unversioned core and full bundles:
 
 - `io.helidon.microprofile.bundles:helidon-microprofile-core` - contains only MP Server
-   and Config. Allows you to add only the specifications needed by your application.
-- `io.helidon.microprofile.bundles:helidon-microprofile` - contains the latest full 
-   MicroProfile version implemented by Helidon
-   
+  and Config. Allows you to add only the specifications needed by your application.
+- `io.helidon.microprofile.bundles:helidon-microprofile` - contains the latest full
+  MicroProfile version implemented by Helidon
+
 You can find more information in this blog post:
 [New Maven bundles](https://medium.com/helidon/microprofile-3-2-and-helidon-mp-1-4-new-maven-bundles-a9f2bdc1b5eb)
 
 #### Helidon CDI and MicroProfile Server
 
-- You cannot start CDI container yourself (this change is required so we can 
-      support GraalVM `native-image`)
+- You cannot start CDI container yourself (this change is required so we can
+  support GraalVM `native-image`)
     - You can only run a single instance of Server in a JVM
     - If you use `SeContainerInitializer` you would get an exception
         - this can be worked around by configuration property `mp.initializer.allow=true`, and warning can be removed
-            using `mp.initializer.no-warn=true`
-        - once `SeContainerInitializer` is used, you can no longer use MP with `native-image` 
+          using `mp.initializer.no-warn=true`
+        - once `SeContainerInitializer` is used, you can no longer use MP with `native-image`
 - You can no longer provide a `Context` instance, root context is now built-in
 - `MpService` and `MpServiceContext` have been removed
     - methods from context have been moved to `JaxRsCdiExtension` and `ServerCdiExtension` that can be accessed
-        from CDI extension through `BeanManager.getExtension`.
+      from CDI extension through `BeanManager.getExtension`.
     - methods `register` can be used on current `io.helidon.context.Context`
-    - `MpService` equivalent is a CDI extension. All Helidon services were refactored to CDI extension 
-        (you can use these for reference)
+    - `MpService` equivalent is a CDI extension. All Helidon services were refactored to CDI extension
+      (you can use these for reference)
 - `Server.cdiContainer` is removed, use `CDI.current()` instead
 
 #### Startup
 New recommended option to start Helidon MP:
 1. Use class `io.helidon.microprofile.cdi.Main`
 2. Use meta configuration option when advanced configuration of config is required (e.g. `meta-config.yaml`)
-3. Put `logging.properties` on the classpath or in the current directory to be automatically picked up to configure 
-    Java util logging
-    
+3. Put `logging.properties` on the classpath or in the current directory to be automatically picked up to configure
+   Java util logging
+
 `io.helidon.microprofile.server.Main` is still available, just calls `io.helidon.microprofile.cdi.Main` and is deprecated.
 `io.helidon.microprofile.server.Server` is still available, though the features are much reduced
 
@@ -1708,7 +1690,7 @@ The startup would fail if the provider is required yet not configured.
 #### Security in MP
 If there is no authentication provider configured, authentication will always fail.
 If there is no authorization provider configured, ABAC provider will be configured.
-(original behavior - these were configured if there was no provider configured overall) 
+(original behavior - these were configured if there was no provider configured overall)
 
 ### Other Behavior changes
 
