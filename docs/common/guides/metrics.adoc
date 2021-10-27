@@ -175,18 +175,24 @@ NOTE: You cannot get the individual fields of a metric. For example, you cannot 
 
 // tag::controlling[]
 // tag::controlling-intro[]
-
+// tag::controlling-intro-part-1[]
 === Controlling Metrics Behavior
-You can control how metrics behaves in several ways by adding a `metrics` section to your application configuration. You can:
+You can control how metrics behaves in several ways by adding a `metrics` section to your application configuration.
 
-*  disable metrics entirely,
-*  disable the use of metrics from individual components, and
-*  control the key performance indicator metrics which Helidon collects.
-
+*  <<disabling-entirely,Disable metrics entirely>>.
+// end::controlling-intro-part-1[]
+// tag::controlling-intro-part-2[]
+*  Identify groups of metrics to control:
+**  <<enabling-disabling-by-component,registered by a particular component>>, and
+**  <<enabling-disabling-by-registry,by metric registry>> (application, vendor, and base) and within a registry by metric names  which match patterns you provide.
+*  Select whether to collect <<extend-kpi,extended key performance indicator metrics>>.
+// end::controlling-intro-part-2[]
 // end::controlling-intro[]
 
-// tag::enabling-disabling-whole-intro[]
-==== Enabling and Disabling Metrics as a Whole
+// tag::disabling-whole[]
+// tag::disabling-whole-intro[]
+[[disabling-entirely]]
+==== Disabling Metrics Entirely
 By default, if your application depends on the `helidon-metrics` Maven module then full-featured metrics are enabled.
 You can disable metrics entirely using configuration:
 [source,properties]
@@ -194,13 +200,16 @@ You can disable metrics entirely using configuration:
 ----
 metrics.enabled=false
 ----
-// end::enabling-disabling-whole-intro[]
+// end::disabling-whole-intro[]
 
-// tag::enabling-disabling-whole-summary[]
+// tag::disabling-whole-summary[]
 With metrics disabled, Helidon never updates any metrics and the `/metrics` endpoints respond with `404` plus a message that metrics are disabled.
-// end::enabling-disabling-whole-summary[]
+// end::disabling-whole-summary[]
+// end::disabling-whole[]
 
+// tag::controlling-by-component[]
 // tag::controlling-by-component-intro[]
+[[enabling-disabling-by-component]]
 ==== Enabling and Disabling Metrics Usage by a Component
 Helidon contains several components and integrations which register and update metrics.
 Depending on how the component is written, you might be able to disable just that component's use of metrics:
@@ -211,15 +220,112 @@ some-component.metrics.enabled=false
 ----
 Check the documentation for a specific component to find out whether that component uses metrics and whether it allows you to disable that use.
 // end::controlling-by-component-intro[]
-
 // tag::controlling-by-component-summary[]
 If you disable a component's use of metrics, Helidon does not register the component's metrics in the visible metrics registries nor do those metrics ever update their values. The response from the `/metrics` endpoint excludes that component's metrics.
 
-Note that if you disable overall metrics, no component updates its metrics regardless of any component-level metrics settings.
+Note that if you disable metrics entirely, no component updates its metrics regardless of any component-level metrics settings.
 // end::controlling-by-component-summary[]
+// end::controlling-by-component[]
+
+// tag::controlling-by-registry[]
+// tag::controlling-by-registry-intro[]
+[[enabling-disabling-by-registry]]
+==== Controlling Metrics By Registry Type and Metric Name
+You can control metrics collection and reporting by registry type and metric name within registry type.
+
+===== Disabling All Metrics of a Given Registry Type
+To disable all metrics in a given registry type (application, vendor, or base), add one or more groups to the configuration:
+
+[source,properties]
+.Disabling `base` and `vendor` metrics (properties format)
+----
+metrics.registries.0.type = base
+metrics.registries.0.enabled = false
+metrics.registries.1.type = vendor
+metrics.registries.1.enabled = false
+----
+
+[source,yaml]
+.Disabling `base` and `vendor` metrics (YAML format)
+----
+metrics:
+  registries:
+    - type: base
+      enabled: false
+    - type: vendor
+      enables: false
+----
+
+===== Controlling Metrics by Metric Name
+You can be even more selective. Within a registry type you can configure up to two regular expression patterns:
+
+* one matching metric names to _exclude_, and
+* one matching metric names to _include_.
+
+Helidon updates and reports a metric only if two conditions hold:
+
+* the metric name _does not_ match the `exclude` regex pattern (if you define one), and
+* either
+** there is no `include` regex pattern, or
+** the metric name matches the `include` pattern.
+
+[CAUTION]
+====
+Make sure any `include` regex pattern you specify matches _all_ the metric names you want to capture.
+====
+Suppose your application creates and updates a group of metrics with names such as `myapp.xxx.queries`, `myapp.xxx.creates`, `myapp.xxx.updates`, and `myapp.xxx.deletes` where `xxx` can be either `supplier` or `customer`.
+
+The following example gathers all metrics _except_ those from your application regarding suppliers:
+[source,properties]
+.Disabling metrics by name (properties format)
+----
+metrics.registries.0.type = application
+metrics.registries.0.filter.exclude = myapp\.supplier\..*
+----
+
+The following settings select the particular subset of the metrics created in your application code representing updates of customers and suppliers:
+[source,properties]
+.Enabling metrics by name (properties format)
+----
+metrics.registries.0.type = application
+metrics.registries.0.filter.include = myapp\..*\.updates
+----
+
+If you use the YAML configuration format, enclose the regex patterns in single-quote marks:
+[source,yaml]
+.Enabling metrics by name (YAML format)
+----
+metrics:
+  registries:
+    - type: application
+      filter:
+        include: 'myapp\..*\.updates'
+----
+
+The next example selects only your application's metrics while excluding those which refer to deletions:
+[source,properties]
+.Combining `include` and `exclude`
+----
+metrics.registries.0.type = application
+metrics.registries.0.filter.include = myapp\..*
+metrics.registries.0.filter.exclude = myapp\..*/deletes
+----
+
+Helidon would not update or report the metric `myapp.supplier.queries`, for example.
+To  include metrics from your application for both updates and queries (but not for other operations), you could change the settings in the previous example to this:
+[source.properties]
+----
+metrics.registries.0.type = application
+metrics.registries.0.filter.include = myapp\..*\.updates|myapp\..*\.queries
+metrics.registries.0.filter.exclude = myapp\..*/deletes
+----
+
+// end::controlling-by-registry-intro[]
+// tag::controlling-by-registry[]
 
 // tag::KPI[]
-==== Key Performance Indicator (KPI) Metrics
+[[extend-kpi]]
+==== Collecting Extended Key Performance Indicator (KPI) Metrics
 Any time you include the Helidon metrics module in your application, Helidon tracks two basic performance indicator metrics:
 
 * a `Counter` of all requests received (`requests.count`), and
