@@ -37,7 +37,6 @@ import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Metered;
 import org.eclipse.microprofile.metrics.annotation.SimplyTimed;
 import org.eclipse.microprofile.metrics.annotation.Timed;
-import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -74,7 +73,7 @@ public class MetricsConfigurerTest {
         assertThat(methodInterceptors.size(), is(1));
         assertThat(methodInterceptors.get(0), is(instanceOf(GrpcMetrics.class)));
         assertThat(((GrpcMetrics) methodInterceptors.get(0)).metricType(), is(MetricType.COUNTER));
-        assertThat(registry.getCounters().get(new MetricID(ServiceOne.class.getName() + ".counted")), is(notNullValue()));
+        assertThat(updReg().getCounters().get(new MetricID(ServiceOne.class.getName() + ".counted")), is(notNullValue()));
     }
 
     @Test
@@ -94,7 +93,7 @@ public class MetricsConfigurerTest {
         assertThat(methodInterceptors.size(), is(1));
         assertThat(methodInterceptors.get(0), is(instanceOf(GrpcMetrics.class)));
         assertThat(((GrpcMetrics) methodInterceptors.get(0)).metricType(), is(MetricType.METERED));
-        assertThat(registry.getMeters().get(new MetricID(ServiceOne.class.getName() + ".metered")), is(notNullValue()));
+        assertThat(updReg().getMeters().get(new MetricID(ServiceOne.class.getName() + ".metered")), is(notNullValue()));
     }
 
     @Test
@@ -114,7 +113,7 @@ public class MetricsConfigurerTest {
         assertThat(methodInterceptors.size(), is(1));
         assertThat(methodInterceptors.get(0), is(instanceOf(GrpcMetrics.class)));
         assertThat(((GrpcMetrics) methodInterceptors.get(0)).metricType(), is(MetricType.TIMER));
-        assertThat(registry.getTimers().get(new MetricID(ServiceOne.class.getName() + ".timed")), is(notNullValue()));
+        assertThat(updReg().getTimers().get(new MetricID(ServiceOne.class.getName() + ".timed")), is(notNullValue()));
     }
 
     @Test
@@ -134,7 +133,7 @@ public class MetricsConfigurerTest {
         assertThat(methodInterceptors.size(), is(1));
         assertThat(methodInterceptors.get(0), is(instanceOf(GrpcMetrics.class)));
         assertThat(((GrpcMetrics) methodInterceptors.get(0)).metricType(), is(MetricType.SIMPLE_TIMER));
-        assertThat(registry.getSimpleTimers().get(new MetricID(ServiceOne.class.getName() + ".simplyTimed")), is(notNullValue()));
+        assertThat(updReg().getSimpleTimers().get(new MetricID(ServiceOne.class.getName() + ".simplyTimed")), is(notNullValue()));
     }
 
     @Test
@@ -154,7 +153,7 @@ public class MetricsConfigurerTest {
         assertThat(methodInterceptors.size(), is(1));
         assertThat(methodInterceptors.get(0), is(instanceOf(GrpcMetrics.class)));
         assertThat(((GrpcMetrics) methodInterceptors.get(0)).metricType(), is(MetricType.CONCURRENT_GAUGE));
-        assertThat(registry.getConcurrentGauges().get(new MetricID(ServiceOne.class.getName() + ".concurrentGauge")),
+        assertThat(updReg().getConcurrentGauges().get(new MetricID(ServiceOne.class.getName() + ".concurrentGauge")),
                 is(notNullValue()));
     }
 
@@ -175,7 +174,7 @@ public class MetricsConfigurerTest {
         assertThat(methodInterceptors.size(), is(1));
         assertThat(methodInterceptors.get(0), is(instanceOf(GrpcMetrics.class)));
         assertThat(((GrpcMetrics) methodInterceptors.get(0)).metricType(), is(MetricType.COUNTER));
-        assertThat(registry.getCounters().get(new MetricID(ServiceThree.class.getName() + ".foo")), is(notNullValue()));
+        assertThat(updReg().getCounters().get(new MetricID(ServiceThree.class.getName() + ".foo")), is(notNullValue()));
     }
 
     @Test
@@ -404,6 +403,22 @@ public class MetricsConfigurerTest {
         @Override
         public void timed(String request, StreamObserver<String> response) {
             super.timed(request, response);
+        }
+    }
+
+    private static MetricRegistry updReg() {
+        MyMetricsCdiExtension.registerGrpcMetrics();
+        return registry;
+    }
+
+    /**
+     * Used only for very limited testing purposes.
+     */
+    @Deprecated
+    private static class MyMetricsCdiExtension extends io.helidon.microprofile.metrics.MetricsCdiExtension {
+
+        static void registerGrpcMetrics() {
+            MyMetricsCdiExtension.registerMetricsForAnnotatedSitesFromGrpcTest();
         }
     }
 }

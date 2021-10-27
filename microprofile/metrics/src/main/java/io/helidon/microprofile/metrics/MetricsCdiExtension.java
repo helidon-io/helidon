@@ -179,11 +179,16 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
     @Deprecated
     public static <E extends Member & AnnotatedElement>
     void registerMetric(E element, Class<?> clazz, LookupResult<? extends Annotation> lookupResult) {
-        if (!(element instanceof AnnotatedCallable)) {
-            throw new IllegalArgumentException("Element must be an AnnotatedMethod or AnnotatedConstructor but was "
+        Executable executable;
+        if (element instanceof AnnotatedCallable) {
+           executable = (Executable) ((AnnotatedCallable<?>) element).getJavaMember();
+        } else if (element instanceof Executable) {
+            executable = (Executable) element;
+        } else {
+            throw new IllegalArgumentException("Element must be an AnnotatedCallable or Executable but was "
                     + element.getClass().getName());
         }
-        Executable executable = (Executable) ((AnnotatedCallable<?>) element).getJavaMember();
+
         registerMetricInternal(LEGACY_ANNOTATED_SITES, element, clazz, lookupResult, executable);
     }
 
@@ -211,16 +216,32 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
 
     private void registerMetricsForAnnotatedSites() {
         MetricRegistry registry = getMetricRegistry();
-        Stream.of(annotatedSites, LEGACY_ANNOTATED_SITES)
-            .flatMap(List::stream)
-            .forEach(registrationPrep -> {
-            org.eclipse.microprofile.metrics.Metric metric = registrationPrep.register(registry);
-            workItemsManager.put(registrationPrep.executable(), registrationPrep.annotationType(),
-                                 MetricWorkItem
-                                         .create(new MetricID(registrationPrep.metricName(),
-                                                              registrationPrep.tags()),
-                                                 metric));
-        });
+        List.of(annotatedSites, LEGACY_ANNOTATED_SITES)
+                .forEach(sites -> {
+                    for (RegistrationPrep registrationPrep : sites) {
+                        org.eclipse.microprofile.metrics.Metric metric = registrationPrep.register(registry);
+                        workItemsManager.put(registrationPrep.executable(), registrationPrep.annotationType(),
+                                             MetricWorkItem
+                                                     .create(new MetricID(registrationPrep.metricName(),
+                                                                          registrationPrep.tags()),
+                                                             metric));
+                    }
+                    sites.clear();
+                });
+    }
+
+    /**
+     * For test use only.
+     *
+     * This method is used from gRPC integration tests and should not be used elsewhere.
+     */
+    @Deprecated
+    protected static void registerMetricsForAnnotatedSitesFromGrpcTest() {
+        MetricRegistry registry = getMetricRegistry();
+        for (RegistrationPrep registrationPrep : LEGACY_ANNOTATED_SITES) {
+            registrationPrep.register(registry);
+        }
+        LEGACY_ANNOTATED_SITES.clear();
     }
 
     @Override
