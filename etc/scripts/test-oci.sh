@@ -48,12 +48,20 @@ key_file=${OCI_TEST_API_PRIVATE_KEY}
 tenancy=${OCI_TEST_TENANCY_OCID}
 region=us-ashburn-1
 EOF
-
 chmod go-rw ~/.oci/config
 chmod go-rw ${OCI_TEST_API_PRIVATE_KEY}
 
-cat ~/.oci/config
-
-sleep 10m
-
 mvn ${MAVEN_ARGS} --version
+
+# Temporary workaround until job stages will share maven repository
+mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml \
+    install -e \
+    -DskipTests \
+    -Dmaven.test.skip=true \
+    -Ppipeline
+
+# Run integrations tests for Vault
+cd tests/integration/oci
+
+mvn ${MAVEN_ARGS} clean verify \
+      -Dmaven.test.failure.ignore=true
