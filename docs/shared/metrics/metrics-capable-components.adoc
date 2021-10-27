@@ -16,11 +16,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-<<<<<<< HEAD:docs/se/guides/_metrics-capable-components.adoc
-= Helidon SE Metrics-Capable Components Guide
-=======
 = Metrics-Capable Components
->>>>>>> 670f8210e... Reorganize the metrics-capable doc a bit, moving it out of the guides area and into the regular doc area for SE and MP metrics:docs/shared/metrics/metrics-capable-components.adoc
 :h1Prefix: SE
 :description: Helidon metrics-capable components
 :keywords: helidon, metrics, metrics-capable, microprofile, guide
@@ -38,12 +34,7 @@
 This document explains Helidon {h1Prefix} metrics-capable components and applications and describes how to create and control them.
 // end::preamble[]
 
-<<<<<<< HEAD:docs/se/guides/_metrics-capable-components.adoc
-This guide explains Helidon SE metrics-capable components and applications and describes how to create and control them.
-
-=======
 // tag::all-beginning-text[]
->>>>>>> 670f8210e... Reorganize the metrics-capable doc a bit, moving it out of the guides area and into the regular doc area for SE and MP metrics:docs/shared/metrics/metrics-capable-components.adoc
 == Introduction
 Think of Helidon metrics in three related but different parts:
 
@@ -59,7 +50,7 @@ endif::[]
 ifeval::["{h1Prefix}" == "SE"]
 Your Helidon SE app provides this feature (if at all) by explicitly using the `MetricsSupport` interface.
 +
-By far most Helidon applications are web apps and choose to expose the built-in metrics web service.
+Most Helidon applications are web-based and their developers choose to expose the built-in metrics web service.
 But by separating the parts of metrics this way,
 Helidon allows non-web apps to work with metrics as well, just without the web service support.
 endif::[]
