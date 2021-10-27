@@ -563,6 +563,17 @@ public interface Multi<T> extends Subscribable<T> {
     }
 
     /**
+     * Signals the default item supplied by specified supplier if the upstream is empty.
+     * @param supplier of the default value
+     * @return Multi
+     * @throws NullPointerException if {@code supplier} is {@code null}
+     */
+    default Multi<T> defaultIfEmpty(Supplier<? extends T> supplier) {
+        Objects.requireNonNull(supplier, "supplier is null");
+        return new MultiDeferredDefaultIfEmpty<>(this, supplier);
+    }
+
+    /**
      * Filter out all duplicates.
      *
      * @return Multi

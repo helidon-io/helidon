@@ -38,6 +38,16 @@ public class SingleDefaultIfEmptyTest {
 
         ts.assertResult(1);
     }
+    @Test
+    public void normalWithSupplier() {
+        TestSubscriber<Integer> ts = new TestSubscriber<>(Long.MAX_VALUE);
+
+        Single.just(1)
+                .defaultIfEmpty(() -> 2)
+                .subscribe(ts);
+
+        ts.assertResult(1);
+    }
 
     @Test
     public void fallback() {
@@ -45,6 +55,17 @@ public class SingleDefaultIfEmptyTest {
 
         Single.<Integer>empty()
                 .defaultIfEmpty(2)
+                .subscribe(ts);
+
+        ts.assertResult(2);
+    }
+
+    @Test
+    public void fallbackWithSupplier() {
+        TestSubscriber<Integer> ts = new TestSubscriber<>(Long.MAX_VALUE);
+
+        Single.<Integer>empty()
+                .defaultIfEmpty(() -> 2)
                 .subscribe(ts);
 
         ts.assertResult(2);
@@ -65,11 +86,36 @@ public class SingleDefaultIfEmptyTest {
     }
 
     @Test
+    public void fallbackBackpressuredWithSupplier() {
+        TestSubscriber<Integer> ts = new TestSubscriber<>();
+
+        Single.<Integer>empty()
+                .defaultIfEmpty(() -> 2)
+                .subscribe(ts);
+
+        ts
+                .assertEmpty()
+                .request(1)
+                .assertResult(2);
+    }
+
+    @Test
     public void error() {
         TestSubscriber<Integer> ts = new TestSubscriber<>(Long.MAX_VALUE);
 
         Single.<Integer>error(new IOException())
                 .defaultIfEmpty(2)
+                .subscribe(ts);
+
+        ts.assertFailure(IOException.class);
+    }
+
+    @Test
+    public void errorWithSupplier() {
+        TestSubscriber<Integer> ts = new TestSubscriber<>(Long.MAX_VALUE);
+
+        Single.<Integer>error(new IOException())
+                .defaultIfEmpty(() -> 2)
                 .subscribe(ts);
 
         ts.assertFailure(IOException.class);
@@ -82,6 +128,24 @@ public class SingleDefaultIfEmptyTest {
 
         Single.create(sp)
                 .defaultIfEmpty(2)
+                .subscribe(ts);
+
+        assertTrue(sp.hasSubscribers());
+
+        ts.assertEmpty();
+
+        ts.cancel();
+
+        assertFalse(sp.hasSubscribers());
+    }
+
+    @Test
+    public void cancelWithSupplier() {
+        SubmissionPublisher<Integer> sp = new SubmissionPublisher<>(Runnable::run, 128);
+        TestSubscriber<Integer> ts = new TestSubscriber<>(Long.MAX_VALUE);
+
+        Single.create(sp)
+                .defaultIfEmpty(() -> 2)
                 .subscribe(ts);
 
         assertTrue(sp.hasSubscribers());
