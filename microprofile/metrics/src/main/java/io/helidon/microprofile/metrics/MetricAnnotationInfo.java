@@ -18,6 +18,7 @@ package io.helidon.microprofile.metrics;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Executable;
 import java.lang.reflect.Member;
 import java.util.ArrayList;
 import java.util.List;
@@ -48,20 +49,22 @@ class MetricAnnotationInfo<A extends Annotation, T extends Metric> {
 
     /**
      * Encapulates information for preparing for a metric registration based on an annotation and an annotated element.
-     *
-     * @param <T> type of the metric to be registered
      */
-    static class RegistrationPrep<T extends Metric> {
+    static class RegistrationPrep {
         private final String metricName;
         private final Metadata metadata;
         private final Tag[] tags;
-        private final Registration<T> registration;
+        private final Registration<?> registration;
+        private final Executable executable;
+        private final Class<? extends Annotation> annotationType;
+
 
         static <A extends Annotation, E extends Member & AnnotatedElement, T extends Metric>
-        RegistrationPrep<?> create(A annotation,
+        RegistrationPrep create(A annotation,
                 E annotatedElement,
                 Class<?> clazz,
-                MatchingType matchingType) {
+                MatchingType matchingType,
+                Executable executable) {
             MetricAnnotationInfo<?, ?> info = ANNOTATION_TYPE_TO_INFO.get(annotation.annotationType());
             if (info == null || !info.annotationClass().isInstance(annotation)) {
                 return null;
@@ -84,14 +87,26 @@ class MetricAnnotationInfo<A extends Annotation, T extends Metric> {
             if (candidateDisplayName != null && !candidateDisplayName.trim().isEmpty()) {
                 metadataBuilder.withDisplayName(candidateDisplayName.trim());
             }
-            return new RegistrationPrep<>(metricName, metadataBuilder.build(), info.tags(annotation), info.registerFunction);
+            return new RegistrationPrep(metricName,
+                                          metadataBuilder.build(),
+                                          info.tags(annotation),
+                                          info.registerFunction,
+                                          executable,
+                                          annotation.annotationType());
         }
 
-        private RegistrationPrep(String metricName, Metadata metadata, Tag[] tags, Registration<T> registration) {
+        private RegistrationPrep(String metricName,
+                                 Metadata metadata,
+                                 Tag[] tags,
+                                 Registration<?> registration,
+                                 Executable executable,
+                                 Class<? extends Annotation> annotationType) {
             this.metricName = metricName;
             this.metadata = metadata;
             this.tags = tags;
             this.registration = registration;
+            this.executable = executable;
+            this.annotationType = annotationType;
         }
 
         String metricName() {
@@ -102,7 +117,15 @@ class MetricAnnotationInfo<A extends Annotation, T extends Metric> {
             return tags;
         }
 
-        T register(MetricRegistry registry) {
+        Executable executable() {
+            return executable;
+        }
+
+        Class<? extends Annotation> annotationType() {
+            return annotationType;
+        }
+
+        Metric register(MetricRegistry registry) {
             return registration.register(registry, metadata, tags);
         }
     }
@@ -261,7 +284,7 @@ class MetricAnnotationInfo<A extends Annotation, T extends Metric> {
     }
 
     @FunctionalInterface
-    interface Registration<T> {
+    interface Registration<T extends Metric> {
         T register(MetricRegistry registry, Metadata metadata, Tag... tags);
     }
 }

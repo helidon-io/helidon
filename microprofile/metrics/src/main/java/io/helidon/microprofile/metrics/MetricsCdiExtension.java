@@ -45,6 +45,7 @@ import javax.enterprise.context.Initialized;
 import javax.enterprise.context.RequestScoped;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.AfterDeploymentValidation;
+import javax.enterprise.inject.spi.AnnotatedCallable;
 import javax.enterprise.inject.spi.AnnotatedMember;
 import javax.enterprise.inject.spi.AnnotatedMethod;
 import javax.enterprise.inject.spi.AnnotatedType;
@@ -73,6 +74,7 @@ import io.helidon.common.Errors;
 import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
+import io.helidon.metrics.api.MetricsSettings;
 import io.helidon.metrics.api.RegistryFactory;
 import io.helidon.metrics.serviceapi.MetricsSupport;
 import io.helidon.microprofile.cdi.RuntimeStart;
@@ -133,9 +135,14 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
             .notReusable()
             .build();
 
+    // only for compatibility with gRPC usage of registerMetric
+    @Deprecated
+    private static final List<RegistrationPrep> LEGACY_ANNOTATED_SITES = new ArrayList<>();
+
     private boolean restEndpointsMetricsEnabled = REST_ENDPOINTS_METRIC_ENABLED_DEFAULT_VALUE;
 
     private final Map<MetricID, AnnotatedMethod<?>> annotatedGaugeSites = new HashMap<>();
+    private final List<RegistrationPrep> annotatedSites = new ArrayList<>();
 
     private Errors.Collector errors = Errors.collector();
 
@@ -172,17 +179,48 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
     @Deprecated
     public static <E extends Member & AnnotatedElement>
     void registerMetric(E element, Class<?> clazz, LookupResult<? extends Annotation> lookupResult) {
-        registerMetricInternal(element, clazz, lookupResult);
+        if (!(element instanceof AnnotatedCallable)) {
+            throw new IllegalArgumentException("Element must be an AnnotatedMethod or AnnotatedConstructor but was "
+                    + element.getClass().getName());
+        }
+        Executable executable = (Executable) ((AnnotatedCallable<?>) element).getJavaMember();
+        registerMetricInternal(LEGACY_ANNOTATED_SITES, element, clazz, lookupResult, executable);
     }
 
-    static <E extends Member & AnnotatedElement> MetricInfo<?> registerMetricInternal(E element, Class<?> clazz,
-            LookupResult<? extends Annotation> lookupResult) {
-        MetricRegistry registry = getMetricRegistry();
-        Annotation annotation = lookupResult.getAnnotation();
+    static <E extends Member & AnnotatedElement>
+    void registerMetricInternal(List<RegistrationPrep> sites,
+                                E element,
+                                Class<?> clazz,
+                                LookupResult<? extends Annotation> lookupResult,
+                                Executable executable) {
+        recordAnnotatedSite(sites, element, clazz, lookupResult, executable);
+    }
 
-        RegistrationPrep<?> registrationPrep = RegistrationPrep.create(annotation, element, clazz, lookupResult.getType());
-        org.eclipse.microprofile.metrics.Metric metric = registrationPrep.register(registry);
-        return new MetricInfo<>(new MetricID(registrationPrep.metricName(), registrationPrep.tags()), metric);
+    private static <E extends Member & AnnotatedElement> void recordAnnotatedSite(
+            List<RegistrationPrep> sites,
+            E element,
+            Class<?> annotatedClass,
+            LookupResult<? extends Annotation> lookupResult,
+            Executable executable) {
+
+        Annotation annotation = lookupResult.getAnnotation();
+        RegistrationPrep registrationPrep = RegistrationPrep
+                .create(annotation, element, annotatedClass, lookupResult.getType(), executable);
+        sites.add(registrationPrep);
+    }
+
+    private void registerMetricsForAnnotatedSites() {
+        MetricRegistry registry = getMetricRegistry();
+        Stream.of(annotatedSites, LEGACY_ANNOTATED_SITES)
+            .flatMap(List::stream)
+            .forEach(registrationPrep -> {
+            org.eclipse.microprofile.metrics.Metric metric = registrationPrep.register(registry);
+            workItemsManager.put(registrationPrep.executable(), registrationPrep.annotationType(),
+                                 MetricWorkItem
+                                         .create(new MetricID(registrationPrep.metricName(),
+                                                              registrationPrep.tags()),
+                                                 metric));
+        });
     }
 
     @Override
@@ -208,9 +246,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
                     METRIC_ANNOTATIONS.forEach(annotation ->
                             MetricUtil.lookupAnnotations(type, annotatedCallable, annotation).forEach(lookupResult -> {
                                 Executable executable = Executable.class.cast(annotatedCallable.getJavaMember());
-                                MetricInfo<?> metricInfo = registerMetricInternal(executable, clazz, lookupResult);
-                                workItemsManager.put(executable, lookupResult.getAnnotation().annotationType(),
-                                        MetricWorkItem.create(metricInfo.metricID, metricInfo.metric));
+                                recordAnnotatedSite(annotatedSites, executable, clazz, lookupResult, executable);
                             })));
 
     }
@@ -565,6 +601,11 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
                 ServerCdiExtension server) {
         Set<String> vendorMetricsAdded = new HashSet<>();
         Config config = ((Config) ConfigProvider.getConfig()).get("metrics");
+
+        // Update the registry factory with the runtime config.
+        RegistryFactory.getInstance(MetricsSettings.create(config));
+
+        registerMetricsForAnnotatedSites();
 
         Routing.Builder defaultRouting = super.registerService(adv, bm, server);
         MetricsSupport metricsSupport = serviceSupport();
