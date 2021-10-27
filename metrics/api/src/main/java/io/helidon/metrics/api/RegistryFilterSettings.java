@@ -21,6 +21,17 @@ import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * Filter settings for registries.
+ *
+ * <p>
+ *     Each filter settings instance contain two optional regular expression patterns, one indicating metric names to include
+ *     and one indicating metric names to exclude. The patterns work together like this:
+ *     <ul>
+ *         <li>If you assign neither pattern, all metric names pass the filter and are accepted.</li>
+ *         <li>If you assign the exclude pattern, the filter rejects any candidate metric name that matches it,
+ *         regardless of the include pattern.</li>
+ *         <li>If you assign the include pattern, the filter accepts only those candidate metric names which match the include
+ *         pattern and do not match the exclude pattern (if you assigned one).</li>
+ *     </ul>
  */
 public interface RegistryFilterSettings {
 

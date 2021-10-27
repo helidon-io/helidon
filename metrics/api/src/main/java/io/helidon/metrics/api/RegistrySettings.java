@@ -29,20 +29,6 @@ import io.helidon.config.metadata.ConfiguredOption;
  * <p>
  *     Callers can also pass a {@link Config} object to builder or static factory methods as well.
  * </p>
- * <p>
- *     The filter string has these characteristics:
- *     <ul>
- *         <li>It contains one or more patterns, separated by semicolons. Each pattern is a regular expression with an optional
- *         prefix
- *         "!".</li>
- *         <li>A "!" prefix negates the regular expression which immediately follows. A candidate string must <em>not</em> match
- *         any such prefixed pattern or it is rejected.</li>
- *         <li>If the filter contains at least one positive pattern (one that is not negated), then a candidate must match at
- *         least one of the positive patterns (and none of the negated ones) to be accepted.</li>
- *     </ul>
- *     In other words, the filter behaves as if the negated patterns are checked first to reject a candidate string, Then a
- *     surviving candidate is accepted if there are no positive patterns or if the candidate matches at least one positive
- *     pattern.
  */
 public interface RegistrySettings {
 
@@ -73,16 +59,6 @@ public interface RegistrySettings {
     static Builder builder() {
         return RegistrySettingsImpl.builder();
     }
-
-    //    /**
-    //     * Creates a new builder initialized with the settings from an existing {@code RegistrySettings} instance.
-    //     *
-    //     * @param metricTypeSettings existing settings to use to pre-populate the builder
-    //     * @return new builder initialized according to the provided settings
-    //     */
-    //    static Builder builder(RegistrySettings metricTypeSettings) {
-    //        return RegistrySettingsImpl.builder(metricTypeSettings);
-    //    }
 
     /**
      * Returns whether metrics of this type are enabled.
