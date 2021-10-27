@@ -46,7 +46,7 @@ user=${OCI_TEST_USER_OCID}
 fingerprint=$(fingerprints ${OCI_TEST_API_PRIVATE_KEY})
 key_file=${OCI_TEST_API_PRIVATE_KEY}
 tenancy=${OCI_TEST_TENANCY_OCID}
-region=us-ashburn-1
+region=us-phoenix-1
 EOF
 chmod go-rw ~/.oci/config
 chmod go-rw ${OCI_TEST_API_PRIVATE_KEY}
