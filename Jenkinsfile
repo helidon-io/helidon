@@ -27,18 +27,18 @@ pipeline {
   stages {
     stage('default') {
       parallel {
-        stage('build'){
-          steps {
-            script {
-              try {
-                sh './etc/scripts/build.sh'
-              } finally {
-                archiveArtifacts artifacts: "**/target/surefire-reports/*.txt, **/target/failsafe-reports/*.txt"
-                junit testResults: '**/target/surefire-reports/*.xml,**/target/failsafe-reports/*.xml'
-              }
-            }
-          }
-        }
+//         stage('build'){
+//           steps {
+//             script {
+//               try {
+//                 sh './etc/scripts/build.sh'
+//               } finally {
+//                 archiveArtifacts artifacts: "**/target/surefire-reports/*.txt, **/target/failsafe-reports/*.txt"
+//                 junit testResults: '**/target/surefire-reports/*.xml,**/target/failsafe-reports/*.xml'
+//               }
+//             }
+//           }
+//         }
         stage('copyright'){
           steps {
             sh './etc/scripts/copyright.sh'
@@ -51,6 +51,44 @@ pipeline {
         }
         stage('integration-tests') {
           stages {
+//             stage('test-vault') {
+//               agent {
+//                 kubernetes {
+//                   inheritFrom 'k8s-slave'
+//                   yamlFile 'etc/pods/vault.yaml'
+//                   yamlMergeStrategy merge()
+//                 }
+//               }
+//               steps {
+//                 sh './etc/scripts/test-integ-vault.sh'
+//                 archiveArtifacts artifacts: "**/target/surefire-reports/*.txt"
+//                 junit testResults: '**/target/surefire-reports/*.xml'
+//               }
+//             }
+//             stage('test-packaging-jar'){
+//               agent {
+//                 label "linux"
+//               }
+//               steps {
+//                 sh 'etc/scripts/test-packaging-jar.sh'
+//               }
+//             }
+//             stage('test-packaging-jlink'){
+//               agent {
+//                 label "linux"
+//               }
+//               steps {
+//                 sh 'etc/scripts/test-packaging-jlink.sh'
+//               }
+//             }
+//             stage('test-packaging-native'){
+//               agent {
+//                 label "linux"
+//               }
+//               steps {
+//                 sh 'etc/scripts/test-packaging-native.sh'
+//               }
+//             }
             stage('test-oci'){
               agent {
                 label "linux"
