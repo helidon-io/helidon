@@ -827,7 +827,11 @@ public final class MetricsSupport extends HelidonRestServiceSupport
 
         @Override
         public JsonObjectBuilder add(String arg0, double arg1) {
-            delegate.add(arg0, arg1);
+            if (Double.isNaN(arg1)) {
+                delegate.add(arg0, String.valueOf(Double.NaN));
+            } else {
+                delegate.add(arg0, arg1);
+            }
             return this;
         }
 
