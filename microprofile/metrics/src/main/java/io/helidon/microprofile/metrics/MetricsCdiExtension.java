@@ -512,11 +512,10 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
     /**
      * Registers metrics for all field and method producers defined by the application.
      *
-     * @param adv After deployment validation event.
      * @param bm  Bean manager.
      */
     private <T extends org.eclipse.microprofile.metrics.Metric> void registerProducers(
-            @Observes AfterDeploymentValidation adv, BeanManager bm) {
+            BeanManager bm) {
         LOGGER.log(Level.FINE, () -> "registerProducers");
 
         Errors problems = errors.collect();
@@ -606,6 +605,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
         RegistryFactory.getInstance(MetricsSettings.create(config));
 
         registerMetricsForAnnotatedSites();
+        registerProducers(bm);
 
         Routing.Builder defaultRouting = super.registerService(adv, bm, server);
         MetricsSupport metricsSupport = serviceSupport();
