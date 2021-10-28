@@ -18,10 +18,12 @@ package io.helidon.metrics;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
 import io.helidon.metrics.api.AbstractRegistry;
+import io.helidon.metrics.api.RegistrySettings;
 
 import org.eclipse.microprofile.metrics.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.Counter;
@@ -40,14 +42,31 @@ import org.eclipse.microprofile.metrics.Timer;
  */
 public class Registry extends AbstractRegistry<HelidonMetric> {
 
+    private final AtomicReference<RegistrySettings> registrySettings = new AtomicReference<>();
+
     /**
      * Create a registry of a certain type.
      *
      * @param type Registry type.
+     * @param registrySettings Registry settings to use in creating the registry.
      * @return The newly created registry.
      */
-    public static Registry create(Type type) {
-        return new Registry(type);
+    public static Registry create(Type type, RegistrySettings registrySettings) {
+        return new Registry(type, registrySettings);
+    }
+
+    /**
+     * Update the registry settings for this registry.
+     *
+     * @param registrySettings new settings to use going forward
+     */
+    public void update(RegistrySettings registrySettings) {
+        this.registrySettings.set(registrySettings);
+    }
+
+    @Override
+    protected boolean isMetricEnabled(String metricName) {
+        return registrySettings.get().isMetricEnabled(metricName);
     }
 
     @Override
@@ -76,8 +95,14 @@ public class Registry extends AbstractRegistry<HelidonMetric> {
         }
     }
 
-    protected Registry(Type type) {
-        super(type);
+    @Override
+    protected RegistrySettings registrySettings() {
+        return registrySettings.get();
+    }
+
+    protected Registry(Type type, RegistrySettings registrySettings) {
+        super(type, HelidonMetric.class);
+        this.registrySettings.set(registrySettings);
     }
 
     @Override
