@@ -38,7 +38,7 @@ class TestOciObjectStorage {
     @Test
     void testDownload() {
         Response response = webTarget
-                .path("/files/file/helidon-logo")
+                .path("/files/file")
                 .request()
                 .get(Response.class);
         assertThat(response.getStatus(), is(Response.Status.OK.getStatusCode()));

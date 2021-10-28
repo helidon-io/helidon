@@ -20,6 +20,7 @@
 #
 oci:
   objectstorage:
-    namespace: "devweblogic"
-    bucketName: "arjdesai-oci-pipeline-test"
-    healthchecks: "arjdesai-oci-pipeline-test"
+    namespace: "<tenancy-namespace>"
+    healthchecks: "<object-storage-bucket>"
+    bucketName: "<object-storage-bucket>"
+    objectName: "<object-inside-bucket>"

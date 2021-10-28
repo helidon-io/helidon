@@ -48,27 +48,30 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 public class ObjectStorageResource {
     private final OciObjectStorage objectStorage;
     private final String bucketName;
+    private final String objectName;
 
     @Inject
     ObjectStorageResource(OciObjectStorage objectStorage,
                           @ConfigProperty(name = "oci.objectstorage.bucketName")
-                                  String bucketName) {
+                                  String bucketName,
+                          @ConfigProperty(name = "oci.objectstorage.objectName")
+                                  String objectName) {
         this.objectStorage = objectStorage;
         this.bucketName = bucketName;
+        this.objectName = objectName;
     }
 
     /**
      * Download a file from object storage.
      *
-     * @param fileName name of the object
      * @return response
      */
     @GET
-    @Path("/file/{file-name}")
-    public Response download(@PathParam("file-name") String fileName) {
+    @Path("/file")
+    public Response download() {
         ApiOptionalResponse<GetObject.Response> ociResponse = objectStorage.getObject(GetObject.Request.builder()
                                                                                                       .bucket(bucketName)
-                                                                                                      .objectName(fileName));
+                                                                                                      .objectName(objectName));
         Optional<GetObject.Response> entity = ociResponse.entity();
 
         if (entity.isEmpty()) {
@@ -80,7 +83,7 @@ public class ObjectStorageResource {
         StreamingOutput stream = output -> response.writeTo(Channels.newChannel(output));
 
         Response.ResponseBuilder ok = Response.ok(stream, MediaType.APPLICATION_OCTET_STREAM_TYPE)
-                .header(Http.Header.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
+                .header(Http.Header.CONTENT_DISPOSITION, "attachment; objectName=\"" + objectName + "\"")
                 .header("opc-request-id", ociResponse.headers().first("opc-request-id").orElse(""))
                 .header("request-id", ociResponse.requestId());
 
@@ -98,16 +101,14 @@ public class ObjectStorageResource {
     /**
      * Upload a file to object storage.
      *
-     * @param fileName name of the object
      * @param contentLength content length (required)
      * @param type content type
      * @param entity the entity used for upload
      * @return response
      */
     @POST
-    @Path("/file/{fileName}")
-    public Response upload(@PathParam("fileName") String fileName,
-                         @HeaderParam("Content-Length") long contentLength,
+    @Path("/file")
+    public Response upload(@HeaderParam("Content-Length") long contentLength,
                          @HeaderParam("Content-Type") @DefaultValue("application/octet-stream") String type,
                          InputStream entity) {
         PutObject.Response response = objectStorage.putObject(PutObject.Request.builder()
@@ -115,7 +116,7 @@ public class ObjectStorageResource {
                                                                       .bucket(bucketName)
                                                                       .requestMediaType(io.helidon.common.http.MediaType
                                                                                                 .parse(type))
-                                                                      .objectName(fileName),
+                                                                      .objectName(objectName),
                                                               Channels.newChannel(entity));
 
         return Response.status(response.status().code())
@@ -127,15 +128,14 @@ public class ObjectStorageResource {
     /**
      * Delete a file from object storage.
      *
-     * @param fileName object name
      * @return response
      */
     @DELETE
-    @Path("/file/{file-name}")
-    public Response delete(@PathParam("file-name") String fileName) {
+    @Path("/file")
+    public Response delete() {
         DeleteObject.Response response = objectStorage.deleteObject(DeleteObject.Request.builder()
                                                                             .bucket(bucketName)
-                                                                            .objectName(fileName));
+                                                                            .objectName(objectName));
 
         return Response.status(response.status().code())
                 .header("opc-request-id", response.headers().first("opc-request-id").orElse(""))
