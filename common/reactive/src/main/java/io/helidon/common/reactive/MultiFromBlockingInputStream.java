@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,8 @@ import java.nio.ByteBuffer;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Flow;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.IntSupplier;
 
 class MultiFromBlockingInputStream extends MultiFromInputStream {
@@ -68,9 +68,8 @@ class MultiFromBlockingInputStream extends MultiFromInputStream {
     static final class InputStreamSubscription extends MultiFromInputStream.InputStreamSubscription {
 
         private final ExecutorService executorService;
-        private final LinkedBlockingQueue<Runnable> submitQueue = new LinkedBlockingQueue<>();
+        private Lock lck = new ReentrantLock();
 
-        private final AtomicBoolean draining = new AtomicBoolean(false);
 
         InputStreamSubscription(Flow.Subscriber<? super ByteBuffer> downstream,
                                 InputStream inputStream,
@@ -81,24 +80,14 @@ class MultiFromBlockingInputStream extends MultiFromInputStream {
         }
 
         protected void trySubmit(long n) {
-            submitQueue.add(() -> {
-                submit(n);
-                drainSubmitQueue();
-            });
-            drainSubmitQueue();
-        }
-
-        private void drainSubmitQueue() {
-            if (!draining.getAndSet(true)) {
+            executorService.submit(() -> {
                 try {
-                    Runnable job = submitQueue.poll();
-                    if (job != null) {
-                        executorService.submit(job);
-                    }
+                    lck.lock();
+                    submit(n);
                 } finally {
-                    draining.set(false);
+                    lck.unlock();
                 }
-            }
+            });
         }
     }
 }

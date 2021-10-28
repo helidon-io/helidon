@@ -30,7 +30,7 @@ public class MultiFromTrustedInputStreamTckTest extends FlowPublisherVerificatio
     static final int BUFFER_SIZE = 4;
 
     public MultiFromTrustedInputStreamTckTest() {
-        super(new TestEnvironment(50));
+        super(new TestEnvironment(500));
     }
 
     @Override
