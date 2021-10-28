@@ -61,9 +61,9 @@ mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml \
     -Ppipeline
 
 # Temporary, find a better way to templatize this
-export oci_objectstorage_namespace = "devweblogic"
-export oci_objectstorage_bucketName = "oci-pipeline-test"
-export oci_objectstorage_healthchecks = ("oci-pipeline-test")
+export oci_objectstorage_namespace=devweblogic
+export oci_objectstorage_bucketName=oci-pipeline-test
+# export oci_objectstorage_healthchecks=("oci-pipeline-test")
 
 # Run integrations tests for Vault
 cd tests/integration/oci
