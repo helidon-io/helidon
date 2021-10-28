@@ -22,4 +22,4 @@ oci:
   objectstorage:
     namespace: "devweblogic"
     bucketName: "arjdesai-oci-pipeline-test"
-    healthchecks: [ "arjdesai-oci-pipeline-test" ]
+    healthchecks: "arjdesai-oci-pipeline-test"
