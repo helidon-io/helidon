@@ -34,7 +34,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.logging.Level;
@@ -139,7 +138,7 @@ public abstract class OpenAPISupport implements Service {
      */
     private final OpenApiConfig openApiConfig;
     private final OpenApiStaticFile openApiStaticFile;
-    private final Supplier<List<? extends IndexView>> indexViewsSupplier;
+    private final Supplier<? extends IndexView> indexViewSupplier;
 
     protected OpenAPISupport(Builder<?> builder) {
         adjustTypeDescriptions(helper().types());
@@ -148,7 +147,7 @@ public abstract class OpenAPISupport implements Service {
         corsEnabledServiceHelper = CorsEnabledServiceHelper.create(FEATURE_NAME, builder.crossOriginConfig);
         openApiConfig = builder.openAPIConfig();
         openApiStaticFile = builder.staticFile();
-        indexViewsSupplier = builder.indexViewsSupplier();
+        indexViewSupplier = builder.indexViewSupplier();
     }
 
     @Override
@@ -178,7 +177,8 @@ public abstract class OpenAPISupport implements Service {
 
     private synchronized OpenAPI model() {
         if (model == null) {
-            model = prepareModel(openApiConfig, openApiStaticFile, indexViewsSupplier.get());
+//            model = prepareModel(openApiConfig, openApiStaticFile, indexViewsSupplier.get());
+            model = prepareModel(openApiConfig, openApiStaticFile, indexViewSupplier.get());
         }
         return model;
     }
@@ -278,30 +278,32 @@ public abstract class OpenAPISupport implements Service {
      *
      * @param config {@code OpenApiConfig} object describing paths, servers, etc.
      * @param staticFile the static file, if any, to be included in the resulting model
-     * @param filteredIndexViews possibly empty list of FilteredIndexViews to use in harvesting definitions from the code
+     * @param indexView IndexView to use in harvesting definitions from the code
      * @return the OpenAPI model
      * @throws RuntimeException in case of errors reading any existing static
      * OpenAPI document
      */
     private OpenAPI prepareModel(OpenApiConfig config, OpenApiStaticFile staticFile,
-            List<? extends IndexView> filteredIndexViews) {
+                                 IndexView indexView) {
         try {
             synchronized (OpenApiDocument.INSTANCE) {
                 OpenApiDocument.INSTANCE.reset();
                 OpenApiDocument.INSTANCE.config(config);
                 OpenApiDocument.INSTANCE.modelFromReader(OpenApiProcessor.modelFromReader(config, getContextClassLoader()));
                 if (staticFile != null) {
-                    OpenApiDocument.INSTANCE.modelFromStaticFile(OpenAPIParser.parse(helper().types(), staticFile.getContent(),
-                            OpenAPIMediaType.byFormat(staticFile.getFormat())));
+                    OpenApiDocument.INSTANCE
+                            .modelFromStaticFile(OpenAPIParser.parse(helper().types(),
+                                                                     staticFile.getContent(),
+                                                                     OpenAPIMediaType.byFormat(staticFile.getFormat())));
                 }
                 if (isAnnotationProcessingEnabled(config)) {
-                    expandModelUsingAnnotations(config, filteredIndexViews);
+                    expandModelUsingAnnotations(config, indexView);
                 } else {
                     LOGGER.log(Level.FINE, "OpenAPI Annotation processing is disabled");
                 }
                 OpenApiDocument.INSTANCE.filter(OpenApiProcessor.getFilter(config, getContextClassLoader()));
                 OpenApiDocument.INSTANCE.initialize();
-                OpenAPIImpl instance = OpenAPIImpl.class.cast(OpenApiDocument.INSTANCE.get());
+                OpenAPI instance = OpenApiDocument.INSTANCE.get();
 
                 // Create a copy, primarily to avoid problems during unit testing.
                 // The SmallRye MergeUtil omits the openapi value, so we need to set it explicitly.
@@ -317,31 +319,20 @@ public abstract class OpenAPISupport implements Service {
         return !config.scanDisable();
     }
 
-    private void expandModelUsingAnnotations(OpenApiConfig config, List<? extends IndexView> filteredIndexViews) {
-        if (filteredIndexViews.isEmpty() || config.scanDisable()) {
+    private void expandModelUsingAnnotations(OpenApiConfig config, IndexView indexView) {
+        if (config.scanDisable()) {
             return;
         }
+        OpenApiAnnotationScanner scanner = new OpenApiAnnotationScanner(config, indexView,
+                                                                        List.of(new HelidonAnnotationScannerExtension()));
+        OpenAPI modelForApp = scanner.scan();
+        if (LOGGER.isLoggable(Level.FINER)) {
 
-        /*
-         * Conduct a SmallRye OpenAPI annotation scan for each filtered index view, merging the resulting OpenAPI models into one.
-         * The AtomicReference is effectively final so we can update the actual reference from inside the lambda.
-         */
-        AtomicReference<OpenAPI> aggregateModelRef = new AtomicReference<>(new OpenAPIImpl()); // Start with skeletal model
-        filteredIndexViews.forEach(filteredIndexView -> {
-                OpenApiAnnotationScanner scanner = new OpenApiAnnotationScanner(config, filteredIndexView,
-                        List.of(new HelidonAnnotationScannerExtension()));
-                OpenAPI modelForApp = scanner.scan();
-                if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.log(Level.FINER, String.format("Intermediate model from index view %s:%n%s",
+                                                  indexView.getKnownClasses(), formatDocument(Format.YAML, modelForApp)));
+        }
 
-                    LOGGER.log(Level.FINER, String.format("Intermediate model from filtered index view %s:%n%s",
-                            filteredIndexView.getKnownClasses(), formatDocument(Format.YAML, modelForApp)));
-                }
-                aggregateModelRef.set(
-                        MergeUtil.merge(aggregateModelRef.get(), modelForApp)
-                                .openapi(modelForApp.getOpenapi())); // SmallRye's merge skips openapi value.
-
-        });
-        OpenApiDocument.INSTANCE.modelFromAnnotations(aggregateModelRef.get());
+        OpenApiDocument.INSTANCE.modelFromAnnotations(modelForApp);
     }
 
     private static ClassLoader getContextClassLoader() {
@@ -803,9 +794,8 @@ public abstract class OpenAPISupport implements Service {
             return me();
         }
 
-        protected Supplier<List<? extends IndexView>> indexViewsSupplier() {
-            // Only in MP can we have possibly multiple index views, one per app, from scanning classes (or the Jandex index).
-            return () -> Collections.emptyList();
+        protected Supplier<? extends IndexView> indexViewSupplier() {
+            return () -> null;
         }
 
         private OpenApiStaticFile getExplicitStaticFile() {
