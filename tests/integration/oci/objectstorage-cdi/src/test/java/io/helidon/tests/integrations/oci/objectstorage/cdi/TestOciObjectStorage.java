@@ -33,8 +33,7 @@ class TestOciObjectStorage {
     private WebTarget webTarget;
 
     /*
-     * Both auth provider will abstain since we are not passing Auth headers,
-     * and with all abstain, composite will return 401.
+     * Test that getObject API on ObjectStorage integration works.
      */
     @Test
     void testDownload() {
