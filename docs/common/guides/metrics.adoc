@@ -177,9 +177,9 @@ NOTE: You cannot get the individual fields of a metric. For example, you cannot 
 // tag::controlling-intro[]
 // tag::controlling-intro-part-1[]
 === Controlling Metrics Behavior
-You can control how metrics behaves in several ways by adding a `metrics` section to your application configuration.
+By adding a `metrics` section to your application configuration you can control how the Helidon metrics subsystem behaves in any of several ways.
 
-*  <<disabling-entirely,Disable metrics entirely>>.
+*  <<disabling-entirely,Disable metrics subsystem entirely>>.
 // end::controlling-intro-part-1[]
 // tag::controlling-intro-part-2[]
 *  Identify groups of metrics to control:
@@ -192,9 +192,9 @@ You can control how metrics behaves in several ways by adding a `metrics` sectio
 // tag::disabling-whole[]
 // tag::disabling-whole-intro[]
 [[disabling-entirely]]
-==== Disabling Metrics Entirely
+==== Disabling Metrics Subsystem Entirely
 By default, if your application depends on the `helidon-metrics` Maven module then full-featured metrics are enabled.
-You can disable metrics entirely using configuration:
+You can disable the metrics subsystem entirely using configuration:
 [source,properties]
 .Configuration properties file disabling metrics
 ----
@@ -203,7 +203,7 @@ metrics.enabled=false
 // end::disabling-whole-intro[]
 
 // tag::disabling-whole-summary[]
-With metrics disabled, Helidon never updates any metrics and the `/metrics` endpoints respond with `404` plus a message that metrics are disabled.
+With metrics processing disabled, Helidon never updates any metrics and the `/metrics` endpoints respond with `404` plus a message that the metrics subsystem is disabled.
 // end::disabling-whole-summary[]
 // end::disabling-whole[]
 
@@ -223,7 +223,7 @@ Check the documentation for a specific component to find out whether that compon
 // tag::controlling-by-component-summary[]
 If you disable a component's use of metrics, Helidon does not register the component's metrics in the visible metrics registries nor do those metrics ever update their values. The response from the `/metrics` endpoint excludes that component's metrics.
 
-Note that if you disable metrics entirely, no component updates its metrics regardless of any component-level metrics settings.
+Note that if you disable metrics processing entirely, no component updates its metrics regardless of any component-level metrics settings.
 // end::controlling-by-component-summary[]
 // end::controlling-by-component[]
 
@@ -231,7 +231,7 @@ Note that if you disable metrics entirely, no component updates its metrics rega
 // tag::controlling-by-registry-intro[]
 [[enabling-disabling-by-registry]]
 ==== Controlling Metrics By Registry Type and Metric Name
-You can control metrics collection and reporting by registry type and metric name within registry type.
+You can control the collection and reporting of metrics by registry type and metric name within registry type.
 
 ===== Disabling All Metrics of a Given Registry Type
 To disable all metrics in a given registry type (application, vendor, or base), add one or more groups to the configuration:

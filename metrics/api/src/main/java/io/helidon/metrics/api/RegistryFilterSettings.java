@@ -23,7 +23,7 @@ import io.helidon.config.metadata.ConfiguredOption;
  * Filter settings for registries.
  *
  * <p>
- *     Each filter settings instance contain two optional regular expression patterns, one indicating metric names to include
+ *     Each filter settings instance contains two optional regular expression patterns, one indicating metric names to include
  *     and one indicating metric names to exclude. The patterns work together like this:
  *     <ul>
  *         <li>If you assign neither pattern, all metric names pass the filter and are accepted.</li>

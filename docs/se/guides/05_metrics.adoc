@@ -91,11 +91,11 @@ For the SE guide, we stitch in the shared content about controlling metrics arou
 ////
 include::{metrics-common}[tag=controlling-intro]
 
-Your Helidon SE application can also control metrics programmatically as described in the following sections.
+Your Helidon SE application can also control metrics processing programmatically as described in the following sections.
 
 include::{metrics-common}[tag=disabling-whole-intro]
 
-A Helidon SE application can disable metrics programmatically.
+A Helidon SE application can disable metrics processing programmatically.
 [source,java]
 .Disable all metrics behavior
 ----
@@ -112,7 +112,7 @@ import io.helidon.metrics.api.RegistryFactory;
 
     RegistryFactory registryFactory = RegistryFactory.getInstance(metricsSettings); // <3>
 ----
-<1> Create a link:{javadoc-base-url-api}/MetricsSettings.html[`MetricsSettings]` instance (via its link:{javadoc-base-url-api}/MetricsSettings.Builder.html[`Builder`]) with metrics disabled.
+<1> Create a link:{javadoc-base-url-api}/MetricsSettings.html[`MetricsSettings]` instance (via its link:{javadoc-base-url-api}/MetricsSettings.Builder.html[`Builder`]) with the metrics subsystem disabled.
 <2> Get a link:{javadoc-base-url-serviceapi}/MetricsSupport.html[`MetricsSupport]` service (usable in setting routing rules) that responds
 to the `/metrics` endpoint with `404` and an explanatory message.
 <3> Get a link:{javadoc-base-url-api}/RegistryFactory.html[`RegistryFactory]` instance that provides `MetricRegistry` instances which register
@@ -149,7 +149,7 @@ include::{metrics-common}[tag=controlling-by-component-summary]
 
 include::{metrics-common}[tag=controlling-by-registry-intro]
 
-Your Helidon SE application can control metrics collection and reporting programmatically as well by preparing these settings objects:
+Your Helidon SE application can control the collection and reporting of metrics programmatically as well by preparing these settings objects:
 
 * link:{javadoc-base-url-api}/RegistryFilterSettings.html[`RegistryFilterSettings`]
 * link:{javadoc-base-url-api}/RegistrySettings.html[`RegistrySettings`]
