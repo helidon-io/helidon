@@ -42,6 +42,19 @@ JSON Web Token (JWT) defines a compact and self-contained way for securely trans
 
 == Next Steps
 
+The main configuration point for JWT Auth is a JAX-RS Application class.
+As this class is discovered using CDI, it must have a bean defining annotation.
+
+Example of an application that enables JWT-Auth (with minimal required annotations):
+
+[source,java]
+----
+@LoginConfig(authMethod = "MP-JWT")
+@ApplicationScoped
+public class ProtectedApplication extends Application{
+}
+----
+
 Learn more about JWT authentication: +
 
 https://download.eclipse.org/microprofile/microprofile-jwt-auth-1.1.1/microprofile-jwt-auth-spec.html#_introduction[Eclipse MicroProfile Interoperable JWT RBAC]
