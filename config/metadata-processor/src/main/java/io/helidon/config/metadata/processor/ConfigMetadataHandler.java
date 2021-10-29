@@ -89,6 +89,7 @@ class ConfigMetadataHandler {
     private TypeMirror builderType;
     private TypeMirror configType;
     private TypeMirror erasedListType;
+    private TypeMirror erasedIterableType;
     private TypeMirror erasedSetType;
     private TypeMirror erasedMapType;
 
@@ -111,6 +112,7 @@ class ConfigMetadataHandler {
         configType = elementUtils.getTypeElement("io.helidon.config.Config").asType();
         erasedListType = typeUtils.erasure(elementUtils.getTypeElement(List.class.getName()).asType());
         erasedSetType = typeUtils.erasure(elementUtils.getTypeElement(Set.class.getName()).asType());
+        erasedIterableType = typeUtils.erasure(elementUtils.getTypeElement(Iterable.class.getName()).asType());
         erasedMapType = typeUtils.erasure(elementUtils.getTypeElement(Map.class.getName()).asType());
     }
 
@@ -570,7 +572,8 @@ class ConfigMetadataHandler {
                 TypeMirror paramType = parameter.asType();
                 TypeMirror erasedType = typeUtils.erasure(paramType);
 
-                if (typeUtils.isSameType(erasedType, erasedListType) || typeUtils.isSameType(erasedType, erasedSetType)) {
+                if (typeUtils.isSameType(erasedType, erasedListType) || typeUtils.isSameType(erasedType, erasedSetType)
+                        || typeUtils.isSameType(erasedType, erasedIterableType)) {
                     DeclaredType type = (DeclaredType) paramType;
                     TypeMirror genericType = type.getTypeArguments().get(0);
                     return new OptionType(genericType.toString(), "LIST");
@@ -713,6 +716,7 @@ class ConfigMetadataHandler {
             // or allowed values explicitly configured in annotation
             return annotation.allowedValues;
         }
+        elementUtils.getTypeElement(type);
         return allowedValues(elementUtils, elementUtils.getTypeElement(type));
     }
 
