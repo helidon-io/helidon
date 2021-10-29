@@ -36,6 +36,9 @@
     <description>Narayana compatible LRA coordinator</description>
 
     <properties>
+        <maven.deploy.skip>true</maven.deploy.skip>
+        <maven.sources.skip>true</maven.sources.skip>
+        <maven.javadoc.skip>true</maven.javadoc.skip>
         <mainClass>io.helidon.lra.coordinator.Main</mainClass>
     </properties>
     
