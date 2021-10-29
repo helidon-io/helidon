@@ -177,7 +177,6 @@ public abstract class OpenAPISupport implements Service {
 
     private synchronized OpenAPI model() {
         if (model == null) {
-//            model = prepareModel(openApiConfig, openApiStaticFile, indexViewsSupplier.get());
             model = prepareModel(openApiConfig, openApiStaticFile, indexViewSupplier.get());
         }
         return model;

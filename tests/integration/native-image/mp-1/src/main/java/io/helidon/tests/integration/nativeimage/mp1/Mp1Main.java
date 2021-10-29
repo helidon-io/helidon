@@ -416,8 +416,11 @@ public final class Mp1Main {
     }
 
     private static void checkDescription(Errors.Collector collector, JsonObject openApi, String path, String expected) {
-        String actual = openApi.getJsonObject("paths")
-                .getJsonObject(path)
+        JsonObject jsonObject = checkPath(collector, openApi, path, "checkDescription");
+        if (jsonObject == null) {
+            return;
+        }
+        String actual = jsonObject
                 .getJsonObject("get")
                 .getJsonObject("responses")
                 .getJsonObject("200")
@@ -432,9 +435,11 @@ public final class Mp1Main {
     }
 
     private static void checkJsonContentType(Errors.Collector collector, JsonObject openApi, String path) {
-        JsonObject jsonObject = openApi.getJsonObject("paths")
-                .getJsonObject(path)
-                .getJsonObject("get")
+        JsonObject jsonObject = checkPath(collector, openApi, path, "checkJsonContentType");
+        if (jsonObject == null) {
+            return;
+        }
+        jsonObject = jsonObject.getJsonObject("get")
                 .getJsonObject("responses")
                 .getJsonObject("200")
                 .getJsonObject("content");
@@ -442,6 +447,15 @@ public final class Mp1Main {
         if (!jsonObject.containsKey("application/json")) {
             collector.fatal("OpenAPI", "Path " + path + " should have type application/json");
         }
+    }
+
+    private static JsonObject checkPath(Errors.Collector collector, JsonObject openApi, String path, String where) {
+        JsonObject jsonObject = openApi.getJsonObject("paths")
+                .getJsonObject(path);
+        if (jsonObject == null) {
+            collector.fatal("OpenAPI", "Path " + path + " expected but not found in " + where);
+        }
+        return jsonObject;
     }
 
     private static void checkProtectedApp(Errors.Collector collector, Set<String> actualPaths, String path) {
