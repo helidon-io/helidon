@@ -97,31 +97,28 @@ public final class MPOpenAPIBuilder extends OpenAPISupport.Builder<MPOpenAPIBuil
 
     private List<FilteredIndexView> buildPerAppFilteredIndexViews() {
         /*
-         * Some JaxRsApplication instances might have an application instance already associated with them. Others might not in
-         * which case we'll try to instantiate them ourselves (unless they are synthetic apps or lack no-args constructors).
+         * Build a list of filtered index views, one for each JAX-RS application. Sort by the Application class name to help
+         * keep the list of endpoints in the OpenAPI document in a stable order. Each filtered index view is tuned to one
+         * JAX-RS application, excluding the other JAX-RS application class names.
          *
-         * Each set in the list holds the classes related to one app.
-         *
-         * Sort the stream by the Application class name to help keep the list of endpoints in the OpenAPI document in a stable
-         * order.
          */
-        List<Set<Class<?>>> appClassesToScan = jaxRsApplicationsToRun().stream()
+        List<Class<?>> appClasses = jaxRsApplicationsToRun().stream()
                 .filter(jaxRsApplication -> jaxRsApplication.applicationClass().isPresent())
                 .sorted(Comparator.comparing(jaxRsApplication -> jaxRsApplication.applicationClass()
                         .get()
                         .getName()))
-                .map(this::classesToScanForJaxRsApp)
+                .map(JaxRsApplication::getClass)
                 .collect(Collectors.toList());
 
-        if (appClassesToScan.size() <= 1) {
+        if (appClasses.size() <= 1) {
             /*
              * Use normal scanning with a FilteredIndexView containing no class restrictions (beyond what might already be in
              * the configuration).
              */
             return List.of(new FilteredIndexView(singleIndexViewSupplier.get(), openAPIConfig.get()));
         }
-        return appClassesToScan.stream()
-                .map(this::appRelatedClassesToFilteredIndexView)
+        return appClasses.stream()
+                .map(appClass -> appClassToFilteredIndexView(appClasses, appClass))
                 .collect(Collectors.toList());
     }
 
@@ -169,26 +166,34 @@ public final class MPOpenAPIBuilder extends OpenAPISupport.Builder<MPOpenAPIBuil
         return result;
     }
 
-    private FilteredIndexView appRelatedClassesToFilteredIndexView(Set<Class<?>> appRelatedClassesToScan) {
+    private FilteredIndexView appClassToFilteredIndexView(List<Class<?>> appClasses, Class<?> appClass) {
         /*
-         * Create an OpenAPIConfig instance to limit scanning to this app's classes by overriding any inclusions of classes or
-         * packages specified in the config with our own inclusions based on this app's classes.
+         * Create an OpenAPIConfig instance to limit scanning to this app by overriding any exclusion of classes
+         * specified in the config with our own exclusions based on the app classes not of interest during this invocation.
+         *
+         * If the app classes are AppA, AppB, and AppC, the exclusion regex expression we want for processing AppB is
+         *
+         * ^(?!(AppA|AppC)$)
+         *
+         * The ^ and $ avoid incorrect prefix/suffix matches. The ?!(AppA|AppC) uses negative look-ahead to make sure the
+         * candidate does not match the classes we want to exclude.
          */
-        Pattern appRelatedClassesPattern = Pattern.compile(
-                appRelatedClassesToScan.stream()
+        Pattern excludeOtherAppsPattern = Pattern.compile(
+                appClasses.stream()
+                        .filter(candidateAppClass -> candidateAppClass != appClass)
                         .map(Class::getName)
                         .map(Pattern::quote)
-                        .map(name -> "^" + name + "$") // avoid false prefix matches
-                        .collect(Collectors.joining("|", "(", ")")));
+                        .collect(Collectors.joining("|", "^(?!(", ")$)")));
 
         FilteredIndexView result = new FilteredIndexView(singleIndexViewSupplier.get(),
-                new FilteringOpenApiConfigImpl(mpConfig, appRelatedClassesPattern));
+                                                         new FilteringOpenApiConfigImpl(mpConfig, excludeOtherAppsPattern));
         if (LOGGER.isLoggable(Level.FINE)) {
-            LOGGER.log(Level.FINE, String.format("FilteredIndexView for %n"
-                    + "  application classes %s%n"
-                    + "  will use pattern: %s%n"
-                    + "  with known classes %s",
-                    appRelatedClassesToScan, appRelatedClassesPattern, result.getKnownClasses()));
+            LOGGER.log(Level.FINE,
+                       String.format("FilteredIndexView for %n"
+                                             + "  application class %s%n"
+                                             + "  will use pattern: %s%n"
+                                             + "  with known classes %s",
+                                     appClass, excludeOtherAppsPattern, result.getKnownClasses()));
         }
 
         return result;
@@ -196,16 +201,16 @@ public final class MPOpenAPIBuilder extends OpenAPISupport.Builder<MPOpenAPIBuil
 
     private static class FilteringOpenApiConfigImpl extends OpenApiConfigImpl {
 
-        private final Pattern appRelatedClassNamesToScan;
+        private final Pattern appClassesToExclude;
 
-        FilteringOpenApiConfigImpl(Config config, Pattern appRelatedClassNamesToScan) {
+        FilteringOpenApiConfigImpl(Config config, Pattern appClassesToExclude) {
             super(config);
-            this.appRelatedClassNamesToScan = appRelatedClassNamesToScan;
+            this.appClassesToExclude = appClassesToExclude;
         }
 
         @Override
-        public Pattern scanClasses() {
-            return appRelatedClassNamesToScan;
+        public Pattern scanExcludeClasses() {
+            return appClassesToExclude;
         }
     }
 
