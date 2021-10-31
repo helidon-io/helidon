@@ -16,22 +16,25 @@
  */
 package io.helidon.microprofile.openapi;
 
-import java.util.ArrayList;
-import java.util.Collections;
+import java.lang.reflect.Modifier;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
+import java.util.StringJoiner;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.enterprise.inject.spi.CDI;
+import javax.ws.rs.Path;
 import javax.ws.rs.core.Application;
+import javax.ws.rs.core.Feature;
+import javax.ws.rs.ext.Provider;
 
 import io.helidon.microprofile.server.JaxRsApplication;
 import io.helidon.microprofile.server.JaxRsCdiExtension;
@@ -41,6 +44,10 @@ import io.smallrye.openapi.api.OpenApiConfig;
 import io.smallrye.openapi.api.OpenApiConfigImpl;
 import io.smallrye.openapi.runtime.scanner.FilteredIndexView;
 import org.eclipse.microprofile.config.Config;
+import org.jboss.jandex.AnnotationInstance;
+import org.jboss.jandex.AnnotationTarget;
+import org.jboss.jandex.ClassInfo;
+import org.jboss.jandex.DotName;
 import org.jboss.jandex.IndexView;
 
 /**
@@ -50,7 +57,9 @@ public final class MPOpenAPIBuilder extends OpenAPISupport.Builder<MPOpenAPIBuil
 
     private static final Logger LOGGER = Logger.getLogger(MPOpenAPIBuilder.class.getName());
 
-    private Optional<OpenApiConfig> openAPIConfig;
+    private static final OpenApiConfig NON_FILTERING_OPEN_API_CONFIG = new OpenApiConfig() { };
+
+    private OpenApiConfig openAPIConfig;
 
     /*
      * Provided by the OpenAPI CDI extension for retrieving a single IndexView of all scanned types for the single-app or
@@ -66,7 +75,7 @@ public final class MPOpenAPIBuilder extends OpenAPISupport.Builder<MPOpenAPIBuil
 
     @Override
     public OpenApiConfig openAPIConfig() {
-        return openAPIConfig.get();
+        return openAPIConfig;
     }
 
     @Override
@@ -95,34 +104,85 @@ public final class MPOpenAPIBuilder extends OpenAPISupport.Builder<MPOpenAPIBuil
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Builds a list of filtered index views, one for each JAX-RS application, sorted by the Application class name to help
+     * keep the list of endpoints in the OpenAPI document in a stable order.
+     * <p>
+     * First, we find all resource, provider, and feature classes present in the index. This is the same for all
+     * applications.
+     * </p>
+     * <p>
+     * Each filtered index view is tuned to one JAX-RS application.
+     *
+     * @return list of {@code FilteredIndexView}s, one per JAX-RS application
+     */
     private List<FilteredIndexView> buildPerAppFilteredIndexViews() {
-        /*
-         * Some JaxRsApplication instances might have an application instance already associated with them. Others might not in
-         * which case we'll try to instantiate them ourselves (unless they are synthetic apps or lack no-args constructors).
-         *
-         * Each set in the list holds the classes related to one app.
-         *
-         * Sort the stream by the Application class name to help keep the list of endpoints in the OpenAPI document in a stable
-         * order.
-         */
-        List<Set<Class<?>>> appClassesToScan = jaxRsApplicationsToRun().stream()
-                .filter(jaxRsApplication -> jaxRsApplication.applicationClass().isPresent())
+
+        List<JaxRsApplication> jaxRsApplications = jaxRsApplicationsToRun().stream()
+                .filter(jaxRsApp -> jaxRsApp.applicationClass().isPresent())
                 .sorted(Comparator.comparing(jaxRsApplication -> jaxRsApplication.applicationClass()
                         .get()
                         .getName()))
-                .map(this::classesToScanForJaxRsApp)
                 .collect(Collectors.toList());
 
-        if (appClassesToScan.size() <= 1) {
-            /*
-             * Use normal scanning with a FilteredIndexView containing no class restrictions (beyond what might already be in
-             * the configuration).
-             */
-            return List.of(new FilteredIndexView(singleIndexViewSupplier.get(), openAPIConfig.get()));
-        }
-        return appClassesToScan.stream()
-                .map(this::appRelatedClassesToFilteredIndexView)
+        IndexView indexView = singleIndexViewSupplier.get();
+
+        Set<String> ancillaryClassNames = ancillaryClassNames(indexView);
+
+        /*
+         * Filter even for a single-application class in case it implements getClasses or getSingletons.
+         */
+        return jaxRsApplications.stream()
+                .map(jaxRsApp -> filteredIndexView(jaxRsApplications,
+                                                   jaxRsApp,
+                                                   ancillaryClassNames))
                 .collect(Collectors.toList());
+    }
+
+    private static Set<String> ancillaryClassNames(IndexView indexView) {
+        Set<String> result = new HashSet<>(resourceClassNames(indexView));
+        result.addAll(providerClassNames(indexView));
+        result.addAll(featureClassNames(indexView));
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.log(Level.FINER, "Ancillary classes: {0}", result);
+        }
+        return result;
+    }
+
+    private static Set<String> resourceClassNames(IndexView indexView) {
+        return annotatedClassNames(indexView, Path.class);
+    }
+
+    private static Set<String> providerClassNames(IndexView indexView) {
+        return annotatedClassNames(indexView, Provider.class);
+    }
+
+    private static Set<String> featureClassNames(IndexView indexView) {
+        return annotatedClassNames(indexView, Feature.class);
+    }
+
+    private static Set<String> annotatedClassNames(IndexView indexView, Class<?> annotationClass) {
+        // Partially inspired by the SmallRye code.
+        return indexView
+                .getAnnotations(DotName.createSimple(annotationClass.getName()))
+                .stream()
+                .map(AnnotationInstance::target)
+                .filter(target -> target.kind() == AnnotationTarget.Kind.CLASS)
+                .map(AnnotationTarget::asClass)
+                .filter(classInfo -> hasImplementationOrIsIncluded(indexView, classInfo))
+                .map(ClassInfo::toString)
+                .collect(Collectors.toSet());
+    }
+
+    private static boolean hasImplementationOrIsIncluded(IndexView indexView, ClassInfo classInfo) {
+        // Partially inspired by the SmallRye code.
+        return !Modifier.isInterface(classInfo.flags())
+                || indexView.getAllKnownImplementors(classInfo.name()).stream()
+                       .anyMatch(MPOpenAPIBuilder::isConcrete);
+    }
+
+    private static boolean isConcrete(ClassInfo classInfo) {
+        return Modifier.isAbstract(classInfo.flags());
     }
 
     private static boolean isNonSynthetic(JaxRsApplication jaxRsApp) {
@@ -130,65 +190,118 @@ public final class MPOpenAPIBuilder extends OpenAPISupport.Builder<MPOpenAPIBuil
     }
 
     /**
-     * Returns the classes that should be scanned for the given JAX-RS application.
+     * Creates a {@link io.smallrye.openapi.runtime.scanner.FilteredIndexView} tailored to the specified JAX-RS application.
      * <p>
-     *     This should always run after the server has instantiated the {@code Application}
-     *     instance for each JAX-RS application, so we just
-     *     use it to invoke {@code getClasses} and {@code getSingletons}.
+     *     Use a {@link io.smallrye.openapi.api.OpenApiConfig} instance which (possibly) limits scanning for this application
+     *     by excluding classes that are not "relevant" to the specified application. For our purposes, the classes "relevant"
+     *     to an application are those:
+     * <ul>
+     *     <li>returned by the application's getClasses method, and</li>
+     *     <li>inferred from the objects returned from the application's getSingletons method.</li>
+     * </ul>
+     *
+     * If both methods return empty sets (the default implementation in {@link javax.ws.rs.core.Application}), then all
+     * resources, providers, and features are considered relevant to the application.
+     * <p>
+     * In constructing the filtered index view for a JAX-RS application, we exclude the other JAX-RS application classes and
+     * any resource, provider, and feature classes not relevant to the application.
      * </p>
-     * @param jaxRsApplication
-     * @return Set of classes to be scanned for annotations related to OpenAPI
+     *
+     * @param jaxRsApplications all JAX-RS applications discovered
+     * @param jaxRsApp the specific JAX-RS application of interest
+     * @param ancillaryClassNames names of resource, provider, and feature classes
+     * @return the filtered index view suitable for the specified JAX-RS application
      */
-    private Set<Class<?>> classesToScanForJaxRsApp(JaxRsApplication jaxRsApplication) {
-        if (jaxRsApplication.synthetic()) {
-            return Collections.emptySet();
-        }
-        Set<Class<?>> result = new HashSet<>();
-        Class<? extends Application> appClass = jaxRsApplication.applicationClass()
-                .get(); // known to be present because of how this method is invoked
-        result.add(appClass);
-        Application app = jaxRsApplication.resourceConfig().getApplication();
-
-        if (app != null) {
-            result.addAll(classesToScanForAppInstance(app));
-        } else {
-            LOGGER.log(Level.WARNING, String.format("Expected application instance not created yet for %s",
-                    appClass.getName()));
-        }
-        return result;
-    }
-
-    private List<Class<?>> classesToScanForAppInstance(Application app) {
-        List<Class<?>> result = new ArrayList<>();
-
-        result.addAll(app.getClasses());
-        app.getSingletons().stream()
-                .map(Object::getClass)
-                .forEach(result::add);
-
-        return result;
-    }
-
-    private FilteredIndexView appRelatedClassesToFilteredIndexView(Set<Class<?>> appRelatedClassesToScan) {
+    private FilteredIndexView filteredIndexView(List<JaxRsApplication> jaxRsApplications,
+                                                JaxRsApplication jaxRsApp,
+                                                Set<String> ancillaryClassNames) {
         /*
-         * Create an OpenAPIConfig instance to limit scanning to this app's classes by overriding any inclusions of classes or
-         * packages specified in the config with our own inclusions based on this app's classes.
+         * If the classes to be ignored are A and B, the exclusion regex expression we want for filtering is
+         *
+         * ^(A|B)$
+         *
+         * The ^ and $ avoid incorrect prefix/suffix matches.
          */
-        Pattern appRelatedClassesPattern = Pattern.compile(
-                appRelatedClassesToScan.stream()
-                        .map(Class::getName)
+
+        IndexView indexView = singleIndexViewSupplier.get();
+
+        Application app = jaxRsApp.resourceConfig().getApplication();
+        Set<String> classesExplicitlyReferenced = Stream.concat(app.getClasses().stream(),
+                                                                app.getSingletons().stream()
+                                                                        .map(Object::getClass))
+                .map(Class::getName)
+                .collect(Collectors.toSet());
+
+        String appClassName = toClassName(jaxRsApp);
+
+        if (classesExplicitlyReferenced.isEmpty() && jaxRsApplications.size() == 1) {
+            // No need to do filtering at all.
+            if (LOGGER.isLoggable(Level.FINE)) {
+                LOGGER.log(Level.FINE, String.format(
+                        "No filtering required for %s which reports no explicitly referenced classes and "
+                                + "is the only JAX-RS application",
+                        appClassName));
+            }
+            return new FilteredIndexView(indexView, NON_FILTERING_OPEN_API_CONFIG);
+        }
+
+        Pattern excludePattern = Pattern.compile(
+                classNamesToIgnore(jaxRsApplications,
+                                   jaxRsApp,
+                                   ancillaryClassNames,
+                                   classesExplicitlyReferenced)
+                        .stream()
                         .map(Pattern::quote)
-                        .map(name -> "^" + name + "$") // avoid false prefix matches
-                        .collect(Collectors.joining("|", "(", ")")));
+                        .collect(Collectors.joining("|", "^(", ")$")));
 
         FilteredIndexView result = new FilteredIndexView(singleIndexViewSupplier.get(),
-                new FilteringOpenApiConfigImpl(mpConfig, appRelatedClassesPattern));
+                                                         new FilteringOpenApiConfigImpl(mpConfig, excludePattern));
         if (LOGGER.isLoggable(Level.FINE)) {
-            LOGGER.log(Level.FINE, String.format("FilteredIndexView for %n"
-                    + "  application classes %s%n"
-                    + "  will use pattern: %s%n"
-                    + "  with known classes %s",
-                    appRelatedClassesToScan, appRelatedClassesPattern, result.getKnownClasses()));
+            String knownClassNames = result
+                    .getKnownClasses()
+                    .stream()
+                    .map(ClassInfo::toString)
+                    .sorted()
+                    .collect(Collectors.joining("," + System.lineSeparator() + "    "));
+            LOGGER.log(Level.FINE,
+                       String.format("FilteredIndexView for %n"
+                                             + "  application class %s%n"
+                                             + "  with explicitly-referenced classes %s%n"
+                                             + "  yields exclude pattern: %s%n"
+                                             + "  and known classes: %n  %s",
+                                     appClassName,
+                                     classesExplicitlyReferenced,
+                                     excludePattern,
+                                     knownClassNames));
+        }
+
+        return result;
+    }
+
+    private static String toClassName(JaxRsApplication jaxRsApplication) {
+        return jaxRsApplication.applicationClass()
+                .map(Class::getName)
+                .orElse("<unknown>");
+    }
+
+    private static Set<String> classNamesToIgnore(List<JaxRsApplication> jaxRsApplications,
+                                                  JaxRsApplication jaxRsApp,
+                                                  Set<String> ancillaryClassNames,
+                                                  Set<String> classesExplicitlyReferenced) {
+
+        String appClassName = toClassName(jaxRsApp);
+
+        Set<String> result = // Start with all other JAX-RS app names.
+                jaxRsApplications.stream()
+                        .map(MPOpenAPIBuilder::toClassName)
+                        .filter(candidateName -> !candidateName.equals("<unknown>") && !candidateName.equals(appClassName))
+                        .collect(Collectors.toSet());
+
+        if (!classesExplicitlyReferenced.isEmpty()) {
+            // This class identified resource, provider, or feature classes it uses. Ignore all ancillary classes that this app
+            // does not explicitly reference.
+            result.addAll(ancillaryClassNames);
+            result.removeAll(classesExplicitlyReferenced);
         }
 
         return result;
@@ -196,16 +309,16 @@ public final class MPOpenAPIBuilder extends OpenAPISupport.Builder<MPOpenAPIBuil
 
     private static class FilteringOpenApiConfigImpl extends OpenApiConfigImpl {
 
-        private final Pattern appRelatedClassNamesToScan;
+        private final Pattern classesToExclude;
 
-        FilteringOpenApiConfigImpl(Config config, Pattern appRelatedClassNamesToScan) {
+        FilteringOpenApiConfigImpl(Config config, Pattern classesToExclude) {
             super(config);
-            this.appRelatedClassNamesToScan = appRelatedClassNamesToScan;
+            this.classesToExclude = classesToExclude;
         }
 
         @Override
-        public Pattern scanClasses() {
-            return appRelatedClassNamesToScan;
+        public Pattern scanExcludeClasses() {
+            return classesToExclude;
         }
     }
 
@@ -217,14 +330,13 @@ public final class MPOpenAPIBuilder extends OpenAPISupport.Builder<MPOpenAPIBuil
      * @return updated builder instance
      */
     private MPOpenAPIBuilder openAPIConfig(OpenApiConfig config) {
-        this.openAPIConfig = Optional.of(config);
+        this.openAPIConfig = config;
         return this;
     }
 
     MPOpenAPIBuilder config(Config mpConfig) {
         this.mpConfig = mpConfig;
-        openAPIConfig(new OpenApiConfigImpl(mpConfig));
-        return this;
+        return openAPIConfig(new OpenApiConfigImpl(mpConfig));
     }
 
     MPOpenAPIBuilder singleIndexViewSupplier(Supplier<? extends IndexView> singleIndexViewSupplier) {
@@ -240,7 +352,7 @@ public final class MPOpenAPIBuilder extends OpenAPISupport.Builder<MPOpenAPIBuil
     @Override
     public void validate() throws IllegalStateException {
         super.validate();
-        if (!openAPIConfig.isPresent()) {
+        if (openAPIConfig == null) {
             throw new IllegalStateException("OpenApiConfig has not been set in MPBuilder");
         }
         Objects.requireNonNull(singleIndexViewSupplier, "singleIndexViewSupplier must be set but was not");
