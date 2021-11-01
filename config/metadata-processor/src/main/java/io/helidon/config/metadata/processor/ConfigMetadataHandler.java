@@ -700,10 +700,7 @@ class ConfigMetadataHandler {
     }
 
     static List<AllowedValue> allowedValues(Elements elementUtils, TypeElement typeElement) {
-        if (typeElement == null){
-            throw new IllegalArgumentException("Argument type not valid!");
-        }
-        if (typeElement.getKind() == ElementKind.ENUM) {
+        if (typeElement != null && typeElement.getKind() == ElementKind.ENUM) {
             return typeElement.getEnclosedElements()
                     .stream()
                     .filter(element -> element.getKind().equals(ElementKind.ENUM_CONSTANT))
@@ -719,7 +716,6 @@ class ConfigMetadataHandler {
             // or allowed values explicitly configured in annotation
             return annotation.allowedValues;
         }
-        elementUtils.getTypeElement(type);
         return allowedValues(elementUtils, elementUtils.getTypeElement(type));
     }
 
