@@ -7,7 +7,18 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
-## [2.4.0-SNAPSHOT]
+## [2.4.1-SNAPSHOT]
+
+This is a bugfix release of Helidon. 
+
+### Compatibility
+
+2.4.1 is API compatible with 2.3.0.
+
+### CHANGES
+
+
+## [2.4.0]
 
 This is a minor release of Helidon. It contains bug fixes and enhancements. Some key new features:
 
@@ -77,6 +88,7 @@ Thanks to the following community members for contributing fixes or enhancements
 - Tests: Add JUnit profiles #3115 [3391](https://github.com/oracle/helidon/pull/3391)
 - Test: Intermittent issue fix [3471](https://github.com/oracle/helidon/pull/3471)
 - Serailization: JEP-290, SerialConfig support [3201](https://github.com/oracle/helidon/pull/3201)
+- Security: OIDC redirect host [3584](https://github.com/oracle/helidon/pull/3584)
 - Security: Signed JWT should use base64 with no-padding when creating a token. [3419](https://github.com/oracle/helidon/pull/3419)
 - Security: OIDC logout [3456](https://github.com/oracle/helidon/pull/3456)
 - Security: OIDC config Refactoring [3277](https://github.com/oracle/helidon/pull/3277)
@@ -115,6 +127,7 @@ Thanks to the following community members for contributing fixes or enhancements
 - Metrics: Avoid exemplar labels such as {} [3266](https://github.com/oracle/helidon/pull/3266)
 - Metrics: Allow metrics-capable components to work in absence of full-featured metrics [3441](https://github.com/oracle/helidon/pull/3441)
 - Metrics: Allow HelidonConcurrentGauge to use a Clock; update test to avoid real waits  [3348](https://github.com/oracle/helidon/pull/3348)
+- Metrics: Allow disabling of metrics by registry type and/or name patterns [3573](https://github.com/oracle/helidon/pull/3573)
 - Metrics: Adds MicroProfile Metrics to Hikari CP [2826](https://github.com/oracle/helidon/pull/2826)
 - Metrics: Add the KPI metrics handler (with no qualifying path) exactly once to each routing [3255](https://github.com/oracle/helidon/pull/3255)
 - Metrics and routings [3260](https://github.com/oracle/helidon/pull/3260)
@@ -169,7 +182,6 @@ Thanks to the following community members for contributing fixes or enhancements
 - Dependencies: Upgrade jaeger-client to 1.6.0 [3233](https://github.com/oracle/helidon/pull/3233)
 - Dependencies: Upgrade google-api-client to 1.32.2 [3563](https://github.com/oracle/helidon/pull/3563)
 - Dependencies: Upgrade brave-opentracing to 1.0.0 [3252](https://github.com/oracle/helidon/pull/3252)
-- Dependencies: Upgrade GraalVM to version 21.1.0 [3193](https://github.com/oracle/helidon/pull/3193)
 - Dependencies: Upgrade GraalVM to 21.3.0 [3578](https://github.com/oracle/helidon/pull/3578)
 - Dependencies: Removes duplicate JTA API jars where appropriate [3317](https://github.com/oracle/helidon/pull/3317)
 - Dependencies: Remove bad javax.injects exclusion [3325](https://github.com/oracle/helidon/pull/3325)
@@ -1687,7 +1699,8 @@ If there is no authorization provider configured, ABAC provider will be configur
       otherwise they are ignored
 
 
-[2.4.0-SNAPSHOT]: https://github.com/oracle/helidon/compare/2.3.4...HEAD
+[2.4.1-SNAPSHOT]: https://github.com/oracle/helidon/compare/2.4.0...HEAD
+[2.4.0]: https://github.com/oracle/helidon/compare/2.3.4...2.4.0
 [2.3.4]: https://github.com/oracle/helidon/compare/2.3.3...2.3.4
 [2.3.3]: https://github.com/oracle/helidon/compare/2.3.2...2.3.3
 [2.3.2]: https://github.com/oracle/helidon/compare/2.3.1...2.3.2
