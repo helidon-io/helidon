@@ -34,6 +34,7 @@
 
         <module>exemplar</module>
         <module>kpi</module>
+        <module>filtering</module>
     </modules>
 
 </project>

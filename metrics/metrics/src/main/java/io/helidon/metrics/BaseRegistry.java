@@ -204,7 +204,7 @@ final class BaseRegistry extends Registry {
     private final MetricsSettings metricsSettings;
 
     private BaseRegistry(MetricsSettings metricsSettings) {
-        super(Type.BASE);
+        super(Type.BASE, metricsSettings.registrySettings(Type.BASE));
         this.metricsSettings = metricsSettings;
     }
 
@@ -280,7 +280,8 @@ final class BaseRegistry extends Registry {
     }
 
     private static void register(BaseRegistry registry, Metadata meta, Metric metric, Tag... tags) {
-        if (registry.metricsSettings.baseMetricsSettings().isBaseMetricEnabled(meta.getName())) {
+        if (registry.metricsSettings.baseMetricsSettings().isBaseMetricEnabled(meta.getName())
+            && registry.metricsSettings.isMetricEnabled(Type.BASE, meta.getName())) {
             registry.register(meta, metric, tags);
         }
     }

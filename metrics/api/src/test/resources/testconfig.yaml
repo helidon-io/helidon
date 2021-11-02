@@ -41,3 +41,36 @@ withRESTSettings:
   metrics:
     web-context: /mycontext
     routing: my-routing
+
+withOneRegistrySettings:
+  metrics:
+    registries:
+      - type: application
+        enabled: false
+
+withTwoRegistrySettings:
+  metrics:
+    enabled: false
+    registries:
+      - type: vendor
+        filter:
+          exclude: 'vendor\.nogood\..*'
+      - type: base
+        enabled: false
+        filter:
+          include: 'base\.good\..*'
+
+registrySettingsWithBadFilterSyntax:
+  metrics:
+    registries:
+      - type: application
+        filter:
+          include: 'ok'
+          exclude: 'bad('
+
+withSimpleFilter:
+  metrics:
+    registries:
+      - type: application
+        filter:
+          include: 'app\.ok\..*'
