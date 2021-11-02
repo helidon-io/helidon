@@ -46,7 +46,7 @@ public class HelidonFormatter extends SimpleFormatter {
     private final Set<String> parsedProps = new HashSet<>();
     private final boolean thread;
 
-    HelidonFormatter() {
+    public HelidonFormatter() {
         thread = format.contains(THREAD_TOKEN) || format.contains("%X{" + THREAD + "}");
         Matcher matcher = X_VALUE.matcher(format);
         while (matcher.find()) {
