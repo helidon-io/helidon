@@ -61,7 +61,7 @@ public class TestNoOpRegistry {
                 .withType(MetricType.SIMPLE_TIMER)
                 .build();
         String metricName = "myOwnSimpleTimer";
-        SimpleTimer simpleTimer = NoOpMetric.NoOpSimpleTimer.create(MetricRegistry.Type.APPLICATION.getName(), metadata);
+        SimpleTimer simpleTimer = NoOpMetricImpl.NoOpSimpleTimerImpl.create(MetricRegistry.Type.APPLICATION.getName(), metadata);
         appRegistry.register(metricName, simpleTimer);
         Assertions.assertThrows(IllegalArgumentException.class,
                                 () -> appRegistry.register(metricName, simpleTimer),

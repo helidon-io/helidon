@@ -53,21 +53,21 @@
 -->
 <suppress>
    <notes><![CDATA[
-   file name: graal-sdk-21.1.0.jar
+   file name: graal-sdk-21.3.0.jar
    ]]></notes>
    <packageUrl regex="true">^pkg:maven/org\.graalvm.*/.*@.*$</packageUrl>
    <cve>CVE-2021-2341</cve>
 </suppress>
 <suppress>
    <notes><![CDATA[
-   file name: graal-sdk-21.1.0.jar
+   file name: graal-sdk-21.3.0.jar
    ]]></notes>
    <packageUrl regex="true">^pkg:maven/org\.graalvm.*/.*@.*$</packageUrl>
    <cve>CVE-2021-2369</cve>
 </suppress>
 <suppress>
    <notes><![CDATA[
-   file name: graal-sdk-21.1.0.jar
+   file name: graal-sdk-21.3.0.jar
    ]]></notes>
    <packageUrl regex="true">^pkg:maven/org\.graalvm.*/.*@.*$</packageUrl>
    <cve>CVE-2021-2388</cve>
@@ -104,11 +104,12 @@
 -->
 <suppress>
    <notes><![CDATA[
-   file name: google-http-client-1.37.0.jar
+   file name: google-http-client-apache-v2-1.40.1.jar
    ]]></notes>
-   <packageUrl regex="true">^pkg:maven/com\.google\.http\-client/google\-http\-client@.*$</packageUrl>
-   <cpe>cpe:/a:apache:httpclient</cpe>
+   <packageUrl regex="true">^pkg:maven/com\.google\.http\-client/google\-http\-client\-apache\-v2@.*$</packageUrl>
+   <cve>CVE-2020-13956</cve>
 </suppress>
+
 
 <!-- This CVE is against Neo4j through 3.4.18. We use Neo4j 4.2.4
      Helidon's Neo4j integration triggered a false positive due to it's 
@@ -129,7 +130,7 @@
    <notes><![CDATA[
    file name: neo4j-java-driver-4.2.4.jar (shaded: io.netty:netty-transport:4.1.60.Final)
    ]]></notes>
-   <packageUrl regex="true">^pkg:maven/io\.netty/netty\-.*@.*$</packageUrl>
+   <filePath regex="true">.*/neo4j\-java\-driver\-4\.2\.4\.jar.*</filePath>
    <cve>CVE-2021-21409</cve>
 </suppress>
 
