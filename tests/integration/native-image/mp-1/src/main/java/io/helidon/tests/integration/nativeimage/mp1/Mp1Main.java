@@ -31,8 +31,6 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.spi.CDI;
@@ -65,9 +63,6 @@ import static io.helidon.common.http.Http.Status.UNAUTHORIZED_401;
  * Main class of this integration test.
  */
 public final class Mp1Main {
-
-    private static final Logger LOGGER = Logger.getLogger(Mp1Main.class.getName());
-
     /**
      * Cannot be instantiated.
      */
@@ -388,11 +383,7 @@ public final class Mp1Main {
         JsonObject openApi = target.path("/openapi")
                 .request(MediaType.APPLICATION_JSON)
                 .get(JsonObject.class);
-        String openApiDocument = target.path("/openapi")
-                .request(MediaType.TEXT_PLAIN)
-                .get(String.class);
 
-        LOGGER.log(Level.FINE, "OpenAPI document received" + openApiDocument);
         // make sure we have all our applications, and for one method check annots are processed
         JsonObject info = openApi.getJsonObject("info");
         String expected = "Generated API";
@@ -425,7 +416,6 @@ public final class Mp1Main {
     }
 
     private static void checkDescription(Errors.Collector collector, JsonObject openApi, String path, String expected) {
-        try {
         String actual = openApi.getJsonObject("paths")
                 .getJsonObject(path)
                 .getJsonObject("get")
@@ -439,10 +429,6 @@ public final class Mp1Main {
 
         collector.fatal("OpenAPI", "Description on path " + path + " should be \""
                 + expected + "\", but is \"" + actual + "\"");
-
-        } catch (NullPointerException npe) {
-            LOGGER.log(Level.FINE, "NPE with path " + path, npe);
-        }
     }
 
     private static void checkJsonContentType(Errors.Collector collector, JsonObject openApi, String path) {
