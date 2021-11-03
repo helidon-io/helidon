@@ -27,7 +27,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.enterprise.inject.spi.CDI;
 import javax.ws.rs.Path;
@@ -54,11 +53,14 @@ import org.jboss.jandex.IndexView;
  */
 public final class MPOpenAPIBuilder extends OpenAPISupport.Builder<MPOpenAPIBuilder> {
 
+    private static final String USE_JAXRS_SEMANTICS_CONFIG_KEY = "mp.openapi.extensions.helidon-use-jaxrs-semantics";
+    private static final boolean USE_JAXRS_SEMANTICS_DEFAULT = true;
+
     private static final Logger LOGGER = Logger.getLogger(MPOpenAPIBuilder.class.getName());
 
-    private static final OpenApiConfig NON_FILTERING_OPEN_API_CONFIG = new OpenApiConfig() { };
-
     private OpenApiConfig openAPIConfig;
+
+    private boolean useJaxRsSemantics = true;
 
     /*
      * Provided by the OpenAPI CDI extension for retrieving a single IndexView of all scanned types for the single-app or
@@ -87,8 +89,6 @@ public final class MPOpenAPIBuilder extends OpenAPISupport.Builder<MPOpenAPIBuil
     /**
      * Returns the {@code JaxRsApplication} instances that should be run, according to the JAX-RS CDI extension.
      *
-     * This excludes synthetic applications that are ad hoc collections of otherwise unassociated JAX-RS resources.
-     *
      * @return List of JaxRsApplication instances that should be run
      */
     static List<JaxRsApplication> jaxRsApplicationsToRun() {
@@ -96,11 +96,7 @@ public final class MPOpenAPIBuilder extends OpenAPISupport.Builder<MPOpenAPIBuil
                 .getBeanManager()
                 .getExtension(JaxRsCdiExtension.class);
 
-        List<JaxRsApplication> jaxRsAppsToRun = ext.applicationsToRun();
-
-        return jaxRsAppsToRun.stream()
-                .filter(MPOpenAPIBuilder::isNonSynthetic)
-                .collect(Collectors.toList());
+        return ext.applicationsToRun();
     }
 
     /**
@@ -126,13 +122,15 @@ public final class MPOpenAPIBuilder extends OpenAPISupport.Builder<MPOpenAPIBuil
 
         IndexView indexView = singleIndexViewSupplier.get();
 
-        Set<String> ancillaryClassNames = ancillaryClassNames(indexView);
+        FilteredIndexView viewFilteredByConfig = new FilteredIndexView(indexView, OpenApiConfigImpl.fromConfig(mpConfig));
+        Set<String> ancillaryClassNames = ancillaryClassNames(viewFilteredByConfig);
 
         /*
          * Filter even for a single-application class in case it implements getClasses or getSingletons.
          */
         return jaxRsApplications.stream()
-                .map(jaxRsApp -> filteredIndexView(jaxRsApplications,
+                .map(jaxRsApp -> filteredIndexView(viewFilteredByConfig,
+                                                   jaxRsApplications,
                                                    jaxRsApp,
                                                    ancillaryClassNames))
                 .collect(Collectors.toList());
@@ -181,57 +179,51 @@ public final class MPOpenAPIBuilder extends OpenAPISupport.Builder<MPOpenAPIBuil
     }
 
     private static boolean isConcrete(ClassInfo classInfo) {
-        return Modifier.isAbstract(classInfo.flags());
-    }
-
-    private static boolean isNonSynthetic(JaxRsApplication jaxRsApp) {
-        return !jaxRsApp.synthetic();
+        return !Modifier.isAbstract(classInfo.flags());
     }
 
     /**
      * Creates a {@link io.smallrye.openapi.runtime.scanner.FilteredIndexView} tailored to the specified JAX-RS application.
      * <p>
-     *     Use a {@link io.smallrye.openapi.api.OpenApiConfig} instance which (possibly) limits scanning for this application
+     *     Use an {@link io.smallrye.openapi.api.OpenApiConfig} instance which (possibly) limits scanning for this application
      *     by excluding classes that are not "relevant" to the specified application. For our purposes, the classes "relevant"
      *     to an application are those:
      * <ul>
-     *     <li>returned by the application's getClasses method, and</li>
-     *     <li>inferred from the objects returned from the application's getSingletons method.</li>
+     *     <li>returned by the application's {@code getClasses} method, and</li>
+     *     <li>inferred from the objects returned from the application's {@code getSingletons} method.</li>
      * </ul>
      *
      * If both methods return empty sets (the default implementation in {@link javax.ws.rs.core.Application}), then all
      * resources, providers, and features are considered relevant to the application.
      * <p>
-     * In constructing the filtered index view for a JAX-RS application, we exclude the other JAX-RS application classes and
-     * any resource, provider, and feature classes not relevant to the application.
+     * In constructing the filtered index view for a JAX-RS application, we also exclude the other JAX-RS application classes.
      * </p>
      *
+     * @param viewFilteredByConfig filtered index view based only on MP config
      * @param jaxRsApplications all JAX-RS applications discovered
      * @param jaxRsApp the specific JAX-RS application of interest
      * @param ancillaryClassNames names of resource, provider, and feature classes
      * @return the filtered index view suitable for the specified JAX-RS application
      */
-    private FilteredIndexView filteredIndexView(List<JaxRsApplication> jaxRsApplications,
+    private FilteredIndexView filteredIndexView(FilteredIndexView viewFilteredByConfig,
+                                                List<JaxRsApplication> jaxRsApplications,
                                                 JaxRsApplication jaxRsApp,
                                                 Set<String> ancillaryClassNames) {
-        /*
-         * If the classes to be ignored are A and B, the exclusion regex expression we want for filtering is
-         *
-         * ^(A|B)$
-         *
-         * The ^ and $ avoid incorrect prefix/suffix matches.
-         */
-
-        IndexView indexView = singleIndexViewSupplier.get();
-
         Application app = jaxRsApp.resourceConfig().getApplication();
-        Set<String> classesExplicitlyReferenced = Stream.concat(app.getClasses().stream(),
-                                                                app.getSingletons().stream()
-                                                                        .map(Object::getClass))
+
+        Set<String> classesFromGetSingletons = app.getSingletons().stream()
+                .map(Object::getClass)
+                .map(Class::getName)
+                .collect(Collectors.toSet());
+
+        Set<String> classesFromGetClasses = app.getClasses().stream()
                 .map(Class::getName)
                 .collect(Collectors.toSet());
 
         String appClassName = toClassName(jaxRsApp);
+
+        Set<String> classesExplicitlyReferenced = new HashSet<>(classesFromGetClasses);
+        classesExplicitlyReferenced.addAll(classesFromGetSingletons);
 
         if (classesExplicitlyReferenced.isEmpty() && jaxRsApplications.size() == 1) {
             // No need to do filtering at all.
@@ -241,9 +233,34 @@ public final class MPOpenAPIBuilder extends OpenAPISupport.Builder<MPOpenAPIBuil
                                 + "is the only JAX-RS application",
                         appClassName));
             }
-            return new FilteredIndexView(indexView, NON_FILTERING_OPEN_API_CONFIG);
+            return viewFilteredByConfig;
         }
 
+        // Also, perform no further filtering if there is exactly one application and we found no classes from getClasses and,
+        // although we found classes from getSingletons, the useJaxRsSemantics setting has been turned off.
+        //
+        // Note that the MP OpenAPI TCK does not follow JAX-RS behavior if the application class returns a non-empty set from
+        // getSingletons; in that case, the TCK incorrectly expects the endpoints defined by other resources as well to appear
+        // in the OpenAPI document.
+        if ((classesFromGetClasses.isEmpty()
+                     && (classesFromGetSingletons.isEmpty() || !useJaxRsSemantics))
+                && jaxRsApplications.size() == 1) {
+            if (LOGGER.isLoggable(Level.FINE)) {
+                LOGGER.log(Level.FINE, String.format(
+                        "No filtering required for %s; although it returns a non-empty set from getSingletons, JAX-RS semantics "
+                                + "has been turned off for OpenAPI processing using " + USE_JAXRS_SEMANTICS_CONFIG_KEY,
+                        appClassName));
+            }
+            return viewFilteredByConfig;
+        }
+
+        /*
+         * If the classes to be ignored are A and B, the exclusion regex expression we want for filtering is
+         *
+         * ^(A|B)$
+         *
+         * The ^ and $ avoid incorrect prefix/suffix matches.
+         */
         Pattern excludePattern = Pattern.compile(
                 classNamesToIgnore(jaxRsApplications,
                                    jaxRsApp,
@@ -253,7 +270,9 @@ public final class MPOpenAPIBuilder extends OpenAPISupport.Builder<MPOpenAPIBuil
                         .map(Pattern::quote)
                         .collect(Collectors.joining("|", "^(", ")$")));
 
-        FilteredIndexView result = new FilteredIndexView(singleIndexViewSupplier.get(),
+        // Create a new filtered index view for this application which excludes the irrelevant classes we just identified. Its
+        // delegate is the previously-created view based only on the MP configuration.
+        FilteredIndexView result = new FilteredIndexView(viewFilteredByConfig,
                                                          new FilteringOpenApiConfigImpl(mpConfig, excludePattern));
         if (LOGGER.isLoggable(Level.FINE)) {
             String knownClassNames = result
@@ -335,6 +354,9 @@ public final class MPOpenAPIBuilder extends OpenAPISupport.Builder<MPOpenAPIBuil
 
     MPOpenAPIBuilder config(Config mpConfig) {
         this.mpConfig = mpConfig;
+        useJaxRsSemantics = mpConfig
+                .getOptionalValue(USE_JAXRS_SEMANTICS_CONFIG_KEY, Boolean.class)
+                .orElse(USE_JAXRS_SEMANTICS_DEFAULT);
         return openAPIConfig(new OpenApiConfigImpl(mpConfig));
     }
 
