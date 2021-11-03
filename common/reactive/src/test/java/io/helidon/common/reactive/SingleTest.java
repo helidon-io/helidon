@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,10 +50,30 @@ public class SingleTest {
     @Test
     public void testJust() {
         SingleTestSubscriber<String> subscriber = new SingleTestSubscriber<>();
-        Single.<String>just("foo").subscribe(subscriber);
+        Single.just("foo").subscribe(subscriber);
         assertThat(subscriber.isComplete(), is(equalTo(true)));
         assertThat(subscriber.getLastError(), is(nullValue()));
         assertThat(subscriber.getItems(), hasItems("foo"));
+    }
+    @Test
+    public void testCreateSupplier() {
+        SingleTestSubscriber<String> subscriber = new SingleTestSubscriber<>();
+        Single.create(() -> "foo").subscribe(subscriber);
+        assertThat(subscriber.isComplete(), is(equalTo(true)));
+        assertThat(subscriber.getLastError(), is(nullValue()));
+        assertThat(subscriber.getItems(), hasItems("foo"));
+    }
+
+    @Test
+    public void testCreateSupplierWithError() {
+        RuntimeException error = new RuntimeException("BOOM");
+        SingleTestSubscriber<String> subscriber = new SingleTestSubscriber<>();
+        Single.<String>create(() -> {
+            throw error;
+        }).subscribe(subscriber);
+        assertThat(subscriber.isComplete(), is(equalTo(false)));
+        assertThat(subscriber.getLastError(), is(error));
+        assertThat(subscriber.getItems(), empty());
     }
 
     @Test
@@ -65,7 +85,22 @@ public class SingleTest {
                 subscription.request(Long.MAX_VALUE);
             }
         };
-        Single.<String>just("foo").subscribe(subscriber);
+        Single.just("foo").subscribe(subscriber);
+        assertThat(subscriber.isComplete(), is(equalTo(false)));
+        assertThat(subscriber.getLastError(), is(nullValue()));
+        assertThat(subscriber.getItems(), is(empty()));
+    }
+
+    @Test
+    public void testCreateSupplierCanceledSubscription() {
+        SingleTestSubscriber<String> subscriber = new SingleTestSubscriber<String>() {
+            @Override
+            public void onSubscribe(Subscription subscription) {
+                subscription.cancel();
+                subscription.request(Long.MAX_VALUE);
+            }
+        };
+        Single.create(() -> "foo").subscribe(subscriber);
         assertThat(subscriber.isComplete(), is(equalTo(false)));
         assertThat(subscriber.getLastError(), is(nullValue()));
         assertThat(subscriber.getItems(), is(empty()));
@@ -79,7 +114,21 @@ public class SingleTest {
                 subscription.request(-1);
             }
         };
-        Single.<String>just("foo").subscribe(subscriber);
+        Single.just("foo").subscribe(subscriber);
+        assertThat(subscriber.isComplete(), is(equalTo(false)));
+        assertThat(subscriber.getLastError(), instanceOf(IllegalArgumentException.class));
+        assertThat(subscriber.getItems(), is(empty()));
+    }
+
+    @Test
+    public void testCreateSupplierNegativeSubscription() {
+        SingleTestSubscriber<String> subscriber = new SingleTestSubscriber<String>() {
+            @Override
+            public void onSubscribe(Subscription subscription) {
+                subscription.request(-1);
+            }
+        };
+        Single.create(() -> "foo").subscribe(subscriber);
         assertThat(subscriber.isComplete(), is(equalTo(false)));
         assertThat(subscriber.getLastError(), instanceOf(IllegalArgumentException.class));
         assertThat(subscriber.getItems(), is(empty()));
@@ -94,7 +143,22 @@ public class SingleTest {
                 subscription.request(-1);
             }
         };
-        Single.<String>just("foo").subscribe(subscriber);
+        Single.just("foo").subscribe(subscriber);
+        assertThat(subscriber.isComplete(), is(equalTo(false)));
+        assertThat(subscriber.getLastError(), instanceOf(IllegalArgumentException.class));
+        assertThat(subscriber.getItems(), is(empty()));
+    }
+
+    @Test
+    public void testCreateSupplierNegativeCanceledSubscription() {
+        SingleTestSubscriber<String> subscriber = new SingleTestSubscriber<String>() {
+            @Override
+            public void onSubscribe(Subscription subscription) {
+                subscription.cancel();
+                subscription.request(-1);
+            }
+        };
+        Single.create(() -> "foo").subscribe(subscriber);
         assertThat(subscriber.isComplete(), is(equalTo(false)));
         assertThat(subscriber.getLastError(), instanceOf(IllegalArgumentException.class));
         assertThat(subscriber.getItems(), is(empty()));
@@ -110,14 +174,28 @@ public class SingleTest {
                 subscription.request(1);
             }
         };
-        Single.<String>just("foo").subscribe(subscriber);
+        Single.just("foo").subscribe(subscriber);
+        subscriber.assertResult("foo");
+    }
+
+    @Test
+    public void testCreateSupplierDoubleSubscriptionRequest() {
+        SingleTestSubscriber<String> subscriber = new SingleTestSubscriber<String>() {
+            @Override
+            public void onSubscribe(Subscription subscription) {
+                super.onSubscribe(subscription);
+                subscription.request(1);
+                subscription.request(1);
+            }
+        };
+        Single.create(() -> "foo").subscribe(subscriber);
         subscriber.assertResult("foo");
     }
 
     @Test
     public void testEmpty() {
         SingleTestSubscriber<Object> subscriber = new SingleTestSubscriber<>();
-        Single.<Object>empty().subscribe(subscriber);
+        Single.empty().subscribe(subscriber);
         assertThat(subscriber.isComplete(), is(equalTo(true)));
         assertThat(subscriber.getLastError(), is(nullValue()));
         assertThat(subscriber.getItems(), is(empty()));
