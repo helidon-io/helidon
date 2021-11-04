@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2021 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<archetype-script xmlns="https://helidon.io/archetype/2.0"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-script-2.0.xsd">
+
+    <context>
+        <text path="project.parent.artifact.id">helidon-mp</text>
+    </context>
+
+    <output>
+        <model>
+            <map key="parent">
+                <value key="groupId">${default.parent.group.id}</value>
+                <value key="artifactId">${project.parent.artifact.id}</value>
+                <value key="version">${helidon.version}</value>
+            </map>
+
+            <map key="project">
+                <value key="groupId">${project.groupId}</value>
+                <value key="artifactId">${project.artifactId}</value>
+                <value key="version">${project.version}</value>
+                <value key="name">${project.name}</value>
+            </map>
+
+            <list key="dependencies">
+                <!-- dependency>
+                    <groupId>io.helidon.integrations.db</groupId>
+                    <artifactId>h2</artifactId>
+                    <scope>runtime</scope>
+                </dependency -->
+                <map>
+                    <value key="groupId">jakarta.annotation</value>
+                    <value key="artifactId">jakarta.annotation-api</value>
+                </map>
+                <map>
+                    <value key="groupId">jakarta.enterprise</value>
+                    <value key="artifactId">jakarta.enterprise.cdi-api</value>
+                </map>
+                <map>
+                    <value key="groupId">jakarta.inject</value>
+                    <value key="artifactId">jakarta.inject-api</value>
+                </map>
+                <map>
+                    <value key="groupId">jakarta.ws.rs</value>
+                    <value key="artifactId">jakarta.ws.rs-api</value>
+                </map>
+                <map>
+                    <value key="groupId">jakarta.json.bind</value>
+                    <value key="artifactId">jakarta.json.bind-api</value>
+                </map>
+                <map>
+                    <value key="groupId">jakarta.persistence</value>
+                    <value key="artifactId">jakarta.persistence-api</value>
+                </map>
+                <map>
+                    <value key="groupId">jakarta.transaction</value>
+                    <value key="artifactId">jakarta.transaction-api</value>
+                </map>
+                <map>
+                    <value key="groupId">io.helidon.common</value>
+                    <value key="artifactId">helidon-common</value>
+                </map>
+                <map>
+                    <value key="groupId">jakarta.xml.bind</value>
+                    <value key="artifactId">jakarta.xml.bind-api</value>
+                </map>
+                <map>
+                    <value key="groupId">io.helidon.microprofile.server</value>
+                    <value key="artifactId">helidon-microprofile-server</value>
+                </map>
+                <map>
+                    <value key="groupId">io.helidon.microprofile.bundles</value>
+                    <value key="artifactId">helidon-microprofile</value>
+                    <map key="version">
+                        <value key="version">${helidon.version}</value>
+                    </map>
+                    <map key="scope">
+                        <value key="scope">runtime</value>
+                    </map>
+                </map>
+                <map>
+                    <value key="groupId">com.h2database</value>
+                    <value key="artifactId">h2</value>
+                    <map key="scope">
+                        <value key="scope">runtime</value>
+                    </map>
+                </map>
+                <map>
+                    <value key="groupId">io.helidon.integrations.cdi</value>
+                    <value key="artifactId">helidon-integrations-cdi-hibernate</value>
+                    <map key="scope">
+                        <value key="scope">runtime</value>
+                    </map>
+                </map>
+                <map>
+                    <value key="groupId">io.helidon.integrations.cdi</value>
+                    <value key="artifactId">helidon-integrations-cdi-jta-weld</value>
+                    <map key="scope">
+                        <value key="scope">runtime</value>
+                    </map>
+                </map>
+                <map>
+                    <value key="groupId">io.helidon.integrations.cdi</value>
+                    <value key="artifactId">helidon-integrations-cdi-datasource-hikaricp</value>
+                    <map key="scope">
+                        <value key="scope">runtime</value>
+                    </map>
+                </map>
+                <map>
+                    <value key="groupId">io.helidon.integrations.cdi</value>
+                    <value key="artifactId">helidon-integrations-cdi-jpa</value>
+                    <map key="scope">
+                        <value key="scope">runtime</value>
+                    </map>
+                </map>
+                <map>
+                    <value key="groupId">org.glassfish.jersey.media</value>
+                    <value key="artifactId">jersey-media-json-binding</value>
+                    <map key="scope">
+                        <value key="scope">runtime</value>
+                    </map>
+                </map>
+                <map>
+                    <value key="groupId">org.hamcrest</value>
+                    <value key="artifactId">hamcrest-all</value>
+                    <map key="scope">
+                        <value key="scope">test</value>
+                    </map>
+                </map>
+            </list>
+
+            <map key="build">
+                <list key="plugins">
+                    <map>
+                        <list key="plugin">
+                            <map>
+                                <value key="groupId">org.jvnet.jaxb2.maven2</value>
+                                <value key="artifactId">maven-jaxb2-plugin</value>
+                                <map key="executions">
+                                    <value key="id">Generate persistence.xml Java objects</value>
+                                    <map key="goals">
+                                        <value key="goal">generate</value>
+                                    </map>
+                                    <value key="configuration"><![CDATA[<configuration>
+                            <generatePackage>io.helidon.archetypes.tests.jaxb</generatePackage>
+                            <markGenerated>true</markGenerated>
+                            <schemas>
+                                <schema>
+                                    <dependencyResource>
+                                        <groupId>jakarta.persistence</groupId>
+                                        <artifactId>jakarta.persistence-api</artifactId>
+                                        <resource>javax/persistence/persistence_2_2.xsd</resource>
+                                    </dependencyResource>
+                                </schema>
+                            </schemas>
+                            <strict>false</strict>
+                        </configuration>]]></value>
+                                </map>
+                            </map>
+                            <map>
+                                <value key="groupId">org.hibernate.orm.tooling</value>
+                                <value key="artifactId">hibernate-enhance-maven-plugin</value>
+                                <map key="executions">
+                                    <map key="goals">
+                                        <value key="goal">enhance</value>
+                                    </map>
+                                    <value key="configuration"><![CDATA[<configuration>
+                            <failOnError>true</failOnError>
+                            <enableLazyInitialization>true</enableLazyInitialization>
+                            <enableDirtyTracking>true</enableDirtyTracking>
+                        </configuration>]]></value>
+                                </map>
+                            </map>
+                        </list>
+                    </map>
+                </list>
+            </map>
+        </model>
+    </output>
+</archetype-script>
