@@ -53,7 +53,7 @@ import org.jboss.jandex.IndexView;
  */
 public final class MPOpenAPIBuilder extends OpenAPISupport.Builder<MPOpenAPIBuilder> {
 
-    private static final String USE_JAXRS_SEMANTICS_CONFIG_KEY = "mp.openapi.extensions.helidon-use-jaxrs-semantics";
+    private static final String USE_JAXRS_SEMANTICS_CONFIG_KEY = "mp.openapi.extensions.helidon.use-jaxrs-semantics";
     private static final boolean USE_JAXRS_SEMANTICS_DEFAULT = true;
 
     private static final Logger LOGGER = Logger.getLogger(MPOpenAPIBuilder.class.getName());
