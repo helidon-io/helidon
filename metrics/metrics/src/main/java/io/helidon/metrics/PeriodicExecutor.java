@@ -75,11 +75,13 @@ class PeriodicExecutor {
         }
     }
 
-    private State state = State.DORMANT;
+    private volatile State state = State.DORMANT;
 
     private ScheduledExecutorService currentTimeUpdaterExecutorService;
 
     private final Collection<Enrollment> deferredEnrollments = new ArrayList<>();
+
+    private final Semaphore access = new Semaphore(1, true);
 
     private PeriodicExecutor() {
     }
@@ -100,49 +102,54 @@ class PeriodicExecutor {
         return INSTANCE.executorState();
     }
 
-    synchronized void enrollRunner(Runnable runnable, Duration interval) {
+    void enrollRunner(Runnable runnable, Duration interval) {
+        sync("enroll runner", () -> {
+            if (state == State.STARTED) {
+                currentTimeUpdaterExecutorService.scheduleAtFixedRate(
+                        runnable,
+                        interval.toMillis(),
+                        interval.toMillis(),
+                        TimeUnit.MILLISECONDS);
+            } else {
+                deferredEnrollments.add(new Enrollment(runnable, interval));
+                if (state == State.STOPPED) {
+                    // Unusual during production use, more likely during testing. Keep the logging for diagnosing production
+                    // problems if they occur.
+                    LOGGER.log(Level.FINE,
+                               "Recording deferred enrollment even though in unexpected state " + State.STOPPED,
+                               new IllegalStateException());
+                }
+            }
+        });
+    }
 
-        if (state == State.STARTED) {
-            currentTimeUpdaterExecutorService.scheduleAtFixedRate(
-                    runnable,
-                    interval.toMillis(),
-                    interval.toMillis(),
-                    TimeUnit.MILLISECONDS);
-        } else {
-            deferredEnrollments.add(new Enrollment(runnable, interval));
-            if (state == State.STOPPED) {
-                LOGGER.log(Level.FINE,
-                           "Recording deferred enrollment even though in unexpected state " + State.STOPPED,
+    void startExecutor() {
+        sync("start", () -> {
+            if (state.isStartable()) {
+                LOGGER.log(Level.FINE, "Starting up with " + deferredEnrollments.size() + " deferred enrollments"
+                        + (state == State.DORMANT ? "" : " even though in state " + state));
+                state = State.STARTED;
+                currentTimeUpdaterExecutorService = Executors.newSingleThreadScheduledExecutor();
+                for (Enrollment deferredEnrollment : deferredEnrollments) {
+                    currentTimeUpdaterExecutorService.scheduleAtFixedRate(
+                            deferredEnrollment.runnable,
+                            deferredEnrollment.interval.toMillis(),
+                            deferredEnrollment.interval.toMillis(),
+                            TimeUnit.MILLISECONDS);
+                }
+                deferredEnrollments.clear();
+            } else {
+                LOGGER.log(Level.WARNING, String.format("Attempt to start in unexpected state state %s; ignored",
+                                                        state),
                            new IllegalStateException());
             }
-        }
+        });
     }
 
-    synchronized void startExecutor() {
-        if (state.isStartable()) {
-            LOGGER.log(Level.FINE, "Starting up with " + deferredEnrollments.size() + " deferred enrollments"
-                    + (state == State.DORMANT ? "" : " even though in state " + State.STOPPED));
-            state = State.STARTED;
-            currentTimeUpdaterExecutorService = Executors.newSingleThreadScheduledExecutor();
-            for (Enrollment deferredEnrollment : deferredEnrollments) {
-                currentTimeUpdaterExecutorService.scheduleAtFixedRate(
-                        deferredEnrollment.runnable,
-                        deferredEnrollment.interval.toMillis(),
-                        deferredEnrollment.interval.toMillis(),
-                        TimeUnit.MILLISECONDS);
-            }
-            deferredEnrollments.clear();
-        } else {
-            LOGGER.log(Level.WARNING, String.format("Attempt to start; the expected state is %s but found %s; ignored",
-                    State.DORMANT,
-                    state),
-                    new IllegalStateException());
-        }
-    }
-
-    synchronized void stopExecutor() {
-        LOGGER.log(Level.FINE, STOP_LOG_MESSAGE, state);
-        switch (state) {
+    void stopExecutor() {
+        sync("stop", () -> {
+            LOGGER.log(Level.FINE, STOP_LOG_MESSAGE, state);
+            switch (state) {
             case STARTED:
                 currentTimeUpdaterExecutorService.shutdownNow();
                 break;
@@ -155,12 +162,23 @@ class PeriodicExecutor {
                         "Unexpected attempt to stop; the expected states are %s but found %s; ignored",
                         Set.of(State.DORMANT, State.STARTED),
                         state),
-                        new IllegalStateException());
-        }
-        state = State.STOPPED;
+                           new IllegalStateException());
+            }
+            state = State.STOPPED;
+        });
     }
 
     State executorState() {
         return state;
+    }
+
+    private void sync(String taskDescription, Runnable task) {
+        try {
+            access.acquire();
+            task.run();
+            access.release();
+        } catch (InterruptedException ex) {
+            LOGGER.log(Level.WARNING, "Attempt to " + taskDescription + " failed", ex);
+        }
     }
 }
