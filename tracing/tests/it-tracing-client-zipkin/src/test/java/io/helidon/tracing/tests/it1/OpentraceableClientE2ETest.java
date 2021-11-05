@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -79,6 +79,7 @@ public class OpentraceableClientE2ETest {
 
     private static WebServer startWebServer() throws InterruptedException, ExecutionException, TimeoutException {
         return WebServer.builder()
+                        .host("localhost")
                         .routing(Routing.builder()
                                  .any((req, res) -> res.send("OK")))
                         .tracer(tracer("test-server"))

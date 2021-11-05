@@ -59,6 +59,7 @@ public class HttpPipelineTest {
 
     private static void startServer(int port) throws Exception {
         webServer = WebServer.builder()
+                .host("localhost")
                 .experimental(ExperimentalConfiguration.builder().http2(
                         Http2Configuration.builder().enable(true).build()).build())
                 .port(port)

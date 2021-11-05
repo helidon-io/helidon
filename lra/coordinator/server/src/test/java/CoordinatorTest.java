@@ -58,6 +58,7 @@ public class CoordinatorTest {
                         .build().get(CoordinatorService.CONFIG_PREFIX))
                 .build();
         server = WebServer.builder()
+                .host("localhost")
                 .addSocket(SocketConfiguration.builder()
                         .name(COORDINATOR_ROUTING_NAME)
                         .port(8077)

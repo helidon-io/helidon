@@ -53,6 +53,7 @@ public class TransferEncodingTest {
      */
     private static void startServer(int port) throws Exception {
         webServer = WebServer.builder()
+                .host("localhost")
                 .port(port)
                 .routing(Routing.builder()
                         .get("/length", (req, res) -> {

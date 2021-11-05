@@ -59,6 +59,7 @@ public class PrematureConnectionCutTest {
         try {
             final TestAsyncRunner async = asyncRunner = new TestAsyncRunner(CALL_NUM);
             webServer = WebServer.builder()
+                    .host("localhost")
                     .port(0)
                     .routing(Routing.builder()
                             .post((req, res) -> req.content()
