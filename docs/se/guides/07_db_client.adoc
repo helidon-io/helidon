@@ -160,10 +160,6 @@ Password must stay empty. Press connect, the browser displays a web page. The da
 
 === Create a sample SE project
 
-==== Using CLI (recommended)
-
-Follow the <<about/05_cli.adoc,Helidon CLI guide>> to quickly build a new application.
-
 ==== Using maven archetype
 
 Generate the project sources using the Helidon SE Maven archetype.
