@@ -141,7 +141,7 @@ final class OidcMetadata {
         }
 
         private void load() {
-            URI wellKnown = identityUri.resolve(DEFAULT_OIDC_METADATA_URI);
+            URI wellKnown = identityUri.resolve(identityUri.getPath()+DEFAULT_OIDC_METADATA_URI);
 
             try {
                 this.metadata = webClient.get()
