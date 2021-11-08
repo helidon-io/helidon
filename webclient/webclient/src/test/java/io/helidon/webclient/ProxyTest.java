@@ -69,13 +69,26 @@ class ProxyTest {
     void testNoProxyHandlingPredicate() {
         Config config = Config.create();
         Proxy proxy = Proxy.create(config.get("proxy"));
-        assertThat(relativizeNoProxy(URI.create("http://localhost/foo"), proxy).toString(),
+        assertThat(relativizeNoProxy(URI.create("http://localhost/foo"), proxy, false).toString(),
                 is("/foo"));
-        assertThat(relativizeNoProxy(URI.create("http://www.localhost/foo"), proxy).toString(),
+        assertThat(relativizeNoProxy(URI.create("http://www.localhost/foo"), proxy, false).toString(),
                 is("http://www.localhost/foo"));
-        assertThat(relativizeNoProxy(URI.create("http://identity.oc9qadev.com/foo/bar"), proxy).toString(),
+        assertThat(relativizeNoProxy(URI.create("http://identity.oc9qadev.com/foo/bar"), proxy, false).toString(),
                 is("/foo/bar"));
-        assertThat(relativizeNoProxy(URI.create("http://identity.oci1234.oc9qadev.com/foo/bar"), proxy).toString(),
+        assertThat(relativizeNoProxy(URI.create("http://identity.oci1234.oc9qadev.com/foo/bar"), proxy, false).toString(),
+                is("/foo/bar"));
+    }
+
+    @Test
+    void testForceRelativeUris() {
+        Config config = Config.create();
+        Proxy proxy = Proxy.create(config.get("proxy"));
+        WebClientConfiguration webConfig = WebClientConfiguration.builder()
+                .config(config.get("force-relative-uris")).build();
+        boolean relativeUris = webConfig.relativeUris();
+        assertThat(relativizeNoProxy(URI.create("http://www.localhost/foo"), proxy, relativeUris).toString(),
+                is("/foo"));
+        assertThat(relativizeNoProxy(URI.create("http://identity.oci.com/foo/bar"), proxy, relativeUris).toString(),
                 is("/foo/bar"));
     }
 

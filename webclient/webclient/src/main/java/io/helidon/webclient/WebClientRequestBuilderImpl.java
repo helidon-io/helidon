@@ -541,7 +541,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         }
 
         return Single.create(rcs.thenCompose(serviceRequest -> {
-            URI requestUri = relativizeNoProxy(finalUri, proxy);
+            URI requestUri = relativizeNoProxy(finalUri, proxy, configuration.relativeUris());
             requestId = serviceRequest.requestId();
             HttpHeaders headers = toNettyHttpHeaders();
             DefaultHttpRequest request = new DefaultHttpRequest(toNettyHttpVersion(httpVersion),
@@ -677,13 +677,16 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
 
 
     /**
-     * Relativize final URI if no proxy or if host in no-proxy list.
+     * Relativize final URI if no proxy or if host in no-proxy list or if forced via
+     * the {@code relative-uris} config property.
      *
      * @param finalUri the final URI
+     * @param proxy the proxy
+     * @param relativeUris flag to force all URIs to be relative
      * @return possibly converted URI
      */
-    static URI relativizeNoProxy(URI finalUri, Proxy proxy) {
-        if (proxy == Proxy.noProxy() || proxy.noProxyPredicate().apply(finalUri)) {
+    static URI relativizeNoProxy(URI finalUri, Proxy proxy, boolean relativeUris) {
+        if (proxy == Proxy.noProxy() || proxy.noProxyPredicate().apply(finalUri) || relativeUris) {
             String path = finalUri.getRawPath();
             String fragment = finalUri.getRawFragment();
             String query = finalUri.getRawQuery();
