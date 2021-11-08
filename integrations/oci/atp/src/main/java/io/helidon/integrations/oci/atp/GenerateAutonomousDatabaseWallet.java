@@ -16,8 +16,20 @@
 
 package io.helidon.integrations.oci.atp;
 
+import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
+import java.security.KeyStore;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
+
 import io.helidon.integrations.oci.connect.OciRequestBase;
 import io.helidon.integrations.oci.connect.OciResponseParser;
+
+import oracle.security.pki.OraclePKIProvider;
 
 /**
  * GenerateAutonomousDatabaseWallet request and response.
@@ -103,6 +115,58 @@ public final class GenerateAutonomousDatabaseWallet {
          */
         public byte[] getContent() {
             return content.clone();
+        }
+
+        /**
+         * Returns SSLContext based on cwallet.sso in wallet.
+         *
+         * @return SSLContext
+         */
+        public SSLContext getSSLContext() throws IllegalStateException {
+            SSLContext sslContext = null;
+            try (ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(content))) {
+                ZipEntry entry = null;
+                while ((entry = zis.getNextEntry()) != null) {
+                    if (entry.getName().equals("cwallet.sso")) {
+                        KeyStore keyStore = KeyStore.getInstance("SSO", new OraclePKIProvider());
+                        keyStore.load(zis, null);
+                        TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance("PKIX");
+                        KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance("PKIX");
+                        trustManagerFactory.init(keyStore);
+                        keyManagerFactory.init(keyStore, null);
+                        sslContext = SSLContext.getInstance("TLS");
+                        sslContext.init(keyManagerFactory.getKeyManagers(), trustManagerFactory.getTrustManagers(), null);
+                    }
+                    zis.closeEntry();
+                }
+            } catch (Exception e) {
+                throw new IllegalStateException("Error while getting SSLContext from wallet.", e);
+            }
+            return sslContext;
+        }
+
+        /**
+         * Returns JDBC URL with connection description for the given service based on tnsnames.ora in wallet.
+         *
+         * @param serviceName
+         * @return String
+         */
+        public String getJdbcUrl(String serviceName) throws IllegalStateException {
+            String jdbcUrl = null;
+            try (ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(content))) {
+                ZipEntry entry = null;
+                while ((entry = zis.getNextEntry()) != null) {
+                    if (entry.getName().equals("tnsnames.ora")) {
+                        jdbcUrl = new String(zis.readAllBytes(), StandardCharsets.UTF_8)
+                                .replaceFirst(serviceName + "_high\\s+=\\s+", "jdbc:oracle:thin:@")
+                                .replaceAll("\\n[^\\n]+", "");
+                    }
+                    zis.closeEntry();
+                }
+            } catch (Exception e) {
+                throw new IllegalStateException("Error while getting JDBC URL from wallet.", e);
+            }
+            return jdbcUrl;
         }
     }
 }

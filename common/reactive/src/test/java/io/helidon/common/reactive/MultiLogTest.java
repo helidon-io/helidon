@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ import org.junit.jupiter.api.Test;
 
 public class MultiLogTest {
 
-    private static final Logger LOGGER = Logger.getLogger(MultiLoggingPublisher.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(LoggingPublisher.class.getName());
 
     private final TestHandler testHandler = new TestHandler();
 
@@ -63,7 +63,7 @@ public class MultiLogTest {
 
         assertLogs(Level.INFO,
                 "Multi\\.log\\([0-9]+\\)",
-                "io.helidon.common.reactive.Multi",
+                "MultiRangePublisher",
                 "log\\(\\)",
                 " ⇘ onSubscribe(...)",
                 " ⇗ request(Long.MAX_VALUE)",
@@ -86,7 +86,7 @@ public class MultiLogTest {
 
         assertLogs(Level.INFO,
                 "Multi\\.log\\([0-9]+\\)",
-                "io.helidon.common.reactive.Multi",
+                "MultiRangePublisher",
                 "log\\(\\)",
                 " ⇘ onSubscribe(...)",
                 " ⇗ request(Long.MAX_VALUE)",
@@ -108,7 +108,7 @@ public class MultiLogTest {
 
         assertLogs(Level.INFO,
                 "TEST_LOGGER",
-                "io.helidon.common.reactive.Multi",
+                "MultiRangePublisher",
                 "log\\(\\)",
                 " ⇘ onSubscribe(...)",
                 " ⇗ request(Long.MAX_VALUE)",
@@ -141,7 +141,7 @@ public class MultiLogTest {
 
         assertLogs(Level.INFO,
                 "Multi\\.log\\([0-9]+\\)",
-                "io.helidon.common.reactive.Multi",
+                "Multi.peek",
                 "log\\(\\)",
                 " ⇘ onSubscribe(...)",
                 " ⇗ request(Long.MAX_VALUE)",
@@ -161,7 +161,7 @@ public class MultiLogTest {
 
         assertLogs(Level.WARNING,
                 "Multi\\.log\\([0-9]+\\)",
-                "io.helidon.common.reactive.Multi",
+                "MultiRangePublisher",
                 "log\\(\\)",
                 " ⇘ onSubscribe(...)",
                 " ⇗ request(Long.MAX_VALUE)",

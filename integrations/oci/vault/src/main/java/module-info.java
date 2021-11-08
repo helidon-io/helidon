@@ -24,6 +24,7 @@ module io.helidon.integrations.oci.vault {
     requires java.json;
     requires io.helidon.common.http;
     requires transitive io.helidon.integrations.common.rest;
+    requires static io.helidon.config.metadata;
 
     exports io.helidon.integrations.oci.vault;
 

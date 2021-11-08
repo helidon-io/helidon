@@ -24,7 +24,7 @@ import java.util.logging.Logger;
 import javax.inject.Inject;
 import javax.interceptor.InvocationContext;
 
-import io.helidon.metrics.Registry;
+import io.helidon.metrics.api.HelidonMetric;
 import io.helidon.microprofile.metrics.MetricsCdiExtension.MetricWorkItem;
 import io.helidon.servicecommon.restcdi.HelidonInterceptor;
 
@@ -84,7 +84,7 @@ abstract class MetricsInterceptorBase<M extends Metric> extends HelidonIntercept
 
     void verifyMetric(InvocationContext context, MetricWorkItem workItem, ActionType actionType) {
         Metric metric = workItem.metric();
-        if (Registry.isMarkedAsDeleted(metric)) {
+        if (HelidonMetric.isMarkedAsDeleted(metric)) {
             throw new IllegalStateException("Attempt to use previously-removed metric" + workItem.metricID());
         }
         if (LOGGER.isLoggable(Level.FINEST)) {

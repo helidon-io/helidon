@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,7 +51,9 @@ public class TestTwoCorsConfigs extends AbstractCorsTest {
     void test1PreFlightAllowedOriginOtherGreeting() throws ExecutionException, InterruptedException {
         WebClientResponse res = runTest1PreFlightAllowedOrigin();
 
-        assertThat(res.status(), is(Http.Status.FORBIDDEN_403));
+        Http.ResponseStatus status = res.status();
+        assertThat(status.code(), is(Http.Status.FORBIDDEN_403.code()));
+        assertThat(status.reasonPhrase(), is("CORS origin is denied"));
     }
 
     @AfterAll

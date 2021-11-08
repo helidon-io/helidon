@@ -43,8 +43,6 @@ public class JaxRsNestedCompleteOrCompensate extends CdiNestedCompleteOrCompensa
     @PUT
     public Response complete(@HeaderParam(LRA_HTTP_CONTEXT_HEADER) URI lraId,
                              @HeaderParam(LRA_HTTP_PARENT_CONTEXT_HEADER) URI parentLraId) {
-        System.out.println("COMPLETING    lra " + lraId);
-        System.out.println("COMPLETING parent " + parentLraId);
         basicTest.getCompletable(CS_COMPLETED, lraId).complete(parentLraId);
         return Response.ok(ParticipantStatus.Completed.name()).build();
     }
@@ -54,8 +52,6 @@ public class JaxRsNestedCompleteOrCompensate extends CdiNestedCompleteOrCompensa
     @PUT
     public Response compensate(@HeaderParam(LRA_HTTP_CONTEXT_HEADER) URI lraId,
                                @HeaderParam(LRA_HTTP_PARENT_CONTEXT_HEADER) URI parentLraId) {
-        System.out.println("COMPENSATING    lra " + lraId);
-        System.out.println("COMPENSATING parent " + parentLraId);
         basicTest.getCompletable(CS_COMPENSATED, lraId).complete(parentLraId);
         return Response.ok(ParticipantStatus.Compensated.name()).build();
     }

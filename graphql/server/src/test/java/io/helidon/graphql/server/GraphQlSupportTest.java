@@ -43,6 +43,7 @@ class GraphQlSupportTest {
     @Test
     void testHelloWorld() {
         WebServer server = WebServer.builder()
+                .host("localhost")
                 .routing(Routing.builder()
                                  .register(GraphQlSupport.create(buildSchema()))
                                  .build())

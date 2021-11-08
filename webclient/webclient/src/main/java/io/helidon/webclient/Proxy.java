@@ -147,6 +147,15 @@ public class Proxy {
         return noProxy;
     }
 
+    /**
+     * Get proxy type. For testing purposes.
+     *
+     * @return the proxy type
+     */
+    ProxyType type() {
+        return type;
+    }
+
     static Function<URI, Boolean> prepareNoProxy(Set<String> noProxyHosts) {
         if (noProxyHosts.isEmpty()) {
             // if no exceptions, then simple
@@ -473,7 +482,7 @@ public class Proxy {
         public Builder config(Config config) {
             config.get("use-system-selector").asBoolean().ifPresent(this::useSystemSelector);
             if (this.type != ProxyType.SYSTEM) {
-                config.get("type").asString().map(ProxyType::valueOf).ifPresent(this::type);
+                config.get("type").asString().map(ProxyType::valueOf).ifPresentOrElse(this::type, () -> type(ProxyType.HTTP));
                 config.get("host").asString().ifPresent(this::host);
                 config.get("port").asInt().ifPresent(this::port);
                 config.get("username").asString().ifPresent(this::username);

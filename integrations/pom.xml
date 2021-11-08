@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-project</artifactId>
-        <version>2.4.0-SNAPSHOT</version>
+        <version>2.4.1-SNAPSHOT</version>
     </parent>
     <groupId>io.helidon.integrations</groupId>
     <artifactId>helidon-integrations-project</artifactId>
@@ -44,6 +44,8 @@
         <module>cdi</module>
         <module>graal</module>
         <module>db</module>
+        <module>jdbc</module>
+        <module>jta</module>
         <module>micronaut</module>
         <module>neo4j</module>
         <module>micrometer</module>

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+# Copyright (c) 2018, 2021 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,8 +24,6 @@ security:
     idcs-uri: "https://your-tenant-id.identity.oracle.com"
     idcs-client-id: "your-client-id"
     idcs-client-secret: "${CLEAR=your-client-secret}"
-    # Used as a base for redirects back to us
-    frontend-uri: "http://localhost:7987"
     proxy-host: ""
   providers:
   - abac:
@@ -37,9 +35,14 @@ security:
       # A prefix used for custom scopes
       scope-audience: "http://localhost:7987/test-application"
       proxy-host: "${security.properties.proxy-host}"
-      frontend-uri: "${security.properties.frontend-uri}"
+      # Used as a base for redirects back to us (based on Host header now, so no need to explicitly define it)
+      # If explicitly defined, will override host header
+      # frontend-uri: "http://localhost:7987"
       # support for non-public signature JWK (and maybe other IDCS specific handling)
       server-type: "idcs"
+      logout-enabled: true
+      # Can define just a path, host will be taken from header
+      post-logout-uri: "/loggedout"
   - idcs-role-mapper:
       multitenant: false
       oidc-config:
@@ -56,6 +59,6 @@ security:
         methods: ["get"]
         authenticate: true
         roles-allowed: ["my_admins"]
-        abac:
-          scopes: ["first_scope", "second_scope"]
+#        abac:
+#          scopes: ["first_scope", "second_scope"]
 

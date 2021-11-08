@@ -20,7 +20,6 @@ import java.util.List;
 
 import javax.json.JsonObjectBuilder;
 
-import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricID;
 
@@ -28,7 +27,7 @@ import org.eclipse.microprofile.metrics.MetricID;
  * Helidon Extension of {@link Metric}.
  * All metrics should inherit from {@link MetricImpl}.
  */
-interface HelidonMetric extends Metric {
+interface HelidonMetric extends io.helidon.metrics.api.HelidonMetric {
     /**
      * Name of this metric.
      *
@@ -67,24 +66,4 @@ interface HelidonMetric extends Metric {
      * @return Name for metric.
      */
     String prometheusNameWithUnits(MetricID metricID);
-
-    /**
-     * Returns the metadata associated with this metric.
-     *
-     * @return the metric's {@link Metadata}
-     */
-    Metadata metadata();
-
-    /**
-     * Returns whether the metric has been deleted.
-     *
-     * @return true if the metrics was removed from the registry; false otherwise
-     */
-    boolean isDeleted();
-
-    /**
-     * Mark this metric as deleted.
-     */
-    void markAsDeleted();
-
 }

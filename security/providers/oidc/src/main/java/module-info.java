@@ -20,6 +20,7 @@
 module io.helidon.security.providers.oidc {
     requires io.helidon.config;
     requires io.helidon.common;
+    requires io.helidon.common.crypto;
     requires io.helidon.security;
     requires java.logging;
 
@@ -31,6 +32,7 @@ module io.helidon.security.providers.oidc {
     requires io.helidon.webclient;
     requires io.helidon.webserver;
     requires io.helidon.security.integration.webserver;
+    requires static io.helidon.config.metadata;
 
     exports io.helidon.security.providers.oidc;
 

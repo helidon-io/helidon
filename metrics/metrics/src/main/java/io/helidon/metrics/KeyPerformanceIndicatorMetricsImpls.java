@@ -18,6 +18,8 @@ package io.helidon.metrics;
 import java.util.HashMap;
 import java.util.Map;
 
+import io.helidon.metrics.api.KeyPerformanceIndicatorMetricsSettings;
+import io.helidon.metrics.api.RegistryFactory;
 import io.helidon.webserver.KeyPerformanceIndicatorSupport;
 
 import org.eclipse.microprofile.metrics.ConcurrentGauge;

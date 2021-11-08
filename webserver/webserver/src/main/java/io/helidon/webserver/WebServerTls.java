@@ -43,6 +43,8 @@ import io.helidon.common.LazyValue;
 import io.helidon.common.pki.KeyConfig;
 import io.helidon.config.Config;
 import io.helidon.config.DeprecatedConfig;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * A class wrapping transport layer security (TLS) configuration for
@@ -116,6 +118,7 @@ public final class WebServerTls {
     /**
      * Fluent API builder for {@link WebServerTls}.
      */
+    @Configured
     public static class Builder implements io.helidon.common.Builder<WebServerTls> {
         private final Set<String> enabledTlsProtocols = new HashSet<>();
 
@@ -179,6 +182,7 @@ public final class WebServerTls {
                     .asLong()
                     .ifPresent(this::sessionTimeoutSeconds);
 
+            config.get("enabled").asBoolean().ifPresent(this::enabled);
 
             return this;
         }
@@ -193,6 +197,7 @@ public final class WebServerTls {
          * @param clientAuth client authentication
          * @return this builder
          */
+        @ConfiguredOption("none")
         public Builder clientAuth(ClientAuthentication clientAuth) {
             this.clientAuth = Objects.requireNonNull(clientAuth);
             return this;
@@ -244,6 +249,7 @@ public final class WebServerTls {
          * @param privateKeyConfig the required private key configuration parameter
          * @return this builder
          */
+        @ConfiguredOption(required = true)
         public Builder privateKey(KeyConfig privateKeyConfig) {
             // setting private key, need to reset ssl context
             this.enabled = true;
@@ -268,6 +274,7 @@ public final class WebServerTls {
          * @param trustConfig the trust configuration
          * @return this builder
          */
+        @ConfiguredOption
         public Builder trust(KeyConfig trustConfig) {
             // setting explicit trust, need to reset ssl context
             this.enabled = true;
@@ -293,6 +300,7 @@ public final class WebServerTls {
          * @param sessionCacheSize the session cache size
          * @return this builder
          */
+        @ConfiguredOption
         public Builder sessionCacheSize(long sessionCacheSize) {
             this.sessionCacheSize = sessionCacheSize;
             return this;
@@ -305,6 +313,7 @@ public final class WebServerTls {
          * @param sessionTimeout the session timeout
          * @return this builder
          */
+        @ConfiguredOption
         public Builder sessionTimeoutSeconds(long sessionTimeout) {
             this.sessionTimeoutSeconds = sessionTimeout;
             return this;
@@ -330,6 +339,7 @@ public final class WebServerTls {
          * @param cipherSuite allowed cipher suite
          * @return an updated builder
          */
+        @ConfiguredOption(key = "cipher-suite")
         public Builder allowedCipherSuite(List<String> cipherSuite) {
             Objects.requireNonNull(cipherSuite);
             if (cipherSuite.isEmpty()) {
@@ -345,6 +355,7 @@ public final class WebServerTls {
          * @param enabled configure to {@code false} to disable SSL context (and SSL support on the server)
          * @return this builder
          */
+        @ConfiguredOption(description = "Can be used to disable TLS even if keys are configured.", value = "true")
         public Builder enabled(boolean enabled) {
             this.enabled = enabled;
             this.explicitEnabled = enabled;

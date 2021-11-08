@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,10 @@ public class HelidonFormatter extends SimpleFormatter {
     private final Set<String> parsedProps = new HashSet<>();
     private final boolean thread;
 
-    HelidonFormatter() {
+    /**
+     * Create new instance of the {@link HelidonFormatter}.
+     */
+    public HelidonFormatter() {
         thread = format.contains(THREAD_TOKEN) || format.contains("%X{" + THREAD + "}");
         Matcher matcher = X_VALUE.matcher(format);
         while (matcher.find()) {

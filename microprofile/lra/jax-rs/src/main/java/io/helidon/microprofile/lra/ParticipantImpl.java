@@ -79,7 +79,7 @@ class ParticipantImpl implements Participant {
     private final Map<Class<? extends Annotation>, URI> compensatorLinks = new HashMap<>();
     private final Map<Class<? extends Annotation>, Set<Method>> methodMap;
 
-    ParticipantImpl(URI baseUri, Class<?> resourceClazz) {
+    ParticipantImpl(URI baseUri, String contextPath, Class<?> resourceClazz) {
         methodMap = scanForLRAMethods(resourceClazz);
         methodMap.entrySet().stream()
                 // Looking only for participant methods
@@ -99,9 +99,9 @@ class ParticipantImpl implements Participant {
                             .getDeclaredAnnotations())
                             .map(Annotation::annotationType)
                             .noneMatch(JAX_RS_ANNOTATIONS::contains)) {
-                        //no jar-rs annotation means LRA cdi method
+                        //no jax-rs method
                         URI uri = UriBuilder.fromUri(baseUri)
-                                .path(ParticipantCdiResource.CDI_PARTICIPANT_PATH) //Auxiliary Jax-Rs resource for cdi methods
+                                .path(contextPath) //Auxiliary non Jax-Rs resource
                                 .path(e.getKey().getSimpleName().toLowerCase())//@Complete -> /complete
                                 .path(resourceClazz.getName())
                                 .path(method.getName())

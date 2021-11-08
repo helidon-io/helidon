@@ -22,3 +22,4 @@ oracle:
           connectionFactoryClassName: org.h2.jdbcx.JdbcDataSource
           password: ""
           user: sa
+          serviceName: fred

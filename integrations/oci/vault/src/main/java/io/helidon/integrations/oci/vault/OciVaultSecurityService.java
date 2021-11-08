@@ -48,6 +48,6 @@ public class OciVaultSecurityService implements SecurityProviderService {
 
     @Override
     public SecurityProvider providerInstance(Config config) {
-        return new OciVaultSecurityProvider(OciVaultRx.create(config));
+        return OciVaultSecurityProvider.create(config);
     }
 }

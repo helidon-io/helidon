@@ -53,7 +53,7 @@ public class CloseConnectionTest {
         webServer = WebServer
                 .builder()
                 .port(0)
-                .bindAddress(localHost)
+                .host("localhost")
                 .routing(Routing.builder()
                         .get((req, res) -> {
                             res.send(Multi

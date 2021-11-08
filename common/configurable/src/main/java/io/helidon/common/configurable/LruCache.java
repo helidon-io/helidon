@@ -24,6 +24,8 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Supplier;
 
 import io.helidon.config.Config;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * Least recently used cache.
@@ -216,6 +218,7 @@ public final class LruCache<K, V> {
      * @param <K> type of keys
      * @param <V> type of values
      */
+    @Configured
     public static class Builder<K, V> implements io.helidon.common.Builder<LruCache<K, V>> {
         private int capacity = DEFAULT_CAPACITY;
 
@@ -241,6 +244,7 @@ public final class LruCache<K, V> {
          * @param capacity maximal number of records in the cache before the oldest one is removed
          * @return updated builder instance
          */
+        @ConfiguredOption("10000")
         public Builder<K, V> capacity(int capacity) {
             this.capacity = capacity;
             return this;

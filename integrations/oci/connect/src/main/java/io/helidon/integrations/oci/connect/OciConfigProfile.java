@@ -31,6 +31,8 @@ import io.helidon.common.Errors;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.pki.KeyConfig;
 import io.helidon.config.Config;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * OCI configuration required to connect to a service over REST API.
@@ -161,6 +163,7 @@ public class OciConfigProfile implements OciConfigProvider {
     /**
      * Fluent API builder for {@link OciConfigProfile}.
      */
+    @Configured
     public static class Builder implements io.helidon.common.Builder<OciConfigProfile> {
         private static final Logger LOGGER = Logger.getLogger(Builder.class.getName());
         private static final String DEFAULT_PROFILE = "DEFAULT";
@@ -207,7 +210,7 @@ public class OciConfigProfile implements OciConfigProvider {
          * @return updated builder
          */
         public Builder config(Config config) {
-            config.asMap().ifPresent(this.fullConfig::putAll);
+            config.detach().asMap().ifPresent(this.fullConfig::putAll);
 
             String profile = config.get("profile-name").asString().orElse(DEFAULT_PROFILE);
             config.get("profile-file").as(Path.class)
@@ -233,6 +236,7 @@ public class OciConfigProfile implements OciConfigProvider {
          * @param userOcid OCID of the user
          * @return updated builder
          */
+        @ConfiguredOption(key = "user")
         public Builder userOcid(String userOcid) {
             this.userOcid = userOcid;
             this.fullConfig.put("user", userOcid);
@@ -246,6 +250,7 @@ public class OciConfigProfile implements OciConfigProvider {
          * @param tenancyOcid OCID of the tenancy
          * @return updated builder
          */
+        @ConfiguredOption(key = "tenancy")
         public Builder tenancyOcid(String tenancyOcid) {
             this.tenancyOcid = tenancyOcid;
             this.fullConfig.put("tenancy", tenancyOcid);
@@ -259,6 +264,7 @@ public class OciConfigProfile implements OciConfigProvider {
          * @param keyFingerprint key fingerprint
          * @return updated builder
          */
+        @ConfiguredOption(key = "fingerprint")
         public Builder keyFingerprint(String keyFingerprint) {
             this.keyFingerprint = keyFingerprint;
             this.fullConfig.put("fingerprint", keyFingerprint);
@@ -272,6 +278,7 @@ public class OciConfigProfile implements OciConfigProvider {
          * @param region region
          * @return updated builder
          */
+        @ConfiguredOption
         public Builder region(String region) {
             this.region = region;
             this.fullConfig.put("region", region);
@@ -285,6 +292,7 @@ public class OciConfigProfile implements OciConfigProvider {
          * @param privateKey private key
          * @return updated builder
          */
+        @ConfiguredOption(key = "key-pem")
         public Builder privateKey(String privateKey) {
             this.privateKey = privateKey;
             this.fullConfig.put("key-pem", privateKey);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import io.helidon.common.http.MediaType;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientRequestBuilder;
 import io.helidon.webclient.WebClientResponse;
+
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.http.Http.Header.ORIGIN;
@@ -131,7 +132,9 @@ public abstract class AbstractCorsTest {
                 .toCompletableFuture()
                 .get();
 
-        assertThat(res.status(), is(Http.Status.FORBIDDEN_403));
+        Http.ResponseStatus status = res.status();
+        assertThat(status.code(), is(Http.Status.FORBIDDEN_403.code()));
+        assertThat(status.reasonPhrase(), is("CORS origin is not in allowed list"));
     }
 
     @Test
@@ -173,7 +176,9 @@ public abstract class AbstractCorsTest {
                 .toCompletableFuture()
                 .get();
 
-        assertThat(res.status(), is(Http.Status.FORBIDDEN_403));
+        Http.ResponseStatus status = res.status();
+        assertThat(status.code(), is(Http.Status.FORBIDDEN_403.code()));
+        assertThat(status.reasonPhrase(), is("CORS origin is denied"));
     }
 
     @Test
@@ -192,7 +197,9 @@ public abstract class AbstractCorsTest {
                 .toCompletableFuture()
                 .get();
 
-        assertThat(res.status(), is(Http.Status.FORBIDDEN_403));
+        Http.ResponseStatus status = res.status();
+        assertThat(status.code(), is(Http.Status.FORBIDDEN_403.code()));
+        assertThat(status.reasonPhrase(), is("CORS headers not in allowed list"));
     }
 
     @Test

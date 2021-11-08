@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package io.helidon.webserver.testsupport;
 
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -96,7 +95,7 @@ public class TestRequest {
     public TestRequest header(String name, String value) {
         Objects.requireNonNull(name, "Parameter 'name' is null!");
         Objects.requireNonNull(name, "Parameter 'value' is null!");
-        headers.computeIfAbsent(name, k -> new ArrayList()).add(value);
+        headers.computeIfAbsent(name, k -> new ArrayList<>()).add(value);
         return this;
     }
 
@@ -310,11 +309,6 @@ public class TestRequest {
     }
 
     private String encode(String str) {
-        try {
-            return URLEncoder.encode(str, StandardCharsets.UTF_8.toString());
-        } catch (UnsupportedEncodingException e) {
-            // Rare case. Should never happen in java
-            throw new IllegalStateException("UTF-8 is not supported!", e);
-        }
+        return URLEncoder.encode(str, StandardCharsets.UTF_8);
     }
 }

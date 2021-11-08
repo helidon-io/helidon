@@ -33,6 +33,8 @@ module io.helidon.integrations.oci.atp {
     requires io.helidon.integrations.common.rest;
     requires io.helidon.common.http;
 
+    requires oraclepki;
+
     exports io.helidon.integrations.oci.atp;
 
     // this is the intended usage, deprecation is to warn about accidental usage in code

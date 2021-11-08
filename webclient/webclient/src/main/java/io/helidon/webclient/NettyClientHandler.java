@@ -18,7 +18,6 @@ package io.helidon.webclient;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -271,28 +270,7 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
     }
 
     private Http.ResponseStatus helidonStatus(HttpResponseStatus nettyStatus) {
-        final int statusCode = nettyStatus.code();
-
-        Optional<Http.Status> status = Http.Status.find(statusCode);
-        if (status.isPresent()) {
-            return status.get();
-        }
-        return new Http.ResponseStatus() {
-            @Override
-            public int code() {
-                return statusCode;
-            }
-
-            @Override
-            public Family family() {
-                return Family.of(statusCode);
-            }
-
-            @Override
-            public String reasonPhrase() {
-                return nettyStatus.reasonPhrase();
-            }
-        };
+        return Http.ResponseStatus.create(nettyStatus.code(), nettyStatus.reasonPhrase());
     }
 
     private static final class HttpResponsePublisher extends BufferedEmittingPublisher<DataChunk> {

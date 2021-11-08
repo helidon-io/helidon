@@ -32,7 +32,9 @@ import io.helidon.lra.coordinator.client.CoordinatorClient;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.lra.annotation.AfterLRA;
+import org.eclipse.microprofile.lra.annotation.Compensate;
 import org.eclipse.microprofile.lra.annotation.Complete;
+import org.eclipse.microprofile.lra.annotation.Forget;
 import org.eclipse.microprofile.lra.annotation.Status;
 import org.eclipse.microprofile.lra.annotation.ws.rs.LRA;
 import org.eclipse.microprofile.lra.annotation.ws.rs.Leave;
@@ -49,7 +51,13 @@ class HandlerService {
                     AfterLRA.class.getName(), (a, client, i, p) -> new NoopAnnotationHandler()
             );
 
-    private static final Set<String> STAND_ALONE_ANNOTATIONS = Set.of(Status.class.getName(), Complete.class.getName());
+    private static final Set<String> STAND_ALONE_ANNOTATIONS = Set.of(
+            Status.class.getName(),
+            Complete.class.getName(),
+            Compensate.class.getName(),
+            AfterLRA.class.getName(),
+            Forget.class.getName()
+    );
 
     private final CoordinatorClient coordinatorClient;
     private final InspectionService inspectionService;

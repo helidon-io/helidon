@@ -20,7 +20,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
-import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -213,16 +212,16 @@ public class OpenApiCdiExtension implements Extension {
         return result;
     }
 
-    private static void dumpIndex(Level level, Index index) throws UnsupportedEncodingException {
+    private static void dumpIndex(Level level, Index index) {
         if (LOGGER.isLoggable(level)) {
             LOGGER.log(level, "Dump of internal Jandex index:");
             PrintStream oldStdout = System.out;
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            try (PrintStream newPS = new PrintStream(baos, true, Charset.defaultCharset().name())) {
+            try (PrintStream newPS = new PrintStream(baos, true, Charset.defaultCharset())) {
                 System.setOut(newPS);
                 index.printAnnotations();
                 index.printSubclasses();
-                LOGGER.log(level, baos.toString(Charset.defaultCharset().name()));
+                LOGGER.log(level, baos.toString(Charset.defaultCharset()));
             } finally {
                 System.setOut(oldStdout);
             }

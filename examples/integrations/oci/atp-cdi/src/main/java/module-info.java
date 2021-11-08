@@ -19,19 +19,19 @@
  */
 module io.helidon.examples.integrations.oci.atp.cdi {
     requires java.logging;
+    requires java.naming;
+    requires java.sql;
     requires java.ws.rs;
-    requires java.json.bind;
     requires jakarta.inject.api;
     requires microprofile.config.api;
 
     requires io.helidon.config.yaml.mp;
-    requires io.helidon.common.http;
     requires io.helidon.integrations.common.rest;
     requires io.helidon.integrations.oci.cdi;
     requires io.helidon.integrations.oci.atp;
     requires io.helidon.microprofile.cdi;
 
-    exports io.helidon.examples.integrations.oci.atp.cdi;
+    requires com.oracle.database.ucp;
 
-    opens io.helidon.examples.integrations.oci.atp.cdi to weld.core.impl, io.helidon.microprofile.cdi;
+    exports io.helidon.examples.integrations.oci.atp.cdi;
 }

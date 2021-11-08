@@ -30,12 +30,15 @@ Helidon SE provides the following to support metrics:
 2. A base set of metrics, available at `/metrics/base`, as specified by the MicroProfile Metrics specification.
 3. A set of Helidon-specific metrics, available at `/metrics/vendor`
 
+
+
+
 include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 
 [source,xml]
 ----
     <dependency>
-        <groupId>io.helidon.metrics</groupId>
+        <groupId>io.helidon.metrics.api</groupId>
         <artifactId>helidon-metrics</artifactId>
     </dependency>
 ----
@@ -45,7 +48,7 @@ To enable Metrics, register it with the WebServer.
 
 [source,java]
 ----
-import io.helidon.metrics.MetricsSupport;
+import io.helidon.metrics.api.MetricsSupport;
 //...
 
 Routing.builder()
@@ -59,7 +62,7 @@ Then you can use metrics in your service.
 [source,java]
 .Define and use a Metrics Counter
 ----
-import io.helidon.metrics.RegistryFactory;
+import io.helidon.metrics.api.RegistryFactory;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 //...
@@ -87,6 +90,11 @@ public class MyService implements Service {
 <1> Get the application metrics registry
 <2> Create a counter in that registry
 <3> Increment the counter for every request
+
+NOTE: Helidon-provided endpoints for `/metrics` do their work synchronously, using the same thread on which the request arrived via Netty. To prevent performance degradation, avoid including long-running code that can be invoked by these handlers while Helidon is responding to the metric. +
+For example, if you implement your own application-specific metric types, you will write logic to format the JSON and OpenMetrics output for those metric types. Helidon invokes this formatting logic whenever a client accesses the /metrics endpoints, so make that formatting code as efficient as possible.
+
+
 
 == Accessing Metrics Endpoint
 

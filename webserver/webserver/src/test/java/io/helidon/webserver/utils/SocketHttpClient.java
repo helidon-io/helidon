@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,13 +21,17 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
-import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import io.helidon.common.http.Http;
 import io.helidon.webserver.WebServer;
@@ -35,6 +39,9 @@ import io.helidon.webserver.WebServer;
 import org.hamcrest.core.Is;
 import org.hamcrest.core.StringEndsWith;
 
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
@@ -44,6 +51,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class SocketHttpClient implements AutoCloseable {
 
     private static final Logger LOGGER = Logger.getLogger(SocketHttpClient.class.getName());
+    private static final String EOL = "\r\n";
+    private static final Pattern FIRST_LINE_PATTERN = Pattern.compile("HTTP/\\d+\\.\\d+ (\\d\\d\\d) (.*)");
 
     private final Socket socket;
 
@@ -54,7 +63,7 @@ public class SocketHttpClient implements AutoCloseable {
      * @throws IOException in case of an error
      */
     public SocketHttpClient(WebServer webServer) throws IOException {
-        socket = new Socket(InetAddress.getLocalHost(), webServer.port());
+        socket = new Socket("localhost", webServer.port());
     }
 
     /**
@@ -82,7 +91,8 @@ public class SocketHttpClient implements AutoCloseable {
      * @return the exact string returned by webserver (including {@code HTTP/1.1 200 OK} line for instance)
      * @throws Exception in case of an error
      */
-    public static String sendAndReceive(String path, Http.Method method, String payload, WebServer webServer) throws Exception {
+    public static String sendAndReceive(String path, Http.RequestMethod method, String payload, WebServer webServer)
+            throws Exception {
         return sendAndReceive(path, method, payload, Collections.emptyList(), webServer);
     }
 
@@ -99,7 +109,7 @@ public class SocketHttpClient implements AutoCloseable {
      * @throws Exception in case of an error
      */
     public static String sendAndReceive(String path,
-                                        Http.Method method,
+                                        Http.RequestMethod method,
                                         String payload,
                                         Iterable<String> headers,
                                         WebServer webServer) throws Exception {
@@ -154,9 +164,90 @@ public class SocketHttpClient implements AutoCloseable {
         StringBuilder data = new StringBuilder(bytes);
         for (int i = 0; data.length() < bytes; ++i) {
             data.append(i)
-                .append("\n");
+                    .append("\n");
         }
         return data;
+    }
+
+    /**
+     * Find headers in response and parse them.
+     *
+     * @param response full HTTP response
+     * @return headers map
+     */
+    public static Map<String, String> headersFromResponse(String response) {
+
+        assertThat(response, notNullValue());
+        int index = response.indexOf("\n\n");
+        if (index < 0) {
+            throw new AssertionError("Missing end of headers in response!");
+        }
+        String hdrsPart = response.substring(0, index);
+        String[] lines = hdrsPart.split("\\n");
+        if (lines.length <= 1) {
+            return Collections.emptyMap();
+        }
+        Map<String, String> result = new HashMap<>(lines.length - 1);
+        boolean first = true;
+        for (String line : lines) {
+            if (first) {
+                first = false;
+                continue;
+            }
+            int i = line.indexOf(':');
+            if (i < 0) {
+                throw new AssertionError("Header without semicolon - " + line);
+            }
+            result.put(line.substring(0, i).trim(), line.substring(i + 1).trim());
+        }
+        return result;
+    }
+
+    /**
+     * Find the status line and return response HTTP status.
+     *
+     * @param response full HTTP response
+     * @return status
+     */
+    public static Http.ResponseStatus statusFromResponse(String response) {
+        // response should start with HTTP/1.1 000 reasonPhrase\n
+        int eol = response.indexOf('\n');
+        assertThat("There must be at least a line end after first line: " + response, eol > -1);
+        String firstLine = response.substring(0, eol).trim();
+
+        Matcher matcher = FIRST_LINE_PATTERN.matcher(firstLine);
+        assertThat("Status line must match the patter of 'HTTP/0.0 000 ReasonPhrase', but is: " + response,
+                   matcher.matches());
+
+        int statusCode = Integer.parseInt(matcher.group(1));
+        String phrase = matcher.group(2);
+
+        return Http.ResponseStatus.create(statusCode, phrase);
+    }
+
+    /**
+     * Get entity from response.
+     *
+     * @param response response with initial line, headers, and entity
+     * @param validateHeaderFormat whether to validate headers are correctly formatted
+     * @return entity string
+     */
+    public static String entityFromResponse(String response, boolean validateHeaderFormat) {
+        assertThat(response, notNullValue());
+        int index = response.indexOf("\n\n");
+        if (index < 0) {
+            throw new AssertionError("Missing end of headers in response!");
+        }
+        if (validateHeaderFormat) {
+            String headers = response.substring(0, index);
+            String[] lines = headers.split("\\n");
+            assertThat(lines[0], startsWith("HTTP/"));
+            for (int i = 1; i < lines.length; i++) {
+                assertThat(lines[i], containsString(":"));
+            }
+        }
+
+        return response.substring(index + 2);
     }
 
     /**
@@ -181,7 +272,7 @@ public class SocketHttpClient implements AutoCloseable {
             }
 
             sb.append(t)
-              .append("\n");
+                    .append("\n");
 
             if ("".equalsIgnoreCase(t) && contentLength >= 0) {
                 char[] content = new char[contentLength];
@@ -205,7 +296,7 @@ public class SocketHttpClient implements AutoCloseable {
      * @param method the http method
      * @throws IOException in case of an IO error
      */
-    public void request(Http.Method method) throws IOException {
+    public void request(Http.RequestMethod method) throws IOException {
         request(method, null);
     }
 
@@ -217,7 +308,7 @@ public class SocketHttpClient implements AutoCloseable {
      *                otherwise it's not a valid payload)
      * @throws IOException in case of an IO error
      */
-    public void request(Http.Method method, String payload) throws IOException {
+    public void request(Http.RequestMethod method, String payload) throws IOException {
         request(method, "/", payload);
     }
 
@@ -230,7 +321,7 @@ public class SocketHttpClient implements AutoCloseable {
      *                otherwise it's not a valid payload)
      * @throws IOException in case of an IO error
      */
-    public void request(Http.Method method, String path, String payload) throws IOException {
+    public void request(Http.RequestMethod method, String path, String payload) throws IOException {
         request(method, path, payload, List.of("Content-Type: application/x-www-form-urlencoded"));
     }
 
@@ -244,24 +335,48 @@ public class SocketHttpClient implements AutoCloseable {
      * @param headers the headers (e.g., {@code Content-Type: application/json})
      * @throws IOException in case of an IO error
      */
-    public void request(Http.Method method, String path, String payload, Iterable<String> headers) throws IOException {
-        if (headers == null) {
-            headers = Collections.emptyList();
+    public void request(Http.RequestMethod method, String path, String payload, Iterable<String> headers) throws IOException {
+        request(method.name(), path, "HTTP/1.1", "127.0.0.1", headers, payload);
+    }
+
+    /**
+     * Send raw data to the server.
+     *
+     * @param method HTTP Method
+     * @param path path
+     * @param protocol protocol
+     * @param host host header value (if null, host header is not sent)
+     * @param headers headers (if null, additional headers are not sent)
+     * @param payload entity (if null, entity is not sent)
+     *
+     * @throws IOException in case of an IO error
+     */
+    public void request(String method, String path, String protocol, String host, Iterable<String> headers, String payload)
+            throws IOException {
+        List<String> usedHeaders = new LinkedList<>();
+        if (headers != null) {
+            headers.forEach(usedHeaders::add);
+        }
+        if (host != null) {
+            usedHeaders.add(0, "Host: " + host);
         }
         PrintWriter pw = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8));
-        pw.print(method.name());
+        pw.print(method);
         pw.print(" ");
         pw.print(path);
-        pw.println(" HTTP/1.1");
-        pw.println("Host: 127.0.0.1");
+        pw.print(" ");
+        pw.print(protocol);
+        pw.print(EOL);
 
-        for (String header : headers) {
-            pw.println(header);
+        for (String header : usedHeaders) {
+            pw.print(header);
+            pw.print(EOL);
         }
 
         sendPayload(pw, payload);
 
-        pw.println("");
+        pw.print(EOL);
+        pw.print(EOL);
         pw.flush();
     }
 
@@ -273,9 +388,11 @@ public class SocketHttpClient implements AutoCloseable {
      */
     protected void sendPayload(PrintWriter pw, String payload) {
         if (payload != null) {
-            pw.println("Content-Length: " + payload.length());
-            pw.println("");
-            pw.println(payload);
+            pw.print("Content-Length: " + payload.length());
+            pw.print(EOL);
+            pw.print(EOL);
+            pw.print(payload);
+            pw.print(EOL);
         }
     }
 

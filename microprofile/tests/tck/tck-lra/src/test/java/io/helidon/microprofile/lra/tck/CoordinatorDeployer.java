@@ -16,12 +16,15 @@
 package io.helidon.microprofile.lra.tck;
 
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 import javax.enterprise.inject.se.SeContainer;
 import javax.enterprise.inject.spi.CDI;
 
+import io.helidon.common.reactive.Single;
 import io.helidon.config.mp.MpConfigSources;
 import io.helidon.lra.coordinator.CoordinatorService;
 import io.helidon.microprofile.arquillian.HelidonContainerConfiguration;
@@ -29,7 +32,7 @@ import io.helidon.microprofile.arquillian.HelidonDeployableContainer;
 import io.helidon.microprofile.server.ServerCdiExtension;
 
 import org.jboss.arquillian.container.spi.Container;
-import org.jboss.arquillian.container.spi.client.container.DeploymentException;
+import org.jboss.arquillian.container.spi.event.container.AfterDeploy;
 import org.jboss.arquillian.container.spi.event.container.BeforeStart;
 import org.jboss.arquillian.container.spi.event.container.BeforeUnDeploy;
 import org.jboss.arquillian.core.api.annotation.Observes;
@@ -41,7 +44,7 @@ public class CoordinatorDeployer {
     private static final Logger LOGGER = Logger.getLogger(CoordinatorDeployer.class.getName());
 
     static final String COORDINATOR_ROUTING_NAME = "coordinator";
-
+    private static volatile CompletableFuture<Void> startedFuture = new CompletableFuture<>();
     private final AtomicInteger coordinatorPort = new AtomicInteger(0);
     private final AtomicInteger clientPort = new AtomicInteger(0);
 
@@ -62,7 +65,7 @@ public class CoordinatorDeployer {
                             "server.sockets.0.port", String.valueOf(coordinatorPort.get()),
                             "server.sockets.0.workers", "16",
                             "server.sockets.0.bind-address", "localhost",
-                            "helidon.lra.coordinator.timeout", "800"
+                            "helidon.lra.coordinator.timeout", "3000"
                     )));
         });
 
@@ -73,7 +76,22 @@ public class CoordinatorDeployer {
 
     }
 
-    public void beforeUndeploy(@Observes BeforeUnDeploy event, Container container) throws DeploymentException {
+    public void afterDeploy(@Observes AfterDeploy event, Container container) throws Exception {
+        ServerCdiExtension serverCdiExtension = CDI.current().getBeanManager().getExtension(ServerCdiExtension.class);
+        for (int i = 0;
+             i < 50 && !serverCdiExtension.started();
+             i++) {
+            try {
+                TimeUnit.MILLISECONDS.sleep(10);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        startedFuture.complete(null);
+    }
+
+    public void beforeUndeploy(@Observes BeforeUnDeploy event, Container container) {
+        startedFuture = new CompletableFuture<>();
         // Gracefully stop the container so coordinator gets the chance to persist lra registry
         try {
             CDI<Object> current = CDI.current();
@@ -85,5 +103,9 @@ public class CoordinatorDeployer {
         } catch (Throwable t) {
             t.printStackTrace();
         }
+    }
+
+    static Single<Void> started() {
+        return Single.create(startedFuture, true);
     }
 }

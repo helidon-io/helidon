@@ -23,6 +23,8 @@ module io.helidon.security.util {
     requires transitive io.helidon.config;
     // builder class
     requires transitive io.helidon.common;
+    // configuration metadata
+    requires static io.helidon.config.metadata;
 
     exports io.helidon.security.util;
 }

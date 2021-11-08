@@ -70,6 +70,14 @@ include::{metrics-common}[tag=vendor-metrics-json-output]
 ----
 include::{metrics-common}[tag=get-single-metric]
 
+include::{metrics-common}[tag=controlling-intro-part-1]
+* <<controlling-rest-request-metrics,Control `REST.request` metrics.>>
+include::{metrics-common}[tag=controlling-intro-part-2]
+[[controlling-rest-request-metrics]]
+
+include::{metrics-common}[tag=disabling-whole]
+
+[[controlling-rest-request-metrics]]
 ==== Controlling `REST.request` Metrics
 Helidon implements the optional family of metrics, all with the name `REST.request`, as described in the
 link:https://download.eclipse.org/microprofile/microprofile-metrics-2.3/microprofile-metrics-spec-2.3.html#_optional_rest[MicroProfile Metrics specification].
@@ -83,7 +91,7 @@ Note that the applications you generate using the full Helidon archetype _do_ en
 generated config file.
 You can see the results in the sample output shown in earlier example runs.
 
-include::{metrics-common}[tag=KPI]
+include::{metrics-common}[tags=controlling-by-component;controlling-by-registry]
 
 include::{metrics-common}[tag=metrics-metadata]
 

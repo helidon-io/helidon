@@ -29,6 +29,7 @@ module io.helidon.webserver {
     requires transitive io.helidon.tracing.config;
     requires transitive io.opentracing.util;
     requires io.helidon.logging.common;
+    requires static io.helidon.config.metadata;
 
     requires java.logging;
     requires io.opentracing.api;

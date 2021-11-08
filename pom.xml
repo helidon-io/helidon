@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-dependencies</artifactId>
-        <version>2.4.0-SNAPSHOT</version>
+        <version>2.4.1-SNAPSHOT</version>
         <relativePath>./dependencies/pom.xml</relativePath>
     </parent>
     <artifactId>helidon-project</artifactId>
@@ -60,7 +60,7 @@
         <version.lib.groovy-all>2.4.14</version.lib.groovy-all>
         <!-- Silence javadoc error org.jboss.logging.annotations.Message$Format not found -->
         <version.lib.jboss-logging-annotations>2.2.1.Final</version.lib.jboss-logging-annotations>
-        <version.lib.kafka-junit5>3.2.1</version.lib.kafka-junit5>
+        <version.lib.kafka-junit5>3.2.3</version.lib.kafka-junit5>
         <version.lib.netty.tcnative>2.0.36.Final</version.lib.netty.tcnative>
         <version.lib.restito>0.9.1</version.lib.restito>
         <version.lib.rxjava2-jdk9-interop>0.1.0</version.lib.rxjava2-jdk9-interop>
@@ -97,7 +97,7 @@
         <version.plugin.exec>1.6.0</version.plugin.exec>
         <version.plugin.failsafe>3.0.0-M5</version.plugin.failsafe>
         <version.plugin.glassfish-copyright>2.3</version.plugin.glassfish-copyright>
-        <version.plugin.helidon-build-tools>2.2.3</version.plugin.helidon-build-tools>
+        <version.plugin.helidon-build-tools>2.3.0</version.plugin.helidon-build-tools>
         <version.plugin.hibernate-enhance>${version.lib.hibernate}</version.plugin.hibernate-enhance>
         <version.plugin.jacoco>0.8.5</version.plugin.jacoco>
         <version.plugin.jandex>1.1.0</version.plugin.jandex>
@@ -112,7 +112,7 @@
         <version.plugin.scm-publish-plugin>3.0.0</version.plugin.scm-publish-plugin>
         <version.plugin.shade>3.0.0</version.plugin.shade>
         <version.plugin.source>3.0.1</version.plugin.source>
-        <version.plugin.spotbugs>4.2.0</version.plugin.spotbugs>
+        <version.plugin.spotbugs>4.4.2.2</version.plugin.spotbugs>
         <version.plugin.findsecbugs>1.11.0</version.plugin.findsecbugs>
         <version.plugin.dependency-check>6.0.2</version.plugin.dependency-check>
         <version.plugin.surefire>3.0.0-M5</version.plugin.surefire>
@@ -121,7 +121,7 @@
         <version.plugin.buildnumber>1.4</version.plugin.buildnumber>
         <version.plugin.wiremock>2.14.0</version.plugin.wiremock>
 
-        <version.helidon-cli>2.2.3</version.helidon-cli>
+        <version.helidon-cli>2.3.0</version.helidon-cli>
 
         <!-- Links to external javadocs. If you see a hardcoded version it means the javadocs for the version we use is not available. -->
         <javadoc.jackson.version>2.12</javadoc.jackson.version>
@@ -211,6 +211,7 @@
                         <source>11</source>
                         <target>11</target>
                         <release>11</release>
+                        <forceJavacCompilerUse>true</forceJavacCompilerUse>
                         <compilerArgs>
                             <arg>-Xlint:unchecked</arg>
                             <!--
@@ -495,6 +496,7 @@
                     <artifactId>spotbugs-maven-plugin</artifactId>
                     <version>${version.plugin.spotbugs}</version>
                     <configuration>
+                        <omitVisitors>FindReturnRef</omitVisitors>
                         <skip>${spotbugs.skip}</skip>
                         <threshold>${spotbugs.threshold}</threshold>
                         <!--suppress UnresolvedMavenProperty -->

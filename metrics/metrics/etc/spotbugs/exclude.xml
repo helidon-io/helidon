@@ -60,4 +60,34 @@
         <Bug pattern="PREDICTABLE_RANDOM" />
     </Match>
 
+    <!--
+       The following exemptions allow us to keep the original names for backward compatibility even though they
+       implement or extend same-named interfaces in another artifact.
+    -->
+    <Match>
+        <Class name="io.helidon.metrics.RegistryFactory" />
+        <Bug pattern="NM_SAME_SIMPLE_NAME_AS_INTERFACE" />
+    </Match>
+    <Match>
+        <Class name="io.helidon.metrics.MetricsSupport" />
+        <Bug pattern="NM_SAME_SIMPLE_NAME_AS_INTERFACE" />
+    </Match>
+    <Match>
+        <Class name="io.helidon.metrics.MetricsSupport$Builder" />
+        <Bug pattern="NM_SAME_SIMPLE_NAME_AS_INTERFACE" />
+    </Match>
+    <Match>
+        <Class name="io.helidon.metrics.HelidonMetric" />
+        <Bug pattern="NM_SAME_SIMPLE_NAME_AS_INTERFACE" />
+    </Match>
+    <Match>
+        <Class name="io.helidon.metrics.KeyPerformanceIndicatorMetricsSettings" />
+        <Bug pattern="NM_SAME_SIMPLE_NAME_AS_INTERFACE" />
+    </Match>
+    <Match>
+        <Class name="io.helidon.metrics.KeyPerformanceIndicatorMetricsSettings$Builder" />
+        <Bug pattern="NM_SAME_SIMPLE_NAME_AS_INTERFACE" />
+    </Match>
+    <!-- -->
+
 </FindBugsFilter>
