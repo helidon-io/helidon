@@ -65,14 +65,17 @@ public class ExecutorServiceMetricsObserver implements ExecutorServiceSupplierOb
                                 (ThreadPoolExecutor tpe) -> tpe.getQueue().size())
             );
 
-   private final MetricRegistry registry;
+    private final MetricRegistry registry;
 
+    /**
+     * Creates a new instance of the observer.
+     */
     public ExecutorServiceMetricsObserver() {
         this.registry = io.helidon.metrics.api.RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.VENDOR);
     }
 
     @Override
-    public <E extends ExecutorService> SupplierObserverContext registerSupplier(Supplier<E> supplier,
+    public SupplierObserverContext registerSupplier(Supplier<? extends ExecutorService> supplier,
                                                     String category,
                                                     String supplierName) {
         SupplierInfo supplierInfo = new SupplierInfo(supplierName, category);
@@ -81,7 +84,7 @@ public class ExecutorServiceMetricsObserver implements ExecutorServiceSupplierOb
     }
 
     @Override
-    public <E extends ExecutorService> SupplierObserverContext registerSupplier(Supplier<E> supplier,
+    public SupplierObserverContext registerSupplier(Supplier<? extends ExecutorService> supplier,
                                                                                 String category,
                                                                                 String supplierName,
                                                                                 List<MethodInvocation> methodInvocations) {
@@ -273,7 +276,9 @@ public class ExecutorServiceMetricsObserver implements ExecutorServiceSupplierOb
          * @param <T> type of the gauge
          * @return the new gauge factory
          */
-        private static <T, E extends ExecutorService> GaugeFactory<T, E> create(Metadata templateMetadata, Function<E, T> valueFunction) {
+        private static <T, E extends ExecutorService> GaugeFactory<T, E> create(
+                Metadata templateMetadata,
+                Function<E, T> valueFunction) {
             return new GaugeFactory<>(templateMetadata, valueFunction);
         }
         private final Metadata templateMetadata;

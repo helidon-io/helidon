@@ -43,7 +43,7 @@ public class ObserverForTesting implements ExecutorServiceSupplierObserver {
     }
 
     @Override
-    public <E extends ExecutorService> SupplierObserverContext registerSupplier(Supplier<E> supplier, String category, String supplierName) {
+    public SupplierObserverContext registerSupplier(Supplier<? extends ExecutorService> supplier, String category, String supplierName) {
         SupplierInfo supplierInfo = new SupplierInfo(category, supplierName);
         suppliers.put(supplier, supplierInfo);
         return supplierInfo.context;

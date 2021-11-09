@@ -35,7 +35,7 @@ public interface ExecutorServiceSupplierObserver {
      *
      * @return the {@code SupplierObserverContext} for the supplier
      */
-    <E extends ExecutorService> SupplierObserverContext registerSupplier(Supplier<E> supplier,
+    SupplierObserverContext registerSupplier(Supplier<? extends ExecutorService> supplier,
                                                                          String category,
                                                                          String supplierName);
 
@@ -51,7 +51,7 @@ public interface ExecutorServiceSupplierObserver {
      *
      * @return the {@code SupplierObserverContext} for the supplier
      */
-    default <E extends ExecutorService> SupplierObserverContext registerSupplier(Supplier<E> supplier,
+    default SupplierObserverContext registerSupplier(Supplier<? extends ExecutorService> supplier,
                                                                                  String category,
                                                                                  String supplierName,
                                                                                  List<MethodInvocation> methodInvocations) {
