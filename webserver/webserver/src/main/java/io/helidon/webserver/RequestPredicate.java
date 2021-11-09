@@ -50,7 +50,7 @@ import io.helidon.common.http.MediaType;
  * The handler to be used for matching requests is passed as parameter to
  * {@link #thenApply(Handler)} and the handler to be used for requests that do not
  * match can be specified using {@link ConditionalHandler#otherwise(Handler) }.
- * <h3>Examples</h3>
+ * <h2>Examples</h2>
  * <p>
  * Invoke a {@link Handler} only when the request contains a header name {@code foo}
  * and accepts {@code text/plain}, otherwise return a response with {@code 404} code.

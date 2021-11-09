@@ -15,15 +15,15 @@
  */
 
 /**
- * <h1>Helidon SE CORS Support</h1>
+ * <h2>Helidon SE CORS Support</h2>
  * <p>
  * Use {@link io.helidon.webserver.cors.CorsSupport} and its {@link io.helidon.webserver.cors.CorsSupport.Builder} to add CORS
  * handling to resources in your application.
  * <p>
  * Because Helidon SE does not use annotation processing to identify endpoints, you need to provide the CORS information for
  * your application another way. You can use Helidon configuration, the Helidon CORS API, or a combination.
- * <h2>Configuration</h2>
- * <h3>Format</h3>
+ * <h3>Configuration</h3>
+ * <h4>Format</h4>
  * CORS configuration looks like this:
  * <pre>
  * enabled: true    # the default
@@ -33,7 +33,7 @@
  * allow-credentials: true
  * max-age: -1
  * </pre>
- * <h3>Finding and applying CORS configuration</h3>
+ * <h4>Finding and applying CORS configuration</h4>
  * Although Helidon prescribes the CORS config format, you can put it wherever you want in your application's configuration
  * file. Your application code will retrieve the CORS config from its location within your configuration and then use that
  * config node to prepare CORS support for your app.
@@ -71,7 +71,7 @@
  * This sets up more restrictive CORS behavior for more sensitive HTTP methods ({@code PUT} for example) and more liberal CORS
  * behavior for {@code GET}.
  *
- * <h2>The Helidon CORS API</h2>
+ * <h3>The Helidon CORS API</h3>
  * You can define your application's CORS behavior programmatically -- together with configuration if you want -- by:
  * <ul>
  *     <li>creating a {@link io.helidon.webserver.cors.CrossOriginConfig.Builder} instance,</li>

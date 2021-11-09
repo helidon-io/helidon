@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-FROM maven:3.6-jdk-11 as build
+FROM maven:3.6.3-openjdk-17-slim as build
 
 WORKDIR /helidon    
 ARG HELIDON_BRANCH=master
@@ -49,7 +49,7 @@ RUN mvn install -pl :helidon-lra-coordinator-server -am -DskipTests
 
 RUN echo "Helidon LRA Coordinator build successfully fished"
 
-FROM openjdk:11-jre-slim
+FROM openjdk:17-jdk-slim
 WORKDIR /helidon
 
 COPY --from=build /helidon/lra/coordinator/server/target/helidon-lra-coordinator-server.jar ./

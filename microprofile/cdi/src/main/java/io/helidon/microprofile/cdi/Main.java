@@ -26,8 +26,8 @@ import javax.enterprise.inject.spi.CDI;
  * This is the "master" main class of Helidon MP.
  * You can boot the Helidon MP instance using this class if you want do not need to modify
  * anything using builders.
- * <h1>Startup</h1>
- * <h2>Configuration</h2>
+ * <h2>Startup</h2>
+ * <h3>Configuration</h3>
  * <p>
  * If this method is used, the following approach is taken for configuration:
  * <ul>
@@ -36,7 +36,7 @@ import javax.enterprise.inject.spi.CDI;
  *      <li>If there are any MicroProfile config sources, these will be added</li>
  *      <li>If there are any {@code META-INF/microprofile-config.properties} files on the classpath, these will be added</li>
  * </ul>
- * <h2>Logging</h2>
+ * <h3>Logging</h3>
  * Helidon uses Java Util Logging. You can configure logging using:
  * <ul>
  *     <li>A system property {@code java.util.logging.config.class}</li>

@@ -18,6 +18,7 @@ package io.helidon.microprofile.metrics;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
@@ -176,14 +177,18 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
      * @param <E> type of element
      * @deprecated This method is made public to migrate from metrics1 to metrics2 for gRPC, this should be refactored
      */
+    @SuppressWarnings("rawtypes")
     @Deprecated
     public static <E extends Member & AnnotatedElement>
     void registerMetric(E element, Class<?> clazz, LookupResult<? extends Annotation> lookupResult) {
         Executable executable;
         if (element instanceof AnnotatedCallable) {
            executable = (Executable) ((AnnotatedCallable<?>) element).getJavaMember();
-        } else if (element instanceof Executable) {
-            executable = (Executable) element;
+        } else if (element instanceof Constructor) {
+            // code checking instanceof Executable and casting to it would not compile on Java17
+            executable = (Constructor) element;
+        } else if (element instanceof Method) {
+            executable = (Method) element;
         } else {
             throw new IllegalArgumentException("Element must be an AnnotatedCallable or Executable but was "
                     + element.getClass().getName());

@@ -15,7 +15,7 @@
  */
 
 /**
- * <h1>Security</h1>
+ * <h2>Security</h2>
  *
  * Supports security for web (and possibly other) resources including:
  * <ul>
@@ -30,7 +30,7 @@
  * Various security aspects are pluggable, using {@link io.helidon.security.spi.SecurityProvider providers}
  * to extend functionality.
  *
- * <h2>Bootstrapping</h2>
+ * <h3>Bootstrapping</h3>
  *
  * You have two way to do things with security - either load it from configuration or create a fully configured instance
  * using a builder. Both approaches should allow the same behavior.
