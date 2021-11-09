@@ -75,6 +75,7 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
         this.growthRate = builder.growthRate;
         this.rejectionHandler = builder.rejectionHandler == null ? DEFAULT_REJECTION_POLICY : builder.rejectionHandler;
         this.useVirtualThreads = builder.useVirtualThreads || builder.virtualThreadsEnforced;
+        ObserverManager.registerSupplier(this, name, useVirtualThreads);
     }
 
     /**
@@ -110,7 +111,7 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
         if (useVirtualThreads) {
             if (VirtualExecutorUtil.isVirtualSupported()) {
                 LOGGER.fine("Using unbounded virtual executor service for pool " + name);
-                return VirtualExecutorUtil.executorService();
+                return ObserverManager.registerExecutorService(this, VirtualExecutorUtil.executorService());
             }
         }
 
@@ -128,7 +129,7 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
         if (prestart) {
             result.prestartAllCoreThreads();
         }
-        return result;
+        return ObserverManager.registerExecutorService(this, result);
     }
 
     @Override

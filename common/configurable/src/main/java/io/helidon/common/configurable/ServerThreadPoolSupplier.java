@@ -38,11 +38,12 @@ public final class ServerThreadPoolSupplier implements Supplier<ExecutorService>
 
     private ServerThreadPoolSupplier(final ThreadPoolSupplier.Builder builder) {
         this.supplier = builder.build();
+        ObserverManager.registerSupplier(this, "server", "helidon-");
     }
 
     @Override
     public ExecutorService get() {
-        return supplier.get();
+        return ObserverManager.registerExecutorService(this, supplier.get());
     }
 
     /**
