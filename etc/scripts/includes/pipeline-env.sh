@@ -71,6 +71,8 @@ if [ -z "${__PIPELINE_ENV_INCLUDED__}" ]; then
         MAVEN_OPTS="${MAVEN_OPTS} -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
         MAVEN_OPTS="${MAVEN_OPTS} -Dorg.slf4j.simpleLogger.showDateTime=true"
         MAVEN_OPTS="${MAVEN_OPTS} -Dorg.slf4j.simpleLogger.dateTimeFormat=HH:mm:ss,SSS"
+        # Needed for archetype engine plugin
+        MAVEN_OPTS="${MAVEN_OPTS} --add-opens=java.base/java.util=ALL-UNNAMED"
         export MAVEN_OPTS
         export PATH="/tools/apache-maven-3.6.3/bin:${JAVA_HOME}/bin:/tools/node-v12/bin:${PATH}"
         if [ -n "${GITHUB_SSH_KEY}" ] ; then
