@@ -17,9 +17,12 @@ package io.helidon.metrics;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
+import java.util.Map;
 import java.util.StringJoiner;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.logging.Level;
@@ -41,16 +44,10 @@ public class ExecutorServiceMetricsObserver implements ExecutorServiceSupplierOb
 
     private static final Logger LOGGER = Logger.getLogger(ExecutorServiceMetricsObserver.class.getName());
 
-    /**
-     * Creates a new {@code ExecutorServiceMetricsObserver} instance.
-     *
-     * @return the new observer
-     */
-    public static ExecutorServiceSupplierObserver create() {
-        return new ExecutorServiceMetricsObserver();
-    }
-
     private static final String METRIC_NAME_PREFIX = "executor-service.";
+
+    // Supplier names ending with "-" need to be made unique; this tracks the next available suffix value for each prefix
+    private static final Map<String, AtomicInteger> NEXT_IDENTIFIERS = new ConcurrentHashMap<>();
 
     // metrics we register for each ThreadPoolExecutor which a supplier creates (other than thread-per-task executors)
     private static final List<GaugeFactory<?, ThreadPoolExecutor>> THREAD_POOL_EXECUTOR_METRIC_FACTORIES = List.of(
@@ -78,7 +75,7 @@ public class ExecutorServiceMetricsObserver implements ExecutorServiceSupplierOb
     public SupplierObserverContext registerSupplier(Supplier<? extends ExecutorService> supplier,
                                                     String category,
                                                     String supplierName) {
-        SupplierInfo supplierInfo = new SupplierInfo(supplierName, category);
+        SupplierInfo supplierInfo = new SupplierInfo(possiblyAdjustedName(supplierName), category);
         LOGGER.log(Level.FINE, () -> String.format("Metrics thread pool supplier registration: %s", supplierInfo));
         return supplierInfo.context();
     }
@@ -88,9 +85,18 @@ public class ExecutorServiceMetricsObserver implements ExecutorServiceSupplierOb
                                                                                 String category,
                                                                                 String supplierName,
                                                                                 List<MethodInvocation> methodInvocations) {
-        SupplierInfo supplierInfo = new SupplierInfoWithMethods(supplierName, category, methodInvocations);
+        SupplierInfo supplierInfo = new SupplierInfoWithMethods(possiblyAdjustedName(supplierName), category, methodInvocations);
         LOGGER.log(Level.FINE, () -> String.format("Metrics thread pool supplier registration: %s", supplierInfo));
         return supplierInfo.context();
+    }
+
+    private String possiblyAdjustedName(String supplierName) {
+        if (!supplierName.endsWith("-")) {
+            return supplierName;
+        }
+        AtomicInteger next = NEXT_IDENTIFIERS.computeIfAbsent(supplierName, key -> new AtomicInteger(0));
+        int nextIndex = next.getAndIncrement();
+        return String.format("%s%d", supplierName, nextIndex);
     }
 
     private class MetricsObserverContext implements ExecutorServiceSupplierObserver.SupplierObserverContext {
@@ -190,7 +196,7 @@ public class ExecutorServiceMetricsObserver implements ExecutorServiceSupplierOb
         private final List<MethodInvocation> methodInvocations;
 
         private SupplierInfoWithMethods(String supplierName, String category, List<MethodInvocation> methodInvocations) {
-            super(supplierName, category);
+            super(supplierName, category + "-per-task");
             this.methodInvocations = methodInvocations;
         }
 
