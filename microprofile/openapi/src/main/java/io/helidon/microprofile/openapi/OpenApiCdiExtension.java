@@ -165,9 +165,9 @@ public class OpenApiCdiExtension implements Extension {
             try (InputStream indexIS = indexURL.openStream()) {
                 LOGGER.log(Level.CONFIG, "Adding Jandex index at {0}", indexURL.toString());
                 indices.add(new IndexReader(indexIS).read());
-            } catch (IOException ex) {
+            } catch (Exception ex) {
                 throw new IOException("Attempted to read from previously-located index file "
-                        + indexURL + " but the index cannot be found", ex);
+                        + indexURL + " but the index cannot be read", ex);
             }
         }
         return indices.size() == 1 ? indices.get(0) : CompositeIndex.create(indices);
