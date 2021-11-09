@@ -93,11 +93,11 @@ class ObserverManager {
             boolean useVirtualThreads) {
         return useVirtualThreads
                 ? observer.registerSupplier(supplier,
-                                            "per-task-thread-pool",
+                                            "ad-hoc",
                                             supplierName,
                                             VirtualExecutorUtil.METRICS_RELATED_METHOD_INVOCATIONS)
                 : observer.registerSupplier(supplier,
-                                            "thread-pool",
+                                            "ad-hoc",
                                             supplierName);
     }
 
