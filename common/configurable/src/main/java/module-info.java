@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import io.helidon.common.configurable.spi.ExecutorServiceSupplierObserver;
+
 /**
  * Common tools that use config component.
  *
@@ -28,4 +30,7 @@ module io.helidon.common.configurable {
     requires static io.helidon.config.metadata;
 
     exports io.helidon.common.configurable;
+    exports io.helidon.common.configurable.spi;
+
+    uses ExecutorServiceSupplierObserver;
 }
