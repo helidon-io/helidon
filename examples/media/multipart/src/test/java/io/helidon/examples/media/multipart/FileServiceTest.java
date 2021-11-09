@@ -22,9 +22,6 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import javax.json.JsonObject;
-import javax.json.JsonString;
-
 import io.helidon.common.http.MediaType;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.media.multipart.FileFormParams;
@@ -33,6 +30,8 @@ import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientResponse;
 import io.helidon.webserver.WebServer;
 
+import jakarta.json.JsonObject;
+import jakarta.json.JsonString;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;

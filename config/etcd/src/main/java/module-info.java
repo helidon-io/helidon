@@ -31,6 +31,8 @@ module io.helidon.config.etcd {
     requires io.helidon.common;
     requires io.helidon.common.media.type;
     requires io.grpc;
+    // used only for compilation of generated classes
+    requires static java.annotation;
 
     exports io.helidon.config.etcd;
 

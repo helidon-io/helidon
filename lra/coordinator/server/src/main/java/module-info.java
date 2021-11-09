@@ -19,7 +19,7 @@
  */
 module io.helidon.lra.coordinator {
     requires java.logging;
-    requires java.json;
+    requires jakarta.json;
     requires microprofile.lra.api;
     requires io.helidon.common.reactive;
     requires io.helidon.webclient;

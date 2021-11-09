@@ -31,11 +31,11 @@ import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.annotation.Priority;
-import javax.inject.Singleton;
-
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.grpc.core.MarshallerSupplier;
+
+import jakarta.annotation.Priority;
+import jakarta.inject.Singleton;
 
 /**
  * A base class for gRPC service and client descriptor builders.
@@ -231,8 +231,8 @@ public abstract class AbstractServiceBuilder {
      * Load the {@link io.helidon.microprofile.grpc.core.MethodHandlerSupplier} instances using the {@link java.util.ServiceLoader}
      * and return them in priority order.
      * <p>
-     * Priority is determined by the value obtained from the {@link javax.annotation.Priority} annotation on
-     * any implementation classes. Classes not annotated with {@link javax.annotation.Priority} have a
+     * Priority is determined by the value obtained from the {@link jakarta.annotation.Priority} annotation on
+     * any implementation classes. Classes not annotated with {@link jakarta.annotation.Priority} have a
      * priority of zero.
      *
      * @return a priority ordered list of {@link io.helidon.microprofile.grpc.core.MethodHandlerSupplier} instances

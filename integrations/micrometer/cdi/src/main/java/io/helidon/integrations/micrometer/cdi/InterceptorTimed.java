@@ -17,11 +17,10 @@ package io.helidon.integrations.micrometer.cdi;
 
 import java.time.Duration;
 
-import javax.annotation.Priority;
-import javax.interceptor.Interceptor;
-
 import io.micrometer.core.annotation.Timed;
 import io.micrometer.core.instrument.Timer;
+import jakarta.annotation.Priority;
+import jakarta.interceptor.Interceptor;
 
 @Interceptor
 @Priority(Interceptor.Priority.PLATFORM_BEFORE + 8)

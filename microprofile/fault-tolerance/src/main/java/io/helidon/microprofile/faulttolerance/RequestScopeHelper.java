@@ -15,15 +15,13 @@
  */
 package io.helidon.microprofile.faulttolerance;
 
-
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
-import javax.enterprise.context.RequestScoped;
-import javax.enterprise.inject.spi.CDI;
-
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.enterprise.inject.spi.CDI;
 import org.glassfish.jersey.internal.inject.InjectionManager;
 import org.glassfish.jersey.process.internal.RequestContext;
 import org.glassfish.jersey.process.internal.RequestScope;

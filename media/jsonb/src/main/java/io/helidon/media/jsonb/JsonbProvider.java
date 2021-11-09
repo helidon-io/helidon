@@ -16,13 +16,13 @@
 
 package io.helidon.media.jsonb;
 
-import javax.json.bind.Jsonb;
-import javax.json.bind.JsonbBuilder;
-import javax.json.bind.JsonbConfig;
-
 import io.helidon.config.Config;
 import io.helidon.media.common.MediaSupport;
 import io.helidon.media.common.spi.MediaSupportProvider;
+
+import jakarta.json.bind.Jsonb;
+import jakarta.json.bind.JsonbBuilder;
+import jakarta.json.bind.JsonbConfig;
 
 /**
  * JSON-B support SPI provider.

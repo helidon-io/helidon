@@ -23,7 +23,7 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import io.helidon.config.mp.MpConfigSources;
 import io.helidon.config.yaml.mp.YamlMpConfigSource;

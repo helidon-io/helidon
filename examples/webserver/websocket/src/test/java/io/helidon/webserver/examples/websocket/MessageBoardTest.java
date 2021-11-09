@@ -16,14 +16,6 @@
 
 package io.helidon.webserver.examples.websocket;
 
-import javax.websocket.ClientEndpointConfig;
-import javax.websocket.CloseReason;
-import javax.websocket.DeploymentException;
-import javax.websocket.Endpoint;
-import javax.websocket.EndpointConfig;
-import javax.websocket.MessageHandler;
-import javax.websocket.Session;
-
 import java.io.IOException;
 import java.net.URI;
 import java.util.concurrent.CountDownLatch;
@@ -34,14 +26,22 @@ import java.util.logging.Logger;
 import io.helidon.common.http.Http;
 import io.helidon.webclient.WebClient;
 import io.helidon.webserver.WebServer;
+
+import jakarta.websocket.ClientEndpointConfig;
+import jakarta.websocket.CloseReason;
+import jakarta.websocket.DeploymentException;
+import jakarta.websocket.Endpoint;
+import jakarta.websocket.EndpointConfig;
+import jakarta.websocket.MessageHandler;
+import jakarta.websocket.Session;
 import org.glassfish.tyrus.client.ClientManager;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.webserver.examples.websocket.Main.startWebServer;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**

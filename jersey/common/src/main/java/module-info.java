@@ -19,11 +19,11 @@
  */
 module io.helidon.jersey.common {
     requires java.logging;
-    requires java.annotation;
+    requires jakarta.annotation;
 
     requires io.helidon.common;
 
-    requires java.ws.rs;
+    requires jakarta.ws.rs;
     requires jersey.common;
     requires jersey.server;
 

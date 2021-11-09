@@ -20,7 +20,7 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import java.lang.management.ThreadMXBean;
 
-import javax.enterprise.inject.Produces;
+import jakarta.enterprise.inject.Produces;
 
 /**
  * A CDI producer for providing various objects that would otherwise be looked up via static methods.

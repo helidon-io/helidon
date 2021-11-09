@@ -22,9 +22,10 @@ import java.util.function.Consumer;
 
 import javax.sql.XAConnection;
 import javax.sql.XADataSource;
-import javax.transaction.xa.XAResource;
 
 import io.helidon.integrations.jdbc.AbstractDataSource;
+
+import jakarta.transaction.xa.XAResource;
 
 /**
  * An {@link AbstractDataSource} that adapts an {@link XADataSource}

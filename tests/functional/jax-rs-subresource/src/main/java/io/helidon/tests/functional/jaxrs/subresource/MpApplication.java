@@ -17,8 +17,8 @@ package io.helidon.tests.functional.jaxrs.subresource;
 
 import java.util.Set;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.ws.rs.core.Application;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.ws.rs.core.Application;
 
 /**
  * TODO javadoc.

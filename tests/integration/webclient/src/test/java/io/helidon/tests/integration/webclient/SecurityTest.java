@@ -16,11 +16,10 @@
 
 package io.helidon.tests.integration.webclient;
 
-import javax.json.JsonObject;
-
 import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
 import io.helidon.webclient.security.WebClientSecurity;
 
+import jakarta.json.JsonObject;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;

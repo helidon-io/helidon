@@ -20,8 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
-import javax.annotation.Priority;
-
 import io.helidon.common.Prioritized;
 import io.helidon.tracing.TracerBuilder;
 import io.helidon.tracing.spi.TracerProvider;
@@ -29,6 +27,7 @@ import io.helidon.tracing.spi.TracerProvider;
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
 import io.opentracing.Tracer;
+import jakarta.annotation.Priority;
 
 /**
  * Zipkin java service.

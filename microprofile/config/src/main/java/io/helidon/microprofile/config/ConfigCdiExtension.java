@@ -18,6 +18,7 @@ package io.helidon.microprofile.config;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.Serial;
 import java.io.Serializable;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
@@ -44,34 +45,33 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.context.Dependent;
-import javax.enterprise.context.spi.CreationalContext;
-import javax.enterprise.event.Observes;
-import javax.enterprise.inject.spi.AfterBeanDiscovery;
-import javax.enterprise.inject.spi.AfterDeploymentValidation;
-import javax.enterprise.inject.spi.Annotated;
-import javax.enterprise.inject.spi.AnnotatedField;
-import javax.enterprise.inject.spi.AnnotatedMethod;
-import javax.enterprise.inject.spi.AnnotatedParameter;
-import javax.enterprise.inject.spi.Bean;
-import javax.enterprise.inject.spi.BeanManager;
-import javax.enterprise.inject.spi.DeploymentException;
-import javax.enterprise.inject.spi.Extension;
-import javax.enterprise.inject.spi.InjectionPoint;
-import javax.enterprise.inject.spi.ProcessBean;
-import javax.enterprise.inject.spi.ProcessObserverMethod;
-import javax.inject.Provider;
-
 import io.helidon.common.NativeImageHelper;
 import io.helidon.config.mp.MpConfig;
-import io.helidon.config.mp.MpConfigImpl;
-import io.helidon.config.mp.MpConfigProviderResolver;
 
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.Dependent;
+import jakarta.enterprise.context.spi.CreationalContext;
+import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.spi.AfterBeanDiscovery;
+import jakarta.enterprise.inject.spi.AfterDeploymentValidation;
+import jakarta.enterprise.inject.spi.Annotated;
+import jakarta.enterprise.inject.spi.AnnotatedField;
+import jakarta.enterprise.inject.spi.AnnotatedMethod;
+import jakarta.enterprise.inject.spi.AnnotatedParameter;
+import jakarta.enterprise.inject.spi.Bean;
+import jakarta.enterprise.inject.spi.BeanManager;
+import jakarta.enterprise.inject.spi.DeploymentException;
+import jakarta.enterprise.inject.spi.Extension;
+import jakarta.enterprise.inject.spi.InjectionPoint;
+import jakarta.enterprise.inject.spi.ProcessBean;
+import jakarta.enterprise.inject.spi.ProcessObserverMethod;
+import jakarta.inject.Provider;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
+import org.eclipse.microprofile.config.ConfigValue;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.config.spi.ConfigSource;
+import org.eclipse.microprofile.config.spi.Converter;
 
 /**
  * Extension to enable config injection in CDI container (all of {@link io.helidon.config.Config},
@@ -251,10 +251,13 @@ public class ConfigCdiExtension implements Extension {
              */
         FieldTypes fieldTypes = FieldTypes.create(type);
         org.eclipse.microprofile.config.Config config = ConfigProvider.getConfig();
-        if (config instanceof MpConfigProviderResolver.ConfigDelegate) {
-            // get the actual instance to have access to Helidon specific methods
-            config = ((MpConfigProviderResolver.ConfigDelegate) config).delegate();
+
+        try {
+            config = config.unwrap(Config.class);
+        } catch (Exception ignored) {
+            // this is to get the delegated config instance from MpConfigProviderResolver
         }
+
         String defaultValue = defaultValue(annotation);
         Object value = configValue(config, fieldTypes, configKey, defaultValue);
 
@@ -315,19 +318,13 @@ public class ConfigCdiExtension implements Extension {
         if (String.class.equals(type)) {
             return (T) value;
         }
-        if (config instanceof MpConfigImpl) {
-            return ((MpConfigImpl) config).getConverter(type)
+
+        return config.getConverter(type)
                     .orElseThrow(() -> new IllegalArgumentException("Did not find converter for type "
                                                                             + type.getName()
                                                                             + ", for key "
                                                                             + key))
                     .convert(value);
-        }
-
-        throw new IllegalArgumentException("Helidon CDI MP Config implementation requires Helidon config instance. "
-                                                   + "Current config is " + config.getClass().getName()
-                                                   + ", which is not supported, as we cannot convert arbitrary String values");
-
     }
 
     private static Object parameterizedConfigValue(Config config,
@@ -647,6 +644,21 @@ public class ConfigCdiExtension implements Extension {
         }
 
         @Override
+        public ConfigValue getConfigValue(String s) {
+            return theConfig.getConfigValue(s);
+        }
+
+        @Override
+        public <T> Optional<Converter<T>> getConverter(Class<T> aClass) {
+            return theConfig.getConverter(aClass);
+        }
+
+        @Override
+        public <T> T unwrap(Class<T> aClass) {
+            return theConfig.unwrap(aClass);
+        }
+
+        @Override
         public Iterable<String> getPropertyNames() {
             return theConfig.getPropertyNames();
         }
@@ -656,6 +668,7 @@ public class ConfigCdiExtension implements Extension {
             return theConfig.getConfigSources();
         }
 
+        @Serial
         private void readObject(ObjectInputStream ios) throws ClassNotFoundException, IOException {
             ios.defaultReadObject();
             this.theConfig = ConfigProvider.getConfig();

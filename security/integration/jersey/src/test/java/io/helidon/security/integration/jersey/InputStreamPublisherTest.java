@@ -28,10 +28,10 @@ import java.util.concurrent.TimeUnit;
 import io.helidon.common.reactive.IoMulti;
 import io.helidon.common.reactive.Multi;
 
+import org.junit.jupiter.api.Test;
+
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-
-import org.junit.jupiter.api.Test;
 
 /**
  * Unit test for {@code InputStreamPublisher}'s replacement.

@@ -16,6 +16,10 @@
 
 package io.helidon.metrics;
 
+import java.util.Map;
+
+import io.helidon.metrics.api.RegistrySettings;
+
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.Metric;
@@ -28,10 +32,6 @@ import org.eclipse.microprofile.metrics.Tag;
 import org.hamcrest.core.IsSame;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
-import java.util.Map;
-
-import io.helidon.metrics.api.RegistrySettings;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;

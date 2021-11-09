@@ -20,8 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
-import javax.json.JsonObject;
-
 import io.helidon.common.context.Context;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.webclient.WebClient;
@@ -30,6 +28,7 @@ import io.helidon.webclient.WebClientResponse;
 import io.opentracing.mock.MockSpan;
 import io.opentracing.mock.MockTracer;
 import io.opentracing.tag.Tags;
+import jakarta.json.JsonObject;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;

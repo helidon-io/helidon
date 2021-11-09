@@ -20,20 +20,20 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.concurrent.Executor;
 
-import javax.jms.BytesMessage;
-import javax.jms.JMSException;
-import javax.jms.MessageEOFException;
-
 import io.helidon.messaging.MessagingException;
+
+import jakarta.jms.BytesMessage;
+import jakarta.jms.JMSException;
+import jakarta.jms.MessageEOFException;
 
 /**
  * A JMS Bytes message representation.
  */
 public class JmsBytesMessage extends AbstractJmsMessage<byte[]> {
 
-    private final javax.jms.BytesMessage msg;
+    private final jakarta.jms.BytesMessage msg;
 
-    JmsBytesMessage(javax.jms.BytesMessage msg, Executor executor, SessionMetadata sharedSessionEntry) {
+    JmsBytesMessage(jakarta.jms.BytesMessage msg, Executor executor, SessionMetadata sharedSessionEntry) {
         super(executor, sharedSessionEntry);
         this.msg = msg;
     }

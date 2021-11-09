@@ -20,13 +20,12 @@ import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.inject.Inject;
-import javax.interceptor.InvocationContext;
-
 import io.helidon.metrics.api.HelidonMetric;
 import io.helidon.microprofile.metrics.MetricsCdiExtension.MetricWorkItem;
 import io.helidon.servicecommon.restcdi.HelidonInterceptor;
 
+import jakarta.inject.Inject;
+import jakarta.interceptor.InvocationContext;
 import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 

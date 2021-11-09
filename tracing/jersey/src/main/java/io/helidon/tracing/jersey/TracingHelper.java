@@ -19,10 +19,10 @@ import java.lang.reflect.Method;
 import java.util.Optional;
 import java.util.function.Function;
 
-import javax.ws.rs.Path;
-import javax.ws.rs.container.ContainerRequestContext;
-
 import io.helidon.jersey.common.InvokedResource;
+
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.container.ContainerRequestContext;
 
 /**
  * Utilities for tracing in helidon.

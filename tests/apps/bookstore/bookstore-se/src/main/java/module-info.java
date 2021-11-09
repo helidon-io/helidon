@@ -19,7 +19,7 @@
  */
 module io.helidon.tests.apps.bookstore.se {
     requires java.logging;
-    requires java.json;
+    requires jakarta.json;
 
     requires io.helidon.webserver;
     requires io.helidon.config.yaml;

@@ -16,11 +16,10 @@
 
 package io.helidon.microprofile.tests.junit5;
 
-import javax.enterprise.inject.spi.CDI;
-import javax.inject.Inject;
-
 import io.helidon.microprofile.config.ConfigCdiExtension;
 
+import jakarta.enterprise.inject.spi.CDI;
+import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.containsString;

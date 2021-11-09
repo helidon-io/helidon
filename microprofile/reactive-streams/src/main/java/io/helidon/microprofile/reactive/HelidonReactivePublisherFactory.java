@@ -93,7 +93,7 @@ public final class HelidonReactivePublisherFactory implements ReactiveStreamsFac
     }
 
     @Override
-    public <T> SubscriberBuilder<T, Void> fromSubscriber(Subscriber<? extends T> subscriber) {
+    public <T> SubscriberBuilder<T, Void> fromSubscriber(Subscriber<? super T> subscriber) {
         Objects.requireNonNull(subscriber, "subscriber is null");
         return new HelidonReactiveSubscriberBuilder<>(new HelidonReactiveStage.HRSSubscriber(subscriber));
     }

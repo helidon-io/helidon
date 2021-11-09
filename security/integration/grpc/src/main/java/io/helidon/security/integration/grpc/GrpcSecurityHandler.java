@@ -31,8 +31,6 @@ import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.annotation.Priority;
-
 import io.helidon.config.Config;
 import io.helidon.grpc.core.InterceptorPriorities;
 import io.helidon.grpc.server.ServiceDescriptor;
@@ -61,6 +59,7 @@ import io.grpc.ServerCallHandler;
 import io.grpc.ServerInterceptor;
 import io.grpc.Status;
 import io.opentracing.SpanContext;
+import jakarta.annotation.Priority;
 
 import static io.helidon.security.AuditEvent.AuditParam.plain;
 

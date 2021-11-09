@@ -21,13 +21,6 @@ import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.Optional;
 
-import javax.annotation.Priority;
-import javax.inject.Inject;
-import javax.interceptor.AroundInvoke;
-import javax.interceptor.Interceptor;
-import javax.interceptor.InvocationContext;
-import javax.ws.rs.Path;
-
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.tracing.jersey.client.ClientTracingFilter;
@@ -37,6 +30,12 @@ import io.opentracing.Span;
 import io.opentracing.SpanContext;
 import io.opentracing.Tracer;
 import io.opentracing.util.GlobalTracer;
+import jakarta.annotation.Priority;
+import jakarta.inject.Inject;
+import jakarta.interceptor.AroundInvoke;
+import jakarta.interceptor.Interceptor;
+import jakarta.interceptor.InvocationContext;
+import jakarta.ws.rs.Path;
 import org.eclipse.microprofile.opentracing.Traced;
 
 /**

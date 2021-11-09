@@ -20,13 +20,13 @@
 module io.helidon.microprofile.grpc.client {
     requires java.logging;
 
-    requires jakarta.enterprise.cdi.api;
-    requires jakarta.inject.api;
+    requires jakarta.cdi;
+    requires jakarta.inject;
 
     requires transitive io.helidon.microprofile.grpc.core;
 
     exports io.helidon.microprofile.grpc.client;
 
-    provides javax.enterprise.inject.spi.Extension
+    provides jakarta.enterprise.inject.spi.Extension
             with io.helidon.microprofile.grpc.client.GrpcClientCdiExtension;
 }

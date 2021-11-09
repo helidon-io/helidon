@@ -20,9 +20,6 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
-
-import javax.annotation.Priority;
 
 import io.helidon.grpc.core.GrpcHelper;
 import io.helidon.grpc.core.InterceptorPriorities;
@@ -37,6 +34,7 @@ import io.grpc.ServerCall;
 import io.grpc.ServerCallHandler;
 import io.grpc.ServerInterceptor;
 import io.grpc.Status;
+import jakarta.annotation.Priority;
 import org.eclipse.microprofile.metrics.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Histogram;
@@ -359,7 +357,7 @@ public class GrpcMetrics
             super.close(status, responseHeaders);
 
             long time = System.nanoTime() - startNanos;
-            getMetric().update(time, TimeUnit.NANOSECONDS);
+            getMetric().update(Duration.ofNanos(time));
         }
     }
 

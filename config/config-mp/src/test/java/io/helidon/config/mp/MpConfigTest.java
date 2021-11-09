@@ -216,6 +216,11 @@ public class MpConfigTest {
             return getClass().getName();
         }
 
+        @Override
+        public Set<String> getPropertyNames() {
+            return getProperties().keySet();
+        }
+
         private void set(String value) {
             this.value.set(value);
         }

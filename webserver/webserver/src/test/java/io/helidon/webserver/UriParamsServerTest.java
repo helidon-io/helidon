@@ -16,14 +16,10 @@
 
 package io.helidon.webserver;
 
-import java.util.concurrent.ExecutionException;
-
-import io.helidon.webclient.WebClientException;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 
 class UriParamsServerTest extends BaseServerTest {

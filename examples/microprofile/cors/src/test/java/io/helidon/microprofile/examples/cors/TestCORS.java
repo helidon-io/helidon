@@ -19,11 +19,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import javax.json.Json;
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObject;
-import javax.json.JsonObjectBuilder;
-
 import io.helidon.common.http.Headers;
 import io.helidon.common.http.MediaType;
 import io.helidon.config.Config;
@@ -34,6 +29,10 @@ import io.helidon.webclient.WebClientRequestBuilder;
 import io.helidon.webclient.WebClientResponse;
 import io.helidon.webserver.cors.CrossOriginConfig;
 
+import jakarta.json.Json;
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonObjectBuilder;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;

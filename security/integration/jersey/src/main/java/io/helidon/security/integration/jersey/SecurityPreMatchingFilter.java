@@ -19,21 +19,20 @@ package io.helidon.security.integration.jersey;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
-import javax.annotation.Priority;
-import javax.ws.rs.ConstrainedTo;
-import javax.ws.rs.Priorities;
-import javax.ws.rs.RuntimeType;
-import javax.ws.rs.container.ContainerRequestContext;
-import javax.ws.rs.container.ContainerRequestFilter;
-import javax.ws.rs.container.PreMatching;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.GenericType;
-import javax.ws.rs.core.UriInfo;
-
 import io.helidon.common.context.Contexts;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.integration.common.SecurityTracing;
 
+import jakarta.annotation.Priority;
+import jakarta.ws.rs.ConstrainedTo;
+import jakarta.ws.rs.Priorities;
+import jakarta.ws.rs.RuntimeType;
+import jakarta.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.container.ContainerRequestFilter;
+import jakarta.ws.rs.container.PreMatching;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.GenericType;
+import jakarta.ws.rs.core.UriInfo;
 import org.glassfish.jersey.internal.inject.InjectionManager;
 import org.glassfish.jersey.internal.util.collection.Ref;
 

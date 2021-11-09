@@ -20,11 +20,11 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.logging.Logger;
 
-import javax.enterprise.inject.se.SeContainer;
-import javax.enterprise.inject.spi.BeanManager;
-import javax.enterprise.inject.spi.CDI;
-
 import io.helidon.microprofile.cdi.HelidonContainer;
+
+import jakarta.enterprise.inject.se.SeContainer;
+import jakarta.enterprise.inject.spi.BeanManager;
+import jakarta.enterprise.inject.spi.CDI;
 
 /**
  * Server to handle lifecycle of microprofile implementation.

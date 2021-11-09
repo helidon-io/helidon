@@ -16,10 +16,6 @@
 
 package io.helidon.jersey.connector;
 
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.HttpHeaders;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.List;
@@ -27,7 +23,6 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
-import com.github.tomakehurst.wiremock.common.ConsoleNotifier;
 import com.github.tomakehurst.wiremock.common.FileSource;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.extension.Extension;
@@ -36,6 +31,10 @@ import com.github.tomakehurst.wiremock.extension.ResponseTransformer;
 import com.github.tomakehurst.wiremock.http.HttpHeader;
 import com.github.tomakehurst.wiremock.http.Request;
 import com.github.tomakehurst.wiremock.http.Response;
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.ClientBuilder;
+import jakarta.ws.rs.client.WebTarget;
+import jakarta.ws.rs.core.HttpHeaders;
 import org.glassfish.jersey.client.ClientConfig;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -137,15 +136,15 @@ public abstract class AbstractTest {
      */
     static class UncachedResponseMethodExecutor extends ResponseTransformer {
 
-        private final Supplier<javax.ws.rs.core.Response> methodSupplier;
+        private final Supplier<jakarta.ws.rs.core.Response> methodSupplier;
 
-        UncachedResponseMethodExecutor(Supplier<javax.ws.rs.core.Response> methodSupplier) {
+        UncachedResponseMethodExecutor(Supplier<jakarta.ws.rs.core.Response> methodSupplier) {
             this.methodSupplier = methodSupplier;
         }
 
         @Override
         public Response transform(Request request, Response response, FileSource files, Parameters parameters) {
-            javax.ws.rs.core.Response original = methodSupplier.get();
+            jakarta.ws.rs.core.Response original = methodSupplier.get();
             com.github.tomakehurst.wiremock.http.Response.Builder builder =
                     com.github.tomakehurst.wiremock.http.Response.response()
                             .status(original.getStatus());
@@ -155,7 +154,7 @@ public abstract class AbstractTest {
 
             com.github.tomakehurst.wiremock.http.HttpHeaders newHeaders = com.github.tomakehurst.wiremock.http.HttpHeaders.noHeaders();
             for (Map.Entry<String, List<String>> entry : original.getStringHeaders().entrySet()) {
-                if (javax.ws.rs.core.HttpHeaders.LOCATION.equals(entry.getKey())) {
+                if (jakarta.ws.rs.core.HttpHeaders.LOCATION.equals(entry.getKey())) {
                     newHeaders = newHeaders.plus(
                             HttpHeader.httpHeader(entry.getKey(), getBaseUri() + entry.getValue().get(0))
                     );

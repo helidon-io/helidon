@@ -15,10 +15,10 @@
  */
 package io.helidon.tests.functional.mp.syntheticapp;
 
-import javax.enterprise.inject.spi.CDI;
-
 import io.helidon.microprofile.cdi.Main;
 import io.helidon.microprofile.server.ServerCdiExtension;
+
+import jakarta.enterprise.inject.spi.CDI;
 
 /**
  * Main class to start this test.

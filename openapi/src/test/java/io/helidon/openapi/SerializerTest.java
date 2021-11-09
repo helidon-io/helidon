@@ -15,15 +15,6 @@
  */
 package io.helidon.openapi;
 
-import io.smallrye.openapi.runtime.io.Format;
-import org.eclipse.microprofile.openapi.models.OpenAPI;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-
-import javax.json.JsonArray;
-import javax.json.JsonObject;
-import javax.json.JsonStructure;
-import javax.json.JsonValue;
 import java.io.IOException;
 import java.io.LineNumberReader;
 import java.io.Reader;
@@ -35,9 +26,24 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static org.hamcrest.CoreMatchers.*;
+import io.smallrye.openapi.runtime.io.Format;
+import jakarta.json.JsonArray;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonStructure;
+import jakarta.json.JsonValue;
+import org.eclipse.microprofile.openapi.models.OpenAPI;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.hasItem;
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+@Disabled("3.0.0-JAKARTA")
 class SerializerTest {
 
     private static SnakeYAMLParserHelper<ExpandedTypeDescription> helper;

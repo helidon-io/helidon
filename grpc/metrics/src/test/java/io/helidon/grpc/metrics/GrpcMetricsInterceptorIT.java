@@ -16,7 +16,9 @@
 
 package io.helidon.grpc.metrics;
 
+import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import io.helidon.grpc.server.GrpcService;
 import io.helidon.grpc.server.MethodDescriptor;
@@ -30,9 +32,6 @@ import io.grpc.ServerCall;
 import io.grpc.ServerCallHandler;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
-import java.util.HashMap;
-import java.util.stream.Collectors;
-
 import org.eclipse.microprofile.metrics.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Histogram;

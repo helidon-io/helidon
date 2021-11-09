@@ -16,14 +16,6 @@
 
 package io.helidon.messaging.connectors.kafka;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
-
-import com.salesforce.kafka.test.junit5.SharedKafkaTestResource;
-
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -42,16 +34,16 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import javax.enterprise.inject.Instance;
-import javax.enterprise.inject.se.SeContainer;
-import javax.enterprise.inject.se.SeContainerInitializer;
-
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.mp.MpConfigProviderResolver;
 import io.helidon.config.mp.MpConfigSources;
 import io.helidon.microprofile.messaging.MessagingCdiExtension;
 
+import com.salesforce.kafka.test.junit5.SharedKafkaTestResource;
+import jakarta.enterprise.inject.Instance;
+import jakarta.enterprise.inject.se.SeContainer;
+import jakarta.enterprise.inject.se.SeContainerInitializer;
 import org.apache.kafka.common.serialization.LongDeserializer;
 import org.apache.kafka.common.serialization.LongSerializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -62,6 +54,12 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 class KafkaMpTest extends AbstractKafkaTest{
 

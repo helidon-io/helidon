@@ -15,7 +15,7 @@
  */
 package io.helidon.microprofile.cdi;
 
-import javax.enterprise.context.Dependent;
+import jakarta.enterprise.context.Dependent;
 
 /**
  * Injectable test bean.

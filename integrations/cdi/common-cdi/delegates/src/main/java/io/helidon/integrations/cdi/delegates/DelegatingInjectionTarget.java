@@ -17,9 +17,9 @@ package io.helidon.integrations.cdi.delegates;
 
 import java.util.Objects;
 
-import javax.enterprise.context.spi.CreationalContext;
-import javax.enterprise.inject.spi.InjectionTarget;
-import javax.enterprise.inject.spi.Producer;
+import jakarta.enterprise.context.spi.CreationalContext;
+import jakarta.enterprise.inject.spi.InjectionTarget;
+import jakarta.enterprise.inject.spi.Producer;
 
 /**
  * A {@link DelegatingProducer} and an {@link InjectionTarget} that

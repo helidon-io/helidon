@@ -20,18 +20,17 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-import javax.enterprise.context.ApplicationScoped;
-
 import io.helidon.microprofile.messaging.AssertableTestBean;
 
-import static org.hamcrest.Matchers.is;
-
+import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
+
+import static org.hamcrest.Matchers.is;
 
 /**
  * This test is modified version of official tck test in version 1.0

@@ -19,19 +19,18 @@ package io.helidon.security.integration.jersey;
 import java.util.LinkedList;
 import java.util.List;
 
-import javax.inject.Inject;
-import javax.inject.Provider;
-import javax.ws.rs.ConstrainedTo;
-import javax.ws.rs.RuntimeType;
-import javax.ws.rs.core.Feature;
-import javax.ws.rs.core.FeatureContext;
-import javax.ws.rs.core.GenericType;
-
 import io.helidon.config.Config;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.annotations.Authorized;
 
+import jakarta.inject.Inject;
+import jakarta.inject.Provider;
+import jakarta.ws.rs.ConstrainedTo;
+import jakarta.ws.rs.RuntimeType;
+import jakarta.ws.rs.core.Feature;
+import jakarta.ws.rs.core.FeatureContext;
+import jakarta.ws.rs.core.GenericType;
 import org.glassfish.jersey.internal.inject.AbstractBinder;
 import org.glassfish.jersey.internal.inject.ReferencingFactory;
 import org.glassfish.jersey.internal.util.collection.Ref;
@@ -236,10 +235,10 @@ public final class SecurityFeature implements Feature {
 
         /**
          * When set to {@code true} (which is the default behavior, the security filter
-         * would use {@link org.glassfish.jersey.server.ContainerRequest#abortWith(javax.ws.rs.core.Response)} to
+         * would use {@link org.glassfish.jersey.server.ContainerRequest#abortWith(jakarta.ws.rs.core.Response)} to
          * abort request and configure a security response.
          * <p>
-         * When set to {@code false}, the security filter would throw an {@link javax.ws.rs.WebApplicationException} instead.
+         * When set to {@code false}, the security filter would throw an {@link jakarta.ws.rs.WebApplicationException} instead.
          * Such an exception can be handled by a custom error handler.
          *
          * @param useAbortWith set to {@code false} to use exceptions, by default uses abortWith on request

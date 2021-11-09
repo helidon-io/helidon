@@ -40,12 +40,12 @@ module io.helidon.grpc.core {
     requires io.netty.transport;
     requires transitive com.google.protobuf;
 
-    requires java.annotation;
-    requires static java.json.bind;
+    requires jakarta.annotation;
+    requires static jakarta.json.bind;
     requires java.logging;
     requires java.naming;
 
-    requires jakarta.inject.api;
+    requires jakarta.inject;
 
     provides MarshallerSupplier with
             MarshallerSupplier.DefaultMarshallerSupplier,

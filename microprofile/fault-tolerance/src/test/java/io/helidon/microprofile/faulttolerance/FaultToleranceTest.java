@@ -27,12 +27,10 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import javax.enterprise.context.Dependent;
-import javax.enterprise.inject.literal.NamedLiteral;
-import javax.enterprise.inject.spi.CDI;
-
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 
+import jakarta.enterprise.inject.literal.NamedLiteral;
+import jakarta.enterprise.inject.spi.CDI;
 import org.junit.jupiter.api.BeforeEach;
 
 import static org.hamcrest.MatcherAssert.assertThat;

@@ -92,21 +92,12 @@
             <artifactId>jakarta.interceptor-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.jboss.logging</groupId>
-            <artifactId>jboss-logging</artifactId>
-        </dependency>
-        <dependency>
             <groupId>jakarta.enterprise</groupId>
             <artifactId>jakarta.enterprise.cdi-api</artifactId>
         </dependency>
         <dependency>
             <groupId>jakarta.inject</groupId>
             <artifactId>jakarta.inject-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.classfilewriter</groupId>
-            <artifactId>jboss-classfilewriter</artifactId>
-            <scope>compile</scope>
         </dependency>
     </dependencies>
     <build>
@@ -136,7 +127,8 @@
                                 <filter>
                                     <artifact>*:*</artifact>
                                     <excludes>
-                                        <exclude>META-INF/services/javax.enterprise.inject.se.SeContainerInitializer</exclude>
+                                        <exclude>META-INF/services/jakarta.enterprise.inject.spi.CDIProvider</exclude>
+                                        <exclude>META-INF/services/jakarta.enterprise.inject.se.SeContainerInitializer</exclude>
                                     </excludes>
                                 </filter>
                             </filters>

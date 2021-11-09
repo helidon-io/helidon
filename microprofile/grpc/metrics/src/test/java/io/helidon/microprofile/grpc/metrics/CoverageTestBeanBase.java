@@ -15,7 +15,7 @@
  */
 package io.helidon.microprofile.grpc.metrics;
 
-import javax.enterprise.context.Dependent;
+import jakarta.enterprise.context.Dependent;
 
 @Dependent
 public class CoverageTestBeanBase {

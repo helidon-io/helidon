@@ -19,10 +19,9 @@ package io.helidon.microprofile.faulttolerance;
 import java.lang.reflect.Method;
 import java.util.concurrent.locks.ReentrantLock;
 
-import javax.enterprise.inject.spi.CDI;
-
 import io.helidon.common.LazyValue;
 
+import jakarta.enterprise.inject.spi.CDI;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Histogram;

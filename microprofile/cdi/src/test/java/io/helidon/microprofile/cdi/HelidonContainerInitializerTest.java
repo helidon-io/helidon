@@ -18,13 +18,12 @@ package io.helidon.microprofile.cdi;
 
 import java.util.Map;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.se.SeContainer;
-import javax.enterprise.inject.se.SeContainerInitializer;
-import javax.enterprise.inject.spi.CDI;
-
 import io.helidon.config.mp.MpConfigSources;
 
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.se.SeContainer;
+import jakarta.enterprise.inject.se.SeContainerInitializer;
+import jakarta.enterprise.inject.spi.CDI;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.junit.jupiter.api.AfterEach;
@@ -87,7 +86,8 @@ class HelidonContainerInitializerTest {
         // this is a reproducer for bug 1554
         Config config = ConfigProviderResolver.instance()
                 .getBuilder()
-                .withSources(MpConfigSources.create(Map.of(HelidonContainerInitializer.CONFIG_ALLOW_INITIALIZER, "true")))
+                .withSources(MpConfigSources.create(Map.of(HelidonContainerInitializer.CONFIG_ALLOW_INITIALIZER, "true",
+                                                           HelidonContainerInitializer.CONFIG_INITIALIZER_NO_WARN, "true")))
                 .build();
 
         configResolver.registerConfig(config, cl);

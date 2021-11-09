@@ -18,9 +18,9 @@ package io.helidon.microprofile.example.helloworld.implicit.cdi;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Produces;
-import javax.enterprise.inject.spi.InjectionPoint;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Produces;
+import jakarta.enterprise.inject.spi.InjectionPoint;
 
 /**
  * Producer for various resources required by this example.

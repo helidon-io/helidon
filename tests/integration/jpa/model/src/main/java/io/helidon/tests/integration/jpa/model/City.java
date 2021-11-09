@@ -17,10 +17,10 @@ package io.helidon.tests.integration.jpa.model;
 
 import java.util.Objects;
 
-import javax.persistence.CascadeType;
-import javax.persistence.Entity;
-import javax.persistence.MapsId;
-import javax.persistence.OneToOne;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Entity;
+import jakarta.persistence.MapsId;
+import jakarta.persistence.OneToOne;
 
 /**
  * City in pokemon world

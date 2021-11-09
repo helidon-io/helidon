@@ -24,7 +24,7 @@ import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
 
 /**
- * Point of access to {@link javax.ws.rs.client.ClientBuilder} to support Helidon features,
+ * Point of access to {@link jakarta.ws.rs.client.ClientBuilder} to support Helidon features,
  * such as propagation of tracing, correct handling of {@link io.helidon.common.context.Context}.
  */
 public final class JaxRsClient {

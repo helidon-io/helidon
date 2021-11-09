@@ -19,9 +19,8 @@ package io.helidon.microprofile.faulttolerance;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-import javax.enterprise.inject.spi.CDI;
-import javax.interceptor.InvocationContext;
-
+import jakarta.enterprise.inject.spi.CDI;
+import jakarta.interceptor.InvocationContext;
 import org.eclipse.microprofile.faulttolerance.ExecutionContext;
 import org.eclipse.microprofile.faulttolerance.Fallback;
 import org.eclipse.microprofile.faulttolerance.FallbackHandler;

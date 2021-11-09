@@ -16,12 +16,11 @@
 
 package io.helidon.microprofile.example.helloworld.implicit;
 
-import javax.inject.Inject;
-import javax.json.JsonObject;
-import javax.ws.rs.client.WebTarget;
-
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 
+import jakarta.inject.Inject;
+import jakarta.json.JsonObject;
+import jakarta.ws.rs.client.WebTarget;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;

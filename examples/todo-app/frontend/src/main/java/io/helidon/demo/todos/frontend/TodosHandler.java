@@ -20,8 +20,6 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
-import javax.json.JsonObject;
-
 import io.helidon.common.http.Http;
 import io.helidon.metrics.RegistryFactory;
 import io.helidon.security.SecurityContext;
@@ -32,6 +30,7 @@ import io.helidon.webserver.Service;
 
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
+import jakarta.json.JsonObject;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricRegistry;

@@ -15,19 +15,18 @@
  */
 package io.helidon.integrations.jta.weld;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.context.Initialized;
-import javax.enterprise.event.Observes;
-import javax.enterprise.inject.se.SeContainer;
-import javax.enterprise.inject.se.SeContainerInitializer;
-import javax.transaction.NotSupportedException;
-import javax.transaction.Status;
-import javax.transaction.SystemException;
-import javax.transaction.UserTransaction;
-
 import io.helidon.integrations.jta.cdi.NarayanaExtension;
 
 import com.arjuna.ats.jta.common.JTAEnvironmentBean;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.Initialized;
+import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.se.SeContainer;
+import jakarta.enterprise.inject.se.SeContainerInitializer;
+import jakarta.transaction.NotSupportedException;
+import jakarta.transaction.Status;
+import jakarta.transaction.SystemException;
+import jakarta.transaction.UserTransaction;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

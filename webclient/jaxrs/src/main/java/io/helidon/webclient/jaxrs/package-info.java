@@ -15,8 +15,8 @@
  */
 /**
  * Helidon support for JAX-RS (Jersey) client.
- * You can create the JAX-RS client as usual using {@link javax.ws.rs.client.ClientBuilder#newBuilder()}
- * and {@link javax.ws.rs.client.ClientBuilder#newClient()}.
+ * You can create the JAX-RS client as usual using {@link jakarta.ws.rs.client.ClientBuilder#newBuilder()}
+ * and {@link jakarta.ws.rs.client.ClientBuilder#newClient()}.
  * <p>
  * If you want to configure defaults for asynchronous executor service,
  *  you can use {@link io.helidon.webclient.jaxrs.JaxRsClient#configureDefaults(io.helidon.config.Config)}

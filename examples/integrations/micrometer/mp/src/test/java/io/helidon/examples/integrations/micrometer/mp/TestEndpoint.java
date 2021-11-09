@@ -15,20 +15,17 @@
  */
 package io.helidon.examples.integrations.micrometer.mp;
 
-import javax.inject.Inject;
-import javax.json.JsonObject;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.MediaType;
-
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
-
+import jakarta.inject.Inject;
+import jakarta.json.JsonObject;
+import jakarta.ws.rs.client.WebTarget;
+import jakarta.ws.rs.core.MediaType;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.examples.integrations.micrometer.mp.GreetResource.PERSONALIZED_GETS_COUNTER_NAME;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 

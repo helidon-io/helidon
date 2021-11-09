@@ -20,8 +20,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import javax.enterprise.util.AnnotationLiteral;
-import javax.inject.Qualifier;
+import jakarta.enterprise.util.AnnotationLiteral;
+import jakarta.inject.Qualifier;
 
 import static java.lang.annotation.ElementType.FIELD;
 import static java.lang.annotation.ElementType.METHOD;
@@ -37,7 +37,7 @@ import static java.lang.annotation.ElementType.TYPE;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @Qualifier
-@Target({ TYPE, METHOD, PARAMETER, FIELD })
+@Target({TYPE, METHOD, PARAMETER, FIELD})
 public @interface BuildTimeEnd {
     /**
      * Annotation literal to use when an annotation instance is needed.

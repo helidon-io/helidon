@@ -29,10 +29,10 @@ import java.security.spec.RSAPublicKeySpec;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.json.JsonObject;
-
 import io.helidon.security.jwt.JwtException;
 import io.helidon.security.jwt.JwtUtil;
+
+import jakarta.json.JsonObject;
 
 import static io.helidon.security.jwt.JwtUtil.asBigInteger;
 import static io.helidon.security.jwt.JwtUtil.getKeyFactory;

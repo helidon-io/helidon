@@ -30,7 +30,6 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -39,8 +38,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import javax.enterprise.inject.spi.Bean;
-
+import jakarta.enterprise.inject.spi.Bean;
 import org.jboss.classfilewriter.AccessFlag;
 import org.jboss.classfilewriter.ClassFile;
 import org.jboss.classfilewriter.ClassMethod;
@@ -64,7 +62,6 @@ import org.jboss.weld.serialization.spi.ProxyServices;
 import org.jboss.weld.util.Proxies;
 import org.jboss.weld.util.Proxies.TypeInfo;
 import org.jboss.weld.util.bytecode.BytecodeUtils;
-import org.jboss.weld.util.bytecode.ClassFileUtils;
 import org.jboss.weld.util.bytecode.ConstructorUtils;
 import org.jboss.weld.util.bytecode.DeferredBytecode;
 import org.jboss.weld.util.bytecode.MethodInformation;
@@ -120,7 +117,7 @@ import static org.jboss.weld.util.reflection.Reflections.cast;
  * @author Marius Bogoevici
  * @author Ales Justin
  */
-public class ProxyFactory<T> implements PrivilegedAction<T> {
+public class OldProxyFactory<T> implements PrivilegedAction<T> {
 
     // Default proxy class name suffix
     public static final String PROXY_SUFFIX = "$Proxy$";
@@ -183,11 +180,11 @@ public class ProxyFactory<T> implements PrivilegedAction<T> {
      * created a new proxy factory from a bean instance. The proxy name is
      * generated from the bean id
      */
-    public ProxyFactory(String contextId, Class<?> proxiedBeanType, Set<? extends Type> typeClosure, Bean<?> bean) {
+    public OldProxyFactory(String contextId, Class<?> proxiedBeanType, Set<? extends Type> typeClosure, Bean<?> bean) {
         this(contextId, proxiedBeanType, typeClosure, bean, false);
     }
 
-    public ProxyFactory(String contextId, Class<?> proxiedBeanType, Set<? extends Type> typeClosure, Bean<?> bean, boolean forceSuperClass) {
+    public OldProxyFactory(String contextId, Class<?> proxiedBeanType, Set<? extends Type> typeClosure, Bean<?> bean, boolean forceSuperClass) {
         this(contextId, proxiedBeanType, typeClosure, getProxyName(contextId, proxiedBeanType, typeClosure, bean), bean, forceSuperClass);
     }
 
@@ -199,11 +196,11 @@ public class ProxyFactory<T> implements PrivilegedAction<T> {
      * @param typeClosure     the bean types of the bean
      * @param proxyName       the name of the proxy class
      */
-    public ProxyFactory(String contextId, Class<?> proxiedBeanType, Set<? extends Type> typeClosure, String proxyName, Bean<?> bean) {
+    public OldProxyFactory(String contextId, Class<?> proxiedBeanType, Set<? extends Type> typeClosure, String proxyName, Bean<?> bean) {
         this(contextId, proxiedBeanType, typeClosure, proxyName, bean, false);
     }
 
-    public ProxyFactory(String contextId, Class<?> proxiedBeanType, Set<? extends Type> typeClosure, String proxyName, Bean<?> bean, boolean forceSuperClass) {
+    public OldProxyFactory(String contextId, Class<?> proxiedBeanType, Set<? extends Type> typeClosure, String proxyName, Bean<?> bean, boolean forceSuperClass) {
         this.bean = bean;
         this.contextId = contextId;
         this.proxiedBeanType = proxiedBeanType;

@@ -20,9 +20,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 
-import javax.json.JsonObject;
-
 import io.helidon.security.jwt.JwtException;
+
+import jakarta.json.JsonObject;
 
 import static io.helidon.security.jwt.JwtUtil.asString;
 import static io.helidon.security.jwt.JwtUtil.getString;

@@ -15,11 +15,11 @@
  */
 package io.helidon.tests.functional.requestscope;
 
-import javax.annotation.PostConstruct;
-import javax.enterprise.context.RequestScoped;
-import javax.ws.rs.core.Context;
-
 import io.helidon.webserver.ServerRequest;
+
+import jakarta.annotation.PostConstruct;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.ws.rs.core.Context;
 
 @RequestScoped
 public class TenantContext {

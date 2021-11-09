@@ -21,9 +21,6 @@ import java.util.Optional;
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import javax.json.JsonStructure;
-import javax.json.JsonWriterFactory;
-
 import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.MediaType;
@@ -32,6 +29,9 @@ import io.helidon.common.reactive.Single;
 import io.helidon.media.common.MessageBodyStreamWriter;
 import io.helidon.media.common.MessageBodyWriterContext;
 import io.helidon.media.jsonp.JsonpBodyWriter.JsonStructureToChunks;
+
+import jakarta.json.JsonStructure;
+import jakarta.json.JsonWriterFactory;
 
 /**
  * Message body writer for {@link JsonStructure} sub-classes (JSON-P).

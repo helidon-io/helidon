@@ -16,10 +16,10 @@
 
 package io.helidon.common.reactive;
 
-import org.junit.jupiter.api.Test;
-
 import java.io.IOException;
 import java.util.concurrent.SubmissionPublisher;
+
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;

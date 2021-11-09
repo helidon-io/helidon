@@ -19,13 +19,12 @@ package io.helidon.examples.integrations.microstream.greetings.se;
 import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 
-import javax.json.JsonArray;
-import javax.json.JsonObject;
-
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.webclient.WebClient;
 import io.helidon.webserver.WebServer;
 
+import jakarta.json.JsonArray;
+import jakarta.json.JsonObject;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;

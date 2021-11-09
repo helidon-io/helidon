@@ -32,7 +32,6 @@ import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collector;
 
-
 import org.eclipse.microprofile.reactive.streams.operators.ProcessorBuilder;
 import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
 import org.eclipse.microprofile.reactive.streams.operators.SubscriberBuilder;

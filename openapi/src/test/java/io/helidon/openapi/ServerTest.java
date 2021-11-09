@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.function.Consumer;
 
-import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
@@ -28,6 +27,7 @@ import io.helidon.webserver.WebServer;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -38,6 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Starts a server with the default OpenAPI endpoint to test a static OpenAPI
  * document file in various ways.
  */
+@Disabled("3.0.0-JAKARTA")
 public class ServerTest {
 
     private static WebServer greetingWebServer;

@@ -22,11 +22,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-import javax.persistence.FlushModeType;
-import javax.persistence.LockModeType;
-import javax.persistence.Parameter;
-import javax.persistence.Query;
-import javax.persistence.TemporalType;
+import jakarta.persistence.FlushModeType;
+import jakarta.persistence.LockModeType;
+import jakarta.persistence.Parameter;
+import jakarta.persistence.Query;
+import jakarta.persistence.TemporalType;
 
 abstract class DelegatingQuery implements Query {
 

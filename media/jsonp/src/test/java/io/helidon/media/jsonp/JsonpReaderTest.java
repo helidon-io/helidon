@@ -18,16 +18,15 @@ package io.helidon.media.jsonp;
 
 import java.util.concurrent.ExecutionException;
 
-import javax.json.JsonArray;
-import javax.json.JsonObject;
-import javax.json.JsonStructure;
-
 import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.reactive.Single;
 import io.helidon.media.common.MessageBodyReader;
 import io.helidon.media.common.MessageBodyReaderContext;
 
+import jakarta.json.JsonArray;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonStructure;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.equalTo;

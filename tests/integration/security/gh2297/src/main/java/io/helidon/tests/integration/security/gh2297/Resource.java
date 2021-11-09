@@ -16,8 +16,8 @@
 
 package io.helidon.tests.integration.security.gh2297;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
 
 /**
  * JAX-RS Resource.

@@ -16,15 +16,14 @@
 
 package io.helidon.examples.integrations.micronaut.data;
 
-import javax.inject.Inject;
-import javax.json.JsonArray;
-import javax.json.JsonObject;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.Response;
-
 import io.helidon.examples.integrations.micronaut.data.model.Pet;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 
+import jakarta.inject.Inject;
+import jakarta.json.JsonArray;
+import jakarta.json.JsonObject;
+import jakarta.ws.rs.client.WebTarget;
+import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

@@ -19,9 +19,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import javax.json.JsonObject;
-import javax.json.JsonValue;
-
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.config.Config;
@@ -34,6 +31,8 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.Service;
 import io.helidon.webserver.WebServer;
 
+import jakarta.json.JsonObject;
+import jakarta.json.JsonValue;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;

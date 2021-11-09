@@ -121,7 +121,7 @@
             {
                 "name": "getTransactionIdentifier",
                 "parameterTypes": [
-                    "javax.transaction.Transaction"
+                    "jakarta.transaction.Transaction"
                 ]
             },
             {
@@ -137,7 +137,7 @@
             {
                 "name": "registerSynchronization",
                 "parameterTypes": [
-                    "javax.transaction.Synchronization"
+                    "jakarta.transaction.Synchronization"
                 ]
             },
             {
@@ -252,7 +252,7 @@
             {
                 "name": "<init>",
                 "parameterTypes": [
-                    "javax.enterprise.inject.spi.BeanManager"
+                    "jakarta.enterprise.inject.spi.BeanManager"
                 ]
             }
         ]

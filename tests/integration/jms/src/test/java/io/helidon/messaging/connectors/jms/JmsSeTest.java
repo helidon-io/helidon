@@ -29,14 +29,14 @@ import io.helidon.common.reactive.Multi;
 import io.helidon.messaging.Channel;
 import io.helidon.messaging.Messaging;
 
+import org.apache.activemq.jndi.ActiveMQInitialContextFactory;
+import org.eclipse.microprofile.reactive.messaging.Message;
+import org.junit.jupiter.api.Test;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import org.apache.activemq.jndi.ActiveMQInitialContextFactory;
-import org.eclipse.microprofile.reactive.messaging.Message;
-import org.junit.jupiter.api.Test;
 
 public class JmsSeTest extends AbstractJmsTest {
 

@@ -15,10 +15,9 @@
  */
 package io.helidon.tracing.jersey;
 
-import javax.annotation.Priority;
-import javax.ws.rs.container.ContainerRequestContext;
-
 import io.opentracing.Tracer;
+import jakarta.annotation.Priority;
+import jakarta.ws.rs.container.ContainerRequestContext;
 
 /**
  * Adds tracing of (overall) Jersey calls.

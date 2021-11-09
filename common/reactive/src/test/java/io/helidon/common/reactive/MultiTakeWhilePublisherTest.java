@@ -16,10 +16,10 @@
 
 package io.helidon.common.reactive;
 
-import org.junit.jupiter.api.Test;
-
 import java.io.IOException;
 import java.util.Arrays;
+
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;

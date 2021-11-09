@@ -63,12 +63,12 @@
                         <dependency>
                             <groupId>jakarta.annotation</groupId>
                             <artifactId>jakarta.annotation-api</artifactId>
-                            <version>${version.lib.annotation-api}</version>
+                            <version>${version.lib.jakarta.annotation-api}</version>
                         </dependency>
                         <dependency>
                             <groupId>jakarta.xml.bind</groupId>
                             <artifactId>jakarta.xml.bind-api</artifactId>
-                            <version>${version.lib.jaxb-api}</version>
+                            <version>${version.lib.jakarta.jaxb-api}</version>
                         </dependency>
                     </dependencies>
                     <configuration>

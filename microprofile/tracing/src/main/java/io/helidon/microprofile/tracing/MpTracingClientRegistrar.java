@@ -17,13 +17,12 @@ package io.helidon.microprofile.tracing;
 
 import java.util.concurrent.ExecutorService;
 
-import javax.ws.rs.client.ClientBuilder;
-
 import io.helidon.common.configurable.ThreadPoolSupplier;
 import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
 import io.helidon.tracing.jersey.client.ClientTracingFilter;
 
+import jakarta.ws.rs.client.ClientBuilder;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.opentracing.ClientTracingRegistrarProvider;
 

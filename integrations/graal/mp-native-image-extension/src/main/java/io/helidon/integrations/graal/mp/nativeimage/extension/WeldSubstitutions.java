@@ -16,7 +16,6 @@
 package io.helidon.integrations.graal.mp.nativeimage.extension;
 
 import java.lang.reflect.Type;
-import java.security.ProtectionDomain;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
@@ -27,7 +26,6 @@ import com.oracle.svm.core.annotate.InjectAccessors;
 import com.oracle.svm.core.annotate.RecomputeFieldValue;
 import com.oracle.svm.core.annotate.Substitute;
 import com.oracle.svm.core.annotate.TargetClass;
-import org.jboss.classfilewriter.ClassFile;
 import org.jboss.weld.event.ObserverNotifier;
 import org.jboss.weld.executor.DaemonThreadFactory;
 import org.jboss.weld.util.reflection.ParameterizedTypeImpl;
@@ -94,12 +92,12 @@ public class WeldSubstitutions {
 
         }
     }
-
-    @TargetClass(className = "org.jboss.weld.util.bytecode.ClassFileUtils")
-    static final class ClassFileUtils {
-        @Substitute
-        public static Class<?> toClass(ClassFile ct, ClassLoader loader, ProtectionDomain domain) {
-            throw new IllegalStateException("Cannot load " + ct.getName());
-        }
-    }
+// TODO 3.0.0-JAKARTA
+//    @TargetClass(className = "org.jboss.weld.util.bytecode.ClassFileUtils")
+//    static final class ClassFileUtils {
+//        @Substitute
+//        public static Class<?> toClass(ClassFile ct, ClassLoader loader, ProtectionDomain domain) {
+//            throw new IllegalStateException("Cannot load " + ct.getName());
+//        }
+//    }
 }

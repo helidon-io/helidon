@@ -19,8 +19,8 @@
  */
 module io.helidon.webserver.tyrus {
     requires java.logging;
-    requires transitive jakarta.websocket.api;
-    requires transitive java.annotation;
+    requires transitive jakarta.websocket;
+    requires transitive jakarta.annotation;
     requires transitive io.helidon.webserver;
 
     requires io.helidon.common.context;

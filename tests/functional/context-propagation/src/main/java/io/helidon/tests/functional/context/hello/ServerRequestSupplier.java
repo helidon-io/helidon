@@ -16,11 +16,12 @@
 
 package io.helidon.tests.functional.context.hello;
 
-import javax.enterprise.context.RequestScoped;
-import javax.ws.rs.core.Context;
 import java.util.function.Supplier;
 
 import io.helidon.webserver.ServerRequest;
+
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.ws.rs.core.Context;
 
 @RequestScoped
 public class ServerRequestSupplier implements Supplier<ServerRequest> {

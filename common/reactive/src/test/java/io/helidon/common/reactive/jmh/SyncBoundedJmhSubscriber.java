@@ -15,9 +15,9 @@
  */
 package io.helidon.common.reactive.jmh;
 
-import org.openjdk.jmh.infra.Blackhole;
-
 import java.util.concurrent.Flow;
+
+import org.openjdk.jmh.infra.Blackhole;
 
 /**
  * Subscriber for testing synchronous sources via an unbounded request amount.

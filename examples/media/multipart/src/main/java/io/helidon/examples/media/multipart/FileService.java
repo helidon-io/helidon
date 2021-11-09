@@ -20,10 +20,6 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
-import javax.json.Json;
-import javax.json.JsonArrayBuilder;
-import javax.json.JsonBuilderFactory;
-
 import io.helidon.common.configurable.ThreadPoolSupplier;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
@@ -37,6 +33,10 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
+
+import jakarta.json.Json;
+import jakarta.json.JsonArrayBuilder;
+import jakarta.json.JsonBuilderFactory;
 
 /**
  * File service.

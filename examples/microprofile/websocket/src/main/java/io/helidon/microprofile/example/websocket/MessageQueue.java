@@ -19,7 +19,7 @@ package io.helidon.microprofile.example.websocket;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import javax.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.ApplicationScoped;
 
 /**
  * Class MessageQueue.

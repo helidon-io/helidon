@@ -237,9 +237,9 @@ import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 import java.util.Collections;
-import javax.json.Json;
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObject;
+import jakarta.json.Json;
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonObject;
 import org.eclipse.microprofile.metrics.Counter;  // <1>
 import org.eclipse.microprofile.metrics.MetricRegistry;
 
@@ -332,9 +332,9 @@ import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 import java.util.Collections;
-import javax.json.Json;
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObject;
+import jakarta.json.Json;
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonObject;
 import org.eclipse.microprofile.metrics.Meter; // <1>
 import org.eclipse.microprofile.metrics.MetricRegistry; // <1>
 
@@ -418,9 +418,9 @@ import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 import java.util.Collections;
-import javax.json.Json;
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObject;
+import jakarta.json.Json;
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonObject;
 import org.eclipse.microprofile.metrics.MetricRegistry; // <1>
 import org.eclipse.microprofile.metrics.Timer;
 
@@ -513,9 +513,9 @@ import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 import java.util.Collections;
 import java.util.Random;
-import javax.json.Json;
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObject;
+import jakarta.json.Json;
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonObject;
 import org.eclipse.microprofile.metrics.Histogram; // <1>
 import org.eclipse.microprofile.metrics.MetricRegistry; // <1>
 
@@ -636,9 +636,9 @@ import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 import java.util.Collections;
-import javax.json.Json;
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObject;
+import jakarta.json.Json;
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonObject;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 
@@ -705,9 +705,9 @@ import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 import java.util.Collections;
-import javax.json.Json;
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObject;
+import jakarta.json.Json;
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonObject;
 import org.eclipse.microprofile.metrics.MetricRegistry; // <1>
 import org.eclipse.microprofile.metrics.SimpleTimer;
 

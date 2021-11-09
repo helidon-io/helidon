@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import io.helidon.common.Prioritized;
  * <ul>
  * <li>Can have additional implementations added</li>
  * <li>Uses priorities defined either by {@link io.helidon.common.Prioritized}
- * or by {@link javax.annotation.Priority}</li>
+ * or by {@link jakarta.annotation.Priority}</li>
  * <li>Can have exclusions defined by an exact implementation class name, either
  * in {@link Builder#addExcludedClass(Class)} or {@link Builder#addExcludedClassName(String)} or
  * by a system property {@value #SYSTEM_PROPERTY_EXCLUDE} that defines
@@ -51,7 +51,7 @@ import io.helidon.common.Prioritized;
  * <ul>
  * <li>Value provided in {@link Builder#addService(Object, int)} (if used)</li>
  * <li>then by {@link io.helidon.common.Prioritized#priority()} if service implements it</li>
- * <li>then by {@link javax.annotation.Priority} annotation if present</li>
+ * <li>then by {@link jakarta.annotation.Priority} annotation if present</li>
  * <li>otherwise a default priority {@value Prioritized#DEFAULT_PRIORITY} from {@link Prioritized#DEFAULT_PRIORITY} is used</li>
  * </ul>
  * Example:

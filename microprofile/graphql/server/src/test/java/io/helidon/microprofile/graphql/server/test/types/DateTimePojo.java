@@ -25,8 +25,7 @@ import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.List;
 
-import javax.json.bind.annotation.JsonbDateFormat;
-
+import jakarta.json.bind.annotation.JsonbDateFormat;
 import org.eclipse.microprofile.graphql.DateFormat;
 import org.eclipse.microprofile.graphql.Description;
 import org.eclipse.microprofile.graphql.Type;

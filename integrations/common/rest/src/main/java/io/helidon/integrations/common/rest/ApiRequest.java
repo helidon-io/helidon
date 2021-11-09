@@ -20,10 +20,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObject;
-
 import io.helidon.common.http.MediaType;
+
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonObject;
 
 /**
  * Common base class for REST requests.

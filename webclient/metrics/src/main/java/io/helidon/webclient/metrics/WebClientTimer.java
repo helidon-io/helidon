@@ -15,7 +15,7 @@
  */
 package io.helidon.webclient.metrics;
 
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Single;
@@ -69,7 +69,7 @@ class WebClientTimer extends WebClientMetric {
     private void updateTimer(Metadata metadata, long start) {
         long time = System.nanoTime() - start;
         Timer timer = metricRegistry().timer(metadata);
-        timer.update(time, TimeUnit.NANOSECONDS);
+        timer.update(Duration.ofNanos(time));
     }
 
 }

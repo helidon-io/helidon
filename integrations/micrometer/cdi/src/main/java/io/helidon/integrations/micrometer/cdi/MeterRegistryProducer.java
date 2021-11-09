@@ -15,11 +15,10 @@
  */
 package io.helidon.integrations.micrometer.cdi;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Produces;
-import javax.inject.Singleton;
-
 import io.micrometer.core.instrument.MeterRegistry;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Produces;
+import jakarta.inject.Singleton;
 
 @ApplicationScoped
 class MeterRegistryProducer {

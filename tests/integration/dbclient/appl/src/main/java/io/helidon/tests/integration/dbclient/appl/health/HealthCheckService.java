@@ -18,8 +18,8 @@ package io.helidon.tests.integration.dbclient.appl.health;
 import java.util.Map;
 import java.util.logging.Logger;
 
-import javax.json.Json;
-import javax.json.JsonObjectBuilder;
+import jakarta.json.Json;
+import jakarta.json.JsonObjectBuilder;
 
 import io.helidon.config.Config;
 import io.helidon.dbclient.DbClient;

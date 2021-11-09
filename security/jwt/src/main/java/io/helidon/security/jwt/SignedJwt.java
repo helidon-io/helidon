@@ -24,13 +24,13 @@ import java.util.Collections;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.json.Json;
-import javax.json.JsonObject;
-import javax.json.JsonReaderFactory;
-
 import io.helidon.common.Errors;
 import io.helidon.security.jwt.jwk.Jwk;
 import io.helidon.security.jwt.jwk.JwkKeys;
+
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonReaderFactory;
 
 /**
  * The JWT used to transfer content across network - e.g. the base64 parts concatenated

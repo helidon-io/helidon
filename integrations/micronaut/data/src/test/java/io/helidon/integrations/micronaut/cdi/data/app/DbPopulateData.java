@@ -18,12 +18,11 @@ package io.helidon.integrations.micronaut.cdi.data.app;
 
 import java.util.Arrays;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
-
 import io.micronaut.context.event.StartupEvent;
 import io.micronaut.core.annotation.TypeHint;
 import io.micronaut.runtime.event.annotation.EventListener;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 @Singleton
 @TypeHint(typeNames = {"org.h2.Driver", "org.h2.mvstore.db.MVTableEngine"})

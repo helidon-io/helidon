@@ -16,11 +16,11 @@
 
 package io.helidon.tests.apps.bookstore.mp;
 
-import javax.enterprise.event.Observes;
-import javax.enterprise.inject.spi.Extension;
-import javax.enterprise.inject.spi.ProcessAnnotatedType;
-import javax.enterprise.inject.spi.WithAnnotations;
-import javax.ws.rs.Path;
+import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.spi.Extension;
+import jakarta.enterprise.inject.spi.ProcessAnnotatedType;
+import jakarta.enterprise.inject.spi.WithAnnotations;
+import jakarta.ws.rs.Path;
 
 /**
  * A CDI extension to dynamically veto the resource class {@link VetoedResource}.

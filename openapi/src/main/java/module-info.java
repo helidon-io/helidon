@@ -30,7 +30,7 @@ module io.helidon.openapi {
     requires org.jboss.jandex;
 
     requires smallrye.open.api.core;
-    requires java.json;
+    requires jakarta.json;
     requires java.desktop; // for java.beans package
     requires org.yaml.snakeyaml;
 

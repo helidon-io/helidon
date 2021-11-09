@@ -25,14 +25,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import javax.json.Json;
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObject;
-import javax.json.JsonObjectBuilder;
-import javax.json.JsonValue;
-
 import io.helidon.dbclient.DbMapper;
 import io.helidon.dbclient.DbRow;
+
+import jakarta.json.Json;
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonObjectBuilder;
+import jakarta.json.JsonValue;
 
 /**
  * Json processing mapper.
@@ -69,8 +69,8 @@ public final class JsonProcessingMapper implements DbMapper<JsonObject> {
     }
 
     /**
-     * Create a new mapper that can map {@link javax.json.JsonObject} to DB parameters and {@link io.helidon.dbclient.DbRow}
-     * to a {@link javax.json.JsonObject}.
+     * Create a new mapper that can map {@link jakarta.json.JsonObject} to DB parameters and {@link io.helidon.dbclient.DbRow}
+     * to a {@link jakarta.json.JsonObject}.
      *
      * @return a new mapper
      */

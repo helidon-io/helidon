@@ -15,12 +15,11 @@
  */
 package io.helidon.common.reactive;
 
-import org.reactivestreams.tck.TestEnvironment;
-import org.reactivestreams.tck.flow.FlowPublisherVerification;
-
-import java.util.Collections;
 import java.util.concurrent.Flow;
 import java.util.stream.IntStream;
+
+import org.reactivestreams.tck.TestEnvironment;
+import org.reactivestreams.tck.flow.FlowPublisherVerification;
 
 public class MultiFlatMapIterableManyToManyTckTest extends FlowPublisherVerification<Integer> {
 

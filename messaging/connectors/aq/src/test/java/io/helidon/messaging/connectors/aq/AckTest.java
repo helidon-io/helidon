@@ -20,17 +20,16 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import javax.jms.JMSException;
-import javax.jms.Message;
-
 import io.helidon.messaging.connectors.jms.JmsMessage;
 import io.helidon.messaging.connectors.jms.SessionMetadata;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-
+import jakarta.jms.JMSException;
+import jakarta.jms.Message;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class AckTest {
 

@@ -23,7 +23,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.openjdk.jmh.annotations.*;
+import org.openjdk.jmh.annotations.Scope;
+import org.openjdk.jmh.annotations.Setup;
+import org.openjdk.jmh.annotations.State;
 
 /**
  * Original copyright Jose Paumard, 2019.

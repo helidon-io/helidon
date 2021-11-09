@@ -20,19 +20,19 @@
 module io.helidon.integrations.oci.cdi {
     requires java.logging;
 
-    requires jakarta.enterprise.cdi.api;
+    requires jakarta.cdi;
 
     requires io.helidon.config;
     requires io.helidon.integrations.oci.connect;
     requires io.helidon.common.serviceloader;
     requires io.helidon.microprofile.cdi;
-    requires jakarta.inject.api;
+    requires jakarta.inject;
 
     exports io.helidon.integrations.oci.cdi;
 
     uses io.helidon.integrations.oci.connect.spi.InjectionProvider;
 
-    provides javax.enterprise.inject.spi.Extension
+    provides jakarta.enterprise.inject.spi.Extension
             with io.helidon.integrations.oci.cdi.OciCdiExtension;
 
     opens io.helidon.integrations.oci.cdi to weld.core.impl, io.helidon.microprofile.cdi;

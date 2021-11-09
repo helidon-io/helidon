@@ -17,12 +17,12 @@ package io.helidon.dbclient.jsonp;
 
 import java.util.Optional;
 
-import javax.annotation.Priority;
-import javax.json.JsonObject;
-
 import io.helidon.common.Prioritized;
 import io.helidon.dbclient.DbMapper;
 import io.helidon.dbclient.spi.DbMapperProvider;
+
+import jakarta.annotation.Priority;
+import jakarta.json.JsonObject;
 
 /**
  * JSON-P mapper provider.

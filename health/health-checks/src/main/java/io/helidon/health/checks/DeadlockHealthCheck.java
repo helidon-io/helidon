@@ -20,12 +20,11 @@ import java.lang.management.ThreadMXBean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
-
 import io.helidon.common.NativeImageHelper;
 import io.helidon.health.common.BuiltInHealthCheck;
 
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.eclipse.microprofile.health.Liveness;
@@ -90,7 +89,7 @@ public final class DeadlockHealthCheck implements HealthCheck {
             LOGGER.log(Level.FINEST, "Failed to find deadlocks in ThreadMXBean, ignoring this healthcheck", e);
         }
         return HealthCheckResponse.named(NAME)
-                .state(noDeadLock)
+                .status(noDeadLock)
                 .build();
     }
 }

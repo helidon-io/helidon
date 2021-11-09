@@ -19,9 +19,9 @@
  */
 module io.helidon.tracing.jersey {
     requires java.logging;
-    requires java.annotation;
+    requires jakarta.annotation;
 
-    requires java.ws.rs;
+    requires jakarta.ws.rs;
     requires jersey.server;
     requires io.opentracing.api;
     requires io.helidon.common;

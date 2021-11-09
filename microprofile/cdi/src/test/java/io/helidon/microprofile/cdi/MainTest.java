@@ -19,13 +19,11 @@ package io.helidon.microprofile.cdi;
 import java.util.List;
 import java.util.Map;
 
-import javax.enterprise.inject.Instance;
-import javax.enterprise.inject.spi.BeanManager;
-import javax.enterprise.inject.spi.CDI;
-
-import io.helidon.config.mp.MpConfigProviderResolver;
 import io.helidon.config.mp.MpConfigSources;
 
+import jakarta.enterprise.inject.Instance;
+import jakarta.enterprise.inject.spi.BeanManager;
+import jakarta.enterprise.inject.spi.CDI;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.junit.jupiter.api.Test;
@@ -80,8 +78,13 @@ class MainTest {
         instance.start();
 
         Object runtimeConfig = extension.runtimeConfig();
-        assertThat(runtimeConfig, instanceOf(MpConfigProviderResolver.ConfigDelegate.class));
-        assertThat(((MpConfigProviderResolver.ConfigDelegate) runtimeConfig).delegate(), sameInstance(config));
+        assertThat(runtimeConfig, instanceOf(Config.class));
+        Config mpConfig = (Config) runtimeConfig;
+        try {
+            mpConfig = ((Config) runtimeConfig).unwrap(Config.class);
+        } catch (Exception ignored) {
+        }
+        assertThat(mpConfig, sameInstance(config));
 
         instance.shutdown();
         assertThat(extension.events(), is(List.of(TestExtension.BUILD_TIME_START,

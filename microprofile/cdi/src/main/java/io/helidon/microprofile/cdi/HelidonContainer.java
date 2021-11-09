@@ -15,9 +15,9 @@
  */
 package io.helidon.microprofile.cdi;
 
-import javax.enterprise.inject.se.SeContainer;
-
 import io.helidon.common.context.Context;
+
+import jakarta.enterprise.inject.se.SeContainer;
 
 /**
  * Helidon CDI Container, separates initialization and runtime phases of the bootstrapping.

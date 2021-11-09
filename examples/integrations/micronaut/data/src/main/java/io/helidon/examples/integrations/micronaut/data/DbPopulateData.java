@@ -20,15 +20,14 @@ package io.helidon.examples.integrations.micronaut.data;
 
 import java.util.Arrays;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
-
 import io.helidon.examples.integrations.micronaut.data.model.Owner;
 import io.helidon.examples.integrations.micronaut.data.model.Pet;
 
 import io.micronaut.context.event.StartupEvent;
 import io.micronaut.core.annotation.TypeHint;
 import io.micronaut.runtime.event.annotation.EventListener;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 /**
  * A Micronaut bean that listens on startup event and populates database with data.

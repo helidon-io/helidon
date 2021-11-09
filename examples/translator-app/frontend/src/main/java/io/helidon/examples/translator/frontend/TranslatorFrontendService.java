@@ -18,17 +18,17 @@ package io.helidon.examples.translator.frontend;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.ws.rs.ProcessingException;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.Response;
-
 import io.helidon.tracing.jersey.client.ClientTracingFilter;
 import io.helidon.webserver.BadRequestException;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
+
+import jakarta.ws.rs.ProcessingException;
+import jakarta.ws.rs.client.ClientBuilder;
+import jakarta.ws.rs.client.WebTarget;
+import jakarta.ws.rs.core.Response;
 
 /**
  * Translator frontend resource.

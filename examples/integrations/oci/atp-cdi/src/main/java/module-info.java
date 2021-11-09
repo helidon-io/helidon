@@ -21,8 +21,8 @@ module io.helidon.examples.integrations.oci.atp.cdi {
     requires java.logging;
     requires java.naming;
     requires java.sql;
-    requires java.ws.rs;
-    requires jakarta.inject.api;
+    requires jakarta.ws.rs;
+    requires jakarta.inject;
     requires microprofile.config.api;
 
     requires io.helidon.config.yaml.mp;

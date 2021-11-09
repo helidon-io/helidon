@@ -15,6 +15,7 @@
  */
 package io.helidon.metrics.jaeger;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
@@ -71,7 +72,7 @@ public class HelidonJaegerMetricsFactory implements MetricsFactory {
 
             @Override
             public void durationMicros(long time) {
-                timer.update(time, TimeUnit.MICROSECONDS);
+                timer.update(Duration.ofNanos(TimeUnit.MICROSECONDS.toNanos(time)));
             }
         };
     }

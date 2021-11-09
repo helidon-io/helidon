@@ -18,9 +18,9 @@ package io.helidon.webserver.tyrus;
 
 import java.util.logging.Logger;
 
-import javax.websocket.Decoder;
-import javax.websocket.Encoder;
-import javax.websocket.EndpointConfig;
+import jakarta.websocket.Decoder;
+import jakarta.websocket.Encoder;
+import jakarta.websocket.EndpointConfig;
 
 /**
  * Class UppercaseCodec.

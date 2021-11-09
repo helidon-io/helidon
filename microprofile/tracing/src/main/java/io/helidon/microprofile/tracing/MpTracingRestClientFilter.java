@@ -17,13 +17,12 @@ package io.helidon.microprofile.tracing;
 
 import java.lang.reflect.Method;
 
-import javax.annotation.Priority;
-import javax.ws.rs.Priorities;
-import javax.ws.rs.client.ClientRequestContext;
-import javax.ws.rs.client.ClientRequestFilter;
-
 import io.helidon.tracing.jersey.client.ClientTracingFilter;
 
+import jakarta.annotation.Priority;
+import jakarta.ws.rs.Priorities;
+import jakarta.ws.rs.client.ClientRequestContext;
+import jakarta.ws.rs.client.ClientRequestFilter;
 import org.eclipse.microprofile.opentracing.Traced;
 
 /**

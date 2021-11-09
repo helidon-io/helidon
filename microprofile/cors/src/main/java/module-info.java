@@ -19,7 +19,7 @@
  */
 module io.helidon.microprofile.cors {
 
-    requires java.ws.rs;
+    requires jakarta.ws.rs;
     requires io.helidon.config;
     requires io.helidon.webserver.cors;
 

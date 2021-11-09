@@ -24,18 +24,17 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.container.ContainerRequestContext;
-import javax.ws.rs.container.ContainerResponseContext;
-import javax.ws.rs.container.ResourceInfo;
-import javax.ws.rs.core.Response;
-
 import io.helidon.common.context.Contexts;
 import io.helidon.common.reactive.Single;
 import io.helidon.lra.coordinator.client.CoordinatorClient;
 import io.helidon.lra.coordinator.client.CoordinatorConnectionException;
 import io.helidon.lra.coordinator.client.Participant;
 
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.container.ContainerResponseContext;
+import jakarta.ws.rs.container.ResourceInfo;
+import jakarta.ws.rs.core.Response;
 import org.jboss.jandex.AnnotationInstance;
 
 import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_CONTEXT_HEADER;

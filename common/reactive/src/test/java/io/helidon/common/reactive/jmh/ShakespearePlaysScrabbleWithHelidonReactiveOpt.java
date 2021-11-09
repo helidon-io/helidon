@@ -16,17 +16,21 @@
 
 package io.helidon.common.reactive.jmh;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map.Entry;
+import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
-import io.helidon.common.mapper.Mapper;
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
-import org.openjdk.jmh.annotations.*;
+
+import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;

@@ -59,7 +59,7 @@ abstract class DbClientMetric<T extends Metric> extends DbClientServiceBase {
         this.measureSuccess = builder.success();
         String tmpDescription;
         if (builder.description() == null) {
-            tmpDescription = ((null == meta) ? null : meta.getDescription().orElse(null));
+            tmpDescription = ((null == meta) ? null : meta.getDescription());
         } else {
             tmpDescription = builder.description();
         }

@@ -18,15 +18,15 @@
  * Integration with Micronaut Data.
  */
 module io.helidon.integrations.micronaut.data {
-    requires java.annotation;
+    requires jakarta.annotation;
     requires java.sql;
 
-    requires jakarta.enterprise.cdi.api;
+    requires jakarta.cdi;
     requires jakarta.interceptor.api;
 
     requires io.micronaut.inject;
 
-    provides javax.enterprise.inject.spi.Extension with io.helidon.integrations.micronaut.cdi.data.MicronautDataCdiExtension;
+    provides jakarta.enterprise.inject.spi.Extension with io.helidon.integrations.micronaut.cdi.data.MicronautDataCdiExtension;
 
     exports io.helidon.integrations.micronaut.cdi.data;
 }

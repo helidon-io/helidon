@@ -20,6 +20,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 import io.helidon.webclient.WebClient;
+
 import org.junit.jupiter.api.AfterAll;
 
 class BaseServerTest {

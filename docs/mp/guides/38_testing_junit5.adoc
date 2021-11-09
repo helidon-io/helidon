@@ -215,7 +215,7 @@ If you want just the basic test features enabled, then you only have to add a fe
 
 [source, java]
 ----
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import io.helidon.microprofile.config.ConfigCdiExtension;
 import io.helidon.microprofile.tests.junit5.AddBean;

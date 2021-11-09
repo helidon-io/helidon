@@ -21,10 +21,10 @@ import java.util.Map;
 import java.util.OptionalInt;
 import java.util.function.Function;
 
-import javax.annotation.Priority;
-
 import io.helidon.config.Config;
 import io.helidon.config.spi.ConfigMapperProvider;
+
+import jakarta.annotation.Priority;
 
 /**
  * Registers config mapper for {@link OptionalInt}, {@link Integer} and {@link java.math.BigInteger}.

@@ -21,28 +21,25 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.context.BeforeDestroyed;
-import javax.enterprise.context.Initialized;
-import javax.enterprise.event.Observes;
-import javax.enterprise.inject.Instance;
-import javax.enterprise.inject.literal.NamedLiteral;
-import javax.inject.Inject;
-import javax.inject.Named;
 import javax.sql.DataSource;
 import javax.sql.XADataSource;
-import javax.transaction.RollbackException;
-import javax.transaction.Status;
-import javax.transaction.Synchronization;
-import javax.transaction.SystemException;
-import javax.transaction.Transaction;
-import javax.transaction.TransactionManager;
-import javax.transaction.TransactionScoped;
-import javax.transaction.TransactionSynchronizationRegistry;
-import javax.transaction.xa.XAResource;
 
 import io.helidon.integrations.jta.jdbc.JtaDataSource;
 import io.helidon.integrations.jta.jdbc.XADataSourceWrappingDataSource;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.BeforeDestroyed;
+import jakarta.enterprise.context.Initialized;
+import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.Instance;
+import jakarta.enterprise.inject.literal.NamedLiteral;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
+import jakarta.transaction.Status;
+import jakarta.transaction.Synchronization;
+import jakarta.transaction.TransactionManager;
+import jakarta.transaction.TransactionScoped;
+import jakarta.transaction.TransactionSynchronizationRegistry;
 
 @ApplicationScoped
 class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvider {

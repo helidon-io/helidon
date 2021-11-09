@@ -20,11 +20,10 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
-import javax.inject.Named;
-import javax.json.bind.Jsonb;
-import javax.json.bind.JsonbBuilder;
-
 import io.grpc.MethodDescriptor;
+import jakarta.inject.Named;
+import jakarta.json.bind.Jsonb;
+import jakarta.json.bind.JsonbBuilder;
 
 /**
  * An implementation of a gRPC {@link MethodDescriptor.Marshaller} that

@@ -18,11 +18,10 @@ package io.helidon.examples.messaging.mp;
 
 import java.util.concurrent.SubmissionPublisher;
 
-import javax.enterprise.context.ApplicationScoped;
-
 import io.helidon.common.reactive.Multi;
 import io.helidon.messaging.connectors.jms.JmsMessage;
 
+import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;

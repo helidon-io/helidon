@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -153,7 +153,7 @@ public interface DbMapperManager {
          * @param priority priority to use
          * @return updated builder instance
          * @see io.helidon.common.Prioritized
-         * @see javax.annotation.Priority
+         * @see jakarta.annotation.Priority
          */
         public Builder addMapperProvider(DbMapperProvider provider, int priority) {
             this.providers.addService(provider, priority);

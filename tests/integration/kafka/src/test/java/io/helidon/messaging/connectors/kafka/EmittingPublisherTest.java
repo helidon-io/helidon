@@ -25,17 +25,17 @@ import java.util.logging.Logger;
 import io.helidon.common.reactive.EmittingPublisher;
 import io.helidon.microprofile.reactive.HelidonReactiveStreamsEngine;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.eclipse.microprofile.reactive.streams.operators.spi.ReactiveStreamsEngine;
 import org.junit.jupiter.api.Test;
 import org.reactivestreams.FlowAdapters;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class EmittingPublisherTest {
 

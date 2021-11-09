@@ -15,8 +15,8 @@
  */
 
 import io.helidon.media.common.spi.MediaSupportProvider;
-import io.helidon.media.jackson.JacksonSupport;
 import io.helidon.media.jackson.JacksonProvider;
+import io.helidon.media.jackson.JacksonSupport;
 
 /**
  * Jackson support common classes.

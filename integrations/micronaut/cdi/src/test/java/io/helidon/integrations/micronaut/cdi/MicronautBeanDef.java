@@ -19,10 +19,9 @@ package io.helidon.integrations.micronaut.cdi;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
-import javax.inject.Singleton;
-
 import io.micronaut.context.annotation.Bean;
 import io.micronaut.context.annotation.DefaultScope;
+import jakarta.inject.Singleton;
 
 @Bean
 @DefaultScope(Singleton.class)

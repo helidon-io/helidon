@@ -22,10 +22,6 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 
-import javax.json.Json;
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObject;
-
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.IoMulti;
@@ -39,6 +35,9 @@ import io.helidon.webclient.WebClientResponse;
 import io.helidon.webclient.metrics.WebClientMetrics;
 import io.helidon.webclient.spi.WebClientService;
 
+import jakarta.json.Json;
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonObject;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 

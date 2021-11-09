@@ -18,8 +18,8 @@ package io.helidon.integrations.cdi.jpa;
 import java.util.List;
 import java.util.Objects;
 
-import javax.persistence.EntityManager;
-import javax.persistence.Query;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.Query;
 
 final class ClearingQuery extends DelegatingQuery {
 

@@ -32,18 +32,19 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import javax.persistence.SharedCacheMode;
-import javax.persistence.ValidationMode;
-import javax.persistence.spi.ClassTransformer;
-import javax.persistence.spi.PersistenceProvider;
-import javax.persistence.spi.PersistenceUnitInfo;
-import javax.persistence.spi.PersistenceUnitTransactionType;
 import javax.sql.DataSource;
 
 import io.helidon.integrations.cdi.jpa.jaxb.Persistence;
 import io.helidon.integrations.cdi.jpa.jaxb.Persistence.PersistenceUnit;
 import io.helidon.integrations.cdi.jpa.jaxb.PersistenceUnitCachingType;
 import io.helidon.integrations.cdi.jpa.jaxb.PersistenceUnitValidationModeType;
+
+import jakarta.persistence.SharedCacheMode;
+import jakarta.persistence.ValidationMode;
+import jakarta.persistence.spi.ClassTransformer;
+import jakarta.persistence.spi.PersistenceProvider;
+import jakarta.persistence.spi.PersistenceUnitInfo;
+import jakarta.persistence.spi.PersistenceUnitTransactionType;
 
 /**
  * A {@link PersistenceUnitInfo} implementation that can be

@@ -41,6 +41,7 @@ import java.util.regex.Pattern;
 import io.helidon.config.mp.spi.MpConfigFilter;
 
 import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.config.ConfigValue;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.eclipse.microprofile.config.spi.Converter;
 
@@ -104,6 +105,13 @@ public class MpConfigImpl implements Config {
             // do not do this first, as we would end up in using an uninitialized filter
             this.filters.add(it);
         });
+    }
+
+    // TODO 3.0.0-JAKARTA
+    @Override
+    public ConfigValue getConfigValue(String s) {
+        // TODO requires implementation of latest config version
+        return null;
     }
 
     @Override
@@ -201,6 +209,7 @@ public class MpConfigImpl implements Config {
      * @param <T> type of the class
      * @return typed instance
      */
+    @Override
     public <T> T unwrap(Class<T> aClass) {
         if (getClass().equals(aClass)) {
             return aClass.cast(this);
@@ -222,6 +231,7 @@ public class MpConfigImpl implements Config {
      * @return an {@link java.util.Optional} containing the converter, or empty if no converter is available for the specified type
      */
     @SuppressWarnings("unchecked")
+    @Override
     public <T> Optional<Converter<T>> getConverter(Class<T> forType) {
         if (forType.isArray()) {
             Class<?> componentType = forType.getComponentType();

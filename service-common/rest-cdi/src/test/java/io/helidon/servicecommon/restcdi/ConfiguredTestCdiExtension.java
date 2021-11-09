@@ -17,7 +17,7 @@ package io.helidon.servicecommon.restcdi;
 
 import java.util.logging.Logger;
 
-import javax.enterprise.inject.spi.ProcessManagedBean;
+import jakarta.enterprise.inject.spi.ProcessManagedBean;
 
 /**
  * Test MP extension that relies on the test SE service which itself reads a value from config, to make sure the config used

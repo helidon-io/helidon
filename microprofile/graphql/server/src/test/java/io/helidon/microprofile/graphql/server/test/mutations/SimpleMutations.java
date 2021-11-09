@@ -16,14 +16,13 @@
 
 package io.helidon.microprofile.graphql.server.test.mutations;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
-
 import java.util.Set;
 
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContact;
 
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import org.eclipse.microprofile.graphql.GraphQLApi;
 import org.eclipse.microprofile.graphql.Mutation;
 import org.eclipse.microprofile.graphql.Name;

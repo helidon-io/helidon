@@ -17,8 +17,8 @@ package io.helidon.tests.integration.tools.example;
 
 import java.util.Optional;
 
-import javax.json.Json;
-import javax.json.JsonValue;
+import jakarta.json.Json;
+import jakarta.json.JsonValue;
 
 import io.helidon.dbclient.DbClient;
 import io.helidon.tests.integration.tools.service.RemoteTestException;

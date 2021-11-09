@@ -20,10 +20,10 @@ import java.util.LinkedList;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
+import org.eclipse.microprofile.reactive.messaging.Message;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-
-import org.eclipse.microprofile.reactive.messaging.Message;
 
 public class TestMessages<T> extends LinkedList<TestMessages.TestMessage<T>> {
 

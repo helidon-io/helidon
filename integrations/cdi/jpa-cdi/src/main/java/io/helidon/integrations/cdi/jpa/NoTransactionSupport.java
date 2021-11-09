@@ -18,8 +18,8 @@ package io.helidon.integrations.cdi.jpa;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.context.spi.Context;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.spi.Context;
 
 /**
  * A {@link TransactionSupport} implementation that is loaded only if

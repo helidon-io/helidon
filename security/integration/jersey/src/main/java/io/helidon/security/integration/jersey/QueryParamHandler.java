@@ -19,11 +19,11 @@ package io.helidon.security.integration.jersey;
 import java.util.List;
 import java.util.Map;
 
-import javax.ws.rs.core.UriInfo;
-
 import io.helidon.config.Config;
 import io.helidon.security.QueryParamMapping;
 import io.helidon.security.util.TokenHandler;
+
+import jakarta.ws.rs.core.UriInfo;
 
 /**
  * Handler of query parameters - extracts them and stores

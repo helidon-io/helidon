@@ -22,13 +22,14 @@ import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.jms.ConnectionFactory;
-import javax.jms.Destination;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 
 import io.helidon.config.Config;
 import io.helidon.messaging.MessagingException;
+
+import jakarta.jms.ConnectionFactory;
+import jakarta.jms.Destination;
 
 import static io.helidon.messaging.connectors.jms.JmsConnector.JNDI_ATTRIBUTE;
 import static io.helidon.messaging.connectors.jms.JmsConnector.JNDI_DESTINATION_ATTRIBUTE;

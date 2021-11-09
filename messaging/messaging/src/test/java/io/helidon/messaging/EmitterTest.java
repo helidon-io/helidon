@@ -23,13 +23,13 @@ import java.util.concurrent.TimeUnit;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 
+import org.eclipse.microprofile.reactive.messaging.Message;
+import org.junit.jupiter.api.Test;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.startsWith;
-
-import org.eclipse.microprofile.reactive.messaging.Message;
-import org.junit.jupiter.api.Test;
 
 public class EmitterTest {
 

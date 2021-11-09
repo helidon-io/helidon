@@ -15,12 +15,13 @@
  */
 package io.helidon.integrations.cdi.jpa;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.literal.NamedLiteral;
-import javax.enterprise.inject.spi.Bean;
-import javax.enterprise.inject.spi.BeanManager;
-import javax.inject.Inject;
 import javax.sql.DataSource;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.literal.NamedLiteral;
+import jakarta.enterprise.inject.spi.Bean;
+import jakarta.enterprise.inject.spi.BeanManager;
+import jakarta.inject.Inject;
 
 /**
  * A {@link PersistenceUnitInfoBean.DataSourceProvider} implementation

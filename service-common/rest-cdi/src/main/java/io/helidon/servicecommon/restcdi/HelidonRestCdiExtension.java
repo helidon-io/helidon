@@ -29,23 +29,6 @@ import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.annotation.Priority;
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.context.Initialized;
-import javax.enterprise.event.Observes;
-import javax.enterprise.inject.Default;
-import javax.enterprise.inject.spi.AfterDeploymentValidation;
-import javax.enterprise.inject.spi.AnnotatedMember;
-import javax.enterprise.inject.spi.AnnotatedType;
-import javax.enterprise.inject.spi.Bean;
-import javax.enterprise.inject.spi.BeanManager;
-import javax.enterprise.inject.spi.Extension;
-import javax.enterprise.inject.spi.ProcessAnnotatedType;
-import javax.enterprise.inject.spi.ProcessManagedBean;
-import javax.enterprise.inject.spi.ProcessProducerField;
-import javax.enterprise.inject.spi.ProcessProducerMethod;
-import javax.interceptor.Interceptor;
-
 import io.helidon.config.Config;
 import io.helidon.config.mp.MpConfig;
 import io.helidon.microprofile.server.RoutingBuilders;
@@ -54,9 +37,25 @@ import io.helidon.servicecommon.rest.HelidonRestServiceSupport;
 import io.helidon.servicecommon.rest.RestServiceSupport;
 import io.helidon.webserver.Routing;
 
+import jakarta.annotation.Priority;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.Initialized;
+import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.Default;
+import jakarta.enterprise.inject.spi.AfterDeploymentValidation;
+import jakarta.enterprise.inject.spi.AnnotatedMember;
+import jakarta.enterprise.inject.spi.AnnotatedType;
+import jakarta.enterprise.inject.spi.Bean;
+import jakarta.enterprise.inject.spi.BeanManager;
+import jakarta.enterprise.inject.spi.Extension;
+import jakarta.enterprise.inject.spi.ProcessAnnotatedType;
+import jakarta.enterprise.inject.spi.ProcessManagedBean;
+import jakarta.enterprise.inject.spi.ProcessProducerField;
+import jakarta.enterprise.inject.spi.ProcessProducerMethod;
+import jakarta.interceptor.Interceptor;
 import org.eclipse.microprofile.config.ConfigProvider;
 
-import static javax.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
+import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 
 /**
  * Abstract superclass of service-specific, REST-based CDI extensions.

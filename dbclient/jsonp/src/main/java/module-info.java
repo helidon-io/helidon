@@ -20,7 +20,7 @@
 module io.helidon.dbclient.jsonp {
     requires java.logging;
     requires io.helidon.dbclient;
-    requires java.json;
+    requires jakarta.json;
 
     exports io.helidon.dbclient.jsonp;
 

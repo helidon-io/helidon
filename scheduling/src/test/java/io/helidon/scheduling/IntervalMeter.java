@@ -16,8 +16,6 @@
 
 package io.helidon.scheduling;
 
-import org.hamcrest.Matchers;
-
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -26,6 +24,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+
+import org.hamcrest.Matchers;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;

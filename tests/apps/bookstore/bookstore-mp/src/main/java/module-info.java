@@ -19,8 +19,8 @@
  */
 module io.helidon.tests.apps.bookstore.mp {
     requires java.logging;
-    requires java.json;
-    requires java.json.bind;
+    requires jakarta.json;
+    requires jakarta.json.bind;
 
     requires io.helidon.microprofile.bundle.core;
     requires io.helidon.microprofile.metrics;

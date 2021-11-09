@@ -16,7 +16,6 @@
 
 package io.helidon.messaging.connectors.jms;
 
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -25,15 +24,14 @@ import java.util.concurrent.CompletionStage;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
-import javax.jms.Connection;
-import javax.jms.ConnectionFactory;
-import javax.jms.Destination;
-import javax.jms.JMSException;
-import javax.jms.Session;
-
 import io.helidon.common.Builder;
 import io.helidon.messaging.MessagingException;
 
+import jakarta.jms.Connection;
+import jakarta.jms.ConnectionFactory;
+import jakarta.jms.Destination;
+import jakarta.jms.JMSException;
+import jakarta.jms.Session;
 import org.eclipse.microprofile.reactive.messaging.Message;
 
 /**
@@ -67,11 +65,11 @@ public interface JmsMessage<PAYLOAD> extends Message<PAYLOAD> {
     /**
      * Original JMS message received.
      *
-     * @param <MSG> expected sub-type of {@link javax.jms.Message}
+     * @param <MSG> expected sub-type of {@link jakarta.jms.Message}
      * @return original JMS message received
      * @throws java.lang.ClassCastException when original payload cannot be casted to expected type
      */
-    <MSG extends javax.jms.Message> MSG getJmsMessage();
+    <MSG extends jakarta.jms.Message> MSG getJmsMessage();
 
     /**
      * Return type identifier set by sending JMS client.
@@ -181,19 +179,19 @@ public interface JmsMessage<PAYLOAD> extends Message<PAYLOAD> {
 
     /**
      * Outgoing JMS message builder.
-     * Makes possible to create JMS message from {@link javax.jms.Message} and customize result.
+     * Makes possible to create JMS message from {@link jakarta.jms.Message} and customize result.
      * Does NOT copy payload, only headers and properties.
      *
-     * @param msg       {@link javax.jms.Message} to derive metadata
+     * @param msg       {@link jakarta.jms.Message} to derive metadata
      * @param <PAYLOAD> payload type
      * @return Message builder
      * @throws MessagingException when JMS provider can't retrieve message body, properties or metadata
      */
-    static <PAYLOAD> OutgoingJmsMessageBuilder<PAYLOAD> builder(javax.jms.Message msg) {
+    static <PAYLOAD> OutgoingJmsMessageBuilder<PAYLOAD> builder(jakarta.jms.Message msg) {
         try {
             return new OutgoingJmsMessageBuilder<>(msg);
         } catch (JMSException e) {
-            throw new MessagingException("Error when retrieving contents of javax.jms.Message");
+            throw new MessagingException("Error when retrieving contents of jakarta.jms.Message");
         }
     }
 
@@ -230,7 +228,7 @@ public interface JmsMessage<PAYLOAD> extends Message<PAYLOAD> {
             message = new OutgoingJmsMessage<>(payload);
         }
 
-        private OutgoingJmsMessageBuilder(javax.jms.Message msg) throws JMSException {
+        private OutgoingJmsMessageBuilder(jakarta.jms.Message msg) throws JMSException {
             message = OutgoingJmsMessage.fromJmsMessage(msg);
         }
 
@@ -353,9 +351,9 @@ public interface JmsMessage<PAYLOAD> extends Message<PAYLOAD> {
         }
 
         /**
-         * Custom mapper used by connector for mapping to {@link javax.jms.Message}.
+         * Custom mapper used by connector for mapping to {@link jakarta.jms.Message}.
          *
-         * @param mapper supplying this message and {@link javax.jms.Session} for manual creation of {@link javax.jms.Message}
+         * @param mapper supplying this message and {@link jakarta.jms.Session} for manual creation of {@link jakarta.jms.Message}
          * @return this builder
          */
         public OutgoingJmsMessageBuilder<PAYLOAD> customMapper(CustomMapper<PAYLOAD> mapper) {
@@ -364,7 +362,7 @@ public interface JmsMessage<PAYLOAD> extends Message<PAYLOAD> {
         }
 
         /**
-         * Correlation ID for creating {@link javax.jms.Message}.
+         * Correlation ID for creating {@link jakarta.jms.Message}.
          *
          * @param correlationId provider specific or application specific correlation ID
          * @return this builder
@@ -415,15 +413,15 @@ public interface JmsMessage<PAYLOAD> extends Message<PAYLOAD> {
     }
 
     /**
-     * Mapper for creating {@link javax.jms.Message}.
+     * Mapper for creating {@link jakarta.jms.Message}.
      *
      * @param <PAYLOAD> The payload.
      */
     @FunctionalInterface
-    interface CustomMapper<PAYLOAD> extends BiFunction<PAYLOAD, Session, javax.jms.Message> {
+    interface CustomMapper<PAYLOAD> extends BiFunction<PAYLOAD, Session, jakarta.jms.Message> {
 
         @Override
-        default javax.jms.Message apply(PAYLOAD p, Session session) {
+        default jakarta.jms.Message apply(PAYLOAD p, Session session) {
             try {
                 return applyThrows(p, session);
             } catch (JMSException e) {
@@ -431,7 +429,7 @@ public interface JmsMessage<PAYLOAD> extends Message<PAYLOAD> {
             }
         }
 
-        javax.jms.Message applyThrows(PAYLOAD p, Session session) throws JMSException;
+        jakarta.jms.Message applyThrows(PAYLOAD p, Session session) throws JMSException;
     }
 
 }

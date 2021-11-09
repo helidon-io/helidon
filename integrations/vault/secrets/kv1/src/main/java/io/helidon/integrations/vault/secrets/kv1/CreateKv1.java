@@ -41,7 +41,7 @@ public final class CreateKv1 {
         /**
          * Fluent API builder for configuring a request.
          * The request builder is passed as is, without a build method.
-         * The equivalent of a build method is {@link #toJson(javax.json.JsonBuilderFactory)}
+         * The equivalent of a build method is {@link #toJson(jakarta.json.JsonBuilderFactory)}
          * used by the {@link io.helidon.integrations.common.rest.RestApi}.
          *
          * @return new request builder

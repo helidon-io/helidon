@@ -19,10 +19,9 @@ package io.helidon.microprofile.grpc.core;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 
-import javax.inject.Inject;
-import javax.inject.Named;
-
 import io.grpc.MethodDescriptor;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;

@@ -21,11 +21,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 
-import javax.json.Json;
-import javax.json.JsonArrayBuilder;
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObjectBuilder;
-
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.http.Http;
@@ -43,6 +38,11 @@ import io.helidon.security.providers.oidc.common.OidcConfig;
 import io.helidon.security.spi.SecurityProvider;
 import io.helidon.security.spi.SubjectMappingProvider;
 import io.helidon.webclient.WebClientRequestBuilder;
+
+import jakarta.json.Json;
+import jakarta.json.JsonArrayBuilder;
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonObjectBuilder;
 
 /**
  * {@link io.helidon.security.spi.SubjectMappingProvider} to obtain roles from IDCS server for a user.

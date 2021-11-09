@@ -21,12 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.container.ContainerRequestContext;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
-
 import io.helidon.config.Config;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.AuthorizationResponse;
@@ -40,6 +34,11 @@ import io.helidon.security.integration.common.AtnTracing;
 import io.helidon.security.integration.common.AtzTracing;
 import io.helidon.security.integration.common.SecurityTracing;
 
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriInfo;
 import org.glassfish.jersey.server.ContainerRequest;
 
 /**

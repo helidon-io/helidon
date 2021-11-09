@@ -18,8 +18,8 @@ package io.helidon.security.examples.google;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
-import io.helidon.common.Builder;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 
@@ -35,7 +35,7 @@ public final class GoogleUtil {
     private GoogleUtil() {
     }
 
-    static WebServer startIt(int port, Builder<? extends Routing> routing) {
+    static WebServer startIt(int port, Supplier<? extends Routing> routing) {
         WebServer server = WebServer.builder(routing)
                 .port(port)
                 .build();

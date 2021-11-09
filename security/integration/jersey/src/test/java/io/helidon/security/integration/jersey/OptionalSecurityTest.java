@@ -21,10 +21,6 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.core.Application;
-
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.ProviderRequest;
 import io.helidon.security.Security;
@@ -34,6 +30,9 @@ import io.helidon.security.SecurityResponse;
 import io.helidon.security.annotations.Authenticated;
 import io.helidon.security.integration.common.SecurityTracing;
 
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.core.Application;
 import org.glassfish.jersey.server.ContainerRequest;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.junit.jupiter.api.BeforeAll;

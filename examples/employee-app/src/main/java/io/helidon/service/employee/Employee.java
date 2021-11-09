@@ -17,8 +17,8 @@ package io.helidon.service.employee;
 
 import java.util.UUID;
 
-import javax.json.bind.annotation.JsonbCreator;
-import javax.json.bind.annotation.JsonbProperty;
+import jakarta.json.bind.annotation.JsonbCreator;
+import jakarta.json.bind.annotation.JsonbProperty;
 /**
  * Represents an employee.
  */

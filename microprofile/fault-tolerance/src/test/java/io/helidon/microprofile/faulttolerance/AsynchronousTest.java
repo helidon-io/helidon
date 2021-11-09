@@ -16,12 +16,13 @@
 
 package io.helidon.microprofile.faulttolerance;
 
-import javax.inject.Inject;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Future;
 
 import io.helidon.microprofile.tests.junit5.AddBean;
+
+import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;

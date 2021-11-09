@@ -15,10 +15,9 @@
  */
 package io.helidon.microprofile.tracing;
 
-import javax.ws.rs.Priorities;
-
 import io.helidon.tracing.jersey.client.ClientTracingFilter;
 
+import jakarta.ws.rs.Priorities;
 import org.eclipse.microprofile.opentracing.Traced;
 import org.eclipse.microprofile.rest.client.RestClientBuilder;
 import org.eclipse.microprofile.rest.client.spi.RestClientListener;

@@ -117,7 +117,7 @@ public class ServiceDescriptorTest {
         HealthCheckResponse response = descriptor.healthCheck().call();
 
         assertThat(response.getName(), is(notNullValue()));
-        assertThat(response.getState(), is(HealthCheckResponse.State.UP));
+        assertThat(response.getStatus(), is(HealthCheckResponse.Status.UP));
     }
 
     @Test

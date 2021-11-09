@@ -31,16 +31,15 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
 
-import javax.enterprise.inject.spi.Bean;
-import javax.json.Json;
-import javax.json.JsonArray;
-import javax.json.JsonObject;
-import javax.json.JsonReaderFactory;
-import javax.json.stream.JsonParsingException;
-
 import io.helidon.integrations.graal.nativeimage.extension.NativeConfig;
 
 import com.oracle.svm.core.annotate.AutomaticFeature;
+import jakarta.enterprise.inject.spi.Bean;
+import jakarta.json.Json;
+import jakarta.json.JsonArray;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonReaderFactory;
+import jakarta.json.stream.JsonParsingException;
 import org.graalvm.nativeimage.hosted.Feature;
 import org.graalvm.nativeimage.hosted.RuntimeReflection;
 import org.jboss.weld.bean.proxy.ClientProxyFactory;

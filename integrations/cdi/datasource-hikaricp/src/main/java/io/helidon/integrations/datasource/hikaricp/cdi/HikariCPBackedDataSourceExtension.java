@@ -26,22 +26,6 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.annotation.sql.DataSourceDefinition;
-import javax.annotation.sql.DataSourceDefinitions;
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.event.Event;
-import javax.enterprise.event.Observes;
-import javax.enterprise.inject.CreationException;
-import javax.enterprise.inject.Instance;
-import javax.enterprise.inject.spi.Annotated;
-import javax.enterprise.inject.spi.Extension;
-import javax.enterprise.inject.spi.InjectionPoint;
-import javax.enterprise.inject.spi.ProcessAnnotatedType;
-import javax.enterprise.inject.spi.ProcessInjectionPoint;
-import javax.enterprise.inject.spi.WithAnnotations;
-import javax.enterprise.inject.spi.configurator.BeanConfigurator;
-import javax.enterprise.util.TypeLiteral;
-import javax.inject.Named;
 import javax.sql.DataSource;
 
 import io.helidon.integrations.datasource.cdi.AbstractDataSourceExtension;
@@ -49,6 +33,22 @@ import io.helidon.integrations.datasource.cdi.AbstractDataSourceExtension;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import com.zaxxer.hikari.metrics.MetricsTrackerFactory;
+import jakarta.annotation.sql.DataSourceDefinition;
+import jakarta.annotation.sql.DataSourceDefinitions;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.event.Event;
+import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.CreationException;
+import jakarta.enterprise.inject.Instance;
+import jakarta.enterprise.inject.spi.Annotated;
+import jakarta.enterprise.inject.spi.Extension;
+import jakarta.enterprise.inject.spi.InjectionPoint;
+import jakarta.enterprise.inject.spi.ProcessAnnotatedType;
+import jakarta.enterprise.inject.spi.ProcessInjectionPoint;
+import jakarta.enterprise.inject.spi.WithAnnotations;
+import jakarta.enterprise.inject.spi.configurator.BeanConfigurator;
+import jakarta.enterprise.util.TypeLiteral;
+import jakarta.inject.Named;
 import org.eclipse.microprofile.config.Config;
 
 /**

@@ -19,8 +19,6 @@ package io.helidon.grpc.server;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.annotation.Priority;
-
 import io.helidon.grpc.core.InterceptorPriorities;
 
 import io.grpc.Context;
@@ -29,6 +27,7 @@ import io.grpc.Metadata;
 import io.grpc.ServerCall;
 import io.grpc.ServerCallHandler;
 import io.grpc.ServerInterceptor;
+import jakarta.annotation.Priority;
 
 import static io.helidon.grpc.core.GrpcHelper.extractMethodName;
 

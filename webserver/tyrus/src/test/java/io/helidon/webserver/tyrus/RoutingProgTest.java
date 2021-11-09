@@ -16,10 +16,10 @@
 
 package io.helidon.webserver.tyrus;
 
-import javax.websocket.server.ServerEndpointConfig;
 import java.net.URI;
 import java.util.Collections;
 
+import jakarta.websocket.server.ServerEndpointConfig;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 

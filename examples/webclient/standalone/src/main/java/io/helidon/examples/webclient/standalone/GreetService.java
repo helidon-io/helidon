@@ -20,17 +20,17 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.json.Json;
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonException;
-import javax.json.JsonObject;
-
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
+
+import jakarta.json.Json;
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonException;
+import jakarta.json.JsonObject;
 
 /**
  * A simple service to greet you. Examples:

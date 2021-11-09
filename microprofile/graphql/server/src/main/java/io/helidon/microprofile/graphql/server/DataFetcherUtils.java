@@ -43,8 +43,6 @@ import java.util.TreeSet;
 import java.util.UUID;
 import java.util.logging.Logger;
 
-import javax.enterprise.inject.spi.CDI;
-
 import io.helidon.graphql.server.ExecutionContext;
 
 import graphql.GraphQLException;
@@ -52,6 +50,7 @@ import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.PropertyDataFetcher;
 import graphql.schema.PropertyDataFetcherHelper;
+import jakarta.enterprise.inject.spi.CDI;
 
 import static io.helidon.microprofile.graphql.server.FormattingHelper.formatDate;
 import static io.helidon.microprofile.graphql.server.FormattingHelper.formatNumber;

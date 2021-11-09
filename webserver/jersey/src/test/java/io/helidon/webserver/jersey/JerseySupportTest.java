@@ -25,14 +25,13 @@ import java.net.URLConnection;
 import java.util.Collections;
 import java.util.List;
 
-import javax.ws.rs.ProcessingException;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-
 import io.helidon.common.http.HttpRequest;
 
+import jakarta.ws.rs.ProcessingException;
+import jakarta.ws.rs.client.Entity;
+import jakarta.ws.rs.client.WebTarget;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import org.glassfish.jersey.CommonProperties;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -42,7 +41,6 @@ import static io.helidon.webserver.jersey.JerseySupport.basePath;
 import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
@@ -70,7 +68,7 @@ public class JerseySupportTest {
     }
 
     @Test
-    public void injection() throws Exception {
+    public void injection() {
         Response response = get("jersey/first/injection");
         doAssert(response,
                  "request=io.helidon.webserver.RequestRouting$RoutedRequest\n"
@@ -79,7 +77,7 @@ public class JerseySupportTest {
     }
 
     @Test
-    public void queryGet() throws Exception {
+    public void queryGet() {
         Response response = webTarget.path("jersey/first/query")
                                      .queryParam("a", "a&value")
                                      .queryParam("b", "b&c=value")
@@ -90,21 +88,21 @@ public class JerseySupportTest {
     }
 
     @Test
-    public void pathGet() throws Exception {
+    public void pathGet() {
         Response response = webTarget.path("jersey/first/path/123").request().get();
 
         doAssert(response, "num=123");
     }
 
     @Test
-    public void simpleGet() throws Exception {
+    public void simpleGet() {
         Response response = get("jersey/first/hello");
 
         doAssert(response, "Hello!");
     }
 
     @Test
-    public void longGet() throws Exception {
+    public void longGet() {
         Response response = get("jersey/first/longhello");
 
         doAssert(response, "Hello Long: " + longData(JerseyExampleResource.LARGE_DATA_SIZE_BYTES) + "!");
@@ -115,7 +113,7 @@ public class JerseySupportTest {
     }
 
     @Test
-    public void simplePost() throws Exception {
+    public void simplePost() {
         Response response = post("jersey/first/hello");
 
         doAssert(response, "Hello: my-entity!");
@@ -141,7 +139,7 @@ public class JerseySupportTest {
     }
 
     @Test
-    public void longPostAndResponse() throws Exception {
+    public void longPostAndResponse() {
         StringBuilder data = longData(JerseyExampleResource.LARGE_DATA_SIZE_BYTES);
 
         Response response = webTarget.path("jersey/first/hello")
@@ -152,56 +150,56 @@ public class JerseySupportTest {
     }
 
     @Test
-    public void errorNoEntity() throws Exception {
+    public void errorNoEntity() {
         Response response = get("jersey/first/error/noentity");
 
         doAssert(response, "", 543);
     }
 
     @Test
-    public void errorWithEntity() throws Exception {
+    public void errorWithEntity() {
         Response response = get("jersey/first/error/entity");
 
         doAssert(response, "error-entity", 543);
     }
 
     @Test
-    public void errorThrownNoEntity() throws Exception {
+    public void errorThrownNoEntity() {
         Response response = get("jersey/first/error/thrown/noentity");
 
         doAssert(response, "", 543);
     }
 
     @Test
-    public void errorThrownEntity() throws Exception {
+    public void errorThrownEntity() {
         Response response = get("jersey/first/error/thrown/entity");
 
         doAssert(response, "error-entity", 543);
     }
 
     @Test
-    public void errorThrownError() throws Exception {
+    public void errorThrownError() {
         Response response = get("jersey/first/error/thrown/error");
 
         doAssert(response, null, 500);
     }
 
     @Test
-    public void errorThrownUnhandled() throws Exception {
+    public void errorThrownUnhandled() {
         Response response = get("jersey/first/error/thrown/unhandled");
 
         doAssert(response, null, 500);
     }
 
     @Test
-    public void simplePostNotFound() throws Exception {
+    public void simplePostNotFound() {
         Response response = post("jersey/first/non-existent-resource");
 
         doAssert(response, null, Response.Status.NOT_FOUND);
     }
 
     @Test
-    public void notFoundResponse() throws Exception {
+    public void notFoundResponse() {
         Response response = delete("jersey/first/notfound");
 
         doAssert(response, "Not Found", Response.Status.NOT_FOUND);
@@ -211,7 +209,7 @@ public class JerseySupportTest {
      * In this test, we need to properly end the connection because the request data won't be fully consumed.
      */
     @Test
-    public void longPostNotFound() throws Exception {
+    public void longPostNotFound() {
         Response response = null;
         try {
              response = webTarget.path("jersey/first/non-existent-resource")
@@ -231,31 +229,30 @@ public class JerseySupportTest {
      * Jersey doesn't close the output stream in case there is no entity. We need to close
      * the publisher by ourselves and this is the test.
      *
-     * @throws Exception in case of an error
      */
     @Test
-    public void noResponseEntityGet() throws Exception {
+    public void noResponseEntityGet() {
         Response response = get("jersey/first/noentity");
 
         doAssert(response, "", Response.Status.OK);
     }
 
     @Test
-    public void simpleGetNotFound() throws Exception {
+    public void simpleGetNotFound() {
         Response response = get("jersey/first/non-existent-resource");
 
         doAssert(response, null, Response.Status.NOT_FOUND);
     }
 
     @Test
-    public void nonJerseyGetNotFound() throws Exception {
+    public void nonJerseyGetNotFound() {
         Response response = get("jersey/second");
 
         doAssert(response, "second-content: ");
     }
 
     @Test
-    public void nonJerseyPOSTNotFound() throws Exception {
+    public void nonJerseyPOSTNotFound() {
         Response response = webTarget.path("jersey/second").request().post(Entity.entity("my-entity", MediaType.TEXT_PLAIN_TYPE));
 
         doAssert(response, "second-content: my-entity");
@@ -308,8 +305,9 @@ public class JerseySupportTest {
         Response response = webTarget.path("jersey/first/streamingOutput")
                 .request()
                 .get();
-        assertEquals(Response.Status.Family.SUCCESSFUL, response.getStatusInfo().getFamily(),
-                "Unexpected error: " + response.getStatus());
+
+        assertThat(response.getStatusInfo().getFamily(), is(Response.Status.Family.SUCCESSFUL));
+
         try (InputStream is = response.readEntity(InputStream.class)) {
             byte[] buffer = new byte[32];
             int n = is.read(buffer);        // should read only first chunk
@@ -398,12 +396,9 @@ public class JerseySupportTest {
     }
 
     private void doAssert(Response response, String expected) {
-        try {
-            assertEquals(Response.Status.Family.SUCCESSFUL, response.getStatusInfo().getFamily(),
-                    "Unexpected error: " + response.getStatus());
-            assertEquals(expected, response.readEntity(String.class));
-        } finally {
-            response.close();
+        try (response) {
+            assertThat(response.getStatusInfo().getFamily(), is(Response.Status.Family.SUCCESSFUL));
+            assertThat(response.readEntity(String.class), is(expected));
         }
     }
 
@@ -412,14 +407,11 @@ public class JerseySupportTest {
     }
 
     private void doAssert(Response response, String expectedContent, int expectedStatusCode) {
-        try {
-            assertEquals(expectedStatusCode, response.getStatus(),
-                    "Unexpected error: " + response.getStatus());
+        try (response) {
+            assertThat(response.getStatus(), is(expectedStatusCode));
             if (expectedContent != null) {
-                assertEquals(expectedContent, response.readEntity(String.class));
+                assertThat(response.readEntity(String.class), is(expectedContent));
             }
-        } finally {
-            response.close();
         }
     }
 }

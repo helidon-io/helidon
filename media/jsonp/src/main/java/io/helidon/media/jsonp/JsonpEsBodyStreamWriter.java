@@ -20,9 +20,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Flow;
 
-import javax.json.JsonStructure;
-import javax.json.JsonWriterFactory;
-
 import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.MediaType;
@@ -31,8 +28,11 @@ import io.helidon.media.common.MessageBodyStreamWriter;
 import io.helidon.media.common.MessageBodyWriterContext;
 import io.helidon.media.jsonp.JsonpBodyWriter.JsonStructureToChunks;
 
+import jakarta.json.JsonStructure;
+import jakarta.json.JsonWriterFactory;
+
 /**
- * Message body writer for {@link javax.json.JsonStructure} sub-classes (JSON-P).
+ * Message body writer for {@link jakarta.json.JsonStructure} sub-classes (JSON-P).
  * This writer is for {@link MediaType#TEXT_EVENT_STREAM} with no element-type parameter or element-type="application/json".
  */
 class JsonpEsBodyStreamWriter implements MessageBodyStreamWriter<JsonStructure> {

@@ -19,7 +19,7 @@
  */
 module io.helidon.examples.dbclient.pokemons.jdbc {
     requires java.logging;
-    requires java.json;
+    requires jakarta.json;
 
     requires io.helidon.config;
     requires io.helidon.dbclient.health;

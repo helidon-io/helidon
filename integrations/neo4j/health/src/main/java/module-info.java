@@ -23,8 +23,8 @@ module io.helidon.integrations.neo4j.health {
 
     requires io.helidon.health.common;
 
-    requires static jakarta.enterprise.cdi.api;
-    requires static jakarta.inject.api;
+    requires static jakarta.cdi;
+    requires static jakarta.inject;
 
     exports io.helidon.integrations.neo4j.health;
 

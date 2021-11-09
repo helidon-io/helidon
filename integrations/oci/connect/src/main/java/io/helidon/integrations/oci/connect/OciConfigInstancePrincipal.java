@@ -46,11 +46,6 @@ import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.json.Json;
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObject;
-import javax.json.JsonWriterFactory;
-
 import io.helidon.common.Base64Value;
 import io.helidon.common.Version;
 import io.helidon.common.configurable.Resource;
@@ -64,6 +59,11 @@ import io.helidon.security.Security;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientResponse;
 import io.helidon.webclient.security.WebClientSecurity;
+
+import jakarta.json.Json;
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonWriterFactory;
 
 /**
  * OCI connectivity configuration based on instance principal.

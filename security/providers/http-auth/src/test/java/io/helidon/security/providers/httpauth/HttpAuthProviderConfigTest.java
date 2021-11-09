@@ -21,11 +21,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.ext.ExceptionMapper;
-
 import io.helidon.config.Config;
 import io.helidon.security.Security;
 import io.helidon.security.integration.jersey.SecurityFeature;
@@ -33,6 +28,10 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.jersey.JerseySupport;
 
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.ClientBuilder;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.ext.ExceptionMapper;
 import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;

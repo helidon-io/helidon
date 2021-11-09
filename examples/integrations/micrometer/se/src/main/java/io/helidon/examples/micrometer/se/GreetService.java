@@ -18,10 +18,6 @@ package io.helidon.examples.micrometer.se;
 
 import java.util.Collections;
 
-import javax.json.Json;
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObject;
-
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.webserver.Routing;
@@ -31,6 +27,9 @@ import io.helidon.webserver.Service;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Timer;
+import jakarta.json.Json;
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonObject;
 
 /**
  * A simple service to greet you.

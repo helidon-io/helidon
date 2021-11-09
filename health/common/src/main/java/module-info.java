@@ -19,8 +19,8 @@
  */
 module io.helidon.health.common {
 
-    requires static jakarta.enterprise.cdi.api;
-    requires static jakarta.inject.api;
+    requires static jakarta.cdi;
+    requires static jakarta.inject;
 
     exports io.helidon.health.common;
 }

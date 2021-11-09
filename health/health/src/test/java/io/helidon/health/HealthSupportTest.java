@@ -22,11 +22,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
-import javax.json.JsonArray;
-import javax.json.JsonObject;
-
 import io.helidon.common.http.Http;
 
+import jakarta.json.JsonArray;
+import jakarta.json.JsonObject;
 import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.junit.jupiter.api.AfterEach;

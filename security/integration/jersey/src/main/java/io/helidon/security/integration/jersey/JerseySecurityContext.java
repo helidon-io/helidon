@@ -16,10 +16,10 @@
 
 package io.helidon.security.integration.jersey;
 
-import javax.ws.rs.core.SecurityContext;
-
 import io.helidon.security.Principal;
 import io.helidon.security.Subject;
+
+import jakarta.ws.rs.core.SecurityContext;
 
 /**
  * {@link SecurityContext} implementation for integration with security component.

@@ -15,11 +15,10 @@
  */
 package io.helidon.microprofile.server;
 
-import javax.enterprise.inject.spi.CDI;
-
 import io.helidon.config.Config;
 import io.helidon.webserver.Routing;
 
+import jakarta.enterprise.inject.spi.CDI;
 import org.eclipse.microprofile.config.ConfigProvider;
 
 /**

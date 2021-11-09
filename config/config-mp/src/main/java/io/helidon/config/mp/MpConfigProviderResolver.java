@@ -225,8 +225,7 @@ public class MpConfigProviderResolver extends ConfigProviderResolver {
      * A delegate used to allow replacing configuration at runtime for components
      * that hold a reference to configuration obtained at build time.
      */
-    @Deprecated
-    public static final class ConfigDelegate implements io.helidon.config.Config, Config {
+    static final class ConfigDelegate implements io.helidon.config.Config, Config {
         private final AtomicReference<Config> delegate = new AtomicReference<>();
         private final AtomicReference<io.helidon.config.Config> helidonDelegate = new AtomicReference<>();
 
@@ -241,6 +240,25 @@ public class MpConfigProviderResolver extends ConfigProviderResolver {
             } else {
                 this.helidonDelegate.set(MpConfig.toHelidonConfig(delegate));
             }
+        }
+
+        @Override
+        public org.eclipse.microprofile.config.ConfigValue getConfigValue(String s) {
+            return delegate.get().getConfigValue(s);
+        }
+
+        @Override
+        public <T> Optional<Converter<T>> getConverter(Class<T> aClass) {
+            return delegate.get().getConverter(aClass);
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public <T> T unwrap(Class<T> aClass) {
+            if (Config.class.equals(aClass)) {
+                return (T) delegate.get();
+            }
+            return delegate.get().unwrap(aClass);
         }
 
         private io.helidon.config.Config getCurrent() {

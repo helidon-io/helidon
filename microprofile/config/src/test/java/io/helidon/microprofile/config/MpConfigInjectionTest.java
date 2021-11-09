@@ -19,10 +19,6 @@ package io.helidon.microprofile.config;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
-import javax.enterprise.context.Dependent;
-import javax.inject.Inject;
-import javax.inject.Qualifier;
-
 import io.helidon.microprofile.config.Converters.Ctor;
 import io.helidon.microprofile.config.Converters.Of;
 import io.helidon.microprofile.config.Converters.Parse;
@@ -31,6 +27,9 @@ import io.helidon.microprofile.tests.junit5.AddBean;
 import io.helidon.microprofile.tests.junit5.AddConfig;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 
+import jakarta.enterprise.context.Dependent;
+import jakarta.inject.Inject;
+import jakarta.inject.Qualifier;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.Test;
 

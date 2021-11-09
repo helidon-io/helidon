@@ -15,13 +15,13 @@
  */
 package io.helidon.tests.integration.mp.ws.services;
 
-import javax.annotation.Priority;
-import javax.enterprise.context.ApplicationScoped;
-
 import io.helidon.microprofile.server.RoutingName;
 import io.helidon.microprofile.server.RoutingPath;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.Service;
+
+import jakarta.annotation.Priority;
+import jakarta.enterprise.context.ApplicationScoped;
 
 /**
  * Service example.

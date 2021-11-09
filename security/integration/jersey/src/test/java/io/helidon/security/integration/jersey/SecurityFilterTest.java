@@ -18,10 +18,6 @@ package io.helidon.security.integration.jersey;
 
 import java.util.Set;
 
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Application;
-import javax.ws.rs.core.Response;
-
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.AuthorizationResponse;
 import io.helidon.security.Security;
@@ -30,6 +26,9 @@ import io.helidon.security.SecurityContext;
 import io.helidon.security.SecurityResponse;
 import io.helidon.security.integration.common.SecurityTracing;
 
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Application;
+import jakarta.ws.rs.core.Response;
 import org.glassfish.jersey.server.ContainerRequest;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.server.ServerConfig;

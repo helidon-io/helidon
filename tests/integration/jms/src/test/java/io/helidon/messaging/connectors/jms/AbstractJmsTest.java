@@ -16,9 +16,8 @@
 
 package io.helidon.messaging.connectors.jms;
 
-import javax.jms.Connection;
-import javax.jms.Session;
-
+import jakarta.jms.Connection;
+import jakarta.jms.Session;
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;

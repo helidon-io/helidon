@@ -18,11 +18,10 @@ package io.helidon.grpc.server;
 
 import java.io.InputStream;
 
-import javax.inject.Named;
-
 import io.helidon.grpc.core.MarshallerSupplier;
 
 import io.grpc.MethodDescriptor;
+import jakarta.inject.Named;
 
 /**
  * A stub {@link MethodDescriptor.Marshaller}.

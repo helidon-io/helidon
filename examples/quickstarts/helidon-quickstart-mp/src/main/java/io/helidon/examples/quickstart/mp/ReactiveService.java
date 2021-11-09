@@ -15,19 +15,19 @@
  */
 package io.helidon.examples.quickstart.mp;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
-
 import io.helidon.microprofile.server.RoutingPath;
 import io.helidon.security.Security;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.Service;
 
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+
 /**
  * Reactive service.
  * <p>
  * Helidon WebServer reactive services can be used in MP as well.
- * Injection is limited to {@link javax.enterprise.context.ApplicationScoped}.
+ * Injection is limited to {@link jakarta.enterprise.context.ApplicationScoped}.
  */
 @ApplicationScoped
 @RoutingPath("/reactive")

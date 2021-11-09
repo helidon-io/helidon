@@ -16,11 +16,11 @@
 
 package io.helidon.common.reactive;
 
-import org.reactivestreams.tck.TestEnvironment;
-import org.reactivestreams.tck.flow.FlowPublisherVerification;
-
 import java.io.IOException;
 import java.util.concurrent.Flow;
+
+import org.reactivestreams.tck.TestEnvironment;
+import org.reactivestreams.tck.flow.FlowPublisherVerification;
 
 public class MultiOnErrorResumeWithFailureTckTest extends FlowPublisherVerification<Integer> {
 

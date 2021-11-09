@@ -20,7 +20,7 @@
 module io.helidon.integrations.micronaut.cdi.processor {
     requires io.micronaut.core;
     requires io.micronaut.inject;
-    requires jakarta.inject.api;
+    requires jakarta.inject;
 
     provides io.micronaut.inject.annotation.AnnotationTransformer with
             io.helidon.integrations.micronaut.cdi.processor.ApplicationScopedTransformer,

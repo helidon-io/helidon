@@ -16,7 +16,7 @@
 
 package io.helidon.integrations.micronaut.cdi;
 
-import javax.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
 @MicronautBeanDef

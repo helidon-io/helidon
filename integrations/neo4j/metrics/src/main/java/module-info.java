@@ -27,13 +27,13 @@ module io.helidon.integrations.neo4j.metrics {
     requires microprofile.metrics.api;
     requires io.helidon.metrics;
 
-    requires static jakarta.enterprise.cdi.api;
-    requires static jakarta.inject.api;
+    requires static jakarta.cdi;
+    requires static jakarta.inject;
     requires static jakarta.interceptor.api;
-    requires static java.annotation;
+    requires static jakarta.annotation;
 
     exports io.helidon.integrations.neo4j.metrics;
 
-    provides javax.enterprise.inject.spi.Extension with io.helidon.integrations.neo4j.metrics.Neo4jMetricsCdiExtension;
+    provides jakarta.enterprise.inject.spi.Extension with io.helidon.integrations.neo4j.metrics.Neo4jMetricsCdiExtension;
 
 }

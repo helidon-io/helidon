@@ -39,7 +39,7 @@ import io.helidon.config.spi.ConfigNode.ObjectNode;
  * given {@code Builder} by invoking
  * {@link io.helidon.config.Config.Builder#disableParserServices()}.
  * <p>
- * A parser can specify a {@link javax.annotation.Priority}. If no priority is
+ * A parser can specify a {@link jakarta.annotation.Priority}. If no priority is
  * explicitly assigned, the value of {@value PRIORITY} is assumed.
  * <p>
  * Parser is used by the config system and a config source provides data as an input stream.

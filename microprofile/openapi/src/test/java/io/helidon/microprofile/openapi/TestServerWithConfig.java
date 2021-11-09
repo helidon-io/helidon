@@ -15,16 +15,17 @@
  */
 package io.helidon.microprofile.openapi;
 
+import java.net.HttpURLConnection;
+import java.util.Map;
+
 import io.helidon.common.http.MediaType;
 import io.helidon.config.ClasspathConfigSource;
 import io.helidon.config.Config;
 import io.helidon.microprofile.server.Server;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
-import java.net.HttpURLConnection;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 

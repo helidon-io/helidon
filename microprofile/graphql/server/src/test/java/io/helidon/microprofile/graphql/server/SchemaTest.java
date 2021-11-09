@@ -23,8 +23,6 @@ import java.util.List;
 import graphql.scalars.ExtendedScalars;
 import org.junit.jupiter.api.Test;
 
-import static graphql.introspection.Introspection.DirectiveLocation.FIELD_DEFINITION;
-import static io.helidon.microprofile.graphql.server.TestHelper.createArgument;
 import static io.helidon.microprofile.graphql.server.TestHelper.createSchemaType;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;

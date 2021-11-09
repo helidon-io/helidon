@@ -25,10 +25,10 @@ module io.helidon.microprofile.grpc.core {
     requires transitive io.helidon.microprofile.config;
     requires io.helidon.common.serviceloader;
 
-    requires transitive jakarta.enterprise.cdi.api;
+    requires transitive jakarta.cdi;
 
     requires java.logging;
-    requires jakarta.inject.api;
+    requires jakarta.inject;
 
     uses io.helidon.microprofile.grpc.core.MethodHandlerSupplier;
 
@@ -38,6 +38,6 @@ module io.helidon.microprofile.grpc.core {
             io.helidon.microprofile.grpc.core.ServerStreamingMethodHandlerSupplier,
             io.helidon.microprofile.grpc.core.UnaryMethodHandlerSupplier;
 
-    provides javax.enterprise.inject.spi.Extension
+    provides jakarta.enterprise.inject.spi.Extension
             with io.helidon.microprofile.grpc.core.GrpcCdiExtension;
 }

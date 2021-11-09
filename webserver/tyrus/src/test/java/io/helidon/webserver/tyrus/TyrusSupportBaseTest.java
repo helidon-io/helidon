@@ -16,16 +16,14 @@
 
 package io.helidon.webserver.tyrus;
 
-import java.net.InetAddress;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import javax.websocket.server.ServerEndpointConfig;
-
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 
+import jakarta.websocket.server.ServerEndpointConfig;
 import org.junit.jupiter.api.AfterAll;
 
 /**

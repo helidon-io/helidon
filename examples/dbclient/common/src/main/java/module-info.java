@@ -19,7 +19,7 @@
 module io.helidon.examples.dbclient.common {
     requires java.logging;
 
-    requires java.json;
+    requires jakarta.json;
     requires transitive io.helidon.dbclient;
     requires io.helidon.common.http;
     requires transitive io.helidon.webserver;

@@ -18,10 +18,6 @@ package io.helidon.media.jsonp;
 import java.nio.charset.Charset;
 import java.util.concurrent.Flow.Publisher;
 
-import javax.json.JsonStructure;
-import javax.json.JsonWriter;
-import javax.json.JsonWriterFactory;
-
 import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.MediaType;
@@ -30,6 +26,10 @@ import io.helidon.common.reactive.Single;
 import io.helidon.media.common.CharBuffer;
 import io.helidon.media.common.MessageBodyWriter;
 import io.helidon.media.common.MessageBodyWriterContext;
+
+import jakarta.json.JsonStructure;
+import jakarta.json.JsonWriter;
+import jakarta.json.JsonWriterFactory;
 
 /**
  * Message body writer for {@link JsonStructure} sub-classes (JSON-P).

@@ -27,12 +27,6 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import javax.enterprise.inject.spi.CDI;
-import javax.ws.rs.Path;
-import javax.ws.rs.core.Application;
-import javax.ws.rs.core.Feature;
-import javax.ws.rs.ext.Provider;
-
 import io.helidon.microprofile.server.JaxRsApplication;
 import io.helidon.microprofile.server.JaxRsCdiExtension;
 import io.helidon.openapi.OpenAPISupport;
@@ -40,6 +34,8 @@ import io.helidon.openapi.OpenAPISupport;
 import io.smallrye.openapi.api.OpenApiConfig;
 import io.smallrye.openapi.api.OpenApiConfigImpl;
 import io.smallrye.openapi.runtime.scanner.FilteredIndexView;
+import jakarta.enterprise.inject.spi.CDI;
+import jakarta.ws.rs.core.Application;
 import org.eclipse.microprofile.config.Config;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationTarget;

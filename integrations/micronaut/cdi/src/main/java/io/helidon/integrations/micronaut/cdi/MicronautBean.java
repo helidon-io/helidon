@@ -37,4 +37,9 @@ class MicronautBean {
     BeanDefinitionReference<?> definitionRef() {
         return beanDefinitionReference;
     }
+
+    @Override
+    public String toString() {
+        return beanType.getName();
+    }
 }

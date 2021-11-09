@@ -18,9 +18,8 @@ package io.helidon.jersey.connector;
 
 import java.io.OutputStream;
 
-import javax.ws.rs.client.Client;
-import javax.ws.rs.core.Configuration;
-
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.core.Configuration;
 import org.glassfish.jersey.client.spi.Connector;
 import org.glassfish.jersey.client.spi.ConnectorProvider;
 
@@ -55,8 +54,8 @@ import org.glassfish.jersey.client.spi.ConnectorProvider;
  * </p>
  * <p>
  * This connector uses {@link org.glassfish.jersey.client.ClientProperties#OUTBOUND_CONTENT_LENGTH_BUFFER} to buffer the entity
- * written for instance by {@link javax.ws.rs.core.StreamingOutput}. Should the buffer be small and
- * {@link javax.ws.rs.core.StreamingOutput#write(OutputStream)} be called many times, the performance can drop. The Content-Length
+ * written for instance by {@link jakarta.ws.rs.core.StreamingOutput}. Should the buffer be small and
+ * {@link jakarta.ws.rs.core.StreamingOutput#write(OutputStream)} be called many times, the performance can drop. The Content-Length
  * or the Content_Encoding header is set by the underlaying Helidon WebClient regardless of the
  * {@link org.glassfish.jersey.client.ClientProperties#OUTBOUND_CONTENT_LENGTH_BUFFER} size, however.
  * </p>

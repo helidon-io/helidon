@@ -15,14 +15,14 @@
  */
 package io.helidon.common.reactive;
 
-import org.reactivestreams.tck.TestEnvironment;
-import org.reactivestreams.tck.flow.FlowPublisherVerification;
-import org.testng.annotations.Test;
-
 import java.util.List;
 import java.util.concurrent.Flow;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
+import org.reactivestreams.tck.TestEnvironment;
+import org.reactivestreams.tck.flow.FlowPublisherVerification;
+import org.testng.annotations.Test;
 
 @Test
 public class MultiCollectorTckTest extends FlowPublisherVerification<List<Integer>> {

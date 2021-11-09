@@ -15,14 +15,14 @@
  */
 package io.helidon.integrations.jta.cdi;
 
-import javax.transaction.HeuristicMixedException;
-import javax.transaction.HeuristicRollbackException;
-import javax.transaction.InvalidTransactionException;
-import javax.transaction.NotSupportedException;
-import javax.transaction.RollbackException;
-import javax.transaction.SystemException;
-import javax.transaction.Transaction;
-import javax.transaction.TransactionManager;
+import jakarta.transaction.HeuristicMixedException;
+import jakarta.transaction.HeuristicRollbackException;
+import jakarta.transaction.InvalidTransactionException;
+import jakarta.transaction.NotSupportedException;
+import jakarta.transaction.RollbackException;
+import jakarta.transaction.SystemException;
+import jakarta.transaction.Transaction;
+import jakarta.transaction.TransactionManager;
 
 /**
  * An {@code abstract} {@link TransactionManager} implementation that
@@ -114,14 +114,14 @@ public abstract class DelegatingTransactionManager implements TransactionManager
      * current thread.
      *
      * @return the transaction status expressed as the value of one of
-     * the {@code int} constants in the {@link javax.transaction.Status} class; if no
+     * the {@code int} constants in the {@link jakarta.transaction.Status} class; if no
      * transaction is associated with the current thread, this method
-     * returns {@link javax.transaction.Status#STATUS_NO_TRANSACTION}
+     * returns {@link jakarta.transaction.Status#STATUS_NO_TRANSACTION}
      *
      * @exception SystemException if this {@link TransactionManager}
      * encounters an unexpected error condition
      *
-     * @see javax.transaction.Status
+     * @see jakarta.transaction.Status
      */
     @Override
     public int getStatus() throws SystemException {

@@ -17,12 +17,11 @@ package io.helidon.microprofile.metrics;
 
 import java.lang.annotation.Annotation;
 
-import javax.inject.Inject;
-import javax.interceptor.InvocationContext;
-
 import io.helidon.microprofile.metrics.MetricsCdiExtension.MetricWorkItem;
 import io.helidon.servicecommon.restcdi.HelidonInterceptor;
 
+import jakarta.inject.Inject;
+import jakarta.interceptor.InvocationContext;
 import org.eclipse.microprofile.metrics.Metric;
 
 /**

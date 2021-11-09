@@ -16,12 +16,11 @@
 
 package io.helidon.microprofile.messaging;
 
-import javax.enterprise.inject.spi.AnnotatedMethod;
-import javax.enterprise.inject.spi.BeanManager;
-
 import io.helidon.common.Errors;
 import io.helidon.config.Config;
 
+import jakarta.enterprise.inject.spi.AnnotatedMethod;
+import jakarta.enterprise.inject.spi.BeanManager;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.streams.operators.SubscriberBuilder;
 import org.reactivestreams.Subscriber;

@@ -23,16 +23,15 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import javax.ws.rs.client.ClientRequestContext;
-import javax.ws.rs.core.Configuration;
-import javax.ws.rs.core.MultivaluedHashMap;
-import javax.ws.rs.core.MultivaluedMap;
-
 import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.integration.jersey.client.ClientSecurity;
 import io.helidon.security.integration.jersey.client.ClientSecurityFilter;
 
+import jakarta.ws.rs.client.ClientRequestContext;
+import jakarta.ws.rs.core.Configuration;
+import jakarta.ws.rs.core.MultivaluedHashMap;
+import jakarta.ws.rs.core.MultivaluedMap;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.endsWith;

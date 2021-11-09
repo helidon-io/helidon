@@ -28,8 +28,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-import javax.annotation.Priority;
-
 import io.helidon.common.LogConfig;
 import io.helidon.grpc.client.test.StringServiceGrpc;
 import io.helidon.grpc.core.InterceptorPriorities;
@@ -49,6 +47,7 @@ import io.grpc.ServerCall;
 import io.grpc.ServerCallHandler;
 import io.grpc.ServerInterceptor;
 import io.grpc.stub.StreamObserver;
+import jakarta.annotation.Priority;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;

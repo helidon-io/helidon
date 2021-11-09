@@ -21,8 +21,6 @@ import java.util.Optional;
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import javax.json.bind.Jsonb;
-
 import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.MediaType;
@@ -30,6 +28,8 @@ import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
 import io.helidon.media.common.MessageBodyStreamWriter;
 import io.helidon.media.common.MessageBodyWriterContext;
+
+import jakarta.json.bind.Jsonb;
 
 /**
  * Message body stream writer supporting object binding with JSON-B.

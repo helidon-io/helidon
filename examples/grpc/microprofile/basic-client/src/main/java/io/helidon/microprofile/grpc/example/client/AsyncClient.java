@@ -18,13 +18,13 @@ package io.helidon.microprofile.grpc.example.client;
 
 import java.util.concurrent.CompletionStage;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.se.SeContainer;
-import javax.enterprise.inject.se.SeContainerInitializer;
-import javax.inject.Inject;
-
 import io.helidon.microprofile.grpc.client.GrpcChannel;
 import io.helidon.microprofile.grpc.client.GrpcProxy;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.se.SeContainer;
+import jakarta.enterprise.inject.se.SeContainerInitializer;
+import jakarta.inject.Inject;
 
 /**
  * A client to the {@link io.helidon.microprofile.grpc.example.client.AsyncStringService}.

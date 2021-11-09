@@ -15,9 +15,9 @@
  */
 package io.helidon.security.integration.jersey;
 
-import javax.annotation.Priority;
-
 import io.helidon.security.providers.common.spi.AnnotationAnalyzer;
+
+import jakarta.annotation.Priority;
 
 /**
  * First annotation analyzer.

@@ -17,10 +17,9 @@ package io.helidon.microprofile.tracing;
 
 import java.util.function.Function;
 
-import javax.ws.rs.container.ContainerRequestContext;
-
 import io.helidon.tracing.jersey.TracingHelper;
 
+import jakarta.ws.rs.container.ContainerRequestContext;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 

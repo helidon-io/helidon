@@ -20,20 +20,20 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.logging.Logger;
 
-import javax.enterprise.inject.se.SeContainer;
-import javax.enterprise.inject.spi.CDI;
-import javax.websocket.CloseReason;
-import javax.websocket.Endpoint;
-import javax.websocket.EndpointConfig;
-import javax.websocket.MessageHandler;
-import javax.websocket.OnClose;
-import javax.websocket.OnError;
-import javax.websocket.OnMessage;
-import javax.websocket.OnOpen;
-import javax.websocket.Session;
-import javax.websocket.server.ServerEndpoint;
-
 import io.helidon.microprofile.server.ServerCdiExtension;
+
+import jakarta.enterprise.inject.se.SeContainer;
+import jakarta.enterprise.inject.spi.CDI;
+import jakarta.websocket.CloseReason;
+import jakarta.websocket.Endpoint;
+import jakarta.websocket.EndpointConfig;
+import jakarta.websocket.MessageHandler;
+import jakarta.websocket.OnClose;
+import jakarta.websocket.OnError;
+import jakarta.websocket.OnMessage;
+import jakarta.websocket.OnOpen;
+import jakarta.websocket.Session;
+import jakarta.websocket.server.ServerEndpoint;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 

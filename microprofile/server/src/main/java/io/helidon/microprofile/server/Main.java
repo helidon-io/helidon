@@ -16,7 +16,7 @@
 
 package io.helidon.microprofile.server;
 
-import javax.enterprise.inject.spi.CDI;
+import jakarta.enterprise.inject.spi.CDI;
 
 /**
  * Start a Helidon microprofile server that collects JAX-RS resources from
@@ -36,7 +36,7 @@ public final class Main {
 
     /**
      * Main method to start server. The server will collect JAX-RS application automatically (through
-     * CDI extension - just annotate it with {@link javax.enterprise.context.ApplicationScoped}).
+     * CDI extension - just annotate it with {@link jakarta.enterprise.context.ApplicationScoped}).
      *
      * @param args command line arguments, currently ignored
      */

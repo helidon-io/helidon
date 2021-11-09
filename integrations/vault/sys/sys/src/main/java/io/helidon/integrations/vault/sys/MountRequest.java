@@ -18,14 +18,14 @@ package io.helidon.integrations.vault.sys;
 
 import java.time.Duration;
 
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObject;
-import javax.json.JsonObjectBuilder;
-
 import io.helidon.integrations.common.rest.ApiJsonBuilder;
 import io.helidon.integrations.vault.AuthMethod;
 import io.helidon.integrations.vault.VaultApiException;
 import io.helidon.integrations.vault.VaultRequest;
+
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonObjectBuilder;
 
 /**
  * A builder for {@link SysRx#enableEngine(io.helidon.integrations.vault.sys.EnableEngine.Request)}

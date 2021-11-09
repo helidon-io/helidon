@@ -19,12 +19,11 @@ package io.helidon.integrations.micronaut.cdi.processor;
 import java.lang.annotation.Annotation;
 import java.util.List;
 
-import javax.inject.Scope;
-
 import io.micronaut.context.annotation.Prototype;
 import io.micronaut.core.annotation.AnnotationValue;
 import io.micronaut.inject.annotation.NamedAnnotationTransformer;
 import io.micronaut.inject.visitor.VisitorContext;
+import jakarta.inject.Scope;
 
 /**
  * Transforms CDI Dependent annotation into Micronaut RequestScope (as the integration module does not
@@ -33,7 +32,7 @@ import io.micronaut.inject.visitor.VisitorContext;
 public class DependentTransformer implements NamedAnnotationTransformer {
     @Override
     public String getName() {
-        return "javax.enterprise.context.Dependent";
+        return "jakarta.enterprise.context.Dependent";
     }
 
     @Override

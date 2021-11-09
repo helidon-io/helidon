@@ -18,15 +18,14 @@ package io.helidon.integrations.micronaut.cdi.data;
 
 import java.sql.Connection;
 
-import javax.annotation.Priority;
-import javax.enterprise.context.Dependent;
-import javax.enterprise.event.Observes;
-import javax.enterprise.inject.spi.AfterBeanDiscovery;
-import javax.enterprise.inject.spi.Extension;
-
 import io.micronaut.context.ApplicationContext;
+import jakarta.annotation.Priority;
+import jakarta.enterprise.context.Dependent;
+import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.spi.AfterBeanDiscovery;
+import jakarta.enterprise.inject.spi.Extension;
 
-import static javax.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
+import static jakarta.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
 
 /**
  * CDI Extension that adds Micronaut data specific features.

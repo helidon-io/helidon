@@ -22,7 +22,7 @@ module io.helidon.security.abac.policy.el {
     requires io.helidon.security.abac.policy;
     requires java.logging;
     // expected to be provided by the actual EL implementation
-    requires static jakarta.el.api;
+    requires static jakarta.el;
     requires java.desktop;
     requires io.helidon.security.util;
 

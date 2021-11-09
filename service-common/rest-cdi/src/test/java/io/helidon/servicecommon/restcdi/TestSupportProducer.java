@@ -16,11 +16,11 @@
 package io.helidon.servicecommon.restcdi;
 
 import io.helidon.config.mp.MpConfig;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Produces;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
-
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Produces;
 
 /**
  * Producer of the test service so the resource can inject the service.

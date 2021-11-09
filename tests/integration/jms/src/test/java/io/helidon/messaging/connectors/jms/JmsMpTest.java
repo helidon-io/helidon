@@ -24,10 +24,6 @@ import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import javax.enterprise.inject.spi.CDI;
-import javax.jms.JMSException;
-import javax.jms.TextMessage;
-
 import io.helidon.microprofile.config.ConfigCdiExtension;
 import io.helidon.microprofile.messaging.MessagingCdiExtension;
 import io.helidon.microprofile.tests.junit5.AddBean;
@@ -39,6 +35,9 @@ import io.helidon.microprofile.tests.junit5.AddExtensions;
 import io.helidon.microprofile.tests.junit5.DisableDiscovery;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 
+import jakarta.enterprise.inject.spi.CDI;
+import jakarta.jms.JMSException;
+import jakarta.jms.TextMessage;
 import org.junit.jupiter.api.Test;
 
 @HelidonTest

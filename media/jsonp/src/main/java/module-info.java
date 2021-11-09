@@ -31,7 +31,7 @@ module io.helidon.media.jsonp {
     requires io.helidon.common.reactive;
     requires io.helidon.config;
     requires io.helidon.media.common;
-    requires transitive java.json;
+    requires transitive jakarta.json;
 
     exports io.helidon.media.jsonp;
 

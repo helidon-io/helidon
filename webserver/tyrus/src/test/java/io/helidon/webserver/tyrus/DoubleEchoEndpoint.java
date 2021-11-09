@@ -19,12 +19,12 @@ package io.helidon.webserver.tyrus;
 import java.io.IOException;
 import java.util.logging.Logger;
 
-import javax.websocket.OnClose;
-import javax.websocket.OnError;
-import javax.websocket.OnMessage;
-import javax.websocket.OnOpen;
-import javax.websocket.Session;
-import javax.websocket.server.ServerEndpoint;
+import jakarta.websocket.OnClose;
+import jakarta.websocket.OnError;
+import jakarta.websocket.OnMessage;
+import jakarta.websocket.OnOpen;
+import jakarta.websocket.Session;
+import jakarta.websocket.server.ServerEndpoint;
 
 /**
  * Class DoubleEchoEndpoint. Echos back a message concatenated with itself.

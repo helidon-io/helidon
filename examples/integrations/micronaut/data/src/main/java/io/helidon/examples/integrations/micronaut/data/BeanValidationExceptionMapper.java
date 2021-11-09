@@ -16,14 +16,14 @@
 
 package io.helidon.examples.integrations.micronaut.data;
 
-import javax.validation.ConstraintViolationException;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.ext.ExceptionMapper;
-import javax.ws.rs.ext.Provider;
+import jakarta.validation.ConstraintViolationException;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.ext.ExceptionMapper;
+import jakarta.ws.rs.ext.Provider;
 
 /**
- * A JAX-RS provider that maps {@link javax.validation.ConstraintViolationException} from bean validation
- * to a proper JAX-RS response with {@link javax.ws.rs.core.Response.Status#BAD_REQUEST} status.
+ * A JAX-RS provider that maps {@link jakarta.validation.ConstraintViolationException} from bean validation
+ * to a proper JAX-RS response with {@link jakarta.ws.rs.core.Response.Status#BAD_REQUEST} status.
  * If this provider is not present, validation exception from Micronaut would end with an internal server
  * error.
  */

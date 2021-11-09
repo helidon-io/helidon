@@ -16,6 +16,7 @@
 package io.helidon.metrics;
 
 import io.helidon.metrics.WeightedSnapshot.WeightedSample;
+
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.metrics.Sample.derived;

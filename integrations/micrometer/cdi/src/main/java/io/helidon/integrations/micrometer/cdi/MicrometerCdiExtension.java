@@ -25,24 +25,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
-import javax.annotation.Priority;
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.context.Initialized;
-import javax.enterprise.event.Observes;
-import javax.enterprise.inject.spi.AnnotatedCallable;
-import javax.enterprise.inject.spi.AnnotatedType;
-import javax.enterprise.inject.spi.BeanManager;
-import javax.enterprise.inject.spi.BeforeBeanDiscovery;
-import javax.enterprise.inject.spi.ProcessAnnotatedType;
-import javax.enterprise.inject.spi.ProcessManagedBean;
-import javax.enterprise.inject.spi.ProcessProducerField;
-import javax.enterprise.inject.spi.ProcessProducerMethod;
-import javax.enterprise.inject.spi.WithAnnotations;
-import javax.enterprise.util.AnnotationLiteral;
-import javax.enterprise.util.Nonbinding;
-import javax.interceptor.Interceptor;
-import javax.interceptor.InterceptorBinding;
-
 import io.helidon.integrations.micrometer.MicrometerSupport;
 import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.servicecommon.restcdi.HelidonRestCdiExtension;
@@ -55,8 +37,25 @@ import io.micrometer.core.instrument.LongTaskTimer;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
+import jakarta.annotation.Priority;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.Initialized;
+import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.spi.AnnotatedCallable;
+import jakarta.enterprise.inject.spi.AnnotatedType;
+import jakarta.enterprise.inject.spi.BeanManager;
+import jakarta.enterprise.inject.spi.BeforeBeanDiscovery;
+import jakarta.enterprise.inject.spi.ProcessAnnotatedType;
+import jakarta.enterprise.inject.spi.ProcessManagedBean;
+import jakarta.enterprise.inject.spi.ProcessProducerField;
+import jakarta.enterprise.inject.spi.ProcessProducerMethod;
+import jakarta.enterprise.inject.spi.WithAnnotations;
+import jakarta.enterprise.util.AnnotationLiteral;
+import jakarta.enterprise.util.Nonbinding;
+import jakarta.interceptor.Interceptor;
+import jakarta.interceptor.InterceptorBinding;
 
-import static javax.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
+import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 
 /**
  * CDI extension for handling Micrometer artifacts.

@@ -17,9 +17,6 @@
 import java.net.URI;
 import java.util.concurrent.TimeUnit;
 
-import javax.json.JsonArray;
-import javax.json.JsonValue;
-
 import io.helidon.common.LazyValue;
 import io.helidon.common.reactive.Multi;
 import io.helidon.config.Config;
@@ -31,6 +28,8 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.SocketConfiguration;
 import io.helidon.webserver.WebServer;
 
+import jakarta.json.JsonArray;
+import jakarta.json.JsonValue;
 import org.eclipse.microprofile.lra.annotation.LRAStatus;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;

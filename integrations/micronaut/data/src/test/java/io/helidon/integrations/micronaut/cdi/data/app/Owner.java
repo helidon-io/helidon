@@ -15,11 +15,10 @@
  */
 package io.helidon.integrations.micronaut.cdi.data.app;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-
 import io.micronaut.core.annotation.Creator;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
 
 @Entity
 public class Owner {

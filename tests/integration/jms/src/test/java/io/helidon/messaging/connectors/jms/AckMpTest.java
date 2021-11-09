@@ -18,9 +18,6 @@ package io.helidon.messaging.connectors.jms;
 
 import java.util.List;
 
-import javax.annotation.PostConstruct;
-import javax.enterprise.inject.se.SeContainer;
-
 import io.helidon.microprofile.config.ConfigCdiExtension;
 import io.helidon.microprofile.messaging.MessagingCdiExtension;
 import io.helidon.microprofile.tests.junit5.AddBean;
@@ -32,6 +29,8 @@ import io.helidon.microprofile.tests.junit5.AddExtensions;
 import io.helidon.microprofile.tests.junit5.DisableDiscovery;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 
+import jakarta.annotation.PostConstruct;
+import jakarta.enterprise.inject.se.SeContainer;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;

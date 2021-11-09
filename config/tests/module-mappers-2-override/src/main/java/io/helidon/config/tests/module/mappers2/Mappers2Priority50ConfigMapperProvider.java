@@ -20,10 +20,10 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.function.Function;
 
-import javax.annotation.Priority;
-
 import io.helidon.config.Config;
 import io.helidon.config.spi.ConfigMapperProvider;
+
+import jakarta.annotation.Priority;
 
 /**
  * Registers Config mappers for {@link Locale}.

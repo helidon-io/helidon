@@ -22,13 +22,13 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import javax.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.ApplicationScoped;
 
 /**
  * Add a bean.
  * This is intended for test sources where we do not want to add {@code beans.xml} as this would add
  * all test classes as beans.
- * The bean will be added by default with {@link javax.enterprise.context.ApplicationScoped}.
+ * The bean will be added by default with {@link jakarta.enterprise.context.ApplicationScoped}.
  * The class will be instantiated using CDI and will be available for injection into test classes and other beans.
  * This annotation can be repeated.
  */
@@ -44,8 +44,8 @@ public @interface AddBean {
 
     /**
      * Scope of the bean.
-     * Only {@link javax.inject.Singleton}, {@link javax.enterprise.context.ApplicationScoped}
-     *   and {@link javax.enterprise.context.RequestScoped} scopes are supported.
+     * Only {@link jakarta.inject.Singleton}, {@link jakarta.enterprise.context.ApplicationScoped}
+     *   and {@link jakarta.enterprise.context.RequestScoped} scopes are supported.
      *
      * @return scope of the bean
      */

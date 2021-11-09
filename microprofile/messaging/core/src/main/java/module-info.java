@@ -20,8 +20,8 @@
 module io.helidon.microprofile.messaging {
     requires java.logging;
 
-    requires static jakarta.enterprise.cdi.api;
-    requires static jakarta.inject.api;
+    requires static jakarta.cdi;
+    requires static jakarta.inject;
     requires static jakarta.activation;
     requires jakarta.interceptor.api;
     requires io.helidon.config;
@@ -35,5 +35,5 @@ module io.helidon.microprofile.messaging {
 
     exports io.helidon.microprofile.messaging;
 
-    provides javax.enterprise.inject.spi.Extension with io.helidon.microprofile.messaging.MessagingCdiExtension;
+    provides jakarta.enterprise.inject.spi.Extension with io.helidon.microprofile.messaging.MessagingCdiExtension;
 }

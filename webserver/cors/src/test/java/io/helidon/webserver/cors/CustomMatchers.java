@@ -15,11 +15,11 @@
  */
 package io.helidon.webserver.cors;
 
+import java.util.Optional;
+
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
-
-import java.util.Optional;
 
 /**
  * Some useful custom matchers.

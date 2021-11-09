@@ -34,14 +34,14 @@ package io.helidon.common;
 public interface Prioritized {
     /**
      * Default priority for any prioritized component (whether it implements this interface
-     * or uses {@code javax.annotation.Priority} annotation.
+     * or uses {@code jakarta.annotation.Priority} annotation.
      */
     int DEFAULT_PRIORITY = 5000;
 
     /**
      * Priority of this class (maybe because it is defined
      * dynamically, so it cannot be defined by an annotation).
-     * If not dynamic, you can use the {@code javax.annotation.Priority}
+     * If not dynamic, you can use the {@code jakarta.annotation.Priority}
      * annotation rather then implementing this interface as long as
      * it is supported by the library using this {@code Prioritized}.
      *

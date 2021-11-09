@@ -25,7 +25,6 @@ import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.Matchers.greaterThan;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BREAKER_CALLS_FAILED_TOTAL;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BREAKER_CALLS_PREVENTED_TOTAL;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BREAKER_CALLS_SUCCEEDED_TOTAL;
@@ -53,6 +52,7 @@ import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.getGa
 import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.getHistogram;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.getMetricRegistry;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;

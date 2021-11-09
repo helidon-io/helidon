@@ -23,12 +23,14 @@ import io.helidon.config.Config;
 import io.helidon.webserver.WebServer;
 
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.openapi.ServerTest.GREETING_OPENAPI_SUPPORT_BUILDER;
 import static io.helidon.openapi.ServerTest.TIME_OPENAPI_SUPPORT_BUILDER;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+@Disabled("3.0.0-JAKARTA")
 public class TestCors {
 
     private static WebServer greetingWebServer;

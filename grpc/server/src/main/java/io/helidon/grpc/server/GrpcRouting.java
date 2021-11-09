@@ -103,7 +103,7 @@ public interface GrpcRouting {
          * Add one or more global {@link ServerInterceptor} instances that will intercept calls
          * to all services in the {@link GrpcRouting} built by this builder.
          * <p>
-         * If the added interceptors are annotated with the {@link javax.annotation.Priority}
+         * If the added interceptors are annotated with the {@link jakarta.annotation.Priority}
          * annotation then that value will be used to assign a priority to use when applying
          * the interceptor otherwise a priority of {@link InterceptorPriorities#USER} will
          * be used.

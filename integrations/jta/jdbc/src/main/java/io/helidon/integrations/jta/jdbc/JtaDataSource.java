@@ -26,11 +26,12 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import javax.sql.DataSource;
-import javax.transaction.Status;
-import javax.transaction.Synchronization;
 
 import io.helidon.integrations.jdbc.AbstractDataSource;
 import io.helidon.integrations.jdbc.ConditionallyCloseableConnection;
+
+import jakarta.transaction.Status;
+import jakarta.transaction.Synchronization;
 
 /**
  * An {@link AbstractDataSource} and a {@link Synchronization} that

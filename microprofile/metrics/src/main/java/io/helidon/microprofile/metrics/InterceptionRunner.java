@@ -17,7 +17,7 @@ package io.helidon.microprofile.metrics;
 
 import java.util.function.BiConsumer;
 
-import javax.interceptor.InvocationContext;
+import jakarta.interceptor.InvocationContext;
 
 /**
  * Abstraction of processing around an interception point, independent from the details of any

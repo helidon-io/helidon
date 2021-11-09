@@ -16,12 +16,12 @@
 
 package io.helidon.microprofile.example.tls;
 
-import javax.enterprise.context.RequestScoped;
-import javax.json.JsonObject;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.json.JsonObject;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
 
 /**
  * A simple JAX-RS resource to greet you. Examples:
