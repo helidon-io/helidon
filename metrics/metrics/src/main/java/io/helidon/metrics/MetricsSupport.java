@@ -115,12 +115,16 @@ public final class MetricsSupport extends HelidonRestServiceSupport
         super(LOGGER, builder, SERVICE_NAME);
         this.rf = builder.registryFactory.get();
         this.metricsSettings = builder.metricsSettingsBuilder.build();
+        clearVendorRegistry();
+        KeyPerformanceIndicatorMetricsImpls.clearCachedKpiMetrics();
     }
 
     protected MetricsSupport(MetricsSettings metricsSettings, RestServiceSettings restServiceSettings) {
         super(LOGGER, restServiceSettings, SERVICE_NAME);
         rf = RegistryFactory.getInstance(metricsSettings);
         this.metricsSettings = metricsSettings;
+        clearVendorRegistry();
+        KeyPerformanceIndicatorMetricsImpls.clearCachedKpiMetrics();
     }
 
     /**
@@ -571,6 +575,12 @@ public final class MetricsSupport extends HelidonRestServiceSupport
                     res.status(Http.Status.NO_CONTENT_204);
                     res.send();
                 });
+    }
+
+    private void clearVendorRegistry() {
+        // Primarily for testing with multiple tests in one JVM.
+        MetricRegistry registry = rf.getRegistry(MetricRegistry.Type.VENDOR);
+        registry.getNames().forEach(registry::remove);
     }
 
     /**
