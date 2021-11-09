@@ -15,7 +15,7 @@
 #
 
 # 1st stage, build the app
-FROM maven:3.6-jdk-11 as build
+FROM maven:3.6.3-openjdk-17-slim as build
 
 WORKDIR /helidon
 
@@ -33,7 +33,7 @@ RUN mvn package -DskipTests
 RUN echo "done!"
 
 # 2nd stage, build the runtime image
-FROM openjdk:11-jre-slim
+FROM openjdk:17-jdk-slim
 WORKDIR /helidon
 
 # Copy the binary built in the 1st stage

@@ -33,6 +33,8 @@
     <description>Java libraries for writing microservices</description>
 
     <properties>
+        <version.java>17</version.java>
+
         <doclint>all</doclint>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -207,9 +209,9 @@
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>${version.plugin.compiler}</version>
                     <configuration>
-                        <source>11</source>
-                        <target>11</target>
-                        <release>11</release>
+                        <source>${version.java}</source>
+                        <target>${version.java}</target>
+                        <release>${version.java}</release>
                         <forceJavacCompilerUse>true</forceJavacCompilerUse>
                         <compilerArgs>
                             <arg>-Xlint:unchecked</arg>
@@ -225,7 +227,7 @@
                     <artifactId>maven-javadoc-plugin</artifactId>
                     <version>${version.plugin.javadoc}</version>
                     <configuration>
-                        <source>11</source>
+                        <source>${version.java}</source>
                         <failOnError>true</failOnError>
                         <!-- we are not interested in each file that is generated -->
                         <quiet>true</quiet>
@@ -343,9 +345,7 @@
                         </offlineLinks>
                         <additionalJOptions combine.children="append">
                             <additionalJOption>-J-Dhttp.agent=maven-javadoc-plugin</additionalJOption>
-                            <additionalJOption>--add-exports=java.base/sun.security.util=io.helidon.common.pki
-                            </additionalJOption>
-                            <!--<additionalJOption>- -frames</additionalJOption>-->
+                            <additionalJOption>--add-exports=java.base/sun.security.util=io.helidon.common.pki</additionalJOption>
                         </additionalJOptions>
                         <additionalOptions>
                             <!--<additionalOption> - -add-stylesheet ${top.parent.basedir}/etc/helidon-javadoc.css</additionalOption>-->
@@ -1184,58 +1184,6 @@ helidon-parent,helidon-dependencies,helidon-bom,helidon-se,helidon-mp,io.grpc,he
             </modules>
         </profile>
         <profile>
-          <id>jdk9-javadoc</id>
-          <!-- https://maven.apache.org/guides/introduction/introduction-to-profiles.html#Details_on_profile_activation -->
-          <!-- AND semantics; see https://issues.apache.org/jira/browse/MNG-4565 -->
-            <activation>
-              <jdk>[9,10)</jdk>
-              <property>
-                  <name>!jdkToolchainVersion</name>
-              </property>
-            </activation>
-            <build>
-                <pluginManagement>
-                    <plugins>
-                        <plugin>
-                            <groupId>org.apache.maven.plugins</groupId>
-                            <artifactId>maven-javadoc-plugin</artifactId>
-                            <configuration>
-                                <additionalJOptions>
-                                    <!-- https://bugs.openjdk.java.net/browse/JDK-8184969 -->
-                                    <JOption>-Xold</JOption>
-                                </additionalJOptions>
-                            </configuration>
-                        </plugin>
-                    </plugins>
-                </pluginManagement>
-            </build>
-        </profile>
-        <profile>
-          <id>jdk9-toolchain-javadoc</id>
-            <activation>
-              <property>
-                <name>jdkToolchainVersion</name>
-                <value>9</value>
-              </property>
-            </activation>
-            <build>
-                <pluginManagement>
-                    <plugins>
-                        <plugin>
-                            <groupId>org.apache.maven.plugins</groupId>
-                            <artifactId>maven-javadoc-plugin</artifactId>
-                            <configuration>
-                                <additionalJOptions combine.children="append">
-                                    <!-- https://bugs.openjdk.java.net/browse/JDK-8184969 -->
-                                    <JOption>-Xold</JOption>
-                                </additionalJOptions>
-                            </configuration>
-                        </plugin>
-                    </plugins>
-                </pluginManagement>
-            </build>
-        </profile>
-        <profile>
             <id>sources</id>
             <build>
                 <plugins>
@@ -1551,7 +1499,7 @@ helidon-parent,helidon-dependencies,helidon-bom,helidon-se,helidon-mp,io.grpc,he
         <profile>
             <id>loom</id>
             <activation>
-                <jdk>16-loom</jdk>
+                <jdk>18-loom</jdk>
             </activation>
             <build>
                 <pluginManagement>
@@ -1560,17 +1508,17 @@ helidon-parent,helidon-dependencies,helidon-bom,helidon-se,helidon-mp,io.grpc,he
                             <groupId>org.apache.maven.plugins</groupId>
                             <artifactId>maven-compiler-plugin</artifactId>
                             <configuration>
-                                <source>16</source>
-                                <target>16</target>
-                                <release>16</release>
+                                <source>18</source>
+                                <target>18</target>
+                                <release>18</release>
                             </configuration>
                         </plugin>
                         <plugin>
                             <groupId>org.apache.maven.plugins</groupId>
                             <artifactId>maven-javadoc-plugin</artifactId>
                             <configuration>
-                                <source>16</source>
-                                <release>16</release>
+                                <source>18</source>
+                                <release>18</release>
                             </configuration>
                         </plugin>
                     </plugins>

@@ -2,7 +2,7 @@
 
 ## Prerequisites
 * Docker
-* Java 11+ 
+* Java 17+ 
 * [Kafka bootstrap server](../README.md) running on `localhost:9092`
 
 ## Build & Run

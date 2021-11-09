@@ -40,12 +40,14 @@ import org.cassandraunit.utils.EmbeddedCassandraServerHelper;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @HelidonTest
 @Configuration(useExisting = true)
+@Disabled("3.0.0-JAKARTA")
 class BackendTests {
 
     private final static String CASSANDRA_HOST = "127.0.0.1";

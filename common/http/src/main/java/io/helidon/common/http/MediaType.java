@@ -569,7 +569,6 @@ public final class MediaType implements AcceptPredicate<MediaType> {
 
     /**
      * Tests if this media type has provided Structured Syntax {@code suffix} (RFC 6839).
-     * <p>
      *
      * @param suffix Suffix with or without '+' prefix. If null or empty then returns {@code true} if this media type
      *               has ANY suffix.
