@@ -55,7 +55,8 @@ public interface ExecutorServiceSupplierObserver {
 
     /**
      * Makes a supplier known to the observer and returns a supplier context for the supplier to use for future interactions
-     * with the observer.
+     * with the observer, using the {@link io.helidon.common.configurable.spi.ExecutorServiceSupplierObserver.MethodInvocation}
+     * abstraction for invoking methods to obtain metric values.
      *
      * @param supplier the executor service supplier registering with the observer
      * @param supplierIndex unique index across suppliers with the same name

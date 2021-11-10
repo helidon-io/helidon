@@ -43,10 +43,6 @@ import io.helidon.common.configurable.spi.ExecutorServiceSupplierObserver;
  *         {@link #unregisterExecutorService(java.util.concurrent.ExecutorService)}.</li>
  *     </ul>
  * </p>
- * <p>
- *
- * </p>
- *
  */
 class ObserverManager {
 
@@ -210,6 +206,10 @@ class ObserverManager {
         }
     }
 
+    /**
+     * Encapsulation of information needed to invoke methods on {@code ThreadPerTaskExecutor} and to create metrics from the
+     * returned values.
+     */
     private static class MethodInvocationImpl implements ExecutorServiceSupplierObserver.MethodInvocation {
         private final String displayName;
         private final String description;
