@@ -31,6 +31,7 @@ module io.helidon.microprofile.server {
     requires transitive jakarta.cdi;
     requires transitive jakarta.ws.rs;
     requires jakarta.interceptor.api;
+    requires jakarta.json;
 
     requires java.logging;
     requires io.helidon.common.serviceloader;

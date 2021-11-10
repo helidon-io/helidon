@@ -24,6 +24,7 @@ import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.Timer;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -41,6 +42,7 @@ import static org.hamcrest.Matchers.is;
  */
 @HelidonTest
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+@Disabled("3.0.0-JAKARTA")
 public class MetricProducerMethodBeanTest {
 
     private final static String CALLS_METRIC = MetricRegistry.name(MetricProducerMethodBean.class, "calls");

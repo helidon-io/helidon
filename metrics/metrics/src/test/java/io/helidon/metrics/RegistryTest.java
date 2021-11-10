@@ -31,6 +31,7 @@ import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.Tag;
 import org.hamcrest.core.IsSame;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -83,6 +84,7 @@ public class RegistryTest {
     }
 
     @Test
+    @Disabled("3.0.0-JAKARTA")
     void testIncompatibleReuseNoTags() {
         Metadata metadata1 = Metadata.builder()
                     .withName("counter3")
@@ -106,6 +108,7 @@ public class RegistryTest {
     }
 
     @Test
+    @Disabled("3.0.0-JAKARTA")
     void testIncompatibleReuseWithTags() {
         Metadata metadata1 = Metadata.builder()
 				.withName("counter4")

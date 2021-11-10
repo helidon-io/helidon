@@ -34,7 +34,7 @@ import static org.mockito.Mockito.when;
 /**
  * Unit test for {@link JavaxElPolicyExecutor}.
  */
-public class JavaxElPolicyExecutorTest {
+public class JakartaElPolicyExecutorTest {
     @Test
     public void testSimpleExpression() {
         JavaxElPolicyExecutor ex = JavaxElPolicyExecutor.create();

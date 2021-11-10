@@ -23,8 +23,8 @@
   Caused by: java.lang.IllegalArgumentException: jboss.el.api.3.0.spec: Invalid module name: '3' is not a Java identifier
  */
 module io.helidon.microprofile.example.staticc {
-    requires cdi.api;
-    requires javax.inject;
+    requires jakarta.cdi;
+    requires jakarta.inject;
     requires jakarta.ws.rs;
     requires microprofile.config.api;
     requires io.helidon.microprofile.server;

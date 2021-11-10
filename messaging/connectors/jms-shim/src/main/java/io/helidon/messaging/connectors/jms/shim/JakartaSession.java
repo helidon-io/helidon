@@ -247,6 +247,14 @@ public class JakartaSession implements Session {
         ShimUtil.run(() -> delegate.unsubscribe(name));
     }
 
+    /**
+     * Unwrap the underlying instance of javax session.
+     *
+     * @param type class to unwrap to
+     * @param <T> type to unwrap to
+     * @return unwrapped session
+     * @throws java.lang.ClassCastException in case the underlying instance is not compatible with the requested type
+     */
     public <T extends javax.jms.Session> T unwrap(Class<T> type) {
         return type.cast(delegate);
     }

@@ -93,7 +93,7 @@
         <version.lib.jedis>3.6.3</version.lib.jedis>
         <version.lib.jersey>3.0.3</version.lib.jersey>
         <version.lib.jgit>5.11.1.202105131744-r</version.lib.jgit>
-        <version.lib.jsonp-impl>2.0.0</version.lib.jsonp-impl>
+        <version.lib.jsonp-impl>2.0.1</version.lib.jsonp-impl>
         <version.lib.junit4>4.13.1</version.lib.junit4>
         <version.lib.junit>5.7.0</version.lib.junit>
         <version.lib.kafka>2.8.1</version.lib.kafka>
@@ -348,6 +348,12 @@
             <dependency>
                 <groupId>org.glassfish</groupId>
                 <artifactId>jakarta.json</artifactId>
+                <version>${version.lib.jsonp-impl}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish</groupId>
+                <artifactId>jakarta.json</artifactId>
+                <classifier>module</classifier>
                 <version>${version.lib.jsonp-impl}</version>
             </dependency>
             <dependency>
