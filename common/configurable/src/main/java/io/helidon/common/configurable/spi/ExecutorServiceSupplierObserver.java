@@ -95,6 +95,9 @@ public interface ExecutorServiceSupplierObserver {
 
     /**
      * Information about method invocations to retrieve interesting (e.g., metrics) values from an executor service.
+     * <p>
+     *     Used for dealing with {@code ThreadPerTaskExecutor} executor services which might not exist in every JDK we support.
+     * </p>
      */
     interface MethodInvocation {
 

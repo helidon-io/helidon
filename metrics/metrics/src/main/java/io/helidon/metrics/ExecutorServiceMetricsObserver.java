@@ -90,15 +90,6 @@ public class ExecutorServiceMetricsObserver implements ExecutorServiceSupplierOb
         return supplierInfo.context();
     }
 
-//    private String possiblyAdjustedCategory(String supplierCategory) {
-//        if (!supplierCategory.endsWith("-")) {
-//            return supplierCategory;
-//        }
-//        AtomicInteger next = NEXT_IDENTIFIERS.computeIfAbsent(supplierCategory, key -> new AtomicInteger(0));
-//        int nextIndex = next.getAndIncrement();
-//        return String.format("%s%d", supplierCategory, nextIndex);
-//    }
-
     private class MetricsObserverContext implements ExecutorServiceSupplierObserver.SupplierObserverContext {
 
         private final SupplierInfo supplierInfo;
