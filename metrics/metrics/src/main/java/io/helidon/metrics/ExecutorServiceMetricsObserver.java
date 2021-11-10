@@ -16,13 +16,12 @@
 package io.helidon.metrics;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 import java.util.StringJoiner;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.logging.Level;
@@ -32,6 +31,7 @@ import io.helidon.common.configurable.spi.ExecutorServiceSupplierObserver;
 
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Metadata;
+import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
@@ -45,9 +45,6 @@ public class ExecutorServiceMetricsObserver implements ExecutorServiceSupplierOb
     private static final Logger LOGGER = Logger.getLogger(ExecutorServiceMetricsObserver.class.getName());
 
     private static final String METRIC_NAME_PREFIX = "executor-service.";
-
-    // Supplier names ending with "-" need to be made unique; this tracks the next available suffix value for each prefix
-    private static final Map<String, AtomicInteger> NEXT_IDENTIFIERS = new ConcurrentHashMap<>();
 
     // metrics we register for each ThreadPoolExecutor which a supplier creates (other than thread-per-task executors)
     private static final List<GaugeFactory<?, ThreadPoolExecutor>> THREAD_POOL_EXECUTOR_METRIC_FACTORIES = List.of(
@@ -73,59 +70,70 @@ public class ExecutorServiceMetricsObserver implements ExecutorServiceSupplierOb
 
     @Override
     public SupplierObserverContext registerSupplier(Supplier<? extends ExecutorService> supplier,
-                                                    String category,
-                                                    String supplierName) {
-        SupplierInfo supplierInfo = new SupplierInfo(possiblyAdjustedName(supplierName), category);
+                                                    int supplierIndex,
+                                                    String supplierCategory) {
+        SupplierInfo supplierInfo = new SupplierInfo(supplierCategory,
+                                                     supplierIndex);
         LOGGER.log(Level.FINE, () -> String.format("Metrics thread pool supplier registration: %s", supplierInfo));
         return supplierInfo.context();
     }
 
     @Override
     public SupplierObserverContext registerSupplier(Supplier<? extends ExecutorService> supplier,
-                                                                                String category,
-                                                                                String supplierName,
+                                                                                int supplierIndex,
+                                                                                String supplierCategory,
                                                                                 List<MethodInvocation> methodInvocations) {
-        SupplierInfo supplierInfo = new SupplierInfoWithMethods(possiblyAdjustedName(supplierName), category, methodInvocations);
+        SupplierInfo supplierInfo = new SupplierInfoWithMethods(supplierCategory,
+                                                                supplierIndex,
+                                                                methodInvocations);
         LOGGER.log(Level.FINE, () -> String.format("Metrics thread pool supplier registration: %s", supplierInfo));
         return supplierInfo.context();
     }
 
-    private String possiblyAdjustedName(String supplierName) {
-        if (!supplierName.endsWith("-")) {
-            return supplierName;
-        }
-        AtomicInteger next = NEXT_IDENTIFIERS.computeIfAbsent(supplierName, key -> new AtomicInteger(0));
-        int nextIndex = next.getAndIncrement();
-        return String.format("%s%d", supplierName, nextIndex);
-    }
+//    private String possiblyAdjustedCategory(String supplierCategory) {
+//        if (!supplierCategory.endsWith("-")) {
+//            return supplierCategory;
+//        }
+//        AtomicInteger next = NEXT_IDENTIFIERS.computeIfAbsent(supplierCategory, key -> new AtomicInteger(0));
+//        int nextIndex = next.getAndIncrement();
+//        return String.format("%s%d", supplierCategory, nextIndex);
+//    }
 
     private class MetricsObserverContext implements ExecutorServiceSupplierObserver.SupplierObserverContext {
 
         private final SupplierInfo supplierInfo;
+        private final Set<MetricID> metricsIDs = new HashSet<>();
 
         private MetricsObserverContext(SupplierInfo supplierInfo) {
             this.supplierInfo = supplierInfo;
         }
 
         @Override
-        public void registerExecutorService(ExecutorService executorService) {
-            LOGGER.log(Level.FINE, String.format("Registering executor service %s for supplier %s",
+        public void registerExecutorService(ExecutorService executorService, int index) {
+            LOGGER.log(Level.FINE, String.format("Registering executor service %s:%d for supplier %s%d",
                                                  executorService,
-                                                 supplierInfo.supplierName()));
+                                                 index,
+                                                 supplierInfo.supplierCategory(),
+                                                 supplierInfo.supplierIndex()));
 
             if (executorService instanceof ThreadPoolExecutor) {
-                registerMetrics((ThreadPoolExecutor) executorService);
+                registerMetrics((ThreadPoolExecutor) executorService, index);
             } else if (supplierInfo instanceof SupplierInfoWithMethods) {
-                registerMetrics(executorService, ((SupplierInfoWithMethods) supplierInfo).methodInvocations());
+                registerMetrics(executorService, ((SupplierInfoWithMethods) supplierInfo).methodInvocations(), index);
             }
         }
 
-        private void registerMetrics(ThreadPoolExecutor threadPoolExecutor) {
+        private void registerMetrics(ThreadPoolExecutor threadPoolExecutor, int index) {
             THREAD_POOL_EXECUTOR_METRIC_FACTORIES.forEach(factory -> factory
-                    .registerGauge(registry, supplierInfo.supplierName(), supplierInfo.category(), threadPoolExecutor));
+                    .registerGauge(registry,
+                                   supplierInfo.supplierCategory(),
+                                   supplierInfo.supplierIndex(),
+                                   threadPoolExecutor,
+                                   index,
+                                   metricsIDs));
         }
 
-        private void registerMetrics(ExecutorService executorService, List<MethodInvocation> methodInvocations) {
+        private void registerMetrics(ExecutorService executorService, List<MethodInvocation> methodInvocations, int index) {
             methodInvocations.forEach(mi -> {
                 Metadata metadata = Metadata.builder()
                         .withName(METRIC_NAME_PREFIX + mi.displayName())
@@ -133,10 +141,9 @@ public class ExecutorServiceMetricsObserver implements ExecutorServiceSupplierOb
                         .withType(MetricType.GAUGE)
                         .withUnit(MetricUnits.NONE)
                         .build();
-                Tag[] tags = {
-                        new Tag("supplier", supplierInfo.supplierName()),
-                        new Tag("category", supplierInfo.category())
-                };
+                Tag[] tags = tags(supplierInfo.supplierCategory(),
+                                  supplierInfo.supplierIndex(),
+                                  index);
                 registry.register(metadata, (Gauge<Object>) () -> {
                     try {
                         return mi.method().invoke(executorService);
@@ -144,7 +151,13 @@ public class ExecutorServiceMetricsObserver implements ExecutorServiceSupplierOb
                         throw new RuntimeException(e);
                     }
                 }, tags);
+                metricsIDs.add(new MetricID(metadata.getName(), tags));
             });
+        }
+
+        @Override
+        public void unregisterExecutorService(ExecutorService executorService) {
+            metricsIDs.forEach(registry::remove);
         }
     }
 
@@ -154,21 +167,21 @@ public class ExecutorServiceMetricsObserver implements ExecutorServiceSupplierOb
     private class SupplierInfo {
 
         private final MetricsObserverContext context;
-        private final String supplierName;
-        private final String category;
+        private final String supplierCategory;
+        private final int supplierIndex;
 
-        private SupplierInfo(String supplierName, String category) {
-            this.supplierName = supplierName;
-            this.category = category;
+        private SupplierInfo(String supplierCategory, int supplierIndex) {
+            this.supplierCategory = supplierCategory;
+            this.supplierIndex = supplierIndex;
             context = new MetricsObserverContext(this);
         }
 
-        String supplierName() {
-            return supplierName;
+        String supplierCategory() {
+            return supplierCategory;
         }
 
-        String category() {
-            return category;
+        int supplierIndex() {
+            return supplierIndex;
         }
 
         private MetricsObserverContext context() {
@@ -178,8 +191,8 @@ public class ExecutorServiceMetricsObserver implements ExecutorServiceSupplierOb
         @Override
         public String toString() {
             return new StringJoiner(", ", SupplierInfo.class.getSimpleName() + "[", "]")
-                    .add("supplierName='" + supplierName + "'")
-                    .add("category='" + category + "'")
+                    .add("supplierCategory='" + supplierCategory + "'")
+                    .add("supplierIndex=" + supplierIndex)
                     .toString();
         }
     }
@@ -195,8 +208,10 @@ public class ExecutorServiceMetricsObserver implements ExecutorServiceSupplierOb
 
         private final List<MethodInvocation> methodInvocations;
 
-        private SupplierInfoWithMethods(String supplierName, String category, List<MethodInvocation> methodInvocations) {
-            super(supplierName, category + "-per-task");
+        private SupplierInfoWithMethods(String supplierCategory,
+                                        int supplierIndex,
+                                        List<MethodInvocation> methodInvocations) {
+            super(supplierCategory, supplierIndex);
             this.methodInvocations = methodInvocations;
         }
 
@@ -207,8 +222,8 @@ public class ExecutorServiceMetricsObserver implements ExecutorServiceSupplierOb
         @Override
         public String toString() {
             return new StringJoiner(", ", SupplierInfoWithMethods.class.getSimpleName() + "[", "]")
-                    .add("supplierName='" + supplierName() + "'")
-                    .add("category='" + category() + "'")
+                    .add("supplierCategory='" + supplierCategory() + "'")
+                    .add("supplierIndex=" + supplierIndex())
                     .add("methodInvocations=" + methodInvocations)
                     .toString();
         }
@@ -295,13 +310,23 @@ public class ExecutorServiceMetricsObserver implements ExecutorServiceSupplierOb
             this.valueFunction = valueFunction;
         }
 
-        private Gauge<T> registerGauge(MetricRegistry registry, String supplierName, String category, E executor) {
-            Tag[] tags = {
-                    new Tag("supplier", supplierName),
-                    new Tag("category", category)
-            };
-
+        private Gauge<T> registerGauge(MetricRegistry registry,
+                                       String supplierCategory,
+                                       int supplierIndex,
+                                       E executor,
+                                       int index,
+                                       Set<MetricID> metricIDs) {
+            Tag[] tags = tags(supplierCategory, supplierIndex, index);
+            metricIDs.add(new MetricID(templateMetadata.getName(), tags));
             return registry.register(templateMetadata, () -> valueFunction.apply(executor), tags);
         }
+    }
+
+    private static Tag[] tags(String supplierCategory, int supplierIndex, int index) {
+        return new Tag[] {
+                new Tag("supplierCategory", supplierCategory),
+                new Tag("supplierIndex", Integer.toString(supplierIndex)),
+                new Tag("poolIndex", Integer.toString(index))
+        };
     }
 }
