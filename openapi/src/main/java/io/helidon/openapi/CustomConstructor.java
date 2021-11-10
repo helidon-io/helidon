@@ -78,7 +78,6 @@ final class CustomConstructor extends Constructor {
         CHILD_MAP_TYPES.put(ServerVariables.class, ServerVariable.class);
         CHILD_MAP_TYPES.put(Scopes.class, String.class);
         */
-         */
         CHILD_MAP_OF_LIST_TYPES.put(SecurityRequirement.class, String.class);
     }
 

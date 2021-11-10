@@ -15,10 +15,9 @@
  */
 package io.helidon.microprofile.metrics;
 
-import javax.enterprise.context.RequestScoped;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 
 /**
@@ -29,7 +28,7 @@ public class ResourceWithLegallyReusedMetrics {
 
     @GET
     @Path("method1")
-    @Counted(name = "reusedName", absolute = true, reusable = true)
+    @Counted(name = "reusedName", absolute = true)
     public String method1() {
         return "Hi from method 1";
     }

@@ -39,6 +39,7 @@ import io.helidon.config.spi.ConfigMapper;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.eclipse.microprofile.config.spi.ConfigSource;
+import org.eclipse.microprofile.config.spi.Converter;
 
 /**
  * Integration with microprofile config.

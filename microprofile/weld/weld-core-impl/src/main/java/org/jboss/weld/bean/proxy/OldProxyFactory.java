@@ -600,14 +600,16 @@ public class OldProxyFactory<T> implements PrivilegedAction<T> {
             ProtectionDomainCache cache = Container.instance(contextId).services().get(ProtectionDomainCache.class);
             domain = cache.getProtectionDomainForProxy(domain);
         }
-        Class<T> proxyClass;
-        if (classLoader == null) {
-            proxyClass = cast(ClassFileUtils.toClass(proxyClassType, originalClass, proxyServices, domain));
-        } else {
-            proxyClass = cast(ClassFileUtils.toClass(proxyClassType, classLoader, domain));
-        }
-        BeanLogger.LOG.createdProxyClass(proxyClass, Arrays.toString(proxyClass.getInterfaces()));
-        return proxyClass;
+        // TODO 3.0.0-JAKARTA
+//        Class<T> proxyClass;
+//        if (classLoader == null) {
+//            proxyClass = cast(ClassFileUtils.toClass(proxyClassType, originalClass, proxyServices, domain));
+//        } else {
+//            proxyClass = cast(ClassFileUtils.toClass(proxyClassType, classLoader, domain));
+//        }
+//        BeanLogger.LOG.createdProxyClass(proxyClass, Arrays.toString(proxyClass.getInterfaces()));
+//        return proxyClass;
+        return null;
     }
 
     private ClassFile newClassFile(String name, int accessFlags, String superclass, String... interfaces) {

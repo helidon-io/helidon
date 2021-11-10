@@ -18,7 +18,6 @@ package io.helidon.microprofile.config;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.io.Serial;
 import java.io.Serializable;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
@@ -668,7 +667,6 @@ public class ConfigCdiExtension implements Extension {
             return theConfig.getConfigSources();
         }
 
-        @Serial
         private void readObject(ObjectInputStream ios) throws ClassNotFoundException, IOException {
             ios.defaultReadObject();
             this.theConfig = ConfigProvider.getConfig();

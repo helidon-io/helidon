@@ -15,14 +15,16 @@
  */
 package io.helidon.microprofile.metrics;
 
+import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.ProcessAnnotatedType;
 import javax.enterprise.inject.spi.WithAnnotations;
-import javax.ws.rs.Path;
-import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import jakarta.ws.rs.Path;
 
 /**
  * Vetoes selected resources which should suppress the registration of their annotation-defined metrics and
