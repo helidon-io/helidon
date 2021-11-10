@@ -24,7 +24,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.common.LazyValue;
-import io.helidon.common.configurable.spi.ExecutorServiceSupplierObserver;
 
 /**
  * A utility class to handle virtual threads (project Loom).
@@ -36,9 +35,6 @@ final class VirtualExecutorUtil {
     // newer and older builds
     private static final List<String> SUPPORTED_METHOD_NAMES = List.of("newVirtualThreadPerTaskExecutor",
                                                                        "newVirtualThreadExecutor");
-
-    static final List<ExecutorServiceSupplierObserver.MethodInvocation> METRICS_RELATED_METHOD_INVOCATIONS = List.of(
-            MethodInvocationImpl.create("Thread count", "thread-count", "threadCount"));
 
     private VirtualExecutorUtil() {
     }
@@ -103,48 +99,4 @@ final class VirtualExecutorUtil {
         throw previous;
     }
 
-    private static class MethodInvocationImpl implements ExecutorServiceSupplierObserver.MethodInvocation {
-        private final String displayName;
-        private final String description;
-        private final Method method;
-        private final Class<?> type;
-
-        static MethodInvocationImpl create(String displayName, String description, String methodName)  {
-            ExecutorService executorService = executorService();
-            Method method = null;
-            try {
-                method = executorService.getClass().getDeclaredMethod(methodName);
-            } catch (NoSuchMethodException e) {
-                throw new RuntimeException(e);
-            }
-            return new MethodInvocationImpl(displayName, description, method);
-        }
-
-        MethodInvocationImpl(String displayName, String description, Method method) {
-            this.displayName = displayName;
-            this.description = description;
-            this.method = method;
-            this.type = method.getReturnType();
-        }
-
-        @Override
-        public String displayName() {
-            return displayName;
-        }
-
-        @Override
-        public String description() {
-            return description;
-        }
-
-        @Override
-        public Method method() {
-            return method;
-        }
-
-        @Override
-        public Class<?> type() {
-            return type;
-        }
-    }
 }
