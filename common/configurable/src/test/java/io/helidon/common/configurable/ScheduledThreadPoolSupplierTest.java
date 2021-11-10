@@ -71,7 +71,7 @@ class ScheduledThreadPoolSupplierTest {
                 "helidon-",
                 16,
                 true);
-        checkObserver(defaultSupplier, defaultInstance, "helidon-");
+        checkObserver(defaultSupplier, defaultInstance, "scheduled");
     }
 
     @Test
@@ -80,7 +80,7 @@ class ScheduledThreadPoolSupplierTest {
                 "scheduled-thread-pool-config-unit-test-",
                 3,
                 false);
-        checkObserver(configuredSupplier, configuredInstance, "scheduled-thread-pool-config-unit-test-");
+        checkObserver(configuredSupplier, configuredInstance, "scheduled");
     }
 
     @Test
@@ -89,7 +89,7 @@ class ScheduledThreadPoolSupplierTest {
                 "scheduled-thread-pool-unit-test-",
                 2,
                 true);
-        checkObserver(builtSupplier, builtInstance, "scheduled-thread-pool-unit-test-");
+        checkObserver(builtSupplier, builtInstance, "scheduled");
     }
 
     private void testInstance(ScheduledThreadPoolExecutor theInstance,
@@ -113,14 +113,14 @@ class ScheduledThreadPoolSupplierTest {
         assertThat(isDaemon.get(), is(shouldBeDaemon));
     }
 
-    private void checkObserver(ScheduledThreadPoolSupplier supplier, ScheduledThreadPoolExecutor theInstance, String namePrefix) {
+    private void checkObserver(ScheduledThreadPoolSupplier supplier, ScheduledThreadPoolExecutor theInstance, String supplierCategory) {
         assertThat("Supplier collection",
                    ObserverForTesting.instance.suppliers(),
                    hasKey(supplier));
         ObserverForTesting.SupplierInfo supplierInfo = ObserverForTesting.instance.suppliers().get(supplier);
-        assertThat("Observer name",
-                   supplierInfo.name(),
-                   is(namePrefix));
+        assertThat("Observer supplier category",
+                   supplierInfo.supplierCategory(),
+                   is(supplierCategory));
         assertThat("ExecutorService",
                    supplierInfo.context().executorServices(),
                    hasItem(theInstance));

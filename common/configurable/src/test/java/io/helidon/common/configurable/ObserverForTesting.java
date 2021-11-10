@@ -43,8 +43,8 @@ public class ObserverForTesting implements ExecutorServiceSupplierObserver {
     }
 
     @Override
-    public SupplierObserverContext registerSupplier(Supplier<? extends ExecutorService> supplier, String category, String supplierName) {
-        SupplierInfo supplierInfo = new SupplierInfo(category, supplierName);
+    public SupplierObserverContext registerSupplier(Supplier<? extends ExecutorService> supplier, int supplierIndex, String supplierCategory) {
+        SupplierInfo supplierInfo = new SupplierInfo(supplierCategory);
         suppliers.put(supplier, supplierInfo);
         return supplierInfo.context;
     }
@@ -61,12 +61,22 @@ public class ObserverForTesting implements ExecutorServiceSupplierObserver {
         private int threadPoolExecutorCount;
 
         @Override
-        public void registerExecutorService(ExecutorService executorService) {
-            executorServices.add(executorService);
+        public void registerExecutorService(ExecutorService executorService, int index) {
+            executorServices.add(index, executorService);
             if (executorService instanceof ScheduledThreadPoolExecutor) {
                 scheduledCount++;
             } else if (executorService instanceof ThreadPoolExecutor) {
                 threadPoolExecutorCount++;
+            }
+        }
+
+        @Override
+        public void unregisterExecutorService(ExecutorService executorService) {
+            executorServices.remove(executorService);
+            if (executorService instanceof ScheduledThreadPoolExecutor) {
+                scheduledCount--;
+            } else if (executorService instanceof ThreadPoolExecutor) {
+                threadPoolExecutorCount--;
             }
         }
 
@@ -85,21 +95,15 @@ public class ObserverForTesting implements ExecutorServiceSupplierObserver {
 
     static class SupplierInfo {
 
-        private final String name;
-        private final String category;
+        private final String supplierCategory;
         private final Context context = new Context();
 
-        private SupplierInfo(String category, String name) {
-            this.name = name;
-            this.category = category;
+        private SupplierInfo(String supplierCategory) {
+            this.supplierCategory = supplierCategory;
         }
 
-        String name() {
-            return name;
-        }
-
-        String category() {
-            return category;
+        String supplierCategory() {
+            return supplierCategory;
         }
 
         Context context() {

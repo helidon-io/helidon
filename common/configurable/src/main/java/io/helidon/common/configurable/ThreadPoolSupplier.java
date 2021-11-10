@@ -75,7 +75,7 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
         this.growthRate = builder.growthRate;
         this.rejectionHandler = builder.rejectionHandler == null ? DEFAULT_REJECTION_POLICY : builder.rejectionHandler;
         this.useVirtualThreads = builder.useVirtualThreads || builder.virtualThreadsEnforced;
-        ObserverManager.registerSupplier(this, name, useVirtualThreads);
+        ObserverManager.registerSupplier(this, name, "general", useVirtualThreads);
     }
 
     /**

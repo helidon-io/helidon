@@ -383,6 +383,7 @@ public class ThreadPool extends ThreadPoolExecutor {
     @Override
     public void shutdown() {
         Event.write();
+        ObserverManager.unregisterExecutorService(this);
         super.shutdown();
     }
 

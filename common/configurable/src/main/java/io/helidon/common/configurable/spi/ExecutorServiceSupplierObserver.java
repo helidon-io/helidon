@@ -22,6 +22,20 @@ import java.util.function.Supplier;
 
 /**
  * Behavior for observers of the various executor service suppliers.
+ * <p>
+ *     This component identifies suppliers to observers using:
+ *     <ul>
+ *         <li>the supplier itself,</li>
+ *         <li>the supplier category (scheduled, server, ad-hoc), and</li>
+ *         <li>the index of this supplier among suppliers in the same category.</li>
+ *     </ul>
+ *     Further, executor services furnished by the suppliers are identified to observers using:
+ *     <ul>
+ *         <li>the executor service itself, and</li>
+ *         <li>the index of the executor service among those from the same supplier.</li>
+ *     </ul>
+ *     The consuming observers can use this identifying information however makes sense for them.
+ *
  */
 public interface ExecutorServiceSupplierObserver {
 
@@ -30,31 +44,31 @@ public interface ExecutorServiceSupplierObserver {
      * with the observer.
      *
      * @param supplier the executor service supplier registering with the observer
-     * @param category the category of supplier registering (e.g., scheduled, server, thread-pool)
-     * @param supplierName name for this supplier (possibly the prefix to use for names of thread pools from this supplier)
+     * @param supplierIndex unique index across suppliers with the same name
+     * @param supplierCategory supplier category for this supplier
      *
      * @return the {@code SupplierObserverContext} for the supplier
      */
     SupplierObserverContext registerSupplier(Supplier<? extends ExecutorService> supplier,
-                                                                         String category,
-                                                                         String supplierName);
+                                             int supplierIndex,
+                                             String supplierCategory);
 
     /**
      * Makes a supplier known to the observer and returns a supplier context for the supplier to use for future interactions
      * with the observer.
      *
      * @param supplier the executor service supplier registering with the observer
-     * @param category the category of supplier registering (e.g., scheduled, server, thread-pool)
-     * @param supplierName name for this supplier (possibly the prefix to use for names of thread pools from this supplier)
+     * @param supplierIndex unique index across suppliers with the same name
+     * @param supplierCategory the category of supplier registering (e.g., scheduled, server, thread-pool)
      * @param methodInvocations method invocation information for retrieving interesting information from the supplier's
      *                          executor services
      *
      * @return the {@code SupplierObserverContext} for the supplier
      */
     default SupplierObserverContext registerSupplier(Supplier<? extends ExecutorService> supplier,
-                                                                                 String category,
-                                                                                 String supplierName,
-                                                                                 List<MethodInvocation> methodInvocations) {
+                                                     int supplierIndex,
+                                                     String supplierCategory,
+                                                     List<MethodInvocation> methodInvocations) {
         return null;
     }
 
@@ -67,8 +81,16 @@ public interface ExecutorServiceSupplierObserver {
          * Informs the observer which created the context of a new executor service created by the supplier.
          *
          * @param executorService the new executor service
+         * @param index unique index value for the executor service within its supplier
          */
-        void registerExecutorService(ExecutorService executorService);
+        void registerExecutorService(ExecutorService executorService, int index);
+
+        /**
+         * Informs the observer that an executor is shutting down.
+         *
+         * @param executorService the executor service shutting down
+         */
+        void unregisterExecutorService(ExecutorService executorService);
     }
 
     /**

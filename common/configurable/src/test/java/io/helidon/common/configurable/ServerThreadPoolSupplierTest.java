@@ -85,7 +85,7 @@ class ServerThreadPoolSupplierTest {
         pool.shutdown();
         assertThat(pool.awaitTermination(10, SECONDS), is(true));
 
-        checkObserver(supplier, pool, "test");
+        checkObserver(supplier, pool, "test", false);
     }
 
     static class Task implements Runnable {
@@ -117,20 +117,26 @@ class ServerThreadPoolSupplierTest {
     }
 
     private void checkObserver(ThreadPoolSupplier supplier, ExecutorService theInstance, String name) {
+        checkObserver(supplier, theInstance, name, true);
+    }
+
+    private void checkObserver(ThreadPoolSupplier supplier, ExecutorService theInstance, String supplierCategory, boolean expectExecutorService) {
         assertThat("Supplier collection",
                    ObserverForTesting.instance.suppliers(),
                    hasKey(supplier));
         ObserverForTesting.SupplierInfo supplierInfo = ObserverForTesting.instance.suppliers().get(supplier);
-        assertThat("Observer name",
-                   supplierInfo.name(),
-                   CoreMatchers.is(name));
-        assertThat("ExecutorService",
-                   supplierInfo.context().executorServices(),
-                   hasItem(theInstance instanceof ContextAwareExecutorService
-                                   ? ((ContextAwareExecutorService) theInstance).unwrap()
-                                   : theInstance));
-        ObserverForTesting.Context ctx = supplierInfo.context();
-        assertThat("Count of non-scheduled executor services registered", ctx.threadPoolCount(), CoreMatchers.is(not(0)));
-        assertThat("Count of scheduled executor services registered", ctx.scheduledCount(), CoreMatchers.is(0));
+        assertThat("Observer supplier category",
+                   supplierInfo.supplierCategory(),
+                   CoreMatchers.is(supplierCategory));
+        if (expectExecutorService) {
+            assertThat("ExecutorService",
+                       supplierInfo.context().executorServices(),
+                       hasItem(theInstance instanceof ContextAwareExecutorService
+                                       ? ((ContextAwareExecutorService) theInstance).unwrap()
+                                       : theInstance));
+            ObserverForTesting.Context ctx = supplierInfo.context();
+            assertThat("Count of non-scheduled executor services registered", ctx.threadPoolCount(), is(not(0)));
+            assertThat("Count of scheduled executor services registered", ctx.scheduledCount(), is(0));
+        }
     }
 }
