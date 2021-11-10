@@ -173,7 +173,7 @@ final class EntityManagerFactories {
 
         Class<?> validatorFactoryClass = null;
         try {
-            validatorFactoryClass = Class.forName("javax.validation.ValidatorFactory");
+            validatorFactoryClass = Class.forName("jakarta.validation.ValidatorFactory");
         } catch (final ClassNotFoundException classNotFoundException) {
             if (LOGGER.isLoggable(Level.INFO)) {
                 LOGGER.logp(Level.INFO, cn, mn, "noValidatorFactoryClass", classNotFoundException);
