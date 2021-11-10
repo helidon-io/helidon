@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        {{#parent}}
+        <groupId>{{groupId}}</groupId>
+        <artifactId>{{artifactId}}</artifactId>
+        <version>{{version}}</version>
+        <relativePath/>
+        {{/parent}}
+    </parent>
+
+    {{#project}}
+    <groupId>{{groupId}}</groupId>
+    <artifactId>{{artifactId}}</artifactId>
+    <version>{{version}}</version>
+    <name>{{name}}</name>
+    {{/project}}
+
+    <properties>
+        {{#properties}}
+        <mainClass>{{package}}.Main</mainClass>
+        <helidon.version>{{version}}</helidon.version>
+        {{/properties}}
+    </properties>
+
+    <dependencies>
+        {{#dependencies}}
+        <dependency>
+            <groupId>{{groupId}}</groupId>
+            <artifactId>{{artifactId}}</artifactId>
+            {{#version}}
+            <version>{{version}}</version>
+            {{/version}}
+            {{#scope}}
+            <scope>{{scope}}</scope>
+            {{/scope}}
+        </dependency>
+        {{/dependencies}}
+    </dependencies>
+
+    <build>
+        {{#build}}
+        <plugins>
+            {{#plugins}}
+            {{#plugin}}
+            <plugin>
+                <groupId>{{groupId}}</groupId>
+                <artifactId>{{artifactId}}</artifactId>
+                <executions>
+                    {{#executions}}
+                    <execution>
+                        {{#id}}
+                        <id>{{id}}</id>
+                        {{/id}}
+                        {{#goals}}
+                        <goals>
+                            <goal>{{goal}}</goal>
+                        </goals>
+                        {{/goals}}
+                        {{{configuration}}}
+                    </execution>
+                    {{/executions}}
+                </executions>
+            </plugin>
+            {{/plugin}}
+            {{/plugins}}
+        </plugins>
+        {{/build}}
+    </build>
+
+</project>

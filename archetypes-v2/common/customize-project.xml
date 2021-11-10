@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2021 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<archetype-script xmlns="https://helidon.io/archetype/2.0"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-script-2.0.xsd">
+
+    <context>
+        <text path="default.project.name">myproject</text>
+        <text path="default.group.id">io.helidon.examples</text>
+        <text path="default.artifact.id">helidon-bare-se</text>
+        <text path="default.project.version">1.0-SNAPSHOT</text>
+        <text path="default.package.name">io.helidon.examples.bare.se</text>
+        <text path="default.helidon.version">2.3.3</text>
+    </context>
+
+    <step label="Customize Project">
+
+        <input>
+            <text name="project.name"
+                  label="Project name"
+                  optional="true"
+                  default="${default.project.name}"
+            />
+
+            <text name="project.groupId"
+                  label="Project groupId"
+                  optional="true"
+                  default="${default.group.id}"
+            />
+
+            <text name="project.artifactId"
+                  label="Project artifactId"
+                  optional="true"
+                  default="${default.artifact.id}"
+            />
+
+            <text name="project.version"
+                  label="Project version"
+                  optional="true"
+                  default="${default.project.version}"
+            />
+
+            <text name="package"
+                  label="Java package name"
+                  optional="true"
+                  default="${default.package.name}"
+            />
+
+            <text name="helidon.version"
+                  label="Helidon version"
+                  optional="true"
+                  default="${default.helidon.version}"
+            />
+        </input>
+    </step>
+</archetype-script>

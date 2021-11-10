@@ -1,0 +1,34 @@
+
+package {{package}};
+
+{{#imports}}
+import {{import}};
+{{/imports}}
+
+/**
+ * A simple JAX-RS resource to greet you. Examples:
+ *
+ * Get default greeting message:
+ * curl -X GET http://localhost:8080/greet
+ *
+ * The message is returned as a JSON object.
+ */
+@Path("/greet")
+public class GreetResource {
+    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
+
+    {{{constructor}}}
+
+    /**
+     * Return a worldly greeting message.
+     *
+     * @return {@link JsonObject}
+     */
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public JsonObject getDefaultMessage() {
+        {{{getDefaultMessage}}}
+    }
+
+    {{{quickstart-mp-greetResource}}}
+}
