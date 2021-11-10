@@ -281,13 +281,15 @@ class MetricProducer {
 
     private static void enforceReusability(MetricID metricID, Metadata existingMetadata,
               Metadata newMetadata, Tag... tags) {
-        if (existingMetadata.isReusable() != newMetadata.isReusable()) {
-            throw new IllegalArgumentException("Attempt to reuse metric " + metricID
-                    + " with inconsistent isReusable setting");
-        }
-        if (!newMetadata.isReusable()) {
-            throw new IllegalArgumentException("Attempting to reuse metric "
-                    + metricID + " that is not reusable");
-        }
+        // TODO 3.0.0-JAKARTA
+        // reusable no longer part of API
+//        if (existingMetadata.isReusable() != newMetadata.isReusable()) {
+//            throw new IllegalArgumentException("Attempt to reuse metric " + metricID
+//                    + " with inconsistent isReusable setting");
+//        }
+//        if (!newMetadata.isReusable()) {
+//            throw new IllegalArgumentException("Attempting to reuse metric "
+//                    + metricID + " that is not reusable");
+//        }
     }
 }

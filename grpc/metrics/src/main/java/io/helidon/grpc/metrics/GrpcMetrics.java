@@ -159,6 +159,8 @@ public class GrpcMetrics
      * @return a {@link io.helidon.grpc.metrics.GrpcMetrics} interceptor
      * @see org.eclipse.microprofile.metrics.Metadata
      */
+    // TODO 3.0.0-JAKARTA
+    // reusability is missing from new metrics API
     public GrpcMetrics reusable(boolean reusable) {
         return new GrpcMetrics(metricRule.reusable(reusable));
     }
@@ -616,8 +618,7 @@ public class GrpcMetrics
             String name = nameFunction.orElse(this::defaultName).createName(service, method, type);
             MetadataBuilder builder = org.eclipse.microprofile.metrics.Metadata.builder()
                     .withName(name)
-                    .withType(type)
-                    .reusable(this.reusable);
+                    .withType(type);
 
             this.description.ifPresent(builder::withDescription);
             this.units.ifPresent(builder::withUnit);

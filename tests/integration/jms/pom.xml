@@ -39,6 +39,11 @@
             <artifactId>helidon-microprofile-messaging</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.messaging</groupId>
+            <artifactId>helidon-messaging-jms-shim</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.apache.activemq</groupId>
             <artifactId>activemq-client</artifactId>
             <scope>test</scope>

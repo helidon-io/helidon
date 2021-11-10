@@ -131,7 +131,6 @@ public class HelidonJaegerMetricsFactory implements MetricsFactory {
                 .withDescription("Jaeger tracing " + metricType.toString() + " for " + name)
                 .withType(metricType)
                 .withUnit(metricUnits)
-                .reusable(true)
                 .build();
     }
 

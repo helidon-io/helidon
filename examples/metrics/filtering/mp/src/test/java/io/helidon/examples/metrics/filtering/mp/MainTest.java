@@ -15,22 +15,18 @@
  */
 package io.helidon.examples.metrics.filtering.mp;
 
-import java.util.concurrent.TimeUnit;
-
-import javax.inject.Inject;
+import java.time.Duration;
 
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 
+import jakarta.inject.Inject;
 import org.eclipse.microprofile.metrics.Counter;
-import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.Timer;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
 
 @HelidonTest
 public class MainTest {
@@ -51,7 +47,7 @@ public class MainTest {
     void checkDisabledMetric() {
         Timer getsTimer = appRegistry.timer(GreetResource.TIMER_FOR_GETS);
         long before = getsTimer.getCount();
-        getsTimer.update(1L, TimeUnit.SECONDS);
+        getsTimer.update(Duration.ofSeconds(1));
         assertThat("Disabled timer value change",
                    getsTimer.getCount() - before,
                    is(0L));

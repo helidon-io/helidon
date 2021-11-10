@@ -362,7 +362,8 @@ public class MicronautCdiExtension implements Extension {
         } catch (Throwable e) {
             if (LOGGER.isLoggable(Level.FINEST)) {
                 LOGGER.log(Level.FINEST,
-                           "Failed to load Micronaut service, probably something missing from classpath. Definition: " + serviceDef,
+                           "Failed to load Micronaut service, probably something missing from classpath. Definition: "
+                                   + serviceDef,
                            e);
             }
             return Stream.empty();

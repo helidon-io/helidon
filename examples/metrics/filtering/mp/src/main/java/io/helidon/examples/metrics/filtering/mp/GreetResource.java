@@ -18,6 +18,8 @@ package io.helidon.examples.metrics.filtering.mp;
 
 import java.util.Collections;
 
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;
 import jakarta.json.JsonObject;
@@ -63,11 +65,11 @@ public class GreetResource {
     /**
      * Return a worldly greeting message.
      *
-     * @return {@link javax.json.JsonObject}
+     * @return {@link jakarta.json.JsonObject}
      */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @Timed(name = TIMER_FOR_GETS, absolute = true, reusable = true)
+    @Timed(name = TIMER_FOR_GETS, absolute = true)
     public JsonObject getDefaultMessage() {
         return createResponse("World");
     }
@@ -76,12 +78,12 @@ public class GreetResource {
      * Return a greeting message using the name that was provided.
      *
      * @param name the name to greet
-     * @return {@link javax.json.JsonObject}
+     * @return {@link jakarta.json.JsonObject}
      */
     @Path("/{name}")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @Timed(name = TIMER_FOR_GETS, absolute = true, reusable = true)
+    @Timed(name = TIMER_FOR_GETS, absolute = true)
     public JsonObject getMessage(@PathParam("name") String name) {
         return createResponse(name);
     }

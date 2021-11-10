@@ -16,17 +16,6 @@
 
 package io.helidon.microprofile.metrics;
 
-import java.io.IOException;
-import java.nio.file.FileSystem;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.nio.file.StandardWatchEventKinds;
-import java.nio.file.WatchEvent;
-import java.nio.file.WatchKey;
-import java.nio.file.WatchService;
-import java.nio.file.Watchable;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -46,8 +35,6 @@ import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 
-import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
-import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -220,7 +207,6 @@ public class MetricsTest extends MetricsBaseTest {
         Metadata newMetadata = Metadata.builder()
                 .withName(metadata.getName())
                 .withType(MetricType.METERED)
-                .reusable(false)
                 .withUnit(MetricUnits.PER_SECOND)
                 .build();
         // Should return the existing meter. Throws exception if metadata is mismatched.

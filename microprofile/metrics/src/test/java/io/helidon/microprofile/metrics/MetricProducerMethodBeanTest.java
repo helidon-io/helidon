@@ -15,10 +15,9 @@
  */
 package io.helidon.microprofile.metrics;
 
-import javax.inject.Inject;
-
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 
+import jakarta.inject.Inject;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Meter;
 import org.eclipse.microprofile.metrics.MetricID;

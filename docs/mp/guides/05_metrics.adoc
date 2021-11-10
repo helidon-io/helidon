@@ -373,7 +373,7 @@ needed to aggregate the counts, but they are left in the example to demonstrate 
 package io.helidon.examples.quickstart.mp;
 
 import java.util.Collections;
-import javax.enterprise.context.RequestScoped;
+import jakarta.enterprise.context.RequestScoped;
 import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;
 import jakarta.json.JsonObject;

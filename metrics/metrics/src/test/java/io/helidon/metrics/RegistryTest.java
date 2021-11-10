@@ -90,7 +90,6 @@ public class RegistryTest {
                     .withDescription("description")
                     .withType(MetricType.COUNTER)
                     .withUnit(MetricUnits.NONE)
-                    .reusable(true)
                     .build();
         Metadata metadata2 = Metadata.builder()
                     .withName("counter3")
@@ -98,7 +97,6 @@ public class RegistryTest {
                     .withDescription("description")
                     .withType(MetricType.COUNTER)
                     .withUnit(MetricUnits.NONE)
-                    .reusable(false)
                     .build();
 
         registry.counter(metadata1);
@@ -115,7 +113,6 @@ public class RegistryTest {
 				.withDescription("description")
 				.withType(MetricType.COUNTER)
 				.withUnit(MetricUnits.NONE)
-				.reusable(true)
 				.build();
         Metadata metadata2 = Metadata.builder()
 				.withName("counter4")
@@ -123,7 +120,6 @@ public class RegistryTest {
 				.withDescription("description")
 				.withType(MetricType.COUNTER)
 				.withUnit(MetricUnits.NONE)
-				.reusable(false)
 				.build();
 
         registry.counter(metadata1, tag1);
@@ -140,7 +136,6 @@ public class RegistryTest {
 				.withDescription("description")
 				.withType(MetricType.COUNTER)
 				.withUnit(MetricUnits.NONE)
-				.reusable(true)
 				.build();
         Metadata metadata2 = Metadata.builder()
 				.withName("counter5")
@@ -148,7 +143,6 @@ public class RegistryTest {
 				.withDescription("description")
 				.withType(MetricType.COUNTER)
 				.withUnit(MetricUnits.NONE)
-				.reusable(true)
 				.build();
 
         registry.counter(metadata1, tag1);

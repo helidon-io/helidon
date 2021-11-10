@@ -35,7 +35,7 @@ public class ResourceWithLegallyReusedMetrics {
 
     @GET
     @Path("method2")
-    @Counted(name = "reusedName", absolute = true, reusable = true)
+    @Counted(name = "reusedName", absolute = true)
     public String method2() {
         return "Hi from method 2";
     }

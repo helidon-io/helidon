@@ -23,6 +23,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import javax.sql.DataSource;
 import javax.sql.XADataSource;
+import javax.transaction.xa.XAResource;
 
 import io.helidon.integrations.jta.jdbc.JtaDataSource;
 import io.helidon.integrations.jta.jdbc.XADataSourceWrappingDataSource;
@@ -35,8 +36,11 @@ import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.literal.NamedLiteral;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
+import jakarta.transaction.RollbackException;
 import jakarta.transaction.Status;
 import jakarta.transaction.Synchronization;
+import jakarta.transaction.SystemException;
+import jakarta.transaction.Transaction;
 import jakarta.transaction.TransactionManager;
 import jakarta.transaction.TransactionScoped;
 import jakarta.transaction.TransactionSynchronizationRegistry;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,23 +14,12 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.metrics;
-
-import jakarta.enterprise.context.Dependent;
-import org.eclipse.microprofile.metrics.annotation.Timed;
-
 /**
- * Class TimedBean.
+ * Exposes JMS based on {@code javax} packages over {@code jakarta} packages.
  */
-@Dependent
-@Timed
-public class TimedBean {
+module io.helidon.messaging.jms.shim {
+    requires javax.jms.api;
+    requires jakarta.jms.api;
 
-    @Timed
-    public void method1() {
-    }
-
-    // Inherits annotations from class
-    public void method2() {
-    }
+    exports io.helidon.messaging.connectors.jms.shim;
 }

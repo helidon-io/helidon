@@ -15,13 +15,12 @@
  */
 package io.helidon.microprofile.metrics;
 
-import javax.inject.Inject;
-
 import io.helidon.common.http.Http;
 import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.microprofile.tests.junit5.AddConfig;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 
+import jakarta.inject.Inject;
 import jakarta.json.JsonObject;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.Invocation;

@@ -250,7 +250,7 @@ public final class JwtUtil {
     }
 
     /**
-     * Create a {@link javax.json.JsonValue} from an object.
+     * Create a {@link jakarta.json.JsonValue} from an object.
      * This will use correct types for known primitives, {@link io.helidon.security.jwt.JwtUtil.Address}
      * otherwise it uses String value.
      *

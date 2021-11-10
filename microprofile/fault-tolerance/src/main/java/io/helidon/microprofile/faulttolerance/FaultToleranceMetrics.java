@@ -373,6 +373,7 @@ class FaultToleranceMetrics {
         return new MetricID(name);
     }
 
+    // TODO 3.0.0-JAKARTA
     private static Metadata newMetadata(String name, String displayName, String description, MetricType metricType,
                                         String metricUnits, boolean isReusable) {
         return Metadata.builder()
@@ -381,7 +382,6 @@ class FaultToleranceMetrics {
                 .withDescription(description)
                 .withType(metricType)
                 .withUnit(metricUnits)
-                .reusable(isReusable)
                 .build();
     }
 }

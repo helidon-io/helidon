@@ -60,6 +60,7 @@ import jakarta.enterprise.context.Initialized;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.inject.spi.AfterDeploymentValidation;
+import jakarta.enterprise.inject.spi.AnnotatedCallable;
 import jakarta.enterprise.inject.spi.AnnotatedMember;
 import jakarta.enterprise.inject.spi.AnnotatedMethod;
 import jakarta.enterprise.inject.spi.AnnotatedType;
@@ -131,7 +132,6 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
                                      + " of the server.")
             .withType(MetricType.SIMPLE_TIMER)
             .withUnit(MetricUnits.NANOSECONDS)
-            .notReusable()
             .build();
 
     // only for compatibility with gRPC usage of registerMetric
@@ -564,7 +564,6 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
                         .withDescription(metric.description())
                         .withType(getMetricType(instance))
                         .withUnit(metric.unit())
-                        .reusable(false)
                         .build();
                 registry.register(md, instance);
             }
@@ -754,7 +753,6 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
                         .withDescription(gaugeAnnotation.description())
                         .withType(MetricType.GAUGE)
                         .withUnit(gaugeAnnotation.unit())
-                        .reusable(false)
                         .build();
                 LOGGER.log(Level.FINE, () -> String.format("Registering gauge with metadata %s", md.toString()));
                 registry.register(md, dg, gaugeID.getTagsAsList().toArray(new Tag[0]));

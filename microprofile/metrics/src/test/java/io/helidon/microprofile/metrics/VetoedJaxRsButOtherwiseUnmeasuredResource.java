@@ -15,8 +15,7 @@
  */
 package io.helidon.microprofile.metrics;
 
-import javax.enterprise.context.RequestScoped;
-
+import jakarta.enterprise.context.RequestScoped;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
