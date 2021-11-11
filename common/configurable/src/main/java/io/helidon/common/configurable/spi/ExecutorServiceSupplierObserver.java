@@ -66,12 +66,10 @@ public interface ExecutorServiceSupplierObserver {
      *
      * @return the {@code SupplierObserverContext} for the supplier
      */
-    default SupplierObserverContext registerSupplier(Supplier<? extends ExecutorService> supplier,
+    SupplierObserverContext registerSupplier(Supplier<? extends ExecutorService> supplier,
                                                      int supplierIndex,
                                                      String supplierCategory,
-                                                     List<MethodInvocation> methodInvocations) {
-        return null;
-    }
+                                                     List<MethodInvocation> methodInvocations);
 
     /**
      * Context with which suppliers (or their surrogates) interact with observers.

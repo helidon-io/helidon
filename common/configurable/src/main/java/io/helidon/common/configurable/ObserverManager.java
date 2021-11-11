@@ -58,7 +58,7 @@ class ObserverManager {
 
     private static final Map<ExecutorService, SupplierInfo> EXECUTOR_SERVICES = new ConcurrentHashMap<>();
 
-    // Defer building list until use to avoid loading problems if this JDK does not support ThreadPerTasExecutor.
+    // Defer building list until use to avoid loading problems if this JDK does not support ThreadPerTaskExecutor.
     private static final LazyValue<List<ExecutorServiceSupplierObserver.MethodInvocation>> METRICS_RELATED_METHOD_INVOCATIONS =
             LazyValue.create(() -> List.of(
                     MethodInvocationImpl.create("Thread count", "thread-count", "threadCount")));

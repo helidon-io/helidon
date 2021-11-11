@@ -387,6 +387,12 @@ public class ThreadPool extends ThreadPoolExecutor {
         super.shutdown();
     }
 
+    @Override
+    public List<Runnable> shutdownNow() {
+        ObserverManager.unregisterExecutorService(this);
+        return super.shutdownNow();
+    }
+
     /**
      * A {@link RejectedExecutionHandler} that supports pool growth by re-attempting to add the
      * task to the queue. If the queue is actually full, the rejection is counted and an exception

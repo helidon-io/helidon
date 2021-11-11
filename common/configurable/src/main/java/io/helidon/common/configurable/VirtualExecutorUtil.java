@@ -98,5 +98,4 @@ final class VirtualExecutorUtil {
         }
         throw previous;
     }
-
 }
