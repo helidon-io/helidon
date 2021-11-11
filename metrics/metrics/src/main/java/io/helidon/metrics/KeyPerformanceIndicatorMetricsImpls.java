@@ -89,11 +89,6 @@ class KeyPerformanceIndicatorMetricsImpls {
                     : new Basic(metricsNamePrefix));
     }
 
-    static void clearCachedKpiMetrics() {
-        // Primarily for testing with multiple tests in one JVM
-        KPI_METRICS.clear();
-    }
-
     /**
      * Basic KPI metrics.
      */
