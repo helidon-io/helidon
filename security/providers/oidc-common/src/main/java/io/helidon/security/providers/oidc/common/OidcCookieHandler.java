@@ -195,7 +195,7 @@ public class OidcCookieHandler {
         return builder;
     }
 
-    static class Builder implements io.helidon.common.Builder<OidcCookieHandler> {
+    static class Builder implements io.helidon.common.Builder<Builder, OidcCookieHandler> {
         static final String DEFAULT_PATH = "/";
         static final boolean DEFAULT_HTTP_ONLY = true;
         static final boolean DEFAULT_SECURE = false;
