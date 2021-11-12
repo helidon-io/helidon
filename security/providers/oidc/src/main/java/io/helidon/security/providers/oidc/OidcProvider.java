@@ -16,29 +16,6 @@
 
 package io.helidon.security.providers.oidc;
 
-import java.lang.annotation.Annotation;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
 import io.helidon.common.Errors;
 import io.helidon.common.http.FormParams;
 import io.helidon.common.http.Http;
@@ -48,18 +25,7 @@ import io.helidon.config.Config;
 import io.helidon.config.DeprecatedConfig;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.security.AuthenticationResponse;
-import io.helidon.security.EndpointConfig;
-import io.helidon.security.Grant;
-import io.helidon.security.OutboundSecurityResponse;
-import io.helidon.security.Principal;
-import io.helidon.security.ProviderRequest;
-import io.helidon.security.Role;
-import io.helidon.security.Security;
-import io.helidon.security.SecurityEnvironment;
-import io.helidon.security.SecurityLevel;
-import io.helidon.security.SecurityResponse;
-import io.helidon.security.Subject;
+import io.helidon.security.*;
 import io.helidon.security.abac.scope.ScopeValidator;
 import io.helidon.security.jwt.Jwt;
 import io.helidon.security.jwt.JwtException;
@@ -75,9 +41,27 @@ import io.helidon.security.spi.AuthenticationProvider;
 import io.helidon.security.spi.OutboundSecurityProvider;
 import io.helidon.security.spi.SecurityProvider;
 import io.helidon.security.util.TokenHandler;
+import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientRequestBuilder;
 
+import java.lang.annotation.Annotation;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
 import static io.helidon.security.providers.oidc.common.OidcConfig.postJsonResponse;
+
+import java.lang.SecurityException;
 
 /**
  * Open ID Connect authentication provider.
@@ -106,6 +90,8 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
     private final boolean useJwtGroups;
     private final BiConsumer<StringBuilder, String> scopeAppender;
     private final OidcCookieHandler cookieHandler;
+    private final OidcCookieHandler idCookieHandler;
+    private final OidcCookieHandler refreshCookieHandler;
 
     private OidcProvider(Builder builder, OidcOutboundConfig oidcOutboundConfig) {
         this.optional = builder.optional;
@@ -114,6 +100,8 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
         this.useJwtGroups = builder.useJwtGroups;
         this.outboundConfig = oidcOutboundConfig;
         this.cookieHandler = oidcConfig.tokenCookieHandler();
+        this.idCookieHandler = oidcConfig.idTokenCookieHandler();
+        this.refreshCookieHandler = oidcConfig.refreshTokenCookieHandler();
 
         attemptPattern = Pattern.compile(".*?" + oidcConfig.redirectAttemptParam() + "=(\\d+).*");
 
@@ -472,10 +460,45 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
             return Single.just(AuthenticationResponse.failed("Invalid token", e));
         }
 
-        return jwtValidator.apply(signedJwt, Errors.collector())
+        SignedJwt idJwt = null;
+        try {
+            Optional<Single<String>> idCookie = idCookieHandler.findCookie(providerRequest.env().headers());
+            if(idCookie.isPresent()) {
+                idJwt = idCookie.get().flatMapSingle(s -> Single.just(SignedJwt.parseToken(s))).get();
+            }
+        } catch (Exception e) {
+            //invalid token
+            LOGGER.log(Level.FINEST, "Could not parse id token", e);
+            return Single.just(AuthenticationResponse.failed("Invalid ID token", e));
+        }
+
+        SignedJwt refreshJwt = null;
+        try {
+            Optional<Single<String>> refreshCookie = refreshCookieHandler.findCookie(providerRequest.env().headers());
+            if(refreshCookie.isPresent()) {
+                refreshJwt = refreshCookie.get().flatMapSingle(s -> Single.just(SignedJwt.parseToken(s))).get();
+            }
+        } catch (Exception e) {
+            //invalid token
+            LOGGER.log(Level.FINEST, "Could not parse refresh token", e);
+            return Single.just(AuthenticationResponse.failed("Invalid refresh token", e));
+        }
+        Errors.Collector errors = Errors.collector();
+
+        if(idJwt!=null) {
+            errors = jwtValidator.apply(idJwt, errors).await();
+        }
+
+        if(refreshJwt!=null) {
+            errors = jwtValidator.apply(refreshJwt, errors).await();
+        }
+
+        SignedJwt finalIdJwt = idJwt;
+        SignedJwt finalRefreshJwt = refreshJwt;
+        return jwtValidator.apply(signedJwt, errors)
                 .map(it -> processValidationResult(providerRequest,
-                                                   signedJwt,
-                                                   it))
+                        signedJwt, finalIdJwt, finalRefreshJwt,
+                        it))
                 .onErrorResume(t -> {
                     LOGGER.log(Level.FINEST, "Failed to validate request", t);
                     return AuthenticationResponse.failed("Failed to validate JWT", t);
@@ -484,15 +507,65 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
 
     private AuthenticationResponse processValidationResult(ProviderRequest providerRequest,
                                                            SignedJwt signedJwt,
+                                                           SignedJwt signedIdJwt,
+                                                           SignedJwt signedRefreshJwt,
                                                            Errors.Collector collector) {
         Jwt jwt = signedJwt.getJwt();
+        Jwt idJwt = null;
         Errors errors = collector.collect();
-        Errors validationErrors = jwt.validate(oidcConfig.issuer(), oidcConfig.audience());
+        Errors validationErrors = collector.collect();
+        Map<String, List<String>> responseHeaders = new HashMap<>();
+        responseHeaders.put("Set-Cookie",new ArrayList<>());
+
+        if(signedRefreshJwt!=null){
+            Jwt refreshJwt = signedRefreshJwt.getJwt();
+            validationErrors.addAll(refreshJwt.validate(oidcConfig.issuer(), oidcConfig.audience()));
+            if(validationErrors.isValid()){
+                // check for expiration only
+                Errors timeErrors = jwt.validate(Jwt.defaultTimeValidators());
+                if(!timeErrors.isValid()){
+                    OidcRefreshResult refreshResult = refreshAccessToken(signedRefreshJwt);
+
+                    if(refreshResult.succeeded()){
+                        jwt = refreshResult.getAccessToken().getJwt();
+                        cookieHandler.createCookie(refreshResult.getAccessToken().tokenContent()).forSingle(c ->{
+                            responseHeaders.get("Set-Cookie").add(c.build().toString());
+                        }).exceptionallyAccept(t->{
+                            LOGGER.log(Level.SEVERE, "Failed to set updated access token cookie", t);
+                        });
+
+                        if(refreshResult.getIdToken()!=null){
+                            signedIdJwt = refreshResult.getIdToken();
+                            idCookieHandler.createCookie(refreshResult.getIdToken().tokenContent()).forSingle(c ->{
+                                responseHeaders.get("Set-Cookie").add(c.build().toString());
+                            }).exceptionallyAccept(t->{
+                                LOGGER.log(Level.SEVERE, "Failed to set updated id token cookie", t);
+                            });
+                        }
+
+                        if(refreshResult.getRefreshToken()!=null){
+                            refreshCookieHandler.createCookie(refreshResult.getRefreshToken().tokenContent()).forSingle(c ->{
+                                responseHeaders.get("Set-Cookie").add(c.build().toString());
+                            }).exceptionallyAccept(t->{
+                                LOGGER.log(Level.SEVERE, "Failed to set updated refresh token cookie", t);
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        validationErrors.addAll(jwt.validate(oidcConfig.issuer(), oidcConfig.audience()));
+
+        if(signedIdJwt!=null){
+            idJwt = signedIdJwt.getJwt();
+            validationErrors.addAll(idJwt.validate(oidcConfig.issuer(), oidcConfig.audience()));
+        }
 
         if (errors.isValid() && validationErrors.isValid()) {
 
             errors.log(LOGGER);
-            Subject subject = buildSubject(jwt, signedJwt);
+            Subject subject = buildSubject(jwt, signedJwt, idJwt);
 
             Set<String> scopes = subject.grantsByType("scope")
                     .stream()
@@ -509,7 +582,11 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
             }
 
             if (missingScopes.isEmpty()) {
-                return AuthenticationResponse.success(subject);
+                return AuthenticationResponse.builder()
+                        .user(subject)
+                        .responseHeaders(responseHeaders)
+                        .status(SecurityResponse.SecurityStatus.SUCCESS)
+                        .build();
             } else {
                 return errorResponse(providerRequest,
                                      Http.Status.FORBIDDEN_403,
@@ -524,6 +601,45 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
             }
             return errorResponse(providerRequest, Http.Status.UNAUTHORIZED_401, "invalid_token", "Token not valid");
         }
+    }
+
+    private OidcRefreshResult refreshAccessToken(SignedJwt refreshToken) {
+        WebClient webClient = oidcConfig.appWebClient();
+
+        FormParams.Builder form = FormParams.builder()
+                .add("grant_type", "refresh_token")
+                .add("refresh_token", refreshToken.tokenContent());
+
+        WebClientRequestBuilder post = webClient.post()
+                .uri(oidcConfig.tokenEndpointUri())
+                .accept(io.helidon.common.http.MediaType.APPLICATION_JSON);
+
+        oidcConfig.updateRequest(OidcConfig.RequestType.REFRESH_TOKEN,
+                post,
+                form);
+
+        return OidcConfig.postJsonResponse(post,
+                        form.build(),
+                        json -> {
+                            String newTokenValue = json.getString("access_token");
+                            String newIdToken = json.getString("id_token", null);
+                            String newRefreshToken = json.getString("refresh_token", null);
+
+                            SignedJwt newToken = SignedJwt.parseToken(newTokenValue);
+                            SignedJwt newId = null;
+                            if(newIdToken!=null){
+                                newId = SignedJwt.parseToken(newIdToken);
+                            }
+                            SignedJwt newRefresh = null;
+                            if(newRefreshToken != null){
+                                newRefresh = SignedJwt.parseToken(newRefreshToken);
+                            }
+
+                            return new OidcRefreshResult(true, newToken, newId, newRefresh, null);
+                        },
+                        (status, errorEntity) -> Optional.of(new OidcRefreshResult(false, null, null, null, "Received a " + status.code() + " from refresh")),
+                        (t, message) -> Optional.of(new OidcRefreshResult(false, null, null, null, "Received a " + message + " from refresh")))
+                .await(60, TimeUnit.SECONDS);
     }
 
     @Override
@@ -566,8 +682,12 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
         return CompletableFuture.completedFuture(OutboundSecurityResponse.empty());
     }
 
-    private Subject buildSubject(Jwt jwt, SignedJwt signedJwt) {
-        Principal principal = buildPrincipal(jwt);
+    private Subject buildSubject(Jwt jwt, SignedJwt signedJwt, Jwt idJwt) {
+        Jwt pToken = jwt;
+        if(idJwt!=null){
+            pToken = idJwt;
+        }
+        Principal principal = buildPrincipal(pToken);
 
         TokenCredential.Builder builder = TokenCredential.builder();
         jwt.issueTime().ifPresent(builder::issueTime);

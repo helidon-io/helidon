@@ -124,6 +124,7 @@ public final class OidcSupport implements Service {
     private final OidcConfig oidcConfig;
     private final OidcCookieHandler tokenCookieHandler;
     private final OidcCookieHandler idTokenCookieHandler;
+    private final OidcCookieHandler refreshTokenCookieHandler;
     private final boolean enabled;
 
     private OidcSupport(Builder builder) {
@@ -131,6 +132,7 @@ public final class OidcSupport implements Service {
         this.enabled = builder.enabled;
         this.tokenCookieHandler = oidcConfig.tokenCookieHandler();
         this.idTokenCookieHandler = oidcConfig.idTokenCookieHandler();
+        this.refreshTokenCookieHandler = oidcConfig.refreshTokenCookieHandler();
     }
 
     /**
@@ -224,6 +226,7 @@ public final class OidcSupport implements Service {
                     ResponseHeaders headers = res.headers();
                     headers.addCookie(tokenCookieHandler.removeCookie().build());
                     headers.addCookie(idTokenCookieHandler.removeCookie().build());
+                    headers.addCookie(refreshTokenCookieHandler.removeCookie().build());
 
                     res.status(Http.Status.TEMPORARY_REDIRECT_307)
                             .addHeader(Http.Header.LOCATION, sb.toString())
@@ -319,6 +322,7 @@ public final class OidcSupport implements Service {
     private String processJsonResponse(ServerRequest req, ServerResponse res, JsonObject json) {
         String tokenValue = json.getString("access_token");
         String idToken = json.getString("id_token", null);
+        String refreshToken = json.getString("refresh_token", null);
 
         //redirect to "state"
         String state = req.queryParams().first(STATE_PARAM_NAME).orElse(DEFAULT_REDIRECT);
@@ -340,12 +344,15 @@ public final class OidcSupport implements Service {
                             idTokenCookieHandler.createCookie(idToken)
                                     .forSingle(it -> {
                                         headers.addCookie(it.build());
-                                        res.send();
                                     })
                                     .exceptionallyAccept(t -> sendError(res, t));
-                        } else {
-                            res.send();
+                            refreshTokenCookieHandler.createCookie(refreshToken)
+                                    .forSingle(it -> {
+                                        headers.addCookie(it.build());
+                                    })
+                                    .exceptionallyAccept(t -> sendError(res, t));
                         }
+                        res.send();
                     })
                     .exceptionallyAccept(t -> sendError(res, t));
         } else {

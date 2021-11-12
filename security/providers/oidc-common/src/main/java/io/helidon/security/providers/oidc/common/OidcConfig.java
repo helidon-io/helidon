@@ -17,6 +17,7 @@
 package io.helidon.security.providers.oidc.common;
 
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.Locale;
@@ -366,6 +367,7 @@ public final class OidcConfig {
     private final Duration clientTimeout;
     private final OidcCookieHandler tokenCookieHandler;
     private final OidcCookieHandler idTokenCookieHandler;
+    private final OidcCookieHandler refreshTokenCookieHandler;
     private final URI postLogoutUri;
     private final URI logoutEndpointUri;
 
@@ -425,8 +427,10 @@ public final class OidcConfig {
         this.tokenCookieHandler = builder.tokenCookieBuilder.build();
         if (logoutEnabled) {
             builder.idTokenCookieBuilder.encryptionEnabled(true);
+            builder.refreshTokenCookieBuilder.encryptionEnabled(true);
         }
         this.idTokenCookieHandler = builder.idTokenCookieBuilder.build();
+        this.refreshTokenCookieHandler = builder.refreshTokenCookieBuilder.build();
 
         if ((builder.scopeAudience == null) || builder.scopeAudience.trim().isEmpty()) {
             this.scopeAudience = "";
@@ -651,6 +655,15 @@ public final class OidcConfig {
      */
     public OidcCookieHandler idTokenCookieHandler() {
         return idTokenCookieHandler;
+    }
+
+    /**
+     * Cookie handler to create cookies or unset cookies for id token.
+     *
+     * @return a new cookie handler
+     */
+    public OidcCookieHandler refreshTokenCookieHandler() {
+        return refreshTokenCookieHandler;
     }
 
     /**
@@ -1008,7 +1021,12 @@ public final class OidcConfig {
         /**
          * Request to validate a JWT against an introspection endpoint.
          */
-        INTROSPECT_JWT;
+        INTROSPECT_JWT,
+
+        /**
+         * Request to refresh access token
+         */
+        REFRESH_TOKEN;
     }
 
     /**
@@ -1022,6 +1040,8 @@ public final class OidcConfig {
                 .cookieName(DEFAULT_COOKIE_NAME);
         private final OidcCookieHandler.Builder idTokenCookieBuilder = OidcCookieHandler.builder()
                 .cookieName(DEFAULT_COOKIE_NAME + "_2");
+        private final OidcCookieHandler.Builder refreshTokenCookieBuilder = OidcCookieHandler.builder()
+                .cookieName(DEFAULT_COOKIE_NAME + "_3");
 
         private String issuer;
         private String audience;
@@ -1147,6 +1167,7 @@ public final class OidcConfig {
                                                 + "\"cookie-same-site\"");
                             this.tokenCookieBuilder.sameSite(SetCookie.SameSite.STRICT);
                             this.idTokenCookieBuilder.sameSite(SetCookie.SameSite.STRICT);
+                            this.refreshTokenCookieBuilder.sameSite(SetCookie.SameSite.STRICT);
                         }
                     }
                 }
@@ -1234,6 +1255,7 @@ public final class OidcConfig {
             config.get("cookie-use").asBoolean().ifPresent(this::useCookie);
             config.get("cookie-name").asString().ifPresent(this::cookieName);
             config.get("cookie-name-id-token").asString().ifPresent(this::cookieNameIdToken);
+            config.get("cookie-name-refresh-token").asString().ifPresent(this::cookieNameRefreshToken);
             config.get("cookie-domain").asString().ifPresent(this::cookieDomain);
             config.get("cookie-path").asString().ifPresent(this::cookiePath);
             config.get("cookie-max-age-seconds").asLong().ifPresent(this::cookieMaxAgeSeconds);
@@ -1246,7 +1268,7 @@ public final class OidcConfig {
             config.get("header-token").as(TokenHandler.class).ifPresent(this::headerTokenHandler);
             // encryption of cookies
             config.get("cookie-encryption-enabled").asBoolean().ifPresent(this::cookieEncryptionEnabled);
-            config.get("cookie-encryption-password").as(char[].class).ifPresent(this::cookieEncryptionPassword);
+            config.get("cookie-encryption-password").asString().ifPresent(this::cookieEncryptionPassword);
             config.get("cookie-encryption-name").asString().ifPresent(this::cookieEncryptionName);
 
             // OIDC server configuration
@@ -1308,10 +1330,10 @@ public final class OidcConfig {
          * @param cookieEncryptionPassword encryption password
          * @return updated builder
          */
-        public Builder cookieEncryptionPassword(char[] cookieEncryptionPassword) {
-            this.tokenCookieBuilder.encryptionPassword(cookieEncryptionPassword);
-            this.idTokenCookieBuilder.encryptionPassword(cookieEncryptionPassword);
-
+        public Builder cookieEncryptionPassword(String cookieEncryptionPassword) {
+            this.tokenCookieBuilder.encryptionPassword(cookieEncryptionPassword.toCharArray());
+            this.idTokenCookieBuilder.encryptionPassword(cookieEncryptionPassword.toCharArray());
+            this.refreshTokenCookieBuilder.encryptionPassword(cookieEncryptionPassword.toCharArray());
             return this;
         }
 
@@ -1759,6 +1781,21 @@ public final class OidcConfig {
          */
         public Builder cookieNameIdToken(String cookieName) {
             this.idTokenCookieBuilder.cookieName(cookieName);
+            return this;
+        }
+
+        /**
+         * Name of the cookie to use for refresh token.
+         * Defaults to {@value #DEFAULT_COOKIE_NAME}_3.
+         *
+         * This cookie is only used when logout is enabled, as otherwise it is not needed.
+         * Content of this cookie is encrypted.
+         *
+         * @param cookieName name of a cookie
+         * @return updated builder instance
+         */
+        public Builder cookieNameRefreshToken(String cookieName) {
+            this.refreshTokenCookieBuilder.cookieName(cookieName);
             return this;
         }
 

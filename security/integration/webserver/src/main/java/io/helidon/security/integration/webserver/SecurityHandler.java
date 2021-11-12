@@ -449,6 +449,11 @@ public final class SecurityHandler implements Handler {
             switch (response.status()) {
             case SUCCESS:
                 //everything is fine, we can continue with processing
+
+                // If headers are returned add them to the response
+                if(response.responseHeaders()!=null){
+                    response.responseHeaders().forEach((key, value) -> res.headers().put(key, value));
+                }
                 break;
             case FAILURE_FINISH:
                 if (atnFinishFailure(res, future, response)) {
