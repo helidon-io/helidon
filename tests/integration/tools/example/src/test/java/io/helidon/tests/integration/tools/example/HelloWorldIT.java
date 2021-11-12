@@ -18,8 +18,8 @@ package io.helidon.tests.integration.tools.example;
 import java.util.Map;
 import java.util.logging.Logger;
 
-import javax.json.JsonString;
-import javax.json.JsonValue;
+import jakarta.json.JsonString;
+import jakarta.json.JsonValue;
 
 import io.helidon.tests.integration.tools.client.HelidonProcessRunner;
 import io.helidon.tests.integration.tools.client.HelidonTestException;

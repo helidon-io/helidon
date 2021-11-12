@@ -20,12 +20,11 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
-import javax.enterprise.context.ApplicationScoped;
-
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.metrics.RegistryFactory;
 
+import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.faulttolerance.Asynchronous;
 import org.eclipse.microprofile.faulttolerance.Timeout;
 

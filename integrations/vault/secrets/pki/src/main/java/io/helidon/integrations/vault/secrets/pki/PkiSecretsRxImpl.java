@@ -18,8 +18,6 @@ package io.helidon.integrations.vault.secrets.pki;
 
 import java.util.function.Function;
 
-import javax.json.JsonObject;
-
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Single;
 import io.helidon.integrations.common.rest.RestApi;
@@ -28,6 +26,8 @@ import io.helidon.integrations.vault.Vault;
 import io.helidon.integrations.vault.VaultApiException;
 import io.helidon.integrations.vault.VaultOptionalResponse;
 import io.helidon.integrations.vault.VaultRestException;
+
+import jakarta.json.JsonObject;
 
 class PkiSecretsRxImpl implements PkiSecretsRx {
     private final RestApi restApi;

@@ -28,11 +28,10 @@ import java.util.List;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import javax.enterprise.inject.spi.Annotated;
-import javax.enterprise.inject.spi.AnnotatedMember;
-import javax.enterprise.inject.spi.AnnotatedMethod;
-import javax.enterprise.inject.spi.AnnotatedType;
-
+import jakarta.enterprise.inject.spi.Annotated;
+import jakarta.enterprise.inject.spi.AnnotatedMember;
+import jakarta.enterprise.inject.spi.AnnotatedMethod;
+import jakarta.enterprise.inject.spi.AnnotatedType;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
@@ -198,7 +197,7 @@ public final class MetricUtil {
                     .withDescription(counted.description().trim())
                     .withType(MetricType.COUNTER)
                     .withUnit(counted.unit().trim())
-                    .reusable(counted.reusable()).build();
+                    .build();
             registry.counter(meta, tags(counted.tags()));
             LOGGER.fine(() -> "### Registered counter " + metricName);
         } else if (annotation instanceof Metered) {
@@ -211,7 +210,7 @@ public final class MetricUtil {
                     .withDescription(metered.description().trim())
                     .withType(MetricType.METERED)
                     .withUnit(metered.unit().trim())
-                    .reusable(metered.reusable()).build();
+                    .build();
             registry.meter(meta, tags(metered.tags()));
             LOGGER.fine(() -> "### Registered meter " + metricName);
         } else if (annotation instanceof ConcurrentGauge) {
@@ -237,7 +236,7 @@ public final class MetricUtil {
                     .withDescription(timed.description().trim())
                     .withType(MetricType.TIMER)
                     .withUnit(timed.unit().trim())
-                    .reusable(timed.reusable()).build();
+                    .build();
             registry.timer(meta, tags(timed.tags()));
             LOGGER.fine(() -> "### Registered timer " + metricName);
         } else if (annotation instanceof SimplyTimed) {
@@ -250,7 +249,7 @@ public final class MetricUtil {
                     .withDescription(simplyTimed.description().trim())
                     .withType(MetricType.SIMPLE_TIMER)
                     .withUnit(simplyTimed.unit().trim())
-                    .reusable(simplyTimed.reusable()).build();
+                    .build();
             registry.simpleTimer(meta, tags(simplyTimed.tags()));
             LOGGER.fine(() -> "### Registered simple timer " + metricName);
         }
@@ -292,7 +291,7 @@ public final class MetricUtil {
                     .withDescription(counted.description().trim())
                     .withType(MetricType.COUNTER)
                     .withUnit(counted.unit().trim())
-                    .reusable(counted.reusable()).build();
+                    .build();
             registry.counter(meta);
             LOGGER.fine(() -> "### Registered counter " + metricName);
         } else if (annotation instanceof Metered) {
@@ -305,7 +304,7 @@ public final class MetricUtil {
                     .withDescription(metered.description().trim())
                     .withType(MetricType.METERED)
                     .withUnit(metered.unit().trim())
-                    .reusable(metered.reusable()).build();
+                    .build();
             registry.meter(meta);
             LOGGER.fine(() -> "### Registered meter " + metricName);
         } else if (annotation instanceof ConcurrentGauge) {
@@ -331,7 +330,7 @@ public final class MetricUtil {
                     .withDescription(timed.description().trim())
                     .withType(MetricType.TIMER)
                     .withUnit(timed.unit().trim())
-                    .reusable(timed.reusable()).build();
+                    .build();
             registry.timer(meta);
             LOGGER.fine(() -> "### Registered timer " + metricName);
         } else if (annotation instanceof SimplyTimed) {
@@ -344,7 +343,7 @@ public final class MetricUtil {
                     .withDescription(simplyTimed.description().trim())
                     .withType(MetricType.SIMPLE_TIMER)
                     .withUnit(simplyTimed.unit().trim())
-                    .reusable(simplyTimed.reusable()).build();
+                    .build();
             registry.timer(meta);
             LOGGER.fine(() -> "### Registered simple timer " + metricName);
         }

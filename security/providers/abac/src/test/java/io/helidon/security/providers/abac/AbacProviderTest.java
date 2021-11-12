@@ -20,14 +20,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import javax.annotation.security.RolesAllowed;
-
 import io.helidon.security.AuthorizationResponse;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.ProviderRequest;
 import io.helidon.security.SecurityLevel;
 import io.helidon.security.SecurityResponse;
 
+import jakarta.annotation.security.RolesAllowed;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 

@@ -23,16 +23,15 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.logging.Logger;
 
-import javax.annotation.Priority;
-import javax.inject.Inject;
-import javax.interceptor.AroundInvoke;
-import javax.interceptor.Interceptor;
-import javax.interceptor.InvocationContext;
-
 import io.micronaut.aop.MethodInterceptor;
 import io.micronaut.context.ApplicationContext;
 import io.micronaut.core.annotation.Internal;
 import io.micronaut.inject.ExecutableMethod;
+import jakarta.annotation.Priority;
+import jakarta.inject.Inject;
+import jakarta.interceptor.AroundInvoke;
+import jakarta.interceptor.Interceptor;
+import jakarta.interceptor.InvocationContext;
 
 /**
  * A CDI interceptor that invokes all Micronaut interceptors.

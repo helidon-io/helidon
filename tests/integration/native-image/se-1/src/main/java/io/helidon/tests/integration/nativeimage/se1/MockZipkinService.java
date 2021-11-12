@@ -29,10 +29,10 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
 
-import javax.json.Json;
-import javax.json.JsonPointer;
-import javax.json.JsonString;
-import javax.json.JsonValue;
+import jakarta.json.Json;
+import jakarta.json.JsonPointer;
+import jakarta.json.JsonString;
+import jakarta.json.JsonValue;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;

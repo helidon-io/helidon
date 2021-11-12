@@ -15,9 +15,8 @@
  */
 package io.helidon.microprofile.metrics;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 
 /**
@@ -26,7 +25,7 @@ import org.eclipse.microprofile.metrics.annotation.Counted;
 public class ResourceWithMixedReusability {
 @GET
     @Path("method1")
-    @Counted(name = "mismatchedReusedName", absolute = true, reusable = true)
+    @Counted(name = "mismatchedReusedName", absolute = true)
     public String method1() {
         return "Hi from method 1";
     }

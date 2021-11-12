@@ -16,13 +16,12 @@
 
 package io.helidon.microprofile.metrics;
 
-import io.helidon.microprofile.tests.junit5.AddConfig;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
+
+import jakarta.inject.Inject;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.annotation.RegistryType;
 import org.junit.jupiter.api.Test;
-
-import javax.inject.Inject;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;

@@ -32,23 +32,23 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.context.Dependent;
-import javax.enterprise.event.Observes;
-import javax.enterprise.inject.CreationException;
-import javax.enterprise.inject.Default;
-import javax.enterprise.inject.Instance;
-import javax.enterprise.inject.literal.NamedLiteral;
-import javax.enterprise.inject.spi.AfterBeanDiscovery;
-import javax.enterprise.inject.spi.BeanManager;
-import javax.enterprise.inject.spi.InjectionPoint;
-import javax.enterprise.inject.spi.ProcessInjectionPoint;
-import javax.inject.Named;
-import javax.inject.Provider;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSocketFactory;
 
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.Dependent;
+import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.CreationException;
+import jakarta.enterprise.inject.Default;
+import jakarta.enterprise.inject.Instance;
+import jakarta.enterprise.inject.literal.NamedLiteral;
+import jakarta.enterprise.inject.spi.AfterBeanDiscovery;
+import jakarta.enterprise.inject.spi.BeanManager;
+import jakarta.enterprise.inject.spi.InjectionPoint;
+import jakarta.enterprise.inject.spi.ProcessInjectionPoint;
+import jakarta.inject.Named;
+import jakarta.inject.Provider;
 import org.eclipse.microprofile.config.Config;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
@@ -56,7 +56,7 @@ import redis.clients.jedis.JedisPoolConfig;
 import redis.clients.jedis.Protocol;
 
 /**
- * An {@link javax.enterprise.inject.spi.Extension} providing CDI
+ * An {@link jakarta.enterprise.inject.spi.Extension} providing CDI
  * integration for the <a
  * href="https://github.com/xetorthio/jedis/blob/master/README.md">Jedis
  * Redis client</a>.
@@ -65,7 +65,7 @@ import redis.clients.jedis.Protocol;
  * href="https://github.com/xetorthio/jedis/wiki/Getting-started#using-jedis-in-a-multithreaded-environment">Using
  * Jedis in a multithreaded environment</a>
  */
-public class JedisExtension implements javax.enterprise.inject.spi.Extension {
+public class JedisExtension implements jakarta.enterprise.inject.spi.Extension {
 
     private static final Map<Class<?>, Map<String, Class<?>>> CONVERSION_TYPES = new LinkedHashMap<>();
 

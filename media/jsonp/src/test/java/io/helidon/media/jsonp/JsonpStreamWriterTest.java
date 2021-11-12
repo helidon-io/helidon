@@ -21,22 +21,20 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Map;
 
-import javax.json.Json;
-import javax.json.JsonArray;
-import javax.json.JsonArrayBuilder;
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObject;
-import javax.json.JsonReaderFactory;
-import javax.json.JsonStructure;
-
 import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.HashParameters;
 import io.helidon.common.reactive.Multi;
 import io.helidon.media.common.MessageBodyOperator;
-import io.helidon.media.common.MessageBodyStreamWriter;
 import io.helidon.media.common.MessageBodyWriterContext;
 
+import jakarta.json.Json;
+import jakarta.json.JsonArray;
+import jakarta.json.JsonArrayBuilder;
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonReaderFactory;
+import jakarta.json.JsonStructure;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;

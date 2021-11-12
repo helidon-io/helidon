@@ -21,13 +21,12 @@ import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.UUID;
 
-import javax.json.Json;
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonNumber;
-import javax.json.JsonObject;
-import javax.json.JsonObjectBuilder;
-
 import com.datastax.driver.core.Row;
+import jakarta.json.Json;
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonNumber;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonObjectBuilder;
 
 /**
  * Data object for backend.

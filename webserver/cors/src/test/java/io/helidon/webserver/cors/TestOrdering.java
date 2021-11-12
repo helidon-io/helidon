@@ -23,13 +23,8 @@ import java.util.function.Supplier;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.webserver.cors.CustomMatchers.notPresent;
 import static io.helidon.webserver.cors.CustomMatchers.present;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.array;
-import static org.hamcrest.Matchers.arrayContaining;
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
 public class TestOrdering {

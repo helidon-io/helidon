@@ -15,28 +15,27 @@
  */
 package io.helidon.media.multipart;
 
-import java.nio.charset.StandardCharsets;
 import java.nio.charset.Charset;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.Flow.Publisher;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.reactive.Multi;
-import io.helidon.media.common.MessageBodyReadableContent;
 import io.helidon.media.common.ContentReaders;
 import io.helidon.media.common.ContentWriters;
 import io.helidon.media.common.MediaContext;
+import io.helidon.media.common.MessageBodyReadableContent;
 
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.media.multipart.MultiPartDecoderTest.chunksPublisher;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
-
-import static io.helidon.media.multipart.MultiPartDecoderTest.chunksPublisher;
 
 /**
  * Tests {@link BodyPart}.

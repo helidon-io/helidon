@@ -21,13 +21,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.logging.LogManager;
 
-import javax.websocket.server.ServerEndpointConfig;
-
 import io.helidon.config.Config;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.staticcontent.StaticContentSupport;
 import io.helidon.webserver.tyrus.TyrusSupport;
+
+import jakarta.websocket.server.ServerEndpointConfig;
 
 /**
  * The application main class.

@@ -17,8 +17,8 @@ package io.helidon.tests.integration.jpa.simple;
 
 import java.util.List;
 
-import javax.persistence.EntityManager;
-import javax.persistence.TypedQuery;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.TypedQuery;
 
 import io.helidon.tests.integration.jpa.dao.Create;
 import io.helidon.tests.integration.jpa.dao.Delete;

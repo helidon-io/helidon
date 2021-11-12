@@ -22,7 +22,7 @@ import java.util.Collections;
 import java.util.Objects;
 import java.util.Set;
 
-import javax.enterprise.inject.spi.BeanAttributes;
+import jakarta.enterprise.inject.spi.BeanAttributes;
 
 /**
  * A {@link BeanAttributes} implementation.

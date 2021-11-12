@@ -28,12 +28,12 @@ In Java there is no way to express a generic type as a literal. I.e `List<Dog>.c
 This is a known problem that has been solved by many popular Java frameworks.
 
 E.g.
-- `javax.ws.rs.GenericType`
-- `javax.enterprise.util.TypeLiteral`
+- `jakarta.ws.rs.GenericType`
+- `jakarta.enterprise.util.TypeLiteral`
 
 ## Proposal
 
-Make a copy of `javax.ws.rs.GenericType` under `io.helidon.common.GenericType`.
+Make a copy of `jakarta.ws.rs.GenericType` under `io.helidon.common.GenericType`.
 
 Overload the existing `as(Class<T> type)` methods with `as(GenericType<T> type)`.
 

@@ -22,10 +22,9 @@ import java.net.URL;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.enterprise.inject.spi.CDI;
-
 import io.helidon.microprofile.server.ServerCdiExtension;
 
+import jakarta.enterprise.inject.spi.CDI;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.arquillian.test.spi.enricher.resource.ResourceProvider;
 

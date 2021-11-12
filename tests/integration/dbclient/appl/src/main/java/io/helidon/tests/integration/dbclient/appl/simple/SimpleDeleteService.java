@@ -19,7 +19,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.logging.Logger;
 
-import javax.json.Json;
+import jakarta.json.Json;
 
 import io.helidon.common.reactive.Single;
 import io.helidon.dbclient.DbClient;

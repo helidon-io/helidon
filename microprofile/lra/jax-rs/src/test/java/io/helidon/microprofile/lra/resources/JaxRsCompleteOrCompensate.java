@@ -16,20 +16,19 @@
 
 package io.helidon.microprofile.lra.resources;
 
+import java.net.URI;
+
+import io.helidon.microprofile.lra.LoadBalancedCoordinatorTest;
+
+import jakarta.inject.Inject;
+import jakarta.ws.rs.HeaderParam;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.lra.annotation.Compensate;
 import org.eclipse.microprofile.lra.annotation.Complete;
 import org.eclipse.microprofile.lra.annotation.ParticipantStatus;
 import org.eclipse.microprofile.lra.annotation.ws.rs.LRA;
-
-import java.net.URI;
-
-import javax.inject.Inject;
-import javax.ws.rs.HeaderParam;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.core.Response;
-
-import io.helidon.microprofile.lra.LoadBalancedCoordinatorTest;
 
 import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_CONTEXT_HEADER;
 

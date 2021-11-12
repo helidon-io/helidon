@@ -16,14 +16,14 @@
 package io.helidon.microprofile.metrics;
 
 import io.helidon.microprofile.tests.junit5.HelidonTest;
+
+import jakarta.inject.Inject;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-
-import javax.inject.Inject;
 
 @HelidonTest
 public class ReusabilityInterceptorTest extends MetricsBaseTest {

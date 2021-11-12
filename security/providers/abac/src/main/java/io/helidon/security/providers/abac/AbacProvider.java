@@ -29,10 +29,6 @@ import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import javax.annotation.security.DenyAll;
-import javax.annotation.security.PermitAll;
-import javax.annotation.security.RolesAllowed;
-
 import io.helidon.common.Errors;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
@@ -48,6 +44,10 @@ import io.helidon.security.providers.abac.spi.AbacValidatorService;
 import io.helidon.security.spi.AuthorizationProvider;
 import io.helidon.security.spi.SecurityProvider;
 import io.helidon.security.spi.SynchronousProvider;
+
+import jakarta.annotation.security.DenyAll;
+import jakarta.annotation.security.PermitAll;
+import jakarta.annotation.security.RolesAllowed;
 
 /**
  * Attribute based access control (ABAC) provider.

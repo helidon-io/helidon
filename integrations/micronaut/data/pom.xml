@@ -67,6 +67,13 @@
             <groupId>io.micronaut.data</groupId>
             <artifactId>micronaut-data-model</artifactId>
             <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <!-- 3.0.0-JAKARTA -->
+                    <groupId>io.micronaut</groupId>
+                    <artifactId>micronaut-validation</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.cdi</groupId>
@@ -148,11 +155,12 @@
                                     <artifactId>micronaut-inject-java</artifactId>
                                     <version>${version.lib.micronaut}</version>
                                 </path>
-                                <path>
-                                    <groupId>io.micronaut</groupId>
-                                    <artifactId>micronaut-validation</artifactId>
-                                    <version>${version.lib.micronaut}</version>
-                                </path>
+                                <!-- 3.0.0-JAKARTA -->
+<!--                                <path>-->
+<!--                                    <groupId>io.micronaut</groupId>-->
+<!--                                    <artifactId>micronaut-validation</artifactId>-->
+<!--                                    <version>${version.lib.micronaut}</version>-->
+<!--                                </path>-->
                                 <path>
                                     <groupId>io.micronaut.data</groupId>
                                     <artifactId>micronaut-data-processor</artifactId>

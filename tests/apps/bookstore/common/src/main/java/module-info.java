@@ -19,7 +19,7 @@
  */
 module io.helidon.tests.apps.bookstore.common {
 
-    requires jakarta.enterprise.cdi.api;
+    requires jakarta.cdi;
 
     opens io.helidon.tests.apps.bookstore.common to weld.core.impl, io.helidon.microprofile.cdi;
 

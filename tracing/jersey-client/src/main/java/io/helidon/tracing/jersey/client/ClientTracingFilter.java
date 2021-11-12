@@ -25,14 +25,6 @@ import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.stream.Collectors;
 
-import javax.annotation.Priority;
-import javax.ws.rs.Priorities;
-import javax.ws.rs.client.ClientRequestContext;
-import javax.ws.rs.client.ClientRequestFilter;
-import javax.ws.rs.client.ClientResponseContext;
-import javax.ws.rs.client.ClientResponseFilter;
-import javax.ws.rs.core.MultivaluedMap;
-
 import io.helidon.common.context.Contexts;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.tracing.config.SpanTracingConfig;
@@ -47,6 +39,13 @@ import io.opentracing.propagation.Format;
 import io.opentracing.propagation.TextMapAdapter;
 import io.opentracing.tag.Tags;
 import io.opentracing.util.GlobalTracer;
+import jakarta.annotation.Priority;
+import jakarta.ws.rs.Priorities;
+import jakarta.ws.rs.client.ClientRequestContext;
+import jakarta.ws.rs.client.ClientRequestFilter;
+import jakarta.ws.rs.client.ClientResponseContext;
+import jakarta.ws.rs.client.ClientResponseFilter;
+import jakarta.ws.rs.core.MultivaluedMap;
 
 /**
  * This filter adds tracing information the the associated JAX-RS client call based on the provided properties.

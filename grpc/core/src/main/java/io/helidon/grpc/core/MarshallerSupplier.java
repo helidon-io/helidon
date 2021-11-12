@@ -16,11 +16,10 @@
 
 package io.helidon.grpc.core;
 
-import javax.inject.Named;
-
 import com.google.protobuf.MessageLite;
 import io.grpc.MethodDescriptor;
 import io.grpc.protobuf.lite.ProtoLiteUtils;
+import jakarta.inject.Named;
 
 /**
  * A supplier of {@link MethodDescriptor.Marshaller} instances for specific

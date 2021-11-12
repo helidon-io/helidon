@@ -16,11 +16,11 @@
 
 package io.helidon.tests.functional.requestscopecdi;
 
-import javax.enterprise.context.RequestScoped;
-import javax.inject.Inject;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 import org.eclipse.microprofile.faulttolerance.Asynchronous;
 
 @RequestScoped

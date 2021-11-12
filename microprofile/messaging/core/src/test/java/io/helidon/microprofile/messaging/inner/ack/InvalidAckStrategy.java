@@ -16,10 +16,9 @@
 
 package io.helidon.microprofile.messaging.inner.ack;
 
-import javax.enterprise.context.ApplicationScoped;
-
 import io.helidon.microprofile.messaging.AssertThrowException;
 
+import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;

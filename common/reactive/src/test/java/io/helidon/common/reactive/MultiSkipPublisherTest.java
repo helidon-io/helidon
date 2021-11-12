@@ -16,9 +16,10 @@
 
 package io.helidon.common.reactive;
 
-import org.junit.jupiter.api.Test;
+import java.util.Collections;
+import java.util.Iterator;
 
-import java.util.*;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;

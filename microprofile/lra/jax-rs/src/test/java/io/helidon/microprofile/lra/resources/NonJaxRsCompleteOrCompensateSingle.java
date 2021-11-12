@@ -20,15 +20,14 @@ import java.net.URI;
 import java.util.HashSet;
 import java.util.Set;
 
-import javax.inject.Inject;
-import javax.ws.rs.HeaderParam;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.core.Response;
-
 import io.helidon.common.reactive.Single;
 import io.helidon.microprofile.lra.LoadBalancedCoordinatorTest;
 
+import jakarta.inject.Inject;
+import jakarta.ws.rs.HeaderParam;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.lra.annotation.AfterLRA;
 import org.eclipse.microprofile.lra.annotation.Compensate;
 import org.eclipse.microprofile.lra.annotation.Complete;

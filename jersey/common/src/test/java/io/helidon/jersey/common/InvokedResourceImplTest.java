@@ -20,10 +20,9 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.Optional;
 
-import javax.annotation.security.RolesAllowed;
-import javax.ws.rs.Path;
-import javax.ws.rs.container.ContainerRequestContext;
-
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.container.ContainerRequestContext;
 import org.glassfish.jersey.server.ExtendedUriInfo;
 import org.glassfish.jersey.server.model.Resource;
 import org.glassfish.jersey.server.model.ResourceMethod;

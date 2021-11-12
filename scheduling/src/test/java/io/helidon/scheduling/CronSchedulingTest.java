@@ -24,13 +24,13 @@ import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.configurable.ScheduledThreadPoolSupplier;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
+
+import static org.hamcrest.MatcherAssert.assertThat;
 
 
 @Execution(ExecutionMode.CONCURRENT)

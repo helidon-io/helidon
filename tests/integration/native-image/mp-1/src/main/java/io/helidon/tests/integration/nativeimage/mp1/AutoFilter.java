@@ -18,9 +18,9 @@ package io.helidon.tests.integration.nativeimage.mp1;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import javax.ws.rs.container.ContainerRequestContext;
-import javax.ws.rs.container.ContainerRequestFilter;
-import javax.ws.rs.ext.Provider;
+import jakarta.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.container.ContainerRequestFilter;
+import jakarta.ws.rs.ext.Provider;
 
 @Provider
 public class AutoFilter implements ContainerRequestFilter {

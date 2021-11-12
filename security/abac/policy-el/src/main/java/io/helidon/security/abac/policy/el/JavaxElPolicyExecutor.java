@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,13 +22,6 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.el.ELException;
-import javax.el.ExpressionFactory;
-import javax.el.FunctionMapper;
-import javax.el.StandardELContext;
-import javax.el.ValueExpression;
-import javax.el.VariableMapper;
-
 import io.helidon.common.Errors;
 import io.helidon.config.Config;
 import io.helidon.security.ProviderRequest;
@@ -36,6 +29,13 @@ import io.helidon.security.SecurityContext;
 import io.helidon.security.SecurityEnvironment;
 import io.helidon.security.Subject;
 import io.helidon.security.abac.policy.spi.PolicyExecutor;
+
+import jakarta.el.ELException;
+import jakarta.el.ExpressionFactory;
+import jakarta.el.FunctionMapper;
+import jakarta.el.StandardELContext;
+import jakarta.el.ValueExpression;
+import jakarta.el.VariableMapper;
 
 /**
  * {@link PolicyExecutor} for Java EE Expression Language (EL).

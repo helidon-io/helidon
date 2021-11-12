@@ -18,9 +18,6 @@ package io.helidon.media.jsonp;
 import java.io.ByteArrayInputStream;
 import java.util.concurrent.TimeUnit;
 
-import javax.json.Json;
-import javax.json.JsonObject;
-
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.webserver.Handler;
@@ -29,6 +26,8 @@ import io.helidon.webserver.testsupport.MediaPublisher;
 import io.helidon.webserver.testsupport.TestClient;
 import io.helidon.webserver.testsupport.TestResponse;
 
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.equalTo;

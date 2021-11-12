@@ -49,4 +49,9 @@ public class JdbcMetricsHistogram implements Histogram {
         return new JdbcMetricsSnapshot(histogram.getSnapshot());
     }
 
+    @Override
+    public long getSum() {
+        // TODO 3.0.0-JAKARTA
+        return (long) (histogram.getCount() * histogram.getSnapshot().getMean());
+    }
 }

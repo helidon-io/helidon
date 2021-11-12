@@ -24,9 +24,9 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.stream.Stream;
 
-import javax.annotation.Priority;
-
 import io.helidon.common.Prioritized;
+
+import jakarta.annotation.Priority;
 
 /**
  * A bag of values ordered by priority.
@@ -122,7 +122,7 @@ public class PriorityBag<T> implements Iterable<T> {
     /**
      * Add elements to the bag.
      * <p>
-     * If the element's class is annotated with the {@link javax.annotation.Priority}
+     * If the element's class is annotated with the {@link jakarta.annotation.Priority}
      * annotation then that value will be used to determine priority otherwise the
      * default priority value will be used.
      *
@@ -149,7 +149,7 @@ public class PriorityBag<T> implements Iterable<T> {
     /**
      * Add an element to the bag.
      * <p>
-     * If the element's class is annotated with the {@link javax.annotation.Priority}
+     * If the element's class is annotated with the {@link jakarta.annotation.Priority}
      * annotation then that value will be used to determine priority otherwise the
      * default priority value will be used.
      *

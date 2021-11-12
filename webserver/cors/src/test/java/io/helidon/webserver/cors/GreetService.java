@@ -15,13 +15,13 @@
  */
 package io.helidon.webserver.cors;
 
+import java.util.Date;
+
 import io.helidon.common.http.Http;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
-
-import java.util.Date;
 
 public class GreetService implements Service {
 

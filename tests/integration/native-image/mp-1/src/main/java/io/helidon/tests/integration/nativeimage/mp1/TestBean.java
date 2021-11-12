@@ -21,9 +21,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import javax.enterprise.context.Dependent;
-import javax.enterprise.inject.spi.BeanManager;
-import javax.inject.Inject;
+import jakarta.enterprise.context.Dependent;
+import jakarta.enterprise.inject.spi.BeanManager;
+import jakarta.inject.Inject;
 
 import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.tests.integration.nativeimage.mp1.other.BeanProcessor;

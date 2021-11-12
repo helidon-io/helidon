@@ -21,8 +21,6 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
-import javax.annotation.Priority;
-
 import io.helidon.common.LogConfig;
 import io.helidon.grpc.core.InterceptorPriorities;
 import io.helidon.grpc.server.test.Echo;
@@ -40,6 +38,7 @@ import io.grpc.ServerCallHandler;
 import io.grpc.ServerInterceptor;
 import io.opentracing.SpanContext;
 import io.opentracing.Tracer;
+import jakarta.annotation.Priority;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;

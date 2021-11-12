@@ -17,9 +17,9 @@ package io.helidon.common.reactive;
 
 import java.util.function.Function;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class SingleComposeTest {
 

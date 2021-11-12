@@ -24,12 +24,12 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
-import javax.json.JsonArray;
-import javax.json.JsonObject;
-import javax.json.JsonString;
-import javax.json.JsonValue;
-
 import io.helidon.config.metadata.ConfiguredOption;
+
+import jakarta.json.JsonArray;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonString;
+import jakarta.json.JsonValue;
 
 final class ConfiguredType {
     private final Set<ConfiguredProperty> allProperties = new HashSet<>();

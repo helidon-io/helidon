@@ -21,17 +21,16 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-import javax.jms.Destination;
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.MessageConsumer;
-import javax.jms.MessageProducer;
-import javax.jms.TextMessage;
+import jakarta.jms.Destination;
+import jakarta.jms.JMSException;
+import jakarta.jms.Message;
+import jakarta.jms.MessageConsumer;
+import jakarta.jms.MessageProducer;
+import jakarta.jms.TextMessage;
+import org.hamcrest.Matchers;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import org.hamcrest.Matchers;
 
 public abstract class AbstractMPTest extends AbstractJmsTest {
 

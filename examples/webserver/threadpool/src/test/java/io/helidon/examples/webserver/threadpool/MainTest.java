@@ -19,10 +19,6 @@ package io.helidon.examples.webserver.threadpool;
 import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
-import javax.json.Json;
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObject;
-
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.media.jsonp.JsonpSupport;
@@ -30,6 +26,9 @@ import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientResponse;
 import io.helidon.webserver.WebServer;
 
+import jakarta.json.Json;
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonObject;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;

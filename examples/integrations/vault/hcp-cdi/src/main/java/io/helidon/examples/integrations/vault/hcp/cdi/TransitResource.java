@@ -16,13 +16,6 @@
 
 package io.helidon.examples.integrations.vault.hcp.cdi;
 
-import javax.inject.Inject;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.core.Response;
-
 import io.helidon.common.Base64Value;
 import io.helidon.integrations.vault.secrets.transit.CreateKey;
 import io.helidon.integrations.vault.secrets.transit.Decrypt;
@@ -37,6 +30,13 @@ import io.helidon.integrations.vault.secrets.transit.Verify;
 import io.helidon.integrations.vault.sys.DisableEngine;
 import io.helidon.integrations.vault.sys.EnableEngine;
 import io.helidon.integrations.vault.sys.Sys;
+
+import jakarta.inject.Inject;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.core.Response;
 
 /**
  * JAX-RS resource for Transit secrets engine operations.

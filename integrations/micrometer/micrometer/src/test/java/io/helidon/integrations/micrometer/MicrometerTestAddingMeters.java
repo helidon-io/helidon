@@ -18,7 +18,6 @@ package io.helidon.integrations.micrometer;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.prometheus.PrometheusConfig;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
-
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;

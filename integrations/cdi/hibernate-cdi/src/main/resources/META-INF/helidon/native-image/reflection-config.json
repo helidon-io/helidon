@@ -1,7 +1,7 @@
 {
     "annotated": [],
     "class-hierarchy": [
-        "javax.enterprise.inject.spi.BeanManager",
+        "jakarta.enterprise.inject.spi.BeanManager",
         "org.hibernate.annotations.common.reflection.java.JavaXClass",
         "org.hibernate.internal.CoreMessageLogger",
         "org.hibernate.persister.entity.EntityPersister",

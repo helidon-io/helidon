@@ -21,7 +21,7 @@ module io.helidon.integrations.micrometer {
 
     requires java.logging;
 
-    requires static java.annotation;
+    requires static jakarta.annotation;
 
     requires io.helidon.common.http;
     requires io.helidon.servicecommon.rest;

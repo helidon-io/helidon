@@ -20,8 +20,8 @@ import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.pki.KeyConfig;
-import io.helidon.webclient.WebClientTls;
 import io.helidon.webclient.WebClient;
+import io.helidon.webclient.WebClientTls;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;

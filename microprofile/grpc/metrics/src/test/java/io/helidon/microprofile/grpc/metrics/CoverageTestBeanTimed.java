@@ -16,6 +16,7 @@
 package io.helidon.microprofile.grpc.metrics;
 
 import io.helidon.microprofile.grpc.core.GrpcMethod;
+
 import org.eclipse.microprofile.metrics.annotation.Timed;
 
 public class CoverageTestBeanTimed extends CoverageTestBeanBase {

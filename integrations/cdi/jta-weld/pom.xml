@@ -90,8 +90,7 @@
         <!-- Compile-scoped dependencies. -->
         <dependency>
             <groupId>org.jboss.narayana.jta</groupId>
-            <artifactId>cdi</artifactId>
-            <scope>compile</scope>
+            <artifactId>narayana-jta-jakarta</artifactId>
         </dependency>
         <dependency>
             <groupId>org.jboss.weld</groupId>

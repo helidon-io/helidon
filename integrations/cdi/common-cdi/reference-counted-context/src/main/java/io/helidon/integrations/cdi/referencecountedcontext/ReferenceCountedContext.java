@@ -20,10 +20,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-import javax.enterprise.context.spi.AlterableContext;
-import javax.enterprise.context.spi.Contextual;
-import javax.enterprise.context.spi.CreationalContext;
-import javax.enterprise.inject.spi.BeanManager;
+import jakarta.enterprise.context.spi.AlterableContext;
+import jakarta.enterprise.context.spi.Contextual;
+import jakarta.enterprise.context.spi.CreationalContext;
+import jakarta.enterprise.inject.spi.BeanManager;
 
 /**
  * A somewhat special-purpose {@link AlterableContext} that
@@ -350,7 +350,7 @@ public final class ReferenceCountedContext implements AlterableContext {
      * <p>Strictly speaking, this method may return {@code null} if
      * the {@link ReferenceCountedExtension} has been deliberately
      * disabled and hence has not had a chance to {@linkplain
-     * javax.enterprise.inject.spi.AfterBeanDiscovery#addContext(Context)
+     * jakarta.enterprise.inject.spi.AfterBeanDiscovery#addContext(Context)
      * install} a {@link ReferenceCountedContext}.  In all normal
      * usage this method will not return {@code null}.</p>
      *

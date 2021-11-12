@@ -15,9 +15,9 @@
  */
 package io.helidon.tests.functional.jaxrs.subresource;
 
-import javax.annotation.security.PermitAll;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
+import jakarta.annotation.security.PermitAll;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
 
 /**
  * A sub-sub resource.

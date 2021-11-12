@@ -40,7 +40,7 @@ import org.reactivestreams.Subscriber;
 
 /**
  * Method signature resolving utility, returns {@link MethodSignatureType} for any recognized signature.
- * Throws {@link javax.enterprise.inject.spi.DeploymentException} for any un-recognized signature.
+ * Throws {@link jakarta.enterprise.inject.spi.DeploymentException} for any un-recognized signature.
  */
 final class MethodSignatureResolver {
     private final Class<?> returnType;
@@ -197,12 +197,12 @@ final class MethodSignatureResolver {
 
     /**
      * Returns {@link MethodSignatureType} for any recognized signature.
-     * Throws {@link javax.enterprise.inject.spi.DeploymentException}
+     * Throws {@link jakarta.enterprise.inject.spi.DeploymentException}
      * for any un-recognized signature.
      *
      * @return {@link MethodSignatureType}
      * of recognized signature
-     * @throws javax.enterprise.inject.spi.DeploymentException for un-recognized signature
+     * @throws jakarta.enterprise.inject.spi.DeploymentException for un-recognized signature
      */
     Optional<MethodSignatureType> resolve() {
         return resolveRules

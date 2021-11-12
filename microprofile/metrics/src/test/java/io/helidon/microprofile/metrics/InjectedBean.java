@@ -16,9 +16,8 @@
 
 package io.helidon.microprofile.metrics;
 
-import javax.enterprise.context.Dependent;
-import javax.inject.Inject;
-
+import jakarta.enterprise.context.Dependent;
+import jakarta.inject.Inject;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Histogram;

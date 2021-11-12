@@ -23,8 +23,8 @@ import java.util.stream.Stream;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.webclient.WebClientTls;
 import io.helidon.webclient.WebClient;
+import io.helidon.webclient.WebClientTls;
 import io.helidon.webserver.WebServer;
 
 import org.junit.jupiter.api.AfterAll;

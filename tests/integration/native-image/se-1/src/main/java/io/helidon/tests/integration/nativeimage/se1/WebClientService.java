@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.logging.Logger;
 
-import javax.json.JsonValue;
+import jakarta.json.JsonValue;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.http.Http;

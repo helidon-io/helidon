@@ -19,12 +19,12 @@ package io.helidon.integrations.oci.objectstorage;
 import java.time.Instant;
 import java.util.Optional;
 
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObject;
-
 import io.helidon.integrations.oci.connect.OciApiException;
 import io.helidon.integrations.oci.connect.OciRequestBase;
 import io.helidon.integrations.oci.connect.OciResponseParser;
+
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonObject;
 
 /**
  * Get Bucket request and response.

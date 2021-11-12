@@ -20,12 +20,6 @@ import java.net.URI;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.context.Destroyed;
-import javax.enterprise.event.Observes;
-import javax.enterprise.inject.Produces;
-import javax.inject.Inject;
-
 import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
 import io.helidon.lra.coordinator.CoordinatorService;
@@ -33,6 +27,12 @@ import io.helidon.microprofile.lra.CoordinatorLocatorService;
 import io.helidon.microprofile.server.RoutingName;
 import io.helidon.microprofile.server.RoutingPath;
 import io.helidon.microprofile.server.ServerCdiExtension;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.Destroyed;
+import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.Produces;
+import jakarta.inject.Inject;
 
 @ApplicationScoped
 public class CoordinatorAppService {

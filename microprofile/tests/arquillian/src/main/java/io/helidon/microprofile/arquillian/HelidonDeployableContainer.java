@@ -46,12 +46,11 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
-import javax.enterprise.inject.se.SeContainer;
-import javax.enterprise.inject.spi.CDI;
-import javax.enterprise.inject.spi.DefinitionException;
-
 import io.helidon.config.mp.MpConfigSources;
 
+import jakarta.enterprise.inject.se.SeContainer;
+import jakarta.enterprise.inject.spi.CDI;
+import jakarta.enterprise.inject.spi.DefinitionException;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigBuilder;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
@@ -202,8 +201,8 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
         if (t == null) {
             return Optional.empty();
         }
-        if (javax.enterprise.inject.spi.DeploymentException.class.isAssignableFrom(t.getClass())) {
-            return Optional.of((javax.enterprise.inject.spi.DeploymentException) t);
+        if (jakarta.enterprise.inject.spi.DeploymentException.class.isAssignableFrom(t.getClass())) {
+            return Optional.of((jakarta.enterprise.inject.spi.DeploymentException) t);
         }
         if (IllegalStateException.class.isAssignableFrom(t.getClass())) {
             return Optional.of((IllegalStateException) t);

@@ -16,9 +16,9 @@
 
 package io.helidon.microprofile.metrics;
 
-import javax.annotation.Priority;
-import javax.inject.Inject;
-import javax.interceptor.Interceptor;
+import jakarta.annotation.Priority;
+import jakarta.inject.Inject;
+import jakarta.interceptor.Interceptor;
 
 /**
  * Interceptor for synthetic {@link SyntheticSimplyTimed} annotations.

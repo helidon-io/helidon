@@ -15,12 +15,12 @@
  */
 package io.helidon.common.reactive;
 
+import java.util.concurrent.Flow;
+import java.util.stream.IntStream;
+
 import org.reactivestreams.tck.TestEnvironment;
 import org.reactivestreams.tck.flow.FlowPublisherVerification;
 import org.testng.annotations.Test;
-
-import java.util.concurrent.Flow;
-import java.util.stream.IntStream;
 
 @Test
 public class MultiDropWhileTckTest extends FlowPublisherVerification<Integer> {

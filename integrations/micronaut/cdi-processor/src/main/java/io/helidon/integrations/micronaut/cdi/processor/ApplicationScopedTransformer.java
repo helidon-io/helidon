@@ -19,12 +19,11 @@ package io.helidon.integrations.micronaut.cdi.processor;
 import java.lang.annotation.Annotation;
 import java.util.List;
 
-import javax.inject.Scope;
-import javax.inject.Singleton;
-
 import io.micronaut.core.annotation.AnnotationValue;
 import io.micronaut.inject.annotation.NamedAnnotationTransformer;
 import io.micronaut.inject.visitor.VisitorContext;
+import jakarta.inject.Scope;
+import jakarta.inject.Singleton;
 
 /**
  * Transforms CDI ApplicationScoped annotation into Micronaut Singleton.
@@ -32,7 +31,7 @@ import io.micronaut.inject.visitor.VisitorContext;
 public class ApplicationScopedTransformer implements NamedAnnotationTransformer {
     @Override
     public String getName() {
-        return "javax.enterprise.context.ApplicationScoped";
+        return "jakarta.enterprise.context.ApplicationScoped";
     }
 
     @Override

@@ -19,8 +19,6 @@ package services;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import javax.enterprise.context.ApplicationScoped;
-
 import io.helidon.grpc.examples.common.Strings.StringMessage;
 import io.helidon.grpc.server.CollectingObserver;
 import io.helidon.microprofile.grpc.core.Bidirectional;
@@ -30,6 +28,7 @@ import io.helidon.microprofile.grpc.core.ServerStreaming;
 import io.helidon.microprofile.grpc.core.Unary;
 
 import io.grpc.stub.StreamObserver;
+import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Metered;
 import org.eclipse.microprofile.metrics.annotation.Timed;

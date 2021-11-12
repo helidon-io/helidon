@@ -23,14 +23,13 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.SubmissionPublisher;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.jms.JMSException;
-import javax.jms.MapMessage;
-
 import io.helidon.common.reactive.BufferedEmittingPublisher;
 import io.helidon.common.reactive.Multi;
 import io.helidon.messaging.connectors.aq.AqMessage;
 
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.jms.JMSException;
+import jakarta.jms.MapMessage;
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;

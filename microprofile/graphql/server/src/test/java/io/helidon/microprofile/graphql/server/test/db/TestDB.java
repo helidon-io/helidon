@@ -34,16 +34,16 @@ import java.util.Random;
 import java.util.UUID;
 
 import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithEnumName;
-import io.helidon.microprofile.graphql.server.test.types.DateTimePojo;
-import io.helidon.microprofile.graphql.server.test.types.NullPOJO;
-import io.helidon.microprofile.graphql.server.test.types.TypeWithNameAndJsonbProperty;
-import javax.enterprise.context.ApplicationScoped;
-
 import io.helidon.microprofile.graphql.server.test.types.Address;
+import io.helidon.microprofile.graphql.server.test.types.DateTimePojo;
 import io.helidon.microprofile.graphql.server.test.types.DefaultValuePOJO;
 import io.helidon.microprofile.graphql.server.test.types.MultiLevelListsAndArrays;
+import io.helidon.microprofile.graphql.server.test.types.NullPOJO;
 import io.helidon.microprofile.graphql.server.test.types.Person;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContact;
+import io.helidon.microprofile.graphql.server.test.types.TypeWithNameAndJsonbProperty;
+
+import jakarta.enterprise.context.ApplicationScoped;
 
 /**
  * An injectable datasource for integration tests.

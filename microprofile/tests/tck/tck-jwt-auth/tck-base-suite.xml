@@ -26,7 +26,7 @@
                 <include name="jaxrs" description="JAX-RS invocation tests"/>
                 <include name="cdi" description="Base CDI injection of ClaimValues"/>
                 <include name="cdi-json" description="CDI injection of JSON-P values"/>
-                <include name="cdi-provider" description="CDI injection of javax.inject.Provider values"/>
+                <include name="cdi-provider" description="CDI injection of jakarta.inject.Provider values"/>
                 <include name="config" description="Validate configuration using MP-config"/>
             </define>
             <define name="excludes">

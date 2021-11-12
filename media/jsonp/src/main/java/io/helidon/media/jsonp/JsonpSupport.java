@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,16 +20,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.json.Json;
-import javax.json.JsonReaderFactory;
-import javax.json.JsonStructure;
-import javax.json.JsonWriterFactory;
-
 import io.helidon.common.LazyValue;
 import io.helidon.media.common.MediaSupport;
 import io.helidon.media.common.MessageBodyReader;
 import io.helidon.media.common.MessageBodyStreamWriter;
 import io.helidon.media.common.MessageBodyWriter;
+
+import jakarta.json.Json;
+import jakarta.json.JsonReaderFactory;
+import jakarta.json.JsonStructure;
+import jakarta.json.JsonWriterFactory;
 
 /**
  * Support for JSON Processing integration.
@@ -204,7 +204,7 @@ public final class JsonpSupport implements MediaSupport {
      * Return JSON-P stream writer.
      * <p>
      * This stream writer supports {@link java.util.concurrent.Flow.Publisher publishers}
-     * of {@link javax.json.JsonStructure} (such as {@link javax.json.JsonObject}),
+     * of {@link jakarta.json.JsonStructure} (such as {@link jakarta.json.JsonObject}),
      * writing them as an array of JSONs.
      *
      * @return JSON processing stream writer.
@@ -217,7 +217,7 @@ public final class JsonpSupport implements MediaSupport {
      * Return JSON-P stream writer.
      * <p>
      * This stream writer supports {@link java.util.concurrent.Flow.Publisher publishers}
-     * of {@link javax.json.JsonStructure} (such as {@link javax.json.JsonObject}),
+     * of {@link jakarta.json.JsonStructure} (such as {@link jakarta.json.JsonObject}),
      * writing them as separate entries in the following format:
      * <pre><code>
      * data: {"json":"data"}\n
@@ -238,7 +238,7 @@ public final class JsonpSupport implements MediaSupport {
      * Return JSON-P stream writer.
      * <p>
      * This stream writer supports {@link java.util.concurrent.Flow.Publisher publishers}
-     * of {@link javax.json.JsonStructure} (such as {@link javax.json.JsonObject}),
+     * of {@link jakarta.json.JsonStructure} (such as {@link jakarta.json.JsonObject}),
      * writing them as separate entries in the following format:
      * <pre><code>
      * {"json":"data"}\n

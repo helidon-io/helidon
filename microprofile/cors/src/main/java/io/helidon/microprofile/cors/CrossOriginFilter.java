@@ -20,23 +20,22 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Optional;
 
-import javax.annotation.Priority;
-import javax.ws.rs.OPTIONS;
-import javax.ws.rs.Path;
-import javax.ws.rs.Priorities;
-import javax.ws.rs.container.ContainerRequestContext;
-import javax.ws.rs.container.ContainerRequestFilter;
-import javax.ws.rs.container.ContainerResponseContext;
-import javax.ws.rs.container.ContainerResponseFilter;
-import javax.ws.rs.container.ResourceInfo;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.Response;
-
 import io.helidon.config.Config;
 import io.helidon.microprofile.cors.CorsSupportMp.RequestAdapterMp;
 import io.helidon.microprofile.cors.CorsSupportMp.ResponseAdapterMp;
 import io.helidon.webserver.cors.CrossOriginConfig;
 
+import jakarta.annotation.Priority;
+import jakarta.ws.rs.OPTIONS;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Priorities;
+import jakarta.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.container.ContainerRequestFilter;
+import jakarta.ws.rs.container.ContainerResponseContext;
+import jakarta.ws.rs.container.ContainerResponseFilter;
+import jakarta.ws.rs.container.ResourceInfo;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.config.ConfigProvider;
 
 /**

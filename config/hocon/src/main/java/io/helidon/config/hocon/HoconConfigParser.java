@@ -20,8 +20,6 @@ import java.io.InputStreamReader;
 import java.util.Objects;
 import java.util.Set;
 
-import javax.annotation.Priority;
-
 import io.helidon.config.ConfigException;
 import io.helidon.config.spi.ConfigNode.ListNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
@@ -33,6 +31,7 @@ import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigList;
 import com.typesafe.config.ConfigObject;
 import com.typesafe.config.ConfigResolveOptions;
+import jakarta.annotation.Priority;
 
 /**
  * Typesafe (Lightbend) Config (HOCON) {@link ConfigParser} implementation that supports following media types:

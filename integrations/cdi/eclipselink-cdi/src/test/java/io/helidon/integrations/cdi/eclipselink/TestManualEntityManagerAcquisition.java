@@ -15,14 +15,13 @@
  */
 package io.helidon.integrations.cdi.eclipselink;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.se.SeContainer;
-import javax.enterprise.inject.se.SeContainerInitializer;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
-
 import io.helidon.integrations.datasource.hikaricp.cdi.HikariCPBackedDataSourceExtension;
 
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.se.SeContainer;
+import jakarta.enterprise.inject.se.SeContainerInitializer;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.Persistence;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

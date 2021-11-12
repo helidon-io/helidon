@@ -32,13 +32,13 @@ import io.helidon.messaging.Channel;
 import io.helidon.messaging.Messaging;
 import io.helidon.messaging.connectors.jms.JmsConnector;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.collection.IsMapContaining.hasEntry;
-import static org.junit.jupiter.api.Assertions.fail;
-
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.collection.IsMapContaining.hasEntry;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class ConfigTest {
 

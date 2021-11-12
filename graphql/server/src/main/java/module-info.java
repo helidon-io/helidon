@@ -20,7 +20,7 @@
 module io.helidon.graphql.server {
     requires java.logging;
 
-    requires java.json.bind;
+    requires jakarta.json.bind;
     requires org.eclipse.yasson;
 
     requires io.helidon.common.configurable;

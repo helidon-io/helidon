@@ -19,9 +19,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.json.Json;
-import javax.json.JsonReaderFactory;
-
 import io.helidon.dbclient.DbStatement;
 import io.helidon.dbclient.DbStatementType;
 import io.helidon.dbclient.common.AbstractStatement;
@@ -29,6 +26,8 @@ import io.helidon.dbclient.common.DbStatementContext;
 import io.helidon.dbclient.mongodb.MongoDbTransaction.TransactionManager;
 
 import com.mongodb.reactivestreams.client.MongoDatabase;
+import jakarta.json.Json;
+import jakarta.json.JsonReaderFactory;
 import org.bson.Document;
 
 /**

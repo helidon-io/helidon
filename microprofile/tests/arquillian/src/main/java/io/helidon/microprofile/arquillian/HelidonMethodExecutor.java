@@ -28,10 +28,9 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import javax.enterprise.context.control.RequestContextController;
-
 import io.helidon.microprofile.arquillian.HelidonContainerExtension.HelidonCDIInjectionEnricher;
 
+import jakarta.enterprise.context.control.RequestContextController;
 import org.jboss.arquillian.container.test.spi.ContainerMethodExecutor;
 import org.jboss.arquillian.test.spi.TestMethodExecutor;
 import org.jboss.arquillian.test.spi.TestResult;

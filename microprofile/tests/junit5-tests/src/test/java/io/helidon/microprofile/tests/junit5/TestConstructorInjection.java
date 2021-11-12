@@ -16,10 +16,9 @@
 
 package io.helidon.microprofile.tests.junit5;
 
-import javax.enterprise.inject.Produces;
-import javax.inject.Inject;
-import javax.inject.Named;
-
+import jakarta.enterprise.inject.Produces;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;

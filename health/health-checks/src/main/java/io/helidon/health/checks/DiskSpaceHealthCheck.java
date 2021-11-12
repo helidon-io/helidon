@@ -25,13 +25,12 @@ import java.nio.file.Paths;
 import java.util.Formatter;
 import java.util.Locale;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
-
 import io.helidon.config.Config;
 import io.helidon.health.HealthCheckException;
 import io.helidon.health.common.BuiltInHealthCheck;
 
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
@@ -76,7 +75,7 @@ public final class DiskSpaceHealthCheck implements HealthCheck {
     public static final String DEFAULT_PATH = ".";
     /**
      * Default threshold percent, when this check starts reporting
-     * {@link org.eclipse.microprofile.health.HealthCheckResponse.State#DOWN}.
+     * {@link org.eclipse.microprofile.health.HealthCheckResponse.Status#DOWN}.
      */
     public static final double DEFAULT_THRESHOLD = 99.999;
 
@@ -193,7 +192,7 @@ public final class DiskSpaceHealthCheck implements HealthCheck {
         Formatter formatter = new Formatter(Locale.US);
 
         return HealthCheckResponse.named("diskSpace")
-                .state(threshold >= usedInBytes)
+                .status(threshold >= usedInBytes)
                 .withData("percentFree", formatter.format("%.2f%%", 100 * ((double) diskFreeInBytes / totalInBytes)).toString())
                 .withData("free", DiskSpaceHealthCheck.format(diskFreeInBytes))
                 .withData("freeBytes", diskFreeInBytes)

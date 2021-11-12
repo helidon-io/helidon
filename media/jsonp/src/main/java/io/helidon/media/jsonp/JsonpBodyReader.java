@@ -21,11 +21,6 @@ import java.nio.charset.Charset;
 import java.util.Objects;
 import java.util.concurrent.Flow.Publisher;
 
-import javax.json.JsonException;
-import javax.json.JsonReader;
-import javax.json.JsonReaderFactory;
-import javax.json.JsonStructure;
-
 import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.mapper.Mapper;
@@ -33,6 +28,11 @@ import io.helidon.common.reactive.Single;
 import io.helidon.media.common.ContentReaders;
 import io.helidon.media.common.MessageBodyReader;
 import io.helidon.media.common.MessageBodyReaderContext;
+
+import jakarta.json.JsonException;
+import jakarta.json.JsonReader;
+import jakarta.json.JsonReaderFactory;
+import jakarta.json.JsonStructure;
 
 /**
  * Message body reader for {@link JsonStructure} sub-classes (JSON-P).

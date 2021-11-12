@@ -19,9 +19,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.Flow.Publisher;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import javax.json.JsonStructure;
-import javax.json.JsonWriterFactory;
-
 import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.MediaType;
@@ -30,8 +27,11 @@ import io.helidon.media.common.MessageBodyStreamWriter;
 import io.helidon.media.common.MessageBodyWriterContext;
 import io.helidon.media.jsonp.JsonpBodyWriter.JsonStructureToChunks;
 
+import jakarta.json.JsonStructure;
+import jakarta.json.JsonWriterFactory;
+
 /**
- * Message body writer for {@link javax.json.JsonStructure} sub-classes (JSON-P).
+ * Message body writer for {@link jakarta.json.JsonStructure} sub-classes (JSON-P).
  */
 class JsonpBodyStreamWriter implements MessageBodyStreamWriter<JsonStructure> {
     private static final byte[] ARRAY_JSON_END_BYTES = "]".getBytes(StandardCharsets.UTF_8);

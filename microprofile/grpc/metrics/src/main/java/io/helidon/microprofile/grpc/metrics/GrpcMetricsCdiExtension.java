@@ -20,18 +20,17 @@ import java.lang.annotation.Annotation;
 import java.util.EnumMap;
 import java.util.Map;
 
-import javax.annotation.Priority;
-import javax.enterprise.event.Observes;
-import javax.enterprise.inject.spi.Extension;
-import javax.enterprise.inject.spi.ProcessAnnotatedType;
-import javax.enterprise.inject.spi.WithAnnotations;
-import javax.enterprise.inject.spi.configurator.AnnotatedMethodConfigurator;
-import javax.interceptor.Interceptor;
-
 import io.helidon.microprofile.grpc.core.AnnotatedMethod;
 import io.helidon.microprofile.grpc.core.Grpc;
 import io.helidon.microprofile.grpc.core.GrpcMethod;
 
+import jakarta.annotation.Priority;
+import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.spi.Extension;
+import jakarta.enterprise.inject.spi.ProcessAnnotatedType;
+import jakarta.enterprise.inject.spi.WithAnnotations;
+import jakarta.enterprise.inject.spi.configurator.AnnotatedMethodConfigurator;
+import jakarta.interceptor.Interceptor;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.annotation.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.annotation.Counted;

@@ -19,14 +19,6 @@ package io.helidon.examples.integrations.vault.hcp.reactive;
 import java.util.Map;
 import java.util.Optional;
 
-import javax.inject.Inject;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.core.Response;
-
 import io.helidon.integrations.vault.Secret;
 import io.helidon.integrations.vault.secrets.kv1.CreateKv1;
 import io.helidon.integrations.vault.secrets.kv1.DeleteKv1;
@@ -35,6 +27,14 @@ import io.helidon.integrations.vault.secrets.kv1.Kv1SecretsRx;
 import io.helidon.integrations.vault.sys.DisableEngine;
 import io.helidon.integrations.vault.sys.EnableEngine;
 import io.helidon.integrations.vault.sys.Sys;
+
+import jakarta.inject.Inject;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.core.Response;
 
 /**
  * JAX-RS resource for Key/Value version 1 secrets engine operations.

@@ -17,12 +17,11 @@
 package io.helidon.microprofile.lra.resources;
 
 import java.net.URI;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 
 public enum Work {
 

@@ -33,6 +33,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -64,7 +65,7 @@ import org.eclipse.microprofile.metrics.Timer;
  * @param <M> general type of metric implementation supported by an implementation of this class (e.g., {@code
  * HelidonMetric}
  */
-public abstract class AbstractRegistry<M extends HelidonMetric> extends MetricRegistry {
+public abstract class AbstractRegistry<M extends HelidonMetric> implements MetricRegistry {
 
     private static final Logger LOGGER = Logger.getLogger(AbstractRegistry.class.getName());
 
@@ -236,6 +237,136 @@ public abstract class AbstractRegistry<M extends HelidonMetric> extends MetricRe
     @Override
     public SimpleTimer simpleTimer(Metadata metadata, Tag... tags) {
         return getOrRegisterMetric(metadata, SimpleTimer.class, tags);
+    }
+
+    /*
+     * TODO 3.0.0-JAKARTA
+     * all methods below are implementations of required methods from the interface
+     * of new metrics API
+     */
+    @Override
+    public Counter counter(MetricID metricID) {
+        return null;
+    }
+
+    @Override
+    public ConcurrentGauge concurrentGauge(MetricID metricID) {
+        return null;
+    }
+
+    @Override
+    public <T, R extends Number> Gauge<R> gauge(String name, T object, Function<T, R> func, Tag... tags) {
+        return null;
+    }
+
+    @Override
+    public <T, R extends Number> Gauge<R> gauge(MetricID metricID, T object, Function<T, R> func) {
+        return null;
+    }
+
+    @Override
+    public <T, R extends Number> Gauge<R> gauge(Metadata metadata, T object, Function<T, R> func, Tag... tags) {
+        return null;
+    }
+
+    @Override
+    public <T extends Number> Gauge<T> gauge(String name, Supplier<T> supplier, Tag... tags) {
+        return null;
+    }
+
+    @Override
+    public <T extends Number> Gauge<T> gauge(MetricID metricID, Supplier<T> supplier) {
+        return null;
+    }
+
+    @Override
+    public <T extends Number> Gauge<T> gauge(Metadata metadata, Supplier<T> supplier, Tag... tags) {
+        return null;
+    }
+
+    @Override
+    public Histogram histogram(MetricID metricID) {
+        return null;
+    }
+
+    @Override
+    public Meter meter(MetricID metricID) {
+        return null;
+    }
+
+    @Override
+    public Timer timer(MetricID metricID) {
+        return null;
+    }
+
+    @Override
+    public SimpleTimer simpleTimer(MetricID metricID) {
+        return null;
+    }
+
+    @Override
+    public Metric getMetric(MetricID metricID) {
+        return null;
+    }
+
+    @Override
+    public <T extends Metric> T getMetric(MetricID metricID, Class<T> asType) {
+        return null;
+    }
+
+    @Override
+    public Counter getCounter(MetricID metricID) {
+        return null;
+    }
+
+    @Override
+    public ConcurrentGauge getConcurrentGauge(MetricID metricID) {
+        return null;
+    }
+
+    @Override
+    public Gauge<?> getGauge(MetricID metricID) {
+        return null;
+    }
+
+    @Override
+    public Histogram getHistogram(MetricID metricID) {
+        return null;
+    }
+
+    @Override
+    public Meter getMeter(MetricID metricID) {
+        return null;
+    }
+
+    @Override
+    public Timer getTimer(MetricID metricID) {
+        return null;
+    }
+
+    @Override
+    public SimpleTimer getSimpleTimer(MetricID metricID) {
+        return null;
+    }
+
+    @Override
+    public Metadata getMetadata(String name) {
+        return null;
+    }
+
+    @Override
+    public SortedMap<MetricID, Metric> getMetrics(MetricFilter filter) {
+        return null;
+    }
+
+    @Override
+    public <T extends Metric> SortedMap<MetricID, T> getMetrics(Class<T> ofType, MetricFilter filter) {
+        return null;
+    }
+
+    @Override
+    public Type getType() {
+        return null;
     }
 
     /**
@@ -519,8 +650,9 @@ public abstract class AbstractRegistry<M extends HelidonMetric> extends MetricRe
                 && a.getTypeRaw().equals(b.getTypeRaw())
                 && a.getDisplayName().equals(b.getDisplayName())
                 && Objects.equals(a.getDescription(), b.getDescription())
-                && Objects.equals(a.getUnit(), b.getUnit())
-                && (a.isReusable() == b.isReusable());
+                && Objects.equals(a.getUnit(), b.getUnit());
+                // TODO 3.0.0-JAKARTA
+                // && (a.isReusable() == b.isReusable());
     }
 
     // -- Private methods -----------------------------------------------------

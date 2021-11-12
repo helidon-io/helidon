@@ -21,7 +21,7 @@ module io.helidon.dbclient.mongodb {
     requires java.logging;
     requires java.sql;
 
-    requires transitive java.json;
+    requires transitive jakarta.json;
     requires mongodb.driver.reactivestreams;
     requires org.mongodb.driver.core;
     requires org.mongodb.bson;

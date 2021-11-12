@@ -18,17 +18,11 @@ package io.helidon.microprofile.grpc.server;
 
 import java.util.Map;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Instance;
-import javax.enterprise.inject.spi.BeanManager;
-import javax.enterprise.inject.spi.CDI;
-import javax.inject.Inject;
-
 import io.helidon.grpc.server.GrpcServer;
 import io.helidon.grpc.server.GrpcService;
 import io.helidon.grpc.server.ServiceDescriptor;
-import io.helidon.microprofile.grpc.core.InProcessGrpcChannel;
 import io.helidon.microprofile.grpc.core.Grpc;
+import io.helidon.microprofile.grpc.core.InProcessGrpcChannel;
 import io.helidon.microprofile.grpc.core.Unary;
 import io.helidon.microprofile.grpc.server.spi.GrpcMpContext;
 import io.helidon.microprofile.grpc.server.spi.GrpcMpExtension;
@@ -40,8 +34,12 @@ import io.helidon.microprofile.server.Server;
 import io.grpc.Channel;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.stub.StreamObserver;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Instance;
+import jakarta.enterprise.inject.spi.BeanManager;
+import jakarta.enterprise.inject.spi.CDI;
+import jakarta.inject.Inject;
 import org.hamcrest.CoreMatchers;
-
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;

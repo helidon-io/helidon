@@ -1403,7 +1403,7 @@ public interface Config {
          * loaded as a {@link java.util.ServiceLoader service}.
          * <p>
          * Order of configuration mapper providers loaded as a service
-         * is defined by {@link javax.annotation.Priority} annotation.
+         * is defined by {@link jakarta.annotation.Priority} annotation.
          * <p>
          * Automatic registration of mappers as a service is enabled by default.
          *
@@ -1431,7 +1431,7 @@ public interface Config {
         /**
          * Disables automatic registration of parsers loaded as a {@link java.util.ServiceLoader service}.
          * <p>
-         * Order of configuration parsers loaded as a service is defined by {@link javax.annotation.Priority} annotation.
+         * Order of configuration parsers loaded as a service is defined by {@link jakarta.annotation.Priority} annotation.
          * <p>
          * Automatic registration of parsers as a service is enabled by default.
          *
@@ -1510,7 +1510,7 @@ public interface Config {
         /**
          * Disables automatic registration of filters loaded as a {@link java.util.ServiceLoader service}.
          * <p>
-         * Order of configuration filters loaded as a service is defined by {@link javax.annotation.Priority} annotation.
+         * Order of configuration filters loaded as a service is defined by {@link jakarta.annotation.Priority} annotation.
          * <p>
          * Automatic registration of filters as a service is enabled by default.
          *

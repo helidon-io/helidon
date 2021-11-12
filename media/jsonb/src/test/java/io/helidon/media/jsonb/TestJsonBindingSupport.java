@@ -18,9 +18,6 @@ package io.helidon.media.jsonb;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import javax.json.bind.Jsonb;
-import javax.json.bind.JsonbBuilder;
-
 import io.helidon.common.GenericType;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;

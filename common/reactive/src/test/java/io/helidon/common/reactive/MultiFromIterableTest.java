@@ -15,15 +15,16 @@
  */
 package io.helidon.common.reactive;
 
-import org.junit.jupiter.api.Test;
-
 import java.util.Collections;
 import java.util.Iterator;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
 
 public class MultiFromIterableTest {

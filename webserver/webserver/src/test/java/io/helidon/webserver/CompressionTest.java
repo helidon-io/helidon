@@ -16,7 +16,7 @@
 
 package io.helidon.webserver;
 
-import java.util.Arrays;;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -32,10 +32,10 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.webserver.TransferEncodingTest.cutHeaders;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsMapContaining.hasEntry;
-import static io.helidon.webserver.TransferEncodingTest.cutHeaders;
 
 /**
  * Tests support for compression in the webserver.

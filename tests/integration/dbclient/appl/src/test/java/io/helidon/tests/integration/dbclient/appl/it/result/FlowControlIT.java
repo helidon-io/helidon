@@ -18,7 +18,7 @@ package io.helidon.tests.integration.dbclient.appl.it.result;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.json.JsonObject;
+import jakarta.json.JsonObject;
 
 import io.helidon.tests.integration.dbclient.appl.it.LogData;
 import io.helidon.tests.integration.tools.client.HelidonProcessRunner;

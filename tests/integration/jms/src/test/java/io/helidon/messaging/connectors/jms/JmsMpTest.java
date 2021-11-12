@@ -24,10 +24,6 @@ import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import javax.enterprise.inject.spi.CDI;
-import javax.jms.JMSException;
-import javax.jms.TextMessage;
-
 import io.helidon.microprofile.config.ConfigCdiExtension;
 import io.helidon.microprofile.messaging.MessagingCdiExtension;
 import io.helidon.microprofile.tests.junit5.AddBean;
@@ -39,6 +35,10 @@ import io.helidon.microprofile.tests.junit5.AddExtensions;
 import io.helidon.microprofile.tests.junit5.DisableDiscovery;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 
+import jakarta.enterprise.inject.spi.CDI;
+import jakarta.jms.JMSException;
+import jakarta.jms.TextMessage;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 @HelidonTest
@@ -140,6 +140,7 @@ import org.junit.jupiter.api.Test;
         @AddConfig(key = "mp.messaging.outgoing.test-channel-derived-msg-toJms.type", value = "queue"),
         @AddConfig(key = "mp.messaging.outgoing.test-channel-derived-msg-toJms.destination", value = JmsMpTest.TEST_TOPIC_DERIVED_2),
 })
+@Disabled("3.0.0-JAKARTA")
 class JmsMpTest extends AbstractMPTest {
 
     static final String TEST_TOPIC_1 = "topic-1";

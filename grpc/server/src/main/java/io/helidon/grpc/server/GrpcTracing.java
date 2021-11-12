@@ -21,8 +21,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import javax.annotation.Priority;
-
 import io.helidon.grpc.core.ContextKeys;
 import io.helidon.grpc.core.InterceptorPriorities;
 
@@ -40,6 +38,7 @@ import io.opentracing.contrib.grpc.OpenTracingContextKey;
 import io.opentracing.contrib.grpc.OperationNameConstructor;
 import io.opentracing.propagation.Format;
 import io.opentracing.propagation.TextMapAdapter;
+import jakarta.annotation.Priority;
 
 /**
  * A {@link ServerInterceptor} that adds tracing to gRPC service calls.

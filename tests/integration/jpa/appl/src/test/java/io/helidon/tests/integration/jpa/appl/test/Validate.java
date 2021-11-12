@@ -18,9 +18,9 @@ package io.helidon.tests.integration.jpa.appl.test;
 import java.io.StringReader;
 import java.util.logging.Logger;
 
-import javax.json.Json;
-import javax.json.JsonArray;
-import javax.json.JsonObject;
+import jakarta.json.Json;
+import jakarta.json.JsonArray;
+import jakarta.json.JsonObject;
 
 import static org.junit.jupiter.api.Assertions.fail;
 

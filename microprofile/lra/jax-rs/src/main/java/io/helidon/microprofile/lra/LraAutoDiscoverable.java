@@ -23,7 +23,7 @@ import org.glassfish.jersey.internal.spi.AutoDiscoverable;
 public class LraAutoDiscoverable implements AutoDiscoverable {
 
     @Override
-    public void configure(javax.ws.rs.core.FeatureContext ctx) {
+    public void configure(jakarta.ws.rs.core.FeatureContext ctx) {
         ctx.register(JaxRsServerFilter.class)
                 .register(JaxRsClientFilter.class)
                 .register(StatusBodyMapper.class);

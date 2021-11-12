@@ -16,10 +16,6 @@
 
 package io.helidon.microprofile.graphql.server.test.queries;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
-import javax.json.bind.annotation.JsonbDateFormat;
-
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
@@ -27,6 +23,9 @@ import java.util.List;
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.types.SimpleDateTimePojo;
 
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.json.bind.annotation.JsonbDateFormat;
 import org.eclipse.microprofile.graphql.GraphQLApi;
 import org.eclipse.microprofile.graphql.Mutation;
 import org.eclipse.microprofile.graphql.Name;

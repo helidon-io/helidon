@@ -16,11 +16,11 @@
 
 package io.helidon.microprofile.grpc.core;
 
-import javax.enterprise.event.Observes;
-import javax.enterprise.inject.spi.AnnotatedType;
-import javax.enterprise.inject.spi.Extension;
-import javax.enterprise.inject.spi.ProcessAnnotatedType;
-import javax.enterprise.inject.spi.WithAnnotations;
+import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.spi.AnnotatedType;
+import jakarta.enterprise.inject.spi.Extension;
+import jakarta.enterprise.inject.spi.ProcessAnnotatedType;
+import jakarta.enterprise.inject.spi.WithAnnotations;
 
 /**
  * An extension that processes beans as they are discovered.
@@ -35,7 +35,7 @@ public class GrpcCdiExtension implements Extension {
      * This is required so that we can support the use-case where an interface has been
      * annotated with {@link Grpc} but the implementation class has not but the
      * implementation class is annotated with a bean discovering annotation such as
-     * {@link javax.enterprise.context.ApplicationScoped}. We need to make sure that the
+     * {@link jakarta.enterprise.context.ApplicationScoped}. We need to make sure that the
      * gRPC server can locate beans so we add the {@link Grpc} from the interface to
      * the bean.
      *

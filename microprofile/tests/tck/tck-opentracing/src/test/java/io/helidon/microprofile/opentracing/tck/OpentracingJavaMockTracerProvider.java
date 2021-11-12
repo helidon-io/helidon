@@ -16,10 +16,10 @@
 
 package io.helidon.microprofile.opentracing.tck;
 
-import javax.annotation.Priority;
-
 import io.helidon.tracing.TracerBuilder;
 import io.helidon.tracing.spi.TracerProvider;
+
+import jakarta.annotation.Priority;
 
 /**
  * Provider for opentracing TCK.

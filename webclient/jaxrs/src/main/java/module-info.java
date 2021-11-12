@@ -21,9 +21,9 @@ import org.glassfish.jersey.internal.spi.AutoDiscoverable;
  */
 module io.helidon.webclient.jaxrs {
     requires java.logging;
-    requires java.annotation;
+    requires jakarta.annotation;
 
-    requires java.ws.rs;
+    requires jakarta.ws.rs;
     requires io.helidon.jersey.client;
     requires io.helidon.jersey.common;
 

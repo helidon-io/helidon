@@ -16,16 +16,16 @@
 
 package io.helidon.microprofile.oidc;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.context.Initialized;
-import javax.enterprise.event.Observes;
-import javax.enterprise.inject.spi.BeanManager;
-import javax.enterprise.inject.spi.Extension;
-
 import io.helidon.config.Config;
 import io.helidon.microprofile.cdi.RuntimeStart;
 import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.security.providers.oidc.OidcSupport;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.Initialized;
+import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.spi.BeanManager;
+import jakarta.enterprise.inject.spi.Extension;
 
 /**
  * Microprofile extension that brings support for Open ID Connect.

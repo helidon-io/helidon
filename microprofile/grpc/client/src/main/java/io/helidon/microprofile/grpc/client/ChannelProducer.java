@@ -19,18 +19,17 @@ package io.helidon.microprofile.grpc.client;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Instance;
-import javax.enterprise.inject.Produces;
-import javax.enterprise.inject.spi.BeanManager;
-import javax.enterprise.inject.spi.InjectionPoint;
-import javax.inject.Inject;
-
 import io.helidon.config.Config;
 import io.helidon.grpc.client.GrpcChannelsProvider;
 import io.helidon.microprofile.grpc.core.InProcessGrpcChannel;
 
 import io.grpc.Channel;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Instance;
+import jakarta.enterprise.inject.Produces;
+import jakarta.enterprise.inject.spi.BeanManager;
+import jakarta.enterprise.inject.spi.InjectionPoint;
+import jakarta.inject.Inject;
 
 /**
  * A producer of gRPC {@link io.grpc.Channel Channels}.

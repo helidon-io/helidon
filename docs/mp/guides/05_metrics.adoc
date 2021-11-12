@@ -42,8 +42,8 @@ base_REST_request_total{class="io.helidon.examples.quickstart.mp.GreetResource",
 base_REST_request_elapsedTime_seconds{class="io.helidon.examples.quickstart.mp.GreetResource",method="getDefaultMessage"} 0.0
 base_REST_request_total{class="io.helidon.examples.quickstart.mp.GreetResource",method="getMessage_java.lang.String"} 0
 base_REST_request_elapsedTime_seconds{class="io.helidon.examples.quickstart.mp.GreetResource",method="getMessage_java.lang.String"} 0.0
-base_REST_request_total{class="io.helidon.examples.quickstart.mp.GreetResource",method="updateGreeting_javax.json.JsonObject"} 0
-base_REST_request_elapsedTime_seconds{class="io.helidon.examples.quickstart.mp.GreetResource",method="updateGreeting_javax.json.JsonObject"} 0.0
+base_REST_request_total{class="io.helidon.examples.quickstart.mp.GreetResource",method="updateGreeting_jakarta.json.JsonObject"} 0
+base_REST_request_elapsedTime_seconds{class="io.helidon.examples.quickstart.mp.GreetResource",method="updateGreeting_jakarta.json.JsonObject"} 0.0
 include::{metrics-common}[tag=metrics-prometheus-output]
 ----
 
@@ -60,8 +60,8 @@ include::{metrics-common}[tag=curl-metrics-json]
         "elapsedTime;class=io.helidon.examples.quickstart.mp.GreetResource;method=getDefaultMessage":0.0,
         "count;class=io.helidon.examples.quickstart.mp.GreetResource;method=getMessage_java.lang.String":0,
         "elapsedTime;class=io.helidon.examples.quickstart.mp.GreetResource;method=getMessage_java.lang.String":0.0,
-        "count;class=io.helidon.examples.quickstart.mp.GreetResource;method=updateGreeting_javax.json.JsonObject":0,
-        "elapsedTime;class=io.helidon.examples.quickstart.mp.GreetResource;method=updateGreeting_javax.json.JsonObject":0.0
+        "count;class=io.helidon.examples.quickstart.mp.GreetResource;method=updateGreeting_jakarta.json.JsonObject":0,
+        "elapsedTime;class=io.helidon.examples.quickstart.mp.GreetResource;method=updateGreeting_jakarta.json.JsonObject":0.0
       },
 include::{metrics-common}[tag=base-metrics-json-output]
   },
@@ -123,14 +123,14 @@ the `/cards` endpoint is called.
 package io.helidon.examples.quickstart.mp;
 
 import java.util.Collections;
-import javax.enterprise.context.RequestScoped;
-import javax.json.Json;
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObject;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.json.Json;
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonObject;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 
 @Path("/cards") //<1>
@@ -201,14 +201,14 @@ Note that when using multiple annotations on a method, you *must* give the metri
 package io.helidon.examples.quickstart.mp;
 
 import java.util.Collections;
-import javax.enterprise.context.RequestScoped;
-import javax.json.Json;
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObject;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.json.Json;
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonObject;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Metered;
@@ -294,14 +294,14 @@ demonstrated below.
 package io.helidon.examples.quickstart.mp;
 
 import java.util.Collections;
-import javax.enterprise.context.RequestScoped;
-import javax.json.Json;
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObject;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.json.Json;
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonObject;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 
 @Path("/cards")
@@ -373,14 +373,14 @@ needed to aggregate the counts, but they are left in the example to demonstrate 
 package io.helidon.examples.quickstart.mp;
 
 import java.util.Collections;
-import javax.enterprise.context.RequestScoped;
-import javax.json.Json;
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObject;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.json.Json;
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonObject;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 
 @Path("/cards")
@@ -449,15 +449,15 @@ package io.helidon.examples.quickstart.mp;
 
 import java.util.Collections;
 import java.util.Random;
-import javax.enterprise.context.RequestScoped;
-import javax.inject.Inject;
-import javax.json.Json;
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObject;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
+import jakarta.json.Json;
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonObject;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Metric;
@@ -548,9 +548,9 @@ package io.helidon.examples.quickstart.mp;
 
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicLong;
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.context.Initialized;
-import javax.enterprise.event.Observes;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.Initialized;
+import jakarta.enterprise.event.Observes;
 import org.eclipse.microprofile.metrics.annotation.Gauge;
 
 @ApplicationScoped // <1>
@@ -580,14 +580,14 @@ public class GreetingCardsAppMetrics {
 package io.helidon.examples.quickstart.mp;
 
 import java.util.Collections;
-import javax.enterprise.context.RequestScoped;
-import javax.json.Json;
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObject;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.json.Json;
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonObject;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 
 @Path("/cards")

@@ -19,8 +19,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 
-import javax.annotation.Priority;
-
 import io.helidon.config.Config;
 import io.helidon.config.objectmapping.ObjectConfigMappers.BuilderConfigMapper;
 import io.helidon.config.objectmapping.ObjectConfigMappers.ConfigMethodHandleConfigMapper;
@@ -28,6 +26,8 @@ import io.helidon.config.objectmapping.ObjectConfigMappers.FactoryMethodConfigMa
 import io.helidon.config.objectmapping.ObjectConfigMappers.GenericConfigMapper;
 import io.helidon.config.objectmapping.ObjectConfigMappers.StringMethodHandleConfigMapper;
 import io.helidon.config.spi.ConfigMapperProvider;
+
+import jakarta.annotation.Priority;
 
 import static io.helidon.config.objectmapping.ReflectionUtil.findBuilderConstructor;
 import static io.helidon.config.objectmapping.ReflectionUtil.findBuilderMethod;

@@ -106,10 +106,10 @@ public class InitializeDb {
      */
     private static Single<Long> initTypes(DbExecute exec) {
         Single<Long> stage = Single.just(0L);
-        try (javax.json.JsonReader reader = javax.json.Json.createReader(InitializeDb.class.getResourceAsStream(TYPES))) {
-            javax.json.JsonArray types = reader.readArray();
-            for (javax.json.JsonValue typeValue : types) {
-                javax.json.JsonObject type = typeValue.asJsonObject();
+        try (jakarta.json.JsonReader reader = jakarta.json.Json.createReader(InitializeDb.class.getResourceAsStream(TYPES))) {
+            jakarta.json.JsonArray types = reader.readArray();
+            for (jakarta.json.JsonValue typeValue : types) {
+                jakarta.json.JsonObject type = typeValue.asJsonObject();
                 stage = stage.flatMapSingle(it -> exec.namedInsert(
                             "insert-type", type.getInt("id"), type.getString("name")));
             }
@@ -133,10 +133,10 @@ public class InitializeDb {
      */
     private static Single<Long> initPokemons(DbExecute exec) {
         Single<Long> stage = Single.just(0L);
-        try (javax.json.JsonReader reader = javax.json.Json.createReader(InitializeDb.class.getResourceAsStream(POKEMONS))) {
-            javax.json.JsonArray pokemons = reader.readArray();
-            for (javax.json.JsonValue pokemonValue : pokemons) {
-                javax.json.JsonObject pokemon = pokemonValue.asJsonObject();
+        try (jakarta.json.JsonReader reader = jakarta.json.Json.createReader(InitializeDb.class.getResourceAsStream(POKEMONS))) {
+            jakarta.json.JsonArray pokemons = reader.readArray();
+            for (jakarta.json.JsonValue pokemonValue : pokemons) {
+                jakarta.json.JsonObject pokemon = pokemonValue.asJsonObject();
                 stage = stage.flatMapSingle(result -> exec
                                 .namedInsert("insert-pokemon",
                                         pokemon.getInt("id"), pokemon.getString("name"), pokemon.getInt("idType")));

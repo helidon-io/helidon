@@ -19,8 +19,7 @@ package io.helidon.metrics;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
 
-import javax.json.JsonObjectBuilder;
-
+import jakarta.json.JsonObjectBuilder;
 import org.eclipse.microprofile.metrics.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricID;

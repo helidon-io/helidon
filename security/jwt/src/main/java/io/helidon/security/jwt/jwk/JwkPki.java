@@ -32,10 +32,10 @@ import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.json.JsonObject;
-
 import io.helidon.security.jwt.JwtException;
 import io.helidon.security.jwt.JwtUtil;
+
+import jakarta.json.JsonObject;
 
 /**
  * PKI specific features of a JWK (Public/private key types of keys).

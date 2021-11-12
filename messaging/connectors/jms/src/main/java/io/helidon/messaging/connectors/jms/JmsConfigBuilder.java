@@ -48,8 +48,8 @@ public final class JmsConfigBuilder extends ConnectorConfigBuilder {
     }
 
     /**
-     * To select from manually configured {@link javax.jms.ConnectionFactory ConnectionFactories} over
-     * {@link JmsConnector.JmsConnectorBuilder#connectionFactory(String, javax.jms.ConnectionFactory)
+     * To select from manually configured {@link jakarta.jms.ConnectionFactory ConnectionFactories} over
+     * {@link JmsConnector.JmsConnectorBuilder#connectionFactory(String, jakarta.jms.ConnectionFactory)
      * JmsConnectorBuilder#connectionFactory()}.
      *
      * @param factoryName connection factory name

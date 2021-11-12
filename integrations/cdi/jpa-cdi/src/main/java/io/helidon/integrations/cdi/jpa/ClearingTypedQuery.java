@@ -18,8 +18,8 @@ package io.helidon.integrations.cdi.jpa;
 import java.util.List;
 import java.util.Objects;
 
-import javax.persistence.EntityManager;
-import javax.persistence.TypedQuery;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.TypedQuery;
 
 final class ClearingTypedQuery<X> extends DelegatingTypedQuery<X> {
 

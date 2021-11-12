@@ -27,8 +27,7 @@ import java.util.concurrent.atomic.LongAccumulator;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Supplier;
 
-import javax.json.JsonObjectBuilder;
-
+import jakarta.json.JsonObjectBuilder;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricID;

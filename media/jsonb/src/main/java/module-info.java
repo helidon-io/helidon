@@ -31,7 +31,7 @@ module io.helidon.media.jsonb {
     requires io.helidon.common.reactive;
     requires io.helidon.config;
     requires io.helidon.media.common;
-    requires transitive java.json.bind;
+    requires transitive jakarta.json.bind;
 
     exports io.helidon.media.jsonb;
 

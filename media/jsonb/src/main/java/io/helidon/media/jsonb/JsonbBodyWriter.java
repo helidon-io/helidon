@@ -19,9 +19,6 @@ import java.nio.charset.Charset;
 import java.util.Objects;
 import java.util.concurrent.Flow.Publisher;
 
-import javax.json.bind.Jsonb;
-import javax.json.bind.JsonbException;
-
 import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.MediaType;
@@ -31,6 +28,9 @@ import io.helidon.media.common.CharBuffer;
 import io.helidon.media.common.ContentWriters;
 import io.helidon.media.common.MessageBodyWriter;
 import io.helidon.media.common.MessageBodyWriterContext;
+
+import jakarta.json.bind.Jsonb;
+import jakarta.json.bind.JsonbException;
 
 /**
  * Message body writer supporting object binding with JSON-B.

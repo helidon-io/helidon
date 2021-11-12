@@ -16,11 +16,10 @@
 
 package io.helidon.microprofile.metrics;
 
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 
-import javax.annotation.Priority;
-import javax.interceptor.Interceptor;
-
+import jakarta.annotation.Priority;
+import jakarta.interceptor.Interceptor;
 import org.eclipse.microprofile.metrics.Timer;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 
@@ -38,6 +37,6 @@ final class InterceptorTimed extends InterceptorTimedBase<Timer> {
 
     @Override
     void postComplete(Timer metric) {
-        metric.update(durationNanoseconds(), TimeUnit.NANOSECONDS);
+        metric.update(Duration.ofNanos(durationNanoseconds()));
     }
 }

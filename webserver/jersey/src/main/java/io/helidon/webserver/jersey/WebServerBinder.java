@@ -16,15 +16,14 @@
 
 package io.helidon.webserver.jersey;
 
-import javax.inject.Inject;
-import javax.inject.Provider;
-import javax.ws.rs.core.GenericType;
-
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
+import jakarta.inject.Inject;
+import jakarta.inject.Provider;
+import jakarta.ws.rs.core.GenericType;
 import org.glassfish.jersey.internal.inject.AbstractBinder;
 import org.glassfish.jersey.internal.inject.ReferencingFactory;
 import org.glassfish.jersey.internal.util.collection.Ref;

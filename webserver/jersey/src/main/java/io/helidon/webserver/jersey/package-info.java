@@ -22,7 +22,7 @@
  *
  * @see io.helidon.webserver.jersey.JerseySupport
  * @see io.helidon.webserver.Routing
- * @see javax.ws.rs.core.Application
+ * @see jakarta.ws.rs.core.Application
  * @see org.glassfish.jersey.server.ResourceConfig
  */
 package io.helidon.webserver.jersey;

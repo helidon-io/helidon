@@ -20,11 +20,11 @@ import java.util.Set;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.prometheus.PrometheusConfig;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
-
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 

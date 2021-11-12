@@ -763,7 +763,7 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
 
         /**
          * Claim {@code groups} from JWT will be used to automatically add
-         *  groups to current subject (may be used with {@link javax.annotation.security.RolesAllowed} annotation).
+         *  groups to current subject (may be used with {@link jakarta.annotation.security.RolesAllowed} annotation).
          *
          * @param useJwtGroups whether to use {@code groups} claim from JWT to retrieve roles
          * @return updated builder instance

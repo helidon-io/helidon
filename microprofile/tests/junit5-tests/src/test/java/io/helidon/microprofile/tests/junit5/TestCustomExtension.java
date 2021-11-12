@@ -16,11 +16,10 @@
 
 package io.helidon.microprofile.tests.junit5;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.context.Initialized;
-import javax.enterprise.event.Observes;
-import javax.enterprise.inject.spi.Extension;
-
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.Initialized;
+import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.spi.Extension;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;

@@ -23,20 +23,17 @@
  * underlying implementation.
  */
 module io.helidon.integrations.jta.cdi {
-    requires java.transaction;
-    requires java.annotation;
+    requires jakarta.transaction;
+    requires jakarta.annotation;
     requires java.sql;
     requires java.rmi;
     requires jakarta.interceptor.api;
-    requires jakarta.inject.api;
-    requires jakarta.enterprise.cdi.api;
-    requires cdi;    // org.jboss.narayana.jta
-    requires jta;    //org.jboss.narayana.jta.jta
-    requires common; // org.jboss.narayana.common
-    requires arjuna; // org.jboss.narayana.arjunacore
+    requires jakarta.inject;
+    requires jakarta.cdi;
+    requires narayana.jta.jakarta;
 
     exports io.helidon.integrations.jta.cdi;
 
-    provides javax.enterprise.inject.spi.Extension
+    provides jakarta.enterprise.inject.spi.Extension
             with io.helidon.integrations.jta.cdi.NarayanaExtension;
 }

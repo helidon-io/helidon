@@ -28,14 +28,14 @@ module io.helidon.integrations.datasource.ucp.cdi {
     requires transitive java.sql;
     requires java.desktop; // For java.beans
     requires java.naming; // PoolDataSourceImpl implements javax.naming.Referenceable
-    requires transitive jakarta.inject.api;
-    requires transitive jakarta.enterprise.cdi.api;
+    requires transitive jakarta.inject;
+    requires transitive jakarta.cdi;
     requires microprofile.config.api;
     requires com.oracle.database.ucp;
     requires transitive io.helidon.integrations.datasource.cdi;
 
     exports io.helidon.integrations.datasource.ucp.cdi;
 
-    provides javax.enterprise.inject.spi.Extension
+    provides jakarta.enterprise.inject.spi.Extension
             with io.helidon.integrations.datasource.ucp.cdi.UCPBackedDataSourceExtension;
 }

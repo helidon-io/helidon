@@ -17,22 +17,20 @@ package io.helidon.microprofile.openapi;
 
 import java.util.Map;
 
-import javax.inject.Inject;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.Response;
-
 import io.helidon.common.http.Http;
 import io.helidon.microprofile.tests.junit5.AddBean;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 import io.helidon.openapi.OpenAPISupport;
 
+import jakarta.inject.Inject;
+import jakarta.ws.rs.client.WebTarget;
+import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.Test;
 import org.yaml.snakeyaml.Yaml;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Test that MP OpenAPI support works when retrieving the OpenAPI document

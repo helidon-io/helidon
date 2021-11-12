@@ -32,9 +32,8 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.logging.Logger;
 
-import javax.json.bind.annotation.JsonbDateFormat;
-import javax.json.bind.annotation.JsonbNumberFormat;
-
+import jakarta.json.bind.annotation.JsonbDateFormat;
+import jakarta.json.bind.annotation.JsonbNumberFormat;
 import org.eclipse.microprofile.graphql.DateFormat;
 
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.BIG_DECIMAL;

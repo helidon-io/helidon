@@ -23,8 +23,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
 
-import javax.interceptor.InvocationContext;
-
 import io.helidon.common.LazyValue;
 
 import io.micronaut.aop.Interceptor;
@@ -38,6 +36,7 @@ import io.micronaut.core.type.ArgumentValue;
 import io.micronaut.core.type.MutableArgumentValue;
 import io.micronaut.core.type.ReturnType;
 import io.micronaut.inject.ExecutableMethod;
+import jakarta.interceptor.InvocationContext;
 
 /**
  * Invocation context for Micronaut interceptors.

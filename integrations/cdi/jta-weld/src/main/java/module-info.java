@@ -24,15 +24,12 @@
  * href="http://narayana.io/">Narayana</a> engine.
  */
 module io.helidon.integrations.jta.weld {
-    requires java.transaction;
+    requires jakarta.transaction;
     requires java.logging;
     requires java.rmi;
-    requires jakarta.enterprise.cdi.api;
-    requires cdi;    // org.jboss.narayana.jta
-    requires jta;    //org.jboss.narayana.jta.jta
-    requires common; // org.jboss.narayana.common
-    requires arjuna; // org.jboss.narayana.arjunacore
+    requires jakarta.cdi;
     requires weld.spi;
+    requires narayana.jta.jakarta;
 
     exports io.helidon.integrations.jta.weld;
 

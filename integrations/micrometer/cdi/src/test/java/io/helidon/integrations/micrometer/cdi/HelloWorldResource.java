@@ -21,20 +21,19 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import javax.enterprise.context.RequestScoped;
-import javax.json.Json;
-import javax.json.JsonBuilderFactory;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.container.AsyncResponse;
-import javax.ws.rs.container.CompletionCallback;
-import javax.ws.rs.container.Suspended;
-import javax.ws.rs.core.MediaType;
-
 import io.micrometer.core.annotation.Counted;
 import io.micrometer.core.annotation.Timed;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.json.Json;
+import jakarta.json.JsonBuilderFactory;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.container.AsyncResponse;
+import jakarta.ws.rs.container.CompletionCallback;
+import jakarta.ws.rs.container.Suspended;
+import jakarta.ws.rs.core.MediaType;
 
 /**
  * HelloWorldResource class.

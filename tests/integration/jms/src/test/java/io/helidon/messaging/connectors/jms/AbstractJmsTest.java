@@ -16,20 +16,22 @@
 
 package io.helidon.messaging.connectors.jms;
 
-import javax.jms.Connection;
-import javax.jms.Session;
+import io.helidon.messaging.connectors.jms.shim.JakartaJms;
 
+import jakarta.jms.Connection;
+import jakarta.jms.ConnectionFactory;
+import jakarta.jms.Session;
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 
 public class AbstractJmsTest {
     static Session session;
-    static ActiveMQConnectionFactory connectionFactory;
+    static ConnectionFactory connectionFactory;
 
     @BeforeAll
     static void beforeAll() throws Exception {
-        connectionFactory = new ActiveMQConnectionFactory("vm://localhost?broker.persistent=false");
+        connectionFactory = JakartaJms.create(new ActiveMQConnectionFactory("vm://localhost?broker.persistent=false"));
         Connection connection = connectionFactory.createConnection();
         session = connection.createSession(false, AcknowledgeMode.AUTO_ACKNOWLEDGE.getAckMode());
     }

@@ -19,6 +19,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -28,21 +29,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import javax.annotation.Priority;
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.context.BeforeDestroyed;
-import javax.enterprise.context.Dependent;
-import javax.enterprise.context.Initialized;
-import javax.enterprise.event.Observes;
-import javax.enterprise.inject.spi.AfterBeanDiscovery;
-import javax.enterprise.inject.spi.BeforeBeanDiscovery;
-import javax.enterprise.inject.spi.Extension;
-import javax.enterprise.inject.spi.ProcessAnnotatedType;
-import javax.enterprise.inject.spi.configurator.BeanConfigurator;
-import javax.inject.Qualifier;
 
 import io.micronaut.aop.Around;
 import io.micronaut.aop.MethodInterceptor;
@@ -57,17 +47,30 @@ import io.micronaut.inject.BeanDefinition;
 import io.micronaut.inject.BeanDefinitionReference;
 import io.micronaut.inject.ExecutableMethod;
 import io.micronaut.inject.qualifiers.Qualifiers;
+import jakarta.annotation.Priority;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.BeforeDestroyed;
+import jakarta.enterprise.context.Dependent;
+import jakarta.enterprise.context.Initialized;
+import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.spi.AfterBeanDiscovery;
+import jakarta.enterprise.inject.spi.BeforeBeanDiscovery;
+import jakarta.enterprise.inject.spi.Extension;
+import jakarta.enterprise.inject.spi.ProcessAnnotatedType;
+import jakarta.enterprise.inject.spi.configurator.BeanConfigurator;
+import jakarta.inject.Qualifier;
 import org.eclipse.microprofile.config.Config;
 
-import static javax.interceptor.Interceptor.Priority.PLATFORM_AFTER;
-import static javax.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
+import static jakarta.interceptor.Interceptor.Priority.PLATFORM_AFTER;
+import static jakarta.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
 
 /**
  * Extension integrating CDI with Micronaut.
- * This extensions adds Micronaut beans to be injectable into CDI beans (limited to {@link javax.inject.Singleton}
+ * This extensions adds Micronaut beans to be injectable into CDI beans (limited to {@link jakarta.inject.Singleton}
  * scope), and adds support for invoking Micronaut interceptors.
  */
 public class MicronautCdiExtension implements Extension {
+    private static final Logger LOGGER = Logger.getLogger(MicronautCdiExtension.class.getName());
     private static final String MICRONAUT_BEAN_PREFIX = "micronaut-";
 
     private final AtomicReference<ApplicationContext> micronautContext = new AtomicReference<>();
@@ -305,9 +308,12 @@ public class MicronautCdiExtension implements Extension {
         SoftServiceLoader.load(BeanDefinitionReference.class)
                 .forEach(list::add);
 
-        List<MicronautBean> beans = list.parallelStream()
+        Map<Class<?>, List<MicronautBean>> beanMap = new HashMap<>();
+
+        // TODO 3.0.0-JAKARTA
+        list.stream()
                 .filter(ServiceDefinition::isPresent)
-                .map(ServiceDefinition::load)
+                .flatMap(this::loadMicronautService)
                 .filter(BeanDefinitionReference::isPresent)
                 .map(ref -> {
                     Class<?> beanType;
@@ -320,7 +326,16 @@ public class MicronautCdiExtension implements Extension {
 
                     return new MicronautBean(beanType, ref);
                 })
-                .collect(Collectors.toList());
+                .forEach(it -> beanMap.computeIfAbsent(it.beanType(), theType -> new LinkedList<>()).add(it));
+
+        List<MicronautBean> beans = new LinkedList<>();
+        beanMap.forEach((type, micronautBeans) -> {
+            if (micronautBeans.size() == 1) {
+                beans.add(micronautBeans.get(0));
+            } else {
+                beans.add(findMostSpecificBean(micronautBeans));
+            }
+        });
 
         // using my own collection, so the field is final
         beanDefinitions.addAll(beans);
@@ -331,6 +346,28 @@ public class MicronautCdiExtension implements Extension {
         }
 
         unprocessedBeans.putAll(mBeanToDefRef);
+    }
+
+    private MicronautBean findMostSpecificBean(List<MicronautBean> micronautBeans) {
+        // TODO 3.0.0-JAKARTA
+        // beans are duplicated, I get definition for each type (definition, intercepted definition) - how to chose?
+        micronautBeans.sort(Comparator.comparing(o -> o.definitionRef().getBeanDefinitionName()));
+        return micronautBeans.get(micronautBeans.size() - 1);
+    }
+
+    @SuppressWarnings("rawtypes")
+    private Stream<BeanDefinitionReference> loadMicronautService(ServiceDefinition<BeanDefinitionReference> serviceDef) {
+        try {
+            return Stream.of(serviceDef.load());
+        } catch (Throwable e) {
+            if (LOGGER.isLoggable(Level.FINEST)) {
+                LOGGER.log(Level.FINEST,
+                           "Failed to load Micronaut service, probably something missing from classpath. Definition: "
+                                   + serviceDef,
+                           e);
+            }
+            return Stream.empty();
+        }
     }
 
     private void findMicronautInterceptors(Set<Class<?>> classInterceptors,

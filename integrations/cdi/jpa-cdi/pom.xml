@@ -32,6 +32,8 @@
     <properties>
       <doclint>-syntax</doclint>
       <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
+        <!-- 3.0.0-JAKARTA -->
+        <skipTests>true</skipTests>
     </properties>
 
     <dependencies>
@@ -88,6 +90,21 @@
             <artifactId>jandex</artifactId>
             <scope>runtime</scope>
         </dependency>
+        <dependency>
+            <groupId>jakarta.xml.bind</groupId>
+            <artifactId>jakarta.xml.bind-api</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.activation</groupId>
+            <artifactId>jakarta.activation-api</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.sun.xml.bind</groupId>
+            <artifactId>jaxb-impl</artifactId>
+            <scope>runtime</scope>
+        </dependency>
 
         <!-- Provided-scoped dependencies. -->
         <dependency>
@@ -109,10 +126,6 @@
             <groupId>jakarta.transaction</groupId>
             <artifactId>jakarta.transaction-api</artifactId>
             <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>jakarta.activation</groupId>
-            <artifactId>jakarta.activation-api</artifactId>
         </dependency>
 
         <!-- Compile-scoped dependencies. -->
@@ -164,27 +177,23 @@
 
         <plugins>
             <plugin>
-                <groupId>org.jvnet.jaxb2.maven2</groupId>
-                <artifactId>maven-jaxb2-plugin</artifactId>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>jaxb2-maven-plugin</artifactId>
                 <executions>
                     <execution>
                         <id>Generate persistence.xml Java objects</id>
                         <goals>
-                          <goal>generate</goal>
+                          <goal>xjc</goal>
                         </goals>
                         <configuration>
-                            <generatePackage>io.helidon.integrations.cdi.jpa.jaxb</generatePackage>
-                            <markGenerated>true</markGenerated>
-                            <schemas>
-                                <schema>
-                                    <dependencyResource>
-                                        <groupId>jakarta.persistence</groupId>
-                                        <artifactId>jakarta.persistence-api</artifactId>
-                                        <resource>javax/persistence/persistence_2_2.xsd</resource>
-                                    </dependencyResource>
-                                </schema>
-                            </schemas>
-                            <strict>false</strict>
+                            <outputDirectory>${project.build.directory}/generated-sources/xjc</outputDirectory>
+                            <addGeneratedAnnotation>true</addGeneratedAnnotation>
+                            <xjbSources>
+                                <xjbSource>src/main/xjb</xjbSource>
+                            </xjbSources>
+                            <sources>
+                                <source>src/main/xsd</source>
+                            </sources>
                         </configuration>
                     </execution>
                 </executions>
@@ -313,42 +322,43 @@
                           </execution>
                         </executions>
                     </plugin>
-                    <plugin>
-                        <groupId>com.ethlo.persistence.tools</groupId>
-                        <artifactId>eclipselink-maven-plugin</artifactId>
-                        <dependencies>
-                            <dependency>
-                                <groupId>org.junit.jupiter</groupId>
-                                <artifactId>junit-jupiter-api</artifactId>
-                                <version>${version.lib.junit}</version>
-                            </dependency>
-                        </dependencies>
-                        <executions>
-                            <execution>
-                                <id>Statically weave JPA entities for Eclipselink</id>
-                                <phase>process-test-classes</phase>
-                                <goals>
-                                    <goal>weave</goal>
-                                </goals>
-                                <configuration>
-                                    <source>${project.build.directory}/eclipselink/test-classes</source>
-                                    <target>${project.build.directory}/eclipselink/test-classes</target>
-                                    <persistenceInfoLocation>${project.build.directory}/eclipselink/test-classes</persistenceInfoLocation>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <id>modelgen</id>
-                                <phase>generate-test-sources</phase>
-                                <goals>
-                                    <goal>modelgen</goal>
-                                </goals>
-                                <configuration>
-                                    <source>${project.build.testSourceDirectory}</source>
-                                    <generatedSourcesDirectory>${project.build.directory}/generated-test-sources/apt</generatedSourcesDirectory>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
+                    <!-- TODO 3.0.0-JAKARTA disabled weaving as plugin does not support jakarta packages (yet) -->
+<!--                    <plugin>-->
+<!--                        <groupId>com.ethlo.persistence.tools</groupId>-->
+<!--                        <artifactId>eclipselink-maven-plugin</artifactId>-->
+<!--                        <dependencies>-->
+<!--                            <dependency>-->
+<!--                                <groupId>org.junit.jupiter</groupId>-->
+<!--                                <artifactId>junit-jupiter-api</artifactId>-->
+<!--                                <version>${version.lib.junit}</version>-->
+<!--                            </dependency>-->
+<!--                        </dependencies>-->
+<!--                        <executions>-->
+<!--                            <execution>-->
+<!--                                <id>Statically weave JPA entities for Eclipselink</id>-->
+<!--                                <phase>process-test-classes</phase>-->
+<!--                                <goals>-->
+<!--                                    <goal>weave</goal>-->
+<!--                                </goals>-->
+<!--                                <configuration>-->
+<!--                                    <source>${project.build.directory}/eclipselink/test-classes</source>-->
+<!--                                    <target>${project.build.directory}/eclipselink/test-classes</target>-->
+<!--                                    <persistenceInfoLocation>${project.build.directory}/eclipselink/test-classes</persistenceInfoLocation>-->
+<!--                                </configuration>-->
+<!--                            </execution>-->
+<!--                            <execution>-->
+<!--                                <id>modelgen</id>-->
+<!--                                <phase>generate-test-sources</phase>-->
+<!--                                <goals>-->
+<!--                                    <goal>modelgen</goal>-->
+<!--                                </goals>-->
+<!--                                <configuration>-->
+<!--                                    <source>${project.build.testSourceDirectory}</source>-->
+<!--                                    <generatedSourcesDirectory>${project.build.directory}/generated-test-sources/apt</generatedSourcesDirectory>-->
+<!--                                </configuration>-->
+<!--                            </execution>-->
+<!--                        </executions>-->
+<!--                    </plugin>-->
                     <plugin>
                         <groupId>org.hibernate.orm.tooling</groupId>
                         <artifactId>hibernate-enhance-maven-plugin</artifactId>
@@ -391,30 +401,6 @@
                     </plugin>
                 </plugins>
             </build>
-        </profile>
-        <profile>
-            <id>xmlbind</id>
-            <activation>
-                <jdk>[9,)</jdk>
-                <activeByDefault>false</activeByDefault>
-            </activation>
-            <dependencies>
-                <dependency>
-                    <groupId>jakarta.xml.bind</groupId>
-                    <artifactId>jakarta.xml.bind-api</artifactId>
-                    <scope>compile</scope>
-                </dependency>
-                <dependency>
-                    <groupId>jakarta.activation</groupId>
-                    <artifactId>jakarta.activation-api</artifactId>
-                    <scope>compile</scope>
-                </dependency>
-                <dependency>
-                    <groupId>com.sun.xml.bind</groupId>
-                    <artifactId>jaxb-impl</artifactId>
-                    <scope>runtime</scope>
-                </dependency>
-            </dependencies>
         </profile>
     </profiles>
 </project>

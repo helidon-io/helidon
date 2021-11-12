@@ -16,9 +16,9 @@
 
 package io.helidon.messaging.connectors.jms;
 
-import javax.jms.Connection;
-import javax.jms.ConnectionFactory;
-import javax.jms.Session;
+import jakarta.jms.Connection;
+import jakarta.jms.ConnectionFactory;
+import jakarta.jms.Session;
 
 /**
  * Metadata of the JMS session.
@@ -35,7 +35,7 @@ public class SessionMetadata {
     }
 
     /**
-     * {@link javax.jms.Session} used for receiving the message.
+     * {@link jakarta.jms.Session} used for receiving the message.
      *
      * @return JMS session
      */
@@ -44,7 +44,7 @@ public class SessionMetadata {
     }
 
     /**
-     * {@link javax.jms.Connection} used for receiving the message.
+     * {@link jakarta.jms.Connection} used for receiving the message.
      *
      * @return JMS connection
      */
@@ -53,7 +53,7 @@ public class SessionMetadata {
     }
 
     /**
-     * {@link javax.jms.ConnectionFactory} used for receiving the message.
+     * {@link jakarta.jms.ConnectionFactory} used for receiving the message.
      *
      * @return JMS connection factory
      */

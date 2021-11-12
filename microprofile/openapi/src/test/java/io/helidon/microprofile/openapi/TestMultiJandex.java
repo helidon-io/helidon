@@ -15,14 +15,16 @@
  */
 package io.helidon.microprofile.openapi;
 
+import java.io.IOException;
+
 import io.helidon.microprofile.openapi.other.TestApp2;
+
 import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.DotName;
 import org.jboss.jandex.IndexView;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class TestMultiJandex {
 

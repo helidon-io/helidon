@@ -31,6 +31,9 @@ module io.helidon.config.etcd {
     requires io.helidon.common;
     requires io.helidon.common.media.type;
     requires io.grpc;
+    // TODO 3.0.0-JAKARTA
+    // used only for compilation of generated classes
+    requires static java.annotation;
 
     exports io.helidon.config.etcd;
 

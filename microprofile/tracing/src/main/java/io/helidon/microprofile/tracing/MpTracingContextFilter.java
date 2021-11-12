@@ -17,22 +17,21 @@ package io.helidon.microprofile.tracing;
 
 import java.util.Optional;
 
-import javax.annotation.Priority;
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Provider;
-import javax.ws.rs.ConstrainedTo;
-import javax.ws.rs.RuntimeType;
-import javax.ws.rs.container.ContainerRequestContext;
-import javax.ws.rs.container.ContainerRequestFilter;
-import javax.ws.rs.container.PreMatching;
-import javax.ws.rs.core.Context;
-
 import io.helidon.common.context.Contexts;
 import io.helidon.tracing.jersey.client.internal.TracingContext;
 import io.helidon.webserver.ServerRequest;
 
 import io.opentracing.SpanContext;
 import io.opentracing.Tracer;
+import jakarta.annotation.Priority;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Provider;
+import jakarta.ws.rs.ConstrainedTo;
+import jakarta.ws.rs.RuntimeType;
+import jakarta.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.container.ContainerRequestFilter;
+import jakarta.ws.rs.container.PreMatching;
+import jakarta.ws.rs.core.Context;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 

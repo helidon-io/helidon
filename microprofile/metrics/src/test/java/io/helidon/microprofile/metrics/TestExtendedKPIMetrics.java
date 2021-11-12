@@ -15,20 +15,20 @@
  */
 package io.helidon.microprofile.metrics;
 
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+
 import io.helidon.common.http.Http;
 import io.helidon.microprofile.tests.junit5.AddBean;
 import io.helidon.microprofile.tests.junit5.AddConfig;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
+
+import jakarta.inject.Inject;
+import jakarta.json.JsonObject;
+import jakarta.ws.rs.client.WebTarget;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.Test;
-
-import javax.inject.Inject;
-import javax.json.JsonObject;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 
 import static io.helidon.metrics.api.KeyPerformanceIndicatorMetricsSettings.Builder.KEY_PERFORMANCE_INDICATORS_CONFIG_KEY;
 import static io.helidon.metrics.api.KeyPerformanceIndicatorMetricsSettings.Builder.KEY_PERFORMANCE_INDICATORS_EXTENDED_CONFIG_KEY;

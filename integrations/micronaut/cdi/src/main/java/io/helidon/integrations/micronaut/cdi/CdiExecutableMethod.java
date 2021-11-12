@@ -32,10 +32,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.enterprise.inject.spi.Annotated;
-import javax.enterprise.inject.spi.AnnotatedMethod;
-import javax.enterprise.inject.spi.AnnotatedParameter;
-
 import io.micronaut.context.AbstractExecutableMethod;
 import io.micronaut.core.annotation.AnnotationMetadata;
 import io.micronaut.core.annotation.AnnotationValue;
@@ -43,6 +39,9 @@ import io.micronaut.core.type.Argument;
 import io.micronaut.core.type.DefaultArgument;
 import io.micronaut.inject.ExecutableMethod;
 import io.micronaut.inject.annotation.DefaultAnnotationMetadata;
+import jakarta.enterprise.inject.spi.Annotated;
+import jakarta.enterprise.inject.spi.AnnotatedMethod;
+import jakarta.enterprise.inject.spi.AnnotatedParameter;
 
 // Executable method used to invoke Micronaut interceptor when we need to merge CDI and Micronaut
 // annotation metadata, or when we do not have Micronaut annotation metadata

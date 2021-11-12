@@ -18,8 +18,8 @@ package io.helidon.tests.integration.dbclient.appl.it.metrics;
 import java.io.IOException;
 import java.util.logging.Logger;
 
-import javax.json.JsonObject;
-import javax.json.JsonValue;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonValue;
 
 import io.helidon.tests.integration.dbclient.appl.model.Pokemon;
 import io.helidon.tests.integration.dbclient.appl.tools.QueryParams;

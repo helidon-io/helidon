@@ -17,13 +17,12 @@ package io.helidon.integrations.micronaut.cdi.data.app;
 
 import java.util.UUID;
 
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.ManyToOne;
-
 import io.micronaut.core.annotation.Creator;
 import io.micronaut.core.annotation.Nullable;
 import io.micronaut.data.annotation.AutoPopulated;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.ManyToOne;
 
 @Entity
 public class Pet {

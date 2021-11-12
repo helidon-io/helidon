@@ -15,14 +15,13 @@
  */
 package io.helidon.integrations.cdi.hibernate;
 
-import javax.enterprise.inject.spi.CDI;
-
+import jakarta.enterprise.inject.spi.CDI;
 import org.hibernate.engine.transaction.jta.platform.spi.JtaPlatform;
 import org.hibernate.engine.transaction.jta.platform.spi.JtaPlatformProvider;
 
 /**
  * A {@link JtaPlatformProvider} that uses a {@link CDI} instance to
- * {@linkplain CDI#select(Class, Annotation...) provide} a {@link
+ * {@linkplain CDI#select(Class, java.lang.annotation.Annotation...) provide} a {@link
  * JtaPlatform}.
  *
  * <p>Normally this class is instantiated by the {@linkplain

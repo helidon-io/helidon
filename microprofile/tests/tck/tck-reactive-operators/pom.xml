@@ -28,6 +28,11 @@
     <artifactId>tck-reactive-operators</artifactId>
     <name>Helidon Microprofile Tests TCK Reactive Streams Operators</name>
 
+    <properties>
+        <!-- 3.0.0-JAKARTA -->
+        <skipTests>true</skipTests>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.microprofile.tests</groupId>

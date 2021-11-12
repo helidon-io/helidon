@@ -23,9 +23,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
-
 import io.helidon.config.Config;
 import io.helidon.security.SecurityException;
 
@@ -39,6 +36,8 @@ import io.opentracing.Span;
 import io.opentracing.SpanContext;
 import io.opentracing.tag.Tags;
 import io.opentracing.util.GlobalTracer;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 
 /**
  * A service showing to access a no-SQL database.

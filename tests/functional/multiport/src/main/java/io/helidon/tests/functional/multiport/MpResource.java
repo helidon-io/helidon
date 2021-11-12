@@ -15,9 +15,9 @@
  */
 package io.helidon.tests.functional.multiport;
 
-import javax.enterprise.context.RequestScoped;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
 
 /**
  * Simple resource.

@@ -19,8 +19,6 @@ package io.helidon.microprofile.grpc.example.basic.implicit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import javax.enterprise.context.ApplicationScoped;
-
 import io.helidon.grpc.server.CollectingObserver;
 import io.helidon.microprofile.grpc.core.Bidirectional;
 import io.helidon.microprofile.grpc.core.ClientStreaming;
@@ -29,6 +27,7 @@ import io.helidon.microprofile.grpc.core.ServerStreaming;
 import io.helidon.microprofile.grpc.core.Unary;
 
 import io.grpc.stub.StreamObserver;
+import jakarta.enterprise.context.ApplicationScoped;
 
 /**
  * The gRPC StringService implementation.

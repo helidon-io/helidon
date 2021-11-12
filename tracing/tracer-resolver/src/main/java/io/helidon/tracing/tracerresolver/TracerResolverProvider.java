@@ -16,11 +16,11 @@
 
 package io.helidon.tracing.tracerresolver;
 
-import javax.annotation.Priority;
-
 import io.helidon.common.Prioritized;
 import io.helidon.tracing.TracerBuilder;
 import io.helidon.tracing.spi.TracerProvider;
+
+import jakarta.annotation.Priority;
 
 /**
  * Service to use {@link io.opentracing.contrib.tracerresolver.TracerResolver} to find tracer to use with Helidon.

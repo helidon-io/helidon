@@ -31,7 +31,7 @@ module io.helidon.security.providers.idcs.mapper {
     requires java.logging;
 
     requires jersey.client;
-    requires java.ws.rs;
+    requires jakarta.ws.rs;
 
     exports io.helidon.security.providers.idcs.mapper;
 

@@ -18,17 +18,16 @@ package io.helidon.integrations.datasource.hikaricp.cdi;
 import java.sql.Connection;
 import java.sql.SQLException;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.context.Initialized;
-import javax.enterprise.event.Observes;
-import javax.inject.Inject;
-import javax.inject.Named;
 import javax.sql.DataSource;
-
-import com.zaxxer.hikari.HikariDataSource;
 
 import io.helidon.microprofile.server.Server;
 
+import com.zaxxer.hikari.HikariDataSource;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.Initialized;
+import jakarta.enterprise.event.Observes;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;

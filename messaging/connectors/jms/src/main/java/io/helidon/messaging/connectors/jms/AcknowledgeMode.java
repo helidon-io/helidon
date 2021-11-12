@@ -17,8 +17,8 @@
 package io.helidon.messaging.connectors.jms;
 
 /**
- * Enumeration equivalent for JMS api's {@link javax.jms.Session#AUTO_ACKNOWLEDGE},
- * {@link javax.jms.Session#CLIENT_ACKNOWLEDGE} and {@link javax.jms.Session#DUPS_OK_ACKNOWLEDGE} constants.
+ * Enumeration equivalent for JMS api's {@link jakarta.jms.Session#AUTO_ACKNOWLEDGE},
+ * {@link jakarta.jms.Session#CLIENT_ACKNOWLEDGE} and {@link jakarta.jms.Session#DUPS_OK_ACKNOWLEDGE} constants.
  */
 public enum AcknowledgeMode {
     /**
@@ -47,7 +47,7 @@ public enum AcknowledgeMode {
 
     /**
      * Returns JMS api constant equivalent of this ack mode as specified in
-     * {@link javax.jms.Connection#createSession(boolean, int)}.
+     * {@link jakarta.jms.Connection#createSession(boolean, int)}.
      *
      * @return 1 for AUTO_ACKNOWLEDGE or 2 for CLIENT_ACKNOWLEDGE or 3 for DUPS_OK_ACKNOWLEDGE
      */

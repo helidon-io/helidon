@@ -18,11 +18,10 @@ package io.helidon.microprofile.server;
 
 import java.util.Map;
 
-import javax.enterprise.inject.se.SeContainerInitializer;
-
 import io.helidon.config.mp.MpConfigSources;
 import io.helidon.microprofile.cdi.Main;
 
+import jakarta.enterprise.inject.se.SeContainerInitializer;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.junit.jupiter.api.AfterAll;

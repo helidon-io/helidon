@@ -19,10 +19,9 @@ package io.helidon.microprofile.faulttolerance;
 import java.lang.reflect.Method;
 import java.util.concurrent.locks.ReentrantLock;
 
-import javax.enterprise.inject.spi.CDI;
-
 import io.helidon.common.LazyValue;
 
+import jakarta.enterprise.inject.spi.CDI;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Histogram;
@@ -374,6 +373,7 @@ class FaultToleranceMetrics {
         return new MetricID(name);
     }
 
+    // TODO 3.0.0-JAKARTA
     private static Metadata newMetadata(String name, String displayName, String description, MetricType metricType,
                                         String metricUnits, boolean isReusable) {
         return Metadata.builder()
@@ -382,7 +382,6 @@ class FaultToleranceMetrics {
                 .withDescription(description)
                 .withType(metricType)
                 .withUnit(metricUnits)
-                .reusable(isReusable)
                 .build();
     }
 }

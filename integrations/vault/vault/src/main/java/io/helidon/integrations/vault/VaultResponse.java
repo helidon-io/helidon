@@ -16,9 +16,9 @@
 
 package io.helidon.integrations.vault;
 
-import javax.json.JsonObject;
-
 import io.helidon.integrations.common.rest.ApiEntityResponse;
+
+import jakarta.json.JsonObject;
 
 /**
  * Response from Vault, always expects a JSON entity.

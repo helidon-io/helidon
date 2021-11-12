@@ -15,9 +15,9 @@
  */
 package io.helidon.tests.functional.mp.syntheticapp;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
 
 /**
  * Example JAX-RS resource that would be automatically picked-up to create a JAX-RS Synthetic Application.

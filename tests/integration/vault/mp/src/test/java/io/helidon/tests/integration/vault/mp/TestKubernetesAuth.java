@@ -23,10 +23,10 @@ import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Optional;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.literal.NamedLiteral;
-import javax.enterprise.inject.se.SeContainer;
-import javax.inject.Inject;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.literal.NamedLiteral;
+import jakarta.enterprise.inject.se.SeContainer;
+import jakarta.inject.Inject;
 
 import io.helidon.config.mp.MpConfigSources;
 import io.helidon.config.yaml.mp.YamlMpConfigSource;

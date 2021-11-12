@@ -20,14 +20,13 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import javax.annotation.Priority;
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.context.BeforeDestroyed;
-import javax.enterprise.context.Initialized;
-import javax.enterprise.event.Observes;
-import javax.interceptor.Interceptor;
-import javax.ws.rs.ProcessingException;
-
+import jakarta.annotation.Priority;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.BeforeDestroyed;
+import jakarta.enterprise.context.Initialized;
+import jakarta.enterprise.event.Observes;
+import jakarta.interceptor.Interceptor;
+import jakarta.ws.rs.ProcessingException;
 import org.eclipse.microprofile.faulttolerance.Fallback;
 import org.eclipse.microprofile.faulttolerance.Retry;
 
@@ -65,7 +64,7 @@ public class StartupServices {
 
     @Retry(delay = 1, delayUnit = ChronoUnit.SECONDS,
             maxDuration = 60, durationUnit = ChronoUnit.SECONDS,
-            maxRetries = 10, abortOn = javax.ws.rs.ClientErrorException.class)
+            maxRetries = 10, abortOn = jakarta.ws.rs.ClientErrorException.class)
     @Fallback(fallbackMethod = "loadApisFromDisk")
     protected void loadApis() throws Exception {
         if (SUCCESSFUL_STARTUP.compareAndSet(false, true)) {

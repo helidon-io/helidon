@@ -2,14 +2,14 @@
     {
         "bean-class": "org.jboss.weld.event.EventImpl",
         "ifaces": [
-            "javax.enterprise.event.Event",
+            "jakarta.enterprise.event.Event",
             "org.jboss.weld.events.WeldEvent"
         ]
     },
     {
         "bean-class": "org.jboss.weld.bean.builtin.InstanceImpl",
         "ifaces": [
-            "javax.enterprise.inject.Instance"
+            "jakarta.enterprise.inject.Instance"
         ]
     },
     {

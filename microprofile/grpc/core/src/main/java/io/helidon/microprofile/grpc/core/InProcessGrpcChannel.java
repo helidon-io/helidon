@@ -21,8 +21,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import javax.enterprise.util.AnnotationLiteral;
-import javax.inject.Qualifier;
+import jakarta.enterprise.util.AnnotationLiteral;
+import jakarta.inject.Qualifier;
 
 /**
  * An qualifier annotation to specify that an in-process {@link io.grpc.Channel}
@@ -30,7 +30,7 @@ import javax.inject.Qualifier;
  * <p>
  * For example:
  * <pre>
- *     &#064;javax.inject.Inject
+ *     &#064;jakarta.inject.Inject
  *     &#064;io.helidon.microprofile.grpc.core.InProcessChannel
  *     private io.grpc.Channel channel;
  * </pre>

@@ -16,11 +16,11 @@
 
 package io.helidon.tests.functional.context.hello;
 
-import javax.ws.rs.container.ContainerRequestContext;
-import javax.ws.rs.container.ContainerRequestFilter;
-import javax.ws.rs.ext.Provider;
-
 import io.helidon.common.context.Contexts;
+
+import jakarta.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.container.ContainerRequestFilter;
+import jakarta.ws.rs.ext.Provider;
 
 /**
  * A filter that adds request scoped context record.

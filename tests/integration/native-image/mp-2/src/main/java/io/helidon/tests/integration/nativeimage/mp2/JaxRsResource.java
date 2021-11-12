@@ -17,16 +17,16 @@ package io.helidon.tests.integration.nativeimage.mp2;
 
 import java.net.URI;
 
-import javax.inject.Inject;
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
-import javax.transaction.Transaction;
-import javax.transaction.Transactional;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.core.Response;
+import jakarta.inject.Inject;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.transaction.Transaction;
+import jakarta.transaction.Transactional;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.core.Response;
 
 /**
  * A resource to test.
@@ -34,7 +34,7 @@ import javax.ws.rs.core.Response;
 @Path("/")
 public class JaxRsResource {
     /**
-     * The {@link javax.persistence.EntityManager} used by this class.
+     * The {@link jakarta.persistence.EntityManager} used by this class.
      *
      * <p>Note that it behaves as though there is a transaction manager
      * in effect, because there is.</p>
@@ -43,7 +43,7 @@ public class JaxRsResource {
     private EntityManager entityManager;
 
     /**
-     * A {@link javax.transaction.Transaction} that is guaranteed to be non-{@code null}
+     * A {@link jakarta.transaction.Transaction} that is guaranteed to be non-{@code null}
      * only when a transactional method is executing.
      *
      * @see #post(String, String)

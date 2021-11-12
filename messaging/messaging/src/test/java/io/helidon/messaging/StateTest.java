@@ -16,9 +16,9 @@
 
 package io.helidon.messaging;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class StateTest {
 

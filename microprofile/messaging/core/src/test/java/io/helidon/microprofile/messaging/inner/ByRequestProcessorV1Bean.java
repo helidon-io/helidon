@@ -16,16 +16,15 @@
 
 package io.helidon.microprofile.messaging.inner;
 
+import java.util.concurrent.CountDownLatch;
+
 import io.helidon.common.reactive.Multi;
+
+import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;
 import org.reactivestreams.FlowAdapters;
 import org.reactivestreams.Publisher;
-
-import javax.enterprise.context.ApplicationScoped;
-
-import java.util.concurrent.CountDownLatch;
-import java.util.stream.IntStream;
 
 /**
  * This test is modified version of official tck test in version 1.0

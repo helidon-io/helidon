@@ -15,11 +15,11 @@
  */
 package io.helidon.tracing.jaeger;
 
-import javax.annotation.Priority;
-
 import io.helidon.common.Prioritized;
 import io.helidon.tracing.TracerBuilder;
 import io.helidon.tracing.spi.TracerProvider;
+
+import jakarta.annotation.Priority;
 
 /**
  * Jaeger java service.

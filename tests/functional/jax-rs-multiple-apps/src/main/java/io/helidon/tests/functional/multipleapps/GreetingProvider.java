@@ -17,11 +17,10 @@ package io.helidon.tests.functional.multipleapps;
 
 import java.util.concurrent.atomic.AtomicReference;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
-
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.HttpHeaders;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 /**

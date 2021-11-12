@@ -15,8 +15,8 @@
  */
 package io.helidon.dbclient.metrics.jdbc;
 
+import java.time.Duration;
 import java.util.concurrent.Callable;
-import java.util.concurrent.TimeUnit;
 
 import org.eclipse.microprofile.metrics.Snapshot;
 import org.eclipse.microprofile.metrics.Timer;
@@ -30,11 +30,6 @@ public class JdbcMetricsTimer implements Timer {
 
     JdbcMetricsTimer(final com.codahale.metrics.Timer meter) {
         this.meter = meter;
-    }
-
-    @Override
-    public void update(long duration, TimeUnit unit) {
-        meter.update(duration, unit);
     }
 
     @Override
@@ -82,4 +77,15 @@ public class JdbcMetricsTimer implements Timer {
         return new JdbcMetricsSnapshot(meter.getSnapshot());
     }
 
+    @Override
+    public void update(Duration duration) {
+        // TODO 3.0.0-JAKARTA
+        meter.update(duration);
+    }
+
+    @Override
+    public Duration getElapsedTime() {
+        // TODO 3.0.0-JAKARTA
+        return Duration.ZERO;
+    }
 }

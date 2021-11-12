@@ -16,13 +16,12 @@
 
 package io.helidon.common.reactive;
 
-
 import java.io.IOException;
+
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
-
-import org.junit.jupiter.api.Test;
 
 public class SingleOnErrorResumeTest {
 

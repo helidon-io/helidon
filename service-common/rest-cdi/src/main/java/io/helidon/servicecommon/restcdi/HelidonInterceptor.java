@@ -17,10 +17,10 @@ package io.helidon.servicecommon.restcdi;
 
 import java.lang.reflect.Executable;
 
-import javax.enterprise.context.Dependent;
-import javax.interceptor.AroundConstruct;
-import javax.interceptor.AroundInvoke;
-import javax.interceptor.InvocationContext;
+import jakarta.enterprise.context.Dependent;
+import jakarta.interceptor.AroundConstruct;
+import jakarta.interceptor.AroundInvoke;
+import jakarta.interceptor.InvocationContext;
 
 /**
  * Common behavior for interceptors, invoking a {@linkplain #preInvocation(InvocationContext, Object) preInvocation} method

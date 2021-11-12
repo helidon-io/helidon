@@ -23,14 +23,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.annotation.Priority;
-import javax.ws.rs.ConstrainedTo;
-import javax.ws.rs.Priorities;
-import javax.ws.rs.RuntimeType;
-import javax.ws.rs.client.ClientRequestContext;
-import javax.ws.rs.client.ClientRequestFilter;
-import javax.ws.rs.core.MultivaluedMap;
-
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.security.EndpointConfig;
@@ -42,6 +34,14 @@ import io.helidon.security.SecurityEnvironment;
 import io.helidon.security.SecurityResponse;
 import io.helidon.security.integration.common.OutboundTracing;
 import io.helidon.security.integration.common.SecurityTracing;
+
+import jakarta.annotation.Priority;
+import jakarta.ws.rs.ConstrainedTo;
+import jakarta.ws.rs.Priorities;
+import jakarta.ws.rs.RuntimeType;
+import jakarta.ws.rs.client.ClientRequestContext;
+import jakarta.ws.rs.client.ClientRequestFilter;
+import jakarta.ws.rs.core.MultivaluedMap;
 
 /**
  * JAX-RS client filter propagating current context principal.

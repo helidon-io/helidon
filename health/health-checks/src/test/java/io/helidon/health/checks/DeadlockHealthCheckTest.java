@@ -46,7 +46,7 @@ class DeadlockHealthCheckTest {
         Mockito.when(threadBean.findDeadlockedThreads()).thenReturn(new long[] {123, 456}); // Deadlocked!
         DeadlockHealthCheck check = new DeadlockHealthCheck(threadBean);
         HealthCheckResponse response = check.call();
-        MatcherAssert.assertThat(HealthCheckResponse.State.DOWN, is(response.getState()));
+        MatcherAssert.assertThat(HealthCheckResponse.Status.DOWN, is(response.getStatus()));
         MatcherAssert.assertThat(response.getData().isPresent(), is(false));
     }
 
@@ -55,7 +55,7 @@ class DeadlockHealthCheckTest {
         Mockito.when(threadBean.findDeadlockedThreads()).thenReturn(null); // no deadlock
         DeadlockHealthCheck check = new DeadlockHealthCheck(threadBean);
         HealthCheckResponse response = check.call();
-        MatcherAssert.assertThat(HealthCheckResponse.State.UP, is(response.getState()));
+        MatcherAssert.assertThat(HealthCheckResponse.Status.UP, is(response.getStatus()));
         MatcherAssert.assertThat(response.getData().isPresent(), is(false));
     }
 }

@@ -20,9 +20,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
-import javax.json.JsonStructure;
-import javax.json.JsonValue;
-
 import io.helidon.common.LogConfig;
 import io.helidon.common.http.MediaType;
 import io.helidon.grpc.server.GrpcRouting;
@@ -38,6 +35,8 @@ import io.helidon.webserver.WebServer;
 
 import io.grpc.Channel;
 import io.grpc.ManagedChannelBuilder;
+import jakarta.json.JsonStructure;
+import jakarta.json.JsonValue;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;

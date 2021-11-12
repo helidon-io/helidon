@@ -24,26 +24,20 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Stream;
 
-import javax.enterprise.inject.Instance;
-import javax.enterprise.inject.literal.NamedLiteral;
-import javax.jms.Connection;
-import javax.jms.ConnectionFactory;
-import javax.jms.JMSException;
-import javax.jms.MessageConsumer;
-import javax.jms.MessageProducer;
-import javax.jms.Queue;
-import javax.jms.Session;
-import javax.jms.Topic;
-
 import io.helidon.config.Config;
 import io.helidon.config.mp.MpConfigSources;
 import io.helidon.messaging.MessagingException;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.collection.IsMapContaining.hasEntry;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.fail;
-
+import jakarta.enterprise.inject.Instance;
+import jakarta.enterprise.inject.literal.NamedLiteral;
+import jakarta.jms.Connection;
+import jakarta.jms.ConnectionFactory;
+import jakarta.jms.JMSException;
+import jakarta.jms.MessageConsumer;
+import jakarta.jms.MessageProducer;
+import jakarta.jms.Queue;
+import jakarta.jms.Session;
+import jakarta.jms.Topic;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
@@ -52,6 +46,11 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.collection.IsMapContaining.hasEntry;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class ConfigTest {
 
@@ -69,7 +68,7 @@ public class ConfigTest {
         Topic topic = Mockito.mock(Topic.class);
         MessageConsumer consumer = Mockito.mock(MessageConsumer.class);
         MessageProducer producer = Mockito.mock(MessageProducer.class);
-        javax.jms.Message msg = Mockito.mock(javax.jms.Message.class);
+        jakarta.jms.Message msg = Mockito.mock(jakarta.jms.Message.class);
         Mockito.when(connectionFactory.createConnection()).thenReturn(jmsConnection);
         Mockito.when(instance.select(NamedLiteral.of("test-factory"))).thenReturn(instance);
         Mockito.when(instance.stream()).thenReturn(Stream.of(connectionFactory));

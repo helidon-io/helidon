@@ -36,9 +36,9 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.json.JsonObject;
-
 import io.helidon.security.jwt.JwtException;
+
+import jakarta.json.JsonObject;
 
 import static io.helidon.security.jwt.JwtUtil.asBigInteger;
 import static io.helidon.security.jwt.JwtUtil.asString;

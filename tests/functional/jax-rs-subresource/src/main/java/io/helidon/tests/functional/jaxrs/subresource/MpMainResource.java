@@ -15,13 +15,13 @@
  */
 package io.helidon.tests.functional.jaxrs.subresource;
 
-import javax.annotation.security.PermitAll;
-import javax.annotation.security.RolesAllowed;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-
 import io.helidon.security.annotations.Authenticated;
+
+import jakarta.annotation.security.PermitAll;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
 
 /**
  * A JAX-RS resource class.

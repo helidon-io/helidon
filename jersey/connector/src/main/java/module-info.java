@@ -21,11 +21,12 @@ import io.helidon.jersey.connector.HelidonConnectorProvider;
  *  * HTTP request and responses.
  */
 module io.helidon.jersey.connector {
+    requires java.logging;
+
+    requires jakarta.activation;
+    requires jakarta.ws.rs;
     requires jersey.client;
     requires jersey.common;
-    requires jakarta.activation;
-    requires java.logging;
-    requires java.ws.rs;
     requires io.helidon.common.reactive;
     requires io.helidon.webclient;
     requires io.netty.codec.http;

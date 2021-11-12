@@ -15,8 +15,8 @@
  */
 package io.helidon.tests.integration.nativeimage.mp3;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 
 import io.helidon.microprofile.server.RoutingPath;
 import io.helidon.security.Security;
@@ -25,7 +25,7 @@ import io.helidon.webserver.Service;
 
 /**
  * Reactive webserver service.
- * Supports only injection of {@link javax.enterprise.context.ApplicationScoped} beans.
+ * Supports only injection of {@link jakarta.enterprise.context.ApplicationScoped} beans.
  */
 @ApplicationScoped
 @RoutingPath("/reactive")

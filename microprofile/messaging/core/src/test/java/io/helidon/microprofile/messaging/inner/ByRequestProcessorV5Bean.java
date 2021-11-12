@@ -21,11 +21,10 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 
-import javax.enterprise.context.ApplicationScoped;
-
 import io.helidon.microprofile.messaging.AsyncTestBean;
 import io.helidon.microprofile.messaging.CountableTestBean;
 
+import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;
 import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;

@@ -15,7 +15,6 @@
  */
 package io.helidon.microprofile.metrics;
 
-
 import java.time.Duration;
 import java.util.Map;
 import java.util.SortedMap;
@@ -23,15 +22,14 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.stream.LongStream;
 
-import javax.inject.Inject;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.container.AsyncResponse;
-import javax.ws.rs.core.MediaType;
-
 import io.helidon.microprofile.tests.junit5.AddConfig;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
-
 import io.helidon.webserver.ServerResponse;
+
+import jakarta.inject.Inject;
+import jakarta.ws.rs.client.WebTarget;
+import jakarta.ws.rs.container.AsyncResponse;
+import jakarta.ws.rs.core.MediaType;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.SimpleTimer;
@@ -39,12 +37,11 @@ import org.eclipse.microprofile.metrics.Timer;
 import org.eclipse.microprofile.metrics.annotation.RegistryType;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.metrics.api.KeyPerformanceIndicatorMetricsSettings.Builder.KEY_PERFORMANCE_INDICATORS_CONFIG_KEY;
+import static io.helidon.metrics.api.KeyPerformanceIndicatorMetricsSettings.Builder.KEY_PERFORMANCE_INDICATORS_EXTENDED_CONFIG_KEY;
 import static io.helidon.microprofile.metrics.HelloWorldResource.SLOW_MESSAGE_SIMPLE_TIMER;
 import static io.helidon.microprofile.metrics.HelloWorldResource.SLOW_MESSAGE_TIMER;
 import static io.helidon.microprofile.metrics.HelloWorldResource.SLOW_RESPONSE;
-import static io.helidon.metrics.api.KeyPerformanceIndicatorMetricsSettings.Builder.KEY_PERFORMANCE_INDICATORS_CONFIG_KEY;
-import static io.helidon.metrics.api.KeyPerformanceIndicatorMetricsSettings.Builder.KEY_PERFORMANCE_INDICATORS_EXTENDED_CONFIG_KEY;
-
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.greaterThan;

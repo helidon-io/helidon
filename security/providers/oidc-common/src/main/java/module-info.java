@@ -39,7 +39,7 @@ module io.helidon.security.providers.oidc.common {
 
     // these are deprecated and will be removed in 3.x
     requires jersey.client;
-    requires java.ws.rs;
+    requires jakarta.ws.rs;
 
     exports io.helidon.security.providers.oidc.common;
 }

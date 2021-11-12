@@ -32,7 +32,7 @@ public class ConstantHealthCheckTest {
         HealthCheckResponse response = check.call();
 
         assertThat(response.getName(), is("foo"));
-        assertThat(response.getState(), is(HealthCheckResponse.State.UP));
+        assertThat(response.getStatus(), is(HealthCheckResponse.Status.UP));
         assertThat(response.getData(), is(notNullValue()));
     }
 
@@ -42,7 +42,7 @@ public class ConstantHealthCheckTest {
         HealthCheckResponse response = check.call();
 
         assertThat(response.getName(), is("foo"));
-        assertThat(response.getState(), is(HealthCheckResponse.State.DOWN));
+        assertThat(response.getStatus(), is(HealthCheckResponse.Status.DOWN));
         assertThat(response.getData(), is(notNullValue()));
     }
 }

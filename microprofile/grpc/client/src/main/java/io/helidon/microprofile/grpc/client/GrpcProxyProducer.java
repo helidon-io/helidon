@@ -16,14 +16,13 @@
 
 package io.helidon.microprofile.grpc.client;
 
-import javax.enterprise.inject.spi.BeanManager;
-import javax.enterprise.inject.spi.InjectionPoint;
-
 import io.helidon.grpc.client.GrpcChannelsProvider;
 import io.helidon.microprofile.grpc.core.InProcessGrpcChannel;
 import io.helidon.microprofile.grpc.core.ModelHelper;
 
 import io.grpc.Channel;
+import jakarta.enterprise.inject.spi.BeanManager;
+import jakarta.enterprise.inject.spi.InjectionPoint;
 
 /**
  * A utility class of gRPC CDI producer stubs.

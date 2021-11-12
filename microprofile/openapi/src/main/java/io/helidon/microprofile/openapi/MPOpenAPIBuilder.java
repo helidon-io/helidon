@@ -27,12 +27,6 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import javax.enterprise.inject.spi.CDI;
-import javax.ws.rs.Path;
-import javax.ws.rs.core.Application;
-import javax.ws.rs.core.Feature;
-import javax.ws.rs.ext.Provider;
-
 import io.helidon.microprofile.server.JaxRsApplication;
 import io.helidon.microprofile.server.JaxRsCdiExtension;
 import io.helidon.openapi.OpenAPISupport;
@@ -40,6 +34,11 @@ import io.helidon.openapi.OpenAPISupport;
 import io.smallrye.openapi.api.OpenApiConfig;
 import io.smallrye.openapi.api.OpenApiConfigImpl;
 import io.smallrye.openapi.runtime.scanner.FilteredIndexView;
+import jakarta.enterprise.inject.spi.CDI;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.core.Application;
+import jakarta.ws.rs.core.Feature;
+import jakarta.ws.rs.ext.Provider;
 import org.eclipse.microprofile.config.Config;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationTarget;
@@ -192,7 +191,7 @@ public final class MPOpenAPIBuilder extends OpenAPISupport.Builder<MPOpenAPIBuil
      *     <li>inferred from the objects returned from the application's {@code getSingletons} method.</li>
      * </ul>
      *
-     * If both methods return empty sets (the default implementation in {@link javax.ws.rs.core.Application}), then all
+     * If both methods return empty sets (the default implementation in {@link jakarta.ws.rs.core.Application}), then all
      * resources, providers, and features are considered relevant to the application.
      * <p>
      * In constructing the filtered index view for a JAX-RS application, we also exclude the other JAX-RS application classes.

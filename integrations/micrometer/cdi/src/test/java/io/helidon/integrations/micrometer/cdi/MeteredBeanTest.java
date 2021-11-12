@@ -17,12 +17,11 @@ package io.helidon.integrations.micrometer.cdi;
 
 import java.util.stream.IntStream;
 
-import javax.inject.Inject;
-
 import io.helidon.microprofile.tests.junit5.AddBean;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 
 import io.micrometer.core.instrument.MeterRegistry;
+import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;

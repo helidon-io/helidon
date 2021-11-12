@@ -21,9 +21,9 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAccessor;
 import java.util.Optional;
 
-import javax.json.JsonObject;
-
 import io.helidon.integrations.common.rest.ApiJsonParser;
+
+import jakarta.json.JsonObject;
 
 /**
  * Utility methods for processing OCI JSON responses.

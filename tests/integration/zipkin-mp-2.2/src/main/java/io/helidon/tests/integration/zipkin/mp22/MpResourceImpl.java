@@ -15,7 +15,7 @@
  */
 package io.helidon.tests.integration.zipkin.mp22;
 
-import javax.enterprise.context.RequestScoped;
+import jakarta.enterprise.context.RequestScoped;
 
 /**
  * Simple resource.

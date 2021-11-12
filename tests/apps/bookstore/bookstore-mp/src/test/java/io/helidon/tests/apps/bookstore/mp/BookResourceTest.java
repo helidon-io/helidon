@@ -16,10 +16,6 @@
 
 package io.helidon.tests.apps.bookstore.mp;
 
-import javax.inject.Inject;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.Response;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -27,6 +23,11 @@ import java.util.stream.Collectors;
 
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 import io.helidon.tests.apps.bookstore.common.Book;
+
+import jakarta.inject.Inject;
+import jakarta.ws.rs.client.Entity;
+import jakarta.ws.rs.client.WebTarget;
+import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

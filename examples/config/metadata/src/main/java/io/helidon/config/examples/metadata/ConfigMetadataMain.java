@@ -28,15 +28,15 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import javax.json.Json;
-import javax.json.JsonArray;
-import javax.json.JsonObject;
-import javax.json.JsonReader;
-import javax.json.JsonReaderFactory;
-import javax.json.JsonValue;
-
 import io.helidon.config.examples.metadata.ConfiguredType.ConfiguredProperty;
 import io.helidon.config.metadata.ConfiguredOption;
+
+import jakarta.json.Json;
+import jakarta.json.JsonArray;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonReader;
+import jakarta.json.JsonReaderFactory;
+import jakarta.json.JsonValue;
 
 /**
  * Reads configuration metadata and prints a full configuration example.

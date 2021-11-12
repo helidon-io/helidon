@@ -18,10 +18,9 @@ package io.helidon.grpc.core;
 
 import java.util.Arrays;
 
-import javax.annotation.Priority;
-
 import io.helidon.common.Prioritized;
 
+import jakarta.annotation.Priority;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;

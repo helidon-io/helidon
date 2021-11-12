@@ -16,9 +16,10 @@
 
 package io.helidon.tests.apps.bookstore.common;
 
-import javax.enterprise.context.ApplicationScoped;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
+
+import jakarta.enterprise.context.ApplicationScoped;
 
 /**
  * Provider for greeting message.

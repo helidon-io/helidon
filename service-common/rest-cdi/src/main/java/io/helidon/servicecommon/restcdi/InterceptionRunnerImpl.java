@@ -30,11 +30,11 @@ import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.interceptor.InvocationContext;
-import javax.ws.rs.container.AsyncResponse;
-import javax.ws.rs.container.CompletionCallback;
-import javax.ws.rs.container.Suspended;
-import javax.ws.rs.container.TimeoutHandler;
+import jakarta.interceptor.InvocationContext;
+import jakarta.ws.rs.container.AsyncResponse;
+import jakarta.ws.rs.container.CompletionCallback;
+import jakarta.ws.rs.container.Suspended;
+import jakarta.ws.rs.container.TimeoutHandler;
 
 /**
  * A general-purpose implementation of {@link InterceptionRunner}, supporting asynchronous JAX-RS endpoints as indicated by the

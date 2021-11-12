@@ -22,9 +22,9 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import javax.json.bind.Jsonb;
-import javax.json.bind.JsonbBuilder;
-import javax.json.bind.JsonbConfig;
+import jakarta.json.bind.Jsonb;
+import jakarta.json.bind.JsonbBuilder;
+import jakarta.json.bind.JsonbConfig;
 
 import static io.helidon.microprofile.graphql.server.ElementGenerator.CLOSE_CURLY;
 import static io.helidon.microprofile.graphql.server.ElementGenerator.CLOSE_SQUARE;

@@ -17,11 +17,11 @@ package io.helidon.security.abac.role;
 
 import java.lang.reflect.Method;
 
-import javax.annotation.Priority;
-import javax.annotation.security.PermitAll;
-
 import io.helidon.common.Prioritized;
 import io.helidon.security.providers.common.spi.AnnotationAnalyzer;
+
+import jakarta.annotation.Priority;
+import jakarta.annotation.security.PermitAll;
 
 /**
  * Implementation of {@link AnnotationAnalyzer} which checks for {@link PermitAll} annotation if

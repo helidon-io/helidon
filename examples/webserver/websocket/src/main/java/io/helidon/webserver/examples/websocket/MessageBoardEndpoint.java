@@ -18,12 +18,12 @@ package io.helidon.webserver.examples.websocket;
 
 import java.util.logging.Logger;
 
-import javax.websocket.CloseReason;
-import javax.websocket.Encoder;
-import javax.websocket.Endpoint;
-import javax.websocket.EndpointConfig;
-import javax.websocket.MessageHandler;
-import javax.websocket.Session;
+import jakarta.websocket.CloseReason;
+import jakarta.websocket.Encoder;
+import jakarta.websocket.Endpoint;
+import jakarta.websocket.EndpointConfig;
+import jakarta.websocket.MessageHandler;
+import jakarta.websocket.Session;
 
 /**
  * Class MessageBoardEndpoint.

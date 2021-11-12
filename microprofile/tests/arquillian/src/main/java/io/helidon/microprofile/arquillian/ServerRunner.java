@@ -18,10 +18,9 @@ package io.helidon.microprofile.arquillian;
 
 import java.util.logging.Logger;
 
-import javax.ws.rs.ApplicationPath;
-
 import io.helidon.microprofile.server.Server;
 
+import jakarta.ws.rs.ApplicationPath;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 

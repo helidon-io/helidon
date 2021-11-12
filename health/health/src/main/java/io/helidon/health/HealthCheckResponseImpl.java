@@ -28,10 +28,10 @@ import org.eclipse.microprofile.health.HealthCheckResponse;
  */
 class HealthCheckResponseImpl extends HealthCheckResponse {
     private final String name;
-    private final State state;
+    private final Status state;
     private final TreeMap<String, Object> data;
 
-    HealthCheckResponseImpl(String name, State state, Map<String, Object> data) {
+    HealthCheckResponseImpl(String name, Status state, Map<String, Object> data) {
         // Since this constructor is internally called, I'm harsh on accepted values
         Objects.requireNonNull(name);
         Objects.requireNonNull(state);
@@ -58,7 +58,7 @@ class HealthCheckResponseImpl extends HealthCheckResponse {
     }
 
     @Override
-    public State getState() {
+    public Status getStatus() {
         return state;
     }
 

@@ -15,9 +15,9 @@
  */
 package io.helidon.common.reactive;
 
-import org.junit.jupiter.api.Test;
-
 import java.util.concurrent.CompletableFuture;
+
+import org.junit.jupiter.api.Test;
 
 public class SingleFromCompletionStageTest {
 

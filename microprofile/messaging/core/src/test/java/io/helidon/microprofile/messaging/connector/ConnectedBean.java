@@ -16,11 +16,10 @@
 
 package io.helidon.microprofile.messaging.connector;
 
-import org.eclipse.microprofile.reactive.messaging.Incoming;
-
-import javax.enterprise.context.ApplicationScoped;
-
 import java.util.concurrent.CountDownLatch;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import org.eclipse.microprofile.reactive.messaging.Incoming;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItemInArray;

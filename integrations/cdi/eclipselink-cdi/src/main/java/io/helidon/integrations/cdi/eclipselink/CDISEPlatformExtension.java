@@ -19,8 +19,7 @@ import java.lang.reflect.Field;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.enterprise.inject.spi.Extension;
-
+import jakarta.enterprise.inject.spi.Extension;
 import org.eclipse.persistence.platform.server.NoServerPlatform;
 import org.eclipse.persistence.platform.server.ServerPlatformUtils;
 

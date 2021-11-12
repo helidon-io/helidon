@@ -23,8 +23,7 @@ import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithEnumName;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContact;
 import io.helidon.microprofile.graphql.server.test.types.TypeWithMap;
 
-import javax.enterprise.context.ApplicationScoped;
-
+import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.graphql.GraphQLApi;
 import org.eclipse.microprofile.graphql.Name;
 import org.eclipse.microprofile.graphql.Query;

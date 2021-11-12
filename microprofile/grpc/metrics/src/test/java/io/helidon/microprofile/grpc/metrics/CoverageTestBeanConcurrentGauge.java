@@ -16,6 +16,7 @@
 package io.helidon.microprofile.grpc.metrics;
 
 import io.helidon.microprofile.grpc.core.GrpcMethod;
+
 import org.eclipse.microprofile.metrics.annotation.ConcurrentGauge;
 
 public class CoverageTestBeanConcurrentGauge extends CoverageTestBeanBase {

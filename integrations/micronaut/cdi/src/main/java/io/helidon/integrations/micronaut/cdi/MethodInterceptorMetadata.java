@@ -21,11 +21,10 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
-import javax.enterprise.inject.spi.AnnotatedMethod;
-
 import io.micronaut.aop.MethodInterceptor;
 import io.micronaut.core.annotation.AnnotationValue;
 import io.micronaut.inject.ExecutableMethod;
+import jakarta.enterprise.inject.spi.AnnotatedMethod;
 
 // metadata of a single method, holding its executable method and interceptors to execute
 class MethodInterceptorMetadata {

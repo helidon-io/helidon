@@ -16,13 +16,13 @@
 
 package io.helidon.webserver;
 
-import io.helidon.common.http.HashParameters;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import io.helidon.common.http.HashParameters;
 import io.helidon.common.http.Parameters;
 
 import org.hamcrest.collection.IsCollectionWithSize;

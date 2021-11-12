@@ -23,16 +23,15 @@ import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
-import javax.enterprise.inject.se.SeContainer;
-import javax.enterprise.inject.spi.CDI;
-import javax.ws.rs.core.Application;
-
 import io.helidon.common.configurable.ServerThreadPoolSupplier;
 import io.helidon.common.context.Contexts;
 import io.helidon.config.mp.MpConfig;
 import io.helidon.config.mp.MpConfigSources;
 import io.helidon.microprofile.cdi.HelidonContainer;
 
+import jakarta.enterprise.inject.se.SeContainer;
+import jakarta.enterprise.inject.spi.CDI;
+import jakarta.ws.rs.core.Application;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.glassfish.jersey.server.ResourceConfig;
@@ -374,7 +373,7 @@ public interface Server {
 
         /**
          * JAX-RS application to use. If more than one application is added, they must be registered
-         * on different {@link javax.ws.rs.ApplicationPath}.
+         * on different {@link jakarta.ws.rs.ApplicationPath}.
          * Also you must make sure that paths do not overlap, as that may cause unexpected results (e.g.
          * registering one application under root ("/") and another under "/app1" would not work as expected).
          *
@@ -429,7 +428,7 @@ public interface Server {
 
         /**
          * JAX-RS application to use. If more than one application is added, they must be registered
-         * on different {@link javax.ws.rs.ApplicationPath}.
+         * on different {@link jakarta.ws.rs.ApplicationPath}.
          * Also you must make sure that paths do not overlap, as that may cause unexpected results (e.g.
          * registering one application under root ("/") and another under "/app1" would not work as expected).
          *

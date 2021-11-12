@@ -30,12 +30,12 @@ import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.stream.StreamSupport;
 
-import javax.enterprise.inject.Instance;
-import javax.enterprise.inject.spi.CDI;
-import javax.enterprise.util.AnnotationLiteral;
-import javax.inject.Named;
-
 import io.helidon.grpc.core.MarshallerSupplier;
+
+import jakarta.enterprise.inject.Instance;
+import jakarta.enterprise.inject.spi.CDI;
+import jakarta.enterprise.util.AnnotationLiteral;
+import jakarta.inject.Named;
 
 /**
  * Common model helper methods.

@@ -18,11 +18,11 @@ package io.helidon.integrations.cdi.jpa;
 import java.util.Calendar;
 import java.util.Date;
 
-import javax.persistence.FlushModeType;
-import javax.persistence.Parameter;
-import javax.persistence.ParameterMode;
-import javax.persistence.StoredProcedureQuery;
-import javax.persistence.TemporalType;
+import jakarta.persistence.FlushModeType;
+import jakarta.persistence.Parameter;
+import jakarta.persistence.ParameterMode;
+import jakarta.persistence.StoredProcedureQuery;
+import jakarta.persistence.TemporalType;
 
 abstract class DelegatingStoredProcedureQuery extends DelegatingQuery implements StoredProcedureQuery {
 

@@ -20,7 +20,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import javax.persistence.EntityManager;
+import jakarta.persistence.EntityManager;
 
 import io.helidon.tests.integration.jpa.model.Pokemon;
 import io.helidon.tests.integration.jpa.model.Stadium;

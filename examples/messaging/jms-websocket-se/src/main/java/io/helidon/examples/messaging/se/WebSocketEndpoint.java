@@ -23,17 +23,16 @@ import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.websocket.CloseReason;
-import javax.websocket.Endpoint;
-import javax.websocket.EndpointConfig;
-import javax.websocket.Session;
-
 import io.helidon.config.Config;
 import io.helidon.messaging.Channel;
 import io.helidon.messaging.Messaging;
 import io.helidon.messaging.connectors.jms.JmsConnector;
 import io.helidon.messaging.connectors.jms.Type;
 
+import jakarta.websocket.CloseReason;
+import jakarta.websocket.Endpoint;
+import jakarta.websocket.EndpointConfig;
+import jakarta.websocket.Session;
 import org.apache.activemq.jndi.ActiveMQInitialContextFactory;
 
 /**

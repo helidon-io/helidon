@@ -40,8 +40,6 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import javax.json.bind.annotation.JsonbProperty;
-
 import io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.DiscoveredMethod;
 
 import graphql.schema.DataFetcher;
@@ -49,6 +47,7 @@ import graphql.schema.DataFetcherFactories;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.PropertyDataFetcher;
+import jakarta.json.bind.annotation.JsonbProperty;
 import org.eclipse.microprofile.graphql.Description;
 import org.eclipse.microprofile.graphql.GraphQLApi;
 import org.eclipse.microprofile.graphql.Id;

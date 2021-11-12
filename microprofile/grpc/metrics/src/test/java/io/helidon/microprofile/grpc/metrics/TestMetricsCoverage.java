@@ -17,18 +17,16 @@ package io.helidon.microprofile.grpc.metrics;
 
 import java.lang.annotation.Annotation;
 import java.util.Arrays;
-import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-
-import javax.enterprise.inject.spi.AnnotatedMethod;
-import javax.inject.Inject;
 
 import io.helidon.microprofile.tests.junit5.AddBean;
 import io.helidon.microprofile.tests.junit5.AddExtension;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 
+import jakarta.enterprise.inject.spi.AnnotatedMethod;
+import jakarta.inject.Inject;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.junit.jupiter.api.Test;
 

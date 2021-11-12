@@ -33,8 +33,8 @@ module io.helidon.grpc.server {
     requires transitive io.opentracing.api;
     requires transitive opentracing.grpc;
 
-    requires java.annotation;
+    requires jakarta.annotation;
     requires java.logging;
 
-    requires jakarta.inject.api;
+    requires jakarta.inject;
 }

@@ -14,7 +14,7 @@
     {
         "bean-class": "io.helidon.integrations.jta.cdi.NarayanaExtension",
         "ifaces": [
-            "javax.transaction.Transaction"
+            "jakarta.transaction.Transaction"
         ]
     }
 ]

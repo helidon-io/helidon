@@ -25,7 +25,7 @@ module io.helidon.health {
     requires io.helidon.webserver;
     requires io.helidon.webserver.cors;
     requires io.helidon.media.jsonp;
-    requires java.json;
+    requires jakarta.json;
     requires io.helidon.faulttolerance;
 
     exports io.helidon.health;

@@ -1,6 +1,6 @@
-javax.ws.rs
-javax.ws.rs.client
-javax.ws.rs.container
-javax.ws.rs.core
-javax.ws.rs.ext
-javax.ws.rs.sse
+jakarta.ws.rs
+jakarta.ws.rs.client
+jakarta.ws.rs.container
+jakarta.ws.rs.core
+jakarta.ws.rs.ext
+jakarta.ws.rs.sse

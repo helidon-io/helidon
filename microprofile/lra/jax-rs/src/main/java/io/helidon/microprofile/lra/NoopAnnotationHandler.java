@@ -16,9 +16,9 @@
 
 package io.helidon.microprofile.lra;
 
-import javax.ws.rs.container.ContainerRequestContext;
-import javax.ws.rs.container.ContainerResponseContext;
-import javax.ws.rs.container.ResourceInfo;
+import jakarta.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.container.ContainerResponseContext;
+import jakarta.ws.rs.container.ResourceInfo;
 
 class NoopAnnotationHandler implements AnnotationHandler {
 

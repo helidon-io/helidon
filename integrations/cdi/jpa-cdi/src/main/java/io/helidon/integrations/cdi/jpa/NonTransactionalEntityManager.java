@@ -19,16 +19,16 @@ import java.lang.annotation.Annotation;
 import java.util.Map;
 import java.util.Set;
 
-import javax.enterprise.inject.Instance;
-import javax.enterprise.inject.Vetoed;
-import javax.persistence.EntityManager;
-import javax.persistence.LockModeType;
-import javax.persistence.PersistenceException;
-import javax.persistence.Query;
-import javax.persistence.StoredProcedureQuery;
-import javax.persistence.TransactionRequiredException;
-import javax.persistence.TypedQuery;
-import javax.persistence.criteria.CriteriaQuery;
+import jakarta.enterprise.inject.Instance;
+import jakarta.enterprise.inject.Vetoed;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
+import jakarta.persistence.PersistenceException;
+import jakarta.persistence.Query;
+import jakarta.persistence.StoredProcedureQuery;
+import jakarta.persistence.TransactionRequiredException;
+import jakarta.persistence.TypedQuery;
+import jakarta.persistence.criteria.CriteriaQuery;
 
 /**
  * A {@link DelegatingEntityManager} that is definitionally not backed

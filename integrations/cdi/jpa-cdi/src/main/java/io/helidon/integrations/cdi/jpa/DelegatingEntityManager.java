@@ -18,20 +18,20 @@ package io.helidon.integrations.cdi.jpa;
 import java.util.List;
 import java.util.Map;
 
-import javax.persistence.EntityGraph;
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.EntityTransaction;
-import javax.persistence.FlushModeType;
-import javax.persistence.LockModeType;
-import javax.persistence.Query;
-import javax.persistence.StoredProcedureQuery;
-import javax.persistence.TypedQuery;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaDelete;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.CriteriaUpdate;
-import javax.persistence.metamodel.Metamodel;
+import jakarta.persistence.EntityGraph;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.EntityTransaction;
+import jakarta.persistence.FlushModeType;
+import jakarta.persistence.LockModeType;
+import jakarta.persistence.Query;
+import jakarta.persistence.StoredProcedureQuery;
+import jakarta.persistence.TypedQuery;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaDelete;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.CriteriaUpdate;
+import jakarta.persistence.metamodel.Metamodel;
 
 /**
  * A partial {@link EntityManager} implementation that forwards all
@@ -120,7 +120,7 @@ abstract class DelegatingEntityManager implements EntityManager, AutoCloseable {
      *
      * @return an {@link EntityManager}; never {@code null}
      *
-     * @exception javax.persistence.PersistenceException if an error
+     * @exception jakarta.persistence.PersistenceException if an error
      * occurs
      *
      * @see #acquireDelegate()
@@ -154,7 +154,7 @@ abstract class DelegatingEntityManager implements EntityManager, AutoCloseable {
      *
      * @return a non-{@code null} {@link EntityManager}
      *
-     * @exception javax.persistence.PersistenceException if an error
+     * @exception jakarta.persistence.PersistenceException if an error
      * occurs
      *
      * @see #delegate()

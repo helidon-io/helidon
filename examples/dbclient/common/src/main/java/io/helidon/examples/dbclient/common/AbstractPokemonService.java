@@ -19,8 +19,6 @@ import java.util.concurrent.CompletionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.json.JsonObject;
-
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
@@ -31,6 +29,8 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
+
+import jakarta.json.JsonObject;
 
 /**
  * Common methods that do not differ between JDBC and MongoDB.

@@ -23,10 +23,11 @@ import java.util.Map;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
-import javax.json.JsonObject;
 
 import io.helidon.security.jwt.JwtException;
 import io.helidon.security.jwt.JwtUtil;
+
+import jakarta.json.JsonObject;
 
 /**
  * Symmetric cipher JSON web key.

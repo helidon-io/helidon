@@ -19,9 +19,9 @@
  */
 module io.helidon.security.examples.abac {
     // CDI API
-    requires jakarta.enterprise.cdi.api;
+    requires jakarta.cdi;
     // implementation of expression language to use (used by the abac provider: policy expression language
-    requires jakarta.el.api;
+    requires jakarta.el;
     requires io.helidon.microprofile.bundle;
     // needed for security components and restrictions of this module
     requires io.helidon.security;

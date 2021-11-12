@@ -82,7 +82,7 @@ class MemoryHealthCheckTest {
         setMemoryUsage(used, total);
         HeapMemoryHealthCheck check = new HeapMemoryHealthCheck(runtime, THRESHOLD_PERCENT);
         HealthCheckResponse response = check.call();
-        assertThat(response.getState(), is(HealthCheckResponse.State.UP));
+        assertThat(response.getStatus(), is(HealthCheckResponse.Status.UP));
         assertThat(response.getData().isPresent(), is(true));
         // Another test will make sure DiskSpaceHealthCheck returns the right stuff, so skipping
         // the textual return values
@@ -98,7 +98,7 @@ class MemoryHealthCheckTest {
         setMemoryUsage(used, total);
         HeapMemoryHealthCheck check = new HeapMemoryHealthCheck(runtime, THRESHOLD_PERCENT);
         HealthCheckResponse response = check.call();
-        assertThat(response.getState(), is(HealthCheckResponse.State.DOWN));
+        assertThat(response.getStatus(), is(HealthCheckResponse.Status.DOWN));
         assertThat(response.getData().isPresent(), is(true));
         // Another test will make sure DiskSpaceHealthCheck returns the right stuff, so skipping
         // the textual return values

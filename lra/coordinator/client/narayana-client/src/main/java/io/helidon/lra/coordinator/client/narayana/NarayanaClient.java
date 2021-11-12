@@ -27,7 +27,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Single;
 import io.helidon.faulttolerance.Retry;
@@ -282,7 +281,7 @@ public class NarayanaClient implements CoordinatorClient {
     }
 
     /**
-     * Narayana accepts participant's links as RFC 5988 {@code javax.ws.rs.core.Link}s delimited by commas.
+     * Narayana accepts participant's links as RFC 5988 {@code jakarta.ws.rs.core.Link}s delimited by commas.
      * <p>
      * Example:
      * <pre>{@code

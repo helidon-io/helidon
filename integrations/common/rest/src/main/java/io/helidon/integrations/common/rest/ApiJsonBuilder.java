@@ -23,12 +23,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-import javax.json.JsonArrayBuilder;
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObject;
-import javax.json.JsonObjectBuilder;
-
 import io.helidon.common.Base64Value;
+
+import jakarta.json.JsonArrayBuilder;
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonObjectBuilder;
 
 /**
  * Common base class for builders that construct a JSON object.

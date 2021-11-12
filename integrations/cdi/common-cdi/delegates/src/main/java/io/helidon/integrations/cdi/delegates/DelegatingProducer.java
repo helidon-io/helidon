@@ -18,9 +18,9 @@ package io.helidon.integrations.cdi.delegates;
 import java.util.Objects;
 import java.util.Set;
 
-import javax.enterprise.context.spi.CreationalContext;
-import javax.enterprise.inject.spi.InjectionPoint;
-import javax.enterprise.inject.spi.Producer;
+import jakarta.enterprise.context.spi.CreationalContext;
+import jakarta.enterprise.inject.spi.InjectionPoint;
+import jakarta.enterprise.inject.spi.Producer;
 
 /**
  * A {@link Producer} implementation that forwards all operations to

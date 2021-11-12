@@ -23,9 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import javax.ws.rs.core.Response;
-import javax.ws.rs.ext.ExceptionMapper;
-
 import io.helidon.security.Security;
 import io.helidon.security.integration.jersey.SecurityFeature;
 import io.helidon.security.providers.abac.AbacProvider;
@@ -35,6 +32,9 @@ import io.helidon.security.providers.httpauth.SecureUserStore;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.jersey.JerseySupport;
+
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.ext.ExceptionMapper;
 
 /**
  * Example of integration between Jersey and Security module using builders.

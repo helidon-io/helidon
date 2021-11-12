@@ -20,9 +20,8 @@ import java.time.temporal.ChronoUnit;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import javax.enterprise.context.Dependent;
-import javax.inject.Inject;
-
+import jakarta.enterprise.context.Dependent;
+import jakarta.inject.Inject;
 import org.eclipse.microprofile.faulttolerance.Asynchronous;
 import org.eclipse.microprofile.faulttolerance.Bulkhead;
 import org.eclipse.microprofile.faulttolerance.CircuitBreaker;

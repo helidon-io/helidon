@@ -29,6 +29,11 @@
     <artifactId>tck-fault-tolerance</artifactId>
     <name>Helidon Microprofile Tests TCK Fault Tolerance</name>
 
+    <properties>
+        <!-- 3.0.0-JAKARTA -->
+        <skipTests>true</skipTests>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.microprofile.tests</groupId>

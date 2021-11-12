@@ -16,8 +16,8 @@
 
 package io.helidon.tests.integration.nativeimage.mp1;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Produces;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Produces;
 
 import io.helidon.tests.integration.nativeimage.mp1.other.ProducedBean;
 

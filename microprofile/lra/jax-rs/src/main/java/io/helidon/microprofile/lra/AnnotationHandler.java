@@ -20,14 +20,12 @@ import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 
-import javax.ws.rs.container.ContainerRequestContext;
-import javax.ws.rs.container.ContainerResponseContext;
-import javax.ws.rs.container.ResourceInfo;
-
-
 import io.helidon.common.context.Contexts;
 import io.helidon.lra.coordinator.client.CoordinatorClient;
 
+import jakarta.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.container.ContainerResponseContext;
+import jakarta.ws.rs.container.ResourceInfo;
 import org.jboss.jandex.AnnotationInstance;
 
 import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_CONTEXT_HEADER;

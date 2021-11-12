@@ -22,7 +22,6 @@ import java.util.stream.LongStream;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.reactive.Multi;
 
-import org.reactivestreams.Publisher;
 import org.reactivestreams.tck.TestEnvironment;
 import org.reactivestreams.tck.flow.FlowPublisherVerification;
 import org.testng.annotations.Test;

@@ -16,12 +16,11 @@
 
 package io.helidon.microprofile.faulttolerance;
 
-import javax.inject.Inject;
-
+import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Tests to verify that the default thread pool sizes can be set via config.

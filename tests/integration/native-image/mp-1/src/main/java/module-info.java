@@ -18,14 +18,14 @@
  * Application to test GraalVM native-image with Helidon MP.
  */
 module helidon.tests.nimage.mp {
-    requires jakarta.enterprise.cdi.api;
-    requires java.ws.rs;
+    requires jakarta.cdi;
+    requires jakarta.ws.rs;
     requires io.helidon.security.annotations;
     requires io.helidon.security.abac.scope;
-    requires java.annotation;
+    requires jakarta.annotation;
     requires microprofile.openapi.api;
-    requires java.json;
-    requires jakarta.inject.api;
+    requires jakarta.json;
+    requires jakarta.inject;
     requires java.logging;
     requires microprofile.jwt.auth.api;
     requires microprofile.health.api;
@@ -34,7 +34,7 @@ module helidon.tests.nimage.mp {
     requires microprofile.fault.tolerance.api;
     requires microprofile.rest.client.api;
     requires microprofile.metrics.api;
-    requires java.json.bind;
+    requires jakarta.json.bind;
     requires microprofile.config.api;
     // this is required, as otherwise the beans from this module
     // never reach health check CDI extension

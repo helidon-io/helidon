@@ -21,9 +21,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import javax.enterprise.util.AnnotationLiteral;
-
 import io.micronaut.core.annotation.Internal;
+import jakarta.enterprise.util.AnnotationLiteral;
 
 /**
  * Used to add interceptors to existing CDI beans to be intercepted by Micronaut interceptors.

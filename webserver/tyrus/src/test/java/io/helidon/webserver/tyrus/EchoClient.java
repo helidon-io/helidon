@@ -24,13 +24,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.logging.Logger;
 
-import javax.websocket.ClientEndpointConfig;
-import javax.websocket.CloseReason;
-import javax.websocket.Endpoint;
-import javax.websocket.EndpointConfig;
-import javax.websocket.MessageHandler;
-import javax.websocket.Session;
-
+import jakarta.websocket.ClientEndpointConfig;
+import jakarta.websocket.CloseReason;
+import jakarta.websocket.Endpoint;
+import jakarta.websocket.EndpointConfig;
+import jakarta.websocket.MessageHandler;
+import jakarta.websocket.Session;
 import org.glassfish.tyrus.client.ClientManager;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;

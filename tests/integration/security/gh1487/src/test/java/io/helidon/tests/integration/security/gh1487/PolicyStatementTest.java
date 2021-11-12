@@ -16,15 +16,14 @@
 
 package io.helidon.tests.integration.security.gh1487;
 
-import javax.enterprise.inject.se.SeContainer;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.Response;
-
 import io.helidon.microprofile.cdi.HelidonContainer;
 import io.helidon.microprofile.server.ServerCdiExtension;
 
+import jakarta.enterprise.inject.se.SeContainer;
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.ClientBuilder;
+import jakarta.ws.rs.client.WebTarget;
+import jakarta.ws.rs.core.Response;
 import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;

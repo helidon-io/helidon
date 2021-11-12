@@ -18,12 +18,11 @@ package io.helidon.webclient.jaxrs;
 import java.util.concurrent.ExecutorService;
 import java.util.logging.Logger;
 
-import javax.annotation.Priority;
-import javax.ws.rs.ConstrainedTo;
-import javax.ws.rs.RuntimeType;
-import javax.ws.rs.core.Configuration;
-import javax.ws.rs.core.FeatureContext;
-
+import jakarta.annotation.Priority;
+import jakarta.ws.rs.ConstrainedTo;
+import jakarta.ws.rs.RuntimeType;
+import jakarta.ws.rs.core.Configuration;
+import jakarta.ws.rs.core.FeatureContext;
 import org.glassfish.jersey.client.ClientAsyncExecutor;
 import org.glassfish.jersey.internal.spi.AutoDiscoverable;
 import org.glassfish.jersey.model.internal.CommonConfig;

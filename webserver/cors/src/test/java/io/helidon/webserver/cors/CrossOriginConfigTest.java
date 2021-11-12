@@ -17,8 +17,8 @@ package io.helidon.webserver.cors;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-
 import io.helidon.config.MissingValueException;
+
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;

@@ -15,6 +15,9 @@
  */
 package io.helidon.integrations.micrometer;
 
+import java.util.concurrent.ExecutionException;
+import java.util.function.Supplier;
+
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.config.Config;
@@ -26,9 +29,6 @@ import io.helidon.webserver.WebServer;
 
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Test;
-
-import java.util.concurrent.ExecutionException;
-import java.util.function.Supplier;
 
 import static org.hamcrest.Matchers.is;
 

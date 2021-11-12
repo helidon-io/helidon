@@ -24,14 +24,13 @@ import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.inject.Inject;
-import javax.interceptor.InvocationContext;
-
 import io.helidon.integrations.micrometer.cdi.MicrometerCdiExtension.MeterWorkItem;
 import io.helidon.servicecommon.restcdi.HelidonInterceptor;
 
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
+import jakarta.inject.Inject;
+import jakarta.interceptor.InvocationContext;
 
 /**
  * Base implementation for all Micrometer interceptors.

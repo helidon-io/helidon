@@ -19,8 +19,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.enterprise.inject.se.SeContainer;
-import javax.enterprise.inject.spi.CDI;
+import jakarta.enterprise.inject.se.SeContainer;
+import jakarta.enterprise.inject.spi.CDI;
 
 /**
  * This is the "master" main class of Helidon MP.

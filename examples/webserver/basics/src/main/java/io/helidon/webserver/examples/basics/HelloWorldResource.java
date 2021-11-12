@@ -16,8 +16,8 @@
 
 package io.helidon.webserver.examples.basics;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
 
 /**
  * Example of the JAX-RS resource. It is integrated with WebServer in {@link Main} class example.

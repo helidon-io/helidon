@@ -33,6 +33,6 @@ module io.helidon.microprofile.grpc.metrics {
     provides io.helidon.microprofile.grpc.server.AnnotatedServiceConfigurer
             with io.helidon.microprofile.grpc.metrics.MetricsConfigurer;
 
-    provides javax.enterprise.inject.spi.Extension
+    provides jakarta.enterprise.inject.spi.Extension
             with io.helidon.microprofile.grpc.metrics.GrpcMetricsCdiExtension;
 }
