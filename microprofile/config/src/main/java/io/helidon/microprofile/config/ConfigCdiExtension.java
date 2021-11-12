@@ -300,13 +300,14 @@ public class ConfigCdiExtension implements Extension {
                                      .orElseGet(OptionalDouble::empty));
         }
 
-        Optional<String> stringValue = config.getOptionalValue(key, String.class);
+        ConfigValue configValue = config.getConfigValue(key);
 
-        if (stringValue.isEmpty()) {
+
+        if (configValue.getValue() == null) {
             return convert(key, config, configuredDefault, type);
         }
 
-        return convert(key, config, stringValue.get(), type);
+        return convert(key, config, configValue, type);
     }
 
     @SuppressWarnings("unchecked")
