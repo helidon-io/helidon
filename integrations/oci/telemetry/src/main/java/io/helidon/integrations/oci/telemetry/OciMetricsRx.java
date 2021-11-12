@@ -92,7 +92,7 @@ public interface OciMetricsRx {
     /**
      * Fluent API builder for {@link io.helidon.integrations.oci.telemetry.OciMetricsRx}.
      */
-    class Builder implements io.helidon.common.Builder<OciMetricsRx> {
+    class Builder implements io.helidon.common.Builder<Builder, OciMetricsRx> {
         private final OciRestApi.Builder apiBuilder = OciRestApi.builder();
 
         private String apiVersion = API_VERSION;

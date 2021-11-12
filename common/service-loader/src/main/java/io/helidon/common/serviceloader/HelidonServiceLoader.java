@@ -138,7 +138,7 @@ public final class HelidonServiceLoader<T> implements Iterable<T> {
      *
      * @param <T> type of the service to be loaded
      */
-    public static final class Builder<T> implements io.helidon.common.Builder<HelidonServiceLoader<T>> {
+    public static final class Builder<T> implements io.helidon.common.Builder<Builder<T>, HelidonServiceLoader<T>> {
         private final ServiceLoader<T> serviceLoader;
         private final List<ServiceWithPriority<T>> customServices = new LinkedList<ServiceWithPriority<T>>();
         private final Set<String> excludedServiceClasses = new HashSet<>();

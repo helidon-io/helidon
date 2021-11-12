@@ -128,11 +128,9 @@ public class Grant implements AbacSupport, Principal {
     /**
      * A fluent API builder for {@link Grant} to be extended by other {@link Grant} implementations.
      *
-     * @param <T> type of the builder, needed for builder inheritance
+     * @param <B> type of the builder, needed for builder inheritance
      */
-    public static class Builder<T extends Builder<T>> implements io.helidon.common.Builder<Grant> {
-        private final T instance;
-
+    public static class Builder<B extends Builder<B>> implements io.helidon.common.Builder<B, Grant> {
         private BasicAttributes properties = BasicAttributes.create();
         private String type;
         private String name;
@@ -141,9 +139,7 @@ public class Grant implements AbacSupport, Principal {
         /**
          * Create a new instance.
          */
-        @SuppressWarnings("unchecked")
         protected Builder() {
-            this.instance = (T) this;
         }
 
         @Override
@@ -157,9 +153,9 @@ public class Grant implements AbacSupport, Principal {
          * @param type type name, known types are "role" and "scope"
          * @return updated builder instance
          */
-        public T type(String type) {
+        public B type(String type) {
             this.type = type;
-            return instance;
+            return identity();
         }
 
         /**
@@ -168,9 +164,9 @@ public class Grant implements AbacSupport, Principal {
          * @param name logical name of this grant (e.g. "admin", "calendar_read" etc.)
          * @return updated builder instance
          */
-        public T name(String name) {
+        public B name(String name) {
             this.name = name;
-            return instance;
+            return identity();
         }
 
         /**
@@ -179,9 +175,9 @@ public class Grant implements AbacSupport, Principal {
          * @param origin who granted this grant?
          * @return updated builder instance
          */
-        public T origin(String origin) {
+        public B origin(String origin) {
             this.origin = origin;
-            return instance;
+            return identity();
         }
 
         /**
@@ -191,9 +187,9 @@ public class Grant implements AbacSupport, Principal {
          *                "cn" etc.)
          * @return updated builder instance
          */
-        public T attributes(AbacSupport attribs) {
+        public B attributes(AbacSupport attribs) {
             this.properties = BasicAttributes.create(attribs);
-            return instance;
+            return identity();
         }
 
         /**
@@ -203,9 +199,9 @@ public class Grant implements AbacSupport, Principal {
          * @param value value of the attribute
          * @return updated builder instance
          */
-        public T addAttribute(String key, Object value) {
+        public B addAttribute(String key, Object value) {
             this.properties.put(key, value);
-            return instance;
+            return identity();
         }
     }
 }

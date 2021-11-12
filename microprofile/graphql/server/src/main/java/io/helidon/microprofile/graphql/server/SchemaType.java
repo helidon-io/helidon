@@ -291,7 +291,7 @@ class SchemaType extends AbstractDescriptiveElement implements ElementGenerator 
     /**
      * A fluent API {@link io.helidon.common.Builder} to build instances of {@link SchemaType}.
      */
-    public static class Builder implements io.helidon.common.Builder<SchemaType> {
+    public static class Builder implements io.helidon.common.Builder<Builder, SchemaType> {
 
         private String name;
         private String valueClassName;

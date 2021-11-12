@@ -162,7 +162,7 @@ public class Neo4jMetricsSupport {
     /**
      * Fluent API builder for Neo4jMetricsSupport.
      */
-    public static class Builder implements io.helidon.common.Builder<Neo4jMetricsSupport> {
+    public static class Builder implements io.helidon.common.Builder<Builder, Neo4jMetricsSupport> {
 
         private Driver driver;
 

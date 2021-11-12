@@ -77,7 +77,8 @@ public abstract class ApiResponse extends ApiJsonParser {
      * @param <B> type of the builder
      * @param <T> type of api response
      */
-    public abstract static class Builder<B extends Builder<B, T>, T extends ApiResponse> implements io.helidon.common.Builder<T> {
+    public abstract static class Builder<B extends Builder<B, T>, T extends ApiResponse>
+            implements io.helidon.common.Builder<B, T> {
         private Headers headers;
         private Http.ResponseStatus status;
         private String requestId;

@@ -365,7 +365,7 @@ public final class SerializationConfig {
      * You can use system properties defined in the class to modify configuration, in which case you can just use
      * {@link SerializationConfig#configureRuntime()} directly.
      */
-    public static class Builder implements io.helidon.common.Builder<SerializationConfig> {
+    public static class Builder implements io.helidon.common.Builder<Builder, SerializationConfig> {
         private Action onWrongConfig = configuredAction(PROP_WRONG_CONFIG_ACTION, Action.WARN);
         private Action onNoConfig = configuredAction(PROP_NO_CONFIG_ACTION, Action.WARN);
         private String filterPattern = System.getProperty(PROP_PATTERN);

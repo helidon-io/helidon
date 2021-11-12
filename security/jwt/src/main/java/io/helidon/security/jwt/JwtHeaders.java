@@ -227,7 +227,7 @@ public class JwtHeaders extends JwtClaims {
     /**
      * Fluent API builder to create JWT Header.
      */
-    public static class Builder implements io.helidon.common.Builder<JwtHeaders> {
+    public static class Builder implements io.helidon.common.Builder<Builder, JwtHeaders> {
         private static final GenericType<List<String>> STRING_LIST_TYPE = new GenericType<List<String>>() { };
         private static final GenericType<String> STRING_TYPE = GenericType.create(String.class);
 

@@ -219,7 +219,7 @@ public class IdcsRoleMapperRxProvider extends IdcsRoleMapperRxProviderBase imple
      * @param <B> type of builder extending this builder
      */
     public static class Builder<B extends Builder<B>> extends IdcsRoleMapperRxProviderBase.Builder<Builder<B>>
-            implements io.helidon.common.Builder<IdcsRoleMapperRxProvider> {
+            implements io.helidon.common.Builder<Builder<B>, IdcsRoleMapperRxProvider> {
         private EvictableCache<String, List<Grant>> roleCache;
 
         @SuppressWarnings("unchecked")

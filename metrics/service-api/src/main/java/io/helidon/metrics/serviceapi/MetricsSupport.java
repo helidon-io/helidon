@@ -131,7 +131,7 @@ public interface MetricsSupport extends RestServiceSupport, Service {
      *
      * @param <T> specific implementation type of {@code MetricsSupport}
      */
-    interface Builder<T extends MetricsSupport> extends io.helidon.common.Builder<T> {
+    interface Builder<B extends Builder<B, T>, T extends MetricsSupport> extends io.helidon.common.Builder<B, T> {
 
         /**
          * Returns the new {@code MetricsSupport} instance according to the builder's settings.
@@ -146,7 +146,7 @@ public interface MetricsSupport extends RestServiceSupport, Service {
          * @param metricsSettingsBuilder the metrics settings to assign for use in building the {@code MetricsSupport} instance
          * @return updated builder
          */
-        Builder<T> metricsSettings(MetricsSettings.Builder metricsSettingsBuilder);
+        B metricsSettings(MetricsSettings.Builder metricsSettingsBuilder);
 
         /**
          * Set the REST service settings.
@@ -156,6 +156,6 @@ public interface MetricsSupport extends RestServiceSupport, Service {
          */
         @ConfiguredOption(mergeWithParent = true,
                           kind = ConfiguredOption.Kind.MAP)
-        Builder<T> restServiceSettings(RestServiceSettings.Builder restServiceSettingsBuilder);
+        B restServiceSettings(RestServiceSettings.Builder restServiceSettingsBuilder);
     }
 }

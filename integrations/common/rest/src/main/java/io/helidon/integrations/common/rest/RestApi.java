@@ -275,7 +275,7 @@ public interface RestApi {
      * @param <B> type of the builder (a subclass of this class)
      * @param <T> type of the built {@link io.helidon.integrations.common.rest.RestApi}
      */
-    abstract class Builder<B extends Builder<B, T>, T extends RestApi> implements io.helidon.common.Builder<T> {
+    abstract class Builder<B extends Builder<B, T>, T extends RestApi> implements io.helidon.common.Builder<B, T> {
         private final WebClient.Builder webClientBuilder = WebClient.builder()
                 .followRedirects(true)
                 .keepAlive(true);

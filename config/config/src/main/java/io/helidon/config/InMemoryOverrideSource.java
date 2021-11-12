@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,7 +54,7 @@ public class InMemoryOverrideSource implements OverrideSource {
     /**
      * Fluent API builder for {@link io.helidon.config.InMemoryOverrideSource}.
      */
-    public static final class Builder implements io.helidon.common.Builder<InMemoryOverrideSource> {
+    public static final class Builder implements io.helidon.common.Builder<Builder, InMemoryOverrideSource> {
 
         private OverrideData overrideData;
         private List<Map.Entry<String, String>> overrideWildcards;

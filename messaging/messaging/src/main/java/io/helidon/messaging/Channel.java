@@ -118,7 +118,7 @@ public final class Channel<PAYLOAD> {
      *
      * @param <PAYLOAD> message payload type
      */
-    public static final class Builder<PAYLOAD> implements io.helidon.common.Builder<Channel<PAYLOAD>> {
+    public static final class Builder<PAYLOAD> implements io.helidon.common.Builder<Builder<PAYLOAD>, Channel<PAYLOAD>> {
 
         private final Channel<PAYLOAD> channel = new Channel<>();
 

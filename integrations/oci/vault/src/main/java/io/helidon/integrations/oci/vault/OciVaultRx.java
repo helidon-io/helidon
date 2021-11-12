@@ -177,7 +177,7 @@ public interface OciVaultRx {
      * Fluent API builder for {@link io.helidon.integrations.oci.vault.OciVaultRx}.
      */
     @Configured
-    class Builder implements io.helidon.common.Builder<OciVaultRx> {
+    class Builder implements io.helidon.common.Builder<Builder, OciVaultRx> {
         private final OciRestApi.Builder accessBuilder = OciRestApi.builder();
 
         private String secretApiVersion = SECRET_API_VERSION;

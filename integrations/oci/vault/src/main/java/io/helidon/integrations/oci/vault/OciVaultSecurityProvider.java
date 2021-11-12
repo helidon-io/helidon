@@ -185,7 +185,7 @@ public class OciVaultSecurityProvider implements SecretsProvider<OciVaultSecurit
         /**
          * Fluent API builder for {@link io.helidon.integrations.oci.vault.OciVaultSecurityProvider.OciVaultDigestConfig}.
          */
-        public static class Builder implements io.helidon.common.Builder<OciVaultDigestConfig> {
+        public static class Builder implements io.helidon.common.Builder<Builder, OciVaultDigestConfig> {
             private static final String CONFIG_KEY_KEY_OCID = "key-ocid";
 
             private String keyOcid;
@@ -361,7 +361,7 @@ public class OciVaultSecurityProvider implements SecretsProvider<OciVaultSecurit
         /**
          * Fluent API builder for {@link io.helidon.integrations.oci.vault.OciVaultSecurityProvider.OciVaultEncryptionConfig}.
          */
-        public static class Builder implements io.helidon.common.Builder<OciVaultEncryptionConfig> {
+        public static class Builder implements io.helidon.common.Builder<Builder, OciVaultEncryptionConfig> {
             private static final String CONFIG_KEY_KEY_ID = "key-ocid";
 
             private String keyId;
@@ -550,7 +550,7 @@ public class OciVaultSecurityProvider implements SecretsProvider<OciVaultSecurit
          * {@link io.helidon.integrations.oci.vault.OciVaultSecurityProvider.OciVaultSecretConfig}.
          */
         @Configured(description = "Secrets retrieved from OCI Vault instance", provides = SecretsProviderConfig.class)
-        public static class Builder implements io.helidon.common.Builder<OciVaultSecretConfig> {
+        public static class Builder implements io.helidon.common.Builder<Builder, OciVaultSecretConfig> {
             private static final String SECRET_OCID_CONFIG_KEY = "ocid";
 
             private String secretId;

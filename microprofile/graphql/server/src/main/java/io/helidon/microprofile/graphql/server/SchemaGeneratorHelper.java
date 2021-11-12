@@ -1734,7 +1734,7 @@ final class SchemaGeneratorHelper {
         /**
          * A fluent API {@link io.helidon.common.Builder} to build instances of {@link DiscoveredMethod}.
          */
-        public static class Builder implements io.helidon.common.Builder<DiscoveredMethod> {
+        public static class Builder implements io.helidon.common.Builder<Builder, DiscoveredMethod> {
             private String name;
             private String returnType;
             private int methodType;

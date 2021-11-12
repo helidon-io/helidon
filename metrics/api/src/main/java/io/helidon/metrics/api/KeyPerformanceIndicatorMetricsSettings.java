@@ -104,7 +104,7 @@ public interface KeyPerformanceIndicatorMetricsSettings {
      * </table>
      */
     @Configured(prefix = MetricsSettings.Builder.METRICS_CONFIG_KEY + "." + Builder.KEY_PERFORMANCE_INDICATORS_CONFIG_KEY)
-    interface Builder extends io.helidon.common.Builder<KeyPerformanceIndicatorMetricsSettings> {
+    interface Builder extends io.helidon.common.Builder<Builder, KeyPerformanceIndicatorMetricsSettings> {
         /**
          * Config key for extended key performance indicator metrics settings.
          */

@@ -124,7 +124,7 @@ public final class JavaxElPolicyExecutor implements PolicyExecutor {
     /**
      * A fluent API builder for {@link JavaxElPolicyExecutor}.
      */
-    public static final class Builder implements io.helidon.common.Builder<JavaxElPolicyExecutor> {
+    public static final class Builder implements io.helidon.common.Builder<Builder, JavaxElPolicyExecutor> {
         private final List<CustomFunction> customMethods = new LinkedList<>();
         private ExpressionFactory expressionFactory;
 

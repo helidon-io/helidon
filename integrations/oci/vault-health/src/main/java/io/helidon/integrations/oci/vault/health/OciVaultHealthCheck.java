@@ -114,7 +114,7 @@ public final class OciVaultHealthCheck implements HealthCheck {
     /**
      * Fluent API builder for {@link OciVaultHealthCheck}.
      */
-    public static final class Builder implements io.helidon.common.Builder<OciVaultHealthCheck> {
+    public static final class Builder implements io.helidon.common.Builder<Builder, OciVaultHealthCheck> {
 
         private OciVaultRx vaultRx;
         private OciVault vault;

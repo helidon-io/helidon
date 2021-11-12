@@ -120,7 +120,7 @@ public interface DbMapperManager {
     /**
      * Fluent API builder for {@link io.helidon.dbclient.DbMapperManager}.
      */
-    final class Builder implements io.helidon.common.Builder<DbMapperManager> {
+    final class Builder implements io.helidon.common.Builder<Builder, DbMapperManager> {
 
         private final HelidonServiceLoader.Builder<DbMapperProvider> providers = HelidonServiceLoader
                 .builder(ServiceLoader.load(DbMapperProvider.class));

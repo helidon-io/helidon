@@ -575,8 +575,8 @@ public final class MetricsSupport extends HelidonRestServiceSupport
     /**
      * A fluent API builder to build instances of {@link MetricsSupport}.
      */
-    public static class Builder extends HelidonRestServiceSupport.Builder<MetricsSupport, Builder>
-            implements io.helidon.metrics.serviceapi.MetricsSupport.Builder<MetricsSupport> {
+    public static class Builder extends HelidonRestServiceSupport.Builder<Builder, MetricsSupport>
+            implements io.helidon.metrics.serviceapi.MetricsSupport.Builder<Builder, MetricsSupport> {
 
         private Supplier<RegistryFactory> registryFactory;
         private MetricsSettings.Builder metricsSettingsBuilder = MetricsSettings.builder();

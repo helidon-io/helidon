@@ -134,7 +134,7 @@ public class AppRoleVaultAuth implements VaultAuth {
     /**
      * Fluent API builder for {@link io.helidon.integrations.vault.auths.approle.AppRoleVaultAuth}.
      */
-    public static class Builder implements io.helidon.common.Builder<AppRoleVaultAuth> {
+    public static class Builder implements io.helidon.common.Builder<Builder, AppRoleVaultAuth> {
         private String appRoleId;
         private String secretId;
         private String path;

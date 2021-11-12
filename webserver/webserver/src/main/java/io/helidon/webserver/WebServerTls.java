@@ -119,7 +119,7 @@ public final class WebServerTls {
      * Fluent API builder for {@link WebServerTls}.
      */
     @Configured
-    public static class Builder implements io.helidon.common.Builder<WebServerTls> {
+    public static class Builder implements io.helidon.common.Builder<Builder, WebServerTls> {
         private final Set<String> enabledTlsProtocols = new HashSet<>();
 
         private SSLContext sslContext;

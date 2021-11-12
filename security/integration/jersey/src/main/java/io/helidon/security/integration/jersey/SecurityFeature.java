@@ -128,7 +128,7 @@ public final class SecurityFeature implements Feature {
     /**
      * {@link SecurityFeature} fluent API builder.
      */
-    public static final class Builder implements io.helidon.common.Builder<SecurityFeature> {
+    public static final class Builder implements io.helidon.common.Builder<Builder, SecurityFeature> {
         private final Security security;
         private final List<QueryParamHandler> queryParamHandlers = new LinkedList<>();
         private boolean authorizeAnnotatedOnly = FeatureConfig.DEFAULT_ATZ_ANNOTATED_ONLY;

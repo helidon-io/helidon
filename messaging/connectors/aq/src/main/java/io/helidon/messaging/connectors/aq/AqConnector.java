@@ -81,7 +81,7 @@ public interface AqConnector extends ConnectorFactory {
     /**
      * Builder for {@link AqConnectorImpl}.
      */
-    class AqConnectorBuilder implements Builder<AqConnectorImpl> {
+    class AqConnectorBuilder implements Builder<AqConnectorBuilder, AqConnectorImpl> {
 
         private final Map<String, DataSource> dataSourceMap = new HashMap<>();
         private ScheduledExecutorService scheduler;

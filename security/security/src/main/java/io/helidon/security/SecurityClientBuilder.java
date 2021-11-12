@@ -27,7 +27,7 @@ import io.helidon.common.Builder;
  */
 public class SecurityClientBuilder<T extends SecurityResponse>
         extends SecurityRequestBuilder<SecurityClientBuilder<T>>
-        implements Builder<SecurityClient<T>> {
+        implements Builder<SecurityClientBuilder<T>, SecurityClient<T>> {
 
     private final SecurityContextImpl context;
     private final Security security;

@@ -468,7 +468,7 @@ public class JerseySupport implements Service {
     /**
      * Builder for convenient way to create {@link JerseySupport}.
      */
-    public static final class Builder implements Configurable<Builder>, io.helidon.common.Builder<JerseySupport> {
+    public static final class Builder implements Configurable<Builder>, io.helidon.common.Builder<Builder, JerseySupport> {
 
         private ResourceConfig resourceConfig;
         private ExecutorService executorService;

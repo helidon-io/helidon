@@ -56,7 +56,7 @@ import jakarta.enterprise.inject.spi.BeanManager;
  */
 public class GrpcServiceBuilder
         extends AbstractServiceBuilder
-        implements Builder<ServiceDescriptor> {
+        implements Builder<GrpcServiceBuilder, ServiceDescriptor> {
 
     private static final Logger LOGGER = Logger.getLogger(GrpcServiceBuilder.class.getName());
 

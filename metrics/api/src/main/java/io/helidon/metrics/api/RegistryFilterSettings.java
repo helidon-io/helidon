@@ -64,7 +64,7 @@ public interface RegistryFilterSettings {
      * Builder for a new {@code RegistryFilterSettings} instance.
      */
     @Configured
-    interface Builder extends io.helidon.common.Builder<RegistryFilterSettings> {
+    interface Builder extends io.helidon.common.Builder<Builder, RegistryFilterSettings> {
 
         /**
          * Returns a new builder initialized according to the specific configuration.

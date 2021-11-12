@@ -26,7 +26,7 @@ import io.helidon.config.ConfigSources;
 /**
  * Detached configuration of a single connector.
  */
-public abstract class ConnectorConfigBuilder implements Builder<Config> {
+public abstract class ConnectorConfigBuilder implements Builder<ConnectorConfigBuilder, Config> {
     private final Map<String, String> configuration = new HashMap<>();
 
     protected ConnectorConfigBuilder() {

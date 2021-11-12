@@ -477,7 +477,7 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
         /**
          * Fluent API builder for {@link io.helidon.security.providers.jwt.JwtProvider.JwtOutboundTarget}.
          */
-        public static final class Builder implements io.helidon.common.Builder<JwtOutboundTarget> {
+        public static final class Builder implements io.helidon.common.Builder<Builder, JwtOutboundTarget> {
             private TokenHandler outboundHandler = TokenHandler.builder()
                     .tokenHeader("Authorization")
                     .tokenPrefix("bearer ")
@@ -592,7 +592,7 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
     /**
      * Fluent API builder for {@link JwtProvider}.
      */
-    public static final class Builder implements io.helidon.common.Builder<JwtProvider> {
+    public static final class Builder implements io.helidon.common.Builder<Builder, JwtProvider> {
         private boolean verifySignature = true;
         private boolean optional = false;
         private boolean authenticate = true;

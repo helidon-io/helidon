@@ -315,7 +315,7 @@ public class SymmetricCipher implements CommonCipher {
     /**
      * Builder of the {@link SymmetricCipher}.
      */
-    public static class Builder implements io.helidon.common.Builder<SymmetricCipher> {
+    public static class Builder implements io.helidon.common.Builder<Builder, SymmetricCipher> {
 
         private String algorithm = ALGORITHM_AES_GCM;
         private String provider = null;

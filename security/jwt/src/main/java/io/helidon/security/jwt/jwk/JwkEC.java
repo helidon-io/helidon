@@ -306,7 +306,7 @@ public class JwkEC extends JwkPki {
     /**
      * Builder for {@link JwkEC}.
      */
-    public static final class Builder extends JwkPki.Builder<Builder> implements io.helidon.common.Builder<JwkEC> {
+    public static final class Builder extends JwkPki.Builder<Builder> implements io.helidon.common.Builder<Builder, JwkEC> {
         private PrivateKey privateKey;
         private PublicKey publicKey;
         private String defaultAlg = ALG_ES256;

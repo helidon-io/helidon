@@ -198,7 +198,7 @@ public final class KeyConfig {
      * @see KeyConfig#fullBuilder()
      */
     @Configured
-    public static class Builder implements io.helidon.common.Builder<KeyConfig> {
+    public static class Builder implements io.helidon.common.Builder<Builder, KeyConfig> {
         private PrivateKey explicitPrivateKey;
         private PublicKey explicitPublicKey;
         private X509Certificate explicitPublicCert;
@@ -327,7 +327,7 @@ public final class KeyConfig {
      * KeyConfig#keystoreBuilder()}.
      */
     @Configured(ignoreBuildMethod = true)
-    public static final class KeystoreBuilder implements io.helidon.common.Builder<KeyConfig> {
+    public static final class KeystoreBuilder implements io.helidon.common.Builder<Builder, KeyConfig> {
         private static final String DEFAULT_KEYSTORE_TYPE = "PKCS12";
 
         private String keystoreType = DEFAULT_KEYSTORE_TYPE;
@@ -647,7 +647,7 @@ public final class KeyConfig {
      * use this builder), or to PKCS#12 keystore format (and use {@link KeystoreBuilder}).
      */
     @Configured(ignoreBuildMethod = true)
-    public static final class PemBuilder implements io.helidon.common.Builder<KeyConfig> {
+    public static final class PemBuilder implements io.helidon.common.Builder<Builder, KeyConfig> {
         private final StreamHolder privateKeyStream = new StreamHolder("privateKey");
         private final StreamHolder publicKeyStream = new StreamHolder("publicKey");
         private final StreamHolder certChainStream = new StreamHolder("certChain");

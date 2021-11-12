@@ -155,7 +155,7 @@ public abstract class SpanTracingConfig extends Traceable {
     /**
      * A fluent API builder for {@link SpanTracingConfig}.
      */
-    public static final class Builder implements io.helidon.common.Builder<SpanTracingConfig> {
+    public static final class Builder implements io.helidon.common.Builder<Builder, SpanTracingConfig> {
         private final Map<String, SpanLogTracingConfig> spanLogMap = new HashMap<>();
         private final String name;
         private Optional<Boolean> enabled = Optional.empty();

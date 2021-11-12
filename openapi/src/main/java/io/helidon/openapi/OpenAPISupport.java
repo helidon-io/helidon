@@ -671,7 +671,7 @@ public abstract class OpenAPISupport implements Service {
      *
      * @param <B> concrete subclass of OpenAPISupport.Builder
      */
-    public abstract static class Builder<B extends Builder<B>> implements io.helidon.common.Builder<OpenAPISupport> {
+    public abstract static class Builder<B extends Builder<B>> implements io.helidon.common.Builder<B, OpenAPISupport> {
 
         /**
          * Config key to select the openapi node from Helidon config.

@@ -580,7 +580,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
     /**
      * Fluent API builder for {@link JwtAuthProvider}.
      */
-    public static class Builder implements io.helidon.common.Builder<JwtAuthProvider> {
+    public static class Builder implements io.helidon.common.Builder<Builder, JwtAuthProvider> {
         private static final String CONFIG_PUBLIC_KEY = "mp.jwt.verify.publickey";
         private static final String CONFIG_PUBLIC_KEY_PATH = "mp.jwt.verify.publickey.location";
         private static final String CONFIG_JWT_DECRYPT_KEY_LOCATION = "mp.jwt.decrypt.key.location";

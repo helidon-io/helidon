@@ -312,7 +312,7 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
     @Configured(prefix = HttpBasicAuthService.PROVIDER_CONFIG_KEY,
                 description = "HTTP Basic Authentication provider",
                 provides = {SecurityProvider.class, AuthenticationProvider.class})
-    public static final class Builder implements io.helidon.common.Builder<HttpBasicAuthProvider> {
+    public static final class Builder implements io.helidon.common.Builder<Builder, HttpBasicAuthProvider> {
         private final List<SecureUserStore> userStores = new LinkedList<>();
         private final OutboundConfig.Builder outboundBuilder = OutboundConfig.builder();
 

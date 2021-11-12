@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -122,7 +122,7 @@ public class AbstractSourceTest {
         private static class TestingBuilder extends AbstractSourceBuilder<TestingBuilder, String>
                 implements PollableSource.Builder<TestingBuilder>,
                            WatchableSource.Builder<TestingBuilder, String>,
-                           io.helidon.common.Builder<TestingSource> {
+                           io.helidon.common.Builder<TestingBuilder, TestingSource> {
 
             private Instant stamp;
 

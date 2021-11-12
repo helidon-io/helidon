@@ -80,7 +80,7 @@ public interface RegistrySettings {
      * Builder for {@code RegistrySettings}.
      */
     @Configured(prefix = MetricsSettings.Builder.METRICS_CONFIG_KEY + "." + "<metric-type>")
-    interface Builder extends io.helidon.common.Builder<RegistrySettings> {
+    interface Builder extends io.helidon.common.Builder<Builder, RegistrySettings> {
 
         /**
          * Config key within the registry's config section controlling whether the current type of metrics should be enabled.

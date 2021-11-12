@@ -67,7 +67,7 @@ public interface Messaging {
     /**
      * Fluent API builder for {@link io.helidon.messaging.Messaging}.
      */
-    final class Builder implements io.helidon.common.Builder<Messaging> {
+    final class Builder implements io.helidon.common.Builder<Builder, Messaging> {
 
         private static final Logger LOGGER = Logger.getLogger(Messaging.class.getName());
 

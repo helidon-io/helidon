@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,7 +61,7 @@ public final class PollingStrategies {
     /**
      * A builder for a scheduled polling strategy.
      */
-    public static final class ScheduledBuilder implements Builder<PollingStrategy> {
+    public static final class ScheduledBuilder implements Builder<ScheduledBuilder, PollingStrategy> {
 
         private static final String INTERVAL_KEY = "interval";
 

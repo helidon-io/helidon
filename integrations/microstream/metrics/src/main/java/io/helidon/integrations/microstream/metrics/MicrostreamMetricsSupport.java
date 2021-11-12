@@ -114,7 +114,7 @@ public class MicrostreamMetricsSupport {
     /**
      * A fluent API builder to build instances of {@link MetricsSupport}.
      */
-    public static final class Builder implements io.helidon.common.Builder<MicrostreamMetricsSupport> {
+    public static final class Builder implements io.helidon.common.Builder<Builder, MicrostreamMetricsSupport> {
 
         private final EmbeddedStorageManager embeddedStorageManager;
         private Config config = Config.empty();

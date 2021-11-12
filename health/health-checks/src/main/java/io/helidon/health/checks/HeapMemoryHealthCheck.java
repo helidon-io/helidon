@@ -129,7 +129,7 @@ public final class HeapMemoryHealthCheck implements HealthCheck {
     /**
      * Fluent API builder for {@link io.helidon.health.checks.HeapMemoryHealthCheck}.
      */
-    public static final class Builder implements io.helidon.common.Builder<HeapMemoryHealthCheck> {
+    public static final class Builder implements io.helidon.common.Builder<Builder, HeapMemoryHealthCheck> {
         private double threshold = DEFAULT_THRESHOLD;
 
         private Builder() {

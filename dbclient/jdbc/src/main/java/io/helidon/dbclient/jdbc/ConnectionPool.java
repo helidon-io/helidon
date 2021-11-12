@@ -102,7 +102,7 @@ public interface ConnectionPool {
      * The builder will produce a connection pool based on Hikari connection pool and will support
      * {@link io.helidon.dbclient.jdbc.spi.HikariCpExtensionProvider} to enhance the Hikari pool.
      */
-    final class Builder implements io.helidon.common.Builder<ConnectionPool> {
+    final class Builder implements io.helidon.common.Builder<Builder, ConnectionPool> {
         /**
          * Database connection URL configuration key.
          */

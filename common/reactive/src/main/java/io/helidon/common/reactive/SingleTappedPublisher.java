@@ -147,7 +147,7 @@ final class SingleTappedPublisher<T> extends CompletionSingle<T> implements Name
      *
      * @param <T> type of returned multi
      */
-    public static class Builder<T> implements io.helidon.common.Builder<SingleTappedPublisher<T>> {
+    public static class Builder<T> implements io.helidon.common.Builder<Builder<T>, SingleTappedPublisher<T>> {
         private final Single<T> source;
         private Consumer<? super Flow.Subscription> onSubscribeCallback;
         private Consumer<? super T> onNextCallback;

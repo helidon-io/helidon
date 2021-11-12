@@ -168,7 +168,7 @@ public class JwkRSA extends JwkPki {
     /**
      * Builder for {@link JwkRSA}.
      */
-    public static final class Builder extends JwkPki.Builder<Builder> implements io.helidon.common.Builder<JwkRSA> {
+    public static final class Builder extends JwkPki.Builder<Builder> implements io.helidon.common.Builder<Builder, JwkRSA> {
         private PrivateKey privateKey;
         private PublicKey publicKey;
 

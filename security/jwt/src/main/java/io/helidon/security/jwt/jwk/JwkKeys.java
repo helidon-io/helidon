@@ -105,7 +105,7 @@ public final class JwkKeys {
     /**
      * Builder of {@link JwkKeys}.
      */
-    public static final class Builder implements io.helidon.common.Builder<JwkKeys> {
+    public static final class Builder implements io.helidon.common.Builder<Builder, JwkKeys> {
         private final List<Jwk> noKeyIdKeys = new LinkedList<>();
         private final Map<String, Jwk> keyMap = new HashMap<>();
 

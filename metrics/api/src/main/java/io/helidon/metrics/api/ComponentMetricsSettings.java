@@ -68,7 +68,7 @@ public interface ComponentMetricsSettings {
      * Builder for {@code ComponentMetricsSettings}.
      */
     @Configured(prefix = Builder.METRICS_CONFIG_KEY)
-    interface Builder extends io.helidon.common.Builder<ComponentMetricsSettings> {
+    interface Builder extends io.helidon.common.Builder<Builder, ComponentMetricsSettings> {
 
         /**
          * By convention, the config key within the component's config section containing metrics settings for the component.

@@ -156,7 +156,7 @@ class OciHttpSignature {
             return new Builder();
         }
 
-        public static class Builder implements io.helidon.common.Builder<SignatureRequest> {
+        public static class Builder implements io.helidon.common.Builder<Builder, SignatureRequest> {
             private RSAPrivateKey privateKey;
             private SecurityEnvironment env;
             private Map<String, List<String>> newHeaders;

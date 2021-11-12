@@ -167,7 +167,7 @@ public final class Emitter<PAYLOAD> implements Publisher<Message<PAYLOAD>> {
      *
      * @param <PAYLOAD> message payload type
      */
-    public static final class Builder<PAYLOAD> implements io.helidon.common.Builder<Emitter<PAYLOAD>> {
+    public static final class Builder<PAYLOAD> implements io.helidon.common.Builder<Builder<PAYLOAD>, Emitter<PAYLOAD>> {
 
         private final Emitter<PAYLOAD> emitter = new Emitter<>();
 

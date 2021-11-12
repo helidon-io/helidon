@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -212,7 +212,7 @@ public final class FaultTolerance {
      * @param <T> type of results handled by {@link io.helidon.common.reactive.Single} or {@link io.helidon.common.reactive.Multi}
      */
     public static class TypedBuilder<T> extends BaseBuilder<TypedBuilder<T>>
-            implements io.helidon.common.Builder<FtHandlerTyped<T>> {
+            implements io.helidon.common.Builder<TypedBuilder<T>, FtHandlerTyped<T>> {
         private final List<FtHandlerTyped<T>> fts = new LinkedList<>();
 
         private TypedBuilder() {
@@ -317,7 +317,7 @@ public final class FaultTolerance {
     /**
      * A builder used for setting up a customized list of fault tolerance handlers.
      */
-    public static class Builder extends BaseBuilder<Builder> implements io.helidon.common.Builder<FtHandler> {
+    public static class Builder extends BaseBuilder<Builder> implements io.helidon.common.Builder<Builder, FtHandler> {
         private final List<FtHandler> fts = new LinkedList<>();
 
         private Builder() {

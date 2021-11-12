@@ -111,7 +111,7 @@ public abstract class CorsSupportBase<Q, R, T extends CorsSupportBase<Q, R, T, B
      * @param <B> type of the builder
      */
     public abstract static class Builder<Q, R, T extends CorsSupportBase<Q, R, T, B>, B extends Builder<Q, R, T, B>>
-            implements io.helidon.common.Builder<CorsSupportBase<Q, R, T, B>>, CorsSetter<Builder<Q, R, T, B>> {
+            implements io.helidon.common.Builder<B, CorsSupportBase<Q, R, T, B>>, CorsSetter<Builder<Q, R, T, B>> {
 
         private String name = "";
         private final CorsSupportHelper.Builder<Q, R> helperBuilder = CorsSupportHelper.builder();

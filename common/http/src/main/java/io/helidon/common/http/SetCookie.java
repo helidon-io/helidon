@@ -205,7 +205,7 @@ public class SetCookie {
     /**
      * A fluent API builder for {@link SetCookie}.
      */
-    public static final class Builder implements io.helidon.common.Builder<SetCookie> {
+    public static final class Builder implements io.helidon.common.Builder<Builder, SetCookie> {
         private final String name;
         private final String value;
         private ZonedDateTime expires;

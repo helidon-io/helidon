@@ -271,7 +271,7 @@ public final class JsonpSupport implements MediaSupport {
     /**
      * Fluent-API builder for {@link JsonpSupport}.
      */
-    public static class Builder implements io.helidon.common.Builder<JsonpSupport> {
+    public static class Builder implements io.helidon.common.Builder<Builder, JsonpSupport> {
 
         private JsonWriterFactory jsonWriterFactory;
         private JsonReaderFactory jsonReaderFactory;

@@ -154,7 +154,7 @@ public class JwkOctet extends Jwk {
     /**
      * Builder for {@link JwkOctet}.
      */
-    public static final class Builder extends Jwk.Builder<Builder> implements io.helidon.common.Builder<JwkOctet> {
+    public static final class Builder extends Jwk.Builder<Builder> implements io.helidon.common.Builder<Builder, JwkOctet> {
         private byte[] key;
 
         private Builder() {

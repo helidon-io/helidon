@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,7 +63,7 @@ public interface ConfigContent {
          */
         OverrideSource.OverrideData data();
 
-        class Builder extends ConfigContent.Builder<Builder> implements io.helidon.common.Builder<OverrideContent> {
+        class Builder extends ConfigContent.Builder<Builder> implements io.helidon.common.Builder<Builder, OverrideContent> {
             // override data
             private OverrideSource.OverrideData data;
 
@@ -111,7 +111,7 @@ public interface ConfigContent {
         /**
          * Fluent API builder for {@link io.helidon.config.spi.ConfigContent.NodeContent}.
          */
-        class Builder extends ConfigContent.Builder<Builder> implements io.helidon.common.Builder<NodeContent> {
+        class Builder extends ConfigContent.Builder<Builder> implements io.helidon.common.Builder<Builder, NodeContent> {
             // node based config source data
             private ConfigNode.ObjectNode rootNode;
 

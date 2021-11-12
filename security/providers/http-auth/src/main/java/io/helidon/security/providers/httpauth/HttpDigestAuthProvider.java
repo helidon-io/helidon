@@ -269,7 +269,7 @@ public final class HttpDigestAuthProvider extends SynchronousProvider implements
     /**
      * {@link HttpDigestAuthProvider} fluent API builder.
      */
-    public static final class Builder implements io.helidon.common.Builder<HttpDigestAuthProvider> {
+    public static final class Builder implements io.helidon.common.Builder<Builder, HttpDigestAuthProvider> {
         private static final SecureUserStore EMPTY_STORE = login -> Optional.empty();
         /**
          * Default is 24 hours.

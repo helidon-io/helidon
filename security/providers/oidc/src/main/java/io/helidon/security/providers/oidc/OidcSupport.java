@@ -427,7 +427,7 @@ public final class OidcSupport implements Service {
     /**
      * A fluent API builder for {@link io.helidon.security.providers.oidc.OidcSupport}.
      */
-    public static class Builder implements io.helidon.common.Builder<OidcSupport> {
+    public static class Builder implements io.helidon.common.Builder<Builder, OidcSupport> {
         private boolean enabled = true;
         private OidcConfig oidcConfig;
 
