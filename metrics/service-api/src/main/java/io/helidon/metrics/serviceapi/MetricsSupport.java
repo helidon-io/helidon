@@ -129,6 +129,7 @@ public interface MetricsSupport extends RestServiceSupport, Service {
      *     Callers can influence how {@code MetricsSupport} behaves by assigning {@link io.helidon.metrics.api.MetricsSettings}.
      * </p>
      *
+     * @param <B> builder type
      * @param <T> specific implementation type of {@code MetricsSupport}
      */
     interface Builder<B extends Builder<B, T>, T extends MetricsSupport> extends io.helidon.common.Builder<B, T> {
