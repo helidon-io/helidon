@@ -211,7 +211,7 @@ final class HelidonTimer extends MetricImpl implements Timer {
         if (withHelpType) {
             prometheusType(sb, name.nameStat(statName), typeName);
         }
-        sb.append(name.nameStat(statName))
+        sb.append(name.nameStatTags(statName))
                 .append(" ")
                 .append(value)
                 .append("\n");
