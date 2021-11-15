@@ -46,7 +46,7 @@ db:
     #
 #    url: "jdbc:h2:tcp://localhost:9092/~test"
 #    username: h2
-#    password: ""
+#    password: "${EMPTY}"
 #    poolName: h2
     initializationFailTimeout: -1
     connectionTimeout: 2000
