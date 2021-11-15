@@ -63,6 +63,9 @@ public interface ConfigContent {
          */
         OverrideSource.OverrideData data();
 
+        /**
+         * Fluent API builder for {@link io.helidon.config.spi.ConfigContent}.
+         */
         class Builder extends ConfigContent.Builder<Builder> implements io.helidon.common.Builder<Builder, OverrideContent> {
             // override data
             private OverrideSource.OverrideData data;

@@ -136,7 +136,13 @@ public interface KeyPerformanceIndicatorMetricsSettings {
         long LONG_RUNNING_REQUESTS_THRESHOLD_MS_DEFAULT = 10 * 1000; // 10 seconds
 
         // The following constants are used in JavaDoc.
+        /**
+         * Prefix of configuration keys.
+         */
         String CONFIG_KEY_PREFIX = "metrics." + KEY_PERFORMANCE_INDICATORS_CONFIG_KEY;
+        /**
+         * Configuration key for long-running requests extended configuration.
+         */
         String QUALIFIED_LONG_RUNNING_REQUESTS_THRESHOLD_CONFIG_KEY =
                 LONG_RUNNING_REQUESTS_CONFIG_KEY + "." + KEY_PERFORMANCE_INDICATORS_EXTENDED_CONFIG_KEY;
 
@@ -176,8 +182,17 @@ public interface KeyPerformanceIndicatorMetricsSettings {
          */
         KeyPerformanceIndicatorMetricsSettings build();
 
+        /**
+         * Whether extended KPIs are enabled.
+         * @return {@code true} if extended
+         */
         boolean isExtended();
 
+        /**
+         * Threshold (in milliseconds) for long-running requests.
+         *
+         * @return threshold in milliseconds
+         */
         long longRunningRequestThresholdMs();
     }
 }

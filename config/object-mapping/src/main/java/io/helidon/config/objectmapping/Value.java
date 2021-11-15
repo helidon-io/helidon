@@ -237,6 +237,9 @@ public @interface Value {
      * Class that represents not-set default values.
      */
     interface None extends Supplier<Void> {
+        /**
+         * Value to use when a {@code null} value should be the default.
+         */
         String VALUE = "io.helidon.config:default=null";
 
         @Override

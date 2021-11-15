@@ -37,4 +37,5 @@ module io.helidon.grpc.server {
     requires java.logging;
 
     requires jakarta.inject;
+    requires io.opentracing.util;
 }

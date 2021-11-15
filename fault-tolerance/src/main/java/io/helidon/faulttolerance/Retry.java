@@ -370,6 +370,11 @@ public interface Retry extends FtHandler {
             }
         }
 
+        /**
+         * A new fluent API builder to configure instances of {@link io.helidon.faulttolerance.Retry}.
+         *
+         * @return a new builder
+         */
         public static Builder builder() {
             return new Builder();
         }

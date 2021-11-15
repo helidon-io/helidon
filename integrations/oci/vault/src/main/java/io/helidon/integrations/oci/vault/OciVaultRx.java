@@ -228,62 +228,145 @@ public interface OciVaultRx {
             return this;
         }
 
+        /**
+         * Replace Vault host prefix.
+         * Changing host prefix may be a breaking change. This API is designed to work with
+         * {@link #VAULTS_HOST_PREFIX}.
+         *
+         * @param vaultPrefix prefix to use
+         * @return updated builder
+         */
         public Builder vaultPrefix(String vaultPrefix) {
             this.vaultPrefix = vaultPrefix;
             return this;
         }
 
+        /**
+         * Replace retrieval host prefix.
+         * Changing host prefix may be a breaking change. This API is designed to work with
+         * {@link #RETRIEVAL_HOST_PREFIX}.
+         *
+         * @param retrievalHostPrefix prefix to use
+         * @return updated builder
+         */
         public Builder retrievalPrefix(String retrievalHostPrefix) {
             this.retrievalPrefix = retrievalHostPrefix;
             return this;
         }
 
+        /**
+         * Vault endpoint.
+         *
+         * @param vaultEndpoint valut endpoint
+         * @return updated builder
+         */
         public Builder vaultEndpoint(String vaultEndpoint) {
             this.vaultEndpoint = vaultEndpoint;
             return this;
         }
 
+        /**
+         * Endpoint to retrieve secrets from.
+         *
+         * @param retrievalEndpoint endpoint
+         * @return updated builder
+         */
         public Builder retrievalEndpoint(String retrievalEndpoint) {
             this.retrievalEndpoint = retrievalEndpoint;
             return this;
         }
 
+        /**
+         * Replace KMS host prefix.
+         * Changing host prefix may be a breaking change. This API is designed to work with
+         * {@link #KMS_HOST_PREFIX}.
+         *
+         * @param kmsPrefix prefix to use
+         * @return updated builder
+         */
         public Builder kmsPrefix(String kmsPrefix) {
             this.kmsPrefix = kmsPrefix;
             return this;
         }
 
+        /**
+         * KMS endpoint.
+         *
+         * @param kmsEndpoint KMS endpoint
+         * @return updated builder
+         */
         public Builder kmsEndpoint(String kmsEndpoint) {
             this.kmsEndpoint = kmsEndpoint;
             return this;
         }
 
+        /**
+         * Endpoint format to use.
+         * Default is {@link #OCI_ENDPOINT_FORMAT}.
+         *
+         * @param endpointFormat endpoint format to use
+         * @return updated builder
+         */
         public Builder vaultEndpointFormat(String endpointFormat) {
             this.vaultEndpointFormat = endpointFormat;
             return this;
         }
 
+        /**
+         * Configure API version to use.
+         * API version is part of the request URI. Changing API version is potentially breaking,
+         *  as this API is designed to work with a specific version (see {@link #SECRET_API_VERSION}).
+         *
+         * @param apiVersion version of the API to use
+         * @return updated builder
+         */
         @ConfiguredOption(key = "vault.secret-api-version")
         public Builder secretApiVersion(String apiVersion) {
             this.secretApiVersion = apiVersion;
             return this;
         }
 
+        /**
+         * Configure bundle API version to use.
+         * API version is part of the request URI. Changing API version is potentially breaking,
+         *  as this API is designed to work with a specific version (see {@link #SECRET_BUNDLE_API_VERSION}).
+         *
+         * @param apiVersion version of the API to use
+         * @return updated builder
+         */
         public Builder secretBundleApiVersion(String apiVersion) {
             this.secretBundleApiVersion = apiVersion;
             return this;
         }
 
+        /**
+         * Configure the cryptographic endpoint.
+         *
+         * @param address endpoint for crypto operations
+         * @return updated builder
+         */
         public Builder cryptographicEndpoint(String address) {
             this.cryptographicEndpoint = address;
             return this;
         }
 
+        /**
+         * Configure the management endpoint.
+         *
+         * @param managementEndpoint management endpoint
+         * @return updated builder
+         */
         public Builder managementEndpoint(String managementEndpoint) {
             this.managementEndpoint = managementEndpoint;
             return this;
         }
 
+        /**
+         * Configure REST API to use.
+         *
+         * @param restApi OCI rest API
+         * @return updated builder
+         */
         @ConfiguredOption(key = "scheme", type = String.class, value = "https", description = "Scheme to use to "
                 + "connect to cloud")
         @ConfiguredOption(key = "domain", type = String.class, value = "oraclecloud.com", description = "Cloud domain")
