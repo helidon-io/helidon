@@ -489,10 +489,6 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
             errors = jwtValidator.apply(idJwt, errors).await();
         }
 
-        if(refreshJwt!=null) {
-            errors = jwtValidator.apply(refreshJwt, errors).await();
-        }
-
         SignedJwt finalIdJwt = idJwt;
         SignedJwt finalRefreshJwt = refreshJwt;
         return jwtValidator.apply(signedJwt, errors)

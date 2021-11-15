@@ -1288,6 +1288,7 @@ public final class OidcConfig {
             config.get("logout-endpoint-uri").as(URI.class).ifPresent(this::logoutEndpointUri);
             config.get("post-logout-uri").as(URI.class).ifPresent(this::postLogoutUri);
             config.get("logout-enabled").asBoolean().ifPresent(this::logoutEnabled);
+            config.get("logout-uri").asString().ifPresent(this::logoutUri);
 
             config.get("introspect-endpoint-uri").as(URI.class).ifPresent(this::introspectEndpointUri);
             config.get("validate-with-jwk").asBoolean().ifPresent(this::validateJwtWithJwk);
