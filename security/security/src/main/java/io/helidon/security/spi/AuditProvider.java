@@ -162,6 +162,12 @@ public interface AuditProvider extends SecurityProvider {
             }
         }
 
+        /**
+         * Check if the stack element is an actual Helidon Security class.
+         *
+         * @param element element to check
+         * @return {@code true} if the class comes from Helidon Security
+         */
         static boolean isSecurityClass(StackWalker.StackFrame element) {
             String className = element.getClassName();
             int last = className.lastIndexOf('.');

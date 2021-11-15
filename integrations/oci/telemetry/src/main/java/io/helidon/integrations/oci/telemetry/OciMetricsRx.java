@@ -127,16 +127,38 @@ public interface OciMetricsRx {
             return this;
         }
 
+        /**
+         * Replace host prefix.
+         * Changing host prefix may be a breaking change. This API is designed to work with
+         * {@link #API_HOST_PREFIX}.
+         *
+         * @param prefix prefix to use
+         * @return updated builder
+         */
         public Builder hostPrefix(String prefix) {
             this.hostPrefix = prefix;
             return this;
         }
 
+        /**
+         * Replace endpoint to be invoked when contacting OCI.
+         *
+         * @param endpoint endpoint to use
+         * @return updated builder
+         */
         public Builder endpoint(String endpoint) {
             this.endpoint = endpoint;
             return this;
         }
 
+        /**
+         * Configure API version to use.
+         * API version is part of the request URI. Changing API version is potentially breaking,
+         *  as this API is designed to work with a specific version (see {@link #API_VERSION}).
+         *
+         * @param apiVersion version of the API to use
+         * @return updated builder
+         */
         public Builder apiVersion(String apiVersion) {
             this.apiVersion = apiVersion;
             return this;
@@ -153,6 +175,12 @@ public interface OciMetricsRx {
             return this;
         }
 
+        /**
+         * Configure REST API to use.
+         *
+         * @param restApi OCI rest API
+         * @return updated builder
+         */
         public Builder restApi(OciRestApi restApi) {
             this.restApi = restApi;
             return this;

@@ -429,6 +429,14 @@ public interface JmsMessage<PAYLOAD> extends Message<PAYLOAD> {
             }
         }
 
+        /**
+         * Helper method to use a lambda that throws a checked exception.
+         *
+         * @param p payload
+         * @param session session
+         * @return a new message
+         * @throws JMSException as thrown by underlying API
+         */
         jakarta.jms.Message applyThrows(PAYLOAD p, Session session) throws JMSException;
     }
 

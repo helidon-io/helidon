@@ -111,7 +111,7 @@
         <!-- Checks for Javadoc comments.                     -->
         <!-- See http://checkstyle.sf.net/config_javadoc.html -->
         <module name="JavadocMethod">
-            <property name="scope" value="protected"/>
+            <property name="accessModifiers" value="public, protected"/>
             <property name="validateThrows" value="false"/>
         </module>
         <module name="MissingJavadocMethod">

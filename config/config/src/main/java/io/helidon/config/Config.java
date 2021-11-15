@@ -922,6 +922,12 @@ public interface Config {
         @Override
         String toString();
 
+        /**
+         * Create a child key to the current key.
+         *
+         * @param key child key (relative to current key)
+         * @return a new resolved key
+         */
         Key child(Key key);
 
         /**
