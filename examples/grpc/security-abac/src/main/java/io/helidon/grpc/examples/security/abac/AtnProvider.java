@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -171,7 +171,7 @@ public class AtnProvider extends SynchronousProvider implements AuthenticationPr
      * A builder that builds {@link AtnProvider} instances.
      */
     public static class Builder
-            implements io.helidon.common.Builder<AtnProvider> {
+            implements io.helidon.common.Builder<Builder, AtnProvider> {
 
         private Config config;
 
@@ -307,7 +307,7 @@ public class AtnProvider extends SynchronousProvider implements AuthenticationPr
          * A builder for building {@link Auth} instances.
          */
         public static class Builder
-            implements io.helidon.common.Builder<Auth> {
+            implements io.helidon.common.Builder<Builder, Auth> {
 
             private final String principal;
             private SubjectType type = SubjectType.USER;
@@ -387,7 +387,7 @@ public class AtnProvider extends SynchronousProvider implements AuthenticationPr
          * A builder for building {@link AtnConfig} instances.
          */
         public static class Builder
-                implements io.helidon.common.Builder<AtnConfig> {
+                implements io.helidon.common.Builder<Builder, AtnConfig> {
 
             private final List<Auth> authData = new ArrayList<>();
 

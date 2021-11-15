@@ -327,7 +327,7 @@ public final class RoleValidator implements AbacValidator<RoleValidator.RoleConf
         /**
          * A fluent API builder for {@link RoleConfig}.
          */
-        public static class Builder implements io.helidon.common.Builder<RoleConfig> {
+        public static class Builder implements io.helidon.common.Builder<Builder, RoleConfig> {
             private final Set<String> userRolesAllowed = new LinkedHashSet<>();
             private final Set<String> serviceRolesAllowed = new LinkedHashSet<>();
             private boolean permitAll = false;

@@ -145,7 +145,7 @@ public class TyrusSupport implements Service {
     /**
      * Builder for convenient way to create {@link TyrusSupport}.
      */
-    public static class Builder implements io.helidon.common.Builder<TyrusSupport> {
+    public static class Builder implements io.helidon.common.Builder<Builder, TyrusSupport> {
 
         private Set<Class<?>> endpointClasses = new HashSet<>();
         private Set<ServerEndpointConfig> endpointConfigs = new HashSet<>();

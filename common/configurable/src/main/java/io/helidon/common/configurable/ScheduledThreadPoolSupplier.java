@@ -120,7 +120,7 @@ public final class ScheduledThreadPoolSupplier implements Supplier<ScheduledExec
      * A fluent API builder for {@link ScheduledThreadPoolSupplier}.
      */
     @Configured
-    public static final class Builder implements io.helidon.common.Builder<ScheduledThreadPoolSupplier> {
+    public static final class Builder implements io.helidon.common.Builder<Builder, ScheduledThreadPoolSupplier> {
         private int corePoolSize = EXECUTOR_DEFAULT_CORE_POOL_SIZE;
         private boolean isDaemon = EXECUTOR_DEFAULT_IS_DAEMON;
         private String threadNamePrefix = EXECUTOR_DEFAULT_THREAD_NAME_PREFIX;

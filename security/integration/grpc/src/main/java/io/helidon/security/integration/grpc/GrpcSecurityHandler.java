@@ -872,7 +872,7 @@ public class GrpcSecurityHandler
 
     // WARNING: builder methods must not have side-effects, as they are used to build instance from configuration
     // if you want side effects, use methods on GrpcSecurityInterceptor
-    private static final class Builder implements io.helidon.common.Builder<GrpcSecurityHandler> {
+    private static final class Builder implements io.helidon.common.Builder<Builder, GrpcSecurityHandler> {
         private Optional<Set<String>> rolesAllowed = Optional.empty();
         private Optional<ClassToInstanceStore<Object>> customObjects = Optional.empty();
         private Optional<Config> config = Optional.empty();

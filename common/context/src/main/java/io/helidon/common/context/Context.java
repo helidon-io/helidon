@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -165,7 +165,7 @@ public interface Context {
     /**
      * Fluent API builder for {@link Context}.
      */
-    class Builder implements io.helidon.common.Builder<Context> {
+    class Builder implements io.helidon.common.Builder<Builder, Context> {
         private static final AtomicLong PARENT_CONTEXT_COUNTER = new AtomicLong(1);
         // this will cycle through long values from 1 to Long.MAX_VALUE
         private static final AtomicLong CHILD_CONTEXT_COUNTER = new AtomicLong(1);

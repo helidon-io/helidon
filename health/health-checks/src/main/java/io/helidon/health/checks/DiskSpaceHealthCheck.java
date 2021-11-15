@@ -204,7 +204,7 @@ public final class DiskSpaceHealthCheck implements HealthCheck {
     /**
      * Fluent API builder for {@link io.helidon.health.checks.DiskSpaceHealthCheck}.
      */
-    public static final class Builder implements io.helidon.common.Builder<DiskSpaceHealthCheck> {
+    public static final class Builder implements io.helidon.common.Builder<Builder, DiskSpaceHealthCheck> {
         private Path path = Paths.get(DEFAULT_PATH);
         private double threshold = DEFAULT_THRESHOLD;
 

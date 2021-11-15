@@ -551,7 +551,7 @@ public class Security {
      */
     @Configured(root = true, prefix = "security", description = "Configuration of security providers, integration and other"
             + " security options")
-    public static final class Builder implements io.helidon.common.Builder<Security> {
+    public static final class Builder implements io.helidon.common.Builder<Builder, Security> {
         private final Set<AuditProvider> auditProviders = new LinkedHashSet<>();
         private final List<NamedProvider<AuthenticationProvider>> atnProviders = new LinkedList<>();
         private final List<NamedProvider<AuthorizationProvider>> atzProviders = new LinkedList<>();

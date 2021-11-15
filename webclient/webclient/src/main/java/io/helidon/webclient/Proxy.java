@@ -408,7 +408,7 @@ public class Proxy {
     /**
      * Fluent API builder for {@link Proxy}.
      */
-    public static class Builder implements io.helidon.common.Builder<Proxy> {
+    public static class Builder implements io.helidon.common.Builder<Builder, Proxy> {
         private final Set<String> noProxyHosts = new HashSet<>();
 
         private ProxyType type;

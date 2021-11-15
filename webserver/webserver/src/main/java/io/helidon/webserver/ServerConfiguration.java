@@ -303,7 +303,7 @@ public interface ServerConfiguration extends SocketConfiguration {
      */
     @Deprecated
     final class Builder implements SocketConfiguration.SocketConfigurationBuilder<Builder>,
-                                   io.helidon.common.Builder<ServerConfiguration> {
+                                   io.helidon.common.Builder<Builder, ServerConfiguration> {
 
         private static final AtomicInteger WEBSERVER_COUNTER = new AtomicInteger(1);
         private final SocketConfiguration.Builder defaultSocketBuilder = SocketConfiguration.builder();

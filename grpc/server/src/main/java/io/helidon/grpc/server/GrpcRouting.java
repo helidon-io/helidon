@@ -85,7 +85,7 @@ public interface GrpcRouting {
     /**
      * A builder that can build {@link GrpcRouting} instances.
      */
-    final class Builder implements io.helidon.common.Builder<GrpcRouting> {
+    final class Builder implements io.helidon.common.Builder<Builder, GrpcRouting> {
 
         /**
          * The {@link Map} of the {@link ServiceDescriptor} instances

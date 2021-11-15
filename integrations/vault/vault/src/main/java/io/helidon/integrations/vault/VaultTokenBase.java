@@ -80,7 +80,7 @@ public abstract class VaultTokenBase {
      * @param <B> type of builder
      * @param <T> type of token
      */
-    public abstract static class Builder<B extends Builder<B, T>, T> implements io.helidon.common.Builder<T> {
+    public abstract static class Builder<B extends Builder<B, T>, T> implements io.helidon.common.Builder<B, T> {
         private Instant created = Instant.now();
         private String token;
         private Duration leaseDuration;

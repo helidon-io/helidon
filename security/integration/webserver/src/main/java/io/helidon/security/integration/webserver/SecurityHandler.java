@@ -857,7 +857,7 @@ public final class SecurityHandler implements Handler {
 
     // WARNING: builder methods must not have side-effects, as they are used to build instance from configuration
     // if you want side effects, use methods on SecurityHandler
-    private static final class Builder implements io.helidon.common.Builder<SecurityHandler> {
+    private static final class Builder implements io.helidon.common.Builder<Builder, SecurityHandler> {
         private final List<QueryParamHandler> queryParamHandlers = new LinkedList<>();
         private Optional<Set<String>> rolesAllowed = Optional.empty();
         private Optional<ClassToInstanceStore<Object>> customObjects = Optional.empty();

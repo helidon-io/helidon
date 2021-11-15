@@ -339,7 +339,7 @@ public final class AbacProvider extends SynchronousProvider implements Authoriza
     @Configured(prefix = "abac",
                 description = "Attribute Based Access Control provider",
                 provides = {SecurityProvider.class, AuthorizationProvider.class})
-    public static final class Builder implements io.helidon.common.Builder<AbacProvider> {
+    public static final class Builder implements io.helidon.common.Builder<Builder, AbacProvider> {
         private final List<AbacValidator<? extends AbacValidatorConfig>> validators = new ArrayList<>();
         private Config config = Config.empty();
         private boolean failOnUnvalidated = true;

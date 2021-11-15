@@ -28,7 +28,7 @@ import io.helidon.common.http.Http;
  * @param <T> type of the target object created by this builder
  * @param <X> type of the entity supported by this builder (such as JsonObject, byte[])
  */
-public interface ResponseBuilder<B extends ResponseBuilder<B, T, X>, T, X> extends Builder<T> {
+public interface ResponseBuilder<B extends ResponseBuilder<B, T, X>, T, X> extends Builder<B, T> {
     /**
      * Response status returned by the API call.
      *

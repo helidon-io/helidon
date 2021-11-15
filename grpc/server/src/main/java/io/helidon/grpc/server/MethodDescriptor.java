@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -229,7 +229,8 @@ public class MethodDescriptor<ReqT, ResT> {
      * @param <ResT> response type
      */
     static final class Builder<ReqT, ResT>
-            implements Rules<ReqT, ResT>, io.helidon.common.Builder<MethodDescriptor<ReqT, ResT>> {
+            implements Rules<ReqT, ResT>,
+                       io.helidon.common.Builder<Builder<ReqT, ResT>, MethodDescriptor<ReqT, ResT>> {
         private final String name;
         private final io.grpc.MethodDescriptor.Builder<ReqT, ResT> descriptor;
         private final ServerCallHandler<ReqT, ResT> callHandler;

@@ -425,7 +425,7 @@ public class CoordinatorService implements Service {
     /**
      * Coordinator builder.
      */
-    public static final class Builder implements io.helidon.common.Builder<CoordinatorService> {
+    public static final class Builder implements io.helidon.common.Builder<Builder, CoordinatorService> {
 
         private Config config;
         private LraPersistentRegistry lraPersistentRegistry;

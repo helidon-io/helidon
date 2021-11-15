@@ -37,7 +37,7 @@ class DirectHandlers {
         return handlers.get(eventType);
     }
 
-    static class Builder implements io.helidon.common.Builder<DirectHandlers> {
+    static class Builder implements io.helidon.common.Builder<Builder, DirectHandlers> {
         private final Map<EventType, DirectHandler> handlers = new EnumMap<>(EventType.class);
         private final DirectHandler defaultHandler = new DefaultHandler();
 

@@ -161,7 +161,7 @@ public class StaticContentSupport implements Service {
     /**
      * Fluent builder of the StaticContent detailed parameters.
      */
-    public static class Builder implements io.helidon.common.Builder<StaticContentSupport> {
+    public static class Builder implements io.helidon.common.Builder<Builder, StaticContentSupport> {
 
         private final Path fsRoot;
         private final String clRoot;

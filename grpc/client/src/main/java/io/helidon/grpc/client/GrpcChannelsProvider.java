@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -201,7 +201,7 @@ public class GrpcChannelsProvider {
     /**
      * Builder builds an instance of {@link GrpcChannelsProvider}.
      */
-    public static class Builder implements io.helidon.common.Builder<GrpcChannelsProvider> {
+    public static class Builder implements io.helidon.common.Builder<Builder, GrpcChannelsProvider> {
 
         private Map<String, GrpcChannelDescriptor> channelConfigs = new HashMap<>();
 

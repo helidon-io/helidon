@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -223,7 +223,7 @@ public class ClasspathConfigSource extends AbstractConfigSource implements Confi
      */
     public static final class Builder extends AbstractConfigSourceBuilder<Builder, Void>
             implements ParsableSource.Builder<Builder>,
-                       io.helidon.common.Builder<ClasspathConfigSource> {
+                       io.helidon.common.Builder<Builder, ClasspathConfigSource> {
 
         private URL url;
         private String resource;

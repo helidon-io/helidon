@@ -64,7 +64,7 @@ public class VaultRestException extends ApiRestException {
      * Fluent API builder for {@link io.helidon.integrations.vault.VaultRestException}
      * used by {@link io.helidon.integrations.common.rest.RestApiBase}.
      */
-    public static class Builder extends BaseBuilder<Builder> implements io.helidon.common.Builder<VaultRestException> {
+    public static class Builder extends BaseBuilder<Builder> implements io.helidon.common.Builder<Builder, VaultRestException> {
         private final List<String> vaultErrors = new LinkedList<>();
 
         private Builder() {

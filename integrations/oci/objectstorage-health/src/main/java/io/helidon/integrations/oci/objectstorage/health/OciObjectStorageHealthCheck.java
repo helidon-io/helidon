@@ -122,7 +122,7 @@ public final class OciObjectStorageHealthCheck implements HealthCheck {
     /**
      * Fluent API builder for {@link OciObjectStorageHealthCheck}.
      */
-    public static final class Builder implements io.helidon.common.Builder<OciObjectStorageHealthCheck> {
+    public static final class Builder implements io.helidon.common.Builder<Builder, OciObjectStorageHealthCheck> {
 
         private String namespace;
         private OciObjectStorageRx ociObjectStorageRx;

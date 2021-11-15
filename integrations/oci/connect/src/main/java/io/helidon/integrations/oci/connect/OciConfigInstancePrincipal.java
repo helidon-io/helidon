@@ -337,7 +337,7 @@ public class OciConfigInstancePrincipal implements OciConfigProvider {
     /**
      * Fluent API builder for {@link io.helidon.integrations.oci.connect.OciConfigInstancePrincipal}.
      */
-    public static class Builder implements io.helidon.common.Builder<OciConfigInstancePrincipal> {
+    public static class Builder implements io.helidon.common.Builder<Builder, OciConfigInstancePrincipal> {
         private static final Logger LOGGER = Logger.getLogger(Builder.class.getName());
         private final WebClient.Builder webClientBuilder = WebClient.builder()
                                                                     .followRedirects(true);

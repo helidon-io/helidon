@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -259,7 +259,7 @@ public final class ContentDisposition {
     /**
      * Builder class to create {@link ContentDisposition} instances.
      */
-    public static final class Builder implements io.helidon.common.Builder<ContentDisposition> {
+    public static final class Builder implements io.helidon.common.Builder<Builder, ContentDisposition> {
 
         private String type = "form-data";
         private final Map<String, String> params = new HashMap<>();

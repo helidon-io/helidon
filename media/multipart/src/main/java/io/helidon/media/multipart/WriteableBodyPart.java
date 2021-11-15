@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,7 +70,7 @@ public final class WriteableBodyPart implements BodyPart {
     /**
      * Builder class for creating {@link BodyPart} instances.
      */
-    public static final class Builder implements io.helidon.common.Builder<WriteableBodyPart> {
+    public static final class Builder implements io.helidon.common.Builder<Builder, WriteableBodyPart> {
 
         private static final WriteableBodyPartContent EMPTY_BODY_CONTENT = new RawBodyPartContent(Single.empty());
 

@@ -129,7 +129,7 @@ public final class FileOverrideSource extends AbstractSource
     public static final class Builder extends AbstractSourceBuilder<Builder, Path>
             implements PollableSource.Builder<Builder>,
                        WatchableSource.Builder<Builder, Path>,
-                       io.helidon.common.Builder<FileOverrideSource> {
+                       io.helidon.common.Builder<Builder, FileOverrideSource> {
 
         private Path path;
 

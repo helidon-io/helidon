@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -159,7 +159,7 @@ public final class ScheduledPollingStrategy implements PollingStrategy {
     /**
      * A fluent API builder for {@link io.helidon.config.ScheduledPollingStrategy}.
      */
-    public static final class Builder implements io.helidon.common.Builder<ScheduledPollingStrategy> {
+    public static final class Builder implements io.helidon.common.Builder<Builder, ScheduledPollingStrategy> {
         private RecurringPolicy recurringPolicy;
         private ScheduledExecutorService executor;
 

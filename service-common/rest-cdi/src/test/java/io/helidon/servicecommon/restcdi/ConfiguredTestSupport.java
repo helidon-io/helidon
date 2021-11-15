@@ -59,8 +59,8 @@ public class ConfiguredTestSupport extends HelidonRestServiceSupport {
         return importance;
     }
 
-    static class Builder extends HelidonRestServiceSupport.Builder<ConfiguredTestSupport, Builder>
-            implements io.helidon.common.Builder<ConfiguredTestSupport> {
+    static class Builder extends HelidonRestServiceSupport.Builder<Builder, ConfiguredTestSupport>
+            implements io.helidon.common.Builder<Builder, ConfiguredTestSupport> {
 
 
         private int importance;

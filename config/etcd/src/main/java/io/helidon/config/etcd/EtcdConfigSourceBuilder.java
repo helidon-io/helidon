@@ -55,7 +55,7 @@ public final class EtcdConfigSourceBuilder extends AbstractConfigSourceBuilder<E
         implements PollableSource.Builder<EtcdConfigSourceBuilder>,
                    WatchableSource.Builder<EtcdConfigSourceBuilder, EtcdEndpoint>,
                    ParsableSource.Builder<EtcdConfigSourceBuilder>,
-                   Builder<EtcdConfigSource> {
+                   Builder<EtcdConfigSourceBuilder, EtcdConfigSource> {
 
     /**
      * Default Etcd API version ({@link io.helidon.config.etcd.EtcdConfigSourceBuilder.EtcdApi#v2}).

@@ -338,7 +338,7 @@ public class IdcsMtRoleMapperRxProvider extends IdcsRoleMapperRxProviderBase {
      */
     public static class Builder<B extends Builder<B>>
             extends IdcsRoleMapperRxProviderBase.Builder<Builder<B>>
-            implements io.helidon.common.Builder<IdcsMtRoleMapperRxProvider> {
+            implements io.helidon.common.Builder<Builder<B>, IdcsMtRoleMapperRxProvider> {
         private TokenHandler idcsAppNameTokenHandler = TokenHandler.forHeader(IDCS_APP_HEADER);
         private TokenHandler idcsTenantTokenHandler = TokenHandler.forHeader(IDCS_TENANT_HEADER);
         private MultitenancyEndpoints multitentantEndpoints;

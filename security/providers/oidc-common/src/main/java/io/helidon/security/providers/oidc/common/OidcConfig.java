@@ -1014,7 +1014,7 @@ public final class OidcConfig {
      * A fluent API {@link io.helidon.common.Builder} to build instances of {@link OidcConfig}.
      */
     @Configured(description = "Open ID Connect configuration")
-    public static class Builder implements io.helidon.common.Builder<OidcConfig> {
+    public static class Builder implements io.helidon.common.Builder<Builder, OidcConfig> {
         static final String DEFAULT_SERVER_TYPE = "@default";
 
         private final OidcCookieHandler.Builder tokenCookieBuilder = OidcCookieHandler.builder()

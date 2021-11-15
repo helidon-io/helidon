@@ -83,7 +83,7 @@ public interface OciAutonomousDbRx {
     /**
      * Fluent API Builder for {@link OciAutonomousDbRx}.
      */
-    class Builder implements io.helidon.common.Builder<OciAutonomousDbRx> {
+    class Builder implements io.helidon.common.Builder<Builder, OciAutonomousDbRx> {
         private final OciRestApi.Builder apiBuilder = OciRestApi.builder();
 
         private String hostPrefix = API_HOST_PREFIX;

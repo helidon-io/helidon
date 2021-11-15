@@ -195,7 +195,7 @@ public final class OutboundConfig {
      * {@link OutboundConfig} builder when not reading it from configuration.
      */
     @Configured(description = "Outbound configuration for outbound security")
-    public static final class Builder implements io.helidon.common.Builder<OutboundConfig> {
+    public static final class Builder implements io.helidon.common.Builder<Builder, OutboundConfig> {
         private final List<OutboundTarget> targets = new LinkedList<>();
         private final Set<String> names = new HashSet<>();
 

@@ -123,7 +123,7 @@ public class TokenCredential {
     /**
      * Fluent API builder for {@link TokenCredential}.
      */
-    public static final class Builder implements io.helidon.common.Builder<TokenCredential> {
+    public static final class Builder implements io.helidon.common.Builder<Builder, TokenCredential> {
         private final ClassToInstanceStore<Object> tokens = new ClassToInstanceStore<>();
         private Instant issueTime;
         private Instant expTime;

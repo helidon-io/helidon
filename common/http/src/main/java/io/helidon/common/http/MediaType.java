@@ -588,7 +588,7 @@ public final class MediaType implements AcceptPredicate<MediaType> {
     /**
      * A fluent API builder to create instances of {@link MediaType}.
      */
-    public static final class Builder implements io.helidon.common.Builder<MediaType> {
+    public static final class Builder implements io.helidon.common.Builder<Builder, MediaType> {
         private String type = AcceptPredicate.WILDCARD_VALUE;
         private String subtype = AcceptPredicate.WILDCARD_VALUE;
         private String charset;

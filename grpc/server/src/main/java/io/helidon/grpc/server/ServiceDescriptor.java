@@ -436,7 +436,7 @@ public class ServiceDescriptor {
     /**
      * A {@link ServiceDescriptor} builder.
      */
-    public static final class Builder implements Rules, io.helidon.common.Builder<ServiceDescriptor> {
+    public static final class Builder implements Rules, io.helidon.common.Builder<Builder, ServiceDescriptor> {
         private final Class<?> serviceClass;
 
         private String name;

@@ -1313,7 +1313,7 @@ public class Jwt {
     /**
      * Builder of a {@link Jwt}.
      */
-    public static final class Builder implements io.helidon.common.Builder<Jwt> {
+    public static final class Builder implements io.helidon.common.Builder<Builder, Jwt> {
         private final JwtHeaders.Builder headerBuilder = JwtHeaders.builder();
         private final Map<String, Object> payloadClaims = new HashMap<>();
         private Optional<String> issuer = Optional.empty();

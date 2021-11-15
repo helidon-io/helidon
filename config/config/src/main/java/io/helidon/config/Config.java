@@ -1138,7 +1138,7 @@ public interface Config {
      * @see ConfigParser
      * @see ConfigFilter
      */
-    interface Builder {
+    interface Builder extends io.helidon.common.Builder<Builder, Config> {
         /**
          * Sets ordered list of {@link ConfigSource} instance to be used as single source of configuration
          * to be wrapped into {@link Config} API.

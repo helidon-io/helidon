@@ -117,7 +117,7 @@ public interface Vault {
     /**
      * Fluent API builder for {@link Vault}.
      */
-    class Builder implements io.helidon.common.Builder<Vault> {
+    class Builder implements io.helidon.common.Builder<Builder, Vault> {
         private static final Logger LOGGER = Logger.getLogger(Vault.class.getName());
 
         private final HelidonServiceLoader.Builder<VaultAuth> vaultAuths

@@ -167,7 +167,7 @@ public class HashDigest implements Digest {
     /**
      * Builder of the {@link HashDigest}.
      */
-    public static final class Builder implements io.helidon.common.Builder<HashDigest> {
+    public static final class Builder implements io.helidon.common.Builder<Builder, HashDigest> {
 
         private String algorithm = ALGORITHM_SHA_256;
         private String provider = null;

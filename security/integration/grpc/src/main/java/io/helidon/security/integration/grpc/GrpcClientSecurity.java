@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -187,7 +187,7 @@ public final class GrpcClientSecurity
      * A builder of {@link GrpcClientSecurity} instances.
      */
     public static final class Builder
-            implements io.helidon.common.Builder<GrpcClientSecurity> {
+            implements io.helidon.common.Builder<Builder, GrpcClientSecurity> {
 
         private final SecurityContext securityContext;
 

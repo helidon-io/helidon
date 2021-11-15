@@ -22,10 +22,10 @@ import io.helidon.servicecommon.rest.RestServiceSettings;
 /**
  * Provider of minimal web support for metrics.
  */
-class MinimalMetricsSupportProviderImpl implements MetricsSupportProvider<MinimalMetricsSupport> {
+class MinimalMetricsSupportProviderImpl implements MetricsSupportProvider<MinimalMetricsSupport.Builder, MinimalMetricsSupport> {
 
     @Override
-    public MetricsSupport.Builder<MinimalMetricsSupport> builder() {
+    public MinimalMetricsSupport.Builder builder() {
         return MinimalMetricsSupport.builder();
     }
 

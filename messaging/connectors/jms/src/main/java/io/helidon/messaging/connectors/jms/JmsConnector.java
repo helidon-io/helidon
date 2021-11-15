@@ -549,7 +549,7 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
     /**
      * Builder for {@link io.helidon.messaging.connectors.jms.JmsConnector}.
      */
-    public static class JmsConnectorBuilder implements Builder<JmsConnector> {
+    public static class JmsConnectorBuilder implements Builder<JmsConnectorBuilder, JmsConnector> {
 
         private final Map<String, ConnectionFactory> connectionFactoryMap = new HashMap<>();
         private ScheduledExecutorService scheduler;

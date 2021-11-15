@@ -141,7 +141,7 @@ public class HmacDigest implements Digest {
     /**
      * Builder of the {@link HmacDigest}.
      */
-    public static final class Builder implements io.helidon.common.Builder<HmacDigest> {
+    public static final class Builder implements io.helidon.common.Builder<Builder, HmacDigest> {
 
         private String algorithm = ALGORITHM_SHA_256;
         private String provider = null;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ public interface Retry extends FtHandler {
     /**
      * Fluent API builder for {@link io.helidon.faulttolerance.Retry}.
      */
-    class Builder implements io.helidon.common.Builder<Retry> {
+    class Builder implements io.helidon.common.Builder<Builder, Retry> {
         private final Set<Class<? extends Throwable>> applyOn = new HashSet<>();
         private final Set<Class<? extends Throwable>> skipOn = new HashSet<>();
 
@@ -288,7 +288,7 @@ public interface Retry extends FtHandler {
         /**
          * Fluent API builder for {@link io.helidon.faulttolerance.Retry.DelayingRetryPolicy}.
          */
-        public static class Builder implements io.helidon.common.Builder<DelayingRetryPolicy> {
+        public static class Builder implements io.helidon.common.Builder<Builder, DelayingRetryPolicy> {
             private int calls = 3;
             private double delayFactor = 2;
             private Duration delay = Duration.ofMillis(200);
@@ -391,7 +391,7 @@ public interface Retry extends FtHandler {
         /**
          * Fluent API builder for {@link io.helidon.faulttolerance.Retry.JitterRetryPolicy}.
          */
-        public static class Builder implements io.helidon.common.Builder<JitterRetryPolicy> {
+        public static class Builder implements io.helidon.common.Builder<Builder, JitterRetryPolicy> {
             private int calls = 3;
             private Duration delay = Duration.ofMillis(200);
             private Duration jitter = Duration.ofMillis(50);

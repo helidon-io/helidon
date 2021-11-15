@@ -274,7 +274,7 @@ public final class HealthSupport implements Service {
     /**
      * Fluent API builder for {@link io.helidon.health.HealthSupport}.
      */
-    public static final class Builder implements io.helidon.common.Builder<HealthSupport> {
+    public static final class Builder implements io.helidon.common.Builder<Builder, HealthSupport> {
         // 10 seconds
         private static final long DEFAULT_TIMEOUT_MILLIS = 10 * 1000;
         private final List<HealthCheck> allChecks = new LinkedList<>();

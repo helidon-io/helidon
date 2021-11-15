@@ -98,7 +98,7 @@ public class TokenVaultAuth implements VaultAuth {
     /**
      * Fluent API builder for {@link io.helidon.integrations.vault.auths.token.TokenVaultAuth}.
      */
-    public static class Builder implements io.helidon.common.Builder<TokenVaultAuth> {
+    public static class Builder implements io.helidon.common.Builder<Builder, TokenVaultAuth> {
         private String baseNamespace;
         private String token;
 

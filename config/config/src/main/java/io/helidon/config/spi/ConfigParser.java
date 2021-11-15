@@ -150,7 +150,7 @@ public interface ConfigParser {
         /**
          * Fluent API builder for {@link Content}.
          */
-        class Builder extends ConfigContent.Builder<Builder> implements io.helidon.common.Builder<Content> {
+        class Builder extends ConfigContent.Builder<Builder> implements io.helidon.common.Builder<Builder, Content> {
             private InputStream data;
             private String mediaType;
             private Charset charset = StandardCharsets.UTF_8;

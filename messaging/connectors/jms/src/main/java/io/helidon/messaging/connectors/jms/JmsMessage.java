@@ -212,7 +212,7 @@ public interface JmsMessage<PAYLOAD> extends Message<PAYLOAD> {
      *
      * @param <PAYLOAD> payload type
      */
-    class OutgoingJmsMessageBuilder<PAYLOAD> implements Builder<Message<PAYLOAD>> {
+    class OutgoingJmsMessageBuilder<PAYLOAD> implements Builder<OutgoingJmsMessageBuilder<PAYLOAD>, Message<PAYLOAD>> {
 
         private final HashMap<String, Object> properties = new HashMap<>();
         private final OutgoingJmsMessage<PAYLOAD> message;

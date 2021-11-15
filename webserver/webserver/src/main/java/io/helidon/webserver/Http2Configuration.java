@@ -53,7 +53,7 @@ public interface Http2Configuration {
     /**
      * Builder for {@link Http2Configuration}.
      */
-    final class Builder implements io.helidon.common.Builder<Http2Configuration> {
+    final class Builder implements io.helidon.common.Builder<Builder, Http2Configuration> {
 
         private boolean enableHttp2 = false;
         private int http2MaxContentLength = DEFAULT_MAX_CONTENT_LENGTH;

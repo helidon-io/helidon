@@ -294,7 +294,7 @@ public final class ClientMethodDescriptor {
      * {@link MethodDescriptor} builder implementation.
      */
     public static class Builder
-            implements Rules, io.helidon.common.Builder<ClientMethodDescriptor> {
+            implements Rules, io.helidon.common.Builder<Builder, ClientMethodDescriptor> {
 
         private String name;
         private io.grpc.MethodDescriptor.Builder descriptor;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -113,7 +113,7 @@ public interface ConfigNode {
         /**
          * Builder to build {@link ListNode} instance.
          */
-        interface Builder extends io.helidon.common.Builder<ListNode> {
+        interface Builder extends io.helidon.common.Builder<Builder, ListNode> {
             /**
              * Adds String value to the list.
              *

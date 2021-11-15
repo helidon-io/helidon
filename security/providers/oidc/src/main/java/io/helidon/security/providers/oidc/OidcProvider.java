@@ -627,7 +627,7 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
     @Configured(prefix = OidcProviderService.PROVIDER_CONFIG_KEY,
                 description = "Open ID Connect security provider",
                 provides = {AuthenticationProvider.class, SecurityProvider.class})
-    public static final class Builder implements io.helidon.common.Builder<OidcProvider> {
+    public static final class Builder implements io.helidon.common.Builder<Builder, OidcProvider> {
         private boolean optional = false;
         private OidcConfig oidcConfig;
         // identity propagation is disabled by default. In general we should not reuse the same token

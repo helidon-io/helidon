@@ -149,7 +149,7 @@ public class K8sVaultAuth implements VaultAuth {
     /**
      * Fluent API builder for {@link io.helidon.integrations.vault.auths.k8s.K8sVaultAuth}.
      */
-    public static class Builder implements io.helidon.common.Builder<K8sVaultAuth> {
+    public static class Builder implements io.helidon.common.Builder<Builder, K8sVaultAuth> {
         private String serviceAccountToken;
         private String tokenRole;
         private String tokenLocation = "/var/run/secrets/kubernetes.io/serviceaccount/token";

@@ -130,7 +130,7 @@ abstract class WebClientMetric implements WebClientService {
     /**
      * Client metric builder.
      */
-    public static final class Builder implements io.helidon.common.Builder<WebClientMetric> {
+    public static final class Builder implements io.helidon.common.Builder<Builder, WebClientMetric> {
 
         private final WebClientMetricType type;
         private Set<String> methods = Collections.emptySet();

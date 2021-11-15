@@ -1408,7 +1408,7 @@ class SchemaGenerator {
     /**
      * A fluent API {@link io.helidon.common.Builder} to build instances of {@link SchemaGenerator}.
      */
-    public static class Builder implements io.helidon.common.Builder<SchemaGenerator> {
+    public static class Builder implements io.helidon.common.Builder<Builder, SchemaGenerator> {
 
         private final Set<Class<?>> collectedApis = new HashSet<>();
 
@@ -1709,7 +1709,7 @@ class SchemaGenerator {
         /**
          * A fluent API {@link io.helidon.common.Builder} to build instances of {@link DiscoveredMethod}.
          */
-        public static class Builder implements io.helidon.common.Builder<RootTypeResult> {
+        public static class Builder implements io.helidon.common.Builder<Builder, RootTypeResult> {
 
             private String rootTypeName;
             private int levels;

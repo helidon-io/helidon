@@ -109,7 +109,7 @@ public interface MetricsSettings {
      * Builder for {@code MetricsSettings}.
      */
     @Configured(prefix = Builder.METRICS_CONFIG_KEY)
-    interface Builder extends io.helidon.common.Builder<MetricsSettings> {
+    interface Builder extends io.helidon.common.Builder<Builder, MetricsSettings> {
 
         /**
          * Config key within the config {@code metrics} section controlling whether metrics are enabled.

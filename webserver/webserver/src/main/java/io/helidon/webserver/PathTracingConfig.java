@@ -68,7 +68,7 @@ public interface PathTracingConfig {
     /**
      * Fluent API builder for {@link PathTracingConfig}.
      */
-    final class Builder implements io.helidon.common.Builder<PathTracingConfig> {
+    final class Builder implements io.helidon.common.Builder<Builder, PathTracingConfig> {
         private final List<String> methods = new LinkedList<>();
         private String path;
         private TracingConfig tracedConfig;

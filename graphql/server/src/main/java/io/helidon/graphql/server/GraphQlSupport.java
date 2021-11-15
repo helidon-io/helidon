@@ -177,7 +177,7 @@ public class GraphQlSupport implements Service {
     /**
      * Fluent API builder to create {@link io.helidon.graphql.server.GraphQlSupport}.
      */
-    public static class Builder implements io.helidon.common.Builder<GraphQlSupport> {
+    public static class Builder implements io.helidon.common.Builder<Builder, GraphQlSupport> {
         private String context = GraphQlConstants.GRAPHQL_WEB_CONTEXT;
         private String schemaUri = GraphQlConstants.GRAPHQL_SCHEMA_URI;
         private CrossOriginConfig crossOriginConfig;

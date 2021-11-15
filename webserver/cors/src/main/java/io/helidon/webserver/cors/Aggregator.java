@@ -94,7 +94,7 @@ class Aggregator {
         return isEnabled;
     }
 
-    static class Builder implements io.helidon.common.Builder<Aggregator>, CorsSetter<Builder> {
+    static class Builder implements io.helidon.common.Builder<Builder, Aggregator>, CorsSetter<Builder> {
 
         private final List<CrossOriginConfigMatchable> crossOriginConfigMatchables = new ArrayList<>();
         private boolean isEnabled = true;

@@ -219,7 +219,7 @@ public final class LruCache<K, V> {
      * @param <V> type of values
      */
     @Configured
-    public static class Builder<K, V> implements io.helidon.common.Builder<LruCache<K, V>> {
+    public static class Builder<K, V> implements io.helidon.common.Builder<Builder<K, V>, LruCache<K, V>> {
         private int capacity = DEFAULT_CAPACITY;
 
         @Override

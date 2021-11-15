@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import io.helidon.config.spi.ConfigSource;
  */
 public class MyConfigSourceBuilder2
         extends AbstractConfigSourceBuilder<MyConfigSourceBuilder2, MyEndpoint2>
-        implements Builder<ConfigSource> {
+        implements Builder<MyConfigSourceBuilder2, ConfigSource> {
 
     private final MyEndpoint2 endpoint;
     private boolean myProp3;
