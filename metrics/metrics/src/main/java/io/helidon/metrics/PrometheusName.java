@@ -85,6 +85,10 @@ class PrometheusName {
         return prometheusName + "_" + statName;
     }
 
+    String nameStatTags(String statName) {
+        return nameStat(statName) + prometheusTags;
+    }
+
     /**
      * Returns the Prometheus metric name (registry type + metric name) + units + suffix (e.g., "count") + tags.
      *
