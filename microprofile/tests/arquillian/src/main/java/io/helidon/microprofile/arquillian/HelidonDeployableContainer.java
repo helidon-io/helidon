@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,6 +52,7 @@ import jakarta.enterprise.inject.se.SeContainer;
 import jakarta.enterprise.inject.spi.CDI;
 import jakarta.enterprise.inject.spi.DefinitionException;
 import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.spi.ConfigBuilder;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.eclipse.microprofile.config.spi.ConfigSource;
@@ -269,12 +270,21 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
         //    META-INF/microprofile-config.properties (such as JWT-Auth)
         ConfigBuilder builder = ConfigProviderResolver.instance()
                 .getBuilder();
+        // we must use the default configuration to support profiles (and test them correctly in config TCK)
+        // we may need to have a custom configuration for TCKs that do require workarounds
+        /*
         Config config =
                 containerConfig.useBuilder(builder.withSources(findMpConfigSources(classPath)))
                 .addDiscoveredConverters()
                 // will read application.yaml
                 .addDiscoveredSources()
                 .build();
+
+        if (config.getOptionalValue("mp.config.profile", Boolean.class).orElse(false)) {
+            // there is a configuration profile, we must add correct sources
+        }
+        */
+        Config config = ConfigProvider.getConfig();
 
         context.runnerClass
                 .getDeclaredMethod("start", Config.class, Integer.TYPE)

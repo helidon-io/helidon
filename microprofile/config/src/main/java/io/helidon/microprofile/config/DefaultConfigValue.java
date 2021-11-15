@@ -13,24 +13,41 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.helidon.microprofile.config;
 
-import jakarta.enterprise.util.AnnotationLiteral;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.eclipse.microprofile.config.ConfigValue;
 
-/**
- * An implementation of the ConfigProperty annotation.
- */
-final class ConfigPropertyLiteral extends AnnotationLiteral<ConfigProperty> implements ConfigProperty {
+class DefaultConfigValue implements ConfigValue {
+    private final String key;
+    private final String value;
 
-    @Override
-    public String name() {
-        return "";
+    DefaultConfigValue(String key, String value) {
+        this.key = key;
+        this.value = value;
     }
 
     @Override
-    public String defaultValue() {
-        return UNCONFIGURED_VALUE;
+    public String getName() {
+        return key;
+    }
+
+    @Override
+    public String getValue() {
+        return value;
+    }
+
+    @Override
+    public String getRawValue() {
+        return value;
+    }
+
+    @Override
+    public String getSourceName() {
+        return null;
+    }
+
+    @Override
+    public int getSourceOrdinal() {
+        return 0;
     }
 }
