@@ -28,7 +28,7 @@ helidon.lra.coordinator:
     connection:
       url: "jdbc:h2:file:./lra-coordinator"
       username: "h2"
-      password: "${EMPTY}"
+      password: ""
       poolName: "h2"
     statements:
       create-lra-table: >-

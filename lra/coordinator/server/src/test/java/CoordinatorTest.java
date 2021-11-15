@@ -80,8 +80,12 @@ public class CoordinatorTest {
 
     @AfterAll
     static void afterAll() {
-        server.shutdown();
-        coordinatorService.shutdown();
+        if (server != null) {
+            server.shutdown();
+        }
+        if (coordinatorService != null) {
+            coordinatorService.shutdown();
+        }
     }
 
     @Test
