@@ -20,31 +20,30 @@
 :h1Prefix: SE
 :description: Helidon WebClient
 :keywords: helidon, WebClient, web, client
+:common-page-prefix-inc: ../../shared/common_prereqs/common_prereqs.adoc
 
 This guide describes how to create a sample Helidon SE project
 that can be used to run some basic examples using WebClient.
 
 == What you need
 
-[width=50%,role="flex, sm7"]
-|===
-|About 15 minutes
-|<<about/03_prerequisites.adoc,Helidon Prerequisites>>
-|===
+For this 15 minute tutorial, you will need the following:
+
+include::{common-page-prefix-inc}[tag=common-prereqs]
 
 * <<WebClient features,WebClient features>>
 * <<WebClient usage,WebClient usage>>
 * <<WebClient Metrics,WebClient Metrics>>
 
-=== WebClient features
+=== WebClient Features
 
-Helidon WebClient is used to perform Http REST request to target endpoint and handle their response. Built on top of
+Helidon's WebClient is used to perform HTTP REST requests to target endpoints and handle their responses. Built on top of
 a reactive approach, you are no longer blocked while waiting for the data.
 
 *Note*: WebClient is still experimental and not intended for production use. APIs and features are not yet fully tested
 and are subject to change.
 
-The WebClient main features:
+WebClient provides the following features:
 
     * *Reactive*:
 As mentioned, the code execution is not blocked by waiting for server response when a request is performed. To avoid
@@ -61,7 +60,7 @@ have to point your client to the correct/final endpoint.
 When you configure the Helidon WebServer to use tracing, metrics and security, the settings are automatically
 propagated to the WebClient and used during request/response.
 
-=== WebClient usage
+=== WebClient Usage
 
 ==== Create a sample SE project
 
@@ -80,7 +79,7 @@ mvn -U archetype:generate -DinteractiveMode=false \
     -Dpackage=io.helidon.examples.quickstart.se
 ----
 
-It created a new directory named `helidon-quickstart-se`.
+You should now have a directory called `helidon-quickstart-se`.
 
 [source,bash]
 .Open this directory
@@ -123,8 +122,8 @@ public class ClientExample {
 }
 ----
 
-Add the following code to create a WebClient instance. The builder approach allow us to create the WebClient with
-specific settings. It improves the readability and simplicity of the code.
+Add the following code to create a WebClient instance. The builder approach allows you to create the WebClient with
+specific settings and improves the readability and simplicity of the code.
 
 [source,java]
 .Add WebClient instance to the main method:
@@ -142,9 +141,9 @@ WebClient webClient = WebClient.builder()
 <1> The base URI of the outbound requests.
 <2> Register a support for Jsonp.
 
-By default, Helidon quickstart run on the host localhost and port 8080. If you changed these values in configuration
-file, make sure to modify the base URI as well.
-Once build, the WebClient can be used to send a GET request to the greeting application.
+By default, the Helidon quickstart application runs on localhost:8080. If you changed the host name or port number
+make sure to modify the base URI as well.
+Once built, the WebClient can be used to send a GET request to the greeting application.
 
 [source,java]
 .Send a GET request to the target endpoint:
@@ -155,7 +154,7 @@ webClient.get()     // <1>
     .peek(System.out::println)  // <4>
     .await();   // <5>
 ----
-<1> Create a Http GET request.
+<1> Create a HTTP GET request.
 <2> Target endpoint path.
 <3> Execute the request and return Single with response entity handled as a String.
 <4> Print the response in the console.
@@ -163,7 +162,7 @@ webClient.get()     // <1>
 
 
 
-The path method joins `/greet` to the WebClient base Uri. The target Uri for this request becomes
+The path method joins `/greet` to the WebClient base URI. The target URI for this request becomes
 `http://localhost:8080/greet` where the response should be a greeting message. Received response entity will be
 automatically handled as a String. If no specific type is put into the method request(),
 WebClientResponse is returned by default. This WebClientResponse object contains response code, headers and non-handled
@@ -203,9 +202,9 @@ When the ClientExample finishes its execution, you can stop the Main class by pr
 
 ==== Discover other WebClient functionality
 
-In practice, String is not the most useful return type, since it usually needs some more handling.In this case it could
-be more interesting to return an object such as JsonObject. Earlier, Json support was added to the webclient,
-so it can be used instead of String.
+In practice, String is not the most useful return type, since it usually needs some more handling. In this case it could
+be more interesting to return an object such as JsonObject. In the previous step JSON support was added to the WebClient
+so that it could be used instead of String.
 
 [source,java]
 .Replace String by JsonObject:
@@ -222,7 +221,7 @@ webClient.get()
 ----
 <1> Request a JsonObject as return value.
 
-In the Uri, the String following `greet` is a path parameter which allows the application to greet someone.
+In the URI, the String following `greet` is a path parameter which allows the application to greet someone.
 
 [source,bash]
 .Output:
@@ -231,7 +230,7 @@ In the Uri, the String following `greet` is a path parameter which allows the ap
 ----
 
 This time, a JsonObject is printed out in the console. It is possible to change the greeting itself by using a PUT
-request to `/greet/greeting` endpoint from the base Uri.
+request to `/greet/greeting` endpoint from the base URI.
 
 [source,java]
 .Modify the application greeting:
@@ -257,10 +256,10 @@ webClient.put()     // <2>
 <3> Submit the JsonObject created earlier.
 <4> Once done, make a GET call to verify the modification was processed to the greeting.
 
-According to the quickstart documentation, a Json object can be sent to the application to change the greeting following
+According to the quickstart documentation, a JSON object can be sent to the application to change the greeting following
 this structure: `{"greeting" : "value"}`. The first three lines of code create the JsonObject with the required content.
 This time, we use the PUT request and submit methods to push the new greeting. One way to check the greeting modification
-is to execute GET request again and display obtained response. `thenCompose` method will execute a GET request after
+is to execute GET request again and display obtained response. The `thenCompose` method will execute a GET request after
 the PUT request is executed.
 
 [source,bash]
@@ -271,13 +270,13 @@ the PUT request is executed.
 
 === WebClient Metrics
 
-WebClient as other Helidon components support Metrics. This chapter introduces the different metrics usable to measure
-the web client activity. There are two ways to set up metrics, first one is programmatically on the WebClient instance,
-second one is to use configuration file.
+WebClient, like other Helidon components, supports Metrics. The following example introduces the different metrics that
+can be used to measure WebClient activity. There are two ways to set up metrics: programmatically on the WebClient
+instance or manually using the configuration file.
 
 ==== Add metrics dependency
 
-There is a specific dependency to use web client metrics in your application.
+There is a specific dependency to use WebClient metrics in your application.
 
 [source,xml]
 .Add the following dependency to pom.xml:
@@ -290,8 +289,8 @@ There is a specific dependency to use web client metrics in your application.
 
 ==== Set up metrics on WebClient instance
 
-It is possible to register metrics on WebClient directly into the code. Will be described a general method to use with
-any metrics.
+It is possible to register metrics on WebClient directly into the code. The following example shows a general method
+that can be used with any metric.
 
 [source,java]
 .Example of metric creation:
@@ -334,13 +333,13 @@ public static void main(String[] args) {
 ----
 <1> Choose the metric name.
 <2> Create a metric from `metricFactory`.
-<3> Build a Web Client Service for counting the GET requests.
+<3> Build a WebClient Service for counting the GET requests.
 
 The metric name can indicate what is measured. In this example, the metric target GET requests on the localhost.
 In order to pass this information to the webclient, the `nameFormat` method extracts it from the metric name.
 Otherwise, the metric name can also have nothing in common with its job. In this case, the methods with `OPTIONAL`
-comment are not required to be used. The `methods` will target the Http request type of your choice. `success` and `error` will
-respectively measure request if they are successful or failed, and `description` add a metric description.
+comment are not required to be used. The methods will target the chosen HTTP request type. While success and error will
+respectively measure if a request is successful or failed. The description will add a metric description.
 
 [source,java]
 .Add the metric service to the WebClient:
@@ -366,7 +365,7 @@ WebClient uses GET and PUT requests, so metrics can be applied on.
 
 ==== Set up metrics with configuration files
 
-Using configuration file can reduce the code complexity and makes the metrics simpler to use. There is no
+Using the configuration file can reduce the code complexity and make the metrics simpler to use. There is no
 need to modify the source code but only the configuration file to measure other values. The `application.yaml` file
 is the default configuration file for Helidon. It can be used to set up metrics settings.
 
@@ -413,8 +412,7 @@ WebClient webClient = WebClient.builder()
                 .build();
 ----
 <1> Create a Helidon Config instance from default file `application.yaml`.
-<2> Configure the webclient with the `client` section from `application.yaml`.
+<2> Configure the WebClient with the `client` section from `application.yaml`.
 
-As shown, using configuration file strongly reduces the amount of code needed in the source code. If you want more
-information about metrics, please have a look to <<se/guides/05_metrics.adoc,Helidon Metric Guide>> where all metrics
-are described in more details.
+As demonstrated, using the configuration file reduces the amount of code needed in the source code. For more information
+about metrics, see the <<se/guides/05_metrics.adoc,Helidon Metrics Guide>>.
