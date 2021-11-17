@@ -28,6 +28,8 @@
 :metrics-support-builder-javadoc: {javadoc-base-url-api}/MetricsSupport.Builder.html
 :lower-case-flavor: se
 :intro-project-name: {h1Prefix}
+:helidon-tag: https://github.com/oracle/helidon/tree/{helidon-version}
+:thread-pool-example-link: {helidon-tag}/examples/webserver/threadpool
 
 include::{metrics-common}[tag=intro]
 include::{metrics-common}[tag=create-sample-project]
@@ -82,6 +84,8 @@ include::{metrics-common}[tag=vendor-metrics-json-output]
 ----
 
 include::{metrics-common}[tag=get-single-metric]
+
+include::{metrics-common}[tag=built-in-metrics-discussion]
 
 ////
 Controlling Metrics section

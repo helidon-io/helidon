@@ -17,9 +17,10 @@ package io.helidon.metrics;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import io.helidon.common.configurable.ThreadPoolSupplier;
+import io.helidon.config.Config;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
@@ -31,8 +32,6 @@ class GreetService implements Service {
 
     static final String GREETING_RESPONSE = "Hello World!";
 
-    private static ExecutorService executorService = Executors.newSingleThreadExecutor();
-
     static CountDownLatch slowRequestInProgress = null;
 
     static void initSlowRequest() {
@@ -43,13 +42,23 @@ class GreetService implements Service {
         slowRequestInProgress.await();
     }
 
+    private final ExecutorService executorService;
+
+   GreetService() {
+       Config config = Config.create();
+       executorService = ThreadPoolSupplier.builder()
+               .config(config.get("application-thread-pool"))
+               .build()
+               .get();
+   }
+
     @Override
     public void update(Routing.Rules rules) {
         rules.get("/greet/slow", this::greetSlow);
     }
 
     private void greetSlow(ServerRequest request, ServerResponse response) {
-        executorService.execute(() -> {
+        executorService.submit(() -> {
             if (slowRequestInProgress != null) {
                 slowRequestInProgress.countDown();
             }
@@ -58,7 +67,7 @@ class GreetService implements Service {
             } catch (InterruptedException e) {
                 //absorb silently
             }
+            response.send(GREETING_RESPONSE);
         });
-        response.send(GREETING_RESPONSE);
     }
 }

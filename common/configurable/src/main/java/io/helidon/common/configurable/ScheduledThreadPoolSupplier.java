@@ -50,6 +50,7 @@ public final class ScheduledThreadPoolSupplier implements Supplier<ScheduledExec
         this.isDaemon = builder.isDaemon;
         this.threadNamePrefix = builder.threadNamePrefix;
         this.prestart = builder.prestart;
+        ObserverManager.registerSupplier(this, "scheduled", threadNamePrefix);
     }
 
     /**
@@ -108,6 +109,7 @@ public final class ScheduledThreadPoolSupplier implements Supplier<ScheduledExec
         if (prestart) {
             result.prestartAllCoreThreads();
         }
+        ObserverManager.registerExecutorService(this, result);
         return result;
     }
 

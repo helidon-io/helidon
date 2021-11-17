@@ -25,6 +25,7 @@ import java.util.logging.Logger;
 import io.helidon.common.http.MediaType;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.webclient.WebClient;
+import io.helidon.webclient.WebClientRequestBuilder;
 import io.helidon.webclient.WebClientResponse;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.Service;
@@ -152,5 +153,52 @@ public class TestServer {
                         .values().stream()
                         .findAny();
         assertThat("In-flight concurrent gauge metric exists", inflightRequests.isPresent(), is(isKPIEnabled));
+    }
+
+    @Test
+    void checkMetricsForExecutorService() {
+
+        String jsonKeyForCompleteTaskCountInThreadPool =
+                "executor-service.completed-task-count;poolIndex=0;supplierCategory=helidon-thread-pool-1;supplierIndex=0";
+
+        WebClientRequestBuilder metricsRequestBuilder = webClientBuilder
+                .build()
+                .get()
+                .accept(MediaType.APPLICATION_JSON)
+                .path("metrics/vendor");
+
+        WebClientResponse response = metricsRequestBuilder
+                .submit()
+                .await();
+
+        assertThat("Normal metrics/vendor URL HTTP response", response.status().code(), is(200));
+
+        JsonObject metrics = response.content().as(JsonObject.class).await();
+
+        int completedTaskCount =
+                metrics.getInt(jsonKeyForCompleteTaskCountInThreadPool);
+        assertThat("Completed task count before accessing slow endpoint", completedTaskCount, is(0));
+
+        WebClientResponse slowGreetResponse = webClientBuilder
+                .build()
+                .get()
+                .accept(MediaType.TEXT_PLAIN)
+                .path("greet/slow")
+                .submit()
+                .await();
+
+        assertThat("Slow greet access response status", slowGreetResponse.status().code(), is(200));
+
+        WebClientResponse secondMetricsResponse = metricsRequestBuilder
+                .submit()
+                .await();
+
+        assertThat("Second access to metrics", secondMetricsResponse.status().code(), is(200));
+
+        JsonObject secondMetrics = secondMetricsResponse.content().as(JsonObject.class).await();
+
+        int secondCompletedTaskCount = secondMetrics.getInt(jsonKeyForCompleteTaskCountInThreadPool);
+
+        assertThat("Completed task count after accessing slow endpoint", secondCompletedTaskCount, is(1));
     }
 }
