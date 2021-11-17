@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+
 # Assign an issue to a column on a project board
 #
 # usage: assign-issue-to-board <repository-full-name> <issue-number> <project-name> <column-name>
