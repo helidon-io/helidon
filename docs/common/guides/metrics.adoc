@@ -19,6 +19,8 @@
 :description: Helidon metrics
 :keywords: helidon, metrics, microprofile, guide
 :common-page-prefix-inc: ../../shared/common_prereqs/common_prereqs.adoc
+//:helidon-tag: https://github.com/oracle/helidon/tree/{helidon-version}
+//:thread-pool-example-link: {helidon-tag}/examples/webserver/threadpool
 :h1Prefix: MP
 
 // tag::intro[]
@@ -64,7 +66,15 @@ Helidon provides three scopes of metrics: base, vendor, and application. Here ar
 
 NOTE: The `/metrics` endpoint will return data for all scopes.
 
-The following example will demonstrate how to use the built-in metrics.  All examples are executed
+The built-in metrics fall into three categories:
+
+. JVM behavior (in the base registry),
+. basic key performance indicators for request handling (in the vendor registry), and
+. thread pool utilization (also in the vendor registry).
+
+A later section describes the <<basic-and-extended-kpi,key performance indicator metrics>> in detail.
+
+The following example demonstrates how to use the other built-in metrics.  All examples are executed
 from the root directory of your project (helidon-quickstart-{lower-case-flavor}).
 // end::using-built-in-metrics-intro[]
 
@@ -86,7 +96,7 @@ mvn package -DskipTests=true
 java -jar target/helidon-quickstart-{lower-case-flavor}.jar
 ----
 
-NOTE: Metrics can be returned in either text format (the default), or JSON.  The text format uses Prometheus Text Format,
+NOTE: Metrics can be returned in either text format (the default), or JSON.  The text format uses OpenMetrics (Prometheus) Text Format,
 see https://prometheus.io/docs/instrumenting/exposition_formats/#text-format-details.
 
 [source,bash]
@@ -136,6 +146,13 @@ curl -H "Accept: application/json"  http://localhost:8080/metrics
 // end::base-metrics-json-output[]
 // tag::vendor-metrics-json-output[]
   "vendor": {
+    "executor-service.active-count;poolIndex=0;supplierCategory=helidon-thread-pool-2;supplierIndex=0": 0,
+    "executor-service.completed-task-count;poolIndex=0;supplierCategory=helidon-thread-pool-2;supplierIndex=0": 0,
+    "executor-service.largest-pool-size;poolIndex=0;supplierCategory=helidon-thread-pool-2;supplierIndex=0": 5,
+    "executor-service.pool-size;poolIndex=0;supplierCategory=helidon-thread-pool-2;supplierIndex=0": 5,
+    "executor-service.queue.remaining-capacity;poolIndex=0;supplierCategory=helidon-thread-pool-2;supplierIndex=0": 10000,
+    "executor-service.queue.size;poolIndex=0;supplierCategory=helidon-thread-pool-2;supplierIndex=0": 0,
+    "executor-service.task-count;poolIndex=0;supplierCategory=helidon-thread-pool-2;supplierIndex=0": 0,
     "requests.count": 6,
     "requests.meter": {
       "count": 6,
@@ -173,6 +190,23 @@ curl -H "Accept: application/json"  http://localhost:8080/metrics/vendor/request
 NOTE: You cannot get the individual fields of a metric. For example, you cannot target http://localhost:8080/metrics/vendor/requests.meter.count.
 // end::get-single-metric[]
 
+// tag::built-in-metrics-discussion[]
+The `base` metrics illustrated above provide some insight into the behavior of the JVM in which the server runs.
+
+The `vendor` metrics shown above appear in two groups:
+
+- Helidon thread pools +
++
+Helidon uses these thread pools for its own internal work, and your application can also use Helidon-managed thread pools if it needs to do work asynchronously. (See link:{thread-pool-example-link}[this example].)
+The metrics in this group show information about the thread pools which can help you assess how efficiently they are utilized.
+Helidon uses tags to distinguish the metrics which describe different thread pools.
+In some cases the specific metrics exposed depend on the particular type of thread pool.
+- basic key performance indicators +
++
+These metrics give an idea of the request traffic the server is handling. See the <<basic-and-extended-kpi,later section>> for more information on the basic and extended key performance indicator metrics.
+
+// end::built-in-metrics-discussion[]
+
 // tag::controlling[]
 // tag::controlling-intro[]
 // tag::controlling-intro-part-1[]
@@ -185,7 +219,7 @@ By adding a `metrics` section to your application configuration you can control 
 *  Identify groups of metrics to control:
 **  <<enabling-disabling-by-component,registered by a particular component>>, and
 **  <<enabling-disabling-by-registry,by metric registry>> (application, vendor, and base) and within a registry by metric names  which match patterns you provide.
-*  Select whether to collect <<extend-kpi,extended key performance indicator metrics>>.
+*  Select whether to collect <<basic-and-extended-kpi,extended key performance indicator metrics>>.
 // end::controlling-intro-part-2[]
 // end::controlling-intro[]
 
@@ -324,8 +358,8 @@ metrics.registries.0.filter.exclude = myapp\..*/deletes
 // tag::controlling-by-registry[]
 
 // tag::KPI[]
-[[extend-kpi]]
-==== Collecting Extended Key Performance Indicator (KPI) Metrics
+[[basic-and-extended-kpi]]
+==== Collecting Basic and Extended Key Performance Indicator (KPI) Metrics
 Any time you include the Helidon metrics module in your application, Helidon tracks two basic performance indicator metrics:
 
 * a `Counter` of all requests received (`requests.count`), and

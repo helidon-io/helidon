@@ -38,6 +38,8 @@ module io.helidon.metrics {
 
     provides io.helidon.metrics.api.spi.RegistryFactoryProvider with io.helidon.metrics.RegistryFactoryProviderImpl;
     provides io.helidon.metrics.serviceapi.spi.MetricsSupportProvider with io.helidon.metrics.MetricsSupportProviderImpl;
+    provides io.helidon.common.configurable.spi.ExecutorServiceSupplierObserver
+            with io.helidon.metrics.ExecutorServiceMetricsObserver;
 
     uses io.helidon.metrics.ExemplarService;
     uses io.helidon.metrics.serviceapi.spi.MetricsSupportProvider;

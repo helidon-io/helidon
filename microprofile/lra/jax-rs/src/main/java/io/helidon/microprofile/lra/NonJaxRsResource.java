@@ -24,9 +24,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.context.BeforeDestroyed;
-import javax.enterprise.event.Observes;
+import javax.annotation.PreDestroy;
 import javax.inject.Inject;
 import javax.ws.rs.core.Response;
 
@@ -202,7 +200,8 @@ class NonJaxRsResource {
         }
     }
 
-    void terminate(@Observes @BeforeDestroyed(ApplicationScoped.class) Object event) {
+   @PreDestroy
+    void terminate() {
         exec.shutdown();
         try {
             if (!exec.awaitTermination(300, TimeUnit.MILLISECONDS)) {

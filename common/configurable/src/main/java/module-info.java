@@ -28,4 +28,7 @@ module io.helidon.common.configurable {
     requires static io.helidon.config.metadata;
 
     exports io.helidon.common.configurable;
+    exports io.helidon.common.configurable.spi;
+
+    uses io.helidon.common.configurable.spi.ExecutorServiceSupplierObserver;
 }
