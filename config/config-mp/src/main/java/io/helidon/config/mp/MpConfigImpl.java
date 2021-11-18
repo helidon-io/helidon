@@ -389,11 +389,7 @@ class MpConfigImpl implements Config {
             throw new IllegalArgumentException("Recursive resolving of references for key " + key + ", value: " + value);
         }
         try {
-            if (value.contains("${")) {
-                return processExpressions(value);
-            } else {
-                return value;
-            }
+            return value.contains("${") ? processExpressions(value) : value;
         } finally {
             UNRESOLVED_KEYS.get().remove(key);
         }

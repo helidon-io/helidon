@@ -20,7 +20,6 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -111,51 +110,14 @@ final class FieldTypes {
         return field2;
     }
 
-    static final class TypedField {
-        private final Class<?> rawType;
-        private ParameterizedType paramType;
+    static final record TypedField(Class<?> rawType, ParameterizedType paramType) {
 
         private TypedField(Class<?> rawType) {
-            this.rawType = rawType;
-        }
-
-        private TypedField(Class<?> rawType, ParameterizedType paramType) {
-            this.rawType = rawType;
-            this.paramType = paramType;
+            this(rawType, null);
         }
 
         private boolean isParameterized() {
             return paramType != null;
-        }
-
-        Class<?> rawType() {
-            return rawType;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if ((o == null) || (getClass() != o.getClass())) {
-                return false;
-            }
-            TypedField that = (TypedField) o;
-            return Objects.equals(rawType, that.rawType)
-                    && Objects.equals(paramType, that.paramType);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(rawType, paramType);
-        }
-
-        @Override
-        public String toString() {
-            return "TypedField{"
-                    + "rawType=" + rawType
-                    + ", paramType=" + paramType
-                    + '}';
         }
     }
 }

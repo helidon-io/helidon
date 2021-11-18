@@ -17,18 +17,11 @@ package io.helidon.microprofile.config;
 
 import org.eclipse.microprofile.config.ConfigValue;
 
-class DefaultConfigValue implements ConfigValue {
-    private final String key;
-    private final String value;
-
-    DefaultConfigValue(String key, String value) {
-        this.key = key;
-        this.value = value;
-    }
+record DefaultConfigValue(String name, String value) implements ConfigValue {
 
     @Override
     public String getName() {
-        return key;
+        return name;
     }
 
     @Override
