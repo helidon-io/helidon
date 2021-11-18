@@ -24,6 +24,9 @@ import java.util.concurrent.locks.ReentrantLock;
 import io.helidon.common.LazyValue;
 
 import jakarta.enterprise.inject.spi.CDI;
+import jakarta.enterprise.util.AnnotationLiteral;
+
+import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Histogram;
@@ -34,6 +37,8 @@ import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.annotation.RegistryType;
+
+import static io.helidon.microprofile.faulttolerance.FaultToleranceExtension.getRealClass;
 
 /**
  * Utility class to register and fetch FT metrics.
@@ -96,7 +101,7 @@ class FaultToleranceMetrics {
                         .withDescription(description())
                         .withType(metricType())
                         .withUnit(unit())
-                        .reusable(true)
+                        // .reusable(true)
                         .build();
                 try {
                     counter = getMetricRegistry().counter(metadata, tags);
@@ -123,7 +128,7 @@ class FaultToleranceMetrics {
                         .withDescription(description())
                         .withType(metricType())
                         .withUnit(unit())
-                        .reusable(true)
+                        // .reusable(true)
                         .build();
                 try {
                     histogram = getMetricRegistry().histogram(metadata, tags);
@@ -141,62 +146,66 @@ class FaultToleranceMetrics {
             MetricID metricID = new MetricID(name(), tags);
             return (Gauge<T>) getMetricRegistry().getMetrics().get(metricID);
         }
-    @SuppressWarnings("unchecked")
-    static <T extends Metric> T getMetric(Method method, String name) {
-        MetricID metricID = newMetricID(String.format(METRIC_NAME_TEMPLATE,
-                method.getDeclaringClass().getName(),
-                method.getName(), name));
-        return (T) getMetricRegistry().getMetrics().get(metricID);
-    }
 
-    static Counter getCounter(Method method, String name) {
-        return getMetric(method, name);
-    }
+        @SuppressWarnings("unchecked")
+        static <T extends Metric> T getMetric(Method method, String name) {
+            MetricID metricID = new MetricID(String.format(METRIC_NAME_TEMPLATE,
+                    method.getDeclaringClass().getName(),
+                    method.getName(), name));
+            return (T) getMetricRegistry().getMetrics().get(metricID);
+        }
 
-    static Histogram getHistogram(Method method, String name) {
-        return getMetric(method, name);
-    }
+        static Counter getCounter(Method method, String name) {
+            return getMetric(method, name);
+        }
 
-    @SuppressWarnings("unchecked")
-    static <T> Gauge<T> getGauge(Method method, String name) {
-        return getMetric(method, name);
-    }
+        static Histogram getHistogram(Method method, String name) {
+            return getMetric(method, name);
+        }
 
-    static long getCounter(Object bean, String methodName, String name,
-                           Class<?>... params) throws Exception {
-        Method method = findMethod(getRealClass(bean), methodName, params);
-        return getCounter(method, name).getCount();
-    }
+        @SuppressWarnings("unchecked")
+        static <T> Gauge<T> getGauge(Method method, String name) {
+            return getMetric(method, name);
+        }
 
-    static Histogram getHistogram(Object bean, String methodName, String name,
-                                  Class<?>... params) throws Exception {
-        Method method = findMethod(getRealClass(bean), methodName, params);
-        return getHistogram(method, name);
-    }
+        static long getCounter(Object bean, String methodName, String name,
+                               Class<?>... params) throws Exception {
+            Method method = findMethod(getRealClass(bean), methodName, params);
+            return getCounter(method, name).getCount();
+        }
 
-    static <T> Gauge<T> getGauge(Object bean, String methodName, String name,
-                                 Class<?>... params) throws Exception {
-        Method method = findMethod(getRealClass(bean), methodName, params);
-        return getGauge(method, name);
-    }
+        static Histogram getHistogram(Object bean, String methodName, String name,
+                                      Class<?>... params) throws Exception {
+            Method method = findMethod(getRealClass(bean), methodName, params);
+            return getHistogram(method, name);
+        }
 
-    /**
-     * Attempts to find a method even if not accessible.
-     *
-     * @param beanClass bean class.
-     * @param methodName name of method.
-     * @param params param types.
-     * @return method found.
-     * @throws NoSuchMethodException if not found.
-     */
-    private static Method findMethod(Class<?> beanClass, String methodName,
-                                     Class<?>... params) throws NoSuchMethodException {
-        try {
-            Method method = beanClass.getDeclaredMethod(methodName, params);
-            method.setAccessible(true);
-            return method;
-        } catch (Exception e) {
-            return beanClass.getMethod(methodName, params);
+        static <T> Gauge<T> getGauge(Object bean, String methodName, String name,
+                                     Class<?>... params) throws Exception {
+            Method method = findMethod(getRealClass(bean), methodName, params);
+            return getGauge(method, name);
+        }
+
+        /**
+         * Attempts to find a method even if not accessible.
+         *
+         * @param beanClass bean class.
+         * @param methodName name of method.
+         * @param params param types.
+         * @return method found.
+         * @throws NoSuchMethodException if not found.
+         */
+        private static Method findMethod(Class<?> beanClass, String methodName,
+                                         Class<?>... params) throws NoSuchMethodException {
+            try {
+                Method method = beanClass.getDeclaredMethod(methodName, params);
+                method.setAccessible(true);
+                return method;
+            } catch (Exception e) {
+                return beanClass.getMethod(methodName, params);
+            }
+        }
+
         @SuppressWarnings("unchecked")
         protected <T> Gauge<T> registerGauge(Gauge<T> newGauge, Tag... tags) {
             Gauge<T> gauge = getGauge(tags);
@@ -207,7 +216,7 @@ class FaultToleranceMetrics {
                         .withDescription(description())
                         .withType(metricType())
                         .withUnit(unit())
-                        .reusable(true)
+                        // .reusable(true)
                         .build();
                 try {
                     gauge = getMetricRegistry().register(metadata, newGauge, tags);
@@ -549,7 +558,7 @@ class FaultToleranceMetrics {
     static <T> Gauge<T> registerGauge(Method method, String metricName, String description, Gauge<T> gauge) {
         LOCK.lock();
         try {
-            MetricID metricID = newMetricID(String.format(METRIC_NAME_TEMPLATE,
+            MetricID metricID = new MetricID(String.format(METRIC_NAME_TEMPLATE,
                     method.getDeclaringClass().getName(),
                     method.getName(),
                     metricName));
@@ -565,6 +574,7 @@ class FaultToleranceMetrics {
             LOCK.unlock();
         }
     }
+
     static class CircuitBreakerCallsTotal extends FaultToleranceMetric {
 
         static final CircuitBreakerCallsTotal INSTANCE = new CircuitBreakerCallsTotal();
@@ -597,16 +607,6 @@ class FaultToleranceMetrics {
             return INSTANCE.registerCounter(tags);
         }
 
-    // TODO 3.0.0-JAKARTA
-    private static Metadata newMetadata(String name, String displayName, String description, MetricType metricType,
-                                        String metricUnits, boolean isReusable) {
-        return Metadata.builder()
-                .withName(name)
-                .withDisplayName(displayName)
-                .withDescription(description)
-                .withType(metricType)
-                .withUnit(metricUnits)
-                .build();
         static Counter register(Tag... tags) {
             return INSTANCE.registerCounter(tags);
         }
@@ -904,5 +904,17 @@ class FaultToleranceMetrics {
         static Histogram register(Tag... tags) {
             return INSTANCE.registerHistogram(tags);
         }
+    }
+
+    // TODO 3.0.0-JAKARTA
+    private static Metadata newMetadata(String name, String displayName, String description, MetricType metricType,
+                                        String metricUnits, boolean isReusable) {
+        return Metadata.builder()
+                .withName(name)
+                .withDisplayName(displayName)
+                .withDescription(description)
+                .withType(metricType)
+                .withUnit(metricUnits)
+                .build();
     }
 }
