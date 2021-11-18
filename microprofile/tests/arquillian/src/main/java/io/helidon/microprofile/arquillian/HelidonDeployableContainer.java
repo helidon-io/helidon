@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,6 +55,8 @@ import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigBuilder;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.eclipse.microprofile.config.spi.ConfigSource;
+import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.eclipse.microprofile.metrics.annotation.RegistryType;
 import org.jboss.arquillian.container.spi.client.container.DeployableContainer;
 import org.jboss.arquillian.container.spi.client.container.DeploymentException;
 import org.jboss.arquillian.container.spi.client.protocol.ProtocolDescription;
@@ -108,6 +110,17 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
      * Run contexts - kept for each deployment.
      */
     private final Map<String, RunContext> contexts = new HashMap<>();
+
+    /**
+     * Annotation literal to inject base registry.
+     */
+    static class BaseRegistryTypeLiteral extends AnnotationLiteral<RegistryType> implements RegistryType {
+
+        @Override
+        public MetricRegistry.Type type() {
+            return MetricRegistry.Type.BASE;
+        }
+    }
 
     @Override
     public Class<HelidonContainerConfiguration> getConfigurationClass() {
@@ -363,11 +376,17 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
 
     @Override
     public void undeploy(Archive<?> archive) {
+        // Clean up all the base metrics for next test
+        cleanupBaseMetrics();
+
+        // Clean up contexts
         RunContext context = contexts.remove(archive.getId());
         if (null == context) {
             LOGGER.severe("Undeploying an archive that was not deployed. ID: " + archive.getId());
             return;
         }
+
+        // Stop the server
         try {
             context.runnerClass.getDeclaredMethod("stop")
                     .invoke(context.runner);
@@ -382,8 +401,8 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
             Thread.currentThread().setContextClassLoader(context.oldClassLoader);
         }
 
+        // Try to clean up the deploy directory
         if (containerConfig.getDeleteTmp()) {
-            // Try to clean up the deploy directory
             if (context.deployDir != null) {
                 try {
                     Files.walk(context.deployDir)
@@ -419,6 +438,18 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
     @Override
     public void undeploy(Descriptor descriptor) {
         // No-Op
+    }
+
+    /**
+     * Injects the base metric registry and cleans up all metrics in preparation to run another
+     * Arquillian test in the same VM. Without this cleanup, metrics added by a previous test
+     * would be available and may cause failures.
+     */
+    private void cleanupBaseMetrics() {
+        MetricRegistry metricRegistry = CDI.current().select(MetricRegistry.class,
+                new BaseRegistryTypeLiteral()).get();
+        Objects.requireNonNull(metricRegistry);
+        metricRegistry.removeMatching((m, v) -> true);
     }
 
     /**

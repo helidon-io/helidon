@@ -17,6 +17,7 @@
 package io.helidon.microprofile.faulttolerance;
 
 import java.lang.reflect.Method;
+import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 
 import org.eclipse.microprofile.faulttolerance.Retry;
@@ -47,7 +48,9 @@ class RetryAntn extends MethodAntn implements Retry {
             throw new FaultToleranceDefinitionException("Invalid @Retry annotation, "
                                                         + "delay must be >= 0");
         }
-        if (maxDuration() < delay()) {
+        Duration delay = Duration.of(delay(), delayUnit());
+        Duration maxDuration = Duration.of(maxDuration(), durationUnit());
+        if (maxDuration.compareTo(delay) < 0) {
             throw new FaultToleranceDefinitionException("Invalid @Retry annotation, "
                                                         + "maxDuration must be >= delay");
         }

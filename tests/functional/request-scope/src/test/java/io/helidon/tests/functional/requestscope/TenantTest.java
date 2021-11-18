@@ -101,4 +101,16 @@ class TenantTest {
     public void testStartup() {
         assertThat(StartupServices.SUCCESSFUL_STARTUP.get(), is(true));
     }
+
+    @Test
+    public void test4() {
+        Response r;
+        r = baseTarget.path("test4")
+                .queryParam("param1", "1")
+                .request()
+                .get();
+        assertThat(r.getStatus(), is(HttpResponseStatus.OK.code()));
+        String entityValue = r.readEntity(String.class);
+        assertThat(entityValue, is("1"));
+    }
 }
