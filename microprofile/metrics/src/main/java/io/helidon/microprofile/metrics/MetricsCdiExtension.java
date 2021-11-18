@@ -74,6 +74,7 @@ import io.helidon.common.Errors;
 import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
+import io.helidon.config.mp.MpConfig;
 import io.helidon.metrics.api.MetricsSettings;
 import io.helidon.metrics.api.RegistryFactory;
 import io.helidon.metrics.serviceapi.MetricsSupport;
@@ -619,19 +620,16 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
                 Object adv,
                 BeanManager bm,
                 ServerCdiExtension server) {
-        Set<String> vendorMetricsAdded = new HashSet<>();
-        Config config = ((Config) ConfigProvider.getConfig()).get("metrics");
-
-        // Update the registry factory with the runtime config.
-        RegistryFactory.getInstance(MetricsSettings.create(config));
+        Routing.Builder defaultRouting = super.registerService(adv, bm, server);
+        MetricsSupport metricsSupport = serviceSupport();
 
         registerMetricsForAnnotatedSites();
         registerProducers(bm);
 
-        Routing.Builder defaultRouting = super.registerService(adv, bm, server);
-        MetricsSupport metricsSupport = serviceSupport();
-
+        Set<String> vendorMetricsAdded = new HashSet<>();
         vendorMetricsAdded.add("@default");
+
+        Config config = MpConfig.toHelidonConfig(ConfigProvider.getConfig()).get(MetricsSettings.Builder.METRICS_CONFIG_KEY);
 
         // now we may have additional sockets we want to add vendor metrics to
         config.get("vendor-metrics-routings")

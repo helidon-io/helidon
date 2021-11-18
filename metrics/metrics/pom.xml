@@ -120,6 +120,7 @@
                                 <excludes>
                                     <exclude>**/TestServerWithKeyPerformanceIndicatorMetrics.java</exclude>
                                     <exclude>**/TestExponentiallyDecayingReservoir.java</exclude>
+                                    <exclude>**/TestDisabledEntirely.java</exclude>
                                 </excludes>
                             </configuration>
                         </execution>
@@ -160,6 +161,18 @@
                             <configuration>
                                 <includes>
                                     <include>**/TestExponentiallyDecayingReservoir.java</include>
+                                </includes>
+                            </configuration>
+                        </execution>
+                        <execution>
+                            <!-- Run in separate invocation to make sure the RegistryFactory is initialized correctly. -->
+                            <id>check-metrics-entirely-disabled</id>
+                            <goals>
+                                <goal>test</goal>
+                            </goals>
+                            <configuration>
+                                <includes>
+                                    <include>**/TestDisabledEntirely.java</include>
                                 </includes>
                             </configuration>
                         </execution>
