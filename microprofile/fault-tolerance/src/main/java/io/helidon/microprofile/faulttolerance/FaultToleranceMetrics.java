@@ -49,7 +49,7 @@ class FaultToleranceMetrics {
 
     private static final ReentrantLock LOCK = new ReentrantLock();
     private static final LazyValue<MetricRegistry> METRIC_REGISTRY = LazyValue.create(
-            () -> CDI.current().select(MetricRegistry.class).get());
+            () -> CDI.current().select(MetricRegistry.class, new BaseRegistryTypeLiteral()).get());
 
     private FaultToleranceMetrics() {
     }
@@ -101,7 +101,6 @@ class FaultToleranceMetrics {
                         .withDescription(description())
                         .withType(metricType())
                         .withUnit(unit())
-                        // .reusable(true)
                         .build();
                 try {
                     counter = getMetricRegistry().counter(metadata, tags);
@@ -128,7 +127,6 @@ class FaultToleranceMetrics {
                         .withDescription(description())
                         .withType(metricType())
                         .withUnit(unit())
-                        // .reusable(true)
                         .build();
                 try {
                     histogram = getMetricRegistry().histogram(metadata, tags);
@@ -216,7 +214,6 @@ class FaultToleranceMetrics {
                         .withDescription(description())
                         .withType(metricType())
                         .withUnit(unit())
-                        // .reusable(true)
                         .build();
                 try {
                     gauge = getMetricRegistry().register(metadata, newGauge, tags);
