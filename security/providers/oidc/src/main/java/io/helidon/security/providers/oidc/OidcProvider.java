@@ -374,7 +374,8 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
         for (Map.Entry<String, List<String>> entry : env.headers().entrySet()) {
             if (entry.getKey().equalsIgnoreCase("host") && !entry.getValue().isEmpty()) {
                 String firstHost = entry.getValue().get(0);
-                return oidcConfig.redirectUriWithHost(env.transport() + "://" + firstHost);
+                String scheme = oidcConfig.forceHttps() ? "https" : env.transport();
+                return oidcConfig.redirectUriWithHost(scheme + "://" + firstHost);
             }
         }
 

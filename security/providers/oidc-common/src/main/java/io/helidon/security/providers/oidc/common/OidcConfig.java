@@ -300,6 +300,11 @@ import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
  *     <td>Required if logout is enabled. Endpoint the OIDC server redirects back to after logging user out.</td>
  * </tr>
  * <tr>
+ *     <td>{@code force-https}</td>
+ *     <td>&nbsp;</td>
+ *     <td>For building redirect URLS force https.  This is helpful if you have a frontend SSL or cloud load balancer in front and helidon is serving plain http.</td>
+ * </tr>
+ * <tr>
  *     <td>{@code logout-enabled}</td>
  *     <td>{@code false}</td>
  *     <td>Whether logout support should be enabled. Requires encryption of cookies (and cookies must be used).</td>
@@ -324,6 +329,7 @@ public final class OidcConfig {
     static final String DEFAULT_BASE_SCOPES = "openid";
     static final boolean DEFAULT_JWT_VALIDATE_JWK = true;
     static final boolean DEFAULT_REDIRECT = true;
+    static final boolean DEFAULT_FORCEHTTPS = false;
     static final String DEFAULT_REALM = "helidon";
     static final String DEFAULT_ATTEMPT_PARAM = "h_ra";
     static final int DEFAULT_MAX_REDIRECTS = 5;
@@ -370,6 +376,7 @@ public final class OidcConfig {
     private final OidcCookieHandler refreshTokenCookieHandler;
     private final URI postLogoutUri;
     private final URI logoutEndpointUri;
+    private final boolean forcehttps;
 
     private OidcConfig(Builder builder) {
         this.clientId = builder.clientId;
@@ -402,6 +409,7 @@ public final class OidcConfig {
         this.generalClient = builder.generalClient;
         this.tokenEndpointAuthentication = builder.tokenEndpointAuthentication;
         this.clientTimeout = builder.clientTimeout;
+        this.forcehttps = builder.forceHttps;
 
         if (tokenEndpointAuthentication == ClientAuthentication.CLIENT_SECRET_POST) {
             // we should only store this if required
@@ -539,6 +547,15 @@ public final class OidcConfig {
      */
     public boolean logoutEnabled() {
         return logoutEnabled;
+    }
+
+    /**
+     * Whether to force HTTPS on url redirects.
+     *
+     * @return {@code false} if force https
+     */
+    public boolean forceHttps() {
+        return forcehttps;
     }
 
     /**
@@ -1082,6 +1099,7 @@ public final class OidcConfig {
         private int maxRedirects = DEFAULT_MAX_REDIRECTS;
         private boolean cookieSameSiteDefault = true;
         private String serverType;
+        private boolean forceHttps = DEFAULT_FORCEHTTPS;
         @Deprecated
         private Client generalClient;
         @Deprecated
@@ -1270,6 +1288,7 @@ public final class OidcConfig {
             config.get("cookie-encryption-enabled").asBoolean().ifPresent(this::cookieEncryptionEnabled);
             config.get("cookie-encryption-password").asString().ifPresent(this::cookieEncryptionPassword);
             config.get("cookie-encryption-name").asString().ifPresent(this::cookieEncryptionName);
+            config.get("force-https").asBoolean().ifPresent(this::forceHttps);
 
             // OIDC server configuration
             config.get("base-scopes").asString().ifPresent(this::baseScopes);
@@ -1348,6 +1367,18 @@ public final class OidcConfig {
          */
         public Builder cookieEncryptionEnabled(boolean cookieEncryptionEnabled) {
             this.tokenCookieBuilder.encryptionEnabled(cookieEncryptionEnabled);
+            return this;
+        }
+
+        /**
+         * Force https on URL redirect builds
+         * Defaults to {@code false}.
+         *
+         * @param forceHttps flag to build https redirects
+         * @return updated builder instance
+         */
+        public Builder forceHttps(boolean forceHttps) {
+            this.forceHttps = forceHttps;
             return this;
         }
 
