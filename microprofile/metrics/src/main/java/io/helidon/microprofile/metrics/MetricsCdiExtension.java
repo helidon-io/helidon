@@ -78,7 +78,6 @@ import io.helidon.config.mp.MpConfig;
 import io.helidon.metrics.api.MetricsSettings;
 import io.helidon.metrics.api.RegistryFactory;
 import io.helidon.metrics.serviceapi.MetricsSupport;
-import io.helidon.microprofile.cdi.RuntimeStart;
 import io.helidon.microprofile.metrics.MetricAnnotationInfo.RegistrationPrep;
 import io.helidon.microprofile.metrics.MetricUtil.LookupResult;
 import io.helidon.microprofile.server.ServerCdiExtension;
