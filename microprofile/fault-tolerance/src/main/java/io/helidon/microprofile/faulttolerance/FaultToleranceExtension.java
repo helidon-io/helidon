@@ -27,8 +27,9 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.stream.Collectors;
 
 import javax.annotation.Priority;
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.Initialized;
 import javax.enterprise.event.Observes;
-import javax.enterprise.inject.spi.AfterDeploymentValidation;
 import javax.enterprise.inject.spi.AnnotatedConstructor;
 import javax.enterprise.inject.spi.AnnotatedField;
 import javax.enterprise.inject.spi.AnnotatedMethod;
@@ -56,6 +57,8 @@ import org.eclipse.microprofile.faulttolerance.Fallback;
 import org.eclipse.microprofile.faulttolerance.Retry;
 import org.eclipse.microprofile.faulttolerance.Timeout;
 import org.glassfish.jersey.process.internal.RequestScope;
+
+import static javax.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 
 /**
  * Class FaultToleranceExtension.
@@ -232,9 +235,12 @@ public class FaultToleranceExtension implements Extension {
     /**
      * Registers metrics for all FT methods and init executors.
      *
-     * @param validation Event information.
+     * This registration must occur after the metrics extension has observed the event and prepared the registry factory.
+     *
+     * @param event Event information.
      */
-    void registerMetricsAndInitExecutors(@Observes AfterDeploymentValidation validation) {
+    void registerMetricsAndInitExecutors(@Observes @Priority(LIBRARY_BEFORE + 10 + 5) @Initialized(ApplicationScoped.class)
+                                                 Object event) {
         if (FaultToleranceMetrics.enabled()) {
             getRegisteredMethods().stream().forEach(beanMethod -> {
                 final Method method = beanMethod.method();
