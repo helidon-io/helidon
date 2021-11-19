@@ -32,6 +32,8 @@
     <properties>
         <!-- 3.0.0-JAKARTA -->
         <skipTests>true</skipTests>
+        <!-- This version of awaitility is required by these TCK's -->
+        <version.lib.awaitility>4.0.3</version.lib.awaitility>
     </properties>
 
     <dependencies>
@@ -74,6 +76,12 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-simple</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.awaitility</groupId>
+            <artifactId>awaitility</artifactId>
+            <version>${version.lib.awaitility}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

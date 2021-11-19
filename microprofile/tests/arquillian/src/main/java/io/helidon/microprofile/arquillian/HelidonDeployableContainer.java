@@ -47,10 +47,10 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import io.helidon.config.mp.MpConfigSources;
-
 import jakarta.enterprise.inject.se.SeContainer;
 import jakarta.enterprise.inject.spi.CDI;
 import jakarta.enterprise.inject.spi.DefinitionException;
+import jakarta.enterprise.util.AnnotationLiteral;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigBuilder;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
