@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import io.helidon.common.LazyValue;
 import io.helidon.grpc.server.GrpcService;
 import io.helidon.grpc.server.MethodDescriptor;
 import io.helidon.grpc.server.ServiceDescriptor;
@@ -69,9 +70,9 @@ import static org.mockito.Mockito.when;
 @SuppressWarnings("unchecked")
 public class GrpcMetricsInterceptorIT {
 
-    private static MetricRegistry vendorRegistry;
+    private static LazyValue<MetricRegistry> vendorRegistry;
 
-    private static MetricRegistry appRegistry;
+    private static LazyValue<MetricRegistry> appRegistry;
 
     private static Meter vendorMeter;
 
@@ -84,7 +85,7 @@ public class GrpcMetricsInterceptorIT {
 
         vendorRegistry = GrpcMetrics.VENDOR_REGISTRY;
         appRegistry = GrpcMetrics.APP_REGISTRY;
-        vendorMeter = vendorRegistry.meter(GrpcMetrics.GRPC_METER);
+        vendorMeter = vendorRegistry.get().meter(GrpcMetrics.GRPC_METER);
     }
 
     @BeforeEach
@@ -107,7 +108,7 @@ public class GrpcMetricsInterceptorIT {
 
         call.close(Status.OK, new Metadata());
 
-        Counter appCounter = appRegistry.counter("Foo.testCounted");
+        Counter appCounter = appRegistry.get().counter("Foo.testCounted");
 
         assertVendorMetrics();
         assertThat(appCounter.getCount(), is(1L));
@@ -126,7 +127,7 @@ public class GrpcMetricsInterceptorIT {
 
         call.close(Status.OK, new Metadata());
 
-        Histogram appHistogram = appRegistry.histogram("Foo.barHistogram");
+        Histogram appHistogram = appRegistry.get().histogram("Foo.barHistogram");
 
         assertVendorMetrics();
         assertThat(appHistogram.getCount(), is(1L));
@@ -145,7 +146,7 @@ public class GrpcMetricsInterceptorIT {
 
         call.close(Status.OK, new Metadata());
 
-        Meter appMeter = appRegistry.meter("Foo.barMetered");
+        Meter appMeter = appRegistry.get().meter("Foo.barMetered");
 
         assertVendorMetrics();
         assertThat(appMeter.getCount(), is(1L));
@@ -164,7 +165,7 @@ public class GrpcMetricsInterceptorIT {
 
         call.close(Status.OK, new Metadata());
 
-        Timer appTimer = appRegistry.timer("Foo.barTimed");
+        Timer appTimer = appRegistry.get().timer("Foo.barTimed");
 
         assertVendorMetrics();
         assertThat(appTimer.getCount(), is(1L));
@@ -183,7 +184,7 @@ public class GrpcMetricsInterceptorIT {
 
         call.close(Status.OK, new Metadata());
 
-        SimpleTimer appSimpleTimer = appRegistry.simpleTimer("Foo.barSimplyTimed");
+        SimpleTimer appSimpleTimer = appRegistry.get().simpleTimer("Foo.barSimplyTimed");
 
         assertVendorMetrics();
         assertThat(appSimpleTimer.getCount(), is(1L));
@@ -202,7 +203,7 @@ public class GrpcMetricsInterceptorIT {
 
         call.close(Status.OK, new Metadata());
 
-        ConcurrentGauge appConcurrentGauge = appRegistry.concurrentGauge("Foo.barConcurrentGauge");
+        ConcurrentGauge appConcurrentGauge = appRegistry.get().concurrentGauge("Foo.barConcurrentGauge");
 
         assertVendorMetrics();
         assertThat(appConcurrentGauge.getCount(), is(1L));
@@ -223,7 +224,7 @@ public class GrpcMetricsInterceptorIT {
         call.close(Status.OK, new Metadata());
 
         Map<MetricID, Metric> matchingMetrics =
-                appRegistry.getMetrics().entrySet().stream()
+                appRegistry.get().getMetrics().entrySet().stream()
                         .filter(entry -> entry.getKey().getName().equals("Foo.barTags"))
                         .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
@@ -257,7 +258,7 @@ public class GrpcMetricsInterceptorIT {
 
         call.close(Status.OK, new Metadata());
 
-        Counter appCounter = appRegistry.counter("Foo.barDesc");
+        Counter appCounter = appRegistry.get().counter("Foo.barDesc");
 
         assertVendorMetrics();
         assertThat(appCounter.toString(), containsString("description='foo'"));
@@ -276,7 +277,7 @@ public class GrpcMetricsInterceptorIT {
 
         call.close(Status.OK, new Metadata());
 
-        Counter appCounter = appRegistry.counter("Foo.barUnits");
+        Counter appCounter = appRegistry.get().counter("Foo.barUnits");
 
         assertVendorMetrics();
         assertThat(appCounter.toString(), containsString("unit='bits'"));
@@ -296,7 +297,7 @@ public class GrpcMetricsInterceptorIT {
 
         call.close(Status.OK, new Metadata());
 
-        Counter appCounter = appRegistry.counter("My.Service.bar");
+        Counter appCounter = appRegistry.get().counter("My.Service.bar");
 
         assertVendorMetrics();
         assertThat(appCounter.getCount(), is(1L));
@@ -315,7 +316,7 @@ public class GrpcMetricsInterceptorIT {
 
         call.close(Status.OK, new Metadata());
 
-        Counter appCounter = appRegistry.counter("overridden");
+        Counter appCounter = appRegistry.get().counter("overridden");
 
         assertVendorMetrics();
         assertThat(appCounter.getCount(), is(1L));
@@ -355,7 +356,7 @@ public class GrpcMetricsInterceptorIT {
     }
 
     private void assertVendorMetrics() {
-        Meter meter = vendorRegistry.meter(GrpcMetrics.GRPC_METER);
+        Meter meter = vendorRegistry.get().meter(GrpcMetrics.GRPC_METER);
 
         assertThat(meter.getCount(), is(vendorMeterCount + 1));
     }
