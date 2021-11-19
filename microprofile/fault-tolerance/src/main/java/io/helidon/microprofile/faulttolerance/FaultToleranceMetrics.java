@@ -16,21 +16,20 @@
 
 package io.helidon.microprofile.faulttolerance;
 
-import java.util.Objects;
-import java.util.function.Supplier;
 import java.lang.reflect.Method;
+import java.util.Objects;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
 
 import jakarta.enterprise.inject.spi.CDI;
 import jakarta.enterprise.util.AnnotationLiteral;
-
-import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Metadata;
+import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
