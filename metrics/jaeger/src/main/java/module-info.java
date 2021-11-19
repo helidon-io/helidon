@@ -19,7 +19,8 @@
 module io.helidon.metrics.jaeger {
 
     requires java.logging;
-    requires io.helidon.metrics;
+    requires io.helidon.common;
+    requires io.helidon.metrics.api;
     requires jaeger.core;
 
     provides io.jaegertracing.spi.MetricsFactory with io.helidon.metrics.jaeger.HelidonJaegerMetricsFactory;
