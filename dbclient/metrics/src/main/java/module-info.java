@@ -23,7 +23,7 @@ import io.helidon.dbclient.spi.DbClientServiceProvider;
 module io.helidon.dbclient.metrics {
     requires java.logging;
     requires io.helidon.dbclient;
-    requires io.helidon.metrics;
+    requires io.helidon.metrics.api;
     requires io.helidon.dbclient.common;
 
     exports io.helidon.dbclient.metrics;
