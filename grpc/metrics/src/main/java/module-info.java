@@ -23,7 +23,7 @@ module io.helidon.grpc.metrics {
     requires transitive io.helidon.grpc.core;
     requires static io.helidon.grpc.client;
     requires static io.helidon.grpc.server;
-    requires transitive io.helidon.metrics;
+    requires transitive io.helidon.metrics.api;
 
     requires microprofile.metrics.api;
 }
