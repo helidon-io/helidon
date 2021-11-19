@@ -17,8 +17,9 @@ package io.helidon.dbclient.metrics.jdbc;
 
 import java.util.logging.Logger;
 
+import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
-import io.helidon.metrics.RegistryFactory;
+import io.helidon.metrics.api.RegistryFactory;
 
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.Gauge;
@@ -40,11 +41,11 @@ public class DropwizardMetricsListener implements MetricRegistryListener {
 
     private final String prefix;
     // Helidon metrics registry
-    private final MetricRegistry registry;
+    private final LazyValue<MetricRegistry> registry = LazyValue.create(
+            () -> RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.VENDOR));
 
     private DropwizardMetricsListener(String prefix) {
         this.prefix = prefix;
-        this.registry = RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.VENDOR);
     }
 
     static MetricRegistryListener create(Config config) {
@@ -54,61 +55,61 @@ public class DropwizardMetricsListener implements MetricRegistryListener {
     @Override
     public void onGaugeAdded(String name, Gauge<?> gauge) {
         LOGGER.finest(() -> String.format("Gauge added: %s", name));
-        registry.register(prefix + name, new JdbcMetricsGauge<>(gauge));
+        registry.get().register(prefix + name, new JdbcMetricsGauge<>(gauge));
     }
 
     @Override
     public void onGaugeRemoved(String name) {
         LOGGER.finest(() -> String.format("Gauge removed: %s", name));
-        registry.remove(prefix + name);
+        registry.get().remove(prefix + name);
     }
 
     @Override
     public void onCounterAdded(String name, Counter counter) {
         LOGGER.finest(() -> String.format("Counter added: %s", name));
-        registry.register(prefix + name, new JdbcMetricsCounter(counter));
+        registry.get().register(prefix + name, new JdbcMetricsCounter(counter));
     }
 
     @Override
     public void onCounterRemoved(String name) {
         LOGGER.finest(() -> String.format("Counter removed: %s", name));
-        registry.remove(prefix + name);
+        registry.get().remove(prefix + name);
     }
 
     @Override
     public void onHistogramAdded(String name, Histogram histogram) {
         LOGGER.finest(() -> String.format("Histogram added: %s", name));
-        registry.register(prefix + name, new JdbcMetricsHistogram(histogram));
+        registry.get().register(prefix + name, new JdbcMetricsHistogram(histogram));
     }
 
     @Override
     public void onHistogramRemoved(String name) {
         LOGGER.finest(() -> String.format("Histogram removed: %s", name));
-        registry.remove(prefix + name);
+        registry.get().remove(prefix + name);
     }
 
     @Override
     public void onMeterAdded(String name, Meter meter) {
         LOGGER.finest(() -> String.format("Meter added: %s", name));
-        registry.register(prefix + name, new JdbcMetricsMeter(meter));
+        registry.get().register(prefix + name, new JdbcMetricsMeter(meter));
     }
 
     @Override
     public void onMeterRemoved(String name) {
         LOGGER.finest(() -> String.format("Meter removed: %s", name));
-        registry.remove(prefix + name);
+        registry.get().remove(prefix + name);
     }
 
     @Override
     public void onTimerAdded(String name, Timer timer) {
         LOGGER.finest(() -> String.format("Timer added: %s", name));
-        registry.register(prefix + name, new JdbcMetricsTimer(timer));
+        registry.get().register(prefix + name, new JdbcMetricsTimer(timer));
     }
 
     @Override
     public void onTimerRemoved(String name) {
         LOGGER.finest(() -> String.format("Timer removed: %s", name));
-        registry.remove(prefix + name);
+        registry.get().remove(prefix + name);
     }
 
 }

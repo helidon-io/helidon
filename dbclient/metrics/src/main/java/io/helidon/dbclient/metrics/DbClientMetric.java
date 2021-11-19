@@ -20,11 +20,12 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
 
+import io.helidon.common.LazyValue;
 import io.helidon.common.reactive.Single;
 import io.helidon.dbclient.DbClientServiceContext;
 import io.helidon.dbclient.DbStatementType;
 import io.helidon.dbclient.common.DbClientServiceBase;
-import io.helidon.metrics.RegistryFactory;
+import io.helidon.metrics.api.RegistryFactory;
 
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetadataBuilder;
@@ -39,7 +40,8 @@ abstract class DbClientMetric<T extends Metric> extends DbClientServiceBase {
     private final Metadata meta;
     private final String description;
     private final BiFunction<String, DbStatementType, String> nameFunction;
-    private final MetricRegistry registry;
+    private final LazyValue<MetricRegistry> registry = LazyValue.create(() ->
+            RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.APPLICATION));
     private final ConcurrentHashMap<String, T> cache = new ConcurrentHashMap<>();
     private final boolean measureErrors;
     private final boolean measureSuccess;
@@ -54,7 +56,6 @@ abstract class DbClientMetric<T extends Metric> extends DbClientServiceBase {
             nameFunction = (name, statement) -> defaultNamePrefix() + name;
         }
         this.nameFunction = nameFunction;
-        this.registry = RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.APPLICATION);
         this.measureErrors = builder.errors();
         this.measureSuccess = builder.success();
         String tmpDescription;
@@ -81,7 +82,7 @@ abstract class DbClientMetric<T extends Metric> extends DbClientServiceBase {
             if (description != null) {
                 builder = builder.withDescription(description);
             }
-            return metric(registry, builder.build());
+            return metric(registry.get(), builder.build());
         });
 
         executeMetric(metric, context.statementFuture());
