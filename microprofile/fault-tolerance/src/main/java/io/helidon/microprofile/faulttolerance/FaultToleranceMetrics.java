@@ -560,9 +560,12 @@ class FaultToleranceMetrics {
                     metricName));
             Gauge<T> existing = getMetricRegistry().getGauges().get(metricID);
             if (existing == null) {
-                getMetricRegistry().register(
-                        newMetadata(metricID.getName(), metricID.getName(), description, MetricType.GAUGE,
-                                MetricUnits.NANOSECONDS, true),
+                getMetricRegistry().register(Metadata.builder()
+                        .withName(metricID.getName())
+                        .withDisplayName(metricID.getName())
+                        .withDescription(description)
+                        .withType(MetricType.GAUGE)
+                        .withUnit(MetricUnits.NANOSECONDS).build(),
                         gauge);
             }
             return existing;
@@ -900,17 +903,5 @@ class FaultToleranceMetrics {
         static Histogram register(Tag... tags) {
             return INSTANCE.registerHistogram(tags);
         }
-    }
-
-    // TODO 3.0.0-JAKARTA
-    private static Metadata newMetadata(String name, String displayName, String description, MetricType metricType,
-                                        String metricUnits, boolean isReusable) {
-        return Metadata.builder()
-                .withName(name)
-                .withDisplayName(displayName)
-                .withDescription(description)
-                .withType(metricType)
-                .withUnit(metricUnits)
-                .build();
     }
 }
