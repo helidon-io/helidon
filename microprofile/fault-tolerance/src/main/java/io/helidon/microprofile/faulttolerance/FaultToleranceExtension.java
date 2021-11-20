@@ -32,8 +32,9 @@ import io.helidon.config.mp.MpConfig;
 import io.helidon.faulttolerance.FaultTolerance;
 
 import jakarta.annotation.Priority;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.Initialized;
 import jakarta.enterprise.event.Observes;
-import jakarta.enterprise.inject.spi.AfterDeploymentValidation;
 import jakarta.enterprise.inject.spi.AnnotatedConstructor;
 import jakarta.enterprise.inject.spi.AnnotatedField;
 import jakarta.enterprise.inject.spi.AnnotatedMethod;
@@ -55,6 +56,8 @@ import org.eclipse.microprofile.faulttolerance.Fallback;
 import org.eclipse.microprofile.faulttolerance.Retry;
 import org.eclipse.microprofile.faulttolerance.Timeout;
 import org.glassfish.jersey.process.internal.RequestScope;
+
+import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 
 /**
  * Class FaultToleranceExtension.
