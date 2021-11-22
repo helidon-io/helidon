@@ -112,6 +112,11 @@ class NoOpMetricImpl extends AbstractMetric implements NoOpMetric {
             return new NoOpGaugeImpl<>(registryType, metadata, metric);
         }
 
+        static <S /* extends Number */> NoOpGaugeImpl<S> create(String registryType, Metadata metadata) {
+            // TODO uncomment above once MP metrics enforces the Number restriction
+            return new NoOpGaugeImpl<>(registryType, metadata, () -> null);
+        }
+
         private NoOpGaugeImpl(String registryType, Metadata metadata, Gauge<T> metric) {
             super(registryType, metadata);
             value = metric::getValue;

@@ -27,6 +27,7 @@ import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import io.helidon.common.LazyValue;
 import io.helidon.common.configurable.spi.ExecutorServiceSupplierObserver;
 
 import org.eclipse.microprofile.metrics.Gauge;
@@ -59,13 +60,13 @@ public class ExecutorServiceMetricsObserver implements ExecutorServiceSupplierOb
                                 (ThreadPoolExecutor tpe) -> tpe.getQueue().size())
             );
 
-    private final MetricRegistry registry;
+    private final LazyValue<MetricRegistry> registry = LazyValue
+            .create(() -> io.helidon.metrics.api.RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.VENDOR));
 
     /**
      * Creates a new instance of the observer.
      */
     public ExecutorServiceMetricsObserver() {
-        this.registry = io.helidon.metrics.api.RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.VENDOR);
     }
 
     @Override
@@ -116,7 +117,7 @@ public class ExecutorServiceMetricsObserver implements ExecutorServiceSupplierOb
 
         private void registerMetrics(ThreadPoolExecutor threadPoolExecutor, int index) {
             THREAD_POOL_EXECUTOR_METRIC_FACTORIES.forEach(factory -> factory
-                    .registerGauge(registry,
+                    .registerGauge(registry.get(),
                                    supplierInfo.supplierCategory(),
                                    supplierInfo.supplierIndex(),
                                    threadPoolExecutor,
@@ -135,7 +136,7 @@ public class ExecutorServiceMetricsObserver implements ExecutorServiceSupplierOb
                 Tag[] tags = tags(supplierInfo.supplierCategory(),
                                   supplierInfo.supplierIndex(),
                                   index);
-                registry.register(metadata, (Gauge<Object>) () -> {
+                registry.get().register(metadata, (Gauge<Object>) () -> {
                     try {
                         return mi.method().invoke(executorService);
                     } catch (IllegalAccessException | InvocationTargetException e) {
@@ -148,7 +149,7 @@ public class ExecutorServiceMetricsObserver implements ExecutorServiceSupplierOb
 
         @Override
         public void unregisterExecutorService(ExecutorService executorService) {
-            metricsIDs.forEach(registry::remove);
+            metricsIDs.forEach(metricID -> registry.get().remove(metricID));
         }
     }
 
