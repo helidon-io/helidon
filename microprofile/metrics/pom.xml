@@ -103,6 +103,7 @@
                                 <exclude>**/HelloWorldAsyncResponseTest.java</exclude>
                                 <exclude>**/TestExtendedKPIMetrics.java</exclude>
                                 <exclude>**/TestMetricsOnOwnSocket.java</exclude>
+                                <exclude>**/TestDisabledMetrics.java</exclude>
                             </excludes>
                         </configuration>
                     </execution>
@@ -117,6 +118,18 @@
                                 <include>**/HelloWorldAsyncResponseTest.java</include>
                                 <include>**/TestExtendedKPIMetrics.java</include>
                                 <include>**/TestMetricsOnOwnSocket.java</include>
+                            </includes>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <!-- Run in separate invocation to disable all metrics -->
+                        <id>test-with-metrics-disabled</id>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <includes>
+                                <include>**/TestDisabledMetrics.java</include>
                             </includes>
                         </configuration>
                     </execution>

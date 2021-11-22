@@ -78,7 +78,6 @@ import io.helidon.config.mp.MpConfig;
 import io.helidon.metrics.api.MetricsSettings;
 import io.helidon.metrics.api.RegistryFactory;
 import io.helidon.metrics.serviceapi.MetricsSupport;
-import io.helidon.microprofile.cdi.RuntimeStart;
 import io.helidon.microprofile.metrics.MetricAnnotationInfo.RegistrationPrep;
 import io.helidon.microprofile.metrics.MetricUtil.LookupResult;
 import io.helidon.microprofile.server.ServerCdiExtension;
@@ -319,9 +318,6 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
      */
     void before(@Observes BeforeBeanDiscovery discovery) {
         LOGGER.log(Level.FINE, () -> "Before bean discovery " + discovery);
-
-        // Initialize our implementation
-        RegistryProducer.clearApplicationRegistry();
 
         // Register beans manually with annotated type identifiers that are deliberately the same as those used by the container
         // during bean discovery to avoid accidental duplicate registration in odd packaging scenarios.
@@ -583,10 +579,6 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
         syntheticSimpleTimersToRegister.addAll(methodsWithSyntheticSimpleTimer.get(clazz));
     }
 
-    private void runtimeStart(@Observes @RuntimeStart Object event) {
-        registerSyntheticSimpleTimerMetrics();
-    }
-
     private void registerSyntheticSimpleTimerMetrics() {
         syntheticSimpleTimersToRegister.forEach(this::registerAndSaveSyntheticSimpleTimer);
         if (LOGGER.isLoggable(Level.FINE)) {
@@ -623,7 +615,12 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
         Routing.Builder defaultRouting = super.registerService(adv, bm, server);
         MetricsSupport metricsSupport = serviceSupport();
 
+        // Initialize our implementation
+        RegistryProducer.clearApplicationRegistry();
+
         registerMetricsForAnnotatedSites();
+        registerAnnotatedGauges(bm);
+        registerSyntheticSimpleTimerMetrics();
         registerProducers(bm);
 
         Set<String> vendorMetricsAdded = new HashSet<>();
@@ -728,9 +725,11 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
         }
     }
 
-    private void registerAnnotatedGauges(@Observes AfterDeploymentValidation adv, BeanManager bm) {
+    private void registerAnnotatedGauges(BeanManager bm) {
         LOGGER.log(Level.FINE, () -> "registerGauges");
         MetricRegistry registry = getMetricRegistry();
+
+        List<Exception> gaugeProblems = new ArrayList<>();
 
         annotatedGaugeSites.entrySet().forEach(gaugeSite -> {
             LOGGER.log(Level.FINE, () -> "gaugeSite " + gaugeSite.toString());
@@ -754,14 +753,18 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
                 LOGGER.log(Level.FINE, () -> String.format("Registering gauge with metadata %s", md.toString()));
                 registry.register(md, dg, gaugeID.getTagsAsList().toArray(new Tag[0]));
             } catch (Throwable t) {
-                adv.addDeploymentProblem(new IllegalArgumentException("Error processing @Gauge "
-                                                                              + "annotation on " + site
-                        .getJavaMember().getDeclaringClass().getName()
-                                                                              + ":" + site.getJavaMember()
-                        .getName(), t));
+                gaugeProblems.add(new IllegalArgumentException(
+                        String.format("Error processing @Gauge annotation on %s#%s: %s",
+                                      site.getJavaMember().getDeclaringClass().getName(),
+                                      site.getJavaMember().getName(),
+                                      t.getMessage()),
+                        t));
             }
         });
 
+        if (!gaugeProblems.isEmpty()) {
+            throw new RuntimeException("Could not process one or more @Gauge annotations" + gaugeProblems);
+        }
         annotatedGaugeSites.clear();
     }
 
