@@ -56,8 +56,6 @@ import org.eclipse.microprofile.faulttolerance.Retry;
 import org.eclipse.microprofile.faulttolerance.Timeout;
 import org.glassfish.jersey.process.internal.RequestScope;
 
-import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
-
 /**
  * Class FaultToleranceExtension.
  */
