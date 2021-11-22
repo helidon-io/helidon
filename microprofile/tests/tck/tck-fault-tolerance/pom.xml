@@ -30,8 +30,6 @@
     <name>Helidon Microprofile Tests TCK Fault Tolerance</name>
 
     <properties>
-        <!-- 3.0.0-JAKARTA -->
-        <skipTests>true</skipTests>
         <!-- This version of awaitility is required by these TCK's -->
         <version.lib.awaitility>4.0.3</version.lib.awaitility>
     </properties>
