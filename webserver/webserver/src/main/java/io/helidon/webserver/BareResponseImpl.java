@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
@@ -346,10 +347,12 @@ class BareResponseImpl implements BareResponse {
                 LOGGER.severe(() -> log("Upstream error while sending response: %s", throwable));
             }
         }
-        ctx.writeAndFlush(lastHttpContent)
-                .addListener(completeOnFailureListener("An exception occurred when writing last http content."))
-                .addListener(completeOnSuccessListener(throwable))
-                .addListener(closeAction);
+
+        writeOnEventLoop(ctx, true, lastHttpContent)
+                .thenApply(f -> f
+                        .addListener(completeOnFailureListener("An exception occurred when writing last http content."))
+                        .addListener(completeOnSuccessListener(throwable))
+                        .addListener(closeAction));
     }
 
     private GenericFutureListener<Future<? super Void>> completeOnFailureListener(String message) {
@@ -387,9 +390,9 @@ class BareResponseImpl implements BareResponse {
             requestContext.runInScope(() -> {
                 if (data.isFlushChunk()) {
                     if (prevRequestChunk == null) {
-                        ctx.flush();
+                        flushOnEventLoop(ctx.flush());
                     } else {
-                        prevRequestChunk = prevRequestChunk.thenRun(ctx::flush);
+                        prevRequestChunk = prevRequestChunk.thenRun(() -> flushOnEventLoop(ctx));
                     }
                     subscription.request(1);
                     return;
@@ -423,25 +426,23 @@ class BareResponseImpl implements BareResponse {
     /**
      * Initiates write of response and sends first chunk if available. This method must be called
      * inside an {@link #orderedWrite(Runnable)} runnable.
-     *
-     * @return Future of response or first chunk.
      */
-    private ChannelFuture initWriteResponse() {
-        ChannelFuture cf = ctx.write(response)
-                .addListener(future -> {
-                    if (future.isSuccess()) {
-                        headersFuture.complete(this);
-                    }
-                })
-                .addListener(completeOnFailureListener("An exception occurred when writing headers."))
-                .addListener(ChannelFutureListener.CLOSE_ON_FAILURE);
+    private void initWriteResponse() {
+        writeOnEventLoop(ctx, false, response)
+                .thenApply(f -> f
+                        .addListener(future -> {
+                            if (future.isSuccess()) {
+                                headersFuture.complete(this);
+                            }
+                        })
+                        .addListener(completeOnFailureListener("An exception occurred when writing headers."))
+                        .addListener(ChannelFutureListener.CLOSE_ON_FAILURE));
         response = null;
         if (firstChunk != null) {
-            cf = sendData(firstChunk);
+            sendData(firstChunk);
             firstChunk = null;
         }
         lengthOptimization = false;
-        return cf;
     }
 
     /**
@@ -449,9 +450,8 @@ class BareResponseImpl implements BareResponse {
      * {@link #orderedWrite(Runnable)} runnable.
      *
      * @param data the chunk.
-     * @return channel future.
      */
-    private ChannelFuture sendData(DataChunk data) {
+    private void sendData(DataChunk data) {
         LOGGER.finest(() -> log("Sending data chunk"));
 
         DefaultHttpContent httpContent;
@@ -472,33 +472,59 @@ class BareResponseImpl implements BareResponse {
 
         LOGGER.finest(() -> log("Sending data chunk on event loop thread", ctx));
 
-        ChannelFuture channelFuture;
-        if (data.flush()) {
-            channelFuture = ctx.writeAndFlush(httpContent);
-        } else {
-            channelFuture = ctx.write(httpContent);
-            subscription.request(1);
-        }
-
-        return channelFuture
-                .addListener(future -> {
-                    data.writeFuture().ifPresent(writeFuture -> {
-                        // Complete write future based con channel future
-                        if (future.isSuccess()) {
-                            writeFuture.complete(data);
-                        } else {
-                            writeFuture.completeExceptionally(future.cause());
-                        }
-                    });
-                    boolean flush = data.flush();
-                    data.release();
-                    if (flush) {
+        Single.create(writeOnEventLoop(ctx, data.flush(), httpContent)
+                .thenApply(f -> {
+                    if (!data.flush()) {
                         subscription.request(1);
                     }
-                    LOGGER.finest(() -> log("Data chunk sent with result: %s", future.isSuccess()));
-                })
-                .addListener(completeOnFailureListener("Failure when sending a content!"))
-                .addListener(ChannelFutureListener.CLOSE_ON_FAILURE);
+                    return f.addListener(future -> {
+                                data.writeFuture().ifPresent(writeFuture -> {
+                                    // Complete write future based con channel future
+                                    if (future.isSuccess()) {
+                                        writeFuture.complete(data);
+                                    } else {
+                                        writeFuture.completeExceptionally(future.cause());
+                                    }
+                                });
+                                boolean flush = data.flush();
+                                data.release();
+                                if (flush) {
+                                    subscription.request(1);
+                                }
+                                LOGGER.finest(() -> log("Data chunk sent with result: %s", future.isSuccess()));
+                            })
+                            .addListener(completeOnFailureListener("Failure when sending a content!"))
+                            .addListener(ChannelFutureListener.CLOSE_ON_FAILURE);
+                })).await(); // FIXME: This is a problem!
+    }
+
+    private void flushOnEventLoop(ChannelHandlerContext ctx){
+        if (ctx.executor().inEventLoop()){
+            ctx.flush();
+        } else {
+            ctx.executor().execute(ctx::flush);
+        }
+    }
+
+    private CompletionStage<ChannelFuture> writeOnEventLoop(ChannelHandlerContext ctx, boolean flush, Object msg) {
+        CompletableFuture<ChannelFuture> channelFuture = new CompletableFuture<>();
+        if (ctx.executor().inEventLoop()) {
+            if (flush) {
+                channelFuture.complete(ctx.writeAndFlush(msg));
+            } else {
+                channelFuture.complete(ctx.write(msg));
+            }
+        } else {
+            ctx.executor().execute(() -> {
+                if (flush) {
+                    channelFuture.complete(ctx.writeAndFlush(msg));
+                } else {
+                    channelFuture.complete(ctx.write(msg));
+                }
+            });
+        }
+
+        return channelFuture;
     }
 
 
