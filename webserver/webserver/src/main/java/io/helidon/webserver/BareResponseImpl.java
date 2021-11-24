@@ -80,7 +80,7 @@ class BareResponseImpl implements BareResponse {
 
     // Accessed by Subscriber method threads
     private Flow.Subscription subscription;
-    private DataChunk firstChunk;
+    private volatile DataChunk firstChunk;
     private CompletableFuture<?> prevRequestChunk;
     private CompletableFuture<ChannelFutureListener> requestEntityAnalyzed;
 
@@ -416,19 +416,20 @@ class BareResponseImpl implements BareResponse {
      *
      * @param data the data chunk.
      */
-    private void onNextPipe(DataChunk data) {
+    private CompletionStage<ChannelFuture> onNextPipe(DataChunk data) {
         if (lengthOptimization) {
-            initWriteResponse();
+            return initWriteResponse().thenCompose(f -> sendData(data, true));
+        } else {
+            return sendData(data, true);
         }
-        sendData(data);
     }
 
     /**
      * Initiates write of response and sends first chunk if available. This method must be called
      * inside an {@link #orderedWrite(Runnable)} runnable.
      */
-    private void initWriteResponse() {
-        writeOnEventLoop(ctx, false, response)
+    private CompletionStage<ChannelFuture> initWriteResponse() {
+        CompletionStage<ChannelFuture> eventLoopDone = writeOnEventLoop(ctx, false, response)
                 .thenApply(f -> f
                         .addListener(future -> {
                             if (future.isSuccess()) {
@@ -438,11 +439,17 @@ class BareResponseImpl implements BareResponse {
                         .addListener(completeOnFailureListener("An exception occurred when writing headers."))
                         .addListener(ChannelFutureListener.CLOSE_ON_FAILURE));
         response = null;
-        if (firstChunk != null) {
-            sendData(firstChunk);
-            firstChunk = null;
-        }
+
+
+            eventLoopDone = eventLoopDone.whenComplete((f,e) -> {
+                if (firstChunk != null) {
+                    sendData(firstChunk, false);
+                    firstChunk = null;
+                }
+            });
+
         lengthOptimization = false;
+        return eventLoopDone;
     }
 
     /**
@@ -451,7 +458,7 @@ class BareResponseImpl implements BareResponse {
      *
      * @param data the chunk.
      */
-    private void sendData(DataChunk data) {
+    private CompletionStage<ChannelFuture> sendData(DataChunk data, boolean requestOneMore) {
         LOGGER.finest(() -> log("Sending data chunk"));
 
         DefaultHttpContent httpContent;
@@ -472,9 +479,9 @@ class BareResponseImpl implements BareResponse {
 
         LOGGER.finest(() -> log("Sending data chunk on event loop thread", ctx));
 
-        Single.create(writeOnEventLoop(ctx, data.flush(), httpContent)
+        return writeOnEventLoop(ctx, data.flush(), httpContent)
                 .thenApply(f -> {
-                    if (!data.flush()) {
+                    if (!data.flush() && requestOneMore) {
                         subscription.request(1);
                     }
                     return f.addListener(future -> {
@@ -488,14 +495,14 @@ class BareResponseImpl implements BareResponse {
                                 });
                                 boolean flush = data.flush();
                                 data.release();
-                                if (flush) {
+                                if (flush && requestOneMore) {
                                     subscription.request(1);
                                 }
                                 LOGGER.finest(() -> log("Data chunk sent with result: %s", future.isSuccess()));
                             })
                             .addListener(completeOnFailureListener("Failure when sending a content!"))
                             .addListener(ChannelFutureListener.CLOSE_ON_FAILURE);
-                })).await(); // FIXME: This is a problem!
+                });
     }
 
     private void flushOnEventLoop(ChannelHandlerContext ctx){

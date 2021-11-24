@@ -17,10 +17,6 @@
 
 package io.helidon.webserver;
 
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -30,7 +26,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.common.http.DataChunk;
+import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Multi;
+import io.helidon.webclient.WebClient;
+import io.helidon.webclient.WebClientResponse;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -71,22 +70,25 @@ public class OrderOfWritesTest {
                     .start()
                     .await(TIME_OUT);
 
-            HttpClient client = HttpClient.newBuilder()
-                    .version(HttpClient.Version.HTTP_1_1)
-                    .followRedirects(HttpClient.Redirect.NORMAL)
-                    .connectTimeout(TIME_OUT)
-                    .build();
-
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create("http://localhost:"+server.port()))
-                    .timeout(TIME_OUT)
-                    .GET()
+            WebClient client = WebClient.builder()
+                    .baseUri("http://localhost:" + server.port())
+                    .connectTimeout(TIME_OUT.toMillis(), TimeUnit.MILLISECONDS)
                     .build();
 
             for (AtomicInteger i = new AtomicInteger(); i.get() < 5000; i.getAndIncrement()) {
-                HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-                String s = response.body();
-                Assertions.assertEquals(expected, s, "Failed at " + i.get() + " " + s);
+                WebClientResponse response = null;
+                try {
+                    response = client.get()
+                            .request()
+                            .await(TIME_OUT);
+                    Assertions.assertEquals(Http.ResponseStatus.Family.SUCCESSFUL, response.status().family());
+                    String content = response.content().as(String.class).await(TIME_OUT);
+                    Assertions.assertEquals(expected, content, "Failed at " + i.get() + " " + content);
+                } finally {
+                    if (response != null) {
+                        response.close();
+                    }
+                }
             }
         } finally {
             exec.shutdownNow();
