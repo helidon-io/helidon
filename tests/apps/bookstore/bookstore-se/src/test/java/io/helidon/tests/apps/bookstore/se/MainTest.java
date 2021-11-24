@@ -32,8 +32,6 @@ import org.junit.jupiter.api.Test;
 
 import static io.helidon.tests.apps.bookstore.se.TestServer.APPLICATION_JSON;
 
-;
-
 public class MainTest {
 
     private static WebServer webServer;
