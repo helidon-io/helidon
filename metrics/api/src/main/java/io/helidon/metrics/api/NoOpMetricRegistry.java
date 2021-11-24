@@ -30,9 +30,8 @@ import org.eclipse.microprofile.metrics.MetricType;
 class NoOpMetricRegistry extends AbstractRegistry<NoOpMetric> {
 
     private static final Map<MetricType, BiFunction<String, Metadata, NoOpMetric>> NO_OP_METRIC_FACTORIES =
-            // Omit gauge because creating a gauge requires an existing delegate instance.
-            // These factory methods do not use delegates.
             Map.of(MetricType.COUNTER, NoOpMetricImpl.NoOpCounterImpl::create,
+                   MetricType.GAUGE, NoOpMetricImpl.NoOpGaugeImpl::create,
                    MetricType.HISTOGRAM, NoOpMetricImpl.NoOpHistogramImpl::create,
                    MetricType.METERED, NoOpMetricImpl.NoOpMeterImpl::create,
                    MetricType.TIMER, NoOpMetricImpl.NoOpTimerImpl::create,

@@ -20,7 +20,8 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 
-import io.helidon.metrics.RegistryFactory;
+import io.helidon.common.LazyValue;
+import io.helidon.metrics.api.RegistryFactory;
 
 import io.jaegertracing.internal.metrics.Counter;
 import io.jaegertracing.internal.metrics.Gauge;
@@ -38,8 +39,8 @@ import org.eclipse.microprofile.metrics.Tag;
  */
 public class HelidonJaegerMetricsFactory implements MetricsFactory {
 
-    private final MetricRegistry vendorRegistry = RegistryFactory.getInstance()
-            .getRegistry(MetricRegistry.Type.VENDOR);
+    private final LazyValue<MetricRegistry> vendorRegistry = LazyValue.create(() -> RegistryFactory.getInstance()
+            .getRegistry(MetricRegistry.Type.VENDOR));
 
     @Override
     public Counter createCounter(String name, Map<String, String> jaegerTags) {
@@ -50,7 +51,7 @@ public class HelidonJaegerMetricsFactory implements MetricsFactory {
                     jaegerTags,
                     MetricType.COUNTER,
                     MetricUnits.NONE,
-                    vendorRegistry::counter);
+                    HelidonJaegerMetricsFactory.this::counter);
 
             @Override
             public void inc(long delta) {
@@ -68,7 +69,7 @@ public class HelidonJaegerMetricsFactory implements MetricsFactory {
                     jaegerTags,
                     MetricType.TIMER,
                     MetricUnits.MICROSECONDS,
-                    vendorRegistry::timer);
+                    HelidonJaegerMetricsFactory.this::timer);
 
             @Override
             public void durationMicros(long time) {
@@ -85,7 +86,7 @@ public class HelidonJaegerMetricsFactory implements MetricsFactory {
 
             {
                 Metadata metadata = metadata(name, MetricType.GAUGE, MetricUnits.NONE);
-                vendorRegistry.register(metadata,
+                vendorRegistry.get().register(metadata,
                         gauge,
                         convertTags(jaegerTags));
             }
@@ -95,6 +96,14 @@ public class HelidonJaegerMetricsFactory implements MetricsFactory {
                 gauge.update(amount);
             }
         };
+    }
+
+    private org.eclipse.microprofile.metrics.Counter counter(Metadata metadata, Tag[] tags) {
+        return vendorRegistry.get().counter(metadata, tags);
+    }
+
+    private org.eclipse.microprofile.metrics.Timer timer(Metadata metadata, Tag[] tags) {
+        return vendorRegistry.get().timer(metadata, tags);
     }
 
     private static class JaegerGauge implements org.eclipse.microprofile.metrics.Gauge<Long> {
