@@ -441,7 +441,7 @@ class BareResponseImpl implements BareResponse {
         response = null;
 
 
-            eventLoopDone = eventLoopDone.whenComplete((f,e) -> {
+            eventLoopDone = eventLoopDone.whenComplete((f, e) -> {
                 if (firstChunk != null) {
                     sendData(firstChunk, false);
                     firstChunk = null;
