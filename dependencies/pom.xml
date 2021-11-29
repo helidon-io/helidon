@@ -45,7 +45,7 @@
         <!-- commons-codec is for dependency convergence only -->
         <version.lib.commons-codec>1.15</version.lib.commons-codec>
         <version.lib.commons-logging>1.2</version.lib.commons-logging>
-        <version.lib.cron-utils>9.1.3</version.lib.cron-utils>
+        <version.lib.cron-utils>9.1.6</version.lib.cron-utils>
         <version.lib.dropwizard.metrics>4.1.2</version.lib.dropwizard.metrics>
         <version.lib.eclipselink>3.0.2</version.lib.eclipselink>
         <version.lib.el-impl>4.0.2</version.lib.el-impl>
@@ -1111,6 +1111,10 @@
                     <exclusion>
                         <groupId>org.glassfish</groupId>
                         <artifactId>javax.el</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.javassist</groupId>
+                        <artifactId>javassist</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
