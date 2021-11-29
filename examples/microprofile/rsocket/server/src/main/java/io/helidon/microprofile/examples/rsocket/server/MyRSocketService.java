@@ -17,7 +17,7 @@
 package io.helidon.microprofile.examples.rsocket.server;
 
 
-import javax.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.ApplicationScoped;
 
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;

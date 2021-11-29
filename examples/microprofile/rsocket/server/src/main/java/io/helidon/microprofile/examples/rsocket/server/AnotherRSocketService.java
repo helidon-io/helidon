@@ -20,7 +20,7 @@ import java.util.concurrent.Flow;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import javax.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.ApplicationScoped;
 
 import io.helidon.common.reactive.Multi;
 import io.helidon.microprofile.rsocket.server.FireAndForget;
