@@ -19,8 +19,8 @@
  */
 module io.helidon.microprofile.faulttolerance {
     requires java.logging;
-    requires java.annotation;
-    requires jakarta.inject.api;
+    requires jakarta.annotation;
+    requires jakarta.inject;
     requires jakarta.interceptor.api;
 
     requires io.helidon.common.context;
@@ -31,7 +31,7 @@ module io.helidon.microprofile.faulttolerance {
     requires io.helidon.microprofile.metrics;
     requires io.helidon.config.mp;
 
-    requires jakarta.enterprise.cdi.api;
+    requires jakarta.cdi;
 
     requires microprofile.config.api;
     requires microprofile.metrics.api;
@@ -46,5 +46,5 @@ module io.helidon.microprofile.faulttolerance {
     // needed when running with modules - to make private methods accessible
     opens io.helidon.microprofile.faulttolerance to weld.core.impl, io.helidon.microprofile.cdi;
 
-    provides javax.enterprise.inject.spi.Extension with io.helidon.microprofile.faulttolerance.FaultToleranceExtension;
+    provides jakarta.enterprise.inject.spi.Extension with io.helidon.microprofile.faulttolerance.FaultToleranceExtension;
 }

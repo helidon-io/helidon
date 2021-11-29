@@ -211,7 +211,7 @@ public class Signature implements Digest {
     /**
      * Builder of the {@link Signature}.
      */
-    public static final class Builder implements io.helidon.common.Builder<Signature> {
+    public static final class Builder implements io.helidon.common.Builder<Builder, Signature> {
 
         private String algorithm = ALGORITHM_SHA256_RSA;
         private String provider = null;

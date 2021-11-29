@@ -17,10 +17,10 @@ package io.helidon.tests.integration.dbclient.appl;
 
 import java.util.logging.Logger;
 
-import javax.json.Json;
-import javax.json.JsonArrayBuilder;
-import javax.json.JsonObject;
-import javax.json.JsonObjectBuilder;
+import jakarta.json.Json;
+import jakarta.json.JsonArrayBuilder;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonObjectBuilder;
 
 import io.helidon.config.Config;
 import io.helidon.dbclient.DbClient;

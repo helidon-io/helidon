@@ -20,9 +20,9 @@ import org.glassfish.jersey.internal.inject.InjectionManagerFactory;
  * Jersey integration.
  */
 module io.helidon.webserver.jersey {
-    requires transitive java.annotation;
+    requires transitive jakarta.annotation;
     requires transitive io.helidon.webserver;
-    requires transitive java.ws.rs;
+    requires transitive jakarta.ws.rs;
     requires transitive io.opentracing.api;
     requires transitive io.helidon.jersey.server;
     requires transitive io.helidon.jersey.client;
@@ -31,7 +31,6 @@ module io.helidon.webserver.jersey {
     requires io.helidon.common.mapper;
     requires io.helidon.common.reactive;
     requires java.logging;
-    requires hk2.api;
     requires io.netty.buffer;
     requires jersey.common;
 

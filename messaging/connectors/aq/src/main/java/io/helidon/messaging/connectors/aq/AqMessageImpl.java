@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,15 +20,14 @@ import java.sql.Connection;
 import java.util.Set;
 import java.util.concurrent.CompletionStage;
 
-import javax.jms.ConnectionFactory;
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.Session;
-
 import io.helidon.messaging.MessagingException;
 import io.helidon.messaging.connectors.jms.JmsMessage;
 import io.helidon.messaging.connectors.jms.SessionMetadata;
+import io.helidon.messaging.connectors.jms.shim.JakartaSession;
 
+import jakarta.jms.ConnectionFactory;
+import jakarta.jms.Message;
+import jakarta.jms.Session;
 import oracle.jms.AQjmsSession;
 
 class AqMessageImpl<T> implements AqMessage<T> {
@@ -38,16 +37,46 @@ class AqMessageImpl<T> implements AqMessage<T> {
 
     AqMessageImpl(JmsMessage<?> msg, SessionMetadata sessionMetadata) {
         this.jmsMessage = msg;
-        this.session = (AQjmsSession) sessionMetadata.session();
+        Session jakartaSession = sessionMetadata.session();
+        if (jakartaSession == null) {
+            this.session = null;
+        } else {
+            this.session = ((JakartaSession) jakartaSession).unwrap(AQjmsSession.class);
+        }
     }
 
     @Override
     public Connection getDbConnection() {
         try {
             return session.getDBConnection();
-        } catch (JMSException e) {
+        } catch (javax.jms.JMSException e) {
             throw new MessagingException("Error when obtaining db connection.", e);
         }
+    }
+
+    @Override
+    public Session getJmsSession() {
+        return jmsMessage.getJmsSession();
+    }
+
+    @Override
+    public jakarta.jms.Connection getJmsConnection() {
+        return jmsMessage.getJmsConnection();
+    }
+
+    @Override
+    public ConnectionFactory getJmsConnectionFactory() {
+        return jmsMessage.getJmsConnectionFactory();
+    }
+
+    @Override
+    public Message getJmsMessage() {
+        return this.jmsMessage.getJmsMessage();
+    }
+
+    @Override
+    public boolean isAck() {
+        return jmsMessage.isAck();
     }
 
     @Override
@@ -66,38 +95,13 @@ class AqMessageImpl<T> implements AqMessage<T> {
     }
 
     @Override
-    public Message getJmsMessage() {
-        return this.jmsMessage.getJmsMessage();
-    }
-
-    @Override
-    public Session getJmsSession() {
-        return jmsMessage.getJmsSession();
-    }
-
-    @Override
-    public javax.jms.Connection getJmsConnection() {
-        return jmsMessage.getJmsConnection();
-    }
-
-    @Override
-    public ConnectionFactory getJmsConnectionFactory() {
-        return jmsMessage.getJmsConnectionFactory();
+    @SuppressWarnings("unchecked")
+    public T getPayload() {
+        return (T) jmsMessage.getPayload();
     }
 
     @Override
     public CompletionStage<Void> ack() {
         return jmsMessage.ack();
-    }
-
-    @Override
-    public boolean isAck() {
-        return jmsMessage.isAck();
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public T getPayload() {
-        return (T) jmsMessage.getPayload();
     }
 }

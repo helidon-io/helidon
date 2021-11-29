@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,16 +25,16 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.enterprise.inject.Any;
-import javax.enterprise.inject.Default;
-import javax.enterprise.inject.Instance;
-import javax.enterprise.inject.spi.BeanManager;
-import javax.inject.Named;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.PersistenceException;
-import javax.persistence.spi.PersistenceProvider;
-import javax.persistence.spi.PersistenceUnitInfo;
-import javax.persistence.spi.PersistenceUnitTransactionType;
+import jakarta.enterprise.inject.Any;
+import jakarta.enterprise.inject.Default;
+import jakarta.enterprise.inject.Instance;
+import jakarta.enterprise.inject.spi.BeanManager;
+import jakarta.inject.Named;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.PersistenceException;
+import jakarta.persistence.spi.PersistenceProvider;
+import jakarta.persistence.spi.PersistenceUnitInfo;
+import jakarta.persistence.spi.PersistenceUnitTransactionType;
 
 /**
  * A utility class for acquiring and creating container-managed {@link
@@ -169,11 +169,11 @@ final class EntityManagerFactories {
         // anyway.
         final Map<String, Object> properties = new HashMap<>();
 
-        properties.put("javax.persistence.bean.manager", beanManager);
+        properties.put("jakarta.persistence.bean.manager", beanManager);
 
         Class<?> validatorFactoryClass = null;
         try {
-            validatorFactoryClass = Class.forName("javax.validation.ValidatorFactory");
+            validatorFactoryClass = Class.forName("jakarta.validation.ValidatorFactory");
         } catch (final ClassNotFoundException classNotFoundException) {
             if (LOGGER.isLoggable(Level.INFO)) {
                 LOGGER.logp(Level.INFO, cn, mn, "noValidatorFactoryClass", classNotFoundException);
@@ -182,7 +182,7 @@ final class EntityManagerFactories {
         if (validatorFactoryClass != null) {
             final Instance<?> validatorFactoryInstance = instance.select(validatorFactoryClass);
             if (!validatorFactoryInstance.isUnsatisfied()) {
-                properties.put("javax.persistence.validation.factory", validatorFactoryInstance.get());
+                properties.put("jakarta.persistence.validation.factory", validatorFactoryInstance.get());
             }
         }
 

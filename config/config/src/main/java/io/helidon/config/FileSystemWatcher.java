@@ -354,7 +354,7 @@ public final class FileSystemWatcher implements ChangeWatcher<Path> {
     /**
      * Fluent API builder for {@link FileSystemWatcher}.
      */
-    public static final class Builder implements io.helidon.common.Builder<FileSystemWatcher> {
+    public static final class Builder implements io.helidon.common.Builder<Builder, FileSystemWatcher> {
         private final List<WatchEvent.Modifier> watchServiceModifiers = new LinkedList<>();
         private ScheduledExecutorService executor;
         private long initialDelay = 1000;

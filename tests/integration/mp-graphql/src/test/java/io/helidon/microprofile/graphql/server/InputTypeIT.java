@@ -19,14 +19,13 @@ package io.helidon.microprofile.graphql.server;
 import java.io.IOException;
 
 import io.helidon.microprofile.graphql.server.test.queries.NoopQueriesAndMutations;
-import javax.inject.Inject;
-
 import io.helidon.microprofile.graphql.server.test.types.SimpleContactInputType;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContactInputTypeWithAddress;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContactInputTypeWithName;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContactInputTypeWithNameValue;
 import io.helidon.microprofile.tests.junit5.AddBean;
 
+import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;

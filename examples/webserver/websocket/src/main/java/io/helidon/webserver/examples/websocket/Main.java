@@ -19,13 +19,13 @@ package io.helidon.webserver.examples.websocket;
 import java.util.Collections;
 import java.util.List;
 
-import javax.websocket.Encoder;
-import javax.websocket.server.ServerEndpointConfig;
-
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.staticcontent.StaticContentSupport;
 import io.helidon.webserver.tyrus.TyrusSupport;
+
+import jakarta.websocket.Encoder;
+import jakarta.websocket.server.ServerEndpointConfig;
 
 import static io.helidon.webserver.examples.websocket.MessageBoardEndpoint.UppercaseEncoder;
 

@@ -38,7 +38,7 @@ public class ApiOptionalResponse<R> extends ApiResponse {
      * A builder to create an optional response.
      * Method name is not {@code builder} to allow subclasses to define their own builder methods.
      *
-     * @param <X> expected entity (such as {@link javax.json.JsonObject}
+     * @param <X> expected entity (such as {@link jakarta.json.JsonObject}
      * @param <R> type of object used to represent the entity
      * @return a new builder
      */
@@ -78,7 +78,7 @@ public class ApiOptionalResponse<R> extends ApiResponse {
     /**
      * Fluent API builder for {@link io.helidon.integrations.common.rest.ApiOptionalResponse}.
      *
-     * @param <X> type of the entity, such as{@link javax.json.JsonObject}
+     * @param <X> type of the entity, such as{@link jakarta.json.JsonObject}
      * @param <R> type of the response created from entity
      */
     public static final class Builder<X, R> extends BuilderBase<Builder<X, R>, ApiOptionalResponse<R>, X, R> {

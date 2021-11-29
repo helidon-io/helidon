@@ -17,10 +17,10 @@ package io.helidon.examples.dbclient.common;
 
 import java.util.Optional;
 
-import javax.annotation.Priority;
-
 import io.helidon.dbclient.DbMapper;
 import io.helidon.dbclient.spi.DbMapperProvider;
+
+import jakarta.annotation.Priority;
 
 /**
  * Provides pokemon mappers.

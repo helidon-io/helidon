@@ -19,7 +19,7 @@
  */
 module io.helidon.examples.integrations.oci.atp.reactive {
     requires java.logging;
-    requires java.json;
+    requires jakarta.json;
     requires java.sql;
 
     requires io.helidon.common.http;

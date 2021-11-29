@@ -12,19 +12,18 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 /**
  * Helidon implementation of MicroProfile Long Running Actions.
  */
 module io.helidon.microprofile.lra {
-    requires jakarta.enterprise.cdi.api;
-    requires jakarta.inject.api;
-    requires java.ws.rs;
+    requires jakarta.cdi;
+    requires jakarta.inject;
+    requires jakarta.ws.rs;
     requires microprofile.lra.api;
     requires org.jboss.jandex;
     requires java.logging;
-    requires java.annotation;
+    requires jakarta.annotation;
     requires io.helidon.config;
     requires io.helidon.microprofile.config;
     requires io.helidon.microprofile.server;
@@ -36,6 +35,6 @@ module io.helidon.microprofile.lra {
 
     uses io.helidon.lra.coordinator.client.CoordinatorClient;
 
-    provides javax.enterprise.inject.spi.Extension with io.helidon.microprofile.lra.LraCdiExtension;
+    provides jakarta.enterprise.inject.spi.Extension with io.helidon.microprofile.lra.LraCdiExtension;
     provides org.glassfish.jersey.internal.spi.AutoDiscoverable with io.helidon.microprofile.lra.LraAutoDiscoverable;
 }

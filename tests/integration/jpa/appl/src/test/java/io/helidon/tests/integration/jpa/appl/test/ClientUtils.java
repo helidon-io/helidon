@@ -18,11 +18,11 @@ package io.helidon.tests.integration.jpa.appl.test;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.json.stream.JsonParsingException;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.Response;
+import jakarta.json.stream.JsonParsingException;
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.ClientBuilder;
+import jakarta.ws.rs.client.WebTarget;
+import jakarta.ws.rs.core.Response;
 
 /**
  * REST client utilities for remote test calls.

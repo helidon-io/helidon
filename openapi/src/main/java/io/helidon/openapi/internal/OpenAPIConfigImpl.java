@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 package io.helidon.openapi.internal;
 
@@ -189,7 +188,7 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
      * <tr><td>{@value SERVERS_OPERATION}</td></tr>
      * </table>
      */
-    public static final class Builder implements io.helidon.common.Builder<OpenApiConfig> {
+    public static final class Builder implements io.helidon.common.Builder<Builder, OpenApiConfig> {
 
         private static final Logger LOGGER = Logger.getLogger(Builder.class.getName());
 

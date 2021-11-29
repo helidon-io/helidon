@@ -34,7 +34,7 @@ import io.helidon.security.spi.AuthenticationProvider;
  *  &#64;Authorized
  *  &#64;Authenticated
  *  &#64;ApplicationPath("myApp")
- *  public class SecuredApplication extends javax.ws.rs.core.Application { ... }
+ *  public class SecuredApplication extends jakarta.ws.rs.core.Application { ... }
  *
  *  &#64;Authorized(false)
  *  &#64;Path("/")

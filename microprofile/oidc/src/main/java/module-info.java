@@ -14,10 +14,6 @@
  * limitations under the License.
  */
 
-import javax.enterprise.inject.spi.Extension;
-
-import io.helidon.microprofile.oidc.OidcCdiExtension;
-
 /**
  * Microprofile OIDC integration.
  */
@@ -30,5 +26,5 @@ module io.helidon.microprofile.oidc {
 
     exports io.helidon.microprofile.oidc;
 
-    provides Extension with OidcCdiExtension;
+    provides jakarta.enterprise.inject.spi.Extension with io.helidon.microprofile.oidc.OidcCdiExtension;
 }

@@ -43,15 +43,15 @@ class JaxRsMethodAnalyzer {
      - String - no need to add it
      - Map, List, Set - basic collection classes - we only care about the type parameter, not the collection itself
      */
-    private static final Set<String> IGNORED_TYPES = Set.of("javax.json.JsonObject",
-                                                            "javax.json.JsonArray",
-                                                            "javax.ws.rs.core.Response",
+    private static final Set<String> IGNORED_TYPES = Set.of("jakarta.json.JsonObject",
+                                                            "jakarta.json.JsonArray",
+                                                            "jakarta.ws.rs.core.Response",
                                                             "java.lang.String",
                                                             Map.class.getName(),
                                                             List.class.getName(),
                                                             Set.class.getName());
 
-    private static final String HTTP_METHOD_ANNOTATION = "javax.ws.rs.HttpMethod";
+    private static final String HTTP_METHOD_ANNOTATION = "jakarta.ws.rs.HttpMethod";
 
     private final Set<String> classesToAdd = new HashSet<>();
     private final HelidonReflectionFeature.BeforeAnalysisContext context;

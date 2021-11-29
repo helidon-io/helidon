@@ -18,9 +18,9 @@
  * Example of integration with OCI object storage in a CDI application.
  */
 module io.helidon.examples.integrations.oci.objectstorage.cdi {
-    requires java.ws.rs;
-    requires java.json.bind;
-    requires jakarta.inject.api;
+    requires jakarta.ws.rs;
+    requires jakarta.json.bind;
+    requires jakarta.inject;
     requires microprofile.config.api;
 
     requires io.helidon.config.yaml.mp;

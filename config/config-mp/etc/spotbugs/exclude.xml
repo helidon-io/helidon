@@ -38,5 +38,10 @@
         <Method name="create" />
         <Bug pattern="URLCONNECTION_SSRF_FD" />
     </Match>
+    <Match>
+        <!-- Regular expression is used only to parse application data, not external data -->
+        <Class name="io.helidon.config.mp.MpConfigImpl" />
+        <Bug pattern="REDOS" />
+    </Match>
 
 </FindBugsFilter>

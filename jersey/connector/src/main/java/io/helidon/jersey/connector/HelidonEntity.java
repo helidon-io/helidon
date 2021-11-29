@@ -24,8 +24,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Flow;
 import java.util.function.Function;
 
-import javax.ws.rs.ProcessingException;
-
 import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.MediaType;
@@ -39,6 +37,7 @@ import io.helidon.media.common.MessageBodyWriterContext;
 import io.helidon.webclient.WebClientRequestBuilder;
 import io.helidon.webclient.WebClientResponse;
 
+import jakarta.ws.rs.ProcessingException;
 import org.glassfish.jersey.client.ClientProperties;
 import org.glassfish.jersey.client.ClientRequest;
 

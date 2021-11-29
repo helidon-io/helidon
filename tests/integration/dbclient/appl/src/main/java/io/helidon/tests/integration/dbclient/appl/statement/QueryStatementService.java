@@ -22,9 +22,9 @@ import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.logging.Logger;
 
-import javax.json.Json;
-import javax.json.JsonArrayBuilder;
-import javax.json.JsonObject;
+import jakarta.json.Json;
+import jakarta.json.JsonArrayBuilder;
+import jakarta.json.JsonObject;
 
 import io.helidon.common.reactive.Multi;
 import io.helidon.dbclient.DbClient;

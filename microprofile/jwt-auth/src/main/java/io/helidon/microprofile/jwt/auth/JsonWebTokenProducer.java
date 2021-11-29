@@ -15,16 +15,15 @@
  */
 package io.helidon.microprofile.jwt.auth;
 
-import javax.enterprise.context.RequestScoped;
-import javax.enterprise.inject.Produces;
-import javax.ws.rs.core.Context;
-
 import io.helidon.security.Principal;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.Subject;
 import io.helidon.security.jwt.SignedJwt;
 import io.helidon.security.providers.common.TokenCredential;
 
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.enterprise.inject.Produces;
+import jakarta.ws.rs.core.Context;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 
 /**

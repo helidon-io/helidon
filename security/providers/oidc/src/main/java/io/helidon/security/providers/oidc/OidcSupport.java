@@ -26,8 +26,6 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.json.JsonObject;
-
 import io.helidon.common.http.FormParams;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
@@ -42,6 +40,8 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
+
+import jakarta.json.JsonObject;
 
 /**
  * OIDC integration requires web resources to be exposed through a web server.
@@ -427,7 +427,7 @@ public final class OidcSupport implements Service {
     /**
      * A fluent API builder for {@link io.helidon.security.providers.oidc.OidcSupport}.
      */
-    public static class Builder implements io.helidon.common.Builder<OidcSupport> {
+    public static class Builder implements io.helidon.common.Builder<Builder, OidcSupport> {
         private boolean enabled = true;
         private OidcConfig oidcConfig;
 

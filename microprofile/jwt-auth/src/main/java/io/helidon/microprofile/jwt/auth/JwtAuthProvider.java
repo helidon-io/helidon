@@ -49,11 +49,6 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.enterprise.inject.spi.DeploymentException;
-import javax.json.Json;
-import javax.json.JsonObject;
-import javax.json.JsonReaderFactory;
-
 import io.helidon.common.Errors;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.http.Http;
@@ -90,6 +85,10 @@ import io.helidon.security.spi.OutboundSecurityProvider;
 import io.helidon.security.spi.SynchronousProvider;
 import io.helidon.security.util.TokenHandler;
 
+import jakarta.enterprise.inject.spi.DeploymentException;
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonReaderFactory;
 import org.eclipse.microprofile.auth.LoginConfig;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.eclipse.microprofile.jwt.JsonWebToken;
@@ -581,7 +580,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
     /**
      * Fluent API builder for {@link JwtAuthProvider}.
      */
-    public static class Builder implements io.helidon.common.Builder<JwtAuthProvider> {
+    public static class Builder implements io.helidon.common.Builder<Builder, JwtAuthProvider> {
         private static final String CONFIG_PUBLIC_KEY = "mp.jwt.verify.publickey";
         private static final String CONFIG_PUBLIC_KEY_PATH = "mp.jwt.verify.publickey.location";
         private static final String CONFIG_JWT_DECRYPT_KEY_LOCATION = "mp.jwt.decrypt.key.location";

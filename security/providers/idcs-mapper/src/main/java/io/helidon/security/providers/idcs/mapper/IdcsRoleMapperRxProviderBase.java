@@ -27,9 +27,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.json.JsonArray;
-import javax.json.JsonObject;
-
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.http.FormParams;
@@ -50,6 +47,9 @@ import io.helidon.security.providers.oidc.common.OidcConfig;
 import io.helidon.security.spi.SubjectMappingProvider;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientRequestBuilder;
+
+import jakarta.json.JsonArray;
+import jakarta.json.JsonObject;
 
 import static io.helidon.security.providers.oidc.common.OidcConfig.postJsonResponse;
 

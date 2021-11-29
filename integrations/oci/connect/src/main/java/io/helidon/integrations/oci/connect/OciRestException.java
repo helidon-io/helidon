@@ -64,7 +64,7 @@ public class OciRestException extends ApiRestException {
     /**
      * Fluent API builder for {@link io.helidon.integrations.oci.connect.OciRestException}.
      */
-    public static class Builder extends BaseBuilder<Builder> implements io.helidon.common.Builder<OciRestException> {
+    public static class Builder extends BaseBuilder<Builder> implements io.helidon.common.Builder<Builder, OciRestException> {
         private String errorCode;
         private String errorMessage;
 

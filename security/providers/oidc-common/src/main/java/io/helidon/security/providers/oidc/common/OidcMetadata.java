@@ -23,12 +23,12 @@ import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.json.Json;
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObject;
-
 import io.helidon.common.Errors;
 import io.helidon.webclient.WebClient;
+
+import jakarta.json.Json;
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonObject;
 
 final class OidcMetadata {
     private static final Logger LOGGER = Logger.getLogger(OidcMetadata.class.getName());
@@ -96,7 +96,7 @@ final class OidcMetadata {
                 .map(it -> it.getString(key, null));
     }
 
-    static class Builder implements io.helidon.common.Builder<OidcMetadata> {
+    static class Builder implements io.helidon.common.Builder<Builder, OidcMetadata> {
         private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Map.of());
         private boolean enableRemoteLoad;
         private JsonObject metadata;

@@ -35,15 +35,6 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import javax.json.Json;
-import javax.json.JsonArray;
-import javax.json.JsonArrayBuilder;
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObject;
-import javax.json.JsonObjectBuilder;
-import javax.json.JsonStructure;
-import javax.json.JsonValue;
-
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.config.Config;
@@ -63,6 +54,14 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 
+import jakarta.json.Json;
+import jakarta.json.JsonArray;
+import jakarta.json.JsonArrayBuilder;
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonObjectBuilder;
+import jakarta.json.JsonStructure;
+import jakarta.json.JsonValue;
 import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
@@ -576,8 +575,8 @@ public final class MetricsSupport extends HelidonRestServiceSupport
     /**
      * A fluent API builder to build instances of {@link MetricsSupport}.
      */
-    public static class Builder extends HelidonRestServiceSupport.Builder<MetricsSupport, Builder>
-            implements io.helidon.metrics.serviceapi.MetricsSupport.Builder<MetricsSupport> {
+    public static class Builder extends HelidonRestServiceSupport.Builder<Builder, MetricsSupport>
+            implements io.helidon.metrics.serviceapi.MetricsSupport.Builder<Builder, MetricsSupport> {
 
         private Supplier<RegistryFactory> registryFactory;
         private MetricsSettings.Builder metricsSettingsBuilder = MetricsSettings.builder();

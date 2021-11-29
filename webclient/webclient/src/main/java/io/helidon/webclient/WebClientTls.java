@@ -159,7 +159,7 @@ public class WebClientTls {
     /**
      * Fluent API builder for {@link WebClientTls} instance.
      */
-    public static final class Builder implements io.helidon.common.Builder<WebClientTls> {
+    public static final class Builder implements io.helidon.common.Builder<Builder, WebClientTls> {
 
         private boolean trustAll = false;
         private boolean disableHostnameVerification = false;

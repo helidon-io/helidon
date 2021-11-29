@@ -24,8 +24,8 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 
-import io.helidon.common.Builder;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.Principal;
 import io.helidon.security.Security;
@@ -87,14 +87,14 @@ public class HttpAuthProviderBuilderTest {
         };
     }
 
-    private static Builder<? extends AuthenticationProvider> basicAuthProvider(boolean optional, SecureUserStore us) {
+    private static Supplier<? extends AuthenticationProvider> basicAuthProvider(boolean optional, SecureUserStore us) {
         return HttpBasicAuthProvider.builder()
                 .realm("mic")
                 .optional(optional)
                 .userStore(us);
     }
 
-    private static Builder<? extends AuthenticationProvider> digestAuthProvider(boolean old, boolean optional, SecureUserStore us) {
+    private static Supplier<? extends AuthenticationProvider> digestAuthProvider(boolean old, boolean optional, SecureUserStore us) {
         HttpDigestAuthProvider.Builder builder = HttpDigestAuthProvider.builder()
                 .realm("mic")
                 .optional(optional)

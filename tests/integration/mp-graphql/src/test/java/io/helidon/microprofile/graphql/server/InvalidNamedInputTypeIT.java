@@ -19,10 +19,9 @@ package io.helidon.microprofile.graphql.server;
 import java.io.IOException;
 import java.util.Set;
 
-import javax.inject.Inject;
-
 import io.helidon.microprofile.graphql.server.test.types.InvalidNamedTypes;
 
+import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;

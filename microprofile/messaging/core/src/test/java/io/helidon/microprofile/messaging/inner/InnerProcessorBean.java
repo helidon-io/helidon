@@ -31,20 +31,20 @@
 
 package io.helidon.microprofile.messaging.inner;
 
-import io.helidon.common.reactive.Multi;
-import io.helidon.microprofile.messaging.CountableTestBean;
-import org.eclipse.microprofile.reactive.messaging.Incoming;
-import org.eclipse.microprofile.reactive.messaging.Outgoing;
-import org.reactivestreams.FlowAdapters;
-import org.reactivestreams.Publisher;
-
-import javax.enterprise.context.ApplicationScoped;
-
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
+
+import io.helidon.common.reactive.Multi;
+import io.helidon.microprofile.messaging.CountableTestBean;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import org.eclipse.microprofile.reactive.messaging.Incoming;
+import org.eclipse.microprofile.reactive.messaging.Outgoing;
+import org.reactivestreams.FlowAdapters;
+import org.reactivestreams.Publisher;
 
 /**
  * This test is modified version of official tck test in version 1.0

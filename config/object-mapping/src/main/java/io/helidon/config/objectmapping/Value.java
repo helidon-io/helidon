@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -237,6 +237,9 @@ public @interface Value {
      * Class that represents not-set default values.
      */
     interface None extends Supplier<Void> {
+        /**
+         * Value to use when a {@code null} value should be the default.
+         */
         String VALUE = "io.helidon.config:default=null";
 
         @Override

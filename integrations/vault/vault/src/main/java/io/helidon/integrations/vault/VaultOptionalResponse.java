@@ -47,7 +47,7 @@ public final class VaultOptionalResponse<R> extends ApiOptionalResponse<R> {
      * A builder to create an optional response.
      * Method name is not {@code builder} to allow subclasses to define their own builder methods.
      *
-     * @param <X> expected entity (such as {@link javax.json.JsonObject}
+     * @param <X> expected entity (such as {@link jakarta.json.JsonObject}
      * @param <R> type of object used to represent the entity
      * @return a new builder
      */
@@ -68,7 +68,7 @@ public final class VaultOptionalResponse<R> extends ApiOptionalResponse<R> {
     /**
      * Fluent API builder for {@link io.helidon.integrations.vault.VaultOptionalResponse}.
      *
-     * @param <X> type of entity (actual entity on HTTP communication, such as {@link javax.json.JsonObject})
+     * @param <X> type of entity (actual entity on HTTP communication, such as {@link jakarta.json.JsonObject})
      * @param <R> type of response (object entity type)
      */
     public static class Builder<X, R> extends BuilderBase<Builder<X, R>, X, R> {
@@ -85,7 +85,7 @@ public final class VaultOptionalResponse<R> extends ApiOptionalResponse<R> {
      * Base builder class for subclasses of {@link io.helidon.integrations.vault.VaultOptionalResponse}.
      *
      * @param <B> Type of builder - a subclass of this class
-     * @param <X> type of entity (actual entity on HTTP communication, such as {@link javax.json.JsonObject})
+     * @param <X> type of entity (actual entity on HTTP communication, such as {@link jakarta.json.JsonObject})
      * @param <R> type of response (object entity type)
      */
     public abstract static class BuilderBase<B extends BuilderBase<B, X, R>, X, R>

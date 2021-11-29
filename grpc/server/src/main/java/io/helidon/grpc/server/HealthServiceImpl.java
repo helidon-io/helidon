@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,6 @@ import io.grpc.health.v1.HealthGrpc;
 import io.grpc.services.HealthStatusManager;
 import io.grpc.stub.StreamObserver;
 import org.eclipse.microprofile.health.HealthCheck;
-import org.eclipse.microprofile.health.HealthCheckResponse.State;
 
 /**
  * An implementation of the {@link HealthGrpc} service.
@@ -94,7 +93,7 @@ class HealthServiceImpl
     }
 
     private HealthCheckResponse toHealthCheckResponse(org.eclipse.microprofile.health.HealthCheckResponse response) {
-        return response.getState().equals(State.UP)
+        return response.getStatus().equals(org.eclipse.microprofile.health.HealthCheckResponse.Status.UP)
                 ? toHealthCheckResponse(HealthCheckResponse.ServingStatus.SERVING)
                 : toHealthCheckResponse(HealthCheckResponse.ServingStatus.NOT_SERVING);
     }

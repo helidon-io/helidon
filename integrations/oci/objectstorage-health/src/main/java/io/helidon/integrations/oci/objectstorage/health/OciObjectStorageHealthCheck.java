@@ -21,9 +21,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.logging.Logger;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
-
 import io.helidon.config.Config;
 import io.helidon.health.common.BuiltInHealthCheck;
 import io.helidon.integrations.common.rest.ApiOptionalResponse;
@@ -31,6 +28,8 @@ import io.helidon.integrations.oci.objectstorage.GetBucket;
 import io.helidon.integrations.oci.objectstorage.OciObjectStorage;
 import io.helidon.integrations.oci.objectstorage.OciObjectStorageRx;
 
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
@@ -116,14 +115,14 @@ public final class OciObjectStorageHealthCheck implements HealthCheck {
             }
         }
 
-        builder.state(status);
+        builder.status(status);
         return builder.build();
     }
 
     /**
      * Fluent API builder for {@link OciObjectStorageHealthCheck}.
      */
-    public static final class Builder implements io.helidon.common.Builder<OciObjectStorageHealthCheck> {
+    public static final class Builder implements io.helidon.common.Builder<Builder, OciObjectStorageHealthCheck> {
 
         private String namespace;
         private OciObjectStorageRx ociObjectStorageRx;

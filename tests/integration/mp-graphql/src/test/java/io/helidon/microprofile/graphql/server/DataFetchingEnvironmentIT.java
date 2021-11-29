@@ -18,17 +18,16 @@ package io.helidon.microprofile.graphql.server;
 
 import java.util.Map;
 
-import javax.inject.Inject;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.MatcherAssert.assertThat;
-
 import io.helidon.graphql.server.InvocationHandler;
 import io.helidon.microprofile.graphql.server.test.queries.DataFetchingEnvironmentQueriesAndMutations;
 import io.helidon.microprofile.tests.junit5.AddBean;
 
+import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Tests for {@link graphql.schema.DataFetchingEnvironment} injection.

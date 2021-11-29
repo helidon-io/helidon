@@ -79,7 +79,7 @@ public interface RestServiceSettings {
      * Builder for {@link io.helidon.servicecommon.rest.RestServiceSettings}.
      */
     @Configured()
-    interface Builder extends io.helidon.common.Builder<RestServiceSettings> {
+    interface Builder extends io.helidon.common.Builder<Builder, RestServiceSettings> {
 
         /**
          * Config key for the routing name setting.

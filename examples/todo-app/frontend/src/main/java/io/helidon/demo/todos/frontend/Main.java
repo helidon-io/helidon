@@ -20,9 +20,6 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-
 import io.helidon.common.LogConfig;
 import io.helidon.config.Config;
 import io.helidon.config.FileSystemWatcher;
@@ -37,6 +34,8 @@ import io.helidon.webserver.accesslog.AccessLogSupport;
 import io.helidon.webserver.staticcontent.StaticContentSupport;
 
 import io.opentracing.Tracer;
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.ClientBuilder;
 import org.glassfish.jersey.logging.LoggingFeature;
 
 import static io.helidon.config.ConfigSources.classpath;

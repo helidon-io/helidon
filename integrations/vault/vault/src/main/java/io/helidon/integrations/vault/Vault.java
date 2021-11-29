@@ -117,7 +117,7 @@ public interface Vault {
     /**
      * Fluent API builder for {@link Vault}.
      */
-    class Builder implements io.helidon.common.Builder<Vault> {
+    class Builder implements io.helidon.common.Builder<Builder, Vault> {
         private static final Logger LOGGER = Logger.getLogger(Vault.class.getName());
 
         private final HelidonServiceLoader.Builder<VaultAuth> vaultAuths
@@ -242,31 +242,68 @@ public interface Vault {
             return this;
         }
 
+        /**
+         * Base namespace to use when invoking Vault operations.
+         *
+         * @param baseNamespace base namespace
+         * @return updated builder
+         */
         public Builder baseNamespace(String baseNamespace) {
             this.baseNamespace = baseNamespace;
             return this;
         }
 
+        /**
+         * Vault address (if configured).
+         *
+         * @return vault address
+         */
         public Optional<String> address() {
             return Optional.ofNullable(address);
         }
 
+        /**
+         * Token (if configured).
+         *
+         * @return token
+         */
         public Optional<String> token() {
             return Optional.ofNullable(token);
         }
 
+        /**
+         * Base namespace (if configured).
+         *
+         * @return namespace to use
+         */
         public Optional<String> baseNamespace() {
             return Optional.ofNullable(baseNamespace);
         }
 
+        /**
+         * Configured fault tolerance handler.
+         *
+         * @return FT Handler
+         */
         public FtHandler ftHandler() {
             return faultTolerance;
         }
 
+        /**
+         * Current config.
+         *
+         * @return config instance
+         */
         public Config config() {
             return config;
         }
 
+        /**
+         * Update to web client setup.
+         * Used by authentication methods
+         *
+         * @return web client updater
+         */
         public Consumer<WebClient.Builder> webClientUpdater() {
             return webClientUpdater;
         }

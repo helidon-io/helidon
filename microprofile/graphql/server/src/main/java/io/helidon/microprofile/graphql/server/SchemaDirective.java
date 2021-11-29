@@ -170,7 +170,7 @@ class SchemaDirective implements ElementGenerator {
     /**
      * A fluent API {@link io.helidon.common.Builder} to build instances of {@link SchemaDirective}.
      */
-    public static class Builder implements io.helidon.common.Builder<SchemaDirective> {
+    public static class Builder implements io.helidon.common.Builder<Builder, SchemaDirective> {
 
         private String name;
         private List<SchemaArgument> listSchemaArguments = new ArrayList<>();

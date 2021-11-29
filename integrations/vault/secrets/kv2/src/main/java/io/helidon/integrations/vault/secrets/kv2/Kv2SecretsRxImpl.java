@@ -16,8 +16,6 @@
 
 package io.helidon.integrations.vault.secrets.kv2;
 
-import javax.json.JsonObject;
-
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Single;
 import io.helidon.integrations.common.rest.RestApi;
@@ -25,6 +23,8 @@ import io.helidon.integrations.vault.ListSecrets;
 import io.helidon.integrations.vault.Vault;
 import io.helidon.integrations.vault.VaultApiException;
 import io.helidon.integrations.vault.VaultOptionalResponse;
+
+import jakarta.json.JsonObject;
 
 class Kv2SecretsRxImpl implements Kv2SecretsRx {
 

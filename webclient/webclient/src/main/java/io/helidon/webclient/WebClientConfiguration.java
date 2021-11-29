@@ -287,7 +287,7 @@ class WebClientConfiguration {
      * A fluent API builder for {@link WebClientConfiguration}.
      */
     static class Builder<B extends Builder<B, T>, T extends WebClientConfiguration>
-            implements io.helidon.common.Builder<T>,
+            implements io.helidon.common.Builder<B, T>,
                        ParentingMediaContextBuilder<B>,
                        MediaContextBuilder<B> {
 

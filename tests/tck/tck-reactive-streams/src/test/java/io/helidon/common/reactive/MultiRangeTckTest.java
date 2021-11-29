@@ -12,16 +12,14 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 package io.helidon.common.reactive;
+
+import java.util.concurrent.Flow;
 
 import org.reactivestreams.tck.TestEnvironment;
 import org.reactivestreams.tck.flow.FlowPublisherVerification;
 import org.testng.annotations.Test;
-
-import java.util.Arrays;
-import java.util.concurrent.Flow;
 
 @Test
 public class MultiRangeTckTest extends FlowPublisherVerification<Integer> {

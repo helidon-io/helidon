@@ -37,7 +37,7 @@ public final class RestException extends ApiRestException {
      * Fluent API builder for {@link io.helidon.integrations.common.rest.RestException}.
      */
     public static class Builder extends ApiRestException.BaseBuilder<Builder>
-            implements io.helidon.common.Builder<ApiRestException> {
+            implements io.helidon.common.Builder<Builder, ApiRestException> {
         private Builder() {
         }
 

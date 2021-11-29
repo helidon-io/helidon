@@ -12,11 +12,11 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 package io.helidon.microprofile.grpc.metrics;
 
 import io.helidon.microprofile.grpc.core.GrpcMethod;
+
 import org.eclipse.microprofile.metrics.annotation.SimplyTimed;
 
 public class CoverageTestBeanSimplyTimed extends CoverageTestBeanBase {

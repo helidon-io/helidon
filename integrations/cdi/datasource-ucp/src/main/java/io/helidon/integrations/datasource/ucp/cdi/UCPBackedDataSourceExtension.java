@@ -26,19 +26,19 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.event.Event;
-import javax.enterprise.inject.CreationException;
-import javax.enterprise.inject.Instance;
-import javax.enterprise.inject.spi.Extension;
-import javax.enterprise.inject.spi.configurator.BeanConfigurator;
-import javax.enterprise.util.TypeLiteral;
-import javax.inject.Named;
 import javax.net.ssl.SSLContext;
 import javax.sql.DataSource;
 
 import io.helidon.integrations.datasource.cdi.AbstractDataSourceExtension;
 
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.event.Event;
+import jakarta.enterprise.inject.CreationException;
+import jakarta.enterprise.inject.Instance;
+import jakarta.enterprise.inject.spi.Extension;
+import jakarta.enterprise.inject.spi.configurator.BeanConfigurator;
+import jakarta.enterprise.util.TypeLiteral;
+import jakarta.inject.Named;
 import oracle.ucp.jdbc.PoolDataSource;
 import oracle.ucp.jdbc.PoolDataSourceImpl;
 

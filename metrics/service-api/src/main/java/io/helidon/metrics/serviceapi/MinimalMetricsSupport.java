@@ -117,7 +117,7 @@ public class MinimalMetricsSupport extends HelidonRestServiceSupport implements 
         this.restServiceSettings = restServiceSettings;
     }
 
-    static class Builder implements MetricsSupport.Builder<MinimalMetricsSupport> {
+    static class Builder implements MetricsSupport.Builder<Builder, MinimalMetricsSupport> {
 
         private RestServiceSettings.Builder restServiceSettingsBuilder = RestServiceSettings.builder()
                 .webContext("/metrics");
@@ -128,7 +128,7 @@ public class MinimalMetricsSupport extends HelidonRestServiceSupport implements 
         }
 
         @Override
-        public MetricsSupport.Builder<MinimalMetricsSupport> restServiceSettings(
+        public Builder restServiceSettings(
                 RestServiceSettings.Builder restServiceSettingsBuilder) {
             this.restServiceSettingsBuilder = restServiceSettingsBuilder;
             return this;

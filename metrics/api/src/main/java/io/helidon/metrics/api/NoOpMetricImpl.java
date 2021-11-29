@@ -18,7 +18,6 @@ package io.helidon.metrics.api;
 import java.io.OutputStream;
 import java.time.Duration;
 import java.util.concurrent.Callable;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 import org.eclipse.microprofile.metrics.ConcurrentGauge;
@@ -112,6 +111,11 @@ class NoOpMetricImpl extends AbstractMetric implements NoOpMetric {
             return new NoOpGaugeImpl<>(registryType, metadata, metric);
         }
 
+        static <S /* extends Number */> NoOpGaugeImpl<S> create(String registryType, Metadata metadata) {
+            // TODO uncomment above once MP metrics enforces the Number restriction
+            return new NoOpGaugeImpl<>(registryType, metadata, () -> null);
+        }
+
         private NoOpGaugeImpl(String registryType, Metadata metadata, Gauge<T> metric) {
             super(registryType, metadata);
             value = metric::getValue;
@@ -149,6 +153,12 @@ class NoOpMetricImpl extends AbstractMetric implements NoOpMetric {
         @Override
         public Snapshot getSnapshot() {
             return snapshot();
+        }
+
+        @Override
+        public long getSum() {
+            // TODO 3.0.0-JAKARTA
+            return 0;
         }
     }
 
@@ -263,7 +273,13 @@ class NoOpMetricImpl extends AbstractMetric implements NoOpMetric {
         }
 
         @Override
-        public void update(long duration, TimeUnit unit) {
+        public void update(Duration duration) {
+        }
+
+        @Override
+        public Duration getElapsedTime() {
+            // TODO 3.0.0-JAKARTA
+            return Duration.ZERO;
         }
 
         @Override
@@ -340,6 +356,18 @@ class NoOpMetricImpl extends AbstractMetric implements NoOpMetric {
 
         @Override
         public void update(Duration duration) {
+        }
+
+        @Override
+        public Duration getMaxTimeDuration() {
+            // TODO 3.0.0-JAKARTA
+            return Duration.ZERO;
+        }
+
+        @Override
+        public Duration getMinTimeDuration() {
+            // TODO 3.0.0-JAKARTA
+            return Duration.ZERO;
         }
 
         @Override

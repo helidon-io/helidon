@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
-import javax.json.JsonStructure;
-import javax.json.JsonValue;
-
 import io.helidon.common.LogConfig;
 import io.helidon.common.http.MediaType;
 import io.helidon.grpc.server.GrpcRouting;
@@ -38,6 +35,8 @@ import io.helidon.webserver.WebServer;
 
 import io.grpc.Channel;
 import io.grpc.ManagedChannelBuilder;
+import jakarta.json.JsonStructure;
+import jakarta.json.JsonValue;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;

@@ -407,7 +407,7 @@ public final class GoogleTokenProvider extends SynchronousProvider implements Au
     /**
      * Fluent API builder to build {@link GoogleTokenProvider} instance.
      */
-    public static final class Builder implements io.helidon.common.Builder<GoogleTokenProvider> {
+    public static final class Builder implements io.helidon.common.Builder<Builder, GoogleTokenProvider> {
         private String clientId;
 
         private String proxyHost;

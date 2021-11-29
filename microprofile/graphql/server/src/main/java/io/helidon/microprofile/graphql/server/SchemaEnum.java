@@ -113,7 +113,7 @@ class SchemaEnum extends AbstractDescriptiveElement implements ElementGenerator 
     /**
      * A fluent API {@link io.helidon.common.Builder} to build instances of {@link SchemaDirective}.
      */
-    public static class Builder implements io.helidon.common.Builder<SchemaEnum> {
+    public static class Builder implements io.helidon.common.Builder<Builder, SchemaEnum> {
 
         private String name;
         private List<String> values = new ArrayList<>();

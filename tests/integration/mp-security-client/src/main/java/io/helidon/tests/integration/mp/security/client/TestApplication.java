@@ -17,8 +17,8 @@ package io.helidon.tests.integration.mp.security.client;
 
 import java.util.Set;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.ws.rs.core.Application;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.ws.rs.core.Application;
 
 /**
  * Jax-rs application.

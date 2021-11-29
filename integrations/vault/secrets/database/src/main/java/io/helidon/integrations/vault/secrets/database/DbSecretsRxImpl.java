@@ -16,13 +16,13 @@
 
 package io.helidon.integrations.vault.secrets.database;
 
-import javax.json.JsonObject;
-
 import io.helidon.common.reactive.Single;
 import io.helidon.integrations.common.rest.RestApi;
 import io.helidon.integrations.vault.ListSecrets;
 import io.helidon.integrations.vault.Vault;
 import io.helidon.integrations.vault.VaultOptionalResponse;
+
+import jakarta.json.JsonObject;
 
 class DbSecretsRxImpl implements DbSecretsRx {
     private final RestApi restApi;

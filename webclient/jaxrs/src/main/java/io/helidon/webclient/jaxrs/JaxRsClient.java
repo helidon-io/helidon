@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
 
 /**
- * Point of access to {@link javax.ws.rs.client.ClientBuilder} to support Helidon features,
+ * Point of access to {@link jakarta.ws.rs.client.ClientBuilder} to support Helidon features,
  * such as propagation of tracing, correct handling of {@link io.helidon.common.context.Context}.
  */
 public final class JaxRsClient {

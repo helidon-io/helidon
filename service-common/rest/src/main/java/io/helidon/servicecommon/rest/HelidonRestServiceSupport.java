@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 package io.helidon.servicecommon.rest;
 
@@ -142,8 +141,8 @@ public abstract class HelidonRestServiceSupport implements RestServiceSupport {
      * @param <T> type of the concrete service
      * @param <B> type of the concrete builder for the service
      */
-    public abstract static class Builder<T extends HelidonRestServiceSupport, B extends Builder<T, B>>
-            implements io.helidon.common.Builder<T> {
+    public abstract static class Builder<B extends Builder<B, T>, T extends HelidonRestServiceSupport>
+            implements io.helidon.common.Builder<B, T> {
 
         private final Class<B> builderClass;
         private Config config = Config.empty();

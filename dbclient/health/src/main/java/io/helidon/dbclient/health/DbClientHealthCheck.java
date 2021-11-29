@@ -235,7 +235,7 @@ public abstract class DbClientHealthCheck implements HealthCheck {
      * This named DML statement shall be configured in {@code statements} section
      * of the DBClient configuration file.
      */
-    public static final class Builder implements io.helidon.common.Builder<DbClientHealthCheck> {
+    public static final class Builder implements io.helidon.common.Builder<Builder, DbClientHealthCheck> {
 
         // Name of Config node with custom health check name.
         private static final String CONFIG_NAME = "name";

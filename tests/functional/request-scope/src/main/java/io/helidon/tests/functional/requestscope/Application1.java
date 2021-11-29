@@ -18,8 +18,8 @@ package io.helidon.tests.functional.requestscope;
 
 import java.util.Set;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.ws.rs.core.Application;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.ws.rs.core.Application;
 
 /**
  * This functional test requires having two application subclasses.

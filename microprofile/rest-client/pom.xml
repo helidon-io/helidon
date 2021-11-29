@@ -53,10 +53,11 @@
             <groupId>io.helidon.jersey</groupId>
             <artifactId>helidon-jersey-client</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.glassfish.jersey.ext.microprofile</groupId>
-            <artifactId>jersey-mp-rest-client</artifactId>
-        </dependency>
+        <!-- TODO 3.0.0-JAKARTA -->
+<!--        <dependency>-->
+<!--            <groupId>org.glassfish.jersey.ext.microprofile</groupId>-->
+<!--            <artifactId>jersey-mp-rest-client</artifactId>-->
+<!--        </dependency>-->
     </dependencies>
 
 </project>

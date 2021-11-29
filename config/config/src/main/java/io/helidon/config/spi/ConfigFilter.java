@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ import io.helidon.config.Config;
  * given {@code Builder} by invoking
  * {@link Config.Builder#disableFilterServices()}.
  * <p>
- * A filter can specify a {@link javax.annotation.Priority}. If no priority is
+ * A filter can specify a {@link jakarta.annotation.Priority}. If no priority is
  * explicitly assigned, the value of {@value PRIORITY} is assumed.
  * <h2>Initializing Filters</h2>
  * Any filter that uses the {@code Config} instance during its initialization

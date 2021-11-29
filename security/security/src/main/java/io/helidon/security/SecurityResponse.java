@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -191,18 +191,16 @@ public abstract class SecurityResponse {
      *
      * @param <T> Type of security response to build
      */
-    abstract static class SecurityResponseBuilder<T extends SecurityResponseBuilder<T, B>, B> implements Builder<B> {
+    abstract static class SecurityResponseBuilder<T extends SecurityResponseBuilder<T, B>, B> implements Builder<T, B> {
         private final Map<String, List<String>> requestHeaders = new HashMap<>();
         private final Map<String, List<String>> responseHeaders = new HashMap<>();
-        private final T myInstance;
+
         private SecurityStatus status = SecurityStatus.SUCCESS;
         private String description;
         private Throwable throwable;
         private int statusCode = -1;
 
-        @SuppressWarnings("unchecked")
         SecurityResponseBuilder() {
-            this.myInstance = (T) this;
         }
 
         /**
@@ -215,7 +213,7 @@ public abstract class SecurityResponse {
          */
         public T statusCode(int statusCode) {
             this.statusCode = statusCode;
-            return myInstance;
+            return identity();
         }
 
         /**
@@ -226,7 +224,7 @@ public abstract class SecurityResponse {
          */
         public T status(SecurityStatus status) {
             this.status = status;
-            return myInstance;
+            return identity();
         }
 
         /**
@@ -238,7 +236,7 @@ public abstract class SecurityResponse {
          */
         public T description(String description) {
             this.description = description;
-            return myInstance;
+            return identity();
         }
 
         /**
@@ -249,7 +247,7 @@ public abstract class SecurityResponse {
          */
         public T throwable(Throwable exception) {
             this.throwable = exception;
-            return myInstance;
+            return identity();
         }
 
         /**
@@ -261,7 +259,7 @@ public abstract class SecurityResponse {
         public T requestHeaders(Map<String, List<String>> headers) {
             this.requestHeaders.clear();
             this.requestHeaders.putAll(headers);
-            return myInstance;
+            return identity();
         }
 
         /**
@@ -274,7 +272,7 @@ public abstract class SecurityResponse {
          */
         public T requestHeader(String header, String value) {
             requestHeaders.put(header, List.of(value));
-            return myInstance;
+            return identity();
         }
 
         /**
@@ -287,7 +285,7 @@ public abstract class SecurityResponse {
          */
         public T requestHeader(String header, List<String> values) {
             requestHeaders.put(header, values);
-            return myInstance;
+            return identity();
         }
 
         /**
@@ -299,7 +297,7 @@ public abstract class SecurityResponse {
         public T responseHeaders(Map<String, List<String>> headers) {
             this.responseHeaders.clear();
             this.responseHeaders.putAll(headers);
-            return myInstance;
+            return identity();
         }
 
         /**
@@ -312,7 +310,7 @@ public abstract class SecurityResponse {
          */
         public T responseHeader(String header, String value) {
             responseHeaders.put(header, List.of(value));
-            return myInstance;
+            return identity();
         }
 
         /**
@@ -325,7 +323,7 @@ public abstract class SecurityResponse {
          */
         public T responseHeader(String header, List<String> values) {
             responseHeaders.put(header, values);
-            return myInstance;
+            return identity();
         }
     }
 }

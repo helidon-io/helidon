@@ -16,13 +16,13 @@
 
 package io.helidon.common.reactive;
 
-import org.reactivestreams.tck.TestEnvironment;
-import org.reactivestreams.tck.flow.FlowPublisherVerification;
-import org.testng.annotations.Test;
-
 import java.io.IOException;
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.reactivestreams.tck.TestEnvironment;
+import org.reactivestreams.tck.flow.FlowPublisherVerification;
+import org.testng.annotations.Test;
 
 @Test
 public class SingleRetryTckTest extends FlowPublisherVerification<Long> {

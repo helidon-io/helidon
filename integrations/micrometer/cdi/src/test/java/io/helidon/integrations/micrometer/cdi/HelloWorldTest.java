@@ -16,21 +16,20 @@
 
 package io.helidon.integrations.micrometer.cdi;
 
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.IntStream;
+
 import io.helidon.microprofile.tests.junit5.AddBean;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
+
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
-import org.junit.jupiter.api.BeforeAll;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.InternalServerErrorException;
+import jakarta.ws.rs.client.WebTarget;
+import jakarta.ws.rs.core.MediaType;
 import org.junit.jupiter.api.Test;
-
-import javax.inject.Inject;
-import javax.json.JsonObject;
-import javax.ws.rs.InternalServerErrorException;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.MediaType;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.IntStream;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;

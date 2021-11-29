@@ -28,6 +28,11 @@
     <name>Helidon Microprofile Tests TCK GraphQL</name>
     <description>The microprofile GraphQL TCK</description>
 
+    <properties>
+        <!-- 3.0.0-JAKARTA -->
+        <skipTests>true</skipTests>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.microprofile.tests</groupId>

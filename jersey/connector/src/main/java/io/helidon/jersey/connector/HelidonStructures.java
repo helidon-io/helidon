@@ -25,8 +25,6 @@ import java.util.Map;
 import java.util.Optional;
 
 import javax.net.ssl.SSLContext;
-import javax.ws.rs.ProcessingException;
-import javax.ws.rs.core.Configuration;
 
 import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
@@ -39,6 +37,8 @@ import io.helidon.webclient.WebClientResponse;
 import io.helidon.webclient.WebClientTls;
 
 import io.netty.handler.codec.http.HttpHeaderValues;
+import jakarta.ws.rs.ProcessingException;
+import jakarta.ws.rs.core.Configuration;
 import org.glassfish.jersey.client.ClientProperties;
 import org.glassfish.jersey.client.ClientRequest;
 

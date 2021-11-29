@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,7 +81,7 @@ public interface AqConnector extends ConnectorFactory {
     /**
      * Builder for {@link AqConnectorImpl}.
      */
-    class AqConnectorBuilder implements Builder<AqConnectorImpl> {
+    class AqConnectorBuilder implements Builder<AqConnectorBuilder, AqConnectorImpl> {
 
         private final Map<String, DataSource> dataSourceMap = new HashMap<>();
         private ScheduledExecutorService scheduler;
@@ -89,8 +89,8 @@ public interface AqConnector extends ConnectorFactory {
         private io.helidon.config.Config config;
 
         /**
-         * Add custom {@link javax.jms.ConnectionFactory ConnectionFactory} referencable by supplied name with
-         * {@link io.helidon.messaging.connectors.jms.JmsConnector#NAMED_FACTORY_ATTRIBUTE}.
+         * Add custom {@link jakarta.jms.ConnectionFactory ConnectionFactory} referencable by supplied name with
+         * {@value io.helidon.messaging.connectors.jms.JmsConnector#NAMED_FACTORY_ATTRIBUTE}.
          *
          * @param name       referencable connection factory name
          * @param dataSource custom connection factory

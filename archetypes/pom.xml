@@ -30,6 +30,11 @@
     <name>Helidon Archetypes</name>
     <packaging>pom</packaging>
 
+    <properties>
+        <!-- 3.0.0-JAKARTA -->
+        <archetype.test.skip>true</archetype.test.skip>
+    </properties>
+
     <modules>
         <module>bare-se</module>
         <module>bare-mp</module>

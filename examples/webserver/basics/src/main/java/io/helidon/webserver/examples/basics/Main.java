@@ -21,9 +21,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Collections;
 
-import javax.json.Json;
-import javax.json.JsonBuilderFactory;
-
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
@@ -38,6 +35,9 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.jersey.JerseySupport;
 import io.helidon.webserver.staticcontent.StaticContentSupport;
+
+import jakarta.json.Json;
+import jakarta.json.JsonBuilderFactory;
 
 /**
  * This example consists of few first tutorial steps of WebServer API. Each step is represented by a single method.

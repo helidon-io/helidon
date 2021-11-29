@@ -16,7 +16,7 @@
 
 package io.helidon.integrations.vault.auths.approle;
 
-import javax.json.JsonObject;
+import jakarta.json.JsonObject;
 
 /**
  * Read Role ID request and response.
@@ -35,7 +35,7 @@ public final class ReadRoleId {
         /**
          * Fluent API builder for configuring a request.
          * The request builder is passed as is, without a build method.
-         * The equivalent of a build method is {@link #toJson(javax.json.JsonBuilderFactory)}
+         * The equivalent of a build method is {@link #toJson(jakarta.json.JsonBuilderFactory)}
          * used by the {@link io.helidon.integrations.common.rest.RestApi}.
          *
          * @return new request builder

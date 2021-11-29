@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,10 @@
  */
 package io.helidon.tests.functional.mp.syntheticapp;
 
-import javax.enterprise.inject.spi.CDI;
-
 import io.helidon.microprofile.cdi.Main;
 import io.helidon.microprofile.server.ServerCdiExtension;
+
+import jakarta.enterprise.inject.spi.CDI;
 
 /**
  * Main class to start this test.

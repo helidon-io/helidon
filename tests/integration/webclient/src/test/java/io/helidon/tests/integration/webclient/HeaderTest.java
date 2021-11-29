@@ -17,17 +17,15 @@ package io.helidon.tests.integration.webclient;
 
 import java.util.List;
 
-import javax.json.JsonObject;
-
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Single;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientRequestBuilder;
-import io.helidon.webclient.WebClientResponse;
 import io.helidon.webclient.WebClientServiceRequest;
 import io.helidon.webclient.WebClientServiceResponse;
 import io.helidon.webclient.spi.WebClientService;
 
+import jakarta.json.JsonObject;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;

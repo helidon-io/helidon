@@ -22,15 +22,14 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.enterprise.inject.spi.CDI;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.Response;
-
 import io.helidon.microprofile.cdi.Main;
 import io.helidon.microprofile.server.ServerCdiExtension;
 
+import jakarta.enterprise.inject.spi.CDI;
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.ClientBuilder;
+import jakarta.ws.rs.client.WebTarget;
+import jakarta.ws.rs.core.Response;
 import org.glassfish.jersey.client.ClientProperties;
 import org.glassfish.jersey.logging.LoggingFeature;
 import org.junit.jupiter.api.AfterAll;
@@ -141,7 +140,7 @@ public abstract class AbstractGraphQLEndpointIT extends AbstractGraphQLTest {
     /**
      * Return the response as Json.
      *
-     * @param response {@link javax.ws.rs.core.Response} received from web server
+     * @param response {@link jakarta.ws.rs.core.Response} received from web server
      * @return the response as Json
      */
     protected Map<String, Object> getJsonResponse(Response response) {

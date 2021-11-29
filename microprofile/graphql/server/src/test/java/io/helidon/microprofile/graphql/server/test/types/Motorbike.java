@@ -17,7 +17,6 @@
 package io.helidon.microprofile.graphql.server.test.types;
 
 import org.eclipse.microprofile.graphql.Description;
-import org.eclipse.microprofile.graphql.Type;
 
 /**
  * Represents a Motorbike.

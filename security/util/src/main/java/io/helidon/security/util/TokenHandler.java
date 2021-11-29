@@ -218,7 +218,7 @@ public final class TokenHandler {
      * Fluent API builder to create {@link TokenHandler}.
      */
     @Configured
-    public static final class Builder implements io.helidon.common.Builder<TokenHandler> {
+    public static final class Builder implements io.helidon.common.Builder<Builder, TokenHandler> {
         private String tokenHeader;
         private String tokenPrefix;
         private Pattern tokenPattern;

@@ -19,18 +19,18 @@ package io.helidon.examples.integrations.vault.hcp.cdi;
 import java.util.Map;
 import java.util.Optional;
 
-import javax.inject.Inject;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.core.Response;
-
 import io.helidon.integrations.vault.secrets.kv2.CreateKv2;
 import io.helidon.integrations.vault.secrets.kv2.DeleteAllKv2;
 import io.helidon.integrations.vault.secrets.kv2.Kv2Secret;
 import io.helidon.integrations.vault.secrets.kv2.Kv2Secrets;
+
+import jakarta.inject.Inject;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.core.Response;
 
 /**
  * JAX-RS resource for Key/Value version 2 secrets engine operations.

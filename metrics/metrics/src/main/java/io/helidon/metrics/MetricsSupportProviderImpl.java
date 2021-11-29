@@ -22,7 +22,7 @@ import io.helidon.servicecommon.rest.RestServiceSettings;
 /**
  * Provider which furnishes a builder for {@link MetricsSupport} instances.
  */
-public class MetricsSupportProviderImpl implements MetricsSupportProvider<MetricsSupport> {
+public class MetricsSupportProviderImpl implements MetricsSupportProvider<MetricsSupport.Builder, MetricsSupport> {
 
     @Override
     public MetricsSupport.Builder builder() {

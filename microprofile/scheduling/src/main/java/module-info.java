@@ -21,8 +21,8 @@ import io.helidon.microprofile.scheduling.SchedulingCdiExtension;
  */
 module io.helidon.microprofile.scheduling {
     requires java.logging;
-    requires static jakarta.enterprise.cdi.api;
-    requires static jakarta.inject.api;
+    requires static jakarta.cdi;
+    requires static jakarta.inject;
     requires jakarta.interceptor.api;
     requires io.helidon.common.configurable;
     requires io.helidon.config;
@@ -34,5 +34,5 @@ module io.helidon.microprofile.scheduling {
     exports io.helidon.microprofile.scheduling;
     opens io.helidon.microprofile.scheduling;
 
-    provides javax.enterprise.inject.spi.Extension with SchedulingCdiExtension;
+    provides jakarta.enterprise.inject.spi.Extension with SchedulingCdiExtension;
 }

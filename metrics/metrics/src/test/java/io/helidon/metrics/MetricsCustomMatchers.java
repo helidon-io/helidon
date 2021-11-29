@@ -15,11 +15,11 @@
  */
 package io.helidon.metrics;
 
-import org.hamcrest.Description;
-import org.hamcrest.TypeSafeMatcher;
-
 import java.util.Map;
 import java.util.function.Predicate;
+
+import org.hamcrest.Description;
+import org.hamcrest.TypeSafeMatcher;
 
 /**
  * Custom Hamcrest matchers used in metrics tests.

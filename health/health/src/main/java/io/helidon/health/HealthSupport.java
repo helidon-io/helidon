@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package io.helidon.health;
 
 import java.time.Duration;
@@ -32,13 +33,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import javax.json.Json;
-import javax.json.JsonArrayBuilder;
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObject;
-import javax.json.JsonObjectBuilder;
-import javax.json.JsonStructure;
-
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
@@ -53,9 +47,15 @@ import io.helidon.webserver.Service;
 import io.helidon.webserver.cors.CorsEnabledServiceHelper;
 import io.helidon.webserver.cors.CrossOriginConfig;
 
+import jakarta.json.Json;
+import jakarta.json.JsonArrayBuilder;
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonObjectBuilder;
+import jakarta.json.JsonStructure;
 import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
-import org.eclipse.microprofile.health.HealthCheckResponse.State;
+import org.eclipse.microprofile.health.HealthCheckResponse.Status;
 
 import static io.helidon.webserver.cors.CorsEnabledServiceHelper.CORS_CONFIG_KEY;
 
@@ -157,7 +157,7 @@ public final class HealthSupport implements Service {
         result = result.onErrorResume(throwable -> {
             LOGGER.log(Level.SEVERE, "Failed to call health checks", throwable);
             HcResponse response = new HcResponse(HealthCheckResponse.down("InternalError"), true);
-            return new HealthResponse(Http.Status.INTERNAL_SERVER_ERROR_500, toJson(State.DOWN, List.of(response)));
+            return new HealthResponse(Http.Status.INTERNAL_SERVER_ERROR_500, toJson(Status.DOWN, List.of(response)));
         });
 
         result.thenAccept(hres -> {
@@ -175,23 +175,23 @@ public final class HealthSupport implements Service {
                 .sorted(Comparator.comparing(HcResponse::name))
                 .collect(Collectors.toList());
 
-        State state = responses.stream()
+        Status state = responses.stream()
                 .map(HcResponse::state)
-                .filter(State.DOWN::equals)
+                .filter(Status.DOWN::equals)
                 .findFirst()
-                .orElse(State.UP);
+                .orElse(Status.UP);
 
         Http.ResponseStatus status = responses.stream()
                 .filter(HcResponse::internalError)
                 .findFirst()
                 .map(it -> Http.Status.INTERNAL_SERVER_ERROR_500)
-                .orElse((state == State.UP) ? Http.Status.OK_200 : Http.Status.SERVICE_UNAVAILABLE_503);
+                .orElse((state == Status.UP) ? Http.Status.OK_200 : Http.Status.SERVICE_UNAVAILABLE_503);
 
         JsonObject json = toJson(state, responses);
         return new HealthResponse(status, json);
     }
 
-    private JsonObject toJson(State state, List<HcResponse> responses) {
+    private JsonObject toJson(Status state, List<HcResponse> responses) {
         final JsonObjectBuilder jsonBuilder = JSON.createObjectBuilder();
         if (backwardCompatible) {
             jsonBuilder.add("outcome", state.toString());
@@ -274,7 +274,7 @@ public final class HealthSupport implements Service {
     /**
      * Fluent API builder for {@link io.helidon.health.HealthSupport}.
      */
-    public static final class Builder implements io.helidon.common.Builder<HealthSupport> {
+    public static final class Builder implements io.helidon.common.Builder<Builder, HealthSupport> {
         // 10 seconds
         private static final long DEFAULT_TIMEOUT_MILLIS = 10 * 1000;
         private final List<HealthCheck> allChecks = new LinkedList<>();
@@ -532,8 +532,8 @@ public final class HealthSupport implements Service {
             return hcr.getName();
         }
 
-        State state() {
-            return hcr.getState();
+        Status state() {
+            return hcr.getStatus();
         }
 
         boolean internalError() {

@@ -20,17 +20,15 @@ import java.io.StringReader;
 import java.util.Arrays;
 import java.util.List;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
-import javax.json.Json;
-import javax.json.JsonObject;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.MediaType;
-
 import io.helidon.microprofile.tests.junit5.AddBean;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 
-import org.eclipse.microprofile.health.Health;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
+import jakarta.ws.rs.client.WebTarget;
+import jakarta.ws.rs.core.MediaType;
 import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.eclipse.microprofile.health.Liveness;
@@ -53,7 +51,9 @@ public class HealthMpServiceIT {
 
     /**
      * Verify that the {@link HealthCheck} CDI beans (inner classes below)
-     * annotated with {@link Health} are discovered and added to the json
+     * annotated with {@link org.eclipse.microprofile.health.Liveness}
+     * and {@link org.eclipse.microprofile.health.Readiness}
+     * are discovered and added to the json
      * returned from the {@code /health} endpoint.
      */
     @Test
@@ -65,8 +65,9 @@ public class HealthMpServiceIT {
 
     /**
      * Verify that the {@link HealthCheck} CDI bean (inner classes below)
-     * NOT annotated with {@link Health} is not added to the json returned
-     * from the {@code /health} endpoint.
+     * NOT annotated with {@link org.eclipse.microprofile.health.Liveness}, or
+     * {@link org.eclipse.microprofile.health.Readiness}
+     * is not added to the json returned from the {@code /health} endpoint.
      */
     @Test
     public void shouldNotAddHealthCheckBeanNotAnnotatedWithHealth() {
@@ -142,7 +143,8 @@ public class HealthMpServiceIT {
 
     /**
      * A test {@link HealthCheck} bean that should be NOT discovered
-     * as it does not have the {@link Health} qualifier.
+     * as it does not have the {@link org.eclipse.microprofile.health.Liveness}
+     * or {@link org.eclipse.microprofile.health.Readiness} qualifiers.
      */
     @ApplicationScoped
     public static class HealthCheckBad

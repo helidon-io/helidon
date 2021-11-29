@@ -16,20 +16,20 @@
 
 package io.helidon.tests.functional.requestscope;
 
-import javax.inject.Inject;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.Response;
-
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
 import io.helidon.faulttolerance.Async;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
+
 import io.netty.handler.codec.http.HttpResponseStatus;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.client.WebTarget;
+import jakarta.ws.rs.core.Response;
+import org.junit.jupiter.api.Test;
+
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-
-import org.junit.jupiter.api.Test;
 
 @HelidonTest
 class TenantTest {

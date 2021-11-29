@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -227,7 +227,7 @@ public final class Subject implements AbacSupport {
     /**
      * A fluent API builder for {@link Subject}.
      */
-    public static final class Builder implements io.helidon.common.Builder<Subject> {
+    public static final class Builder implements io.helidon.common.Builder<Builder, Subject> {
         private final List<Grant> grants = new LinkedList<>();
         private final List<Principal> principals = new LinkedList<>();
         private final ClassToInstanceStore<Object> privateCredentials = new ClassToInstanceStore<>();

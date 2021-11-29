@@ -177,7 +177,7 @@ public class AsymmetricCipher implements CommonCipher {
     /**
      * Builder of the {@link AsymmetricCipher}.
      */
-    public static final class Builder implements io.helidon.common.Builder<AsymmetricCipher> {
+    public static final class Builder implements io.helidon.common.Builder<Builder, AsymmetricCipher> {
 
         private String algorithm = ALGORITHM_RSA_ECB_OAEP256;
         private String provider = null;

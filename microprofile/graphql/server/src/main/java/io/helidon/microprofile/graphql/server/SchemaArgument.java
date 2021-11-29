@@ -385,7 +385,7 @@ class SchemaArgument extends AbstractDescriptiveElement implements ElementGenera
     /**
      * A fluent API {@link io.helidon.common.Builder} to build instances of {@link SchemaArgument}.
      */
-    public static class Builder implements io.helidon.common.Builder<SchemaArgument> {
+    public static class Builder implements io.helidon.common.Builder<Builder, SchemaArgument> {
 
         private String argumentName;
         private String argumentType;

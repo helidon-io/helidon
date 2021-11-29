@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import javax.enterprise.util.AnnotationLiteral;
-import javax.inject.Qualifier;
+import jakarta.enterprise.util.AnnotationLiteral;
+import jakarta.inject.Qualifier;
 
 import static java.lang.annotation.ElementType.FIELD;
 import static java.lang.annotation.ElementType.METHOD;
@@ -40,12 +40,12 @@ import static java.lang.annotation.ElementType.TYPE;
  *     available at runtime is intended for runtime of this application</li>
  * </ul>
  *
- * <p>Example of usage in a CDI {@link javax.enterprise.inject.spi.Extension}:
+ * <p>Example of usage in a CDI {@link jakarta.enterprise.inject.spi.Extension}:
  * <pre>
  * void initRuntime(@Observes @RuntimeStart io.helidon.config.Config config) {}
  * </pre>
  *
- * End of runtime is equivalent to end of {@link javax.enterprise.context.ApplicationScoped}, so there is no need
+ * End of runtime is equivalent to end of {@link jakarta.enterprise.context.ApplicationScoped}, so there is no need
  * to create additional annotations.
  */
 @Retention(RetentionPolicy.RUNTIME)

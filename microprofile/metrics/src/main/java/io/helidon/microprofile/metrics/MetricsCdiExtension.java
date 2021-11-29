@@ -18,6 +18,7 @@ package io.helidon.microprofile.metrics;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
@@ -39,51 +40,50 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
-import javax.annotation.Priority;
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.context.Initialized;
-import javax.enterprise.context.RequestScoped;
-import javax.enterprise.event.Observes;
-import javax.enterprise.inject.spi.AfterDeploymentValidation;
-import javax.enterprise.inject.spi.AnnotatedCallable;
-import javax.enterprise.inject.spi.AnnotatedMember;
-import javax.enterprise.inject.spi.AnnotatedMethod;
-import javax.enterprise.inject.spi.AnnotatedType;
-import javax.enterprise.inject.spi.Bean;
-import javax.enterprise.inject.spi.BeanManager;
-import javax.enterprise.inject.spi.BeforeBeanDiscovery;
-import javax.enterprise.inject.spi.DeploymentException;
-import javax.enterprise.inject.spi.ProcessAnnotatedType;
-import javax.enterprise.inject.spi.ProcessInjectionPoint;
-import javax.enterprise.inject.spi.ProcessManagedBean;
-import javax.enterprise.inject.spi.ProcessProducerField;
-import javax.enterprise.inject.spi.ProcessProducerMethod;
-import javax.enterprise.inject.spi.WithAnnotations;
-import javax.enterprise.inject.spi.configurator.AnnotatedTypeConfigurator;
-import javax.inject.Singleton;
-import javax.interceptor.Interceptor;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.HEAD;
-import javax.ws.rs.OPTIONS;
-import javax.ws.rs.PATCH;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-
 import io.helidon.common.Errors;
 import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
+import io.helidon.config.mp.MpConfig;
 import io.helidon.metrics.api.MetricsSettings;
 import io.helidon.metrics.api.RegistryFactory;
 import io.helidon.metrics.serviceapi.MetricsSupport;
-import io.helidon.microprofile.cdi.RuntimeStart;
 import io.helidon.microprofile.metrics.MetricAnnotationInfo.RegistrationPrep;
 import io.helidon.microprofile.metrics.MetricUtil.LookupResult;
 import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.servicecommon.restcdi.HelidonRestCdiExtension;
 import io.helidon.webserver.Routing;
 
+import jakarta.annotation.Priority;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.Initialized;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.spi.AfterDeploymentValidation;
+import jakarta.enterprise.inject.spi.AnnotatedCallable;
+import jakarta.enterprise.inject.spi.AnnotatedMember;
+import jakarta.enterprise.inject.spi.AnnotatedMethod;
+import jakarta.enterprise.inject.spi.AnnotatedType;
+import jakarta.enterprise.inject.spi.Bean;
+import jakarta.enterprise.inject.spi.BeanManager;
+import jakarta.enterprise.inject.spi.BeforeBeanDiscovery;
+import jakarta.enterprise.inject.spi.DeploymentException;
+import jakarta.enterprise.inject.spi.ProcessAnnotatedType;
+import jakarta.enterprise.inject.spi.ProcessInjectionPoint;
+import jakarta.enterprise.inject.spi.ProcessManagedBean;
+import jakarta.enterprise.inject.spi.ProcessProducerField;
+import jakarta.enterprise.inject.spi.ProcessProducerMethod;
+import jakarta.enterprise.inject.spi.WithAnnotations;
+import jakarta.enterprise.inject.spi.configurator.AnnotatedTypeConfigurator;
+import jakarta.inject.Singleton;
+import jakarta.interceptor.Interceptor;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.HEAD;
+import jakarta.ws.rs.OPTIONS;
+import jakarta.ws.rs.PATCH;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Histogram;
@@ -105,7 +105,7 @@ import org.eclipse.microprofile.metrics.annotation.SimplyTimed;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 
 import static io.helidon.microprofile.metrics.MetricUtil.getMetricName;
-import static javax.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
+import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 
 /**
  * MetricsCdiExtension class.
@@ -132,7 +132,6 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
                                      + " of the server.")
             .withType(MetricType.SIMPLE_TIMER)
             .withUnit(MetricUnits.NANOSECONDS)
-            .notReusable()
             .build();
 
     // only for compatibility with gRPC usage of registerMetric
@@ -176,14 +175,18 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
      * @param <E> type of element
      * @deprecated This method is made public to migrate from metrics1 to metrics2 for gRPC, this should be refactored
      */
+    @SuppressWarnings("rawtypes")
     @Deprecated
     public static <E extends Member & AnnotatedElement>
     void registerMetric(E element, Class<?> clazz, LookupResult<? extends Annotation> lookupResult) {
         Executable executable;
         if (element instanceof AnnotatedCallable) {
            executable = (Executable) ((AnnotatedCallable<?>) element).getJavaMember();
-        } else if (element instanceof Executable) {
-            executable = (Executable) element;
+        } else if (element instanceof Constructor) {
+            // code checking instanceof Executable and casting to it would not compile on Java17
+            executable = (Constructor) element;
+        } else if (element instanceof Method) {
+            executable = (Method) element;
         } else {
             throw new IllegalArgumentException("Element must be an AnnotatedCallable or Executable but was "
                     + element.getClass().getName());
@@ -318,9 +321,6 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
      */
     void before(@Observes BeforeBeanDiscovery discovery) {
         LOGGER.log(Level.FINE, () -> "Before bean discovery " + discovery);
-
-        // Initialize our implementation
-        RegistryProducer.clearApplicationRegistry();
 
         // Register beans manually with annotated type identifiers that are deliberately the same as those used by the container
         // during bean discovery to avoid accidental duplicate registration in odd packaging scenarios.
@@ -561,7 +561,6 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
                         .withDescription(metric.description())
                         .withType(getMetricType(instance))
                         .withUnit(metric.unit())
-                        .reusable(false)
                         .build();
                 registry.register(md, instance);
             }
@@ -580,10 +579,6 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
 
         syntheticSimpleTimerClassesProcessed.add(clazz);
         syntheticSimpleTimersToRegister.addAll(methodsWithSyntheticSimpleTimer.get(clazz));
-    }
-
-    private void runtimeStart(@Observes @RuntimeStart Object event) {
-        registerSyntheticSimpleTimerMetrics();
     }
 
     private void registerSyntheticSimpleTimerMetrics() {
@@ -619,19 +614,21 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
                 Object adv,
                 BeanManager bm,
                 ServerCdiExtension server) {
-        Set<String> vendorMetricsAdded = new HashSet<>();
-        Config config = ((Config) ConfigProvider.getConfig()).get("metrics");
-
-        // Update the registry factory with the runtime config.
-        RegistryFactory.getInstance(MetricsSettings.create(config));
-
-        registerMetricsForAnnotatedSites();
-        registerProducers(bm);
-
         Routing.Builder defaultRouting = super.registerService(adv, bm, server);
         MetricsSupport metricsSupport = serviceSupport();
 
+        // Initialize our implementation
+        RegistryProducer.clearApplicationRegistry();
+
+        registerMetricsForAnnotatedSites();
+        registerAnnotatedGauges(bm);
+        registerSyntheticSimpleTimerMetrics();
+        registerProducers(bm);
+
+        Set<String> vendorMetricsAdded = new HashSet<>();
         vendorMetricsAdded.add("@default");
+
+        Config config = MpConfig.toHelidonConfig(ConfigProvider.getConfig()).get(MetricsSettings.Builder.METRICS_CONFIG_KEY);
 
         // now we may have additional sockets we want to add vendor metrics to
         config.get("vendor-metrics-routings")
@@ -730,9 +727,11 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
         }
     }
 
-    private void registerAnnotatedGauges(@Observes AfterDeploymentValidation adv, BeanManager bm) {
+    private void registerAnnotatedGauges(BeanManager bm) {
         LOGGER.log(Level.FINE, () -> "registerGauges");
         MetricRegistry registry = getMetricRegistry();
+
+        List<Exception> gaugeProblems = new ArrayList<>();
 
         annotatedGaugeSites.entrySet().forEach(gaugeSite -> {
             LOGGER.log(Level.FINE, () -> "gaugeSite " + gaugeSite.toString());
@@ -751,19 +750,22 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
                         .withDescription(gaugeAnnotation.description())
                         .withType(MetricType.GAUGE)
                         .withUnit(gaugeAnnotation.unit())
-                        .reusable(false)
                         .build();
                 LOGGER.log(Level.FINE, () -> String.format("Registering gauge with metadata %s", md.toString()));
                 registry.register(md, dg, gaugeID.getTagsAsList().toArray(new Tag[0]));
             } catch (Throwable t) {
-                adv.addDeploymentProblem(new IllegalArgumentException("Error processing @Gauge "
-                                                                              + "annotation on " + site
-                        .getJavaMember().getDeclaringClass().getName()
-                                                                              + ":" + site.getJavaMember()
-                        .getName(), t));
+                gaugeProblems.add(new IllegalArgumentException(
+                        String.format("Error processing @Gauge annotation on %s#%s: %s",
+                                      site.getJavaMember().getDeclaringClass().getName(),
+                                      site.getJavaMember().getName(),
+                                      t.getMessage()),
+                        t));
             }
         });
 
+        if (!gaugeProblems.isEmpty()) {
+            throw new RuntimeException("Could not process one or more @Gauge annotations" + gaugeProblems);
+        }
         annotatedGaugeSites.clear();
     }
 

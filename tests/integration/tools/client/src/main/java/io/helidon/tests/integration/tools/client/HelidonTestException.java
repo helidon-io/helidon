@@ -18,8 +18,8 @@ package io.helidon.tests.integration.tools.client;
 import java.io.PrintStream;
 import java.util.List;
 
-import javax.json.JsonArray;
-import javax.json.JsonObject;
+import jakarta.json.JsonArray;
+import jakarta.json.JsonObject;
 
 /**
  * Thrown to report error in integration test execution.

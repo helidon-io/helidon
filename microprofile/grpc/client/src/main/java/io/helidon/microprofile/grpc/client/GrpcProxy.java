@@ -21,8 +21,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import javax.enterprise.util.AnnotationLiteral;
-import javax.inject.Qualifier;
+import jakarta.enterprise.util.AnnotationLiteral;
+import jakarta.inject.Qualifier;
 
 /**
  * A qualifier annotation used to mark an injection point for
@@ -34,7 +34,7 @@ import javax.inject.Qualifier;
 public @interface GrpcProxy {
 
     /**
-     * An {@link javax.enterprise.util.AnnotationLiteral} for the
+     * An {@link jakarta.enterprise.util.AnnotationLiteral} for the
      * {@link GrpcProxy} annotation.
      */
     class Literal

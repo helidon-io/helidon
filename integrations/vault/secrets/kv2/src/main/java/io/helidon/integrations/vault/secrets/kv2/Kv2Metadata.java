@@ -20,9 +20,9 @@ import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 
-import javax.json.JsonObject;
-
 import io.helidon.integrations.common.rest.ApiJsonParser;
+
+import jakarta.json.JsonObject;
 
 /**
  * Metadata of a KV version 2 secret.

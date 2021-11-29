@@ -357,7 +357,7 @@ public interface WebServer {
      * sockets and optional multiple routings.
      */
     @Configured(root = true, prefix = "server", description = "Configuration of the HTTP server.")
-    final class Builder implements io.helidon.common.Builder<WebServer>,
+    final class Builder implements io.helidon.common.Builder<Builder, WebServer>,
                                    SocketConfiguration.SocketConfigurationBuilder<Builder>,
                                    ParentingMediaContextBuilder<Builder>,
                                    MediaContextBuilder<Builder> {
@@ -422,6 +422,12 @@ public interface WebServer {
             return result;
         }
 
+        /**
+         * Configure the transport to be used by this server.
+         *
+         * @param transport transport to use
+         * @return updated builder instance
+         */
         public Builder transport(Transport transport) {
             configurationBuilder.transport(transport);
             return this;

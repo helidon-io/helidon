@@ -16,8 +16,9 @@
 
 package io.helidon.microprofile.graphql.server.test.types;
 
-import org.eclipse.microprofile.graphql.Type;
 import java.util.Map;
+
+import org.eclipse.microprofile.graphql.Type;
 
 /**
  * POJO to test a {@link Map} as a value.

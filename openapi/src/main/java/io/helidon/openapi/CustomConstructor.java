@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 package io.helidon.openapi;
 
@@ -30,10 +29,7 @@ import org.eclipse.microprofile.openapi.models.media.Content;
 import org.eclipse.microprofile.openapi.models.media.MediaType;
 import org.eclipse.microprofile.openapi.models.responses.APIResponse;
 import org.eclipse.microprofile.openapi.models.responses.APIResponses;
-import org.eclipse.microprofile.openapi.models.security.Scopes;
 import org.eclipse.microprofile.openapi.models.security.SecurityRequirement;
-import org.eclipse.microprofile.openapi.models.servers.ServerVariable;
-import org.eclipse.microprofile.openapi.models.servers.ServerVariables;
 import org.yaml.snakeyaml.TypeDescription;
 import org.yaml.snakeyaml.constructor.Constructor;
 import org.yaml.snakeyaml.error.Mark;
@@ -77,8 +73,11 @@ final class CustomConstructor extends Constructor {
         CHILD_MAP_TYPES.put(Callback.class, PathItem.class);
         CHILD_MAP_TYPES.put(Content.class, MediaType.class);
         CHILD_MAP_TYPES.put(APIResponses.class, APIResponse.class);
+        /*
+        TODO 3.0.0-JAKARTA
         CHILD_MAP_TYPES.put(ServerVariables.class, ServerVariable.class);
         CHILD_MAP_TYPES.put(Scopes.class, String.class);
+        */
         CHILD_MAP_OF_LIST_TYPES.put(SecurityRequirement.class, String.class);
     }
 

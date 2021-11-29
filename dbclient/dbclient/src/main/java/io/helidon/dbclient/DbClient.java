@@ -152,7 +152,7 @@ public interface DbClient {
     /**
      * Helidon database handler builder.
      */
-    final class Builder implements io.helidon.common.Builder<DbClient> {
+    final class Builder implements io.helidon.common.Builder<Builder, DbClient> {
 
         private final HelidonServiceLoader.Builder<DbClientServiceProvider> clientServiceProviders = HelidonServiceLoader.builder(
                 ServiceLoader.load(DbClientServiceProvider.class));

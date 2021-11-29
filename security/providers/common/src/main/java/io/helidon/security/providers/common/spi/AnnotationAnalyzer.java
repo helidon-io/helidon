@@ -223,7 +223,7 @@ public interface AnnotationAnalyzer {
         /**
          * Fluent API builder for {@link AnalyzerResponse}.
          */
-        public static class Builder implements io.helidon.common.Builder<AnalyzerResponse> {
+        public static class Builder implements io.helidon.common.Builder<Builder, AnalyzerResponse> {
             private final ClassToInstanceStore<Object> registry = ClassToInstanceStore.create();
             private AnalyzerResponse parent;
             private Flag atnResponse = Flag.ABSTAIN;

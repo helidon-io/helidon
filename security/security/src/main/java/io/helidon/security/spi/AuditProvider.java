@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -162,6 +162,12 @@ public interface AuditProvider extends SecurityProvider {
             }
         }
 
+        /**
+         * Check if the stack element is an actual Helidon Security class.
+         *
+         * @param element element to check
+         * @return {@code true} if the class comes from Helidon Security
+         */
         static boolean isSecurityClass(StackWalker.StackFrame element) {
             String className = element.getClassName();
             int last = className.lastIndexOf('.');

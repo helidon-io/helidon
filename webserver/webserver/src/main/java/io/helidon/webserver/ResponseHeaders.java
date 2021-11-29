@@ -36,7 +36,7 @@ import io.helidon.common.reactive.Single;
  * Extends {@link Parameters} interface by adding HTTP response headers oriented constants and convenient methods.
  * Use constants located in {@link io.helidon.common.http.Http.Header} as standard header names.
  *
- * <h3>Lifecycle</h3>
+ * <h2>Lifecycle</h2>
  * Headers can be muted until {@link #send() send} to the client. It is also possible to register a '{@link #beforeSend(Consumer)
  * before send}' function which can made 'last minute mutation'.
  * <p>

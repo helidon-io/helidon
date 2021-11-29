@@ -19,8 +19,7 @@ package io.helidon.metrics;
 import java.util.Objects;
 import java.util.concurrent.atomic.LongAdder;
 
-import javax.json.JsonObjectBuilder;
-
+import jakarta.json.JsonObjectBuilder;
 import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricID;
@@ -47,6 +46,11 @@ final class HelidonHistogram extends MetricImpl implements Histogram {
 
     static HelidonHistogram create(String type, Metadata metadata, Histogram delegate) {
         return new HelidonHistogram(type, metadata, delegate);
+    }
+
+    @Override
+    public long getSum() {
+        return delegate.getSum();
     }
 
     @Override
@@ -125,6 +129,12 @@ final class HelidonHistogram extends MetricImpl implements Histogram {
 
         public void update(int value) {
             update((long) value);
+        }
+
+        // TODO 3.0.0-JAKARTA
+        @Override
+        public long getSum() {
+            return 0;
         }
 
         @Override

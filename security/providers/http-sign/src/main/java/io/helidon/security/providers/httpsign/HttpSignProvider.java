@@ -316,7 +316,7 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
     /**
      * Fluent API builder for this provider. Call {@link #build()} to create a provider instance.
      */
-    public static final class Builder implements io.helidon.common.Builder<HttpSignProvider> {
+    public static final class Builder implements io.helidon.common.Builder<Builder, HttpSignProvider> {
         private boolean optional = true;
         private String realm = "helidon";
         private final Set<HttpSignHeader> acceptHeaders = EnumSet.noneOf(HttpSignHeader.class);

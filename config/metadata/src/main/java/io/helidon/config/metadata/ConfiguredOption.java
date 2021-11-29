@@ -104,7 +104,8 @@ public @interface ConfiguredOption {
     /**
      * Kind of this option.
      * Defaults to {@link Kind#VALUE},
-     * autodetects {@link Kind#LIST} if the parameter is an actual {@link java.util.List} or {@link java.util.Set}.
+     * autodetects {@link Kind#LIST} if the parameter is an actual {@link java.util.List}, {@link java.util.Set}
+     * or {@link java.lang.Iterable}.
      * {@link Kind#MAP} is detected as well, though the type must be a String to a primitive or string
      *
      * @return kind of configuration option

@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 /**
@@ -31,7 +30,7 @@ module io.helidon.openapi {
     requires org.jboss.jandex;
 
     requires smallrye.open.api.core;
-    requires java.json;
+    requires jakarta.json;
     requires java.desktop; // for java.beans package
     requires org.yaml.snakeyaml;
 

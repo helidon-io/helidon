@@ -21,7 +21,7 @@
  * @see io.helidon.integrations.vault.secrets.transit.TransitSecrets
  */
 module io.helidon.integrations.vault.secrets.transit {
-    requires java.json;
+    requires jakarta.json;
 
     requires io.helidon.integrations.common.rest;
     requires io.helidon.integrations.vault;

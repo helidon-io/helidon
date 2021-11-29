@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,12 +40,12 @@ module io.helidon.grpc.core {
     requires io.netty.transport;
     requires transitive com.google.protobuf;
 
-    requires java.annotation;
-    requires static java.json.bind;
+    requires jakarta.annotation;
+    requires static jakarta.json.bind;
     requires java.logging;
     requires java.naming;
 
-    requires jakarta.inject.api;
+    requires jakarta.inject;
 
     provides MarshallerSupplier with
             MarshallerSupplier.DefaultMarshallerSupplier,

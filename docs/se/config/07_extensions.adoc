@@ -134,7 +134,7 @@ First provider that returns `true` when `supports("my-type")` is called would be
 
 The config system invokes extensions of a given type in priority order.
 Developers can express the relative importance of an extension by annotating the service implementation class with
-`@javax.annotation.Priority`.
+`@jakarta.annotation.Priority`.
 The default value is 100. A _lower_ priority value represents _greater_ importance.
 
 == ConfigSource SPI [[Config-SPI-ConfigSource]]
@@ -460,7 +460,7 @@ interface ConfigMapperProvider {
 ----
 
 
-A mapper provider can specify a `@javax.annotation.Priority`.
+A mapper provider can specify a `@jakarta.annotation.Priority`.
 If no priority is explicitly assigned, the value of `100` is assumed.
 
 [source,java]

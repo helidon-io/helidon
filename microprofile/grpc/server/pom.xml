@@ -93,6 +93,18 @@
             <artifactId>rxjava</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <!--
+            TODO 3.0.0-JAKARTA
+            need to use this version to work around the same groupId/artifactId and
+            different package names in Jakarta
+            This is needed for the Generated annotation in grpc sources
+            -->
+            <groupId>javax.annotation</groupId>
+            <artifactId>javax.annotation-api</artifactId>
+            <scope>provided</scope>
+            <optional>true</optional>
+        </dependency>
     </dependencies>
 
     <build>

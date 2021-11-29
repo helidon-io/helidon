@@ -213,13 +213,13 @@ package io.helidon.example.jpa;
 import java.io.Serializable;
 import java.util.Objects;
 
-import javax.persistence.Access;
-import javax.persistence.AccessType;
-import javax.persistence.Basic;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import jakarta.persistence.Access;
+import jakarta.persistence.AccessType;
+import jakarta.persistence.Basic;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 
 @Access(value = AccessType.FIELD) <1>
 @Entity(name = "Greeting") <2>
@@ -428,9 +428,9 @@ imports:
 [source,java]
 .`src/main/java/io/helidon/example/jpa/GreetResource.java`
 ----
-import javax.enterprise.context.Dependent;
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
+import jakarta.enterprise.context.Dependent;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 ----
 
 Annotate the resource class declaration with `@Dependent`:
@@ -470,8 +470,8 @@ file, add the following import:
 [source,java]
 .`src/main/java/io/helidon/example/jpa/GreetResource.java`
 ----
-import javax.transaction.Transactional;
-import javax.ws.rs.PathParam;
+import jakarta.transaction.Transactional;
+import jakarta.ws.rs.PathParam;
 ----
 
 Add the following resource method to the `GreetResource` class:

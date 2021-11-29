@@ -25,13 +25,6 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.logging.Logger;
 
-import javax.json.Json;
-import javax.json.JsonObject;
-import javax.json.JsonReaderFactory;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.WebTarget;
-
 import io.helidon.common.Errors;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.http.FormParams;
@@ -52,6 +45,12 @@ import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientRequestBuilder;
 import io.helidon.webclient.security.WebClientSecurity;
 
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonReaderFactory;
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.ClientBuilder;
+import jakarta.ws.rs.client.WebTarget;
 import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 
 /**
@@ -1015,7 +1014,7 @@ public final class OidcConfig {
      * A fluent API {@link io.helidon.common.Builder} to build instances of {@link OidcConfig}.
      */
     @Configured(description = "Open ID Connect configuration")
-    public static class Builder implements io.helidon.common.Builder<OidcConfig> {
+    public static class Builder implements io.helidon.common.Builder<Builder, OidcConfig> {
         static final String DEFAULT_SERVER_TYPE = "@default";
 
         private final OidcCookieHandler.Builder tokenCookieBuilder = OidcCookieHandler.builder()

@@ -16,8 +16,6 @@
 
 package io.helidon.integrations.vault.secrets.cubbyhole;
 
-import javax.json.JsonObject;
-
 import io.helidon.common.reactive.Single;
 import io.helidon.integrations.common.rest.RestApi;
 import io.helidon.integrations.vault.ListSecrets;
@@ -25,6 +23,8 @@ import io.helidon.integrations.vault.Vault;
 import io.helidon.integrations.vault.VaultApiException;
 import io.helidon.integrations.vault.VaultOptionalResponse;
 import io.helidon.integrations.vault.VaultRestException;
+
+import jakarta.json.JsonObject;
 
 class CubbyholeSecretsRxImpl implements CubbyholeSecretsRx {
     private final RestApi restApi;

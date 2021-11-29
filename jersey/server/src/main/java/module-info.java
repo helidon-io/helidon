@@ -18,12 +18,12 @@
  * Jersey server.
  */
 module io.helidon.jersey.server {
-    requires transitive java.ws.rs;
+    requires transitive jakarta.ws.rs;
     requires transitive jersey.common;
     requires transitive jersey.server;
     requires transitive jersey.hk2;
 
-    requires transitive jakarta.inject.api;
+    requires transitive jakarta.inject;
     requires transitive jakarta.activation;
-    requires transitive java.annotation;
+    requires transitive jakarta.annotation;
 }

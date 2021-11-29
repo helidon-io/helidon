@@ -16,11 +16,11 @@
 
 package io.helidon.security.providers.config.vault;
 
-import javax.annotation.Priority;
-
 import io.helidon.config.Config;
 import io.helidon.security.spi.SecurityProvider;
 import io.helidon.security.spi.SecurityProviderService;
+
+import jakarta.annotation.Priority;
 
 /**
  * Java Service Loader implementation of a {@link io.helidon.security.Security} provider service.

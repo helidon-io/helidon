@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ module io.helidon.media.jsonb {
     requires io.helidon.common.reactive;
     requires io.helidon.config;
     requires io.helidon.media.common;
-    requires transitive java.json.bind;
+    requires transitive jakarta.json.bind;
 
     exports io.helidon.media.jsonb;
 

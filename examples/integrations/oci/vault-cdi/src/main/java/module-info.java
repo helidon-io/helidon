@@ -18,10 +18,10 @@
  * Example of OCI Vault integration in CDI.
  */
 module io.helidon.examples.integrations.oci.vault.cdi {
-    requires java.json.bind;
-    requires java.ws.rs;
+    requires jakarta.json.bind;
+    requires jakarta.ws.rs;
 
-    requires jakarta.inject.api;
+    requires jakarta.inject;
 
     requires microprofile.config.api;
 

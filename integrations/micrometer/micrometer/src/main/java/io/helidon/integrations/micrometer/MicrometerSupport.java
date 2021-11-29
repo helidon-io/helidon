@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 package io.helidon.integrations.micrometer;
 
@@ -120,8 +119,8 @@ public class MicrometerSupport extends HelidonRestServiceSupport {
     /**
      * Fluid builder for {@code MicrometerSupport} objects.
      */
-    public static class Builder extends HelidonRestServiceSupport.Builder<MicrometerSupport, Builder>
-            implements io.helidon.common.Builder<MicrometerSupport> {
+    public static class Builder extends HelidonRestServiceSupport.Builder<Builder, MicrometerSupport>
+            implements io.helidon.common.Builder<Builder, MicrometerSupport> {
 
         private Supplier<MeterRegistryFactory> meterRegistryFactorySupplier = null;
 

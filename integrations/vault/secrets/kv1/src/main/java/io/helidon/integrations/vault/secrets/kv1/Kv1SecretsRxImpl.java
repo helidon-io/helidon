@@ -16,14 +16,14 @@
 
 package io.helidon.integrations.vault.secrets.kv1;
 
-import javax.json.JsonObject;
-
 import io.helidon.common.reactive.Single;
 import io.helidon.integrations.common.rest.RestApi;
 import io.helidon.integrations.vault.ListSecrets;
 import io.helidon.integrations.vault.Vault;
 import io.helidon.integrations.vault.VaultApiException;
 import io.helidon.integrations.vault.VaultOptionalResponse;
+
+import jakarta.json.JsonObject;
 
 class Kv1SecretsRxImpl implements Kv1SecretsRx {
     private final RestApi restApi;

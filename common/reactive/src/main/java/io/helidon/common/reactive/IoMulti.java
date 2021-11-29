@@ -249,7 +249,7 @@ public interface IoMulti {
      * Fluent API builder for creating a {@link io.helidon.common.reactive.Multi} from a
      * {@link java.nio.channels.ReadableByteChannel}.
      */
-    final class MultiFromByteChannelBuilder implements Builder<Multi<ByteBuffer>> {
+    final class MultiFromByteChannelBuilder implements Builder<MultiFromByteChannelBuilder, Multi<ByteBuffer>> {
         private static final int DEFAULT_BUFFER_CAPACITY = 1024 * 8;
         private static final RetrySchema DEFAULT_RETRY_SCHEMA = RetrySchema.linear(0, 10, 250);
         private static final String THREAD_PREFIX = "multi-rbc-";
@@ -342,7 +342,7 @@ public interface IoMulti {
     /**
      * Fluent API builder for creating a subscriber consuming {@code Multi<ByteBuffer>} to {@link WritableByteChannel}.
      */
-    final class MultiToByteChannelBuilder implements Builder<Function<? super Multi<ByteBuffer>, ? extends Single<Void>>> {
+    final class MultiToByteChannelBuilder implements Builder<MultiToByteChannelBuilder, Function<? super Multi<ByteBuffer>, ? extends Single<Void>>> {
 
         private final WritableByteChannel writableByteChannel;
         private Executor executor;
@@ -385,7 +385,7 @@ public interface IoMulti {
      * Fluent API builder for creating a {@link io.helidon.common.reactive.Multi} from an
      * {@link java.io.InputStream}.
      */
-    final class MultiFromInputStreamBuilder implements Builder<Multi<ByteBuffer>> {
+    final class MultiFromInputStreamBuilder implements Builder<MultiFromInputStreamBuilder, Multi<ByteBuffer>> {
 
         private int bufferSize = 1024;
         private ExecutorService executor;
@@ -431,7 +431,7 @@ public interface IoMulti {
     /**
      * Fluent API builder for {@link io.helidon.common.reactive.OutputStreamMulti}.
      */
-    final class OutputStreamMultiBuilder implements Builder<OutputStreamMulti> {
+    final class OutputStreamMultiBuilder implements Builder<OutputStreamMultiBuilder, OutputStreamMulti> {
 
         private Duration timeout;
         private BiConsumer<Long, Long> consumer;

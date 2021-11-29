@@ -18,18 +18,17 @@ package io.helidon.integrations.datasource.ucp.cdi;
 import java.sql.Connection;
 import java.sql.SQLException;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.context.Initialized;
-import javax.enterprise.event.Observes;
-import javax.inject.Inject;
-import javax.inject.Named;
 import javax.sql.DataSource;
 
 import io.helidon.microprofile.server.Server;
 
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.Initialized;
+import jakarta.enterprise.event.Observes;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import oracle.ucp.jdbc.PoolDataSource;
 import oracle.ucp.jdbc.PoolDataSourceImpl;
-
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.jboss.weld.proxy.WeldClientProxy;
 import org.junit.jupiter.api.AfterEach;
@@ -40,7 +39,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ApplicationScoped
 class TestDataSourceAcquisition {

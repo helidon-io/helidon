@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +19,11 @@ package io.helidon.config;
 import java.util.Properties;
 import java.util.Set;
 
-import javax.annotation.Priority;
-
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigParserException;
+
+import jakarta.annotation.Priority;
 
 /**
  * {@link ConfigParser} implementation that parses Java Properties content.

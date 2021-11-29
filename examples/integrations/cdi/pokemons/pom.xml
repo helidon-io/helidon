@@ -167,6 +167,17 @@
                         </goals>
                     </execution>
                 </executions>
+                <dependencies>
+                    <dependency>
+                        <!--
+                         3.0.0-JAKARTA
+                         used by hibernate plugin
+                         -->
+                        <groupId>net.bytebuddy</groupId>
+                        <artifactId>byte-buddy</artifactId>
+                        <version>${version.lib.byte-buddy}</version>
+                    </dependency>
+                </dependencies>
             </plugin>
             <plugin>
                 <groupId>com.ethlo.persistence.tools</groupId>

@@ -105,7 +105,7 @@ class DiskSpaceHealthCheckTest {
         setDiskUsage(used);
         DiskSpaceHealthCheck check = new DiskSpaceHealthCheck(fileStore, THRESHOLD_PERCENT);
         HealthCheckResponse response = check.call();
-        assertThat(HealthCheckResponse.State.UP, is(response.getState()));
+        assertThat(HealthCheckResponse.Status.UP, is(response.getStatus()));
         assertThat(response.getData().isPresent(), is(true));
         // Another test will make sure DiskSpaceHealthCheck returns the right stuff, so skipping
         // the textual return values
@@ -120,7 +120,7 @@ class DiskSpaceHealthCheckTest {
         setDiskUsage(used);
         DiskSpaceHealthCheck check = new DiskSpaceHealthCheck(fileStore, THRESHOLD_PERCENT);
         HealthCheckResponse response = check.call();
-        assertThat(HealthCheckResponse.State.DOWN, is(response.getState()));
+        assertThat(HealthCheckResponse.Status.DOWN, is(response.getStatus()));
         assertThat(response.getData().isPresent(), is(true));
         // Another test will make sure DiskSpaceHealthCheck returns the right stuff, so skipping
         // the textual return values

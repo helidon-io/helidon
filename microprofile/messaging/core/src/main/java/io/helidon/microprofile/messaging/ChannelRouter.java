@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package io.helidon.microprofile.messaging;
@@ -23,15 +22,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import javax.enterprise.context.spi.CreationalContext;
-import javax.enterprise.inject.spi.AnnotatedMethod;
-import javax.enterprise.inject.spi.Bean;
-import javax.enterprise.inject.spi.BeanManager;
-import javax.enterprise.inject.spi.DeploymentException;
-
 import io.helidon.common.Errors;
 import io.helidon.config.Config;
 
+import jakarta.enterprise.context.spi.CreationalContext;
+import jakarta.enterprise.inject.spi.AnnotatedMethod;
+import jakarta.enterprise.inject.spi.Bean;
+import jakarta.enterprise.inject.spi.BeanManager;
+import jakarta.enterprise.inject.spi.DeploymentException;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;
@@ -59,7 +57,7 @@ class ChannelRouter {
     /**
      * Register bean reference with at least one annotated messaging method method.
      *
-     * @param bean {@link javax.enterprise.inject.spi.Bean} with messaging methods reference
+     * @param bean {@link jakarta.enterprise.inject.spi.Bean} with messaging methods reference
      * @see org.eclipse.microprofile.reactive.messaging.Incoming
      * @see org.eclipse.microprofile.reactive.messaging.Outgoing
      */
@@ -76,7 +74,7 @@ class ChannelRouter {
     /**
      * Connect all discovered channel graphs.
      *
-     * @param beanManager {@link javax.enterprise.inject.spi.BeanManager} for looking-up bean instances of discovered methods
+     * @param beanManager {@link jakarta.enterprise.inject.spi.BeanManager} for looking-up bean instances of discovered methods
      */
     void connect(BeanManager beanManager) {
         this.beanManager = beanManager;
@@ -93,7 +91,7 @@ class ChannelRouter {
     /**
      * Register messaging method.
      *
-     * @param m {@link javax.enterprise.inject.spi.AnnotatedMethod}
+     * @param m {@link jakarta.enterprise.inject.spi.AnnotatedMethod}
      *          with {@link org.eclipse.microprofile.reactive.messaging.Incoming @Incoming}
      *          or {@link org.eclipse.microprofile.reactive.messaging.Outgoing @Outgoing} annotation
      */
@@ -203,7 +201,7 @@ class ChannelRouter {
 
     @SuppressWarnings("unchecked")
     static <T> T lookup(Bean<?> bean, BeanManager beanManager) {
-        javax.enterprise.context.spi.Context context = beanManager.getContext(bean.getScope());
+        jakarta.enterprise.context.spi.Context context = beanManager.getContext(bean.getScope());
         Object instance = context.get(bean);
         if (instance == null) {
             CreationalContext<?> creationalContext = beanManager.createCreationalContext(bean);

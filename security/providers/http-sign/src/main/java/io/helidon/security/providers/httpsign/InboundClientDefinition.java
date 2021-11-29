@@ -147,7 +147,7 @@ public class InboundClientDefinition {
      * Fluent API builder to create a new instance of {@link InboundClientDefinition}.
      * Use {@link #build()} to create the instance.
      */
-    public static final class Builder implements io.helidon.common.Builder<InboundClientDefinition> {
+    public static final class Builder implements io.helidon.common.Builder<Builder, InboundClientDefinition> {
         private String keyId;
         private String algorithm;
         private KeyConfig keyConfig;

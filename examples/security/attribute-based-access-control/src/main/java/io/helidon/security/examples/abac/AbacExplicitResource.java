@@ -17,15 +17,6 @@ package io.helidon.security.examples.abac;
 
 import java.time.DayOfWeek;
 
-import javax.json.JsonString;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-
 import io.helidon.security.AuthorizationResponse;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.SubjectType;
@@ -34,6 +25,15 @@ import io.helidon.security.abac.scope.ScopeValidator;
 import io.helidon.security.abac.time.TimeValidator;
 import io.helidon.security.annotations.Authenticated;
 import io.helidon.security.annotations.Authorized;
+
+import jakarta.json.JsonString;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 
 /**
  * Explicit authorization resource - authorization must be called by programmer.

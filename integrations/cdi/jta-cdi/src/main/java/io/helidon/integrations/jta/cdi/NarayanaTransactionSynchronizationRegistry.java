@@ -15,11 +15,10 @@
  */
 package io.helidon.integrations.jta.cdi;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Vetoed;
-import javax.inject.Inject;
-
 import com.arjuna.ats.jta.common.JTAEnvironmentBean;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Vetoed;
+import jakarta.inject.Inject;
 
 /**
  * A {@link DelegatingTransactionSynchronizationRegistry} in

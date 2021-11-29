@@ -16,9 +16,8 @@
 
 package io.helidon.microprofile.metrics;
 
-import javax.enterprise.context.Dependent;
-import javax.enterprise.inject.Produces;
-
+import jakarta.enterprise.context.Dependent;
+import jakarta.enterprise.inject.Produces;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.annotation.Metric;
 
@@ -31,8 +30,9 @@ public class ProducerBean {
     @Produces
     @Metric(name = "counter1", absolute = true) final Counter counter1 = new LongCounter();
 
-    @Produces
-    @Metric(name = "counter2", absolute = true)
+    //@Produces
+    // TODO 3.0.0-JAKARTA
+    //@Metric(name = "counter2", absolute = true)
     public Counter getCounter() {
         LongCounter counter = new LongCounter();
         counter.inc();

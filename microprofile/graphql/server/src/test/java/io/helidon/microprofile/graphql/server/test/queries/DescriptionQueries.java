@@ -16,9 +16,9 @@
 
 package io.helidon.microprofile.graphql.server.test.queries;
 
-import javax.enterprise.context.ApplicationScoped;
-
 import io.helidon.microprofile.graphql.server.test.types.DescriptionType;
+
+import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.graphql.Description;
 import org.eclipse.microprofile.graphql.GraphQLApi;
 import org.eclipse.microprofile.graphql.Name;

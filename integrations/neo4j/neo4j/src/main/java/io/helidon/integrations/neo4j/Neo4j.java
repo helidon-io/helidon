@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package io.helidon.integrations.neo4j;
@@ -76,7 +75,7 @@ public final class Neo4j {
     /**
      * Fluent API builder for Neo4j.
      */
-    public static final class Builder implements io.helidon.common.Builder<Neo4j> {
+    public static final class Builder implements io.helidon.common.Builder<Builder, Neo4j> {
         private boolean encrypted;
         private boolean authenticationEnabled = true;
         private String username;

@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 
@@ -22,12 +21,12 @@
  */
 module io.helidon.servicecommon.restcdi {
 
-    requires jakarta.enterprise.cdi.api;
+    requires jakarta.cdi;
     requires io.helidon.servicecommon.rest;
     requires java.logging;
     requires microprofile.config.api;
     requires jakarta.interceptor.api;
-    requires jakarta.inject.api;
+    requires jakarta.inject;
     requires io.helidon.config.mp;
     requires io.helidon.microprofile.server;
 

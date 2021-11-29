@@ -16,12 +16,12 @@
 
 package io.helidon.integrations.vault.auths.approle;
 
-import javax.json.JsonObject;
-
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Single;
 import io.helidon.integrations.common.rest.RestApi;
 import io.helidon.integrations.vault.VaultOptionalResponse;
+
+import jakarta.json.JsonObject;
 
 class AppRoleAuthRxImpl implements AppRoleAuthRx {
     private final RestApi restApi;
