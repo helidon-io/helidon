@@ -20,8 +20,7 @@
 module io.helidon.microprofile.rsocket.client {
     requires java.logging;
 
-    requires static jakarta.enterprise.cdi.api;
-    requires static jakarta.inject.api;
+    requires static jakarta.inject;
 
     requires io.helidon.common.mapper;
     requires io.helidon.common.reactive;
@@ -34,6 +33,7 @@ module io.helidon.microprofile.rsocket.client {
     requires io.helidon.config;
     requires microprofile.config.api;
     requires io.helidon.config.mp;
+    requires jakarta.cdi;
 
     exports io.helidon.microprofile.rsocket.client;
 

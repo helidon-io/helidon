@@ -28,18 +28,18 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import javax.annotation.Priority;
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.context.Initialized;
-import javax.enterprise.context.spi.CreationalContext;
-import javax.enterprise.event.Observes;
-import javax.enterprise.inject.spi.AnnotatedMethod;
-import javax.enterprise.inject.spi.Bean;
-import javax.enterprise.inject.spi.BeanManager;
-import javax.enterprise.inject.spi.DeploymentException;
-import javax.enterprise.inject.spi.Extension;
-import javax.enterprise.inject.spi.ProcessAnnotatedType;
-import javax.enterprise.inject.spi.WithAnnotations;
+import jakarta.annotation.Priority;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.Initialized;
+import jakarta.enterprise.context.spi.CreationalContext;
+import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.spi.AnnotatedMethod;
+import jakarta.enterprise.inject.spi.Bean;
+import jakarta.enterprise.inject.spi.BeanManager;
+import jakarta.enterprise.inject.spi.DeploymentException;
+import jakarta.enterprise.inject.spi.Extension;
+import jakarta.enterprise.inject.spi.ProcessAnnotatedType;
+import jakarta.enterprise.inject.spi.WithAnnotations;
 
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
@@ -54,9 +54,7 @@ import io.helidon.webserver.tyrus.TyrusSupport;
 
 import io.rsocket.Payload;
 
-
-
-import static javax.interceptor.Interceptor.Priority.PLATFORM_AFTER;
+import static jakarta.interceptor.Interceptor.Priority.PLATFORM_AFTER;
 
 /**
  * Configure RSocket related things.
@@ -257,7 +255,7 @@ public class RSocketCdiExtension implements Extension {
 
     @SuppressWarnings("unchecked")
     private static <T> T lookup(Bean<?> bean, BeanManager beanManager) {
-        javax.enterprise.context.spi.Context context = beanManager.getContext(bean.getScope());
+        jakarta.enterprise.context.spi.Context context = beanManager.getContext(bean.getScope());
         Object instance = context.get(bean);
         if (instance == null) {
             CreationalContext<?> creationalContext = beanManager.createCreationalContext(bean);

@@ -27,9 +27,9 @@ module io.helidon.rsocket.health {
     requires io.helidon.common.reactive;
     requires io.helidon.common;
     requires io.helidon.config;
-    requires jakarta.enterprise.cdi.api;
     requires microprofile.health.api;
     requires io.helidon.rsocket.server;
+    requires jakarta.cdi;
 
 
     exports io.helidon.rsocket.health;

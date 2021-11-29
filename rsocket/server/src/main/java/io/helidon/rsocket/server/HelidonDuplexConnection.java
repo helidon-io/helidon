@@ -19,7 +19,6 @@ package io.helidon.rsocket.server;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 
-import javax.websocket.Session;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
@@ -28,6 +27,7 @@ import io.netty.buffer.UnpooledByteBufAllocator;
 import io.rsocket.DuplexConnection;
 import io.rsocket.RSocketErrorException;
 import io.rsocket.frame.ErrorFrameCodec;
+import jakarta.websocket.Session;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;

@@ -21,11 +21,6 @@ import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
 
-import javax.websocket.CloseReason;
-import javax.websocket.Endpoint;
-import javax.websocket.EndpointConfig;
-import javax.websocket.Session;
-import javax.websocket.server.ServerEndpointConfig;
 
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 
@@ -35,6 +30,11 @@ import io.rsocket.core.RSocketServer;
 import io.rsocket.plugins.DuplexConnectionInterceptor;
 import io.rsocket.plugins.RSocketInterceptor;
 import io.rsocket.transport.ServerTransport.ConnectionAcceptor;
+import jakarta.websocket.CloseReason;
+import jakarta.websocket.Endpoint;
+import jakarta.websocket.EndpointConfig;
+import jakarta.websocket.Session;
+import jakarta.websocket.server.ServerEndpointConfig;
 import reactor.core.publisher.Mono;
 
 

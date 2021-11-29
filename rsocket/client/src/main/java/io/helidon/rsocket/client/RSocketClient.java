@@ -268,7 +268,7 @@ public class RSocketClient implements Disposable {
     /**
      * Builder for RSocket Client.
      */
-    public static class Builder implements io.helidon.common.Builder<RSocketClient> {
+    public static class Builder implements io.helidon.common.Builder {
 
         private String route;
         private WellKnownAuthType authType = null;

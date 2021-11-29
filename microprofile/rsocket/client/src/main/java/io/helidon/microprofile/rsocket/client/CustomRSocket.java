@@ -16,11 +16,11 @@
 
 package io.helidon.microprofile.rsocket.client;
 
+import jakarta.inject.Qualifier;
+
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
-import javax.enterprise.util.Nonbinding;
-import javax.inject.Qualifier;
 
 
 /**
@@ -34,6 +34,5 @@ public @interface CustomRSocket {
      * Get prefix.
      * @return value.
      */
-    @Nonbinding
     String value() default "";
 }

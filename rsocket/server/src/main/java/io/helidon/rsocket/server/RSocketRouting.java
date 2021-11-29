@@ -93,7 +93,7 @@ public interface RSocketRouting {
     /**
      * Builder class for RSocket Routing.
      */
-    class Builder implements Rules, io.helidon.common.Builder<RSocketRouting> {
+    class Builder implements Rules, io.helidon.common.Builder {
 
         private final Map<String, RequestResponseHandler> requestResponseRoutes;
         private final Map<String, FireAndForgetHandler> fireAndForgetRoutes;

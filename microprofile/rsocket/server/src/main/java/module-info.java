@@ -22,8 +22,6 @@ import io.helidon.microprofile.rsocket.server.RSocketCdiExtension;
 module io.helidon.microprofile.rsocket.server {
     requires java.logging;
 
-    requires static jakarta.enterprise.cdi.api;
-    requires static jakarta.inject.api;
     requires static jakarta.activation;
 
     requires io.helidon.common.context;
@@ -41,5 +39,5 @@ module io.helidon.microprofile.rsocket.server {
 
     exports io.helidon.microprofile.rsocket.server;
 
-    provides javax.enterprise.inject.spi.Extension with RSocketCdiExtension;
+    provides jakarta.enterprise.inject.spi.Extension with RSocketCdiExtension;
 }

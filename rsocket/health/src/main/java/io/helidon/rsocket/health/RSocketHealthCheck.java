@@ -18,7 +18,7 @@ package io.helidon.rsocket.health;
 
 import java.util.Map;
 
-import javax.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.ApplicationScoped;
 
 import io.helidon.rsocket.server.RSocketEndpoint;
 

@@ -1,18 +1,19 @@
 package io.helidon.microprofile.rsocket.client;
 
+
+import jakarta.enterprise.context.ApplicationScoped;
+
 import java.lang.annotation.Annotation;
 import java.util.Set;
-
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.context.Dependent;
-import javax.enterprise.inject.Produces;
-import javax.enterprise.inject.spi.InjectionPoint;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
 import io.helidon.config.mp.MpConfig;
 import io.helidon.rsocket.client.RSocketClient;
 
+import jakarta.enterprise.context.Dependent;
+import jakarta.enterprise.inject.Produces;
+import jakarta.enterprise.inject.spi.InjectionPoint;
 import org.eclipse.microprofile.config.ConfigProvider;
 
 
