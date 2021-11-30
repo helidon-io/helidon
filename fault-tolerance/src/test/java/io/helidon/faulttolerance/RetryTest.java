@@ -294,37 +294,6 @@ class RetryTest {
         assertThat("Must be a RuntimeException", isRuntime.get(), is(true));
     }
 
-    public static ScheduledExecutorService EXECUTOR_SERVICE = Executors.newScheduledThreadPool(2);
-
-    @Test
-    void testCancellation() throws Exception {
-        Retry retry = Retry.builder()
-                .retryPolicy(Retry.JitterRetryPolicy.builder()
-                        .calls(100)
-                        .delay(Duration.ofSeconds(1))
-                        .jitter(Duration.ZERO).build())
-                .overallTimeout(Duration.ofSeconds(2000)).build();
-
-        Single<Void> single = retry.invoke(() ->
-                CompletableFuture.runAsync(() -> {
-                    try {
-                        System.out.println("Begin executing task");
-                        Thread.sleep(1000);
-                    } catch (Throwable e) {
-                        System.out.println("Task interrupted!");
-                        e.printStackTrace();
-                    }
-                    System.out.println("End executing task");
-                    throw new RuntimeException("Retry!");
-                }, EXECUTOR_SERVICE));
-
-        single.exceptionallyAccept(Throwable::printStackTrace);
-
-        Thread.sleep(2000);
-        System.out.println("Calling cancel()");
-        single.cancel();
-    }
-
     @Test
     void testRetryCancel() {
         AtomicBoolean cancelCalled = new AtomicBoolean();
