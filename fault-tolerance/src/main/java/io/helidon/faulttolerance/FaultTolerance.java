@@ -18,6 +18,8 @@ package io.helidon.faulttolerance;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
@@ -143,6 +145,32 @@ public final class FaultTolerance {
             return cause(throwable.getCause());
         }
         return throwable;
+    }
+
+    /**
+     * Establish a dependency between a source (stage) and a dependent (future). The
+     * dependent shall complete (normally or exceptionally) based on the source stage.
+     * The source stage shall be cancelled if the dependent is cancelled. The {@code
+     * mayInterruptIfRunning} flag is always set to {@code true} during cancellation.
+     *
+     * @param source the source stage
+     * @param dependent the dependent future
+     * @param <T> type of result
+     */
+    static <T> CompletableFuture<T> createDependency(CompletionStage<T> source, CompletableFuture<T> dependent) {
+        source.whenComplete((o, t) -> {
+            if (t != null) {
+                dependent.completeExceptionally(t);
+            } else {
+                dependent.complete(o);
+            }
+        });
+        dependent.whenComplete((o, t) -> {
+            if (t instanceof CancellationException) {
+                source.toCompletableFuture().cancel(true);
+            }
+        });
+        return dependent;
     }
 
     abstract static class BaseBuilder<B extends BaseBuilder<B>> {

@@ -326,7 +326,7 @@ class RetryTest {
     }
 
     @Test
-    void testSimpleCancel() {
+    void testRetryCancel() {
         AtomicBoolean cancelCalled = new AtomicBoolean();
         Retry retry = Retry.builder().build();
         Single<Void> single = retry.invoke(() ->

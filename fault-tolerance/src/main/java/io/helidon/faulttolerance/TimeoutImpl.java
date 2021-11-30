@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,8 @@ import java.util.function.Supplier;
 import io.helidon.common.LazyValue;
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
+
+import static io.helidon.faulttolerance.FaultTolerance.createDependency;
 
 class TimeoutImpl implements Timeout {
     private static final long MONITOR_THREAD_TIMEOUT = 100L;
@@ -98,13 +100,7 @@ class TimeoutImpl implements Timeout {
             // Run invocation in current thread
             Single<T> single = Single.create(supplier.get(), true);
             callReturned.set(true);
-            single.whenComplete((o, t) -> {
-                if (t != null) {
-                    future.completeExceptionally(t);
-                } else {
-                    future.complete(o);
-                }
-            });
+            createDependency(single, future);
 
             // Clear interrupted flag here -- required for uninterruptible busy loops
             Thread.interrupted();
