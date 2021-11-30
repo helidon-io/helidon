@@ -37,8 +37,6 @@ import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 
-import static io.helidon.webclient.WebClientRequestBuilderImpl.RECEIVED;
-import static io.helidon.webclient.WebClientRequestBuilderImpl.REQUEST;
 import static io.helidon.webclient.WebClientRequestBuilderImpl.REQUEST_ID;
 
 /**
@@ -53,7 +51,7 @@ class RequestContentSubscriber implements Flow.Subscriber<DataChunk> {
     private final CompletableFuture<WebClientResponse> responseFuture;
     private final CompletableFuture<WebClientServiceRequest> sent;
     private final DefaultHttpRequest request;
-    private final Channel channel;
+    private final NettyChannel channel;
     private final long requestId;
     private final boolean allowChunkedEncoding;
 
@@ -67,7 +65,7 @@ class RequestContentSubscriber implements Flow.Subscriber<DataChunk> {
                              CompletableFuture<WebClientServiceRequest> sent,
                              boolean allowChunkedEncoding) {
         this.request = request;
-        this.channel = channel;
+        this.channel = new NettyChannel(channel);
         this.responseFuture = responseFuture;
         this.sent = sent;
         this.requestId = channel.attr(REQUEST_ID).get();
@@ -113,7 +111,7 @@ class RequestContentSubscriber implements Flow.Subscriber<DataChunk> {
                                                          + Http.Header.CONNECTION + ": close, has to be set.");
                 }
             }
-            channel.writeAndFlush(request);
+            channel.write(true, request);
             sendData(firstDataChunk);
             firstDataChunk = null;
 
@@ -141,15 +139,14 @@ class RequestContentSubscriber implements Flow.Subscriber<DataChunk> {
             } else if (HttpUtil.getContentLength(request) == 0 && firstDataChunk != null) {
                 HttpUtil.setContentLength(request, firstDataChunk.remaining());
             }
-            channel.writeAndFlush(request);
+            channel.write(true, request);
             if (firstDataChunk != null) {
                 sendData(firstDataChunk);
             }
         }
-        WebClientRequestImpl clientRequest = channel.attr(REQUEST).get();
-        WebClientServiceRequest serviceRequest = clientRequest.configuration().clientServiceRequest();
+        WebClientServiceRequest serviceRequest = channel.serviceRequest();
         LOGGER.finest(() -> "(client reqID: " + requestId + ") Sending last http content");
-        channel.writeAndFlush(LAST_HTTP_CONTENT)
+        channel.write(true, LAST_HTTP_CONTENT, f -> f
                 .addListener(completeOnFailureListener("(client reqID: " + requestId + ") "
                                                                + "An exception occurred when writing last http content."))
                 .addListener(ChannelFutureListener.CLOSE_ON_FAILURE)
@@ -158,27 +155,27 @@ class RequestContentSubscriber implements Flow.Subscriber<DataChunk> {
                         sent.complete(serviceRequest);
                         LOGGER.finest(() -> "(client reqID: " + requestId + ") Request sent");
                     }
-                });
+                }));
     }
 
     private void sendData(DataChunk data) {
         LOGGER.finest(() -> "(client reqID: " + requestId + ") Sending data chunk");
         DefaultHttpContent httpContent = new DefaultHttpContent(Unpooled.wrappedBuffer(data.data()));
-        channel.writeAndFlush(httpContent)
+        channel.write(true, httpContent, f -> f
                 .addListener(future -> {
                     data.release();
                     subscription.request(1);
                     LOGGER.finest(() -> "(client reqID: " + requestId + ") Data chunk sent with result: " + future.isSuccess());
                 })
                 .addListener(completeOnFailureListener("(client reqID: " + requestId + ") Failure when sending a content!"))
-                .addListener(ChannelFutureListener.CLOSE_ON_FAILURE);
+                .addListener(ChannelFutureListener.CLOSE_ON_FAILURE));
     }
 
     private GenericFutureListener<Future<? super Void>> completeOnFailureListener(String message) {
         return future -> {
             if (!future.isSuccess()) {
                 Throwable cause = future.cause();
-                if (channel.attr(RECEIVED).get().isDone() || !channel.isActive()) {
+                if (channel.isConnectionReset()) {
                     completeRequestFuture(new IllegalStateException("(client reqID: " + requestId + ") "
                                                                             + "Connection reset by the host", cause));
                 } else {
