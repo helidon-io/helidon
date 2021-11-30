@@ -24,9 +24,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Flow;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -35,7 +33,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
-
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -299,7 +296,7 @@ class RetryTest {
         AtomicBoolean cancelCalled = new AtomicBoolean();
         Retry retry = Retry.builder().build();
         Single<Void> single = retry.invoke(() ->
-                new CompletableFuture<>() {
+                new CompletableFuture<Void>() {
                     @Override
                     public boolean cancel(boolean b) {
                         cancelCalled.set(true);
