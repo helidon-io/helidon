@@ -43,12 +43,6 @@ final class SingleOnErrorResumeWith<T> extends CompletionSingle<T> {
         source.subscribe(new OnErrorResumeWithSubscriber<>(subscriber, fallbackFunction));
     }
 
-    @Override
-    public Single<T> cancel() {
-        source.cancel();
-        return source.cancel();
-    }
-
     static final class OnErrorResumeWithSubscriber<T> extends DeferredScalarSubscription<T>
     implements Flow.Subscriber<T> {
 
