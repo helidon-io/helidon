@@ -72,7 +72,6 @@ public class GreetResource {
      *
      * @return {@link JsonObject}
      */
-    @SuppressWarnings("checkstyle:designforextension")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public JsonObject getDefaultMessage() {
@@ -85,7 +84,6 @@ public class GreetResource {
      * @param nick the nick to greet
      * @return {@link JsonObject}
      */
-    @SuppressWarnings("checkstyle:designforextension")
     @Path("/{nick}")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -115,7 +113,6 @@ public class GreetResource {
      *
      * @return {@link JsonObject}
      */
-    @SuppressWarnings("checkstyle:designforextension")
     @Path("/all")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -137,7 +134,7 @@ public class GreetResource {
                     .build();
         }
 
-        StringBuffer msg = new StringBuffer("The Persons are:");
+        StringBuilder msg = new StringBuilder("The Persons are:");
         //Looping through the Resultant list
         for (Person person : persons) {
             System.out.println(person.toString());

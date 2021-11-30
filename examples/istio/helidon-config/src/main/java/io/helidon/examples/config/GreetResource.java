@@ -57,7 +57,6 @@ public class GreetResource {
      *
      * @return {@link String}
      */
-    @SuppressWarnings("checkstyle:designforextension")
     @GET
     public String getMessage() {
         return this.message.get();
