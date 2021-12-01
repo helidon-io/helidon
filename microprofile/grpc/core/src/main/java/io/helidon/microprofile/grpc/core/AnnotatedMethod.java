@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
-import java.security.AccessController;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -395,7 +394,7 @@ public class AnnotatedMethod implements AnnotatedElement {
             return null;
         }
 
-        declaredMethod = AccessController.doPrivileged(ModelHelper.findMethodOnClassPA(declaringClass, declaredMethod));
+        declaredMethod = ModelHelper.findMethodOnClass(declaringClass, declaredMethod);
         if (declaredMethod == null) {
             return null;
         }
