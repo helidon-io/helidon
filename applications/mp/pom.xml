@@ -68,7 +68,7 @@
                         <dependency>
                             <groupId>jakarta.xml.bind</groupId>
                             <artifactId>jakarta.xml.bind-api</artifactId>
-                            <version>${version.lib.jakarta.jaxb-api}</version>
+                            <version>${version.lib.jakarta.xml.bind-api}</version>
                         </dependency>
                     </dependencies>
                     <configuration>

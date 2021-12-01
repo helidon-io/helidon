@@ -72,7 +72,6 @@
         <version.lib.jakarta.el-api>4.0.0</version.lib.jakarta.el-api>
         <version.lib.jakarta.inject>2.0.0</version.lib.jakarta.inject>
         <version.lib.jakarta.interceptor-api>2.0.0</version.lib.jakarta.interceptor-api>
-        <version.lib.jakarta.jaxb-api>3.0.1</version.lib.jakarta.jaxb-api>
         <version.lib.jakarta.jaxrs-api>3.0.0</version.lib.jakarta.jaxrs-api>
         <version.lib.jakarta.jms-api>3.0.0</version.lib.jakarta.jms-api>
         <version.lib.jakarta.jsonb-api>2.0.0</version.lib.jakarta.jsonb-api>
@@ -81,7 +80,7 @@
         <version.lib.jakarta.transaction-api>2.0.0</version.lib.jakarta.transaction-api>
         <version.lib.jakarta.validation-api>3.0.0</version.lib.jakarta.validation-api>
         <version.lib.jakarta.websockets-api>2.0.0</version.lib.jakarta.websockets-api>
-        <version.lib.jakarta.xml.bind-api>3.0.0</version.lib.jakarta.xml.bind-api>
+        <version.lib.jakarta.xml.bind-api>3.0.1</version.lib.jakarta.xml.bind-api>
         <version.lib.jandex>2.3.1.Final</version.lib.jandex>
         <version.lib.jaxb-core>3.0.2</version.lib.jaxb-core>
         <version.lib.jaxb-impl>3.0.2</version.lib.jaxb-impl>
@@ -271,7 +270,7 @@
             <dependency>
                 <groupId>jakarta.xml.bind</groupId>
                 <artifactId>jakarta.xml.bind-api</artifactId>
-                <version>${version.lib.jakarta.jaxb-api}</version>
+                <version>${version.lib.jakarta.xml.bind-api}</version>
             </dependency>
             <dependency>
                 <groupId>com.sun.xml.bind</groupId>
