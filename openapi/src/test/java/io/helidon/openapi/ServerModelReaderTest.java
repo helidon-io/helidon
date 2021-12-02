@@ -29,7 +29,6 @@ import jakarta.json.JsonStructure;
 import jakarta.json.JsonValue;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -40,12 +39,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Makes sure that the app-supplied model reader participates in constructing
  * the OpenAPI model.
  */
-@Disabled("3.0.0-JAKARTA")
 public class ServerModelReaderTest {
 
     private static final String SIMPLE_PROPS_PATH = "/openapi";
 
-    private static final OpenAPISupport.Builder OPENAPI_SUPPORT_BUILDER =
+    private static final OpenAPISupport.Builder<?> OPENAPI_SUPPORT_BUILDER =
         OpenAPISupport.builderSE()
                 .config(Config.create(ConfigSources.classpath("simple.properties")).get(OpenAPISupport.Builder.CONFIG_KEY));
 

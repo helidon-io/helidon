@@ -116,6 +116,22 @@ public class TestUtil {
         return actualMT;
     }
 
+    static MediaType connectAndConsumePayload(
+            int port, String path, String queryParameter, MediaType expectedMediaType) throws Exception {
+        HttpURLConnection cnx = getURLConnection(port, "GET", path, queryParameter);
+        MediaType actualMT = validateResponseMediaType(cnx, expectedMediaType);
+        if (actualMT.test(MediaType.APPLICATION_OPENAPI_YAML) || actualMT.test(MediaType.APPLICATION_YAML)) {
+            yamlFromResponse(cnx);
+        } else if (actualMT.test(MediaType.APPLICATION_OPENAPI_JSON)
+                || actualMT.test(MediaType.APPLICATION_JSON)) {
+            jsonFromResponse(cnx);
+        } else {
+            throw new IllegalArgumentException(
+                    "Expected either JSON or YAML response but received " + actualMT.toString());
+        }
+        return actualMT;
+    }
+
     /**
      * Returns the {@code MediaType} instance conforming to the HTTP response
      * content type.
@@ -293,6 +309,18 @@ public class TestUtil {
         return conn;
     }
 
+    static HttpURLConnection getURLConnection(
+            int port,
+            String method,
+            String path,
+            String queryParameter) throws Exception {
+        URL url = new URL("http://localhost:" + port + path + "?" + queryParameter);
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setRequestMethod(method);
+        System.out.println("Connectiong: " + method + " " + url);
+        return conn;
+    }
+
     /**
      * Stop the web server.
      *
@@ -322,7 +350,7 @@ public class TestUtil {
      */
     public static WebServer startServer(
             int port,
-            OpenAPISupport.Builder... openAPIBuilders) throws
+            OpenAPISupport.Builder<?>... openAPIBuilders) throws
             InterruptedException, ExecutionException, TimeoutException {
         WebServer result = WebServer.builder(Routing.builder()
                         .register(openAPIBuilders)
