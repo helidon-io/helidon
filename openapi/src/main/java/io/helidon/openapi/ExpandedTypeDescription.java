@@ -68,7 +68,7 @@ class ExpandedTypeDescription extends TypeDescription {
 
     private static final PropertyUtils PROPERTY_UTILS = new PropertyUtils();
 
-    private Class<?> impl;
+    private final Class<?> impl;
 
     /**
      * Factory method for ease of chaining other method invocations.
@@ -77,15 +77,25 @@ class ExpandedTypeDescription extends TypeDescription {
      * @param impl implementation class for the interface
      * @return resulting TypeDescription
      */
-    static ExpandedTypeDescription create(Class<? extends Object> clazz, Class<?> impl) {
+    static ExpandedTypeDescription create(Class<?> clazz, Class<?> impl) {
 
-        ExpandedTypeDescription result = clazz.equals(Schema.class)
-                ? new SchemaTypeDescription(clazz, impl) : new ExpandedTypeDescription(clazz, impl);
+        ExpandedTypeDescription result;
+        if (clazz.equals(Schema.class)) {
+            result = new SchemaTypeDescription(clazz, impl);
+        } else if (CustomConstructor.CHILD_MAP_TYPES.containsKey(clazz)) {
+            CustomConstructor.ChildMapType<?, ?> childMapType = CustomConstructor.CHILD_MAP_TYPES.get(clazz);
+            result = childMapType.typeDescriptionFactory().apply(impl);
+        } else if (CustomConstructor.CHILD_MAP_OF_LIST_TYPES.containsKey(clazz)) {
+            CustomConstructor.ChildMapListType<?, ?> childMapListType = CustomConstructor.CHILD_MAP_OF_LIST_TYPES.get(clazz);
+            result = childMapListType.typeDescriptionFunction().apply(impl);
+        } else {
+            result = new ExpandedTypeDescription(clazz, impl);
+        }
         result.setPropertyUtils(PROPERTY_UTILS);
         return result;
     }
 
-    private ExpandedTypeDescription(Class<? extends Object> clazz, Class<?> impl) {
+    private ExpandedTypeDescription(Class<?> clazz, Class<?> impl) {
         super(clazz, null, impl);
         this.impl = impl;
     }
@@ -260,13 +270,103 @@ class ExpandedTypeDescription extends TypeDescription {
             }
         }
 
-        private SchemaTypeDescription(Class<? extends Object> clazz, Class<?> impl) {
+        private SchemaTypeDescription(Class<?> clazz, Class<?> impl) {
             super(clazz, impl);
         }
 
         @Override
         public Property getProperty(String name) {
             return name.equals("additionalProperties") ? ADDL_PROPS_PROPERTY : super.getProperty(name);
+        }
+    }
+
+    /**
+     * Type description for parent/child model objects which resemble maps.
+     *
+     * @param <P> parent type
+     * @param <C> child type
+     */
+    static class MapLikeTypeDescription<P, C> extends ExpandedTypeDescription {
+
+        private final Class<P> parentType;
+        private final Class<C> childType;
+        private final CustomConstructor.ChildAdder<P, C> childAdder;
+
+        static <P, C> MapLikeTypeDescription<P, C> create(Class<P> parentType,
+                                                          Class<?> impl,
+                                                          Class<C> childType,
+                                                          CustomConstructor.ChildAdder<P, C> childAdder) {
+            return new MapLikeTypeDescription<>(parentType, impl, childType, childAdder);
+        }
+
+        MapLikeTypeDescription(Class<P> parentType,
+                               Class<?> impl,
+                               Class<C> childType,
+                               CustomConstructor.ChildAdder<P, C> childAdder) {
+            super(parentType, impl);
+            this.childType = childType;
+            this.parentType = parentType;
+            this.childAdder = childAdder;
+        }
+
+        @Override
+        public boolean setProperty(Object targetBean, String propertyName, Object value) throws Exception {
+            P parent = parentType.cast(targetBean);
+            C child = childType.cast(value);
+            childAdder.addChild(parent, propertyName, child);
+            return true;
+        }
+
+        protected Class<P> parentType() {
+            return parentType;
+        }
+
+        protected Class<C> childType() {
+            return childType;
+        }
+
+        protected CustomConstructor.ChildAdder<P, C> childAdder() {
+            return childAdder;
+        }
+    }
+
+    static class ListMapLikeTypeDescription<P, C> extends MapLikeTypeDescription<P, C> {
+
+        private final CustomConstructor.ChildNameAdder<P> childNameAdder;
+        private final CustomConstructor.ChildListAdder<P, C> childListAdder;
+
+        static <P, C> ListMapLikeTypeDescription<P, C> create(Class<P> parentType,
+                                                              Class<?> impl,
+                                                              Class<C> childType,
+                                                              CustomConstructor.ChildAdder<P, C> childAdder,
+                                                              CustomConstructor.ChildNameAdder<P> childNameAdder,
+                                                              CustomConstructor.ChildListAdder<P, C> childListAdder) {
+            return new ListMapLikeTypeDescription<>(parentType, impl, childType, childAdder, childNameAdder, childListAdder);
+        }
+
+        private ListMapLikeTypeDescription(Class<P> parentType,
+                                   Class<?> impl,
+                                   Class<C> childType,
+                                   CustomConstructor.ChildAdder<P, C> childAdder,
+                                   CustomConstructor.ChildNameAdder<P> childNameAdder,
+                                   CustomConstructor.ChildListAdder<P, C> childListAdder) {
+            super(parentType, impl, childType, childAdder);
+            this.childNameAdder = childNameAdder;
+            this.childListAdder = childListAdder;
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public boolean setProperty(Object targetBean, String propertyName, Object value) throws Exception {
+            P parent = parentType().cast(targetBean);
+            if (value == null) {
+                childNameAdder.addChild(parent, propertyName);
+            } else if (value instanceof List) {
+                childListAdder.addChildren(parent, propertyName, (List<C>) value);
+            } else {
+                childAdder().addChild(parent, propertyName, childType().cast(value));
+            }
+            return true;
         }
     }
 
