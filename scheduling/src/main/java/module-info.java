@@ -21,7 +21,7 @@ module io.helidon.scheduling {
     requires io.helidon.config;
     requires io.helidon.common.configurable;
     requires java.logging;
-    requires cron.utils;
+    requires com.cronutils;
 
     exports io.helidon.scheduling;
 }
