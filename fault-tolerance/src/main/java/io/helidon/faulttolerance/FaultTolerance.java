@@ -18,7 +18,6 @@ package io.helidon.faulttolerance;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
@@ -166,7 +165,7 @@ public final class FaultTolerance {
             }
         });
         dependent.whenComplete((o, t) -> {
-            if (t instanceof CancellationException) {
+            if (dependent.isCancelled()) {
                 source.toCompletableFuture().cancel(true);
             }
         });
