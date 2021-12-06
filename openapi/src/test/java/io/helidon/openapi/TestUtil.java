@@ -317,7 +317,6 @@ public class TestUtil {
         URL url = new URL("http://localhost:" + port + path + "?" + queryParameter);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestMethod(method);
-        System.out.println("Connectiong: " + method + " " + url);
         return conn;
     }
 
