@@ -33,7 +33,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
-
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -47,10 +46,10 @@ class RetryTest {
     void testRetry() {
         Retry retry = Retry.builder()
                 .retryPolicy(Retry.JitterRetryPolicy.builder()
-                                     .calls(3)
-                                     .delay(Duration.ofMillis(50))
-                                     .jitter(Duration.ofMillis(50))
-                                     .build())
+                        .calls(3)
+                        .delay(Duration.ofMillis(50))
+                        .jitter(Duration.ofMillis(50))
+                        .build())
                 .overallTimeout(Duration.ofMillis(500))
                 .build();
 
@@ -69,10 +68,10 @@ class RetryTest {
     void testRetryOn() {
         Retry retry = Retry.builder()
                 .retryPolicy(Retry.JitterRetryPolicy.builder()
-                                     .calls(3)
-                                     .delay(Duration.ofMillis(100))
-                                     .jitter(Duration.ofMillis(50))
-                                     .build())
+                        .calls(3)
+                        .delay(Duration.ofMillis(100))
+                        .jitter(Duration.ofMillis(50))
+                        .build())
                 .overallTimeout(Duration.ofMillis(500))
                 .addApplyOn(RetryException.class)
                 .build();
@@ -97,10 +96,10 @@ class RetryTest {
     void testAbortOn() {
         Retry retry = Retry.builder()
                 .retryPolicy(Retry.JitterRetryPolicy.builder()
-                                     .calls(3)
-                                     .delay(Duration.ofMillis(100))
-                                     .jitter(Duration.ofMillis(50))
-                                     .build())
+                        .calls(3)
+                        .delay(Duration.ofMillis(100))
+                        .jitter(Duration.ofMillis(50))
+                        .build())
                 .overallTimeout(Duration.ofMillis(50000))
                 .addSkipOn(TerminalException.class)
                 .build();
@@ -125,10 +124,10 @@ class RetryTest {
     void testTimeout() {
         Retry retry = Retry.builder()
                 .retryPolicy(Retry.JitterRetryPolicy.builder()
-                                     .calls(3)
-                                     .delay(Duration.ofMillis(100))
-                                     .jitter(Duration.ZERO)
-                                     .build())
+                        .calls(3)
+                        .delay(Duration.ofMillis(100))
+                        .jitter(Duration.ZERO)
+                        .build())
                 .overallTimeout(Duration.ofMillis(50))
                 .build();
 
@@ -290,6 +289,22 @@ class RetryTest {
 
         assertThat("Must be a TimeoutException", isTimeout.get(), is(true));
         assertThat("Must be a RuntimeException", isRuntime.get(), is(true));
+    }
+
+    @Test
+    void testRetryCancel() {
+        AtomicBoolean cancelCalled = new AtomicBoolean();
+        Retry retry = Retry.builder().build();
+        Single<Void> single = retry.invoke(() ->
+                new CompletableFuture<Void>() {
+                    @Override
+                    public boolean cancel(boolean b) {
+                        cancelCalled.set(true);
+                        return super.cancel(b);
+                    }
+                });
+        single.cancel();
+        assertThat("Cancel must be called", cancelCalled.get(), is(true));
     }
 
     private static class TestSubscriber implements Flow.Subscriber<Integer> {
