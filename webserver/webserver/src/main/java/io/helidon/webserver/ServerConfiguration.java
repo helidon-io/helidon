@@ -798,7 +798,7 @@ public interface ServerConfiguration extends SocketConfiguration {
 
         @Override
         public Builder enableCompression(boolean value) {
-            this.defaultSocketBuilder.enableCompression(true);
+            this.defaultSocketBuilder.enableCompression(value);
             return this;
         }
     }
