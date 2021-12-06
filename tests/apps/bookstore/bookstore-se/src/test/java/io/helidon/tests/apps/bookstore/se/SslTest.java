@@ -39,7 +39,7 @@ public class SslTest {
 
     @BeforeAll
     public static void startServer() throws Exception {
-        webServer = TestServer.start(true, false);
+        webServer = TestServer.start(true, false, false);
         client = TestServer.newOkHttpClient(true);
     }
 
