@@ -29,10 +29,11 @@ This document describes how to use the Helidon health check API with Kubernetes.
 Probes is the term used by Kubernetes to describe health checks for containers
  (link:{kubernetes-probes-url}[Kubernetes documentation]).
 
-There are two types of probes:
+There are three types of probes:
 
 * `liveness`: Indicates whether the container is running
 * `readiness`: Indicates whether the container is ready to service requests
+* `startup`: Indicates whether the applicaiton in the container has started
 
 You can implement probes using the following mechanisms:
 
@@ -42,6 +43,8 @@ You can implement probes using the following mechanisms:
 
 A microservice exposed to HTTP traffic will typically implement both the
  liveness probe and the readiness probe using HTTP requests.
+If the microservice takes a significant time to initialize itself, you can also define a startup probe, in which case
+Kubernetes does not check liveness or readiness probes until the startup probe returns success.
 
 You can configure several parameters for probes. The following are the most
  relevant parameters:
@@ -98,6 +101,12 @@ We recommend the following:
 * Be aggressive when checking local dependencies.
 * Set `failureThreshold` according to `periodSeconds` in order to accommodate
  temporary errors.
+
+=== Startup probe
+
+The startup probe prevents Kubernetes from prematurely checking the other probes if the application takes a long time to start.
+Otherwise, Kubernetes might misinterpret a failed liveness or readiness probe and shut down the container when, in fact, the application is still coming up.
+
 
 == Troubleshooting probes
 

@@ -74,7 +74,7 @@ A typical health check combines the statuses of all the dependencies that
 | Java functional interface representing the logic of a single health check
 
 | `org.eclipse.microprofile.health.HealthCheckResponse`
-| Result of a health check invocation that contains a state and a description.
+| Result of a health check invocation that contains a status and a description.
 
 | `org.eclipse.microprofile.health.HealthCheckResponseBuilder`
 | Builder class to create `HealthCheckResponse` instances
@@ -116,7 +116,7 @@ HealthCheck hc = this::exampleHealthCheck;
 `HealthSupport` is a WebServer service that contains a collection of
  registered `HealthCheck` instances. When queried, it invokes the registered
  health check and returns a response with a status code representing the overall
- state of the application.
+ status of the application.
 
 [cols="1,5",role="flex, sm7"]
 .Health status codes
@@ -162,12 +162,11 @@ TIP: Balance collecting a lot of information with the need to avoid overloading
 .JSON response:
 ----
 {
-    "outcome": "UP",
     "status": "UP",
     "checks": [
         {
             "name": "exampleHealthCheck",
-            "state": "UP",
+            "status": "UP",
             "data": {
                 "time": 1546958376613
             }
@@ -244,16 +243,15 @@ Accessing the Helidon-provided `/health` endpoint reports the health of your app
 .JSON response.
 ----
 {
-    "outcome": "UP",
     "status": "UP",
     "checks": [
         {
             "name": "deadlock",
-            "state": "UP"
+            "status": "UP"
         },
         {
             "name": "diskSpace",
-            "state": "UP",
+            "status": "UP",
             "data": {
                 "free": "211.00 GB",
                 "freeBytes": 226563444736,
@@ -264,7 +262,7 @@ Accessing the Helidon-provided `/health` endpoint reports the health of your app
         },
         {
             "name": "heapMemory",
-            "state": "UP",
+            "status": "UP",
             "data": {
                 "free": "215.15 MB",
                 "freeBytes": 225600496,
@@ -282,11 +280,3 @@ Accessing the Helidon-provided `/health` endpoint reports the health of your app
 
 
 
-=== Strict JSON Output
-
-The JSON responses shown above contain properties `"status"` and `"outcome"` with the same
-values. Helidon reports both of these to maintain backward compatibility with older
-versions of MicroProfile Health. This behavior can be disabled by setting
-the property `health.backward-compatible` to `false`, in which case only `"status"`
-is reported. Future versions of Helidon will drop support for older versions of Health,
-so it is recommended to rely on `"status"` instead of `"outcome"` in your applications.

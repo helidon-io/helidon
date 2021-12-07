@@ -61,9 +61,9 @@ implement health checks as part of your microservice that are specific to your s
 
 == Concepts
 
-=== Liveness and Readiness Checks
+=== Liveness, Readiness, and Startup Checks
 
-MicroProfile Health supports two types of health checks:
+MicroProfile Health supports three types of health checks:
 
 _Liveness_ checks report whether the runtime environment in which the service is running
 is sufficient to support the work the service performs.
@@ -77,17 +77,17 @@ _Readiness_ checks report whether the service is _currently_ capable of performi
 A service that reports `DOWN` for its readiness cannot _at the moment_ do its job, but at
 some future point it might become able to do so without requiring a restart.
 
-The following table describes more about these two types of health checks, including how an orchestrator
+_Startup_ checks indicate whether the service has started to the point where liveness and readiness checks even make sense.
+ A service reporting `DOWN` for a startup check is still initializing itself and normally will report `UP`, assuming it has started successfully.
+
+The following table describes more about these types of health checks, including how an orchestrator
 such as Kubernetes might react.
 
 === Known Health Check Endpoints
 A MicroProfile-compliant service reports its health via known REST endpoints. Helidon MP
 provides these endpoints automatically as part of every MP microservice.
 
-External management tools (or `curl` or browsers) retrieve liveness via `/health/live` and
-readiness via `/health/ready`.
-
-The following table summarizes the two types of health checks in MicroProfile Health.
+External management tools (or `curl` or browsers) retrieve health checks using the REST endpoints in he following table which summarizes the types of health checks in MicroProfile Health.
 
 .Types of Health Checks
 |===
@@ -103,6 +103,11 @@ The following table summarizes the two types of health checks in MicroProfile He
 |`/health/ready`
 |Diverts requests away from the instance; periodically rechecks readiness and resumes traffic once the
 microservice reports itself as ready.
+
+|startup
+|whether the microservice has initialized to the point where liveness and readiness checks might pass
+|`/health/started`
+|Treats the instance as still starting up; does not check liveness or readiness until the startup [robe reports success or times out according to its configuration.
 |===
 
 === Built-in and Custom Health Checks
@@ -110,19 +115,19 @@ microservice reports itself as ready.
 ==== Built-in Health Checks
 Helidon provides built-in, default checks for each endpoint.
 The built-in liveness checks include various environmental values, such as whether the JVM has detected deadlocks
-or whether there is sufficient heap space. The built-in readiness check always reports `UP`.
+or whether there is sufficient heap space. The built-in readiness and startup checks always report `UP`.
 
 You can see all the defaults by accessing any Helidon MP microservice's `/health/live` endpoint
 and viewing the response.
 
 ==== Custom Health Checks
-Add your own liveness or readiness checks by adding a Java class for each check.
-Each custom check must implement the `HealthCheck` interface, and you add either the `@Liveness` or
-the `@Readiness` annotation to the class.
+Add your own liveness, readiness, or startup checks by adding a Java class for each check.
+Each custom check must implement the `HealthCheck` interface, and you add either the `@Liveness`, `@Startup`, or
+ `@Readiness` annotation to the class.
 
 === Next Steps
 Add custom health checks to your own microservices.
 
 The
 <<mp/guides/04_health.adoc, Helidon MP Health Check Guide>> shows how to create a
-sample project and add custom liveness and readiness health checks.
+sample project and add custom health checks.
