@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,8 @@ import io.helidon.common.LazyValue;
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.MultiTappedPublisher;
 import io.helidon.common.reactive.Single;
+
+import static io.helidon.faulttolerance.FaultTolerance.createDependency;
 
 interface DelayedTask<T> {
     // the result completes when the call fully completes (regardless of errors)
@@ -115,20 +117,10 @@ interface DelayedTask<T> {
                 } catch (Exception e) {
                     result = CompletableFuture.failedStage(e);
                 }
+
                 CompletableFuture<T> future = resultFuture.get();
-
-                result.handle((it, throwable) -> {
-                    if (throwable == null) {
-                        future.complete(it);
-                    } else {
-                        future.completeExceptionally(throwable);
-                    }
-
-                    return null;
-                });
-
-                return result.thenRun(() -> {
-                });
+                createDependency(result, future);
+                return result.thenRun(() -> {});
             }
 
             @Override
