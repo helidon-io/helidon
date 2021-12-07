@@ -17,7 +17,6 @@
 package io.helidon.health;
 
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -29,6 +28,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -79,10 +79,10 @@ public final class HealthSupport implements Service {
     private final List<HealthCheck> allChecks = new LinkedList<>();
     private final List<HealthCheck> livenessChecks = new LinkedList<>();
     private final List<HealthCheck> readinessChecks = new LinkedList<>();
+    private final List<HealthCheck> startupChecks = new LinkedList<>();
     private final boolean includeAll;
     private final Set<String> includedHealthChecks;
     private final Set<String> excludedHealthChecks;
-    private final boolean backwardCompatible;
     private final CorsEnabledServiceHelper corsEnabledServiceHelper;
     private final MessageBodyWriter<JsonStructure> jsonpWriter = JsonpSupport.writer();
     private final Timeout timeout;
@@ -91,24 +91,13 @@ public final class HealthSupport implements Service {
     private HealthSupport(Builder builder) {
         this.enabled = builder.enabled;
         this.webContext = builder.webContext;
-        this.backwardCompatible = builder.backwardCompatible;
         corsEnabledServiceHelper = CorsEnabledServiceHelper.create(SERVICE_NAME, builder.crossOriginConfig);
 
         if (enabled) {
-            builder.allChecks
-                    .stream()
-                    .filter(health -> !builder.excludedClasses.contains(health.getClass()))
-                    .forEach(allChecks::add);
-
-            builder.readinessChecks
-                    .stream()
-                    .filter(health -> !builder.excludedClasses.contains(health.getClass()))
-                    .forEach(readinessChecks::add);
-
-            builder.livenessChecks
-                    .stream()
-                    .filter(health -> !builder.excludedClasses.contains(health.getClass()))
-                    .forEach(livenessChecks::add);
+            collectNonexcludedChecks(builder, builder.allChecks, allChecks::add);
+            collectNonexcludedChecks(builder, builder.readinessChecks, readinessChecks::add);
+            collectNonexcludedChecks(builder, builder.livenessChecks, livenessChecks::add);
+            collectNonexcludedChecks(builder, builder.startupChecks, startupChecks::add);
 
             this.includedHealthChecks = new HashSet<>(builder.includedHealthChecks);
             this.excludedHealthChecks = new HashSet<>(builder.excludedHealthChecks);
@@ -134,7 +123,14 @@ public final class HealthSupport implements Service {
         rules.any(webContext, corsEnabledServiceHelper.processor())
                 .get(webContext, this::callAll)
                 .get(webContext + "/live", this::callLiveness)
-                .get(webContext + "/ready", this::callReadiness);
+                .get(webContext + "/ready", this::callReadiness)
+                .get(webContext + "/started", this::callStartup);
+    }
+
+    private static void collectNonexcludedChecks(Builder builder, List<HealthCheck> checks, Consumer<HealthCheck> adder) {
+        checks.stream()
+               .filter(health -> !builder.excludedClasses.contains(health.getClass()))
+               .forEach(adder);
     }
 
     private void callAll(ServerRequest req, ServerResponse res) {
@@ -147,6 +143,10 @@ public final class HealthSupport implements Service {
 
     private void callReadiness(ServerRequest req, ServerResponse res) {
         invoke(res, readinessChecks);
+    }
+
+    private void callStartup(ServerRequest req, ServerResponse res) {
+        invoke(res, startupChecks);
     }
 
     void invoke(ServerResponse res, List<HealthCheck> healthChecks) {
@@ -175,36 +175,32 @@ public final class HealthSupport implements Service {
                 .sorted(Comparator.comparing(HcResponse::name))
                 .collect(Collectors.toList());
 
-        Status state = responses.stream()
-                .map(HcResponse::state)
+        Status status = responses.stream()
+                .map(HcResponse::status)
                 .filter(Status.DOWN::equals)
                 .findFirst()
                 .orElse(Status.UP);
 
-        Http.ResponseStatus status = responses.stream()
+        Http.ResponseStatus httpStatus = responses.stream()
                 .filter(HcResponse::internalError)
                 .findFirst()
                 .map(it -> Http.Status.INTERNAL_SERVER_ERROR_500)
-                .orElse((state == Status.UP) ? Http.Status.OK_200 : Http.Status.SERVICE_UNAVAILABLE_503);
+                .orElse((status == Status.UP) ? Http.Status.OK_200 : Http.Status.SERVICE_UNAVAILABLE_503);
 
-        JsonObject json = toJson(state, responses);
-        return new HealthResponse(status, json);
+        JsonObject json = toJson(status, responses);
+        return new HealthResponse(httpStatus, json);
     }
 
-    private JsonObject toJson(Status state, List<HcResponse> responses) {
+    private JsonObject toJson(Status status, List<HcResponse> responses) {
         final JsonObjectBuilder jsonBuilder = JSON.createObjectBuilder();
-        if (backwardCompatible) {
-            jsonBuilder.add("outcome", state.toString());
-        }
-        jsonBuilder.add("status", state.toString());
+        jsonBuilder.add("status", status.toString());
 
         final JsonArrayBuilder checkArrayBuilder = JSON.createArrayBuilder();
 
         for (HcResponse r : responses) {
             JsonObjectBuilder checkBuilder = JSON.createObjectBuilder();
             checkBuilder.add("name", r.name());
-            checkBuilder.add("state", r.state().toString());
-            checkBuilder.add("status", r.state().toString());
+            checkBuilder.add("status", r.status().toString());
             Optional<Map<String, Object>> data = r.data();
             data.ifPresent(m -> checkBuilder.add("data", JSON.createObjectBuilder(m)));
 
@@ -280,13 +276,13 @@ public final class HealthSupport implements Service {
         private final List<HealthCheck> allChecks = new LinkedList<>();
         private final List<HealthCheck> livenessChecks = new LinkedList<>();
         private final List<HealthCheck> readinessChecks = new LinkedList<>();
+        private final List<HealthCheck> startupChecks = new LinkedList<>();
 
         private final Set<Class<?>> excludedClasses = new HashSet<>();
         private final Set<String> includedHealthChecks = new HashSet<>();
         private final Set<String> excludedHealthChecks = new HashSet<>();
         private String webContext = DEFAULT_WEB_CONTEXT;
         private boolean enabled = true;
-        private boolean backwardCompatible = true;
         private CrossOriginConfig crossOriginConfig;
         private long timeoutMillis = DEFAULT_TIMEOUT_MILLIS;
 
@@ -310,24 +306,6 @@ public final class HealthSupport implements Service {
             } else {
                 this.webContext = "/" + path;
             }
-            return this;
-        }
-
-        /**
-         * Add a health check (or healthchecks) to the list.
-         * All health checks would get invoked when this endpoint is called (even when
-         * the result is excluded).
-         *
-         * @param healthChecks health check(s) to add
-         * @return updated builder instance
-         * @deprecated use {@link #addReadiness(org.eclipse.microprofile.health.HealthCheck...)} or
-         *  {@link #addLiveness(org.eclipse.microprofile.health.HealthCheck...)} instead.
-         *  This method is needed until the microprofile specification removes support for generic HealthChecks (which are
-         *      already deprecated).
-         */
-        @Deprecated
-        public Builder add(HealthCheck... healthChecks) {
-            this.allChecks.addAll(Arrays.asList(healthChecks));
             return this;
         }
 
@@ -397,7 +375,6 @@ public final class HealthSupport implements Service {
             config.get("include").asList(String.class).ifPresent(list -> list.forEach(this::addIncluded));
             config.get("exclude").asList(String.class).ifPresent(list -> list.forEach(this::addExcluded));
             config.get("exclude-classes").asList(Class.class).ifPresent(list -> list.forEach(this::addExcludedClass));
-            config.get("backward-compatible").asBoolean().ifPresent(this::backwardCompatible);
             config.get("timeout-millis").asLong().ifPresent(this::timeoutMillis);
             config.get(CORS_CONFIG_KEY)
                     .as(CrossOriginConfig::create)
@@ -480,6 +457,28 @@ public final class HealthSupport implements Service {
         }
 
         /**
+         * Add start-up health check(s).
+         *
+         * @param healthChecks health checks to add
+         * @return updated builder instance
+         */
+        public Builder addStartup(HealthCheck... healthChecks) {
+            return addStartup(List.of(healthChecks));
+        }
+
+        /**
+         * Add start-up health check(s).
+         *
+         * @param healthChecks health checks to add
+         * @return updated builder instance
+         */
+        public Builder addStartup(Collection<HealthCheck> healthChecks) {
+            this.allChecks.addAll(healthChecks);
+            this.startupChecks.addAll(healthChecks);
+            return this;
+        }
+
+        /**
          * HealthSupport can be disabled by invoking this method.
          *
          * @param enabled whether to enable the health support (defaults to {@code true})
@@ -487,18 +486,6 @@ public final class HealthSupport implements Service {
          */
         public Builder enabled(boolean enabled) {
             this.enabled = enabled;
-            return this;
-        }
-
-        /**
-         * Backward compatibility flag to produce Health 1.X compatible JSON output
-         * (including "outcome" property).
-         *
-         * @param enabled whether to enable backward compatible mode (defaults to {@code true})
-         * @return updated builder instance
-         */
-        public Builder backwardCompatible(boolean enabled) {
-            this.backwardCompatible = enabled;
             return this;
         }
 
@@ -532,7 +519,7 @@ public final class HealthSupport implements Service {
             return hcr.getName();
         }
 
-        Status state() {
+        Status status() {
             return hcr.getStatus();
         }
 
