@@ -22,7 +22,6 @@ import io.helidon.health.checks.HealthChecks;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 
-import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
 
 /**
