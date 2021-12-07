@@ -33,13 +33,15 @@ import org.yaml.snakeyaml.introspector.PropertySubstitute;
 import org.yaml.snakeyaml.introspector.PropertyUtils;
 import org.yaml.snakeyaml.nodes.Node;
 import org.yaml.snakeyaml.nodes.ScalarNode;
+import org.yaml.snakeyaml.nodes.Tag;
 
 /**
  * Extension of {@link TypeDescription} that handles:
  * <ul>
  *     <li>nested enums,</li>
- *     <li>extensible types, and</li>
- *     <li>references.</li>
+ *     <li>extensible types,</li>
+ *     <li>references, and</li>
+ *     <li>additional properties (which can be either Boolean or Schema).</li>
  * </ul>
  * <p>
  *     The OpenAPI document format uses lower-case enum names and values, while the SmallRye
@@ -59,6 +61,14 @@ import org.yaml.snakeyaml.nodes.ScalarNode;
  *     description simplifies defining the {@code $ref} property to those types that support it.
  * </p>
  * <p>
+ *     In schemas, the {@code additionalProperties} value can be either a boolean or a schema. The MicroProfile
+ *     {@link org.eclipse.microprofile.openapi.models.media.Schema} type exposes {@code getAdditionalPropertiesBoolean},
+ *     {@code setAdditionalPropertiesBoolean}, {@code getAdditionalPropertiesSchema}, and {@code setAdditionalPropertiesSchema}
+ *     methods. We do not know until runtime and the value is available for each {@code additionalProperties} instance which
+ *     type (Boolean or Schema) to use, so we cannot just prepare a smart SnakeYAML {@code Property} implementation. Instead
+ *     we augment the schema-specific {@code TypeDescription} so it knows how to decide, at runtime, what to do.
+ * </p>
+ * <p>
  *     We use this expanded version of {@code TypeDescription} with the generated SnakeYAMLParserHelper class.
  * </p>
  */
@@ -66,7 +76,7 @@ class ExpandedTypeDescription extends TypeDescription {
 
     private static final String EXTENSION_PROPERTY_PREFIX = "x-";
 
-    private static final PropertyUtils PROPERTY_UTILS = new PropertyUtils();
+    static final PropertyUtils PROPERTY_UTILS = new PropertyUtils();
 
     private final Class<?> impl;
 
@@ -230,10 +240,11 @@ class ExpandedTypeDescription extends TypeDescription {
      * Specific type description for {@code Schema}.
      * <p>
      *     The {@code Schema} node allows the {@code additionalProperties} subnode to be either
-     *     {@code Boolean} or another {@code Schema}. This type description provides a customized
-     *     property description for {@code additionalProperties} that infers which variant a
-     *     specific node in the document actually uses and then processes it accordingly.
+     *     {@code Boolean} or another {@code Schema}, and the {@code Schema} class exposes getters and setters for
+     *     {@code additionalPropertiesBoolean}, and {@code additionalPropertiesSchema}.
+     *     This type description customizes the handling of {@code additionalProperties} to account for all that.
      * </p>
+     * @see io.helidon.openapi.Serializer (specifically doRepresentJavaBeanProperty) for output handling for additionalProperties
      */
     static final class SchemaTypeDescription extends ExpandedTypeDescription {
 
@@ -261,22 +272,51 @@ class ExpandedTypeDescription extends TypeDescription {
                 };
 
         private static PropertyDescriptor preparePropertyDescriptor() {
+            /*
+             * The PropertyDescriptor here is just a placeholder. We will not know until we are mapping a node in the model
+             * whether the additionalProperties is a boolean or a Schema. That is handled explicitly in setProperty below.
+             */
             try {
                 return new PropertyDescriptor("additionalProperties",
-                        Schema.class.getMethod("getAdditionalPropertiesSchema"),
-                        Schema.class.getMethod("setAdditionalPropertiesSchema", Schema.class));
+                                              Schema.class.getMethod("getAdditionalPropertiesSchema"),
+                                              Schema.class.getMethod("setAdditionalPropertiesSchema", Schema.class));
             } catch (IntrospectionException | NoSuchMethodException e) {
                 throw new RuntimeException(e);
             }
         }
 
-        private SchemaTypeDescription(Class<?> clazz, Class<?> impl) {
-            super(clazz, impl);
+        @Override
+        public boolean setupPropertyType(String key, Node valueNode) {
+            if (key.equals("additionalProperties")) {
+                valueNode.setType(valueNode.getTag().equals(Tag.BOOL) ? Boolean.class : Schema.class);
+                return true;
+            }
+            return super.setupPropertyType(key, valueNode);
         }
 
         @Override
         public Property getProperty(String name) {
             return name.equals("additionalProperties") ? ADDL_PROPS_PROPERTY : super.getProperty(name);
+        }
+
+        @Override
+        public boolean setProperty(Object targetBean, String propertyName, Object value) throws Exception {
+            if (!(targetBean instanceof Schema schema) || !propertyName.equals("additionalProperties")) {
+                return super.setProperty(targetBean, propertyName, value);
+            }
+            if (value instanceof Boolean) {
+                schema.setAdditionalPropertiesBoolean((Boolean) value);
+            } else if (value instanceof Schema) {
+                schema.setAdditionalPropertiesSchema((Schema) value);
+            } else {
+                throw new IllegalArgumentException("Expected additionalProperties as Boolean or Schema but was "
+                                                           + value.getClass().getName());
+            }
+            return true;
+        }
+
+        private SchemaTypeDescription(Class<?> clazz, Class<?> impl) {
+            super(clazz, impl);
         }
     }
 
