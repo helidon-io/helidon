@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,6 +41,7 @@ import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.Liveness;
 import org.eclipse.microprofile.health.Readiness;
+import org.eclipse.microprofile.health.Startup;
 
 import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 
@@ -96,10 +97,16 @@ public class HealthCdiExtension implements Extension {
                 .filter(hc -> !builtInHealthChecks.contains(hc))
                 .forEach(builder::addReadiness);
 
+        cdi.select(HealthCheck.class, Startup.Literal.INSTANCE)
+                .stream()
+                .filter(hc -> !builtInHealthChecks.contains(hc))
+                .forEach(builder::addStartup);
+
         HelidonServiceLoader.create(ServiceLoader.load(HealthCheckProvider.class))
                 .forEach(healthCheckProvider -> {
                     healthCheckProvider.livenessChecks().forEach(builder::addLiveness);
                     healthCheckProvider.readinessChecks().forEach(builder::addReadiness);
+                    healthCheckProvider.startupChecks().forEach(builder::addStartup);
                 });
 
         RoutingBuilders.create(helidonConfig)
