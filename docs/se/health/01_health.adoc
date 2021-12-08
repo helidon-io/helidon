@@ -19,7 +19,7 @@
 = Health Checks
 :h1Prefix: SE
 :description: Helidon health checks
-:keywords: helidon, health-checks, health, check
+:keywords: helidon, health checks, health, check
 :javadoc-base-url-api: {javadoc-base-url}io.helidon.health.checks/io/helidon/health/checks
 :feature-name: Health Checks
 :common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
@@ -175,7 +175,7 @@ TIP: Balance collecting a lot of information with the need to avoid overloading
 }
 ----
 
-=== Built-in health-checks
+=== Built-in health checks
 
 You can use Helidon-provided health checks to report various
  common health check statuses:

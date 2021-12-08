@@ -146,7 +146,7 @@ public class HealthMpServiceIT {
     }
 
     /**
-     * A Test {@link HealthCheck} bean for start-up that should be discovered
+     * A Test {@link HealthCheck} bean for startup that should be discovered
      * by CDI and added to the health check endpoint.
      */
     @Startup
@@ -206,7 +206,7 @@ public class HealthMpServiceIT {
 
     /**
      * A test {@link HealthCheckProvider} bean that should be discovered
-     * by the service loader and its provided start-up {@link HealthCheck}s added
+     * by the service loader and its provided startup {@link HealthCheck}s added
      * to the health check endpoint.
      */
     public static class HealthCheckProviderThree

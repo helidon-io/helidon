@@ -31,9 +31,9 @@ Probes is the term used by Kubernetes to describe health checks for containers
 
 There are three types of probes:
 
-* `liveness`: Indicates whether the container is running
-* `readiness`: Indicates whether the container is ready to service requests
-* `startup`: Indicates whether the applicaiton in the container has started
+* _liveness_: Indicates whether the container is running
+* _readiness_: Indicates whether the container is ready to service requests
+* _startup_: Indicates whether the application in the container has started
 
 You can implement probes using the following mechanisms:
 

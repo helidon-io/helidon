@@ -18,8 +18,8 @@
 
 = Helidon MP Health Check Guide
 :h1Prefix: MP
-:description: Helidon health-checks
-:keywords: helidon, health-checks, health, check
+:description: Helidon health checks
+:keywords: helidon, health checks, health, check
 :common-page-prefix-inc: ../../shared/common_prereqs/common_prereqs.adoc
 
 This guide describes how to create a sample MicroProfile (MP) project
@@ -191,7 +191,7 @@ import org.eclipse.microprofile.health.Readiness;
 @Readiness // <2>
 @ApplicationScoped
 public class GreetReadinessCheck implements HealthCheck {
-  private AtomicLong readyTime = new AtomicLong(0);
+  private final AtomicLong readyTime = new AtomicLong(0);
 
 
   @Override
@@ -204,7 +204,7 @@ public class GreetReadinessCheck implements HealthCheck {
 
   public void onStartUp(
       @Observes @Initialized(ApplicationScoped.class) Object init) {
-    readyTime = new AtomicLong(System.currentTimeMillis()); // <4>
+    readyTime.set(System.currentTimeMillis()); // <4>
   }
 
   /**
@@ -218,9 +218,9 @@ public class GreetReadinessCheck implements HealthCheck {
 }
 ----
 <1> Include additional imports.
-<2> Annotation indicating that this is a readiness health-check.
+<2> Annotation indicating that this is a readiness health check.
 <3> Build the `HealthCheckResponse` with status `UP` after five seconds, else `DOWN`.
-<4> Initialize the time at startup.
+<4> Record the time at startup.
 
 
 [source,bash]
@@ -301,20 +301,20 @@ import org.eclipse.microprofile.health.Started;
 @Started // <2>
 @ApplicationScoped
 public class GreetStartedCheck implements HealthCheck {
-  private AtomicLong readyTime = new AtomicLong(0);
+  private final AtomicLong readyTime = new AtomicLong(0);
 
 
   @Override
   public HealthCheckResponse call() {
     return HealthCheckResponse.named("StartedCheck")  // <3>
-        .status(isReady())
+        .status(isStarted())
         .withData("time", readyTime.get())
         .build();
   }
 
   public void onStartUp(
       @Observes @Initialized(ApplicationScoped.class) Object init) {
-    readyTime = new AtomicLong(System.currentTimeMillis()); // <4>
+    readyTime.set(System.currentTimeMillis()); // <4>
   }
 
   /**
@@ -328,9 +328,9 @@ public class GreetStartedCheck implements HealthCheck {
 }
 ----
 <1> Include additional imports.
-<2> Annotation indicating that this is a startup health-check.
+<2> Annotation indicating that this is a startup health check.
 <3> Build the `HealthCheckResponse` with status `UP` after eight seconds, else `DOWN`.
-<4> Initialize the time at startup of Helidon; the application will declare itself as started eight seconds later.
+<4> Record the time at startup of Helidon; the application will declare itself as started eight seconds later.
 
 
 [source,bash]
@@ -650,6 +650,6 @@ This guide demonstrated how to use health checks in a Helidon MP application as 
 
 Refer to the following references for additional information:
 
-* MicroProfile health-check specification at https://github.com/eclipse/microprofile-health/releases/tag/2.0
-* MicroProfile health-check Javadoc at https://javadoc.io/doc/org.eclipse.microprofile.health/microprofile-health-api/2.0
+* MicroProfile health check specification at https://github.com/eclipse/microprofile-health/releases/tag/2.0
+* MicroProfile health check Javadoc at https://javadoc.io/doc/org.eclipse.microprofile.health/microprofile-health-api/2.0
 * Helidon Javadoc at https://helidon.io/docs/latest/apidocs/index.html?overview-summary.html

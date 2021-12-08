@@ -87,7 +87,7 @@ such as Kubernetes might react.
 A MicroProfile-compliant service reports its health via known REST endpoints. Helidon MP
 provides these endpoints automatically as part of every MP microservice.
 
-External management tools (or `curl` or browsers) retrieve health checks using the REST endpoints in he following table which summarizes the types of health checks in MicroProfile Health.
+External management tools (or `curl` or browsers) retrieve health checks using the REST endpoints in the following table which summarizes the types of health checks in MicroProfile Health.
 
 .Types of Health Checks
 |===
@@ -107,7 +107,7 @@ microservice reports itself as ready.
 |startup
 |whether the microservice has initialized to the point where liveness and readiness checks might pass
 |`/health/started`
-|Treats the instance as still starting up; does not check liveness or readiness until the startup [robe reports success or times out according to its configuration.
+|Treats the instance as still starting up; does not check liveness or readiness until the startup probe reports success or times out according to its configuration.
 |===
 
 === Built-in and Custom Health Checks
@@ -122,8 +122,8 @@ and viewing the response.
 
 ==== Custom Health Checks
 Add your own liveness, readiness, or startup checks by adding a Java class for each check.
-Each custom check must implement the `HealthCheck` interface, and you add either the `@Liveness`, `@Startup`, or
- `@Readiness` annotation to the class.
+Each custom check must implement the `HealthCheck` interface, and you add either the `@Liveness`,
+ `@Readiness`, or `@Startup` annotation to the class.
 
 === Next Steps
 Add custom health checks to your own microservices.
