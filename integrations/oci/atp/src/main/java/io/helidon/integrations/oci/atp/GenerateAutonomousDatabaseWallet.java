@@ -16,20 +16,18 @@
 
 package io.helidon.integrations.oci.atp;
 
+import io.helidon.integrations.oci.connect.OciRequestBase;
+import io.helidon.integrations.oci.connect.OciResponseParser;
+import oracle.security.pki.OraclePKIProvider;
+
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
-
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManagerFactory;
-
-import io.helidon.integrations.oci.connect.OciRequestBase;
-import io.helidon.integrations.oci.connect.OciResponseParser;
-
-import oracle.security.pki.OraclePKIProvider;
 
 /**
  * GenerateAutonomousDatabaseWallet request and response.
