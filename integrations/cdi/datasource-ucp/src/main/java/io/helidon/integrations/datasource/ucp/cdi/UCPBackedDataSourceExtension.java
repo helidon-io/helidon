@@ -15,9 +15,16 @@
  */
 package io.helidon.integrations.datasource.ucp.cdi;
 
-import io.helidon.integrations.datasource.cdi.AbstractDataSourceExtension;
-import oracle.ucp.jdbc.PoolDataSource;
-import oracle.ucp.jdbc.PoolDataSourceImpl;
+import java.beans.BeanInfo;
+import java.beans.IntrospectionException;
+import java.beans.Introspector;
+import java.beans.PropertyDescriptor;
+import java.lang.reflect.Method;
+import java.sql.SQLException;
+import java.util.Properties;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Event;
@@ -29,16 +36,11 @@ import javax.enterprise.util.TypeLiteral;
 import javax.inject.Named;
 import javax.net.ssl.SSLContext;
 import javax.sql.DataSource;
-import java.beans.BeanInfo;
-import java.beans.IntrospectionException;
-import java.beans.Introspector;
-import java.beans.PropertyDescriptor;
-import java.lang.reflect.Method;
-import java.sql.SQLException;
-import java.util.Properties;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+
+import io.helidon.integrations.datasource.cdi.AbstractDataSourceExtension;
+
+import oracle.ucp.jdbc.PoolDataSource;
+import oracle.ucp.jdbc.PoolDataSourceImpl;
 
 /**
  * An {@link Extension} that arranges for named {@link DataSource}
