@@ -47,14 +47,14 @@ public class AtpResource {
 
     private final OciAutonomousDb autonomousDb;
     private final PoolDataSource atpDataSource;
-    private final String atpServiceName;
+    private final String atpTnsNetServiceName;
 
     @Inject
     AtpResource(OciAutonomousDb autonomousDb, @Named("atp") PoolDataSource atpDataSource,
-                @ConfigProperty(name = "oracle.ucp.jdbc.PoolDataSource.atp.serviceName") String atpServiceName) {
+                @ConfigProperty(name = "oracle.ucp.jdbc.PoolDataSource.atp.tnsNetServiceName") String atpTnsNetServiceName) {
         this.autonomousDb = autonomousDb;
         this.atpDataSource = Objects.requireNonNull(atpDataSource);
-        this.atpServiceName = atpServiceName;
+        this.atpTnsNetServiceName = atpTnsNetServiceName;
     }
 
     /**
@@ -78,7 +78,7 @@ public class AtpResource {
         String returnEntity = null;
         try {
             this.atpDataSource.setSSLContext(walletArchive.getSSLContext());
-            this.atpDataSource.setURL(walletArchive.getJdbcUrl(this.atpServiceName));
+            this.atpDataSource.setURL(walletArchive.getJdbcUrl(this.atpTnsNetServiceName));
             try(
                 Connection connection = this.atpDataSource.getConnection();
                 PreparedStatement ps = connection.prepareStatement("SELECT 'Hello world!!' FROM DUAL");

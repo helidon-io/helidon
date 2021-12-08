@@ -24,7 +24,7 @@ server:
 db:
   userName: "${atp.db.userName}"
   password: "${atp.db.password}"
-  serviceName: "${atp.db.serviceName}"
+  tnsNetServiceName: "${atp.db.tnsNetServiceName}"
 
 oci:
   atp:

@@ -73,9 +73,9 @@ class AtpService implements Service {
         PoolDataSource pds = PoolDataSourceFactory.getPoolDataSource();
         try {
             pds.setSSLContext(walletArchive.getSSLContext());
-            pds.setURL(walletArchive.getJdbcUrl(config.get("db.serviceName")
+            pds.setURL(walletArchive.getJdbcUrl(config.get("db.tnsNetServiceName")
                     .as(String.class)
-                    .orElseThrow(() -> new IllegalStateException("Missing serviceName!!"))));
+                    .orElseThrow(() -> new IllegalStateException("Missing tnsNetServiceName!!"))));
             pds.setUser(config.get("db.userName").as(String.class).orElse("ADMIN"));
             pds.setPassword(config.get("db.password")
                     .as(String.class)
