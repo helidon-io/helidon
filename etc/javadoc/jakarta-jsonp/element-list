@@ -1,3 +1,4 @@
+module:jakarta.json
 jakarta.json
 jakarta.json.spi
 jakarta.json.stream
