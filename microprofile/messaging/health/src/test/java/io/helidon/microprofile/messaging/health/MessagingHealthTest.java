@@ -53,12 +53,10 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * Tests for messaging health:
  * <pre>{@code
  * {
- *     "outcome": "UP",
  *     "status": "UP",
  *     "checks": [
  *         {
  *             "name": "messaging",
- *             "state": "UP",
  *             "status": "UP",
  *             "data": {
  *                 "test-channel-1": "UP",
@@ -150,7 +148,7 @@ public class MessagingHealthTest {
 
     private void assertMessagingHealth(HealthCheckResponse.Status rootState, Map<String, HealthCheckResponse.Status> channels) {
         JsonObject messaging = getHealthCheck("messaging");
-        assertThat(messaging.getString("state"), equalTo(rootState.name()));
+        assertThat(messaging.getString("status"), equalTo(rootState.name()));
         JsonObject data = messaging.getJsonObject("data");
         channels.forEach((name, state) -> assertThat(data.getString(name), equalTo(state.name())));
     }
