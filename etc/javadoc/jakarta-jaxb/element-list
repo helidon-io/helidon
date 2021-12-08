@@ -1,3 +1,4 @@
+module:jakarta.xml.bind
 jakarta.xml.bind
 jakarta.xml.bind.annotation
 jakarta.xml.bind.annotation.adapters
