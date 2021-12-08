@@ -15,16 +15,9 @@
  */
 package io.helidon.integrations.datasource.ucp.cdi;
 
-import java.beans.BeanInfo;
-import java.beans.IntrospectionException;
-import java.beans.Introspector;
-import java.beans.PropertyDescriptor;
-import java.lang.reflect.Method;
-import java.sql.SQLException;
-import java.util.Properties;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import io.helidon.integrations.datasource.cdi.AbstractDataSourceExtension;
+import oracle.ucp.jdbc.PoolDataSource;
+import oracle.ucp.jdbc.PoolDataSourceImpl;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Event;
@@ -36,11 +29,16 @@ import javax.enterprise.util.TypeLiteral;
 import javax.inject.Named;
 import javax.net.ssl.SSLContext;
 import javax.sql.DataSource;
-
-import io.helidon.integrations.datasource.cdi.AbstractDataSourceExtension;
-
-import oracle.ucp.jdbc.PoolDataSource;
-import oracle.ucp.jdbc.PoolDataSourceImpl;
+import java.beans.BeanInfo;
+import java.beans.IntrospectionException;
+import java.beans.Introspector;
+import java.beans.PropertyDescriptor;
+import java.lang.reflect.Method;
+import java.sql.SQLException;
+import java.util.Properties;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * An {@link Extension} that arranges for named {@link DataSource}
@@ -223,6 +221,10 @@ public class UCPBackedDataSourceExtension extends AbstractDataSourceExtension {
             }
             final Object serviceName = connectionFactoryProperties.remove("serviceName");
             final Object pdbRoles = connectionFactoryProperties.remove("pdbRoles");
+            // Used for OCI ATP Integration
+            // Removing this so that it is not set on connectionFactoryProperties,
+            // Else we get exception with getConnection using this DS, if its set.
+            connectionFactoryProperties.remove("tnsNetServiceName");
             if (!connectionFactoryProperties.stringPropertyNames().isEmpty()) {
                 // We found some String-typed properties that are
                 // destined for the underlying connection factory to

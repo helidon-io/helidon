@@ -64,19 +64,19 @@ REST endpoint to work with OCI Autonomous Transaction Processing:
 public class AtpResource {
     private final OciAutonomousDb autonomousDb;
     private final PoolDataSource atpDataSource;
-    private final String atpServiceName;
+    private final String atpTnsNetServiceName;
 
     @Inject
     AtpResource(OciAutonomousDb autonomousDb, <1>
                 @Named("atp") PoolDataSource atpDataSource,
-                @ConfigProperty(name = "oracle.ucp.jdbc.PoolDataSource.atp.serviceName") String atpServiceName) { <2>
+                @ConfigProperty(name = "oracle.ucp.jdbc.PoolDataSource.atp.tnsNetServiceName") String atpTnsNetServiceName) { <2>
         this.autonomousDb = autonomousDb;
         this.atpDataSource = Objects.requireNonNull(atpDataSource);
-        this.atpServiceName = atpServiceName;
+        this.atpTnsNetServiceName = atpTnsNetServiceName;
     }
 ----
 <1> `OciAutonomousDb` is configured and injected automatically
-<2> ATP ServiceName is read from the properties
+<2> ATP ServiceName is read from config. This is `netServiceName` of your database instance running inside OCI ATP as can be found in `tnsnames.ora` file.
 
 Additionally, in `microprofile-config.properties` OCI properties should be specified:
 
@@ -123,7 +123,7 @@ To generate wallet file for OCI Autonomous Transaction Processing:
         String returnEntity = null;
         try {
             this.atpDataSource.setSSLContext(walletArchive.getSSLContext()); <3>
-            this.atpDataSource.setURL(walletArchive.getJdbcUrl(this.atpServiceName)); <3>
+            this.atpDataSource.setURL(walletArchive.getJdbcUrl(this.atpTnsNetServiceName)); <3>
             try(
                 Connection connection = this.atpDataSource.getConnection();
                 PreparedStatement ps = connection.prepareStatement("SELECT 'Hello world!!' FROM DUAL");

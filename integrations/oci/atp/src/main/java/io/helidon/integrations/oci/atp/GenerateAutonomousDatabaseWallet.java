@@ -16,20 +16,18 @@
 
 package io.helidon.integrations.oci.atp;
 
+import io.helidon.integrations.oci.connect.OciRequestBase;
+import io.helidon.integrations.oci.connect.OciResponseParser;
+import oracle.security.pki.OraclePKIProvider;
+
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
-
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManagerFactory;
-
-import io.helidon.integrations.oci.connect.OciRequestBase;
-import io.helidon.integrations.oci.connect.OciResponseParser;
-
-import oracle.security.pki.OraclePKIProvider;
 
 /**
  * GenerateAutonomousDatabaseWallet request and response.
@@ -148,17 +146,17 @@ public final class GenerateAutonomousDatabaseWallet {
         /**
          * Returns JDBC URL with connection description for the given service based on tnsnames.ora in wallet.
          *
-         * @param serviceName
+         * @param tnsNetServiceName
          * @return String
          */
-        public String getJdbcUrl(String serviceName) throws IllegalStateException {
+        public String getJdbcUrl(String tnsNetServiceName) throws IllegalStateException {
             String jdbcUrl = null;
             try (ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(content))) {
                 ZipEntry entry = null;
                 while ((entry = zis.getNextEntry()) != null) {
                     if (entry.getName().equals("tnsnames.ora")) {
                         jdbcUrl = new String(zis.readAllBytes(), StandardCharsets.UTF_8)
-                                .replaceFirst(serviceName + "_high\\s+=\\s+", "jdbc:oracle:thin:@")
+                                .replaceFirst(tnsNetServiceName + "\\s+=\\s+", "jdbc:oracle:thin:@")
                                 .replaceAll("\\n[^\\n]+", "");
                     }
                     zis.closeEntry();

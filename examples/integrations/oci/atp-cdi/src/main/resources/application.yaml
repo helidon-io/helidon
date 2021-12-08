@@ -27,7 +27,7 @@ oracle:
       PoolDataSource:
         atp:
           connectionFactoryClassName: oracle.jdbc.pool.OracleDataSource
-          serviceName: "${atp.db.serviceName}"
+          tnsNetServiceName: "${atp.db.tnsNetServiceName}"
           user: "${atp.db.user}"
           password: "${atp.db.password}"
 
