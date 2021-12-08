@@ -1,0 +1,3 @@
+org.eclipse.microprofile.lra
+org.eclipse.microprofile.lra.annotation
+org.eclipse.microprofile.lra.annotation.ws.rs
