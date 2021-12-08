@@ -16,6 +16,8 @@
 
 /**
  * Microprofile OIDC integration.
+ *
+ * @see org.eclipse.microprofile.auth
  */
 module io.helidon.microprofile.oidc {
     requires java.logging;

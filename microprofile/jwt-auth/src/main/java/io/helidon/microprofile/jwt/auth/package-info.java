@@ -16,5 +16,8 @@
 
 /**
  * Implementation of Microprofile JWT Auth specification.
+ *
+ * @see org.eclipse.microprofile.jwt
+ * @see org.eclipse.microprofile.auth
  */
 package io.helidon.microprofile.jwt.auth;

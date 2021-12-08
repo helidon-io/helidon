@@ -15,5 +15,8 @@
  */
 /**
  * MicroProfile Reactive Messaging Health check.
+ *
+ * @see org.eclipse.microprofile.reactive.messaging
+ * @see org.eclipse.microprofile.health
  */
 package io.helidon.microprofile.messaging.health;

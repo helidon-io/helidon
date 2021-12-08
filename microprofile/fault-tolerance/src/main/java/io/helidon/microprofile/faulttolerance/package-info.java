@@ -16,5 +16,7 @@
 
 /**
  * Helidon implementation of Microprofile fault tolerance.
+ *
+ * @see org.eclipse.microprofile.faulttolerance
  */
 package io.helidon.microprofile.faulttolerance;

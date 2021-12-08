@@ -16,5 +16,8 @@
 
 /**
  * Integration of Helidon security with Microprofile server.
+ *
+ * @see org.eclipse.microprofile.jwt
+ * @see org.eclipse.microprofile.auth
  */
 package io.helidon.microprofile.security;

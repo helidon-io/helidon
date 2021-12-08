@@ -15,5 +15,7 @@
  */
 /**
  * CDI extension for Helidon MP.
+ *
+ * @see jakarta.enterprise.context
  */
 package io.helidon.microprofile.cdi;

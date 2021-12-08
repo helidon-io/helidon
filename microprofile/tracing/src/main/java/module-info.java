@@ -16,6 +16,8 @@
 
 /**
  * Eclipse Microprofile Tracing implementation for helidon microprofile.
+ *
+ * @see org.eclipse.microprofile.opentracing
  */
 module io.helidon.microprofile.tracing {
     requires java.logging;

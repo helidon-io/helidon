@@ -16,6 +16,8 @@
 
 /**
  * Microprofile health module.
+ *
+ * @see org.eclipse.microprofile.health
  */
 module io.helidon.microprofile.health {
     requires java.logging;

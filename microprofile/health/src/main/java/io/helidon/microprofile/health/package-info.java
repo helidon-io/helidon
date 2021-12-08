@@ -16,5 +16,7 @@
 
 /**
  * Implements the JAX-RS and CDI support for microprofile.
+ *
+ * @see org.eclipse.microprofile.health
  */
 package io.helidon.microprofile.health;

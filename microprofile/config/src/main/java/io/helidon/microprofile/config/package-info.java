@@ -16,5 +16,7 @@
 
 /**
  * Helidon implementation of microprofile config for CDI.
+ *
+ * @see org.eclipse.microprofile.config
  */
 package io.helidon.microprofile.config;
