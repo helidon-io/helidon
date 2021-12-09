@@ -68,10 +68,6 @@ public final class MPOpenAPIBuilder extends OpenAPISupport.Builder<MPOpenAPIBuil
 
     private Config mpConfig;
 
-    protected MPOpenAPIBuilder() {
-        super(MPOpenAPIBuilder.class);
-    }
-
     @Override
     public OpenApiConfig openAPIConfig() {
         return openAPIConfig;
