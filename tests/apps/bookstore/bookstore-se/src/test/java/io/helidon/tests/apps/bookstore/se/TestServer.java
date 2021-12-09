@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,9 @@
 
 package io.helidon.tests.apps.bookstore.se;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -27,12 +30,7 @@ import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
-
 import io.helidon.webserver.WebServer;
-
 import okhttp3.Interceptor;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -60,8 +58,8 @@ class TestServer {
         }
     };
 
-    static WebServer start(boolean ssl, boolean http2) throws Exception {
-        WebServer webServer = Main.startServer(ssl, http2);
+    static WebServer start(boolean ssl, boolean http2, boolean compression) throws Exception {
+        WebServer webServer = Main.startServer(ssl, http2, compression);
 
         long timeout = 2000; // 2 seconds should be enough to start the server
         long now = System.currentTimeMillis();
@@ -101,8 +99,15 @@ class TestServer {
     }
 
     static Request.Builder newRequestBuilder(WebServer webServer, String path, boolean ssl) throws Exception {
+        return newRequestBuilder(webServer, path, ssl, false);
+    }
+
+    static Request.Builder newRequestBuilder(WebServer webServer, String path, boolean ssl, boolean compression)
+            throws Exception {
         URL url = new URL((ssl ? "https" : "http") + "://localhost:" + webServer.port() + path);
-        return new Request.Builder().url(url);
+        Request.Builder builder = new Request.Builder().url(url);
+        builder.addHeader("Accept-Encoding", compression ? "gzip" : "none");
+        return builder;
     }
 
     static class LoggingInterceptor implements Interceptor {

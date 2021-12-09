@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -496,7 +496,9 @@ public final class HealthSupport implements Service {
          *
          * @param enabled whether to enable backward compatible mode (defaults to {@code true})
          * @return updated builder instance
+         * @deprecated rely on the current output format
          */
+        @Deprecated
         public Builder backwardCompatible(boolean enabled) {
             this.backwardCompatible = enabled;
             return this;
