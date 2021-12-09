@@ -19,14 +19,15 @@ package io.helidon.webserver;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.function.Function;
 
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelId;
 import io.netty.util.concurrent.Future;
 
 /**
- * Wrapper for {@link io.netty.channel.ChannelHandlerContext} guarding all writes to be made exclusively from event loop thread.
+ * Wrapper for {@link io.netty.channel.Channel} guarding all writes to be made exclusively from event loop thread.
  *
  * <ul>
  * <b>Netty can provide "ordering" in the one of the following situations exclusively:</b>
@@ -40,10 +41,11 @@ import io.netty.util.concurrent.Future;
  * >https://github.com/netty/netty/issues/3887#issuecomment-112540327</a>
  */
 class NettyChannel {
-    private final ChannelHandlerContext ctx;
+    private final Channel channel;
+    private CompletionStage<ChannelFuture> writeFuture = CompletableFuture.completedFuture(null);
 
-    NettyChannel(ChannelHandlerContext ctx) {
-        this.ctx = ctx;
+    NettyChannel(Channel channel) {
+        this.channel = channel;
     }
 
     /**
@@ -52,7 +54,7 @@ class NettyChannel {
      * @return globally unique identifier
      */
     ChannelId id() {
-        return ctx.channel().id();
+        return channel.id();
     }
 
     /**
@@ -64,18 +66,21 @@ class NettyChannel {
      * method called of the next ChannelOutboundHandler contained in the ChannelPipeline of the Channel.
      */
     void read() {
-        ctx.read();
+        channel.read();
     }
 
     /**
      * Request to flush all pending messages via this ChannelOutboundInvoker from Netty's event loop thread.
      */
     void flush() {
-        if (ctx.executor().inEventLoop()) {
-            ctx.flush();
-        } else {
-            ctx.executor().execute(ctx::flush);
-        }
+        writeFuture = writeFuture.thenApply(f -> {
+            if (channel.eventLoop().inEventLoop()) {
+                channel.flush();
+            } else {
+                channel.eventLoop().execute(channel::flush);
+            }
+            return f;
+        });
     }
 
     /**
@@ -83,28 +88,36 @@ class NettyChannel {
      *
      * @param flush flush immediately
      * @param msg   message to write
-     * @return CompletionStage completed when request is made from event loop thread, containing future of actual write
+     * @param listeners function for accessing channel future of the netty write
      */
-    CompletionStage<ChannelFuture> write(boolean flush, Object msg) {
+    void write(boolean flush, Object msg, Function<ChannelFuture, ChannelFuture> listeners) {
+        // Ordered writes
+        writeFuture = writeFuture.thenCompose(f -> writeInt(flush, msg, listeners));
+    }
+
+    private CompletionStage<ChannelFuture> writeInt(boolean flush,
+                                                    Object msg,
+                                                    Function<ChannelFuture, ChannelFuture> listeners) {
         CompletableFuture<ChannelFuture> channelFuture = new CompletableFuture<>();
 
-        if (ctx.executor().inEventLoop()) {
+        if (channel.eventLoop().inEventLoop()) {
             // Fast path for items emitted by event loop thread
             if (flush) {
-                channelFuture.complete(ctx.writeAndFlush(msg));
+                channelFuture.complete(listeners.apply(channel.writeAndFlush(msg)));
             } else {
-                channelFuture.complete(ctx.write(msg));
+                channelFuture.complete(listeners.apply(channel.write(msg)));
             }
         } else {
             if (flush) {
-                ctx.executor().execute(() -> channelFuture.complete(ctx.writeAndFlush(msg)));
+                channel.eventLoop().execute(() -> channelFuture.complete(listeners.apply(channel.writeAndFlush(msg))));
             } else {
-                ctx.executor().execute(() -> channelFuture.complete(ctx.write(msg)));
+                channel.eventLoop().execute(() -> channelFuture.complete(listeners.apply(channel.write(msg))));
             }
         }
 
         return channelFuture;
     }
+
 
     /**
      * Map Netty's future completing with void to CompletableFuture completing with supplied item.
@@ -125,7 +138,7 @@ class NettyChannel {
     @Override
     public String toString() {
         return "NettyChannel{"
-                + "ctx=" + ctx.toString()
+                + "channel=" + channel.toString()
                 + '}';
     }
 }
