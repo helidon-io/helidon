@@ -16,6 +16,8 @@
 
 /**
  * CDI implementation enhancements for Helidon MP.
+ *
+ * @see jakarta.enterprise.context
  */
 module io.helidon.microprofile.cdi {
     // needed for Unsafe used from Weld

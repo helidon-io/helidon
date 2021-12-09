@@ -16,6 +16,8 @@
 
 /**
  * Microprofile fault tolerance implementation.
+ *
+ * @see org.eclipse.microprofile.faulttolerance
  */
 module io.helidon.microprofile.faulttolerance {
     requires java.logging;

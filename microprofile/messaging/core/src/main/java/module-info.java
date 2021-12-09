@@ -16,6 +16,8 @@
 
 /**
  * MicroProfile Reactive Messaging implementation.
+ *
+ * @see org.eclipse.microprofile.reactive.messaging
  */
 module io.helidon.microprofile.messaging {
     requires java.logging;

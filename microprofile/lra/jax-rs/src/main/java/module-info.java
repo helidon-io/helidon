@@ -15,6 +15,8 @@
  */
 /**
  * Helidon implementation of MicroProfile Long Running Actions.
+ *
+ * @see org.eclipse.microprofile.lra
  */
 module io.helidon.microprofile.lra {
     requires jakarta.cdi;

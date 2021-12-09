@@ -134,9 +134,19 @@
         <javadoc.link.jakarta-jaxb>https://jakarta.ee/specifications/xml-binding/3.0/apidocs/</javadoc.link.jakarta-jaxb>
         <javadoc.link.jakarta-transaction>https://jakarta.ee/specifications/transactions/2.0/apidocs/</javadoc.link.jakarta-transaction>
 
-        <javadoc.link.microprofile-config>https://static.javadoc.io/org.eclipse.microprofile.config/microprofile-config-api/${version.lib.microprofile-config}</javadoc.link.microprofile-config>
-        <javadoc.link.microprofile-health>https://static.javadoc.io/org.eclipse.microprofile.health/microprofile-health-api/${version.lib.microprofile-health}</javadoc.link.microprofile-health>
-        <javadoc.link.microprofile-metrics>https://static.javadoc.io/org.eclipse.microprofile.metrics/microprofile-metrics-api/${version.lib.microprofile-metrics-api}</javadoc.link.microprofile-metrics>
+        <javadoc.link.microprofile-config>https://download.eclipse.org/microprofile/microprofile-config-${version.lib.microprofile-config}/apidocs/</javadoc.link.microprofile-config>
+        <javadoc.link.microprofile-health>https://download.eclipse.org/microprofile/microprofile-health-${version.lib.microprofile-health}/apidocs/</javadoc.link.microprofile-health>
+        <javadoc.link.microprofile-metrics>https://download.eclipse.org/microprofile/microprofile-metrics-${version.lib.microprofile-metrics-api}/apidocs/</javadoc.link.microprofile-metrics>
+        <javadoc.link.microprofile-fault-tolerance-api>https://download.eclipse.org/microprofile/microprofile-fault-tolerance-${version.lib.microprofile-fault-tolerance-api}/apidocs/</javadoc.link.microprofile-fault-tolerance-api>
+        <javadoc.link.microprofile-graphql>https://download.eclipse.org/microprofile/microprofile-graphql-${version.lib.microprofile-graphql}/apidocs/</javadoc.link.microprofile-graphql>
+        <javadoc.link.microprofile-jwt>https://download.eclipse.org/microprofile/microprofile-jwt-auth-${version.lib.microprofile-jwt}/apidocs/</javadoc.link.microprofile-jwt>
+        <javadoc.link.microprofile-openapi-api>https://download.eclipse.org/microprofile/microprofile-open-api-${version.lib.microprofile-openapi-api}/apidocs/</javadoc.link.microprofile-openapi-api>
+        <javadoc.link.microprofile-reactive-messaging-api>https://download.eclipse.org/microprofile/microprofile-reactive-messaging-${version.lib.microprofile-reactive-messaging-api}/apidocs/</javadoc.link.microprofile-reactive-messaging-api>
+        <javadoc.link.microprofile-reactive-streams-operators-api>https://download.eclipse.org/microprofile/microprofile-reactive-streams-operators-${version.lib.microprofile-reactive-streams-operators-api}/apidocs</javadoc.link.microprofile-reactive-streams-operators-api>
+        <javadoc.link.microprofile-rest-client>https://download.eclipse.org/microprofile/microprofile-rest-client-${version.lib.microprofile-rest-client}/apidocs</javadoc.link.microprofile-rest-client>
+        <javadoc.link.microprofile-tracing>https://download.eclipse.org/microprofile/microprofile-opentracing-${version.lib.microprofile-tracing}/apidocs/</javadoc.link.microprofile-tracing>
+        <javadoc.link.microprofile-lra-api>https://download.eclipse.org/microprofile/microprofile-lra-${version.lib.microprofile-lra-api}/apidocs/</javadoc.link.microprofile-lra-api>
+
 
         <javadoc.link.jersey>https://eclipse-ee4j.github.io/jersey.github.io/apidocs/${version.lib.jersey}/jersey</javadoc.link.jersey>
         <javadoc.link.weld>https://docs.jboss.org/weld/javadoc/3.0/weld-spi/</javadoc.link.weld>
@@ -318,10 +328,49 @@
                                 <url>${javadoc.link.microprofile-health}</url>
                                 <location>${javadoc.packagelist.dir}/microprofile-health</location>
                             </offlineLink>
+
                             <offlineLink>
                                 <url>${javadoc.link.microprofile-metrics}</url>
                                 <location>${javadoc.packagelist.dir}/microprofile-metrics</location>
                             </offlineLink>
+
+                            <offlineLink>
+                                <url>${javadoc.link.microprofile-fault-tolerance-api}</url>
+                                <location>${javadoc.packagelist.dir}/microprofile-fault-tolerance-api</location>
+                            </offlineLink>
+                            <offlineLink>
+                                <url>${javadoc.link.microprofile-graphql}</url>
+                                <location>${javadoc.packagelist.dir}/microprofile-graphql</location>
+                            </offlineLink>
+                            <offlineLink>
+                                <url>${javadoc.link.microprofile-jwt}</url>
+                                <location>${javadoc.packagelist.dir}/microprofile-jwt</location>
+                            </offlineLink>
+                            <offlineLink>
+                                <url>${javadoc.link.microprofile-lra-api}</url>
+                                <location>${javadoc.packagelist.dir}/microprofile-lra-api</location>
+                            </offlineLink>
+                            <offlineLink>
+                                <url>${javadoc.link.microprofile-openapi-api}</url>
+                                <location>${javadoc.packagelist.dir}/microprofile-openapi-api</location>
+                            </offlineLink>
+                            <offlineLink>
+                                <url>${javadoc.link.microprofile-reactive-messaging-api}</url>
+                                <location>${javadoc.packagelist.dir}/microprofile-reactive-messaging-api</location>
+                            </offlineLink>
+                            <offlineLink>
+                                <url>${javadoc.link.microprofile-reactive-streams-operators-api}</url>
+                                <location>${javadoc.packagelist.dir}/microprofile-reactive-streams-operators-api</location>
+                            </offlineLink>
+                            <offlineLink>
+                                <url>${javadoc.link.microprofile-rest-client}</url>
+                                <location>${javadoc.packagelist.dir}/microprofile-rest-client</location>
+                            </offlineLink>
+                            <offlineLink>
+                                <url>${javadoc.link.microprofile-tracing}</url>
+                                <location>${javadoc.packagelist.dir}/microprofile-tracing</location>
+                            </offlineLink>
+
                             <offlineLink>
                                 <url>${javadoc.link.weld}</url>
                                 <location>${javadoc.packagelist.dir}/weld</location>

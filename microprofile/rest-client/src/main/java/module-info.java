@@ -16,6 +16,8 @@
 
 /**
  * MP Rest client.
+ *
+ * @see org.eclipse.microprofile.rest.client
  */
 module io.helidon.microprofile.restclient {
     requires java.logging;
