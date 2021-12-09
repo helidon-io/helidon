@@ -51,6 +51,7 @@ org.glassfish.jersey.message
 org.glassfish.jersey.message.internal
 org.glassfish.jersey.microprofile.config
 org.glassfish.jersey.microprofile.restclient
+org.glassfish.jersey.microprofile.restclient.internal
 org.glassfish.jersey.model
 org.glassfish.jersey.model.internal
 org.glassfish.jersey.moxy.internal

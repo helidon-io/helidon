@@ -17,5 +17,7 @@
  * Microprofile extension for tracing.
  * Expected location of configuration is at key {@code tracing},
  * see {@link io.helidon.tracing.TracerBuilder} for details about configuration.
+ *
+ * @see org.eclipse.microprofile.opentracing
  */
 package io.helidon.microprofile.tracing;

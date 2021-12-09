@@ -15,7 +15,7 @@
  */
 
 /**
- * This package contains JAX-RS (Jersey based) support for {@link io.helidon.webserver.WebServer WebServer}'s
+ * This package contains {@link javax.ws.rs JAX-RS} (Jersey based) support for {@link io.helidon.webserver.WebServer WebServer}'s
  * {@link io.helidon.webserver.Routing Routing}.
  * <p>
  * For more information see {@link io.helidon.webserver.jersey.JerseySupport JerseySupport} documentation.

@@ -16,6 +16,8 @@
 
 /**
  * CDI extension for microprofile config implementation.
+ *
+ * @see org.eclipse.microprofile.config
  */
 module io.helidon.microprofile.config {
     requires java.logging;

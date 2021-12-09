@@ -1,0 +1,5 @@
+org.eclipse.microprofile.rest.client
+org.eclipse.microprofile.rest.client.annotation
+org.eclipse.microprofile.rest.client.ext
+org.eclipse.microprofile.rest.client.inject
+org.eclipse.microprofile.rest.client.spi
