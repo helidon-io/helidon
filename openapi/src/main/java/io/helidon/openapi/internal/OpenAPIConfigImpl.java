@@ -15,16 +15,14 @@
  */
 package io.helidon.openapi.internal;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
@@ -36,10 +34,6 @@ import io.smallrye.openapi.api.OpenApiConfig;
  * Helidon-specific implementation of the smallrye OpenApiConfig interface,
  * loadable from a Helidon {@link Config} object as well as individual items
  * settable programmatically.
- * <p>
- * Helidon SE does not support annotation scanning, so we do not need
- * a way to set the scanning-related values. We just initialize them
- * appropriately.
  */
 public class OpenAPIConfigImpl implements OpenApiConfig {
 
@@ -47,7 +41,7 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
     private final String filter;
     private final Map<String, Set<String>> operationServers;
     private final Map<String, Set<String>> pathServers;
-    private Boolean scanDisable = Boolean.TRUE;
+    private Boolean scanDisable;
     private final Pattern scanPackages;
     private final Pattern scanClasses;
     private final Pattern scanExcludePackages;
@@ -57,6 +51,7 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
     private final Set<String> scanDependenciesJars = Collections.emptySet();
     private final String customSchemaRegistryClass;
     private final Boolean applicationPathDisable;
+    private final Map<String, String> schemas;
 
     private OpenAPIConfigImpl(Builder builder) {
         modelReader = builder.modelReader;
@@ -71,6 +66,7 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
         scanExcludeClasses = builder.scanExcludeClasses;
         customSchemaRegistryClass = builder.customSchemaRegistryClass;
         applicationPathDisable = builder.applicationPathDisable;
+        schemas = Collections.unmodifiableMap(builder.schemas);
     }
 
     /**
@@ -142,17 +138,6 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
         return scanDependenciesJars;
     }
 
-    /**
-     * Reports whether schema-reference following is enabled; note this is now always {$code true}. Provided for backward
-     * compatibility only.
-     *
-     * @return true
-     */
-    @Deprecated
-    public boolean schemaReferencesEnable() {
-        return true;
-    }
-
     @Override
     public String customSchemaRegistryClass() {
         return customSchemaRegistryClass;
@@ -161,6 +146,11 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
     @Override
     public boolean applicationPathDisable() {
         return applicationPathDisable;
+    }
+
+    @Override
+    public Map<String, String> getSchemas() {
+        return schemas;
     }
 
     private static <T, U> Set<U> chooseEntry(Map<T, Set<U>> map, T key) {
@@ -190,6 +180,11 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
      */
     public static final class Builder implements io.helidon.common.Builder<Builder, OpenApiConfig> {
 
+        /**
+         * Config key prefix for schema overrides for specified classes.
+         */
+        public static final String SCHEMA = "schema";
+
         private static final Logger LOGGER = Logger.getLogger(Builder.class.getName());
 
         private static final Pattern MATCH_EVERYTHING = Pattern.compile(".*");
@@ -201,13 +196,8 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
         static final String SERVERS_PATH = "servers.path";
         static final String SERVERS_OPERATION = "servers.operation";
 
-        @Deprecated
-        static final String SCHEMA_REFERENCES_ENABLE = "schema-references.enable";
-
         static final String CUSTOM_SCHEMA_REGISTRY_CLASS = "custom-schema-registry.class";
         static final String APPLICATION_PATH_DISABLE = "application-path.disable";
-
-        static final List<String> CONFIG_KEYS = Arrays.asList(new String[] {MODEL_READER, FILTER, SERVERS});
 
         private String modelReader;
         private String filter;
@@ -222,6 +212,7 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
 
         private String customSchemaRegistryClass;
         private Boolean applicationPathDisable;
+        private Map<String, String> schemas = new HashMap<>();
 
         private Builder() {
         }
@@ -244,9 +235,9 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
             stringFromConfig(config, SERVERS, this::servers);
             listFromConfig(config, SERVERS_PATH, this::pathServers);
             listFromConfig(config, SERVERS_OPERATION, this::operationServers);
-            booleanFromConfig(config, SCHEMA_REFERENCES_ENABLE, this::schemaReferencesEnable);
             stringFromConfig(config, CUSTOM_SCHEMA_REGISTRY_CLASS, this::customSchemaRegistryClass);
             booleanFromConfig(config, APPLICATION_PATH_DISABLE, this::applicationPathDisable);
+            mapFromConfig(config, SCHEMA, this::schemas);
             return this;
         }
 
@@ -346,6 +337,29 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
         }
 
         /**
+         * Sets schemas.
+         *
+         * @param schemas map of FQ class name to JSON string depicting the schema
+         * @return updated builder
+         */
+        public Builder schemas(Map<String, String> schemas) {
+            this.schemas = new HashMap<>(schemas);
+            return this;
+        }
+
+        /**
+         * Adds a schema for a class.
+         *
+         * @param fullyQualifiedClassName name of the class the schema describes
+         * @param schema JSON text definition of the schema
+         * @return updated builder
+         */
+        public Builder addSchema(String fullyQualifiedClassName, String schema) {
+            schemas.put(fullyQualifiedClassName, schema);
+            return this;
+        }
+
+        /**
          * Sets whether annotation scanning should be disabled.
          *
          * @param value new setting for annotation scanning disabled flag
@@ -353,20 +367,6 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
          */
         public Builder scanDisable(boolean value) {
             scanDisable = value;
-            return this;
-        }
-
-        /**
-         * NO LONGER FUNCTIONAL; sets whether schema references are enabled.
-         *
-         * @param value new setting for schema references enabled
-         * @return updated builder
-         */
-        @Deprecated
-        public Builder schemaReferencesEnable(Boolean value) {
-            LOGGER.log(Level.WARNING,
-                    String.format("OpenAPI configuration setting %s is no longer supported but was set to '%b'; "
-                            + "it is always treated as 'true'", SCHEMA_REFERENCES_ENABLE, value));
             return this;
         }
 
@@ -406,6 +406,17 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
                 String value = c.asString().get();
                 assignment.apply(key, value);
             }));
+        }
+
+        private static void mapFromConfig(Config config,
+                                          String keyPrefix,
+                                          Function<Map<String, String>, Builder> assignment) {
+            AtomicReference<Map<String, String>> schemas = new AtomicReference<>(new HashMap<>());
+            config.get(keyPrefix)
+                    .detach()
+                    .ifExists(configNode -> schemas.set(configNode.asMap().get()));
+
+            assignment.apply(schemas.get());
         }
 
         private static void booleanFromConfig(Config config,

@@ -32,8 +32,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-@Disabled("3.0.0-JAKARTA") // OpenAPI: Caused by: java.lang.NoSuchMethodError:
-        // 'java.util.List org.jboss.jandex.ClassInfo.unsortedFields()'
 class MainTest {
     private static Server server;
 
