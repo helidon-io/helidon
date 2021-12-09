@@ -1,0 +1,8 @@
+[
+    {
+        "bean-class": "io.helidon.integrations.datasource.ucp.cdi.UCPBackedDataSourceExtension",
+        "ifaces": [
+            "io.helidon.integrations.datasource.ucp.cdi.UCPBackedDataSourceExtension"
+        ]
+    }
+]
