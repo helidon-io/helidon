@@ -65,7 +65,7 @@ class BareResponseImpl implements BareResponse {
     private static final SocketClosedException CLOSED = new SocketClosedException("Response channel is closed!");
 
     private final boolean keepAlive;
-    private final ChannelHandlerContext ctx;
+    private final NettyChannel channel;
     private final AtomicBoolean statusHeadersSent = new AtomicBoolean(false);
     private final AtomicBoolean internallyClosed = new AtomicBoolean(false);
     private final CompletableFuture<BareResponse> responseFuture;
@@ -79,7 +79,7 @@ class BareResponseImpl implements BareResponse {
 
     // Accessed by Subscriber method threads
     private Flow.Subscription subscription;
-    private DataChunk firstChunk;
+    private volatile DataChunk firstChunk;
     private CompletableFuture<?> prevRequestChunk;
     private CompletableFuture<ChannelFutureListener> requestEntityAnalyzed;
 
@@ -106,7 +106,7 @@ class BareResponseImpl implements BareResponse {
         this.requestEntityAnalyzed = requestEntityAnalyzed;
         this.responseFuture = new CompletableFuture<>();
         this.headersFuture = new CompletableFuture<>();
-        this.ctx = ctx;
+        this.channel = new NettyChannel(ctx.channel());
         this.requestId = requestId;
         this.keepAlive = HttpUtil.isKeepAlive(request);
         this.requestHeaders = request.headers();
@@ -194,7 +194,7 @@ class BareResponseImpl implements BareResponse {
         // If already set (e.g. WebSocket upgrade), do not override
         if (keepAlive) {
             if (!requestContext.requestCompleted()) {
-                LOGGER.finer(() -> log("Request content not fully read with keep-alive: true", ctx));
+                LOGGER.finer(() -> log("Request content not fully read with keep-alive: true", channel));
                 if (!requestContext.hasRequests() || requestContext.requestCancelled()) {
                     requestEntityAnalyzed = requestEntityAnalyzed.thenApply(listener -> {
                         if (listener.equals(ChannelFutureListener.CLOSE)) {
@@ -206,7 +206,7 @@ class BareResponseImpl implements BareResponse {
                     });
                     //We are not sure which Connection header value should be set.
                     //If unhandled entity is only one content large, we can keep the keep-alive
-                    ctx.channel().read();
+                    channel.read();
                 } else {
                     response.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.CLOSE);
                     requestEntityAnalyzed.complete(ChannelFutureListener.CLOSE);
@@ -297,11 +297,11 @@ class BareResponseImpl implements BareResponse {
             requestContext.runInScope(() -> {
                 if (ChannelFutureListener.CLOSE.equals(listener)) {
                     if (LOGGER.isLoggable(Level.FINEST)) {
-                        LOGGER.finest(log("Closing with an empty buffer; keep-alive: false", ctx));
+                        LOGGER.finest(log("Closing with an empty buffer; keep-alive: false", channel));
                     }
                 } else {
                     LOGGER.finest(() -> log("Writing an empty last http content; keep-alive: true"));
-                    ctx.channel().read();
+                    channel.read();
                 }
                 writeLastContent(throwable, listener);
             });
@@ -346,10 +346,10 @@ class BareResponseImpl implements BareResponse {
                 LOGGER.severe(() -> log("Upstream error while sending response: %s", throwable));
             }
         }
-        ctx.writeAndFlush(lastHttpContent)
+        channel.write(true, lastHttpContent, f -> f
                 .addListener(completeOnFailureListener("An exception occurred when writing last http content."))
                 .addListener(completeOnSuccessListener(throwable))
-                .addListener(closeAction);
+                .addListener(closeAction));
     }
 
     private GenericFutureListener<Future<? super Void>> completeOnFailureListener(String message) {
@@ -365,7 +365,7 @@ class BareResponseImpl implements BareResponse {
         return future -> {
             if (future.isSuccess()) {
                 completeResponseFuture(throwable);
-                LOGGER.finest(() -> log("Last http message flushed", ctx));
+                LOGGER.finest(() -> log("Last http message flushed", channel));
             }
         };
     }
@@ -387,9 +387,9 @@ class BareResponseImpl implements BareResponse {
             requestContext.runInScope(() -> {
                 if (data.isFlushChunk()) {
                     if (prevRequestChunk == null) {
-                        ctx.flush();
+                        channel.flush();
                     } else {
-                        prevRequestChunk = prevRequestChunk.thenRun(ctx::flush);
+                        prevRequestChunk = prevRequestChunk.thenRun(channel::flush);
                     }
                     subscription.request(1);
                     return;
@@ -417,7 +417,7 @@ class BareResponseImpl implements BareResponse {
         if (lengthOptimization) {
             initWriteResponse();
         }
-        sendData(data);
+        sendData(data, true);
     }
 
     /**
@@ -426,22 +426,17 @@ class BareResponseImpl implements BareResponse {
      *
      * @return Future of response or first chunk.
      */
-    private ChannelFuture initWriteResponse() {
-        ChannelFuture cf = ctx.write(response)
-                .addListener(future -> {
-                    if (future.isSuccess()) {
-                        headersFuture.complete(this);
-                    }
-                })
+    private void initWriteResponse() {
+        channel.write(false, response, f -> f
+                .addListener(future -> NettyChannel.completeFuture(future, headersFuture, this))
                 .addListener(completeOnFailureListener("An exception occurred when writing headers."))
-                .addListener(ChannelFutureListener.CLOSE_ON_FAILURE);
+                .addListener(ChannelFutureListener.CLOSE_ON_FAILURE));
         response = null;
         if (firstChunk != null) {
-            cf = sendData(firstChunk);
+            sendData(firstChunk, false);
             firstChunk = null;
         }
         lengthOptimization = false;
-        return cf;
     }
 
     /**
@@ -449,9 +444,8 @@ class BareResponseImpl implements BareResponse {
      * {@link #orderedWrite(Runnable)} runnable.
      *
      * @param data the chunk.
-     * @return channel future.
      */
-    private ChannelFuture sendData(DataChunk data) {
+    private void sendData(DataChunk data, boolean requestOneMore) {
         LOGGER.finest(() -> log("Sending data chunk"));
 
         DefaultHttpContent httpContent;
@@ -470,35 +464,30 @@ class BareResponseImpl implements BareResponse {
             httpContent = new DefaultHttpContent(Unpooled.wrappedBuffer(data.data()));
         }
 
-        LOGGER.finest(() -> log("Sending data chunk on event loop thread", ctx));
+        LOGGER.finest(() -> log("Sending data chunk on event loop thread", channel));
 
-        ChannelFuture channelFuture;
-        if (data.flush()) {
-            channelFuture = ctx.writeAndFlush(httpContent);
-        } else {
-            channelFuture = ctx.write(httpContent);
-            subscription.request(1);
-        }
-
-        return channelFuture
-                .addListener(future -> {
-                    data.writeFuture().ifPresent(writeFuture -> {
+        channel.write(data.flush(), httpContent, f -> {
+            // After request for write is made on event loop thread
+            if (!data.flush() && requestOneMore) {
+                // No flush, request another chunk immediately, this one needs to wait in the cache
+                subscription.request(1);
+            }
+            // Add listeners to execute when actual write is done
+            return f.addListener(future -> {
                         // Complete write future based con channel future
-                        if (future.isSuccess()) {
-                            writeFuture.complete(data);
-                        } else {
-                            writeFuture.completeExceptionally(future.cause());
+                        data.writeFuture()
+                                .ifPresent(writeFuture -> NettyChannel.completeFuture(future, writeFuture, data));
+                        boolean flush = data.flush();
+                        data.release();
+                        if (flush && requestOneMore) {
+                            // Previous chunk sent, request another one
+                            subscription.request(1);
                         }
-                    });
-                    boolean flush = data.flush();
-                    data.release();
-                    if (flush) {
-                        subscription.request(1);
-                    }
-                    LOGGER.finest(() -> log("Data chunk sent with result: %s", future.isSuccess()));
-                })
-                .addListener(completeOnFailureListener("Failure when sending a content!"))
-                .addListener(ChannelFutureListener.CLOSE_ON_FAILURE);
+                        LOGGER.finest(() -> log("Data chunk sent with result: %s", future.isSuccess()));
+                    })
+                    .addListener(completeOnFailureListener("Failure when sending a content!"))
+                    .addListener(ChannelFutureListener.CLOSE_ON_FAILURE);
+        });
     }
 
 
@@ -557,7 +546,7 @@ class BareResponseImpl implements BareResponse {
     private String log(String template, Object... params) {
         List<Object> list = new ArrayList<>(params.length + 3);
         list.add(System.identityHashCode(this));
-        list.add(ctx != null ? ctx.channel().id() : "N/A");
+        list.add(channel.id());
         list.add(http2StreamId != null ? http2StreamId : "N/A");
         list.addAll(Arrays.asList(params));
         return String.format("[Response: %s, Channel: 0x%s, StreamID: %s] " + template, list.toArray());
