@@ -26,11 +26,12 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import javax.sql.DataSource;
-import javax.transaction.Status;
-import javax.transaction.Synchronization;
 
 import io.helidon.integrations.jdbc.AbstractDataSource;
 import io.helidon.integrations.jdbc.ConditionallyCloseableConnection;
+
+import jakarta.transaction.Status;
+import jakarta.transaction.Synchronization;
 
 /**
  * An {@link AbstractDataSource} and a {@link Synchronization} that
@@ -132,7 +133,7 @@ public final class JtaDataSource extends AbstractDataSource implements Synchroni
      * JtaDataSource} with the supplied registrar, which is most
      * commonly&mdash;but is not required to be&mdash;a reference to
      * the {@link
-     * javax.transaction.TransactionSynchronizationRegistry#registerInterposedSynchronization(Synchronization)}
+     * jakarta.transaction.TransactionSynchronizationRegistry#registerInterposedSynchronization(Synchronization)}
      * method.
      *
      * <p>If there is no currently active transaction, no action is taken.</p>
@@ -233,7 +234,7 @@ public final class JtaDataSource extends AbstractDataSource implements Synchroni
      * Given an {@link Iterable} of {@link
      * TransactionSpecificConnection} instances and a {@link
      * CheckedConsumer} of {@link Connection} instances, ensures that
-     * the {@link CheckedConsumer#accept(Connection)} method is
+     * the {@link CheckedConsumer#accept(Object)} method is
      * invoked on each reachable {@link
      * TransactionSpecificConnection}, properly handling all
      * exceptional conditions.

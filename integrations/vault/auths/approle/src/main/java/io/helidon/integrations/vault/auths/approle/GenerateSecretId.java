@@ -20,14 +20,14 @@ import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.json.Json;
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObject;
-import javax.json.JsonObjectBuilder;
-import javax.json.JsonWriterFactory;
-
 import io.helidon.integrations.common.rest.ApiEntityResponse;
 import io.helidon.integrations.vault.VaultResponse;
+
+import jakarta.json.Json;
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonObjectBuilder;
+import jakarta.json.JsonWriterFactory;
 
 /**
  * Generate secret ID request and response.
@@ -50,7 +50,7 @@ public final class GenerateSecretId {
         /**
          * Fluent API builder for configuring a request.
          * The request builder is passed as is, without a build method.
-         * The equivalent of a build method is {@link #toJson(javax.json.JsonBuilderFactory)}
+         * The equivalent of a build method is {@link #toJson(jakarta.json.JsonBuilderFactory)}
          * used by the {@link io.helidon.integrations.common.rest.RestApi}.
          *
          * @return new request builder

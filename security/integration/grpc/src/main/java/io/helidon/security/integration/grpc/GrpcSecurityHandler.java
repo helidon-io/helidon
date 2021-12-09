@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,8 +31,6 @@ import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.annotation.Priority;
-
 import io.helidon.config.Config;
 import io.helidon.grpc.core.InterceptorPriorities;
 import io.helidon.grpc.server.ServiceDescriptor;
@@ -61,6 +59,7 @@ import io.grpc.ServerCallHandler;
 import io.grpc.ServerInterceptor;
 import io.grpc.Status;
 import io.opentracing.SpanContext;
+import jakarta.annotation.Priority;
 
 import static io.helidon.security.AuditEvent.AuditParam.plain;
 
@@ -873,7 +872,7 @@ public class GrpcSecurityHandler
 
     // WARNING: builder methods must not have side-effects, as they are used to build instance from configuration
     // if you want side effects, use methods on GrpcSecurityInterceptor
-    private static final class Builder implements io.helidon.common.Builder<GrpcSecurityHandler> {
+    private static final class Builder implements io.helidon.common.Builder<Builder, GrpcSecurityHandler> {
         private Optional<Set<String>> rolesAllowed = Optional.empty();
         private Optional<ClassToInstanceStore<Object>> customObjects = Optional.empty();
         private Optional<Config> config = Optional.empty();

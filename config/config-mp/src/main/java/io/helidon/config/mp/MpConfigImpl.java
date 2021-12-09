@@ -41,23 +41,22 @@ import java.util.regex.Pattern;
 import io.helidon.config.mp.spi.MpConfigFilter;
 
 import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.config.ConfigValue;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.eclipse.microprofile.config.spi.Converter;
 
 /**
  * Implementation of the basic MicroProfile {@link org.eclipse.microprofile.config.Config} API.
- * @deprecated This is an internal class that was exposed accidentaly. It will be package local in next major release.
  */
-@Deprecated
-public class MpConfigImpl implements Config {
+class MpConfigImpl implements Config {
     private static final Logger LOGGER = Logger.getLogger(MpConfigImpl.class.getName());
     // for references resolving
     // matches string between ${ } with a negative lookbehind if there is not backslash
-    private static final String REGEX_REFERENCE = "(?<!\\\\)\\$\\{([^}]+)\\}";
+    private static final String REGEX_REFERENCE = "(?<!\\\\)\\$\\{([^${}:]+)(:[^$}]*)?}";
     private static final Pattern PATTERN_REFERENCE = Pattern.compile(REGEX_REFERENCE);
     // for encoding backslashes
     // matches a backslash with a positive lookahead if it is the backslash that encodes ${}
-    private static final String REGEX_BACKSLASH = "\\\\(?=\\$\\{([^}]+)\\})";
+    private static final String REGEX_BACKSLASH = "\\\\(?=\\$\\{([^}]+)})";
     private static final Pattern PATTERN_BACKSLASH = Pattern.compile(REGEX_BACKSLASH);
     // I only care about unresolved key happening within the same thread
     private static final ThreadLocal<Set<String>> UNRESOLVED_KEYS = ThreadLocal.withInitial(HashSet::new);
@@ -93,7 +92,8 @@ public class MpConfigImpl implements Config {
         this.converters.putIfAbsent(String.class, value -> value);
         this.configProfile = profile;
 
-        this.valueResolving = getOptionalValue("helidon.config.value-resolving.enabled", Boolean.class)
+        this.valueResolving = getOptionalValue("mp.config.property.expressions.enabled", Boolean.class)
+                .or(() -> getOptionalValue("helidon.config.value-resolving.enabled", Boolean.class))
                 .orElse(true);
 
         // we need to initialize the filters first, before we set up filters
@@ -104,6 +104,17 @@ public class MpConfigImpl implements Config {
             // do not do this first, as we would end up in using an uninitialized filter
             this.filters.add(it);
         });
+    }
+
+    @Override
+    public ConfigValue getConfigValue(String key) {
+        if (configProfile == null) {
+            return findConfigValue(key)
+                    .orElseGet(() -> new ConfigValueImpl(key, null, null, null, 0));
+        }
+        return findConfigValue("%" + configProfile + "." + key)
+                .or(() -> findConfigValue(key))
+                .orElseGet(() -> new ConfigValueImpl(key, null, null, null, 0));
     }
 
     @Override
@@ -132,7 +143,11 @@ public class MpConfigImpl implements Config {
             // first try to see if we have a direct value
             Optional<String> optionalValue = getOptionalValue(propertyName, String.class);
             if (optionalValue.isPresent()) {
-                return Optional.of((T) toArray(propertyName, optionalValue.get(), componentType));
+                try {
+                    return Optional.of((T) toArray(propertyName, optionalValue.get(), componentType));
+                } catch (NoSuchElementException e) {
+                    return Optional.empty();
+                }
             }
 
             /*
@@ -173,8 +188,8 @@ public class MpConfigImpl implements Config {
                 return Optional.empty();
             }
         } else {
-            return getStringValue(propertyName)
-                    .flatMap(it -> applyFilters(propertyName, it))
+            return findConfigValue(propertyName)
+                    .map(ConfigValue::getValue)
                     .map(it -> convert(propertyName, propertyType, it));
         }
     }
@@ -201,6 +216,7 @@ public class MpConfigImpl implements Config {
      * @param <T> type of the class
      * @return typed instance
      */
+    @Override
     public <T> T unwrap(Class<T> aClass) {
         if (getClass().equals(aClass)) {
             return aClass.cast(this);
@@ -222,6 +238,7 @@ public class MpConfigImpl implements Config {
      * @return an {@link java.util.Optional} containing the converter, or empty if no converter is available for the specified type
      */
     @SuppressWarnings("unchecked")
+    @Override
     public <T> Optional<Converter<T>> getConverter(Class<T> forType) {
         if (forType.isArray()) {
             Class<?> componentType = forType.getComponentType();
@@ -310,7 +327,7 @@ public class MpConfigImpl implements Config {
         }
     }
 
-    private Optional<String> getStringValue(String propertyName) {
+    private Optional<ConfigValue> findConfigValue(String propertyName) {
         for (ConfigSource source : sources) {
             String value = source.getValue(propertyName);
 
@@ -319,8 +336,22 @@ public class MpConfigImpl implements Config {
                 continue;
             }
 
-            LOGGER.finest("Found property " + propertyName + " in source " + source.getName());
-            return Optional.of(resolveReferences(propertyName, value));
+            if (value.isEmpty()) {
+                if (LOGGER.isLoggable(Level.FINEST)) {
+                    LOGGER.finest("Found property " + propertyName
+                                          + " in source " + source.getName()
+                                          + " and it is empty (removed)");
+                }
+                return Optional.empty();
+            }
+
+            if (LOGGER.isLoggable(Level.FINEST)) {
+                LOGGER.finest("Found property " + propertyName + " in source " + source.getName());
+            }
+            String rawValue = value;
+            return applyFilters(propertyName, value)
+                    .map(it -> resolveReferences(propertyName, it))
+                    .map(it -> new ConfigValueImpl(propertyName, it, rawValue, source.getName(), source.getOrdinal()));
         }
 
         return Optional.empty();
@@ -355,16 +386,37 @@ public class MpConfigImpl implements Config {
         }
         if (!UNRESOLVED_KEYS.get().add(key)) {
             UNRESOLVED_KEYS.get().clear();
-            throw new IllegalStateException("Recursive resolving of references for key " + key + ", value: " + value);
+            throw new IllegalArgumentException("Recursive resolving of references for key " + key + ", value: " + value);
         }
         try {
-            return format(value);
-        } catch (NoSuchElementException e) {
-            LOGGER.log(Level.FINER, e, () -> String.format("Reference for key %s not found. Value: %s", key, value));
-            return value;
+            return value.contains("${") ? processExpressions(value) : value;
         } finally {
             UNRESOLVED_KEYS.get().remove(key);
         }
+    }
+
+    private String processExpressions(String value) {
+        if (value.equals("${EMPTY}")) {
+            return "";
+        }
+
+        int iteration = 0;
+        String current;
+        String replaced = value;
+        do {
+            if (iteration > 4) {
+                throw new IllegalArgumentException("Too many iterations on property expression. Original value: " + value + ", "
+                                                           + "currentValue: " + replaced);
+            }
+            current = replaced;
+            replaced = format(current);
+            iteration++;
+
+        } while (!replaced.equals(current));
+
+        // remove all backslash that encodes ${...}
+        Matcher m = PATTERN_BACKSLASH.matcher(replaced);
+        return m.replaceAll("");
     }
 
     private String format(String value) {
@@ -372,15 +424,28 @@ public class MpConfigImpl implements Config {
         final StringBuffer sb = new StringBuffer();
         while (m.find()) {
             String propertyName = m.group(1);
+            Optional<String> propertyValue = getOptionalValue(propertyName, String.class);
+            String defaultValue = m.group(2);
+            String finalValue;
+            if (defaultValue == null) {
+                //the specification requires us to fail if property not found
+                //finalValue = propertyValue.orElseGet(() -> "${" + propertyName + "}");
+                finalValue = propertyValue
+                        .orElseThrow(() -> new NoSuchElementException("Property "
+                                                                              + propertyName
+                                                                              + " used in expression "
+                                                                              + value
+                                                                              + " does not exist"));
+            } else {
+                // the capturing group captures the : separator, so let's only use the value after it
+                finalValue = propertyValue.orElse(defaultValue.substring(1));
+            }
             m.appendReplacement(sb,
-                                Matcher.quoteReplacement(getOptionalValue(propertyName, String.class)
-                                                                 .orElseGet(() -> "${" + propertyName + "}")));
+                                Matcher.quoteReplacement(finalValue));
         }
         m.appendTail(sb);
-        // remove all backslash that encodes ${...}
-        m = PATTERN_BACKSLASH.matcher(sb.toString());
 
-        return m.replaceAll("");
+        return sb.toString();
     }
 
     @SuppressWarnings("unchecked")
@@ -466,11 +531,20 @@ public class MpConfigImpl implements Config {
     static String[] toArray(String stringValue) {
         String[] values = SPLIT_PATTERN.split(stringValue, -1);
 
-        for (int i = 0; i < values.length; i++) {
-            String value = values[i];
-            values[i] = ESCAPED_COMMA_PATTERN.matcher(value).replaceAll(Matcher.quoteReplacement(","));
+        List<String> result = new ArrayList<>(values.length);
+
+        for (String s : values) {
+            String value = ESCAPED_COMMA_PATTERN.matcher(s).replaceAll(Matcher.quoteReplacement(","));
+            if (!value.isEmpty()) {
+                result.add(value);
+            }
         }
-        return values;
+
+        if (result.isEmpty()) {
+            throw new NoSuchElementException("Value " + stringValue + " resolved into an empty array");
+        }
+
+        return result.toArray(new String[0]);
     }
 
     private static class FailingConverter<T> implements Converter<T> {

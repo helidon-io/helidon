@@ -16,6 +16,8 @@
 
 /**
  * Microprofile health module.
+ *
+ * @see org.eclipse.microprofile.health
  */
 module io.helidon.microprofile.health {
     requires java.logging;
@@ -27,10 +29,11 @@ module io.helidon.microprofile.health {
     requires io.helidon.health.common;
     requires io.helidon.microprofile.server;
 
-    requires jakarta.enterprise.cdi.api;
-    requires jakarta.inject.api;
-    requires java.ws.rs;
-    requires java.json;
+    requires jakarta.cdi;
+    requires jakarta.inject;
+    requires jakarta.ws.rs;
+    requires jakarta.json;
+    requires jakarta.interceptor.api;
     requires microprofile.config.api;
     requires microprofile.health.api;
     requires io.helidon.config.mp;
@@ -42,5 +45,5 @@ module io.helidon.microprofile.health {
 
     uses io.helidon.microprofile.health.HealthCheckProvider;
 
-    provides javax.enterprise.inject.spi.Extension with io.helidon.microprofile.health.HealthCdiExtension;
+    provides jakarta.enterprise.inject.spi.Extension with io.helidon.microprofile.health.HealthCdiExtension;
 }

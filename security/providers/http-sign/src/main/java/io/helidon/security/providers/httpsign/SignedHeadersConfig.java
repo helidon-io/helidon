@@ -116,7 +116,7 @@ public final class SignedHeadersConfig {
      * Fluent API builder to create {@link SignedHeadersConfig} instances.
      * Call {@link #build()} to create a new instance.
      */
-    public static final class Builder implements io.helidon.common.Builder<SignedHeadersConfig> {
+    public static final class Builder implements io.helidon.common.Builder<Builder, SignedHeadersConfig> {
         private static final HeadersConfig DEFAULT_HEADERS = HeadersConfig.create(List.of("date"));
 
         private final Map<String, HeadersConfig> methodConfigs = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);

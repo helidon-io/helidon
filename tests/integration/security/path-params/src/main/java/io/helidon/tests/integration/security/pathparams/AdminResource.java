@@ -16,8 +16,8 @@
 
 package io.helidon.tests.integration.security.pathparams;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
 
 /**
  * An admin resource that should not be accessible without proper credentials.

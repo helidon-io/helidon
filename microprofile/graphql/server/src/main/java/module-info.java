@@ -23,9 +23,10 @@ module io.helidon.microprofile.graphql.server {
     requires java.logging;
     requires java.desktop;
 
-    requires java.json.bind;
-    requires java.annotation;
-    requires jakarta.enterprise.cdi.api;
+    requires jakarta.json.bind;
+    requires jakarta.annotation;
+    requires jakarta.cdi;
+    requires jakarta.interceptor.api;
     requires org.eclipse.yasson;
 
     requires org.jboss.jandex;
@@ -43,7 +44,7 @@ module io.helidon.microprofile.graphql.server {
 
     exports io.helidon.microprofile.graphql.server;
 
-    provides javax.enterprise.inject.spi.Extension with
+    provides jakarta.enterprise.inject.spi.Extension with
             GraphQlCdiExtension;
 
     opens io.helidon.microprofile.graphql.server to weld.core.impl;

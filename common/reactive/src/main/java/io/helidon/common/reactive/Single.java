@@ -223,6 +223,18 @@ public interface Single<T> extends Subscribable<T>, CompletionStage<T>, Awaitabl
     }
 
     /**
+     * Create a {@link Single} instance that publishes result of the given supplier to its subscriber(s).
+     *
+     * @param <T>  item type
+     * @param supplier item supplier to publish
+     * @return Single
+     * @throws NullPointerException if item is {@code null}
+     */
+    static <T> Single<T> create(Supplier<? extends T> supplier) {
+        return new SingleDeferredJust<>(supplier);
+    }
+
+    /**
      * Get a {@link Single} instance that never completes.
      *
      * @param <T> item type
@@ -294,6 +306,17 @@ public interface Single<T> extends Subscribable<T>, CompletionStage<T>, Awaitabl
     default Single<T> defaultIfEmpty(T defaultItem) {
         Objects.requireNonNull(defaultItem, "defaultItem is null");
         return new SingleDefaultIfEmpty<>(this, defaultItem);
+    }
+
+    /**
+     * Signals the default item supplied by specified supplier if the upstream is empty.
+     * @param supplier of the default value
+     * @return Multi
+     * @throws NullPointerException if {@code supplier} is {@code null}
+     */
+    default Single<T> defaultIfEmpty(Supplier<? extends T> supplier) {
+        Objects.requireNonNull(supplier, "supplier is null");
+        return new SingleDeferredDefaultIfEmpty<>(this, supplier);
     }
 
     /**

@@ -16,14 +16,17 @@
 
 /**
  * MP Rest client.
+ *
+ * @see org.eclipse.microprofile.rest.client
  */
 module io.helidon.microprofile.restclient {
     requires java.logging;
     requires microprofile.rest.client.api;
     requires io.helidon.common.context;
     requires jersey.common;
-    requires jersey.mp.rest.client;
-    requires java.ws.rs;
+    //TODO 3.0.0-JAKARTA
+//    requires jersey.mp.rest.client;
+    requires jakarta.ws.rs;
 
     exports io.helidon.microprofile.restclient;
     // needed for jersey injection

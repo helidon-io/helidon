@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -113,7 +113,7 @@ public class RetryPoliciesTest {
         }
 
         private static class TestingBuilder extends AbstractConfigSourceBuilder<TestingBuilder, Void>
-                implements io.helidon.common.Builder<TestingSource> {
+                implements io.helidon.common.Builder<TestingBuilder, TestingSource> {
 
             public CountDownLatch loadLatch;
             private Supplier<NodeContent> dataSupplier = () -> NodeContent.builder()

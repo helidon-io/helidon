@@ -19,8 +19,6 @@ package io.helidon.integrations.oci.objectstorage;
 import java.util.Optional;
 import java.util.concurrent.Flow;
 
-import javax.json.JsonObject;
-
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Multi;
@@ -29,6 +27,8 @@ import io.helidon.integrations.common.rest.ApiOptionalResponse;
 import io.helidon.integrations.oci.connect.OciApiException;
 import io.helidon.integrations.oci.connect.OciRequestBase;
 import io.helidon.integrations.oci.connect.OciRestApi;
+
+import jakarta.json.JsonObject;
 
 class OciObjectStorageRxImpl implements OciObjectStorageRx {
     private final OciRestApi restApi;

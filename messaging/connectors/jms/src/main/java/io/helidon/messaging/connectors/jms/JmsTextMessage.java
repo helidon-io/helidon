@@ -18,24 +18,24 @@ package io.helidon.messaging.connectors.jms;
 
 import java.util.concurrent.Executor;
 
-import javax.jms.JMSException;
-
 import io.helidon.messaging.MessagingException;
+
+import jakarta.jms.JMSException;
 
 /**
  * A JMS Text message representation.
  */
 public class JmsTextMessage extends AbstractJmsMessage<String> {
 
-    private final javax.jms.TextMessage msg;
+    private final jakarta.jms.TextMessage msg;
 
-    JmsTextMessage(javax.jms.TextMessage msg, Executor executor, SessionMetadata sharedSessionEntry) {
+    JmsTextMessage(jakarta.jms.TextMessage msg, Executor executor, SessionMetadata sharedSessionEntry) {
         super(executor, sharedSessionEntry);
         this.msg = msg;
     }
 
     @Override
-    public javax.jms.TextMessage getJmsMessage() {
+    public jakarta.jms.TextMessage getJmsMessage() {
         return msg;
     }
 

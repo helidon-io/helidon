@@ -23,14 +23,6 @@ import java.util.ServiceLoader;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import javax.annotation.Priority;
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.context.Initialized;
-import javax.enterprise.event.Observes;
-import javax.enterprise.inject.spi.BeforeBeanDiscovery;
-import javax.enterprise.inject.spi.CDI;
-import javax.enterprise.inject.spi.Extension;
-
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
 import io.helidon.config.mp.MpConfig;
@@ -38,27 +30,24 @@ import io.helidon.health.HealthSupport;
 import io.helidon.health.common.BuiltInHealthCheck;
 import io.helidon.microprofile.server.RoutingBuilders;
 
+import jakarta.annotation.Priority;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.Initialized;
+import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.spi.BeforeBeanDiscovery;
+import jakarta.enterprise.inject.spi.CDI;
+import jakarta.enterprise.inject.spi.Extension;
 import org.eclipse.microprofile.config.ConfigProvider;
-import org.eclipse.microprofile.health.Health;
 import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.Liveness;
 import org.eclipse.microprofile.health.Readiness;
 
-import static javax.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
+import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 
 /**
  * Health extension.
  */
 public class HealthCdiExtension implements Extension {
-    // must be used until removed from MP specification
-    @SuppressWarnings("deprecation")
-    private static final Health HEALTH_LITERAL = new Health() {
-        @Override
-        public Class<? extends Annotation> annotationType() {
-            return Health.class;
-        }
-    };
-
     private static final BuiltInHealthCheck BUILT_IN_HEALTH_CHECK_LITERAL = new BuiltInHealthCheck() {
         @Override
         public Class<? extends Annotation> annotationType() {
@@ -96,13 +85,6 @@ public class HealthCdiExtension implements Extension {
                         .stream()
                         .collect(Collectors.toList()) : Collections.<HealthCheck>emptyList())
                 .orElse(Collections.emptyList());
-
-        // we must use builder.add(HealthCheck) as long as HEALTH_LITERAL can be used
-        //noinspection deprecation
-        cdi.select(HealthCheck.class, HEALTH_LITERAL)
-                .stream()
-                .filter(hc -> !builtInHealthChecks.contains(hc))
-                .forEach(builder::add);
 
         cdi.select(HealthCheck.class, Liveness.Literal.INSTANCE)
                 .stream()

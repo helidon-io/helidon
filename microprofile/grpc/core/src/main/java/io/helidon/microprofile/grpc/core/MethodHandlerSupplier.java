@@ -22,7 +22,7 @@ import io.helidon.grpc.core.MethodHandler;
 /**
  * A supplier of {@link io.helidon.grpc.core.MethodHandler}s for {@link AnnotatedMethod}s.
  * <p>
- * Implementation classes may be annotated with {@link javax.annotation.Priority}
+ * Implementation classes may be annotated with {@link jakarta.annotation.Priority}
  * to influence their priority order when determining which supplier is used if
  * more than one supplier is able to supply a handler for a method.
  * The built-in default suppliers have a priority of zero, which is also the default

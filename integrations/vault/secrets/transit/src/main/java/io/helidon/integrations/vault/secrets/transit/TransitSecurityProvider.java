@@ -200,7 +200,7 @@ public class TransitSecurityProvider implements EncryptionProvider<TransitSecuri
          * Fluent API builder for
          * {@link io.helidon.integrations.vault.secrets.transit.TransitSecurityProvider.TransitDigestConfig}.
          */
-        public static class Builder implements io.helidon.common.Builder<TransitDigestConfig> {
+        public static class Builder implements io.helidon.common.Builder<Builder, TransitDigestConfig> {
             /**
              * Digest is a signature.
              */
@@ -474,7 +474,7 @@ public class TransitSecurityProvider implements EncryptionProvider<TransitSecuri
          * Fluent API builder for
          * {@link io.helidon.integrations.vault.secrets.transit.TransitSecurityProvider.TransitEncryptionConfig}.
          */
-        public static class Builder implements io.helidon.common.Builder<TransitEncryptionConfig> {
+        public static class Builder implements io.helidon.common.Builder<Builder, TransitEncryptionConfig> {
             private static final String CONFIG_KEY_KEY_NAME = "key-name";
 
             private String keyName;

@@ -1,0 +1,6 @@
+jakarta.ws.rs
+jakarta.ws.rs.client
+jakarta.ws.rs.container
+jakarta.ws.rs.core
+jakarta.ws.rs.ext
+jakarta.ws.rs.sse

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -321,7 +321,7 @@ public interface SecurityContext {
     /**
      * Fluent API builder for {@link SecurityContext}.
      */
-    class Builder implements io.helidon.common.Builder<SecurityContext> {
+    class Builder implements io.helidon.common.Builder<Builder, SecurityContext> {
         private final Security security;
         private String id;
         private Supplier<ExecutorService> executorServiceSupplier;

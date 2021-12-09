@@ -418,7 +418,7 @@ public final class EncryptedJwt {
     /**
      * Encrypted JWT builder.
      */
-    public static class Builder implements io.helidon.common.Builder<EncryptedJwt> {
+    public static class Builder implements io.helidon.common.Builder<Builder, EncryptedJwt> {
 
         private final SignedJwt jwt;
         private final JwtHeaders.Builder headersBuilder = JwtHeaders.builder();

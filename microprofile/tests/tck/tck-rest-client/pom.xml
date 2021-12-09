@@ -21,12 +21,17 @@
     <parent>
         <artifactId>tck-project</artifactId>
         <groupId>io.helidon.microprofile.tests</groupId>
-        <version>2.4.0-SNAPSHOT</version>
+        <version>3.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>tck-rest-client</artifactId>
     <name>Helidon Microprofile Tests TCK REST Client</name>
+
+    <properties>
+        <!-- 3.0.0-JAKARTA -->
+        <skipTests>true</skipTests>
+    </properties>
 
     <dependencies>
         <dependency>

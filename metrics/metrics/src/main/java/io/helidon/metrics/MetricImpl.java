@@ -32,14 +32,13 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import javax.json.Json;
-import javax.json.JsonArrayBuilder;
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObjectBuilder;
-
 import io.helidon.metrics.Sample.Derived;
 import io.helidon.metrics.api.AbstractMetric;
 
+import jakarta.json.Json;
+import jakarta.json.JsonArrayBuilder;
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonObjectBuilder;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricUnits;
@@ -163,9 +162,9 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
         JsonObjectBuilder metaBuilder =
                 new MetricsSupport.MergingJsonObjectBuilder(JSON.createObjectBuilder());
 
-        addNonEmpty(metaBuilder, "unit", metadata().getUnit().orElse(null));
+        addNonEmpty(metaBuilder, "unit", metadata().getUnit());
         addNonEmpty(metaBuilder, "type", metadata().getType());
-        addNonEmpty(metaBuilder, "description", metadata().getDescription().orElse(null));
+        addNonEmpty(metaBuilder, "description", metadata().getDescription());
         addNonEmpty(metaBuilder, "displayName", metadata().getDisplayName());
         if (metricIDs != null) {
             for (MetricID metricID : metricIDs) {
@@ -231,7 +230,7 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
         sb.append("# HELP ")
                 .append(nameWithUnits)
                 .append(" ")
-                .append(metadata().getDescription().orElse(""))
+                .append(metadata().getDescription())
                 .append('\n');
     }
 
@@ -443,7 +442,7 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
 
     // for Gauge and Histogram - must convert
     Units getUnits() {
-        String unit = metadata().getUnit().get();
+        String unit = metadata().getUnit();
         if ((null == unit) || unit.isEmpty() || MetricUnits.NONE.equals(unit)) {
             return new Units(null);
         }

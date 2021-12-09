@@ -17,7 +17,7 @@
 package io.helidon.metrics;
 
 import java.util.EnumMap;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.Semaphore;
 
 import io.helidon.config.Config;
 import io.helidon.metrics.api.MetricsSettings;
@@ -45,16 +45,29 @@ import org.eclipse.microprofile.metrics.MetricRegistry.Type;
 public class RegistryFactory implements io.helidon.metrics.api.RegistryFactory {
 
     private final EnumMap<Type, Registry> registries = new EnumMap<>(Type.class);
-    private final AtomicReference<MetricsSettings> metricsSettings;
+    private final Semaphore metricsSettingsAccess = new Semaphore(1);
+    private MetricsSettings metricsSettings;
 
     protected RegistryFactory(MetricsSettings metricsSettings, Registry appRegistry, Registry vendorRegistry) {
-        this.metricsSettings = new AtomicReference<>(metricsSettings);
+        this.metricsSettings = metricsSettings;
         registries.put(Type.APPLICATION, appRegistry);
         registries.put(Type.VENDOR, vendorRegistry);
     }
 
     private RegistryFactory(MetricsSettings metricsSettings) {
-        this(metricsSettings, Registry.create(Type.APPLICATION), Registry.create(Type.VENDOR));
+        this(metricsSettings,
+             Registry.create(Type.APPLICATION, metricsSettings.registrySettings(Type.APPLICATION)),
+             Registry.create(Type.VENDOR, metricsSettings.registrySettings(Type.VENDOR)));
+    }
+
+    private void accessMetricsSettings(Runnable operation) {
+        try {
+            metricsSettingsAccess.acquire();
+            operation.run();
+            metricsSettingsAccess.release();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 
@@ -138,13 +151,18 @@ public class RegistryFactory implements io.helidon.metrics.api.RegistryFactory {
 
     @Override
     public void update(MetricsSettings metricsSettings) {
-        this.metricsSettings.set(metricsSettings);
+        accessMetricsSettings(() -> {
+            this.metricsSettings = metricsSettings;
+            registries.forEach((key, value) -> value.update(metricsSettings.registrySettings(key)));
+        });
     }
 
     private synchronized void ensureBase() {
         if (null == registries.get(Type.BASE)) {
-            Registry registry = BaseRegistry.create(metricsSettings.get());
-            registries.put(Type.BASE, registry);
+            accessMetricsSettings(() -> {
+                Registry registry = BaseRegistry.create(metricsSettings);
+                registries.put(Type.BASE, registry);
+            });
         }
     }
 }

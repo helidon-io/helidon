@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,9 @@ package io.helidon.common.serviceloader;
 import java.util.Comparator;
 import java.util.List;
 
-import javax.annotation.Priority;
-
 import io.helidon.common.Prioritized;
+
+import jakarta.annotation.Priority;
 
 /**
  * Priority utilities.
@@ -82,8 +82,8 @@ public final class Priorities {
      * Sort the list based on priorities.
      * <ul>
      * <li>If element implements {@link io.helidon.common.Prioritized}, uses its priority.</li>
-     * <li>If element is a class and has annotation {@link javax.annotation.Priority}, uses its priority</li>
-     * <li>If element is any object and its class has annotation {@link javax.annotation.Priority}, uses its priority</li>
+     * <li>If element is a class and has annotation {@link jakarta.annotation.Priority}, uses its priority</li>
+     * <li>If element is any object and its class has annotation {@link jakarta.annotation.Priority}, uses its priority</li>
      * </ul>
      * @param list list to sort
      * @param defaultPriority default priority for elements that do not have it
@@ -94,7 +94,7 @@ public final class Priorities {
 
     /**
      * Returns a comparator for two objects, the classes for which are implementations of
-     * {@link io.helidon.common.Prioritized}, and/or optionally annotated with {@link javax.annotation.Priority}
+     * {@link io.helidon.common.Prioritized}, and/or optionally annotated with {@link jakarta.annotation.Priority}
      * and which applies a specified default priority if either or both classes lack the annotation.
      *
      * @param <S> type of object being compared

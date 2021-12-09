@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-dependencies</artifactId>
-        <version>2.4.0-SNAPSHOT</version>
+        <version>3.0.0-SNAPSHOT</version>
         <relativePath>./dependencies/pom.xml</relativePath>
     </parent>
     <artifactId>helidon-project</artifactId>
@@ -33,6 +33,8 @@
     <description>Java libraries for writing microservices</description>
 
     <properties>
+        <version.java>17</version.java>
+
         <doclint>all</doclint>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -52,11 +54,10 @@
 
         Changing these version requires approval for a new third party dependency!
         -->
-        <version.lib.arquillian>1.4.0.Final</version.lib.arquillian>
-        <version.lib.arquillian-weld-embedded>2.0.0.Final</version.lib.arquillian-weld-embedded>
-        <version.lib.asciidoctor.diagram>1.5.4.1</version.lib.asciidoctor.diagram>
+        <version.lib.arquillian>1.7.0.Alpha10</version.lib.arquillian>
+        <version.lib.asciidoctor.diagram>1.5.18</version.lib.asciidoctor.diagram>
         <version.lib.asm>6.0</version.lib.asm>
-        <version.lib.checkstyle>8.29</version.lib.checkstyle>
+        <version.lib.checkstyle>9.1</version.lib.checkstyle>
         <version.lib.groovy-all>2.4.14</version.lib.groovy-all>
         <!-- Silence javadoc error org.jboss.logging.annotations.Message$Format not found -->
         <version.lib.jboss-logging-annotations>2.2.1.Final</version.lib.jboss-logging-annotations>
@@ -71,11 +72,11 @@
         <version.lib.shrinkwrap-resolver>3.0.1</version.lib.shrinkwrap-resolver>
         <version.lib.spotbugs-annotations>3.1.12</version.lib.spotbugs-annotations>
         <version.lib.surefire.testng>3.0.0-M5</version.lib.surefire.testng>
-        <version.lib.testng>6.13.1</version.lib.testng>
+        <version.lib.testng>7.4.0</version.lib.testng>
         <version.lib.zipkin.junit>2.12.5</version.lib.zipkin.junit>
         <version.lib.bedrock>5.0.11</version.lib.bedrock>
         <version.lib.awaitility>3.1.6</version.lib.awaitility>
-        <version.lib.weld-junit>2.0.0.Final</version.lib.weld-junit>
+        <version.lib.weld-junit>3.0.0.Final</version.lib.weld-junit>
         <version.lib.jmh>1.23</version.lib.jmh>
         <version.lib.wiremock>2.26.3</version.lib.wiremock>
         <version.lib.commons-lang3>3.10</version.lib.commons-lang3>
@@ -88,7 +89,7 @@
         <version.plugin.archetype-packaging>3.1.2</version.plugin.archetype-packaging>
         <version.plugin.archetype>3.1.2</version.plugin.archetype>
         <version.plugin.build-helper>1.12</version.plugin.build-helper>
-        <version.plugin.checkstyle>3.1.0</version.plugin.checkstyle>
+        <version.plugin.checkstyle>3.1.2</version.plugin.checkstyle>
         <version.plugin.compiler>3.8.1</version.plugin.compiler>
         <version.plugin.dependency>3.1.2</version.plugin.dependency>
         <version.plugin.directory>0.3.1</version.plugin.directory>
@@ -102,12 +103,12 @@
         <version.plugin.jacoco>0.8.5</version.plugin.jacoco>
         <version.plugin.jandex>1.1.0</version.plugin.jandex>
         <version.plugin.jar>3.0.2</version.plugin.jar>
-        <version.plugin.javadoc>3.3.0</version.plugin.javadoc>
-        <version.plugin.jaxb>0.14.0</version.plugin.jaxb>
+        <version.plugin.javadoc>3.3.1</version.plugin.javadoc>
+        <version.plugin.jaxb>2.5.0</version.plugin.jaxb>
         <version.plugin.license>1.16</version.plugin.license>
         <version.plugin.os>1.5.0.Final</version.plugin.os>
         <version.plugin.project-info-reports>3.0.0</version.plugin.project-info-reports>
-        <version.plugin.protobuf>0.5.1</version.plugin.protobuf>
+        <version.plugin.protobuf>0.6.1</version.plugin.protobuf>
         <version.plugin.resources>2.7</version.plugin.resources>
         <version.plugin.scm-publish-plugin>3.0.0</version.plugin.scm-publish-plugin>
         <version.plugin.shade>3.0.0</version.plugin.shade>
@@ -124,34 +125,45 @@
         <version.helidon-cli>2.3.0</version.helidon-cli>
 
         <!-- Links to external javadocs. If you see a hardcoded version it means the javadocs for the version we use is not available. -->
+        <javadoc.link.jakarta-jaxrs>https://jakarta.ee/specifications/restful-ws/3.0/apidocs/</javadoc.link.jakarta-jaxrs>
+        <javadoc.link.jakarta-cdi>https://jakarta.ee/specifications/cdi/3.0/apidocs/</javadoc.link.jakarta-cdi>
+        <javadoc.link.jakarta-jsonb>https://jakarta.ee/specifications/jsonb/2.0/apidocs/</javadoc.link.jakarta-jsonb>
+        <javadoc.link.jakarta-persistence>https://jakarta.ee/specifications/persistence/3.0/apidocs/</javadoc.link.jakarta-persistence>
+        <javadoc.link.jakarta-jsonp>https://jakarta.ee/specifications/jsonp/2.0/apidocs/</javadoc.link.jakarta-jsonp>
+        <javadoc.link.jakarta-inject>https://jakarta.ee/specifications/dependency-injection/2.0/apidocs/</javadoc.link.jakarta-inject>
+        <javadoc.link.jakarta-jaxb>https://jakarta.ee/specifications/xml-binding/3.0/apidocs/</javadoc.link.jakarta-jaxb>
+        <javadoc.link.jakarta-transaction>https://jakarta.ee/specifications/transactions/2.0/apidocs/</javadoc.link.jakarta-transaction>
+
+        <javadoc.link.microprofile-config>https://download.eclipse.org/microprofile/microprofile-config-${version.lib.microprofile-config}/apidocs/</javadoc.link.microprofile-config>
+        <javadoc.link.microprofile-health>https://download.eclipse.org/microprofile/microprofile-health-${version.lib.microprofile-health}/apidocs/</javadoc.link.microprofile-health>
+        <javadoc.link.microprofile-metrics>https://download.eclipse.org/microprofile/microprofile-metrics-${version.lib.microprofile-metrics-api}/apidocs/</javadoc.link.microprofile-metrics>
+        <javadoc.link.microprofile-fault-tolerance-api>https://download.eclipse.org/microprofile/microprofile-fault-tolerance-${version.lib.microprofile-fault-tolerance-api}/apidocs/</javadoc.link.microprofile-fault-tolerance-api>
+        <javadoc.link.microprofile-graphql>https://download.eclipse.org/microprofile/microprofile-graphql-${version.lib.microprofile-graphql}/apidocs/</javadoc.link.microprofile-graphql>
+        <javadoc.link.microprofile-jwt>https://download.eclipse.org/microprofile/microprofile-jwt-auth-${version.lib.microprofile-jwt}/apidocs/</javadoc.link.microprofile-jwt>
+        <javadoc.link.microprofile-openapi-api>https://download.eclipse.org/microprofile/microprofile-open-api-${version.lib.microprofile-openapi-api}/apidocs/</javadoc.link.microprofile-openapi-api>
+        <javadoc.link.microprofile-reactive-messaging-api>https://download.eclipse.org/microprofile/microprofile-reactive-messaging-${version.lib.microprofile-reactive-messaging-api}/apidocs/</javadoc.link.microprofile-reactive-messaging-api>
+        <javadoc.link.microprofile-reactive-streams-operators-api>https://download.eclipse.org/microprofile/microprofile-reactive-streams-operators-${version.lib.microprofile-reactive-streams-operators-api}/apidocs</javadoc.link.microprofile-reactive-streams-operators-api>
+        <javadoc.link.microprofile-rest-client>https://download.eclipse.org/microprofile/microprofile-rest-client-${version.lib.microprofile-rest-client}/apidocs</javadoc.link.microprofile-rest-client>
+        <javadoc.link.microprofile-tracing>https://download.eclipse.org/microprofile/microprofile-opentracing-${version.lib.microprofile-tracing}/apidocs/</javadoc.link.microprofile-tracing>
+        <javadoc.link.microprofile-lra-api>https://download.eclipse.org/microprofile/microprofile-lra-${version.lib.microprofile-lra-api}/apidocs/</javadoc.link.microprofile-lra-api>
+
+
+        <javadoc.link.jersey>https://eclipse-ee4j.github.io/jersey.github.io/apidocs/${version.lib.jersey}/jersey</javadoc.link.jersey>
+        <javadoc.link.weld>https://docs.jboss.org/weld/javadoc/3.0/weld-spi/</javadoc.link.weld>
+        <javadoc.link.narayana>http://narayana.io/docs/api/</javadoc.link.narayana>
+        <javadoc.link.eclipselink>https://www.eclipse.org/eclipselink/api/3.0/</javadoc.link.eclipselink>
+
         <javadoc.jackson.version>2.12</javadoc.jackson.version>
         <javadoc.link.jackson-annotations>https://fasterxml.github.io/jackson-annotations/javadoc/${javadoc.jackson.version}/</javadoc.link.jackson-annotations>
         <javadoc.link.jackson-core>https://fasterxml.github.io/jackson-core/javadoc/${javadoc.jackson.version}/</javadoc.link.jackson-core>
         <javadoc.link.jackson-databind>https://fasterxml.github.io/jackson-databind/javadoc/${javadoc.jackson.version}/</javadoc.link.jackson-databind>
-        <javadoc.link.jaxrs>https://eclipse-ee4j.github.io/jaxrs-api/apidocs/${version.lib.jaxrs-api}</javadoc.link.jaxrs>
         <javadoc.link.netty>https://static.javadoc.io/io.netty/netty-transport/${version.lib.netty}</javadoc.link.netty>
-        <javadoc.link.cdi>http://docs.jboss.org/cdi/api/2.0</javadoc.link.cdi>
-        <javadoc.link.javax-inject>http://javax-inject.github.io/javax-inject/api/</javadoc.link.javax-inject>
-        <javadoc.link.reactive-streams>http://www.reactive-streams.org/reactive-streams-${version.lib.reactivestreams}-javadoc</javadoc.link.reactive-streams>
-        <javadoc.link.jersey>https://eclipse-ee4j.github.io/jersey.github.io/apidocs/${version.lib.jersey}/jersey</javadoc.link.jersey>
-        <javadoc.link.typesafe-config>https://static.javadoc.io/com.typesafe/config/${version.lib.typesafe-config}</javadoc.link.typesafe-config>
         <javadoc.link.netty-transport>https://static.javadoc.io/io.netty/netty-transport/${version.lib.netty}</javadoc.link.netty-transport>
+        <javadoc.link.reactive-streams>http://www.reactive-streams.org/reactive-streams-${version.lib.reactivestreams}-javadoc</javadoc.link.reactive-streams>
+        <javadoc.link.typesafe-config>https://static.javadoc.io/com.typesafe/config/${version.lib.typesafe-config}</javadoc.link.typesafe-config>
         <javadoc.link.opentracing>https://static.javadoc.io/io.opentracing/opentracing-api/${version.lib.opentracing}</javadoc.link.opentracing>
         <javadoc.link.prometheus>https://static.javadoc.io/io.prometheus/simpleclient/${version.lib.prometheus}</javadoc.link.prometheus>
         <javadoc.link.zipkin>https://static.javadoc.io/io.zipkin.reporter2/zipkin-reporter/2.12.3</javadoc.link.zipkin>
-        <javadoc.link.jakarta-jsonb>https://static.javadoc.io/jakarta.json.bind/jakarta.json.bind-api/${version.lib.jsonb-api}</javadoc.link.jakarta-jsonb>
-        <javadoc.link.jakarta-persistence>https://static.javadoc.io/jakarta.persistence/jakarta.persistence-api/${version.lib.persistence-api}</javadoc.link.jakarta-persistence>
-        <javadoc.link.jakarta-jsonp>https://static.javadoc.io/jakarta.json/jakarta.json-api/${version.lib.jsonp-api}</javadoc.link.jakarta-jsonp>
-        <javadoc.link.javax-jsonb>https://static.javadoc.io/javax.json.bind/javax.json.bind-api/1.0</javadoc.link.javax-jsonb>
-        <javadoc.link.javax-jaxb>https://static.javadoc.io/javax.xml.bind/jaxb-api/2.3.1</javadoc.link.javax-jaxb>
-        <javadoc.link.javax-persistence>https://static.javadoc.io/javax.persistence/javax.persistence-api/2.2</javadoc.link.javax-persistence>
-        <javadoc.link.javax-transaction>https://static.javadoc.io/javax.transaction/javax.transaction-api/1.3</javadoc.link.javax-transaction>
-        <javadoc.link.microprofile-config>https://static.javadoc.io/org.eclipse.microprofile.config/microprofile-config-api/${version.lib.microprofile-config}</javadoc.link.microprofile-config>
-        <javadoc.link.microprofile-health>https://static.javadoc.io/org.eclipse.microprofile.health/microprofile-health-api/${version.lib.microprofile-health}</javadoc.link.microprofile-health>
-        <javadoc.link.microprofile-metrics>https://static.javadoc.io/org.eclipse.microprofile.metrics/microprofile-metrics-api/${version.lib.microprofile-metrics-api}</javadoc.link.microprofile-metrics>
-        <javadoc.link.weld>https://docs.jboss.org/weld/javadoc/3.0/weld-spi/</javadoc.link.weld>
-        <javadoc.link.narayana>http://narayana.io/docs/api/</javadoc.link.narayana>
-        <javadoc.link.eclipselink>https://www.eclipse.org/eclipselink/api/2.7/</javadoc.link.eclipselink>
 
         <!--suppress UnresolvedMavenProperty -->
         <javadoc.packagelist.dir>${top.parent.basedir}/etc/javadoc</javadoc.packagelist.dir>
@@ -207,9 +219,9 @@
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>${version.plugin.compiler}</version>
                     <configuration>
-                        <source>11</source>
-                        <target>11</target>
-                        <release>11</release>
+                        <source>${version.java}</source>
+                        <target>${version.java}</target>
+                        <release>${version.java}</release>
                         <forceJavacCompilerUse>true</forceJavacCompilerUse>
                         <compilerArgs>
                             <arg>-Xlint:unchecked</arg>
@@ -225,7 +237,7 @@
                     <artifactId>maven-javadoc-plugin</artifactId>
                     <version>${version.plugin.javadoc}</version>
                     <configuration>
-                        <source>11</source>
+                        <source>${version.java}</source>
                         <failOnError>true</failOnError>
                         <!-- we are not interested in each file that is generated -->
                         <quiet>true</quiet>
@@ -245,20 +257,20 @@
                                 <location>${javadoc.packagelist.dir}/jackson-databind</location>
                             </offlineLink>
                             <offlineLink>
-                                <url>${javadoc.link.jaxrs}</url>
-                                <location>${javadoc.packagelist.dir}/jaxrs</location>
+                                <url>${javadoc.link.jakarta-jaxrs}</url>
+                                <location>${javadoc.packagelist.dir}/jakarta-jaxrs</location>
                             </offlineLink>
                             <offlineLink>
                                 <url>${javadoc.link.netty}</url>
                                 <location>${javadoc.packagelist.dir}/netty</location>
                             </offlineLink>
                             <offlineLink>
-                                <url>${javadoc.link.cdi}</url>
-                                <location>${javadoc.packagelist.dir}/cdi</location>
+                                <url>${javadoc.link.jakarta-cdi}</url>
+                                <location>${javadoc.packagelist.dir}/jakarta-cdi</location>
                             </offlineLink>
                             <offlineLink>
-                                <url>${javadoc.link.javax-inject}</url>
-                                <location>${javadoc.packagelist.dir}/javax-inject</location>
+                                <url>${javadoc.link.jakarta-inject}</url>
+                                <location>${javadoc.packagelist.dir}/jakarta-inject</location>
                             </offlineLink>
                             <offlineLink>
                                 <url>${javadoc.link.reactive-streams}</url>
@@ -301,20 +313,12 @@
                                 <location>${javadoc.packagelist.dir}/jakarta-jsonp</location>
                             </offlineLink>
                             <offlineLink>
-                                <url>${javadoc.link.javax-jsonb}</url>
-                                <location>${javadoc.packagelist.dir}/javax-jsonb</location>
+                                <url>${javadoc.link.jakarta-jaxb}</url>
+                                <location>${javadoc.packagelist.dir}/jakarta-jaxb</location>
                             </offlineLink>
                             <offlineLink>
-                                <url>${javadoc.link.javax-jaxb}</url>
-                                <location>${javadoc.packagelist.dir}/javax-jaxb</location>
-                            </offlineLink>
-                            <offlineLink>
-                                <url>${javadoc.link.javax-persistence}</url>
-                                <location>${javadoc.packagelist.dir}/javax-persistence</location>
-                            </offlineLink>
-                            <offlineLink>
-                                <url>${javadoc.link.javax-transaction}</url>
-                                <location>${javadoc.packagelist.dir}/javax-transaction</location>
+                                <url>${javadoc.link.jakarta-transaction}</url>
+                                <location>${javadoc.packagelist.dir}/jakarta-transaction</location>
                             </offlineLink>
                             <offlineLink>
                                 <url>${javadoc.link.microprofile-config}</url>
@@ -324,10 +328,49 @@
                                 <url>${javadoc.link.microprofile-health}</url>
                                 <location>${javadoc.packagelist.dir}/microprofile-health</location>
                             </offlineLink>
+
                             <offlineLink>
                                 <url>${javadoc.link.microprofile-metrics}</url>
                                 <location>${javadoc.packagelist.dir}/microprofile-metrics</location>
                             </offlineLink>
+
+                            <offlineLink>
+                                <url>${javadoc.link.microprofile-fault-tolerance-api}</url>
+                                <location>${javadoc.packagelist.dir}/microprofile-fault-tolerance-api</location>
+                            </offlineLink>
+                            <offlineLink>
+                                <url>${javadoc.link.microprofile-graphql}</url>
+                                <location>${javadoc.packagelist.dir}/microprofile-graphql</location>
+                            </offlineLink>
+                            <offlineLink>
+                                <url>${javadoc.link.microprofile-jwt}</url>
+                                <location>${javadoc.packagelist.dir}/microprofile-jwt</location>
+                            </offlineLink>
+                            <offlineLink>
+                                <url>${javadoc.link.microprofile-lra-api}</url>
+                                <location>${javadoc.packagelist.dir}/microprofile-lra-api</location>
+                            </offlineLink>
+                            <offlineLink>
+                                <url>${javadoc.link.microprofile-openapi-api}</url>
+                                <location>${javadoc.packagelist.dir}/microprofile-openapi-api</location>
+                            </offlineLink>
+                            <offlineLink>
+                                <url>${javadoc.link.microprofile-reactive-messaging-api}</url>
+                                <location>${javadoc.packagelist.dir}/microprofile-reactive-messaging-api</location>
+                            </offlineLink>
+                            <offlineLink>
+                                <url>${javadoc.link.microprofile-reactive-streams-operators-api}</url>
+                                <location>${javadoc.packagelist.dir}/microprofile-reactive-streams-operators-api</location>
+                            </offlineLink>
+                            <offlineLink>
+                                <url>${javadoc.link.microprofile-rest-client}</url>
+                                <location>${javadoc.packagelist.dir}/microprofile-rest-client</location>
+                            </offlineLink>
+                            <offlineLink>
+                                <url>${javadoc.link.microprofile-tracing}</url>
+                                <location>${javadoc.packagelist.dir}/microprofile-tracing</location>
+                            </offlineLink>
+
                             <offlineLink>
                                 <url>${javadoc.link.weld}</url>
                                 <location>${javadoc.packagelist.dir}/weld</location>
@@ -343,9 +386,7 @@
                         </offlineLinks>
                         <additionalJOptions combine.children="append">
                             <additionalJOption>-J-Dhttp.agent=maven-javadoc-plugin</additionalJOption>
-                            <additionalJOption>--add-exports=java.base/sun.security.util=io.helidon.common.pki
-                            </additionalJOption>
-                            <!--<additionalJOption>- -frames</additionalJOption>-->
+                            <additionalJOption>--add-exports=java.base/sun.security.util=io.helidon.common.pki</additionalJOption>
                         </additionalJOptions>
                         <additionalOptions>
                             <!--<additionalOption> - -add-stylesheet ${top.parent.basedir}/etc/helidon-javadoc.css</additionalOption>-->
@@ -545,7 +586,7 @@
                     <version>${version.plugin.protobuf}</version>
                     <configuration>
                         <!--suppress UnresolvedMavenProperty -->
-                        <protocArtifact>com.google.protobuf:protoc:3.5.1-1:exe:${os.detected.classifier}</protocArtifact>
+                        <protocArtifact>com.google.protobuf:protoc:3.17.3:exe:${os.detected.classifier}</protocArtifact>
                         <pluginId>grpc-java</pluginId>
                         <!--suppress UnresolvedMavenProperty -->
                         <pluginArtifact>
@@ -591,20 +632,43 @@
                     </dependencies>
                 </plugin>
                 <plugin>
-                  <groupId>org.hibernate.orm.tooling</groupId>
-                  <artifactId>hibernate-enhance-maven-plugin</artifactId>
-                  <version>${version.plugin.hibernate-enhance}</version>
+                    <groupId>org.hibernate.orm.tooling</groupId>
+                    <artifactId>hibernate-enhance-maven-plugin</artifactId>
+                    <version>${version.plugin.hibernate-enhance}</version>
+                    <dependencies>
+                        <dependency>
+                            <!-- used by hibernate plugin - requires update for Java 17 -->
+                            <groupId>net.bytebuddy</groupId>
+                            <artifactId>byte-buddy</artifactId>
+                            <version>${version.lib.byte-buddy}</version>
+                        </dependency>
+                    </dependencies>
                 </plugin>
                 <plugin>
-                    <groupId>org.jvnet.jaxb2.maven2</groupId>
-                    <artifactId>maven-jaxb2-plugin</artifactId>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>jaxb2-maven-plugin</artifactId>
                     <version>${version.plugin.jaxb}</version>
                     <dependencies>
-                        <!-- Force upgrade version. Needed to support Java 16 -->
+                        <!-- Force upgrade version to use jakarta packages. -->
                         <dependency>
                             <groupId>org.glassfish.jaxb</groupId>
-                            <artifactId>jaxb-runtime</artifactId>
+                            <artifactId>jaxb-xjc</artifactId>
                             <version>${version.lib.jaxb-runtime}</version>
+                        </dependency>
+                        <dependency>
+                            <groupId>com.sun.xml.bind</groupId>
+                            <artifactId>jaxb-impl</artifactId>
+                            <version>${version.lib.jaxb-runtime}</version>
+                        </dependency>
+                        <dependency>
+                            <groupId>jakarta.activation</groupId>
+                            <artifactId>jakarta.activation-api</artifactId>
+                            <version>${version.lib.jakarta.activation-api}</version>
+                        </dependency>
+                        <dependency>
+                            <groupId>jakarta.xml.bind</groupId>
+                            <artifactId>jakarta.xml.bind-api</artifactId>
+                            <version>${version.lib.jakarta.xml.bind-api}</version>
                         </dependency>
                     </dependencies>
                 </plugin>
@@ -961,12 +1025,6 @@
                 <groupId>org.eclipse.microprofile.jwt</groupId>
                 <artifactId>microprofile-jwt-auth-tck</artifactId>
                 <version>${version.lib.microprofile-jwt}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>javax.enterprise</groupId>
-                        <artifactId>cdi-api</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.microprofile.jwt</groupId>
@@ -1021,7 +1079,7 @@
             </dependency>
             <dependency>
                 <groupId>org.jboss.arquillian.testenricher</groupId>
-                <artifactId>arquillian-testenricher-cdi</artifactId>
+                <artifactId>arquillian-testenricher-cdi-jakarta</artifactId>
                 <version>${version.lib.arquillian}</version>
             </dependency>
             <dependency>
@@ -1048,11 +1106,6 @@
                 <groupId>org.jboss.arquillian.container</groupId>
                 <artifactId>arquillian-container-spi</artifactId>
                 <version>${version.lib.arquillian}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.arquillian.container</groupId>
-                <artifactId>arquillian-weld-embedded</artifactId>
-                <version>${version.lib.arquillian-weld-embedded}</version>
             </dependency>
             <!-- Force update of shrinkwrap version used by arquillian -->
             <dependency>
@@ -1182,58 +1235,6 @@ helidon-parent,helidon-dependencies,helidon-bom,helidon-se,helidon-mp,io.grpc,he
             <modules>
                 <module>archetypes</module>
             </modules>
-        </profile>
-        <profile>
-          <id>jdk9-javadoc</id>
-          <!-- https://maven.apache.org/guides/introduction/introduction-to-profiles.html#Details_on_profile_activation -->
-          <!-- AND semantics; see https://issues.apache.org/jira/browse/MNG-4565 -->
-            <activation>
-              <jdk>[9,10)</jdk>
-              <property>
-                  <name>!jdkToolchainVersion</name>
-              </property>
-            </activation>
-            <build>
-                <pluginManagement>
-                    <plugins>
-                        <plugin>
-                            <groupId>org.apache.maven.plugins</groupId>
-                            <artifactId>maven-javadoc-plugin</artifactId>
-                            <configuration>
-                                <additionalJOptions>
-                                    <!-- https://bugs.openjdk.java.net/browse/JDK-8184969 -->
-                                    <JOption>-Xold</JOption>
-                                </additionalJOptions>
-                            </configuration>
-                        </plugin>
-                    </plugins>
-                </pluginManagement>
-            </build>
-        </profile>
-        <profile>
-          <id>jdk9-toolchain-javadoc</id>
-            <activation>
-              <property>
-                <name>jdkToolchainVersion</name>
-                <value>9</value>
-              </property>
-            </activation>
-            <build>
-                <pluginManagement>
-                    <plugins>
-                        <plugin>
-                            <groupId>org.apache.maven.plugins</groupId>
-                            <artifactId>maven-javadoc-plugin</artifactId>
-                            <configuration>
-                                <additionalJOptions combine.children="append">
-                                    <!-- https://bugs.openjdk.java.net/browse/JDK-8184969 -->
-                                    <JOption>-Xold</JOption>
-                                </additionalJOptions>
-                            </configuration>
-                        </plugin>
-                    </plugins>
-                </pluginManagement>
-            </build>
         </profile>
         <profile>
             <id>sources</id>
@@ -1551,7 +1552,7 @@ helidon-parent,helidon-dependencies,helidon-bom,helidon-se,helidon-mp,io.grpc,he
         <profile>
             <id>loom</id>
             <activation>
-                <jdk>16-loom</jdk>
+                <jdk>18-loom</jdk>
             </activation>
             <build>
                 <pluginManagement>
@@ -1560,17 +1561,17 @@ helidon-parent,helidon-dependencies,helidon-bom,helidon-se,helidon-mp,io.grpc,he
                             <groupId>org.apache.maven.plugins</groupId>
                             <artifactId>maven-compiler-plugin</artifactId>
                             <configuration>
-                                <source>16</source>
-                                <target>16</target>
-                                <release>16</release>
+                                <source>18</source>
+                                <target>18</target>
+                                <release>18</release>
                             </configuration>
                         </plugin>
                         <plugin>
                             <groupId>org.apache.maven.plugins</groupId>
                             <artifactId>maven-javadoc-plugin</artifactId>
                             <configuration>
-                                <source>16</source>
-                                <release>16</release>
+                                <source>18</source>
+                                <release>18</release>
                             </configuration>
                         </plugin>
                     </plugins>

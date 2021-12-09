@@ -20,15 +20,13 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 
-import javax.annotation.Priority;
-
+import io.helidon.common.LazyValue;
 import io.helidon.grpc.core.GrpcHelper;
 import io.helidon.grpc.core.InterceptorPriorities;
 import io.helidon.grpc.server.MethodDescriptor;
 import io.helidon.grpc.server.ServiceDescriptor;
-import io.helidon.metrics.RegistryFactory;
+import io.helidon.metrics.api.RegistryFactory;
 
 import io.grpc.Context;
 import io.grpc.ForwardingServerCall;
@@ -37,6 +35,7 @@ import io.grpc.ServerCall;
 import io.grpc.ServerCallHandler;
 import io.grpc.ServerInterceptor;
 import io.grpc.Status;
+import jakarta.annotation.Priority;
 import org.eclipse.microprofile.metrics.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Histogram;
@@ -59,14 +58,14 @@ public class GrpcMetrics
     /**
      * The registry of vendor metrics.
      */
-    static final MetricRegistry VENDOR_REGISTRY =
-            RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.VENDOR);
+    static final LazyValue<MetricRegistry> VENDOR_REGISTRY = LazyValue.create(() ->
+            RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.VENDOR));
 
     /**
      * The registry of application metrics.
      */
-    static final MetricRegistry APP_REGISTRY =
-            RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.APPLICATION);
+    static final LazyValue<MetricRegistry> APP_REGISTRY = LazyValue.create(() ->
+            RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.APPLICATION));
 
     static final org.eclipse.microprofile.metrics.Metadata GRPC_METER = org.eclipse.microprofile.metrics.Metadata
             .builder()
@@ -161,6 +160,8 @@ public class GrpcMetrics
      * @return a {@link io.helidon.grpc.metrics.GrpcMetrics} interceptor
      * @see org.eclipse.microprofile.metrics.Metadata
      */
+    // TODO 3.0.0-JAKARTA
+    // reusability is missing from new metrics API
     public GrpcMetrics reusable(boolean reusable) {
         return new GrpcMetrics(metricRule.reusable(reusable));
     }
@@ -261,27 +262,27 @@ public class GrpcMetrics
 
         switch (type) {
             case COUNTER:
-                serverCall = new CountedServerCall<>(APP_REGISTRY.counter(
+                serverCall = new CountedServerCall<>(APP_REGISTRY.get().counter(
                         rules.metadata(service, methodName), rules.toTags()), call);
                 break;
             case METERED:
-                serverCall = new MeteredServerCall<>(APP_REGISTRY.meter(
+                serverCall = new MeteredServerCall<>(APP_REGISTRY.get().meter(
                         rules.metadata(service, methodName), rules.toTags()), call);
                 break;
             case HISTOGRAM:
-                serverCall = new HistogramServerCall<>(APP_REGISTRY.histogram(
+                serverCall = new HistogramServerCall<>(APP_REGISTRY.get().histogram(
                         rules.metadata(service, methodName), rules.toTags()), call);
                 break;
             case TIMER:
-                serverCall = new TimedServerCall<>(APP_REGISTRY.timer(
+                serverCall = new TimedServerCall<>(APP_REGISTRY.get().timer(
                         rules.metadata(service, methodName), rules.toTags()), call);
                 break;
             case SIMPLE_TIMER:
-                serverCall = new SimplyTimedServerCall<>(APP_REGISTRY.simpleTimer(
+                serverCall = new SimplyTimedServerCall<>(APP_REGISTRY.get().simpleTimer(
                         rules.metadata(service, methodName), rules.toTags()), call);
                 break;
             case CONCURRENT_GAUGE:
-                serverCall = new ConcurrentGaugeServerCall<>(APP_REGISTRY.concurrentGauge(
+                serverCall = new ConcurrentGaugeServerCall<>(APP_REGISTRY.get().concurrentGauge(
                         rules.metadata(service, methodName), rules.toTags()), call);
                 break;
             case GAUGE:
@@ -290,7 +291,7 @@ public class GrpcMetrics
                 serverCall = call;
         }
 
-        serverCall = new MeteredServerCall<>(VENDOR_REGISTRY.meter(GRPC_METER), serverCall);
+        serverCall = new MeteredServerCall<>(VENDOR_REGISTRY.get().meter(GRPC_METER), serverCall);
 
         return next.startCall(serverCall, headers);
     }
@@ -359,7 +360,7 @@ public class GrpcMetrics
             super.close(status, responseHeaders);
 
             long time = System.nanoTime() - startNanos;
-            getMetric().update(time, TimeUnit.NANOSECONDS);
+            getMetric().update(Duration.ofNanos(time));
         }
     }
 
@@ -618,8 +619,7 @@ public class GrpcMetrics
             String name = nameFunction.orElse(this::defaultName).createName(service, method, type);
             MetadataBuilder builder = org.eclipse.microprofile.metrics.Metadata.builder()
                     .withName(name)
-                    .withType(type)
-                    .reusable(this.reusable);
+                    .withType(type);
 
             this.description.ifPresent(builder::withDescription);
             this.units.ifPresent(builder::withUnit);

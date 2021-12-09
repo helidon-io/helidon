@@ -24,7 +24,6 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -35,7 +34,6 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
 
 class TestPeriodicExecutor {
 
@@ -125,7 +123,7 @@ class TestPeriodicExecutor {
     }
 
     @Test
-    void testWarningOnStopWhenStopped() throws InterruptedException {
+    void testNoWarningOnStopWhenStopped() throws InterruptedException {
 
         MyHandler handler = new MyHandler();
         PERIODIC_EXECUTOR_LOGGER.addHandler(handler);
@@ -137,14 +135,39 @@ class TestPeriodicExecutor {
 
             executor.stopExecutor();
             List<LogRecord> logRecords = handler.logRecords();
-            assertThat("Expected log records", logRecords.size(), is(1));
-            assertThat("Log record level", logRecords.get(0)
-                    .getLevel(), is(equalTo(Level.WARNING)));
-            assertThat("Log record content", logRecords.get(0)
-                            .getMessage(),
-                    containsString("Unexpected attempt to stop"));
+            assertThat("Expected log records", logRecords.size(), is(0));
         } finally {
             PERIODIC_EXECUTOR_LOGGER.removeHandler(handler);
+        }
+    }
+
+    @Test
+    void testFineMessageOnStopWhenStopped() throws InterruptedException {
+
+        MyHandler handler = new MyHandler();
+        Level originalLevel = PERIODIC_EXECUTOR_LOGGER.getLevel();
+
+        PERIODIC_EXECUTOR_LOGGER.addHandler(handler);
+        try {
+            PERIODIC_EXECUTOR_LOGGER.setLevel(Level.FINE);
+            PeriodicExecutor executor = PeriodicExecutor.create();
+            executor.stopExecutor();
+            Thread.sleep(SLEEP_TIME_NO_DATA_MS);
+
+            executor.stopExecutor();
+            handler.clear();
+
+            executor.stopExecutor();
+            List<LogRecord> logRecords = handler.logRecords();
+            assertThat("Expected log records", logRecords.size(), is(2));
+            assertThat("Log record level", logRecords.get(1)
+                    .getLevel(), is(equalTo(Level.FINE)));
+            assertThat("Log record content", logRecords.get(1)
+                               .getMessage(),
+                       containsString("Unexpected attempt to stop"));
+        } finally {
+            PERIODIC_EXECUTOR_LOGGER.removeHandler(handler);
+            PERIODIC_EXECUTOR_LOGGER.setLevel(originalLevel);
         }
     }
 

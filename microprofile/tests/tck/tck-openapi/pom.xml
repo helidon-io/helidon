@@ -23,12 +23,17 @@
     <parent>
         <groupId>io.helidon.microprofile.tests</groupId>
         <artifactId>tck-project</artifactId>
-        <version>2.4.0-SNAPSHOT</version>
+        <version>3.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>tck-openapi</artifactId>
     <name>Helidon Microprofile Tests TCK OpenAPI</name>
+
+    <properties>
+        <!-- 3.0.0-JAKARTA -->
+        <skipTests>true</skipTests>
+    </properties>
 
     <dependencies>
         <dependency>
@@ -80,6 +85,10 @@
                         <dependency>org.eclipse.microprofile.openapi:microprofile-openapi-tck</dependency>
                     </dependenciesToScan>
                     <trimStackTrace>false</trimStackTrace>
+                    <!-- Following works around TCK test error when Application.getSingletons returns a non-empty set -->
+                    <systemPropertyVariables>
+                        <mp.openapi.extensions.helidon.use-jaxrs-semantics>false</mp.openapi.extensions.helidon.use-jaxrs-semantics>
+                    </systemPropertyVariables>
                 </configuration>
             </plugin>
         </plugins>

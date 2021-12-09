@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.applications</groupId>
         <artifactId>helidon-mp</artifactId>
-        <version>2.4.0-SNAPSHOT</version>
+        <version>3.0.0-SNAPSHOT</version>
         <relativePath>../../../../applications/mp/pom.xml</relativePath>
     </parent>
     <groupId>io.helidon.tests.integration</groupId>
@@ -80,10 +80,6 @@
             <groupId>io.helidon.integrations.cdi</groupId>
             <artifactId>helidon-integrations-cdi-jta-weld</artifactId>
             <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss</groupId>
-            <artifactId>jboss-transaction-spi</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.integrations.cdi</groupId>
@@ -164,14 +160,15 @@
                 <artifactId>hibernate-enhance-maven-plugin</artifactId>
                 <executions>
                     <execution>
+                        <id>Statically enhance JPA entities for Hibernate</id>
+                        <goals>
+                            <goal>enhance</goal>
+                        </goals>
                         <configuration>
                             <failOnError>true</failOnError>
                             <enableLazyInitialization>true</enableLazyInitialization>
                             <enableDirtyTracking>true</enableDirtyTracking>
                         </configuration>
-                        <goals>
-                            <goal>enhance</goal>
-                        </goals>
                     </execution>
                 </executions>
             </plugin>

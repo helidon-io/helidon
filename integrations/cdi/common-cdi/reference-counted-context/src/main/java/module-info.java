@@ -22,10 +22,10 @@
  */
 module io.helidon.integrations.cdi.referencecountedcontext {
     requires io.helidon.integrations.cdi.delegates;
-    requires jakarta.enterprise.cdi.api;
+    requires jakarta.cdi;
 
     exports io.helidon.integrations.cdi.referencecountedcontext;
 
-    provides javax.enterprise.inject.spi.Extension
+    provides jakarta.enterprise.inject.spi.Extension
             with io.helidon.integrations.cdi.referencecountedcontext.ReferenceCountedExtension;
 }

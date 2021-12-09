@@ -20,9 +20,9 @@ import java.util.Collections;
 import java.util.Objects;
 import java.util.Set;
 
-import javax.enterprise.inject.Instance;
-import javax.enterprise.inject.Vetoed;
-import javax.persistence.EntityManager;
+import jakarta.enterprise.inject.Instance;
+import jakarta.enterprise.inject.Vetoed;
+import jakarta.persistence.EntityManager;
 
 /**
  * A {@link DelegatingEntityManager} created in certain very specific
@@ -127,7 +127,7 @@ class CdiTransactionScopedEntityManager extends DelegatingEntityManager {
      * Disposes of this {@link CdiTransactionScopedEntityManager} by
      * calling the {@link #close()} method.
      *
-     * <p>If the {@link javax.transaction.TransactionScoped} scope is
+     * <p>If the {@link jakarta.transaction.TransactionScoped} scope is
      * behaving the way it should, then this method will be invoked
      * only when the underlying transaction has finished committing or
      * rolling back, and in no other situations.  It follows that the

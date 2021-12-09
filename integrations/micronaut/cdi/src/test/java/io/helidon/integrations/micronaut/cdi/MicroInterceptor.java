@@ -16,10 +16,9 @@
 
 package io.helidon.integrations.micronaut.cdi;
 
-import javax.inject.Singleton;
-
 import io.micronaut.aop.MethodInterceptor;
 import io.micronaut.aop.MethodInvocationContext;
+import jakarta.inject.Singleton;
 
 @Singleton
 public class MicroInterceptor implements MethodInterceptor<Object, Object> {

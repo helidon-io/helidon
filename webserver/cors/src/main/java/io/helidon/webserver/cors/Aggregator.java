@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 package io.helidon.webserver.cors;
 
@@ -95,7 +94,7 @@ class Aggregator {
         return isEnabled;
     }
 
-    static class Builder implements io.helidon.common.Builder<Aggregator>, CorsSetter<Builder> {
+    static class Builder implements io.helidon.common.Builder<Builder, Aggregator>, CorsSetter<Builder> {
 
         private final List<CrossOriginConfigMatchable> crossOriginConfigMatchables = new ArrayList<>();
         private boolean isEnabled = true;

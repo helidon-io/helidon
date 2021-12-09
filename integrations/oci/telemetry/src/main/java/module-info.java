@@ -21,7 +21,7 @@
  * @see io.helidon.integrations.oci.telemetry.OciMetricsRx
  */
 module io.helidon.integrations.oci.telemetry {
-    requires java.json;
+    requires jakarta.json;
 
     requires io.helidon.common.reactive;
     requires io.helidon.integrations.common.rest;

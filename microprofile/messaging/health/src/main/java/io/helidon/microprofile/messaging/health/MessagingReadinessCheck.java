@@ -19,12 +19,11 @@ package io.helidon.microprofile.messaging.health;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
-
 import io.helidon.health.common.BuiltInHealthCheck;
 import io.helidon.microprofile.messaging.MessagingCdiExtension;
 
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.eclipse.microprofile.health.HealthCheckResponseBuilder;
@@ -56,7 +55,7 @@ public class MessagingReadinessCheck implements HealthCheck {
             isUp.compareAndSet(true, up);
             b.withData(channelName, up ? "UP" : "DOWN");
         });
-        b.state(isUp.get());
+        b.status(isUp.get());
         return b.build();
     }
 }

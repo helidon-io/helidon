@@ -16,8 +16,7 @@
 
 package io.helidon.microprofile.metrics;
 
-import javax.enterprise.context.Dependent;
-
+import jakarta.enterprise.context.Dependent;
 import org.eclipse.microprofile.metrics.annotation.Metered;
 
 /**

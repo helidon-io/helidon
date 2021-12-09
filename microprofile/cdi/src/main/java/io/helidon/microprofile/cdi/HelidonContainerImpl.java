@@ -31,14 +31,6 @@ import java.util.logging.LogManager;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
-import javax.enterprise.context.BeforeDestroyed;
-import javax.enterprise.context.Destroyed;
-import javax.enterprise.context.Initialized;
-import javax.enterprise.inject.se.SeContainer;
-import javax.enterprise.inject.spi.BeanManager;
-import javax.enterprise.inject.spi.CDI;
-import javax.enterprise.inject.spi.Extension;
-
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
 import io.helidon.common.LogConfig;
@@ -49,6 +41,13 @@ import io.helidon.common.context.Contexts;
 import io.helidon.config.mp.MpConfig;
 import io.helidon.config.mp.MpConfigProviderResolver;
 
+import jakarta.enterprise.context.BeforeDestroyed;
+import jakarta.enterprise.context.Destroyed;
+import jakarta.enterprise.context.Initialized;
+import jakarta.enterprise.inject.se.SeContainer;
+import jakarta.enterprise.inject.spi.BeanManager;
+import jakarta.enterprise.inject.spi.CDI;
+import jakarta.enterprise.inject.spi.Extension;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.jboss.weld.AbstractCDI;
@@ -84,7 +83,7 @@ import static org.jboss.weld.executor.ExecutorServicesFactory.ThreadPoolType.COM
  * <p>Initialization should happen statically and is part of the compiled native image.
  * Start happens at runtime with current configuration.
  * <p>When running in JIT mode (or on any regular JDK), this works as if Weld is used directly.
- * <p>Important note - you need to explicitly use this class. Using {@link javax.enterprise.inject.se.SeContainerInitializer} will
+ * <p>Important note - you need to explicitly use this class. Using {@link jakarta.enterprise.inject.se.SeContainerInitializer} will
  * boot Weld.
  */
 final class HelidonContainerImpl extends Weld implements HelidonContainer {
@@ -144,9 +143,9 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
     private HelidonContainerImpl init() {
         LOGGER.fine(() -> "Initializing CDI container " + id);
 
-        addHelidonBeanDefiningAnnotations("javax.ws.rs.Path",
-                                          "javax.ws.rs.ext.Provider",
-                                          "javax.websocket.server.ServerEndpoint",
+        addHelidonBeanDefiningAnnotations("jakarta.ws.rs.Path",
+                                          "jakarta.ws.rs.ext.Provider",
+                                          "jakarta.websocket.server.ServerEndpoint",
                                           "org.eclipse.microprofile.graphql.GraphQLApi",
                                           "org.eclipse.microprofile.graphql.Input",
                                           "org.eclipse.microprofile.graphql.Interface",

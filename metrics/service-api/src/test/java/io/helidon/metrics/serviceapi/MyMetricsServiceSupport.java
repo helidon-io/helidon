@@ -62,7 +62,7 @@ public class MyMetricsServiceSupport extends HelidonRestServiceSupport {
         return counter.getCount();
     }
 
-    public static class Builder extends HelidonRestServiceSupport.Builder<MyMetricsServiceSupport, Builder> {
+    public static class Builder extends HelidonRestServiceSupport.Builder<Builder, MyMetricsServiceSupport> {
 
         private ComponentMetricsSettings.Builder componentMetricsSettingsBuilder = ComponentMetricsSettings.builder();
 

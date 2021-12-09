@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,9 +29,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import javax.enterprise.inject.Any;
-import javax.enterprise.inject.spi.BeanManager;
-
 import io.helidon.common.Builder;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.grpc.core.ContextKeys;
@@ -50,6 +47,8 @@ import io.helidon.microprofile.grpc.core.Instance;
 import io.helidon.microprofile.grpc.core.ModelHelper;
 
 import io.grpc.ServerInterceptor;
+import jakarta.enterprise.inject.Any;
+import jakarta.enterprise.inject.spi.BeanManager;
 
 /**
  * A builder for constructing a {@link ServiceDescriptor}
@@ -57,7 +56,7 @@ import io.grpc.ServerInterceptor;
  */
 public class GrpcServiceBuilder
         extends AbstractServiceBuilder
-        implements Builder<ServiceDescriptor> {
+        implements Builder<GrpcServiceBuilder, ServiceDescriptor> {
 
     private static final Logger LOGGER = Logger.getLogger(GrpcServiceBuilder.class.getName());
 
@@ -68,7 +67,7 @@ public class GrpcServiceBuilder
      *
      * @param serviceClass gRPC service (handler) class.
      * @param instance     the target instance to call gRPC handler methods on
-     * @param beanManager  the {@link javax.enterprise.inject.spi.BeanManager} to use
+     * @param beanManager  the {@link jakarta.enterprise.inject.spi.BeanManager} to use
      *                     to look-up CDI beans.
      * @throws java.lang.NullPointerException if the service or instance parameters are null
      */
@@ -81,7 +80,7 @@ public class GrpcServiceBuilder
      * Create a new introspection modeller for a given gRPC service.
      *
      * @param service      the service to call gRPC handler methods on
-     * @param beanManager  the {@link javax.enterprise.inject.spi.BeanManager} to use
+     * @param beanManager  the {@link jakarta.enterprise.inject.spi.BeanManager} to use
      *                     to look-up CDI beans.
      * @throws java.lang.NullPointerException if the service is null
      * @return a {@link GrpcServiceBuilder}
@@ -94,7 +93,7 @@ public class GrpcServiceBuilder
      * Create a new introspection modeller for a given gRPC service class.
      *
      * @param serviceClass gRPC service (handler) class.
-     * @param beanManager  the {@link javax.enterprise.inject.spi.BeanManager} to use
+     * @param beanManager  the {@link jakarta.enterprise.inject.spi.BeanManager} to use
      *                     to look-up CDI beans.
      * @throws java.lang.NullPointerException if the service class is null
      * @return a {@link GrpcServiceBuilder}
@@ -108,7 +107,7 @@ public class GrpcServiceBuilder
      *
      * @param serviceClass gRPC service (handler) class.
      * @param instance     the target instance to call gRPC handler methods on
-     * @param beanManager  the {@link javax.enterprise.inject.spi.BeanManager} to use
+     * @param beanManager  the {@link jakarta.enterprise.inject.spi.BeanManager} to use
      *                     to look-up CDI beans.
      * @throws java.lang.NullPointerException if the service or instance parameters are null
      * @return a {@link GrpcServiceBuilder}
@@ -149,7 +148,7 @@ public class GrpcServiceBuilder
      *
      * @param builder      the {@link ServiceDescriptor.Builder} to add the method to
      * @param methodList   the list of methods to add
-     * @param beanManager  the {@link javax.enterprise.inject.spi.BeanManager} to use
+     * @param beanManager  the {@link jakarta.enterprise.inject.spi.BeanManager} to use
      *                     to look-up CDI beans.
      */
     private void addServiceMethods(ServiceDescriptor.Builder builder, AnnotatedMethodList methodList, BeanManager beanManager) {
@@ -169,7 +168,7 @@ public class GrpcServiceBuilder
      *
      * @param builder  the {@link ServiceDescriptor.Builder} to add the method to
      * @param method   the {@link AnnotatedMethod} representing the method to add
-     * @param beanManager  the {@link javax.enterprise.inject.spi.BeanManager} to use
+     * @param beanManager  the {@link jakarta.enterprise.inject.spi.BeanManager} to use
      *                     to look-up CDI beans.
      */
     @SuppressWarnings("unchecked")
@@ -273,7 +272,7 @@ public class GrpcServiceBuilder
     }
 
     private ServerInterceptor lookupInterceptor(Annotation annotation, BeanManager beanManager) {
-        javax.enterprise.inject.Instance<ServerInterceptor> instance;
+        jakarta.enterprise.inject.Instance<ServerInterceptor> instance;
         instance = beanManager.createInstance()
                 .select(ServerInterceptor.class, GrpcInterceptor.Literal.INSTANCE);
 
@@ -299,7 +298,7 @@ public class GrpcServiceBuilder
         }
 
         if (ServerInterceptor.class.isAssignableFrom(cls)) {
-            javax.enterprise.inject.Instance<?> instance = beanManager.createInstance().select(cls, Any.Literal.INSTANCE);
+            jakarta.enterprise.inject.Instance<?> instance = beanManager.createInstance().select(cls, Any.Literal.INSTANCE);
             if (instance.isResolvable()) {
                 return (ServerInterceptor) instance.get();
             } else {

@@ -19,12 +19,12 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
-import javax.json.JsonObject;
-import javax.json.JsonValue;
-
 import io.helidon.media.common.MessageBodyReadableContent;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientRequestBuilder;
+
+import jakarta.json.JsonObject;
+import jakarta.json.JsonValue;
 
 /**
  * Web client to access specific service of remote test application.

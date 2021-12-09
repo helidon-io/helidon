@@ -16,14 +16,14 @@
 
 package io.helidon.metrics;
 
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
-import javax.json.Json;
-import javax.json.JsonNumber;
-import javax.json.JsonObject;
-import javax.json.JsonObjectBuilder;
-
+import jakarta.json.Json;
+import jakarta.json.JsonNumber;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonObjectBuilder;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
@@ -82,7 +82,7 @@ class HelidonTimerTest {
         dataSetTimerID = new MetricID("response_time");
 
         for (long i : SAMPLE_LONG_DATA) {
-            dataSetTimer.update(i, TimeUnit.NANOSECONDS);
+            dataSetTimer.update(Duration.ofNanos(i));
         }
 
         timer = HelidonTimer.create("application", meta, timerClock);
@@ -91,7 +91,7 @@ class HelidonTimerTest {
 
         for (int i = 0; i < markSeconds; i++) {
             timerClock.add(1, TimeUnit.SECONDS);
-            timer.update(1, TimeUnit.SECONDS);
+            timer.update(Duration.ofSeconds(1));
         }
     }
 
@@ -232,7 +232,7 @@ class HelidonTimerTest {
         MetricID metricID = new MetricID("idleTimer");
 
         JsonObjectBuilder builder = MetricImpl.JSON.createObjectBuilder();
-        helidonTimer.update(1L, TimeUnit.MILLISECONDS);
+        helidonTimer.update(Duration.ofMillis(1L));
 
         for (int i = 1; i < 48; i++) {
             testClock.add(1L, TimeUnit.HOURS);
@@ -261,7 +261,7 @@ class HelidonTimerTest {
         Stream.of(24L, 28L, 32L, 36L)
                 .forEach(value -> {
                     testClock.addNanos(450, TimeUnit.MILLISECONDS);
-                    helidonTimer.update(value, TimeUnit.MILLISECONDS);
+                    helidonTimer.update(Duration.ofMillis(value));
                 });
         MetricID timerID = new MetricID(timerName);
         JsonObjectBuilder builder = Json.createObjectBuilder();

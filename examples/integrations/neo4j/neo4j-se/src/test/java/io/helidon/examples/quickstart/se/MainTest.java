@@ -18,8 +18,6 @@ package io.helidon.examples.quickstart.se;
 
 import java.util.concurrent.TimeUnit;
 
-import javax.json.JsonArray;
-
 import io.helidon.common.http.Http;
 import io.helidon.examples.integrations.neo4j.se.Main;
 import io.helidon.media.jsonp.JsonpSupport;
@@ -27,6 +25,7 @@ import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientResponse;
 import io.helidon.webserver.WebServer;
 
+import jakarta.json.JsonArray;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;

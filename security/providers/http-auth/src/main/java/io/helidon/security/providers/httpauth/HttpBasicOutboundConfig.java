@@ -128,7 +128,7 @@ public class HttpBasicOutboundConfig {
     /**
      * Fluent API builder for {@link io.helidon.security.providers.httpauth.HttpBasicOutboundConfig}.
      */
-    public static class Builder implements io.helidon.common.Builder<HttpBasicOutboundConfig> {
+    public static class Builder implements io.helidon.common.Builder<Builder, HttpBasicOutboundConfig> {
         private TokenHandler tokenHandler = DEFAULT_TOKEN_HANDLER;
         private boolean hasExplicitUser = false;
         private String explicitUser;

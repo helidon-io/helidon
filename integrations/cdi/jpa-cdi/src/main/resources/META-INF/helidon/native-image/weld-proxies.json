@@ -14,25 +14,25 @@
     {
         "bean-class": "io.helidon.integrations.cdi.jpa.JpaExtension",
         "ifaces": [
-            "javax.persistence.EntityManager"
+            "jakarta.persistence.EntityManager"
         ]
     },
     {
         "bean-class": "io.helidon.integrations.cdi.jpa.JpaExtension",
         "ifaces": [
-            "javax.persistence.EntityManagerFactory"
+            "jakarta.persistence.EntityManagerFactory"
         ]
     },
     {
         "bean-class": "io.helidon.integrations.cdi.jpa.PersistenceUnitInfoBean",
         "ifaces": [
-            "javax.persistence.spi.PersistenceUnitInfo"
+            "jakarta.persistence.spi.PersistenceUnitInfo"
         ]
     },
     {
         "bean-class": "io.helidon.integrations.cdi.jpa.JpaExtension",
         "ifaces": [
-            "javax.persistence.EntityManager",
+            "jakarta.persistence.EntityManager",
             "io.helidon.integrations.cdi.jpa.CdiTransactionScopedEntityManager",
             "java.lang.AutoCloseable",
             "io.helidon.integrations.cdi.jpa.DelegatingEntityManager"
@@ -41,7 +41,7 @@
     {
         "bean-class": "io.helidon.integrations.cdi.jpa.JpaExtension",
         "ifaces": [
-            "javax.persistence.EntityManager",
+            "jakarta.persistence.EntityManager",
             "io.helidon.integrations.cdi.jpa.NonTransactionalEntityManager",
             "java.lang.AutoCloseable",
             "io.helidon.integrations.cdi.jpa.DelegatingEntityManager"
@@ -50,7 +50,7 @@
     {
         "bean-class": "io.helidon.integrations.cdi.jpa.JpaExtension",
         "ifaces": [
-            "javax.persistence.EntityManager",
+            "jakarta.persistence.EntityManager",
             "io.helidon.integrations.cdi.jpa.JpaTransactionScopedEntityManager",
             "java.lang.AutoCloseable",
             "io.helidon.integrations.cdi.jpa.DelegatingEntityManager"

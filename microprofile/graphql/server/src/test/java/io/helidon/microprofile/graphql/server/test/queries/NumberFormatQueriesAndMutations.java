@@ -16,15 +16,15 @@
 
 package io.helidon.microprofile.graphql.server.test.queries;
 
-import javax.enterprise.context.ApplicationScoped;
-
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import io.helidon.microprofile.graphql.server.test.types.SimpleContactWithNumberFormats;
-import javax.json.bind.annotation.JsonbNumberFormat;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.json.bind.annotation.JsonbNumberFormat;
 import org.eclipse.microprofile.graphql.GraphQLApi;
 import org.eclipse.microprofile.graphql.Mutation;
 import org.eclipse.microprofile.graphql.Name;

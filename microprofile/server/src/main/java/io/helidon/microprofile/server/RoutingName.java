@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
- * Binds an {@link javax.ws.rs.core.Application} or {@link io.helidon.webserver.Service} to a specific (named) routing
+ * Binds an {@link jakarta.ws.rs.core.Application} or {@link io.helidon.webserver.Service} to a specific (named) routing
  *  on {@link io.helidon.webserver.WebServer}. The routing should have a corresponding named socket configured on the
  *  WebServer to run the routing on.
  *

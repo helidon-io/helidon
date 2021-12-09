@@ -18,10 +18,9 @@ package io.helidon.integrations.microstream.cdi;
 
 import java.nio.file.Path;
 
-import javax.inject.Inject;
-
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 
+import jakarta.inject.Inject;
 import one.microstream.storage.embedded.types.EmbeddedStorageManager;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;

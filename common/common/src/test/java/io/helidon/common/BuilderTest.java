@@ -79,7 +79,7 @@ class BuilderTest {
         }
     }
 
-    private static class Builder1 implements Builder<Result1> {
+    private static class Builder1 implements Builder<Builder1, Result1> {
         private String message;
 
         private Builder1() {
@@ -96,7 +96,7 @@ class BuilderTest {
         }
     }
 
-    private static class Builder2 implements Builder<Result2> {
+    private static class Builder2 implements Builder<Builder2, Result2> {
         private String name;
 
         private Builder2() {

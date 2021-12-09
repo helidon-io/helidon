@@ -28,9 +28,10 @@ module io.helidon.microprofile.server {
 
     requires io.helidon.config.mp;
     requires io.helidon.microprofile.config;
-    requires transitive jakarta.enterprise.cdi.api;
-    requires transitive java.ws.rs;
+    requires transitive jakarta.cdi;
+    requires transitive jakarta.ws.rs;
     requires jakarta.interceptor.api;
+    requires jakarta.json;
 
     requires java.logging;
     requires io.helidon.common.serviceloader;
@@ -42,7 +43,7 @@ module io.helidon.microprofile.server {
 
     exports io.helidon.microprofile.server;
 
-    provides javax.enterprise.inject.spi.Extension with
+    provides jakarta.enterprise.inject.spi.Extension with
             io.helidon.microprofile.server.ServerCdiExtension,
             io.helidon.microprofile.server.JaxRsCdiExtension;
 

@@ -31,3 +31,6 @@ proxy:
   no-proxy:
     - localhost
     - .oc9qadev.com
+
+force-relative-uris:
+  relative-uris: true

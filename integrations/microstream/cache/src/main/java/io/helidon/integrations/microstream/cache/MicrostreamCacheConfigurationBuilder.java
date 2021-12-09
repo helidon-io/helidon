@@ -40,9 +40,10 @@ import one.microstream.configuration.types.Configuration;
  * @param <K> type of the cache key
  * @param <V> type of the cache value
  */
-public class MicrostreamCacheConfigurationBuilder<K, V> implements CacheConfigurationPropertyNames,
-                                                                   CacheConfiguration.Builder<K, V>,
-                                                                   io.helidon.common.Builder<CacheConfiguration<K, V>> {
+public class MicrostreamCacheConfigurationBuilder<K, V>
+        implements CacheConfigurationPropertyNames,
+                   CacheConfiguration.Builder<K, V>,
+                   io.helidon.common.Builder<MicrostreamCacheConfigurationBuilder<K, V>, CacheConfiguration<K, V>> {
 
     private final Builder<K, V> cacheConfigBuilder;
 

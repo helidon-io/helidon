@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -97,7 +97,7 @@ public class ClasspathOverrideSource extends AbstractSource implements OverrideS
      * then {@link OverrideSource#load} throws {@link ConfigException}.
      */
     public static final class Builder extends AbstractSourceBuilder<Builder, Void>
-            implements io.helidon.common.Builder<ClasspathOverrideSource> {
+            implements io.helidon.common.Builder<Builder, ClasspathOverrideSource> {
 
         private URL url;
         private String resource;

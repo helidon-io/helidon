@@ -16,13 +16,16 @@
 
 /**
  * Microprofile jwt module.
+ *
+ * @see org.eclipse.microprofile.jwt
+ * @see org.eclipse.microprofile.auth
  */
 module io.helidon.microprofile.jwt.auth {
     requires java.logging;
 
-    requires jakarta.enterprise.cdi.api;
-    requires jakarta.inject.api;
-    requires java.ws.rs;
+    requires jakarta.cdi;
+    requires jakarta.inject;
+    requires jakarta.ws.rs;
     requires microprofile.config.api;
     requires transitive microprofile.jwt.auth.api;
 
@@ -36,7 +39,7 @@ module io.helidon.microprofile.jwt.auth {
     requires io.helidon.security.util;
     requires transitive io.helidon.security.jwt;
     requires io.helidon.security.integration.jersey;
-    requires java.annotation;
+    requires jakarta.annotation;
 
     exports io.helidon.microprofile.jwt.auth;
 
@@ -45,5 +48,5 @@ module io.helidon.microprofile.jwt.auth {
 
     provides io.helidon.security.providers.common.spi.AnnotationAnalyzer with io.helidon.microprofile.jwt.auth.JwtAuthAnnotationAnalyzer;
     provides io.helidon.security.spi.SecurityProviderService with io.helidon.microprofile.jwt.auth.JwtAuthProviderService;
-    provides javax.enterprise.inject.spi.Extension with io.helidon.microprofile.jwt.auth.JwtAuthCdiExtension;
+    provides jakarta.enterprise.inject.spi.Extension with io.helidon.microprofile.jwt.auth.JwtAuthCdiExtension;
 }

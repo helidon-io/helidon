@@ -18,14 +18,13 @@ package io.helidon.microprofile.graphql.server;
 
 import java.io.IOException;
 
-import javax.inject.Inject;
-
 import io.helidon.graphql.server.InvocationHandler;
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.exception.ExceptionQueries;
 import io.helidon.microprofile.tests.junit5.AddBean;
 import io.helidon.microprofile.tests.junit5.AddConfig;
 
+import jakarta.inject.Inject;
 import org.eclipse.microprofile.graphql.ConfigKey;
 import org.junit.jupiter.api.Test;
 

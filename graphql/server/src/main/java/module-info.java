@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@
 module io.helidon.graphql.server {
     requires java.logging;
 
-    requires java.json.bind;
+    requires jakarta.json.bind;
     requires org.eclipse.yasson;
 
     requires io.helidon.common.configurable;

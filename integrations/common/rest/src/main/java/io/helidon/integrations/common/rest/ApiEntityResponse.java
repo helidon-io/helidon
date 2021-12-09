@@ -34,7 +34,7 @@ public abstract class ApiEntityResponse extends ApiResponse {
      *
      * @param <B> type of the builder (subclass of this class)
      * @param <T> type of the response being built
-     * @param <X> type of the entity supported ({@link javax.json.JsonObject}, {@link io.helidon.common.reactive.Multi}, or
+     * @param <X> type of the entity supported ({@link jakarta.json.JsonObject}, {@link io.helidon.common.reactive.Multi}, or
      *           {@code byte[]})
      */
     public abstract static class Builder<B extends Builder<B, T, X>, T extends ApiEntityResponse, X>

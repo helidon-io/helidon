@@ -94,7 +94,7 @@ public class CubbyholeSecurityProvider implements SecretsProvider<CubbyholeSecur
          * Fluent API builder for
          * {@link io.helidon.integrations.vault.secrets.cubbyhole.CubbyholeSecurityProvider.CubbyholeSecretConfig}.
          */
-        public static class Builder implements io.helidon.common.Builder<CubbyholeSecretConfig> {
+        public static class Builder implements io.helidon.common.Builder<Builder, CubbyholeSecretConfig> {
             private String path;
             private String key;
 

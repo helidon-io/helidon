@@ -1,7 +1,7 @@
 {
     "annotated": [],
     "class-hierarchy": [
-        "javax.el.ExpressionFactory"
+        "jakarta.el.ExpressionFactory"
     ],
     "classes": [
     ],

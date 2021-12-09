@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +18,12 @@ package io.helidon.microprofile.jwt.auth;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 
-import javax.annotation.Priority;
-import javax.annotation.security.RolesAllowed;
-
 import io.helidon.common.Prioritized;
 import io.helidon.config.Config;
 import io.helidon.security.providers.common.spi.AnnotationAnalyzer;
 
+import jakarta.annotation.Priority;
+import jakarta.annotation.security.RolesAllowed;
 import org.eclipse.microprofile.auth.LoginConfig;
 
 import static io.helidon.microprofile.jwt.auth.JwtAuthProviderService.PROVIDER_NAME;

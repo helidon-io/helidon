@@ -33,16 +33,16 @@ class HealthCheckResponseProviderImplTest {
         assertThat("successful-test", is(response.getName()));
         assertThat(response.getData(), notNullValue());
         assertThat(response.getData().isPresent(), is(false));
-        assertThat(HealthCheckResponse.State.UP, is(response.getState()));
+        assertThat(HealthCheckResponse.Status.UP, is(response.getStatus()));
     }
 
     @Test
-    void stateTrueResponseIsUp() {
-        HealthCheckResponse response = HealthCheckResponse.named("successful-test").state(true).build();
+    void statusTrueResponseIsUp() {
+        HealthCheckResponse response = HealthCheckResponse.named("successful-test").status(true).build();
         assertThat("successful-test", is(response.getName()));
         assertThat(response.getData(), notNullValue());
         assertThat(response.getData().isPresent(), is(false));
-        assertThat(HealthCheckResponse.State.UP, is(response.getState()));
+        assertThat(HealthCheckResponse.Status.UP, is(response.getStatus()));
     }
 
     @Test
@@ -51,16 +51,16 @@ class HealthCheckResponseProviderImplTest {
         assertThat("failed-test", is(response.getName()));
         assertThat(response.getData(), notNullValue());
         assertThat(response.getData().isPresent(), is(false));
-        assertThat(HealthCheckResponse.State.DOWN, is(response.getState()));
+        assertThat(HealthCheckResponse.Status.DOWN, is(response.getStatus()));
     }
 
     @Test
-    void stateFalseResponseIsDown() {
-        HealthCheckResponse response = HealthCheckResponse.named("failed-test").state(false).build();
+    void statusFalseResponseIsDown() {
+        HealthCheckResponse response = HealthCheckResponse.named("failed-test").status(false).build();
         assertThat("failed-test", is(response.getName()));
         assertThat(response.getData(), notNullValue());
         assertThat(response.getData().isPresent(), is(false));
-        assertThat(HealthCheckResponse.State.DOWN, is(response.getState()));
+        assertThat(HealthCheckResponse.Status.DOWN, is(response.getStatus()));
     }
 
     @Test
@@ -75,7 +75,7 @@ class HealthCheckResponseProviderImplTest {
         assertThat("data-test", is(response.getName()));
         assertThat(response.getData(), notNullValue());
         assertThat(response.getData().isPresent(), is(true));
-        assertThat(HealthCheckResponse.State.UP, is(response.getState()));
+        assertThat(HealthCheckResponse.Status.UP, is(response.getStatus()));
         assertThat(3, is(response.getData().get().size()));
         assertThat(response.getData().get(), hasEntry("baz", Long.MAX_VALUE));
         assertThat(response.getData().get(), hasEntry("foo", "bar"));
@@ -111,7 +111,7 @@ class HealthCheckResponseProviderImplTest {
                 .withData("foo", "bar")
                 .up();
 
-        // We know from previous tests that the builder has the right state.
+        // We know from previous tests that the builder has the right status.
         final HealthCheckResponse response = builder.build();
 
         // Now modify the builder
@@ -127,11 +127,11 @@ class HealthCheckResponseProviderImplTest {
         assertThat(response.getData().isPresent(), is(true));
         assertThat(1, is(response.getData().get().size()));
         assertThat(response.getData().get(), hasEntry("foo", "bar"));
-        assertThat(HealthCheckResponse.State.UP, is(response.getState()));
+        assertThat(HealthCheckResponse.Status.UP, is(response.getStatus()));
 
         // The new "response2" must contain the old and new data, and the new values
         assertThat("reuse-test2", is(response2.getName()));
-        assertThat(HealthCheckResponse.State.DOWN, is(response2.getState()));
+        assertThat(HealthCheckResponse.Status.DOWN, is(response2.getStatus()));
         assertThat(response2.getData(), notNullValue());
         assertThat(response2.getData().isPresent(), is(true));
         assertThat(2, is(response2.getData().get().size()));

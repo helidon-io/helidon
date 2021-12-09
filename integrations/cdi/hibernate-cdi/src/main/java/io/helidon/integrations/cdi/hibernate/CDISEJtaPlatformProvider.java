@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,14 +15,13 @@
  */
 package io.helidon.integrations.cdi.hibernate;
 
-import javax.enterprise.inject.spi.CDI;
-
+import jakarta.enterprise.inject.spi.CDI;
 import org.hibernate.engine.transaction.jta.platform.spi.JtaPlatform;
 import org.hibernate.engine.transaction.jta.platform.spi.JtaPlatformProvider;
 
 /**
  * A {@link JtaPlatformProvider} that uses a {@link CDI} instance to
- * {@linkplain CDI#select(Class, Annotation...) provide} a {@link
+ * {@linkplain CDI#select(Class, java.lang.annotation.Annotation...) provide} a {@link
  * JtaPlatform}.
  *
  * <p>Normally this class is instantiated by the {@linkplain

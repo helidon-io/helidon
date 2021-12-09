@@ -30,10 +30,6 @@ import java.util.List;
 import java.util.Queue;
 import java.util.logging.Logger;
 
-import javax.json.Json;
-import javax.json.JsonArray;
-import javax.json.JsonObject;
-
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.media.jsonp.JsonpSupport;
@@ -45,8 +41,12 @@ import com.oracle.bedrock.runtime.LocalPlatform;
 import com.oracle.bedrock.runtime.console.CapturingApplicationConsole;
 import com.oracle.bedrock.runtime.options.Arguments;
 import com.oracle.bedrock.runtime.options.Console;
+import jakarta.json.Json;
+import jakarta.json.JsonArray;
+import jakarta.json.JsonObject;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -255,11 +255,13 @@ class MainTest {
     }
 
     @Test
+    @Disabled("3.0.0-JAKARTA")
     void basicTestMetricsHealthSEModules() throws Exception {
         runMetricsAndHealthTest("se", "jsonp", true);
     }
 
     @Test
+    @Disabled("3.0.0-JAKARTA")
     void basicTestMetricsHealthMPModules() throws Exception {
         runMetricsAndHealthTest("mp", "", true);
     }

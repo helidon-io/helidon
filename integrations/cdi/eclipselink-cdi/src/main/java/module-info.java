@@ -24,15 +24,15 @@
 module io.helidon.integrations.cdi.eclipselink {
     requires java.management;
 
-    requires java.transaction;
-    requires jakarta.enterprise.cdi.api;
-    requires jakarta.inject.api;
+    requires jakarta.transaction;
+    requires jakarta.cdi;
+    requires jakarta.inject;
     requires java.sql;
     requires org.eclipse.persistence.jpa;
     requires org.eclipse.persistence.core;
 
     exports io.helidon.integrations.cdi.eclipselink;
 
-    provides javax.enterprise.inject.spi.Extension
+    provides jakarta.enterprise.inject.spi.Extension
             with io.helidon.integrations.cdi.eclipselink.CDISEPlatformExtension;
 }

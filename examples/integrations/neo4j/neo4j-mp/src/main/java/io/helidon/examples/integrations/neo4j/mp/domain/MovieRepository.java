@@ -18,9 +18,8 @@ package io.helidon.examples.integrations.neo4j.mp.domain;
 
 import java.util.List;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
-
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.Value;
 /**

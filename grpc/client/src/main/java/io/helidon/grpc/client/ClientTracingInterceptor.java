@@ -24,8 +24,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import javax.annotation.Priority;
-
 import io.helidon.grpc.core.ContextKeys;
 import io.helidon.grpc.core.InterceptorPriorities;
 
@@ -45,6 +43,7 @@ import io.opentracing.contrib.grpc.ActiveSpanSource;
 import io.opentracing.contrib.grpc.OperationNameConstructor;
 import io.opentracing.propagation.Format;
 import io.opentracing.propagation.TextMap;
+import jakarta.annotation.Priority;
 
 /**
  * A {@link ClientInterceptor} that captures tracing information into

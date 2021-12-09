@@ -14,19 +14,16 @@
  * limitations under the License.
  */
 
-import javax.enterprise.inject.se.SeContainerInitializer;
-
-import io.helidon.microprofile.cdi.ExecutorServices;
-import io.helidon.microprofile.cdi.HelidonContainerInitializer;
-
 /**
  * CDI implementation enhancements for Helidon MP.
+ *
+ * @see jakarta.enterprise.context
  */
 module io.helidon.microprofile.cdi {
     // needed for Unsafe used from Weld
     requires jdk.unsupported;
     requires java.logging;
-    requires jakarta.enterprise.cdi.api;
+    requires jakarta.cdi;
 
     requires io.helidon.common;
     requires io.helidon.config;
@@ -37,13 +34,17 @@ module io.helidon.microprofile.cdi {
     requires weld.environment.common;
     requires weld.se.core;
     requires io.helidon.common.context;
-    requires jakarta.inject.api;
+    requires jakarta.inject;
     requires microprofile.config.api;
 
     exports io.helidon.microprofile.cdi;
 
-    uses javax.enterprise.inject.spi.Extension;
+    uses jakarta.enterprise.inject.spi.Extension;
 
-    provides SeContainerInitializer with HelidonContainerInitializer;
-    provides org.jboss.weld.bootstrap.api.Service with ExecutorServices;
+    provides jakarta.enterprise.inject.se.SeContainerInitializer with io.helidon.microprofile.cdi.HelidonContainerInitializer;
+    provides jakarta.enterprise.inject.spi.CDIProvider with io.helidon.microprofile.cdi.HelidonCdiProvider;
+
+    provides org.jboss.weld.bootstrap.api.Service with io.helidon.microprofile.cdi.ExecutorServices;
+
+    opens io.helidon.microprofile.cdi to weld.core.impl;
 }

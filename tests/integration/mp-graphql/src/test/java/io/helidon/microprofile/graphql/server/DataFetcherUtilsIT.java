@@ -26,8 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import javax.inject.Inject;
-
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithEnumName;
 import io.helidon.microprofile.graphql.server.test.queries.SimpleQueriesWithArgs;
@@ -36,6 +34,7 @@ import io.helidon.microprofile.graphql.server.test.types.SimpleContact;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContactWithNumberFormats;
 import io.helidon.microprofile.tests.junit5.AddBean;
 
+import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.microprofile.graphql.server.JsonUtils.convertObjectToMap;

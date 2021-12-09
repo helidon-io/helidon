@@ -185,7 +185,7 @@ public interface EvictableCache<K, V> {
      * @param <K> types of keys used in the cache
      * @param <V> types of values used in the cache
      */
-    class Builder<K, V> implements io.helidon.common.Builder<EvictableCache<K, V>> {
+    class Builder<K, V> implements io.helidon.common.Builder<Builder<K, V>, EvictableCache<K, V>> {
         private boolean cacheEnabled = true;
         private long cacheTimeout = CACHE_TIMEOUT_MINUTES;
         private TimeUnit cacheTimeoutUnit = TimeUnit.MINUTES;

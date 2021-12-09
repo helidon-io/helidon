@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -100,7 +100,7 @@ public final class MediaContext {
     /**
      * MediaSupport builder.
      */
-    public static class Builder implements io.helidon.common.Builder<MediaContext>,
+    public static class Builder implements io.helidon.common.Builder<Builder, MediaContext>,
                                            MediaContextBuilder<Builder> {
 
         private static final String SERVICE_NAME = "name";

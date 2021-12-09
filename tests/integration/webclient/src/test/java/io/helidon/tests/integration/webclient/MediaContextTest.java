@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,15 +20,14 @@ import java.io.InputStream;
 import java.util.Collections;
 import java.util.concurrent.ExecutionException;
 
-import javax.json.Json;
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObject;
-
 import io.helidon.media.common.MediaContext;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientRequestBuilder;
 
+import jakarta.json.Json;
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonObject;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -129,7 +128,7 @@ public class MediaContextTest extends TestParent {
                 .thenAccept(it -> fail("JsonReader should not be registered!"))
                 .exceptionally(ex -> {
                     assertThat(ex.getCause().getMessage(),
-                               is("No reader found for type: interface javax.json.JsonObject"));
+                               is("No reader found for type: interface jakarta.json.JsonObject"));
                     return null;
                 })
                 .thenCompose(it -> client.put().path("/greeting").submit(JSON_OLD_GREETING)) //Cleanup
@@ -157,7 +156,7 @@ public class MediaContextTest extends TestParent {
                 .thenAccept(it -> fail("JsonObject should not have been handled."))
                 .exceptionally(throwable -> {
                     assertThat(throwable.getCause().getMessage(),
-                               is("No reader found for type: interface javax.json.JsonObject"));
+                               is("No reader found for type: interface jakarta.json.JsonObject"));
                     return null;
                 })
                 .toCompletableFuture()

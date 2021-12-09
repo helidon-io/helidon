@@ -204,7 +204,6 @@ public class Security {
 
     /**
      * Creates new instance based on configuration values.
-     * <p>
      *
      * @param config Config instance located on security configuration ("providers" is an expected child)
      * @return new instance.
@@ -218,7 +217,6 @@ public class Security {
 
     /**
      * Creates new instance based on configuration values.
-     * <p>
      *
      * @param config Config instance located on security configuration ("providers" is an expected child)
      * @return new instance.
@@ -553,7 +551,7 @@ public class Security {
      */
     @Configured(root = true, prefix = "security", description = "Configuration of security providers, integration and other"
             + " security options")
-    public static final class Builder implements io.helidon.common.Builder<Security> {
+    public static final class Builder implements io.helidon.common.Builder<Builder, Security> {
         private final Set<AuditProvider> auditProviders = new LinkedHashSet<>();
         private final List<NamedProvider<AuthenticationProvider>> atnProviders = new LinkedList<>();
         private final List<NamedProvider<AuthorizationProvider>> atzProviders = new LinkedList<>();

@@ -16,9 +16,9 @@
 
 package io.helidon.microprofile.server;
 
-import javax.enterprise.inject.spi.Annotated;
-
 import io.helidon.config.Config;
+
+import jakarta.enterprise.inject.spi.Annotated;
 
 class RoutingConfiguration {
     private String routingName = RoutingName.DEFAULT_NAME;

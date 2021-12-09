@@ -23,12 +23,17 @@
     <parent>
         <groupId>io.helidon.microprofile.tests</groupId>
         <artifactId>tck-project</artifactId>
-        <version>2.4.0-SNAPSHOT</version>
+        <version>3.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>tck-health</artifactId>
     <name>Helidon Microprofile Tests TCK Health</name>
+
+    <properties>
+        <!-- 3.0.0-JAKARTA -->
+        <skipTests>true</skipTests>
+    </properties>
 
     <dependencies>
         <dependency>

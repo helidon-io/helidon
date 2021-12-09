@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,6 @@
  */
 package io.helidon.examples.microprofile.security.idcs;
 
-import javax.enterprise.context.ApplicationScoped;
-
 import io.helidon.microprofile.server.RoutingPath;
 import io.helidon.security.Principal;
 import io.helidon.security.SecurityContext;
@@ -25,6 +23,8 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
+
+import jakarta.enterprise.context.ApplicationScoped;
 
 /**
  * Reactive service implementation.

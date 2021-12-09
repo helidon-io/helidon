@@ -29,45 +29,64 @@ import org.eclipse.microprofile.metrics.MetricType;
  */
 class NoOpMetricRegistry extends AbstractRegistry<NoOpMetric> {
 
+    private static final Map<MetricType, BiFunction<String, Metadata, NoOpMetric>> NO_OP_METRIC_FACTORIES =
+            Map.of(MetricType.COUNTER, NoOpMetricImpl.NoOpCounterImpl::create,
+                   MetricType.GAUGE, NoOpMetricImpl.NoOpGaugeImpl::create,
+                   MetricType.HISTOGRAM, NoOpMetricImpl.NoOpHistogramImpl::create,
+                   MetricType.METERED, NoOpMetricImpl.NoOpMeterImpl::create,
+                   MetricType.TIMER, NoOpMetricImpl.NoOpTimerImpl::create,
+                   MetricType.SIMPLE_TIMER, NoOpMetricImpl.NoOpSimpleTimerImpl::create,
+                   MetricType.CONCURRENT_GAUGE, NoOpMetricImpl.NoOpConcurrentGaugeImpl::create);
+
+    private static final RegistrySettings REGISTRY_SETTINGS = RegistrySettings.builder().enabled(false).build();
+
     public static NoOpMetricRegistry create(MetricRegistry.Type type) {
         return new NoOpMetricRegistry(type);
     }
 
+
     private NoOpMetricRegistry(MetricRegistry.Type type) {
-        super(type);
+        super(type, NoOpMetric.class);
+    }
+
+    @Override
+    protected boolean isMetricEnabled(String metricName) {
+        return false;
     }
 
     @Override
     protected Map<MetricType, BiFunction<String, Metadata, NoOpMetric>> prepareMetricFactories() {
-        // Omit gauge because creating a gauge requires an existing delegate instance.
-        // These factory methods do not use delegates.
-        return Map.of(MetricType.COUNTER, NoOpMetric.NoOpCounter::create,
-                      MetricType.HISTOGRAM, NoOpMetric.NoOpHistogram::create,
-                      MetricType.METERED, NoOpMetric.NoOpMeter::create,
-                      MetricType.TIMER, NoOpMetric.NoOpTimer::create,
-                      MetricType.SIMPLE_TIMER, NoOpMetric.NoOpSimpleTimer::create,
-                      MetricType.CONCURRENT_GAUGE, NoOpMetric.NoOpConcurrentGauge::create);
+        return noOpMetricFactories();
+    }
+
+    protected static Map<MetricType, BiFunction<String, Metadata, NoOpMetric>> noOpMetricFactories() {
+        return NO_OP_METRIC_FACTORIES;
     }
 
     @Override
-    protected <T extends Metric> NoOpMetric toImpl(Metadata metadata, T metric) {
+    protected RegistrySettings registrySettings() {
+        return REGISTRY_SETTINGS;
+    }
+
+    @Override
+    protected <T extends Metric> NoOpMetricImpl toImpl(Metadata metadata, T metric) {
         String registryTypeName = registryType().getName();
         MetricType metricType = AbstractRegistry.deriveType(metadata.getTypeRaw(), metric);
         switch (metricType) {
         case COUNTER:
-            return NoOpMetric.NoOpCounter.create(registryTypeName, metadata);
+            return NoOpMetricImpl.NoOpCounterImpl.create(registryTypeName, metadata);
         case GAUGE:
-            return NoOpMetric.NoOpGauge.create(registryTypeName, metadata, (Gauge<?>) metric);
+            return NoOpMetricImpl.NoOpGaugeImpl.create(registryTypeName, metadata, (Gauge<?>) metric);
         case HISTOGRAM:
-            return NoOpMetric.NoOpHistogram.create(registryTypeName, metadata);
+            return NoOpMetricImpl.NoOpHistogramImpl.create(registryTypeName, metadata);
         case METERED:
-            return NoOpMetric.NoOpMeter.create(registryTypeName, metadata);
+            return NoOpMetricImpl.NoOpMeterImpl.create(registryTypeName, metadata);
         case TIMER:
-            return NoOpMetric.NoOpTimer.create(registryTypeName, metadata);
+            return NoOpMetricImpl.NoOpTimerImpl.create(registryTypeName, metadata);
         case SIMPLE_TIMER:
-            return NoOpMetric.NoOpSimpleTimer.create(registryTypeName, metadata);
+            return NoOpMetricImpl.NoOpSimpleTimerImpl.create(registryTypeName, metadata);
         case CONCURRENT_GAUGE:
-            return NoOpMetric.NoOpConcurrentGauge.create(registryTypeName, metadata);
+            return NoOpMetricImpl.NoOpConcurrentGaugeImpl.create(registryTypeName, metadata);
         case INVALID:
         default:
             throw new IllegalArgumentException("Unexpected metric type " + metricType
@@ -77,12 +96,12 @@ class NoOpMetricRegistry extends AbstractRegistry<NoOpMetric> {
 
     @Override
     protected Map<Class<? extends NoOpMetric>, MetricType> prepareMetricToTypeMap() {
-        return Map.of(NoOpMetric.NoOpConcurrentGauge.class, MetricType.CONCURRENT_GAUGE,
-                      NoOpMetric.NoOpCounter.class, MetricType.COUNTER,
-                      NoOpMetric.NoOpGauge.class, MetricType.GAUGE,
-                      NoOpMetric.NoOpHistogram.class, MetricType.HISTOGRAM,
-                      NoOpMetric.NoOpMeter.class, MetricType.METERED,
-                      NoOpMetric.NoOpTimer.class, MetricType.TIMER,
-                      NoOpMetric.NoOpSimpleTimer.class, MetricType.SIMPLE_TIMER);
+        return Map.of(NoOpMetricImpl.NoOpConcurrentGaugeImpl.class, MetricType.CONCURRENT_GAUGE,
+                      NoOpMetricImpl.NoOpCounterImpl.class, MetricType.COUNTER,
+                      NoOpMetricImpl.NoOpGaugeImpl.class, MetricType.GAUGE,
+                      NoOpMetricImpl.NoOpHistogramImpl.class, MetricType.HISTOGRAM,
+                      NoOpMetricImpl.NoOpMeterImpl.class, MetricType.METERED,
+                      NoOpMetricImpl.NoOpTimerImpl.class, MetricType.TIMER,
+                      NoOpMetricImpl.NoOpSimpleTimerImpl.class, MetricType.SIMPLE_TIMER);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package io.helidon.webserver;
 
-import java.util.Arrays;;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -32,10 +32,10 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.webserver.TransferEncodingTest.cutHeaders;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsMapContaining.hasEntry;
-import static io.helidon.webserver.TransferEncodingTest.cutHeaders;
 
 /**
  * Tests support for compression in the webserver.
@@ -70,6 +70,7 @@ public class CompressionTest {
      */
     private static void startServer(int port) throws Exception {
         webServer = WebServer.builder()
+                .host("localhost")
                 .port(port)
                 .routing(Routing.builder()
                         .get("/compressed", (req, res) -> {

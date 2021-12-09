@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 package io.helidon.lra.coordinator;
 
@@ -30,14 +29,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
-import javax.json.Json;
-import javax.json.JsonArray;
-import javax.json.JsonArrayBuilder;
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObject;
-import javax.json.JsonStructure;
-import javax.json.JsonValue;
-
 import io.helidon.common.LazyValue;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
@@ -51,6 +42,13 @@ import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 
+import jakarta.json.Json;
+import jakarta.json.JsonArray;
+import jakarta.json.JsonArrayBuilder;
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonStructure;
+import jakarta.json.JsonValue;
 import org.eclipse.microprofile.lra.annotation.LRAStatus;
 
 import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_CONTEXT_HEADER;
@@ -427,7 +425,7 @@ public class CoordinatorService implements Service {
     /**
      * Coordinator builder.
      */
-    public static final class Builder implements io.helidon.common.Builder<CoordinatorService> {
+    public static final class Builder implements io.helidon.common.Builder<Builder, CoordinatorService> {
 
         private Config config;
         private LraPersistentRegistry lraPersistentRegistry;

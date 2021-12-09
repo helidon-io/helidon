@@ -452,7 +452,7 @@ public interface SocketConfiguration {
      * The {@link io.helidon.webserver.SocketConfiguration} builder class.
      */
     @Configured
-    final class Builder implements SocketConfigurationBuilder<Builder>, io.helidon.common.Builder<SocketConfiguration> {
+    final class Builder implements SocketConfigurationBuilder<Builder>, io.helidon.common.Builder<Builder, SocketConfiguration> {
         /**
          * @deprecated remove once WebServer.Builder.addSocket(name, socket) methods are removed
          */

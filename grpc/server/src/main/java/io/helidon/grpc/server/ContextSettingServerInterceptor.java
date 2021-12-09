@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,6 @@ package io.helidon.grpc.server;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.annotation.Priority;
-
 import io.helidon.grpc.core.InterceptorPriorities;
 
 import io.grpc.Context;
@@ -29,6 +27,7 @@ import io.grpc.Metadata;
 import io.grpc.ServerCall;
 import io.grpc.ServerCallHandler;
 import io.grpc.ServerInterceptor;
+import jakarta.annotation.Priority;
 
 import static io.helidon.grpc.core.GrpcHelper.extractMethodName;
 

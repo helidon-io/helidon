@@ -156,4 +156,29 @@
    <cpe>cpe:/a:netty:netty</cpe>
 </suppress>
 
+<!-- These are old CVEs related to config components of Eclipse IDE and Jenkins. They are generating
+     false positive for MicroProfile Config
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: microprofile-config-api-3.0-RC5.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.eclipse\.microprofile\.config/microprofile\-config\-api@.*$</packageUrl>
+   <cve>CVE-2008-7271</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: microprofile-config-api-3.0-RC5.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.eclipse\.microprofile\.config/microprofile\-config\-api@.*$</packageUrl>
+   <cve>CVE-2010-4647</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: microprofile-config-api-3.0-RC5.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.eclipse\.microprofile\.config/microprofile\-config\-api@.*$</packageUrl>
+   <cve>CVE-2018-1000413</cve>
+</suppress>
+
 </suppressions>

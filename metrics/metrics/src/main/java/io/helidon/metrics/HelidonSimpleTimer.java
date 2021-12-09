@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 package io.helidon.metrics;
 
@@ -22,8 +21,7 @@ import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import javax.json.JsonObjectBuilder;
-
+import jakarta.json.JsonObjectBuilder;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricType;
@@ -51,6 +49,16 @@ final class HelidonSimpleTimer extends MetricImpl implements SimpleTimer {
 
     static HelidonSimpleTimer create(String repoType, Metadata metadata, SimpleTimer metric) {
         return new HelidonSimpleTimer(repoType, metadata, metric);
+    }
+
+    @Override
+    public Duration getMaxTimeDuration() {
+        return delegate.getMaxTimeDuration();
+    }
+
+    @Override
+    public Duration getMinTimeDuration() {
+        return delegate.getMinTimeDuration();
     }
 
     @Override
@@ -184,6 +192,19 @@ final class HelidonSimpleTimer extends MetricImpl implements SimpleTimer {
                     .build());
             this.clock = clock;
         }
+
+        @Override
+        public Duration getMaxTimeDuration() {
+            // TODO 3.0.0-JAKARTA
+            return null;
+        }
+
+        @Override
+        public Duration getMinTimeDuration() {
+            // TODO 3.0.0-JAKARTA
+            return null;
+        }
+
         @Override
         public void update(Duration duration) {
             update(duration.toNanos());

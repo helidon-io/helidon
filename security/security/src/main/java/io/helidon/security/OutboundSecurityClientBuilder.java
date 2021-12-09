@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import io.helidon.common.Builder;
  * Builder constructing a security client - extends the {@link SecurityRequestBuilder} for convenience.
  */
 public class OutboundSecurityClientBuilder extends SecurityRequestBuilder<OutboundSecurityClientBuilder>
-        implements Builder<SecurityClient<OutboundSecurityResponse>> {
+        implements Builder<OutboundSecurityClientBuilder, SecurityClient<OutboundSecurityResponse>> {
 
     private final SecurityContextImpl context;
     private final Security security;

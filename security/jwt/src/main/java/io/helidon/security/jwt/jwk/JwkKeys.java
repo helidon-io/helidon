@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,12 +28,12 @@ import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.json.Json;
-import javax.json.JsonArray;
-import javax.json.JsonObject;
-import javax.json.JsonReaderFactory;
-
 import io.helidon.common.configurable.Resource;
+
+import jakarta.json.Json;
+import jakarta.json.JsonArray;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonReaderFactory;
 
 /**
  * A representation of the JSON web keys document - a map of key ids to corresponding web keys.
@@ -105,7 +105,7 @@ public final class JwkKeys {
     /**
      * Builder of {@link JwkKeys}.
      */
-    public static final class Builder implements io.helidon.common.Builder<JwkKeys> {
+    public static final class Builder implements io.helidon.common.Builder<Builder, JwkKeys> {
         private final List<Jwk> noKeyIdKeys = new LinkedList<>();
         private final Map<String, Jwk> keyMap = new HashMap<>();
 

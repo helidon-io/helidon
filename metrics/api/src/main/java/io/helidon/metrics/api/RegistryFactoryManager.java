@@ -37,8 +37,13 @@ import io.helidon.metrics.api.spi.RegistryFactoryProvider;
  *     <ul>
  *         <li>The {@code create} methods create a new {@link RegistryFactory} according to the specified settings (or defaults)
  *         but keep no reference to such registry factories.</li>
- *         <li>The {@code getInstance} methods reuse a single {@code RegistryFactory}, initialized using the default
- *         {@link MetricsSettings} but changeable via {@link #getInstance(MetricsSettings)}.</li>
+ *         <li>The {@code getInstance} methods reuse a single {@code RegistryFactory}. The instance, the creation of which is
+ *         deferred until the first invocation of one of the {@code getInstance} methods, uses either the default
+ *         metrics settings or the metrics settings passed to {@link #getInstance(MetricsSettings)} if that is the first
+ *         {@code getInstance} method invoked.
+ *         Subsequent calls to {@code getInstance(MetricsSettings)} update that same instance with the settings but do not
+ *         create a new instance of the registry factory because previous callers might have saved references to the return
+ *         values from previous {@code getInstance} invocations.</li>
  *         <li>The {@link RegistryFactory#getInstance(ComponentMetricsSettings)} method which metrics-capable components invoke,
  *         passing a {@code ComponentMetricsSettings} object to indicate what type of {@code RegistryFactory} they need to use,
  *         based on their component-specific metrics settings.
@@ -59,8 +64,11 @@ class RegistryFactoryManager {
 
     private static final RegistryFactoryProvider NO_OP_FACTORY_PROVIDER = (metricsSettings) -> NoOpRegistryFactory.create();
 
-    // Instance managed and returned by the {@link getInstance} methods.
-    private static final RegistryFactory INSTANCE = create();
+    // Might be changed via getInstance(MetricsSettings).
+    private static MetricsSettings metricsSettings = MetricsSettings.create();
+
+    // Instance managed and returned by the {@link getInstance} methods. Use the latest-provided metrics settings.
+    private static final LazyValue<RegistryFactory> INSTANCE = LazyValue.create(() -> create(metricsSettings));
 
     // If metrics-capable components ask for a no-op factory, reuse the same one.
     private static final RegistryFactory NO_OP_INSTANCE = NoOpRegistryFactory.create();
@@ -94,17 +102,19 @@ class RegistryFactoryManager {
     }
 
     static RegistryFactory getInstance() {
-        return INSTANCE;
+        return INSTANCE.get();
     }
 
     static synchronized RegistryFactory getInstance(MetricsSettings metricsSettings) {
-        INSTANCE.update(metricsSettings);
-        return INSTANCE;
+        RegistryFactoryManager.metricsSettings = metricsSettings;
+        RegistryFactory result = INSTANCE.get();
+        result.update(metricsSettings);
+        return result;
     }
 
     static synchronized RegistryFactory getInstance(ComponentMetricsSettings componentMetricsSettings) {
         return componentMetricsSettings.isEnabled()
-                ? INSTANCE
+                ? INSTANCE.get()
                 : NO_OP_INSTANCE;
     }
 

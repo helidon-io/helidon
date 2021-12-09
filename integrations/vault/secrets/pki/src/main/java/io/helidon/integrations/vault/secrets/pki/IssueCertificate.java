@@ -21,11 +21,11 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 
-import javax.json.JsonObject;
-
 import io.helidon.common.LazyValue;
 import io.helidon.integrations.common.rest.ApiEntityResponse;
 import io.helidon.integrations.vault.VaultApiException;
+
+import jakarta.json.JsonObject;
 
 /**
  * Issue Certificate request and response.
@@ -45,7 +45,7 @@ public final class IssueCertificate {
         /**
          * Fluent API builder for configuring a request.
          * The request builder is passed as is, without a build method.
-         * The equivalent of a build method is {@link #toJson(javax.json.JsonBuilderFactory)}
+         * The equivalent of a build method is {@link #toJson(jakarta.json.JsonBuilderFactory)}
          * used by the {@link io.helidon.integrations.common.rest.RestApi}.
          *
          * @return new request builder

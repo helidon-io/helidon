@@ -16,9 +16,8 @@
 
 package io.helidon.microprofile.tests.junit5;
 
-import javax.enterprise.inject.spi.BeanManager;
-import javax.inject.Inject;
-
+import jakarta.enterprise.inject.spi.BeanManager;
+import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.Test;
 

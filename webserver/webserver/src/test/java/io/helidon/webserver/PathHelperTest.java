@@ -17,10 +17,9 @@ package io.helidon.webserver;
 
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.webserver.PathHelper.extractPathParams;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-
-import static io.helidon.webserver.PathHelper.extractPathParams;
 
 class PathHelperTest {
 

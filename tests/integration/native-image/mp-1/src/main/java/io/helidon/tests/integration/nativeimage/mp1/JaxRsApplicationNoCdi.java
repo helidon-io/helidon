@@ -17,8 +17,8 @@ package io.helidon.tests.integration.nativeimage.mp1;
 
 import java.util.Set;
 
-import javax.ws.rs.ApplicationPath;
-import javax.ws.rs.core.Application;
+import jakarta.ws.rs.ApplicationPath;
+import jakarta.ws.rs.core.Application;
 
 /**
  * This should not be picked up automatically, as it lacks a bean defining annotation.

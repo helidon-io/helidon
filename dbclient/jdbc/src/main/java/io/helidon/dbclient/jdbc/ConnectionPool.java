@@ -102,7 +102,7 @@ public interface ConnectionPool {
      * The builder will produce a connection pool based on Hikari connection pool and will support
      * {@link io.helidon.dbclient.jdbc.spi.HikariCpExtensionProvider} to enhance the Hikari pool.
      */
-    final class Builder implements io.helidon.common.Builder<ConnectionPool> {
+    final class Builder implements io.helidon.common.Builder<Builder, ConnectionPool> {
         /**
          * Database connection URL configuration key.
          */
@@ -157,6 +157,12 @@ public interface ConnectionPool {
                     .collect(Collectors.toList());
         }
 
+        /**
+         * Update builder from configuration.
+         *
+         * @param config configuration
+         * @return updated builder
+         */
         public Builder config(Config config) {
             Map<String, String> poolConfig = config.detach().asMap().get();
             poolConfig.forEach((key, value) -> {
@@ -182,21 +188,45 @@ public interface ConnectionPool {
             return this;
         }
 
+        /**
+         * Connection pool URL string.
+         *
+         * @param url connection pool string to use
+         * @return updated builder
+         */
         public Builder url(String url) {
             this.url = url;
             return this;
         }
 
+        /**
+         * Connection pool username.
+         *
+         * @param username username to use
+         * @return updated builder
+         */
         public Builder username(String username) {
             this.username = username;
             return this;
         }
 
+        /**
+         * Connection pool password.
+         *
+         * @param password password to use
+         * @return updated builder
+         */
         public Builder password(String password) {
             this.password = password;
             return this;
         }
 
+        /**
+         * Configure connection pool properties.
+         *
+         * @param properties properties to use
+         * @return updated builder
+         */
         public Builder properties(Properties properties) {
             this.properties = properties;
             return this;

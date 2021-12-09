@@ -19,9 +19,9 @@ package io.helidon.integrations.vault;
 import java.util.List;
 import java.util.Optional;
 
-import javax.json.JsonObject;
-
 import io.helidon.integrations.common.rest.ApiJsonParser;
+
+import jakarta.json.JsonObject;
 
 /**
  * List secrets request and response.
@@ -43,7 +43,7 @@ public final class ListSecrets {
         /**
          * Fluent API builder for configuring a request.
          * The request builder is passed as is, without a build method.
-         * The equivalent of a build method is {@link #toJson(javax.json.JsonBuilderFactory)}
+         * The equivalent of a build method is {@link #toJson(jakarta.json.JsonBuilderFactory)}
          * used by the {@link io.helidon.integrations.common.rest.RestApi}.
          *
          * @return new request builder

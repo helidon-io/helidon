@@ -100,9 +100,8 @@ import io.opentracing.Tracer;
  *           are of the correct type and contain all methods, even those not inherited from this
  *           interface
  */
-@SuppressWarnings("rawtypes")
 @Configured(description = "OpenTracing tracer configuration.", ignoreBuildMethod = true)
-public interface TracerBuilder<T extends TracerBuilder> extends Builder<Tracer> {
+public interface TracerBuilder<T extends TracerBuilder<T>> extends Builder<T, Tracer> {
     /**
      * Create a new builder for the service name.
      *
@@ -144,11 +143,10 @@ public interface TracerBuilder<T extends TracerBuilder> extends Builder<Tracer> 
      * @param uri the endpoint of the tracing collector
      * @return updated builder instance
      */
-    @SuppressWarnings("unchecked")
     default T collectorUri(URI uri) {
         Objects.requireNonNull(uri);
 
-        TracerBuilder<?> result = this;
+        T result = identity();
 
         if (null != uri.getScheme()) {
             result = result.collectorProtocol(uri.getScheme());
@@ -166,7 +164,7 @@ public interface TracerBuilder<T extends TracerBuilder> extends Builder<Tracer> 
             result = result.collectorPort(uri.getPort());
         }
 
-        return (T) result;
+        return result;
     }
 
     /**

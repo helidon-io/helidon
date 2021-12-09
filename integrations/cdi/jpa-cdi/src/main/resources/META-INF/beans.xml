@@ -24,17 +24,17 @@
        bean-discovery-mode="annotated">
     <scan>
         <exclude name="io.helidon.integrations.cdi.jpa.JtaDataSourceProvider">
-            <if-class-not-available name="javax.transaction.Transaction"/>
+            <if-class-not-available name="jakarta.transaction.Transaction"/>
         </exclude>
         <exclude name="io.helidon.integrations.cdi.jpa.BeanManagerBackedDataSourceProvider">
-            <if-class-available name="javax.transaction.Transaction"/>
+            <if-class-available name="jakarta.transaction.Transaction"/>
         </exclude>
 
         <exclude name="io.helidon.integrations.cdi.jpa.JtaTransactionSupport">
-            <if-class-not-available name="javax.transaction.Transaction"/>
+            <if-class-not-available name="jakarta.transaction.Transaction"/>
         </exclude>
         <exclude name="io.helidon.integrations.cdi.jpa.NoTransactionSupport">
-            <if-class-available name="javax.transaction.Transaction"/>
+            <if-class-available name="jakarta.transaction.Transaction"/>
         </exclude>
     </scan>
 </beans>

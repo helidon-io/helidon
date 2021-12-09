@@ -36,9 +36,9 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.json.JsonObject;
-
 import io.helidon.security.jwt.JwtException;
+
+import jakarta.json.JsonObject;
 
 import static io.helidon.security.jwt.JwtUtil.asBigInteger;
 import static io.helidon.security.jwt.JwtUtil.asString;
@@ -306,7 +306,7 @@ public class JwkEC extends JwkPki {
     /**
      * Builder for {@link JwkEC}.
      */
-    public static final class Builder extends JwkPki.Builder<Builder> implements io.helidon.common.Builder<JwkEC> {
+    public static final class Builder extends JwkPki.Builder<Builder> implements io.helidon.common.Builder<Builder, JwkEC> {
         private PrivateKey privateKey;
         private PublicKey publicKey;
         private String defaultAlg = ALG_ES256;

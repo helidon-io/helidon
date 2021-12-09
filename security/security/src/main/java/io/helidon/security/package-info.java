@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 
 /**
- * <h1>Security</h1>
+ * <h2>Security</h2>
  *
  * Supports security for web (and possibly other) resources including:
  * <ul>
@@ -30,7 +30,7 @@
  * Various security aspects are pluggable, using {@link io.helidon.security.spi.SecurityProvider providers}
  * to extend functionality.
  *
- * <h2>Bootstrapping</h2>
+ * <h3>Bootstrapping</h3>
  *
  * You have two way to do things with security - either load it from configuration or create a fully configured instance
  * using a builder. Both approaches should allow the same behavior.

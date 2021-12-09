@@ -19,16 +19,15 @@ package io.helidon.microprofile.graphql.server.test.queries;
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.types.TypeWithNameAndJsonbProperty;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
-
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import org.eclipse.microprofile.graphql.GraphQLApi;
 import org.eclipse.microprofile.graphql.Name;
 import org.eclipse.microprofile.graphql.Query;
 
 /**
  * Class that holds simple query definitions with types that have different property
- * names through {@link javax.json.bind.annotation.JsonbProperty} or {@link Name}.
+ * names through {@link jakarta.json.bind.annotation.JsonbProperty} or {@link Name}.
  */
 @GraphQLApi
 @ApplicationScoped

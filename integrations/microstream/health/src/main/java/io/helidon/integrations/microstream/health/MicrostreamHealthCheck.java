@@ -91,7 +91,7 @@ public class MicrostreamHealthCheck implements HealthCheck {
      * Builder for MicrostreamHealthCheck.
      *
      */
-    public static class Builder implements io.helidon.common.Builder<MicrostreamHealthCheck> {
+    public static class Builder implements io.helidon.common.Builder<Builder, MicrostreamHealthCheck> {
 
         private final EmbeddedStorageManager embeddedStorageManager;
 

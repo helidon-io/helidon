@@ -29,7 +29,7 @@ public final class HelidonProperties {
 
     /**
      * A Helidon {@link Config} instance that is passed to {@link WebClient.Builder#config(Config)} if available.
-     * This property is settable on {@link javax.ws.rs.core.Configurable#property(String, Object)} objects.
+     * This property is settable on {@link jakarta.ws.rs.core.Configurable#property(String, Object)} objects.
      */
     public static final String CONFIG = "jersey.connector.helidon.config";
 }

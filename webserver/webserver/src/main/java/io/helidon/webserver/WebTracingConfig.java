@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -137,7 +137,7 @@ public abstract class WebTracingConfig {
     /**
      * A fluent API builder for {@link WebTracingConfig}.
      */
-    public static class Builder implements io.helidon.common.Builder<WebTracingConfig> {
+    public static class Builder implements io.helidon.common.Builder<Builder, WebTracingConfig> {
         private final List<PathTracingConfig> pathTracingConfigs = new LinkedList<>();
         private TracingConfig tracedConfig = TracingConfig.ENABLED;
 

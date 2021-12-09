@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 package io.helidon.lra.coordinator.client.narayana;
 
@@ -27,7 +26,6 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
 
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Single;
@@ -283,7 +281,7 @@ public class NarayanaClient implements CoordinatorClient {
     }
 
     /**
-     * Narayana accepts participant's links as RFC 5988 {@code javax.ws.rs.core.Link}s delimited by commas.
+     * Narayana accepts participant's links as RFC 5988 {@code jakarta.ws.rs.core.Link}s delimited by commas.
      * <p>
      * Example:
      * <pre>{@code

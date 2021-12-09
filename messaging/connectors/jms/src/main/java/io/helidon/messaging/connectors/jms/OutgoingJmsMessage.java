@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,11 +25,10 @@ import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.jms.JMSException;
-import javax.jms.Session;
-
 import io.helidon.messaging.MessagingException;
 
+import jakarta.jms.JMSException;
+import jakarta.jms.Session;
 import org.eclipse.microprofile.reactive.messaging.Message;
 
 class OutgoingJmsMessage<PAYLOAD> implements Message<PAYLOAD> {
@@ -79,8 +78,8 @@ class OutgoingJmsMessage<PAYLOAD> implements Message<PAYLOAD> {
         this.postProcessors.add(processor);
     }
 
-    javax.jms.Message toJmsMessage(Session session, MessageMappers.MessageMapper defaultMapper) throws JMSException {
-        javax.jms.Message jmsMessage;
+    jakarta.jms.Message toJmsMessage(Session session, MessageMappers.MessageMapper defaultMapper) throws JMSException {
+        jakarta.jms.Message jmsMessage;
         if (mapper != null) {
             jmsMessage = mapper.apply(getPayload(), session);
         } else {
@@ -93,7 +92,7 @@ class OutgoingJmsMessage<PAYLOAD> implements Message<PAYLOAD> {
     }
 
     @SuppressWarnings("unchecked")
-    static <PAYLOAD> OutgoingJmsMessage<PAYLOAD> fromJmsMessage(javax.jms.Message jmsMessage) throws JMSException {
+    static <PAYLOAD> OutgoingJmsMessage<PAYLOAD> fromJmsMessage(jakarta.jms.Message jmsMessage) throws JMSException {
         OutgoingJmsMessage<PAYLOAD> msg = new OutgoingJmsMessage<>();
         msg.postProcess(m -> {
             Enumeration<String> e = jmsMessage.getPropertyNames();
@@ -120,7 +119,7 @@ class OutgoingJmsMessage<PAYLOAD> implements Message<PAYLOAD> {
                 // deliberately noop, original's jms session is closed
                 return CompletableFuture.completedFuture(null);
             } catch (JMSException e) {
-                throw new MessagingException("Error when acking original javax.jms.Message");
+                throw new MessagingException("Error when acking original jakarta.jms.Message");
             }
         });
         return msg;
@@ -128,7 +127,7 @@ class OutgoingJmsMessage<PAYLOAD> implements Message<PAYLOAD> {
 
     @FunctionalInterface
     interface PostProcessor {
-        void accept(javax.jms.Message m) throws JMSException;
+        void accept(jakarta.jms.Message m) throws JMSException;
     }
 
     @FunctionalInterface

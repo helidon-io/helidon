@@ -28,8 +28,8 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * used to specify the binding of a gRPC client or server interceptor to target gRPC service and methods.
  * <p>
  * The annotation type that is marked as a binding must be applied to a client of server gRPC interceptor
- * implementation class (marked with the {@code javax.interceptor.Interceptor @Interceptor} annotation to associate that annotation with an interceptor.  The annotation
- * may then be applied instead of, or in addition to, the {@code javax.interceptor.Interceptors @Interceptors} annotation to specify
+ * implementation class (marked with the {@code jakarta.interceptor.Interceptor @Interceptor} annotation to associate that annotation with an interceptor.  The annotation
+ * may then be applied instead of, or in addition to, the {@code jakarta.interceptor.Interceptors @Interceptors} annotation to specify
  * what interceptors are attached to the class or method.
  * <p>
  * The associated annotation type must be associated only with {@link java.lang.annotation.ElementType#TYPE TYPE}s and/or

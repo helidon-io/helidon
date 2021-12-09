@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 /**
  * Helidon Jaeger metrics integration.
@@ -20,7 +19,8 @@
 module io.helidon.metrics.jaeger {
 
     requires java.logging;
-    requires io.helidon.metrics;
+    requires io.helidon.common;
+    requires io.helidon.metrics.api;
     requires jaeger.core;
 
     provides io.jaegertracing.spi.MetricsFactory with io.helidon.metrics.jaeger.HelidonJaegerMetricsFactory;

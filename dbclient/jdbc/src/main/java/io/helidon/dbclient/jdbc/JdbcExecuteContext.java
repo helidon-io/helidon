@@ -75,7 +75,7 @@ final class JdbcExecuteContext extends DbClientContext {
         });
     }
 
-    static class Builder extends BuilderBase<Builder> implements io.helidon.common.Builder<JdbcExecuteContext> {
+    static class Builder extends BuilderBase<Builder> implements io.helidon.common.Builder<Builder, JdbcExecuteContext> {
         private ExecutorService executorService;
         private String dbType;
         private CompletionStage<Connection> connection;

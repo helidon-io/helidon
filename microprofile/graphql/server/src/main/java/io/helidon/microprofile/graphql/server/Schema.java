@@ -507,7 +507,7 @@ class Schema implements ElementGenerator {
     /**
      * A fluent API {@link io.helidon.common.Builder} to build instances of {@link Schema}.
      */
-    public static class Builder implements io.helidon.common.Builder<Schema> {
+    public static class Builder implements io.helidon.common.Builder<Builder, Schema> {
 
         private String queryName;
         private String mutationName;

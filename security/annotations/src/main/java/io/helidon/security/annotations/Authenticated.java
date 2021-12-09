@@ -33,7 +33,7 @@ import io.helidon.security.spi.AuthenticationProvider;
  * <pre>
  *  &#64;Authenticated
  *  &#64;ApplicationPath("myApp")
- *  public class SecuredApplication extends javax.ws.rs.core.Application { ... }
+ *  public class SecuredApplication extends jakarta.ws.rs.core.Application { ... }
  *
  *  &#64;Authenticated(false)
  *  &#64;Path("/")

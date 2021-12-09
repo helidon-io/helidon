@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,5 +17,7 @@
  * Microprofile extension for tracing.
  * Expected location of configuration is at key {@code tracing},
  * see {@link io.helidon.tracing.TracerBuilder} for details about configuration.
+ *
+ * @see org.eclipse.microprofile.opentracing
  */
 package io.helidon.microprofile.tracing;

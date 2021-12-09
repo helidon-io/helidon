@@ -15,11 +15,11 @@
  */
 package io.helidon.servicecommon.restcdi;
 
+import java.util.logging.Logger;
+
 import io.helidon.config.Config;
 import io.helidon.servicecommon.rest.HelidonRestServiceSupport;
 import io.helidon.webserver.Routing;
-
-import java.util.logging.Logger;
 
 /**
  * Test SE service which does not really expose its own endpoint but does use config to set an "importance" value.
@@ -59,8 +59,8 @@ public class ConfiguredTestSupport extends HelidonRestServiceSupport {
         return importance;
     }
 
-    static class Builder extends HelidonRestServiceSupport.Builder<ConfiguredTestSupport, Builder>
-            implements io.helidon.common.Builder<ConfiguredTestSupport> {
+    static class Builder extends HelidonRestServiceSupport.Builder<Builder, ConfiguredTestSupport>
+            implements io.helidon.common.Builder<Builder, ConfiguredTestSupport> {
 
 
         private int importance;

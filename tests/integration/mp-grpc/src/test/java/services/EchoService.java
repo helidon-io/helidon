@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,13 @@
 
 package services;
 
-import javax.enterprise.context.ApplicationScoped;
-
 import io.helidon.grpc.server.test.Echo.EchoRequest;
 import io.helidon.grpc.server.test.Echo.EchoResponse;
 import io.helidon.microprofile.grpc.core.Grpc;
 import io.helidon.microprofile.grpc.core.Unary;
 
 import io.grpc.stub.StreamObserver;
+import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 
 import static io.helidon.grpc.core.ResponseHelper.complete;

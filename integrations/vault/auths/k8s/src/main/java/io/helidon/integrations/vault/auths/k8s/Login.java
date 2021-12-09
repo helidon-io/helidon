@@ -20,12 +20,12 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
-import javax.json.JsonObject;
-
 import io.helidon.integrations.common.rest.ApiEntityResponse;
 import io.helidon.integrations.vault.VaultRequest;
 import io.helidon.integrations.vault.VaultResponse;
 import io.helidon.integrations.vault.VaultToken;
+
+import jakarta.json.JsonObject;
 
 import static io.helidon.integrations.vault.VaultUtil.arrayToList;
 
@@ -46,7 +46,7 @@ public final class Login {
         /**
          * Fluent API builder for configuring a request.
          * The request builder is passed as is, without a build method.
-         * The equivalent of a build method is {@link #toJson(javax.json.JsonBuilderFactory)}
+         * The equivalent of a build method is {@link #toJson(jakarta.json.JsonBuilderFactory)}
          * used by the {@link io.helidon.integrations.common.rest.RestApi}.
          *
          * @return new request builder

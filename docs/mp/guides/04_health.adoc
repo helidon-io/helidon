@@ -129,7 +129,7 @@ using CDI.  The following example shows how to add a custom liveness health chec
 ----
 package io.helidon.examples.quickstart.mp;
 
-import javax.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.eclipse.microprofile.health.Liveness;
@@ -190,10 +190,10 @@ package io.helidon.examples.quickstart.mp;
 
 import java.time.Duration; // <1>
 import java.util.concurrent.atomic.AtomicLong;
-import javax.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.ApplicationScoped;
 
-import javax.enterprise.context.Initialized;
-import javax.enterprise.event.Observes;
+import jakarta.enterprise.context.Initialized;
+import jakarta.enterprise.event.Observes;
 import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.eclipse.microprofile.health.Readiness;

@@ -25,10 +25,9 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import javax.annotation.Priority;
-import javax.inject.Singleton;
-import javax.ws.rs.core.Application;
-
+import jakarta.annotation.Priority;
+import jakarta.inject.Singleton;
+import jakarta.ws.rs.core.Application;
 import org.glassfish.jersey.inject.hk2.Hk2InjectionManagerFactory;
 import org.glassfish.jersey.inject.hk2.ImmediateHk2InjectionManager;
 import org.glassfish.jersey.internal.inject.Binder;

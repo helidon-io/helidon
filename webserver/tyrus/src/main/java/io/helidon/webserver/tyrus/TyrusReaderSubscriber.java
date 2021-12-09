@@ -20,14 +20,13 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Flow;
 
-import javax.websocket.CloseReason;
-
 import io.helidon.common.http.DataChunk;
 
+import jakarta.websocket.CloseReason;
 import org.glassfish.tyrus.spi.Connection;
 
-import static javax.websocket.CloseReason.CloseCodes.NORMAL_CLOSURE;
-import static javax.websocket.CloseReason.CloseCodes.UNEXPECTED_CONDITION;
+import static jakarta.websocket.CloseReason.CloseCodes.NORMAL_CLOSURE;
+import static jakarta.websocket.CloseReason.CloseCodes.UNEXPECTED_CONDITION;
 
 /**
  * Class TyrusReaderSubscriber.

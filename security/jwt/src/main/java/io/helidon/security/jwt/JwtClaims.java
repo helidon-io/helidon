@@ -21,11 +21,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Collections;
 
-import javax.json.Json;
-import javax.json.JsonObject;
-import javax.json.JsonReaderFactory;
-
 import io.helidon.common.Errors;
+
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonReaderFactory;
 
 class JwtClaims {
     private static final Base64.Decoder URL_DECODER = Base64.getUrlDecoder();

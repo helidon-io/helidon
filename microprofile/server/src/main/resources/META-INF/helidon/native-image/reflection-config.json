@@ -2,10 +2,10 @@
     "annotated":[
     ],
     "class-hierarchy": [
-        "javax.ws.rs.client.ClientBuilder",
-        "javax.ws.rs.client.ClientRequestFilter",
-        "javax.ws.rs.client.ClientResponseFilter",
-        "javax.ws.rs.client.RxInvokerProvider"
+        "jakarta.ws.rs.client.ClientBuilder",
+        "jakarta.ws.rs.client.ClientRequestFilter",
+        "jakarta.ws.rs.client.ClientResponseFilter",
+        "jakarta.ws.rs.client.RxInvokerProvider"
     ],
     "classes": [
     ],

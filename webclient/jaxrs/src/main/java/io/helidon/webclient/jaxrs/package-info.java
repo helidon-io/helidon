@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,8 @@
  */
 /**
  * Helidon support for JAX-RS (Jersey) client.
- * You can create the JAX-RS client as usual using {@link javax.ws.rs.client.ClientBuilder#newBuilder()}
- * and {@link javax.ws.rs.client.ClientBuilder#newClient()}.
+ * You can create the JAX-RS client as usual using {@link jakarta.ws.rs.client.ClientBuilder#newBuilder()}
+ * and {@link jakarta.ws.rs.client.ClientBuilder#newClient()}.
  * <p>
  * If you want to configure defaults for asynchronous executor service,
  *  you can use {@link io.helidon.webclient.jaxrs.JaxRsClient#configureDefaults(io.helidon.config.Config)}

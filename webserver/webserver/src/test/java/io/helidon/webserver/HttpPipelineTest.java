@@ -29,9 +29,9 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Test support for HTTP 1.1 pipelining.
@@ -59,6 +59,7 @@ public class HttpPipelineTest {
 
     private static void startServer(int port) throws Exception {
         webServer = WebServer.builder()
+                .host("localhost")
                 .experimental(ExperimentalConfiguration.builder().http2(
                         Http2Configuration.builder().enable(true).build()).build())
                 .port(port)

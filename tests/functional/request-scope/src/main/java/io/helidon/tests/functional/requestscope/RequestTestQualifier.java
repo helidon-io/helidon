@@ -15,8 +15,8 @@
  */
 package io.helidon.tests.functional.requestscope;
 
-import javax.enterprise.context.RequestScoped;
-import javax.inject.Inject;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 
 @RequestScoped
 @TestQualifier

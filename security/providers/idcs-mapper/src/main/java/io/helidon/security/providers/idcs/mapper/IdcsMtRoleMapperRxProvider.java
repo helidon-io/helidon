@@ -24,11 +24,6 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
-import javax.json.Json;
-import javax.json.JsonArrayBuilder;
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObjectBuilder;
-
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.http.Http;
@@ -47,6 +42,11 @@ import io.helidon.security.spi.SecurityProvider;
 import io.helidon.security.util.TokenHandler;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientRequestBuilder;
+
+import jakarta.json.Json;
+import jakarta.json.JsonArrayBuilder;
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonObjectBuilder;
 
 /**
  * {@link io.helidon.security.spi.SubjectMappingProvider} to obtain roles from IDCS server for a user.
@@ -338,7 +338,7 @@ public class IdcsMtRoleMapperRxProvider extends IdcsRoleMapperRxProviderBase {
      */
     public static class Builder<B extends Builder<B>>
             extends IdcsRoleMapperRxProviderBase.Builder<Builder<B>>
-            implements io.helidon.common.Builder<IdcsMtRoleMapperRxProvider> {
+            implements io.helidon.common.Builder<Builder<B>, IdcsMtRoleMapperRxProvider> {
         private TokenHandler idcsAppNameTokenHandler = TokenHandler.forHeader(IDCS_APP_HEADER);
         private TokenHandler idcsTenantTokenHandler = TokenHandler.forHeader(IDCS_TENANT_HEADER);
         private MultitenancyEndpoints multitentantEndpoints;

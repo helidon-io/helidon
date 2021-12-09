@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import io.helidon.common.Builder;
  * @param <B> type of the builder
  * @param <T> type which the builder builds
  */
-public interface FormBuilder<B, T> extends Builder<T> {
+public interface FormBuilder<B, T> extends Builder<FormBuilder<B, T>, T> {
 
     /**
      * Add a new values to specific content disposition name.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ public interface Bulkhead extends FtHandler {
     /**
      * Fluent API builder for {@link io.helidon.faulttolerance.Bulkhead}.
      */
-    class Builder implements io.helidon.common.Builder<Bulkhead> {
+    class Builder implements io.helidon.common.Builder<Builder, Bulkhead> {
         private static final int DEFAULT_LIMIT = 10;
         private static final int DEFAULT_QUEUE_LENGTH = 10;
 

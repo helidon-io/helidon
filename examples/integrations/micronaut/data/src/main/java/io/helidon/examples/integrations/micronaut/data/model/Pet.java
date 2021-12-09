@@ -18,13 +18,12 @@ package io.helidon.examples.integrations.micronaut.data.model;
 
 import java.util.UUID;
 
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.ManyToOne;
-
 import io.micronaut.core.annotation.Creator;
 import io.micronaut.core.annotation.Nullable;
 import io.micronaut.data.annotation.AutoPopulated;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.ManyToOne;
 
 /**
  * Pet database entity.
@@ -45,7 +44,7 @@ public class Pet {
      * @param name name of the pet
      * @param owner owner of the pet (optional)
      */
-    // NOTE - please use Nullable from this package, javax.annotation.Nullable will fail with JPMS,
+    // NOTE - please use Nullable from this package, jakarta.annotation.Nullable will fail with JPMS,
     // as it is declared in the same package as is used by annother module (jakarta.annotation-api)
     @Creator
     public Pet(String name, @Nullable Owner owner) {

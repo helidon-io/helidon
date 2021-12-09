@@ -127,7 +127,7 @@ public class GrpcChannelDescriptor {
     /**
      * Builder builds a GrpcChannelDescriptor.
      */
-    public static class Builder implements io.helidon.common.Builder<GrpcChannelDescriptor> {
+    public static class Builder implements io.helidon.common.Builder<Builder, GrpcChannelDescriptor> {
         private boolean inProcessChannel;
         private String host = GrpcChannelsProvider.DEFAULT_HOST;
         private int port = GrpcChannelsProvider.DEFAULT_PORT;

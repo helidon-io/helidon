@@ -21,9 +21,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
-import javax.enterprise.inject.se.SeContainer;
-import javax.enterprise.inject.spi.CDI;
-
 import io.helidon.common.reactive.Single;
 import io.helidon.config.mp.MpConfigSources;
 import io.helidon.lra.coordinator.CoordinatorService;
@@ -31,6 +28,8 @@ import io.helidon.microprofile.arquillian.HelidonContainerConfiguration;
 import io.helidon.microprofile.arquillian.HelidonDeployableContainer;
 import io.helidon.microprofile.server.ServerCdiExtension;
 
+import jakarta.enterprise.inject.se.SeContainer;
+import jakarta.enterprise.inject.spi.CDI;
 import org.jboss.arquillian.container.spi.Container;
 import org.jboss.arquillian.container.spi.event.container.AfterDeploy;
 import org.jboss.arquillian.container.spi.event.container.BeforeStart;

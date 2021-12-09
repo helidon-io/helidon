@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,6 @@ import java.nio.charset.Charset;
 import java.util.Objects;
 import java.util.concurrent.Flow.Publisher;
 
-import javax.json.bind.Jsonb;
-import javax.json.bind.JsonbException;
-
 import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.MediaType;
@@ -31,6 +28,9 @@ import io.helidon.media.common.CharBuffer;
 import io.helidon.media.common.ContentWriters;
 import io.helidon.media.common.MessageBodyWriter;
 import io.helidon.media.common.MessageBodyWriterContext;
+
+import jakarta.json.bind.Jsonb;
+import jakarta.json.bind.JsonbException;
 
 /**
  * Message body writer supporting object binding with JSON-B.

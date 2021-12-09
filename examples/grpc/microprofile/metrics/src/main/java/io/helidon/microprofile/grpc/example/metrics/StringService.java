@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,6 @@ package io.helidon.microprofile.grpc.example.metrics;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import javax.enterprise.context.ApplicationScoped;
-
 import io.helidon.grpc.server.CollectingObserver;
 import io.helidon.microprofile.grpc.core.Bidirectional;
 import io.helidon.microprofile.grpc.core.ClientStreaming;
@@ -29,6 +27,7 @@ import io.helidon.microprofile.grpc.core.ServerStreaming;
 import io.helidon.microprofile.grpc.core.Unary;
 
 import io.grpc.stub.StreamObserver;
+import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Metered;
 import org.eclipse.microprofile.metrics.annotation.Timed;
@@ -37,7 +36,7 @@ import org.eclipse.microprofile.metrics.annotation.Timed;
  * The gRPC StringService implementation.
  * <p>
  * This class is a gRPC service annotated with {@link io.helidon.microprofile.grpc.core.Grpc}
- * and {@link javax.enterprise.context.ApplicationScoped} so that it will be discovered and deployed
+ * and {@link jakarta.enterprise.context.ApplicationScoped} so that it will be discovered and deployed
  * using CDI when the MP gRPC server starts.
  */
 @Grpc

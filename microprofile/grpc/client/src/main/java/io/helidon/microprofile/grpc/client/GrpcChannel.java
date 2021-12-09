@@ -21,9 +21,9 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import javax.enterprise.util.AnnotationLiteral;
-import javax.enterprise.util.Nonbinding;
-import javax.inject.Qualifier;
+import jakarta.enterprise.util.AnnotationLiteral;
+import jakarta.enterprise.util.Nonbinding;
+import jakarta.inject.Qualifier;
 
 /**
  * A qualifier annotation that can be used to specify the name of a configured gRPC
@@ -72,7 +72,7 @@ public @interface GrpcChannel {
     @Nonbinding String name();
 
     /**
-     * An {@link javax.enterprise.util.AnnotationLiteral} for the
+     * An {@link jakarta.enterprise.util.AnnotationLiteral} for the
      * {@link GrpcChannel} annotation.
      */
     class Literal extends AnnotationLiteral<GrpcChannel> implements GrpcChannel {

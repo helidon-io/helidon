@@ -32,7 +32,6 @@ import java.util.concurrent.Executor;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.annotation.Priority;
 import javax.net.ssl.SSLContext;
 
 import io.helidon.common.configurable.Resource;
@@ -48,7 +47,6 @@ import io.grpc.BindableService;
 import io.grpc.HandlerRegistry;
 import io.grpc.ManagedChannel;
 import io.grpc.Metadata;
-import io.grpc.MethodDescriptor;
 import io.grpc.Server;
 import io.grpc.ServerCall;
 import io.grpc.ServerCallHandler;
@@ -71,6 +69,7 @@ import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SslProvider;
 import io.netty.util.concurrent.DefaultThreadFactory;
 import io.netty.util.concurrent.ThreadPerTaskExecutor;
+import jakarta.annotation.Priority;
 import org.eclipse.microprofile.health.HealthCheck;
 
 import static java.lang.String.format;
@@ -324,7 +323,7 @@ public class GrpcServerImpl implements GrpcServer {
         Iterator<String> methods = ssd.getMethods()
                 .stream()
                 .map(ServerMethodDefinition::getMethodDescriptor)
-                .map(MethodDescriptor::getFullMethodName)
+                .map(io.grpc.MethodDescriptor::getFullMethodName)
                 .sorted()
                 .iterator();
 

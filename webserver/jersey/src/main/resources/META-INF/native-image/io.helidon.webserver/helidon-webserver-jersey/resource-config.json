@@ -1,7 +1,7 @@
 {
     "bundles": [
         {
-            "name": "javax.xml.bind.Messages"
+            "name": "jakarta.xml.bind.Messages"
         }
     ],
     "resources": [

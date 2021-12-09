@@ -16,9 +16,8 @@
 
 package io.helidon.microprofile.tyrus;
 
-import javax.enterprise.inject.spi.BeanManager;
-import javax.enterprise.inject.spi.CDI;
-
+import jakarta.enterprise.inject.spi.BeanManager;
+import jakarta.enterprise.inject.spi.CDI;
 import org.glassfish.tyrus.core.ComponentProvider;
 
 /**

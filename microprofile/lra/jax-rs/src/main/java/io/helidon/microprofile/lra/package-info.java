@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 /**
@@ -21,5 +20,7 @@
  * Allows defining transactional context for Jax-Rs resources with {@link org.eclipse.microprofile.lra.annotation.ws.rs.LRA}
  * annotation and compensation actions with {@link org.eclipse.microprofile.lra.annotation.Compensate} and
  * {@link org.eclipse.microprofile.lra.annotation.Complete}.
+ *
+ * @see org.eclipse.microprofile.lra
  */
 package io.helidon.microprofile.lra;

@@ -19,10 +19,10 @@ package io.helidon.microprofile.messaging.health;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
+import io.helidon.common.reactive.Single;
+
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
-
-import io.helidon.common.reactive.Single;
 
 public class TestSubscriber<T> implements Subscriber<T> {
     private Subscription subscription;

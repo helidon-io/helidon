@@ -16,11 +16,10 @@
 
 package io.helidon.microprofile.messaging.health;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Named;
-
 import io.helidon.common.reactive.BufferedEmittingPublisher;
 
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Named;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;
 import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;

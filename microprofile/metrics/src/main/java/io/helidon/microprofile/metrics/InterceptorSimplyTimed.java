@@ -16,9 +16,8 @@
 
 package io.helidon.microprofile.metrics;
 
-import javax.annotation.Priority;
-import javax.interceptor.Interceptor;
-
+import jakarta.annotation.Priority;
+import jakarta.interceptor.Interceptor;
 import org.eclipse.microprofile.metrics.annotation.SimplyTimed;
 
 /**
