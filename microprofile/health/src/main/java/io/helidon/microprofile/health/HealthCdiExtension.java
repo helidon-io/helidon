@@ -29,6 +29,7 @@ import io.helidon.config.mp.MpConfig;
 import io.helidon.health.HealthSupport;
 import io.helidon.health.common.BuiltInHealthCheck;
 import io.helidon.microprofile.server.RoutingBuilders;
+import io.helidon.servicecommon.restcdi.HelidonRestCdiExtension;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -36,7 +37,7 @@ import jakarta.enterprise.context.Initialized;
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.inject.spi.BeforeBeanDiscovery;
 import jakarta.enterprise.inject.spi.CDI;
-import jakarta.enterprise.inject.spi.Extension;
+import jakarta.enterprise.inject.spi.ProcessManagedBean;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.Liveness;
@@ -48,7 +49,7 @@ import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 /**
  * Health extension.
  */
-public class HealthCdiExtension implements Extension {
+public class HealthCdiExtension extends HelidonRestCdiExtension<HealthSupport> {
     private static final BuiltInHealthCheck BUILT_IN_HEALTH_CHECK_LITERAL = new BuiltInHealthCheck() {
         @Override
         public Class<? extends Annotation> annotationType() {
@@ -58,6 +59,13 @@ public class HealthCdiExtension implements Extension {
 
     private static final Logger LOGGER = Logger.getLogger(HealthCdiExtension.class.getName());
 
+    /**
+     * Creates a new instance of the health CDI extension.
+     */
+    public HealthCdiExtension() {
+        super(LOGGER, HealthSupport::create, HealthSupport.Builder.HEALTH_CONFIG_KEY);
+    }
+
     void registerProducers(@Observes BeforeBeanDiscovery bbd) {
         bbd.addAnnotatedType(JvmRuntimeProducers.class, "health.JvmRuntimeProducers")
                 .add(ApplicationScoped.Literal.INSTANCE);
@@ -65,7 +73,7 @@ public class HealthCdiExtension implements Extension {
 
     void registerHealth(@Observes @Priority(LIBRARY_BEFORE + 10) @Initialized(ApplicationScoped.class) Object adv) {
         org.eclipse.microprofile.config.Config config = ConfigProvider.getConfig();
-        Config helidonConfig = MpConfig.toHelidonConfig(config).get("health");
+        Config helidonConfig = MpConfig.toHelidonConfig(config).get(HealthSupport.Builder.HEALTH_CONFIG_KEY);
 
         if (!config.getOptionalValue("health.enabled", Boolean.class).orElse(true)) {
             LOGGER.finest("Health support is disabled in configuration");
@@ -112,5 +120,10 @@ public class HealthCdiExtension implements Extension {
         RoutingBuilders.create(helidonConfig)
                 .routingBuilder()
                 .register(builder.build());
+    }
+
+    @Override
+    protected void processManagedBean(ProcessManagedBean<?> processManagedBean) {
+        // Annotated sites are handled in registerHealth.
     }
 }
