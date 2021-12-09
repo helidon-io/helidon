@@ -27,7 +27,7 @@ import io.netty.channel.ChannelId;
 import io.netty.util.concurrent.Future;
 
 /**
- * Wrapper for {@link io.netty.channel.ChannelHandlerContext} guarding all writes to be made exclusively from event loop thread.
+ * Wrapper for {@link io.netty.channel.Channel} guarding all writes to be made exclusively from event loop thread.
  *
  * <ul>
  * <b>Netty can provide "ordering" in the one of the following situations exclusively:</b>
