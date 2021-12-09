@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
@@ -107,7 +106,7 @@ class BareResponseImpl implements BareResponse {
         this.requestEntityAnalyzed = requestEntityAnalyzed;
         this.responseFuture = new CompletableFuture<>();
         this.headersFuture = new CompletableFuture<>();
-        this.channel = new NettyChannel(ctx);
+        this.channel = new NettyChannel(ctx.channel());
         this.requestId = requestId;
         this.keepAlive = HttpUtil.isKeepAlive(request);
         this.requestHeaders = request.headers();
@@ -347,12 +346,10 @@ class BareResponseImpl implements BareResponse {
                 LOGGER.severe(() -> log("Upstream error while sending response: %s", throwable));
             }
         }
-
-        channel.write(true, lastHttpContent)
-                .thenApply(f -> f
-                        .addListener(completeOnFailureListener("An exception occurred when writing last http content."))
-                        .addListener(completeOnSuccessListener(throwable))
-                        .addListener(closeAction));
+        channel.write(true, lastHttpContent, f -> f
+                .addListener(completeOnFailureListener("An exception occurred when writing last http content."))
+                .addListener(completeOnSuccessListener(throwable))
+                .addListener(closeAction));
     }
 
     private GenericFutureListener<Future<? super Void>> completeOnFailureListener(String message) {
@@ -416,48 +413,39 @@ class BareResponseImpl implements BareResponse {
      *
      * @param data the data chunk.
      */
-    private CompletionStage<ChannelFuture> onNextPipe(DataChunk data) {
+    private void onNextPipe(DataChunk data) {
         if (lengthOptimization) {
-            return initWriteResponse().thenCompose(f -> sendData(data, true));
-        } else {
-            return sendData(data, true);
+            initWriteResponse();
         }
+        sendData(data, true);
     }
 
     /**
      * Initiates write of response and sends first chunk if available. This method must be called
      * inside an {@link #orderedWrite(Runnable)} runnable.
+     *
+     * @return Future of response or first chunk.
      */
-    private CompletionStage<ChannelFuture> initWriteResponse() {
-        CompletionStage<ChannelFuture> eventLoopDone = channel.write(false, response)
-                .thenApply(f -> f
-                        .addListener(future -> NettyChannel.completeFuture(future, headersFuture, this))
-                        .addListener(completeOnFailureListener("An exception occurred when writing headers."))
-                        .addListener(ChannelFutureListener.CLOSE_ON_FAILURE));
-
+    private void initWriteResponse() {
+        channel.write(false, response, f -> f
+                .addListener(future -> NettyChannel.completeFuture(future, headersFuture, this))
+                .addListener(completeOnFailureListener("An exception occurred when writing headers."))
+                .addListener(ChannelFutureListener.CLOSE_ON_FAILURE));
         response = null;
+        if (firstChunk != null) {
+            sendData(firstChunk, false);
+            firstChunk = null;
+        }
         lengthOptimization = false;
-
-        return eventLoopDone.whenComplete((f, e) -> {
-            if (firstChunk != null) {
-                sendData(firstChunk, false);
-                firstChunk = null;
-            }
-        });
     }
 
     /**
      * Submits a data chunk for writing. This method must be called inside an
      * {@link #orderedWrite(Runnable)} runnable.
      *
-     * When DataChunk has flush true, upstream is requested for another chunk
-     * after actual write is done. When flush is false, upstream is requested
-     * after request for write is finished.
-     *
      * @param data the chunk.
-     * @param requestOneMore if write should request for another chunk
      */
-    private CompletionStage<ChannelFuture> sendData(DataChunk data, boolean requestOneMore) {
+    private void sendData(DataChunk data, boolean requestOneMore) {
         LOGGER.finest(() -> log("Sending data chunk"));
 
         DefaultHttpContent httpContent;
@@ -478,31 +466,30 @@ class BareResponseImpl implements BareResponse {
 
         LOGGER.finest(() -> log("Sending data chunk on event loop thread", channel));
 
-        return channel.write(data.flush(), httpContent)
-                .thenApply(f -> {
-                    // After request for write is made on event loop thread
-                    if (!data.flush() && requestOneMore) {
-                        // No flush, request another chunk immediately, this one needs to wait in the cache
-                        subscription.request(1);
-                    }
-                    // Add listeners to execute when actual write is done
-                    return f.addListener(future -> {
-                                // Complete write future based con channel future
-                                data.writeFuture()
-                                        .ifPresent(writeFuture -> NettyChannel.completeFuture(future, writeFuture, data));
-
-                                boolean flush = data.flush();
-                                data.release();
-                                if (flush && requestOneMore) {
-                                    // Previous chunk sent, request another one
-                                    subscription.request(1);
-                                }
-                                LOGGER.finest(() -> log("Data chunk sent with result: %s", future.isSuccess()));
-                            })
-                            .addListener(completeOnFailureListener("Failure when sending a content!"))
-                            .addListener(ChannelFutureListener.CLOSE_ON_FAILURE);
-                });
+        channel.write(data.flush(), httpContent, f -> {
+            // After request for write is made on event loop thread
+            if (!data.flush() && requestOneMore) {
+                // No flush, request another chunk immediately, this one needs to wait in the cache
+                subscription.request(1);
+            }
+            // Add listeners to execute when actual write is done
+            return f.addListener(future -> {
+                        // Complete write future based con channel future
+                        data.writeFuture()
+                                .ifPresent(writeFuture -> NettyChannel.completeFuture(future, writeFuture, data));
+                        boolean flush = data.flush();
+                        data.release();
+                        if (flush && requestOneMore) {
+                            // Previous chunk sent, request another one
+                            subscription.request(1);
+                        }
+                        LOGGER.finest(() -> log("Data chunk sent with result: %s", future.isSuccess()));
+                    })
+                    .addListener(completeOnFailureListener("Failure when sending a content!"))
+                    .addListener(ChannelFutureListener.CLOSE_ON_FAILURE);
+        });
     }
+
 
     @Override
     public void onError(Throwable thr) {
