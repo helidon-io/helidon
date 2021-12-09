@@ -29,6 +29,7 @@ public class ClientTracingAutoDiscoverable implements AutoDiscoverable {
     public void configure(FeatureContext context) {
         if (!context.getConfiguration().isRegistered(ClientTracingFilter.class)) {
             context.register(ClientTracingFilter.class, 10);
+            context.register(ClientTracingInterceptor.class, 10);
         }
     }
 }
