@@ -31,6 +31,7 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Unit test for {@link SignedJwt}.
@@ -46,6 +47,9 @@ public class SignedJwtTest {
 
     private static final String BASE64URL_TOKEN =
             "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6IlF6QkNNRE0xUVRJMk1qUkZNVEZETkRCRFJUWXdSa1U0UkRkRU16VTVSVGN3TkRSQk5qaENOUSJ9.ewogICJpc3MiOiAidGVzdCIsCiAgImF1ZCI6IFsKICAgICJPQUFDbGllbnR0ZXN0IiwKICAgICJ0ZXN0IgogIF0sCiAgImV4cCI6IDE2NDA0NDU5ODQsCiAgImp0aSI6ICJnamlVOU51UFV5WTZDelVlLUdZS3ZRIiwKICAiaWF0IjogMTYzNzgxNzk4NCwKICAic3ViIjogIk9BQUFkbWludGVzdCIsCiAgImNsaWVudCI6ICJPQUFDbGllbnR0ZXN0IiwKICAic2NvcGUiOiBbCiAgICAib3BlbmlkIgogIF0sCiAgImRvbWFpbiI6ICJPQUFEb21haW50ZXN0IiwKICAiZ3JhbnQiOiAiQVVUSE9SSVpBVElPTl9DT0RFIiwKICAiZ3JvdXBzIjogWwogICAgIk9BQS1BZG1pbi1Sb2xldGVzdCIKICBdLAogICJhcHBJZCI6ICJ0ZXN0IiwKICAic3RhdGljQXR0ciI6ICJDdXN0b21WYWx1ZSIsCiAgInNlc3Npb25JZCI6ICJ0ZXN0LXRlc3QtNDk3Mi10ZXN0LTFkOTJkMDlmZGIxZnxsZUlnVjZwSWwxZEo0M3h4d010NHY2YldVcTVBRm1obDhabVNoM3RiT2lzPSIsCiAgImFwcGxpY2F0aW9uSWQiOiAidGVzdCIsCiAgIm5vbmNlIjogInRlc3QtYjU3MC00MzUwLXRlc3QtZDAwNWJmNDIyYTNhIiwKICAibWRjX3Nzb19saW5rIjogIjI2NWM3LXRlc3QwMDUyLn5-VXNlcklkZW50aXR5U3RvcmUxIiwKICAicmVzU3J2QXR0ciI6ICJSRVNPVVJDRUNPTlNUIgp9.hk4WiDJQrEw5GHvls0qG4C56_Hv-vSrnDWN5m_ikfmlPfJjDaNRUU-phuOb2YhQs_zzSxYmIyWcph4DUKMNF6akx_qHuJnbm7wX5Ps18gNzFM6d9WSalUUL1oILKvutpsHKzI4TVgmfO6DmeIgxxPLXyozRQWcsJPcDMuSDiE06Li4LhjKhzXgj1jpnDcaMttF_EQqiIv3CHWLodXs-WLS_meBQXrdyZPH_O805E3wFTWyFxAUSt2KsevgiHKUxGZtGBwCiOwS5gMfR1aJPuXY4YhkONFDX19Z-DShImLcdPn3yrt1dGJn145TNjftiOBHOkpRmlNHmI0lI-HIgozg";
+
+    private static final String NO_SIGNATURE_TOKEN =
+            "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.ewogICJpc3MiOiAidGVzdCIsCiAgImF1ZCI6IFsKICAgICJPQUFDbGllbnR0ZXN0IiwKICAgICJ0ZXN0IgogIF0sCiAgImV4cCI6IDE2NDA0NDU5ODQsCiAgImp0aSI6ICJnamlVOU51UFV5WTZDelVlLUdZS3ZRIiwKICAiaWF0IjogMTYzNzgxNzk4NCwKICAic3ViIjogIk9BQUFkbWludGVzdCIsCiAgImNsaWVudCI6ICJPQUFDbGllbnR0ZXN0IiwKICAic2NvcGUiOiBbCiAgICAib3BlbmlkIgogIF0sCiAgImRvbWFpbiI6ICJPQUFEb21haW50ZXN0IiwKICAiZ3JhbnQiOiAiQVVUSE9SSVpBVElPTl9DT0RFIiwKICAiZ3JvdXBzIjogWwogICAgIk9BQS1BZG1pbi1Sb2xldGVzdCIKICBdLAogICJhcHBJZCI6ICJ0ZXN0IiwKICAic3RhdGljQXR0ciI6ICJDdXN0b21WYWx1ZSIsCiAgInNlc3Npb25JZCI6ICJ0ZXN0LXRlc3QtNDk3Mi10ZXN0LTFkOTJkMDlmZGIxZnxsZUlnVjZwSWwxZEo0M3h4d010NHY2YldVcTVBRm1obDhabVNoM3RiT2lzPSIsCiAgImFwcGxpY2F0aW9uSWQiOiAidGVzdCIsCiAgIm5vbmNlIjogInRlc3QtYjU3MC00MzUwLXRlc3QtZDAwNWJmNDIyYTNhIiwKICAibWRjX3Nzb19saW5rIjogIjI2NWM3LXRlc3QwMDUyLn5-VXNlcklkZW50aXR5U3RvcmUxIiwKICAicmVzU3J2QXR0ciI6ICJSRVNPVVJDRUNPTlNUIgp9.";
 
     private static JwkKeys auth0Keys;
     private static JwkKeys customKeys;
@@ -81,6 +85,37 @@ public class SignedJwtTest {
         assertThat(signedJwt.getSignature(), notNullValue());
         assertThat(signedJwt.getSignedBytes(), notNullValue());
         assertThat(signedJwt.tokenContent(), is(BASE64URL_TOKEN));
+    }
+
+    @Test
+    public void testParsingInvalidEncodingOnTokenParts() {
+        String[][] tokens = {
+                {"header", "eyJhbGciOiJIUzI1+NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"},
+                {"payload", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9+lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"},
+                {"signature", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV/adQssw5c"}
+        };
+        for (int i=0; i < tokens.length; i++) {
+            try {
+                SignedJwt.parseToken(tokens[i][1]);
+                fail("Parsing should have failed as the token " + tokens[i][0] + " is incorrectly encoded");
+            } catch (JwtException t) {
+            }
+        }
+    }
+
+    @Test
+    public void testParsingNoSignature() {
+        SignedJwt signedJwt = SignedJwt.parseToken(NO_SIGNATURE_TOKEN);
+
+        assertThat(signedJwt.getSignature(), notNullValue());
+        assertThat(signedJwt.getSignedBytes(), notNullValue());
+        assertThat(signedJwt.getSignature(), is(new byte[0]));
+        assertThat(signedJwt.tokenContent(), is(NO_SIGNATURE_TOKEN));
+
+        Errors errors = signedJwt.verifySignature(null, Jwk.NONE_JWK);
+        assertThat(errors, notNullValue());
+        errors.log(LOGGER);
+        errors.checkValid();
     }
 
     @Test
