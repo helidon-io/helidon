@@ -25,11 +25,14 @@ import org.glassfish.jersey.internal.spi.AutoDiscoverable;
  */
 @ConstrainedTo(RuntimeType.CLIENT)
 public class ClientTracingAutoDiscoverable implements AutoDiscoverable {
+
+    static final int CLIENT_TRACING_PRIORITY = 10;
+
     @Override
     public void configure(FeatureContext context) {
         if (!context.getConfiguration().isRegistered(ClientTracingFilter.class)) {
-            context.register(ClientTracingFilter.class, 10);
-            context.register(ClientTracingInterceptor.class, 10);
+            context.register(ClientTracingFilter.class, CLIENT_TRACING_PRIORITY);
+            context.register(ClientTracingInterceptor.class, CLIENT_TRACING_PRIORITY);
         }
     }
 }
