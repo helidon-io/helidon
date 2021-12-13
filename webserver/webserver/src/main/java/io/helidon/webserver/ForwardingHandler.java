@@ -411,7 +411,6 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
         BareResponseImpl bareResponse =
                 new BareResponseImpl(ctx,
                                      request,
-                                     requestContext,
                                      prevRequestFuture,
                                      requestEntityAnalyzed,
                                      requestId);
