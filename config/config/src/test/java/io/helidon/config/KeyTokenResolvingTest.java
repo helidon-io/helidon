@@ -231,7 +231,7 @@ public class KeyTokenResolvingTest {
 
         Config config = Config.builder()
                 .sources(ConfigSources.create(ConfigNode.ObjectNode.builder()
-                                                    .addValue("domain", "oracle.com")
+                                                    .addValue("domain", Config.Key.escapeName("oracle.com"))
                                                     .addValue("$domain.sso", "on")
                                                     .addValue(Config.Key.escapeName("seznam.cz") + ".sso", "off")
                                                     .build()))
