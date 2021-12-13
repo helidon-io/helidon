@@ -38,7 +38,7 @@ import jakarta.json.JsonReaderFactory;
  */
 public final class SignedJwt {
     private static final Pattern JWT_PATTERN = Pattern
-            .compile("([a-zA-Z0-9/=+]+)\\.([a-zA-Z0-9/=+]+)\\.([a-zA-Z0-9_\\-/=+]*)");
+            .compile("([a-zA-Z0-9-_=]+)\\.([a-zA-Z0-9-_=]+)\\.([a-zA-Z0-9-_=]*)");
     private static final Base64.Decoder URL_DECODER = Base64.getUrlDecoder();
     private static final Base64.Encoder URL_ENCODER = Base64.getUrlEncoder().withoutPadding();
 
