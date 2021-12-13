@@ -16,6 +16,7 @@
 package io.helidon.webclient;
 
 import java.time.Duration;
+import java.util.Optional;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -23,6 +24,8 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.Version;
+import io.helidon.common.context.Context;
+import io.helidon.common.context.Contexts;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.media.common.MediaContext;
@@ -155,7 +158,15 @@ final class NettyClient implements WebClient {
 
             ThreadFactory threadFactory =
                     r -> {
-                        Thread result = new Thread(r, threadNamePrefix + threadCounter.getAndIncrement());
+                        Thread result;
+                        Optional<Context> context = Contexts.context();
+                        String threadName = threadNamePrefix + threadCounter.getAndIncrement();
+                        if (context.isPresent()) {
+                            Runnable cr = () -> Contexts.runInContext(context.get(), r);
+                            result = new Thread(cr, threadName);
+                        } else {
+                            result = new Thread(r, threadName);
+                        }
                         // we should exit the VM if client event loop is the only thread(s) running
                         result.setDaemon(true);
                         return result;

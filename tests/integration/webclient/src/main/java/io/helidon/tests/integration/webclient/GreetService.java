@@ -24,6 +24,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import io.helidon.common.context.Contexts;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.FormParams;
 import io.helidon.common.http.Http;
@@ -36,7 +37,6 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
-
 import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;
 import jakarta.json.JsonException;
@@ -94,7 +94,8 @@ public class GreetService implements Service {
                 .get("/obtainedQuery", this::obtainedQuery)
                 .get("/pattern with space", this::getDefaultMessageHandler)
                 .put("/greeting", this::updateGreetingHandler)
-                .get("/connectionClose", this::connectionClose);
+                .get("/connectionClose", this::connectionClose)
+                .get("/contextCheck", this::contextCheck);
     }
 
     private void contentLength(ServerRequest serverRequest, ServerResponse serverResponse) {
@@ -271,5 +272,32 @@ public class GreetService implements Service {
 
         greeting.set(jo.getString("greeting"));
         response.status(Http.Status.NO_CONTENT_204).send();
+    }
+
+    /**
+     * Checks the existence of a {@code Context} object in a WebClient thread. Context
+     * propagation for these threads is executed in {@link io.helidon.webclient.NettyClient}.
+     *
+     * @param request the request
+     * @param response the response
+     */
+    private void contextCheck(ServerRequest request, ServerResponse response) {
+        WebClient webClient = WebClient.builder()
+                .baseUri("http://localhost:" + Main.serverPort + "/")
+                .build();
+
+        webClient.get()
+                .request()
+                .thenAccept(clientResponse -> {
+                    Contexts.context().orElseThrow();       // must be non-null
+                    response.status(Http.Status.OK_200);
+                    response.send();
+                })
+                .exceptionally(throwable -> {
+                    response.status(Http.Status.INTERNAL_SERVER_ERROR_500);
+                    response.send();
+                    return null;
+                });
+
     }
 }
