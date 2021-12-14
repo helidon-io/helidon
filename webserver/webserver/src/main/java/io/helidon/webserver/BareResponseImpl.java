@@ -77,9 +77,7 @@ class BareResponseImpl implements BareResponse {
     // Accessed by Subscriber method threads
     private Flow.Subscription subscription;
     private DataChunk firstChunk;
-    private CompletableFuture<?> prevRequestChunk;
     private final CompletableFuture<?> readyToRequest;
-    private final CompletableFuture<ChannelFutureListener> requestEntityAnalyzed;
 
     // Accessed by writeStatusHeaders(status, headers) method
     private volatile boolean lengthOptimization;
@@ -99,7 +97,6 @@ class BareResponseImpl implements BareResponse {
                      CompletableFuture<ChannelFutureListener> requestEntityAnalyzed,
                      long requestId) {
         this.readyToRequest = requestEntityAnalyzed.thenCompose(l -> prevRequestChunk);
-        this.requestEntityAnalyzed = requestEntityAnalyzed;
         this.responseFuture = new CompletableFuture<>();
         this.headersFuture = new CompletableFuture<>();
         this.channel = new NettyChannel(ctx.channel());
@@ -267,14 +264,9 @@ class BareResponseImpl implements BareResponse {
 
             writeLastContent(throwable, ChannelFutureListener.CLOSE_ON_FAILURE);
 
-            if (!requestEntityAnalyzed.isDone()) {
-                // the request content wasn't read, close the connection once the content is fully written.
-                log(Level.FINER, "Request content not fully read with keep-alive: true", channel);
-
-                // if content is not consumed, we need to trigger next chunk read in order to not get stuck forever; the
-                // connection will be closed in the ForwardingHandler in case there is more than just small amount of data
-                channel.read();
-            }
+            // Trigger next chunk read in order to not get stuck forever; the
+            // connection will be closed in the ForwardingHandler in case there is more than just small amount of data
+            channel.read();
 
         } else {
             log(Level.FINEST, "Closing with an empty buffer; keep-alive: false", channel);
@@ -350,22 +342,23 @@ class BareResponseImpl implements BareResponse {
         }
         this.subscription = Objects.requireNonNull(subscription, "subscription is null");
 
-        // Callback deferring first request for data after:
-        // 1. - All writes from the previous response in an HTTP connection have been submitted.
-        //      This is required to properly support HTTP pipelining.
-        // 2. - Request stream has been completed
-        readyToRequest.whenComplete((l, t) -> subscription.request(1));
+        // TyrusSupport controls order of writes manually
+        if (isWebSocketUpgrade) {
+            subscription.request(1);
+        } else {
+            // Callback deferring first request for data after:
+            // 1. - All writes from the previous response in an HTTP connection have been submitted.
+            //      This is required to properly support HTTP pipelining.
+            // 2. - Request stream has been completed
+            readyToRequest.whenComplete((l, t) -> subscription.request(1));
+        }
     }
 
     @Override
     public void onNext(DataChunk data) {
         Objects.requireNonNull(data, "DataChunk is null");
         if (data.isFlushChunk()) {
-            if (prevRequestChunk == null) {
-                channel.flush();
-            } else {
-                prevRequestChunk = prevRequestChunk.thenRun(channel::flush);
-            }
+            channel.flush();
             subscription.request(1);
             return;
         }
@@ -376,16 +369,6 @@ class BareResponseImpl implements BareResponse {
             return;
         }
 
-        onNextPipe(data);
-    }
-
-    /**
-     * Utility method to write next data chunk. This method must be called inside an
-     * {@link #orderedWrite(Runnable)} runnable.
-     *
-     * @param data the data chunk.
-     */
-    private void onNextPipe(DataChunk data) {
         if (lengthOptimization) {
             initWriteResponse();
         }

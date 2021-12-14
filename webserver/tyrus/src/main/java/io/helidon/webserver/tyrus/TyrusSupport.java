@@ -278,7 +278,10 @@ public class TyrusSupport implements Service {
             res.status(upgradeResponse.getStatus());
             upgradeResponse.getHeaders().forEach((key, value) -> res.headers().add(key, value));
             TyrusWriterPublisher publisherWriter = new TyrusWriterPublisher();
-            res.send(publisherWriter);
+
+            // Force BareResponseImpl to websocket mode
+            res.headers().send()
+                    .forSingle(responseHeaders -> res.send(publisherWriter));
 
             // Write reason for failure if not successful
             if (upgradeInfo.getStatus() != WebSocketEngine.UpgradeStatus.SUCCESS) {
