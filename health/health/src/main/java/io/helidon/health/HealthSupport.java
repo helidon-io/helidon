@@ -110,20 +110,18 @@ public final class HealthSupport extends HelidonRestServiceSupport {
 
     @Override
     public void update(Routing.Rules rules) {
-        if (!enabled) {
-            // do not register anything if health check is disabled
-            return;
-        }
         configureEndpoint(rules, rules);
     }
 
     @Override
     protected void postConfigureEndpoint(Routing.Rules defaultRules, Routing.Rules serviceEndpointRoutingRules) {
-        serviceEndpointRoutingRules
-                .get(context(), this::callAll)
-                .get(context() + "/live", this::callLiveness)
-                .get(context() + "/ready", this::callReadiness)
-                .get(context() + "/started", this::callStartup);
+        if (enabled) {
+            serviceEndpointRoutingRules
+                    .get(context(), this::callAll)
+                    .get(context() + "/live", this::callLiveness)
+                    .get(context() + "/ready", this::callReadiness)
+                    .get(context() + "/started", this::callStartup);
+        }
     }
 
     private static void collectNonexcludedChecks(Builder builder, List<HealthCheck> checks, Consumer<HealthCheck> adder) {
