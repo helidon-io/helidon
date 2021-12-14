@@ -26,10 +26,8 @@ import java.util.stream.Collectors;
 
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
-import io.helidon.config.mp.MpConfig;
 import io.helidon.health.HealthSupport;
 import io.helidon.health.common.BuiltInHealthCheck;
-import io.helidon.microprofile.server.RoutingBuilders;
 import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.servicecommon.restcdi.HelidonRestCdiExtension;
 import io.helidon.webserver.Routing;
@@ -67,7 +65,7 @@ public class HealthCdiExtension extends HelidonRestCdiExtension<HealthSupport> {
      * Creates a new instance of the health CDI extension.
      */
     public HealthCdiExtension() {
-        super(LOGGER, healthSupportFactory, HealthSupport.Builder.HEALTH_CONFIG_KEY);
+        super(LOGGER, HEALTH_SUPPORT_FACTORY, HealthSupport.Builder.HEALTH_CONFIG_KEY);
     }
 
     void registerProducers(@Observes BeforeBeanDiscovery bbd) {
@@ -89,7 +87,7 @@ public class HealthCdiExtension extends HelidonRestCdiExtension<HealthSupport> {
         return defaultRouting;
     }
 
-    private static final Function<Config, HealthSupport> healthSupportFactory = (Config helidonConfig) -> {
+    private static final Function<Config, HealthSupport> HEALTH_SUPPORT_FACTORY = (Config helidonConfig) -> {
 
         org.eclipse.microprofile.config.Config config = ConfigProvider.getConfig();
 
