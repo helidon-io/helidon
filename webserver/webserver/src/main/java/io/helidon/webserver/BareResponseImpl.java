@@ -96,7 +96,11 @@ class BareResponseImpl implements BareResponse {
                      CompletableFuture<?> prevRequestChunk,
                      CompletableFuture<ChannelFutureListener> requestEntityAnalyzed,
                      long requestId) {
-        this.readyToRequest = requestEntityAnalyzed.thenCompose(l -> prevRequestChunk);
+        if (prevRequestChunk != null) {
+            this.readyToRequest = requestEntityAnalyzed.thenCompose(l -> prevRequestChunk);
+        } else {
+            this.readyToRequest = requestEntityAnalyzed;
+        }
         this.responseFuture = new CompletableFuture<>();
         this.headersFuture = new CompletableFuture<>();
         this.channel = new NettyChannel(ctx.channel());
@@ -350,7 +354,11 @@ class BareResponseImpl implements BareResponse {
             // 1. - All writes from the previous response in an HTTP connection have been submitted.
             //      This is required to properly support HTTP pipelining.
             // 2. - Request stream has been completed
-            readyToRequest.whenComplete((l, t) -> subscription.request(1));
+            readyToRequest.whenComplete((l, t) -> {
+                subscription.request(1);
+            });
+            //Auxiliary read, in case of pending read does nothing
+            channel.read();
         }
     }
 

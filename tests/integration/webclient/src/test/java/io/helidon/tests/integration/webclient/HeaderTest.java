@@ -15,6 +15,7 @@
  */
 package io.helidon.tests.integration.webclient;
 
+import java.time.Duration;
 import java.util.List;
 
 import io.helidon.common.http.Http;
@@ -39,6 +40,7 @@ import static org.hamcrest.Matchers.is;
 public class HeaderTest extends TestParent {
 
     private static final String TEST_USER = "unit-test-user";
+    private static final Duration TIME_OUT = Duration.ofSeconds(10);
 
     @Test
     public void userAgentNotOverridden() {
@@ -61,21 +63,21 @@ public class HeaderTest extends TestParent {
                 .path("contentLength")
                 .submit()
                 .flatMapSingle(response -> response.content().as(String.class))
-                .await();
+                .await(TIME_OUT);
         assertThat(contentLength, is(Http.Header.CONTENT_LENGTH + " is 0"));
 
         contentLength = webClient.put()
                 .path("contentLength")
                 .submit()
                 .flatMapSingle(response -> response.content().as(String.class))
-                .await();
+                .await(TIME_OUT);
         assertThat(contentLength, is(Http.Header.CONTENT_LENGTH + " is 0"));
 
         contentLength = webClient.get()
                 .path("contentLength")
                 .request()
                 .flatMapSingle(response -> response.content().as(String.class))
-                .await();
+                .await(TIME_OUT);
         assertThat(contentLength, is("No " + Http.Header.CONTENT_LENGTH + " has been set"));
 
         String sampleSmallEntity = "Hi there";
@@ -83,7 +85,7 @@ public class HeaderTest extends TestParent {
                 .path("contentLength")
                 .submit(sampleSmallEntity)
                 .flatMapSingle(response -> response.content().as(String.class))
-                .await();
+                .await(TIME_OUT);
         assertThat(contentLength, is(Http.Header.CONTENT_LENGTH + " is " + sampleSmallEntity.length()));
 
         contentLength = webClient.post()
@@ -94,7 +96,7 @@ public class HeaderTest extends TestParent {
                 .path("contentLength")
                 .submit(sampleSmallEntity)
                 .flatMapSingle(response -> response.content().as(String.class))
-                .await();
+                .await(TIME_OUT);
         assertThat(contentLength, is(Http.Header.CONTENT_LENGTH + " is " + sampleSmallEntity.length()));
     }
 
