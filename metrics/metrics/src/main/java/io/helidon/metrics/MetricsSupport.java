@@ -413,6 +413,8 @@ public final class MetricsSupport extends HelidonRestServiceSupport
             io.helidon.metrics.RegistryFactory fullRF = (io.helidon.metrics.RegistryFactory) rf;
             Registry app = fullRF.getARegistry(MetricRegistry.Type.APPLICATION);
 
+            PeriodicExecutor.start();
+
             // register the metric registry and factory to be available to all
             MetricsContextHandler metricsContextHandler = new MetricsContextHandler(app, rf);
             defaultRules.any(metricsContextHandler);
@@ -469,8 +471,6 @@ public final class MetricsSupport extends HelidonRestServiceSupport
      */
     @Override
     public void update(Routing.Rules rules) {
-        PeriodicExecutor.start();
-
         configureEndpoint(rules, rules);
     }
 
