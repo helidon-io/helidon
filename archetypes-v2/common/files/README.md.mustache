@@ -1,17 +1,15 @@
-{{#readme}}
-# {{title}}
+# {{name}}
 
-{{description}}
+{{readme-description}}
 
 ## Build and run
 
 With JDK11+
 ```bash
 mvn package
-java -jar target/{{project.artifactId}}.jar
+java -jar target/{{artifactId}}.jar
 ```
 
-{{#sections}}
-{{{section}}}
-{{/sections}}
-{{/readme}}
+{{#readme-sections}}
+{{.}}
+{{/readme-sections}}

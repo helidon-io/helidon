@@ -20,19 +20,30 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
 
-    <step label="Application Type">
-        <inputs>
-            <enum name="base" label="Select archetype" default="bare">
-                <option value="bare" label="Bare Helidon MP project suitable to start from scratch">
-                    <exec src="bare/bare-mp.xml"/>
-                </option>
-                <option value="quickstart" label="Sample Helidon MP project that includes multiple REST operations">
-                    <exec src="quickstart/quickstart-mp.xml"/>
-                </option>
-                <option value="database" label="Helidon MP application that uses JPA with an in-memory H2 database">
-                    <exec src="database/database-mp.xml"/>
-                </option>
-            </enum>
-        </inputs>
-    </step>
+    <output>
+        <templates engine="mustache" transformations="mustache,packaged">
+            <directory>files</directory>
+            <includes>
+                <include>src/*/java/**/*.mustache</include>
+            </includes>
+        </templates>
+        <templates engine="mustache" transformations="mustache">
+            <directory>files</directory>
+            <includes>
+                <include>src/*/resources/**/*.mustache</include>
+            </includes>
+        </templates>
+        <files>
+            <directory>files</directory>
+            <includes>
+                <include>src/*/resources/**</include>
+            </includes>
+            <excludes>
+                <exclude>**/*.mustache</exclude>
+            </excludes>
+        </files>
+        <model>
+            <value key="dot-helidon-schema-version">1.1.0</value>
+        </model>
+    </output>
 </archetype-script>

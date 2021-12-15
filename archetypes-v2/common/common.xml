@@ -18,18 +18,24 @@
 -->
 <archetype-script xmlns="https://helidon.io/archetype/2.0"
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-script-2.0.xsd">
+                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
 
-
-    <input>
-        <enum name="build-system"
-              label="Select a build system">
-            <option value="maven" label="Apache Maven">
-                <exec src="pom-file.xml"/>
-            </option>
-        </enum>
-    </input>
-
-    <source src="main.xml"/>
-    <source src="readme.xml"/>
+    <output>
+        <transformation id="mustache">
+            <replace regex="\.mustache$" replacement=""/>
+        </transformation>
+        <transformation id="packaged">
+            <replace regex="__pkg__" replacement="${ROOT.package/\./\/}"/>
+        </transformation>
+        <templates engine="mustache" transformations="mustache">
+            <directory>files</directory>
+            <includes>
+                <include>.helidon.mustache</include>
+                <include>README.md.mustache</include>
+            </includes>
+        </templates>
+        <model>
+            <value key="dot-helidon-schema-version">1.1.0</value>
+        </model>
+    </output>
 </archetype-script>

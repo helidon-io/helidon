@@ -18,28 +18,22 @@
 -->
 <archetype-script xmlns="https://helidon.io/archetype/2.0"
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-script-2.0.xsd">
+                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
 
     <step label="Application Type">
-        <input>
-            <enum name="base" label="Select archetype">
-                <option value="quickstart"
-                        label="Sample Helidon SE project that includes multiple REST operations">
-
+        <inputs>
+            <enum name="base" label="Select archetype" default="bare">
+                <option value="bare" label="Bare Helidon SE project suitable to start from scratch">
+                    <exec src="bare/bare-se.xml"/>
+                </option>
+                <option value="quickstart" label="Sample Helidon SE project that includes multiple REST operations">
                     <exec src="quickstart/quickstart-se.xml"/>
                 </option>
                 <option value="database"
                         label="Helidon SE application that uses the dbclient API with an in-memory H2 database">
-
                     <exec src="database/database-se.xml"/>
                 </option>
-                <option value="bare"
-                        label="Bare Helidon SE project suitable to start from scratch">
-
-                    <exec src="bare/bare-se.xml"/>
-                </option>
             </enum>
-        </input>
-        <exec src="../common/customize-project.xml"/>
+        </inputs>
     </step>
 </archetype-script>

@@ -16,14 +16,37 @@
     limitations under the License.
 
 -->
+<!--suppress GrazieInspection -->
 <archetype-script xmlns="https://helidon.io/archetype/2.0"
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-script-2.0.xsd">
+                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
 
-    <exec src="../../common/common.xml"/>
-    <source src="../../common/java-files.xml"/>
-    <source src="../../common/static-files.xml"/>
-    <source src="pom-model.xml"/>
-    <source src="readme-model.xml"/>
-    <source src="java-model.xml"/>
+    <exec src="../common/common-mp.xml"/>
+    <source src="/common/project-sources.xml"/>
+    <output>
+        <model>
+            <value key="readme-description">Minimal Helidon MP project suitable to start from scratch.</value>
+            <list key="readme-sections">
+                <value file="files/README.md"/>
+            </list>
+            <list key="config-entries">
+                <value file="files/microprofile-config.properties"/>
+            </list>
+            <list key="MainTest-java-imports">
+                <value>javax.json.JsonObject</value>
+            </list>
+            <list key="MainTest-methods">
+                <value><![CDATA[
+    @Test
+    public void testGreet() throws Exception {
+        JsonObject jsonObject = target
+                .path("greet")
+                .request()
+                .get(JsonObject.class);
+        assertThat(jsonObject.getString("message"), is("Hello World!"));
+    }
+                ]]></value>
+            </list>
+        </model>
+    </output>
 </archetype-script>

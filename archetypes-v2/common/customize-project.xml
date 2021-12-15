@@ -18,55 +18,36 @@
 -->
 <archetype-script xmlns="https://helidon.io/archetype/2.0"
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-script-2.0.xsd">
-
-    <context>
-        <text path="default.project.name">myproject</text>
-        <text path="default.group.id">io.helidon.examples</text>
-        <text path="default.artifact.id">helidon-bare-se</text>
-        <text path="default.project.version">1.0-SNAPSHOT</text>
-        <text path="default.package.name">io.helidon.examples.bare.se</text>
-        <text path="default.helidon.version">2.3.3</text>
-    </context>
+                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
 
     <step label="Customize Project">
-
-        <input>
-            <text name="project.name"
-                  label="Project name"
-                  optional="true"
-                  default="${default.project.name}"
-            />
-
-            <text name="project.groupId"
-                  label="Project groupId"
-                  optional="true"
-                  default="${default.group.id}"
-            />
-
-            <text name="project.artifactId"
-                  label="Project artifactId"
-                  optional="true"
-                  default="${default.artifact.id}"
-            />
-
-            <text name="project.version"
-                  label="Project version"
-                  optional="true"
-                  default="${default.project.version}"
-            />
-
-            <text name="package"
-                  label="Java package name"
-                  optional="true"
-                  default="${default.package.name}"
-            />
-
-            <text name="helidon.version"
-                  label="Helidon version"
-                  optional="true"
-                  default="${default.helidon.version}"
-            />
-        </input>
+        <inputs>
+            <enum name="build-system" label="Select a build system" default="maven">
+                <option value="maven" label="Apache Maven">
+                    <output>
+                        <templates engine="mustache" transformations="mustache">
+                            <directory>files</directory>
+                            <includes>
+                                <include>pom.xml.mustache</include>
+                            </includes>
+                        </templates>
+                    </output>
+                </option>
+            </enum>
+            <text name="name" label="Project name" optional="true" default="myproject"/>
+            <text name="groupId" label="Project groupId" optional="true" default="com.examples"/>
+            <text name="artifactId" label="Project artifactId" optional="true" default="myproject"/>
+            <text name="version" label="Project version" optional="true" default="1.0-SNAPSHOT"/>
+            <text name="package" label="Java package name" optional="true" default="com.example.myproject"/>
+        </inputs>
+        <output>
+            <model>
+                <value key="name">${name}</value>
+                <value key="groupId">${groupId}</value>
+                <value key="artifactId">${artifactId}</value>
+                <value key="project-version">${version}</value>
+                <value key="package">${package}</value>
+            </model>
+        </output>
     </step>
 </archetype-script>

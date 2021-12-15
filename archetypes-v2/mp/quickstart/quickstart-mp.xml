@@ -18,10 +18,39 @@
 -->
 <archetype-script xmlns="https://helidon.io/archetype/2.0"
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-script-2.0.xsd">
+                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
 
-    <exec src="../bare/bare-mp.xml"/>
-    <source src="java-files.xml"/>
-    <source src="templates.xml"/>
-    <source src="readme.xml"/>
+    <source src="../bare/bare-mp.xml"/>
+    <output>
+        <model>
+            <list key="MainTest-java-imports">
+                <value>javax.ws.rs.client.Entity</value>
+                <value>javax.ws.rs.core.MediaType</value>
+            </list>
+            <list key="MainTest-methods">
+                <value><![CDATA[    @Test
+    public void testGreetings() throws Exception {
+        JsonObject jsonObject = target
+                .path("greet/Joe")
+                .request()
+                .get(JsonObject.class);
+        assertThat(jsonObject.getString("message"), is("Hello Joe!"));
+
+        try (Response r = target
+                .path("greet/greeting")
+                .request()
+                .put(Entity.entity("{\"greeting\" : \"Hola\"}", MediaType.APPLICATION_JSON))) {
+            assertThat(r.getStatus(), is(204));
+        }
+
+        jsonObject = target
+                .path("greet/Jose")
+                .request()
+                .get(JsonObject.class);
+        assertThat(jsonObject.getString("message"), is("Hola Jose!"));
+    }
+                ]]></value>
+            </list>
+        </model>
+    </output>
 </archetype-script>

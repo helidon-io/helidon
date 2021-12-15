@@ -18,21 +18,15 @@
 -->
 <archetype-script xmlns="https://helidon.io/archetype/2.0"
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-script-2.0.xsd">
+                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
 
     <step label="Docker">
-        <input>
-            <boolean name="docker"
-                     label="Docker support"
-                     prompt="Do you want a Dockerfile ?">
-
-                <input>
-                    <boolean name="native-image"
-                             label="Do you want a native-image Dockerfile ?"/>
-
-                    <boolean name="jlink"
-                             label="Do you want a jlink Dockerfile ?"/>
-                </input>
+        <inputs>
+            <boolean name="docker" label="Docker support" prompt="Do you want a Dockerfile ?">
+                <inputs>
+                    <boolean name="native-image" label="Do you want a native-image Dockerfile ?"/>
+                    <boolean name="jlink" label="Do you want a jlink Dockerfile ?"/>
+                </inputs>
                 <output>
                     <templates>
                         <directory>files</directory>
@@ -68,6 +62,6 @@
                     </model>
                 </output>
             </boolean>
-        </input>
+        </inputs>
     </step>
 </archetype-script>
