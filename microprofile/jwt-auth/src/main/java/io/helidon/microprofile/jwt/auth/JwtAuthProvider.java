@@ -624,7 +624,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
         private String cookieProperty = "Bearer";
         private String decryptKeyLocation;
         private boolean useCookie = false;
-        private boolean loadOnBUild = false;
+        private boolean loadOnStartup = false;
 
         private Builder() {
         }
@@ -680,7 +680,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
                 defaultDecryptionJwk = LazyValue.create(() -> null);
             }
 
-            if (loadOnBUild) {
+            if (loadOnStartup) {
                 defaultJwk.get();
                 defaultDecryptionJwk.get();
             }
@@ -1101,7 +1101,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
             config.get("atn-token.verify-key").asString().ifPresent(this::publicKeyPath);
             config.get("sign-token").ifExists(outbound -> outboundConfig(OutboundConfig.create(outbound)));
             config.get("sign-token").ifExists(this::outbound);
-            config.get("load-on-build").asBoolean().ifPresent(this::loadOnBuild);
+            config.get("load-on-startup").asBoolean().ifPresent(this::loadOnStartup);
 
             org.eclipse.microprofile.config.Config mpConfig = ConfigProviderResolver.instance().getConfig();
 
@@ -1214,14 +1214,14 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
         }
 
         /**
-         * Whether to load JWK verification keys on security build.
+         * Whether to load JWK verification keys on server startup
          * Default value is {@code false}.
          *
-         * @param loadOnBuild load verification keys on security build
+         * @param loadOnStartup load verification keys on server startup
          * @return updated builder instance
          */
-        public Builder loadOnBuild(boolean loadOnBuild) {
-            this.loadOnBUild = loadOnBuild;
+        public Builder loadOnStartup(boolean loadOnStartup) {
+            this.loadOnStartup = loadOnStartup;
             return this;
         }
 
