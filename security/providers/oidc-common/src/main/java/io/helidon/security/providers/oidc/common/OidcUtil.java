@@ -67,8 +67,7 @@ final class OidcUtil {
         return clientBuilder;
     }
 
-    static WebClient.Builder webClientBaseBuilder(String proxyProtocol,
-                                                  String proxyHost,
+    static WebClient.Builder webClientBaseBuilder(String proxyHost,
                                                   int proxyPort,
                                                   Duration clientTimeout) {
         WebClient.Builder webClientBuilder = WebClient.builder()
@@ -80,7 +79,7 @@ final class OidcUtil {
         if (proxyHost != null) {
             webClientBuilder.proxy(Proxy.builder()
                                            .type(Proxy.ProxyType.HTTP)
-                                           .host(proxyProtocol + "://" + proxyHost)
+                                           .host(proxyHost)
                                            .port(proxyPort)
                                            .build());
         }
