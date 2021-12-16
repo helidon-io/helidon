@@ -1295,6 +1295,11 @@
                 <version>${version.lib.netty}</version>
             </dependency>
             <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-transport-native-unix-common</artifactId>
+                <version>${version.lib.netty}</version>
+            </dependency>
+            <dependency>
                 <!-- required for dependency convergence, used from guava and perfmark-api -->
                 <groupId>com.google.errorprone</groupId>
                 <artifactId>error_prone_annotations</artifactId>
