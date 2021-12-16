@@ -15,10 +15,11 @@
  */
 package io.helidon.tests.functional.multipleapps;
 
+import java.util.Set;
+
 import javax.enterprise.context.ApplicationScoped;
 import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.core.Application;
-import java.util.Set;
 
 /**
  * Second application.
