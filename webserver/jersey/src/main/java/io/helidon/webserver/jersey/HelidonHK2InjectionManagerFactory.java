@@ -68,6 +68,9 @@ public class HelidonHK2InjectionManagerFactory extends Hk2InjectionManagerFactor
             result = new HelidonInjectionManager(forApplication, wrapper.injectionManager, wrapper.application);
             LOGGER.finest(() -> "Creating injection manager " + forApplication + " with shared "
                     + wrapper.injectionManager);
+        } else if (parent instanceof HelidonInjectionManager) {
+            result = (InjectionManager) parent;
+            LOGGER.finest(() -> "Using injection manager " + result);
         } else {
             throw new IllegalStateException("Invalid parent injection manager");
         }
