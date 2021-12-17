@@ -18,6 +18,7 @@ package io.helidon.tests.integration.webclient;
 
 import java.security.Principal;
 import java.util.Collections;
+import java.util.Objects;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -29,6 +30,7 @@ import javax.json.JsonBuilderFactory;
 import javax.json.JsonException;
 import javax.json.JsonObject;
 
+import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.FormParams;
@@ -276,8 +278,7 @@ public class GreetService implements Service {
     }
 
     /**
-     * Checks the existence of a {@code Context} object in a WebClient thread. Context
-     * propagation for these threads is executed in {@link io.helidon.webclient.NettyClient}.
+     * Checks the existence of a {@code Context} object in a WebClient thread.
      *
      * @param request the request
      * @param response the response
@@ -287,10 +288,14 @@ public class GreetService implements Service {
                 .baseUri("http://localhost:" + Main.serverPort + "/")
                 .build();
 
+        Context context = Contexts.context().orElseGet(Context::create);
+        context.register(this);
+
         webClient.get()
                 .request()
                 .thenAccept(clientResponse -> {
-                    Contexts.context().orElseThrow();       // must be non-null
+                    Context singleContext = Contexts.context().orElseThrow();
+                    Objects.requireNonNull(singleContext.get(GreetService.class));
                     response.status(Http.Status.OK_200);
                     response.send();
                 })

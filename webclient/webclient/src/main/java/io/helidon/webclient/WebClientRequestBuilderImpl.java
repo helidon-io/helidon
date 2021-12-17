@@ -540,7 +540,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
                     });
         }
 
-        return Single.create(rcs.thenCompose(serviceRequest -> {
+        Single<WebClientResponse> single =  Single.create(rcs.thenCompose(serviceRequest -> {
             URI requestUri = relativizeNoProxy(finalUri, proxy, configuration.relativeUris());
             requestId = serviceRequest.requestId();
             HttpHeaders headers = toNettyHttpHeaders();
@@ -607,6 +607,8 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
             });
             return result;
         }));
+
+        return new SingleWithContext<>(single, context);
     }
 
     private MessageBodyReadableContent getContentFromClientResponse(WebClientResponse response) {
