@@ -473,11 +473,11 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
             return Single.just(AuthenticationResponse.failed("Invalid ID token", e));
         }
 
-        SignedJwt refreshJwt = null;
+        String refreshJwt = null;
         try {
             Optional<Single<String>> refreshCookie = refreshCookieHandler.findCookie(providerRequest.env().headers());
             if(refreshCookie.isPresent()) {
-                refreshJwt = refreshCookie.get().flatMapSingle(s -> Single.just(SignedJwt.parseToken(s))).get();
+                refreshJwt = refreshCookie.get().flatMapSingle(Single::just).get();
             }
         } catch (Exception e) {
             //invalid token
@@ -491,7 +491,7 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
         }
 
         SignedJwt finalIdJwt = idJwt;
-        SignedJwt finalRefreshJwt = refreshJwt;
+        String finalRefreshJwt = refreshJwt;
         return jwtValidator.apply(signedJwt, errors)
                 .map(it -> processValidationResult(providerRequest,
                         signedJwt, finalIdJwt, finalRefreshJwt,
@@ -505,7 +505,7 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
     private AuthenticationResponse processValidationResult(ProviderRequest providerRequest,
                                                            SignedJwt signedJwt,
                                                            SignedJwt signedIdJwt,
-                                                           SignedJwt signedRefreshJwt,
+                                                           String signedRefreshJwt,
                                                            Errors.Collector collector) {
         Jwt jwt = signedJwt.getJwt();
         Jwt idJwt = null;
@@ -515,8 +515,6 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
         responseHeaders.put("Set-Cookie",new ArrayList<>());
 
         if(signedRefreshJwt!=null){
-            Jwt refreshJwt = signedRefreshJwt.getJwt();
-            validationErrors.addAll(refreshJwt.validate(oidcConfig.issuer(), oidcConfig.audience()));
             if(validationErrors.isValid()){
                 // check for expiration only
                 Errors timeErrors = jwt.validate(Jwt.defaultTimeValidators());
@@ -600,12 +598,12 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
         }
     }
 
-    private OidcRefreshResult refreshAccessToken(SignedJwt refreshToken) {
+    private OidcRefreshResult refreshAccessToken(String refreshToken) {
         WebClient webClient = oidcConfig.appWebClient();
 
         FormParams.Builder form = FormParams.builder()
                 .add("grant_type", "refresh_token")
-                .add("refresh_token", refreshToken.tokenContent());
+                .add("refresh_token", refreshToken);
 
         WebClientRequestBuilder post = webClient.post()
                 .uri(oidcConfig.tokenEndpointUri())
