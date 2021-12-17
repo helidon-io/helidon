@@ -91,7 +91,7 @@
         <version.lib.junit4>4.13.1</version.lib.junit4>
         <version.lib.junit>5.7.0</version.lib.junit>
         <version.lib.kafka>2.8.1</version.lib.kafka>
-        <version.lib.log4j>2.13.3</version.lib.log4j>
+        <version.lib.log4j>2.16.0</version.lib.log4j>
         <version.lib.logback>1.2.3</version.lib.logback>
         <version.lib.mariadb-java-client>2.6.2</version.lib.mariadb-java-client>
         <version.lib.maven-wagon>2.10</version.lib.maven-wagon>
@@ -119,7 +119,7 @@
         <version.lib.neo4j>4.2.4</version.lib.neo4j>
         <version.lib.mysql-connector-java>8.0.22</version.lib.mysql-connector-java>
         <version.lib.narayana>5.12.0.Final</version.lib.narayana>
-        <version.lib.netty>4.1.63.Final</version.lib.netty>
+        <version.lib.netty>4.1.72.Final</version.lib.netty>
         <version.lib.netty-io_uring>0.0.8.Final</version.lib.netty-io_uring>
         <version.lib.oci-java-sdk-objectstorage>2.3.0</version.lib.oci-java-sdk-objectstorage>
         <version.lib.ojdbc8>21.3.0.0</version.lib.ojdbc8>
@@ -1292,6 +1292,11 @@
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-common</artifactId>
+                <version>${version.lib.netty}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-transport-native-unix-common</artifactId>
                 <version>${version.lib.netty}</version>
             </dependency>
             <dependency>

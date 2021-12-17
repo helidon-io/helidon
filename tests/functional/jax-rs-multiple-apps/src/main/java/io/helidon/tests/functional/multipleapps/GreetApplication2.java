@@ -32,7 +32,7 @@ public class GreetApplication2 extends Application {
 
     @Override
     public Set<Class<?>> getClasses() {
-        return Set.of(GreetResource2.class, SharedFilter.class);
+        return Set.of(GreetResource2.class, SharedFilter.class, MyFeature.class);
     }
 
     @Override

@@ -19,6 +19,11 @@ import javax.enterprise.inject.spi.Extension;
 
 import io.helidon.microprofile.openapi.OpenApiCdiExtension;
 
+/**
+ * CDI extension for MicroProfile OpenAPI implementation.
+ *
+ * @see org.eclipse.microprofile.openapi
+ */
 module io.helidon.microprofile.openapi {
     requires java.logging;
     

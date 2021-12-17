@@ -20,7 +20,7 @@
 module io.helidon.webserver.transport.netty.epoll {
     requires io.helidon.webserver;
 
-    requires io.netty.transport.epoll;
+    requires io.netty.transport.classes.epoll;
 
     exports io.helidon.webserver.transport.netty.epoll;
 }
