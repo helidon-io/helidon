@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 
 /**
- * This package contains JAX-RS (Jersey based) support for {@link io.helidon.webserver.WebServer WebServer}'s
+ * This package contains {@link javax.ws.rs JAX-RS} (Jersey based) support for {@link io.helidon.webserver.WebServer WebServer}'s
  * {@link io.helidon.webserver.Routing Routing}.
  * <p>
  * For more information see {@link io.helidon.webserver.jersey.JerseySupport JerseySupport} documentation.

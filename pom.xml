@@ -54,7 +54,7 @@
         -->
         <version.lib.arquillian>1.4.0.Final</version.lib.arquillian>
         <version.lib.arquillian-weld-embedded>2.0.0.Final</version.lib.arquillian-weld-embedded>
-        <version.lib.asciidoctor.diagram>1.5.4.1</version.lib.asciidoctor.diagram>
+        <version.lib.asciidoctor.diagram>1.5.18</version.lib.asciidoctor.diagram>
         <version.lib.asm>6.0</version.lib.asm>
         <version.lib.checkstyle>8.29</version.lib.checkstyle>
         <version.lib.groovy-all>2.4.14</version.lib.groovy-all>
@@ -102,7 +102,7 @@
         <version.plugin.jacoco>0.8.5</version.plugin.jacoco>
         <version.plugin.jandex>1.1.0</version.plugin.jandex>
         <version.plugin.jar>3.0.2</version.plugin.jar>
-        <version.plugin.javadoc>3.3.0</version.plugin.javadoc>
+        <version.plugin.javadoc>3.3.1</version.plugin.javadoc>
         <version.plugin.jaxb>0.14.0</version.plugin.jaxb>
         <version.plugin.license>1.16</version.plugin.license>
         <version.plugin.os>1.5.0.Final</version.plugin.os>
@@ -124,6 +124,30 @@
         <version.helidon-cli>2.3.0</version.helidon-cli>
 
         <!-- Links to external javadocs. If you see a hardcoded version it means the javadocs for the version we use is not available. -->
+
+        <javadoc.link.jakarta-jaxrs>https://jakarta.ee/specifications/restful-ws/2.1/apidocs/</javadoc.link.jakarta-jaxrs>
+        <javadoc.link.jakarta-cdi>https://jakarta.ee/specifications/cdi/2.0/apidocs/</javadoc.link.jakarta-cdi>
+        <javadoc.link.jakarta-jsonb>https://jakarta.ee/specifications/jsonb/1.0/apidocs/</javadoc.link.jakarta-jsonb>
+        <javadoc.link.jakarta-persistence>https://jakarta.ee/specifications/persistence/2.2/apidocs/</javadoc.link.jakarta-persistence>
+        <javadoc.link.jakarta-jsonp>https://jakarta.ee/specifications/jsonp/1.1/apidocs/</javadoc.link.jakarta-jsonp>
+        <javadoc.link.jakarta-inject>https://jakarta.ee/specifications/dependency-injection/1.0/apidocs/</javadoc.link.jakarta-inject>
+        <javadoc.link.jakarta-jaxb>https://jakarta.ee/specifications/xml-binding/2.3/apidocs/</javadoc.link.jakarta-jaxb>
+        <javadoc.link.jakarta-transaction>https://jakarta.ee/specifications/transactions/1.3/apidocs/</javadoc.link.jakarta-transaction>
+
+        <javadoc.link.microprofile-config>https://download.eclipse.org/microprofile/microprofile-config-${version.lib.microprofile-config}/apidocs/</javadoc.link.microprofile-config>
+        <javadoc.link.microprofile-health>https://download.eclipse.org/microprofile/microprofile-health-${version.lib.microprofile-health}/apidocs/</javadoc.link.microprofile-health>
+        <javadoc.link.microprofile-metrics>https://download.eclipse.org/microprofile/microprofile-metrics-${version.lib.microprofile-metrics-api}/apidocs/</javadoc.link.microprofile-metrics>
+        <javadoc.link.microprofile-fault-tolerance-api>https://download.eclipse.org/microprofile/microprofile-fault-tolerance-${version.lib.microprofile-fault-tolerance-api}/apidocs/</javadoc.link.microprofile-fault-tolerance-api>
+        <javadoc.link.microprofile-graphql>https://download.eclipse.org/microprofile/microprofile-graphql-${version.lib.microprofile-graphql}/apidocs/</javadoc.link.microprofile-graphql>
+        <javadoc.link.microprofile-jwt>https://download.eclipse.org/microprofile/microprofile-jwt-auth-${version.lib.microprofile-jwt}/apidocs/</javadoc.link.microprofile-jwt>
+        <javadoc.link.microprofile-openapi-api>https://download.eclipse.org/microprofile/microprofile-open-api-${version.lib.microprofile-openapi-api}/apidocs/</javadoc.link.microprofile-openapi-api>
+        <javadoc.link.microprofile-reactive-messaging-api>https://download.eclipse.org/microprofile/microprofile-reactive-messaging-${version.lib.microprofile-reactive-messaging-api}/apidocs/</javadoc.link.microprofile-reactive-messaging-api>
+        <javadoc.link.microprofile-reactive-streams-operators-api>https://download.eclipse.org/microprofile/microprofile-reactive-streams-operators-${version.lib.microprofile-reactive-streams-operators-api}/apidocs</javadoc.link.microprofile-reactive-streams-operators-api>
+        <javadoc.link.microprofile-rest-client>https://download.eclipse.org/microprofile/microprofile-rest-client-${version.lib.microprofile-rest-client}/apidocs</javadoc.link.microprofile-rest-client>
+        <javadoc.link.microprofile-tracing>https://download.eclipse.org/microprofile/microprofile-opentracing-${version.lib.microprofile-tracing}/apidocs/</javadoc.link.microprofile-tracing>
+        <javadoc.link.microprofile-lra-api>https://download.eclipse.org/microprofile/microprofile-lra-${version.lib.microprofile-lra-api}/apidocs/</javadoc.link.microprofile-lra-api>
+
+
         <javadoc.jackson.version>2.12</javadoc.jackson.version>
         <javadoc.link.jackson-annotations>https://fasterxml.github.io/jackson-annotations/javadoc/${javadoc.jackson.version}/</javadoc.link.jackson-annotations>
         <javadoc.link.jackson-core>https://fasterxml.github.io/jackson-core/javadoc/${javadoc.jackson.version}/</javadoc.link.jackson-core>
@@ -131,7 +155,6 @@
         <javadoc.link.jaxrs>https://eclipse-ee4j.github.io/jaxrs-api/apidocs/${version.lib.jaxrs-api}</javadoc.link.jaxrs>
         <javadoc.link.netty>https://static.javadoc.io/io.netty/netty-transport/${version.lib.netty}</javadoc.link.netty>
         <javadoc.link.cdi>http://docs.jboss.org/cdi/api/2.0</javadoc.link.cdi>
-        <javadoc.link.javax-inject>http://javax-inject.github.io/javax-inject/api/</javadoc.link.javax-inject>
         <javadoc.link.reactive-streams>http://www.reactive-streams.org/reactive-streams-${version.lib.reactivestreams}-javadoc</javadoc.link.reactive-streams>
         <javadoc.link.jersey>https://eclipse-ee4j.github.io/jersey.github.io/apidocs/${version.lib.jersey}/jersey</javadoc.link.jersey>
         <javadoc.link.typesafe-config>https://static.javadoc.io/com.typesafe/config/${version.lib.typesafe-config}</javadoc.link.typesafe-config>
@@ -139,16 +162,6 @@
         <javadoc.link.opentracing>https://static.javadoc.io/io.opentracing/opentracing-api/${version.lib.opentracing}</javadoc.link.opentracing>
         <javadoc.link.prometheus>https://static.javadoc.io/io.prometheus/simpleclient/${version.lib.prometheus}</javadoc.link.prometheus>
         <javadoc.link.zipkin>https://static.javadoc.io/io.zipkin.reporter2/zipkin-reporter/2.12.3</javadoc.link.zipkin>
-        <javadoc.link.jakarta-jsonb>https://static.javadoc.io/jakarta.json.bind/jakarta.json.bind-api/${version.lib.jsonb-api}</javadoc.link.jakarta-jsonb>
-        <javadoc.link.jakarta-persistence>https://static.javadoc.io/jakarta.persistence/jakarta.persistence-api/${version.lib.persistence-api}</javadoc.link.jakarta-persistence>
-        <javadoc.link.jakarta-jsonp>https://static.javadoc.io/jakarta.json/jakarta.json-api/${version.lib.jsonp-api}</javadoc.link.jakarta-jsonp>
-        <javadoc.link.javax-jsonb>https://static.javadoc.io/javax.json.bind/javax.json.bind-api/1.0</javadoc.link.javax-jsonb>
-        <javadoc.link.javax-jaxb>https://static.javadoc.io/javax.xml.bind/jaxb-api/2.3.1</javadoc.link.javax-jaxb>
-        <javadoc.link.javax-persistence>https://static.javadoc.io/javax.persistence/javax.persistence-api/2.2</javadoc.link.javax-persistence>
-        <javadoc.link.javax-transaction>https://static.javadoc.io/javax.transaction/javax.transaction-api/1.3</javadoc.link.javax-transaction>
-        <javadoc.link.microprofile-config>https://static.javadoc.io/org.eclipse.microprofile.config/microprofile-config-api/${version.lib.microprofile-config}</javadoc.link.microprofile-config>
-        <javadoc.link.microprofile-health>https://static.javadoc.io/org.eclipse.microprofile.health/microprofile-health-api/${version.lib.microprofile-health}</javadoc.link.microprofile-health>
-        <javadoc.link.microprofile-metrics>https://static.javadoc.io/org.eclipse.microprofile.metrics/microprofile-metrics-api/${version.lib.microprofile-metrics-api}</javadoc.link.microprofile-metrics>
         <javadoc.link.weld>https://docs.jboss.org/weld/javadoc/3.0/weld-spi/</javadoc.link.weld>
         <javadoc.link.narayana>http://narayana.io/docs/api/</javadoc.link.narayana>
         <javadoc.link.eclipselink>https://www.eclipse.org/eclipselink/api/2.7/</javadoc.link.eclipselink>
@@ -245,20 +258,8 @@
                                 <location>${javadoc.packagelist.dir}/jackson-databind</location>
                             </offlineLink>
                             <offlineLink>
-                                <url>${javadoc.link.jaxrs}</url>
-                                <location>${javadoc.packagelist.dir}/jaxrs</location>
-                            </offlineLink>
-                            <offlineLink>
                                 <url>${javadoc.link.netty}</url>
                                 <location>${javadoc.packagelist.dir}/netty</location>
-                            </offlineLink>
-                            <offlineLink>
-                                <url>${javadoc.link.cdi}</url>
-                                <location>${javadoc.packagelist.dir}/cdi</location>
-                            </offlineLink>
-                            <offlineLink>
-                                <url>${javadoc.link.javax-inject}</url>
-                                <location>${javadoc.packagelist.dir}/javax-inject</location>
                             </offlineLink>
                             <offlineLink>
                                 <url>${javadoc.link.reactive-streams}</url>
@@ -289,6 +290,14 @@
                                 <location>${javadoc.packagelist.dir}/zipkin</location>
                             </offlineLink>
                             <offlineLink>
+                                <url>${javadoc.link.jakarta-cdi}</url>
+                                <location>${javadoc.packagelist.dir}/jakarta-cdi</location>
+                            </offlineLink>
+                            <offlineLink>
+                                <url>${javadoc.link.jakarta-jaxrs}</url>
+                                <location>${javadoc.packagelist.dir}/jakarta-jaxrs</location>
+                            </offlineLink>
+                            <offlineLink>
                                 <url>${javadoc.link.jakarta-jsonb}</url>
                                 <location>${javadoc.packagelist.dir}/jakarta-jsonb</location>
                             </offlineLink>
@@ -301,20 +310,8 @@
                                 <location>${javadoc.packagelist.dir}/jakarta-jsonp</location>
                             </offlineLink>
                             <offlineLink>
-                                <url>${javadoc.link.javax-jsonb}</url>
-                                <location>${javadoc.packagelist.dir}/javax-jsonb</location>
-                            </offlineLink>
-                            <offlineLink>
-                                <url>${javadoc.link.javax-jaxb}</url>
-                                <location>${javadoc.packagelist.dir}/javax-jaxb</location>
-                            </offlineLink>
-                            <offlineLink>
-                                <url>${javadoc.link.javax-persistence}</url>
-                                <location>${javadoc.packagelist.dir}/javax-persistence</location>
-                            </offlineLink>
-                            <offlineLink>
-                                <url>${javadoc.link.javax-transaction}</url>
-                                <location>${javadoc.packagelist.dir}/javax-transaction</location>
+                                <url>${javadoc.link.jakarta-inject}</url>
+                                <location>${javadoc.packagelist.dir}/jakarta-inject</location>
                             </offlineLink>
                             <offlineLink>
                                 <url>${javadoc.link.microprofile-config}</url>
@@ -327,6 +324,42 @@
                             <offlineLink>
                                 <url>${javadoc.link.microprofile-metrics}</url>
                                 <location>${javadoc.packagelist.dir}/microprofile-metrics</location>
+                            </offlineLink>
+                            <offlineLink>
+                                <url>${javadoc.link.microprofile-fault-tolerance-api}</url>
+                                <location>${javadoc.packagelist.dir}/microprofile-fault-tolerance-api</location>
+                            </offlineLink>
+                            <offlineLink>
+                                <url>${javadoc.link.microprofile-graphql}</url>
+                                <location>${javadoc.packagelist.dir}/microprofile-graphql</location>
+                            </offlineLink>
+                            <offlineLink>
+                                <url>${javadoc.link.microprofile-jwt}</url>
+                                <location>${javadoc.packagelist.dir}/microprofile-jwt</location>
+                            </offlineLink>
+                            <offlineLink>
+                                <url>${javadoc.link.microprofile-lra-api}</url>
+                                <location>${javadoc.packagelist.dir}/microprofile-lra-api</location>
+                            </offlineLink>
+                            <offlineLink>
+                                <url>${javadoc.link.microprofile-openapi-api}</url>
+                                <location>${javadoc.packagelist.dir}/microprofile-openapi-api</location>
+                            </offlineLink>
+                            <offlineLink>
+                                <url>${javadoc.link.microprofile-reactive-messaging-api}</url>
+                                <location>${javadoc.packagelist.dir}/microprofile-reactive-messaging-api</location>
+                            </offlineLink>
+                            <offlineLink>
+                                <url>${javadoc.link.microprofile-reactive-streams-operators-api}</url>
+                                <location>${javadoc.packagelist.dir}/microprofile-reactive-streams-operators-api</location>
+                            </offlineLink>
+                            <offlineLink>
+                                <url>${javadoc.link.microprofile-rest-client}</url>
+                                <location>${javadoc.packagelist.dir}/microprofile-rest-client</location>
+                            </offlineLink>
+                            <offlineLink>
+                                <url>${javadoc.link.microprofile-tracing}</url>
+                                <location>${javadoc.packagelist.dir}/microprofile-tracing</location>
                             </offlineLink>
                             <offlineLink>
                                 <url>${javadoc.link.weld}</url>

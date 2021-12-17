@@ -18,6 +18,9 @@ import org.glassfish.jersey.internal.inject.InjectionManagerFactory;
 
 /**
  * Jersey integration.
+ *
+ * @see javax.ws.rs
+ * @see org.glassfish.jersey
  */
 module io.helidon.webserver.jersey {
     requires transitive java.annotation;

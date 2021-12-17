@@ -15,5 +15,7 @@
  */
 /**
  * Helidon specific extension to the rest client implementation from Jersey.
+ *
+ * @see org.eclipse.microprofile.rest.client
  */
 package io.helidon.microprofile.restclient;

@@ -1,0 +1,3 @@
+org.eclipse.microprofile.auth
+org.eclipse.microprofile.jwt
+org.eclipse.microprofile.jwt.config
