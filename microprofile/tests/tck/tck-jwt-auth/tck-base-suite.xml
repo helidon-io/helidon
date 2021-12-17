@@ -57,16 +57,10 @@
             <class name="org.eclipse.microprofile.jwt.tck.container.jaxrs.PrincipalInjectionTest"/>
             <class name="org.eclipse.microprofile.jwt.tck.config.PublicKeyAsPEMTest"/>
             <class name="org.eclipse.microprofile.jwt.tck.config.PublicKeyAsPEMLocationTest"/>
-            <!-- TODO expects server to be running before security is configured
-            https://github.com/eclipse/microprofile-jwt-auth/issues/118
-            -->
-            <!--<class name="org.eclipse.microprofile.jwt.tck.config.PublicKeyAsPEMLocationURLTest"/>-->
+            <class name="org.eclipse.microprofile.jwt.tck.config.PublicKeyAsPEMLocationURLTest"/>
             <class name="org.eclipse.microprofile.jwt.tck.config.PublicKeyAsJWKTest"/>
             <class name="org.eclipse.microprofile.jwt.tck.config.PublicKeyAsJWKLocationTest"/>
-            <!-- TODO expects server to be running before security is configured
-            https://github.com/eclipse/microprofile-jwt-auth/issues/118
-            -->
-            <!--<class name="org.eclipse.microprofile.jwt.tck.config.PublicKeyAsJWKLocationURLTest"/>-->
+            <class name="org.eclipse.microprofile.jwt.tck.config.PublicKeyAsJWKLocationURLTest"/>
             <class name="org.eclipse.microprofile.jwt.tck.config.PublicKeyAsJWKSTest"/>
             <class name="org.eclipse.microprofile.jwt.tck.config.PublicKeyAsJWKSLocationTest"/>
             <class name="org.eclipse.microprofile.jwt.tck.config.PublicKeyAsBase64JWKTest"/>
