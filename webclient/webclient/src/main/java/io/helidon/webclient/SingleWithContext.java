@@ -38,11 +38,10 @@ import java.util.logging.Level;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.reactive.CompletionAwaitable;
-import io.helidon.common.reactive.CompletionSingle;
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
 
-class SingleWithContext<T> extends CompletionSingle<T> {
+class SingleWithContext<T> implements Single<T> {
 
     private final Single<T> delegate;
     private final Context context;
@@ -69,12 +68,12 @@ class SingleWithContext<T> extends CompletionSingle<T> {
 
     @Override
     public <U> U to(Function<? super Single<T>, ? extends U> converter) {
-        return delegate.to(converter);
+        return delegate.to(t -> Contexts.runInContext(context, () -> converter.apply(t)));
     }
 
     @Override
     public <U> Single<U> compose(Function<? super Single<T>, ? extends Single<? extends U>> composer) {
-        return delegate.compose(composer);
+        return delegate.compose(t -> Contexts.runInContext(context, () -> composer.apply(t)));
     }
 
     @Override
@@ -84,37 +83,37 @@ class SingleWithContext<T> extends CompletionSingle<T> {
 
     @Override
     public Single<T> defaultIfEmpty(Supplier<? extends T> supplier) {
-        return delegate.defaultIfEmpty(supplier);
+        return delegate.defaultIfEmpty(() -> Contexts.runInContext(context, supplier::get));
     }
 
     @Override
     public <U> Multi<U> flatMap(Function<? super T, ? extends Flow.Publisher<? extends U>> mapper) {
-        return delegate.flatMap(mapper);
+        return delegate.flatMap(t -> Contexts.runInContext(context, () -> mapper.apply(t)));
     }
 
     @Override
     public <U> Multi<U> flatMapIterable(Function<? super T, ? extends Iterable<? extends U>> mapper) {
-        return delegate.flatMapIterable(mapper);
+        return delegate.flatMapIterable(t -> Contexts.runInContext(context, () -> mapper.apply(t)));
     }
 
     @Override
     public <U> Single<U> flatMapSingle(Function<? super T, ? extends Single<? extends U>> mapper) {
-        return delegate.flatMapSingle(mapper);
+        return delegate.flatMapSingle(t -> Contexts.runInContext(context, () -> mapper.apply(t)));
     }
 
     @Override
     public <U> Single<U> flatMapCompletionStage(Function<? super T, ? extends CompletionStage<? extends U>> mapper) {
-        return delegate.flatMapCompletionStage(mapper);
+        return delegate.flatMapCompletionStage(t -> Contexts.runInContext(context, () -> mapper.apply(t)));
     }
 
     @Override
     public <U> Single<U> flatMapOptional(Function<? super T, Optional<? extends U>> mapper) {
-        return delegate.flatMapOptional(mapper);
+        return delegate.flatMapOptional(t -> Contexts.runInContext(context, () -> mapper.apply(t)));
     }
 
     @Override
     public <U> Single<U> map(Function<? super T, ? extends U> mapper) {
-        return delegate.map(mapper);
+        return delegate.map(t -> Contexts.runInContext(context, () -> mapper.apply(t)));
     }
 
     @Override
@@ -124,32 +123,32 @@ class SingleWithContext<T> extends CompletionSingle<T> {
 
     @Override
     public Single<T> onCancel(Runnable onCancel) {
-        return delegate.onCancel(onCancel);
+        return delegate.onCancel(wrapRunnable(onCancel));
     }
 
     @Override
     public Single<T> onComplete(Runnable onComplete) {
-        return delegate.onComplete(onComplete);
+        return delegate.onComplete(wrapRunnable(onComplete));
     }
 
     @Override
     public Single<T> onError(Consumer<? super Throwable> onErrorConsumer) {
-        return delegate.onError(onErrorConsumer);
+        return delegate.onError(wrapConsumerThrowable(onErrorConsumer));
     }
 
     @Override
     public Single<T> onErrorResume(Function<? super Throwable, ? extends T> onError) {
-        return delegate.onErrorResume(onError);
+        return delegate.onErrorResume(t -> Contexts.runInContext(context, () -> onError.apply(t)));
     }
 
     @Override
     public Single<T> onErrorResumeWithSingle(Function<? super Throwable, ? extends Single<? extends T>> onError) {
-        return delegate.onErrorResumeWithSingle(onError);
+        return delegate.onErrorResumeWithSingle(t -> Contexts.runInContext(context, () -> onError.apply(t)));
     }
 
     @Override
     public Multi<T> onErrorResumeWith(Function<? super Throwable, ? extends Flow.Publisher<? extends T>> onError) {
-        return delegate.onErrorResumeWith(onError);
+        return delegate.onErrorResumeWith(t -> Contexts.runInContext(context, () -> onError.apply(t)));
     }
 
     @Override
@@ -164,22 +163,22 @@ class SingleWithContext<T> extends CompletionSingle<T> {
 
     @Override
     public Single<T> onCompleteResumeWithSingle(Function<Optional<T>, ? extends Single<? extends T>> onComplete) {
-        return delegate.onCompleteResumeWithSingle(onComplete);
+        return delegate.onCompleteResumeWithSingle(t -> Contexts.runInContext(context, () -> onComplete.apply(t)));
     }
 
     @Override
     public Single<T> onTerminate(Runnable onTerminate) {
-        return delegate.onTerminate(onTerminate);
+        return delegate.onTerminate(wrapRunnable(onTerminate));
     }
 
     @Override
     public Single<T> ifEmpty(Runnable ifEmpty) {
-        return delegate.ifEmpty(ifEmpty);
+        return delegate.ifEmpty(wrapRunnable(ifEmpty));
     }
 
     @Override
     public Single<T> peek(Consumer<? super T> consumer) {
-        return delegate.peek(consumer);
+        return delegate.peek(wrapConsumer(consumer));
     }
 
     @Override
@@ -209,12 +208,12 @@ class SingleWithContext<T> extends CompletionSingle<T> {
 
     @Override
     public Single<T> retry(BiPredicate<? super Throwable, ? super Long> predicate) {
-        return delegate.retry(predicate);
+        return delegate.retry((t, n) -> Contexts.runInContext(context, () -> predicate.test(t, n)));
     }
 
     @Override
     public <U> Single<T> retryWhen(BiFunction<? super Throwable, ? super Long, ? extends Flow.Publisher<U>> whenFunction) {
-        return delegate.retryWhen(whenFunction);
+        return delegate.retryWhen((t, n) -> Contexts.runInContext(context, () -> whenFunction.apply(t, n)));
     }
 
     @Override
@@ -264,7 +263,7 @@ class SingleWithContext<T> extends CompletionSingle<T> {
 
     @Override
     public CompletionAwaitable<Void> forSingle(Consumer<T> consumer) {
-        return delegate.forSingle(consumer);
+        return delegate.forSingle(wrapConsumer(consumer));
     }
 
     @Override
