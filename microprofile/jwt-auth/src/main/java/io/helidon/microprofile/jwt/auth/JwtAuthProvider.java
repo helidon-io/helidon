@@ -44,12 +44,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import io.helidon.common.Errors;
+import io.helidon.common.LazyValue;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.http.Http;
 import io.helidon.common.pki.KeyConfig;
@@ -135,14 +137,14 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
     private final SubjectType subjectType;
     private final TokenHandler atnTokenHandler;
     private final TokenHandler defaultTokenHandler;
-    private final JwkKeys verifyKeys;
+    private final LazyValue<JwkKeys> verifyKeys;
     private final Set<String> expectedAudiences;
     private final JwkKeys signKeys;
-    private final JwkKeys decryptionKeys;
+    private final LazyValue<JwkKeys> decryptionKeys;
     private final OutboundConfig outboundConfig;
     private final String issuer;
-    private final Jwk defaultJwk;
-    private final Jwk defaultDecryptionJwk;
+    private final LazyValue<Jwk> defaultJwk;
+    private final LazyValue<Jwk> defaultDecryptionJwk;
     private final Map<OutboundTarget, JwtOutboundTarget> targetToJwtConfig = new IdentityHashMap<>();
     private final String expectedIssuer;
     private final String cookiePrefix;
@@ -251,7 +253,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
                                 throw new JwtException("Header \"cty\" (content type) must be set to \"JWT\" "
                                                                + "for encrypted tokens");
                             }
-                            signedJwt = encryptedJwt.decrypt(decryptionKeys, defaultDecryptionJwk);
+                            signedJwt = encryptedJwt.decrypt(decryptionKeys.get(), defaultDecryptionJwk.get());
                         } else {
                             signedJwt = SignedJwt.parseToken(token);
                         }
@@ -262,7 +264,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
                         //invalid token
                         return AuthenticationResponse.failed("Invalid token", e);
                     }
-                    Errors errors = signedJwt.verifySignature(verifyKeys, defaultJwk);
+                    Errors errors = signedJwt.verifySignature(verifyKeys.get(), defaultJwk.get());
                     if (errors.isValid()) {
                         Jwt jwt = signedJwt.getJwt();
 
@@ -609,11 +611,11 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
                 .tokenPrefix("bearer ")
                 .build();
         private OutboundConfig outboundConfig;
-        private JwkKeys verifyKeys;
+        private LazyValue<JwkKeys> verifyKeys;
+        private LazyValue<JwkKeys> decryptionKeys;
+        private LazyValue<Jwk> defaultJwk;
+        private LazyValue<Jwk> defaultDecryptionJwk;
         private JwkKeys signKeys;
-        private JwkKeys decryptionKeys;
-        private Jwk defaultJwk;
-        private Jwk defaultDecryptionJwk;
         private String defaultKeyId;
         private String issuer;
         private String publicKeyPath;
@@ -621,6 +623,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
         private String cookieProperty = "Bearer";
         private String decryptKeyLocation;
         private boolean useCookie = false;
+        private boolean loadOnStartup = false;
 
         private Builder() {
         }
@@ -632,35 +635,58 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
                     throw new DeploymentException("Both " + CONFIG_PUBLIC_KEY + " and " + CONFIG_PUBLIC_KEY_PATH + " are set! "
                                                           + "Only one of them should be picked.");
                 }
-                verifyKeys = createJwkKeys();
+                String publicKeyPath = this.publicKeyPath;
+                String publicKey = this.publicKey;
+                LazyValue<Jwk> defaultJwk = this.defaultJwk;
+                verifyKeys = LazyValue.create(() -> createJwkKeys(publicKeyPath, publicKey, defaultJwk));
             }
 
+            LazyValue<JwkKeys> verifyKeys = this.verifyKeys;
+
             if ((null == defaultJwk) && (null != defaultKeyId)) {
-                defaultJwk = verifyKeys.forKeyId(defaultKeyId)
-                        .orElseThrow(() -> new DeploymentException("Default key id defined as \"" + defaultKeyId + "\" yet the "
-                                                                           + "key id is not present in the JWK keys"));
+                String defaultKeyId = this.defaultKeyId;
+                Supplier<Jwk> jwkSupplier = () -> verifyKeys.get().forKeyId(defaultKeyId)
+                        .orElseThrow(() -> new DeploymentException("Default key id defined as \"" + defaultKeyId + "\" yet "
+                                                                           + "the key id is not present in the JWK keys"));
+                defaultJwk = LazyValue.create(jwkSupplier);
             }
 
             if (null == defaultJwk) {
-                List<Jwk> keys = verifyKeys.keys();
-                if (!keys.isEmpty()) {
-                    defaultJwk = keys.get(0);
-                }
+                Supplier<Jwk> jwkSupplier = () -> {
+                    List<Jwk> keys = verifyKeys.get().keys();
+                    if (!keys.isEmpty()) {
+                        return keys.get(0);
+                    }
+                    return null;
+                };
+                defaultJwk = LazyValue.create(jwkSupplier);
             }
 
             if (decryptKeyLocation != null) {
-                decryptionKeys = createDecryptionJwkKeys();
+                String decryptKeyLocation = this.decryptKeyLocation;
+                decryptionKeys = LazyValue.create(() -> createDecryptionJwkKeys(decryptKeyLocation));
 
-                List<Jwk> keys = decryptionKeys.keys();
-                if (!keys.isEmpty() && keys.get(0).keyId() == null) {
-                    defaultDecryptionJwk = keys.get(0);
-                }
+                LazyValue<JwkKeys> decryptionKeys = this.decryptionKeys;
+                defaultDecryptionJwk = LazyValue.create(() -> {
+                    List<Jwk> keys = decryptionKeys.get().keys();
+                    if (!keys.isEmpty() && keys.get(0).keyId() == null) {
+                        return keys.get(0);
+                    }
+                    return null;
+                });
+            } else {
+                decryptionKeys = LazyValue.create(() -> null);
+                defaultDecryptionJwk = LazyValue.create(() -> null);
             }
 
+            if (loadOnStartup) {
+                defaultJwk.get();
+                defaultDecryptionJwk.get();
+            }
             return new JwtAuthProvider(this);
         }
 
-        private JwkKeys createDecryptionJwkKeys() {
+        private JwkKeys createDecryptionJwkKeys(String decryptKeyLocation) {
             return Optional.of(decryptKeyLocation)
                     .map(this::loadDecryptionJwkKeysFromLocation)
                     .get();
@@ -742,7 +768,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
             return JwkKeys.builder().addKey(Jwk.create(jsonObject)).build();
         }
 
-        private JwkKeys createJwkKeys() {
+        private JwkKeys createJwkKeys(String publicKeyPath, String publicKey, LazyValue<Jwk> defaultJwk) {
             if ((null == publicKeyPath) && (null == publicKey) && (null == defaultJwk)) {
                 LOGGER.severe("Either \""
                                       + CONFIG_PUBLIC_KEY
@@ -758,7 +784,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
                             .map(pk -> loadJwkKeys("configuration", pk)))
                     .or(() -> Optional.ofNullable(defaultJwk)
                             .map(jwk -> JwkKeys.builder()
-                                    .addKey(jwk)
+                                    .addKey(jwk.get())
                                     .build()))
                     .orElseThrow(() -> new SecurityException("No public key or default JWK set for MP JWT-Auth Provider."));
         }
@@ -993,8 +1019,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
          * @return updated builder instance
          */
         public Builder verifyJwk(Resource verifyJwkResource) {
-            this.verifyKeys = JwkKeys.builder().resource(verifyJwkResource).build();
-
+            this.verifyKeys = LazyValue.create(JwkKeys.builder().resource(verifyJwkResource).build());
             return this;
         }
 
@@ -1041,7 +1066,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
          * @return updated builder instance
          */
         public Builder defaultJwk(Jwk defaultJwk) {
-            this.defaultJwk = defaultJwk;
+            this.defaultJwk = LazyValue.create(defaultJwk);
             return this;
         }
 
@@ -1075,6 +1100,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
             config.get("atn-token.verify-key").asString().ifPresent(this::publicKeyPath);
             config.get("sign-token").ifExists(outbound -> outboundConfig(OutboundConfig.create(outbound)));
             config.get("sign-token").ifExists(this::outbound);
+            config.get("load-on-startup").asBoolean().ifPresent(this::loadOnStartup);
 
             org.eclipse.microprofile.config.Config mpConfig = ConfigProviderResolver.instance().getConfig();
 
@@ -1183,6 +1209,18 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
          */
         public Builder decryptKeyLocation(String decryptKeyLocation) {
             this.decryptKeyLocation = decryptKeyLocation;
+            return this;
+        }
+
+        /**
+         * Whether to load JWK verification keys on server startup
+         * Default value is {@code false}.
+         *
+         * @param loadOnStartup load verification keys on server startup
+         * @return updated builder instance
+         */
+        public Builder loadOnStartup(boolean loadOnStartup) {
+            this.loadOnStartup = loadOnStartup;
             return this;
         }
 
