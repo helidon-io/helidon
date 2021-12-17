@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -279,7 +279,10 @@ public class TyrusSupport implements Service {
             res.status(upgradeResponse.getStatus());
             upgradeResponse.getHeaders().forEach((key, value) -> res.headers().add(key, value));
             TyrusWriterPublisher publisherWriter = new TyrusWriterPublisher();
-            res.send(publisherWriter);
+
+            // Force BareResponseImpl to websocket mode
+            res.headers().send()
+                    .forSingle(responseHeaders -> res.send(publisherWriter));
 
             // Write reason for failure if not successful
             if (upgradeInfo.getStatus() != WebSocketEngine.UpgradeStatus.SUCCESS) {
