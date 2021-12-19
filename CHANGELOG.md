@@ -20,7 +20,7 @@ This is a bugfix release of Helidon.  It is recommended for all users of Helidon
 Helidon itself does not use `log4j`, and by default will not include `log4j` on
 your application's classpath.  But Helidon does manage the version of `log4j` and
 uses it in some examples and the `helidon-logging-log4j` integration feature. This
-release of Helidon upgrades this managed version to 2.16.0.
+release of Helidon upgrades this managed version to 2.17.0.
 
 ### CHANGES
 - WebServer: Netty mixed writing aligned with master [3718](https://github.com/oracle/helidon/pull/3718)
@@ -52,7 +52,7 @@ release of Helidon upgrades this managed version to 2.16.0.
 - Docs: Update javadocs and links for Jakarta EE and MicroProfile [3721](https://github.com/oracle/helidon/pull/3721)
 - Docs: LRA doc fix artifact and group ids 2x [3689](https://github.com/oracle/helidon/pull/3689)
 - Docs: Doc and JavaDoc fixes for #3747 and #3687. [3757](https://github.com/oracle/helidon/pull/3757)
-- Dependencies: Upgrades log4j to 2.16.0 [3737](https://github.com/oracle/helidon/pull/3737)
+- Dependencies: Upgrades log4j to 2.17.0
 - Dependencies: Upgrades Netty to 4.1.72.Final [3739](https://github.com/oracle/helidon/pull/3739)
 - Dependencies: Bump cronutils 2x [3678](https://github.com/oracle/helidon/pull/3678)
 - Config: Support for mutable file based MP config sources. [3666](https://github.com/oracle/helidon/pull/3666)
