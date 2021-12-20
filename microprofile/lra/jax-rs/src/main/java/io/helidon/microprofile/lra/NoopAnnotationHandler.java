@@ -21,10 +21,25 @@ import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.container.ResourceInfo;
 
+import io.helidon.common.context.Contexts;
+import io.helidon.lra.coordinator.client.PropagatedHeaders;
+
 class NoopAnnotationHandler implements AnnotationHandler {
+
+    private final ParticipantService participantService;
+
+    NoopAnnotationHandler(ParticipantService participantService) {
+        this.participantService = participantService;
+    }
 
     @Override
     public void handleJaxRsBefore(ContainerRequestContext requestContext, ResourceInfo resourceInfo) {
+        // Custom headers propagation
+        PropagatedHeaders propagatedHeaders = participantService.prepareCustomHeaderPropagation(requestContext.getHeaders());
+        String key = PropagatedHeaders.class.getName();
+        requestContext.setProperty(key, propagatedHeaders);
+        Contexts.context()
+                .ifPresent(context -> context.register(key, propagatedHeaders));
     }
 
     @Override

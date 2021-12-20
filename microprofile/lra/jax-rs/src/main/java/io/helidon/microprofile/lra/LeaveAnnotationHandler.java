@@ -23,8 +23,10 @@ import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.container.ResourceInfo;
 
+import io.helidon.common.context.Contexts;
 import io.helidon.lra.coordinator.client.CoordinatorClient;
 import io.helidon.lra.coordinator.client.Participant;
+import io.helidon.lra.coordinator.client.PropagatedHeaders;
 
 import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_CONTEXT_HEADER;
 
@@ -49,6 +51,12 @@ class LeaveAnnotationHandler implements AnnotationHandler {
                     reqCtx.setProperty(LRA_HTTP_CONTEXT_HEADER, lraId);
                 });
 
+        // Custom headers propagation
+        PropagatedHeaders propagatedHeaders = participantService.prepareCustomHeaderPropagation(reqCtx.getHeaders());
+        String key = PropagatedHeaders.class.getName();
+        reqCtx.setProperty(key, propagatedHeaders);
+        Contexts.context()
+                .ifPresent(context -> context.register(key, propagatedHeaders));
     }
 
     @Override

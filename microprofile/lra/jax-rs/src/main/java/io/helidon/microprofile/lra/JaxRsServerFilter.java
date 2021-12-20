@@ -31,8 +31,6 @@ import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.container.ResourceInfo;
 import javax.ws.rs.core.Context;
 
-import io.helidon.lra.coordinator.client.CoordinatorClient;
-
 @ConstrainedTo(RuntimeType.SERVER)
 class JaxRsServerFilter implements ContainerRequestFilter, ContainerResponseFilter {
 
@@ -40,9 +38,6 @@ class JaxRsServerFilter implements ContainerRequestFilter, ContainerResponseFilt
 
     @Context
     private ResourceInfo resourceInfo;
-
-    @Inject
-    private CoordinatorClient coordinatorClient;
 
     @Inject
     private HandlerService handlerService;

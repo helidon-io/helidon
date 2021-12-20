@@ -53,7 +53,7 @@ public class CoordinatorDeployer {
         HelidonContainerConfiguration containerConfig = helidonContainer.getContainerConfig();
 
         containerConfig.addConfigBuilderConsumer(configBuilder -> {
-            configBuilder.withSources(MpConfigSources.create(CoordinatorService.class.getResource("/application.yaml")),
+            configBuilder.withSources(
                     MpConfigSources.create(Map.of(
                             // Force client to use random port first time with 0
                             // reuse port second time(TckRecoveryTests does redeploy)
@@ -65,8 +65,13 @@ public class CoordinatorDeployer {
                             "server.sockets.0.port", String.valueOf(coordinatorPort.get()),
                             "server.sockets.0.workers", "16",
                             "server.sockets.0.bind-address", "localhost",
-                            "helidon.lra.coordinator.timeout", "3000"
-                    )));
+                            "helidon.lra.coordinator.timeout", "3000",
+                            "helidon.lra.coordinator.recovery-interval", "100",
+                            "helidon.lra.coordinator.recovery-initial-delay", "100",
+                            "helidon.lra.coordinator.db.connection.url", "jdbc:h2:file:./target/lra-coordinator"
+                    )),
+                    MpConfigSources.create(CoordinatorService.class.getResource("/application.yaml"))
+            );
         });
 
         JavaArchive javaArchive = ShrinkWrap.create(JavaArchive.class)

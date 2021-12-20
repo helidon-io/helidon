@@ -19,28 +19,44 @@ package io.helidon.microprofile.lra;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.stream.Collectors;
 
 import javax.ws.rs.ConstrainedTo;
 import javax.ws.rs.RuntimeType;
 import javax.ws.rs.client.ClientRequestContext;
 import javax.ws.rs.client.ClientRequestFilter;
+import javax.ws.rs.core.MultivaluedMap;
 
 import io.helidon.common.context.Contexts;
+import io.helidon.lra.coordinator.client.PropagatedHeaders;
 
 import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_CONTEXT_HEADER;
 
 @ConstrainedTo(RuntimeType.CLIENT)
 class JaxRsClientFilter implements ClientRequestFilter {
     @Override
-    public void filter(final ClientRequestContext requestContext) throws IOException {
-        if (requestContext.getHeaders().containsKey(LRA_HTTP_CONTEXT_HEADER)) {
-            return;
+    public void filter(final ClientRequestContext reqCtx) throws IOException {
+        MultivaluedMap<String, Object> headers = reqCtx.getHeaders();
+
+        // LRA context
+        if (!headers.containsKey(LRA_HTTP_CONTEXT_HEADER)) {
+            Contexts.context()
+                    .flatMap(c -> c.get(LRA_HTTP_CONTEXT_HEADER, URI.class))
+                    .ifPresent(lraId ->
+                            // no explicit lraId header, add the one saved in Helidon context
+                            headers.putSingle(LRA_HTTP_CONTEXT_HEADER, lraId.toASCIIString()));
         }
 
+        // Custom header propagation
         Contexts.context()
-                .flatMap(c -> c.get(LRA_HTTP_CONTEXT_HEADER, URI.class))
-                .ifPresent(lraId ->
-                        // no explicit lraId header, add the one saved in Helidon context
-                        requestContext.getHeaders().putSingle(LRA_HTTP_CONTEXT_HEADER, lraId.toASCIIString()));
+                .flatMap(c -> c.get(PropagatedHeaders.class.getName(), PropagatedHeaders.class))
+                .map(PropagatedHeaders::toMap)
+                .ifPresent(propagatedHeaders ->
+                        propagatedHeaders.forEach((key, values) -> {
+                            // User defined headers have priority
+                            if (!headers.containsKey(key)) {
+                                headers.put(key, values.stream().map(Object.class::cast).collect(Collectors.toList()));
+                            }
+                        }));
     }
 }
