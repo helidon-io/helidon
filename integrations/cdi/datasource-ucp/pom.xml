@@ -42,8 +42,7 @@
         </dependency>
         <dependency>
             <groupId>com.oracle.database.jdbc</groupId>
-            <artifactId>ojdbc8-production</artifactId>
-            <type>pom</type>
+            <artifactId>ucp</artifactId>
             <scope>compile</scope>
         </dependency>
         <dependency>
@@ -97,6 +96,12 @@
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.oracle.database.jdbc</groupId>
+            <artifactId>ojdbc8-production</artifactId>
+            <type>pom</type>
             <scope>test</scope>
         </dependency>
         <dependency>

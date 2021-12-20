@@ -1,0 +1,9 @@
+[
+    {
+        "bean-class": "oracle.ucp.jdbc.PoolDataSourceImpl",
+        "ifaces": [
+            "oracle.ucp.jdbc.PoolDataSource",
+            "oracle.ucp.UniversalConnectionPoolAdapter"
+        ]
+    }
+]
