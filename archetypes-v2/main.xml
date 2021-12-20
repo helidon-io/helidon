@@ -22,7 +22,7 @@
 
     <step label="Helidon Flavor">
         <inputs>
-            <enum name="flavor" label="Select a flavor" default="se">
+            <enum name="flavor" label="Select a flavor" default="se" global="true">
                 <option value="se" label="Helidon SE">
                     <exec src="se/se.xml"/>
                 </option>

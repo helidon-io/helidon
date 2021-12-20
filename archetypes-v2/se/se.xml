@@ -22,7 +22,7 @@
 
     <step label="Application Type">
         <inputs>
-            <enum name="base" label="Select archetype" default="bare">
+            <enum name="base" label="Select archetype" default="bare" global="true">
                 <option value="bare" label="Bare Helidon SE project suitable to start from scratch">
                     <exec src="bare/bare-se.xml"/>
                 </option>
