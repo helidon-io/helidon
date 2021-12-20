@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ public class CoordinatorAppService {
     ServerCdiExtension serverCdiExtension;
 
     LazyValue<URI> coordinatorUri = LazyValue.create(() -> {
-        CoordinatorDeployer.started().await(5, TimeUnit.SECONDS);
+        CoordinatorDeployer.started().await(30, TimeUnit.SECONDS);
         // Check if external coordinator is set or use internal with random port
         int randomPort = serverCdiExtension.port(CoordinatorDeployer.COORDINATOR_ROUTING_NAME);
         String port = System.getProperty("lra.coordinator.port", String.valueOf(randomPort));

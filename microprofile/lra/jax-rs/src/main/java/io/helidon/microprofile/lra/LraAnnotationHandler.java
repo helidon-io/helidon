@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import java.net.URI;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.CompletionException;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 import io.helidon.common.context.Contexts;
@@ -48,12 +47,15 @@ class LraAnnotationHandler implements AnnotationHandler {
     private final InspectionService.Lra annotation;
     private final CoordinatorClient coordinatorClient;
     private final ParticipantService participantService;
+    private Duration coordinatorTimeout;
 
     LraAnnotationHandler(AnnotationInstance annotation,
                          CoordinatorClient coordinatorClient,
                          InspectionService inspectionService,
-                         ParticipantService participantService) {
+                         ParticipantService participantService,
+                         Duration coordinatorTimeout) {
         this.participantService = participantService;
+        this.coordinatorTimeout = coordinatorTimeout;
         this.annotation = inspectionService.lraAnnotation(annotation);
         this.coordinatorClient = coordinatorClient;
     }
@@ -198,7 +200,7 @@ class LraAnnotationHandler implements AnnotationHandler {
     private <T> T awaitCoordinator(Single<T> single) {
         try {
             // Connection timeout should be handled by client impl separately
-            return single.await(5, TimeUnit.SECONDS);
+            return single.await(coordinatorTimeout);
         } catch (CompletionException e) {
             Throwable cause = e.getCause();
             if (cause instanceof CoordinatorConnectionException) {

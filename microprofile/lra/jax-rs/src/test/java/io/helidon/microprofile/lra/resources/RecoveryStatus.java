@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,8 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+
+import org.eclipse.microprofile.lra.LRAResponse;
 import org.eclipse.microprofile.lra.annotation.Compensate;
 import org.eclipse.microprofile.lra.annotation.ParticipantStatus;
 import org.eclipse.microprofile.lra.annotation.Status;
@@ -88,13 +90,9 @@ public class RecoveryStatus {
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
-            // TODO 3.0.0-JAKARTA
-            //TODO return LRAResponse.failedToComplete();
-            return Response.ok().build();
+            return LRAResponse.failedToComplete();
         }
-        // TODO 3.0.0-JAKARTA
-        //TODO return LRAResponse.compensated();
-        return Response.ok().build();
+        return LRAResponse.compensated();
     }
 
     @Status

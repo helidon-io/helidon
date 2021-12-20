@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -229,10 +229,7 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
                 deploymentException = candicate;
             }
         }
-        if (deploymentException.isPresent()) {
-            return deploymentException;
-        }
-        return Optional.empty();
+        return deploymentException;
     }
 
     void startServer(RunContext context, Path[] classPath)
@@ -298,7 +295,12 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
             // there is a configuration profile, we must add correct sources
         }
         */
-        Config config = ConfigProvider.getConfig();
+        Config config;
+        if (containerConfig.hasCustomConfig()) {
+            config = containerConfig.useBuilder(builder).build();
+        } else {
+            config = ConfigProvider.getConfig();
+        }
 
         context.runnerClass
                 .getDeclaredMethod("start", Config.class, Integer.TYPE)
@@ -457,10 +459,14 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
      * would be available and may cause failures.
      */
     private void cleanupBaseMetrics() {
-        MetricRegistry metricRegistry = CDI.current().select(MetricRegistry.class,
-                new BaseRegistryTypeLiteral()).get();
-        Objects.requireNonNull(metricRegistry);
-        metricRegistry.removeMatching((m, v) -> true);
+        try {
+            MetricRegistry metricRegistry = CDI.current().select(MetricRegistry.class,
+                    new BaseRegistryTypeLiteral()).get();
+            Objects.requireNonNull(metricRegistry);
+            metricRegistry.removeMatching((m, v) -> true);
+        } catch (IllegalStateException e) {
+            LOGGER.log(Level.WARNING, "Unable to cleanup base metrics", e);
+        }
     }
 
     /**
