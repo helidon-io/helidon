@@ -409,7 +409,6 @@ class MainTest {
                 .path("/health")
                 .request(JsonObject.class)
                 .thenAccept(it -> {
-                    assertThat("Checking health outcome", it.getString("outcome"), is("UP"));
                     assertThat("Checking health status", it.getString("status"), is("UP"));
                     // Verify that built-in health checks are disabled in MP according to
                     // 'microprofile-config.properties' setting in bookstore application

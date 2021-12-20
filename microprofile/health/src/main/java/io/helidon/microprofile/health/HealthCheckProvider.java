@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,6 +44,15 @@ public interface HealthCheckProvider {
      * @return the {@link org.eclipse.microprofile.health.HealthCheck}s
      */
     default List<HealthCheck> livenessChecks() {
+        return Collections.emptyList();
+    }
+
+    /**
+     * Return the provided start-up {@link org.eclipse.microprofile.health.HealthCheck}s.
+     *
+     * @return the {@link org.eclipse.microprofile.health.HealthCheck}s
+     */
+    default List<HealthCheck> startupChecks() {
         return Collections.emptyList();
     }
 }
