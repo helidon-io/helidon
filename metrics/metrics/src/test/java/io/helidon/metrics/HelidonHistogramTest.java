@@ -93,6 +93,7 @@ class HelidonHistogramTest {
             + "# TYPE application_file_sizes_bytes summary\n"
             + "# HELP application_file_sizes_bytes Users file size\n"
             + "application_file_sizes_bytes_count 200\n"
+            + "application_file_sizes_bytes_sum 10127\n"
             + "application_file_sizes_bytes{quantile=\"0.5\"} 48000\n"
             + "application_file_sizes_bytes{quantile=\"0.75\"} 75000\n"
             + "application_file_sizes_bytes{quantile=\"0.95\"} 96000\n"

@@ -738,8 +738,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
             MetricID gaugeID = gaugeSite.getKey();
 
             AnnotatedMethod<?> site = gaugeSite.getValue();
-            // TODO uncomment following clause once MP metrics enforces restriction
-            DelegatingGauge<? /* extends Number */> dg;
+            DelegatingGauge<? extends Number> dg;
             try {
                 dg = buildDelegatingGauge(gaugeID.getName(), site,
                                           bm);
@@ -769,23 +768,20 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
         annotatedGaugeSites.clear();
     }
 
-    private DelegatingGauge<? /* extends Number */> buildDelegatingGauge(String gaugeName,
+    private DelegatingGauge<? extends Number> buildDelegatingGauge(String gaugeName,
                                                                          AnnotatedMethod<?> site, BeanManager bm) {
-        // TODO uncomment preceding clause once MP metrics enforces restriction
         Bean<?> bean = bm.getBeans(site.getJavaMember().getDeclaringClass())
                 .stream()
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Cannot find bean for annotated gauge " + gaugeName));
 
         Class<?> returnType = site.getJavaMember().getReturnType();
-        // TODO uncomment following line once MP metrics enforces restriction
-        //        Class<? extends Number> narrowedReturnType = typeToNumber(returnType);
+        Class<? extends Number> narrowedReturnType = typeToNumber(returnType);
 
         return DelegatingGauge.newInstance(
                 site.getJavaMember(),
                 getReference(bm, bean.getBeanClass(), bean),
-                // TODO use narrowedReturnType instead of returnType below once MP metrics enforces restriction
-                returnType);
+                narrowedReturnType);
     }
 
     @SuppressWarnings("unchecked")

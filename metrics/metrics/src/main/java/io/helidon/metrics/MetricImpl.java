@@ -312,13 +312,26 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
     }
 
     void appendPrometheusHistogramElements(StringBuilder sb, MetricID metricID,
-            boolean withHelpType, long count, DisplayableLabeledSnapshot snap) {
+                                           boolean withHelpType, long count, long sum, DisplayableLabeledSnapshot snap) {
         PrometheusName name = PrometheusName.create(this, metricID);
-        appendPrometheusHistogramElements(sb, name, withHelpType, count, snap);
+        appendPrometheusHistogramElements(sb, name, withHelpType, count, sum, true, snap);
     }
 
-    void appendPrometheusHistogramElements(StringBuilder sb, PrometheusName name,
-            boolean withHelpType, long count, DisplayableLabeledSnapshot snap) {
+    void appendPrometheusHistogramElements(StringBuilder sb,
+                                           PrometheusName name,
+                                           boolean withHelpType,
+                                           long count,
+                                           DisplayableLabeledSnapshot snap) {
+        appendPrometheusHistogramElements(sb, name, withHelpType, count, 0, false, snap);
+    }
+
+    void appendPrometheusHistogramElements(StringBuilder sb,
+                                           PrometheusName name,
+                                           boolean withHelpType,
+                                           long count,
+                                           long sum,
+                                           boolean includeSum,
+                                           DisplayableLabeledSnapshot snap) {
 
         // # TYPE application:file_sizes_mean_bytes gauge
         // application:file_sizes_mean_bytes 4738.231
@@ -348,7 +361,12 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
                 .append(" ")
                 .append(count)
                 .append('\n');
-
+        if (includeSum) {
+            sb.append(name.nameUnitsSuffixTags("sum"))
+                    .append(" ")
+                    .append(sum)
+                    .append('\n');
+        }
         // application:file_sizes_bytes{quantile="0.5"} 4201
         // for each supported quantile
         prometheusQuantile(sb, name, getUnits(), "0.5", snap.median());

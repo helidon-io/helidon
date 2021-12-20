@@ -208,8 +208,7 @@ class MetricProducer {
     @Produces
     @VendorDefined
     @SuppressWarnings("unchecked")
-    private <T /* extends Number */> Gauge<T> produceGauge(MetricRegistry registry, InjectionPoint ip) {
-        // TODO uncomment preceding clause once MP metrics enforces restriction
+    private <T extends Number> Gauge<T> produceGauge(MetricRegistry registry, InjectionPoint ip) {
         Metric metric = ip.getAnnotated().getAnnotation(Metric.class);
         return (Gauge<T>) registry.getGauges().entrySet().stream()
                 .filter(entry -> entry.getKey().getName().equals(metric.name()))
@@ -227,9 +226,8 @@ class MetricProducer {
      * @return requested gauge
      */
     @Produces
-    private <T /* extends Number */> Gauge<T> produceGaugeDefault(MetricRegistry registry,
+    private <T extends Number> Gauge<T> produceGaugeDefault(MetricRegistry registry,
             InjectionPoint ip) {
-        // TODO uncomment preceding clause once MP metrics enforces restrictions
         return produceGauge(registry, ip);
     }
 
@@ -271,25 +269,9 @@ class MetricProducer {
             if (specificMetricAnno == null) {
                 return result;
             }
-            final Metadata existingMetadata = registry.getMetadata().get(metricID.getName());
-            enforceReusability(metricID, existingMetadata, newMetadata);
         } else {
             result = registerFn.apply(newMetadata, tags);
         }
         return result;
-    }
-
-    private static void enforceReusability(MetricID metricID, Metadata existingMetadata,
-              Metadata newMetadata, Tag... tags) {
-        // TODO 3.0.0-JAKARTA
-        // reusable no longer part of API
-//        if (existingMetadata.isReusable() != newMetadata.isReusable()) {
-//            throw new IllegalArgumentException("Attempt to reuse metric " + metricID
-//                    + " with inconsistent isReusable setting");
-//        }
-//        if (!newMetadata.isReusable()) {
-//            throw new IllegalArgumentException("Attempting to reuse metric "
-//                    + metricID + " that is not reusable");
-//        }
     }
 }

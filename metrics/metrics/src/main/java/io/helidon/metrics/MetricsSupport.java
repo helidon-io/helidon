@@ -556,7 +556,7 @@ public final class MetricsSupport extends HelidonRestServiceSupport
     private void optionsOne(ServerRequest req, ServerResponse res, Registry registry) {
         String metricName = req.path().param("metric");
 
-        registry.getOptionalMetricWithIDsEntry(metricName)
+        Optional.ofNullable(registry.metadataWithIDs(metricName))
                 .ifPresentOrElse(entry -> {
                     if (req.headers().isAccepted(MediaType.APPLICATION_JSON)) {
                         JsonObjectBuilder builder = JSON.createObjectBuilder();

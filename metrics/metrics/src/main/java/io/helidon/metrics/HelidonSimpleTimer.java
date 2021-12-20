@@ -183,6 +183,7 @@ final class HelidonSimpleTimer extends MetricImpl implements SimpleTimer {
         private final HelidonCounter counter;
         private final Clock clock;
         private Duration elapsed = Duration.ofNanos(0);
+
         private Sample.Labeled sample = null;
 
         SimpleTimerImpl(String repoType, String name, Clock clock) {

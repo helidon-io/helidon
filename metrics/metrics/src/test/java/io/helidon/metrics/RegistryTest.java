@@ -80,7 +80,7 @@ public class RegistryTest {
         registry.counter(metadata1, tag1);
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                 () -> registry.timer(metadata2, tag2));
-        assertThat(ex.getMessage(), containsString("already registered"));
+        assertThat(ex.getMessage(), containsString("conflicts"));
     }
 
     @Test
