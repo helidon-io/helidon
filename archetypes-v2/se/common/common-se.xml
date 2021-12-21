@@ -98,6 +98,9 @@
                 <value>static org.hamcrest.MatcherAssert.assertThat</value>
                 <value>static org.hamcrest.Matchers.is</value>
             </list>
+            <map key="mainClass">
+                <value key="package" template="mustache">{{package}}</value>
+            </map>
         </model>
     </output>
 </archetype-script>
