@@ -76,13 +76,14 @@ class BareResponseImpl implements BareResponse {
 
     // Accessed by Subscriber method threads
     private Flow.Subscription subscription;
-    private DataChunk firstChunk;
-    private final CompletableFuture<?> readyToRequest;
+    private final CompletableFuture<ChannelFutureListener> readyToRequest;
 
     // Accessed by writeStatusHeaders(status, headers) method
+    private volatile DataChunk firstChunk;
     private volatile boolean lengthOptimization;
     private volatile boolean isWebSocketUpgrade = false;
     private volatile DefaultHttpResponse response;
+    private final AtomicBoolean keepAliveValid;
 
     /**
      * @param ctx the channel handler context
@@ -95,9 +96,12 @@ class BareResponseImpl implements BareResponse {
                      HttpRequest request,
                      CompletableFuture<?> prevRequestChunk,
                      CompletableFuture<ChannelFutureListener> requestEntityAnalyzed,
+                     AtomicBoolean keepAliveValid,
                      long requestId) {
+        this.keepAliveValid = keepAliveValid;
+        // Deffer onNext/onError/onComplete
         if (prevRequestChunk != null) {
-            this.readyToRequest = requestEntityAnalyzed.thenCompose(l -> prevRequestChunk);
+            this.readyToRequest = prevRequestChunk.thenCompose(l -> requestEntityAnalyzed);
         } else {
             this.readyToRequest = requestEntityAnalyzed;
         }
@@ -109,7 +113,7 @@ class BareResponseImpl implements BareResponse {
         this.requestHeaders = request.headers();
         this.http2StreamId = requestHeaders.get(HTTP_2_STREAM_ID);
 
-        // We need to keep this listener so we can remove it when this response completes. If we don't, we leak
+        // We need to keep this listener, so we can remove it when this response completes. If we don't, we leak
         // while the channel remains open since each response adds a new listener that references 'this'.
         // Use fields to avoid capturing lambdas.
 
@@ -189,7 +193,11 @@ class BareResponseImpl implements BareResponse {
         // http://www.w3.org/Protocols/HTTP/1.1/draft-ietf-http-v11-spec-01.html#Connection
         // If already set (e.g. WebSocket upgrade), do not override
         if (keepAlive && !headers.containsKey(HttpHeaderNames.CONNECTION.toString())) {
-            response.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE);
+            if (keepAliveValid.get()) {
+                response.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE);
+            } else {
+                response.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.CLOSE);
+            }
         }
 
         // Content length optimization attempt
@@ -248,7 +256,8 @@ class BareResponseImpl implements BareResponse {
         if (wasClosed && subscription != null) {
             subscription.cancel();
         }
-        completeInternalPipe(wasClosed, throwable);
+        // Defer onComplete/onError to support HTTP pipelining
+        readyToRequest.whenComplete((cfl, t) -> completeInternalPipe(cfl, wasClosed, throwable));
     }
 
     /**
@@ -257,7 +266,7 @@ class BareResponseImpl implements BareResponse {
      * @param wasClosed response closed boolean.
      * @param throwable a throwable.
      */
-    private void completeInternalPipe(boolean wasClosed, Throwable throwable) {
+    private void completeInternalPipe(ChannelFutureListener keepAliveListener, boolean wasClosed, Throwable throwable) {
         if (wasClosed) {
             // if already closed, as the contract specifies, don't fail
             completeResponseFuture(throwable);
@@ -266,7 +275,7 @@ class BareResponseImpl implements BareResponse {
         if (keepAlive) {
             log(Level.FINEST, "Writing an empty last http content; keep-alive: true");
 
-            writeLastContent(throwable, ChannelFutureListener.CLOSE_ON_FAILURE);
+            writeLastContent(throwable, keepAliveListener);
 
             // Trigger next chunk read in order to not get stuck forever; the
             // connection will be closed in the ForwardingHandler in case there is more than just small amount of data
@@ -350,14 +359,12 @@ class BareResponseImpl implements BareResponse {
         if (isWebSocketUpgrade) {
             subscription.request(1);
         } else {
-            // Callback deferring first request for data after:
+            // Callback deferring first request for data(onNext) after:
             // 1. - All writes from the previous response in an HTTP connection have been submitted.
             //      This is required to properly support HTTP pipelining.
             // 2. - Request stream has been completed
-            readyToRequest.whenComplete((l, t) -> {
-                subscription.request(1);
-            });
-            //Auxiliary read, in case of pending read does nothing
+            readyToRequest.whenComplete((l, t) -> subscription.request(1));
+            //Auxiliary read, does nothing in case of pending read
             channel.read();
         }
     }

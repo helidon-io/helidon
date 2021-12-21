@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -96,6 +97,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
     private boolean ignorePayload;
 
     private CompletableFuture<ChannelFutureListener> requestEntityAnalyzed;
+    private AtomicBoolean keepAliveValid = new AtomicBoolean();
     private CompletableFuture<?> prevRequestFuture;
     private boolean lastContent;
     private boolean hadContentAlready;
@@ -253,11 +255,16 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                 LOGGER.fine(log("Received LastHttpContent: %s", ctx, System.identityHashCode(msg)));
             }
 
+            // BareResponseImpl needs to know if lastContent arrived
+            // before requestContext.complete() triggers send headers
+            keepAliveValid.set(true);
+
             if (!isWebSocketUpgrade) {
                 lastContent = true;
                 requestContext.complete();
                 requestContext = null; // just to be sure that current http req/res session doesn't interfere with other ones
             }
+
             requestEntityAnalyzed.complete(ChannelFutureListener.CLOSE_ON_FAILURE);
         } else if (!content.isReadable()) {
             // this is here to handle the case when the content is not readable but we didn't
@@ -402,6 +409,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
         }
 
         requestEntityAnalyzed = new CompletableFuture<>();
+        keepAliveValid = new AtomicBoolean();
 
         //If the keep alive is not set, we know we will be closing the connection
         if (!HttpUtil.isKeepAlive(requestContext.request())) {
@@ -413,6 +421,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                                      request,
                                      prevRequestFuture,
                                      requestEntityAnalyzed,
+                                     keepAliveValid,
                                      requestId);
         prevRequestFuture = new CompletableFuture<>();
         CompletableFuture<?> thisResp = prevRequestFuture;

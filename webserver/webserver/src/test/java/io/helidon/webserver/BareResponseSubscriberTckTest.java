@@ -19,6 +19,7 @@ package io.helidon.webserver;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Flow;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.common.http.DataChunk;
 
@@ -54,6 +55,7 @@ public class BareResponseSubscriberTckTest extends FlowSubscriberWhiteboxVerific
                 httpRequest,
                 CompletableFuture.completedFuture(null),
                 CompletableFuture.completedFuture(null),
+                new AtomicBoolean(),
                 0L) {
             @Override
             public void onSubscribe(Flow.Subscription subscription) {
