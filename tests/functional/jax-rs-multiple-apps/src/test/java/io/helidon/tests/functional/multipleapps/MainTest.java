@@ -22,6 +22,7 @@ import jakarta.inject.Inject;
 import jakarta.json.JsonObject;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.Response;
+
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -62,6 +63,7 @@ class MainTest {
         assertEquals(response.getStatus(), 200);
         assertTrue(response.getHeaders().containsKey("sharedfilter"));
         assertTrue(response.getHeaders().containsKey("filter2"));
+        assertTrue(response.getHeaders().containsKey("filter3"));       // MyFeature
         assertFalse(response.getHeaders().containsKey("filter1"));
         JsonObject jsonObject = response.readEntity(JsonObject.class);
         assertEquals("Hello World 2!", jsonObject.getString("message"),

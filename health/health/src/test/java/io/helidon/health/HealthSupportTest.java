@@ -142,7 +142,6 @@ class HealthSupportTest {
 
         // Test the JSON
         final JsonObject json = response.json();
-        assertThat(json.getString("outcome"), equalTo("UP"));
         assertThat(json.getJsonArray("checks"), notNullValue());
         assertThat(json.getJsonArray("checks").size(), equalTo(0));
     }
@@ -178,7 +177,6 @@ class HealthSupportTest {
 
         // Test the JSON
         final JsonObject json = response.json();
-        assertThat(json.getString("outcome"), is("UP"));
         assertThat(json.getJsonArray("checks"), notNullValue());
         assertThat(json.getJsonArray("checks"), hasSize(goodChecks.size()));
     }
@@ -196,7 +194,6 @@ class HealthSupportTest {
 
         // Test the JSON
         final JsonObject json = response.json();
-        assertThat(json.getString("outcome"), is("DOWN"));
         assertThat(json.getJsonArray("checks"), notNullValue());
         assertThat(json.getJsonArray("checks"), hasSize(badChecks.size()));
     }
@@ -214,7 +211,6 @@ class HealthSupportTest {
 
         // Test the JSON
         final JsonObject json = response.json();
-        assertThat(json.getString("outcome"), is("DOWN"));
         assertThat(json.getJsonArray("checks"), notNullValue());
         assertThat(json.getJsonArray("checks"), hasSize(brokenChecks.size()));
     }

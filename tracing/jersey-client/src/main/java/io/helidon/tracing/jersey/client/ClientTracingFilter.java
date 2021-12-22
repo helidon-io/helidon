@@ -259,6 +259,7 @@ public class ClientTracingFilter implements ClientRequestFilter, ClientResponseF
                                                  (status < HTTP_STATUS_SERVER_ERROR_THRESHOLD) ? "ClientError" : "ServerError"));
             }
             span.finish();
+            requestContext.removeProperty(SPAN_PROPERTY_NAME);
         }
     }
 

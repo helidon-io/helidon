@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,18 +15,21 @@
  */
 package io.helidon.examples.health.basics;
 
+import java.time.Duration;
+
 import io.helidon.health.HealthSupport;
 import io.helidon.health.checks.HealthChecks;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 
-import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
 
 /**
  * Main class of health check integration example.
  */
 public final class Main {
+
+    private static long serverStartTime;
 
     private Main() {
     }
@@ -37,10 +40,15 @@ public final class Main {
      * @param args not used
      */
     public static void main(String[] args) {
+        serverStartTime = System.currentTimeMillis();
         HealthSupport health = HealthSupport.builder()
                 .addLiveness(HealthChecks.healthChecks())
-                .addReadiness((HealthCheck) () -> HealthCheckResponse.named("exampleHealthCheck")
+                .addReadiness(() -> HealthCheckResponse.named("exampleHealthCheck")
                         .up()
+                        .withData("time", System.currentTimeMillis())
+                        .build())
+                .addStartup(() -> HealthCheckResponse.named("exampleStartCheck")
+                        .status(isStarted())
                         .withData("time", System.currentTimeMillis())
                         .build())
                 .build();
@@ -60,5 +68,9 @@ public final class Main {
                     return null;
                 });
 
+    }
+
+    private static boolean isStarted() {
+        return Duration.ofMillis(System.currentTimeMillis() - serverStartTime).getSeconds() >= 8;
     }
 }

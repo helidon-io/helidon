@@ -13,30 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package io.helidon.tests.functional.multipleapps;
 
-import java.util.Set;
+import jakarta.ws.rs.ConstrainedTo;
+import jakarta.ws.rs.RuntimeType;
+import jakarta.ws.rs.container.DynamicFeature;
+import jakarta.ws.rs.container.ResourceInfo;
+import jakarta.ws.rs.core.FeatureContext;
 
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.ws.rs.ApplicationPath;
-import jakarta.ws.rs.core.Application;
-
-/**
- * Second application.
- */
-@ApplicationScoped
-@ApplicationPath("app2")
-public class GreetApplication2 extends Application {
-
-    private static final Filter2 filter2 = new Filter2();
+@ConstrainedTo(RuntimeType.SERVER)
+public class MyFeature implements DynamicFeature {
 
     @Override
-    public Set<Class<?>> getClasses() {
-        return Set.of(GreetResource2.class, SharedFilter.class, MyFeature.class);
-    }
-
-    @Override
-    public Set<Object> getSingletons() {
-        return Set.of(filter2);
+    public void configure(ResourceInfo resourceInfo, FeatureContext featureContext) {
+        featureContext.register(Filter3.class);
     }
 }
