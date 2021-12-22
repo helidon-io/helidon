@@ -25,7 +25,7 @@ module io.helidon.config {
 
     requires java.logging;
 
-    requires transitive java.annotation;
+    requires transitive jakarta.annotation;
 
     requires transitive io.helidon.common;
     requires transitive io.helidon.common.reactive;

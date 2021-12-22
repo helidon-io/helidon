@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@ public interface Timeout extends FtHandler {
     /**
      * Fluent API builder for {@link io.helidon.faulttolerance.Timeout}.
      */
-    class Builder implements io.helidon.common.Builder<Timeout> {
+    class Builder implements io.helidon.common.Builder<Builder, Timeout> {
         private Duration timeout = Duration.ofSeconds(10);
         private LazyValue<? extends ScheduledExecutorService> executor = FaultTolerance.scheduledExecutor();
         private boolean currentThread = false;

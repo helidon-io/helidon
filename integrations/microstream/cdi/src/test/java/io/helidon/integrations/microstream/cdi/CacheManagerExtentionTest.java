@@ -20,12 +20,12 @@ import java.time.Duration;
 import java.util.HashMap;
 
 import javax.cache.Cache;
-import javax.inject.Inject;
 
 import io.helidon.integrations.microstream.cache.ConfigException;
 import io.helidon.microprofile.tests.junit5.AddConfig;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 
+import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;

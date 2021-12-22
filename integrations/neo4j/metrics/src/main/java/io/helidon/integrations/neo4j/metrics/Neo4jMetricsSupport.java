@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package io.helidon.integrations.neo4j.metrics;
@@ -136,7 +135,6 @@ public class Neo4jMetricsSupport {
             Metadata metadata = Metadata.builder()
                     .withName(counterName)
                     .withType(MetricType.COUNTER)
-                    .notReusable()
                     .build();
             Neo4JCounterWrapper wrapper = new Neo4JCounterWrapper(() -> fn.apply(cpm));
             metricRegistry.register(metadata, wrapper);
@@ -154,7 +152,6 @@ public class Neo4jMetricsSupport {
             Metadata metadata = Metadata.builder()
                     .withName(poolPrefix + name)
                     .withType(MetricType.GAUGE)
-                    .notReusable()
                     .build();
             Neo4JGaugeWrapper<Integer> wrapper =
                     new Neo4JGaugeWrapper<>(() -> fn.apply(cpm));
@@ -165,7 +162,7 @@ public class Neo4jMetricsSupport {
     /**
      * Fluent API builder for Neo4jMetricsSupport.
      */
-    public static class Builder implements io.helidon.common.Builder<Neo4jMetricsSupport> {
+    public static class Builder implements io.helidon.common.Builder<Builder, Neo4jMetricsSupport> {
 
         private Driver driver;
 

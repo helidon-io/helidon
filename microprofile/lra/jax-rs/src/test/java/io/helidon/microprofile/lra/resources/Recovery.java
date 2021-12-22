@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package io.helidon.microprofile.lra.resources;
@@ -21,24 +20,22 @@ import java.net.URI;
 import java.time.temporal.ChronoUnit;
 import java.util.concurrent.CompletableFuture;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
-import javax.ws.rs.HeaderParam;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-
 import io.helidon.microprofile.lra.LoadBalancedCoordinatorTest;
 
-import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_CONTEXT_HEADER;
-import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_RECOVERY_HEADER;
-
-import org.eclipse.microprofile.lra.LRAResponse;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.HeaderParam;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.lra.annotation.Compensate;
 import org.eclipse.microprofile.lra.annotation.Complete;
 import org.eclipse.microprofile.lra.annotation.ws.rs.LRA;
+
+import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_CONTEXT_HEADER;
+import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_RECOVERY_HEADER;
 
 @ApplicationScoped
 @Path(Recovery.PATH_BASE)
@@ -97,9 +94,13 @@ public class Recovery {
         if (secondCall) {
             basicTest.getCompletable(CS_COMPENSATE_SECOND).complete(lraId);
         } else {
-            return LRAResponse.failedToCompensate();
+            // TODO 3.0.0-JAKARTA
+            //TODO return LRAResponse.failedToCompensate();
+            return Response.ok().build();
         }
-        return LRAResponse.compensated();
+        // TODO 3.0.0-JAKARTA
+        //TODO return LRAResponse.compensated();
+        return Response.ok().build();
     }
 
     @PUT
@@ -115,8 +116,12 @@ public class Recovery {
         if (secondCall) {
             basicTest.getCompletable(CS_COMPLETE_SECOND).complete(lraId);
         } else {
-            return LRAResponse.failedToComplete();
+            // TODO 3.0.0-JAKARTA
+            //TODO return LRAResponse.failedToComplete();
+            return Response.ok().build();
         }
-        return LRAResponse.completed();
+        // TODO 3.0.0-JAKARTA
+        //TODO return LRAResponse.completed();
+        return Response.ok().build();
     }
 }

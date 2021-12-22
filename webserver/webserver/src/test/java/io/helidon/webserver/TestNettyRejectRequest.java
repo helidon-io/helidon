@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 package io.helidon.webserver;
 
@@ -41,6 +40,7 @@ public class TestNettyRejectRequest {
     @BeforeAll
     public static void createAndStartServer() {
         server = WebServer.builder()
+                .host("localhost")
                 .routing(Routing.builder()
                                  .get((req, res) -> res.send("test")))
                 .port(0)

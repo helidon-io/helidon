@@ -23,7 +23,7 @@ import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.logging.Logger;
 
-import javax.json.JsonObject;
+import jakarta.json.JsonObject;
 
 import io.helidon.common.reactive.Single;
 import io.helidon.dbclient.DbClient;

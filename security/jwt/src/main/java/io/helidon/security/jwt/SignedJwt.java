@@ -24,13 +24,13 @@ import java.util.Collections;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.json.Json;
-import javax.json.JsonObject;
-import javax.json.JsonReaderFactory;
-
 import io.helidon.common.Errors;
 import io.helidon.security.jwt.jwk.Jwk;
 import io.helidon.security.jwt.jwk.JwkKeys;
+
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonReaderFactory;
 
 /**
  * The JWT used to transfer content across network - e.g. the base64 parts concatenated
@@ -38,7 +38,7 @@ import io.helidon.security.jwt.jwk.JwkKeys;
  */
 public final class SignedJwt {
     private static final Pattern JWT_PATTERN = Pattern
-            .compile("([a-zA-Z0-9/=+]+)\\.([a-zA-Z0-9/=+]+)\\.([a-zA-Z0-9_\\-/=+]*)");
+            .compile("([a-zA-Z0-9-_=]+)\\.([a-zA-Z0-9-_=]+)\\.([a-zA-Z0-9-_=]*)");
     private static final Base64.Decoder URL_DECODER = Base64.getUrlDecoder();
     private static final Base64.Encoder URL_ENCODER = Base64.getUrlEncoder().withoutPadding();
 

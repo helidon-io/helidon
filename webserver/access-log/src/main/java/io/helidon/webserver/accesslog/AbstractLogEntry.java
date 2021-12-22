@@ -110,12 +110,9 @@ public abstract class AbstractLogEntry implements AccessLogEntry {
      * @param <R> The type of your log entry
      * @param <T> The type of your builder
      */
-    protected abstract static class Builder<R extends AbstractLogEntry, T extends Builder<R, ?>>
-            implements io.helidon.common.Builder<R> {
+    protected abstract static class Builder<R extends AbstractLogEntry, T extends Builder<R, T>>
+            implements io.helidon.common.Builder<T, R> {
         private static final Pattern SANITIZE_PATTERN = Pattern.compile("[^\\p{Print}]", Pattern.UNICODE_CHARACTER_CLASS);
-
-        @SuppressWarnings("unchecked")
-        private final T builder = (T) this;
 
         private Function<String, String> padding = Function.identity();
         private boolean sanitize = true;
@@ -129,7 +126,7 @@ public abstract class AbstractLogEntry implements AccessLogEntry {
          */
         public T noPad() {
             this.padding = Function.identity();
-            return builder;
+            return identity();
         }
 
         /**
@@ -155,7 +152,7 @@ public abstract class AbstractLogEntry implements AccessLogEntry {
 
                         return builder.toString();
                     });
-            return builder;
+            return identity();
         }
 
         /**
@@ -182,7 +179,7 @@ public abstract class AbstractLogEntry implements AccessLogEntry {
 
                         return builder.toString();
                     });
-            return builder;
+            return identity();
         }
 
         /**
@@ -195,7 +192,7 @@ public abstract class AbstractLogEntry implements AccessLogEntry {
          */
         public T sanitize(boolean sanitize) {
             this.sanitize = sanitize;
-            return builder;
+            return identity();
         }
 
         /**
@@ -207,7 +204,7 @@ public abstract class AbstractLogEntry implements AccessLogEntry {
          */
         public T maxLength(int maxLength) {
             this.maxLength = maxLength;
-            return builder;
+            return identity();
         }
 
         private Function<String, String> sanitizationFunction() {

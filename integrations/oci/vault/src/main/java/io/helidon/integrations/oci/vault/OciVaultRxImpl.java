@@ -19,8 +19,6 @@ package io.helidon.integrations.oci.vault;
 import java.util.Optional;
 import java.util.function.Function;
 
-import javax.json.JsonObject;
-
 import io.helidon.common.configurable.LruCache;
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Single;
@@ -28,6 +26,8 @@ import io.helidon.integrations.common.rest.ApiOptionalResponse;
 import io.helidon.integrations.oci.connect.OciApiException;
 import io.helidon.integrations.oci.connect.OciRequestBase;
 import io.helidon.integrations.oci.connect.OciRestApi;
+
+import jakarta.json.JsonObject;
 
 class OciVaultRxImpl implements OciVaultRx {
     private final LruCache<String, String> keyIdToEndpointCache = LruCache.<String, String>builder()

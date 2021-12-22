@@ -12,24 +12,21 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 package io.helidon.microprofile.grpc.metrics;
 
 import java.lang.annotation.Annotation;
 import java.util.Arrays;
-import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-
-import javax.enterprise.inject.spi.AnnotatedMethod;
-import javax.inject.Inject;
 
 import io.helidon.microprofile.tests.junit5.AddBean;
 import io.helidon.microprofile.tests.junit5.AddExtension;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 
+import jakarta.enterprise.inject.spi.AnnotatedMethod;
+import jakarta.inject.Inject;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.junit.jupiter.api.Test;
 

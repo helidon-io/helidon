@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package io.helidon.microprofile.reactive;
@@ -94,7 +93,7 @@ public final class HelidonReactivePublisherFactory implements ReactiveStreamsFac
     }
 
     @Override
-    public <T> SubscriberBuilder<T, Void> fromSubscriber(Subscriber<? extends T> subscriber) {
+    public <T> SubscriberBuilder<T, Void> fromSubscriber(Subscriber<? super T> subscriber) {
         Objects.requireNonNull(subscriber, "subscriber is null");
         return new HelidonReactiveSubscriberBuilder<>(new HelidonReactiveStage.HRSSubscriber(subscriber));
     }

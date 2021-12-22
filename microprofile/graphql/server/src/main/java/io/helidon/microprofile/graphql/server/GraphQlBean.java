@@ -19,8 +19,8 @@ package io.helidon.microprofile.graphql.server;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.enterprise.inject.spi.CDI;
+import jakarta.enterprise.context.control.ActivateRequestContext;
+import jakarta.enterprise.inject.spi.CDI;
 
 class GraphQlBean {
     @ActivateRequestContext

@@ -19,14 +19,14 @@ package io.helidon.integrations.vault.auths.token;
 import java.util.Optional;
 import java.util.logging.Logger;
 
-import javax.annotation.Priority;
-
 import io.helidon.config.Config;
 import io.helidon.integrations.common.rest.RestApi;
 import io.helidon.integrations.vault.Vault;
 import io.helidon.integrations.vault.VaultApiException;
 import io.helidon.integrations.vault.auths.common.VaultRestApi;
 import io.helidon.integrations.vault.spi.VaultAuth;
+
+import jakarta.annotation.Priority;
 
 /**
  * Java Service Loader implementation for authenticating using a token.
@@ -98,7 +98,7 @@ public class TokenVaultAuth implements VaultAuth {
     /**
      * Fluent API builder for {@link io.helidon.integrations.vault.auths.token.TokenVaultAuth}.
      */
-    public static class Builder implements io.helidon.common.Builder<TokenVaultAuth> {
+    public static class Builder implements io.helidon.common.Builder<Builder, TokenVaultAuth> {
         private String baseNamespace;
         private String token;
 

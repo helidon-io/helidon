@@ -29,10 +29,10 @@ import java.security.spec.RSAPublicKeySpec;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.json.JsonObject;
-
 import io.helidon.security.jwt.JwtException;
 import io.helidon.security.jwt.JwtUtil;
+
+import jakarta.json.JsonObject;
 
 import static io.helidon.security.jwt.JwtUtil.asBigInteger;
 import static io.helidon.security.jwt.JwtUtil.getKeyFactory;
@@ -168,7 +168,7 @@ public class JwkRSA extends JwkPki {
     /**
      * Builder for {@link JwkRSA}.
      */
-    public static final class Builder extends JwkPki.Builder<Builder> implements io.helidon.common.Builder<JwkRSA> {
+    public static final class Builder extends JwkPki.Builder<Builder> implements io.helidon.common.Builder<Builder, JwkRSA> {
         private PrivateKey privateKey;
         private PublicKey publicKey;
 

@@ -177,7 +177,7 @@ class CorsSupportHelper<Q, R> {
      * @param <Q> type of request wrapped by adapter
      * @param <R> type of response wrapped by adapter
      */
-    public static class Builder<Q, R> implements io.helidon.common.Builder<CorsSupportHelper<Q, R>> {
+    public static class Builder<Q, R> implements io.helidon.common.Builder<Builder<Q, R>, CorsSupportHelper<Q, R>> {
 
         private Supplier<Optional<CrossOriginConfig>> secondaryCrossOriginLookup = EMPTY_SECONDARY_SUPPLIER;
 

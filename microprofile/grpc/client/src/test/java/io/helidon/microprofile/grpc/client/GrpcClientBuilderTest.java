@@ -16,8 +16,6 @@
 
 package io.helidon.microprofile.grpc.client;
 
-import javax.inject.Singleton;
-
 import io.helidon.grpc.client.ClientMethodDescriptor;
 import io.helidon.grpc.client.ClientServiceDescriptor;
 import io.helidon.grpc.core.JavaMarshaller;
@@ -26,6 +24,7 @@ import io.helidon.microprofile.grpc.core.GrpcMarshaller;
 import io.helidon.microprofile.grpc.core.GrpcMethod;
 
 import io.grpc.stub.StreamObserver;
+import jakarta.inject.Singleton;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.instanceOf;

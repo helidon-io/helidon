@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,10 @@
 
 package io.helidon.grpc.core;
 
-import javax.inject.Named;
-
 import com.google.protobuf.MessageLite;
 import io.grpc.MethodDescriptor;
 import io.grpc.protobuf.lite.ProtoLiteUtils;
+import jakarta.inject.Named;
 
 /**
  * A supplier of {@link MethodDescriptor.Marshaller} instances for specific

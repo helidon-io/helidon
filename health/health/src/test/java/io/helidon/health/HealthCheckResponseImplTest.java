@@ -29,12 +29,12 @@ class HealthCheckResponseImplTest {
     void nullNameThrowsException() {
         assertThrows(NullPointerException.class, () -> new HealthCheckResponseImpl(
                 null,
-                HealthCheckResponse.State.DOWN,
+                HealthCheckResponse.Status.DOWN,
                 new HashMap<>()));
     }
 
     @Test
-    void nullStateThrowsException() {
+    void nullStatusThrowsException() {
         assertThrows(NullPointerException.class, () -> new HealthCheckResponseImpl(
                 "Bad",
                 null,
@@ -45,7 +45,7 @@ class HealthCheckResponseImplTest {
     void nullDataThrowsException() {
         assertThrows(NullPointerException.class, () -> new HealthCheckResponseImpl(
                 "Bad",
-                HealthCheckResponse.State.DOWN,
+                HealthCheckResponse.Status.DOWN,
                 null));
     }
 }

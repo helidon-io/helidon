@@ -17,17 +17,17 @@
 package io.helidon.microprofile.config;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
-
-import javax.enterprise.context.Dependent;
-import javax.enterprise.inject.se.SeContainer;
-import javax.inject.Inject;
 
 import io.helidon.microprofile.tests.junit5.AddBean;
 import io.helidon.microprofile.tests.junit5.Configuration;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 
+import jakarta.enterprise.context.Dependent;
+import jakarta.enterprise.inject.se.SeContainer;
+import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.eclipse.microprofile.config.spi.ConfigSource;
@@ -98,6 +98,11 @@ class MutableMpTest {
                 return value.get();
             }
             return null;
+        }
+
+        @Override
+        public Set<String> getPropertyNames() {
+            return getProperties().keySet();
         }
 
         @Override

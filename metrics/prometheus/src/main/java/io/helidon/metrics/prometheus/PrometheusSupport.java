@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -199,7 +199,7 @@ public final class PrometheusSupport implements Service {
     /**
      * A builder of {@link PrometheusSupport}.
      */
-    public static final class Builder implements io.helidon.common.Builder<PrometheusSupport> {
+    public static final class Builder implements io.helidon.common.Builder<Builder, PrometheusSupport> {
 
         private CollectorRegistry registry = CollectorRegistry.defaultRegistry;
         private String path;

@@ -112,7 +112,7 @@ public interface MapperManager {
     /**
      * Fluent API builder for {@link io.helidon.common.mapper.MapperManager}.
      */
-    final class Builder implements io.helidon.common.Builder<MapperManager> {
+    final class Builder implements io.helidon.common.Builder<Builder, MapperManager> {
         private HelidonServiceLoader.Builder<MapperProvider> providers = HelidonServiceLoader
                 .builder(ServiceLoader.load(MapperProvider.class));
 

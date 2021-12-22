@@ -77,6 +77,7 @@ public class BytesReuseTest {
      */
     private static void startServer(int port) throws Exception {
         webServer = WebServer.builder()
+                .host("localhost")
                 .port(port)
                 .routing(Routing.builder()
                                  .any((req, res) -> {

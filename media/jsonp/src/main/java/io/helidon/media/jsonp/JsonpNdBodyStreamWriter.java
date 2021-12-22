@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,9 +21,6 @@ import java.util.Optional;
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import javax.json.JsonStructure;
-import javax.json.JsonWriterFactory;
-
 import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.MediaType;
@@ -32,6 +29,9 @@ import io.helidon.common.reactive.Single;
 import io.helidon.media.common.MessageBodyStreamWriter;
 import io.helidon.media.common.MessageBodyWriterContext;
 import io.helidon.media.jsonp.JsonpBodyWriter.JsonStructureToChunks;
+
+import jakarta.json.JsonStructure;
+import jakarta.json.JsonWriterFactory;
 
 /**
  * Message body writer for {@link JsonStructure} sub-classes (JSON-P).

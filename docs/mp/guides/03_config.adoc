@@ -316,8 +316,8 @@ You can inject the `Config` object into the class and access it directly as show
 ----
  // <1>
 import io.helidon.config.Config;
-import javax.enterprise.context.Initialized;
-import javax.enterprise.event.Observes;
+import jakarta.enterprise.context.Initialized;
+import jakarta.enterprise.event.Observes;
 ...
 
 @ApplicationScoped

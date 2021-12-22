@@ -17,9 +17,9 @@ package io.helidon.tests.functional.multipleapps;
 
 import java.util.Set;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.ws.rs.ApplicationPath;
-import javax.ws.rs.core.Application;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.ws.rs.ApplicationPath;
+import jakarta.ws.rs.core.Application;
 
 /**
  * Second application.
@@ -32,7 +32,7 @@ public class GreetApplication2 extends Application {
 
     @Override
     public Set<Class<?>> getClasses() {
-        return Set.of(GreetResource2.class, SharedFilter.class);
+        return Set.of(GreetResource2.class, SharedFilter.class, MyFeature.class);
     }
 
     @Override

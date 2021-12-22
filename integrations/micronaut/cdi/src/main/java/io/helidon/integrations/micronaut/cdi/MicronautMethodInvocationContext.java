@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
 
-import javax.interceptor.InvocationContext;
-
 import io.helidon.common.LazyValue;
 
 import io.micronaut.aop.Interceptor;
@@ -38,6 +36,7 @@ import io.micronaut.core.type.ArgumentValue;
 import io.micronaut.core.type.MutableArgumentValue;
 import io.micronaut.core.type.ReturnType;
 import io.micronaut.inject.ExecutableMethod;
+import jakarta.interceptor.InvocationContext;
 
 /**
  * Invocation context for Micronaut interceptors.

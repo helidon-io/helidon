@@ -23,14 +23,14 @@ import java.nio.file.Paths;
 import java.util.Optional;
 import java.util.logging.Logger;
 
-import javax.annotation.Priority;
-
 import io.helidon.config.Config;
 import io.helidon.integrations.common.rest.RestApi;
 import io.helidon.integrations.vault.Vault;
 import io.helidon.integrations.vault.VaultApiException;
 import io.helidon.integrations.vault.auths.common.NoVaultAuth;
 import io.helidon.integrations.vault.spi.VaultAuth;
+
+import jakarta.annotation.Priority;
 
 /**
  * Vault authentication for Kubernetes (k8s).
@@ -149,7 +149,7 @@ public class K8sVaultAuth implements VaultAuth {
     /**
      * Fluent API builder for {@link io.helidon.integrations.vault.auths.k8s.K8sVaultAuth}.
      */
-    public static class Builder implements io.helidon.common.Builder<K8sVaultAuth> {
+    public static class Builder implements io.helidon.common.Builder<Builder, K8sVaultAuth> {
         private String serviceAccountToken;
         private String tokenRole;
         private String tokenLocation = "/var/run/secrets/kubernetes.io/serviceaccount/token";

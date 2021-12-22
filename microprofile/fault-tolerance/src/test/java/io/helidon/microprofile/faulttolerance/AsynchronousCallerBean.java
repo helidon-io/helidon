@@ -19,8 +19,7 @@ package io.helidon.microprofile.faulttolerance;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 
-import javax.enterprise.context.ApplicationScoped;
-
+import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.faulttolerance.Asynchronous;
 
 /**

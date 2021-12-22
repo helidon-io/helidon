@@ -21,11 +21,10 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
-
 import io.helidon.integrations.microstream.cdi.MicrostreamStorage;
 
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import one.microstream.storage.embedded.types.EmbeddedStorageManager;
 
 /**

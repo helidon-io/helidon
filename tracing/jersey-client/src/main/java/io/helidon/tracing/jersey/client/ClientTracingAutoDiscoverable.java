@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,9 @@
  */
 package io.helidon.tracing.jersey.client;
 
-import javax.ws.rs.ConstrainedTo;
-import javax.ws.rs.RuntimeType;
-import javax.ws.rs.core.FeatureContext;
-
+import jakarta.ws.rs.ConstrainedTo;
+import jakarta.ws.rs.RuntimeType;
+import jakarta.ws.rs.core.FeatureContext;
 import org.glassfish.jersey.internal.spi.AutoDiscoverable;
 
 /**
@@ -26,10 +25,14 @@ import org.glassfish.jersey.internal.spi.AutoDiscoverable;
  */
 @ConstrainedTo(RuntimeType.CLIENT)
 public class ClientTracingAutoDiscoverable implements AutoDiscoverable {
+
+    static final int CLIENT_TRACING_PRIORITY = 10;
+
     @Override
     public void configure(FeatureContext context) {
         if (!context.getConfiguration().isRegistered(ClientTracingFilter.class)) {
-            context.register(ClientTracingFilter.class, 10);
+            context.register(ClientTracingFilter.class, CLIENT_TRACING_PRIORITY);
+            context.register(ClientTracingInterceptor.class, CLIENT_TRACING_PRIORITY);
         }
     }
 }

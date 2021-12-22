@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -147,7 +147,7 @@ public interface GrpcServerConfiguration {
     /**
      * A {@link GrpcServerConfiguration} builder.
      */
-    final class Builder implements io.helidon.common.Builder<GrpcServerConfiguration> {
+    final class Builder implements io.helidon.common.Builder<Builder, GrpcServerConfiguration> {
         private static final AtomicInteger GRPC_SERVER_COUNTER = new AtomicInteger(1);
 
         private String name = DEFAULT_NAME;
@@ -169,7 +169,13 @@ public interface GrpcServerConfiguration {
         private Builder() {
         }
 
-        public GrpcServerConfiguration.Builder config(Config config) {
+        /**
+         * Update the builder from configuration.
+         *
+         * @param config configuration instance
+         * @return updated builder
+         */
+        public Builder config(Config config) {
             if (config == null) {
                 return this;
             }
@@ -220,7 +226,8 @@ public interface GrpcServerConfiguration {
         }
 
         /**
-         * Sets an <a href="http://opentracing.io">opentracing.io</a> tracer. (Default is {@link GlobalTracer}.)
+         * Sets an <a href="http://opentracing.io">opentracing.io</a> tracer.
+         * (Default is {@link GlobalTracer}.)
          *
          * @param tracer a tracer to set
          * @return an updated builder
@@ -286,6 +293,11 @@ public interface GrpcServerConfiguration {
             return port;
         }
 
+        /**
+         * Current Helidon {@link io.helidon.common.context.Context}.
+         *
+         * @return current context
+         */
         public Context context() {
             return context;
         }

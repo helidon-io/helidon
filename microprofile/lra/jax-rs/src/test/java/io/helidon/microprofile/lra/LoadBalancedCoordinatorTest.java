@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package io.helidon.microprofile.lra;
@@ -29,24 +28,16 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Logger;
 
-import javax.enterprise.inject.spi.BeanManager;
-import javax.inject.Inject;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
-
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.lra.coordinator.client.CoordinatorClient;
 import io.helidon.microprofile.config.ConfigCdiExtension;
-import io.helidon.microprofile.lra.resources.NonJaxRsCompleteOrCompensate;
 import io.helidon.microprofile.lra.resources.CdiNestedCompleteOrCompensate;
 import io.helidon.microprofile.lra.resources.CommonAfter;
 import io.helidon.microprofile.lra.resources.DontEnd;
 import io.helidon.microprofile.lra.resources.JaxRsCompleteOrCompensate;
 import io.helidon.microprofile.lra.resources.JaxRsNestedCompleteOrCompensate;
+import io.helidon.microprofile.lra.resources.NonJaxRsCompleteOrCompensate;
 import io.helidon.microprofile.lra.resources.NonJaxRsCompleteOrCompensateCS;
 import io.helidon.microprofile.lra.resources.NonJaxRsCompleteOrCompensateSingle;
 import io.helidon.microprofile.lra.resources.Recovery;
@@ -64,12 +55,20 @@ import io.helidon.microprofile.tests.junit5.HelidonTest;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientResponse;
 
+import jakarta.enterprise.inject.spi.BeanManager;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.client.Entity;
+import jakarta.ws.rs.client.WebTarget;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
 import org.eclipse.microprofile.lra.annotation.LRAStatus;
 import org.eclipse.microprofile.lra.annotation.ParticipantStatus;
 import org.glassfish.jersey.ext.cdi1x.internal.CdiComponentProvider;
 import org.hamcrest.core.AnyOf;
 import org.hamcrest.core.IsNull;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_CONTEXT_HEADER;
@@ -126,6 +125,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 @AddConfig(key = "server.sockets.2.name", value = CoordinatorClusterDeploymentService.COORDINATOR_B_NAME)
 @AddConfig(key = "server.sockets.2.port", value = "0")
 @AddConfig(key = "server.sockets.2.bind-address", value = "localhost")
+@Disabled("3.0.0-JAKARTA")
 public class LoadBalancedCoordinatorTest {
 
     private static final Logger LOGGER = Logger.getLogger(LoadBalancedCoordinatorTest.class.getName());

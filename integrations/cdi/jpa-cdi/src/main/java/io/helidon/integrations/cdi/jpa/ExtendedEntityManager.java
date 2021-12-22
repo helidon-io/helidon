@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,12 +20,12 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
-import javax.enterprise.context.spi.Context;
-import javax.enterprise.inject.CreationException;
-import javax.enterprise.inject.Instance;
-import javax.enterprise.inject.spi.Bean;
-import javax.enterprise.inject.spi.BeanManager;
-import javax.persistence.EntityManager;
+import jakarta.enterprise.context.spi.Context;
+import jakarta.enterprise.inject.CreationException;
+import jakarta.enterprise.inject.Instance;
+import jakarta.enterprise.inject.spi.Bean;
+import jakarta.enterprise.inject.spi.BeanManager;
+import jakarta.persistence.EntityManager;
 
 /**
  * A {@link DelegatingEntityManager} created to support extended
@@ -103,7 +103,7 @@ final class ExtendedEntityManager extends DelegatingEntityManager {
         // of "managed", not "detached", entities) spans transactions.
         //
         // In this CDI-centric implementation, we make use of
-        // javax.transaction.TransactionScoped to serve up
+        // jakarta.transaction.TransactionScoped to serve up
         // EntityManager instances in true JTA transaction scope.
         // That means those objects are destroyed when the transaction
         // is destroyed.  Obviously therefore they cannot be used as

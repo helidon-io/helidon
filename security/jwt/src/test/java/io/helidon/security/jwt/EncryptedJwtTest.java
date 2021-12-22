@@ -18,12 +18,11 @@ package io.helidon.security.jwt;
 
 import java.util.Optional;
 
-import javax.json.JsonObject;
-
 import io.helidon.common.configurable.Resource;
 import io.helidon.security.jwt.EncryptedJwt.SupportedAlgorithm;
 import io.helidon.security.jwt.jwk.JwkKeys;
 
+import jakarta.json.JsonObject;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 

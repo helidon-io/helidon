@@ -12,16 +12,15 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 package io.helidon.servicecommon.restcdi;
 
 import java.lang.reflect.Executable;
 
-import javax.enterprise.context.Dependent;
-import javax.interceptor.AroundConstruct;
-import javax.interceptor.AroundInvoke;
-import javax.interceptor.InvocationContext;
+import jakarta.enterprise.context.Dependent;
+import jakarta.interceptor.AroundConstruct;
+import jakarta.interceptor.AroundInvoke;
+import jakarta.interceptor.InvocationContext;
 
 /**
  * Common behavior for interceptors, invoking a {@linkplain #preInvocation(InvocationContext, Object) preInvocation} method

@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package io.helidon.common.reactive;
@@ -295,7 +294,7 @@ public final class MultiTappedPublisher<T> implements Multi<T>, NamedOperator {
      *
      * @param <T> type of returned multi
      */
-    public static class Builder<T> implements io.helidon.common.Builder<MultiTappedPublisher<T>> {
+    public static class Builder<T> implements io.helidon.common.Builder<Builder<T>, MultiTappedPublisher<T>> {
         private final Multi<T> source;
         private Consumer<? super Flow.Subscription> onSubscribeCallback;
         private Consumer<? super T> onNextCallback;

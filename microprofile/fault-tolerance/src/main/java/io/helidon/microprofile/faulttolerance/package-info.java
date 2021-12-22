@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,5 +16,7 @@
 
 /**
  * Helidon implementation of Microprofile fault tolerance.
+ *
+ * @see org.eclipse.microprofile.faulttolerance
  */
 package io.helidon.microprofile.faulttolerance;

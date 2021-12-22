@@ -17,9 +17,9 @@ package io.helidon.tests.integration.jpa.model;
 
 import java.util.Objects;
 
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.MappedSuperclass;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
+import jakarta.persistence.MappedSuperclass;
 
 /**
  * Settlement in pokemon world.

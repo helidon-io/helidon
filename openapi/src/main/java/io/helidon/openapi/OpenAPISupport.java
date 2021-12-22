@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 package io.helidon.openapi;
 
@@ -41,15 +40,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import javax.json.Json;
-import javax.json.JsonArray;
-import javax.json.JsonNumber;
-import javax.json.JsonObject;
-import javax.json.JsonReader;
-import javax.json.JsonReaderFactory;
-import javax.json.JsonString;
-import javax.json.JsonValue;
-
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.config.Config;
@@ -73,6 +63,14 @@ import io.smallrye.openapi.runtime.OpenApiStaticFile;
 import io.smallrye.openapi.runtime.io.Format;
 import io.smallrye.openapi.runtime.scanner.AnnotationScannerExtension;
 import io.smallrye.openapi.runtime.scanner.OpenApiAnnotationScanner;
+import jakarta.json.Json;
+import jakarta.json.JsonArray;
+import jakarta.json.JsonNumber;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonReader;
+import jakarta.json.JsonReaderFactory;
+import jakarta.json.JsonString;
+import jakarta.json.JsonValue;
 import org.eclipse.microprofile.openapi.models.Extensible;
 import org.eclipse.microprofile.openapi.models.OpenAPI;
 import org.eclipse.microprofile.openapi.models.Operation;
@@ -108,9 +106,26 @@ public abstract class OpenAPISupport implements Service {
      */
     public static final MediaType DEFAULT_RESPONSE_MEDIA_TYPE = MediaType.APPLICATION_OPENAPI_YAML;
 
-    /**
-     * Path to the Jandex index file.
-     */
+    private enum QueryParameterRequestedFormat {
+        JSON(MediaType.APPLICATION_JSON), YAML(MediaType.APPLICATION_OPENAPI_YAML);
+
+        static QueryParameterRequestedFormat chooseFormat(String format) {
+            return QueryParameterRequestedFormat.valueOf(format);
+        }
+
+        private final MediaType mt;
+
+        QueryParameterRequestedFormat(MediaType mt) {
+            this.mt = mt;
+        }
+
+        MediaType mediaType() {
+            return mt;
+        }
+    }
+
+    private static final String OPENAPI_ENDPOINT_FORMAT_QUERY_PARAMETER = "format";
+
     private static final Logger LOGGER = Logger.getLogger(OpenAPISupport.class.getName());
 
     private static final String DEFAULT_STATIC_FILE_PATH_PREFIX = "META-INF/openapi.";
@@ -141,6 +156,11 @@ public abstract class OpenAPISupport implements Service {
     private final OpenApiStaticFile openApiStaticFile;
     private final Supplier<List<? extends IndexView>> indexViewsSupplier;
 
+    /**
+     * Creates a new instance of {@code OpenAPISupport}.
+     *
+     * @param builder the builder to use in constructing the instance
+     */
     protected OpenAPISupport(Builder<?> builder) {
         adjustTypeDescriptions(helper().types());
         implsToTypes = buildImplsToTypes(helper());
@@ -370,7 +390,7 @@ public abstract class OpenAPISupport implements Service {
             resp.send(openAPIDocument);
         } catch (Exception ex) {
             resp.status(Http.Status.INTERNAL_SERVER_ERROR_500);
-            resp.send("Error serializing OpenAPI document");
+            resp.send("Error serializing OpenAPI document; " + ex.getMessage());
             LOGGER.log(Level.SEVERE, "Error serializing OpenAPI document", ex);
         }
     }
@@ -424,6 +444,20 @@ public abstract class OpenAPISupport implements Service {
          * Response media type default is application/vnd.oai.openapi (YAML)
          * unless otherwise specified.
          */
+        Optional<String> queryParameterFormat = req.queryParams()
+                .first(OPENAPI_ENDPOINT_FORMAT_QUERY_PARAMETER);
+        if (queryParameterFormat.isPresent()) {
+            String queryParameterFormatValue = queryParameterFormat.get();
+            try {
+                return QueryParameterRequestedFormat.chooseFormat(queryParameterFormatValue).mediaType();
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException(
+                        "Query parameter 'format' had value '"
+                        + queryParameterFormatValue
+                        + "' but expected " + Arrays.toString(QueryParameterRequestedFormat.values()));
+            }
+        }
+
         final Optional<MediaType> requestedMediaType = req.headers()
                 .bestAccepted(OpenAPIMediaType.preferredOrdering());
 
@@ -673,26 +707,17 @@ public abstract class OpenAPISupport implements Service {
      *
      * @param <B> concrete subclass of OpenAPISupport.Builder
      */
-    public abstract static class Builder<B extends Builder<B>> implements io.helidon.common.Builder<OpenAPISupport> {
+    public abstract static class Builder<B extends Builder<B>> implements io.helidon.common.Builder<B, OpenAPISupport> {
 
         /**
          * Config key to select the openapi node from Helidon config.
          */
         public static final String CONFIG_KEY = "openapi";
 
-        private final Class<B> builderClass;
-
         private Optional<String> webContext = Optional.empty();
         private Optional<String> staticFilePath = Optional.empty();
         private CrossOriginConfig crossOriginConfig = null;
 
-        protected Builder(Class<B> builderClass) {
-            this.builderClass = builderClass;
-        }
-
-        protected B me() {
-            return builderClass.cast(this);
-        }
 
         /**
          * Set various builder attributes from the specified {@code Config} object.
@@ -714,7 +739,7 @@ public abstract class OpenAPISupport implements Service {
             config.get(CORS_CONFIG_KEY)
                     .as(CrossOriginConfig::create)
                     .ifPresent(this::crossOriginConfig);
-            return me();
+            return identity();
         }
 
         /**
@@ -776,7 +801,7 @@ public abstract class OpenAPISupport implements Service {
                 path = "/" + path;
             }
             this.webContext = Optional.of(path);
-            return me();
+            return identity();
         }
 
         /**
@@ -788,7 +813,7 @@ public abstract class OpenAPISupport implements Service {
         public B staticFile(String path) {
             Objects.requireNonNull(path, "path to static file must be non-null");
             staticFilePath = Optional.of(path);
-            return me();
+            return identity();
         }
 
         /**
@@ -800,9 +825,14 @@ public abstract class OpenAPISupport implements Service {
         public B crossOriginConfig(CrossOriginConfig crossOriginConfig) {
             Objects.requireNonNull(crossOriginConfig, "CrossOriginConfig must be non-null");
             this.crossOriginConfig = crossOriginConfig;
-            return me();
+            return identity();
         }
 
+        /**
+         * Returns the supplier of index views.
+         *
+         * @return index views supplier
+         */
         protected Supplier<List<? extends IndexView>> indexViewsSupplier() {
             // Only in MP can we have possibly multiple index views, one per app, from scanning classes (or the Jandex index).
             return () -> Collections.emptyList();

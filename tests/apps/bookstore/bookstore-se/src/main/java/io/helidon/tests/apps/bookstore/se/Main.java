@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,7 +66,7 @@ public final class Main {
      * @return the created {@link WebServer} instance
      */
     static WebServer startServer() {
-        return startServer(false, false);
+        return startServer(false, false, false);
     }
 
     /**
@@ -76,7 +76,7 @@ public final class Main {
      * @param http2 Enable http2 support.
      * @return the created {@link WebServer} instance
      */
-    static WebServer startServer(boolean ssl, boolean http2) {
+    static WebServer startServer(boolean ssl, boolean http2, boolean compression) {
         // load logging configuration
         LogConfig.configureRuntime();
 
@@ -89,12 +89,14 @@ public final class Main {
                 .update(it -> configureJsonSupport(it, config))
                 .update(it -> configureSsl(it, ssl))
                 .update(it -> configureHttp2(it, http2))
+                .enableCompression(compression)
                 .build();
 
         // Start the server and print some info.
         server.start().thenAccept(ws -> {
             String url = (ssl ? "https" : "http") + "://localhost:" + ws.port() + SERVICE_PATH;
-            System.out.println("WEB server is up! " + url + " [ssl=" + ssl + ", http2=" + http2 + "]");
+            System.out.println("WEB server is up! " + url + " [ssl=" + ssl + ", http2=" + http2
+                    + ", compression=" + compression + "]");
         });
 
         // Server threads are not daemon. NO need to block. Just react.

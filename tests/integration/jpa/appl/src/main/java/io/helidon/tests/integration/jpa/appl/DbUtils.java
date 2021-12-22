@@ -17,7 +17,7 @@ package io.helidon.tests.integration.jpa.appl;
 
 import java.util.List;
 
-import javax.persistence.EntityManager;
+import jakarta.persistence.EntityManager;
 
 import io.helidon.tests.integration.jpa.model.Pokemon;
 

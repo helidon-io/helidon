@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ import io.helidon.config.Config;
 /**
  * Builder for configuring a new SslContext for creation.
  */
-public final class SSLContextBuilder implements Builder<SSLContext> {
+public final class SSLContextBuilder implements Builder<SSLContextBuilder, SSLContext> {
 
     private static final String PROTOCOL = "TLS";
     private static final Random RANDOM = new Random();

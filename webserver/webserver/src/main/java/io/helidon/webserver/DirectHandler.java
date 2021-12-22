@@ -170,7 +170,7 @@ public interface DirectHandler {
         /**
          * Fluent API builder for {@link DirectHandler.TransportResponse}.
          */
-        public static class Builder implements io.helidon.common.Builder<TransportResponse> {
+        public static class Builder implements io.helidon.common.Builder<Builder, TransportResponse> {
             private final Map<String, List<String>> headers = new HashMap<>();
 
             private Http.ResponseStatus status = Http.Status.BAD_REQUEST_400;

@@ -19,7 +19,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.Optional;
 
-import javax.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.container.ContainerRequestContext;
 
 /**
  * Information about the current request - invoked resource information.
@@ -53,7 +53,7 @@ public interface InvokedResource {
 
     /**
      * Resource definition class.
-     * The definition class is the class annotated with {@link javax.ws.rs.Path}
+     * The definition class is the class annotated with {@link jakarta.ws.rs.Path}
      *  annotation.
      *
      * @return class of the JAX-RS resource or empty if none found

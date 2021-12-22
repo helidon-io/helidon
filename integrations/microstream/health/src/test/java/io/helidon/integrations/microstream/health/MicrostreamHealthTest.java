@@ -44,7 +44,7 @@ class MicrostreamHealthTest {
         setMicrostreamStatus(true);
         MicrostreamHealthCheck check = MicrostreamHealthCheck.create(embeddedStorageManager);
         HealthCheckResponse response = check.call();
-        assertThat(response.getState(), is(HealthCheckResponse.State.UP));
+        assertThat(response.getStatus(), is(HealthCheckResponse.Status.UP));
     }
 
     @Test
@@ -52,7 +52,7 @@ class MicrostreamHealthTest {
         setMicrostreamStatus(false);
         MicrostreamHealthCheck check = MicrostreamHealthCheck.create(embeddedStorageManager);
         HealthCheckResponse response = check.call();
-        assertThat(response.getState(), is(HealthCheckResponse.State.DOWN));
+        assertThat(response.getStatus(), is(HealthCheckResponse.Status.DOWN));
     }
 
     @Test
@@ -67,6 +67,6 @@ class MicrostreamHealthTest {
                 .timeout(20, TimeUnit.MILLISECONDS).build();
 
         HealthCheckResponse response = check.call();
-        assertThat(response.getState(), is(HealthCheckResponse.State.DOWN));
+        assertThat(response.getStatus(), is(HealthCheckResponse.Status.DOWN));
     }
 }

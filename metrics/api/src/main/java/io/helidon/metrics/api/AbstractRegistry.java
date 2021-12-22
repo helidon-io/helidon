@@ -16,6 +16,9 @@
 
 package io.helidon.metrics.api;
 
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -30,6 +33,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -61,7 +65,7 @@ import org.eclipse.microprofile.metrics.Timer;
  * @param <M> general type of metric implementation supported by an implementation of this class (e.g., {@code
  * HelidonMetric}
  */
-public abstract class AbstractRegistry<M extends HelidonMetric> extends MetricRegistry {
+public abstract class AbstractRegistry<M extends HelidonMetric> implements MetricRegistry {
 
     private static final Logger LOGGER = Logger.getLogger(AbstractRegistry.class.getName());
 
@@ -74,13 +78,17 @@ public abstract class AbstractRegistry<M extends HelidonMetric> extends MetricRe
 
     private final Map<MetricType, BiFunction<String, Metadata, M>> metricFactories = prepareMetricFactories();
 
+    private final Class<M> metricClass;
+
     /**
      * Create a registry of a certain type.
      *
      * @param type Registry type.
+     * @param metricClass class of the specific metric type this registry manages
      */
-    protected AbstractRegistry(Type type) {
+    protected AbstractRegistry(Type type, Class<M> metricClass) {
         this.type = type;
+        this.metricClass = metricClass;
     }
 
     /**
@@ -93,6 +101,8 @@ public abstract class AbstractRegistry<M extends HelidonMetric> extends MetricRe
         return (metric instanceof HelidonMetric)
                 && ((HelidonMetric) metric).isDeleted();
     }
+
+    protected abstract boolean isMetricEnabled(String metricName);
 
     @Override
     public <T extends Metric> T register(String name, T metric) throws IllegalArgumentException {
@@ -227,6 +237,136 @@ public abstract class AbstractRegistry<M extends HelidonMetric> extends MetricRe
     @Override
     public SimpleTimer simpleTimer(Metadata metadata, Tag... tags) {
         return getOrRegisterMetric(metadata, SimpleTimer.class, tags);
+    }
+
+    /*
+     * TODO 3.0.0-JAKARTA
+     * all methods below are implementations of required methods from the interface
+     * of new metrics API
+     */
+    @Override
+    public Counter counter(MetricID metricID) {
+        return null;
+    }
+
+    @Override
+    public ConcurrentGauge concurrentGauge(MetricID metricID) {
+        return null;
+    }
+
+    @Override
+    public <T, R extends Number> Gauge<R> gauge(String name, T object, Function<T, R> func, Tag... tags) {
+        return null;
+    }
+
+    @Override
+    public <T, R extends Number> Gauge<R> gauge(MetricID metricID, T object, Function<T, R> func) {
+        return null;
+    }
+
+    @Override
+    public <T, R extends Number> Gauge<R> gauge(Metadata metadata, T object, Function<T, R> func, Tag... tags) {
+        return null;
+    }
+
+    @Override
+    public <T extends Number> Gauge<T> gauge(String name, Supplier<T> supplier, Tag... tags) {
+        return null;
+    }
+
+    @Override
+    public <T extends Number> Gauge<T> gauge(MetricID metricID, Supplier<T> supplier) {
+        return null;
+    }
+
+    @Override
+    public <T extends Number> Gauge<T> gauge(Metadata metadata, Supplier<T> supplier, Tag... tags) {
+        return null;
+    }
+
+    @Override
+    public Histogram histogram(MetricID metricID) {
+        return null;
+    }
+
+    @Override
+    public Meter meter(MetricID metricID) {
+        return null;
+    }
+
+    @Override
+    public Timer timer(MetricID metricID) {
+        return null;
+    }
+
+    @Override
+    public SimpleTimer simpleTimer(MetricID metricID) {
+        return null;
+    }
+
+    @Override
+    public Metric getMetric(MetricID metricID) {
+        return null;
+    }
+
+    @Override
+    public <T extends Metric> T getMetric(MetricID metricID, Class<T> asType) {
+        return null;
+    }
+
+    @Override
+    public Counter getCounter(MetricID metricID) {
+        return null;
+    }
+
+    @Override
+    public ConcurrentGauge getConcurrentGauge(MetricID metricID) {
+        return null;
+    }
+
+    @Override
+    public Gauge<?> getGauge(MetricID metricID) {
+        return null;
+    }
+
+    @Override
+    public Histogram getHistogram(MetricID metricID) {
+        return null;
+    }
+
+    @Override
+    public Meter getMeter(MetricID metricID) {
+        return null;
+    }
+
+    @Override
+    public Timer getTimer(MetricID metricID) {
+        return null;
+    }
+
+    @Override
+    public SimpleTimer getSimpleTimer(MetricID metricID) {
+        return null;
+    }
+
+    @Override
+    public Metadata getMetadata(String name) {
+        return null;
+    }
+
+    @Override
+    public SortedMap<MetricID, Metric> getMetrics(MetricFilter filter) {
+        return null;
+    }
+
+    @Override
+    public <T extends Metric> SortedMap<MetricID, T> getMetrics(Class<T> ofType, MetricFilter filter) {
+        return null;
+    }
+
+    @Override
+    public Type getType() {
+        return null;
     }
 
     /**
@@ -425,12 +565,12 @@ public abstract class AbstractRegistry<M extends HelidonMetric> extends MetricRe
     }
 
     /**
-     * Returns a stream of {@link Map.Entry} for this registry.
+     * Returns a stream of {@link Map.Entry} for this registry for enabled metrics.
      *
      * @return Stream of {@link Map.Entry}
      */
     protected Stream<Map.Entry<MetricID, M>> stream() {
-        return allMetrics.entrySet().stream();
+        return allMetrics.entrySet().stream().filter(entry -> registrySettings().isMetricEnabled(entry.getKey().getName()));
     }
 
     /**
@@ -445,6 +585,8 @@ public abstract class AbstractRegistry<M extends HelidonMetric> extends MetricRe
 
     protected abstract Map<MetricType, BiFunction<String, Metadata, M>> prepareMetricFactories();
 
+    protected abstract RegistrySettings registrySettings();
+
     // -- Package private -----------------------------------------------------
 
     protected Optional<Map.Entry<MetricID, M>> getOptionalMetricEntry(String metricName) {
@@ -453,6 +595,20 @@ public abstract class AbstractRegistry<M extends HelidonMetric> extends MetricRe
             return new AbstractMap.SimpleImmutableEntry<>(metricID,
                                                           allMetrics.get(metricID));
         });
+    }
+
+    private static class DisabledMetricInvocationHandler implements InvocationHandler {
+
+        private final NoOpMetric delegate;
+
+        DisabledMetricInvocationHandler(MetricType metricType, String metricName, Metadata metadata) {
+            delegate = NoOpMetricRegistry.noOpMetricFactories().get(metricType).apply(metricName, metadata);
+        }
+
+        @Override
+        public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+            return method.invoke(delegate, args);
+        }
     }
 
     private Optional<M> getOptionalMetric(String metricName, Tag... tags) {
@@ -494,8 +650,9 @@ public abstract class AbstractRegistry<M extends HelidonMetric> extends MetricRe
                 && a.getTypeRaw().equals(b.getTypeRaw())
                 && a.getDisplayName().equals(b.getDisplayName())
                 && Objects.equals(a.getDescription(), b.getDescription())
-                && Objects.equals(a.getUnit(), b.getUnit())
-                && (a.isReusable() == b.isReusable());
+                && Objects.equals(a.getUnit(), b.getUnit());
+                // TODO 3.0.0-JAKARTA
+                // && (a.isReusable() == b.isReusable());
     }
 
     // -- Private methods -----------------------------------------------------
@@ -559,8 +716,7 @@ public abstract class AbstractRegistry<M extends HelidonMetric> extends MetricRe
                                   warnOfMismatchedType(clazz, newMetadata);
                                   final Metadata metadata = getOrRegisterMetadata(metricName, newMetadata, tags);
                                   return registerMetric(metricName,
-                                                        metricFactories.get(MetricType.from(clazz))
-                                                                .apply(type.getName(), metadata),
+                                                        createEnabledAwareMetric(metricName, clazz, metadata),
                                                         tags);
                               }), clazz);
     }
@@ -582,7 +738,7 @@ public abstract class AbstractRegistry<M extends HelidonMetric> extends MetricRe
                                                                   Class<U> clazz,
                                                                   Tag... tags) {
         final MetricType newType = MetricType.from(clazz);
-        M result = getOptionalMetric(metricName, tags)
+        return toType(getOptionalMetric(metricName, tags)
                 .orElseGet(() -> {
                     final Metadata metadata = getOrRegisterMetadata(metricName, newType,
                                                                     () -> Metadata.builder()
@@ -590,10 +746,9 @@ public abstract class AbstractRegistry<M extends HelidonMetric> extends MetricRe
                                                                             .withType(newType)
                                                                             .build(), tags);
                     return registerMetric(metricName,
-                                          metricFactories.get(MetricType.from(clazz)).apply(type.getName(), metadata),
+                                          createEnabledAwareMetric(metricName, clazz, metadata),
                                           tags);
-                });
-        return toType(result, clazz);
+                }), clazz);
     }
 
     /**
@@ -620,7 +775,7 @@ public abstract class AbstractRegistry<M extends HelidonMetric> extends MetricRe
                                                                 .withName(metricName)
                                                                 .withType(metricType)
                                                                 .build(), NO_TAGS);
-        registerMetric(metricName, toImpl(metadata, metric), NO_TAGS);
+        registerMetric(metricName, toEnabledAwareImpl(metricName, metadata, metric), NO_TAGS);
         return metric;
     }
 
@@ -645,8 +800,27 @@ public abstract class AbstractRegistry<M extends HelidonMetric> extends MetricRe
         enforceMetricUniqueness(metricName, tags);
 
         metadata = getOrRegisterMetadata(metricName, metadata, tags);
-        registerMetric(metricName, toImpl(metadata, metric), tags);
+        registerMetric(metricName, toEnabledAwareImpl(metricName, metadata, metric), tags);
         return metric;
+    }
+
+    private <U extends Metric> M createEnabledAwareMetric(String metricName, Class<U> clazz, Metadata metadata) {
+        MetricType metricType = MetricType.from(clazz);
+        return registrySettings().isMetricEnabled(metricName)
+                ? metricFactories.get(MetricType.from(clazz)).apply(type.getName(), metadata)
+                : metricClass.cast(Proxy.newProxyInstance(
+                        metricClass.getClassLoader(),
+                        new Class<?>[] {clazz, metricClass},
+                        new DisabledMetricInvocationHandler(metricType, metricName, metadata)));
+    }
+
+    private <T extends Metric> M toEnabledAwareImpl(String metricName, Metadata metadata, T metric) {
+        return registrySettings().isMetricEnabled(metricName)
+                ? toImpl(metadata, metric)
+                : metricClass.cast(Proxy.newProxyInstance(
+                        metricClass.getClassLoader(),
+                        new Class<?>[] {toMetricClass(metric), metricClass},
+                        new DisabledMetricInvocationHandler(MetricType.from(metric.getClass()), metricName, metadata)));
     }
 
     private <U extends Metric> void warnOfMismatchedType(Class<U> clazz, Metadata metadata) {
@@ -765,6 +939,11 @@ public abstract class AbstractRegistry<M extends HelidonMetric> extends MetricRe
     }
 
     private MetricType toType(Metric metric) {
+        Class<? extends Metric> clazz = toMetricClass(metric);
+        return MetricType.from(clazz == null ? metric.getClass() : clazz);
+    }
+
+    private static <T extends Metric> Class<? extends Metric> toMetricClass(T metric) {
         // Find subtype of Metric, needed for user-defined metrics
         Class<?> clazz = metric.getClass();
         do {
@@ -777,7 +956,7 @@ public abstract class AbstractRegistry<M extends HelidonMetric> extends MetricRe
             }
             clazz = clazz.getSuperclass();
         } while (clazz != null);
-        return MetricType.from(clazz == null ? metric.getClass() : clazz);
+        return (Class<? extends Metric>) clazz;
     }
 
     // For testing

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -77,7 +77,7 @@ public interface Async {
     /**
      * Fluent API Builder for {@link io.helidon.faulttolerance.Async}.
      */
-    class Builder implements io.helidon.common.Builder<Async> {
+    class Builder implements io.helidon.common.Builder<Builder, Async> {
         private LazyValue<? extends ExecutorService> executor = FaultTolerance.executor();
 
         private Builder() {

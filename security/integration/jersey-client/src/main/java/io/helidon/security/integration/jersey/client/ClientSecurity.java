@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,16 +23,16 @@ public final class ClientSecurity {
      * Property name for security context. Use this only in case you want to use a different security context
      * than the one in the current request context.
      * Set this with
-     * {@link javax.ws.rs.client.Invocation.Builder#property(String, Object)}, obtained
-     * through {@link javax.ws.rs.client.WebTarget#request()}
+     * {@link jakarta.ws.rs.client.Invocation.Builder#property(String, Object)}, obtained
+     * through {@link jakarta.ws.rs.client.WebTarget#request()}
      */
     // do not change the value of this property, needed for backward compatibility
     public static final String PROPERTY_CONTEXT = "io.helidon.security.jersey.SecureClient.context";
     /**
      * Property name for outbound security provider name. Set this with
-     * {@link javax.ws.rs.client.Invocation.Builder#property(String, Object)},
+     * {@link jakarta.ws.rs.client.Invocation.Builder#property(String, Object)},
      * obtained
-     * through {@link javax.ws.rs.client.WebTarget#request()}
+     * through {@link jakarta.ws.rs.client.WebTarget#request()}
      */
     // do not change the value of this property, needed for backward compatibility
     public static final String PROPERTY_PROVIDER = "io.helidon.security.jersey.SecureClient.explicitProvider";

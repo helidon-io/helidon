@@ -18,13 +18,13 @@ package io.helidon.integrations.vault.auths.common;
 
 import java.util.Optional;
 
-import javax.annotation.Priority;
-
 import io.helidon.config.Config;
 import io.helidon.integrations.common.rest.RestApi;
 import io.helidon.integrations.vault.Vault;
 import io.helidon.integrations.vault.VaultApiException;
 import io.helidon.integrations.vault.spi.VaultAuth;
+
+import jakarta.annotation.Priority;
 
 /**
  * Java Service Loader implementation for creating an unauthenticated Vault instance.

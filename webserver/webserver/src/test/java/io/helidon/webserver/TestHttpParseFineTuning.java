@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ class TestHttpParseFineTuning {
         // default is 8Kb for headers
         // and 4096 for initial line
         WebServer ws = WebServer.builder()
+                .host("localhost")
                 .routing(Routing.builder()
                                  .register("/static", StaticContentSupport.create("/static"))
                                  .any((req, res) -> res.send("any"))
@@ -69,6 +70,7 @@ class TestHttpParseFineTuning {
         Config config = Config.create(ConfigSources.create(Map.of("validate-headers", "false")));
 
         WebServer ws = WebServer.builder()
+                .host("localhost")
                 .routing(Routing.builder()
                                  .register("/static", StaticContentSupport.create("/static"))
                                  .any((req, res) -> res.send("any"))

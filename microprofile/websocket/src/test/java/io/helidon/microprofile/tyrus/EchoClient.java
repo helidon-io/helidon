@@ -16,13 +16,6 @@
 
 package io.helidon.microprofile.tyrus;
 
-import javax.websocket.ClientEndpointConfig;
-import javax.websocket.CloseReason;
-import javax.websocket.Endpoint;
-import javax.websocket.EndpointConfig;
-import javax.websocket.Extension;
-import javax.websocket.MessageHandler;
-import javax.websocket.Session;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Arrays;
@@ -33,6 +26,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.logging.Logger;
 
+import jakarta.websocket.ClientEndpointConfig;
+import jakarta.websocket.CloseReason;
+import jakarta.websocket.Endpoint;
+import jakarta.websocket.EndpointConfig;
+import jakarta.websocket.Extension;
+import jakarta.websocket.MessageHandler;
+import jakarta.websocket.Session;
 import org.glassfish.tyrus.client.ClientManager;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;

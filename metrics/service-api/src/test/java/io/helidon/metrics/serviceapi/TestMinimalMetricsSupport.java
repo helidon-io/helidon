@@ -46,6 +46,7 @@ class TestMinimalMetricsSupport {
 
         try {
             webServer = WebServer.builder()
+                    .host("localhost")
                     .port(0)
                     .routing(routing)
                     .build()

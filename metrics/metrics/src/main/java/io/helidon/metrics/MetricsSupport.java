@@ -35,15 +35,6 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import javax.json.Json;
-import javax.json.JsonArray;
-import javax.json.JsonArrayBuilder;
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObject;
-import javax.json.JsonObjectBuilder;
-import javax.json.JsonStructure;
-import javax.json.JsonValue;
-
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.config.Config;
@@ -63,6 +54,14 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 
+import jakarta.json.Json;
+import jakarta.json.JsonArray;
+import jakarta.json.JsonArrayBuilder;
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonObjectBuilder;
+import jakarta.json.JsonStructure;
+import jakarta.json.JsonValue;
 import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
@@ -413,6 +412,8 @@ public final class MetricsSupport extends HelidonRestServiceSupport
             io.helidon.metrics.RegistryFactory fullRF = (io.helidon.metrics.RegistryFactory) rf;
             Registry app = fullRF.getARegistry(MetricRegistry.Type.APPLICATION);
 
+            PeriodicExecutor.start();
+
             // register the metric registry and factory to be available to all
             MetricsContextHandler metricsContextHandler = new MetricsContextHandler(app, rf);
             defaultRules.any(metricsContextHandler);
@@ -469,8 +470,6 @@ public final class MetricsSupport extends HelidonRestServiceSupport
      */
     @Override
     public void update(Routing.Rules rules) {
-        PeriodicExecutor.start();
-
         configureEndpoint(rules, rules);
     }
 
@@ -508,8 +507,10 @@ public final class MetricsSupport extends HelidonRestServiceSupport
     static JsonObject jsonDataByName(Registry registry, String metricName) {
         JsonObjectBuilder builder = new MetricsSupport.MergingJsonObjectBuilder(JSON.createObjectBuilder());
         for (Map.Entry<MetricID, HelidonMetric> metricEntry : registry.getMetricsByName(metricName)) {
-            metricEntry.getValue()
-                    .jsonData(builder, metricEntry.getKey());
+            HelidonMetric metric = metricEntry.getValue();
+            if (registry.isMetricEnabled(metricName)) {
+                metric.jsonData(builder, metricEntry.getKey());
+            }
         }
         return builder.build();
     }
@@ -518,8 +519,10 @@ public final class MetricsSupport extends HelidonRestServiceSupport
         final StringBuilder sb = new StringBuilder();
         boolean isFirst = true;
         for (Map.Entry<MetricID, HelidonMetric> metricEntry : registry.getMetricsByName(metricName)) {
-            metricEntry.getValue()
-                    .prometheusData(sb, metricEntry.getKey(), isFirst);
+            HelidonMetric metric = metricEntry.getValue();
+            if (registry.isMetricEnabled(metricName)) {
+                metric.prometheusData(sb, metricEntry.getKey(), isFirst);
+            }
             isFirst = false;
         }
         return sb.toString();
@@ -572,8 +575,8 @@ public final class MetricsSupport extends HelidonRestServiceSupport
     /**
      * A fluent API builder to build instances of {@link MetricsSupport}.
      */
-    public static class Builder extends HelidonRestServiceSupport.Builder<MetricsSupport, Builder>
-            implements io.helidon.metrics.serviceapi.MetricsSupport.Builder<MetricsSupport> {
+    public static class Builder extends HelidonRestServiceSupport.Builder<Builder, MetricsSupport>
+            implements io.helidon.metrics.serviceapi.MetricsSupport.Builder<Builder, MetricsSupport> {
 
         private Supplier<RegistryFactory> registryFactory;
         private MetricsSettings.Builder metricsSettingsBuilder = MetricsSettings.builder();
@@ -823,7 +826,11 @@ public final class MetricsSupport extends HelidonRestServiceSupport
 
         @Override
         public JsonObjectBuilder add(String arg0, double arg1) {
-            delegate.add(arg0, arg1);
+            if (Double.isNaN(arg1)) {
+                delegate.add(arg0, String.valueOf(Double.NaN));
+            } else {
+                delegate.add(arg0, arg1);
+            }
             return this;
         }
 

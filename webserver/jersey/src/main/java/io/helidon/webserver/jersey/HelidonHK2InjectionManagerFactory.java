@@ -25,10 +25,9 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import javax.annotation.Priority;
-import javax.inject.Singleton;
-import javax.ws.rs.core.Application;
-
+import jakarta.annotation.Priority;
+import jakarta.inject.Singleton;
+import jakarta.ws.rs.core.Application;
 import org.glassfish.jersey.inject.hk2.Hk2InjectionManagerFactory;
 import org.glassfish.jersey.inject.hk2.ImmediateHk2InjectionManager;
 import org.glassfish.jersey.internal.inject.Binder;
@@ -61,13 +60,16 @@ public class HelidonHK2InjectionManagerFactory extends Hk2InjectionManagerFactor
             LOGGER.finest(() -> "Creating injection manager " + result);
         } else if (parent instanceof ImmediateHk2InjectionManager) {        // single JAX-RS app
             result = (InjectionManager) parent;
-            LOGGER.finest(() -> "Using injection manager " + result);
+            LOGGER.finest(() -> "Using injection manager for single app case " + result);
         } else if (parent instanceof InjectionManagerWrapper) {             // multiple JAX-RS apps
             InjectionManagerWrapper wrapper = (InjectionManagerWrapper) parent;
             InjectionManager forApplication = super.create(null);
             result = new HelidonInjectionManager(forApplication, wrapper.injectionManager, wrapper.application);
-            LOGGER.finest(() -> "Creating injection manager " + forApplication + " with shared "
-                    + wrapper.injectionManager);
+            LOGGER.finest(() -> "Creating injection manager for multi app case " + forApplication
+                    + " with shared " + wrapper.injectionManager);
+        } else if (parent instanceof HelidonInjectionManager) {
+            result = (InjectionManager) parent;
+            LOGGER.finest(() -> "Re-using existing Helidon injection manager " + result);
         } else {
             throw new IllegalStateException("Invalid parent injection manager");
         }

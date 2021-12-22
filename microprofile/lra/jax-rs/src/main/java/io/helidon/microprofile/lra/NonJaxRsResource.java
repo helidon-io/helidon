@@ -24,12 +24,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.context.BeforeDestroyed;
-import javax.enterprise.event.Observes;
-import javax.inject.Inject;
-import javax.ws.rs.core.Response;
-
 import io.helidon.common.Reflected;
 import io.helidon.common.configurable.ThreadPoolSupplier;
 import io.helidon.common.http.HttpRequest;
@@ -40,8 +34,12 @@ import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.BeforeDestroyed;
+import jakarta.enterprise.event.Observes;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.eclipse.microprofile.lra.LRAResponse;
 import org.eclipse.microprofile.lra.annotation.LRAStatus;
 import org.eclipse.microprofile.lra.annotation.ParticipantStatus;
 
@@ -61,8 +59,9 @@ class NonJaxRsResource {
 
     private final ExecutorService exec;
 
+    // TODO 3.0.0-JAKARTA
     private static final Map<ParticipantStatus, Supplier<Response>> PARTICIPANT_RESPONSE_BUILDERS =
-            Map.of(
+            Map.of(/*
                     ParticipantStatus.Compensating, () -> LRAResponse.compensating(ParticipantStatus.Compensating),
                     ParticipantStatus.Compensated, () -> LRAResponse.compensated(ParticipantStatus.Compensated),
                     ParticipantStatus.Active, () -> Response.ok(ParticipantStatus.Active.name()).build(),
@@ -71,6 +70,7 @@ class NonJaxRsResource {
                     ParticipantStatus.Completing, () -> LRAResponse.compensating(ParticipantStatus.Completing),
                     ParticipantStatus.Completed, () -> LRAResponse.compensating(ParticipantStatus.Completed),
                     ParticipantStatus.FailedToComplete, () -> LRAResponse.failedToComplete(ParticipantStatus.FailedToComplete)
+                    */
             );
 
     private final ParticipantService participantService;

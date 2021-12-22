@@ -280,7 +280,7 @@ public final class OutboundTarget {
      * Fluent API builder for {@link OutboundTarget}.
      */
     @Configured
-    public static final class Builder implements io.helidon.common.Builder<OutboundTarget> {
+    public static final class Builder implements io.helidon.common.Builder<Builder, OutboundTarget> {
         private final Set<String> transports = new HashSet<>();
         private final Set<String> hosts = new HashSet<>();
         private final Set<String> paths = new HashSet<>();

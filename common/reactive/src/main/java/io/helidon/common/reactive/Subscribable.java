@@ -24,6 +24,7 @@ import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * Decorated publisher that allows subscribing to individual events with java functions.
@@ -84,6 +85,14 @@ public interface Subscribable<T> extends Publisher<T> {
      * @throws NullPointerException if {@code defaultItem} is {@code null}
      */
     Subscribable<T> defaultIfEmpty(T defaultItem);
+
+    /**
+     * Signals the default item supplied by specified supplier if the upstream is empty.
+     * @param supplier of the default value
+     * @return Multi
+     * @throws NullPointerException if {@code supplier} is {@code null}
+     */
+    Subscribable<T> defaultIfEmpty(Supplier<? extends T> supplier);
 
     /**
      * Transform item with supplied function and flatten resulting {@link Flow.Publisher} to downstream.

@@ -149,7 +149,7 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
      * A fluent API builder for {@link ThreadPoolSupplier}.
      */
     @Configured
-    public static final class Builder implements io.helidon.common.Builder<ThreadPoolSupplier> {
+    public static final class Builder implements io.helidon.common.Builder<Builder, ThreadPoolSupplier> {
         private int corePoolSize = DEFAULT_CORE_POOL_SIZE;
         private int maxPoolSize = DEFAULT_MAX_POOL_SIZE;
         private int keepAliveMinutes = DEFAULT_KEEP_ALIVE_MINUTES;

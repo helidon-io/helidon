@@ -1,3 +1,4 @@
-javax.json
-javax.json.spi
-javax.json.stream
+module:jakarta.json
+jakarta.json
+jakarta.json.spi
+jakarta.json.stream

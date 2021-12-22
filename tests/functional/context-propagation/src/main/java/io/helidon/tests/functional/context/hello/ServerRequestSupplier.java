@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,12 @@
 
 package io.helidon.tests.functional.context.hello;
 
-import javax.enterprise.context.RequestScoped;
-import javax.ws.rs.core.Context;
 import java.util.function.Supplier;
 
 import io.helidon.webserver.ServerRequest;
+
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.ws.rs.core.Context;
 
 @RequestScoped
 public class ServerRequestSupplier implements Supplier<ServerRequest> {

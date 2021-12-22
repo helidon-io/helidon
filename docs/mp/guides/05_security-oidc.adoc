@@ -562,7 +562,7 @@ Navigate to the GreetResource and find the `getDefaultMessage` with @Authenticat
 [source,java]
 .Import the RolesAllowed annotation
 ----
-import javax.annotation.security.RolesAllowed;
+import jakarta.annotation.security.RolesAllowed;
 ----
 
 [source,java]

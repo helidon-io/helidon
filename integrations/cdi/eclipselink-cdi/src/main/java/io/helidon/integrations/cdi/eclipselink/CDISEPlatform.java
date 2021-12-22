@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,16 +23,16 @@ import java.lang.annotation.Target;
 import java.util.Objects;
 import java.util.concurrent.Executor;
 
-import javax.enterprise.inject.InjectionException;
-import javax.enterprise.inject.Instance;
-import javax.enterprise.inject.literal.NamedLiteral;
-import javax.enterprise.inject.spi.CDI;
-import javax.enterprise.util.AnnotationLiteral;
-import javax.inject.Qualifier;
 import javax.management.MBeanServer;
 import javax.sql.DataSource;
-import javax.transaction.TransactionManager;
 
+import jakarta.enterprise.inject.InjectionException;
+import jakarta.enterprise.inject.Instance;
+import jakarta.enterprise.inject.literal.NamedLiteral;
+import jakarta.enterprise.inject.spi.CDI;
+import jakarta.enterprise.util.AnnotationLiteral;
+import jakarta.inject.Qualifier;
+import jakarta.transaction.TransactionManager;
 import org.eclipse.persistence.exceptions.ValidationException;
 import org.eclipse.persistence.platform.server.JMXServerPlatformBase;
 import org.eclipse.persistence.platform.server.ServerPlatformBase;

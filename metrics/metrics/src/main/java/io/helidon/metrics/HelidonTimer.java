@@ -16,13 +16,12 @@
 
 package io.helidon.metrics;
 
+import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.Callable;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import javax.json.JsonObjectBuilder;
-
+import jakarta.json.JsonObjectBuilder;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.Meter;
 import org.eclipse.microprofile.metrics.MetricID;
@@ -55,8 +54,13 @@ final class HelidonTimer extends MetricImpl implements Timer {
     }
 
     @Override
-    public void update(long duration, TimeUnit unit) {
-        delegate.update(duration, unit);
+    public void update(Duration duration) {
+        delegate.update(duration);
+    }
+
+    @Override
+    public Duration getElapsedTime() {
+        return delegate.getElapsedTime();
     }
 
     @Override
@@ -207,7 +211,7 @@ final class HelidonTimer extends MetricImpl implements Timer {
         if (withHelpType) {
             prometheusType(sb, name.nameStat(statName), typeName);
         }
-        sb.append(name.nameStat(statName))
+        sb.append(name.nameStatTags(statName))
                 .append(" ")
                 .append(value)
                 .append("\n");
@@ -230,7 +234,7 @@ final class HelidonTimer extends MetricImpl implements Timer {
         public long stop() {
             if (running.compareAndSet(true, false)) {
                 elapsed = clock.nanoTick() - startTime;
-                theTimer.update(elapsed, TimeUnit.NANOSECONDS);
+                theTimer.update(Duration.ofNanos(elapsed));
             }
 
             return elapsed;
@@ -260,8 +264,14 @@ final class HelidonTimer extends MetricImpl implements Timer {
         }
 
         @Override
-        public void update(long duration, TimeUnit unit) {
-            update(unit.toNanos(duration));
+        public void update(Duration duration) {
+            update(duration.toNanos());
+        }
+
+        @Override
+        public Duration getElapsedTime() {
+            // TODO 3.0.0-JAKARTA
+            return null;
         }
 
         @Override

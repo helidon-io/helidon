@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,10 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.common.reactive.Multi;
+import io.helidon.common.reactive.Single;
 
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
@@ -60,5 +62,33 @@ class TimeoutTest {
         assertThat(cause, notNullValue());
         assertThat(cause, instanceOf(TimeoutException.class));
         assertThat("Should have timed out in FT, not in await in test", time, is(Matchers.lessThan(5000L)));
+    }
+
+    @Test
+    void testTimeoutCancel() {
+        timeoutCancel(false);
+    }
+
+    @Test
+    void testTimeoutCancelCurrentThread() {
+        timeoutCancel(true);
+    }
+
+    void timeoutCancel(boolean currentThread) {
+        AtomicBoolean cancelCalled = new AtomicBoolean();
+        Timeout timeout = Timeout.builder()
+                .timeout(Duration.ofMillis(200))
+                .currentThread(currentThread)
+                .build();
+        Single<Void> single = timeout.invoke(() ->
+                new CompletableFuture<>() {
+                    @Override
+                    public boolean cancel(boolean b) {
+                        cancelCalled.set(true);
+                        return super.cancel(b);
+                    }
+                });
+        single.cancel();
+        assertThat("Cancel must be called", cancelCalled.get(), is(true));
     }
 }

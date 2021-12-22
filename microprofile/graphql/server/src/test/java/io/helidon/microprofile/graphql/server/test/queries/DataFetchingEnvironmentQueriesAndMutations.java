@@ -17,9 +17,7 @@
 package io.helidon.microprofile.graphql.server.test.queries;
 
 import graphql.schema.DataFetchingEnvironment;
-
-import javax.enterprise.context.ApplicationScoped;
-
+import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.graphql.GraphQLApi;
 import org.eclipse.microprofile.graphql.Name;
 import org.eclipse.microprofile.graphql.Query;

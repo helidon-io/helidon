@@ -24,6 +24,7 @@ import java.util.logging.Logger;
 
 import io.helidon.common.http.Http;
 import io.helidon.webserver.utils.SocketHttpClient;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -53,6 +54,7 @@ public class TransferEncodingTest {
      */
     private static void startServer(int port) throws Exception {
         webServer = WebServer.builder()
+                .host("localhost")
                 .port(port)
                 .routing(Routing.builder()
                         .get("/length", (req, res) -> {

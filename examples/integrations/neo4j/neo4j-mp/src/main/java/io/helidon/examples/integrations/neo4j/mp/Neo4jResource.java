@@ -18,15 +18,15 @@ package io.helidon.examples.integrations.neo4j.mp;
 
 import java.util.List;
 
-import javax.enterprise.context.RequestScoped;
-import javax.inject.Inject;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
-
 import io.helidon.examples.integrations.neo4j.mp.domain.Movie;
 import io.helidon.examples.integrations.neo4j.mp.domain.MovieRepository;
+
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
 
 /**
  * REST endpoint for movies.

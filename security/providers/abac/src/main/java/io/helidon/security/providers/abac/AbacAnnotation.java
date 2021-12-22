@@ -29,7 +29,7 @@ import java.lang.annotation.Target;
  * Annotations annotated with this annotation MUST be processed by ABAC security provider if present
  * and authorization should be denied if they are not.
  *
- * {@link javax.annotation.security.RolesAllowed} is considered meta-annotated by default.
+ * {@link jakarta.annotation.security.RolesAllowed} is considered meta-annotated by default.
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.ANNOTATION_TYPE)

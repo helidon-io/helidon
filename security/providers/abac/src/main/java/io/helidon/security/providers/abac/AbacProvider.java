@@ -29,10 +29,6 @@ import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import javax.annotation.security.DenyAll;
-import javax.annotation.security.PermitAll;
-import javax.annotation.security.RolesAllowed;
-
 import io.helidon.common.Errors;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
@@ -48,6 +44,10 @@ import io.helidon.security.providers.abac.spi.AbacValidatorService;
 import io.helidon.security.spi.AuthorizationProvider;
 import io.helidon.security.spi.SecurityProvider;
 import io.helidon.security.spi.SynchronousProvider;
+
+import jakarta.annotation.security.DenyAll;
+import jakarta.annotation.security.PermitAll;
+import jakarta.annotation.security.RolesAllowed;
 
 /**
  * Attribute based access control (ABAC) provider.
@@ -339,7 +339,7 @@ public final class AbacProvider extends SynchronousProvider implements Authoriza
     @Configured(prefix = "abac",
                 description = "Attribute Based Access Control provider",
                 provides = {SecurityProvider.class, AuthorizationProvider.class})
-    public static final class Builder implements io.helidon.common.Builder<AbacProvider> {
+    public static final class Builder implements io.helidon.common.Builder<Builder, AbacProvider> {
         private final List<AbacValidator<? extends AbacValidatorConfig>> validators = new ArrayList<>();
         private Config config = Config.empty();
         private boolean failOnUnvalidated = true;

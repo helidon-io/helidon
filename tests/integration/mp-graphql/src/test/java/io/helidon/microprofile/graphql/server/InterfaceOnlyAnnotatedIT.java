@@ -18,16 +18,15 @@ package io.helidon.microprofile.graphql.server;
 
 import java.io.IOException;
 
-import io.helidon.microprofile.graphql.server.test.queries.NoopQueriesAndMutations;
-import javax.inject.Inject;
-
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
+import io.helidon.microprofile.graphql.server.test.queries.NoopQueriesAndMutations;
 import io.helidon.microprofile.graphql.server.test.types.AbstractVehicle;
 import io.helidon.microprofile.graphql.server.test.types.Car;
 import io.helidon.microprofile.graphql.server.test.types.Motorbike;
 import io.helidon.microprofile.graphql.server.test.types.Vehicle;
 import io.helidon.microprofile.tests.junit5.AddBean;
 
+import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 
 /**

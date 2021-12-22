@@ -16,9 +16,9 @@
 
 package io.helidon.microprofile.faulttolerance;
 
-import javax.enterprise.context.Dependent;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import jakarta.enterprise.context.Dependent;
 import org.eclipse.microprofile.faulttolerance.ExecutionContext;
 import org.eclipse.microprofile.faulttolerance.Fallback;
 import org.eclipse.microprofile.faulttolerance.FallbackHandler;

@@ -25,7 +25,7 @@
  */
 module io.helidon.integrations.common.rest {
     requires java.logging;
-    requires java.json;
+    requires jakarta.json;
 
     requires io.opentracing.api;
 

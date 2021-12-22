@@ -18,7 +18,7 @@ package io.helidon.tests.integration.tools.example;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.json.Json;
+import jakarta.json.Json;
 
 import io.helidon.common.http.MediaType;
 import io.helidon.dbclient.DbClient;

@@ -19,12 +19,12 @@ package io.helidon.integrations.vault.secrets.cubbyhole;
 import java.util.Map;
 import java.util.Optional;
 
-import javax.json.JsonObject;
-
 import io.helidon.integrations.common.rest.ApiJsonParser;
 import io.helidon.integrations.vault.Secret;
 import io.helidon.integrations.vault.VaultApiException;
 import io.helidon.integrations.vault.VaultRequest;
+
+import jakarta.json.JsonObject;
 
 /**
  * Get Cubbyhole secret request and response.
@@ -45,7 +45,7 @@ public final class GetCubbyhole {
         /**
          * Fluent API builder for configuring a request.
          * The request builder is passed as is, without a build method.
-         * The equivalent of a build method is {@link #toJson(javax.json.JsonBuilderFactory)}
+         * The equivalent of a build method is {@link #toJson(jakarta.json.JsonBuilderFactory)}
          * used by the {@link io.helidon.integrations.common.rest.RestApi}.
          *
          * @return new request builder

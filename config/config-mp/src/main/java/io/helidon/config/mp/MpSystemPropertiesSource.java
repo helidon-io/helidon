@@ -22,8 +22,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
-import javax.annotation.Priority;
-
+import jakarta.annotation.Priority;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
 @Priority(400)

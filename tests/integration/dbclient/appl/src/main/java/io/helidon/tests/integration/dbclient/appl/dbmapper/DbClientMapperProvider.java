@@ -17,7 +17,7 @@ package io.helidon.tests.integration.dbclient.appl.dbmapper;
 
 import java.util.Optional;
 
-import javax.json.JsonObject;
+import jakarta.json.JsonObject;
 
 import io.helidon.dbclient.DbMapper;
 import io.helidon.dbclient.spi.DbMapperProvider;

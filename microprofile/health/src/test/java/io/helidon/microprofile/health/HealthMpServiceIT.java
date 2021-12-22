@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,21 +20,20 @@ import java.io.StringReader;
 import java.util.Arrays;
 import java.util.List;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
-import javax.json.Json;
-import javax.json.JsonObject;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.MediaType;
-
 import io.helidon.microprofile.tests.junit5.AddBean;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 
-import org.eclipse.microprofile.health.Health;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
+import jakarta.ws.rs.client.WebTarget;
+import jakarta.ws.rs.core.MediaType;
 import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.eclipse.microprofile.health.Liveness;
 import org.eclipse.microprofile.health.Readiness;
+import org.eclipse.microprofile.health.Startup;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -45,6 +44,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @HelidonTest
 @AddBean(HealthMpServiceIT.HealthCheckOne.class)
 @AddBean(HealthMpServiceIT.HealthCheckTwo.class)
+@AddBean(HealthMpServiceIT.HealthCheckThree.class)
 @AddBean(HealthMpServiceIT.HealthCheckBad.class)
 public class HealthMpServiceIT {
 
@@ -53,7 +53,9 @@ public class HealthMpServiceIT {
 
     /**
      * Verify that the {@link HealthCheck} CDI beans (inner classes below)
-     * annotated with {@link Health} are discovered and added to the json
+     * annotated with {@link org.eclipse.microprofile.health.Liveness}
+     * and {@link org.eclipse.microprofile.health.Readiness}
+     * are discovered and added to the json
      * returned from the {@code /health} endpoint.
      */
     @Test
@@ -61,12 +63,14 @@ public class HealthMpServiceIT {
         JsonObject json = getHealthJson();
         assertThat(healthCheckExists(json, "One"), is(true));
         assertThat(healthCheckExists(json, "Two"), is(true));
+        assertThat(healthCheckExists(json, "Three"), is(true));
     }
 
     /**
      * Verify that the {@link HealthCheck} CDI bean (inner classes below)
-     * NOT annotated with {@link Health} is not added to the json returned
-     * from the {@code /health} endpoint.
+     * NOT annotated with {@link org.eclipse.microprofile.health.Liveness}, or
+     * {@link org.eclipse.microprofile.health.Readiness}
+     * is not added to the json returned from the {@code /health} endpoint.
      */
     @Test
     public void shouldNotAddHealthCheckBeanNotAnnotatedWithHealth() {
@@ -86,7 +90,9 @@ public class HealthMpServiceIT {
                 () -> assertThat("Three exists", healthCheckExists(json, "Three"), is(true)),
                 () -> assertThat("Four exists", healthCheckExists(json, "Four"), is(true)),
                 () -> assertThat("Five exists", healthCheckExists(json, "Five"), is(true)),
-                () -> assertThat("Six exists", healthCheckExists(json, "Six"), is(true))
+                () -> assertThat("Six exists", healthCheckExists(json, "Six"), is(true)),
+                () -> assertThat("Seven exists", healthCheckExists(json, "Seven"), is(true)),
+                () -> assertThat("Eight exists", healthCheckExists(json, "Eight"), is(true))
         );
 
     }
@@ -108,7 +114,6 @@ public class HealthMpServiceIT {
 
         JsonObject json = (JsonObject) Json.createReader(new StringReader(health)).read();
         assertThat(json, is(notNullValue()));
-        assertThat(json.getJsonString("outcome"), is(notNullValue()));      // backward compatibility default
         return json;
     }
 
@@ -141,8 +146,23 @@ public class HealthMpServiceIT {
     }
 
     /**
+     * A Test {@link HealthCheck} bean for startup that should be discovered
+     * by CDI and added to the health check endpoint.
+     */
+    @Startup
+    public static class HealthCheckThree
+            implements HealthCheck {
+
+        @Override
+        public HealthCheckResponse call() {
+            return HealthCheckResponse.builder().name("Three").up().build();
+        }
+    }
+
+    /**
      * A test {@link HealthCheck} bean that should be NOT discovered
-     * as it does not have the {@link Health} qualifier.
+     * as it does not have the {@link org.eclipse.microprofile.health.Liveness}
+     * or {@link org.eclipse.microprofile.health.Readiness} qualifiers.
      */
     @ApplicationScoped
     public static class HealthCheckBad
@@ -181,6 +201,21 @@ public class HealthMpServiceIT {
             return Arrays.asList(
                     new HealthCheckStub("Five"),
                     new HealthCheckStub("Six"));
+        }
+    }
+
+    /**
+     * A test {@link HealthCheckProvider} bean that should be discovered
+     * by the service loader and its provided startup {@link HealthCheck}s added
+     * to the health check endpoint.
+     */
+    public static class HealthCheckProviderThree
+            implements HealthCheckProvider {
+        @Override
+        public List<HealthCheck> startupChecks() {
+            return Arrays.asList(
+                    new HealthCheckStub("Seven"),
+                    new HealthCheckStub("Eight"));
         }
     }
 

@@ -1,10 +1,10 @@
 
 package {{package}};
 
-import javax.json.JsonArray;
-import javax.json.JsonObject;
-import javax.json.JsonReader;
-import javax.json.JsonValue;
+import jakarta.json.JsonArray;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonReader;
+import jakarta.json.JsonValue;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
 
@@ -12,7 +12,7 @@ import io.helidon.common.reactive.Single;
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.DbExecute;
 
-import static javax.json.Json.createReader;
+import static jakarta.json.Json.createReader;
 
 /**
  * Initialize JDBC database schema and populate it with sample data.

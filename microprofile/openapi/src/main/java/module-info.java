@@ -12,13 +12,15 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
-
-import javax.enterprise.inject.spi.Extension;
 
 import io.helidon.microprofile.openapi.OpenApiCdiExtension;
 
+/**
+ * CDI extension for MicroProfile OpenAPI implementation.
+ *
+ * @see org.eclipse.microprofile.openapi
+ */
 module io.helidon.microprofile.openapi {
     requires java.logging;
     
@@ -27,6 +29,7 @@ module io.helidon.microprofile.openapi {
     requires microprofile.config.api;
     requires io.helidon.microprofile.server;
     requires io.helidon.openapi;
+    requires jakarta.interceptor.api;
 
     requires org.jboss.jandex;
 
@@ -35,5 +38,5 @@ module io.helidon.microprofile.openapi {
     // this is needed for CDI extensions that use non-public observer methods
     opens io.helidon.microprofile.openapi to weld.core.impl, io.helidon.microprofile.cdi;
 
-    provides Extension with OpenApiCdiExtension;
+    provides jakarta.enterprise.inject.spi.Extension with OpenApiCdiExtension;
 }

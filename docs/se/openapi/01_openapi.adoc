@@ -152,6 +152,7 @@ those described in the MicroProfile OpenAPI spec, two of which were mentioned ab
 servers for given paths
 |`openapi.servers.operation` |Prefix for config properties specifying alternative
 servers for given operations
+|`openapi.schema` |Prefix for config properties defining the schema for a class
 |===
 For more information on what these settings do consult the MicroProfile OpenAPI spec.
 
@@ -182,5 +183,5 @@ There is not yet an adopted IANA YAML media type, but a proposed one specificall
 for OpenAPI documents that has some support is `application/vnd.oai.openapi`.
 That is what Helidon returns, by default.
 
-In addition a client can specify `Accept:` as either `application/vnd.oai.openapi+json` or `application/json`
-to request JSON.
+In addition a client can specify the HTTP header `Accept:` as either `application/vnd.oai.openapi+json` or `application/json`
+to request JSON. Alternatively, the client can pass the query parameter `format` as either `JSON` or `YAML` to receive `application/json` or `application/vnd.oai.openapi` (YAML) output, respectively.

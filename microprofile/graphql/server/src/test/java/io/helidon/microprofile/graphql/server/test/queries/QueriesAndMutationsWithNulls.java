@@ -16,14 +16,13 @@
 
 package io.helidon.microprofile.graphql.server.test.queries;
 
+import java.time.LocalDate;
+
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.types.NullPOJO;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
-
-import java.time.LocalDate;
-
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import org.eclipse.microprofile.graphql.DefaultValue;
 import org.eclipse.microprofile.graphql.GraphQLApi;
 import org.eclipse.microprofile.graphql.Mutation;

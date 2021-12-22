@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,8 +52,20 @@ public interface PollableSource<S> {
      * @see io.helidon.config.AbstractConfigSource
      */
     interface Builder<T extends Builder<T>> {
+        /**
+         * Configure the polling strategy to use.
+         *
+         * @param pollingStrategy polling strategy
+         * @return updated builder
+         */
         T pollingStrategy(PollingStrategy pollingStrategy);
 
+        /**
+         * Configure the polling strategy to use.
+         *
+         * @param pollingStrategy supplier of polling strategy (such as its builder)
+         * @return updated builder
+         */
         default T pollingStrategy(Supplier<? extends PollingStrategy> pollingStrategy) {
             return pollingStrategy(pollingStrategy.get());
         }

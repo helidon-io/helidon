@@ -14,13 +14,11 @@
  * limitations under the License.
  */
 
-import javax.enterprise.inject.spi.Extension;
-
 /**
  * MicroProfile access log extension.
  */
 module io.helidon.microprofile.accesslog {
-    requires java.annotation;
+    requires jakarta.annotation;
 
     requires io.helidon.microprofile.server;
     requires io.helidon.webserver.accesslog;
@@ -31,5 +29,5 @@ module io.helidon.microprofile.accesslog {
     // this is needed for CDI extensions that use non-public observer methods
     opens io.helidon.microprofile.accesslog to weld.core.impl, io.helidon.microprofile.cdi;
 
-    provides Extension with io.helidon.microprofile.accesslog.AccessLogCdiExtension;
+    provides jakarta.enterprise.inject.spi.Extension with io.helidon.microprofile.accesslog.AccessLogCdiExtension;
 }

@@ -28,20 +28,6 @@ import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.Priority;
-import javax.ws.rs.ConstrainedTo;
-import javax.ws.rs.Path;
-import javax.ws.rs.Priorities;
-import javax.ws.rs.RuntimeType;
-import javax.ws.rs.container.ContainerRequestContext;
-import javax.ws.rs.container.ContainerRequestFilter;
-import javax.ws.rs.container.ContainerResponseContext;
-import javax.ws.rs.container.ContainerResponseFilter;
-import javax.ws.rs.core.Application;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.Response;
-
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
 import io.helidon.jersey.common.InvokedResource;
@@ -58,6 +44,19 @@ import io.helidon.security.internal.SecurityAuditEvent;
 import io.helidon.security.providers.common.spi.AnnotationAnalyzer;
 import io.helidon.webserver.ServerRequest;
 
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.Priority;
+import jakarta.ws.rs.ConstrainedTo;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Priorities;
+import jakarta.ws.rs.RuntimeType;
+import jakarta.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.container.ContainerRequestFilter;
+import jakarta.ws.rs.container.ContainerResponseContext;
+import jakarta.ws.rs.container.ContainerResponseFilter;
+import jakarta.ws.rs.core.Application;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.Response;
 import org.glassfish.jersey.server.ExtendedUriInfo;
 import org.glassfish.jersey.server.ServerConfig;
 import org.glassfish.jersey.server.model.AbstractResourceModelVisitor;
@@ -209,7 +208,7 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
 
     @Override
     public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) {
-        javax.ws.rs.core.SecurityContext jSecurityContext = requestContext.getSecurityContext();
+        jakarta.ws.rs.core.SecurityContext jSecurityContext = requestContext.getSecurityContext();
         if (null == jSecurityContext) {
             return;
         }

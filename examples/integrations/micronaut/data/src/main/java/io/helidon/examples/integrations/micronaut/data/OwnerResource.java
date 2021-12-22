@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,14 @@
 
 package io.helidon.examples.integrations.micronaut.data;
 
-import javax.inject.Inject;
-import javax.validation.constraints.Pattern;
-import javax.ws.rs.GET;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-
 import io.helidon.examples.integrations.micronaut.data.model.Owner;
 
+import jakarta.inject.Inject;
+import jakarta.validation.constraints.Pattern;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
 import org.eclipse.microprofile.metrics.annotation.SimplyTimed;
 
 /**
@@ -60,7 +59,7 @@ public class OwnerResource {
      *
      * @param name name of the owner to find, must be at least two characters long, may contain whitespace
      * @return a single owner
-     * @throws javax.ws.rs.NotFoundException in case the owner is not in the database (to return 404 status)
+     * @throws jakarta.ws.rs.NotFoundException in case the owner is not in the database (to return 404 status)
      */
     @Path("/{name}")
     @GET

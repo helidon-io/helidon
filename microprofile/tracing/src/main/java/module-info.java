@@ -16,17 +16,19 @@
 
 /**
  * Eclipse Microprofile Tracing implementation for helidon microprofile.
+ *
+ * @see org.eclipse.microprofile.opentracing
  */
 module io.helidon.microprofile.tracing {
     requires java.logging;
-    requires java.annotation;
+    requires jakarta.annotation;
 
-    requires java.ws.rs;
+    requires jakarta.ws.rs;
     requires jersey.common;
     requires io.opentracing.api;
 
-    requires static jakarta.enterprise.cdi.api;
-    requires static jakarta.inject.api;
+    requires static jakarta.cdi;
+    requires static jakarta.inject;
     requires static jakarta.interceptor.api;
 
     requires io.helidon.microprofile.server;
@@ -47,7 +49,7 @@ module io.helidon.microprofile.tracing {
     // this is needed for CDI extensions that use non-public observer methods
     opens io.helidon.microprofile.tracing to weld.core.impl,hk2.utils, io.helidon.microprofile.cdi;
 
-    provides javax.enterprise.inject.spi.Extension
+    provides jakarta.enterprise.inject.spi.Extension
             with io.helidon.microprofile.tracing.TracingCdiExtension;
     provides org.glassfish.jersey.internal.spi.AutoDiscoverable
             with io.helidon.microprofile.tracing.MpTracingAutoDiscoverable;

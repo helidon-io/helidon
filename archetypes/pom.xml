@@ -23,12 +23,17 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-project</artifactId>
-        <version>2.4.0-SNAPSHOT</version>
+        <version>3.0.0-SNAPSHOT</version>
     </parent>
     <groupId>io.helidon.archetypes</groupId>
     <artifactId>helidon-archetypes-project</artifactId>
     <name>Helidon Archetypes</name>
     <packaging>pom</packaging>
+
+    <properties>
+        <!-- 3.0.0-JAKARTA -->
+        <archetype.test.skip>true</archetype.test.skip>
+    </properties>
 
     <modules>
         <module>bare-se</module>

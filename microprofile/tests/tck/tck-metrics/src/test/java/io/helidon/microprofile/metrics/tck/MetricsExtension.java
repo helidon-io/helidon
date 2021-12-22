@@ -20,8 +20,6 @@ import org.jboss.arquillian.container.test.impl.enricher.resource.URLResourcePro
 import org.jboss.arquillian.core.spi.LoadableExtension;
 import org.jboss.arquillian.test.spi.enricher.resource.ResourceProvider;
 
-import javax.enterprise.inject.spi.CDI;
-
 /**
  * LoadableExtension that will load the UrlResourceProvider.
  */

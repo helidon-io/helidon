@@ -21,8 +21,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
-import javax.annotation.Priority;
-
+import jakarta.annotation.Priority;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
 @Priority(300)

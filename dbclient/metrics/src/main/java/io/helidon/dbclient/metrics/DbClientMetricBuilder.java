@@ -22,5 +22,5 @@ import io.helidon.dbclient.DbClientService;
  * DB Client metric builder.
  */
 public abstract class DbClientMetricBuilder extends DbClientMetricBuilderBase<DbClientMetricBuilder>
-        implements Builder<DbClientService> {
+        implements Builder<DbClientMetricBuilder, DbClientService> {
 }

@@ -22,15 +22,16 @@ import io.helidon.servicecommon.rest.RestServiceSettings;
 /**
  * Provider behavior for {@link io.helidon.metrics.serviceapi.MetricsSupport.Builder} instances (and, indirectly, for {@link io.helidon.metrics.serviceapi.MetricsSupport} instances).
  *
+ * @param <B> builder type
  * @param <T> implementation type of {@link io.helidon.metrics.serviceapi.MetricsSupport}
  */
-public interface MetricsSupportProvider<T extends MetricsSupport> {
+public interface MetricsSupportProvider<B extends MetricsSupport.Builder<B, T>, T extends MetricsSupport> {
 
     /**
      *
      * @return a new {@link MetricsSupport.Builder} for a specific implementation type of {@code MetricsSupport}
      */
-    T.Builder<T> builder();
+    B builder();
 
     /**
      * Create a new instance of the specific type of {@link MetricsSupport}.

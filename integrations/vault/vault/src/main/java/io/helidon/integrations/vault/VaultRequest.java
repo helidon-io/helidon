@@ -22,10 +22,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObjectBuilder;
-
 import io.helidon.integrations.common.rest.ApiJsonRequest;
+
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonObjectBuilder;
 
 /**
  * Common helper methods for Vault Requests.

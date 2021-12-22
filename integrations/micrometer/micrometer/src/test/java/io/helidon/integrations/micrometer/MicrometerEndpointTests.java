@@ -12,9 +12,11 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 package io.helidon.integrations.micrometer;
+
+import java.util.concurrent.ExecutionException;
+import java.util.function.Supplier;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
@@ -27,9 +29,6 @@ import io.helidon.webserver.WebServer;
 
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Test;
-
-import java.util.concurrent.ExecutionException;
-import java.util.function.Supplier;
 
 import static org.hamcrest.Matchers.is;
 
@@ -77,6 +76,7 @@ public class MicrometerEndpointTests {
 
         try {
             webServer = WebServer.builder()
+                    .host("localhost")
                     .port(-1)
                     .routing(prepareRouting(micrometerSupportSupplier))
                     .build()

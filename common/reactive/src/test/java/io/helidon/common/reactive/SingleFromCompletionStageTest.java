@@ -12,13 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 package io.helidon.common.reactive;
 
-import org.junit.jupiter.api.Test;
-
 import java.util.concurrent.CompletableFuture;
+
+import org.junit.jupiter.api.Test;
 
 public class SingleFromCompletionStageTest {
 

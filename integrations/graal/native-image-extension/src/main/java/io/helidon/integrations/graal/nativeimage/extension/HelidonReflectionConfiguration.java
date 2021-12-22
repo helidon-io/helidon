@@ -25,12 +25,11 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
-import javax.json.Json;
-import javax.json.JsonArray;
-import javax.json.JsonObject;
-import javax.json.JsonReaderFactory;
-import javax.json.stream.JsonParsingException;
-
+import jakarta.json.Json;
+import jakarta.json.JsonArray;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonReaderFactory;
+import jakarta.json.stream.JsonParsingException;
 import org.graalvm.nativeimage.hosted.Feature;
 
 final class HelidonReflectionConfiguration {

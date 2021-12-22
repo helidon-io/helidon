@@ -23,7 +23,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
 
-import javax.json.Json;
+import jakarta.json.Json;
 
 /**
  * Statement parameter parsers.

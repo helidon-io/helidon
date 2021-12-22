@@ -12,17 +12,16 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 package io.helidon.common.reactive;
-
-import org.reactivestreams.tck.TestEnvironment;
-import org.reactivestreams.tck.flow.FlowPublisherVerification;
-import org.testng.annotations.Test;
 
 import java.util.concurrent.Flow;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+
+import org.reactivestreams.tck.TestEnvironment;
+import org.reactivestreams.tck.flow.FlowPublisherVerification;
+import org.testng.annotations.Test;
 
 @Test
 public class MultiFromStreamTckTest extends FlowPublisherVerification<Integer> {

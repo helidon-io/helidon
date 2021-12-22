@@ -16,8 +16,7 @@
 
 package io.helidon.microprofile.graphql.server.test.types;
 
-import javax.json.bind.annotation.JsonbProperty;
-
+import jakarta.json.bind.annotation.JsonbProperty;
 import org.eclipse.microprofile.graphql.Name;
 
 /**

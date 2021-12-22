@@ -20,15 +20,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 
-import javax.json.Json;
-import javax.json.JsonArrayBuilder;
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObjectBuilder;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.client.Invocation;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.Response;
-
 import io.helidon.config.Config;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.Grant;
@@ -40,6 +31,15 @@ import io.helidon.security.providers.common.EvictableCache;
 import io.helidon.security.providers.oidc.common.OidcConfig;
 import io.helidon.security.spi.SecurityProvider;
 import io.helidon.security.spi.SubjectMappingProvider;
+
+import jakarta.json.Json;
+import jakarta.json.JsonArrayBuilder;
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonObjectBuilder;
+import jakarta.ws.rs.client.Entity;
+import jakarta.ws.rs.client.Invocation;
+import jakarta.ws.rs.client.WebTarget;
+import jakarta.ws.rs.core.Response;
 
 /**
  * {@link SubjectMappingProvider} to obtain roles from IDCS server for a user.
@@ -190,7 +190,7 @@ public class IdcsRoleMapperProvider extends IdcsRoleMapperProviderBase implement
      * @param <B> type of builder extending this builder
      */
     public static class Builder<B extends Builder<B>> extends IdcsRoleMapperProviderBase.Builder<Builder<B>>
-            implements io.helidon.common.Builder<IdcsRoleMapperProvider> {
+            implements io.helidon.common.Builder<Builder<B>, IdcsRoleMapperProvider> {
         private EvictableCache<String, List<Grant>> roleCache;
 
         @SuppressWarnings("unchecked")

@@ -16,16 +16,18 @@
 
 /**
  * CDI extension for microprofile config implementation.
+ *
+ * @see org.eclipse.microprofile.config
  */
 module io.helidon.microprofile.config {
     requires java.logging;
-    requires jakarta.enterprise.cdi.api;
-    requires jakarta.inject.api;
+    requires jakarta.cdi;
+    requires jakarta.inject;
     requires io.helidon.common;
     requires io.helidon.config;
     requires transitive microprofile.config.api;
     requires io.helidon.config.mp;
-    requires java.annotation;
+    requires jakarta.annotation;
     requires io.helidon.common.serviceloader;
 
     exports io.helidon.microprofile.config;
@@ -33,5 +35,5 @@ module io.helidon.microprofile.config {
     // this is needed for CDI extensions that use non-public observer methods
     opens io.helidon.microprofile.config to weld.core.impl, io.helidon.microprofile.cdi;
 
-    provides javax.enterprise.inject.spi.Extension with io.helidon.microprofile.config.ConfigCdiExtension;
+    provides jakarta.enterprise.inject.spi.Extension with io.helidon.microprofile.config.ConfigCdiExtension;
 }

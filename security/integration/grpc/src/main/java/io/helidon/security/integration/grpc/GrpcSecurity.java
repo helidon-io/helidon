@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,8 +28,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.annotation.Priority;
-
 import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
 import io.helidon.grpc.core.InterceptorPriorities;
@@ -53,6 +51,7 @@ import io.grpc.Status;
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
 import io.opentracing.contrib.grpc.OpenTracingContextKey;
+import jakarta.annotation.Priority;
 
 /**
  * Integration of security into the gRPC Server.

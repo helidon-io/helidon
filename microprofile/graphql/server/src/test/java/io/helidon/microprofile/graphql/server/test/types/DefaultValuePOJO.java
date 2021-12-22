@@ -19,9 +19,8 @@ package io.helidon.microprofile.graphql.server.test.types;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 
-import javax.json.bind.annotation.JsonbDateFormat;
+import jakarta.json.bind.annotation.JsonbDateFormat;
 import org.eclipse.microprofile.graphql.DefaultValue;
-import org.eclipse.microprofile.graphql.Description;
 import org.eclipse.microprofile.graphql.NumberFormat;
 import org.eclipse.microprofile.graphql.Type;
 

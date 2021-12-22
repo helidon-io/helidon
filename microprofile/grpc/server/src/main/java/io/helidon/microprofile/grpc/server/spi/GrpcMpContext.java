@@ -18,12 +18,12 @@ package io.helidon.microprofile.grpc.server.spi;
 
 import java.util.concurrent.CompletionStage;
 
-import javax.enterprise.inject.spi.BeanManager;
-
 import io.helidon.config.Config;
 import io.helidon.grpc.server.GrpcRouting;
 import io.helidon.grpc.server.GrpcServer;
 import io.helidon.grpc.server.GrpcServerConfiguration;
+
+import jakarta.enterprise.inject.spi.BeanManager;
 
 /**
  * A context to allow a microprofile gRPC server extensions to configure additional
@@ -54,9 +54,9 @@ public interface GrpcMpContext {
     GrpcRouting.Builder routing();
 
     /**
-     * Obtain the {@link javax.enterprise.inject.spi.BeanManager}.
+     * Obtain the {@link jakarta.enterprise.inject.spi.BeanManager}.
      *
-     * @return the {@link javax.enterprise.inject.spi.BeanManager}
+     * @return the {@link jakarta.enterprise.inject.spi.BeanManager}
      */
     BeanManager beanManager();
 

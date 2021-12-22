@@ -12,13 +12,11 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 package io.helidon.microprofile.metrics;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 
 /**
@@ -27,7 +25,7 @@ import org.eclipse.microprofile.metrics.annotation.Counted;
 public class ResourceWithMixedReusability {
 @GET
     @Path("method1")
-    @Counted(name = "mismatchedReusedName", absolute = true, reusable = true)
+    @Counted(name = "mismatchedReusedName", absolute = true)
     public String method1() {
         return "Hi from method 1";
     }

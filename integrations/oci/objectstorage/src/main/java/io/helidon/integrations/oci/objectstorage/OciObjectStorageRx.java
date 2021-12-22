@@ -119,7 +119,7 @@ public interface OciObjectStorageRx {
     /**
      * Fluent API Builder for {@link io.helidon.integrations.oci.objectstorage.OciObjectStorageRx}.
      */
-    class Builder implements io.helidon.common.Builder<OciObjectStorageRx> {
+    class Builder implements io.helidon.common.Builder<Builder, OciObjectStorageRx> {
         private final OciRestApi.Builder apiBuilder = OciRestApi.builder();
 
         private String hostPrefix = API_HOST_PREFIX;

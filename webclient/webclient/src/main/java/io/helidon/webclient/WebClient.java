@@ -142,7 +142,7 @@ public interface WebClient {
     /**
      * Fluent API builder for {@link io.helidon.webclient.WebClient}.
      */
-    final class Builder implements io.helidon.common.Builder<WebClient>,
+    final class Builder implements io.helidon.common.Builder<Builder, WebClient>,
                                    ParentingMediaContextBuilder<Builder>,
                                    MediaContextBuilder<Builder> {
 

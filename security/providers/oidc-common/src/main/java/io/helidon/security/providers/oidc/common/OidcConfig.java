@@ -25,13 +25,6 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.logging.Logger;
 
-import javax.json.Json;
-import javax.json.JsonObject;
-import javax.json.JsonReaderFactory;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.WebTarget;
-
 import io.helidon.common.Errors;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.http.FormParams;
@@ -52,6 +45,12 @@ import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientRequestBuilder;
 import io.helidon.webclient.security.WebClientSecurity;
 
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonReaderFactory;
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.ClientBuilder;
+import jakarta.ws.rs.client.WebTarget;
 import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 
 /**
@@ -341,7 +340,7 @@ public final class OidcConfig {
     private final WebTarget tokenEndpoint;
     private final URI tokenEndpointUri;
     private final String scopeAudience;
-    private final String redirectUriWithHost;
+    private final String frontendUri;
     private final boolean useHeader;
     private final TokenHandler headerHandler;
     private final String authorizationEndpointUri;
@@ -374,6 +373,7 @@ public final class OidcConfig {
         this.useCookie = builder.useCookie;
         this.useParam = builder.useParam;
         this.paramName = builder.paramName;
+        this.frontendUri = builder.frontendUri;
         this.redirectUri = builder.redirectUri;
         this.logoutUri = builder.logoutUri;
         this.logoutEnabled = builder.logoutEnabled;
@@ -438,9 +438,7 @@ public final class OidcConfig {
             }
         }
         LOGGER.finest(() -> "OIDC Scope audience: " + scopeAudience);
-
-        this.redirectUriWithHost = builder.frontendUri + builder.redirectUri;
-        LOGGER.finest(() -> "Redirect URI with host: " + redirectUriWithHost);
+        LOGGER.finest(() -> "Redirect URI with host: " + frontendUri + redirectUri);
     }
 
     /**
@@ -734,7 +732,24 @@ public final class OidcConfig {
      * @see Builder#redirectUri(String)
      */
     public String redirectUriWithHost() {
-        return redirectUriWithHost;
+        if (frontendUri == null) {
+            throw new SecurityException("Frontend URI is not defined");
+        }
+        return frontendUri + redirectUri;
+    }
+
+    /**
+     * Redirect URI with host information taken from request,
+     *  unless an explicit frontend uri is defined in configuration.
+     *
+     * @param frontendUri the frontend uri
+     * @return redirect URI
+     */
+    public String redirectUriWithHost(String frontendUri) {
+        if (this.frontendUri != null) {
+            return redirectUriWithHost();
+        }
+        return frontendUri + this.redirectUri;
     }
 
     /**
@@ -999,7 +1014,7 @@ public final class OidcConfig {
      * A fluent API {@link io.helidon.common.Builder} to build instances of {@link OidcConfig}.
      */
     @Configured(description = "Open ID Connect configuration")
-    public static class Builder implements io.helidon.common.Builder<OidcConfig> {
+    public static class Builder implements io.helidon.common.Builder<Builder, OidcConfig> {
         static final String DEFAULT_SERVER_TYPE = "@default";
 
         private final OidcCookieHandler.Builder tokenCookieBuilder = OidcCookieHandler.builder()
@@ -1071,8 +1086,7 @@ public final class OidcConfig {
             collector.collect().checkValid();
             collector = Errors.collector();
 
-            WebClient.Builder webClientBuilder = OidcUtil.webClientBaseBuilder(proxyProtocol,
-                                                                               proxyHost,
+            WebClient.Builder webClientBuilder = OidcUtil.webClientBaseBuilder(proxyHost,
                                                                                proxyPort,
                                                                                clientTimeout);
             ClientBuilder clientBuilder = OidcUtil.clientBaseBuilder(proxyProtocol, proxyHost, proxyPort);
@@ -1909,7 +1923,8 @@ public final class OidcConfig {
          * Note that the URI should not contain any query parameters. You can obtain state using the
          * state query parameter that must be provided to {@link #logoutUri(String)}.
          *
-         * @param uri this will be used by the OIDC server to redirect user to once logout is done
+         * @param uri this will be used by the OIDC server to redirect user to once logout is done, can define just path,
+         *            in which case the scheme, host and port will be taken from request.
          * @return updated builder instance
          */
         public Builder postLogoutUri(URI uri) {

@@ -24,10 +24,10 @@
  * @see io.helidon.integrations.cdi.hibernate.CDISEJtaPlatform
  */
 module io.helidon.integrations.cdi.hibernate {
-    requires java.transaction;
+    requires jakarta.transaction;
     requires java.sql;
-    requires jakarta.inject.api;
-    requires jakarta.enterprise.cdi.api;
+    requires jakarta.inject;
+    requires jakarta.cdi;
     requires org.hibernate.orm.core;
 
     exports io.helidon.integrations.cdi.hibernate;

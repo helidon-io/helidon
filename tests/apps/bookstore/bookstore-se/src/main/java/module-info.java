@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@
  */
 module io.helidon.tests.apps.bookstore.se {
     requires java.logging;
-    requires java.json;
+    requires jakarta.json;
 
     requires io.helidon.webserver;
     requires io.helidon.config.yaml;

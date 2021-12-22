@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,10 +25,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.core.Response;
-
 import io.helidon.tracing.jersey.client.ClientTracingFilter;
 import io.helidon.tracing.zipkin.ZipkinTracer;
 import io.helidon.webserver.Routing;
@@ -40,6 +36,9 @@ import brave.opentracing.BraveTracer;
 import brave.propagation.TraceContext;
 import io.opentracing.Span;
 import io.opentracing.Tracer;
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.ClientBuilder;
+import jakarta.ws.rs.core.Response;
 import org.glassfish.jersey.client.ClientConfig;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -79,6 +78,7 @@ public class OpentraceableClientE2ETest {
 
     private static WebServer startWebServer() throws InterruptedException, ExecutionException, TimeoutException {
         return WebServer.builder()
+                        .host("localhost")
                         .routing(Routing.builder()
                                  .any((req, res) -> res.send("OK")))
                         .tracer(tracer("test-server"))

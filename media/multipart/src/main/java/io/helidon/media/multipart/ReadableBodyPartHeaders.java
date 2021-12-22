@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,7 +75,7 @@ public final class ReadableBodyPartHeaders extends ReadOnlyParameters implements
     /**
      * Builder class to create {@link ReadableBodyPartHeaders} instances.
      */
-    public static final class Builder implements io.helidon.common.Builder<ReadableBodyPartHeaders> {
+    public static final class Builder implements io.helidon.common.Builder<Builder, ReadableBodyPartHeaders> {
 
         /**
          * The headers map.

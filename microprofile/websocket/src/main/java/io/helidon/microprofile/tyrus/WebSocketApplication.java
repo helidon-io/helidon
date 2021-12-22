@@ -21,9 +21,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Logger;
 
-import javax.websocket.Endpoint;
-import javax.websocket.Extension;
-import javax.websocket.server.ServerApplicationConfig;
+import jakarta.websocket.Endpoint;
+import jakarta.websocket.Extension;
+import jakarta.websocket.server.ServerApplicationConfig;
 
 /**
  * Represents a websocket application with class and config endpoints.

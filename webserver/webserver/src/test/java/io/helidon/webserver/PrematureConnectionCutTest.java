@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package io.helidon.webserver;
@@ -59,6 +58,7 @@ public class PrematureConnectionCutTest {
         try {
             final TestAsyncRunner async = asyncRunner = new TestAsyncRunner(CALL_NUM);
             webServer = WebServer.builder()
+                    .host("localhost")
                     .port(0)
                     .routing(Routing.builder()
                             .post((req, res) -> req.content()

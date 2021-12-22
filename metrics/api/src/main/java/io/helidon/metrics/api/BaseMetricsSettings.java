@@ -98,7 +98,7 @@ public interface BaseMetricsSettings {
      * Builder for {@code BaseMetricsSettings}.
      */
     @Configured(prefix = MetricsSettings.Builder.METRICS_CONFIG_KEY + "." + Builder.BASE_METRICS_CONFIG_KEY)
-    interface Builder extends io.helidon.common.Builder<BaseMetricsSettings> {
+    interface Builder extends io.helidon.common.Builder<Builder, BaseMetricsSettings> {
 
         /**
          * Config key within the config {@code metrics} section controlling base metrics behavior.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import javax.annotation.Priority;
-
 import io.helidon.grpc.core.ContextKeys;
 import io.helidon.grpc.core.InterceptorPriorities;
 
@@ -40,6 +38,7 @@ import io.opentracing.contrib.grpc.OpenTracingContextKey;
 import io.opentracing.contrib.grpc.OperationNameConstructor;
 import io.opentracing.propagation.Format;
 import io.opentracing.propagation.TextMapAdapter;
+import jakarta.annotation.Priority;
 
 /**
  * A {@link ServerInterceptor} that adds tracing to gRPC service calls.

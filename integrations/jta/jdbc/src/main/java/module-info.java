@@ -20,7 +20,7 @@
 @SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.integrations.jta.jdbc {
 
-    requires transitive java.transaction; // automatic module
+    requires transitive jakarta.transaction; // automatic module
 
     requires transitive io.helidon.integrations.jdbc;
 

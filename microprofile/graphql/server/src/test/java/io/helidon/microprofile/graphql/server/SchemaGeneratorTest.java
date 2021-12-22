@@ -32,8 +32,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.json.bind.annotation.JsonbNumberFormat;
-
 import io.helidon.microprofile.graphql.server.test.enums.EnumTestNoEnumName;
 import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithEnumName;
 import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithNameAndNameAnnotation;
@@ -63,6 +61,7 @@ import io.helidon.microprofile.graphql.server.test.types.TypeWithNameAndJsonbPro
 import io.helidon.microprofile.graphql.server.test.types.Vehicle;
 import io.helidon.microprofile.graphql.server.test.types.VehicleIncident;
 
+import jakarta.json.bind.annotation.JsonbNumberFormat;
 import org.eclipse.microprofile.graphql.DateFormat;
 import org.eclipse.microprofile.graphql.Name;
 import org.eclipse.microprofile.graphql.NonNull;
@@ -593,7 +592,7 @@ class SchemaGeneratorTest extends AbstractGraphQLTest {
     }
 
     /**
-     * Assert that a {@link org.eclipse.microprofile.graphql.NumberFormat} or {@link javax.json.bind.annotation.JsonbNumberFormat}
+     * Assert that a {@link org.eclipse.microprofile.graphql.NumberFormat} or {@link jakarta.json.bind.annotation.JsonbNumberFormat}
      * annotation is correctly applied.
      *
      * @param clazz          {@link Class} to apply to

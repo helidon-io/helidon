@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package io.helidon.messaging;
@@ -27,7 +26,7 @@ import io.helidon.config.ConfigSources;
 /**
  * Detached configuration of a single connector.
  */
-public abstract class ConnectorConfigBuilder implements Builder<Config> {
+public abstract class ConnectorConfigBuilder implements Builder<ConnectorConfigBuilder, Config> {
     private final Map<String, String> configuration = new HashMap<>();
 
     protected ConnectorConfigBuilder() {

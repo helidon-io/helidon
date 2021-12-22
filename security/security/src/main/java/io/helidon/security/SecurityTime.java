@@ -123,7 +123,7 @@ public class SecurityTime {
      * Fluent API builder for {@link SecurityTime}.
      */
     @Configured
-    public static final class Builder implements io.helidon.common.Builder<SecurityTime> {
+    public static final class Builder implements io.helidon.common.Builder<Builder, SecurityTime> {
         private final List<ChronoValues> values = new ArrayList<>();
         private ZoneId timeZone = ZoneId.systemDefault();
         private long shiftBySeconds = 0;

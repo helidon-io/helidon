@@ -195,7 +195,7 @@ public final class SimpleRetryPolicy implements RetryPolicy {
     /**
      * Fluent API builder for {@link io.helidon.config.SimpleRetryPolicy}.
      */
-    public static final class Builder implements io.helidon.common.Builder<SimpleRetryPolicy> {
+    public static final class Builder implements io.helidon.common.Builder<Builder, SimpleRetryPolicy> {
         private int retries = 3;
         private Duration delay = Duration.ofMillis(200);
         private double delayFactor = 2;

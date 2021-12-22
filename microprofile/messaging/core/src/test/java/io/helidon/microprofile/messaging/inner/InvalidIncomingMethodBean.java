@@ -18,12 +18,11 @@ package io.helidon.microprofile.messaging.inner;
 
 import java.util.concurrent.CountDownLatch;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.spi.DeploymentException;
-
 import io.helidon.microprofile.messaging.AssertThrowException;
 import io.helidon.microprofile.messaging.CountableTestBean;
 
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.spi.DeploymentException;
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;

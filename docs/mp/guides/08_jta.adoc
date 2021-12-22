@@ -96,8 +96,8 @@ transaction if necessary, might look like this:
 [source,java]
 .`PersonDAO.java`
 ----
-import javax.transaction.Transactional;
-import javax.transaction.Transactional.TxType;
+import jakarta.transaction.Transactional;
+import jakarta.transaction.Transactional.TxType;
 
 @Transactional(TxType.REQUIRED) <1>
 public void savePerson(Person person) {

@@ -12,14 +12,13 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 package io.helidon.openapi;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -30,10 +29,7 @@ import org.eclipse.microprofile.openapi.models.media.Content;
 import org.eclipse.microprofile.openapi.models.media.MediaType;
 import org.eclipse.microprofile.openapi.models.responses.APIResponse;
 import org.eclipse.microprofile.openapi.models.responses.APIResponses;
-import org.eclipse.microprofile.openapi.models.security.Scopes;
 import org.eclipse.microprofile.openapi.models.security.SecurityRequirement;
-import org.eclipse.microprofile.openapi.models.servers.ServerVariable;
-import org.eclipse.microprofile.openapi.models.servers.ServerVariables;
 import org.yaml.snakeyaml.TypeDescription;
 import org.yaml.snakeyaml.constructor.Constructor;
 import org.yaml.snakeyaml.error.Mark;
@@ -44,53 +40,141 @@ import org.yaml.snakeyaml.nodes.SequenceNode;
 import org.yaml.snakeyaml.nodes.Tag;
 
 /**
- * Specialized SnakeYAML constructor for modifying {@code Node} objects for OpenAPI types that extend {@code Map} to adjust the
- * type of the child nodes of such nodes.
+ * Specialized SnakeYAML constructor for modifying {@code Node} objects for OpenAPI types needing special attention.
  * <p>
- * Several MicroProfile OpenAPI interfaces extend {@code Map}. For example, {@code Paths} extends {@code Map
- * <String, PathItem>} and {@code SecurityRequirement} extends {@code Map<String, List<String>>}. When SnakeYAML builds the node
- * corresponding to one of these types, it correctly creates each child node as a {@code MappingNode} but it assigns those
- * child nodes a type of {@code Object} instead of the mapped type -- {@code PathItem} in the example above.
- * </p>
- * <p>
- * This class customizes the preparation of the node tree in these situations by setting the types for the child nodes explicitly
- * to the corresponding child type. In OpenAPI 1.1.2 there are two situations, depending on whether the mapped-to type is a
- * {@code List} or not.
- * </p>
- * <p>
- * The MicroProfile OpenAPI 2.0 versions of the interfaces no longer use this construct of an interface extending {@code Map}, so
- * ideally we can remove this workaround when we adopt 2.0.
+ *     Several MP OpenAPI types resemble maps with strings for keys and various child types as values. Such interfaces
+ *     expose an {@code addX} method, where X is the child type (e.g., {@link Paths} exposes {@link Paths#addPathItem}.
+ *     SnakeYAML parsing, left to itself, would incorrectly attempt to use the string keys as property names in converting OpenAPI
+ *     documents to and from the in-memory POJO model. To prevent that, this custom constructor takes over the job of
+ *     creating these parent instances and populating the children from the SnakeYAML node graph.
  * </p>
  */
 final class CustomConstructor extends Constructor {
 
-    // maps OpenAPI interfaces which extend Map<?, type> to the mapped-to type where that mapped-to type is NOT List
-    private static final Map<Class<?>, Class<?>> CHILD_MAP_TYPES = new HashMap<>();
+    // OpenAPI interfaces which resemble Map<?, type>, linked to info used to prepare the type description for that type where
+    // the mapped-to type is NOT a list. For typing reasons (in ExpandedTypeDescription$MapLikeTypeDescription#create)
+    // we provide type-specific factory functions as part of the type metadata here where we can specify the actual parent
+    // and child types.
+    static final Map<Class<?>, ChildMapType<?, ?>> CHILD_MAP_TYPES = Map.of(
+            APIResponses.class, new ChildMapType<>(APIResponses.class,
+                                                   APIResponse.class,
+                                                   APIResponses::addAPIResponse,
+                                                   impl -> ExpandedTypeDescription.MapLikeTypeDescription.create(
+                                                           APIResponses.class,
+                                                           impl,
+                                                           APIResponse.class,
+                                                           APIResponses::addAPIResponse)),
+            Callback.class, new ChildMapType<>(Callback.class,
+                                               PathItem.class,
+                                               Callback::addPathItem,
+                                               impl -> ExpandedTypeDescription.MapLikeTypeDescription.create(
+                                                       Callback.class,
+                                                       impl,
+                                                       PathItem.class,
+                                                       Callback::addPathItem)),
+            Content.class, new ChildMapType<>(Content.class,
+                                              MediaType.class,
+                                              Content::addMediaType,
+                                              impl -> ExpandedTypeDescription.MapLikeTypeDescription.create(
+                                                      Content.class,
+                                                      impl,
+                                                      MediaType.class,
+                                                      Content::addMediaType)),
+            Paths.class, new ChildMapType<>(Paths.class,
+                                            PathItem.class,
+                                            Paths::addPathItem,
+                                            impl -> ExpandedTypeDescription.MapLikeTypeDescription.create(
+                                                    Paths.class,
+                                                    impl,
+                                                    PathItem.class,
+                                                    Paths::addPathItem)));
 
-    // maps OpenAPI interfaces which extend Map<?, List<type>> to the type that appears in the list
-    private static final Map<Class<?>, Class<?>> CHILD_MAP_OF_LIST_TYPES = new HashMap<>();
+    // OpenAPI interfaces which resemble Map<?, List<type>>, linked to info used to prepare the type description for that type
+    // where the mapped-to type IS a list.
+    static final Map<Class<?>, ChildMapListType<?, ?>> CHILD_MAP_OF_LIST_TYPES = Map.of(
+            SecurityRequirement.class, new ChildMapListType<>(SecurityRequirement.class,
+                                                              String.class,
+                                                              SecurityRequirement::addScheme,
+                                                              SecurityRequirement::addScheme,
+                                                              SecurityRequirement::addScheme,
+                                                              impl -> ExpandedTypeDescription.ListMapLikeTypeDescription.create(
+                                                                      SecurityRequirement.class,
+                                                                      impl,
+                                                                      String.class,
+                                                                      SecurityRequirement::addScheme,
+                                                                      SecurityRequirement::addScheme,
+                                                                      SecurityRequirement::addScheme)));
+
+    /**
+     * Adds a single named child to the parent.
+     *
+     * @param <P> parent type
+     * @param <C> child type
+     */
+    @FunctionalInterface
+    interface ChildAdder<P, C> {
+        Object addChild(P parent, String name, C child);
+    }
+
+    /**
+     * Adds a list of children to the parent.
+     *
+     * @param <P> parent type
+     * @param <C> child type
+     */
+    @FunctionalInterface
+    interface ChildListAdder<P, C> {
+        Object addChildren(P parent, String name, List<C> children);
+    }
+
+    /**
+     * Adds a valueless child name to the parent.
+     *
+     * @param <P> parent type
+     */
+    @FunctionalInterface
+    interface ChildNameAdder<P> {
+        P addChild(P parent, String name);
+    }
+
+    /**
+     * Type information about a map-resembling interface.
+     *
+     * @param <P> parent type
+     * @param <C> child type
+     */
+    record ChildMapType<P, C>(Class<P> parentType,
+                              Class<C> childType,
+                              ChildAdder<P, C> childAdder,
+                              Function<Class<?>, ExpandedTypeDescription.MapLikeTypeDescription<P, C>> typeDescriptionFactory) { }
+
+    /**
+     * Type information about a map-resembling interface in which a child can have 0, 1, or more values i.e., the child is
+     * a list).
+     *
+     * @param <P> parent type
+     * @param <C> child type
+     */
+    record ChildMapListType<P, C>(
+            Class<P> parentType,
+            Class<C> childType,
+            ChildAdder<P, C> childAdder,
+            ChildListAdder<P, C> childListAdder,
+            ChildNameAdder<P> childNameAdder,
+            Function<Class<?>, ExpandedTypeDescription.ListMapLikeTypeDescription<P, C>> typeDescriptionFunction) { }
 
     private static final Logger LOGGER = Logger.getLogger(CustomConstructor.class.getName());
 
-    static {
-        CHILD_MAP_TYPES.put(Paths.class, PathItem.class);
-        CHILD_MAP_TYPES.put(Callback.class, PathItem.class);
-        CHILD_MAP_TYPES.put(Content.class, MediaType.class);
-        CHILD_MAP_TYPES.put(APIResponses.class, APIResponse.class);
-        CHILD_MAP_TYPES.put(ServerVariables.class, ServerVariable.class);
-        CHILD_MAP_TYPES.put(Scopes.class, String.class);
-        CHILD_MAP_OF_LIST_TYPES.put(SecurityRequirement.class, String.class);
-    }
-
     CustomConstructor(TypeDescription td) {
         super(td);
+        yamlClassConstructors.put(NodeId.mapping, new ConstructMapping());
     }
 
     @Override
     protected void constructMapping2ndStep(MappingNode node, Map<Object, Object> mapping) {
         Class<?> parentType = node.getType();
         if (CHILD_MAP_TYPES.containsKey(parentType)) {
-            Class<?> childType = CHILD_MAP_TYPES.get(parentType);
+            Class<?> childType = CHILD_MAP_TYPES.get(parentType).childType;
             node.getValue().forEach(tuple -> {
                 Node valueNode = tuple.getValueNode();
                 if (valueNode.getType() == Object.class) {
@@ -98,7 +182,7 @@ final class CustomConstructor extends Constructor {
                 }
             });
         } else if (CHILD_MAP_OF_LIST_TYPES.containsKey(parentType)) {
-            Class<?> childType = CHILD_MAP_OF_LIST_TYPES.get(parentType);
+            Class<?> childType = CHILD_MAP_OF_LIST_TYPES.get(parentType).childType;
             node.getValue().forEach(tuple -> {
                 Node valueNode = tuple.getValueNode();
                 if (valueNode.getNodeId() == NodeId.sequence) {
@@ -126,9 +210,35 @@ final class CustomConstructor extends Constructor {
         });
         if (!numericHttpStatusMarks.isEmpty()) {
             LOGGER.log(Level.WARNING,
-                    "Numeric HTTP status value(s) should be quoted. "
-                    + "Please change the following; unquoted numeric values might be rejected in a future release: {0}",
-                    numericHttpStatusMarks);
+                       "Numeric HTTP status value(s) should be quoted. "
+                               + "Please change the following; unquoted numeric values might be rejected in a future release: "
+                               + "{0}",
+                       numericHttpStatusMarks);
+        }
+    }
+
+    /**
+     * Override of SnakeYAML logic which constructs an object from a node.
+     * <p>
+     *     This class makes sure that parent/child relationships that resemble maps are handled correctly and defers to the
+     *     superclass implementation in other cases.
+     * </p>
+     */
+    class ConstructMapping extends Constructor.ConstructMapping {
+
+        @Override
+        public Object construct(Node node) {
+            Class<?> parentType = node.getType();
+            if (CHILD_MAP_TYPES.containsKey(parentType) || CHILD_MAP_OF_LIST_TYPES.containsKey(parentType)) {
+                // Following is inspired by SnakeYAML Constructor$ConstructMapping#construct.
+                MappingNode mappingNode = (MappingNode) node;
+                if (node.isTwoStepsConstruction()) {
+                    return newMap(mappingNode);
+                } else {
+                    return constructMapping(mappingNode);
+                }
+            }
+            return super.construct(node);
         }
     }
 }

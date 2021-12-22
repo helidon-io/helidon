@@ -19,14 +19,14 @@
  */
 module io.helidon.security.integration.jersey {
     requires java.logging;
-    requires java.annotation;
+    requires jakarta.annotation;
 
     requires transitive io.helidon.security;
     requires transitive io.helidon.security.annotations;
     requires transitive io.helidon.security.providers.common;
     requires transitive io.helidon.security.util;
     requires transitive io.helidon.common.serviceloader;
-    requires transitive java.ws.rs;
+    requires transitive jakarta.ws.rs;
 
     requires io.helidon.common.context;
     requires io.helidon.jersey.common;
@@ -36,7 +36,7 @@ module io.helidon.security.integration.jersey {
     requires io.helidon.webclient.jaxrs;
     requires io.helidon.webserver;
 
-    requires jakarta.inject.api;
+    requires jakarta.inject;
 
     exports io.helidon.security.integration.jersey;
 

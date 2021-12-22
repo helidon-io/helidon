@@ -92,7 +92,7 @@ public class Kv1SecurityProvider implements SecretsProvider<Kv1SecurityProvider.
         /**
          * Fluent API builder for {@link io.helidon.integrations.vault.secrets.kv1.Kv1SecurityProvider.Kv1SecretConfig}.
          */
-        public static class Builder implements io.helidon.common.Builder<Kv1SecretConfig> {
+        public static class Builder implements io.helidon.common.Builder<Builder, Kv1SecretConfig> {
             private String path;
             private String key;
 

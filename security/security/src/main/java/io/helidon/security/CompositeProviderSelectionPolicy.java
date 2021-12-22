@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -213,7 +213,7 @@ public final class CompositeProviderSelectionPolicy implements ProviderSelection
      * Fluent API builder to create {@link CompositeProviderSelectionPolicy}.
      * Invoke {@link #build()} to get a function to be sent to {@link Security.Builder#providerSelectionPolicy(Function)}.
      */
-    public static final class Builder implements io.helidon.common.Builder<Function<Providers, ProviderSelectionPolicy>> {
+    public static final class Builder implements io.helidon.common.Builder<Builder, Function<Providers, ProviderSelectionPolicy>> {
         private final List<FlaggedProvider> authenticators = new LinkedList<>();
         private final List<FlaggedProvider> authorizers = new LinkedList<>();
         private final List<String> outbound = new LinkedList<>();

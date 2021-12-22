@@ -142,7 +142,7 @@ public interface InjectionProvider {
         /**
          * Fluent API builder for {@link io.helidon.integrations.vault.spi.InjectionProvider.InstanceConfig}.
          */
-        public static class Builder implements io.helidon.common.Builder<InstanceConfig> {
+        public static class Builder implements io.helidon.common.Builder<Builder, InstanceConfig> {
             private String vaultPath;
             private String vaultName;
 

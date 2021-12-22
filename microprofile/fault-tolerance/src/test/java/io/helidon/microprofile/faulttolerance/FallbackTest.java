@@ -16,9 +16,9 @@
 
 package io.helidon.microprofile.faulttolerance;
 
-import javax.inject.Inject;
-
 import io.helidon.microprofile.tests.junit5.AddBean;
+
+import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;

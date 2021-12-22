@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 package io.helidon.webclient.metrics;
 
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Single;
@@ -69,7 +69,7 @@ class WebClientTimer extends WebClientMetric {
     private void updateTimer(Metadata metadata, long start) {
         long time = System.nanoTime() - start;
         Timer timer = metricRegistry().timer(metadata);
-        timer.update(time, TimeUnit.NANOSECONDS);
+        timer.update(Duration.ofNanos(time));
     }
 
 }

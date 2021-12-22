@@ -16,19 +16,19 @@
 
 package io.helidon.microprofile.faulttolerance;
 
-import javax.inject.Inject;
 import java.util.concurrent.CompletableFuture;
 
 import io.helidon.microprofile.tests.junit5.AddBean;
-import org.eclipse.microprofile.faulttolerance.exceptions.TimeoutException;
 
+import jakarta.inject.Inject;
+import org.eclipse.microprofile.faulttolerance.exceptions.TimeoutException;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.lessThan;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 
 /**
  * Test beans with timeout methods.

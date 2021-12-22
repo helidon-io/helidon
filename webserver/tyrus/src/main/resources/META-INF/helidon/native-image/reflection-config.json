@@ -1,9 +1,9 @@
 {
   "annotated": [],
   "class-hierarchy": [
-    "javax.websocket.Endpoint",
-    "javax.websocket.Encoder",
-    "javax.websocket.Decoder",
+    "jakarta.websocket.Endpoint",
+    "jakarta.websocket.Encoder",
+    "jakarta.websocket.Decoder",
     "org.glassfish.tyrus.spi.ClientContainer",
     "io.netty.channel.ChannelInboundHandlerAdapter",
     "io.netty.channel.ChannelHandlerAdapter",
@@ -11,7 +11,7 @@
     "io.netty.channel.ChannelOutboundHandler"
   ],
   "classes": [
-    "javax.websocket.CloseReason",
+    "jakarta.websocket.CloseReason",
     "javax.naming.InitialContext"
   ],
   "exclude": [

@@ -37,14 +37,15 @@ class MetricsSupportManager {
 
     private static final Logger LOGGER = Logger.getLogger(MetricsSupportManager.class.getName());
 
-    private static final LazyValue<MetricsSupportProvider<?>> LAZY_PROVIDER =
+    @SuppressWarnings("unchecked")
+    private static final LazyValue<MetricsSupportProvider<?, ?>> LAZY_PROVIDER =
             LazyValue.create(MetricsSupportManager::loadMetricsSupportProvider);
 
     private MetricsSupportManager() {
     }
 
-    private static MetricsSupportProvider<?> loadMetricsSupportProvider() {
-        MetricsSupportProvider<?> provider = HelidonServiceLoader.builder(ServiceLoader.load(MetricsSupportProvider.class))
+    private static MetricsSupportProvider<?, ?> loadMetricsSupportProvider() {
+        MetricsSupportProvider<?, ?> provider = HelidonServiceLoader.builder(ServiceLoader.load(MetricsSupportProvider.class))
                 .addService(new MinimalMetricsSupportProviderImpl(), Integer.MAX_VALUE)
                 .build()
                 .asList()
@@ -54,12 +55,13 @@ class MetricsSupportManager {
     }
 
     static MetricsSupport create() {
-        return LAZY_PROVIDER.get().builder()
+        return LAZY_PROVIDER.get()
+                .builder()
                 .restServiceSettings(MetricsSupport.defaultedMetricsRestServiceSettingsBuilder())
                 .build();
     }
 
-    static MetricsSupport.Builder<?> builder() {
+    static MetricsSupport.Builder<?, ?> builder() {
         return LAZY_PROVIDER.get()
                 .builder()
                 .restServiceSettings(MetricsSupport.defaultedMetricsRestServiceSettingsBuilder());

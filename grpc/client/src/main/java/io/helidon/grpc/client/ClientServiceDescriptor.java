@@ -360,7 +360,7 @@ public class ClientServiceDescriptor {
      * A {@link ClientServiceDescriptor} builder.
      */
     public static final class Builder
-            implements Rules, io.helidon.common.Builder<ClientServiceDescriptor> {
+            implements Rules, io.helidon.common.Builder<Builder, ClientServiceDescriptor> {
         private String name;
         private PriorityBag<ClientInterceptor> interceptors = PriorityBag.withDefaultPriority(InterceptorPriorities.USER);
         private Class<?> serviceClass;

@@ -20,8 +20,6 @@ import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
-import javax.ws.rs.client.ClientBuilder;
-
 import io.helidon.common.Errors;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.security.providers.common.OutboundConfig;
@@ -29,6 +27,7 @@ import io.helidon.webclient.Proxy;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.tracing.WebClientTracing;
 
+import jakarta.ws.rs.client.ClientBuilder;
 import org.glassfish.jersey.client.ClientProperties;
 
 final class OidcUtil {
@@ -67,8 +66,7 @@ final class OidcUtil {
         return clientBuilder;
     }
 
-    static WebClient.Builder webClientBaseBuilder(String proxyProtocol,
-                                                  String proxyHost,
+    static WebClient.Builder webClientBaseBuilder(String proxyHost,
                                                   int proxyPort,
                                                   Duration clientTimeout) {
         WebClient.Builder webClientBuilder = WebClient.builder()
@@ -80,7 +78,7 @@ final class OidcUtil {
         if (proxyHost != null) {
             webClientBuilder.proxy(Proxy.builder()
                                            .type(Proxy.ProxyType.HTTP)
-                                           .host(proxyProtocol + "://" + proxyHost)
+                                           .host(proxyHost)
                                            .port(proxyPort)
                                            .build());
         }

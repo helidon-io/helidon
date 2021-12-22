@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,8 @@
 
 package io.helidon.microprofile.server;
 
-import javax.ws.rs.ApplicationPath;
-import javax.ws.rs.core.Application;
-
+import jakarta.ws.rs.ApplicationPath;
+import jakarta.ws.rs.core.Application;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.config.testing.OptionalMatcher.value;

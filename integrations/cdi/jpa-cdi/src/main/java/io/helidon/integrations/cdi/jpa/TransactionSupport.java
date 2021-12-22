@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 package io.helidon.integrations.cdi.jpa;
 
-import javax.enterprise.context.spi.Context;
+import jakarta.enterprise.context.spi.Context;
 
 /**
  * An interface whose implementations indicate indirectly whether JTA
@@ -35,61 +35,61 @@ interface TransactionSupport {
 
     /**
      * Equal in value and meaning to {@link
-     * javax.transaction.Status#STATUS_ACTIVE}.
+     * jakarta.transaction.Status#STATUS_ACTIVE}.
      */
     int STATUS_ACTIVE = 0;
 
     /**
      * Equal in value and meaning to {@link
-     * javax.transaction.Status#STATUS_MARKED_ROLLBACK}.
+     * jakarta.transaction.Status#STATUS_MARKED_ROLLBACK}.
      */
     int STATUS_MARKED_ROLLBACK = 1;
 
     /**
      * Equal in value and meaning to {@link
-     * javax.transaction.Status#STATUS_PREPARED}.
+     * jakarta.transaction.Status#STATUS_PREPARED}.
      */
     int STATUS_PREPARED = 2;
 
     /**
      * Equal in value and meaning to {@link
-     * javax.transaction.Status#STATUS_COMMITTED}.
+     * jakarta.transaction.Status#STATUS_COMMITTED}.
      */
     int STATUS_COMMITTED = 3;
 
     /**
      * Equal in value and meaning to {@link
-     * javax.transaction.Status#STATUS_ROLLEDBACK}.
+     * jakarta.transaction.Status#STATUS_ROLLEDBACK}.
      */
     int STATUS_ROLLEDBACK = 4;
 
     /**
      * Equal in value and meaning to {@link
-     * javax.transaction.Status#STATUS_UNKNOWN}.
+     * jakarta.transaction.Status#STATUS_UNKNOWN}.
      */
     int STATUS_UNKNOWN = 5;
 
     /**
      * Equal in value and meaning to {@link
-     * javax.transaction.Status#STATUS_NO_TRANSACTION}.
+     * jakarta.transaction.Status#STATUS_NO_TRANSACTION}.
      */
     int STATUS_NO_TRANSACTION = 6;
 
     /**
      * Equal in value and meaning to {@link
-     * javax.transaction.Status#STATUS_PREPARING}.
+     * jakarta.transaction.Status#STATUS_PREPARING}.
      */
     int STATUS_PREPARING = 7;
 
     /**
      * Equal in value and meaning to {@link
-     * javax.transaction.Status#STATUS_COMMITTING}.
+     * jakarta.transaction.Status#STATUS_COMMITTING}.
      */
     int STATUS_COMMITTING = 8;
 
     /**
      * Equal in value and meaning to {@link
-     * javax.transaction.Status#STATUS_ROLLING_BACK}.
+     * jakarta.transaction.Status#STATUS_ROLLING_BACK}.
      */
     int STATUS_ROLLING_BACK = 9;
 
@@ -131,7 +131,7 @@ interface TransactionSupport {
      * <p>Implementations of this method must return {@link
      * #STATUS_NO_TRANSACTION} ({@code 6}) if JTA is not supported.</p>
      *
-     * @return a JTA {@link javax.transaction.Status} constant
+     * @return a JTA {@link jakarta.transaction.Status} constant
      * indicating the current transaction status
      */
     int getStatus();

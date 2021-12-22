@@ -17,6 +17,7 @@
 plugins {
     id 'java'
     id 'org.kordamp.gradle.jandex' version '0.6.0'
+    id 'application'
 }
 
 group = 'io.helidon.examples'
@@ -31,7 +32,8 @@ tasks.withType(JavaCompile) {
 }
 
 ext {
-    helidonversion = '2.4.0-SNAPSHOT'
+    helidonversion = '3.0.0-SNAPSHOT'
+    mainClass='io.helidon.microprofile.cdi.Main'
 }
 
 repositories {
@@ -75,10 +77,14 @@ assemble.dependsOn copyLibs
 jar {
   archiveFileName = "${project.name}.jar"
   manifest {
-    attributes ('Main-Class': 'io.helidon.microprofile.cdi.Main',
+    attributes ('Main-Class': "${project.mainClass}" ,
                 'Class-Path': configurations.runtimeClasspath.files.collect { "libs/$it.name" }.join(' ')
                )
   }
+}
+
+application {
+    mainClass = "${project.mainClass}"
 }
 
 // This is a work-around for running unit tests.
@@ -93,4 +99,4 @@ task moveBeansXML {
     }
 }
 test.dependsOn moveBeansXML
-
+run.dependsOn moveBeansXML

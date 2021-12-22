@@ -224,7 +224,7 @@ public class ConfigVaultProvider implements SecretsProvider<ConfigVaultProvider.
     @Configured(prefix = "config-vault",
                 description = "Secrets and Encryption provider using just configuration",
                 provides = {SecurityProvider.class, SecretsProvider.class, EncryptionProvider.class})
-    public static class Builder implements io.helidon.common.Builder<ConfigVaultProvider> {
+    public static class Builder implements io.helidon.common.Builder<Builder, ConfigVaultProvider> {
         private Config config = Config.empty();
         private Optional<char[]> masterPassword = Optional.empty();
 

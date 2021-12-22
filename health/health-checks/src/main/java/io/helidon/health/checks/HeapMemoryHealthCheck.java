@@ -19,12 +19,11 @@ package io.helidon.health.checks;
 import java.util.Formatter;
 import java.util.Locale;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
-
 import io.helidon.config.Config;
 import io.helidon.health.common.BuiltInHealthCheck;
 
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
@@ -115,7 +114,7 @@ public final class HeapMemoryHealthCheck implements HealthCheck {
         final long usedMemory = totalMemory - freeMemory;
         final long threshold = (long) ((thresholdPercent / 100) * maxMemory);
         return HealthCheckResponse.named("heapMemory")
-                .state(threshold >= usedMemory)
+                .status(threshold >= usedMemory)
                 .withData("percentFree",
                           formatter.format("%.2f%%", 100 * ((double) (maxMemory - usedMemory) / maxMemory)).toString())
                 .withData("free", DiskSpaceHealthCheck.format(freeMemory))
@@ -130,7 +129,7 @@ public final class HeapMemoryHealthCheck implements HealthCheck {
     /**
      * Fluent API builder for {@link io.helidon.health.checks.HeapMemoryHealthCheck}.
      */
-    public static final class Builder implements io.helidon.common.Builder<HeapMemoryHealthCheck> {
+    public static final class Builder implements io.helidon.common.Builder<Builder, HeapMemoryHealthCheck> {
         private double threshold = DEFAULT_THRESHOLD;
 
         private Builder() {

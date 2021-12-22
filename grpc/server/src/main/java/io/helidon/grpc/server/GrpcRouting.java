@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,7 +85,7 @@ public interface GrpcRouting {
     /**
      * A builder that can build {@link GrpcRouting} instances.
      */
-    final class Builder implements io.helidon.common.Builder<GrpcRouting> {
+    final class Builder implements io.helidon.common.Builder<Builder, GrpcRouting> {
 
         /**
          * The {@link Map} of the {@link ServiceDescriptor} instances
@@ -103,7 +103,7 @@ public interface GrpcRouting {
          * Add one or more global {@link ServerInterceptor} instances that will intercept calls
          * to all services in the {@link GrpcRouting} built by this builder.
          * <p>
-         * If the added interceptors are annotated with the {@link javax.annotation.Priority}
+         * If the added interceptors are annotated with the {@link jakarta.annotation.Priority}
          * annotation then that value will be used to assign a priority to use when applying
          * the interceptor otherwise a priority of {@link InterceptorPriorities#USER} will
          * be used.

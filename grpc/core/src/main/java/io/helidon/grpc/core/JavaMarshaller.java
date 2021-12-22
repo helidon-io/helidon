@@ -23,12 +23,11 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.logging.Logger;
 
-import javax.inject.Named;
-import javax.inject.Singleton;
-
 import io.helidon.config.Config;
 
 import io.grpc.MethodDescriptor;
+import jakarta.inject.Named;
+import jakarta.inject.Singleton;
 
 /**
  * An implementation of a gRPC {@link MethodDescriptor.Marshaller} that

@@ -26,16 +26,16 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import javax.json.Json;
-import javax.json.JsonArray;
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObject;
-import javax.json.JsonObjectBuilder;
-import javax.json.JsonString;
-import javax.json.JsonValue;
-
 import io.helidon.common.Errors;
 import io.helidon.common.GenericType;
+
+import jakarta.json.Json;
+import jakarta.json.JsonArray;
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonObjectBuilder;
+import jakarta.json.JsonString;
+import jakarta.json.JsonValue;
 
 /**
  * Representation of the header section of a JWT.
@@ -227,7 +227,7 @@ public class JwtHeaders extends JwtClaims {
     /**
      * Fluent API builder to create JWT Header.
      */
-    public static class Builder implements io.helidon.common.Builder<JwtHeaders> {
+    public static class Builder implements io.helidon.common.Builder<Builder, JwtHeaders> {
         private static final GenericType<List<String>> STRING_LIST_TYPE = new GenericType<List<String>>() { };
         private static final GenericType<String> STRING_TYPE = GenericType.create(String.class);
 

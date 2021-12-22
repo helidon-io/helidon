@@ -20,21 +20,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Logger;
 
-import javax.annotation.Priority;
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.context.Initialized;
-import javax.enterprise.event.Observes;
-import javax.enterprise.inject.UnsatisfiedResolutionException;
-import javax.enterprise.inject.spi.BeanManager;
-import javax.enterprise.inject.spi.CDI;
-import javax.enterprise.inject.spi.Extension;
-import javax.enterprise.inject.spi.ProcessAnnotatedType;
-import javax.enterprise.inject.spi.WithAnnotations;
-import javax.websocket.Endpoint;
-import javax.websocket.server.ServerApplicationConfig;
-import javax.websocket.server.ServerEndpoint;
-import javax.websocket.server.ServerEndpointConfig;
-
 import io.helidon.config.Config;
 import io.helidon.microprofile.cdi.RuntimeStart;
 import io.helidon.microprofile.server.RoutingName;
@@ -43,7 +28,22 @@ import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.tyrus.TyrusSupport;
 
-import static javax.interceptor.Interceptor.Priority.PLATFORM_AFTER;
+import jakarta.annotation.Priority;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.Initialized;
+import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.UnsatisfiedResolutionException;
+import jakarta.enterprise.inject.spi.BeanManager;
+import jakarta.enterprise.inject.spi.CDI;
+import jakarta.enterprise.inject.spi.Extension;
+import jakarta.enterprise.inject.spi.ProcessAnnotatedType;
+import jakarta.enterprise.inject.spi.WithAnnotations;
+import jakarta.websocket.Endpoint;
+import jakarta.websocket.server.ServerApplicationConfig;
+import jakarta.websocket.server.ServerEndpoint;
+import jakarta.websocket.server.ServerEndpointConfig;
+
+import static jakarta.interceptor.Interceptor.Priority.PLATFORM_AFTER;
 
 /**
  * Configure Tyrus related things.
@@ -114,12 +114,12 @@ public class WebSocketCdiExtension implements Extension {
      *
      * @param extension The extension.
      */
-    private void extension(@Observes ProcessAnnotatedType<? extends javax.websocket.Extension> extension) {
+    private void extension(@Observes ProcessAnnotatedType<? extends jakarta.websocket.Extension> extension) {
         LOGGER.finest(() -> "Extension found " + extension.getAnnotatedType().getJavaClass());
 
-        Class<? extends javax.websocket.Extension> cls = extension.getAnnotatedType().getJavaClass();
+        Class<? extends jakarta.websocket.Extension> cls = extension.getAnnotatedType().getJavaClass();
         try {
-            javax.websocket.Extension instance = cls.getConstructor().newInstance();
+            jakarta.websocket.Extension instance = cls.getConstructor().newInstance();
             appBuilder.extension(instance);
         } catch (NoSuchMethodException e) {
             LOGGER.warning(() -> "Extension does not have no-args constructor for "

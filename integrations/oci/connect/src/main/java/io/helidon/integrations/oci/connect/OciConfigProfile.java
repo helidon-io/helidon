@@ -164,7 +164,7 @@ public class OciConfigProfile implements OciConfigProvider {
      * Fluent API builder for {@link OciConfigProfile}.
      */
     @Configured
-    public static class Builder implements io.helidon.common.Builder<OciConfigProfile> {
+    public static class Builder implements io.helidon.common.Builder<Builder, OciConfigProfile> {
         private static final Logger LOGGER = Logger.getLogger(Builder.class.getName());
         private static final String DEFAULT_PROFILE = "DEFAULT";
         private static final String DEFAULT_PROFILE_PATH = "~/.oci/config";

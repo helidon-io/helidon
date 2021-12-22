@@ -178,7 +178,7 @@ link:{mp-openapi-spec}#configuration[configuration section] of the MicroProfile
 OpenAPI spec.
 
 == Accessing the OpenAPI document
-Now your Helidon MP application will automatially respond to an additional endpoint --
+Now your Helidon MP application will automatically respond to an additional endpoint --
  `/openapi` -- and it will return the OpenAPI document describing the endpoints
 in your application.
 
@@ -187,5 +187,5 @@ There is not yet an adopted IANA YAML media type, but a proposed one specificall
 for OpenAPI documents that has some support is `application/vnd.oai.openapi`.
 That is what Helidon returns, by default.
 
-A client can specify `Accept:` as either `application/vnd.oai.openapi+json` or `application/json`
-to request JSON.
+In addition a client can specify the HTTP header `Accept:` as either `application/vnd.oai.openapi+json` or `application/json`
+to request JSON. Alternatively, the client can pass the query parameter `format` as either `JSON` or `YAML` to receive `application/json` or `application/vnd.oai.openapi` (YAML) output, respectively.

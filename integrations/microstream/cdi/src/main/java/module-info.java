@@ -17,7 +17,7 @@
 /**
  * Provides CDI support for Microstream integration.
  *
- * @provides javax.enterprise.inject.spi.Extension
+ * @provides jakarta.enterprise.inject.spi.Extension
  */
 module io.helidon.integrations.microstream.cdi {
     exports io.helidon.integrations.microstream.cdi;
@@ -25,17 +25,17 @@ module io.helidon.integrations.microstream.cdi {
     requires transitive cache.api;
     requires io.helidon.integrations.microstream;
     requires io.helidon.integrations.microstream.cache;
-    requires transitive jakarta.enterprise.cdi.api;
-    requires transitive jakarta.inject.api;
+    requires transitive jakarta.cdi;
+    requires transitive jakarta.inject;
     requires jakarta.interceptor.api;
-    requires java.annotation;
+    requires jakarta.annotation;
     requires microstream.base;
     requires microstream.cache;
     requires microstream.persistence;
     requires microstream.storage;
     requires microstream.storage.embedded;
 
-    provides javax.enterprise.inject.spi.Extension
+    provides jakarta.enterprise.inject.spi.Extension
             with io.helidon.integrations.microstream.cdi.EmbeddedStorageManagerExtension,
                     io.helidon.integrations.microstream.cdi.CacheExtension;
 }

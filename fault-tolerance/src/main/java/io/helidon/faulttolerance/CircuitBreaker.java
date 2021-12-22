@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -89,7 +89,7 @@ public interface CircuitBreaker extends FtHandler {
     /**
      * Fluent API builder for {@link io.helidon.faulttolerance.CircuitBreaker}.
      */
-    class Builder implements io.helidon.common.Builder<CircuitBreaker> {
+    class Builder implements io.helidon.common.Builder<Builder, CircuitBreaker> {
         private final Set<Class<? extends Throwable>> skipOn = new HashSet<>();
         private final Set<Class<? extends Throwable>> applyOn = new HashSet<>();
         // how long to transition from open to half-open

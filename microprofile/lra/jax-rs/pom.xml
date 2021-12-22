@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.microprofile.lra</groupId>
         <artifactId>helidon-microprofile-lra-project</artifactId>
-        <version>2.4.0-SNAPSHOT</version>
+        <version>3.0.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-microprofile-lra</artifactId>
@@ -30,6 +30,17 @@
     <description>MicroProfile Long Running Actions implementation</description>
 
     <dependencies>
+        <dependency>
+            <!--
+            TODO 3.0.0-JAKARTA
+            need to use this version to work around the same groupId/artifactId and
+            different package names in Jakarta
+            Needed for MP LRA API -->
+            <groupId>javax.ws.rs</groupId>
+            <artifactId>javax.ws.rs-api</artifactId>
+            <scope>provided</scope>
+            <optional>true</optional>
+        </dependency>
         <dependency>
             <groupId>org.eclipse.microprofile.lra</groupId>
             <artifactId>microprofile-lra-api</artifactId>
