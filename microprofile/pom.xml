@@ -56,5 +56,6 @@
         <module>graphql</module>
         <module>scheduling</module>
         <module>lra</module>
+        <module>bean-validation</module>
     </modules>
 </project>
