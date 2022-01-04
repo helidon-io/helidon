@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 package io.helidon.metrics.api;
+
+import java.util.Map;
 
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
@@ -106,6 +108,20 @@ public interface MetricsSettings {
     RegistrySettings registrySettings(MetricRegistry.Type registryType);
 
     /**
+     * Returns the global tags, if any.
+     *
+     * @return global tag names and values
+     */
+    Map<String, String> globalTags();
+
+    /**
+     * Returns the app tag value, if any.
+     *
+     * @return app tag value; null if none set
+     */
+    String appTagValue();
+
+    /**
      * Builder for {@code MetricsSettings}.
      */
     @Configured(prefix = Builder.METRICS_CONFIG_KEY)
@@ -135,6 +151,16 @@ public interface MetricsSettings {
          * Default web context for the metrics endpoint.
          */
         String DEFAULT_CONTEXT = "/metrics";
+
+        /**
+         * Config key for comma-separated, {@code tag=value} global tag settings.
+         */
+        String GLOBAL_TAGS_CONFIG_KEY = "tags";
+
+        /**
+         * Config key for the app tag value to be applied to all metrics in this application.
+         */
+        String APP_TAG_CONFIG_KEY = "appName";
 
         /**
          * Constructs a {@code MetricsSettings} object from the builder.
@@ -191,5 +217,24 @@ public interface MetricsSettings {
                           kind = ConfiguredOption.Kind.LIST,
                           type = RegistrySettings.class)
         Builder registrySettings(MetricRegistry.Type registryType, RegistrySettings registrySettings);
+
+        /**
+         * Sets the global tags to be applied to all metrics.
+         *
+         * @param globalTags map of tag name/tag value pairs
+         * @return updatedbuilder
+         */
+        @ConfiguredOption(key = GLOBAL_TAGS_CONFIG_KEY,
+                          kind = ConfiguredOption.Kind.MAP)
+        Builder globalTags(Map<String, String> globalTags);
+
+        /**
+         * Sets the value for the {@code _app} tag to be applied to all metrics.
+         *
+         * @param appTag app tag value
+         * @return updated builder
+         */
+        @ConfiguredOption(key = APP_TAG_CONFIG_KEY)
+        Builder appTagValue(String appTag);
     }
 }

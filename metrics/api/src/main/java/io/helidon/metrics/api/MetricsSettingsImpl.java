@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,10 @@
  */
 package io.helidon.metrics.api;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -33,12 +36,16 @@ class MetricsSettingsImpl implements MetricsSettings {
     private final KeyPerformanceIndicatorMetricsSettings kpiMetricsSettings;
     private final BaseMetricsSettings baseMetricsSettings;
     private final EnumMap<MetricRegistry.Type, RegistrySettings> registrySettings;
+    private final Map<String, String> globalTags;
+    private final String appTagValue;
 
     private MetricsSettingsImpl(MetricsSettingsImpl.Builder builder) {
         isEnabled = builder.isEnabled;
         kpiMetricsSettings = builder.kpiMetricsSettingsBuilder.build();
         baseMetricsSettings = builder.baseMetricsSettingsBuilder.build();
         registrySettings = builder.registrySettings;
+        globalTags = builder.globalTags;
+        appTagValue = builder.appTagValue;
     }
 
     @Override
@@ -70,6 +77,16 @@ class MetricsSettingsImpl implements MetricsSettings {
         return registrySettings.getOrDefault(registryType, DEFAULT_REGISTRY_SETTINGS);
     }
 
+    @Override
+    public Map<String, String> globalTags() {
+        return globalTags;
+    }
+
+    @Override
+    public String appTagValue() {
+        return appTagValue;
+    }
+
     // For testing and within-package use only
     Map<MetricRegistry.Type, RegistrySettings> registrySettings() {
         return registrySettings;
@@ -82,6 +99,8 @@ class MetricsSettingsImpl implements MetricsSettings {
                 KeyPerformanceIndicatorMetricsSettings.builder();
         private BaseMetricsSettings.Builder baseMetricsSettingsBuilder = BaseMetricsSettings.builder();
         private final EnumMap<MetricRegistry.Type, RegistrySettings> registrySettings = prepareRegistrySettings();
+        private Map<String, String> globalTags = Collections.emptyMap();
+        private String appTagValue;
 
         private static EnumMap<MetricRegistry.Type, RegistrySettings> prepareRegistrySettings() {
             EnumMap<MetricRegistry.Type, RegistrySettings> result = new EnumMap<>(MetricRegistry.Type.class);
@@ -136,6 +155,14 @@ class MetricsSettingsImpl implements MetricsSettings {
             metricsSettingsConfig.get(REGISTRIES_CONFIG_KEY)
                     .asList(TypedRegistrySettingsImpl::create)
                     .ifPresent(this::addAllTypedRegistrySettings);
+
+            metricsSettingsConfig.get(GLOBAL_TAGS_CONFIG_KEY)
+                    .as(this::globalTagsExpressionToMap)
+                    .ifPresent(this::globalTags);
+
+            metricsSettingsConfig.get(APP_TAG_CONFIG_KEY)
+                    .asString()
+                    .ifPresent(this::appTagValue);
             return this;
         }
 
@@ -152,10 +179,46 @@ class MetricsSettingsImpl implements MetricsSettings {
             return this;
         }
 
+        @Override
+        public MetricsSettings.Builder globalTags(Map<String, String> globalTags) {
+            this.globalTags = new HashMap<>(globalTags);
+            return this;
+        }
+
+        @Override
+        public MetricsSettings.Builder appTagValue(String appTagValue) {
+            this.appTagValue = appTagValue;
+            return this;
+        }
+
         private void addAllTypedRegistrySettings(List<TypedRegistrySettingsImpl> typedRegistrySettingsList) {
             for (TypedRegistrySettingsImpl typedRegistrySettings : typedRegistrySettingsList) {
                 registrySettings.put(typedRegistrySettings.registryType, typedRegistrySettings);
             }
+        }
+
+        private Map<String, String> globalTagsExpressionToMap(Config globalTagExpression) {
+            String pairs = globalTagExpression.asString().get();
+            Map<String, String> result = new HashMap<>();
+            List<String> errorPairs = new ArrayList<>();
+            String[] assignments = pairs.split(",");
+            for (String assignment : assignments) {
+                int equalsSlot = assignment.indexOf("=");
+                if (equalsSlot == -1) {
+                    errorPairs.add("Missing '=': " + assignment);
+                } else if (equalsSlot == 0) {
+                    errorPairs.add("Missing tag name: " + assignment);
+                } else if (equalsSlot == assignment.length() - 1) {
+                    errorPairs.add("Missing tag value: " + assignment);
+                } else {
+                    result.put(assignment.substring(0, equalsSlot),
+                               assignment.substring(equalsSlot + 1));
+                }
+            }
+            if (!errorPairs.isEmpty()) {
+                throw new IllegalArgumentException("Error(s) in global tag expression: " + errorPairs);
+            }
+            return result;
         }
 
         private static class TypedRegistrySettingsImpl extends RegistrySettingsImpl {
