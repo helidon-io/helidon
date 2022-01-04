@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-FROM openjdk:11-jre-slim-buster
+FROM openjdk:17-jdk-slim-buster
 
 ENV VERSION=2.7.0
 ENV SCALA_VERSION=2.13

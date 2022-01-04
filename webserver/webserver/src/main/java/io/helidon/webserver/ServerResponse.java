@@ -39,7 +39,7 @@ import io.helidon.media.common.MessageBodyWriters;
 /**
  * Represents HTTP Response.
  *
- * <h3>Lifecycle</h3>
+ * <h2>Lifecycle</h2>
  * HTTP response is send to the client in two or more steps (chunks). First contains {@link #status() HTTP status code}
  * and {@link ResponseHeaders headers}. First part can be send explicitly by calling {@link ResponseHeaders#send()}
  * method or implicitly by sending a first part of the the response content. As soon as first part is send it become immutable -
@@ -161,7 +161,7 @@ public interface ServerResponse extends MessageBodyFilters, MessageBodyWriters {
     /**
      * Send a message and close the response.
      *
-     * <h3>Marshalling</h3>
+     * <h4>Marshalling</h4>
      * Data are marshaled using default or {@link #registerWriter(Class, Function) registered} {@code writer} to the format
      * of {@link ByteBuffer} {@link Publisher Publisher}. The last registered compatible writer is used.
      * <p>
@@ -173,7 +173,7 @@ public interface ServerResponse extends MessageBodyFilters, MessageBodyWriters {
      *     <li>{@link java.io.File}</li>
      * </ul>
      *
-     * <h3>Blocking</h3>
+     * <h4>Blocking</h4>
      * The method blocks only during marshalling. It means until {@code registered writer} produce a {@code Publisher} and
      * subscribe HTTP IO implementation on it. If the thread is used for publishing is up to HTTP IO and generated Publisher
      * implementations. Use returned {@link io.helidon.common.reactive.Single} to monitor and react on finished sending process.
@@ -203,7 +203,7 @@ public interface ServerResponse extends MessageBodyFilters, MessageBodyWriters {
      * A single {@link Subscription Subscriber} subscribes to the provided {@link Publisher Publisher} during
      * the method execution.
      *
-     * <h3>Blocking</h3>
+     * <h4>Blocking</h4>
      * If the thread is used for publishing is up to HTTP IO and generated Publisher
      * implementations. Use returned {@link io.helidon.common.reactive.Single} to monitor and react on finished sending process.
      *
@@ -221,7 +221,7 @@ public interface ServerResponse extends MessageBodyFilters, MessageBodyWriters {
      * A single {@link Subscription Subscriber} subscribes to the provided {@link Publisher Publisher} during
      * the method execution.
      *
-     * <h3>Blocking</h3>
+     * <h4>Blocking</h4>
      * If the thread is used for publishing is up to HTTP IO and generated Publisher
      * implementations. Use returned {@link io.helidon.common.reactive.Single} to monitor and react on finished sending process.
      *
