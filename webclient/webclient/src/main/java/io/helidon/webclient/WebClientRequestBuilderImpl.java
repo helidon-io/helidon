@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -608,7 +608,40 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
             return result;
         }));
 
-        return new SingleWithContext<>(single, context);
+        return wrapWithContext(single);
+    }
+
+    /**
+     * Wraps a single into another that runs all subscriber methods using the current
+     * context. This will enable calls to {@code Contexts.context()} in reactive handlers
+     * to return a non-empty optional.
+     *
+     * @param single single to be wrapped
+     * @param <T> type parameter
+     * @return wrapped single
+     */
+    private <T> Single<T> wrapWithContext(Single<T> single) {
+        return Single.create(subscriber -> single.subscribe(new Flow.Subscriber<T>() {
+            @Override
+            public void onSubscribe(Flow.Subscription subscription) {
+                Contexts.runInContext(context, () -> subscriber.onSubscribe(subscription));
+            }
+
+            @Override
+            public void onNext(T item) {
+                Contexts.runInContext(context, () -> subscriber.onNext(item));
+            }
+
+            @Override
+            public void onError(Throwable throwable) {
+                Contexts.runInContext(context, () -> subscriber.onError(throwable));
+            }
+
+            @Override
+            public void onComplete() {
+                Contexts.runInContext(context, subscriber::onComplete);
+            }
+        }));
     }
 
     private MessageBodyReadableContent getContentFromClientResponse(WebClientResponse response) {

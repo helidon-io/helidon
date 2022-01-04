@@ -16,6 +16,10 @@
 
 package io.helidon.tests.integration.webclient;
 
+import javax.json.Json;
+import javax.json.JsonBuilderFactory;
+import javax.json.JsonException;
+import javax.json.JsonObject;
 import java.security.Principal;
 import java.util.Collections;
 import java.util.Objects;
@@ -24,11 +28,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import javax.json.Json;
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonException;
-import javax.json.JsonObject;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
