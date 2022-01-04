@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,6 +44,7 @@ import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.metrics.api.KeyPerformanceIndicatorMetricsSettings;
 import io.helidon.metrics.api.MetricsSettings;
 import io.helidon.metrics.api.RegistryFactory;
+import io.helidon.metrics.api.SystemTagsManager;
 import io.helidon.metrics.serviceapi.MinimalMetricsSupport;
 import io.helidon.servicecommon.rest.HelidonRestServiceSupport;
 import io.helidon.servicecommon.rest.RestServiceSettings;
@@ -110,16 +111,29 @@ public final class MetricsSupport extends HelidonRestServiceSupport
 
     private static final Logger LOGGER = Logger.getLogger(MetricsSupport.class.getName());
 
+    /**
+     * Creates a new {@code  MetricsSupport} instance from the provided builder.
+     *
+     * @param builder the builder for preparing the new instance
+     */
     protected MetricsSupport(Builder builder) {
         super(LOGGER, builder, SERVICE_NAME);
         this.rf = builder.registryFactory.get();
         this.metricsSettings = builder.metricsSettingsBuilder.build();
+        SystemTagsManager.create(metricsSettings);
     }
 
+    /**
+     * Creates a new {@code MetricsSupport} instance from the provides settings.
+     *
+     * @param metricsSettings the metrics settings to use in preparing the {@code MetricsSupport} instance
+     * @param restServiceSettings rest services settings to use in preparing the {@code MetricsSupport} instance
+     */
     protected MetricsSupport(MetricsSettings metricsSettings, RestServiceSettings restServiceSettings) {
         super(LOGGER, restServiceSettings, SERVICE_NAME);
         rf = RegistryFactory.getInstance(metricsSettings);
         this.metricsSettings = metricsSettings;
+        SystemTagsManager.create(metricsSettings);
     }
 
     /**
@@ -581,6 +595,9 @@ public final class MetricsSupport extends HelidonRestServiceSupport
         private Supplier<RegistryFactory> registryFactory;
         private MetricsSettings.Builder metricsSettingsBuilder = MetricsSettings.builder();
 
+        /**
+         * Creates a new builder instance.
+         */
         protected Builder() {
             super(Builder.class, MetricsSettings.Builder.DEFAULT_CONTEXT);
         }
@@ -596,6 +613,12 @@ public final class MetricsSupport extends HelidonRestServiceSupport
             return build(MetricsSupport::new);
         }
 
+        /**
+         * Creates a new {@code MetricsSupport} instance from the provided factory.
+         *
+         * @param factory the factory which maps the builder to a {@code MetricsSupport} instance
+         * @return the created {@code MetricsSupport} instance
+         */
         protected MetricsSupport build(Function<Builder, MetricsSupport> factory) {
             if (null == registryFactory) {
                 registryFactory = () -> RegistryFactory.getInstance(MetricsSettings.create(config()));

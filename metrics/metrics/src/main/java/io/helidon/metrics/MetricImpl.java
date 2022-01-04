@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.StringJoiner;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -34,6 +35,7 @@ import java.util.stream.Collectors;
 
 import io.helidon.metrics.Sample.Derived;
 import io.helidon.metrics.api.AbstractMetric;
+import io.helidon.metrics.api.SystemTagsManager;
 
 import jakarta.json.Json;
 import jakarta.json.JsonArrayBuilder;
@@ -188,11 +190,13 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
     }
 
     static String jsonFullKey(String baseName, MetricID metricID) {
-        return metricID.getTags().isEmpty() ? baseName
-                : String.format("%s;%s", baseName,
-                        metricID.getTagsAsList().stream()
-                                .map(MetricImpl::tagForJsonKey)
-                                .collect(Collectors.joining(";")));
+        return baseName + tagsToJsonFormat(SystemTagsManager.instance().allTags(metricID));
+    }
+
+    private static String tagsToJsonFormat(Iterable<Map.Entry<String, String>> it) {
+        StringJoiner sj = new StringJoiner(";", ";", "").setEmptyValue("");
+        it.forEach(entry -> sj.add(tagForJsonKey(entry)));
+        return sj.toString();
     }
 
     static String jsonFullKey(MetricID metricID) {
@@ -208,9 +212,13 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
         return String.format("%s=%s", jsonEscape(t.getTagName()), jsonEscape(t.getTagValue()));
     }
 
+    private static String tagForJsonKey(Map.Entry<String, String> tagEntry) {
+        return String.format("%s=%s", jsonEscape(tagEntry.getKey()), jsonEscape(tagEntry.getValue()));
+    }
+
     static String jsonEscape(String s) {
         final Matcher m = JSON_ESCAPED_CHARS_REGEX.matcher(s);
-        final StringBuffer sb = new StringBuffer();
+        final StringBuilder sb = new StringBuilder();
         while (m.find()) {
             m.appendReplacement(sb, JSON_ESCAPED_CHARS_MAP.get(m.group()));
         }
@@ -304,7 +312,8 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
             prometheusType(sb, nameToUse.get(), typeName);
         }
         Object convertedValue = name.units().convert(value);
-        sb.append(nameToUse.get() + name.prometheusTags())
+        sb.append(nameToUse.get())
+                .append(name.prometheusTags())
                 .append(" ")
                 .append(convertedValue)
                 .append(prometheusExemplar(sample, name.units()))
@@ -433,12 +442,16 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
         return name;
     }
     final String prometheusTags(Map<String, String> tags) {
-        return (tags == null || tags.isEmpty() ? "" : tags.entrySet().stream()
-                .filter(entry -> entry.getKey() != null)
-                .map(entry -> String.format("%s=\"%s\"",
-                        prometheusClean(entry.getKey(), ""),
-                        prometheusTagValue(entry.getValue())))
-                .collect(Collectors.joining(",", "{", "}")));
+
+        StringJoiner sj = new StringJoiner(",", "{", "}").setEmptyValue("");
+        SystemTagsManager.instance().allTags(tags).forEach(entry -> {
+            if (entry.getKey() != null) {
+                sj.add(String.format("%s=\"%s\"",
+                                     prometheusClean(entry.getKey(), ""),
+                                     prometheusTagValue(entry.getValue())));
+            }
+        });
+        return sj.toString();
     }
 
     private String prometheusTagValue(String value) {
