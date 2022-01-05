@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,6 +43,7 @@ import java.util.stream.Stream;
 import io.helidon.common.Errors;
 import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
 import io.helidon.config.ConfigValue;
 import io.helidon.config.mp.MpConfig;
 import io.helidon.metrics.api.MetricsSettings;
@@ -645,6 +646,23 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
         Contexts.globalContext().register(RegistryFactory.getInstance());
 
         return defaultRouting;
+    }
+
+    @Override
+    protected Config seComponentConfig() {
+        // Combine the Helidon-specific "metrics.xxx" settings with the MP
+        // "mp.metrics.xxx" settings into a single metrics config object.
+        Config mpConfig = MpConfig.toHelidonConfig(ConfigProvider.getConfig());
+        Config mpMetricsConfig = mpConfig.get("mp").get("metrics").detach();
+        Config metricsConfig = mpConfig.get("metrics").detach();
+        Config.Builder builder = Config.builder();
+        if (mpMetricsConfig.exists()) {
+            builder.addSource(ConfigSources.create(mpMetricsConfig));
+        }
+        if (metricsConfig.exists()) {
+            builder.addSource(ConfigSources.create(metricsConfig));
+        }
+        return builder.build();
     }
 
     private static boolean chooseRestEndpointsSetting(Config metricsConfig) {

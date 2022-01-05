@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -238,7 +238,7 @@ public abstract class HelidonRestCdiExtension<T extends RestServiceSupport> impl
             @Observes @Priority(LIBRARY_BEFORE + 10) @Initialized(ApplicationScoped.class) Object adv,
             BeanManager bm, ServerCdiExtension server) {
 
-        Config config = MpConfig.toHelidonConfig(ConfigProvider.getConfig()).get(configPrefix);
+        Config config = seComponentConfig();
         serviceSupport = serviceSupportFactory.apply(config);
 
         RoutingBuilders routingBuilders = RoutingBuilders.create(config);
@@ -248,6 +248,20 @@ public abstract class HelidonRestCdiExtension<T extends RestServiceSupport> impl
         return routingBuilders.defaultRoutingBuilder();
     }
 
+    /**
+     * Returns the SE config to use in setting up the component's SE service.
+     *
+     * @return the SE config node for the component-specific configuration
+     */
+    protected Config seComponentConfig() {
+        return MpConfig.toHelidonConfig(ConfigProvider.getConfig()).get(configPrefix);
+    }
+
+    /**
+     * Returns the SE service instance created during MP service registration.
+     *
+     * @return the SE service support object used by this MP service
+     */
     protected T serviceSupport() {
         return serviceSupport;
     }
