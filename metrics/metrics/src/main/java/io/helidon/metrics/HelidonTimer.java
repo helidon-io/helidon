@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -125,7 +125,7 @@ final class HelidonTimer extends MetricImpl implements Timer {
         appendPrometheusTimerStatElement(sb, name, "fifteen_min_rate_per_second", withHelpType, "gauge", getFifteenMinuteRate());
 
         DisplayableLabeledSnapshot snap = snapshot();
-        appendPrometheusHistogramElements(sb, name, withHelpType, getCount(), snap);
+        appendPrometheusHistogramElements(sb, name, withHelpType, getCount(), getElapsedTime(), snap);
     }
 
     @Override
@@ -137,6 +137,7 @@ final class HelidonTimer extends MetricImpl implements Timer {
     public void jsonData(JsonObjectBuilder builder, MetricID metricID) {
         JsonObjectBuilder myBuilder = JSON.createObjectBuilder()
                 .add(jsonFullKey("count", metricID), getCount())
+                .add(jsonFullKey("sum", metricID), getElapsedTime().toSeconds())
                 .add(jsonFullKey("meanRate", metricID), getMeanRate())
                 .add(jsonFullKey("oneMinRate", metricID), getOneMinuteRate())
                 .add(jsonFullKey("fiveMinRate", metricID), getFiveMinuteRate())
@@ -250,6 +251,7 @@ final class HelidonTimer extends MetricImpl implements Timer {
         private final Meter meter;
         private final HelidonHistogram histogram;
         private final Clock clock;
+        private long elapsedTimeNanos;
 
         TimerImpl(String repoType, String name, Clock clock) {
             this.meter = HelidonMeter.create(repoType, Metadata.builder()
@@ -270,8 +272,7 @@ final class HelidonTimer extends MetricImpl implements Timer {
 
         @Override
         public Duration getElapsedTime() {
-            // TODO 3.0.0-JAKARTA
-            return null;
+            return Duration.ofNanos(elapsedTimeNanos);
         }
 
         @Override
@@ -335,12 +336,13 @@ final class HelidonTimer extends MetricImpl implements Timer {
             if (nanos >= 0) {
                 histogram.update(nanos);
                 meter.mark();
+                elapsedTimeNanos += nanos;
             }
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(super.hashCode(), meter, histogram);
+            return Objects.hash(super.hashCode(), meter, histogram, elapsedTimeNanos);
         }
 
         @Override
@@ -352,7 +354,7 @@ final class HelidonTimer extends MetricImpl implements Timer {
                 return false;
             }
             TimerImpl that = (TimerImpl) o;
-            return meter.equals(that.meter) && histogram.equals(that.histogram);
+            return meter.equals(that.meter) && histogram.equals(that.histogram) && elapsedTimeNanos == that.elapsedTimeNanos;
         }
     }
 
@@ -377,6 +379,7 @@ final class HelidonTimer extends MetricImpl implements Timer {
     protected String toStringDetails() {
         StringBuilder sb = new StringBuilder();
         sb.append(", count='").append(getCount()).append('\'');
+        sb.append(", elapsedTime='").append(getElapsedTime()).append('\'');
         sb.append(", fifteenMinuteRate='").append(getFifteenMinuteRate()).append('\'');
         sb.append(", fiveMinuteRate='").append(getFiveMinuteRate()).append('\'');
         sb.append(", meanRate='").append(getMeanRate()).append('\'');

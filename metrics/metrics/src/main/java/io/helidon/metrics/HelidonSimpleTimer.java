@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -183,6 +183,8 @@ final class HelidonSimpleTimer extends MetricImpl implements SimpleTimer {
         private final HelidonCounter counter;
         private final Clock clock;
         private Duration elapsed = Duration.ofNanos(0);
+        private Duration min = null;
+        private Duration max = null;
 
         private Sample.Labeled sample = null;
 
@@ -196,14 +198,12 @@ final class HelidonSimpleTimer extends MetricImpl implements SimpleTimer {
 
         @Override
         public Duration getMaxTimeDuration() {
-            // TODO 3.0.0-JAKARTA
-            return null;
+            return max;
         }
 
         @Override
         public Duration getMinTimeDuration() {
-            // TODO 3.0.0-JAKARTA
-            return null;
+            return min;
         }
 
         @Override
@@ -253,6 +253,12 @@ final class HelidonSimpleTimer extends MetricImpl implements SimpleTimer {
                 counter.inc();
                 elapsed = elapsed.plusNanos(nanos);
                 sample = Sample.labeled(nanos);
+                if (min == null || min.toNanos() > nanos) {
+                    min = Duration.ofNanos(nanos);
+                }
+                if (max == null || max.toNanos() < nanos) {
+                    max = Duration.ofNanos(nanos);
+                }
             }
         }
 
@@ -265,12 +271,13 @@ final class HelidonSimpleTimer extends MetricImpl implements SimpleTimer {
                 return false;
             }
             SimpleTimerImpl that = (SimpleTimerImpl) o;
-            return counter.equals(that.counter) && elapsed.equals(that.elapsed);
+            return counter.equals(that.counter) && elapsed.equals(that.elapsed) && Objects
+                    .equals(min, that.min) && Objects.equals(max, that.max) && Objects.equals(sample, that.sample);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(super.hashCode(), counter, elapsed);
+            return Objects.hash(counter, elapsed, min, max, sample);
         }
     }
 
@@ -294,6 +301,8 @@ final class HelidonSimpleTimer extends MetricImpl implements SimpleTimer {
     @Override
     protected String toStringDetails() {
         return ", count='" + getCount() + '\''
-                + ", elapsedTime='" + getElapsedTime() + '\'';
+                + ", elapsedTime='" + getElapsedTime() + '\''
+                + ", minTimeDuration='" + getMinTimeDuration() + '\''
+                + ", maxTimeDuration='" + getMaxTimeDuration() + '\'';
     }
 }

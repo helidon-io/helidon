@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,13 +26,13 @@ import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.SimpleTimer;
-import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 
 class HelidonSimpleTimerTest {
 
@@ -99,11 +99,13 @@ class HelidonSimpleTimerTest {
         SimpleTimer timer = HelidonSimpleTimer.create("application", meta, clock);
         SimpleTimer.Context context = timer.time();
 
-        clock.add(1, TimeUnit.SECONDS);
+        clock.add(3, TimeUnit.SECONDS);
 
         long diff = context.stop();
 
-        assertThat(diff, is(TimeUnit.SECONDS.toNanos(1)));
+        long toSeconds = TimeUnit.SECONDS.toNanos(3);
+        assertThat(diff, is(toSeconds));
+        checkMinAndMaxDurations(timer, toSeconds, toSeconds);
     }
 
     @Test
@@ -112,13 +114,15 @@ class HelidonSimpleTimerTest {
         SimpleTimer timer = HelidonSimpleTimer.create("application", meta, clock);
 
         String result = timer.time(() -> {
-            clock.add(1, TimeUnit.SECONDS);
+            clock.add(2, TimeUnit.SECONDS);
             return "hello";
         });
 
+        long toSeconds = TimeUnit.SECONDS.toNanos(2);
         assertThat(timer.getCount(), is(1L));
-        assertThat(timer.getElapsedTime(), is(Duration.ofSeconds(1)));
+        assertThat(timer.getElapsedTime(), is(Duration.ofSeconds(2)));
         assertThat(result, is("hello"));
+        checkMinAndMaxDurations(timer, toSeconds, toSeconds);
     }
 
     @Test
@@ -128,8 +132,10 @@ class HelidonSimpleTimerTest {
 
         timer.time(() -> clock.add(1, TimeUnit.SECONDS));
 
-        assertThat(timer.getCount(), CoreMatchers.is(1L));
+        long toSeconds = TimeUnit.SECONDS.toNanos(1);
+        assertThat(timer.getCount(), is(1L));
         assertThat(timer.getElapsedTime(), is(Duration.ofSeconds(1)));
+        checkMinAndMaxDurations(timer, toSeconds, toSeconds);
     }
 
     @Test
@@ -143,5 +149,24 @@ class HelidonSimpleTimerTest {
         assertThat(metricData, notNullValue());
         assertThat("count", metricData.getJsonNumber("count").longValue(), is(200L));
         assertThat("elapsedTime", metricData.getJsonNumber("elapsedTime"), notNullValue());
+    }
+
+    @Test
+    void testDataSetTimerDurations() {
+        checkMinAndMaxDurations(dataSetTimer, 0L, 990L);
+    }
+
+    @Test
+    void testIdleSimpleTimerMinAndMaxDurations() {
+        TestClock clock = TestClock.create();
+        SimpleTimer timer = HelidonSimpleTimer.create("application", meta, clock);
+
+        assertThat("Min duration", timer.getMinTimeDuration(), is(nullValue()));
+        assertThat("Max duration", timer.getMaxTimeDuration(), is(nullValue()));
+    }
+
+    private void checkMinAndMaxDurations(SimpleTimer simpleTimer, long minNanos, long maxNanos) {
+        assertThat("Min duration", simpleTimer.getMinTimeDuration(), is(Duration.ofNanos(minNanos)));
+        assertThat("Max duration", simpleTimer.getMaxTimeDuration(), is(Duration.ofNanos(maxNanos)));
     }
 }

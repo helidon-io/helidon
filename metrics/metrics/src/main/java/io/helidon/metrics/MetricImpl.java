@@ -17,6 +17,7 @@
 package io.helidon.metrics;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -330,8 +331,9 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
                                            PrometheusName name,
                                            boolean withHelpType,
                                            long count,
+                                           Duration elapsedTime,
                                            DisplayableLabeledSnapshot snap) {
-        appendPrometheusHistogramElements(sb, name, withHelpType, count, 0, false, snap);
+        appendPrometheusHistogramElements(sb, name, withHelpType, count, elapsedTime.toSeconds(), true, snap);
     }
 
     void appendPrometheusHistogramElements(StringBuilder sb,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -114,6 +114,8 @@ class HelidonHistogramTest {
     // name{tag="val",tag="val"} where the braces and tags within are optional
     private static final Pattern PROMETHEUS_KEY_PATTERN = Pattern.compile("([^{]+)(?:\\{([^}]+)})?+");
 
+    private static final long SAMPLE_INT_SUM = Arrays.stream(SAMPLE_INT_DATA).sum();
+
     /**
      * Parses a {@code Stream| of text lines (presumably in Prometheus/OpenMetrics format) into a {@code Stream}
      * of {@code Map.Entry}, with the key the value name and the value a {@code Number}
@@ -209,7 +211,8 @@ class HelidonHistogramTest {
                   () -> assertThat(delegatingHistoInt.getSnapshot().getValues(),
                                    is(Arrays.stream(SAMPLE_INT_DATA).asLongStream().toArray())),
                   () -> assertThat(histoLong.getSnapshot().getValues(), is(SAMPLE_LONG_DATA)),
-                  () -> assertThat(delegatingHistoLong.getSnapshot().getValues(), is(SAMPLE_LONG_DATA))
+                  () -> assertThat(delegatingHistoLong.getSnapshot().getValues(), is(SAMPLE_LONG_DATA)),
+                  () -> assertThat(histoInt.getSum(), is(equalTo(SAMPLE_INT_SUM)))
         );
 
     }
