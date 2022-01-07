@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,7 +85,7 @@ public final class JdbcDbClientProviderBuilder implements DbClientProviderBuilde
             this.mapperManager = MapperManager.create();
         }
         if (null == executorService) {
-            executorService = ThreadPoolSupplier.create();
+            executorService = ThreadPoolSupplier.create("jdbc-dbclient-thread-pool");
         }
         return new JdbcDbClient(this);
     }
@@ -97,7 +97,9 @@ public final class JdbcDbClientProviderBuilder implements DbClientProviderBuilde
                 .ifExists(cfg -> connectionPool(ConnectionPool.create(cfg)));
 
         config.get("statements").as(DbStatements::create).ifPresent(this::statements);
-        config.get("executor-service").as(ThreadPoolSupplier::create).ifPresent(this::executorService);
+        config.get("executor-service")
+                .as(c -> ThreadPoolSupplier.create(c, "jdbc-dbclient-thread-pool"))
+                .ifPresent(this::executorService);
         return this;
     }
 
