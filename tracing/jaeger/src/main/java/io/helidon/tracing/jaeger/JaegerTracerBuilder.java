@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -640,12 +640,29 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
         this.reporterFlushIntervalMillis = aLong;
     }
 
-    enum SamplerType {
+    /**
+     * Sampler type definition.
+     * Available options are "const", "probabilistic", "ratelimiting" and "remote".
+     */
+    public enum SamplerType {
+        /**
+         * Constant option.
+         */
         CONSTANT("const"),
+        /**
+         * Probabilistic option.
+         */
         PROBABILISTIC("probabilistic"),
+        /**
+         * Ratelimiting option.
+         */
         RATE_LIMITING("ratelimiting"),
+        /**
+         * Remote option.
+         */
         REMOTE("remote");
         private final String config;
+
 
         SamplerType(String config) {
             this.config = config;
