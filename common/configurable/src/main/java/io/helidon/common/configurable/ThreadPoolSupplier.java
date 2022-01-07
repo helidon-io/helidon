@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,6 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
     private static final boolean DEFAULT_IS_DAEMON = true;
     private static final String DEFAULT_THREAD_NAME_PREFIX = "helidon-";
     private static final boolean DEFAULT_PRESTART = true;
-    private static final String DEFAULT_POOL_NAME_PREFIX = "helidon-thread-pool-";
     private static final int DEFAULT_GROWTH_RATE = 0; // Maintain JDK pool behavior when max > core
     private static final int DEFAULT_GROWTH_THRESHOLD = 1000;
 
@@ -70,7 +69,7 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
         this.isDaemon = builder.isDaemon;
         this.threadNamePrefix = builder.threadNamePrefix;
         this.prestart = builder.prestart;
-        this.name = builder.name == null ? DEFAULT_POOL_NAME_PREFIX + DEFAULT_NAME_COUNTER.incrementAndGet() : builder.name;
+        this.name = builder.name;
         this.growthThreshold = builder.growthThreshold;
         this.growthRate = builder.growthRate;
         this.rejectionHandler = builder.rejectionHandler == null ? DEFAULT_REJECTION_POLICY : builder.rejectionHandler;
@@ -92,9 +91,24 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
      *
      * @param config config instance
      * @return a new thread pool supplier configured from config
+     * @deprecated since 2.4.2, please use {@link #create(Config, String)}
      */
+    @Deprecated
     public static ThreadPoolSupplier create(Config config) {
         return builder().config(config)
+                .build();
+    }
+
+    /**
+     * Load supplier from configuration.
+     *
+     * @param config config instance
+     * @param name thread pool name
+     * @return a new thread pool supplier configured from config
+     */
+    public static ThreadPoolSupplier create(Config config, String name) {
+        return builder().name(name)
+                .config(config)
                 .build();
     }
 
@@ -102,9 +116,22 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
      * Create a new thread pool supplier with default configuration.
      *
      * @return a new thread pool supplier with default configuration
+     * @deprecated since 2.4.2, please use {@link #create(String)}
      */
+    @Deprecated
     public static ThreadPoolSupplier create() {
         return builder().build();
+    }
+
+    /**
+     * Create a new thread pool supplier with default configuration and
+     * a given name.
+     *
+     * @param name thread pool name
+     * @return a new thread pool supplier with default configuration
+     */
+    public static ThreadPoolSupplier create(String name) {
+        return builder().name(name).build();
     }
 
     ExecutorService getThreadPool() {
@@ -171,7 +198,8 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
         @Override
         public ThreadPoolSupplier build() {
             if (name == null) {
-                name = DEFAULT_POOL_NAME_PREFIX + DEFAULT_NAME_COUNTER.incrementAndGet();
+                LOGGER.warning("Neither a thread name prefix nor a pool name specified");
+                name = threadNamePrefix + "thread-pool-" + DEFAULT_NAME_COUNTER.incrementAndGet();
             }
             if (rejectionHandler == null) {
                 rejectionHandler = DEFAULT_REJECTION_POLICY;

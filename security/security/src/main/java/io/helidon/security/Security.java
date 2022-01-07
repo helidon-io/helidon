@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -576,7 +576,7 @@ public class Security {
         private Tracer tracer;
         private boolean tracingEnabled = true;
         private SecurityTime serverTime = SecurityTime.builder().build();
-        private Supplier<ExecutorService> executorService = ThreadPoolSupplier.create();
+        private Supplier<ExecutorService> executorService = ThreadPoolSupplier.create("security-thread-pool");
         private boolean enabled = true;
 
         private Builder() {
@@ -1175,7 +1175,7 @@ public class Security {
             }
 
             config.get("environment.server-time").as(SecurityTime::create).ifPresent(this::serverTime);
-            executorService(ThreadPoolSupplier.create(config.get("environment.executor-service")));
+            executorService(ThreadPoolSupplier.create(config.get("environment.executor-service"), "security-thread-pool"));
 
             Map<String, SecurityProviderService> configKeyToService = new HashMap<>();
             Map<String, SecurityProviderService> classNameToService = new HashMap<>();
