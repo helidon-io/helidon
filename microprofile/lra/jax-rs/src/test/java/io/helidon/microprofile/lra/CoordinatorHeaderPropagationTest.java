@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -146,6 +146,7 @@ class CoordinatorHeaderPropagationTest {
 
                     res.status(201)
                             .addHeader(LRA_HTTP_CONTEXT_HEADER, lraId)
+                            .addHeader(NOT_PROPAGATED_HEADER, "not this extra one!")
                             .addHeader(EXTRA_COORDINATOR_PROPAGATED_HEADER, "yes extra start header!")
                             .send();
                 })
@@ -293,8 +294,10 @@ class CoordinatorHeaderPropagationTest {
         assertThat(calledByCompensateHeadersParticipant, hasEntry(PROPAGATED_HEADER, List.of("yes me!")));
         assertThat(calledByCompensateHeadersParticipant, not(hasEntry(NOT_PROPAGATED_HEADER, List.of("not me!"))));
 
-        assertThat(startHeadersCoordinator, not(hasEntry(EXTRA_COORDINATOR_PROPAGATED_HEADER, List.of("yes extra start header!"))));
-        assertThat(secondStartHeadersParticipant, not(hasEntry(EXTRA_COORDINATOR_PROPAGATED_HEADER, List.of("yes extra start header!"))));
+        // Headers returned by coordinator's start resource get propagated too
+        assertThat(startHeadersCoordinator, hasEntry(EXTRA_COORDINATOR_PROPAGATED_HEADER, List.of("yes extra start header!")));
+        assertThat(secondStartHeadersParticipant, hasEntry(EXTRA_COORDINATOR_PROPAGATED_HEADER, List.of("yes extra start header!")));
+        assertThat(secondStartHeadersParticipant, not(hasEntry(NOT_PROPAGATED_HEADER, List.of("not this extra one!"))));
 
     }
 

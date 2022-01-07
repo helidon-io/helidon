@@ -39,7 +39,6 @@ import javax.ws.rs.core.Response;
 import io.helidon.common.Reflected;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.reactive.Single;
-import io.helidon.config.Config;
 import io.helidon.lra.coordinator.client.CoordinatorClient;
 import io.helidon.lra.coordinator.client.Participant;
 import io.helidon.lra.coordinator.client.PropagatedHeaders;
@@ -65,15 +64,15 @@ class ParticipantService {
                        @ConfigProperty(name = NonJaxRsResource.CONFIG_CONTEXT_PATH_KEY,
                                defaultValue = NonJaxRsResource.CONTEXT_PATH_DEFAULT) String nonJaxRsContextPath,
                        @ConfigProperty(name = "mp.lra.participant.url") Optional<URI> participantUri,
-                       Config config) {
+                       @ConfigProperty(
+                               name = CoordinatorClient.CONF_KEY_COORDINATOR_HEADERS_PROPAGATION_PREFIX,
+                               defaultValue = ""
+                       ) Set<String> propagationPrefixes) {
         this.lraCdiExtension = lraCdiExtension;
         this.beanManager = beanManager;
         this.nonJaxRsContextPath = nonJaxRsContextPath;
         this.participantUri = participantUri;
-        this.propagationPrefixes = config.get(CoordinatorClient.CONF_KEY_COORDINATOR_HEADERS_PROPAGATION_PREFIX)
-                .asList(String.class)
-                .map(Set::copyOf)
-                .orElse(Set.of());
+        this.propagationPrefixes = propagationPrefixes;
     }
 
     Participant participant(URI defaultBaseUri, Class<?> clazz) {
