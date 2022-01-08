@@ -1,0 +1,15 @@
+# {{name}}
+
+{{readme-description}}
+
+## Build and run
+
+With JDK11+
+```bash
+mvn package
+java -jar target/{{artifactId}}.jar
+```
+
+{{#readme-sections}}
+{{.}}
+{{/readme-sections}}
