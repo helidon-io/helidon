@@ -197,7 +197,9 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
         @Override
         public ThreadPoolSupplier build() {
             if (name == null) {
-                LOGGER.warning("Neither a thread name prefix nor a pool name specified");
+                if (DEFAULT_THREAD_NAME_PREFIX.equals(threadNamePrefix)) {
+                    LOGGER.warning("Neither a thread name prefix nor a pool name specified");
+                }
                 name = threadNamePrefix + "thread-pool-" + DEFAULT_NAME_COUNTER.incrementAndGet();
             }
             if (rejectionHandler == null) {
