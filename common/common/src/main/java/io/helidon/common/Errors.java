@@ -16,10 +16,7 @@
 
 package io.helidon.common;
 
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -192,6 +189,22 @@ public final class Errors extends LinkedList<Errors.ErrorMessage> {
         private boolean hasFatal;
         private boolean hasWarning;
         private boolean hasHint;
+
+        /**
+         * Add list of errors to current collector.
+         *
+         */
+        public Collector addErrors(Errors errors){
+            if(errors==null){
+                return this;
+            }
+
+            for(Errors.ErrorMessage m : errors){
+                message(m.source, m.message, m.severity);
+            }
+
+            return this;
+        }
 
         /**
          * Add a message to the list of messages.

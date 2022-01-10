@@ -510,12 +510,11 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
         Jwt jwt = signedJwt.getJwt();
         Jwt idJwt = null;
         Errors errors = collector.collect();
-        Errors validationErrors = collector.collect();
         Map<String, List<String>> responseHeaders = new HashMap<>();
         responseHeaders.put("Set-Cookie",new ArrayList<>());
 
         if(signedRefreshJwt!=null){
-            if(validationErrors.isValid()){
+            if(errors.isValid()){
                 // check for expiration only
                 Errors timeErrors = jwt.validate(Jwt.defaultTimeValidators());
                 if(!timeErrors.isValid()){
@@ -539,23 +538,34 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
                         }
 
                         if(refreshResult.getRefreshToken()!=null){
-                            refreshCookieHandler.createCookie(refreshResult.getRefreshToken().tokenContent()).forSingle(c ->{
+                            refreshCookieHandler.createCookie(refreshResult.getRefreshToken()).forSingle(c ->{
                                 responseHeaders.get("Set-Cookie").add(c.build().toString());
                             }).exceptionallyAccept(t->{
                                 LOGGER.log(Level.SEVERE, "Failed to set updated refresh token cookie", t);
                             });
                         }
+                    }else{
+                        cookieHandler.removeCookie();
+                        idCookieHandler.removeCookie();
+                        refreshCookieHandler.removeCookie();
                     }
                 }
             }
         }
 
-        validationErrors.addAll(jwt.validate(oidcConfig.issuer(), oidcConfig.audience()));
+        Errors.Collector validationCollector = Errors.collector();
+        Set<String> validAudience = Set.of(oidcConfig.audience());
+        if(oidcConfig.audience()!=null && oidcConfig.audience().contains(",")){
+            validAudience = Set.of(oidcConfig.audience().split(Pattern.quote(",")));
+        }
+        validationCollector.addErrors(jwt.validate(oidcConfig.issuer(), validAudience));
 
         if(signedIdJwt!=null){
             idJwt = signedIdJwt.getJwt();
-            validationErrors.addAll(idJwt.validate(oidcConfig.issuer(), oidcConfig.audience()));
+            validationCollector.addErrors(idJwt.validate(oidcConfig.issuer(), validAudience));
         }
+
+        Errors validationErrors = validationCollector.collect();
 
         if (errors.isValid() && validationErrors.isValid()) {
 
@@ -625,12 +635,8 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
                             if(newIdToken!=null){
                                 newId = SignedJwt.parseToken(newIdToken);
                             }
-                            SignedJwt newRefresh = null;
-                            if(newRefreshToken != null){
-                                newRefresh = SignedJwt.parseToken(newRefreshToken);
-                            }
 
-                            return new OidcRefreshResult(true, newToken, newId, newRefresh, null);
+                            return new OidcRefreshResult(true, newToken, newId, newRefreshToken, null);
                         },
                         (status, errorEntity) -> Optional.of(new OidcRefreshResult(false, null, null, null, "Received a " + status.code() + " from refresh")),
                         (t, message) -> Optional.of(new OidcRefreshResult(false, null, null, null, "Received a " + message + " from refresh")))

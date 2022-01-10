@@ -6,10 +6,10 @@ public class OidcRefreshResult {
     private final boolean succeeded;
     private final SignedJwt accessToken;
     private final SignedJwt idToken;
-    private final SignedJwt refreshToken;
+    private final String refreshToken;
     private final String errorMessage;
 
-    public OidcRefreshResult(boolean succeeded, SignedJwt accessToken, SignedJwt idToken, SignedJwt refreshToken, String errorMessage) {
+    public OidcRefreshResult(boolean succeeded, SignedJwt accessToken, SignedJwt idToken, String refreshToken, String errorMessage) {
         this.succeeded = succeeded;
         this.accessToken = accessToken;
         this.idToken = idToken;
@@ -29,7 +29,7 @@ public class OidcRefreshResult {
         return idToken;
     }
 
-    public SignedJwt getRefreshToken() {
+    public String getRefreshToken() {
         return refreshToken;
     }
 
