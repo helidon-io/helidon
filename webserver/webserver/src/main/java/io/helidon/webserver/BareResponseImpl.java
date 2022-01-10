@@ -377,7 +377,21 @@ class BareResponseImpl implements BareResponse {
             return;
         }
         this.subscription = Objects.requireNonNull(subscription, "subscription is null");
-        subscription.request(1);
+
+        // TyrusSupport controls order of writes manually
+        if (isWebSocketUpgrade) {
+            subscription.request(1);
+        } else {
+            // Callback deferring first request for data after:
+            // - Request stream has been completed
+            requestEntityAnalyzed.whenComplete((channelFutureListener, throwable) -> {
+                subscription.request(1);
+            });
+            if (keepAlive) {
+                //Auxiliary read, does nothing in case of pending read
+                channel.read();
+            }
+        }
     }
 
     @Override

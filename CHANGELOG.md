@@ -7,15 +7,67 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
-## [2.4.1-SNAPSHOT]
+## [2.4.2-SNAPSHOT]
 
-This is a bugfix release of Helidon. 
+This is a bugfix release of Helidon.  It is recommended for all users of Helidon 2.
+
+### Compatibility
+
+2.4.2 is API compatible with 2.3.0.
+
+### CHANGES
+
+## [2.4.1]
+
+This is a bugfix release of Helidon.  It is recommended for all users of Helidon 2.
 
 ### Compatibility
 
 2.4.1 is API compatible with 2.3.0.
 
+### log4j
+
+Helidon itself does not use `log4j`, and by default will not include `log4j` on
+your application's classpath.  But Helidon does manage the version of `log4j` and
+uses it in some examples and the `helidon-logging-log4j` integration feature. This
+release of Helidon upgrades this managed version to 2.17.0.
+
 ### CHANGES
+- WebServer: Netty mixed writing aligned with master [3718](https://github.com/oracle/helidon/pull/3718)
+- WebServer: Defer writes with backpressure #3684 [3741](https://github.com/oracle/helidon/pull/3741)
+- WebServer: Allow compression to be enabled together with HTTP/2 (helidon-2.x) [3705](https://github.com/oracle/helidon/pull/3705)
+- WebServer: 3640 Netty mixed writing 2x [3671](https://github.com/oracle/helidon/pull/3671)
+- WebClient: New flag to force the use of relative URIs (paths) on all requests [3614](https://github.com/oracle/helidon/pull/3614)
+- WebClient: Netty order of writes 2x backport #3674 [3710](https://github.com/oracle/helidon/pull/3710)
+- Tests: Added explicit "localhost" to tests.  [3575](https://github.com/oracle/helidon/pull/3575)
+- Reactive: Multi defaultIfEmpty [3592](https://github.com/oracle/helidon/pull/3592)
+- Perf: JWK keys lazy load [3742](https://github.com/oracle/helidon/pull/3742)
+- OpenAPI: Redesign the per-application OpenAPI processing [3615](https://github.com/oracle/helidon/pull/3615)
+- OpenAPI: Correct the handling of additionalProperties in OpenAPI (2.x) [3636](https://github.com/oracle/helidon/pull/3636)
+- OpenAPI: Catch all exceptions, not just IOException, when unable to read Jandex [3626](https://github.com/oracle/helidon/pull/3626)
+- OIDC: Fix proxy configuration. [3749](https://github.com/oracle/helidon/pull/3749)
+- OCI: Fix serviceName usage for OCI ATP integration [3711](https://github.com/oracle/helidon/pull/3711)
+- Metrics: Suppress warning when metrics PeriodicExecutor is stopped multiple times [3617](https://github.com/oracle/helidon/pull/3617)
+- Metrics: Prepare RegistryFactory lazily to use the most-recently-assigned MetricsSettings [3659](https://github.com/oracle/helidon/pull/3659)
+- Metrics: Move scheduling of metrics periodic updater so it is run in MP as well as in SE (2.x) [3732](https://github.com/oracle/helidon/pull/3732)
+- Metrics: Implement metrics for thread pool suppliers [3630](https://github.com/oracle/helidon/pull/3630)
+- Metrics: Fix some remaining problems with disabling metrics, mostly deferring access to RegistryFactory [3663](https://github.com/oracle/helidon/pull/3663)
+- Logging: HelidonFormatter constructor made public [3609](https://github.com/oracle/helidon/pull/3609)
+- JWT: SignedJwt's parseToken() expects characters from base64 instead of ba64URL encoding [3740](https://github.com/oracle/helidon/pull/3740)
+- JAX-RS: Handle creation of InjectionManager when parent is a HelidonInjectionManager (helidon-2.x) [3754](https://github.com/oracle/helidon/pull/3754)
+- Health: Mark @Deprecated method so we can remove it in a future major release [3696](https://github.com/oracle/helidon/pull/3696)
+- Fault Tolerance: Improved support for cancellation of FT handlers (helidon-2.x) [3682](https://github.com/oracle/helidon/pull/3682)
+- Examples: Helidon Istio Example [3676](https://github.com/oracle/helidon/pull/3676)
+- Examples: Add support for gradle application plugin to quickstarts [3617](https://github.com/oracle/helidon/pull/3612)
+- Docs: Update javadocs and links for Jakarta EE and MicroProfile [3721](https://github.com/oracle/helidon/pull/3721)
+- Docs: LRA doc fix artifact and group ids 2x [3689](https://github.com/oracle/helidon/pull/3689)
+- Docs: Doc and JavaDoc fixes for #3747 and #3687. [3757](https://github.com/oracle/helidon/pull/3757)
+- Dependencies: Upgrades log4j to 2.17.0
+- Dependencies: Upgrades Netty to 4.1.72.Final [3739](https://github.com/oracle/helidon/pull/3739)
+- Dependencies: Bump cronutils 2x [3678](https://github.com/oracle/helidon/pull/3678)
+- Config: Support for mutable file based MP config sources. [3666](https://github.com/oracle/helidon/pull/3666)
+- Build: Manage version of netty-transport-native-unix-common [3746](https://github.com/oracle/helidon/pull/3746)
+
 
 
 ## [2.4.0]
@@ -1699,7 +1751,8 @@ If there is no authorization provider configured, ABAC provider will be configur
       otherwise they are ignored
 
 
-[2.4.1-SNAPSHOT]: https://github.com/oracle/helidon/compare/2.4.0...HEAD
+[2.4.2-SNAPSHOT]: https://github.com/oracle/helidon/compare/2.4.1...2.4.2-SNAPSHOT
+[2.4.1]: https://github.com/oracle/helidon/compare/2.4.0...2.4.1
 [2.4.0]: https://github.com/oracle/helidon/compare/2.3.4...2.4.0
 [2.3.4]: https://github.com/oracle/helidon/compare/2.3.3...2.3.4
 [2.3.3]: https://github.com/oracle/helidon/compare/2.3.2...2.3.3
