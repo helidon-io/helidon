@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -201,6 +201,25 @@ public class HelloWorldResource {
             }
         });
     }
+
+    @GET
+    @Path("/mappedExc")
+    @Produces(MediaType.TEXT_PLAIN)
+    public void triggerMappedException() throws HelloWorldMappedException {
+        throw new HelloWorldMappedException();
+    }
+
+    @GET
+    @Path("/unmappedExc")
+    @Produces(MediaType.TEXT_PLAIN)
+    public void triggerUnmappedException() throws HelloWorldUnmappedException {
+        throw new HelloWorldUnmappedException();
+    }
+
+    public static class HelloWorldMappedException extends Exception {}
+
+    public static class HelloWorldUnmappedException extends Exception {}
+
 
     private long inflightRequestsCount() {
         return inflightRequestsCount(vendorRegistry);

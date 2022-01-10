@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,19 +15,8 @@
  */
 package io.helidon.microprofile.metrics;
 
-import java.util.Set;
-
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.ws.rs.ApplicationPath;
-import jakarta.ws.rs.core.Application;
-
-@ApplicationScoped
-@ApplicationPath("/")
-public class HelloWorldApp extends Application {
-
-    @Override
-    public Set<Class<?>> getClasses() {
-        return Set.of(HelloWorldResource.class,
-                      HelloWorldExceptionMapper.class);
-    }
+/**
+ * Marker interface for work items processed by metrics interceptors.
+ */
+interface MetricWorkItem {
 }

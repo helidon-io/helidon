@@ -29,6 +29,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.jersey.JerseySupport;
 
 import jakarta.annotation.Priority;
@@ -40,6 +41,7 @@ import jakarta.enterprise.inject.spi.ProcessManagedBean;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Application;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
@@ -275,19 +277,27 @@ public class JaxRsCdiExtension implements Extension {
         JerseySupport.Builder builder = JerseySupport.builder(jaxRsApplication.resourceConfig());
         builder.config(((io.helidon.config.Config) ConfigProvider.getConfig()).get("server.jersey"));
         builder.executorService(jaxRsApplication.executorService().orElseGet(defaultExecutorService));
-        builder.register(new ExceptionMapper<Exception>() {
-            @Override
-            public Response toResponse(Exception exception) {
-                if (exception instanceof WebApplicationException) {
-                    return ((WebApplicationException) exception).getResponse();
-                } else {
-                    LOGGER.log(Level.WARNING, exception, () -> "Internal server error");
-                    return Response.serverError().build();
-                }
-            }
-        });
+        builder.register(new CatchAllExceptionMapper());
         builder.injectionManager(injectionManager);
         return builder.build();
+    }
+
+    @Provider
+    private static class CatchAllExceptionMapper implements ExceptionMapper<Exception> {
+
+        @Context
+        private ServerRequest serverRequest;
+
+        @Override
+        public Response toResponse(Exception exception) {
+            serverRequest.context().register("unmappedException", exception);
+            if (exception instanceof WebApplicationException) {
+                return ((WebApplicationException) exception).getResponse();
+            } else {
+                LOGGER.log(Level.WARNING, exception, () -> "Internal server error");
+                return Response.serverError().build();
+            }
+        }
     }
 
     Optional<String> findContextRoot(io.helidon.config.Config config, JaxRsApplication jaxRsApplication) {

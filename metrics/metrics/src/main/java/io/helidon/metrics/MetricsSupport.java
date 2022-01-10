@@ -46,6 +46,7 @@ import io.helidon.metrics.api.MetricsSettings;
 import io.helidon.metrics.api.RegistryFactory;
 import io.helidon.metrics.api.SystemTagsManager;
 import io.helidon.metrics.serviceapi.MinimalMetricsSupport;
+import io.helidon.metrics.serviceapi.PostRequestMetricsSupport;
 import io.helidon.servicecommon.rest.HelidonRestServiceSupport;
 import io.helidon.servicecommon.rest.RestServiceSettings;
 import io.helidon.webserver.Handler;
@@ -390,12 +391,13 @@ public final class MetricsSupport extends HelidonRestServiceSupport
 
         rules.any((req, res) -> {
             KeyPerformanceIndicatorSupport.Context kpiContext = kpiContext(req);
+            PostRequestMetricsSupport prms = PostRequestMetricsSupport.create();
+            req.context().register(prms);
 
             kpiContext.requestHandlingStarted(kpiMetrics);
             res.whenSent()
-                    .thenAccept(r -> kpiContext.requestProcessingCompleted(
-                            r.status().code() < 500))
-                    .exceptionallyAccept(t -> kpiContext.requestProcessingCompleted(false));
+                    .thenAccept(r -> postRequestProcessing(prms, req, r, null, kpiContext))
+                    .exceptionallyAccept(t -> postRequestProcessing(prms, req, res, t, kpiContext));
             Exception exception = null;
             try {
                 req.next();
@@ -496,6 +498,15 @@ public final class MetricsSupport extends HelidonRestServiceSupport
         return request.context()
                 .get(KeyPerformanceIndicatorSupport.Context.class)
                 .orElseGet(KeyPerformanceIndicatorSupport.Context::create);
+    }
+
+    private void postRequestProcessing(PostRequestMetricsSupport prms,
+                                       ServerRequest request,
+                                       ServerResponse response,
+                                       Throwable throwable,
+                                       KeyPerformanceIndicatorSupport.Context kpiContext) {
+        kpiContext.requestProcessingCompleted(throwable == null && response.status().code() < 500);
+        prms.runTasks(request, response, throwable);
     }
 
     private void getByName(ServerRequest req, ServerResponse res, Registry registry) {

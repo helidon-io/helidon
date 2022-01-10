@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,15 +30,16 @@ import jakarta.interceptor.InterceptorBinding;
 @Target({ ElementType.TYPE, ElementType.METHOD })
 
 /**
- * Marker interface indicating that the corresponding method should have an automatic {@link SimpleTimer} created for it
+ * Marker interface indicating that the corresponding method should have automatic metrics created for it
  * and updated when the method is invoked.
  */
-@interface SyntheticSimplyTimed {
+@interface SyntheticRestRequest {
 
     /**
-     * Implementation of the synthetic {@code REST.request} {@code SimpleTimer} metric {@link SyntheticSimplyTimed}.
+     * Implementation of the synthetic annotation {@link SyntheticRestRequest} denoting {@code REST.request} methods which
+     * should be measured using {@code SimpleTimer} and {@code Counter} metrics.
      */
-    class Literal extends AnnotationLiteral<SyntheticSimplyTimed> implements SyntheticSimplyTimed {
+    class Literal extends AnnotationLiteral<SyntheticRestRequest> implements SyntheticRestRequest {
 
         private static final long serialVersionUID = 1L;
 

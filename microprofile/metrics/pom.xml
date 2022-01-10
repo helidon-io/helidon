@@ -46,6 +46,10 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.service-common</groupId>
             <artifactId>helidon-service-common-rest-cdi</artifactId>
         </dependency>
@@ -131,6 +135,9 @@
                             <includes>
                                 <include>**/TestDisabledMetrics.java</include>
                             </includes>
+                            <excludes>
+                                <exclude>**/HelloWorldTest.java</exclude>
+                            </excludes>
                         </configuration>
                     </execution>
                 </executions>

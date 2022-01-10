@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,19 +15,17 @@
  */
 package io.helidon.microprofile.metrics;
 
-import java.util.Set;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.ext.ExceptionMapper;
+import jakarta.ws.rs.ext.Provider;
 
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.ws.rs.ApplicationPath;
-import jakarta.ws.rs.core.Application;
-
-@ApplicationScoped
-@ApplicationPath("/")
-public class HelloWorldApp extends Application {
-
+@Provider
+public class HelloWorldExceptionMapper implements ExceptionMapper<HelloWorldResource.HelloWorldMappedException> {
     @Override
-    public Set<Class<?>> getClasses() {
-        return Set.of(HelloWorldResource.class,
-                      HelloWorldExceptionMapper.class);
+    public Response toResponse(HelloWorldResource.HelloWorldMappedException e) {
+        return Response.status(500)
+                .entity("Correctly mapped exception")
+                .type(MediaType.TEXT_PLAIN).build();
     }
 }
