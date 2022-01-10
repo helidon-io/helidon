@@ -44,9 +44,12 @@
             <artifactId>helidon-config</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.oracle.database.jdbc</groupId>
-            <artifactId>ojdbc8-production</artifactId>
-            <type>pom</type>
+            <groupId>io.helidon.integrations.db</groupId>
+            <artifactId>ojdbc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.integrations.db</groupId>
+            <artifactId>ucp</artifactId>
         </dependency>
         <dependency>
             <!-- only needed for compilation, not required in runtime -->

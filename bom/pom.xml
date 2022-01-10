@@ -810,12 +810,22 @@
             <!-- integrations -->
             <dependency>
                 <groupId>io.helidon.integrations.db</groupId>
+                <artifactId>h2</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.db</groupId>
+                <artifactId>hikaricp</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.db</groupId>
                 <artifactId>ojdbc</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.helidon.integrations.db</groupId>
-                <artifactId>h2</artifactId>
+                <artifactId>ucp</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>

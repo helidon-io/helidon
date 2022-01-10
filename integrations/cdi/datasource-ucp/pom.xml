@@ -36,14 +36,13 @@
     <dependencies>
         <!-- Compile-scoped dependencies. -->
         <dependency>
-            <groupId>${project.groupId}</groupId>
+            <groupId>io.helidon.integrations.cdi</groupId>
             <artifactId>helidon-integrations-cdi-datasource</artifactId>
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>com.oracle.database.jdbc</groupId>
+            <groupId>io.helidon.integrations.db</groupId>
             <artifactId>ucp</artifactId>
-            <type>jar</type>
             <scope>compile</scope>
         </dependency>
         <dependency>
@@ -95,14 +94,13 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>com.h2database</groupId>
+            <groupId>io.helidon.integrations.db</groupId>
             <artifactId>h2</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>com.oracle.database.jdbc</groupId>
-            <artifactId>ojdbc8-production</artifactId>
-            <type>pom</type>
+            <groupId>io.helidon.integrations.db</groupId>
+            <artifactId>ojdbc</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
