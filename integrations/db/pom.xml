@@ -38,8 +38,10 @@
 
     <modules>
         <module>h2</module>
+        <module>hikaricp</module>
         <module>mysql</module>
         <module>ojdbc</module>
         <module>pgsql</module>
+        <module>ucp</module>
     </modules>
 </project>
