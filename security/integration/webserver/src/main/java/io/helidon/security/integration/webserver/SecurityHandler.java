@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,8 @@ import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import io.helidon.common.context.Context;
+import io.helidon.common.context.Contexts;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpRequest;
 import io.helidon.config.Config;
@@ -339,6 +341,7 @@ public final class SecurityHandler implements Handler {
                                                   .customObjects(customObjects.orElse(new ClassToInstanceStore<>()))
                                                   .build());
 
+        Optional<Context> context = Contexts.context();
         processAuthentication(res, securityContext, tracing.atnTracing())
                 .thenCompose(atnResult -> {
                     if (atnResult.proceed) {
@@ -355,7 +358,10 @@ public final class SecurityHandler implements Handler {
                         tracing.logProceed();
                         tracing.finish();
 
-                        req.next();
+                        // propagate context information in call to next
+                        context.ifPresentOrElse(
+                                c -> Contexts.runInContext(c, (Runnable) req::next),
+                                req::next);
                     } else {
                         tracing.logDeny();
                         tracing.finish();
