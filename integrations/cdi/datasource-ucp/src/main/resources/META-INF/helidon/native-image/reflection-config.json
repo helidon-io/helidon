@@ -1,6 +1,0 @@
-{
-    "annotated": [],
-    "class-hierarchy": [],
-    "classes": ["oracle.ucp.jdbc.PoolDataSourceImpl"],
-    "exclude": []
-}

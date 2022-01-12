@@ -1,9 +1,9 @@
 [
     {
-        "bean-class": "oracle.ucp.jdbc.PoolDataSourceImpl",
+        "bean-class": "io.helidon.integrations.datasource.ucp.cdi.UCPBackedDataSourceExtension",
         "ifaces": [
             "oracle.ucp.jdbc.PoolDataSource",
-            "oracle.ucp.UniversalConnectionPoolAdapter"
+            "javax.sql.DataSource"
         ]
     }
 ]
