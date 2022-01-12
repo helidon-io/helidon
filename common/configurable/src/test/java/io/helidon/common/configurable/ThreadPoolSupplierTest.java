@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,7 +51,7 @@ class ThreadPoolSupplierTest {
 
     @BeforeAll
     static void initClass() {
-        defaultInstance = ensureOurExecutor(ThreadPoolSupplier.create().getThreadPool());
+        defaultInstance = ensureOurExecutor(ThreadPoolSupplier.create("test-thread-pool").getThreadPool());
 
         builtInstance = ensureOurExecutor(ThreadPoolSupplier.builder()
                                           .threadNamePrefix("thread-pool-unit-test-")
@@ -128,7 +128,7 @@ class ThreadPoolSupplierTest {
         try {
             log.addHandler(handler);
             Config config = Config.create(ConfigSources.create(Map.of(thresholdKey, threshold, rateKey, rate)));
-            ExecutorService executor = ThreadPoolSupplier.create(config).get();
+            ExecutorService executor = ThreadPoolSupplier.create(config, "test-thread-pool").get();
             Optional<ThreadPool> asThreadPool = ThreadPool.asThreadPool(executor);
             ThreadPool pool = asThreadPool.orElseThrow(() -> new RuntimeException("not a thread pool"));
             assertThat(pool.getGrowthThreshold(), is(Integer.parseInt(threshold)));
