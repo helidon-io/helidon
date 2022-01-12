@@ -23,6 +23,7 @@ import javax.json.JsonObject;
 import java.security.Principal;
 import java.util.Collections;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -287,9 +288,18 @@ public class GreetService implements Service {
                 .baseUri("http://localhost:" + Main.serverPort + "/")
                 .build();
 
-        Context context = Contexts.context().orElseGet(Context::create);
-        context.register(this);
+        Optional<Context> context = Contexts.context();
 
+        // Verify that context was propagated with auth enabled
+        if (context.isEmpty()) {
+            response.status(Http.Status.INTERNAL_SERVER_ERROR_500).send();
+            return;
+        }
+
+        // Register instance in context
+        context.get().register(this);
+
+        // Ensure context is available in webclient threads
         webClient.get()
                 .request()
                 .thenAccept(clientResponse -> {
