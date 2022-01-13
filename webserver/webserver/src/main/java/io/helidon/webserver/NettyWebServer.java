@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,6 +48,7 @@ import io.helidon.common.context.Context;
 import io.helidon.common.reactive.Single;
 import io.helidon.media.common.MessageBodyReaderContext;
 import io.helidon.media.common.MessageBodyWriterContext;
+
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFactory;
@@ -96,8 +97,8 @@ class NettyWebServer implements WebServer {
     private volatile boolean started;
     private final AtomicBoolean shutdownThreadGroupsInitiated = new AtomicBoolean(false);
 
-    private static final String HELIDON_MAXORDER_DEFAULT = "6";
-    private static final String NETTY_MAXORDER_PROPERTY = "io.netty.allocator.maxOrder";
+    static final String HELIDON_MAXORDER_DEFAULT = "6";
+    static final String NETTY_MAXORDER_PROPERTY = "io.netty.allocator.maxOrder";
     static {
         if (System.getProperty(NETTY_MAXORDER_PROPERTY) == null) {
             LOGGER.fine("Setting " + NETTY_MAXORDER_PROPERTY + " to " + HELIDON_MAXORDER_DEFAULT + " by default");
