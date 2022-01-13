@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.webserver;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
+import java.security.SecureRandom;
 import java.security.Security;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
@@ -34,6 +35,7 @@ import javax.net.ssl.TrustManagerFactory;
 
 import io.helidon.common.Builder;
 import io.helidon.common.CollectionsHelper;
+import io.helidon.common.LazyValue;
 import io.helidon.common.pki.KeyConfig;
 import io.helidon.config.Config;
 
@@ -44,7 +46,9 @@ import io.helidon.config.Config;
 public final class SSLContextBuilder implements Builder<SSLContext> {
 
     private static final String PROTOCOL = "TLS";
-    private static final Random RANDOM = new Random();
+    // secure random cannot be stored in native image, it must
+    // be initialized at runtime
+    private static final LazyValue<Random> RANDOM = LazyValue.create(SecureRandom::new);
 
     private KeyConfig privateKeyConfig;
     private KeyConfig trustConfig;
@@ -166,7 +170,7 @@ public final class SSLContextBuilder implements Builder<SSLContext> {
         }
 
         byte[] passwordBytes = new byte[64];
-        RANDOM.nextBytes(passwordBytes);
+        RANDOM.get().nextBytes(passwordBytes);
         char[] password = Base64.getEncoder().encodeToString(passwordBytes).toCharArray();
 
         KeyStore ks = KeyStore.getInstance("JKS");
