@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,12 +18,16 @@ package io.helidon.tests.integration.webclient;
 
 import java.security.Principal;
 import java.util.Collections;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import io.helidon.common.context.Context;
+import io.helidon.common.context.Contexts;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.FormParams;
 import io.helidon.common.http.Http;
@@ -94,7 +98,8 @@ public class GreetService implements Service {
                 .get("/obtainedQuery", this::obtainedQuery)
                 .get("/pattern with space", this::getDefaultMessageHandler)
                 .put("/greeting", this::updateGreetingHandler)
-                .get("/connectionClose", this::connectionClose);
+                .get("/connectionClose", this::connectionClose)
+                .get("/contextCheck", this::contextCheck);
     }
 
     private void contentLength(ServerRequest serverRequest, ServerResponse serverResponse) {
@@ -271,5 +276,44 @@ public class GreetService implements Service {
 
         greeting.set(jo.getString("greeting"));
         response.status(Http.Status.NO_CONTENT_204).send();
+    }
+
+    /**
+     * Checks the existence of a {@code Context} object in a WebClient thread.
+     *
+     * @param request the request
+     * @param response the response
+     */
+    private void contextCheck(ServerRequest request, ServerResponse response) {
+        WebClient webClient = WebClient.builder()
+                .baseUri("http://localhost:" + Main.serverPort + "/")
+                .build();
+
+        Optional<Context> context = Contexts.context();
+
+        // Verify that context was propagated with auth enabled
+        if (context.isEmpty()) {
+            response.status(Http.Status.INTERNAL_SERVER_ERROR_500).send();
+            return;
+        }
+
+        // Register instance in context
+        context.get().register(this);
+
+        // Ensure context is available in webclient threads
+        webClient.get()
+                .request()
+                .thenAccept(clientResponse -> {
+                    Context singleContext = Contexts.context().orElseThrow();
+                    Objects.requireNonNull(singleContext.get(GreetService.class));
+                    response.status(Http.Status.OK_200);
+                    response.send();
+                })
+                .exceptionally(throwable -> {
+                    response.status(Http.Status.INTERNAL_SERVER_ERROR_500);
+                    response.send();
+                    return null;
+                });
+
     }
 }
