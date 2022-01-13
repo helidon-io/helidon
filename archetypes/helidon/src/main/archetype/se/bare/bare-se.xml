@@ -54,7 +54,7 @@
             </list>
             <value key="Main-readyMessage">System.out.println("WEB server is up! http://localhost:" + ws.port() + "/greet");</value>
             <list key="MainTest-java-imports">
-                <value>javax.json.JsonObject</value>
+                <value>jakarta.json.JsonObject</value>
             </list>
             <list key="MainTest-helidon-imports">
                 <value>io.helidon.media.jsonp.JsonpSupport</value>

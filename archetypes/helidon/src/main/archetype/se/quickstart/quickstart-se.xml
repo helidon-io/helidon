@@ -26,8 +26,8 @@
             <value key="readme-description">Sample Helidon SE project that includes multiple REST operations.</value>
             <list key="MainTest-java-imports">
                 <value>java.util.Collections</value>
-                <value>javax.json.Json</value>
-                <value>javax.json.JsonBuilderFactory</value>
+                <value>jakarta.json.Json</value>
+                <value>jakarta.json.JsonBuilderFactory</value>
             </list>
             <list key="MainTest-static-fields">
                 <value><![CDATA[    private static final JsonBuilderFactory JSON_BUILDER = Json.createBuilderFactory(Collections.emptyMap());]]></value>

@@ -96,11 +96,29 @@
                     <value key="artifactId">jersey-media-json-binding</value>
                     <value key="scope">runtime</value>
                 </map>
+                <!--
+                    TODO investigate why HV and EL are required
+                -->
+                <map>
+                    <value key="groupId">org.hibernate.validator</value>
+                    <value key="artifactId">hibernate-validator</value>
+                    <value key="version">7.0.2.Final</value>
+                    <value key="scope">runtime</value>
+                </map>
+                <map>
+                    <value key="groupId">org.glassfish</value>
+                    <value key="artifactId">jakarta.el</value>
+                    <value key="scope">runtime</value>
+                </map>
             </list>
+            <!--
+                TODO investigate how to use org.jvnet.jaxb2.maven2:maven-jaxb2-plugin
+             -->
             <list key="maven-plugins">
-                <value><![CDATA[                        <plugin>
-                <groupId>org.jvnet.jaxb2.maven2</groupId>
-                <artifactId>maven-jaxb2-plugin</artifactId>
+                <value><![CDATA[            <plugin>
+                <groupId>com.evolvedbinary.maven.jvnet</groupId>
+                <artifactId>jaxb30-maven-plugin</artifactId>
+                <version>0.15.0</version>
                 <executions>
                     <execution>
                         <id>Generate persistence.xml Java objects</id>
@@ -115,7 +133,7 @@
                                     <dependencyResource>
                                         <groupId>jakarta.persistence</groupId>
                                         <artifactId>jakarta.persistence-api</artifactId>
-                                        <resource>javax/persistence/persistence_2_2.xsd</resource>
+                                        <resource>jakarta/persistence/persistence_3_0.xsd</resource>
                                     </dependencyResource>
                                 </schema>
                             </schemas>
@@ -145,9 +163,9 @@
                 <value file="files/microprofile-config.properties"/>
             </list>
             <list key="MainTest-java-imports">
-                <value>javax.ws.rs.core.MediaType</value>
-                <value>javax.json.JsonArray</value>
-                <value>javax.json.JsonObject</value>
+                <value>jakarta.ws.rs.core.MediaType</value>
+                <value>jakarta.json.JsonArray</value>
+                <value>jakarta.json.JsonObject</value>
             </list>
             <list key="MainTest-helidon-imports">
                 <value>io.helidon.media.jsonp.JsonpSupport</value>
