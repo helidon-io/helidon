@@ -60,6 +60,10 @@
                 <groupId>io.helidon.build-tools</groupId>
                 <artifactId>helidon-archetype-maven-plugin</artifactId>
                 <configuration>
+                    <generateCombinations>false</generateCombinations>
+                    <externalValues>
+                        <artifactId>myproject</artifactId>
+                    </externalValues>
                     <entrypoint>
                         <presets>
                             <!--suppress UnresolvedMavenProperty -->
