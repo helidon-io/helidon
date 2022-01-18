@@ -16,13 +16,12 @@
 package io.helidon.microprofile.faulttolerance;
 
 
+import javax.enterprise.context.RequestScoped;
+import javax.enterprise.inject.spi.CDI;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
-
-import javax.enterprise.context.RequestScoped;
-import javax.enterprise.inject.spi.CDI;
 
 import org.glassfish.jersey.internal.inject.InjectionManager;
 import org.glassfish.jersey.process.internal.RequestContext;
@@ -114,32 +113,18 @@ class RequestScopeHelper {
         if (requestScope != null && requestContext != null) {       // Jersey and CDI
             return () -> requestScope.runInScope(requestContext,
                     (Callable<?>) (() -> {
-                        InjectionManager old = WeldRequestScope.actualInjectorManager.get();
-                        BoundRequestContext boundRequestContext = null;
                         try {
-                            boundRequestContext = migrateRequestContext();
+                            migrateRequestContext();
                             WeldRequestScope.actualInjectorManager.set(injectionManager);
                             return supplier.get();
                         } catch (Throwable t) {
                             throw t instanceof Exception ? ((Exception) t) : new RuntimeException(t);
-                        } finally {
-                            if (boundRequestContext != null) {
-                                boundRequestContext.deactivate();
-                            }
-                            WeldRequestScope.actualInjectorManager.set(old);
                         }
                     }));
         } else if (weldManager != null) {         // CDI only
             return () -> {
-                BoundRequestContext boundRequestContext = null;
-                try {
-                    boundRequestContext = migrateRequestContext();
+                    migrateRequestContext();
                     return supplier.get();
-                } finally {
-                    if (boundRequestContext != null) {
-                        boundRequestContext.deactivate();
-                    }
-                }
             };
         } else {
             return supplier;
@@ -153,9 +138,8 @@ class RequestScopeHelper {
      * if a request scope bean in the original context was not accessed/proxied, it
      * will not be carried over.
      *
-     * @return the request context
      */
-    private BoundRequestContext migrateRequestContext() {
+    private void migrateRequestContext() {
         if (requestScopeInstances != null) {
             BoundRequestContext requestContext = weldManager.instance()
                     .select(BoundRequestContext.class, BoundLiteral.INSTANCE).get();
@@ -163,9 +147,7 @@ class RequestScopeHelper {
             requestContext.associate(requestMap);
             requestContext.activate();
             requestContext.clearAndSet(requestScopeInstances);
-            return requestContext;
         }
-        return null;
     }
 
     /**
