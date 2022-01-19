@@ -79,6 +79,15 @@
    <cpe>cpe:/a:grpc:grpc</cpe>
 </suppress>
 
+<!-- Falsely maps to Netty 2.0 -->
+<suppress>
+   <notes><![CDATA[
+   file name: netty-tcnative-classes-2.0.46.Final.jar
+   ]]></notes>
+   <sha1>9937a832d9c19861822d345b48ced388b645aa5f</sha1>
+   <cpe>cpe:/a:netty:netty</cpe>
+</suppress>
+
 <!-- CVE in older version of weld, incorrectly attributed to cdi-api -->
 <suppress>
    <notes><![CDATA[
