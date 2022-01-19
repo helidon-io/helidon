@@ -646,19 +646,23 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
      */
     public enum SamplerType {
         /**
-         * Constant option.
+         * Constant sampler always makes the same decision for all traces.
+         * It either samples all traces {@code 1} or none of them {@code 0}.
          */
         CONSTANT("const"),
         /**
-         * Probabilistic option.
+         * Probabilistic sampler makes a random sampling decision with the
+         * probability of sampling equal to the value of the property.
          */
         PROBABILISTIC("probabilistic"),
         /**
-         * Ratelimiting option.
+         * Rate Limiting sampler uses a leaky bucket rate limiter to ensure that
+         * traces are sampled with a certain constant rate.
          */
         RATE_LIMITING("ratelimiting"),
         /**
-         * Remote option.
+         * Remote sampler consults Jaeger agent for the appropriate sampling
+         * strategy to use in the current service.
          */
         REMOTE("remote");
         private final String config;
