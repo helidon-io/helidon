@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,13 +22,17 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.config.Config;
 
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.not;
 
 /**
  * Unit test for {@link ScheduledThreadPoolSupplier}.
@@ -38,20 +42,34 @@ class ScheduledThreadPoolSupplierTest {
     private static ScheduledThreadPoolExecutor configuredInstance;
     private static ScheduledThreadPoolExecutor defaultInstance;
 
+    private static ScheduledThreadPoolSupplier builtSupplier;
+    private static ScheduledThreadPoolSupplier configuredSupplier;
+    private static ScheduledThreadPoolSupplier defaultSupplier;
+
+
     @BeforeAll
     static void initClass() {
-        defaultInstance = ScheduledThreadPoolSupplier.create().getThreadPool();
+        ObserverForTesting.clear();
+        defaultSupplier = ScheduledThreadPoolSupplier.create();
+        defaultInstance = defaultSupplier.getThreadPool();
 
-        builtInstance = ScheduledThreadPoolSupplier.builder()
+        builtSupplier = ScheduledThreadPoolSupplier.builder()
                 .threadNamePrefix("scheduled-thread-pool-unit-test-")
                 .corePoolSize(2)
                 .daemon(true)
                 .prestart(true)
-                .build()
-                .getThreadPool();
+                .build();
+        builtInstance = builtSupplier.getThreadPool();
 
-        configuredInstance = ScheduledThreadPoolSupplier.create(Config.create()
-                .get("unit.scheduled-thread-pool")).getThreadPool();
+        configuredSupplier = ScheduledThreadPoolSupplier.create(Config.create()
+                                                                        .get("unit.scheduled-thread-pool"));
+        configuredInstance = configuredSupplier.getThreadPool();
+    }
+
+    @AfterAll
+    static void shutdown() {
+        defaultInstance.shutdown();
+        configuredInstance.shutdown();
     }
 
     @Test
@@ -60,6 +78,7 @@ class ScheduledThreadPoolSupplierTest {
                 "helidon-",
                 16,
                 true);
+        checkObserver(defaultSupplier, defaultInstance, "scheduled");
     }
 
     @Test
@@ -68,6 +87,7 @@ class ScheduledThreadPoolSupplierTest {
                 "scheduled-thread-pool-config-unit-test-",
                 3,
                 false);
+        checkObserver(configuredSupplier, configuredInstance, "scheduled");
     }
 
     @Test
@@ -76,6 +96,7 @@ class ScheduledThreadPoolSupplierTest {
                 "scheduled-thread-pool-unit-test-",
                 2,
                 true);
+        checkObserver(builtSupplier, builtInstance, "scheduled");
     }
 
     private void testInstance(ScheduledThreadPoolExecutor theInstance,
@@ -97,5 +118,21 @@ class ScheduledThreadPoolSupplierTest {
         theInstance.submit(() -> isDaemon.set(Thread.currentThread().isDaemon())) .get();
 
         assertThat(isDaemon.get(), is(shouldBeDaemon));
+    }
+
+    private void checkObserver(ScheduledThreadPoolSupplier supplier, ScheduledThreadPoolExecutor theInstance, String supplierCategory) {
+        assertThat("Supplier collection",
+                   ObserverForTesting.instance.suppliers(),
+                   hasKey(supplier));
+        ObserverForTesting.SupplierInfo supplierInfo = ObserverForTesting.instance.suppliers().get(supplier);
+        assertThat("Observer supplier category",
+                   supplierInfo.supplierCategory(),
+                   is(supplierCategory));
+        assertThat("ExecutorService",
+                   supplierInfo.context().executorServices(),
+                   hasItem(theInstance));
+        ObserverForTesting.Context ctx = supplierInfo.context();
+        assertThat("Count of scheduled executor services registered", ctx.scheduledCount(), is(not(0)));
+        assertThat("Count of non-scheduled executor services registered", ctx.threadPoolCount(), is(0));
     }
 }
