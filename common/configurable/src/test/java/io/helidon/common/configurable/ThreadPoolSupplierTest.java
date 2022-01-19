@@ -61,7 +61,8 @@ class ThreadPoolSupplierTest {
 
     @BeforeAll
     static void initClass() {
-        defaultInstance = ensureOurExecutor(ThreadPoolSupplier.create("test-thread-pool").getThreadPool());
+        defaultSupplier = ThreadPoolSupplier.create("test-thread-pool");
+        defaultInstance = ensureOurExecutor(defaultSupplier.getThreadPool());
 
         builtSupplier = ThreadPoolSupplier.builder()
                 .threadNamePrefix("thread-pool-unit-test-")
