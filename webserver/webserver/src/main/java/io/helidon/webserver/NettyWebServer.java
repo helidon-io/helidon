@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -96,6 +96,15 @@ class NettyWebServer implements WebServer {
 
     private volatile boolean started;
     private final AtomicBoolean shutdownThreadGroupsInitiated = new AtomicBoolean(false);
+
+    static final String HELIDON_MAXORDER_DEFAULT = "6";
+    static final String NETTY_MAXORDER_PROPERTY = "io.netty.allocator.maxOrder";
+    static {
+        if (System.getProperty(NETTY_MAXORDER_PROPERTY) == null) {
+            LOGGER.fine("Setting " + NETTY_MAXORDER_PROPERTY + " to " + HELIDON_MAXORDER_DEFAULT + " by default");
+            System.setProperty(NETTY_MAXORDER_PROPERTY, HELIDON_MAXORDER_DEFAULT);
+        }
+    }
 
     /**
      * Creates a new instance.
