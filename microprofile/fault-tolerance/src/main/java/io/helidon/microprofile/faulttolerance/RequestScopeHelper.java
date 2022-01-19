@@ -113,18 +113,32 @@ class RequestScopeHelper {
         if (requestScope != null && requestContext != null) {       // Jersey and CDI
             return () -> requestScope.runInScope(requestContext,
                     (Callable<?>) (() -> {
+                        InjectionManager old = WeldRequestScope.actualInjectorManager.get();
+                        BoundRequestContext boundRequestContext = null;
                         try {
-                            migrateRequestContext();
+                            boundRequestContext = migrateRequestContext();
                             WeldRequestScope.actualInjectorManager.set(injectionManager);
                             return supplier.get();
                         } catch (Throwable t) {
                             throw t instanceof Exception ? ((Exception) t) : new RuntimeException(t);
+                        } finally {
+                            if (boundRequestContext != null) {
+                                boundRequestContext.deactivate();
+                            }
+                            WeldRequestScope.actualInjectorManager.set(old);
                         }
                     }));
         } else if (weldManager != null) {         // CDI only
             return () -> {
-                    migrateRequestContext();
+                BoundRequestContext boundRequestContext = null;
+                try {
+                    boundRequestContext = migrateRequestContext();
                     return supplier.get();
+                } finally {
+                    if (boundRequestContext != null) {
+                        boundRequestContext.deactivate();
+                    }
+                }
             };
         } else {
             return supplier;
@@ -138,16 +152,23 @@ class RequestScopeHelper {
      * if a request scope bean in the original context was not accessed/proxied, it
      * will not be carried over.
      *
+     * @return the request context if not active or {@code null} otherwise
      */
-    private void migrateRequestContext() {
+    private BoundRequestContext migrateRequestContext() {
+        BoundRequestContext requestContext = weldManager.instance()
+                .select(BoundRequestContext.class, BoundLiteral.INSTANCE).get();
+        boolean isActive = requestContext.isActive();
+
         if (requestScopeInstances != null) {
-            BoundRequestContext requestContext = weldManager.instance()
-                    .select(BoundRequestContext.class, BoundLiteral.INSTANCE).get();
             Map<String, Object> requestMap = new HashMap<>();
             requestContext.associate(requestMap);
-            requestContext.activate();
             requestContext.clearAndSet(requestScopeInstances);
+            if (!isActive) {
+                requestContext.activate();
+                return requestContext;
+            }
         }
+        return null;
     }
 
     /**
