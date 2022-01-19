@@ -33,6 +33,7 @@ import io.helidon.webserver.Service;
 import io.helidon.webserver.WebServer;
 
 import jakarta.json.JsonObject;
+import jakarta.json.JsonValue;
 import org.eclipse.microprofile.metrics.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.junit.jupiter.api.AfterAll;
@@ -42,7 +43,9 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 
 public class TestServer {
 
@@ -178,8 +181,11 @@ public class TestServer {
 
         JsonObject metrics = response.content().as(JsonObject.class).await(CLIENT_TIMEOUT);
 
-        int completedTaskCount =
-                metrics.getInt(jsonKeyForCompleteTaskCountInThreadPool);
+        assertThat("JSON metrics results before accessing slow endpoint",
+                   metrics,
+                   hasKey(jsonKeyForCompleteTaskCountInThreadPool));
+
+        int completedTaskCount = metrics.getInt(jsonKeyForCompleteTaskCountInThreadPool);
         assertThat("Completed task count before accessing slow endpoint", completedTaskCount, is(0));
 
         WebClientResponse slowGreetResponse = webClientBuilder
@@ -199,6 +205,11 @@ public class TestServer {
         assertThat("Second access to metrics", secondMetricsResponse.status().code(), is(200));
 
         JsonObject secondMetrics = secondMetricsResponse.content().as(JsonObject.class).await(CLIENT_TIMEOUT);
+
+        assertThat("JSON metrics results after accessing slow endpoint",
+                   secondMetrics,
+                   hasKey(jsonKeyForCompleteTaskCountInThreadPool));
+
 
         int secondCompletedTaskCount = secondMetrics.getInt(jsonKeyForCompleteTaskCountInThreadPool);
 

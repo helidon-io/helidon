@@ -22,6 +22,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.config.Config;
 
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -63,6 +64,12 @@ class ScheduledThreadPoolSupplierTest {
         configuredSupplier = ScheduledThreadPoolSupplier.create(Config.create()
                                                                         .get("unit.scheduled-thread-pool"));
         configuredInstance = configuredSupplier.getThreadPool();
+    }
+
+    @AfterAll
+    static void shutdown() {
+        defaultInstance.shutdown();
+        configuredInstance.shutdown();
     }
 
     @Test
