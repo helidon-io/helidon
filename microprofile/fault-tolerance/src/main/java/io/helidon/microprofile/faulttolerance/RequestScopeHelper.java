@@ -155,15 +155,13 @@ class RequestScopeHelper {
      * @return the request context if not active or {@code null} otherwise
      */
     private BoundRequestContext migrateRequestContext() {
-        BoundRequestContext requestContext = weldManager.instance()
-                .select(BoundRequestContext.class, BoundLiteral.INSTANCE).get();
-        boolean isActive = requestContext.isActive();
-
         if (requestScopeInstances != null) {
+            BoundRequestContext requestContext = weldManager.instance()
+                    .select(BoundRequestContext.class, BoundLiteral.INSTANCE).get();
             Map<String, Object> requestMap = new HashMap<>();
             requestContext.associate(requestMap);
             requestContext.clearAndSet(requestScopeInstances);
-            if (!isActive) {
+            if (!requestContext.isActive()) {
                 requestContext.activate();
                 return requestContext;
             }
