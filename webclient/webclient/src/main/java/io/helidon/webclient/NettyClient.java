@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,14 @@
 package io.helidon.webclient;
 
 import java.time.Duration;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.Version;
+import io.helidon.common.context.Contexts;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.media.common.MediaContext;
@@ -36,7 +37,6 @@ import io.netty.channel.nio.NioEventLoopGroup;
  *       - what about the base URI? only would work with prod config
  */
 final class NettyClient implements WebClient {
-    private static final Config EMPTY_CONFIG = Config.empty();
     private static final Duration DEFAULT_CONNECT_TIMEOUT = Duration.ofMinutes(1);
     private static final Duration DEFAULT_READ_TIMEOUT = Duration.ofMinutes(10);
     private static final boolean DEFAULT_FOLLOW_REDIRECTS = false;
@@ -49,31 +49,54 @@ final class NettyClient implements WebClient {
     private static final MediaContext DEFAULT_MEDIA_SUPPORT = MediaContext.create();
     private static final WebClientTls DEFAULT_TLS = WebClientTls.builder().build();
 
-    private static final AtomicBoolean DEFAULTS_CONFIGURED = new AtomicBoolean();
-
-    private static final WebClientConfiguration DEFAULT_CONFIGURATION =
-            WebClientConfiguration.builder()
-                    .config(EMPTY_CONFIG)
-                    .connectTimeout(DEFAULT_CONNECT_TIMEOUT)
-                    .readTimeout(DEFAULT_READ_TIMEOUT)
-                    .followRedirects(DEFAULT_FOLLOW_REDIRECTS)
-                    .maxRedirects(DEFAULT_NUMBER_OF_REDIRECTS)
-                    .userAgent(DEFAULT_USER_AGENT)
-                    .readerContextParent(DEFAULT_MEDIA_SUPPORT.readerContext())
-                    .writerContextParent(DEFAULT_MEDIA_SUPPORT.writerContext())
-                    .proxy(DEFAULT_PROXY)
-                    .tls(DEFAULT_TLS)
-                    .keepAlive(DEFAULT_KEEP_ALIVE)
-                    .validateHeaders(DEFAULT_VALIDATE_HEADERS)
-                    .build();
-
     // configurable per client instance
-    static final AtomicReference<WebClientConfiguration> SHARED_CONFIGURATION = new AtomicReference<>(DEFAULT_CONFIGURATION);
+    static final WebClientConfiguration SHARED_CONFIGURATION;
 
     // shared by all client instances
-    private static LazyValue<NioEventLoopGroup> eventGroup = LazyValue.create(() -> {
-        throw new IllegalStateException("Value supplier not yet set");
-    });
+    private static final NioEventLoopGroup EVENT_GROUP;
+
+    static {
+        Config globalConfig = Contexts.globalContext().get(Config.class).orElseGet(Config::empty);
+
+        Config config = globalConfig.get("client");
+
+        WebClientConfiguration.Builder<?, ?> builder = WebClientConfiguration.builder()
+                .connectTimeout(DEFAULT_CONNECT_TIMEOUT)
+                .readTimeout(DEFAULT_READ_TIMEOUT)
+                .followRedirects(DEFAULT_FOLLOW_REDIRECTS)
+                .maxRedirects(DEFAULT_NUMBER_OF_REDIRECTS)
+                .userAgent(DEFAULT_USER_AGENT)
+                .readerContextParent(DEFAULT_MEDIA_SUPPORT.readerContext())
+                .writerContextParent(DEFAULT_MEDIA_SUPPORT.writerContext())
+                .proxy(DEFAULT_PROXY)
+                .tls(DEFAULT_TLS)
+                .keepAlive(DEFAULT_KEEP_ALIVE)
+                .validateHeaders(DEFAULT_VALIDATE_HEADERS)
+                .config(config);
+
+        SHARED_CONFIGURATION = builder.build();
+
+        Config eventLoopConfig = config.get("event-loop");
+        int numberOfThreads = eventLoopConfig.get("workers")
+                .asInt()
+                .orElse(1);
+        String threadNamePrefix = eventLoopConfig.get("name-prefix")
+                .asString()
+                .orElse("helidon-client-");
+        AtomicInteger threadCounter = new AtomicInteger();
+
+        ThreadFactory threadFactory =
+                r -> {
+                    Thread result = new Thread(r, threadNamePrefix + threadCounter.getAndIncrement());
+                    // we should exit the VM if client event loop is the only thread(s) running
+                    result.setDaemon(true);
+                    return result;
+                };
+
+        ExecutorService executorService = Executors.newCachedThreadPool(threadFactory);
+
+        EVENT_GROUP = new NioEventLoopGroup(numberOfThreads, Contexts.wrap(executorService));
+    }
 
     // this instance configuration
     private final WebClientConfiguration configuration;
@@ -88,11 +111,11 @@ final class NettyClient implements WebClient {
 
         // we need to configure these - if user wants to override, they must
         // do it before first usage
-        configureDefaults(EMPTY_CONFIG);
+//        configureDefaults(EMPTY_CONFIG);
     }
 
-    static LazyValue<NioEventLoopGroup> eventGroup() {
-        return eventGroup;
+    static NioEventLoopGroup eventGroup() {
+        return EVENT_GROUP;
     }
 
     @Override
@@ -132,41 +155,12 @@ final class NettyClient implements WebClient {
 
     @Override
     public WebClientRequestBuilder method(String method) {
-        return WebClientRequestBuilderImpl.create(eventGroup, configuration, Http.RequestMethod.create(method));
+        return WebClientRequestBuilderImpl.create(EVENT_GROUP, configuration, Http.RequestMethod.create(method));
     }
 
     @Override
     public WebClientRequestBuilder method(Http.RequestMethod method) {
-        return WebClientRequestBuilderImpl.create(eventGroup, configuration, method);
-    }
-
-    static void configureDefaults(Config globalConfig) {
-        if (DEFAULTS_CONFIGURED.compareAndSet(false, true)) {
-            Config config = globalConfig.get("client");
-            WebClientConfiguration.Builder<?, ?> builder = DEFAULT_CONFIGURATION.derive();
-            Config eventLoopConfig = config.get("event-loop");
-            int numberOfThreads = eventLoopConfig.get("workers")
-                    .asInt()
-                    .orElse(1);
-            String threadNamePrefix = eventLoopConfig.get("name-prefix")
-                    .asString()
-                    .orElse("helidon-client-");
-            AtomicInteger threadCounter = new AtomicInteger();
-
-            ThreadFactory threadFactory =
-                    r -> {
-                        Thread result = new Thread(r, threadNamePrefix + threadCounter.getAndIncrement());
-                        // we should exit the VM if client event loop is the only thread(s) running
-                        result.setDaemon(true);
-                        return result;
-                    };
-
-            eventGroup = LazyValue.create(new NioEventLoopGroup(numberOfThreads, threadFactory));
-
-            builder.config(config);
-
-            SHARED_CONFIGURATION.set(builder.build());
-        }
+        return WebClientRequestBuilderImpl.create(EVENT_GROUP, configuration, method);
     }
 
 }

@@ -42,7 +42,6 @@ import java.util.function.Function;
 import java.util.logging.Logger;
 
 import io.helidon.common.GenericType;
-import io.helidon.common.LazyValue;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.http.DataChunk;
@@ -62,7 +61,6 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelOption;
-import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
@@ -110,7 +108,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     }
 
     private final Map<String, String> properties;
-    private final LazyValue<NioEventLoopGroup> eventGroup;
+    private final NioEventLoopGroup eventGroup;
     private final WebClientConfiguration configuration;
     private final Http.RequestMethod method;
     private final WebClientRequestHeaders headers;
@@ -136,7 +134,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     private Long requestId;
     private boolean allowChunkedEncoding;
 
-    private WebClientRequestBuilderImpl(LazyValue<NioEventLoopGroup> eventGroup,
+    private WebClientRequestBuilderImpl(NioEventLoopGroup eventGroup,
                                         WebClientConfiguration configuration,
                                         Http.RequestMethod method) {
         this.properties = new HashMap<>();
@@ -167,9 +165,9 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         this.keepAlive = configuration.keepAlive();
     }
 
-    public static WebClientRequestBuilder create(LazyValue<NioEventLoopGroup> eventGroup,
-                                                 WebClientConfiguration configuration,
-                                                 Http.RequestMethod method) {
+    static WebClientRequestBuilder create(NioEventLoopGroup eventGroup,
+                                          WebClientConfiguration configuration,
+                                          Http.RequestMethod method) {
         return new WebClientRequestBuilderImpl(eventGroup, configuration, method);
     }
 
@@ -568,9 +566,8 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
 
             CompletableFuture<WebClientResponse> result = new CompletableFuture<>();
 
-            EventLoopGroup group = eventGroup.get();
             Bootstrap bootstrap = new Bootstrap();
-            bootstrap.group(group)
+            bootstrap.group(eventGroup)
                     .channel(NioSocketChannel.class)
                     .handler(new NettyClientInitializer(requestConfiguration))
                     .option(ChannelOption.SO_KEEPALIVE, keepAlive)
