@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -113,29 +113,29 @@ class RequestScopeHelper {
             return () -> requestScope.runInScope(requestContext,
                     (Callable<?>) (() -> {
                         InjectionManager old = WeldRequestScope.actualInjectorManager.get();
-                        BoundRequestContext boundRequestContext = null;
+                        Runnable migrationCleaner = null;
                         try {
-                            boundRequestContext = migrateRequestContext();
+                            migrationCleaner = migrateRequestContext();
                             WeldRequestScope.actualInjectorManager.set(injectionManager);
                             return supplier.get();
                         } catch (Throwable t) {
                             throw t instanceof Exception ? ((Exception) t) : new RuntimeException(t);
                         } finally {
-                            if (boundRequestContext != null) {
-                                boundRequestContext.deactivate();
+                            if (migrationCleaner != null) {
+                                migrationCleaner.run();
                             }
                             WeldRequestScope.actualInjectorManager.set(old);
                         }
                     }));
         } else if (weldManager != null) {         // CDI only
             return () -> {
-                BoundRequestContext boundRequestContext = null;
+                Runnable migrationCleaner = null;
                 try {
-                    boundRequestContext = migrateRequestContext();
+                    migrationCleaner = migrateRequestContext();
                     return supplier.get();
                 } finally {
-                    if (boundRequestContext != null) {
-                        boundRequestContext.deactivate();
+                    if (migrationCleaner != null) {
+                        migrationCleaner.run();
                     }
                 }
             };
@@ -151,17 +151,32 @@ class RequestScopeHelper {
      * if a request scope bean in the original context was not accessed/proxied, it
      * will not be carried over.
      *
-     * @return the request context
+     * @return runnable that cleans up after migration or {@code null}
      */
-    private BoundRequestContext migrateRequestContext() {
+    private Runnable migrateRequestContext() {
         if (requestScopeInstances != null) {
+            // Access CDI context instance
             BoundRequestContext requestContext = weldManager.instance()
                     .select(BoundRequestContext.class, BoundLiteral.INSTANCE).get();
+
+            // Ensure a storage and activate if necessary
             Map<String, Object> requestMap = new HashMap<>();
-            requestContext.associate(requestMap);
-            requestContext.activate();
+            boolean wasAssociated = requestContext.associate(requestMap);
             requestContext.clearAndSet(requestScopeInstances);
-            return requestContext;
+            boolean wasActive = requestContext.isActive();
+            if (!wasActive) {
+                requestContext.activate();
+            }
+
+            // Return runnable that properly cleans up after context migration
+            return () -> {
+                if (!wasActive) {
+                    requestContext.deactivate();
+                }
+                if (wasAssociated) {
+                    requestContext.dissociate(requestMap);
+                }
+            };
         }
         return null;
     }
