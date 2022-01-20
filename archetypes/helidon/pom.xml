@@ -49,7 +49,7 @@
                 <configuration>
                     <entrypoint>
                         <presets>
-                            <text path="helidon-version">${project.version}</text>
+                            <text path="helidon-version" resolvable="false">${project.version}</text>
                         </presets>
                         <exec src="flavor.xml"/>
                     </entrypoint>
