@@ -16,6 +16,8 @@
 
 /**
  * Microprofile health module.
+ *
+ * @see org.eclipse.microprofile.health
  */
 module io.helidon.microprofile.health {
     requires java.logging;
@@ -25,6 +27,7 @@ module io.helidon.microprofile.health {
     requires io.helidon.common.serviceloader;
     requires io.helidon.health;
     requires io.helidon.health.common;
+    requires io.helidon.servicecommon.restcdi;
     requires io.helidon.microprofile.server;
 
     requires jakarta.cdi;

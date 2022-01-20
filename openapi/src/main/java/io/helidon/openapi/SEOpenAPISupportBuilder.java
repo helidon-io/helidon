@@ -34,10 +34,6 @@ public final class SEOpenAPISupportBuilder extends OpenAPISupport.Builder<SEOpen
 
     private final OpenAPIConfigImpl.Builder apiConfigBuilder = OpenAPIConfigImpl.builder();
 
-    protected SEOpenAPISupportBuilder() {
-        super(SEOpenAPISupportBuilder.class);
-    }
-
     /**
      * Set various builder attributes from the specified openapi {@code Config} object.
      * <p>

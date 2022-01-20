@@ -16,5 +16,7 @@
 
 /**
  * MicroProfile Reactive Messaging implementation.
+ *
+ * @see org.eclipse.microprofile.reactive.messaging
  */
 package io.helidon.microprofile.messaging;

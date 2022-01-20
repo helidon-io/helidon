@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -25,6 +25,8 @@
 :metrics-common: {common-guides}/metrics.adoc
 :lower-case-flavor: mp
 :intro-project-name: MicroProfile (MP)
+:helidon-tag: https://github.com/oracle/helidon/tree/{helidon-version}
+:thread-pool-example-link: {helidon-tag}/examples/webserver/threadpool
 
 include::{metrics-common}[tag=intro]
 include::{metrics-common}[tag=create-sample-project]
@@ -69,6 +71,8 @@ include::{metrics-common}[tag=vendor-metrics-json-output]
 }
 ----
 include::{metrics-common}[tag=get-single-metric]
+
+include::{metrics-common}[tag=built-in-metrics-discussion]
 
 include::{metrics-common}[tag=controlling-intro-part-1]
 * <<controlling-rest-request-metrics,Control `REST.request` metrics.>>

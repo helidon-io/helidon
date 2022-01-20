@@ -60,8 +60,12 @@
             </exclusions>
         </dependency>
         <dependency>
-            <groupId>io.helidon.webserver</groupId>
-            <artifactId>helidon-webserver-cors</artifactId>
+            <groupId>io.helidon.service-common</groupId>
+            <artifactId>helidon-service-common-rest</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config-metadata</artifactId>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>

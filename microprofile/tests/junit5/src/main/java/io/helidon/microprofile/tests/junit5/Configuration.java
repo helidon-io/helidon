@@ -30,7 +30,9 @@ import java.lang.annotation.Target;
 @Inherited
 public @interface Configuration {
     /**
-     * If set to {@code true}, the existing (or default) MicroProfile configuration would be used.
+     * If set to {@code true}, the existing (or default) MicroProfile configuration would be used. In this case it is
+     * important to set property {@code mp.initializer.allow=true} in order CDI container to start, when used with
+     * {@link HelidonTest}.
      * By default uses a configuration constructed using all {@link io.helidon.microprofile.tests.junit5.AddConfig}
      * annotations and {@link #configSources()}.
      * When set to false and a {@link org.junit.jupiter.api.BeforeAll} method registers a custom configuration

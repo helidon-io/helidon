@@ -27,7 +27,6 @@ import io.helidon.webserver.WebServer;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -38,7 +37,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Starts a server with the default OpenAPI endpoint to test a static OpenAPI
  * document file in various ways.
  */
-@Disabled("3.0.0-JAKARTA")
 public class ServerTest {
 
     private static WebServer greetingWebServer;
@@ -149,11 +147,24 @@ public class ServerTest {
      * response
      */
     @Test
-    public void checkExplicitResponseMediaType() throws Exception {
+    public void checkExplicitResponseMediaTypeViaHeaders() throws Exception {
         connectAndConsumePayload(MediaType.APPLICATION_OPENAPI_YAML);
         connectAndConsumePayload(MediaType.APPLICATION_YAML);
         connectAndConsumePayload(MediaType.APPLICATION_OPENAPI_JSON);
         connectAndConsumePayload(MediaType.APPLICATION_JSON);
+    }
+
+    @Test
+    void checkExplicitResponseMediaTypeViaQueryParameter() throws Exception {
+        TestUtil.connectAndConsumePayload(greetingWebServer.port(),
+                                          GREETING_PATH,
+                                          "format=JSON",
+                                          MediaType.APPLICATION_JSON);
+
+        TestUtil.connectAndConsumePayload(greetingWebServer.port(),
+                                          GREETING_PATH,
+                                          "format=YAML",
+                                          MediaType.APPLICATION_OPENAPI_YAML);
     }
 
     /**

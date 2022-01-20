@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,6 +50,7 @@ public final class ScheduledThreadPoolSupplier implements Supplier<ScheduledExec
         this.isDaemon = builder.isDaemon;
         this.threadNamePrefix = builder.threadNamePrefix;
         this.prestart = builder.prestart;
+        ObserverManager.registerSupplier(this, "scheduled", threadNamePrefix);
     }
 
     /**
@@ -108,6 +109,7 @@ public final class ScheduledThreadPoolSupplier implements Supplier<ScheduledExec
         if (prestart) {
             result.prestartAllCoreThreads();
         }
+        ObserverManager.registerExecutorService(this, result);
         return result;
     }
 

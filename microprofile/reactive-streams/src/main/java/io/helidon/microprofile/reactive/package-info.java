@@ -16,5 +16,7 @@
 
 /**
  * Support for MicroProfile Reactive Streams Operators in Helidon MP.
+ *
+ * @see org.eclipse.microprofile.reactive.streams.operators
  */
 package io.helidon.microprofile.reactive;

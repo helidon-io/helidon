@@ -33,7 +33,7 @@ public class HealthCheckResponseProviderImpl implements HealthCheckResponseProvi
         return new HealthCheckResponseBuilder() {
             private final Map<String, Object> data = new HashMap<>();
             private String name;
-            private HealthCheckResponse.Status state = HealthCheckResponse.Status.UP;
+            private HealthCheckResponse.Status status = HealthCheckResponse.Status.UP;
 
             @Override
             public HealthCheckResponseBuilder name(String name) {
@@ -72,13 +72,13 @@ public class HealthCheckResponseProviderImpl implements HealthCheckResponseProvi
 
             @Override
             public HealthCheckResponseBuilder up() {
-                this.state = HealthCheckResponse.Status.UP;
+                this.status = HealthCheckResponse.Status.UP;
                 return this;
             }
 
             @Override
             public HealthCheckResponseBuilder down() {
-                this.state = HealthCheckResponse.Status.DOWN;
+                this.status = HealthCheckResponse.Status.DOWN;
                 return this;
             }
 
@@ -95,7 +95,7 @@ public class HealthCheckResponseProviderImpl implements HealthCheckResponseProvi
 
             @Override
             public HealthCheckResponse build() {
-                return new HealthCheckResponseImpl(name, state, data);
+                return new HealthCheckResponseImpl(name, status, data);
             }
         };
     }

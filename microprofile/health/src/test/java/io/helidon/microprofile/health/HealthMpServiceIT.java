@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.eclipse.microprofile.health.Liveness;
 import org.eclipse.microprofile.health.Readiness;
+import org.eclipse.microprofile.health.Startup;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -43,6 +44,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @HelidonTest
 @AddBean(HealthMpServiceIT.HealthCheckOne.class)
 @AddBean(HealthMpServiceIT.HealthCheckTwo.class)
+@AddBean(HealthMpServiceIT.HealthCheckThree.class)
 @AddBean(HealthMpServiceIT.HealthCheckBad.class)
 public class HealthMpServiceIT {
 
@@ -61,6 +63,7 @@ public class HealthMpServiceIT {
         JsonObject json = getHealthJson();
         assertThat(healthCheckExists(json, "One"), is(true));
         assertThat(healthCheckExists(json, "Two"), is(true));
+        assertThat(healthCheckExists(json, "Three"), is(true));
     }
 
     /**
@@ -87,7 +90,9 @@ public class HealthMpServiceIT {
                 () -> assertThat("Three exists", healthCheckExists(json, "Three"), is(true)),
                 () -> assertThat("Four exists", healthCheckExists(json, "Four"), is(true)),
                 () -> assertThat("Five exists", healthCheckExists(json, "Five"), is(true)),
-                () -> assertThat("Six exists", healthCheckExists(json, "Six"), is(true))
+                () -> assertThat("Six exists", healthCheckExists(json, "Six"), is(true)),
+                () -> assertThat("Seven exists", healthCheckExists(json, "Seven"), is(true)),
+                () -> assertThat("Eight exists", healthCheckExists(json, "Eight"), is(true))
         );
 
     }
@@ -109,7 +114,6 @@ public class HealthMpServiceIT {
 
         JsonObject json = (JsonObject) Json.createReader(new StringReader(health)).read();
         assertThat(json, is(notNullValue()));
-        assertThat(json.getJsonString("outcome"), is(notNullValue()));      // backward compatibility default
         return json;
     }
 
@@ -138,6 +142,20 @@ public class HealthMpServiceIT {
         @Override
         public HealthCheckResponse call() {
             return HealthCheckResponse.builder().name("Two").up().build();
+        }
+    }
+
+    /**
+     * A Test {@link HealthCheck} bean for startup that should be discovered
+     * by CDI and added to the health check endpoint.
+     */
+    @Startup
+    public static class HealthCheckThree
+            implements HealthCheck {
+
+        @Override
+        public HealthCheckResponse call() {
+            return HealthCheckResponse.builder().name("Three").up().build();
         }
     }
 
@@ -183,6 +201,21 @@ public class HealthMpServiceIT {
             return Arrays.asList(
                     new HealthCheckStub("Five"),
                     new HealthCheckStub("Six"));
+        }
+    }
+
+    /**
+     * A test {@link HealthCheckProvider} bean that should be discovered
+     * by the service loader and its provided startup {@link HealthCheck}s added
+     * to the health check endpoint.
+     */
+    public static class HealthCheckProviderThree
+            implements HealthCheckProvider {
+        @Override
+        public List<HealthCheck> startupChecks() {
+            return Arrays.asList(
+                    new HealthCheckStub("Seven"),
+                    new HealthCheckStub("Eight"));
         }
     }
 

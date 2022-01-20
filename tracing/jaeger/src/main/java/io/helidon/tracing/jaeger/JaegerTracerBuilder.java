@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -640,12 +640,33 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
         this.reporterFlushIntervalMillis = aLong;
     }
 
-    enum SamplerType {
+    /**
+     * Sampler type definition.
+     * Available options are "const", "probabilistic", "ratelimiting" and "remote".
+     */
+    public enum SamplerType {
+        /**
+         * Constant sampler always makes the same decision for all traces.
+         * It either samples all traces {@code 1} or none of them {@code 0}.
+         */
         CONSTANT("const"),
+        /**
+         * Probabilistic sampler makes a random sampling decision with the
+         * probability of sampling equal to the value of the property.
+         */
         PROBABILISTIC("probabilistic"),
+        /**
+         * Rate Limiting sampler uses a leaky bucket rate limiter to ensure that
+         * traces are sampled with a certain constant rate.
+         */
         RATE_LIMITING("ratelimiting"),
+        /**
+         * Remote sampler consults Jaeger agent for the appropriate sampling
+         * strategy to use in the current service.
+         */
         REMOTE("remote");
         private final String config;
+
 
         SamplerType(String config) {
             this.config = config;

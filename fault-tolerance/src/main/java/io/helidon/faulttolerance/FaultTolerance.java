@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.faulttolerance;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
@@ -83,7 +84,7 @@ public final class FaultTolerance {
         CONFIG.set(config);
 
         SCHEDULED_EXECUTOR.set(LazyValue.create(ScheduledThreadPoolSupplier.create(CONFIG.get().get("scheduled-executor"))));
-        EXECUTOR.set(LazyValue.create(ThreadPoolSupplier.create(CONFIG.get().get("executor"))));
+        EXECUTOR.set(LazyValue.create(ThreadPoolSupplier.create(CONFIG.get().get("executor"), "ft-se-thread-pool")));
     }
 
     /**
@@ -143,6 +144,32 @@ public final class FaultTolerance {
             return cause(throwable.getCause());
         }
         return throwable;
+    }
+
+    /**
+     * Establish a dependency between a source (stage) and a dependent (future). The
+     * dependent shall complete (normally or exceptionally) based on the source stage.
+     * The source stage shall be cancelled if the dependent is cancelled. The {@code
+     * mayInterruptIfRunning} flag is always set to {@code true} during cancellation.
+     *
+     * @param source the source stage
+     * @param dependent the dependent future
+     * @param <T> type of result
+     */
+    static <T> CompletableFuture<T> createDependency(CompletionStage<T> source, CompletableFuture<T> dependent) {
+        source.whenComplete((o, t) -> {
+            if (t != null) {
+                dependent.completeExceptionally(t);
+            } else {
+                dependent.complete(o);
+            }
+        });
+        dependent.whenComplete((o, t) -> {
+            if (dependent.isCancelled()) {
+                source.toCompletableFuture().cancel(true);
+            }
+        });
+        return dependent;
     }
 
     abstract static class BaseBuilder<B extends BaseBuilder<B>> {

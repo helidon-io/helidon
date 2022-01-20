@@ -16,6 +16,8 @@
 
 /**
  * Microprofile metrics implementation.
+ *
+ * @see org.eclipse.microprofile.metrics
  */
 module io.helidon.microprofile.metrics {
     requires java.logging;

@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -92,6 +92,9 @@ This will change the behavior as follows:
 In addition to the `@AddConfig` annotation, you can also use
  `@Configuration` to configure additional classpath properties config sources using `configSources`, and to
 mark that a custom configuration is desired.
+If `@Configuration(useExisting=true)`, the existing (or default) MicroProfile configuration would be used. In this case
+it is important to set property `mp.initializer.allow=true` in order CDI container to start, when used with
+`@HelidonTest`.
 You can set up config in `@BeforeAll` method and register it with `ConfigProviderResolver` using MP Config APIs, and declare
 `@Configuration(useExisting=true)`.
 Note that this is not compatible with repeatable tests that use method sources that access CDI, as we must delay the CDI

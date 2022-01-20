@@ -30,11 +30,6 @@
     <artifactId>tck-openapi</artifactId>
     <name>Helidon Microprofile Tests TCK OpenAPI</name>
 
-    <properties>
-        <!-- 3.0.0-JAKARTA -->
-        <skipTests>true</skipTests>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>io.helidon.microprofile.tests</groupId>
@@ -70,6 +65,24 @@
         <dependency>
             <groupId>jakarta.activation</groupId>
             <artifactId>jakarta.activation-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!--
+            RestAssured xml-path, used by the TCK, requires the javax flavor of JAX-B, so add the API and impl.
+        -->
+        <!-- API, java.xml.bind module -->
+        <dependency>
+            <groupId>jakarta.xml.bind</groupId>
+            <artifactId>jakarta.xml.bind-api</artifactId>
+            <version>2.3.2</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Runtime, com.sun.xml.bind module -->
+        <dependency>
+            <groupId>org.glassfish.jaxb</groupId>
+            <artifactId>jaxb-runtime</artifactId>
+            <version>2.3.2</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

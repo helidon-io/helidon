@@ -33,7 +33,6 @@ import jakarta.json.JsonStructure;
 import jakarta.json.JsonValue;
 import org.eclipse.microprofile.openapi.models.OpenAPI;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -43,7 +42,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@Disabled("3.0.0-JAKARTA")
 class SerializerTest {
 
     private static SnakeYAMLParserHelper<ExpandedTypeDescription> helper;

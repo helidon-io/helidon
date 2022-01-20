@@ -16,6 +16,8 @@
 
 /**
  * MicroProfile Reactive Streams Operators implementation.
+ *
+ * @see org.eclipse.microprofile.reactive.streams.operators
  */
 module io.helidon.microprofile.reactive {
     requires java.logging;

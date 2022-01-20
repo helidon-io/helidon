@@ -16,6 +16,9 @@
 
 /**
  * Microprofile jwt module.
+ *
+ * @see org.eclipse.microprofile.jwt
+ * @see org.eclipse.microprofile.auth
  */
 module io.helidon.microprofile.jwt.auth {
     requires java.logging;

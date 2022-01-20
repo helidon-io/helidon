@@ -1086,8 +1086,7 @@ public final class OidcConfig {
             collector.collect().checkValid();
             collector = Errors.collector();
 
-            WebClient.Builder webClientBuilder = OidcUtil.webClientBaseBuilder(proxyProtocol,
-                                                                               proxyHost,
+            WebClient.Builder webClientBuilder = OidcUtil.webClientBaseBuilder(proxyHost,
                                                                                proxyPort,
                                                                                clientTimeout);
             ClientBuilder clientBuilder = OidcUtil.clientBaseBuilder(proxyProtocol, proxyHost, proxyPort);

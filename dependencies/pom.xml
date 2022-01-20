@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@
         <!-- commons-codec is for dependency convergence only -->
         <version.lib.commons-codec>1.15</version.lib.commons-codec>
         <version.lib.commons-logging>1.2</version.lib.commons-logging>
-        <version.lib.cron-utils>9.1.3</version.lib.cron-utils>
+        <version.lib.cron-utils>9.1.6</version.lib.cron-utils>
         <version.lib.dropwizard.metrics>4.1.2</version.lib.dropwizard.metrics>
         <version.lib.eclipselink>3.0.2</version.lib.eclipselink>
         <version.lib.el-impl>4.0.2</version.lib.el-impl>
@@ -59,7 +59,7 @@
         <version.lib.graphql-java.extended.scalars>15.0.0</version.lib.graphql-java.extended.scalars>
         <version.lib.grpc>1.35.0</version.lib.grpc>
         <version.lib.guava>30.0-jre</version.lib.guava>
-        <version.lib.h2>1.4.200</version.lib.h2>
+        <version.lib.h2>2.0.206</version.lib.h2>
         <version.lib.hamcrest>1.3</version.lib.hamcrest>
         <version.lib.hibernate>6.0.0.Beta1</version.lib.hibernate>
         <version.lib.hikaricp>5.0.0</version.lib.hikaricp>
@@ -72,7 +72,6 @@
         <version.lib.jakarta.el-api>4.0.0</version.lib.jakarta.el-api>
         <version.lib.jakarta.inject>2.0.0</version.lib.jakarta.inject>
         <version.lib.jakarta.interceptor-api>2.0.0</version.lib.jakarta.interceptor-api>
-        <version.lib.jakarta.jaxb-api>3.0.1</version.lib.jakarta.jaxb-api>
         <version.lib.jakarta.jaxrs-api>3.0.0</version.lib.jakarta.jaxrs-api>
         <version.lib.jakarta.jms-api>3.0.0</version.lib.jakarta.jms-api>
         <version.lib.jakarta.jsonb-api>2.0.0</version.lib.jakarta.jsonb-api>
@@ -81,8 +80,8 @@
         <version.lib.jakarta.transaction-api>2.0.0</version.lib.jakarta.transaction-api>
         <version.lib.jakarta.validation-api>3.0.0</version.lib.jakarta.validation-api>
         <version.lib.jakarta.websockets-api>2.0.0</version.lib.jakarta.websockets-api>
-        <version.lib.jakarta.xml.bind-api>3.0.0</version.lib.jakarta.xml.bind-api>
-        <version.lib.jandex>2.3.1.Final</version.lib.jandex>
+        <version.lib.jakarta.xml.bind-api>3.0.1</version.lib.jakarta.xml.bind-api>
+        <version.lib.jandex>2.4.1.Final</version.lib.jandex>
         <version.lib.jaxb-core>3.0.2</version.lib.jaxb-core>
         <version.lib.jaxb-impl>3.0.2</version.lib.jaxb-impl>
         <version.lib.jboss.classfilewriter>1.2.5.Final</version.lib.jboss.classfilewriter>
@@ -97,7 +96,7 @@
         <version.lib.junit4>4.13.1</version.lib.junit4>
         <version.lib.junit>5.7.0</version.lib.junit>
         <version.lib.kafka>2.8.1</version.lib.kafka>
-        <version.lib.log4j>2.13.3</version.lib.log4j>
+        <version.lib.log4j>2.17.1</version.lib.log4j>
         <version.lib.logback>1.2.3</version.lib.logback>
         <version.lib.mariadb-java-client>2.6.2</version.lib.mariadb-java-client>
         <version.lib.maven-wagon>2.10</version.lib.maven-wagon>
@@ -105,29 +104,27 @@
         <version.lib.micronaut>3.1.3</version.lib.micronaut>
         <version.lib.micronaut.data>3.1.2</version.lib.micronaut.data>
         <version.lib.micronaut.sql>4.0.4</version.lib.micronaut.sql>
-        <version.lib.microprofile-config>3.0</version.lib.microprofile-config>
+        <version.lib.microprofile-config>3.0.1</version.lib.microprofile-config>
         <version.lib.microprofile-fault-tolerance-api>4.0</version.lib.microprofile-fault-tolerance-api>
         <version.lib.microprofile-graphql>2.0-RC1</version.lib.microprofile-graphql>
         <version.lib.microprofile-health>4.0</version.lib.microprofile-health>
-        <version.lib.microprofile-jwt>2.0-RC2</version.lib.microprofile-jwt>
+        <version.lib.microprofile-jwt>2.0</version.lib.microprofile-jwt>
         <version.lib.microprofile-metrics-api>4.0</version.lib.microprofile-metrics-api>
-        <version.lib.microprofile-openapi-api>3.0-RC5</version.lib.microprofile-openapi-api>
+        <version.lib.microprofile-openapi-api>3.0</version.lib.microprofile-openapi-api>
         <version.lib.microprofile-reactive-messaging-api>2.0.1</version.lib.microprofile-reactive-messaging-api>
         <version.lib.microprofile-reactive-streams-operators-api>2.0</version.lib.microprofile-reactive-streams-operators-api>
         <version.lib.microprofile-reactive-streams-operators-core>2.0</version.lib.microprofile-reactive-streams-operators-core>
-        <version.lib.microprofile-rest-client>3.0-RC5</version.lib.microprofile-rest-client>
-        <version.lib.microprofile-tracing>3.0-RC4</version.lib.microprofile-tracing>
+        <version.lib.microprofile-rest-client>3.0</version.lib.microprofile-rest-client>
+        <version.lib.microprofile-tracing>3.0</version.lib.microprofile-tracing>
         <version.lib.microprofile-lra-api>1.0</version.lib.microprofile-lra-api>
         <version.lib.microstream>05.00.02-MS-GA</version.lib.microstream>
         <version.lib.mockito>2.23.4</version.lib.mockito>
         <version.lib.mongodb.reactivestreams>1.11.0</version.lib.mongodb.reactivestreams>
         <version.lib.mssql-jdbc>8.4.1.jre8</version.lib.mssql-jdbc>
-        <version.lib.neo4j>4.2.4</version.lib.neo4j>
-        <version.lib.rsocket>1.1.1</version.lib.rsocket>
-        <version.lib.rsocket-transport>1.1.0</version.lib.rsocket-transport>
+        <version.lib.neo4j>4.4.2</version.lib.neo4j>
         <version.lib.mysql-connector-java>8.0.22</version.lib.mysql-connector-java>
         <version.lib.narayana>5.12.0.Final</version.lib.narayana>
-        <version.lib.netty>4.1.63.Final</version.lib.netty>
+        <version.lib.netty>4.1.72.Final</version.lib.netty>
         <version.lib.netty-io_uring>0.0.8.Final</version.lib.netty-io_uring>
         <version.lib.oci-java-sdk-objectstorage>2.3.0</version.lib.oci-java-sdk-objectstorage>
         <version.lib.ojdbc8>21.3.0.0</version.lib.ojdbc8>
@@ -140,7 +137,7 @@
         <version.lib.postgresql>42.2.18</version.lib.postgresql>
         <version.lib.prometheus>0.9.0</version.lib.prometheus>
         <version.lib.slf4j>1.7.32</version.lib.slf4j>
-        <version.lib.smallrye-openapi>2.1.15</version.lib.smallrye-openapi>
+        <version.lib.smallrye-openapi>2.1.16</version.lib.smallrye-openapi>
         <version.lib.snakeyaml>1.27</version.lib.snakeyaml>
         <version.lib.typesafe-config>1.4.1</version.lib.typesafe-config>
         <version.lib.tyrus>2.0.1</version.lib.tyrus>
@@ -273,7 +270,7 @@
             <dependency>
                 <groupId>jakarta.xml.bind</groupId>
                 <artifactId>jakarta.xml.bind-api</artifactId>
-                <version>${version.lib.jakarta.jaxb-api}</version>
+                <version>${version.lib.jakarta.xml.bind-api}</version>
             </dependency>
             <dependency>
                 <groupId>com.sun.xml.bind</groupId>
@@ -1131,6 +1128,10 @@
                         <groupId>org.glassfish</groupId>
                         <artifactId>javax.el</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>org.javassist</groupId>
+                        <artifactId>javassist</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
@@ -1293,6 +1294,11 @@
                 <artifactId>netty-incubator-transport-native-io_uring</artifactId>
                 <version>${version.lib.netty-io_uring}</version>
                 <classifier>linux-x86_64</classifier>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-transport-native-unix-common</artifactId>
+                <version>${version.lib.netty}</version>
             </dependency>
             <dependency>
                 <groupId>io.netty</groupId>

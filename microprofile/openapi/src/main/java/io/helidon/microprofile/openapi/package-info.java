@@ -16,5 +16,7 @@
 
 /**
  * Support for OpenAPI in Helidon MP.
+ *
+ * @see org.eclipse.microprofile.openapi
  */
 package io.helidon.microprofile.openapi;
