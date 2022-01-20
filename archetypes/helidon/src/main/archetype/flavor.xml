@@ -36,6 +36,7 @@
     <output>
         <model>
             <value key="helidon-version">${helidon-version}</value>
+            <value key="flavor">${flavor}</value>
         </model>
     </output>
 </archetype-script>

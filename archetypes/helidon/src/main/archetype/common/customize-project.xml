@@ -34,7 +34,6 @@
                     </output>
                 </option>
             </enum>
-            <text name="name" label="Project name" optional="true" default="myproject"/>
             <text name="groupId" label="Project groupId" optional="true" default="com.examples"/>
             <text name="artifactId" label="Project artifactId" optional="true" default="myproject"/>
             <text name="version" label="Project version" optional="true" default="1.0-SNAPSHOT"/>
@@ -42,7 +41,6 @@
         </inputs>
         <output>
             <model>
-                <value key="name">${name}</value>
                 <value key="groupId">${groupId}</value>
                 <value key="artifactId">${artifactId}</value>
                 <value key="project-version">${version}</value>

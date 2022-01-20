@@ -36,4 +36,9 @@
             </enum>
         </inputs>
     </step>
+    <output>
+        <model>
+            <value key="base">${base}</value>
+        </model>
+    </output>
 </archetype-script>
