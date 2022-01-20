@@ -49,18 +49,17 @@ final class NettyClient implements WebClient {
     private static final MediaContext DEFAULT_MEDIA_SUPPORT = MediaContext.create();
     private static final WebClientTls DEFAULT_TLS = WebClientTls.builder().build();
 
+    private static final Config GLOBAL_CLIENT_CONFIG;
+
     // configurable per client instance
     static final WebClientConfiguration SHARED_CONFIGURATION;
-
-    // shared by all client instances
-    private static final NioEventLoopGroup EVENT_GROUP;
 
     static {
         Config globalConfig = Contexts.globalContext().get(Config.class).orElseGet(Config::empty);
 
-        Config config = globalConfig.get("client");
+        GLOBAL_CLIENT_CONFIG = globalConfig.get("client");
 
-        WebClientConfiguration.Builder<?, ?> builder = WebClientConfiguration.builder()
+        SHARED_CONFIGURATION = WebClientConfiguration.builder()
                 .connectTimeout(DEFAULT_CONNECT_TIMEOUT)
                 .readTimeout(DEFAULT_READ_TIMEOUT)
                 .followRedirects(DEFAULT_FOLLOW_REDIRECTS)
@@ -72,11 +71,13 @@ final class NettyClient implements WebClient {
                 .tls(DEFAULT_TLS)
                 .keepAlive(DEFAULT_KEEP_ALIVE)
                 .validateHeaders(DEFAULT_VALIDATE_HEADERS)
-                .config(config);
+                .config(GLOBAL_CLIENT_CONFIG)
+                .build();
+    }
 
-        SHARED_CONFIGURATION = builder.build();
-
-        Config eventLoopConfig = config.get("event-loop");
+    // shared by all client instances
+    private static final LazyValue<NioEventLoopGroup> EVENT_GROUP = LazyValue.create(() -> {
+        Config eventLoopConfig = GLOBAL_CLIENT_CONFIG.get("event-loop");
         int numberOfThreads = eventLoopConfig.get("workers")
                 .asInt()
                 .orElse(1);
@@ -95,8 +96,8 @@ final class NettyClient implements WebClient {
 
         ExecutorService executorService = Executors.newCachedThreadPool(threadFactory);
 
-        EVENT_GROUP = new NioEventLoopGroup(numberOfThreads, Contexts.wrap(executorService));
-    }
+        return new NioEventLoopGroup(numberOfThreads, Contexts.wrap(executorService));
+    });
 
     // this instance configuration
     private final WebClientConfiguration configuration;
@@ -115,7 +116,7 @@ final class NettyClient implements WebClient {
     }
 
     static NioEventLoopGroup eventGroup() {
-        return EVENT_GROUP;
+        return EVENT_GROUP.get();
     }
 
     @Override
@@ -155,12 +156,12 @@ final class NettyClient implements WebClient {
 
     @Override
     public WebClientRequestBuilder method(String method) {
-        return WebClientRequestBuilderImpl.create(EVENT_GROUP, configuration, Http.RequestMethod.create(method));
+        return WebClientRequestBuilderImpl.create(EVENT_GROUP.get(), configuration, Http.RequestMethod.create(method));
     }
 
     @Override
     public WebClientRequestBuilder method(Http.RequestMethod method) {
-        return WebClientRequestBuilderImpl.create(EVENT_GROUP, configuration, method);
+        return WebClientRequestBuilderImpl.create(EVENT_GROUP.get(), configuration, method);
     }
 
 }
