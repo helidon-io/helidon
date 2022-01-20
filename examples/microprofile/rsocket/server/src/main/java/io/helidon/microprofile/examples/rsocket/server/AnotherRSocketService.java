@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,6 @@ import java.util.concurrent.Flow;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import jakarta.enterprise.context.ApplicationScoped;
-
 import io.helidon.common.reactive.Multi;
 import io.helidon.microprofile.rsocket.server.FireAndForget;
 import io.helidon.microprofile.rsocket.server.RSocket;
@@ -31,7 +29,7 @@ import io.helidon.microprofile.rsocket.server.RequestStream;
 
 import io.rsocket.Payload;
 import io.rsocket.util.ByteBufPayload;
-
+import jakarta.enterprise.context.ApplicationScoped;
 
 /**
  * Example RSocket endpoint.

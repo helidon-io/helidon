@@ -16,12 +16,10 @@
 
 package io.helidon.microprofile.rsocket.client;
 
-import jakarta.inject.Qualifier;
-
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
-
+import jakarta.inject.Qualifier;
 
 /**
  * Custom RSocket config prefix.

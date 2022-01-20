@@ -28,6 +28,18 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import io.helidon.common.reactive.Multi;
+import io.helidon.common.reactive.Single;
+import io.helidon.config.Config;
+import io.helidon.config.ConfigValue;
+import io.helidon.microprofile.cdi.RuntimeStart;
+import io.helidon.microprofile.server.ServerCdiExtension;
+import io.helidon.rsocket.server.RSocketEndpoint;
+import io.helidon.rsocket.server.RSocketRouting;
+import io.helidon.rsocket.server.RSocketSupport;
+import io.helidon.webserver.tyrus.TyrusSupport;
+
+import io.rsocket.Payload;
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Initialized;
@@ -41,18 +53,6 @@ import jakarta.enterprise.inject.spi.Extension;
 import jakarta.enterprise.inject.spi.ProcessAnnotatedType;
 import jakarta.enterprise.inject.spi.WithAnnotations;
 
-import io.helidon.common.reactive.Multi;
-import io.helidon.common.reactive.Single;
-import io.helidon.config.Config;
-import io.helidon.config.ConfigValue;
-import io.helidon.microprofile.cdi.RuntimeStart;
-import io.helidon.microprofile.server.ServerCdiExtension;
-import io.helidon.rsocket.server.RSocketEndpoint;
-import io.helidon.rsocket.server.RSocketRouting;
-import io.helidon.rsocket.server.RSocketSupport;
-import io.helidon.webserver.tyrus.TyrusSupport;
-
-import io.rsocket.Payload;
 
 import static jakarta.interceptor.Interceptor.Priority.PLATFORM_AFTER;
 

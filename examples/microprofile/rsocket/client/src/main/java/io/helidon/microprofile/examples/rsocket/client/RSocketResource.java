@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,11 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutionException;
 
+import io.helidon.common.reactive.Single;
+import io.helidon.microprofile.rsocket.client.CustomRSocket;
+import io.helidon.rsocket.client.RSocketClient;
+
+import io.rsocket.Payload;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
@@ -27,11 +32,6 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 
-import io.helidon.common.reactive.Single;
-import io.helidon.microprofile.rsocket.client.CustomRSocket;
-import io.helidon.rsocket.client.RSocketClient;
-
-import io.rsocket.Payload;
 
 
 /**

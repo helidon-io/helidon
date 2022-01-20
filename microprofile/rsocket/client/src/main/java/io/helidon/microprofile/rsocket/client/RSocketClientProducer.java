@@ -15,9 +15,6 @@
  */
 package io.helidon.microprofile.rsocket.client;
 
-
-import jakarta.enterprise.context.ApplicationScoped;
-
 import java.lang.annotation.Annotation;
 import java.util.Set;
 
@@ -26,6 +23,7 @@ import io.helidon.config.ConfigValue;
 import io.helidon.config.mp.MpConfig;
 import io.helidon.rsocket.client.RSocketClient;
 
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Dependent;
 import jakarta.enterprise.inject.Produces;
 import jakarta.enterprise.inject.spi.InjectionPoint;

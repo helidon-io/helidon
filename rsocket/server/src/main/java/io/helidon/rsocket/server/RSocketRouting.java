@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,24 +67,88 @@ public interface RSocketRouting {
      */
     interface Rules {
 
+        /**
+         * Register an RSocket service.
+         *
+         * @param service {@link RSocketService}
+         * @return {@link Rules}
+         */
         Rules register(RSocketService service);
 
+        /**
+         *  Register an RSocket service.
+         *
+         * @param pathParam String
+         * @param service {@link RSocketService}
+         * @return {@link Rules}
+         */
         Rules register(String pathParam, RSocketService service);
 
+        /**
+         * Assign Fire And Forget handler.
+         * @param handler {@link FireAndForgetHandler}
+         * @return {@link Rules}
+         */
         Rules fireAndForget(FireAndForgetHandler handler);
 
+        /**
+         * Assign Fire And Forget handler with path param.
+         *
+         * @param pathParam String
+         * @param handler {@link FireAndForgetHandler}
+         * @return {@link Rules}
+         */
         Rules fireAndForget(String pathParam, FireAndForgetHandler handler);
 
+        /**
+         * Assign Request Channel handler.
+         *
+         * @param handler {@link RequestChannelHandler}
+         * @return {@link Rules}
+         */
         Rules requestChannel(RequestChannelHandler handler);
 
+        /**
+         * Assign Request Channel handler with path param.
+         *
+         * @param pathParam String
+         * @param handler {@link RequestChannelHandler}
+         * @return {@link Rules}
+         */
         Rules requestChannel(String pathParam, RequestChannelHandler handler);
 
+        /**
+         * Assign Request Response handler.
+         *
+         * @param handler {@link RequestResponseHandler}
+         * @return {@link Rules}
+         */
         Rules requestResponse(RequestResponseHandler handler);
 
+        /**
+         * Assign Request Response handler with param.
+         *
+         * @param pathParam String
+         * @param handler {@link RequestResponseHandler}
+         * @return {@link Rules}
+         */
         Rules requestResponse(String pathParam, RequestResponseHandler handler);
 
+        /**
+         * Assign Request Stream handler.
+         *
+         * @param handler {@link RequestStreamHandler}
+         * @return {@link Rules}
+         */
         Rules requestStream(RequestStreamHandler handler);
 
+        /**
+         * Assign Request Stream handler with param.
+         *
+         * @param pathParam String
+         * @param handler {@link RequestStreamHandler}
+         * @return {@link Rules}
+         */
         Rules requestStream(String pathParam, RequestStreamHandler handler);
 
 

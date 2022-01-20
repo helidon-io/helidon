@@ -122,6 +122,8 @@
         <version.lib.mongodb.reactivestreams>1.11.0</version.lib.mongodb.reactivestreams>
         <version.lib.mssql-jdbc>8.4.1.jre8</version.lib.mssql-jdbc>
         <version.lib.neo4j>4.4.2</version.lib.neo4j>
+        <version.lib.rsocket>1.1.1</version.lib.rsocket>
+        <version.lib.rsocket-transport>1.1.1</version.lib.rsocket-transport>
         <version.lib.mysql-connector-java>8.0.22</version.lib.mysql-connector-java>
         <version.lib.narayana>5.12.0.Final</version.lib.narayana>
         <version.lib.netty>4.1.72.Final</version.lib.netty>
