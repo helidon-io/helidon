@@ -195,21 +195,20 @@ class BareResponseImpl implements BareResponse {
             if (!requestContext.requestCompleted()) {
                 LOGGER.finer(() -> log("Request content not fully read with keep-alive: true", channel));
 
-                // no requests, nothing emitted or request cancelled (this is fine, we ignore entity and close connection)
-                boolean entityRequested = true;
-                if ((!requestContext.hasRequests() && !requestContext.hasEmitted())
-                        || requestContext.requestCancelled()) {
-                    if (!isWebSocketUpgrade) {
-                        entityRequested = false;
-                    }
-                }
-                if (entityRequested) {
-                    HttpRequest request = requestContext.request();
-                    LOGGER.warning("Entity was requested and not fully consumed before a response is sent. "
-                                           + "This is not supported. Connection will be closed. Please fix your route for "
-                            + request.method() + " " + request.uri());
-                }
                 if (!isWebSocketUpgrade) {
+                    if (requestContext.isDataRequested()) {
+                        // there are pending requests, we have emitted some data and request was not explicitly canceled
+                        // this is a bug in code, where entity is requested and not fully processed
+                        // throwing an exception here is a breaking change (also this may be an intermittent problem
+                        // as it may depend on thread race)
+                        HttpRequest request = requestContext.request();
+                        LOGGER.warning("Entity was requested and not fully consumed before a response is sent. "
+                                               + "This is not supported. Connection will be closed. Please fix your route for "
+                                               + request.method() + " " + request.uri());
+                    }
+
+                    // in either case, we need to close the connection as it has data pending
+                    // and we do not want to read an unknown amount of request data
                     response.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.CLOSE);
                     requestEntityAnalyzed.complete(ChannelFutureListener.CLOSE);
                 }

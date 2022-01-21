@@ -87,6 +87,15 @@ class RequestContext {
         return publisher.hasRequests();
     }
 
+    /**
+     * Has there been a request for content.
+     *
+     * @return {@code true} if data was requested and request was not cancelled
+     */
+    boolean isDataRequested() {
+        return (hasRequests() || hasEmitted()) && !requestCancelled();
+    }
+
     boolean hasEmitted() {
         return emitted;
     }
