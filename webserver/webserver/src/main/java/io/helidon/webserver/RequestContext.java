@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,13 @@
 
 package io.helidon.webserver;
 
+import java.util.concurrent.Flow;
 import java.util.logging.Logger;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
+import io.helidon.common.http.DataChunk;
+import io.helidon.common.reactive.Multi;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.HttpRequest;
@@ -35,11 +38,17 @@ class RequestContext {
     private final HttpRequest request;
     private final Context scope;
     private volatile boolean responseCompleted;
+    private volatile boolean emitted;
 
     RequestContext(HttpRequestScopedPublisher publisher, HttpRequest request, Context scope) {
         this.publisher = publisher;
         this.request = request;
         this.scope = scope;
+    }
+
+    Flow.Publisher<DataChunk> publisher() {
+        return Multi.create(publisher)
+                .peek(something -> emitted = true);
     }
 
     HttpRequest request() {
@@ -76,6 +85,10 @@ class RequestContext {
      */
     boolean hasRequests() {
         return publisher.hasRequests();
+    }
+
+    boolean hasEmitted() {
+        return emitted;
     }
 
     /**

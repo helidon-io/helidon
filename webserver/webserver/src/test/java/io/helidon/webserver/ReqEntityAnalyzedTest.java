@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.http.DataChunk;
+import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Multi;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientResponse;
@@ -34,6 +35,8 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.RepeatedTest;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -87,6 +90,8 @@ public class ReqEntityAnalyzedTest {
                     .submit(payload)
                     .onError(Throwable::printStackTrace)
                     .await(TIME_OUT);
+
+            assertThat(webClientResponse.status(), is(Http.Status.OK_200));
 
             webClientResponse.content().as(String.class)
                     .forSingle(s -> assertEquals("Server:0Server:1Server:2", s, "Wrong response!"))

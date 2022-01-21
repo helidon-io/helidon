@@ -98,7 +98,6 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
     private CompletableFuture<ChannelFutureListener> requestEntityAnalyzed;
     private CompletableFuture<?> prevRequestFuture;
     private boolean lastContent;
-    private boolean hadContentAlready;
 
     ForwardingHandler(Routing routing,
                       NettyWebServer webServer,
@@ -120,7 +119,6 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
 
     private void reset() {
         lastContent = false;
-        hadContentAlready = false;
         isWebSocketUpgrade = false;
         actualPayloadSize = 0L;
         ignorePayload = false;
@@ -209,6 +207,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
         lastContent = false;
 
         HttpContent httpContent = (HttpContent) msg;
+        boolean hasRequests = requestContext.hasRequests();
 
         ByteBuf content = httpContent.content();
         if (content.isReadable()) {
@@ -263,19 +262,6 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
             // this is here to handle the case when the content is not readable but we didn't
             // exceptionally complete the publisher and close the connection
             throw new IllegalStateException("It is not expected to not have readable content.");
-        } else if (!requestContext.hasRequests()
-                && HttpUtil.isKeepAlive(requestContext.request())
-                && !requestEntityAnalyzed.isDone()) {
-            if (hadContentAlready) {
-                LOGGER.finest(() -> "More than one unhandled content present. Closing the connection.");
-                requestEntityAnalyzed.complete(ChannelFutureListener.CLOSE);
-            } else {
-                //We are checking the unhandled entity, but we cannot be sure if connection should be closed or not.
-                //Next content has to be checked if it is last chunk. If not close connection.
-                hadContentAlready = true;
-                LOGGER.finest(() -> "Requesting the next chunk to determine if the connection should be closed.");
-                ctx.channel().read();
-            }
         }
     }
 
@@ -290,7 +276,6 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
 
     @SuppressWarnings("checkstyle:methodlength")
     private boolean channelReadHttpRequest(ChannelHandlerContext ctx, Context requestScope, Object msg) {
-        hadContentAlready = false;
         if (LOGGER.isLoggable(Level.FINE)) {
             LOGGER.fine(log("Received HttpRequest: %s. Remote address: %s. Scope id: %s",
                                   ctx,
@@ -353,7 +338,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
             }
 
             if (publisher.hasRequests()) {
-                LOGGER.finest(() -> log("Requesting next chunks from Netty", ctx));
+                LOGGER.finest(() -> log("Requesting next (%d, %d) chunks from Netty", ctx, n, demand));
                 ctx.channel().read();
             } else {
                 LOGGER.finest(() -> log("No hook action required", ctx));
@@ -366,7 +351,12 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
         // If a problem with the request URI, return 400 response
         BareRequestImpl bareRequest;
         try {
-            bareRequest = new BareRequestImpl((HttpRequest) msg, publisher, webServer, ctx, sslEngine, requestId);
+            bareRequest = new BareRequestImpl((HttpRequest) msg,
+                                              requestContextRef.publisher(),
+                                              webServer,
+                                              ctx,
+                                              sslEngine,
+                                              requestId);
         } catch (IllegalArgumentException e) {
             send400BadRequest(ctx, request, e);
             return true;
@@ -376,9 +366,19 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
             LOGGER.finest(log("Request id: %s", ctx, bareRequest.requestId()));
         }
 
+        String contentLength = request.headers().get(HttpHeaderNames.CONTENT_LENGTH);
+
+        if ("0".equals(contentLength)
+                || (contentLength == null
+                             && !"upgrade".equalsIgnoreCase(request.headers().get(HttpHeaderNames.CONNECTION))
+                             && !"chunked".equalsIgnoreCase(request.headers().get(HttpHeaderNames.TRANSFER_ENCODING))
+                             && !"multipart/byteranges".equalsIgnoreCase(request.headers().get(HttpHeaderNames.CONTENT_TYPE)))) {
+            // no entity
+            requestContextRef.complete();
+        }
+
         // If context length is greater than maximum allowed, return 413 response
         if (maxPayloadSize >= 0) {
-            String contentLength = request.headers().get(Http.Header.CONTENT_LENGTH);
             if (contentLength != null) {
                 try {
                     long value = Long.parseLong(contentLength);
@@ -536,7 +536,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                         "");
 
         FullHttpResponse response = toNettyResponse(transportResponse);
-        ctx.write(response);
+        ctx.writeAndFlush(response);
     }
 
     /**
@@ -555,6 +555,8 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                         t);
 
         FullHttpResponse response = toNettyResponse(handlerResponse);
+        // 400 -> close connection
+        response.headers().add(HttpHeaderNames.CONNECTION, HttpHeaderValues.CLOSE);
 
         ctx.writeAndFlush(response)
                 .addListener(future -> ctx.close());
@@ -575,6 +577,8 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                         "");
 
         FullHttpResponse response = toNettyResponse(transportResponse);
+        // too big entity -> close connection
+        response.headers().add(HttpHeaderNames.CONNECTION, HttpHeaderValues.CLOSE);
 
         ctx.writeAndFlush(response)
                 .addListener(future -> ctx.close());
@@ -596,7 +600,6 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
 
         HttpHeaders nettyHeaders = response.headers();
         headers.forEach(nettyHeaders::add);
-        nettyHeaders.add(HttpHeaderNames.CONNECTION, HttpHeaderValues.CLOSE);
         return response;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -307,7 +307,7 @@ public class PlainTest {
     }
 
     @Test
-    public void getWithIllegalSmallEnoughPayloadDoesntCauseConnectionClose() throws Exception {
+    public void getWithIllegalSmallEnoughPayloadDoesCauseConnectionClose() throws Exception {
         // open
         try (SocketHttpClient s = new SocketHttpClient(webServer)) {
             // get
@@ -315,12 +315,12 @@ public class PlainTest {
 
             // assert
             assertThat(entityFromResponse(s.receive(), true), is("9\nIt works!\n0\n\n"));
-            SocketHttpClient.assertConnectionIsOpen(s);
+            SocketHttpClient.assertConnectionIsClosed(s);
         }
     }
 
     @Test
-    public void unconsumedSmallPostDataDoesNotCauseConnectionClose() throws Exception {
+    public void unconsumedSmallPostDataDoesCauseConnectionClose() throws Exception {
         // open
         try (SocketHttpClient s = new SocketHttpClient(webServer)) {
             // get
@@ -329,7 +329,7 @@ public class PlainTest {
             System.out.println(received);
             // assert
             assertThat(entityFromResponse(received, true), is("15\nPayload not consumed!\n0\n\n"));
-            SocketHttpClient.assertConnectionIsOpen(s);
+            SocketHttpClient.assertConnectionIsClosed(s);
         }
     }
 
@@ -360,7 +360,7 @@ public class PlainTest {
     }
 
     @Test
-    public void errorHandlerWithGetPayloadDoesNotCauseConnectionClose() throws Exception {
+    public void errorHandlerWithGetPayloadDoesCauseConnectionClose() throws Exception {
         // open
         try (SocketHttpClient s = new SocketHttpClient(webServer)) {
             // get
@@ -368,12 +368,12 @@ public class PlainTest {
 
             // assert
             assertThat(s.receive(), startsWith("HTTP/1.1 500 Internal Server Error\n"));
-            SocketHttpClient.assertConnectionIsOpen(s);
+            SocketHttpClient.assertConnectionIsClosed(s);
         }
     }
 
     @Test
-    public void errorHandlerWithPostDataDoesNotCauseConnectionClose() throws Exception {
+    public void errorHandlerWithPostDataDoesCauseConnectionClose() throws Exception {
         // open
         try (SocketHttpClient s = new SocketHttpClient(webServer)) {
             // get
@@ -381,7 +381,7 @@ public class PlainTest {
 
             // assert
             assertThat(s.receive(), startsWith("HTTP/1.1 500 Internal Server Error\n"));
-            SocketHttpClient.assertConnectionIsOpen(s);
+            SocketHttpClient.assertConnectionIsClosed(s);
         }
     }
 
