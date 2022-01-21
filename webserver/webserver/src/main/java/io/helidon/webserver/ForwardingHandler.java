@@ -207,7 +207,6 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
         lastContent = false;
 
         HttpContent httpContent = (HttpContent) msg;
-        boolean hasRequests = requestContext.hasRequests();
 
         ByteBuf content = httpContent.content();
         if (content.isReadable()) {
