@@ -7,11 +7,16 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [1.4.11]
 
-This is a bug fix release of Helidon 1. We recommend all Helidon 1.4 users upgrade to this release.
+This is a bug fix release of Helidon 1. It primarily contains dependency upgrades.
 
 ### Fixes
 
-- Upgrade Netty to 4.1.72.Final and tcnative to 2.0.46.Final [3782](https://github.com/oracle/helidon/pull/3782)
+- Fixes to support GraalVM 21.3.0 native image [3807](https://github.com/oracle/helidon/pull/3807)
+- Upgrade Netty to 4.1.73.Final [3799](https://github.com/oracle/helidon/pull/3799)
+- Upgrade Jersey to 2.35 [3812](https://github.com/oracle/helidon/pull/3812)
+- Upgrade graalvm to 21.3.0 [3808](https://github.com/oracle/helidon/pull/3808)
+- Upgrade grpc-java to 1.41.2 [3824](https://github.com/oracle/helidon/pull/3824)
+- Upgrade OCI SDK to 2.3.0 [3814](https://github.com/oracle/helidon/pull/3814)
 
 ## [1.4.10]
 
