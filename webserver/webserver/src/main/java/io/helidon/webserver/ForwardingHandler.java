@@ -350,7 +350,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
         // If a problem with the request URI, return 400 response
         BareRequestImpl bareRequest;
         try {
-            bareRequest = new BareRequestImpl((HttpRequest) msg,
+            bareRequest = new BareRequestImpl(request,
                                               requestContextRef.publisher(),
                                               webServer,
                                               ctx,
@@ -535,6 +535,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                         "");
 
         FullHttpResponse response = toNettyResponse(transportResponse);
+        // we should flush this immediately, as we need the client to send entity
         ctx.writeAndFlush(response);
     }
 

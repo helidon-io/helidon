@@ -39,6 +39,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.common.GenericType;
@@ -206,15 +207,19 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
             for (ChannelRecord channelRecord : channels) {
                 Channel channel = channelRecord.channel;
                 if (channel.isOpen() && channel.attr(IN_USE).get().compareAndSet(false, true)) {
-                    LOGGER.finest(() -> "Reusing -> " + channel.hashCode());
-                    LOGGER.finest(() -> "Setting in use -> true");
+                    if (LOGGER.isLoggable(Level.FINEST)) {
+                        LOGGER.finest(() -> "Reusing -> " + channel.hashCode() + ", settting in use -> true");
+                    }
                     return channelRecord.channelFuture;
                 }
-                LOGGER.finest(() -> "Not accepted -> " + channel.hashCode());
-                LOGGER.finest(() -> "Open -> " + channel.isOpen());
-                LOGGER.finest(() -> "In use -> " + channel.attr(IN_USE).get());
+                if (LOGGER.isLoggable(Level.FINEST)) {
+                    LOGGER.finest(() -> "Not accepted -> " + channel.hashCode() + ", open -> "
+                            + channel.isOpen() + ", in use -> " + channel.attr(IN_USE).get());
+                }
             }
-            LOGGER.finest(() -> "New connection to -> " + connectionIdent);
+            if (LOGGER.isLoggable(Level.FINEST)) {
+                LOGGER.finest(() -> "New connection to -> " + connectionIdent);
+            }
             URI uri = connectionIdent.base;
             ChannelFuture connect = bootstrap.connect(uri.getHost(), uri.getPort());
             Channel channel = connect.channel();
@@ -227,9 +232,9 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     }
 
     static void removeChannelFromCache(ConnectionIdent key, Channel channel) {
-        LOGGER.finest(() -> "Removing from channel cache.");
-        LOGGER.finest(() -> "Connection ident -> " + key);
-        LOGGER.finest(() -> "Channel -> " + channel.hashCode());
+        if (LOGGER.isLoggable(Level.FINEST)) {
+            LOGGER.finest(() -> "Removing from channel cache. Connection ident ->  " + key + ", channel -> " + channel.hashCode());
+        }
         CHANNEL_CACHE.get(key).remove(new ChannelRecord(channel));
     }
 
@@ -581,8 +586,10 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
                     : bootstrap.connect(finalUri.getHost(), finalUri.getPort());
 
             channelFuture.addListener((ChannelFutureListener) future -> {
-                LOGGER.finest(() -> "(client reqID: " + requestId + ") "
-                        + "Channel hashcode -> " + channelFuture.channel().hashCode());
+                if (LOGGER.isLoggable(Level.FINEST)) {
+                    LOGGER.finest(() -> "(client reqID: " + requestId + ") "
+                            + "Channel hashcode -> " + channelFuture.channel().hashCode());
+                }
                 channelFuture.channel().attr(REQUEST).set(clientRequest);
                 channelFuture.channel().attr(RESPONSE_RECEIVED).set(false);
                 channelFuture.channel().attr(RECEIVED).set(responseReceived);

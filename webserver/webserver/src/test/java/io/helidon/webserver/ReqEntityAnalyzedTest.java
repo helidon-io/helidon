@@ -19,8 +19,6 @@ package io.helidon.webserver;
 
 import java.nio.ByteBuffer;
 import java.time.Duration;
-import java.util.Optional;
-import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -37,9 +35,7 @@ import org.junit.jupiter.api.RepeatedTest;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 public class ReqEntityAnalyzedTest {
     private static final Duration TIME_OUT = Duration.ofSeconds(5);
@@ -93,14 +89,15 @@ public class ReqEntityAnalyzedTest {
 
             assertThat(webClientResponse.status(), is(Http.Status.OK_200));
 
-            webClientResponse.content().as(String.class)
-                    .forSingle(s -> assertEquals("Server:0Server:1Server:2", s, "Wrong response!"))
+            String response = webClientResponse.content()
+                    .as(String.class)
                     .await(TIME_OUT);
 
-        } catch (CompletionException e) {
-            fail(e);
+            assertThat(response, is("Server:0Server:1Server:2"));
         } finally {
-            Optional.ofNullable(webClientResponse).ifPresent(WebClientResponse::close);
+            if (webClientResponse != null) {
+                webClientResponse.close();
+            }
         }
     }
 
