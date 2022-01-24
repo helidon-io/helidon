@@ -163,8 +163,10 @@ class NettyWebServer implements WebServer {
             bootstraps.put(name, bootstrap);
         }
 
-        // Log entry that also initializes NettyInitializer
-        LOGGER.fine(() -> NettyInitializer.getMaxOrderProperty() + " set to " + NettyInitializer.getMaxOrderValue());
+        // Log entry that also initializes NettyInitializer class
+        String maxOrderProp = NettyInitializer.getMaxOrderProperty();
+        String maxOrderValue = NettyInitializer.getMaxOrderValue();
+        LOGGER.fine(() -> maxOrderProp + " set to " + maxOrderValue);
     }
 
     private SslContext createSslContext(WebServerTls webServerTls) {
