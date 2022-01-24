@@ -233,7 +233,8 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
 
     static void removeChannelFromCache(ConnectionIdent key, Channel channel) {
         if (LOGGER.isLoggable(Level.FINEST)) {
-            LOGGER.finest(() -> "Removing from channel cache. Connection ident ->  " + key + ", channel -> " + channel.hashCode());
+            LOGGER.finest(() -> "Removing from channel cache. Connection ident ->  " + key
+                    + ", channel -> " + channel.hashCode());
         }
         CHANNEL_CACHE.get(key).remove(new ChannelRecord(channel));
     }
