@@ -97,15 +97,6 @@ class NettyWebServer implements WebServer {
     private volatile boolean started;
     private final AtomicBoolean shutdownThreadGroupsInitiated = new AtomicBoolean(false);
 
-    static final String HELIDON_MAXORDER_DEFAULT = "6";
-    static final String NETTY_MAXORDER_PROPERTY = "io.netty.allocator.maxOrder";
-    static {
-        if (System.getProperty(NETTY_MAXORDER_PROPERTY) == null) {
-            LOGGER.fine("Setting " + NETTY_MAXORDER_PROPERTY + " to " + HELIDON_MAXORDER_DEFAULT + " by default");
-            System.setProperty(NETTY_MAXORDER_PROPERTY, HELIDON_MAXORDER_DEFAULT);
-        }
-    }
-
     /**
      * Creates a new instance.
      *
@@ -171,6 +162,11 @@ class NettyWebServer implements WebServer {
 
             bootstraps.put(name, bootstrap);
         }
+
+        // Log entry that also initializes NettyInitializer class
+        String maxOrderProp = NettyInitializer.getMaxOrderProperty();
+        String maxOrderValue = NettyInitializer.getMaxOrderValue();
+        LOGGER.fine(() -> maxOrderProp + " set to " + maxOrderValue);
     }
 
     private SslContext createSslContext(WebServerTls webServerTls) {

@@ -71,7 +71,7 @@ public class NettyMaxOrderTest {
      */
     @Test
     public void textMaxOrderValue() {
-        String value = System.getProperty(NettyWebServer.NETTY_MAXORDER_PROPERTY);
-        assertThat(value, is(NettyWebServer.HELIDON_MAXORDER_DEFAULT));
+        String value = System.getProperty(NettyInitializer.getMaxOrderProperty());
+        assertThat(value, is(NettyInitializer.getMaxOrderValue()));
     }
 }
