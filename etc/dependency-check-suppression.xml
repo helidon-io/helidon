@@ -46,31 +46,50 @@
 </suppress>
 
 <!-- GraalVM -->
-<!-- This suppresses multiple CVEs related to running untrusted Java code.
-     The descriptions of these CVEs have the statement:
-       This vulnerability does not apply to Java deployments, typically in servers, that load and run only trusted code"
-     Therefore these do not apply to Helidon's use of GraalVM
+<!-- This suppresses multiple JDK CVEs related to running untrusted Java code.
+     These to not apply to Helidon's use of Java/GraalVM
 -->
 <suppress>
    <notes><![CDATA[
    file name: graal-sdk-21.3.0.jar
    ]]></notes>
-   <packageUrl regex="true">^pkg:maven/org\.graalvm.*/.*@.*$</packageUrl>
-   <cve>CVE-2021-2341</cve>
+   <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
+   <cve>CVE-2022-21248</cve>
 </suppress>
 <suppress>
    <notes><![CDATA[
    file name: graal-sdk-21.3.0.jar
    ]]></notes>
-   <packageUrl regex="true">^pkg:maven/org\.graalvm.*/.*@.*$</packageUrl>
-   <cve>CVE-2021-2369</cve>
+   <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
+   <cve>CVE-2022-21271</cve>
 </suppress>
 <suppress>
    <notes><![CDATA[
    file name: graal-sdk-21.3.0.jar
    ]]></notes>
-   <packageUrl regex="true">^pkg:maven/org\.graalvm.*/.*@.*$</packageUrl>
-   <cve>CVE-2021-2388</cve>
+   <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
+   <cve>CVE-2022-21277</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: graal-sdk-21.3.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
+   <cve>CVE-2022-21282</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: graal-sdk-21.3.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
+   <cve>CVE-2022-21283</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: graal-sdk-21.3.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
+   <cve>CVE-2022-21291</cve>
 </suppress>
 
 
