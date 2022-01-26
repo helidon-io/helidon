@@ -47,7 +47,7 @@
 
 <!-- GraalVM -->
 <!-- This suppresses multiple JDK CVEs related to running untrusted Java code.
-     These to not apply to Helidon's use of Java/GraalVM
+     These do not apply to Helidon's use of Java/GraalVM.
 -->
 <suppress>
    <notes><![CDATA[
@@ -90,6 +90,83 @@
    ]]></notes>
    <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
    <cve>CVE-2022-21291</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: graal-sdk-21.3.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
+   <cve>CVE-2022-21293</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: graal-sdk-21.3.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
+   <cve>CVE-2022-21294</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: graal-sdk-21.3.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
+   <cve>CVE-2022-21296</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: graal-sdk-21.3.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
+   <cve>CVE-2022-21299</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: graal-sdk-21.3.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
+   <cve>CVE-2022-21305</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: graal-sdk-21.3.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
+   <cve>CVE-2022-21340</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: graal-sdk-21.3.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
+   <cve>CVE-2022-21341</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: graal-sdk-21.3.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
+   <cve>CVE-2022-21349</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: graal-sdk-21.3.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
+   <cve>CVE-2022-21360</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: graal-sdk-21.3.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
+   <cve>CVE-2022-21365</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: graal-sdk-21.3.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
+   <cve>CVE-2022-21366</cve>
 </suppress>
 
 
