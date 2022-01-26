@@ -20,8 +20,11 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import jakarta.json.JsonObjectBuilder;
+import jakarta.json.JsonValue;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricType;
@@ -121,7 +124,30 @@ final class HelidonSimpleTimer extends MetricImpl implements SimpleTimer {
         sb.append(promName)
                 .append(tags)
                 .append(" ")
-                .append(elapsedTimeInSeconds());
+                .append(elapsedTimeInSeconds())
+                .append("\n");
+
+        promName = prometheusNameWithUnits(name + "_maxTimeDuration", Optional.of(MetricUnits.SECONDS));
+        if (withHelpType) {
+            prometheusType(sb, promName, "gauge");
+        }
+        sb.append(promName)
+                .append(tags)
+                .append(" ")
+                .append(durationPrometheusOutput(getMaxTimeDuration()))
+                .append("\n");
+
+        promName = prometheusNameWithUnits(name + "_minTimeDuration", Optional.of(MetricUnits.SECONDS));
+        if (withHelpType) {
+            prometheusType(sb, promName, "gauge");
+        }
+        sb.append(promName)
+                .append(tags)
+                .append(" ")
+                .append(durationPrometheusOutput(getMinTimeDuration()))
+                .append("\n");
+
+
         if (sample != null) {
             sb.append(prometheusExemplar(elapsedTimeInSeconds(sample.value()), sample));
         }
@@ -138,7 +164,21 @@ final class HelidonSimpleTimer extends MetricImpl implements SimpleTimer {
         JsonObjectBuilder myBuilder = JSON.createObjectBuilder()
                 .add(jsonFullKey("count", metricID), getCount())
                 .add(jsonFullKey("elapsedTime", metricID), elapsedTimeInSeconds());
+        addJsonDuration(myBuilder, jsonFullKey("maxTimeDuration", metricID), getMaxTimeDuration());
+        addJsonDuration(myBuilder, jsonFullKey("minTimeDuration", metricID), getMinTimeDuration());
         builder.add(metricID.getName(), myBuilder);
+    }
+
+    private static void addJsonDuration(JsonObjectBuilder builder, String fullKey, Duration duration) {
+        if (duration == null) {
+            builder.add(fullKey, JsonValue.NULL);
+        } else {
+            builder.add(fullKey, duration.toSeconds());
+        }
+    }
+
+    private static String durationPrometheusOutput(Duration duration) {
+        return duration == null ? "NaN" : Long.toString(duration.toSeconds());
     }
 
     private double elapsedTimeInSeconds() {
@@ -183,10 +223,15 @@ final class HelidonSimpleTimer extends MetricImpl implements SimpleTimer {
         private final HelidonCounter counter;
         private final Clock clock;
         private Duration elapsed = Duration.ofNanos(0);
-        private Duration min = null;
-        private Duration max = null;
+        private Duration currentMin = null;
+        private Duration currentMax = null;
+        private Duration lastMin = null;
+        private Duration lastMax = null;
+        private long lastMinute;
 
         private Sample.Labeled sample = null;
+
+        private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
         SimpleTimerImpl(String repoType, String name, Clock clock) {
             counter =  HelidonCounter.create(repoType, Metadata.builder()
@@ -194,16 +239,19 @@ final class HelidonSimpleTimer extends MetricImpl implements SimpleTimer {
                     .withType(MetricType.COUNTER)
                     .build());
             this.clock = clock;
+            lastMinute = currentTimeMinute();
         }
 
         @Override
         public Duration getMaxTimeDuration() {
-            return max;
+            updateState();
+            return readAccess(() -> lastMax == null ? null : Duration.from(lastMax));
         }
 
         @Override
         public Duration getMinTimeDuration() {
-            return min;
+            updateState();
+            return readAccess(() -> lastMin == null ? null : Duration.from(lastMin));
         }
 
         @Override
@@ -240,7 +288,7 @@ final class HelidonSimpleTimer extends MetricImpl implements SimpleTimer {
 
         @Override
         public Duration getElapsedTime() {
-            return elapsed;
+            return readAccess(() -> Duration.from(elapsed));
         }
 
         @Override
@@ -248,17 +296,44 @@ final class HelidonSimpleTimer extends MetricImpl implements SimpleTimer {
             return counter.getCount();
         }
 
+        private long currentTimeMinute() {
+            return clock.milliTime() / 1000 / 60;
+        }
+
         private void update(long nanos) {
-            if (nanos >= 0) {
-                counter.inc();
-                elapsed = elapsed.plusNanos(nanos);
-                sample = Sample.labeled(nanos);
-                if (min == null || min.toNanos() > nanos) {
-                    min = Duration.ofNanos(nanos);
+            writeAccess(() -> {
+                if (nanos >= 0) {
+                    counter.inc();
+                    elapsed = elapsed.plusNanos(nanos);
+                    sample = Sample.labeled(nanos);
+                    updateStateLocked();
+                    if (currentMin == null || currentMin.toNanos() > nanos) {
+                        currentMin = Duration.ofNanos(nanos);
+                    }
+                    if (currentMax == null || currentMax.toNanos() < nanos) {
+                        currentMax = Duration.ofNanos(nanos);
+                    }
                 }
-                if (max == null || max.toNanos() < nanos) {
-                    max = Duration.ofNanos(nanos);
-                }
+                return null;
+            });
+        }
+
+        private void updateState() {
+            writeAccess(() -> {
+                updateStateLocked();
+                return null;
+            });
+        }
+
+        private void updateStateLocked() {
+            long currentMinute = currentTimeMinute();
+            long diff = currentMinute - lastMinute;
+            if (diff >= 1L) {
+                lastMax = currentMax;
+                lastMin = currentMin;
+                currentMax = null;
+                currentMin = null;
+                lastMinute = currentMinute;
             }
         }
 
@@ -271,13 +346,37 @@ final class HelidonSimpleTimer extends MetricImpl implements SimpleTimer {
                 return false;
             }
             SimpleTimerImpl that = (SimpleTimerImpl) o;
-            return counter.equals(that.counter) && elapsed.equals(that.elapsed) && Objects
-                    .equals(min, that.min) && Objects.equals(max, that.max) && Objects.equals(sample, that.sample);
+            return counter.equals(that.counter)
+                    && elapsed.equals(that.elapsed)
+                    && Objects.equals(lastMin, that.lastMin)
+                    && Objects.equals(lastMax, that.lastMax)
+                    && Objects.equals(sample, that.sample);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(counter, elapsed, min, max, sample);
+            return Objects.hash(counter, elapsed, lastMin, lastMax, sample);
+        }
+
+        private <T> T writeAccess(Callable<T> action) {
+            return access(lock.writeLock(), action);
+        }
+
+        private <T> T readAccess(Callable<T> action) {
+            return access(lock.readLock(), action);
+        }
+
+        private <T> T access(Lock lock, Callable<T> action) {
+            lock.lock();
+            try {
+                return action.call();
+            } catch (IllegalArgumentException e) {
+                throw e;
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            } finally {
+                lock.unlock();
+            }
         }
     }
 

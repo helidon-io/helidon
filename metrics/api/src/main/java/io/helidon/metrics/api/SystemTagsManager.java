@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,7 +55,6 @@ public interface SystemTagsManager {
      * @param metricID metric ID possibly containing explicit tag settings
      * @return iterator over all tags, explicit and global and app-level
      */
-    //    Iterator<Map.Entry<String, String>> allTags(MetricID metricID);
     Iterable<Map.Entry<String, String>> allTags(MetricID metricID);
 
     /**
@@ -64,6 +63,5 @@ public interface SystemTagsManager {
      * @param explicitTags map containing explicitly-defined tags for a metric
      * @return iterator over all tags, explicit and global and app-level
      */
-//    Iterator<Map.Entry<String, String>> allTags(Map<String, String> explicitTags);
     Iterable<Map.Entry<String, String>> allTags(Map<String, String> explicitTags);
 }

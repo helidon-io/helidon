@@ -193,7 +193,7 @@ class HelidonTimerTest {
 
         assertThat(metricData, notNullValue());
         assertThat("count", metricData.getJsonNumber("count").longValue(), is(withinTolerance(200L)));
-        assertThat("sum", metricData.getJsonNumber("sum").longValue(), is(equalTo(0L))); // less than a second
+        assertThat("elapsedTime", metricData.getJsonNumber("elapsedTime").longValue(), is(equalTo(0L))); // less than a second
         assertThat("min", metricData.getJsonNumber("min").longValue(), is(withinTolerance(0L)));
         assertThat("max", metricData.getJsonNumber("max").longValue(), is(withinTolerance(990L)));
         assertThat("mean", metricData.getJsonNumber("mean").doubleValue(),  is(withinTolerance(506.349)));

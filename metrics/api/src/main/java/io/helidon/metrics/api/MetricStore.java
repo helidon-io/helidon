@@ -128,7 +128,10 @@ class MetricStore<M extends HelidonMetric> {
         return writeAccess(() -> {
             M metric = getMetricLocked(newMetadata.getName(), tags);
             if (metric == null) {
-                Metadata metadata = getConsistentMetadataLocked(newMetadata);
+                Metadata metadataToUse = newMetadata.getTypeRaw().equals(MetricType.INVALID)
+                        ? Metadata.builder(newMetadata).withType(MetricType.from(clazz)).build()
+                        : newMetadata;
+                Metadata metadata = getConsistentMetadataLocked(metadataToUse);
                 metric = registerMetricLocked(new MetricID(metadata.getName(), tags),
                                               createEnabledAwareMetric(clazz, metadata));
             } else {

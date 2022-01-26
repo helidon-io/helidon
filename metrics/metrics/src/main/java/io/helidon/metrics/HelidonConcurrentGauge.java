@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,9 @@
 package io.helidon.metrics;
 
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.Callable;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import jakarta.json.JsonObjectBuilder;
 import org.eclipse.microprofile.metrics.ConcurrentGauge;
@@ -124,71 +126,85 @@ final class HelidonConcurrentGauge extends MetricImpl implements ConcurrentGauge
     }
 
     static class ConcurrentGaugeImpl implements ConcurrentGauge {
-        private final AtomicLong count;
-        private final AtomicLong lastMax;
-        private final AtomicLong lastMin;
-        private final AtomicLong currentMax;
-        private final AtomicLong currentMin;
-        private final AtomicLong lastMinute;
+        private long count;
+        private long lastMax;
+        private long lastMin;
+        private long currentMax;
+        private long currentMin;
+        private long lastMinute;
         private final Clock clock;
+
+        private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+
 
         ConcurrentGaugeImpl(Clock clock) {
             this.clock = clock;
-            count = new AtomicLong(0L);
-            lastMax = new AtomicLong(Long.MIN_VALUE);
-            lastMin = new AtomicLong(Long.MAX_VALUE);
-            currentMax = new AtomicLong(Long.MIN_VALUE);
-            currentMin = new AtomicLong(Long.MAX_VALUE);
-            lastMinute = new AtomicLong(currentTimeMinute());
+            count = 0L;
+            lastMax = Long.MIN_VALUE;
+            lastMin = Long.MAX_VALUE;
+            currentMax = Long.MIN_VALUE;
+            currentMin = Long.MAX_VALUE;
+            lastMinute = currentTimeMinute();
         }
 
         @Override
         public long getCount() {
-            return count.get();
+            return count;
         }
 
         @Override
         public long getMax() {
             updateState();
-            final long max = lastMax.get();
-            return max == Long.MIN_VALUE ? 0L : max;
+            return readAccess(() -> {
+                final long max = lastMax;
+                return max == Long.MIN_VALUE ? 0L : max;
+            });
         }
 
         @Override
         public long getMin() {
             updateState();
-            final long min = lastMin.get();
-            return min == Long.MAX_VALUE ? 0L : min;
+            return readAccess(() -> {
+                final long min = lastMin;
+                return min == Long.MAX_VALUE ? 0L : min;
+            });
         }
 
         @Override
-        public synchronized void inc() {
-            updateState();
-            count.incrementAndGet();
-            final long count = getCount();
-            if (count > currentMax.get()) {
-                currentMax.set(count);
-            }
+        public void inc() {
+            writeAccess(() -> {
+                updateStateLocked();
+                count++;
+                if (count > currentMax) {
+                    currentMax = count;
+                }
+            });
         }
 
         @Override
-        public synchronized void dec() {
-            updateState();
-            count.decrementAndGet();
-            final long count = getCount();
-            if (count < currentMin.get()) {
-                currentMin.set(count);
-            }
+        public void dec() {
+            writeAccess(() -> {
+                updateStateLocked();
+                count--;
+                if (count < currentMin) {
+                    currentMin = count;
+                }
+            });
         }
 
-        public synchronized void updateState() {
+        public void updateState() {
+            writeAccess(this::updateStateLocked);
+        }
+
+        private Void updateStateLocked() {
             long currentMinute = currentTimeMinute();
-            long diff = currentMinute - lastMinute.get();
+            long diff = currentMinute - lastMinute;
             if (diff >= 1L) {
-                lastMax.set(currentMax.get());
-                lastMin.set(currentMin.get());
-                lastMinute.set(currentMinute);
+                lastMax = currentMax;
+                lastMin = currentMin;
+                lastMinute = currentMinute;
             }
+            return null;
         }
 
         private long currentTimeMinute() {
@@ -209,7 +225,41 @@ final class HelidonConcurrentGauge extends MetricImpl implements ConcurrentGauge
                 return false;
             }
             ConcurrentGaugeImpl that = (ConcurrentGaugeImpl) o;
-            return count.equals(that.count) && lastMin.equals(that.lastMin) && lastMax.equals(that.lastMax);
+            return count == that.count && lastMin == that.lastMin && lastMax == that.lastMax;
+        }
+
+        private void writeAccess(Runnable action) {
+            access(lock.writeLock(), action);
+        }
+
+        private <T> T readAccess(Callable<T> action) {
+            return access(lock.readLock(), action);
+        }
+
+        private void access(Lock lock, Runnable action) {
+            lock.lock();
+            try {
+                action.run();
+            } catch (IllegalArgumentException e) {
+                throw e;
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            } finally {
+                lock.unlock();
+            }
+        }
+
+        private <T> T access(Lock lock, Callable<T> action) {
+            lock.lock();
+            try {
+                return action.call();
+            } catch (IllegalArgumentException e) {
+                throw e;
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            } finally {
+                lock.unlock();
+            }
         }
     }
 

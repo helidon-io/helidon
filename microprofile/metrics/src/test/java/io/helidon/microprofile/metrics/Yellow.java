@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,14 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.helidon.microprofile.metrics;
 
-import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
-import jakarta.enterprise.util.AnnotationLiteral;
 import jakarta.inject.Qualifier;
 
 import static java.lang.annotation.ElementType.FIELD;
@@ -29,21 +26,8 @@ import static java.lang.annotation.ElementType.PARAMETER;
 import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
-/**
- * VendorDefined annotation.
- */
-@Target({TYPE, METHOD, PARAMETER, FIELD})
-@Retention(RUNTIME)
-@Documented
 @Qualifier
-@interface VendorDefined {
-
-    /**
-     * Literal.
-     */
-    final class Literal extends AnnotationLiteral<VendorDefined>
-            implements VendorDefined {
-        public static final Literal INSTANCE = new Literal();
-        private static final long serialVersionUID = 1L;
-    }
+@Retention(RUNTIME)
+@Target({TYPE, METHOD, FIELD, PARAMETER})
+public @interface Yellow {
 }

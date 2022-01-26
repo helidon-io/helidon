@@ -45,7 +45,6 @@ import jakarta.json.JsonObjectBuilder;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricUnits;
-import org.eclipse.microprofile.metrics.Tag;
 
 /**
  * Base for our implementations of various metrics.
@@ -173,7 +172,7 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
             for (MetricID metricID : metricIDs) {
                 boolean tagAdded = false;
                 JsonArrayBuilder ab = JSON.createArrayBuilder();
-                for (Tag tag : metricID.getTagsAsList()) {
+                for (Map.Entry<String, String> tag : SystemTagsManager.instance().allTags(metricID)) {
                     tagAdded = true;
                     ab.add(tagForJsonKey(tag));
                 }
@@ -207,10 +206,6 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
 
     protected String toStringDetails() {
         return "";
-    }
-
-    private static String tagForJsonKey(Tag t) {
-        return String.format("%s=%s", jsonEscape(t.getTagName()), jsonEscape(t.getTagValue()));
     }
 
     private static String tagForJsonKey(Map.Entry<String, String> tagEntry) {
@@ -324,7 +319,7 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
     void appendPrometheusHistogramElements(StringBuilder sb, MetricID metricID,
                                            boolean withHelpType, long count, long sum, DisplayableLabeledSnapshot snap) {
         PrometheusName name = PrometheusName.create(this, metricID);
-        appendPrometheusHistogramElements(sb, name, withHelpType, count, sum, true, snap);
+        appendPrometheusHistogramElements(sb, name, withHelpType, count, sum, snap);
     }
 
     void appendPrometheusHistogramElements(StringBuilder sb,
@@ -333,7 +328,7 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
                                            long count,
                                            Duration elapsedTime,
                                            DisplayableLabeledSnapshot snap) {
-        appendPrometheusHistogramElements(sb, name, withHelpType, count, elapsedTime.toSeconds(), true, snap);
+        appendPrometheusHistogramElements(sb, name, withHelpType, count, elapsedTime.toSeconds(), snap);
     }
 
     void appendPrometheusHistogramElements(StringBuilder sb,
@@ -341,7 +336,6 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
                                            boolean withHelpType,
                                            long count,
                                            long sum,
-                                           boolean includeSum,
                                            DisplayableLabeledSnapshot snap) {
 
         // # TYPE application:file_sizes_mean_bytes gauge
@@ -372,12 +366,10 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
                 .append(" ")
                 .append(count)
                 .append('\n');
-        if (includeSum) {
-            sb.append(name.nameUnitsSuffixTags("sum"))
-                    .append(" ")
-                    .append(sum)
-                    .append('\n');
-        }
+        sb.append(name.nameUnitsSuffixTags("sum"))
+                .append(" ")
+                .append(sum)
+                .append('\n');
         // application:file_sizes_bytes{quantile="0.5"} 4201
         // for each supported quantile
         prometheusQuantile(sb, name, getUnits(), "0.5", snap.median());

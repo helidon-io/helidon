@@ -137,7 +137,7 @@ final class HelidonTimer extends MetricImpl implements Timer {
     public void jsonData(JsonObjectBuilder builder, MetricID metricID) {
         JsonObjectBuilder myBuilder = JSON.createObjectBuilder()
                 .add(jsonFullKey("count", metricID), getCount())
-                .add(jsonFullKey("sum", metricID), getElapsedTime().toSeconds())
+                .add(jsonFullKey("elapsedTime", metricID), getElapsedTime().toSeconds())
                 .add(jsonFullKey("meanRate", metricID), getMeanRate())
                 .add(jsonFullKey("oneMinRate", metricID), getOneMinuteRate())
                 .add(jsonFullKey("fiveMinRate", metricID), getFiveMinuteRate())

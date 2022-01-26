@@ -36,6 +36,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import io.helidon.common.Errors;
@@ -58,7 +59,9 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Initialized;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.Stereotype;
 import jakarta.enterprise.inject.spi.AfterDeploymentValidation;
+import jakarta.enterprise.inject.spi.Annotated;
 import jakarta.enterprise.inject.spi.AnnotatedCallable;
 import jakarta.enterprise.inject.spi.AnnotatedMember;
 import jakarta.enterprise.inject.spi.AnnotatedMethod;
@@ -68,10 +71,7 @@ import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.enterprise.inject.spi.BeforeBeanDiscovery;
 import jakarta.enterprise.inject.spi.DeploymentException;
 import jakarta.enterprise.inject.spi.ProcessAnnotatedType;
-import jakarta.enterprise.inject.spi.ProcessInjectionPoint;
 import jakarta.enterprise.inject.spi.ProcessManagedBean;
-import jakarta.enterprise.inject.spi.ProcessProducerField;
-import jakarta.enterprise.inject.spi.ProcessProducerMethod;
 import jakarta.enterprise.inject.spi.WithAnnotations;
 import jakarta.enterprise.inject.spi.configurator.AnnotatedTypeConfigurator;
 import jakarta.inject.Singleton;
@@ -85,39 +85,60 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.metrics.Counter;
-import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Metadata;
-import org.eclipse.microprofile.metrics.Meter;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.SimpleTimer;
 import org.eclipse.microprofile.metrics.Tag;
-import org.eclipse.microprofile.metrics.Timer;
 import org.eclipse.microprofile.metrics.annotation.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Gauge;
 import org.eclipse.microprofile.metrics.annotation.Metered;
-import org.eclipse.microprofile.metrics.annotation.Metric;
 import org.eclipse.microprofile.metrics.annotation.SimplyTimed;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 
-import static io.helidon.microprofile.metrics.MetricUtil.getMetricName;
 import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 
 /**
  * MetricsCdiExtension class.
+ *
+ * <p>
+ *     Earlier versions of this class detected app-provided producer fields and methods and triggered creation and registration
+ *     of the corresponding metrics upon such detection. As explained in
+ *     https://github.com/eclipse/microprofile-metrics/issues/456 and https://github.com/eclipse/microprofile-metrics/pull/594
+ *     this probably was never correct and does not work because {@code @Metric} no longer applies to producers per the
+ *     MP metrics 3.0 spec. The issue and PR discussion explain how developers who provide their own producers should use
+ *     CDI qualifiers on the producers (and, therefore, injection points) to avoid ambiguity between their own producers and
+ *     producers written by vendors implementing MP metrics.
+ *
+ *     For Helidon, this means we no longer need to track producer fields and methods, nor do we need to augment injection points
+ *     with our own {@code VendorProvided} qualifier to disambiguate, because we now rely on developers who write their own
+ *     producers to avoid the ambiguity using qualifiers.
+ * </p>
  */
 public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport> {
 
     private static final Logger LOGGER = Logger.getLogger(MetricsCdiExtension.class.getName());
 
-    private static final Set<Class<? extends Annotation>> METRIC_ANNOTATIONS
-            = new HashSet<>(Arrays.asList(Counted.class, Metered.class, Timed.class, ConcurrentGauge.class, SimplyTimed.class));
+    static final Class<? extends Annotation>[] ALL_METRIC_ANNOTATIONS_ARRAY =
+            (Class<? extends Annotation>[]) new Class<?>[]
+                    {Counted.class, Metered.class, Timed.class, ConcurrentGauge.class, SimplyTimed.class, Gauge.class};
+
+    static final Set<Class<? extends Annotation>> ALL_METRIC_ANNOTATIONS =
+            new HashSet<>(Arrays.asList(ALL_METRIC_ANNOTATIONS_ARRAY));
 
     private static final List<Class<? extends Annotation>> JAX_RS_ANNOTATIONS
             = Arrays.asList(GET.class, PUT.class, POST.class, HEAD.class, OPTIONS.class, DELETE.class, PATCH.class);
+
+    private static final Set<Class<? extends Annotation>> METRIC_ANNOTATIONS_ON_ANY_ELEMENT =
+            new HashSet<>(ALL_METRIC_ANNOTATIONS) {
+                {
+                    remove(Gauge.class);
+                }
+            };
+
 
     static final String REST_ENDPOINTS_METRIC_ENABLED_PROPERTY_NAME = "rest-request.enabled";
     private static final boolean REST_ENDPOINTS_METRIC_ENABLED_DEFAULT_VALUE = false;
@@ -168,6 +189,9 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
     private final AtomicReference<Config> metricsConfig = new AtomicReference<>();
 
     private final WorkItemsManager<MetricWorkItem> workItemsManager = WorkItemsManager.create();
+
+    // records stereotype annotations which have metrics annotations inside them
+    private final Map<Class<?>, StereotypeMetricsInfo> stereotypeMetricsInfo = new HashMap<>();
 
     @SuppressWarnings("unchecked")
     private static <T> T getReference(BeanManager bm, Type type, Bean<?> bean) {
@@ -276,17 +300,25 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
             return;
         }
 
-        Stream.of(type.getMethods(),
-                  type.getConstructors())
-                .flatMap(Set::stream)
+        Stream.concat(type.getMethods().stream(), type.getConstructors().stream())
                 .filter(annotatedCallable -> !Modifier.isPrivate(annotatedCallable.getJavaMember().getModifiers()))
                 .filter(annotatedCallable -> type.equals(annotatedCallable.getDeclaringType()))
                 .forEach(annotatedCallable ->
-                    METRIC_ANNOTATIONS.forEach(annotation ->
-                            MetricUtil.lookupAnnotations(type, annotatedCallable, annotation).forEach(lookupResult -> {
-                                Executable executable = Executable.class.cast(annotatedCallable.getJavaMember());
-                                recordAnnotatedSite(annotatedSites, executable, clazz, lookupResult, executable);
-                            })));
+                                 METRIC_ANNOTATIONS_ON_ANY_ELEMENT // all except gauges; they are handled elsewhere
+                                         .forEach(annotation ->
+                                                          MetricUtil.lookupAnnotations(type,
+                                                                                       annotatedCallable,
+                                                                                       annotation,
+                                                                                       stereotypeMetricsInfo)
+                                                                  .forEach(lookupResult -> {
+                                                                      Executable executable = (Executable) annotatedCallable
+                                                                              .getJavaMember();
+                                                                      recordAnnotatedSite(annotatedSites,
+                                                                                          executable,
+                                                                                          clazz,
+                                                                                          lookupResult,
+                                                                                          executable);
+                                                                  })));
 
     }
 
@@ -377,10 +409,38 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
      * @param pat ProcessAnnotatedType event
      */
     private void recordMetricAnnotatedClass(@Observes
-    @WithAnnotations({Counted.class, Metered.class, Timed.class, ConcurrentGauge.class,
-            SimplyTimed.class}) ProcessAnnotatedType<?> pat) {
+    @WithAnnotations({Counted.class, Metered.class, Timed.class, ConcurrentGauge.class, SimplyTimed.class, Gauge.class})
+                                                    ProcessAnnotatedType<?> pat) {
         if (isConcreteNonInterceptor(pat)) {
             recordAnnotatedType(pat);
+
+            // Find and record stereotypes applied to the type or its members which themselves carry metrics annotations.
+            AnnotatedType<?> annotatedType = pat.getAnnotatedType();
+
+            Stream.concat(Stream.of(annotatedType),
+                          Stream.concat(pat.getAnnotatedType().getMethods().stream(),
+                                        Stream.concat(pat.getAnnotatedType().getConstructors().stream(),
+                                                      pat.getAnnotatedType().getFields().stream())))
+                    .map(Annotated::getAnnotations)
+                    .flatMap(Set::stream)
+                    .distinct()
+                    .filter(MetricsCdiExtension::isStereotype)
+                    .forEach(this::recordIfMetricsRelatedStereotype);
+        }
+    }
+
+    private static boolean isStereotype(Annotation annotation) {
+        return annotation.annotationType().isAnnotationPresent(Stereotype.class);
+    }
+
+    private void recordIfMetricsRelatedStereotype(Annotation stereotypeAnnotation) {
+        Class<? extends Annotation> candidateType = stereotypeAnnotation.annotationType();
+        Set<Annotation> metricsRelatedAnnotations = Arrays.stream(candidateType.getAnnotations())
+                .filter(a -> ALL_METRIC_ANNOTATIONS.contains(a.annotationType()))
+                .collect(Collectors.toSet());
+
+        if (!metricsRelatedAnnotations.isEmpty()) {
+            stereotypeMetricsInfo.put(candidateType, StereotypeMetricsInfo.create(metricsRelatedAnnotations));
         }
     }
 
@@ -406,15 +466,6 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
         }
         LOGGER.log(Level.FINE, () -> "Accepting annotated type " + clazz.getName() + " for later bean processing");
         return true;
-    }
-
-    private void processInjectionPoints(@Observes ProcessInjectionPoint<?, ?> pip) {
-        Type type = pip.getInjectionPoint().getType();
-        if (type.equals(Counter.class) || type.equals(Histogram.class)
-                || type.equals(Meter.class) || type.equals(Timer.class) || type.equals(SimpleTimer.class)
-                || type.equals(org.eclipse.microprofile.metrics.ConcurrentGauge.class)) {
-            pip.configureInjectionPoint().addQualifier(VendorDefined.Literal.INSTANCE);
-        }
     }
 
     /**
@@ -551,70 +602,6 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
                 : parameter.getType().getName();
     }
 
-    /**
-     * Records metric producer fields defined by the application. Ignores producers
-     * with non-default qualifiers and library producers.
-     *
-     * @param ppf Producer field.
-     */
-    protected void recordProducerFields(
-            @Observes ProcessProducerField<? extends org.eclipse.microprofile.metrics.Metric, ?> ppf) {
-        if (!isOwnProducerOrNonDefaultQualified(ppf.getBean(), MetricProducer.class)) {
-            recordProducerField(ppf);
-        }
-    }
-
-    /**
-     * Records metric producer methods defined by the application. Ignores producers
-     * with non-default qualifiers and library producers.
-     *
-     * @param ppm Producer method.
-     */
-    protected void recordProducerMethods(
-            @Observes ProcessProducerMethod<? extends org.eclipse.microprofile.metrics.Metric, ?> ppm) {
-        if (!isOwnProducerOrNonDefaultQualified(ppm.getBean(), MetricProducer.class)) {
-            recordProducerMethod(ppm);
-        }
-    }
-
-    /**
-     * Registers metrics for all field and method producers defined by the application.
-     *
-     * @param bm  Bean manager.
-     */
-    private <T extends org.eclipse.microprofile.metrics.Metric> void registerProducers(
-            BeanManager bm) {
-        LOGGER.log(Level.FINE, () -> "registerProducers");
-
-        Errors problems = errors.collect();
-        errors = null;
-        if (problems.hasFatal()) {
-            throw new DeploymentException("Metrics module found issues with deployment: " + problems.toString());
-        }
-
-        MetricRegistry registry = getMetricRegistry();
-        producers().forEach((bean, annotatedMember) -> {
-            Metric metric = annotatedMember.getAnnotation(Metric.class);
-            if (metric != null) {
-                String metricName = getMetricName(new AnnotatedElementWrapper(annotatedMember),
-                        annotatedMember.getDeclaringType()
-                                .getJavaClass(),
-                        MetricUtil.MatchingType.METHOD,
-                        metric.name(), metric.absolute());
-                T instance = getReference(bm, annotatedMember.getBaseType(), bean);
-                Metadata md = Metadata.builder()
-                        .withName(metricName)
-                        .withDisplayName(metric.displayName())
-                        .withDescription(metric.description())
-                        .withType(getMetricType(instance))
-                        .withUnit(metric.unit())
-                        .build();
-                registry.register(md, instance);
-            }
-        });
-        producers().clear();
-    }
-
     private void collectRestRequestMetrics(@Observes ProcessManagedBean<?> pmb) {
         AnnotatedType<?> type = pmb.getAnnotatedBeanClass();
         Class<?> clazz = type.getJavaClass();
@@ -661,6 +648,13 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
                 Object adv,
                 BeanManager bm,
                 ServerCdiExtension server) {
+
+        Errors problems = errors.collect();
+        errors = null;
+        if (problems.hasFatal()) {
+            throw new DeploymentException("Metrics module found issues with deployment: " + problems.toString());
+        }
+
         Routing.Builder defaultRouting = super.registerService(adv, bm, server);
         MetricsSupport metricsSupport = serviceSupport();
 
@@ -670,7 +664,6 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
         registerMetricsForAnnotatedSites();
         registerAnnotatedGauges(bm);
         registerRestRequestMetrics();
-        registerProducers(bm);
 
         Set<String> vendorMetricsAdded = new HashSet<>();
         vendorMetricsAdded.add("@default");
@@ -699,11 +692,20 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
         // Combine the Helidon-specific "metrics.xxx" settings with the MP
         // "mp.metrics.xxx" settings into a single metrics config object.
         Config mpConfig = MpConfig.toHelidonConfig(ConfigProvider.getConfig());
-        Config mpMetricsConfig = mpConfig.get("mp").get("metrics").detach();
+
+        Map<String, String> mpConfigSettings = new HashMap<>();
+        Stream.of("tags", "appName")
+                .forEach(key -> {
+                    mpConfig.get("mp.metrics." + key)
+                            .asString()
+                            .ifPresent(value -> mpConfigSettings.put(key, value));
+                });
+
         Config metricsConfig = mpConfig.get("metrics").detach();
+
         Config.Builder builder = Config.builder();
-        if (mpMetricsConfig.exists()) {
-            builder.addSource(ConfigSources.create(mpMetricsConfig));
+        if (!mpConfigSettings.isEmpty()) {
+            builder.addSource(ConfigSources.create(mpConfigSettings));
         }
         if (metricsConfig.exists()) {
             builder.addSource(ConfigSources.create(metricsConfig));
@@ -758,36 +760,38 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
         }
 
         // Process @Gauge methods keeping non-private declared on this class
-        for (AnnotatedMethod method : type.getMethods()) {
+        for (AnnotatedMethod<?> method : type.getMethods()) {
             Method javaMethod = method.getJavaMember();
             if (!javaMethod.getDeclaringClass().equals(clazz)
-                    || Modifier.isPrivate(javaMethod.getModifiers())
-                    || !method.isAnnotationPresent(Gauge.class)) {
+                    || Modifier.isPrivate(javaMethod.getModifiers())) {
                 continue;
             }
-            Class<? extends Annotation> scopeAnnotation = pmb.getBean().getScope();
-            if (scopeAnnotation == RequestScoped.class) {
-                errors.fatal(clazz, "Cannot configure @Gauge on a request scoped bean");
-                return;
-            }
-            if (scopeAnnotation != ApplicationScoped.class && type.getAnnotation(Singleton.class) == null) {
-                if (ConfigProvider.getConfig().getOptionalValue("metrics.warn-dependent", Boolean.class).orElse(true)) {
-                    LOGGER.warning("@Gauge is configured on a bean " + clazz.getName()
-                            + " that is neither ApplicationScoped nor Singleton. This is most likely a bug."
-                            + " You may set 'metrics.warn-dependent' configuration option to 'false' to remove "
-                            + "this warning.");
+            MetricUtil.metricsAnnotationsOnElement(method, Gauge.class, stereotypeMetricsInfo).forEach(gaugeAnnotation -> {
+                // We have at least one Gauge annotation on the method, so do some checking at the class level.
+                Class<? extends Annotation> scopeAnnotation = pmb.getBean().getScope();
+                if (scopeAnnotation == RequestScoped.class) {
+                    errors.fatal(clazz, "Cannot configure @Gauge on a request scoped bean");
+                    return;
                 }
-            }
-            Gauge gaugeAnnotation = method.getAnnotation(Gauge.class);
-            String explicitGaugeName = gaugeAnnotation.name();
-            String gaugeNameSuffix = (
-                    explicitGaugeName.length() > 0 ? explicitGaugeName
-                            : javaMethod.getName());
-            String gaugeName = (
-                    gaugeAnnotation.absolute() ? gaugeNameSuffix
-                            : String.format("%s.%s", clazz.getName(), gaugeNameSuffix));
-            annotatedGaugeSites.put(new MetricID(gaugeName, tags(gaugeAnnotation.tags())), method);
-            LOGGER.log(Level.FINE, () -> String.format("Recorded annotated gauge with name %s", gaugeName));
+                if (scopeAnnotation != ApplicationScoped.class && type.getAnnotation(Singleton.class) == null) {
+                    if (ConfigProvider.getConfig().getOptionalValue("metrics.warn-dependent", Boolean.class).orElse(true)) {
+                        LOGGER.warning(String.format("""
+                                               @Gauge is configured on a bean %s that is neither ApplicationScoped nor \
+                                               Singleton. This is most likely a bug. You may set 'metrics.warn-dependent' \
+                                               configuration option to 'false' to remove this warning.""", clazz.getName()));
+                    }
+                }
+
+                String explicitGaugeName = gaugeAnnotation.name();
+                String gaugeNameSuffix = (
+                        explicitGaugeName.length() > 0 ? explicitGaugeName
+                                : javaMethod.getName());
+                String gaugeName = (
+                        gaugeAnnotation.absolute() ? gaugeNameSuffix
+                                : String.format("%s.%s", clazz.getName(), gaugeNameSuffix));
+                annotatedGaugeSites.put(new MetricID(gaugeName, tags(gaugeAnnotation.tags())), method);
+                LOGGER.log(Level.FINE, () -> String.format("Recorded annotated gauge with name %s", gaugeName));
+            });
         }
     }
 
@@ -806,16 +810,24 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
             try {
                 dg = buildDelegatingGauge(gaugeID.getName(), site,
                                           bm);
-                Gauge gaugeAnnotation = site.getAnnotation(Gauge.class);
-                Metadata md = Metadata.builder()
-                        .withName(gaugeID.getName())
-                        .withDisplayName(gaugeAnnotation.displayName())
-                        .withDescription(gaugeAnnotation.description())
-                        .withType(MetricType.GAUGE)
-                        .withUnit(gaugeAnnotation.unit())
-                        .build();
-                LOGGER.log(Level.FINE, () -> String.format("Registering gauge with metadata %s", md.toString()));
-                registry.register(md, dg, gaugeID.getTagsAsList().toArray(new Tag[0]));
+                Gauge gaugeAnnotation = siteAnnotation(site, Gauge.class);
+                if (gaugeAnnotation == null) {
+                    gaugeProblems.add(new IllegalArgumentException(
+                               String.format("""
+                                             Unable to find expected @Gauge annotation at previously-identified site %s; \
+                                             ignoring site""",
+                                             site.getJavaMember())));
+                } else {
+                    Metadata md = Metadata.builder()
+                            .withName(gaugeID.getName())
+                            .withDisplayName(gaugeAnnotation.displayName())
+                            .withDescription(gaugeAnnotation.description())
+                            .withType(MetricType.GAUGE)
+                            .withUnit(gaugeAnnotation.unit())
+                            .build();
+                    LOGGER.log(Level.FINE, () -> String.format("Registering gauge with metadata %s", md.toString()));
+                    registry.register(md, dg, gaugeID.getTagsAsList().toArray(new Tag[0]));
+                }
             } catch (Throwable t) {
                 gaugeProblems.add(new IllegalArgumentException(
                         String.format("Error processing @Gauge annotation on %s#%s: %s",
@@ -830,6 +842,26 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
             throw new RuntimeException("Could not process one or more @Gauge annotations" + gaugeProblems);
         }
         annotatedGaugeSites.clear();
+    }
+
+    private <T extends Annotation> T siteAnnotation(Annotated site, Class<T> annotationType) {
+        Annotation result = site.getAnnotation(annotationType);
+        if (result != null) {
+            return annotationType.cast(result);
+        }
+        for (Annotation a : site.getAnnotations()) {
+            if (isStereotype(a)) {
+                StereotypeMetricsInfo info = stereotypeMetricsInfo.get(a.annotationType());
+                if (info != null) {
+                    for (Annotation annotationOnStereotype : info.metricsAnnotations()) {
+                        if (annotationType.isInstance(annotationOnStereotype)) {
+                            return annotationType.cast(annotationOnStereotype);
+                        }
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     private DelegatingGauge<? extends Number> buildDelegatingGauge(String gaugeName,
@@ -920,5 +952,13 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
             return annotatedMember.getJavaMember().isSynthetic();
         }
     }
+
+    static record StereotypeMetricsInfo(Set<Annotation> metricsAnnotations) {
+
+        static StereotypeMetricsInfo create(Set<Annotation> metricsAnnotations) {
+            return new StereotypeMetricsInfo(metricsAnnotations);
+        }
+    }
+
 
 }

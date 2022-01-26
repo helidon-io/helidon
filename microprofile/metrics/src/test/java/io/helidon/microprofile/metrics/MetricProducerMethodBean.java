@@ -16,6 +16,7 @@
 package io.helidon.microprofile.metrics;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Produces;
 import jakarta.enterprise.inject.spi.InjectionPoint;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.metrics.Counter;
@@ -39,9 +40,7 @@ public class MetricProducerMethodBean {
         }
     }
 
-    //@Produces
-    // TODO 3.0.0-JAKARTA
-    //@Metric(name = "cache-hits")
+    @Produces
     Gauge<Double> cacheHitRatioGauge(final @Metric(name = "hits") Meter hits, final @Metric(name = "calls") Timer calls) {
         return new Gauge<Double>() {
 
@@ -52,11 +51,27 @@ public class MetricProducerMethodBean {
         };
     }
 
-    //@Produces
-    // TODO 3.0.0-JAKARTA
-    //@Metric(name = "not_registered_metric")
+    @Produces @Yellow
     Counter notRegisteredMetric(MetricRegistry registry, InjectionPoint ip) {
-        return registry.counter("not_registered_metric");
+        return new Counter() {
+
+            private long count;
+
+            @Override
+            public void inc() {
+                count++;
+            }
+
+            @Override
+            public void inc(long n) {
+                count += n;
+            }
+
+            @Override
+            public long getCount() {
+                return count;
+            }
+        };
     }
 
     @Override

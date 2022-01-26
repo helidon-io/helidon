@@ -585,7 +585,9 @@ public final class MetricsSupport extends HelidonRestServiceSupport
                 .ifPresentOrElse(entry -> {
                     if (req.headers().isAccepted(MediaType.APPLICATION_JSON)) {
                         JsonObjectBuilder builder = JSON.createObjectBuilder();
-                        HelidonMetric.class.cast(entry.getKey()).jsonMeta(builder, entry.getValue());
+                        // The returned list of metric IDs is guaranteed to have at least one element at this point.
+                        // Use the first to find a metric which will know how to create the metadata output.
+                        HelidonMetric.class.cast(registry.getMetric(entry.getValue().get(0))).jsonMeta(builder, entry.getValue());
                         sendJson(res, builder.build());
                     } else {
                         res.status(Http.Status.NOT_ACCEPTABLE_406);
