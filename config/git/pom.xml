@@ -34,7 +34,7 @@
     </description>
 
     <properties>
-        <junit4.version>4.13</junit4.version>
+        <junit4.version>4.13.1</junit4.version>
         <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
     </properties>
 
