@@ -82,7 +82,7 @@ public class YamlConfigParser implements ConfigParser {
         Map yamlMap;
         try (AutoCloseable readable = content.asReadable()) {
             Yaml yaml = new Yaml(new SafeConstructor());
-            yamlMap = yaml.loadAs(ConfigHelper.createReader((Readable) readable), Map.class);
+            yamlMap = (Map) yaml.loadAs(ConfigHelper.createReader((Readable) readable), Object.class);
             if (yamlMap == null) { // empty source
                 return ObjectNode.empty();
             }
