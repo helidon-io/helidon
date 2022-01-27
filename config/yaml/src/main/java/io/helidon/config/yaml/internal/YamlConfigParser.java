@@ -31,6 +31,7 @@ import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigParserException;
 
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.SafeConstructor;
 
 /**
  * YAML {@link ConfigParser} implementation that supports {@value #MEDIA_TYPE_APPLICATION_YAML}.
@@ -80,7 +81,7 @@ public class YamlConfigParser implements ConfigParser {
     public <S> ObjectNode parse(Content<S> content) throws ConfigParserException {
         Map yamlMap;
         try (AutoCloseable readable = content.asReadable()) {
-            Yaml yaml = new Yaml();
+            Yaml yaml = new Yaml(new SafeConstructor());
             yamlMap = yaml.loadAs(ConfigHelper.createReader((Readable) readable), Map.class);
             if (yamlMap == null) { // empty source
                 return ObjectNode.empty();
