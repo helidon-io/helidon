@@ -16,6 +16,7 @@
 package io.helidon.metrics;
 
 import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.concurrent.TimeUnit;
 
 import jakarta.json.Json;
@@ -29,8 +30,9 @@ import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.SimpleTimer;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
-import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -189,6 +191,39 @@ class HelidonSimpleTimerTest {
         assertThat("minTimeDuration", metricData.getJsonNumber("minTimeDuration").longValue(), is(3L));
 
 
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {MetricUnits.SECONDS, MetricUnits.NANOSECONDS, MetricUnits.MILLISECONDS, MetricUnits.MICROSECONDS})
+    void testJsonNonDefaultUnits(String metricUnits) {
+        Metadata metadataWithUnits = Metadata.builder(meta)
+                .withUnit(metricUnits)
+                .build();
+        TestClock clock = TestClock.create();
+        HelidonSimpleTimer simpleTimer = HelidonSimpleTimer.create("application", metadataWithUnits, clock);
+
+        Duration longInterval = Duration.ofSeconds(4);
+        Duration shortInterval = Duration.ofSeconds(3);
+        Duration overallInterval = Duration.of(longInterval.toNanos() + shortInterval.toNanos(), ChronoUnit.NANOS);
+
+        simpleTimer.update(longInterval);
+        simpleTimer.update(shortInterval);
+        clock.add(1, TimeUnit.MINUTES);
+        JsonObjectBuilder builder = Json.createObjectBuilder();
+        simpleTimer.jsonData(builder, new MetricID("simpleTimerWithExplicitUnits"));
+        JsonObject json = builder.build();
+
+        JsonObject metricData = json.getJsonObject("simpleTimerWithExplicitUnits");
+        assertThat(metricData, notNullValue());
+        assertThat("elapsedTime",
+                   metricData.getJsonNumber("elapsedTime").longValue(),
+                   is(TestUtils.secondsToMetricUnits(metricUnits, overallInterval)));
+        assertThat("maxTimeDuration",
+                   metricData.getJsonNumber("maxTimeDuration").longValue(),
+                   is(TestUtils.secondsToMetricUnits(metricUnits, longInterval)));
+        assertThat("maxTimeDuration",
+                   metricData.getJsonNumber("minTimeDuration").longValue(),
+                   is(TestUtils.secondsToMetricUnits(metricUnits, shortInterval)));
     }
 
     @Test

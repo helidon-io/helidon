@@ -27,6 +27,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.collection.IsMapContaining.hasEntry;
 import static org.hamcrest.collection.IsMapContaining.hasKey;
@@ -125,4 +126,33 @@ class TestSystemTagsManager {
                                    hasKey(SystemTagsManager.APP_TAG)));
     }
 
+    @Test
+    void checkForNoTags() {
+        MetricsSettings metricsSettings = MetricsSettings.create(); // no global tags
+        SystemTagsManager mgr = SystemTagsManager.create(metricsSettings);
+
+        MetricID metricID = new MetricID("no-tags-metric");
+        Map<String, String> fullTags = new HashMap<>();
+        mgr.allTags(metricID).forEach(entry -> fullTags.put(entry.getKey(), entry.getValue()));
+
+        assertThat("All tags for metric ID with no tags itself and no global tags is empty",
+                   fullTags.isEmpty(),
+                   is(true));
+    }
+
+    @Test
+    void checkForGlobalButNoMetricTags() {
+        Config metricsConfig = Config.just(ConfigSources.create(GLOBAL_AND_APP_TAG_SETTINGS)).get("metrics");
+        MetricsSettings metricsSettings = MetricsSettings.create(metricsConfig);
+        SystemTagsManager mgr = SystemTagsManager.create(metricsSettings);
+
+        MetricID metricID = new MetricID("no-tags-metric");
+        Map<String, String> fullTags = new HashMap<>();
+        mgr.allTags(metricID).forEach(entry -> fullTags.put(entry.getKey(), entry.getValue()));
+
+        assertThat("Global tags derived from tagless metric ID",
+                   fullTags, allOf(hasEntry(GLOBAL_TAG_1, GLOBAL_VALUE_1),
+                                   hasEntry(GLOBAL_TAG_2, GLOBAL_VALUE_2),
+                                   hasKey(SystemTagsManager.APP_TAG)));
+    }
 }

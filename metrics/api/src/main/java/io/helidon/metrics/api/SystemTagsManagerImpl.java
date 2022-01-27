@@ -19,6 +19,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.function.Consumer;
 
 import org.eclipse.microprofile.metrics.MetricID;
@@ -74,7 +75,7 @@ class SystemTagsManagerImpl implements SystemTagsManager {
         return new MultiIterable<>(metricID.getTags().entrySet(), systemTags.entrySet());
     }
 
-    private static class MultiIterable<T> implements Iterable<T> {
+    static class MultiIterable<T> implements Iterable<T> {
 
         private final Iterable<T>[] iterables;
 
@@ -89,8 +90,8 @@ class SystemTagsManagerImpl implements SystemTagsManager {
         public Iterator<T> iterator() {
             return new Iterator<T>() {
 
-                private Iterator<T> current = iterables[0].iterator();
-                private int nextIndex = 1;
+                private int nextIndex = 0;
+                private Iterator<T> current = nextIterator();
 
                 @Override
                 public boolean hasNext() {
@@ -98,18 +99,25 @@ class SystemTagsManagerImpl implements SystemTagsManager {
                         return true;
                     }
 
-                    while (nextIndex < iterables.length - 1) {
-                        current = iterables[nextIndex++].iterator();
-                        if (current.hasNext()) {
-                            return true;
-                        }
-                    }
-                    return false;
+                    current = nextIterator();
+                    return current.hasNext();
                 }
 
                 @Override
                 public T next() {
                     return current.next();
+                }
+
+                private Iterator<T> nextIterator() {
+                    while (nextIndex < iterables.length) {
+                        Iterator<T> candidateNextIterator = iterables[nextIndex].iterator();
+                        if (candidateNextIterator.hasNext()) {
+                            nextIndex++;
+                            return candidateNextIterator;
+                        }
+                        nextIndex++;
+                    }
+                    return emptyIterator;
                 }
             };
         }
@@ -120,5 +128,17 @@ class SystemTagsManagerImpl implements SystemTagsManager {
                 it.forEach(action);
             }
         }
+
+        private final Iterator<T> emptyIterator = new Iterator<>() {
+            @Override
+            public boolean hasNext() {
+                return false;
+            }
+
+            @Override
+            public T next() {
+                throw new NoSuchElementException();
+            }
+        };
     }
 }

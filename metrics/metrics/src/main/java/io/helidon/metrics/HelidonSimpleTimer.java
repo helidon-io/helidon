@@ -24,7 +24,6 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import jakarta.json.JsonObjectBuilder;
-import jakarta.json.JsonValue;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricType;
@@ -162,19 +161,15 @@ final class HelidonSimpleTimer extends MetricImpl implements SimpleTimer {
     @Override
     public void jsonData(JsonObjectBuilder builder, MetricID metricID) {
         JsonObjectBuilder myBuilder = JSON.createObjectBuilder()
-                .add(jsonFullKey("count", metricID), getCount())
-                .add(jsonFullKey("elapsedTime", metricID), elapsedTimeInSeconds());
+                .add(jsonFullKey("count", metricID), getCount());
+        addJsonDuration(myBuilder, jsonFullKey("elapsedTime", metricID), getElapsedTime());
         addJsonDuration(myBuilder, jsonFullKey("maxTimeDuration", metricID), getMaxTimeDuration());
         addJsonDuration(myBuilder, jsonFullKey("minTimeDuration", metricID), getMinTimeDuration());
         builder.add(metricID.getName(), myBuilder);
     }
 
-    private static void addJsonDuration(JsonObjectBuilder builder, String fullKey, Duration duration) {
-        if (duration == null) {
-            builder.add(fullKey, JsonValue.NULL);
-        } else {
-            builder.add(fullKey, duration.toSeconds());
-        }
+    private void addJsonDuration(JsonObjectBuilder builder, String fullKey, Duration duration) {
+        builder.add(fullKey, TimeUnits.convert(duration, metadata().getUnit()));
     }
 
     private static String durationPrometheusOutput(Duration duration) {

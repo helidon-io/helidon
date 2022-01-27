@@ -41,7 +41,9 @@ import io.helidon.metrics.api.SystemTagsManager;
 import jakarta.json.Json;
 import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
+import jakarta.json.JsonValue;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricUnits;
@@ -517,6 +519,25 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
                     return (o) -> CHECK_NANS.apply(o, p ->
                             String.valueOf(TimeUnit.SECONDS.convert(new BigDecimal(String.valueOf(o)).longValue(), from)));
             }
+        }
+
+        static JsonValue convert(Duration duration, String metricUnits) {
+            if (duration == null) {
+                return JsonObject.NULL;
+            }
+            long result = switch (metricUnits) {
+                case MetricUnits.DAYS -> duration.toDays();
+                case MetricUnits.HOURS -> duration.toHours();
+                case MetricUnits.MINUTES -> duration.toMinutes();
+                case MetricUnits.SECONDS -> duration.toSeconds();
+                case MetricUnits.MILLISECONDS -> duration.toMillis();
+                case MetricUnits.MICROSECONDS -> duration.toNanos() / 1000;
+
+                // includes explicit nanoseconds units and no units set (default)
+                default -> duration.toNanos();
+            };
+
+            return Json.createValue(result);
         }
     }
 
