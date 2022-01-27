@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigParserException;
 
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.SafeConstructor;
 
 /**
  * YAML {@link ConfigParser} implementation that supports {@value #MEDIA_TYPE_APPLICATION_YAML}.
@@ -80,8 +81,8 @@ public class YamlConfigParser implements ConfigParser {
     public <S> ObjectNode parse(Content<S> content) throws ConfigParserException {
         Map yamlMap;
         try (AutoCloseable readable = content.asReadable()) {
-            Yaml yaml = new Yaml();
-            yamlMap = yaml.loadAs(ConfigHelper.createReader((Readable) readable), Map.class);
+            Yaml yaml = new Yaml(new SafeConstructor());
+            yamlMap = (Map) yaml.loadAs(ConfigHelper.createReader((Readable) readable), Object.class);
             if (yamlMap == null) { // empty source
                 return ObjectNode.empty();
             }
