@@ -133,6 +133,7 @@ public class JaxRsCdiExtension implements Extension {
                                         .map(appClass -> JaxRsApplication.builder()
                                                 .applicationClass(appClass)
                                                 .config(ResourceConfig.forApplicationClass(appClass, allClasses))
+                                                .providers(providers)
                                                 .build())
                                         .collect(Collectors.toList()));
 
@@ -276,15 +277,12 @@ public class JaxRsCdiExtension implements Extension {
         JerseySupport.Builder builder = JerseySupport.builder(jaxRsApplication.resourceConfig());
         builder.config(((io.helidon.config.Config) ConfigProvider.getConfig()).get("server.jersey"));
         builder.executorService(jaxRsApplication.executorService().orElseGet(defaultExecutorService));
-        builder.register(new ExceptionMapper<Exception>() {
-            @Override
-            public Response toResponse(Exception exception) {
-                if (exception instanceof WebApplicationException) {
-                    return ((WebApplicationException) exception).getResponse();
-                } else {
-                    LOGGER.log(Level.WARNING, exception, () -> "Internal server error");
-                    return Response.serverError().build();
-                }
+        builder.register((ExceptionMapper<Exception>) exception -> {
+            if (exception instanceof WebApplicationException) {
+                return ((WebApplicationException) exception).getResponse();
+            } else {
+                LOGGER.log(Level.WARNING, exception, () -> "Internal server error");
+                return Response.serverError().build();
             }
         });
         builder.injectionManager(injectionManager);

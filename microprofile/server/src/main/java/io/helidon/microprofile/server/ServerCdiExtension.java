@@ -51,6 +51,7 @@ import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.ProcessManagedBean;
 import javax.enterprise.inject.spi.ProcessProducerField;
 import javax.enterprise.inject.spi.ProcessProducerMethod;
+import javax.ws.rs.ext.ParamConverterProvider;
 
 import io.helidon.common.Prioritized;
 import io.helidon.common.configurable.ServerThreadPoolSupplier;
@@ -66,6 +67,7 @@ import io.helidon.webserver.jersey.JerseySupport;
 import io.helidon.webserver.staticcontent.StaticContentSupport;
 
 import org.eclipse.microprofile.config.ConfigProvider;
+import org.glassfish.jersey.internal.inject.Bindings;
 import org.glassfish.jersey.internal.inject.InjectionManager;
 import org.glassfish.jersey.internal.inject.Injections;
 
@@ -233,6 +235,17 @@ public class ServerCdiExtension implements Extension {
             boolean singleManager = config.get("server.single-injection-manager").asBoolean().asOptional().orElse(false);
             InjectionManager shared = jaxRsApplications.size() == 1 || singleManager ? null
                     : Injections.createInjectionManager();
+
+            // If multiple apps, register all ParamConverterProvider's in shared manager to prevent
+            // only those associated with the first application to be installed by Jersey
+            if (shared != null) {
+                JaxRsApplication anyApp = jaxRsApplications.iterator().next();
+                anyApp.providers().stream()
+                        .filter(ParamConverterProvider.class::isAssignableFrom)
+                        .forEach(c -> shared.register(Bindings.serviceAsContract(c).to(ParamConverterProvider.class)));
+            }
+
+            // Add all applications
             jaxRsApplications.forEach(it -> addApplication(jaxRs, it, shared));
         }
         STARTUP_LOGGER.finest("Registered jersey application(s)");
