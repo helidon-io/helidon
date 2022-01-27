@@ -7,11 +7,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [1.4.11]
 
-This is a bug fix release of Helidon 1. It primarily contains dependency upgrades.
+This is a bug fix release of Helidon 1. It is reccomended for all users of Helidon 1.x.
 
 ### Fixes
 
 - Fixes to support GraalVM 21.3.0 native image [3807](https://github.com/oracle/helidon/pull/3807)
+- SafeConstructor with YAML parsing [3845](https://github.com/oracle/helidon/pull/3845)
 - Upgrade Netty to 4.1.73.Final [3799](https://github.com/oracle/helidon/pull/3799)
 - Upgrade Jersey to 2.35 [3812](https://github.com/oracle/helidon/pull/3812)
 - Upgrade graalvm to 21.3.0 [3808](https://github.com/oracle/helidon/pull/3808)
