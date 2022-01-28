@@ -162,6 +162,21 @@ public class HelloWorldResource {
     }
 
     @GET
+    @Path("/get-async")
+    @Produces(MediaType.TEXT_PLAIN)
+    public void getAsync(@Suspended final AsyncResponse asyncResponse) {
+        Thread thread = new Thread(() -> {
+            try {
+                Thread.sleep(5000);
+                asyncResponse.resume("This is a GET request with AsyncResponse");
+            } catch (Exception e) {
+                System.err.println(e);
+            }
+        });
+        thread.start();
+    }
+
+    @GET
     @Path("/slowWithArg/{name}")
     @Produces(MediaType.TEXT_PLAIN)
     @SimplyTimed(name = SLOW_MESSAGE_SIMPLE_TIMER, absolute = true)

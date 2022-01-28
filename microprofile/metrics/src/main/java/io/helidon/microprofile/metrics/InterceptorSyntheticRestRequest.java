@@ -87,6 +87,9 @@ final class InterceptorSyntheticRestRequest extends HelidonInterceptor.WithPostC
                     SyntheticRestRequest.class.getSimpleName()));
         }
 
+        PostCompletionMetricsUpdate update = new PostCompletionMetricsUpdate(workItem);
+        PostRequestMetricsSupport.recordPostProcessingWork(request, update::updateRestRequestMetrics);
+
         startNanos = System.nanoTime();
     }
 
@@ -96,8 +99,6 @@ final class InterceptorSyntheticRestRequest extends HelidonInterceptor.WithPostC
         // post-completion metrics. We have to wait until we know whether an exception escapes JAX-RS or not.
         // We can do that only in the metrics-registered handler.
         endNanos = System.nanoTime();
-        PostCompletionMetricsUpdate update = new PostCompletionMetricsUpdate(workItem);
-        PostRequestMetricsSupport.recordPostProcessingWork(request, update::updateRestRequestMetrics);
     }
 
     private class PostCompletionMetricsUpdate {
