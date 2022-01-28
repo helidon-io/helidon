@@ -133,7 +133,6 @@ public class JaxRsCdiExtension implements Extension {
                                         .map(appClass -> JaxRsApplication.builder()
                                                 .applicationClass(appClass)
                                                 .config(ResourceConfig.forApplicationClass(appClass, allClasses))
-                                                .providers(providers)
                                                 .build())
                                         .collect(Collectors.toList()));
 

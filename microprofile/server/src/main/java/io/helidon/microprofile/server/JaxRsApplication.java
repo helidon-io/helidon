@@ -16,9 +16,7 @@
 
 package io.helidon.microprofile.server;
 
-import java.util.Collections;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
 import javax.ws.rs.ApplicationPath;
@@ -45,7 +43,6 @@ public final class JaxRsApplication {
     private final boolean routingNameRequired;
     private final Class<? extends Application> appClass;
     private final boolean synthetic;
-    private final Set<Class<?>> providers;
 
     /**
      * Create a new instance based on an JAX-RS Application class.
@@ -90,7 +87,6 @@ public final class JaxRsApplication {
         this.appName = builder.appName;
         this.appClass = builder.appClass;
         this.synthetic = builder.synthetic;
-        this.providers = builder.providers;
     }
 
     @Override
@@ -150,16 +146,6 @@ public final class JaxRsApplication {
     }
 
     /**
-     * List of all providers found by scanning the {@code @Provider} annotation. This list
-     * will be identical for all application subclasses.
-     *
-     * @return list of providers
-     */
-    Set<Class<?>> providers() {
-        return providers;
-    }
-
-    /**
      * Fluent API builder to create {@link JaxRsApplication} instances.
      */
     public static class Builder {
@@ -172,8 +158,6 @@ public final class JaxRsApplication {
         private String routingName;
         private boolean routingNameRequired;
         private boolean synthetic = false;
-        private Set<Class<?>> providers = Collections.emptySet();
-
 
         /**
          * Configure an explicit context root for this application.
@@ -294,18 +278,6 @@ public final class JaxRsApplication {
          */
         public Builder routingNameRequired(boolean routingNameRequired) {
             this.routingNameRequired = routingNameRequired;
-            return this;
-        }
-
-        /**
-         * Configure a set of providers for this application. This set is typically the
-         * same for all applications.
-         *
-         * @param providers set of providers
-         * @return updated builder instance
-         */
-        public Builder providers(Set<Class<?>> providers) {
-            this.providers = providers;
             return this;
         }
 

@@ -37,6 +37,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import javax.annotation.Priority;
 import javax.enterprise.context.ApplicationScoped;
@@ -46,11 +47,13 @@ import javax.enterprise.context.spi.CreationalContext;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
+import javax.enterprise.inject.spi.CDI;
 import javax.enterprise.inject.spi.DeploymentException;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.ProcessManagedBean;
 import javax.enterprise.inject.spi.ProcessProducerField;
 import javax.enterprise.inject.spi.ProcessProducerMethod;
+import javax.ws.rs.core.Application;
 import javax.ws.rs.ext.ParamConverterProvider;
 
 import io.helidon.common.Prioritized;
@@ -239,10 +242,18 @@ public class ServerCdiExtension implements Extension {
             // If multiple apps, register all ParamConverterProvider's in shared manager to prevent
             // only those associated with the first application to be installed by Jersey
             if (shared != null) {
-                JaxRsApplication anyApp = jaxRsApplications.iterator().next();
-                anyApp.providers().stream()
+                List<? extends Application> instances = jaxRsApplications.stream()
+                        .flatMap(app -> app.applicationClass().stream())
+                        .flatMap(c -> CDI.current().select(c).stream())
+                        .collect(Collectors.toList());
+                instances.stream()
+                        .flatMap(i -> i.getClasses().stream())
                         .filter(ParamConverterProvider.class::isAssignableFrom)
                         .forEach(c -> shared.register(Bindings.serviceAsContract(c).to(ParamConverterProvider.class)));
+                instances.stream()
+                        .flatMap(i -> i.getSingletons().stream())
+                        .filter(s -> s instanceof ParamConverterProvider)
+                        .forEach(shared::register);
             }
 
             // Add all applications
