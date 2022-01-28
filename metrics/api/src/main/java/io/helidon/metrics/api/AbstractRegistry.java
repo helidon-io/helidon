@@ -478,6 +478,16 @@ public abstract class AbstractRegistry<M extends HelidonMetric> implements Metri
     }
 
     /**
+     * Update the registry settings for this registry.
+     *
+     * @param registrySettings new settings to use going forward
+     */
+    public void update(RegistrySettings registrySettings) {
+        metricStore.update(registrySettings);
+    }
+
+
+    /**
      * Returns type of this registry.
      *
      * @return The type.

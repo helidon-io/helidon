@@ -67,7 +67,7 @@ class MetricStore<M extends HelidonMetric> {
     private final Map<String, List<MetricID>> allMetricIDsByName = new ConcurrentHashMap<>();
     private final Map<String, Metadata> allMetadata = new ConcurrentHashMap<>(); // metric name -> metadata
 
-    private final RegistrySettings registrySettings;
+    private RegistrySettings registrySettings;
     private final Map<MetricType, BiFunction<String, Metadata, M>> metricFactories;
     private final AbstractRegistry.GaugeFactory.SupplierBased supplierBasedGaugeFactory;
     private final AbstractRegistry.GaugeFactory.FunctionBased functionBasedGaugeFactory;
@@ -106,6 +106,10 @@ class MetricStore<M extends HelidonMetric> {
         this.registryType = registryType;
         this.metricClass = metricClass;
         this.toImpl = toImpl;
+    }
+
+    void update(RegistrySettings registrySettings) {
+        this.registrySettings = registrySettings;
     }
 
     <U extends Metric> U getOrRegisterMetric(MetricID metricID, Class<U> clazz) {

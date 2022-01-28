@@ -57,12 +57,9 @@ public class Registry extends AbstractRegistry<HelidonMetric> {
         return new Registry(type, registrySettings);
     }
 
-    /**
-     * Update the registry settings for this registry.
-     *
-     * @param registrySettings new settings to use going forward
-     */
+    @Override
     public void update(RegistrySettings registrySettings) {
+        super.update(registrySettings);
         this.registrySettings.set(registrySettings);
     }
 
