@@ -30,6 +30,10 @@
                 <value file="files/README.md"/>
             </list>
             <list key="dependencies">
+                <map order="1000">
+                    <value key="groupId">io.helidon.microprofile.bundles</value>
+                    <value key="artifactId">helidon-microprofile</value>
+                </map>
                 <map>
                     <value key="groupId">jakarta.annotation</value>
                     <value key="artifactId">jakarta.annotation-api</value>

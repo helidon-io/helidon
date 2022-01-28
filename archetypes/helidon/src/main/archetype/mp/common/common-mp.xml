@@ -31,10 +31,6 @@
             <value key="parent-artifactId">helidon-mp</value>
             <list key="dependencies">
                 <map>
-                    <value key="groupId">io.helidon.microprofile.bundles</value>
-                    <value key="artifactId">helidon-microprofile</value>
-                </map>
-                <map>
                     <value key="groupId">org.jboss</value>
                     <value key="artifactId">jandex</value>
                     <value key="scope">runtime</value>

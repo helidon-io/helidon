@@ -47,6 +47,28 @@
     }
                 ]]></value>
             </list>
+            <list key="dependencies">
+                <map>
+                    <value key="groupId">io.helidon.microprofile.bundles</value>
+                    <value key="artifactId">helidon-microprofile-core</value>
+                </map>
+                <map>
+                    <value key="groupId">io.helidon.microprofile.metrics</value>
+                    <value key="artifactId">helidon-microprofile-metrics</value>
+                </map>
+                <map>
+                    <value key="groupId">io.helidon.microprofile.health</value>
+                    <value key="artifactId">helidon-microprofile-health</value>
+                </map>
+                <map>
+                    <value key="groupId">io.helidon.microprofile.bundles</value>
+                    <value key="artifactId">helidon-microprofile-core</value>
+                </map>
+                <map>
+                    <value key="groupId">io.helidon.media</value>
+                    <value key="artifactId">helidon-media-jsonp</value>
+                </map>
+            </list>
         </model>
     </output>
 </archetype-script>
