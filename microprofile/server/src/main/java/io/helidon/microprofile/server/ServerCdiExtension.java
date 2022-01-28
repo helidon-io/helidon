@@ -253,7 +253,7 @@ public class ServerCdiExtension implements Extension {
                 instances.stream()
                         .flatMap(i -> i.getSingletons().stream())
                         .filter(s -> s instanceof ParamConverterProvider)
-                        .forEach(shared::register);
+                        .forEach(s -> shared.register(Bindings.service(s)));
             }
 
             // Add all applications

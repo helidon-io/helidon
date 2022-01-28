@@ -27,7 +27,7 @@ class MainTest {
 
     @Test
     void testHello() {
-        assertThat(TestCollector.PARAM_CONVERTER_PROVIDERS,
-                containsInAnyOrder(ParamConverterProvider1.class, ParamConverterProvider2.class));
+        assertThat(TestCollector.PARAM_CONVERTER_PROVIDERS, containsInAnyOrder(ParamConverterProvider1.class,
+                ParamConverterProvider2.class, ParamConverterProvider3.class));
     }
 }

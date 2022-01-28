@@ -17,22 +17,30 @@
 package io.helidon.tests.functional.paramconverterprovider;
 
 import javax.enterprise.context.ApplicationScoped;
-import javax.ws.rs.core.Application;
+import javax.ws.rs.ext.ParamConverter;
 import javax.ws.rs.ext.ParamConverterProvider;
-import java.util.Set;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Type;
 
 @ApplicationScoped
-public class Application1 extends Application {
+public class ParamConverterProvider3 implements ParamConverterProvider {
 
-    private final ParamConverterProvider provider = new ParamConverterProvider3();
-
-    @Override
-    public Set<Class<?>> getClasses() {
-        return Set.of(Resource1.class, ParamConverterProvider1.class);
+    public ParamConverterProvider3() {
+        TestCollector.PARAM_CONVERTER_PROVIDERS.add(getClass());
     }
 
     @Override
-    public Set<Object> getSingletons() {
-        return Set.of(provider);
+    public <T> ParamConverter<T> getConverter(Class<T> rawType, Type genericType, Annotation[] annotations) {
+        return new ParamConverter<T>() {
+            @Override
+            public T fromString(String value) {
+                return null;
+            }
+
+            @Override
+            public String toString(T value) {
+                return null;
+            }
+        };
     }
 }
