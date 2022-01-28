@@ -34,9 +34,7 @@ import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.context.BeforeDestroyed;
-import jakarta.enterprise.event.Observes;
+import jakarta.annotation.PreDestroy;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -202,7 +200,8 @@ class NonJaxRsResource {
         }
     }
 
-    void terminate(@Observes @BeforeDestroyed(ApplicationScoped.class) Object event) {
+   @PreDestroy
+    void terminate() {
         exec.shutdown();
         try {
             if (!exec.awaitTermination(300, TimeUnit.MILLISECONDS)) {

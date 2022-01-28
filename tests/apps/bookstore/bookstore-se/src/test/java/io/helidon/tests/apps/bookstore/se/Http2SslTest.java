@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -87,7 +87,7 @@ public class Http2SslTest {
 
     @Test
     public void testHelloWorldHttp2SslConcurrent() throws Exception {
-        ExecutorService executor = ThreadPoolSupplier.create().get();
+        ExecutorService executor = ThreadPoolSupplier.create("test-thread-pool").get();
         Request.Builder builder = TestServer.newRequestBuilder(webServer, "/books", true);
         Request getBooks = builder.build();
 
