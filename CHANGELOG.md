@@ -5,13 +5,25 @@ All notable changes to this project will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.4.11]
+## [1.4.12]
 
-This is a bug fix release of Helidon 1. We recommend all Helidon 1.4 users upgrade to this release.
+This is a bug fix release of Helidon 1. It is reccomended for all users of Helidon 1.x.
 
 ### Fixes
 
-- Upgrade Netty to 4.1.72.Final and tcnative to 2.0.46.Final [3782](https://github.com/oracle/helidon/pull/3782)
+## [1.4.11]
+
+This is a bug fix release of Helidon 1. It is reccomended for all users of Helidon 1.x.
+
+### Fixes
+
+- Fixes to support GraalVM 21.3.0 native image [3807](https://github.com/oracle/helidon/pull/3807)
+- SafeConstructor with YAML parsing [3845](https://github.com/oracle/helidon/pull/3845)
+- Upgrade Netty to 4.1.73.Final [3799](https://github.com/oracle/helidon/pull/3799)
+- Upgrade Jersey to 2.35 [3812](https://github.com/oracle/helidon/pull/3812)
+- Upgrade graalvm to 21.3.0 [3808](https://github.com/oracle/helidon/pull/3808)
+- Upgrade grpc-java to 1.41.2 [3824](https://github.com/oracle/helidon/pull/3824)
+- Upgrade OCI SDK to 2.3.0 [3814](https://github.com/oracle/helidon/pull/3814)
 
 ## [1.4.10]
 
@@ -767,6 +779,7 @@ for details.
 ### Notes
 - Initial source drop on Github
 
+[1.4.12]: https://github.com/oracle/helidon/compare/1.4.11..1.4.12
 [1.4.11]: https://github.com/oracle/helidon/compare/1.4.10..1.4.11
 [1.4.10]: https://github.com/oracle/helidon/compare/1.4.9..1.4.10
 [1.4.9]: https://github.com/oracle/helidon/compare/1.4.8..1.4.9
