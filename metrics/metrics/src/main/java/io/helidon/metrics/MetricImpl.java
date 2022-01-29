@@ -240,6 +240,10 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
                 .append('\n');
     }
 
+    void addJsonDuration(JsonObjectBuilder builder, String fullKey, Duration duration) {
+        builder.add(fullKey, TimeUnits.convert(duration, metadata().getUnit()));
+    }
+
     @Override
     public void prometheusData(StringBuilder sb, MetricID metricID, boolean withHelpType) {
         String nameWithUnits = prometheusNameWithUnits(metricID);

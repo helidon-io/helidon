@@ -168,10 +168,6 @@ final class HelidonSimpleTimer extends MetricImpl implements SimpleTimer {
         builder.add(metricID.getName(), myBuilder);
     }
 
-    private void addJsonDuration(JsonObjectBuilder builder, String fullKey, Duration duration) {
-        builder.add(fullKey, TimeUnits.convert(duration, metadata().getUnit()));
-    }
-
     private static String durationPrometheusOutput(Duration duration) {
         return duration == null ? "NaN" : Long.toString(duration.toSeconds());
     }

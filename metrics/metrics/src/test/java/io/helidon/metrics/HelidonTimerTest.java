@@ -43,6 +43,7 @@ import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.closeTo;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.lessThan;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertAll;
@@ -193,7 +194,7 @@ class HelidonTimerTest {
 
         assertThat(metricData, notNullValue());
         assertThat("count", metricData.getJsonNumber("count").longValue(), is(withinTolerance(200L)));
-        assertThat("elapsedTime", metricData.getJsonNumber("elapsedTime").longValue(), is(equalTo(0L))); // less than a second
+        assertThat("elapsedTime", metricData.getJsonNumber("elapsedTime").longValue(), is(greaterThan(0L))); // less than a second
         assertThat("min", metricData.getJsonNumber("min").longValue(), is(withinTolerance(0L)));
         assertThat("max", metricData.getJsonNumber("max").longValue(), is(withinTolerance(990L)));
         assertThat("mean", metricData.getJsonNumber("mean").doubleValue(),  is(withinTolerance(506.349)));
