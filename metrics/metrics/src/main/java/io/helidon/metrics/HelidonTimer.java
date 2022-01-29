@@ -138,14 +138,14 @@ final class HelidonTimer extends MetricImpl implements Timer {
         JsonObjectBuilder myBuilder = JSON.createObjectBuilder()
                 .add(jsonFullKey("count", metricID), getCount());
         addJsonDuration(myBuilder, jsonFullKey("elapsedTime", metricID), getElapsedTime());
-        myBuilder.add(jsonFullKey("meanRate", metricID), getMeanRate())
+        myBuilder = myBuilder.add(jsonFullKey("meanRate", metricID), getMeanRate())
                 .add(jsonFullKey("oneMinRate", metricID), getOneMinuteRate())
                 .add(jsonFullKey("fiveMinRate", metricID), getFiveMinuteRate())
                 .add(jsonFullKey("fifteenMinRate", metricID), getFifteenMinuteRate());
         Snapshot snapshot = getSnapshot();
         // Convert snapshot output according to units.
         long divisor = conversionFactor();
-        myBuilder.add(jsonFullKey("min", metricID), snapshot.getMin() / divisor)
+        myBuilder = myBuilder.add(jsonFullKey("min", metricID), snapshot.getMin() / divisor)
                 .add(jsonFullKey("max", metricID), snapshot.getMax() / divisor)
                 .add(jsonFullKey("mean", metricID), snapshot.getMean() / divisor)
                 .add(jsonFullKey("stddev", metricID), snapshot.getStdDev() / divisor)
