@@ -240,8 +240,23 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
                 .append('\n');
     }
 
-    void addJsonDuration(JsonObjectBuilder builder, String fullKey, Duration duration) {
-        builder.add(fullKey, TimeUnits.convert(duration, metadata().getUnit()));
+    JsonValue jsonDuration(Duration duration) {
+        if (duration == null) {
+            return JsonObject.NULL;
+        }
+        long result = switch (metadata().getUnit()) {
+            case MetricUnits.DAYS -> duration.toDays();
+            case MetricUnits.HOURS -> duration.toHours();
+            case MetricUnits.MINUTES -> duration.toMinutes();
+            case MetricUnits.SECONDS -> duration.toSeconds();
+            case MetricUnits.MILLISECONDS -> duration.toMillis();
+            case MetricUnits.MICROSECONDS -> duration.toNanos() / 1000;
+
+            // includes explicit nanoseconds units and no units set (default)
+            default -> duration.toNanos();
+        };
+
+        return Json.createValue(result);
     }
 
     @Override
@@ -523,25 +538,6 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
                     return (o) -> CHECK_NANS.apply(o, p ->
                             String.valueOf(TimeUnit.SECONDS.convert(new BigDecimal(String.valueOf(o)).longValue(), from)));
             }
-        }
-
-        static JsonValue convert(Duration duration, String metricUnits) {
-            if (duration == null) {
-                return JsonObject.NULL;
-            }
-            long result = switch (metricUnits) {
-                case MetricUnits.DAYS -> duration.toDays();
-                case MetricUnits.HOURS -> duration.toHours();
-                case MetricUnits.MINUTES -> duration.toMinutes();
-                case MetricUnits.SECONDS -> duration.toSeconds();
-                case MetricUnits.MILLISECONDS -> duration.toMillis();
-                case MetricUnits.MICROSECONDS -> duration.toNanos() / 1000;
-
-                // includes explicit nanoseconds units and no units set (default)
-                default -> duration.toNanos();
-            };
-
-            return Json.createValue(result);
         }
     }
 

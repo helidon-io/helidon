@@ -52,14 +52,9 @@
         <Method name="jsonData" />
         <Bug pattern="RV_RETURN_VALUE_IGNORED_NO_SIDE_EFFECT" />
     </Match>
-    <Match>
-        <Class name="io.helidon.metrics.HelidonTimer" />
-        <Method name="jsonData" />
-        <Bug patterh="RV_RETURN_VALUE_IGNORED_NO_SIDE_EFFECT" />
-    </Match>
     <Match> <!-- see https://github.com/spotbugs/spotbugs/issues/1916 -->
         <Class name="io.helidon.metrics.MetricImpl" />
-        <Method name="addJsonDuration" />
+        <Method name="jsonDuration" />
         <Bug pattern="RV_RETURN_VALUE_IGNORED_NO_SIDE_EFFECT" />
     </Match>
 
