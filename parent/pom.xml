@@ -225,10 +225,6 @@
         </profile>
         <profile>
             <id>staging</id>
-            <!-- TODO REMOVE ME -->
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
             <repositories>
                 <repository>
                     <id>ossrh-staging</id>
