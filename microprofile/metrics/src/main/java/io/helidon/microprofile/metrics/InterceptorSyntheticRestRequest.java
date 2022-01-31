@@ -104,7 +104,7 @@ final class InterceptorSyntheticRestRequest extends HelidonInterceptor.Base<Synt
             if (throwable == null) {
                 // Because our SimpleTimer implementation does not update the metric if the elapsed time is 0, make sure to record
                 // a duration of at least 1 nanosecond.
-                long elapsedNanos = Math.min(endNanos - startNanos, 1);
+                long elapsedNanos = endNanos > startNanos ? endNanos - startNanos : 1;
                 workItem.successfulSimpleTimer().update(Duration.ofNanos(elapsedNanos));
             } else {
                 workItem.unmappedExceptionCounter().inc();
