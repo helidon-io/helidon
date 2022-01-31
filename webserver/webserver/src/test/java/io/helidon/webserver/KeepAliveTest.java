@@ -17,10 +17,14 @@
 
 package io.helidon.webserver;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.ByteBuffer;
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.LogConfig;
 import io.helidon.common.http.DataChunk;
@@ -35,15 +39,17 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.RepeatedTest;
 
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.not;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class KeepAliveTest {
     private static WebServer server;
     private static WebClient webClient;
+    private static HttpClient httpClient;
+    private static URI uri;
 
     @BeforeAll
     static void setUp() {
@@ -71,6 +77,12 @@ public class KeepAliveTest {
                 .baseUri(serverUrl)
                 .keepAlive(true)
                 .build();
+
+        httpClient = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofSeconds(10))
+                .build();
+
+        uri = URI.create(serverUrl);
     }
 
     @AfterAll
@@ -78,9 +90,13 @@ public class KeepAliveTest {
         server.shutdown();
     }
 
-    @RepeatedTest(100)
+    @RepeatedTest(1000)
     void closeWithKeepAliveUnconsumedRequest() {
         testCall(webClient, true, "/close", 500, HttpHeaderValues.CLOSE);
+    }
+
+    void closeWithKeepAliveUnconsumedRequestHttpClient() {
+        testCallJdk("/close", 500, HttpHeaderValues.CLOSE);
     }
 
     @RepeatedTest(100)
@@ -91,6 +107,34 @@ public class KeepAliveTest {
     @RepeatedTest(100)
     void sendWithKeepAlive() {
         testCall(webClient, true, "/plain", 200, HttpHeaderValues.KEEP_ALIVE);
+    }
+
+    private static void testCallJdk(String path,
+                                    int expectedStatus,
+                                    AsciiString expectedConnectionHeader) {
+        try {
+            HttpResponse<byte[]> res = httpClient.send(HttpRequest.newBuilder()
+                                                               .uri(uri.resolve(path))
+                                                               .PUT(HttpRequest.BodyPublishers.fromPublisher(Multi.just("first",
+                                                                                                                        "second")
+                                                                                                                     .map(String::getBytes)
+                                                                                                                     .map(ByteBuffer::wrap)))
+                                                               .build(),
+                                                       HttpResponse.BodyHandlers.ofByteArray());
+
+            assertThat(res.statusCode(), is(expectedStatus));
+            if (expectedConnectionHeader == null) {
+                assertThat(res.headers().firstValue(HttpHeaderNames.CONNECTION.toString()), is(Optional.empty()));
+            } else {
+                assertThat(res.headers().firstValue(HttpHeaderNames.CONNECTION.toString()),
+                           is(Optional.of(expectedConnectionHeader.toString())));
+            }
+            byte[] bytes = res.body();
+        } catch (AssertionError e) {
+            throw e;
+        } catch (Throwable e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private static void testCall(WebClient webClient,
@@ -109,9 +153,9 @@ public class KeepAliveTest {
                                     .map(ByteBuffer::wrap)
                                     .map(bb -> DataChunk.create(true, true, bb))
                     )
-                    .await(5, TimeUnit.MINUTES);
+                    .await(Duration.ofMinutes(5));
 
-            assertEquals(expectedStatus, res.status().code());
+            assertThat(res.status().code(), is(expectedStatus));
             if (expectedConnectionHeader != null) {
                 assertThat(res.headers().toMap(), hasEntry(HttpHeaderNames.CONNECTION.toString(), List.of(expectedConnectionHeader.toString())));
             } else {

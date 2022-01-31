@@ -438,6 +438,10 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                         LOGGER.fine(log("Response complete: %s", ctx, System.identityHashCode(msg)));
                     }
                 });
+        /*
+        TODO we should only send continue in case the entity is request (e.g. we found a route and user started reading it)
+        This would solve connection close for 404 for requests with entity
+         */
         if (HttpUtil.is100ContinueExpected(request)) {
             send100Continue(ctx, request);
         }
