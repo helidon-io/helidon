@@ -41,25 +41,24 @@ import jakarta.ws.rs.core.Context;
  * </p>
  * <p>
  *     Note that the metrics updates for {@code REST.request} occur after the server has sent the response, due to the sequencing
- *     of {@code ExceptionMapping} invocations vs. when the {@code MetricsSupport} handler regains control. To distinguish
- *     between mapped and unmapped exceptions, the {@link io.helidon.microprofile.server.JaxRsCdiExtension}
- *     {@code CatchAllExceptionMapper}, which runs only if the application does not map the exception, stores the unmapped
- *     exception in the request context. The code here infers whether any exception is mapped by the presence or absence of that
- *     request context element to decide which {@code REST.request} metric to update.
+ *     of {@code ExceptionMapping} invocations vs. when the {@code MetricsSupport} handler regains control and due to possible
+ *     asynchronous requests. To distinguish between mapped and unmapped exceptions, the
+ *     {@link io.helidon.microprofile.server.JaxRsCdiExtension} {@code CatchAllExceptionMapper}, which runs only if the
+ *     application does not map the exception, stores the unmapped exception in the request context. The code here infers whether
+ *     any exception is mapped by the presence or absence of that  request context element to decide which {@code REST.request}
+ *     metric to update.
  * </p>
  */
 @SyntheticRestRequest
 @Interceptor
 @Priority(Interceptor.Priority.PLATFORM_BEFORE + 10)
-final class InterceptorSyntheticRestRequest extends HelidonInterceptor.WithPostCompletion.Base<SyntheticRestRequestWorkItem>
-        implements HelidonInterceptor.WithPostCompletion<SyntheticRestRequestWorkItem> {
+final class InterceptorSyntheticRestRequest extends HelidonInterceptor.Base<SyntheticRestRequestWorkItem>
+        implements HelidonInterceptor<SyntheticRestRequestWorkItem> {
 
 
     private static final Logger LOGGER = Logger.getLogger(InterceptorSyntheticRestRequest.class.getName());
 
     private long startNanos;
-    private long endNanos;
-    private SyntheticRestRequestWorkItem workItem;
 
     @Inject
     private MetricsCdiExtension extension;
@@ -93,14 +92,6 @@ final class InterceptorSyntheticRestRequest extends HelidonInterceptor.WithPostC
         startNanos = System.nanoTime();
     }
 
-    @Override
-    public void postCompletion(InvocationContext context, Throwable throwable, SyntheticRestRequestWorkItem workItem) {
-        // Exception mappings are invoked after this interceptor, so we cannot yet update the
-        // post-completion metrics. We have to wait until we know whether an exception escapes JAX-RS or not.
-        // We can do that only in the metrics-registered handler.
-        endNanos = System.nanoTime();
-    }
-
     private class PostCompletionMetricsUpdate {
         private final SyntheticRestRequestWorkItem workItem;
 
@@ -108,9 +99,13 @@ final class InterceptorSyntheticRestRequest extends HelidonInterceptor.WithPostC
             this.workItem = workItem;
         }
 
-        private void updateRestRequestMetrics(ServerResponse serverResponse, Throwable throwable) {
+        void updateRestRequestMetrics(ServerResponse serverResponse, Throwable throwable) {
+            long endNanos = System.nanoTime();
             if (throwable == null) {
-                workItem.successfulSimpleTimer().update(Duration.ofNanos(endNanos - startNanos));
+                // Because our SimpleTimer implementation does not update the metric if the elapsed time is 0, make sure to record
+                // a duration of at least 1 nanosecond.
+                long elapsedNanos = Math.min(endNanos - startNanos, 1);
+                workItem.successfulSimpleTimer().update(Duration.ofNanos(elapsedNanos));
             } else {
                 workItem.unmappedExceptionCounter().inc();
             }

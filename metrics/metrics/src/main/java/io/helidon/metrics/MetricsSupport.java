@@ -396,6 +396,7 @@ public final class MetricsSupport extends HelidonRestServiceSupport
 
             kpiContext.requestHandlingStarted(kpiMetrics);
             res.whenSent()
+                    // Perform updates which depend on completion of request *processing* (after the response is sent).
                     .thenAccept(r -> postRequestProcessing(prms, req, r, null, kpiContext))
                     .exceptionallyAccept(t -> postRequestProcessing(prms, req, res, t, kpiContext));
             Exception exception = null;
@@ -405,6 +406,8 @@ public final class MetricsSupport extends HelidonRestServiceSupport
                 exception = e;
                 throw e;
             } finally {
+                // Perform updates which depend on completion of request *handling* (after the server has begun request
+                // *processing* but, in the case of async requests, possibly before processing has finished).
                 kpiContext.requestHandlingCompleted(exception == null);
             }
         });
