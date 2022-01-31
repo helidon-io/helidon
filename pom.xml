@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2016, 2021 Oracle and/or its affiliates.
+    Copyright (c) 2016, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -97,7 +97,7 @@
         <version.plugin.exec>1.6.0</version.plugin.exec>
         <version.plugin.failsafe>3.0.0-M5</version.plugin.failsafe>
         <version.plugin.glassfish-copyright>2.3</version.plugin.glassfish-copyright>
-        <version.plugin.helidon-build-tools>2.3.0</version.plugin.helidon-build-tools>
+        <version.plugin.helidon-build-tools>2.3.2</version.plugin.helidon-build-tools>
         <version.plugin.hibernate-enhance>${version.lib.hibernate}</version.plugin.hibernate-enhance>
         <version.plugin.jacoco>0.8.5</version.plugin.jacoco>
         <version.plugin.jandex>1.1.0</version.plugin.jandex>
@@ -121,7 +121,7 @@
         <version.plugin.buildnumber>1.4</version.plugin.buildnumber>
         <version.plugin.wiremock>2.14.0</version.plugin.wiremock>
 
-        <version.helidon-cli>2.3.0</version.helidon-cli>
+        <version.helidon-cli>2.3.2</version.helidon-cli>
 
         <!-- Links to external javadocs. If you see a hardcoded version it means the javadocs for the version we use is not available. -->
 
