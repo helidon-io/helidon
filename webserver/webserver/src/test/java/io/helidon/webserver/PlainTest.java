@@ -256,7 +256,7 @@ public class PlainTest {
     }
 
     @Test
-    public void getWithLargePayloadCausesConnectionClose() throws Exception {
+    public void getWithLargePayloadDoesNotCauseConnectionClose() throws Exception {
         // open
         try (SocketHttpClient s = new SocketHttpClient(webServer)) {
             // get
@@ -264,7 +264,7 @@ public class PlainTest {
 
             // assert
             assertThat(entityFromResponse(s.receive(), true), is("9\nIt works!\n0\n\n"));
-            SocketHttpClient.assertConnectionIsClosed(s);
+            SocketHttpClient.assertConnectionIsOpen(s);
         }
     }
 
@@ -295,19 +295,19 @@ public class PlainTest {
     }
 
     @Test
-    public void deferredGetWithLargePayloadCausesConnectionClose() throws Exception {
+    public void deferredGetWithLargePayloadDoesNotCauseConnectionClose() throws Exception {
         // open
         try (SocketHttpClient s = new SocketHttpClient(webServer)) {
             // get
             s.request(Http.Method.GET, "/deferred", SocketHttpClient.longData(100_000).toString());
             // assert
             assertThat(entityFromResponse(s.receive(), true), is("d\nI'm deferred!\n0\n\n"));
-            SocketHttpClient.assertConnectionIsClosed(s);
+            SocketHttpClient.assertConnectionIsOpen(s);
         }
     }
 
     @Test
-    public void getWithIllegalSmallEnoughPayloadDoesCauseConnectionClose() throws Exception {
+    public void getWithIllegalSmallEnoughPayloadDoesntCauseConnectionClose() throws Exception {
         // open
         try (SocketHttpClient s = new SocketHttpClient(webServer)) {
             // get
@@ -315,12 +315,12 @@ public class PlainTest {
 
             // assert
             assertThat(entityFromResponse(s.receive(), true), is("9\nIt works!\n0\n\n"));
-            SocketHttpClient.assertConnectionIsClosed(s);
+            SocketHttpClient.assertConnectionIsOpen(s);
         }
     }
 
     @Test
-    public void unconsumedSmallPostDataDoesCauseConnectionClose() throws Exception {
+    public void unconsumedSmallPostDataDoesNotCauseConnectionClose() throws Exception {
         // open
         try (SocketHttpClient s = new SocketHttpClient(webServer)) {
             // get
@@ -329,12 +329,12 @@ public class PlainTest {
             System.out.println(received);
             // assert
             assertThat(entityFromResponse(received, true), is("15\nPayload not consumed!\n0\n\n"));
-            SocketHttpClient.assertConnectionIsClosed(s);
+            SocketHttpClient.assertConnectionIsOpen(s);
         }
     }
 
     @Test
-    public void unconsumedLargePostDataCausesConnectionClose() throws Exception {
+    public void unconsumedLargePostDataDoesNotCauseConnectionClose() throws Exception {
         // open
         try (SocketHttpClient s = new SocketHttpClient(webServer)) {
             // get
@@ -342,12 +342,12 @@ public class PlainTest {
 
             // assert
             assertThat(entityFromResponse(s.receive(), true), is("15\nPayload not consumed!\n0\n\n"));
-            SocketHttpClient.assertConnectionIsClosed(s);
+            SocketHttpClient.assertConnectionIsOpen(s);
         }
     }
 
     @Test
-    public void unconsumedDeferredLargePostDataCausesConnectionClose() throws Exception {
+    public void unconsumedDeferredLargePostDataDoesNotCauseConnectionClose() throws Exception {
         // open
         try (SocketHttpClient s = new SocketHttpClient(webServer)) {
             // get
@@ -355,12 +355,12 @@ public class PlainTest {
 
             // assert
             assertThat(entityFromResponse(s.receive(), true), is("d\nI'm deferred!\n0\n\n"));
-            SocketHttpClient.assertConnectionIsClosed(s);
+            SocketHttpClient.assertConnectionIsOpen(s);
         }
     }
 
     @Test
-    public void errorHandlerWithGetPayloadDoesCauseConnectionClose() throws Exception {
+    public void errorHandlerWithGetPayloadDoesNotCauseConnectionClose() throws Exception {
         // open
         try (SocketHttpClient s = new SocketHttpClient(webServer)) {
             // get
@@ -368,12 +368,12 @@ public class PlainTest {
 
             // assert
             assertThat(s.receive(), startsWith("HTTP/1.1 500 Internal Server Error\n"));
-            SocketHttpClient.assertConnectionIsClosed(s);
+            SocketHttpClient.assertConnectionIsOpen(s);
         }
     }
 
     @Test
-    public void errorHandlerWithPostDataDoesCauseConnectionClose() throws Exception {
+    public void errorHandlerWithPostDataDoesNotCauseConnectionClose() throws Exception {
         // open
         try (SocketHttpClient s = new SocketHttpClient(webServer)) {
             // get
@@ -381,7 +381,7 @@ public class PlainTest {
 
             // assert
             assertThat(s.receive(), startsWith("HTTP/1.1 500 Internal Server Error\n"));
-            SocketHttpClient.assertConnectionIsClosed(s);
+            SocketHttpClient.assertConnectionIsOpen(s);
         }
     }
 

@@ -17,14 +17,13 @@
 
 package io.helidon.webserver;
 
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.LogConfig;
 import io.helidon.common.http.DataChunk;
@@ -48,8 +47,6 @@ import static org.hamcrest.Matchers.not;
 public class KeepAliveTest {
     private static WebServer server;
     private static WebClient webClient;
-    private static HttpClient httpClient;
-    private static URI uri;
 
     @BeforeAll
     static void setUp() {
@@ -78,11 +75,6 @@ public class KeepAliveTest {
                 .keepAlive(true)
                 .build();
 
-        httpClient = HttpClient.newBuilder()
-                .connectTimeout(Duration.ofSeconds(10))
-                .build();
-
-        uri = URI.create(serverUrl);
     }
 
     @AfterAll
@@ -90,65 +82,36 @@ public class KeepAliveTest {
         server.shutdown();
     }
 
-    @RepeatedTest(1000)
+    @RepeatedTest(100)
     void closeWithKeepAliveUnconsumedRequest() {
-        testCall(webClient, true, "/close", 500, HttpHeaderValues.CLOSE);
-    }
-
-    void closeWithKeepAliveUnconsumedRequestHttpClient() {
-        testCallJdk("/close", 500, HttpHeaderValues.CLOSE);
+        testCall(webClient, true, "/close", 500, HttpHeaderValues.CLOSE, true);
     }
 
     @RepeatedTest(100)
     void sendWithoutKeepAlive() {
-        testCall(webClient, false, "/plain", 200, null);
+        testCall(webClient, false, "/plain", 200, null, false);
     }
 
     @RepeatedTest(100)
     void sendWithKeepAlive() {
-        testCall(webClient, true, "/plain", 200, HttpHeaderValues.KEEP_ALIVE);
-    }
-
-    private static void testCallJdk(String path,
-                                    int expectedStatus,
-                                    AsciiString expectedConnectionHeader) {
-        try {
-            HttpResponse<byte[]> res = httpClient.send(HttpRequest.newBuilder()
-                                                               .uri(uri.resolve(path))
-                                                               .PUT(HttpRequest.BodyPublishers.fromPublisher(Multi.just("first",
-                                                                                                                        "second")
-                                                                                                                     .map(String::getBytes)
-                                                                                                                     .map(ByteBuffer::wrap)))
-                                                               .build(),
-                                                       HttpResponse.BodyHandlers.ofByteArray());
-
-            assertThat(res.statusCode(), is(expectedStatus));
-            if (expectedConnectionHeader == null) {
-                assertThat(res.headers().firstValue(HttpHeaderNames.CONNECTION.toString()), is(Optional.empty()));
-            } else {
-                assertThat(res.headers().firstValue(HttpHeaderNames.CONNECTION.toString()),
-                           is(Optional.of(expectedConnectionHeader.toString())));
-            }
-            byte[] bytes = res.body();
-        } catch (AssertionError e) {
-            throw e;
-        } catch (Throwable e) {
-            throw new RuntimeException(e);
-        }
+        testCall(webClient, true, "/plain", 200, HttpHeaderValues.KEEP_ALIVE, false);
     }
 
     private static void testCall(WebClient webClient,
                                  boolean keepAlive,
                                  String path,
                                  int expectedStatus,
-                                 AsciiString expectedConnectionHeader) {
+                                 AsciiString expectedConnectionHeader,
+                                 boolean ignoreConnectionClose) {
         WebClientResponse res = null;
         try {
             res = webClient
                     .put()
                     .keepAlive(keepAlive)
                     .path(path)
-                    .submit(Multi.just("first", "second")
+                    .submit(Multi.interval(10, TimeUnit.MILLISECONDS, Executors.newSingleThreadScheduledExecutor())
+                                    .limit(2)
+                                    .map(l -> "msg_"+ l)
                                     .map(String::getBytes)
                                     .map(ByteBuffer::wrap)
                                     .map(bb -> DataChunk.create(true, true, bb))
@@ -157,11 +120,21 @@ public class KeepAliveTest {
 
             assertThat(res.status().code(), is(expectedStatus));
             if (expectedConnectionHeader != null) {
-                assertThat(res.headers().toMap(), hasEntry(HttpHeaderNames.CONNECTION.toString(), List.of(expectedConnectionHeader.toString())));
+                assertThat(res.headers().toMap(),
+                           hasEntry(HttpHeaderNames.CONNECTION.toString(), List.of(expectedConnectionHeader.toString())));
             } else {
                 assertThat(res.headers().toMap(), not(hasKey(HttpHeaderNames.CONNECTION.toString())));
             }
             res.content().forEach(DataChunk::release);
+        } catch (CompletionException e) {
+            if (ignoreConnectionClose && e.getMessage().contains("Connection reset")) {
+                // this is an expected (intermittent) result - due to a natural race (between us writing the request
+                // data and server responding), we may either get a response
+                // or the socket may be closed for writing (the reset comes from an attempt to write entity to a closed
+                // socket)
+                return;
+            }
+            throw e;
         } finally {
             Optional.ofNullable(res).ifPresent(WebClientResponse::close);
         }

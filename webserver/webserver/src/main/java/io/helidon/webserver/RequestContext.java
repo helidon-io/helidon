@@ -16,7 +16,6 @@
 
 package io.helidon.webserver;
 
-import java.util.concurrent.Flow;
 import java.util.logging.Logger;
 
 import io.helidon.common.context.Context;
@@ -46,7 +45,7 @@ class RequestContext {
         this.scope = scope;
     }
 
-    Flow.Publisher<DataChunk> publisher() {
+    Multi<DataChunk> publisher() {
         return Multi.create(publisher)
                 .peek(something -> emitted = true);
     }
@@ -93,7 +92,7 @@ class RequestContext {
      * @return {@code true} if data was requested and request was not cancelled
      */
     boolean isDataRequested() {
-        return (hasRequests() || hasEmitted()) && !requestCancelled();
+        return (hasRequests() || hasEmitted()) || requestCancelled();
     }
 
     boolean hasEmitted() {
