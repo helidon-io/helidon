@@ -93,10 +93,10 @@ executed.
 
 == Injection Managers in Helidon
 
-Jersey does not currently provider support for multiple `Application` subclasses.
+Jersey does not currently provide support for multiple `Application` subclasses.
 As a result, it creates a single internal _injection manager_ for your entire application,
 but this is insufficient when multiple `Application` subclasses are present.
-Helidon creates separate injection managers
+Helidon creates a separate injection manager
 for each `Application` subclass, and a single parent injection manager for your
 application. Each `Application` subclass injection manager delegates to the parent
 injection manager.
