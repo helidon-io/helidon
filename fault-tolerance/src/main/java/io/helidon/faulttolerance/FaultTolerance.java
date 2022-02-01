@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,7 +84,7 @@ public final class FaultTolerance {
         CONFIG.set(config);
 
         SCHEDULED_EXECUTOR.set(LazyValue.create(ScheduledThreadPoolSupplier.create(CONFIG.get().get("scheduled-executor"))));
-        EXECUTOR.set(LazyValue.create(ThreadPoolSupplier.create(CONFIG.get().get("executor"))));
+        EXECUTOR.set(LazyValue.create(ThreadPoolSupplier.create(CONFIG.get().get("executor"), "ft-se-thread-pool")));
     }
 
     /**

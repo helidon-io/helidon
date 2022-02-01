@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -82,7 +82,7 @@ public class MainTest {
                 .request(JsonArray.class)
                 .await();
 
-        assertEquals("The Matrix", result.getJsonObject(0).getString("title"));
+        assertEquals("The Matrix Reloaded", result.getJsonObject(0).getString("title"));
     }
 
     @Test

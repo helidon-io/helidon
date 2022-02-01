@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2021 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -32,7 +32,8 @@
     <name>Helidon Neo4j MP integration Example</name>
 
     <properties>
-        <neo4j-harness.version>4.2.1</neo4j-harness.version>
+        <neo4j-harness.version>4.4.3</neo4j-harness.version>
+        <jetty-util.version>11.0.7</jetty-util.version>
     </properties>
 
     <dependencies>
@@ -96,6 +97,12 @@
             </exclusions>
         </dependency>
         <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-util</artifactId>
+            <version>${jetty-util.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
             <scope>test</scope>
@@ -132,7 +139,12 @@
                      as the database process is separate from the application
                      -->
                     <argLine>
+                        --add-exports=java.base/sun.nio.ch=ALL-UNNAMED
                         --add-opens=java.base/java.lang=ALL-UNNAMED
+                        --add-opens=java.base/java.lang.reflect=ALL-UNNAMED
+                        --add-opens=java.base/java.io=ALL-UNNAMED
+                        --add-opens=java.base/java.nio=ALL-UNNAMED
+                        --add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED
                     </argLine>
                 </configuration>
             </plugin>

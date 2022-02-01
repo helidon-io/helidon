@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -162,6 +162,11 @@ class NettyWebServer implements WebServer {
 
             bootstraps.put(name, bootstrap);
         }
+
+        // Log entry that also initializes NettyInitializer class
+        String maxOrderProp = NettyInitializer.getMaxOrderProperty();
+        String maxOrderValue = NettyInitializer.getMaxOrderValue();
+        LOGGER.fine(() -> maxOrderProp + " set to " + maxOrderValue);
     }
 
     private SslContext createSslContext(WebServerTls webServerTls) {

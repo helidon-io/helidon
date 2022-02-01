@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,6 @@ import java.util.function.Function;
 import java.util.logging.Logger;
 
 import io.helidon.common.GenericType;
-import io.helidon.common.LazyValue;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.http.DataChunk;
@@ -62,7 +61,6 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelOption;
-import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
@@ -110,7 +108,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     }
 
     private final Map<String, String> properties;
-    private final LazyValue<NioEventLoopGroup> eventGroup;
+    private final NioEventLoopGroup eventGroup;
     private final WebClientConfiguration configuration;
     private final Http.RequestMethod method;
     private final WebClientRequestHeaders headers;
@@ -136,7 +134,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     private Long requestId;
     private boolean allowChunkedEncoding;
 
-    private WebClientRequestBuilderImpl(LazyValue<NioEventLoopGroup> eventGroup,
+    private WebClientRequestBuilderImpl(NioEventLoopGroup eventGroup,
                                         WebClientConfiguration configuration,
                                         Http.RequestMethod method) {
         this.properties = new HashMap<>();
@@ -167,9 +165,9 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         this.keepAlive = configuration.keepAlive();
     }
 
-    public static WebClientRequestBuilder create(LazyValue<NioEventLoopGroup> eventGroup,
-                                                 WebClientConfiguration configuration,
-                                                 Http.RequestMethod method) {
+    static WebClientRequestBuilder create(NioEventLoopGroup eventGroup,
+                                          WebClientConfiguration configuration,
+                                          Http.RequestMethod method) {
         return new WebClientRequestBuilderImpl(eventGroup, configuration, method);
     }
 
@@ -540,7 +538,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
                     });
         }
 
-        return Single.create(rcs.thenCompose(serviceRequest -> {
+        Single<WebClientResponse> single =  Single.create(rcs.thenCompose(serviceRequest -> {
             URI requestUri = relativizeNoProxy(finalUri, proxy, configuration.relativeUris());
             requestId = serviceRequest.requestId();
             HttpHeaders headers = toNettyHttpHeaders();
@@ -568,9 +566,8 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
 
             CompletableFuture<WebClientResponse> result = new CompletableFuture<>();
 
-            EventLoopGroup group = eventGroup.get();
             Bootstrap bootstrap = new Bootstrap();
-            bootstrap.group(group)
+            bootstrap.group(eventGroup)
                     .channel(NioSocketChannel.class)
                     .handler(new NettyClientInitializer(requestConfiguration))
                     .option(ChannelOption.SO_KEEPALIVE, keepAlive)
@@ -606,6 +603,41 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
                 }
             });
             return result;
+        }));
+
+        return wrapWithContext(single);
+    }
+
+    /**
+     * Wraps a single into another that runs all subscriber methods using the current
+     * context. This will enable calls to {@code Contexts.context()} in reactive handlers
+     * to return a non-empty optional.
+     *
+     * @param single single to be wrapped
+     * @param <T> type parameter
+     * @return wrapped single
+     */
+    private <T> Single<T> wrapWithContext(Single<T> single) {
+        return Single.create(subscriber -> single.subscribe(new Flow.Subscriber<T>() {
+            @Override
+            public void onSubscribe(Flow.Subscription subscription) {
+                Contexts.runInContext(context, () -> subscriber.onSubscribe(subscription));
+            }
+
+            @Override
+            public void onNext(T item) {
+                Contexts.runInContext(context, () -> subscriber.onNext(item));
+            }
+
+            @Override
+            public void onError(Throwable throwable) {
+                Contexts.runInContext(context, () -> subscriber.onError(throwable));
+            }
+
+            @Override
+            public void onComplete() {
+                Contexts.runInContext(context, subscriber::onComplete);
+            }
         }));
     }
 
