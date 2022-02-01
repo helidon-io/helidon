@@ -44,6 +44,7 @@
 :config-table-methods-column-header: Annotation Parameter
 :basic-table-intro: The table below lists the parameters for the `@CrossOriginConfig` annotation and the configuration keys that identify the CORS characteristics.
 :helidon-variant: MP
+:cors-config-key-explanation:
 
 Your application code establishes the CORS behavior of your endpoints using the `@CrossOrigin` annotation.
 You and your users can override that behavior, as well as the CORS behavior of the built-in services,
