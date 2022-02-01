@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ package io.helidon.microprofile.metrics;
 
 import java.lang.annotation.Annotation;
 
-import io.helidon.microprofile.metrics.MetricsCdiExtension.MetricWorkItem;
 import io.helidon.servicecommon.restcdi.HelidonInterceptor;
 
 import jakarta.inject.Inject;
@@ -34,7 +33,7 @@ import org.eclipse.microprofile.metrics.Metric;
  * @param <T> type of metrics the interceptor handles
  */
 abstract class InterceptorWithPostInvoke<T extends Metric> extends InterceptorBase<T>
-        implements HelidonInterceptor.WithPostCompletion<MetricWorkItem> {
+        implements HelidonInterceptor.WithPostCompletion<BasicMetricWorkItem> {
 
     @Inject
     private MetricsCdiExtension extension;
@@ -44,7 +43,7 @@ abstract class InterceptorWithPostInvoke<T extends Metric> extends InterceptorBa
     }
 
     @Override
-    public void postCompletion(InvocationContext context, Throwable t, MetricWorkItem workItem) {
+    public void postCompletion(InvocationContext context, Throwable t, BasicMetricWorkItem workItem) {
         invokeVerifiedAction(context, workItem, this::postComplete, ActionType.COMPLETE);
     }
 

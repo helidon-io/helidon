@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.LongStream;
 
 import io.helidon.microprofile.tests.junit5.AddConfig;
@@ -72,9 +73,11 @@ public class HelloWorldAsyncResponseTest {
     private MetricRegistry vendorRegistry;
 
     @Test
-    public void test() throws NoSuchMethodException {
-        MetricID metricID = MetricsCdiExtension.syntheticSimpleTimerMetricID(HelloWorldResource.class.getMethod("slowMessage",
-                AsyncResponse.class, ServerResponse.class));
+    public void test() throws Exception {
+        MetricID metricID = MetricsCdiExtension
+                .restEndpointSimpleTimerMetricID(HelloWorldResource.class.getMethod("slowMessage",
+                                                                                    AsyncResponse.class,
+                                                                                    ServerResponse.class));
 
         SortedMap<MetricID, SimpleTimer> simpleTimers = registry.getSimpleTimers();
 
@@ -94,11 +97,12 @@ public class HelloWorldAsyncResponseTest {
         assertThat("Timer", timer, is(notNullValue()));
         long slowMessageTimerCountBefore= timer.getCount();
 
-        String result = webTarget
+        String result = HelloWorldTest.runAndPause(() ->webTarget
                 .path("helloworld/slow")
                 .request()
                 .accept(MediaType.TEXT_PLAIN)
-                .get(String.class);
+                .get(String.class)
+        );
 
         /*
          * We test simple timers (explicit and the implicit REST.request one) and timers on the async method.
@@ -127,13 +131,15 @@ public class HelloWorldAsyncResponseTest {
     }
 
     @Test
-    public void testAsyncWithArg() {
+    public void testAsyncWithArg() throws InterruptedException {
         LongStream.range(0, 3).forEach(
                 i -> webTarget
                         .path("helloworld/slowWithArg/Johan")
                         .request(MediaType.TEXT_PLAIN_TYPE)
                         .get(String.class));
 
+        // Make sure server has a chance to update the metrics, which happens just after it sends the response.
+        TimeUnit.MILLISECONDS.sleep(500L);
         SimpleTimer syntheticSimpleTimer = getSyntheticSimpleTimer();
         assertThat("Synthetic SimpleTimer count", syntheticSimpleTimer.getCount(), is(3L));
     }
@@ -141,7 +147,8 @@ public class HelloWorldAsyncResponseTest {
     SimpleTimer getSyntheticSimpleTimer() {
         MetricID metricID = null;
         try {
-            metricID = MetricsCdiExtension.syntheticSimpleTimerMetricID(HelloWorldResource.class.getMethod("slowMessageWithArg",
+            metricID = MetricsCdiExtension.restEndpointSimpleTimerMetricID(
+                    HelloWorldResource.class.getMethod("slowMessageWithArg",
                     String.class, AsyncResponse.class));
         } catch (NoSuchMethodException e) {
             throw new RuntimeException(e);
@@ -183,6 +190,10 @@ public class HelloWorldAsyncResponseTest {
 
             // The response might arrive here before the server-side code which updates the inflight metric has run. So wait.
             HelloWorldResource.awaitResponseSent();
+
+            // Make sure server has a chance to update the metrics, which happens just after it sends the response.
+            TimeUnit.MILLISECONDS.sleep(500L);
+
             long afterRequest = inflightRequestsCount();
 
             assertThat("Slow response", response, containsString(SLOW_RESPONSE));
@@ -201,4 +212,5 @@ public class HelloWorldAsyncResponseTest {
     void testBasicPerRequestMetrics() {
         TestBasicPerformanceIndicators.doCheckMetricsVendorURL(webTarget);
     }
+
 }

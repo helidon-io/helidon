@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.microprofile.metrics;
 
 import jakarta.annotation.Priority;
 import jakarta.interceptor.Interceptor;
+import org.eclipse.microprofile.metrics.SimpleTimer;
 import org.eclipse.microprofile.metrics.annotation.SimplyTimed;
 
 /**
@@ -25,16 +26,21 @@ import org.eclipse.microprofile.metrics.annotation.SimplyTimed;
  * <p>
  *     Note that this interceptor fires only for explicit {@code SimplyTimed} annotations.
  *     The CDI extension adds synthetic {@code SimplyTimed} annotations to each JAX-RS
- *     method, and the separate {@link InterceptorSyntheticSimplyTimed} interceptor deals with those.
+ *     method, and the separate {@link InterceptorSyntheticRestRequest} interceptor deals with those.
  * </p>
  */
 @SimplyTimed
 @Interceptor
 @Priority(Interceptor.Priority.PLATFORM_BEFORE + 10)
-final class InterceptorSimplyTimed extends InterceptorSimplyTimedBase {
+final class InterceptorSimplyTimed extends InterceptorTimedBase<SimpleTimer> {
 
     InterceptorSimplyTimed() {
-        super(SimplyTimed.class);
+        super(SimplyTimed.class, SimpleTimer.class);
+    }
+
+    @Override
+    void postComplete(SimpleTimer metric) {
+        metric.update(duration());
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
+import org.eclipse.microprofile.metrics.SimpleTimer;
 import org.eclipse.microprofile.metrics.Tag;
 import org.hamcrest.core.IsSame;
 import org.junit.jupiter.api.BeforeAll;
@@ -36,7 +37,12 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
@@ -80,55 +86,7 @@ public class RegistryTest {
         registry.counter(metadata1, tag1);
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                 () -> registry.timer(metadata2, tag2));
-        assertThat(ex.getMessage(), containsString("already registered"));
-    }
-
-    @Test
-    @Disabled("3.0.0-JAKARTA")
-    void testIncompatibleReuseNoTags() {
-        Metadata metadata1 = Metadata.builder()
-                    .withName("counter3")
-                    .withDisplayName("display name")
-                    .withDescription("description")
-                    .withType(MetricType.COUNTER)
-                    .withUnit(MetricUnits.NONE)
-                    .build();
-        Metadata metadata2 = Metadata.builder()
-                    .withName("counter3")
-                    .withDisplayName("display name")
-                    .withDescription("description")
-                    .withType(MetricType.COUNTER)
-                    .withUnit(MetricUnits.NONE)
-                    .build();
-
-        registry.counter(metadata1);
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> registry.counter(metadata2));
-        assertThat(ex.getMessage(), containsString("already registered"));
-    }
-
-    @Test
-    @Disabled("3.0.0-JAKARTA")
-    void testIncompatibleReuseWithTags() {
-        Metadata metadata1 = Metadata.builder()
-				.withName("counter4")
-				.withDisplayName("display name")
-				.withDescription("description")
-				.withType(MetricType.COUNTER)
-				.withUnit(MetricUnits.NONE)
-				.build();
-        Metadata metadata2 = Metadata.builder()
-				.withName("counter4")
-				.withDisplayName("display name")
-				.withDescription("description")
-				.withType(MetricType.COUNTER)
-				.withUnit(MetricUnits.NONE)
-				.build();
-
-        registry.counter(metadata1, tag1);
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> registry.counter(metadata2, tag1));
-        assertThat(ex.getMessage(), containsString("already registered"));
+        assertThat(ex.getMessage(), containsString("conflicts"));
     }
 
     @Test
@@ -197,6 +155,100 @@ public class RegistryTest {
         MetricID metricID = new MetricID("NOT_THERE");
         boolean result = registry.remove(metricID);
         assertThat(result, is(false));
+    }
+
+    @Test
+    void testGetCounterWithoutCreate() {
+        MetricID metricID = new MetricID("counter8", tag1);
+        Counter shouldBeMissing = registry.getCounter(metricID);
+        assertThat("Counter get without create", shouldBeMissing, is(nullValue()));
+    }
+
+    @Test
+    void testGetCounterAfterCreate() {
+        MetricID metricID = new MetricID("counter9", tag1);
+        Counter counter = registry.counter(metricID);
+        Counter shouldBePresent = registry.getCounter(metricID);
+        assertThat("Counter get after create", shouldBePresent, is(sameInstance(counter)));
+    }
+
+    @Test
+    void testGetType() {
+        assertThat("Registry type", registry.getType(), is(MetricRegistry.Type.BASE));
+
+        MetricRegistry vendorRegistry = io.helidon.metrics.api.RegistryFactory.getInstance()
+                .getRegistry(MetricRegistry.Type.VENDOR);
+        assertThat("Registry type for vendor registry", vendorRegistry.getType(), is(MetricRegistry.Type.VENDOR));
+
+        MetricRegistry baseRegistry = io.helidon.metrics.api.RegistryFactory.getInstance()
+                .getRegistry(MetricRegistry.Type.BASE);
+        assertThat("Registry type for base registry", baseRegistry.getType(), is(MetricRegistry.Type.BASE));
+    }
+
+    @Test
+    void testGetMetric() {
+        MetricID metricID = new MetricID("counter10", tag1);
+        Counter counter = registry.counter(metricID);
+
+        MetricID otherMetricID = new MetricID("counter10", tag1);
+        Metric retrievedMetric = registry.getMetric(otherMetricID);
+        assertThat("Retrieved metric", retrievedMetric, is(sameInstance(counter)));
+
+        Counter retrievedCounter = registry.getMetric(otherMetricID, Counter.class);
+        assertThat("Retrieved counter", retrievedCounter, is(sameInstance(counter)));
+    }
+
+    @Test
+    void testGetMetricWithoutCreate() {
+        MetricID metricID = new MetricID("NOT_THERE");
+        Metric missingMetric = registry.getMetric(metricID);
+        assertThat("Missing metric", missingMetric, is(nullValue()));
+    }
+
+    @Test
+    void testGetMetadata() {
+        Metadata metadata = Metadata.builder()
+                .withName("counter11")
+                .withType(MetricType.COUNTER)
+                .build();
+
+        Counter counter = registry.counter(metadata, tag1);
+
+        Metadata retrievedMetadata = registry.getMetadata("counter11");
+        assertThat("Retrieved metadata", retrievedMetadata, is(equalTo(metadata)));
+    }
+
+    @Test
+    void testGetMetadataWithoutCreate() {
+        Metadata retrievedMetadata = registry.getMetadata("NOT_THERE");
+        assertThat("Missing metadata", retrievedMetadata, is(nullValue()));
+    }
+
+    @Test
+    void testGetMetricsWithFilter() {
+        MetricID metricIDa = new MetricID("counter12", tag1);
+        MetricID metricIDb = new MetricID("counter13", tag1);
+
+        Counter counterA = registry.counter(metricIDa);
+        Counter counterB = registry.counter(metricIDb);
+
+        Map<MetricID, Metric> matchingMetrics = registry.getMetrics(new MetricNameFilter(metricIDb.getName()));
+        assertThat("Metrics matching filter", matchingMetrics, hasEntry(metricIDb, counterB));
+        assertThat("Metrics not matching filter", matchingMetrics, not(hasEntry(metricIDa, counterA)));
+    }
+
+    @Test
+    void testGetMetricsWithFilterAndType() {
+        MetricID metricIDa = new MetricID("counter14", tag1);
+        MetricID metricIDb = new MetricID("simpleTimer1", tag1);
+
+        Counter counter = registry.counter(metricIDa);
+        SimpleTimer simpleTimer = registry.simpleTimer(metricIDb);
+
+        Map<MetricID, SimpleTimer> matchingMetrics = registry.getMetrics(SimpleTimer.class,
+                                                                         new MetricNameFilter(metricIDb.getName()));
+        assertThat("Metrics matching filter", matchingMetrics, hasEntry(metricIDb, simpleTimer));
+        assertThat("Metrics not matching filter", matchingMetrics, not(hasEntry(metricIDa, counter)));
     }
 
     private static class MetricNameFilter implements MetricFilter {

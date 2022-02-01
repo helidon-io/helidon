@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,28 +16,15 @@
 
 package io.helidon.metrics.api;
 
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.SortedMap;
 import java.util.SortedSet;
-import java.util.TreeMap;
-import java.util.TreeSet;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.eclipse.microprofile.metrics.ConcurrentGauge;
@@ -67,28 +54,32 @@ import org.eclipse.microprofile.metrics.Timer;
  */
 public abstract class AbstractRegistry<M extends HelidonMetric> implements MetricRegistry {
 
-    private static final Logger LOGGER = Logger.getLogger(AbstractRegistry.class.getName());
-
     private static final Tag[] NO_TAGS = new Tag[0];
 
     private final MetricRegistry.Type type;
-    private final Map<MetricID, M> allMetrics = new ConcurrentHashMap<>();
-    private final Map<String, List<MetricID>> allMetricIDsByName = new ConcurrentHashMap<>();
-    private final Map<String, Metadata> allMetadata = new ConcurrentHashMap<>(); // metric name -> metadata
 
     private final Map<MetricType, BiFunction<String, Metadata, M>> metricFactories = prepareMetricFactories();
 
-    private final Class<M> metricClass;
+    private final MetricStore<M> metricStore;
 
     /**
      * Create a registry of a certain type.
      *
      * @param type Registry type.
      * @param metricClass class of the specific metric type this registry manages
+     * @param registrySettings registry settings which influence this registry
      */
-    protected AbstractRegistry(Type type, Class<M> metricClass) {
+    protected AbstractRegistry(Type type,
+                               Class<M> metricClass,
+                               RegistrySettings registrySettings) {
         this.type = type;
-        this.metricClass = metricClass;
+        metricStore = MetricStore.create(registrySettings,
+                                         prepareMetricFactories(),
+                                         this::createGauge,
+                                         this::createGauge,
+                                         type,
+                                         metricClass,
+                                         this::toImpl);
     }
 
     /**
@@ -102,11 +93,21 @@ public abstract class AbstractRegistry<M extends HelidonMetric> implements Metri
                 && ((HelidonMetric) metric).isDeleted();
     }
 
+    /**
+     * Indicates whether the specified metric name is enabled or not.
+     * <p>
+     *     Concrete implementations of this method should account for registry settings that might have disabled the specified
+     *     metric or the registry as a whole. They do not need to check whether metrics in its entirety is enabled.
+     * </p>
+     *
+     * @param metricName name of the metric to check
+     * @return true if the metric is enabled; false otherwise
+     */
     protected abstract boolean isMetricEnabled(String metricName);
 
     @Override
     public <T extends Metric> T register(String name, T metric) throws IllegalArgumentException {
-        return registerUniqueMetric(name, metric);
+        return metricStore.register(name, metric);
     }
 
     @Override
@@ -116,7 +117,7 @@ public abstract class AbstractRegistry<M extends HelidonMetric> implements Metri
 
     @Override
     public <T extends Metric> T register(Metadata metadata, T metric, Tag... tags) throws IllegalArgumentException {
-        return registerUniqueMetric(metadata, metric, tags);
+        return metricStore.register(metadata, metric, tags);
     }
 
     @Override
@@ -131,12 +132,22 @@ public abstract class AbstractRegistry<M extends HelidonMetric> implements Metri
 
     @Override
     public Counter counter(String name, Tag... tags) {
-        return getOrRegisterMetric(name, Counter.class, tags);
+        return metricStore.getOrRegisterMetric(name, Counter.class, tags);
     }
 
     @Override
     public Counter counter(Metadata metadata, Tag... tags) {
-        return getOrRegisterMetric(metadata, Counter.class, tags);
+        return metricStore.getOrRegisterMetric(metadata, Counter.class, tags);
+    }
+
+    @Override
+    public Counter counter(MetricID metricID) {
+        return metricStore.getOrRegisterMetric(metricID, Counter.class);
+    }
+
+    @Override
+    public Counter getCounter(MetricID metricID) {
+        return getMetric(metricID, Counter.class);
     }
 
     @Override
@@ -151,12 +162,22 @@ public abstract class AbstractRegistry<M extends HelidonMetric> implements Metri
 
     @Override
     public Histogram histogram(String name, Tag... tags) {
-        return getOrRegisterMetric(name, Histogram.class, tags);
+        return metricStore.getOrRegisterMetric(name, Histogram.class, tags);
     }
 
     @Override
     public Histogram histogram(Metadata metadata, Tag... tags) {
-        return getOrRegisterMetric(metadata, Histogram.class, tags);
+        return metricStore.getOrRegisterMetric(metadata, Histogram.class, tags);
+    }
+
+    @Override
+    public Histogram histogram(MetricID metricID) {
+        return metricStore.getOrRegisterMetric(metricID, Histogram.class);
+    }
+
+    @Override
+    public Histogram getHistogram(MetricID metricID) {
+        return getMetric(metricID, Histogram.class);
     }
 
     @Override
@@ -171,12 +192,22 @@ public abstract class AbstractRegistry<M extends HelidonMetric> implements Metri
 
     @Override
     public Meter meter(String name, Tag... tags) {
-        return getOrRegisterMetric(name, Meter.class, tags);
+        return metricStore.getOrRegisterMetric(name, Meter.class, tags);
     }
 
     @Override
     public Meter meter(Metadata metadata, Tag... tags) {
-        return getOrRegisterMetric(metadata, Meter.class, tags);
+        return metricStore.getOrRegisterMetric(metadata, Meter.class, tags);
+    }
+
+    @Override
+    public Meter meter(MetricID metricID) {
+        return metricStore.getOrRegisterMetric(metricID, Meter.class);
+    }
+
+    @Override
+    public Meter getMeter(MetricID metricID) {
+        return getMetric(metricID, Meter.class);
     }
 
     @Override
@@ -191,12 +222,22 @@ public abstract class AbstractRegistry<M extends HelidonMetric> implements Metri
 
     @Override
     public Timer timer(String name, Tag... tags) {
-        return getOrRegisterMetric(name, Timer.class, tags);
+        return metricStore.getOrRegisterMetric(name, Timer.class, tags);
     }
 
     @Override
     public Timer timer(Metadata metadata, Tag... tags) {
-        return getOrRegisterMetric(metadata, Timer.class, tags);
+        return metricStore.getOrRegisterMetric(metadata, Timer.class, tags);
+    }
+
+    @Override
+    public Timer timer(MetricID metricID) {
+        return metricStore.getOrRegisterMetric(metricID, Timer.class);
+    }
+
+    @Override
+    public Timer getTimer(MetricID metricID) {
+        return getMetric(metricID, Timer.class);
     }
 
     @Override
@@ -211,12 +252,22 @@ public abstract class AbstractRegistry<M extends HelidonMetric> implements Metri
 
     @Override
     public ConcurrentGauge concurrentGauge(String name, Tag... tags) {
-        return getOrRegisterMetric(name, ConcurrentGauge.class, tags);
+        return metricStore.getOrRegisterMetric(name, ConcurrentGauge.class, tags);
     }
 
     @Override
     public ConcurrentGauge concurrentGauge(Metadata metadata, Tag... tags) {
-        return getOrRegisterMetric(metadata, ConcurrentGauge.class, tags);
+        return metricStore.getOrRegisterMetric(metadata, ConcurrentGauge.class, tags);
+    }
+
+    @Override
+    public ConcurrentGauge concurrentGauge(MetricID metricID) {
+        return metricStore.getOrRegisterMetric(metricID, ConcurrentGauge.class);
+    }
+
+    @Override
+    public ConcurrentGauge getConcurrentGauge(MetricID metricID) {
+        return getMetric(metricID, ConcurrentGauge.class);
     }
 
     @Override
@@ -231,208 +282,94 @@ public abstract class AbstractRegistry<M extends HelidonMetric> implements Metri
 
     @Override
     public SimpleTimer simpleTimer(String name, Tag... tags) {
-        return getOrRegisterMetric(name, SimpleTimer.class, tags);
+        return metricStore.getOrRegisterMetric(name, SimpleTimer.class, tags);
     }
 
     @Override
     public SimpleTimer simpleTimer(Metadata metadata, Tag... tags) {
-        return getOrRegisterMetric(metadata, SimpleTimer.class, tags);
-    }
-
-    /*
-     * TODO 3.0.0-JAKARTA
-     * all methods below are implementations of required methods from the interface
-     * of new metrics API
-     */
-    @Override
-    public Counter counter(MetricID metricID) {
-        return null;
-    }
-
-    @Override
-    public ConcurrentGauge concurrentGauge(MetricID metricID) {
-        return null;
-    }
-
-    @Override
-    public <T, R extends Number> Gauge<R> gauge(String name, T object, Function<T, R> func, Tag... tags) {
-        return null;
-    }
-
-    @Override
-    public <T, R extends Number> Gauge<R> gauge(MetricID metricID, T object, Function<T, R> func) {
-        return null;
-    }
-
-    @Override
-    public <T, R extends Number> Gauge<R> gauge(Metadata metadata, T object, Function<T, R> func, Tag... tags) {
-        return null;
-    }
-
-    @Override
-    public <T extends Number> Gauge<T> gauge(String name, Supplier<T> supplier, Tag... tags) {
-        return null;
-    }
-
-    @Override
-    public <T extends Number> Gauge<T> gauge(MetricID metricID, Supplier<T> supplier) {
-        return null;
-    }
-
-    @Override
-    public <T extends Number> Gauge<T> gauge(Metadata metadata, Supplier<T> supplier, Tag... tags) {
-        return null;
-    }
-
-    @Override
-    public Histogram histogram(MetricID metricID) {
-        return null;
-    }
-
-    @Override
-    public Meter meter(MetricID metricID) {
-        return null;
-    }
-
-    @Override
-    public Timer timer(MetricID metricID) {
-        return null;
-    }
-
-    @Override
-    public SimpleTimer simpleTimer(MetricID metricID) {
-        return null;
-    }
-
-    @Override
-    public Metric getMetric(MetricID metricID) {
-        return null;
-    }
-
-    @Override
-    public <T extends Metric> T getMetric(MetricID metricID, Class<T> asType) {
-        return null;
-    }
-
-    @Override
-    public Counter getCounter(MetricID metricID) {
-        return null;
-    }
-
-    @Override
-    public ConcurrentGauge getConcurrentGauge(MetricID metricID) {
-        return null;
-    }
-
-    @Override
-    public Gauge<?> getGauge(MetricID metricID) {
-        return null;
-    }
-
-    @Override
-    public Histogram getHistogram(MetricID metricID) {
-        return null;
-    }
-
-    @Override
-    public Meter getMeter(MetricID metricID) {
-        return null;
-    }
-
-    @Override
-    public Timer getTimer(MetricID metricID) {
-        return null;
+        return metricStore.getOrRegisterMetric(metadata, SimpleTimer.class, tags);
     }
 
     @Override
     public SimpleTimer getSimpleTimer(MetricID metricID) {
-        return null;
+        return getMetric(metricID, SimpleTimer.class);
     }
 
     @Override
-    public Metadata getMetadata(String name) {
-        return null;
+    public SimpleTimer simpleTimer(MetricID metricID) {
+        return metricStore.getOrRegisterMetric(metricID, SimpleTimer.class);
     }
 
     @Override
-    public SortedMap<MetricID, Metric> getMetrics(MetricFilter filter) {
-        return null;
+    public <T, R extends Number> Gauge<R> gauge(String name, T object, Function<T, R> func, Tag... tags) {
+        return metricStore.getOrRegisterGauge(name, object, func, tags);
     }
 
     @Override
-    public <T extends Metric> SortedMap<MetricID, T> getMetrics(Class<T> ofType, MetricFilter filter) {
-        return null;
+    public <T, R extends Number> Gauge<R> gauge(MetricID metricID, T object, Function<T, R> func) {
+        return metricStore.getOrRegisterGauge(metricID, object, func);
     }
 
     @Override
-    public Type getType() {
-        return null;
+    public <T, R extends Number> Gauge<R> gauge(Metadata metadata, T object, Function<T, R> func, Tag... tags) {
+        return metricStore.getOrRegisterGauge(metadata, object, func, tags);
+    }
+
+    @Override
+    public <T extends Number> Gauge<T> gauge(String name, Supplier<T> supplier, Tag... tags) {
+        return metricStore.getOrRegisterGauge(name, supplier, tags);
+    }
+
+    @Override
+    public <T extends Number> Gauge<T> gauge(MetricID metricID, Supplier<T> supplier) {
+        return metricStore.getOrRegisterGauge(metricID, supplier);
+    }
+
+    @Override
+    public <T extends Number> Gauge<T> gauge(Metadata metadata, Supplier<T> supplier, Tag... tags) {
+        return metricStore.getOrRegisterGauge(metadata, supplier, tags);
+    }
+
+    @Override
+    public Gauge<?> getGauge(MetricID metricID) {
+        return getMetric(metricID, Gauge.class);
     }
 
     /**
-     * Removes a metric by name. Synchronized for atomic update of more than one internal map.
+     * Removes a metric by name.
      *
      * @param name Name of the metric.
      * @return Outcome of removal.
      */
     @Override
-    public synchronized boolean remove(String name) {
-        final List<Map.Entry<MetricID, M>> doomedMetrics = getMetricsByName(name);
-        if (doomedMetrics.isEmpty()) {
-            return false;
-        }
-
-        boolean result = false;
-        for (Map.Entry<MetricID, M> doomedMetric : doomedMetrics) {
-            doomedMetric.getValue().markAsDeleted();
-            result |= allMetrics.remove(doomedMetric.getKey()) != null;
-        }
-
-        allMetricIDsByName.remove(name);
-        allMetadata.remove(name);
-        return result;
+    public boolean remove(String name) {
+        return metricStore.remove(name);
     }
 
     /**
-     * Removes a metric by ID. Synchronized for atomic update of more than one internal map.
+     * Removes a metric by ID.
      *
      * @param metricID ID of metric.
      * @return Outcome of removal.
      */
     @Override
-    public synchronized boolean remove(MetricID metricID) {
-        final List<MetricID> metricIDS = allMetricIDsByName.get(metricID.getName());
-        if (metricIDS == null) {
-            return false;
-        }
-        metricIDS.remove(metricID);
-        if (metricIDS.isEmpty()) {
-            allMetricIDsByName.remove(metricID.getName());
-            allMetadata.remove(metricID.getName());
-        }
-
-        M doomedMetric = allMetrics.remove(metricID);
-        if (doomedMetric != null) {
-            doomedMetric.markAsDeleted();
-        }
-        return doomedMetric != null;
+    public boolean remove(MetricID metricID) {
+        return metricStore.remove(metricID);
     }
 
     @Override
-    public synchronized void removeMatching(MetricFilter filter) {
-        allMetrics.entrySet().stream()
-                .filter(entry -> filter.matches(entry.getKey(), entry.getValue()))
-                .forEach(entry -> remove(entry.getKey()));
+    public void removeMatching(MetricFilter filter) {
+        metricStore.removeMatching(filter);
     }
 
     @Override
     public SortedSet<String> getNames() {
-        return new TreeSet<>(allMetricIDsByName.keySet());
+        return metricStore.getNames();
     }
 
     @Override
     public SortedSet<MetricID> getMetricIDs() {
-        return new TreeSet<>(allMetrics.keySet());
+        return metricStore.getMetricIDs();
     }
 
     @Override
@@ -442,7 +379,7 @@ public abstract class AbstractRegistry<M extends HelidonMetric> implements Metri
 
     @Override
     public SortedMap<MetricID, Gauge> getGauges(MetricFilter filter) {
-        return getSortedMetrics(filter, Gauge.class);
+        return metricStore.getSortedMetrics(filter, Gauge.class);
     }
 
     @Override
@@ -452,7 +389,7 @@ public abstract class AbstractRegistry<M extends HelidonMetric> implements Metri
 
     @Override
     public SortedMap<MetricID, Counter> getCounters(MetricFilter filter) {
-        return getSortedMetrics(filter, Counter.class);
+        return metricStore.getSortedMetrics(filter, Counter.class);
     }
 
     @Override
@@ -462,7 +399,7 @@ public abstract class AbstractRegistry<M extends HelidonMetric> implements Metri
 
     @Override
     public SortedMap<MetricID, Histogram> getHistograms(MetricFilter filter) {
-        return getSortedMetrics(filter, Histogram.class);
+        return metricStore.getSortedMetrics(filter, Histogram.class);
     }
 
     @Override
@@ -472,7 +409,7 @@ public abstract class AbstractRegistry<M extends HelidonMetric> implements Metri
 
     @Override
     public SortedMap<MetricID, Meter> getMeters(MetricFilter filter) {
-        return getSortedMetrics(filter, Meter.class);
+        return metricStore.getSortedMetrics(filter, Meter.class);
     }
 
     @Override
@@ -482,7 +419,7 @@ public abstract class AbstractRegistry<M extends HelidonMetric> implements Metri
 
     @Override
     public SortedMap<MetricID, Timer> getTimers(MetricFilter filter) {
-        return getSortedMetrics(filter, Timer.class);
+        return metricStore.getSortedMetrics(filter, Timer.class);
     }
 
     @Override
@@ -492,7 +429,7 @@ public abstract class AbstractRegistry<M extends HelidonMetric> implements Metri
 
     @Override
     public SortedMap<MetricID, ConcurrentGauge> getConcurrentGauges(MetricFilter filter) {
-        return getSortedMetrics(filter, ConcurrentGauge.class);
+        return metricStore.getSortedMetrics(filter, ConcurrentGauge.class);
     }
 
     @Override
@@ -502,28 +439,53 @@ public abstract class AbstractRegistry<M extends HelidonMetric> implements Metri
 
     @Override
     public SortedMap<MetricID, SimpleTimer> getSimpleTimers(MetricFilter filter) {
-        return getSortedMetrics(filter, SimpleTimer.class);
+        return metricStore.getSortedMetrics(filter, SimpleTimer.class);
     }
 
     @Override
     public Map<String, Metadata> getMetadata() {
-        return Collections.unmodifiableMap(allMetadata);
+        return Collections.unmodifiableMap(metricStore.metadata());
+    }
+
+    @Override
+    public Metadata getMetadata(String name) {
+        return metricStore.metadata(name);
     }
 
     @Override
     public Map<MetricID, Metric> getMetrics() {
-        return Collections.unmodifiableMap(allMetrics);
+        return Collections.unmodifiableMap(metricStore.metrics());
+    }
+
+    @Override
+    public SortedMap<MetricID, Metric> getMetrics(MetricFilter filter) {
+        return metricStore.getSortedMetrics(filter, Metric.class);
+    }
+
+    @Override
+    public <T extends Metric> SortedMap<MetricID, T> getMetrics(Class<T> ofType, MetricFilter filter) {
+        return metricStore.getSortedMetrics(filter, ofType);
+    }
+
+    @Override
+    public Metric getMetric(MetricID metricID) {
+        return metricStore.metric(metricID);
+    }
+
+    @Override
+    public <T extends Metric> T getMetric(MetricID metricID, Class<T> asType) {
+        return asType.cast(metricStore.metric(metricID));
     }
 
     /**
-     * Access a metric by name. Used by FT library.
+     * Update the registry settings for this registry.
      *
-     * @param metricName Metric name.
-     * @return Optional metric.
+     * @param registrySettings new settings to use going forward
      */
-    public Optional<Metric> getMetric(String metricName) {
-        return getOptionalMetricEntry(metricName).map(Map.Entry::getValue);
+    public void update(RegistrySettings registrySettings) {
+        metricStore.update(registrySettings);
     }
+
 
     /**
      * Returns type of this registry.
@@ -534,34 +496,33 @@ public abstract class AbstractRegistry<M extends HelidonMetric> implements Metri
         return type.getName();
     }
 
+    @Override
+    public Type getType() {
+        return type;
+    }
+
     /**
      * Determines if registry is empty.
      *
      * @return Outcome of test.
      */
     public boolean empty() {
-        return allMetrics.isEmpty();
+        return metricStore.metrics().isEmpty();
     }
 
     @Override
     public String toString() {
-        return type() + ": " + allMetrics.size() + " metrics";
+        return type() + ": " + metricStore.metrics().size() + " metrics";
     }
 
     /**
-     * Get internal map entry given a metric name. Synchronized for atomic access of more than
-     * one internal map.
+     * Returns a map entry, its key the metadata and its value all metric IDs matching the provided metric name.
      *
-     * @param metricName The metric name.
-     * @return Optional map entry..
+     * @param metricName name to search for
+     * @return the metadata and metric IDs known for the specified metric name; null if the name is not registered
      */
-    public synchronized Optional<Map.Entry<? extends Metric, List<MetricID>>> getOptionalMetricWithIDsEntry(String metricName) {
-        final List<MetricID> metricIDs = allMetricIDsByName.get(metricName);
-        if (metricIDs == null || metricIDs.isEmpty()) {
-            return Optional.empty();
-        }
-        return Optional.of(
-                new AbstractMap.SimpleEntry<>(allMetrics.get(metricIDs.get(0)), metricIDs));
+    public Map.Entry<Metadata, List<MetricID>> metadataWithIDs(String metricName) {
+        return metricStore.metadataWithIDs(metricName);
     }
 
     /**
@@ -570,7 +531,7 @@ public abstract class AbstractRegistry<M extends HelidonMetric> implements Metri
      * @return Stream of {@link Map.Entry}
      */
     protected Stream<Map.Entry<MetricID, M>> stream() {
-        return allMetrics.entrySet().stream().filter(entry -> registrySettings().isMetricEnabled(entry.getKey().getName()));
+        return metricStore.stream();
     }
 
     /**
@@ -583,96 +544,85 @@ public abstract class AbstractRegistry<M extends HelidonMetric> implements Metri
      */
     protected abstract <T extends Metric> M toImpl(Metadata metadata, T metric);
 
+    /**
+     * Provides a map from MicroProfile metric type to a factory which creates a concrete metric instance of the MP metric type
+     * which also extends the implementation metric base class for the concrete implementation (e.g., no-op or full-featured).
+     *
+     * @return map from each MicroProfile metric type to the correspondingfactory method
+     */
     protected abstract Map<MetricType, BiFunction<String, Metadata, M>> prepareMetricFactories();
-
-    protected abstract RegistrySettings registrySettings();
 
     // -- Package private -----------------------------------------------------
 
+    /**
+     * Returns an {@code Optional} for an entry containing a metric ID and the corresponding metric matching the specified
+     * metric name.
+     * <p>
+     *     If multiple metrics match the name (because of tags), the returned metric is, preferentially, the one (if any) with
+     *     no tags. If all metrics registered under the specified name have tags, then the method returns the metric which was
+     *     registered earliest
+     * </p>
+     *
+     * @param metricName name of the metric of interest
+     * @return {@code Optional} of a map entry containing the metric ID and the metric selected
+     */
     protected Optional<Map.Entry<MetricID, M>> getOptionalMetricEntry(String metricName) {
-        return getOptionalMetricWithIDsEntry(metricName).map(entry -> {
-            final MetricID metricID = entry.getValue().get(0);
-            return new AbstractMap.SimpleImmutableEntry<>(metricID,
-                                                          allMetrics.get(metricID));
-        });
+        return Optional.ofNullable(metricStore.untaggedOrFirstMetricWithID(metricName));
     }
 
-    private static class DisabledMetricInvocationHandler implements InvocationHandler {
-
-        private final NoOpMetric delegate;
-
-        DisabledMetricInvocationHandler(MetricType metricType, String metricName, Metadata metadata) {
-            delegate = NoOpMetricRegistry.noOpMetricFactories().get(metricType).apply(metricName, metadata);
-        }
-
-        @Override
-        public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-            return method.invoke(delegate, args);
-        }
-    }
-
-    private Optional<M> getOptionalMetric(String metricName, Tag... tags) {
-        return getOptionalMetric(new MetricID(metricName, tags));
-    }
-
-    private Optional<M> getOptionalMetric(MetricID metricID) {
-        return Optional.ofNullable(allMetrics.get(metricID));
-    }
-
+    /**
+     * Returns a list of metric ID/metric pairs which match the provided metric name.
+     *
+     * @param metricName name of the metric of interest
+     * @return List of entries indicating metrics with the specified name; empty of no matches
+     */
     protected List<Map.Entry<MetricID, M>> getMetricsByName(String metricName) {
-        List<MetricID> metricIDs = allMetricIDsByName.get(metricName);
-        if (metricIDs == null) {
-            return Collections.emptyList();
-        }
-        List<Map.Entry<MetricID, M>> result = new ArrayList<>();
-        for (MetricID metricID : metricIDs) {
-            result.add(new AbstractMap.SimpleEntry<>(metricID, allMetrics.get(metricID)));
-        }
-        return result;
+        return metricStore.metricsWithIDs(metricName);
     }
 
-    protected Type registryType() {
-        return type;
-    }
-
+    /**
+     * Returns a list of metric IDs given a metric name.
+     *
+     * @param metricName name of the metric of interest
+     * @return list of metric IDs for metrics with the specified name; empty if no matches
+     */
     protected List<MetricID> metricIDsForName(String metricName) {
-        return allMetricIDsByName.get(metricName);
+        return metricStore.metricIDs(metricName);
     }
 
-    static <T extends Metadata, U extends Metadata> boolean metadataMatches(T a, U b) {
-        if (a == b) {
-            return true;
-        }
-        if (a == null || b == null) {
-            return false;
-        }
-        return a.getName().equals(b.getName())
-                && a.getTypeRaw().equals(b.getTypeRaw())
-                && a.getDisplayName().equals(b.getDisplayName())
-                && Objects.equals(a.getDescription(), b.getDescription())
-                && Objects.equals(a.getUnit(), b.getUnit());
-                // TODO 3.0.0-JAKARTA
-                // && (a.isReusable() == b.isReusable());
+    // Concrete implementations might choose to override the default implementation to avoid the extra lambda binding
+    // if performance of gauge creation might be an issue.
+
+    /**
+     * Creates a gauge instance according to the provided metadata such that retrievals of the gauge value trigger an
+     * invocation of the provided function, passing the indicated object.
+     * <p>
+     *     This default implementation uses a capturing lambda for retrieving the value. Concrete subclasses can override this
+     *     implementation if capturing lambda behavior might become a performance issue.
+     * </p>
+     *
+     * @param metadata metadata to use in creating the gauge
+     * @param object object to pass to the value-returning function
+     * @param func gauge-value-returning function
+     * @param <T> Java type of the function parameter (and the object to pass to it)
+     * @param <R> specific {@code Number} subtype the gauge reports
+     * @return new gauge
+     */
+    protected <T, R extends Number> Gauge<R> createGauge(Metadata metadata, T object, Function<T, R> func) {
+        return createGauge(metadata, () -> func.apply(object));
     }
+
+    /**
+     * Creates a gauge instance according to the specified supplier which returns the gauge value.
+     *
+     * @param metadata metadata to use in creating the gauge
+     * @param supplier gauge-value-returning supplier
+     * @param <R> specific {@code Number} subtype the supplier returns
+     * @return new gauge
+     */
+    protected abstract <R extends Number> Gauge<R> createGauge(Metadata metadata, Supplier<R> supplier);
 
     // -- Private methods -----------------------------------------------------
-
-    private static boolean enforceConsistentMetadata(Metadata existingMetadata, Metadata newMetadata,
-                                                     Tag... tags) {
-        if (!metadataMatches(existingMetadata, newMetadata)) {
-            throw new IllegalArgumentException("New metric " + new MetricID(newMetadata.getName(), tags)
-                                                       + " with metadata " + newMetadata
-                                                       + " conflicts with a metric already registered with metadata "
-                                                       + existingMetadata);
-        }
-        return true;
-    }
-
-    private <T extends M> boolean enforceConsistentMetadata(T existingMetric,
-                                                            Metadata newMetadata, Tag... tags) {
-
-        return enforceConsistentMetadata(existingMetric.metadata(), newMetadata, tags);
-    }
 
     private static boolean enforceConsistentMetadataType(Metadata existingMetadata, MetricType newType, Tag... tags) {
         if (!existingMetadata.getTypeRaw().equals(newType)) {
@@ -687,241 +637,12 @@ public abstract class AbstractRegistry<M extends HelidonMetric> implements Metri
     }
 
     /**
-     * Returns an existing metric (if one is already registered with the name
-     * from the metadata plus the tags, and if the existing metadata is
-     * consistent with the new metadata) or a new metric, registered using the metadata and tags.
-     * Synchronized for atomic access of more than one internal map.
+     * Infers the {@link MetricType} from a provided candidate type and a metric instance.
      *
-     * @param <U> type of the metric
-     * @param newMetadata metadata describing the metric type
-     * @param clazz class of the metric to find or create
-     * @param tags tags for refining the identity of the metric
-     * @return the existing or newly-created metric
-     * @throws IllegalArgumentException if the metadata is inconsistent with
-     * previously-registered metadata or if the metric is being reused and the
-     * metadata prohibits reuse
+     * @param candidateType type of metric to use if not invalid; typically computed from an existing metric
+     * @param metric the metric for which to derive the metric type
+     * @return the {@code MetricType} of the metric
      */
-    private synchronized <U extends Metric> U getOrRegisterMetric(Metadata newMetadata,
-                                                                  Class<U> clazz,
-                                                                  Tag... tags) throws IllegalArgumentException {
-        final String metricName = newMetadata.getName();
-        /*
-         * If there is an existing compatible metric then there's really nothing
-         * new to register; the existing registration is enough so return that
-         * previously-registered metric.
-         */
-        return toType(getOptionalMetric(metricName, tags)
-                              .filter(existingMetric -> enforceConsistentMetadata(existingMetric, newMetadata, tags))
-                              .orElseGet(() -> {
-                                  warnOfMismatchedType(clazz, newMetadata);
-                                  final Metadata metadata = getOrRegisterMetadata(metricName, newMetadata, tags);
-                                  return registerMetric(metricName,
-                                                        createEnabledAwareMetric(metricName, clazz, metadata),
-                                                        tags);
-                              }), clazz);
-    }
-
-    /**
-     * Returns an existing metric with the requested name and tags, or if none
-     * is already registered registers a new metric using the name and type. If
-     * metadata with the same name already exists it is used and checked for
-     * consistency with the metric type {@code T}.
-     * Synchronized for atomic access of more than one internal map.
-     *
-     * @param <U> specific type of {@code Metric} (e.g., {@code Counter}
-     * @param metricName name of the metric
-     * @param clazz class of the {@code Metric} type {@code <U>}to find or create
-     * @param tags tags for refining the identity of the metric
-     * @return the existing or newly-created metric
-     */
-    private synchronized <U extends Metric> U getOrRegisterMetric(String metricName,
-                                                                  Class<U> clazz,
-                                                                  Tag... tags) {
-        final MetricType newType = MetricType.from(clazz);
-        return toType(getOptionalMetric(metricName, tags)
-                .orElseGet(() -> {
-                    final Metadata metadata = getOrRegisterMetadata(metricName, newType,
-                                                                    () -> Metadata.builder()
-                                                                            .withName(metricName)
-                                                                            .withType(newType)
-                                                                            .build(), tags);
-                    return registerMetric(metricName,
-                                          createEnabledAwareMetric(metricName, clazz, metadata),
-                                          tags);
-                }), clazz);
-    }
-
-    /**
-     * Registers a new metric, using the specified name, using existing metadata
-     * or, if none, creating new metadata based on the metric's name and type,
-     * returning the metric itself. Throws an exception if the metric is already
-     * registered or if the metric and existing metadata are incompatible.
-     * Synchronized for atomic access of more than one internal map.
-     *
-     * @param <T> type of the metric
-     * @param metricName name of the metric
-     * @param metric the metric to register
-     * @return the newly-registered metric
-     * @throws IllegalArgumentException if the metric is already registered and
-     * its metadata prohibits reuse
-     */
-    private synchronized <T extends Metric> T registerUniqueMetric(String metricName, T metric) throws IllegalArgumentException {
-
-        enforceMetricUniqueness(metricName);
-        final MetricType metricType = MetricType.from(metric.getClass());
-
-        final Metadata metadata = getOrRegisterMetadata(metricName, metricType,
-                                                        () -> Metadata.builder()
-                                                                .withName(metricName)
-                                                                .withType(metricType)
-                                                                .build(), NO_TAGS);
-        registerMetric(metricName, toEnabledAwareImpl(metricName, metadata, metric), NO_TAGS);
-        return metric;
-    }
-
-    /**
-     * Registers a new metric, using the metadata's name and the tags, described
-     * by the given metadata, returning the metric itself. Throws an exception
-     * if the metric is already registered or if incompatible metadata is
-     * already registered.
-     * Synchronized for atomic access of more than one internal map.
-     *
-     * @param <T> type of the metric
-     * @param metadata metadata describing the metric
-     * @param metric the metric to register
-     * @param tags tags associated with the metric
-     * @return the newly-registered metric
-     * @throws IllegalArgumentException if the specified metadata is incompatible with previously-registered metadata
-     */
-    private synchronized <T extends Metric> T registerUniqueMetric(Metadata metadata, T metric, Tag... tags)
-            throws IllegalArgumentException {
-
-        final String metricName = metadata.getName();
-        enforceMetricUniqueness(metricName, tags);
-
-        metadata = getOrRegisterMetadata(metricName, metadata, tags);
-        registerMetric(metricName, toEnabledAwareImpl(metricName, metadata, metric), tags);
-        return metric;
-    }
-
-    private <U extends Metric> M createEnabledAwareMetric(String metricName, Class<U> clazz, Metadata metadata) {
-        MetricType metricType = MetricType.from(clazz);
-        return registrySettings().isMetricEnabled(metricName)
-                ? metricFactories.get(MetricType.from(clazz)).apply(type.getName(), metadata)
-                : metricClass.cast(Proxy.newProxyInstance(
-                        metricClass.getClassLoader(),
-                        new Class<?>[] {clazz, metricClass},
-                        new DisabledMetricInvocationHandler(metricType, metricName, metadata)));
-    }
-
-    private <T extends Metric> M toEnabledAwareImpl(String metricName, Metadata metadata, T metric) {
-        return registrySettings().isMetricEnabled(metricName)
-                ? toImpl(metadata, metric)
-                : metricClass.cast(Proxy.newProxyInstance(
-                        metricClass.getClassLoader(),
-                        new Class<?>[] {toMetricClass(metric), metricClass},
-                        new DisabledMetricInvocationHandler(MetricType.from(metric.getClass()), metricName, metadata)));
-    }
-
-    private <U extends Metric> void warnOfMismatchedType(Class<U> clazz, Metadata metadata) {
-        if (!metadata.getTypeRaw().equals(MetricType.from(clazz))) {
-            LOGGER.log(Level.WARNING,
-                       String.format("MetricType '%s' from metadata conflicts with metric type '%s' being created",
-                                     metadata.getTypeRaw(), MetricType.from(clazz)),
-                       new IllegalArgumentException());
-        }
-    }
-
-    private boolean enforceMetricUniqueness(String metricName) {
-        return enforceMetricUniqueness(new MetricID(metricName));
-    }
-
-    private boolean enforceMetricUniqueness(String metricName, Tag... tags) {
-        return enforceMetricUniqueness(new MetricID(metricName, tags));
-    }
-
-    private boolean enforceMetricUniqueness(MetricID metricID) {
-        if (allMetrics.containsKey(metricID)) {
-            throw new IllegalArgumentException("Attempt to reregister the existing metric " + metricID);
-        }
-        return true;
-    }
-
-    private <T extends M, U extends Metric> U toType(T m1, Class<U> clazz) {
-        MetricType type1 = toType(m1);
-        MetricType type2 = MetricType.from(clazz);
-        if (type1 == type2) {
-            return clazz.cast(m1);
-        }
-        throw new IllegalArgumentException("Metric types " + type1.toString()
-                                                   + " and " + type2.toString() + " do not match");
-    }
-
-    /**
-     * Returns an existing metadata instance with the requested name or, if there
-     * is none, registers the provided new metadata. Throws an exception if the
-     * provided new metadata is incompatible with any existing metadata
-     * Synchronized for multiple access of an internal map.
-     *
-     * @param metricName name of the metric
-     * @param newMetadata new metadata to register if none exists for this name
-     * @param tags tags associated with the metric being sought or created (for error messaging)
-     * @return existing metadata if any; otherwise the provided new metadata
-     */
-    private synchronized Metadata getOrRegisterMetadata(String metricName, Metadata newMetadata, Tag... tags) {
-
-        return getOptionalMetadata(metricName)
-                .filter(existingMetadata -> enforceConsistentMetadata(existingMetadata, newMetadata, tags))
-                .orElseGet(() -> registerMetadata(newMetadata));
-    }
-
-    /**
-     * Returns an existing metadata instance with the requested name or, if there is none,
-     * registers the metadata supplied by the provided metadata factory. Throws an exception
-     * if the provided new metric type is incompatible with any previously-registered
-     * metadata. Synchronized for multiple access of an internal map.
-     *
-     * @param metricName name of the metric
-     * @param newMetricType metric type of the new metric being created
-     * @param metadataFactory supplier for new metadata if none is found under the specified name
-     * @param tags tags associated with the metric being sought or created (for error messaging)
-     * @return existing metadata if any; otherwise the metadata from the provided supplier
-     */
-    private synchronized Metadata getOrRegisterMetadata(String metricName, MetricType newMetricType,
-                                                        Supplier<Metadata> metadataFactory, Tag... tags) {
-
-        return getOptionalMetadata(metricName)
-                .filter(existingMetadata -> enforceConsistentMetadataType(existingMetadata, newMetricType, tags))
-                .orElseGet(() -> registerMetadata(metadataFactory.get()));
-    }
-
-    private Optional<Metadata> getOptionalMetadata(String name) {
-        return Optional.ofNullable(allMetadata.get(name));
-    }
-
-    private Metadata registerMetadata(Metadata metadata) {
-        allMetadata.put(metadata.getName(), metadata);
-        return metadata;
-    }
-
-    /**
-     * Register a metric using name and tags. Synchronized for atomic access of more than
-     * one internal map.
-     *
-     * @param metricName Name of metric.
-     * @param metric The metric instance.
-     * @param tags The metric tags.
-     * @param <T> Metric subtype.
-     * @return The metric instance.
-     */
-    private synchronized <T extends M> T registerMetric(String metricName, T metric, Tag... tags) {
-        final MetricID metricID = new MetricID(metricName, tags);
-        allMetrics.put(metricID, metric);
-        List<MetricID> metricIDsWithSameName = allMetricIDsByName.computeIfAbsent(metricName, k -> new ArrayList<>());
-        metricIDsWithSameName.add(metricID);
-        return metric;
-    }
-
     protected static MetricType deriveType(MetricType candidateType, Metric metric) {
         if (candidateType != MetricType.INVALID) {
             return candidateType;
@@ -938,49 +659,67 @@ public abstract class AbstractRegistry<M extends HelidonMetric> implements Metri
                 .orElse(MetricType.INVALID);
     }
 
-    private MetricType toType(Metric metric) {
-        Class<? extends Metric> clazz = toMetricClass(metric);
-        return MetricType.from(clazz == null ? metric.getClass() : clazz);
-    }
-
-    private static <T extends Metric> Class<? extends Metric> toMetricClass(T metric) {
-        // Find subtype of Metric, needed for user-defined metrics
-        Class<?> clazz = metric.getClass();
-        do {
-            Optional<Class<?>> optionalClass = Arrays.stream(clazz.getInterfaces())
-                    .filter(Metric.class::isAssignableFrom)
-                    .findFirst();
-            if (optionalClass.isPresent()) {
-                clazz = optionalClass.get();
-                break;
-            }
-            clazz = clazz.getSuperclass();
-        } while (clazz != null);
-        return (Class<? extends Metric>) clazz;
-    }
-
-    // For testing
+    /**
+     * For testing.
+     *
+     * @return map from MicroProfile metric type to factory functions.
+     */
     protected Map<MetricType, BiFunction<String, Metadata, M>> metricFactories() {
         return metricFactories;
     }
 
     /**
-     * Returns a sorted map based on a filter a metric class.
+     * Prepares the map from Java types of implementation metrics to the corresponding {@link MetricType}.
      *
-     * @param filter The filter.
-     * @param metricClass The class.
-     * @param <V> Type of class.
-     * @return The sorted map.
+     * @return prepared map for a given metrics implementation
      */
-    private <V> SortedMap<MetricID, V> getSortedMetrics(MetricFilter filter, Class<V> metricClass) {
-        Map<MetricID, V> collected = allMetrics.entrySet()
-                .stream()
-                .filter(it -> metricClass.isAssignableFrom(it.getValue().getClass()))
-                .filter(it -> filter.matches(it.getKey(), it.getValue()))
-                .collect(Collectors.toMap(Map.Entry::getKey, it -> metricClass.cast(it.getValue())));
-
-        return new TreeMap<>(collected);
-    }
-
     protected abstract Map<Class<? extends M>, MetricType> prepareMetricToTypeMap();
+
+    /**
+     * Gauge factories based on either functions or suppliers.
+     * <p>
+     *     Metrics implementations (such as the no-op implementation of the full-featured one) implement
+     *     these interfaces so as to allow the {@link AbstractRegistry} to simply implement the MicroProfile
+     *     methods for registering gauges.
+     * </p>
+     */
+    public interface GaugeFactory {
+
+        /**
+         * Gauge factory based on a supplier which provides the gauge value.
+         */
+        @FunctionalInterface
+        interface SupplierBased {
+
+            /**
+             * Creates a gauge implemention with the specified metadata which invokes the provided supplier to fetch the gauge
+             * value.
+             *
+             * @param metadata metadata to use in defining the gauge
+             * @param valueSupplier {@code Supplier} of the gauge value
+             * @param <R> specific {@code Number} subtype the gauge reports
+             * @return new gauge implementation
+             */
+            <R extends Number> Gauge<R> createGauge(Metadata metadata, Supplier<R> valueSupplier);
+        }
+
+        /**
+         * Gauge factory based on a function which provides the gauge value when passed an object of a declared type.
+         */
+        @FunctionalInterface
+        interface FunctionBased {
+            /**
+             * Creates a gauge implementation with the specified metadata which invokes the provided function passing the given
+             * object.
+             *
+             * @param metadata metadata to use in defining the gauge
+             * @param object object to be passed to the function which provides the gauge value
+             * @param valueFunction function which provides the gauge value
+             * @param <T> type of object passed to the function
+             * @param <R> specific {@code Number} subtype the gauge reports
+             * @return new gauge implementation
+             */
+            <T, R extends Number> Gauge<R> createGauge(Metadata metadata, T object, Function<T, R> valueFunction);
+        }
+    }
 }

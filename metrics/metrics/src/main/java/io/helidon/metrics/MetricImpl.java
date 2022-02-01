@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,13 @@
 package io.helidon.metrics;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.StringJoiner;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -34,15 +36,17 @@ import java.util.stream.Collectors;
 
 import io.helidon.metrics.Sample.Derived;
 import io.helidon.metrics.api.AbstractMetric;
+import io.helidon.metrics.api.SystemTagsManager;
 
 import jakarta.json.Json;
 import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
+import jakarta.json.JsonValue;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricUnits;
-import org.eclipse.microprofile.metrics.Tag;
 
 /**
  * Base for our implementations of various metrics.
@@ -170,7 +174,7 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
             for (MetricID metricID : metricIDs) {
                 boolean tagAdded = false;
                 JsonArrayBuilder ab = JSON.createArrayBuilder();
-                for (Tag tag : metricID.getTagsAsList()) {
+                for (Map.Entry<String, String> tag : SystemTagsManager.instance().allTags(metricID)) {
                     tagAdded = true;
                     ab.add(tagForJsonKey(tag));
                 }
@@ -188,11 +192,13 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
     }
 
     static String jsonFullKey(String baseName, MetricID metricID) {
-        return metricID.getTags().isEmpty() ? baseName
-                : String.format("%s;%s", baseName,
-                        metricID.getTagsAsList().stream()
-                                .map(MetricImpl::tagForJsonKey)
-                                .collect(Collectors.joining(";")));
+        return baseName + tagsToJsonFormat(SystemTagsManager.instance().allTags(metricID));
+    }
+
+    private static String tagsToJsonFormat(Iterable<Map.Entry<String, String>> it) {
+        StringJoiner sj = new StringJoiner(";", ";", "").setEmptyValue("");
+        it.forEach(entry -> sj.add(tagForJsonKey(entry)));
+        return sj.toString();
     }
 
     static String jsonFullKey(MetricID metricID) {
@@ -204,13 +210,13 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
         return "";
     }
 
-    private static String tagForJsonKey(Tag t) {
-        return String.format("%s=%s", jsonEscape(t.getTagName()), jsonEscape(t.getTagValue()));
+    private static String tagForJsonKey(Map.Entry<String, String> tagEntry) {
+        return String.format("%s=%s", jsonEscape(tagEntry.getKey()), jsonEscape(tagEntry.getValue()));
     }
 
     static String jsonEscape(String s) {
         final Matcher m = JSON_ESCAPED_CHARS_REGEX.matcher(s);
-        final StringBuffer sb = new StringBuffer();
+        final StringBuilder sb = new StringBuilder();
         while (m.find()) {
             m.appendReplacement(sb, JSON_ESCAPED_CHARS_MAP.get(m.group()));
         }
@@ -232,6 +238,25 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
                 .append(" ")
                 .append(metadata().getDescription())
                 .append('\n');
+    }
+
+    JsonValue jsonDuration(Duration duration) {
+        if (duration == null) {
+            return JsonObject.NULL;
+        }
+        long result = switch (metadata().getUnit()) {
+            case MetricUnits.DAYS -> duration.toDays();
+            case MetricUnits.HOURS -> duration.toHours();
+            case MetricUnits.MINUTES -> duration.toMinutes();
+            case MetricUnits.SECONDS -> duration.toSeconds();
+            case MetricUnits.MILLISECONDS -> duration.toMillis();
+            case MetricUnits.MICROSECONDS -> duration.toNanos() / 1000;
+
+            // includes explicit nanoseconds units and no units set (default)
+            default -> duration.toNanos();
+        };
+
+        return Json.createValue(result);
     }
 
     @Override
@@ -304,7 +329,8 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
             prometheusType(sb, nameToUse.get(), typeName);
         }
         Object convertedValue = name.units().convert(value);
-        sb.append(nameToUse.get() + name.prometheusTags())
+        sb.append(nameToUse.get())
+                .append(name.prometheusTags())
                 .append(" ")
                 .append(convertedValue)
                 .append(prometheusExemplar(sample, name.units()))
@@ -312,13 +338,26 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
     }
 
     void appendPrometheusHistogramElements(StringBuilder sb, MetricID metricID,
-            boolean withHelpType, long count, DisplayableLabeledSnapshot snap) {
+                                           boolean withHelpType, long count, long sum, DisplayableLabeledSnapshot snap) {
         PrometheusName name = PrometheusName.create(this, metricID);
-        appendPrometheusHistogramElements(sb, name, withHelpType, count, snap);
+        appendPrometheusHistogramElements(sb, name, withHelpType, count, sum, snap);
     }
 
-    void appendPrometheusHistogramElements(StringBuilder sb, PrometheusName name,
-            boolean withHelpType, long count, DisplayableLabeledSnapshot snap) {
+    void appendPrometheusHistogramElements(StringBuilder sb,
+                                           PrometheusName name,
+                                           boolean withHelpType,
+                                           long count,
+                                           Duration elapsedTime,
+                                           DisplayableLabeledSnapshot snap) {
+        appendPrometheusHistogramElements(sb, name, withHelpType, count, elapsedTime.toSeconds(), snap);
+    }
+
+    void appendPrometheusHistogramElements(StringBuilder sb,
+                                           PrometheusName name,
+                                           boolean withHelpType,
+                                           long count,
+                                           long sum,
+                                           DisplayableLabeledSnapshot snap) {
 
         // # TYPE application:file_sizes_mean_bytes gauge
         // application:file_sizes_mean_bytes 4738.231
@@ -348,7 +387,10 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
                 .append(" ")
                 .append(count)
                 .append('\n');
-
+        sb.append(name.nameUnitsSuffixTags("sum"))
+                .append(" ")
+                .append(sum)
+                .append('\n');
         // application:file_sizes_bytes{quantile="0.5"} 4201
         // for each supported quantile
         prometheusQuantile(sb, name, getUnits(), "0.5", snap.median());
@@ -415,12 +457,16 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
         return name;
     }
     final String prometheusTags(Map<String, String> tags) {
-        return (tags == null || tags.isEmpty() ? "" : tags.entrySet().stream()
-                .filter(entry -> entry.getKey() != null)
-                .map(entry -> String.format("%s=\"%s\"",
-                        prometheusClean(entry.getKey(), ""),
-                        prometheusTagValue(entry.getValue())))
-                .collect(Collectors.joining(",", "{", "}")));
+
+        StringJoiner sj = new StringJoiner(",", "{", "}").setEmptyValue("");
+        SystemTagsManager.instance().allTags(tags).forEach(entry -> {
+            if (entry.getKey() != null) {
+                sj.add(String.format("%s=\"%s\"",
+                                     prometheusClean(entry.getKey(), ""),
+                                     prometheusTagValue(entry.getValue())));
+            }
+        });
+        return sj.toString();
     }
 
     private String prometheusTagValue(String value) {

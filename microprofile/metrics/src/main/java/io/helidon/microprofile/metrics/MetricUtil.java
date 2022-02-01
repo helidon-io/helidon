@@ -25,8 +25,10 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import jakarta.enterprise.inject.spi.Annotated;
 import jakarta.enterprise.inject.spi.AnnotatedMember;
@@ -104,22 +106,51 @@ public final class MetricUtil {
     static <A extends Annotation> List<LookupResult<A>> lookupAnnotations(
             AnnotatedType<?> annotatedType,
             AnnotatedMember<?> annotatedMember,
-            Class<A> annotClass) {
-        List<LookupResult<A>> result = lookupAnnotations(annotatedMember, annotClass);
+            Class<A> annotClass,
+            Map<Class<?>, MetricsCdiExtension.StereotypeMetricsInfo> stereotypeTypes) {
+        List<LookupResult<A>> result = lookupAnnotations(annotatedMember, annotClass, stereotypeTypes);
         if (result.isEmpty()) {
-            result = lookupAnnotations(annotatedType, annotClass);
+            result = lookupAnnotations(annotatedType, annotClass, stereotypeTypes);
         }
         return result;
     }
 
-    static <A extends Annotation>  List<LookupResult<A>> lookupAnnotations(Annotated annotated,
-            Class<A> annotClass) {
-        // We have to filter by annotation class ourselves, because annotatedMethod.getAnnotations(Class) delegates
-        // to the Java method. That would bypass any annotations that had been added dynamically to the configurator.
-        return annotated.getAnnotations().stream()
+    static <A extends Annotation>  List<LookupResult<A>> lookupAnnotations(
+            Annotated annotated,
+            Class<A> annotClass,
+            Map<Class<?>, MetricsCdiExtension.StereotypeMetricsInfo> stereotypeMetricsInfo) {
+
+        return metricsAnnotationsOnElement(annotated, stereotypeMetricsInfo)
                 .filter(annotClass::isInstance)
                 .map(annotation -> new LookupResult<>(matchingType(annotated), annotClass.cast(annotation)))
                 .collect(Collectors.toList());
+    }
+
+    static Stream<Annotation> metricsAnnotationsOnElement(Annotated annotated,
+                                                          Map<Class<?>, MetricsCdiExtension.StereotypeMetricsInfo>
+                                                                  stereotypeMetricsInfo) {
+        // We have to filter by annotation class ourselves using annotated.getAnnotations(), because
+        // annotated.getAnnotations(Class) delegates to the Java method. That would bypass any annotations that had been
+        // added dynamically to the configurator.
+
+        // Further, we need to create lookup results not only for explicit metrics annotations on the annotated element but
+        // also any (possibly multiple) metrics annotations via stereotypes.
+
+        return Stream.concat(annotated.getAnnotations().stream()
+                                     .filter(a -> MetricsCdiExtension.ALL_METRIC_ANNOTATIONS.contains(a.annotationType())),
+                             annotated.getAnnotations().stream()
+                                     .filter(a -> stereotypeMetricsInfo.containsKey(a.annotationType()))
+                                     .flatMap(a -> stereotypeMetricsInfo.get(a.annotationType()).metricsAnnotations().stream())
+        );
+    }
+
+    static <T extends Annotation> Stream<T> metricsAnnotationsOnElement(Annotated annotated,
+                                                          Class<T> annotationType,
+                                                          Map<Class<?>, MetricsCdiExtension.StereotypeMetricsInfo>
+                                                                  stereotypeMetricsInfo) {
+        return metricsAnnotationsOnElement(annotated, stereotypeMetricsInfo)
+                .filter(annotationType::isInstance)
+                .map(annotationType::cast);
     }
 
     /**
@@ -418,10 +449,20 @@ public final class MetricUtil {
             this.annotation = annotation;
         }
 
+        /**
+         * Returns the matching type for this lookup result.
+         *
+         * @return matching type
+         */
         public MatchingType getType() {
             return type;
         }
 
+        /**
+         * Returns the annotation for the lookup result.
+         *
+         * @return the annotation
+         */
         public A getAnnotation() {
             return annotation;
         }

@@ -38,14 +38,24 @@ include::{metrics-common}[tag=build-and-run-intro]
 .Text response:
 ----
 # TYPE base_REST_request_total counter
-# HELP base_REST_request_total The number of invocations and total response time of RESTful resource methods since the start of the server.
+# HELP base_REST_request_total The number of invocations and total response time of this RESTful resource method since the start of the server. The metric will not record the elapsed time nor count of a REST request if it resulted in an unmapped exception. Also tracks the highest recorded time duration within the previous completed full minute and lowest recorded time duration within the previous completed full minute.
 base_REST_request_total{class="io.helidon.examples.quickstart.mp.GreetResource",method="getDefaultMessage"} 0
 # TYPE base_REST_request_elapsedTime_seconds gauge
 base_REST_request_elapsedTime_seconds{class="io.helidon.examples.quickstart.mp.GreetResource",method="getDefaultMessage"} 0.0
+# TYPE base_REST_request_maxTimeDuration_seconds gauge
+base_REST_request_maxTimeDuration_seconds{class="io.helidon.examples.quickstart.mp.GreetResource",method="getDefaultMessage"} NaN
+# TYPE base_REST_request_minTimeDuration_seconds gauge
+base_REST_request_minTimeDuration_seconds{class="io.helidon.examples.quickstart.mp.GreetResource",method="getDefaultMessage"} NaN
 base_REST_request_total{class="io.helidon.examples.quickstart.mp.GreetResource",method="getMessage_java.lang.String"} 0
 base_REST_request_elapsedTime_seconds{class="io.helidon.examples.quickstart.mp.GreetResource",method="getMessage_java.lang.String"} 0.0
-base_REST_request_total{class="io.helidon.examples.quickstart.mp.GreetResource",method="updateGreeting_jakarta.json.JsonObject"} 0
-base_REST_request_elapsedTime_seconds{class="io.helidon.examples.quickstart.mp.GreetResource",method="updateGreeting_jakarta.json.JsonObject"} 0.0
+base_REST_request_maxTimeDuration_seconds{class="io.helidon.examples.quickstart.mp.GreetResource",method="getMessage_java.lang.String"} NaN
+base_REST_request_minTimeDuration_seconds{class="io.helidon.examples.quickstart.mp.GreetResource",method="getMessage_java.lang.String"} NaN
+...
+# TYPE base_REST_request_unmappedException_total counter
+# HELP base_REST_request_unmappedException_total The total number of unmapped exceptions that occur from this RESTful resouce method since the start of the server.
+base_REST_request_unmappedException_total{class="io.helidon.examples.quickstart.mp.GreetResource",method="getDefaultMessage"} 0
+base_REST_request_unmappedException_total{class="io.helidon.examples.quickstart.mp.GreetResource",method="getMessage_java.lang.String"} 0
+...
 include::{metrics-common}[tag=metrics-prometheus-output]
 ----
 
@@ -58,12 +68,15 @@ include::{metrics-common}[tag=curl-metrics-json]
   "base": {
     "REST.request":
       {
-        "count;class=io.helidon.examples.quickstart.mp.GreetResource;method=getDefaultMessage":0,
-        "elapsedTime;class=io.helidon.examples.quickstart.mp.GreetResource;method=getDefaultMessage":0.0,
-        "count;class=io.helidon.examples.quickstart.mp.GreetResource;method=getMessage_java.lang.String":0,
-        "elapsedTime;class=io.helidon.examples.quickstart.mp.GreetResource;method=getMessage_java.lang.String":0.0,
-        "count;class=io.helidon.examples.quickstart.mp.GreetResource;method=updateGreeting_jakarta.json.JsonObject":0,
-        "elapsedTime;class=io.helidon.examples.quickstart.mp.GreetResource;method=updateGreeting_jakarta.json.JsonObject":0.0
+      "count;class=io.helidon.examples.quickstart.mp.GreetResource;method=getDefaultMessage": 0,
+      "elapsedTime;class=io.helidon.examples.quickstart.mp.GreetResource;method=getDefaultMessage": 0,
+      "maxTimeDuration;class=io.helidon.examples.quickstart.mp.GreetResource;method=getDefaultMessage": null,
+      "minTimeDuration;class=io.helidon.examples.quickstart.mp.GreetResource;method=getDefaultMessage": null,
+      "count;class=io.helidon.examples.quickstart.mp.GreetResource;method=getMessage_java.lang.String": 0,
+      "elapsedTime;class=io.helidon.examples.quickstart.mp.GreetResource;method=getMessage_java.lang.String": 0,
+      "maxTimeDuration;class=io.helidon.examples.quickstart.mp.GreetResource;method=getMessage_java.lang.String": null,
+      "minTimeDuration;class=io.helidon.examples.quickstart.mp.GreetResource;method=getMessage_java.lang.String": null,
+      ...
       },
 include::{metrics-common}[tag=base-metrics-json-output]
   },
@@ -229,7 +242,7 @@ public class GreetingCards {
   @Counted(name = "cardCount", absolute = true) //<1>
   @Metered(name = "cardMeter", absolute = true, unit = MetricUnits.MILLISECONDS) //<2>
   @Timed(name = "cardTimer", absolute = true, unit = MetricUnits.MILLISECONDS) //<3>
-  public JsonObject anyCard() throws InterruptedException {
+  public JsonObject anyCard() {
     return createResponse("Here are some random cards ...");
   }
 
@@ -257,29 +270,30 @@ curl -H "Accept: application/json"  http://localhost:8080/metrics/application
 ----
 {
   "cardCount": 2,
-  "cardMeter": {  // <1>
+  "cardMeter": { // <1>
     "count": 2,
-    "meanRate": 0.3664337145491488,
-    "oneMinRate": 0.4,
-    "fiveMinRate": 0.4,
-    "fifteenMinRate": 0.4
+    "meanRate": 0.15653506570241812,
+    "oneMinRate": 0,
+    "fiveMinRate": 0,
+    "fifteenMinRate": 0
   },
   "cardTimer": { // <2>
     "count": 2,
-    "meanRate": 0.36649792432150535,
-    "oneMinRate": 0.4,
-    "fiveMinRate": 0.4,
-    "fifteenMinRate": 0.4,
-    "min": 12944,
-    "max": 2078856,
-    "mean": 1045900.0,
-    "stddev": 1032956.0,
-    "p50": 2078856.0,
-    "p75": 2078856.0,
-    "p95": 2078856.0,
-    "p98": 2078856.0,
-    "p99": 2078856.0,
-    "p999": 2078856.0
+    "elapsedTime": 2,
+    "meanRate": 0.15651866263362785,
+    "oneMinRate": 0,
+    "fiveMinRate": 0,
+    "fifteenMinRate": 0,
+    "min": 0,
+    "max": 2,
+    "mean": 1.0506565,
+    "stddev": 1.0405735,
+    "p50": 2.09123,
+    "p75": 2.09123,
+    "p95": 2.09123,
+    "p98": 2.09123,
+    "p99": 2.09123,
+    "p999": 2.09123
   }
 }
 ----
@@ -289,7 +303,7 @@ curl -H "Accept: application/json"  http://localhost:8080/metrics/application
 
 ==== Reusing Metrics
 
-You can share a metric across multiple endpoints by specifying the reusable field in the metric annotation as
+You can share a metric across multiple endpoints simply by specifying the same metric annotation as
 demonstrated below.
 
 [source,java]
@@ -316,7 +330,7 @@ public class GreetingCards {
 
   @GET
   @Produces(MediaType.APPLICATION_JSON)
-  @Counted(name = "anyCard",absolute = true)
+  @Counted(name = "anyCard", absolute = true)
   public JsonObject anyCard() throws InterruptedException {
     return createResponse("Here are some cards ...");
   }
@@ -324,7 +338,7 @@ public class GreetingCards {
   @GET
   @Path("/birthday")
   @Produces(MediaType.APPLICATION_JSON)
-  @Counted(name = "specialEventCard", absolute = true, reusable = true)  // <1>
+  @Counted(name = "specialEventCard", absolute = true)  // <1>
   public JsonObject birthdayCard() throws InterruptedException {
     return createResponse("Here are some birthday cards ...");
   }
@@ -332,7 +346,7 @@ public class GreetingCards {
   @GET
   @Path("/wedding")
   @Produces(MediaType.APPLICATION_JSON)
-  @Counted(name = "specialEventCard", absolute = true, reusable = true)  // <2>
+  @Counted(name = "specialEventCard", absolute = true)  // <2>
   public JsonObject weddingCard() throws InterruptedException {
     return createResponse("Here are some wedding cards ...");
   }

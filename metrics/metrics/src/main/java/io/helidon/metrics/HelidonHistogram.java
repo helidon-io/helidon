@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,7 +81,7 @@ final class HelidonHistogram extends MetricImpl implements Histogram {
 
     @Override
     public void prometheusData(StringBuilder sb, MetricID metricID, boolean withHelpType) {
-        appendPrometheusHistogramElements(sb, metricID, withHelpType, getCount(), snapshot());
+        appendPrometheusHistogramElements(sb, metricID, withHelpType, getCount(), getSum(), snapshot());
     }
 
     @Override
@@ -103,7 +103,8 @@ final class HelidonHistogram extends MetricImpl implements Histogram {
     @Override
     public void jsonData(JsonObjectBuilder builder, MetricID metricID) {
         JsonObjectBuilder myBuilder = JSON.createObjectBuilder()
-                .add(jsonFullKey("count", metricID), getCount());
+                .add(jsonFullKey("count", metricID), getCount())
+                .add(jsonFullKey("sum", metricID), getSum());
         Snapshot snapshot = getSnapshot();
         myBuilder = myBuilder.add(jsonFullKey("min", metricID), snapshot.getMin())
                 .add(jsonFullKey("max", metricID), snapshot.getMax())
@@ -121,6 +122,7 @@ final class HelidonHistogram extends MetricImpl implements Histogram {
 
     static final class HistogramImpl implements Histogram {
         private final LongAdder counter = new LongAdder();
+        private final LongAdder sum = new LongAdder();
         private final ExponentiallyDecayingReservoir reservoir;
 
         private HistogramImpl(Clock clock) {
@@ -131,20 +133,21 @@ final class HelidonHistogram extends MetricImpl implements Histogram {
             update((long) value);
         }
 
-        // TODO 3.0.0-JAKARTA
         @Override
         public long getSum() {
-            return 0;
+            return sum.sum();
         }
 
         @Override
         public void update(long value) {
             counter.increment();
+            sum.add(value);
             reservoir.update(value, ExemplarServiceManager.exemplarLabel());
         }
 
         public void update(long value, long timestamp) {
             counter.increment();
+            sum.add(value);
             reservoir.update(value, timestamp, ExemplarServiceManager.exemplarLabel());
         }
 

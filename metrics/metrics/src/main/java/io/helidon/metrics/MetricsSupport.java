@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,9 @@ import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.metrics.api.KeyPerformanceIndicatorMetricsSettings;
 import io.helidon.metrics.api.MetricsSettings;
 import io.helidon.metrics.api.RegistryFactory;
+import io.helidon.metrics.api.SystemTagsManager;
 import io.helidon.metrics.serviceapi.MinimalMetricsSupport;
+import io.helidon.metrics.serviceapi.PostRequestMetricsSupport;
 import io.helidon.servicecommon.rest.HelidonRestServiceSupport;
 import io.helidon.servicecommon.rest.RestServiceSettings;
 import io.helidon.webserver.Handler;
@@ -110,16 +112,29 @@ public final class MetricsSupport extends HelidonRestServiceSupport
 
     private static final Logger LOGGER = Logger.getLogger(MetricsSupport.class.getName());
 
+    /**
+     * Creates a new {@code  MetricsSupport} instance from the provided builder.
+     *
+     * @param builder the builder for preparing the new instance
+     */
     protected MetricsSupport(Builder builder) {
         super(LOGGER, builder, SERVICE_NAME);
         this.rf = builder.registryFactory.get();
         this.metricsSettings = builder.metricsSettingsBuilder.build();
+        SystemTagsManager.create(metricsSettings);
     }
 
+    /**
+     * Creates a new {@code MetricsSupport} instance from the provides settings.
+     *
+     * @param metricsSettings the metrics settings to use in preparing the {@code MetricsSupport} instance
+     * @param restServiceSettings rest services settings to use in preparing the {@code MetricsSupport} instance
+     */
     protected MetricsSupport(MetricsSettings metricsSettings, RestServiceSettings restServiceSettings) {
         super(LOGGER, restServiceSettings, SERVICE_NAME);
         rf = RegistryFactory.getInstance(metricsSettings);
         this.metricsSettings = metricsSettings;
+        SystemTagsManager.create(metricsSettings);
     }
 
     /**
@@ -376,12 +391,14 @@ public final class MetricsSupport extends HelidonRestServiceSupport
 
         rules.any((req, res) -> {
             KeyPerformanceIndicatorSupport.Context kpiContext = kpiContext(req);
+            PostRequestMetricsSupport prms = PostRequestMetricsSupport.create();
+            req.context().register(prms);
 
             kpiContext.requestHandlingStarted(kpiMetrics);
             res.whenSent()
-                    .thenAccept(r -> kpiContext.requestProcessingCompleted(
-                            r.status().code() < 500))
-                    .exceptionallyAccept(t -> kpiContext.requestProcessingCompleted(false));
+                    // Perform updates which depend on completion of request *processing* (after the response is sent).
+                    .thenAccept(r -> postRequestProcessing(prms, req, r, null, kpiContext))
+                    .exceptionallyAccept(t -> postRequestProcessing(prms, req, res, t, kpiContext));
             Exception exception = null;
             try {
                 req.next();
@@ -389,6 +406,8 @@ public final class MetricsSupport extends HelidonRestServiceSupport
                 exception = e;
                 throw e;
             } finally {
+                // Perform updates which depend on completion of request *handling* (after the server has begun request
+                // *processing* but, in the case of async requests, possibly before processing has finished).
                 kpiContext.requestHandlingCompleted(exception == null);
             }
         });
@@ -484,6 +503,15 @@ public final class MetricsSupport extends HelidonRestServiceSupport
                 .orElseGet(KeyPerformanceIndicatorSupport.Context::create);
     }
 
+    private void postRequestProcessing(PostRequestMetricsSupport prms,
+                                       ServerRequest request,
+                                       ServerResponse response,
+                                       Throwable throwable,
+                                       KeyPerformanceIndicatorSupport.Context kpiContext) {
+        kpiContext.requestProcessingCompleted(throwable == null && response.status().code() < 500);
+        prms.runTasks(request, response, throwable);
+    }
+
     private void getByName(ServerRequest req, ServerResponse res, Registry registry) {
         String metricName = req.path().param("metric");
 
@@ -556,11 +584,13 @@ public final class MetricsSupport extends HelidonRestServiceSupport
     private void optionsOne(ServerRequest req, ServerResponse res, Registry registry) {
         String metricName = req.path().param("metric");
 
-        registry.getOptionalMetricWithIDsEntry(metricName)
+        Optional.ofNullable(registry.metadataWithIDs(metricName))
                 .ifPresentOrElse(entry -> {
                     if (req.headers().isAccepted(MediaType.APPLICATION_JSON)) {
                         JsonObjectBuilder builder = JSON.createObjectBuilder();
-                        HelidonMetric.class.cast(entry.getKey()).jsonMeta(builder, entry.getValue());
+                        // The returned list of metric IDs is guaranteed to have at least one element at this point.
+                        // Use the first to find a metric which will know how to create the metadata output.
+                        HelidonMetric.class.cast(registry.getMetric(entry.getValue().get(0))).jsonMeta(builder, entry.getValue());
                         sendJson(res, builder.build());
                     } else {
                         res.status(Http.Status.NOT_ACCEPTABLE_406);
@@ -581,6 +611,9 @@ public final class MetricsSupport extends HelidonRestServiceSupport
         private Supplier<RegistryFactory> registryFactory;
         private MetricsSettings.Builder metricsSettingsBuilder = MetricsSettings.builder();
 
+        /**
+         * Creates a new builder instance.
+         */
         protected Builder() {
             super(Builder.class, MetricsSettings.Builder.DEFAULT_CONTEXT);
         }
@@ -596,6 +629,12 @@ public final class MetricsSupport extends HelidonRestServiceSupport
             return build(MetricsSupport::new);
         }
 
+        /**
+         * Creates a new {@code MetricsSupport} instance from the provided factory.
+         *
+         * @param factory the factory which maps the builder to a {@code MetricsSupport} instance
+         * @return the created {@code MetricsSupport} instance
+         */
         protected MetricsSupport build(Function<Builder, MetricsSupport> factory) {
             if (null == registryFactory) {
                 registryFactory = () -> RegistryFactory.getInstance(MetricsSettings.create(config()));

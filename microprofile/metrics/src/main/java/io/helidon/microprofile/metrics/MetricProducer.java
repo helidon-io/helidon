@@ -127,71 +127,35 @@ class MetricProducer {
     }
 
     @Produces
-    private Counter produceCounterDefault(MetricRegistry registry, InjectionPoint ip) {
-        return produceCounter(registry, ip);
-    }
-
-    @Produces
-    @VendorDefined
     private Counter produceCounter(MetricRegistry registry, InjectionPoint ip) {
         return produceMetric(registry, ip, Counted.class, registry::getCounters,
                 registry::counter, Counter.class);
     }
 
     @Produces
-    private Meter produceMeterDefault(MetricRegistry registry, InjectionPoint ip) {
-        return produceMeter(registry, ip);
-    }
-
-    @Produces
-    @VendorDefined
     private Meter produceMeter(MetricRegistry registry, InjectionPoint ip) {
         return produceMetric(registry, ip, Metered.class, registry::getMeters,
                 registry::meter, Meter.class);
     }
 
     @Produces
-    private Timer produceTimerDefault(MetricRegistry registry, InjectionPoint ip) {
-        return produceTimer(registry, ip);
-    }
-
-    @Produces
-    @VendorDefined
     private Timer produceTimer(MetricRegistry registry, InjectionPoint ip) {
         return produceMetric(registry, ip, Timed.class, registry::getTimers, registry::timer, Timer.class);
     }
 
     @Produces
-    @VendorDefined
     private SimpleTimer produceSimpleTimer(MetricRegistry registry, InjectionPoint ip) {
         return produceMetric(registry, ip, SimplyTimed.class, registry::getSimpleTimers, registry::simpleTimer,
                 SimpleTimer.class);
     }
 
     @Produces
-    private SimpleTimer produceSimpleTimerDefault(MetricRegistry registry, InjectionPoint ip) {
-        return produceSimpleTimer(registry, ip);
-    }
-
-    @Produces
-    private Histogram produceHistogramDefault(MetricRegistry registry, InjectionPoint ip) {
-        return produceHistogram(registry, ip);
-    }
-
-    @Produces
-    @VendorDefined
     private Histogram produceHistogram(MetricRegistry registry, InjectionPoint ip) {
         return produceMetric(registry, ip, null, registry::getHistograms,
                 registry::histogram, Histogram.class);
     }
 
     @Produces
-    private ConcurrentGauge produceConcurrentGaugeDefault(MetricRegistry registry, InjectionPoint ip) {
-        return produceConcurrentGauge(registry, ip);
-    }
-
-    @Produces
-    @VendorDefined
     private ConcurrentGauge produceConcurrentGauge(MetricRegistry registry, InjectionPoint ip) {
         return produceMetric(registry, ip, org.eclipse.microprofile.metrics.annotation.ConcurrentGauge.class,
                 registry::getConcurrentGauges, registry::concurrentGauge, ConcurrentGauge.class);
@@ -206,10 +170,8 @@ class MetricProducer {
      * @return requested gauge
      */
     @Produces
-    @VendorDefined
     @SuppressWarnings("unchecked")
-    private <T /* extends Number */> Gauge<T> produceGauge(MetricRegistry registry, InjectionPoint ip) {
-        // TODO uncomment preceding clause once MP metrics enforces restriction
+    private <T extends Number> Gauge<T> produceGauge(MetricRegistry registry, InjectionPoint ip) {
         Metric metric = ip.getAnnotated().getAnnotation(Metric.class);
         return (Gauge<T>) registry.getGauges().entrySet().stream()
                 .filter(entry -> entry.getKey().getName().equals(metric.name()))
@@ -219,25 +181,9 @@ class MetricProducer {
     }
 
     /**
-     * Returns the default {@link Gauge} matching the criteria.
-     *
-     * @param <T>      type of the {@code Gauge}
-     * @param registry metric registry
-     * @param ip       injection point being resolved
-     * @return requested gauge
-     */
-    @Produces
-    private <T /* extends Number */> Gauge<T> produceGaugeDefault(MetricRegistry registry,
-            InjectionPoint ip) {
-        // TODO uncomment preceding clause once MP metrics enforces restrictions
-        return produceGauge(registry, ip);
-    }
-
-    /**
      * Returns an existing metric if one exists that matches the injection point
-     * criteria and is also reusable, or if there is none registers and returns a new one
-     * using the caller-provided function. If the caller refers to an existing metric that is
-     * not reusable then the method throws an {@code IllegalArgumentException}.
+     * criteria, or if there is none registers and returns a new one
+     * using the caller-provided function.
      *
      * @param <T> the type of the metric
      * @param <U> the type of the annotation which marks a registration of the metric type
@@ -259,37 +205,17 @@ class MetricProducer {
         final MetricID metricID = new MetricID(getName(metricAnno, ip), tags);
 
         T result = getTypedMetricsFn.get().get(metricID);
-        final Metadata newMetadata = newMetadata(ip, metricAnno, MetricType.from(clazz));
-        /*
-         * If the injection point does not include the corresponding metric  annotation which would
-         * declare the metric, then we do not need to enforce reuse restrictions because an @Inject
-         * or a @Metric by itself on an injection point is lookup-or-register.
-         */
         if (result != null) {
             final Annotation specificMetricAnno = annotationClass == null ? null
                     : ip.getAnnotated().getAnnotation(annotationClass);
             if (specificMetricAnno == null) {
                 return result;
             }
-            final Metadata existingMetadata = registry.getMetadata().get(metricID.getName());
-            enforceReusability(metricID, existingMetadata, newMetadata);
+
         } else {
+            final Metadata newMetadata = newMetadata(ip, metricAnno, MetricType.from(clazz));
             result = registerFn.apply(newMetadata, tags);
         }
         return result;
-    }
-
-    private static void enforceReusability(MetricID metricID, Metadata existingMetadata,
-              Metadata newMetadata, Tag... tags) {
-        // TODO 3.0.0-JAKARTA
-        // reusable no longer part of API
-//        if (existingMetadata.isReusable() != newMetadata.isReusable()) {
-//            throw new IllegalArgumentException("Attempt to reuse metric " + metricID
-//                    + " with inconsistent isReusable setting");
-//        }
-//        if (!newMetadata.isReusable()) {
-//            throw new IllegalArgumentException("Attempting to reuse metric "
-//                    + metricID + " that is not reusable");
-//        }
     }
 }

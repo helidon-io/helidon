@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,16 +20,17 @@ import java.lang.management.ClassLoadingMXBean;
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
+import java.lang.management.MemoryUsage;
 import java.lang.management.OperatingSystemMXBean;
 import java.lang.management.RuntimeMXBean;
 import java.lang.management.ThreadMXBean;
 import java.util.List;
+import java.util.function.Function;
 
 import io.helidon.metrics.api.BaseMetricsSettings;
 import io.helidon.metrics.api.MetricsSettings;
 
 import org.eclipse.microprofile.metrics.Counter;
-import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricType;
@@ -55,6 +56,8 @@ import org.eclipse.microprofile.metrics.Tag;
  * {@code {{@value BaseMetricsSettings.Builder#}}metrics.base.enabled=false}.
  */
 final class BaseRegistry extends Registry {
+
+    private static final Tag[] NO_TAGS = new Tag[0];
 
     private static final Metadata MEMORY_USED_HEAP = Metadata.builder()
             .withName("memory.usedHeap")
@@ -218,33 +221,33 @@ final class BaseRegistry extends Registry {
         MemoryMXBean memoryBean = ManagementFactory.getMemoryMXBean();
 
         // load all base metrics
-        register(result, MEMORY_USED_HEAP, (Gauge<Long>) () -> memoryBean.getHeapMemoryUsage().getUsed());
-        register(result, MEMORY_COMMITTED_HEAP, (Gauge<Long>) () -> memoryBean.getHeapMemoryUsage().getCommitted());
-        register(result, MEMORY_MAX_HEAP, (Gauge<Long>) () -> memoryBean.getHeapMemoryUsage().getMax());
+        register(result, MEMORY_USED_HEAP, memoryBean.getHeapMemoryUsage(), MemoryUsage::getUsed);
+        register(result, MEMORY_COMMITTED_HEAP, memoryBean.getHeapMemoryUsage(), MemoryUsage::getCommitted);
+        register(result, MEMORY_MAX_HEAP, memoryBean.getHeapMemoryUsage(), MemoryUsage::getMax);
 
         RuntimeMXBean runtimeBean = ManagementFactory.getRuntimeMXBean();
-        register(result, JVM_UPTIME, (Gauge<Long>) runtimeBean::getUptime);
+        register(result, JVM_UPTIME, runtimeBean, RuntimeMXBean::getUptime);
 
         ThreadMXBean threadBean = ManagementFactory.getThreadMXBean();
-        register(result, THREAD_COUNT, (Gauge<Integer>) threadBean::getThreadCount);
-        register(result, THREAD_DAEMON_COUNT, (Gauge<Integer>) threadBean::getDaemonThreadCount);
-        register(result, THREAD_MAX_COUNT, (Gauge<Integer>) threadBean::getPeakThreadCount);
+        register(result, THREAD_COUNT, threadBean, ThreadMXBean::getThreadCount);
+        register(result, THREAD_DAEMON_COUNT, threadBean, ThreadMXBean::getDaemonThreadCount);
+        register(result, THREAD_MAX_COUNT, threadBean, ThreadMXBean::getPeakThreadCount);
 
         ClassLoadingMXBean clBean = ManagementFactory.getClassLoadingMXBean();
-        register(result, CL_LOADED_COUNT, (Gauge<Integer>) clBean::getLoadedClassCount);
+        register(result, CL_LOADED_COUNT, clBean, ClassLoadingMXBean::getLoadedClassCount);
         register(result, CL_LOADED_TOTAL, (SimpleCounter) clBean::getTotalLoadedClassCount);
         register(result, CL_UNLOADED_COUNT, (SimpleCounter) clBean::getUnloadedClassCount);
 
         OperatingSystemMXBean osBean = ManagementFactory.getOperatingSystemMXBean();
-        register(result, OS_AVAILABLE_CPU, (Gauge<Integer>) osBean::getAvailableProcessors);
-        register(result, OS_LOAD_AVERAGE, (Gauge<Double>) osBean::getSystemLoadAverage);
+        register(result, OS_AVAILABLE_CPU, osBean, OperatingSystemMXBean::getAvailableProcessors);
+        register(result, OS_LOAD_AVERAGE, osBean, OperatingSystemMXBean::getSystemLoadAverage);
 
         List<GarbageCollectorMXBean> gcBeans = ManagementFactory.getGarbageCollectorMXBeans();
         for (GarbageCollectorMXBean gcBean : gcBeans) {
             String poolName = gcBean.getName();
             register(result, gcCountMeta(), (SimpleCounter) gcBean::getCollectionCount,
                     new Tag("name", poolName));
-            register(result, gcTimeMeta(), (Gauge<Long>) gcBean::getCollectionTime,
+            register(result, gcTimeMeta(), gcBean, GarbageCollectorMXBean::getCollectionTime,
                     new Tag("name", poolName));
         }
 
@@ -286,7 +289,22 @@ final class BaseRegistry extends Registry {
         }
     }
 
-    @FunctionalInterface
+    private static <T, R extends Number>  void register(BaseRegistry registry,
+                                                        Metadata meta,
+                                                        T object,
+                                                        Function<T, R> func,
+                                                        Tag... tags) {
+        if (registry.metricsSettings.baseMetricsSettings().isBaseMetricEnabled(meta.getName())
+                && registry.metricsSettings.isMetricEnabled(Type.BASE, meta.getName())) {
+            registry.gauge(meta, object, func, tags);
+        }
+    }
+
+    private static <T, R extends Number>  void register(BaseRegistry registry, Metadata meta, T object, Function<T, R> func) {
+        register(registry, meta, object, func, NO_TAGS);
+    }
+
+        @FunctionalInterface
     private interface SimpleCounter extends Counter {
         @Override
         default void inc() {

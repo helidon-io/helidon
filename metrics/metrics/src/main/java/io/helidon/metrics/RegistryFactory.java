@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,6 +48,13 @@ public class RegistryFactory implements io.helidon.metrics.api.RegistryFactory {
     private final Semaphore metricsSettingsAccess = new Semaphore(1);
     private MetricsSettings metricsSettings;
 
+    /**
+     * Create a new instance.
+     *
+     * @param metricsSettings metrics setting to use in preparing the registry factory
+     * @param appRegistry application registry to provide from the factory
+     * @param vendorRegistry vendor registry to provide from the factory
+     */
     protected RegistryFactory(MetricsSettings metricsSettings, Registry appRegistry, Registry vendorRegistry) {
         this.metricsSettings = metricsSettings;
         registries.put(Type.APPLICATION, appRegistry);

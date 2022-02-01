@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -93,6 +93,7 @@ class HelidonHistogramTest {
             + "# TYPE application_file_sizes_bytes summary\n"
             + "# HELP application_file_sizes_bytes Users file size\n"
             + "application_file_sizes_bytes_count 200\n"
+            + "application_file_sizes_bytes_sum 10127\n"
             + "application_file_sizes_bytes{quantile=\"0.5\"} 48000\n"
             + "application_file_sizes_bytes{quantile=\"0.75\"} 75000\n"
             + "application_file_sizes_bytes{quantile=\"0.95\"} 96000\n"
@@ -112,6 +113,8 @@ class HelidonHistogramTest {
 
     // name{tag="val",tag="val"} where the braces and tags within are optional
     private static final Pattern PROMETHEUS_KEY_PATTERN = Pattern.compile("([^{]+)(?:\\{([^}]+)})?+");
+
+    private static final long SAMPLE_INT_SUM = Arrays.stream(SAMPLE_INT_DATA).sum();
 
     /**
      * Parses a {@code Stream| of text lines (presumably in Prometheus/OpenMetrics format) into a {@code Stream}
@@ -208,7 +211,8 @@ class HelidonHistogramTest {
                   () -> assertThat(delegatingHistoInt.getSnapshot().getValues(),
                                    is(Arrays.stream(SAMPLE_INT_DATA).asLongStream().toArray())),
                   () -> assertThat(histoLong.getSnapshot().getValues(), is(SAMPLE_LONG_DATA)),
-                  () -> assertThat(delegatingHistoLong.getSnapshot().getValues(), is(SAMPLE_LONG_DATA))
+                  () -> assertThat(delegatingHistoLong.getSnapshot().getValues(), is(SAMPLE_LONG_DATA)),
+                  () -> assertThat(histoInt.getSum(), is(equalTo(SAMPLE_INT_SUM)))
         );
 
     }

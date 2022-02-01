@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import java.util.concurrent.atomic.DoubleAccumulator;
 import java.util.concurrent.atomic.DoubleAdder;
 import java.util.concurrent.atomic.LongAccumulator;
 import java.util.concurrent.atomic.LongAdder;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import jakarta.json.JsonObjectBuilder;
@@ -35,8 +36,7 @@ import org.eclipse.microprofile.metrics.MetricID;
 /**
  * Gauge implementation.
  */
-final class HelidonGauge<T /* extends Number */> extends MetricImpl implements Gauge<T> {
-    // TODO uncomment above once MP metrics enforces the Number restriction
+final class HelidonGauge<T extends Number> extends MetricImpl implements Gauge<T> {
     private final Supplier<T> value;
 
     private HelidonGauge(String registryType, Metadata metadata, Gauge<T> metric) {
@@ -45,10 +45,21 @@ final class HelidonGauge<T /* extends Number */> extends MetricImpl implements G
         value = metric::getValue;
     }
 
-    static <S /* extends Number */> HelidonGauge<S> create(String registryType, Metadata metadata,
+    static <S extends Number> HelidonGauge<S> create(String registryType, Metadata metadata,
             Gauge<S> metric) {
-        // TODO uncomment above once MP metrics enforces the Number restriction
         return new HelidonGauge<>(registryType, metadata, metric);
+    }
+
+    static <T, S extends Number> HelidonGauge<S> create(String registryType, Metadata metadata,
+                                                        T object,
+                                                        Function<T, S> func) {
+        return new HelidonGauge<>(registryType, metadata, () -> func.apply(object));
+    }
+
+    static <T, S extends Number> HelidonGauge<S> create(String registryType,
+                                                         Metadata metadata,
+                                                         Supplier<S> valueSupplier) {
+        return new HelidonGauge<>(registryType, metadata, valueSupplier::get);
     }
 
     @Override
@@ -68,50 +79,41 @@ final class HelidonGauge<T /* extends Number */> extends MetricImpl implements G
 
     @Override
     public void jsonData(JsonObjectBuilder builder, MetricID metricID) {
-        // TODO uncomment 'value' declaration below and remove 'untypedValue' once MP metrics enforces restriction
-        // T value = getValue();
-        T untypedValue = getValue();
+        T value = getValue();
         String nameWithTags = jsonFullKey(metricID);
 
-        // TODO remove following 'if' and 'value' assignment once MP metrics enforces restriction,
-        // promoting the nested 'if' one level.
-        if (untypedValue instanceof Number) {
-            Number value = (Number) untypedValue;
-            if (value instanceof AtomicInteger) {
-                builder.add(nameWithTags, value.doubleValue());
-            } else if (value instanceof AtomicLong) {
-                builder.add(nameWithTags, value.longValue());
-            } else if (value instanceof BigDecimal) {
-                builder.add(nameWithTags, (BigDecimal) value);
-            } else if (value instanceof BigInteger) {
-                builder.add(nameWithTags, (BigInteger) value);
-            } else if (value instanceof Byte) {
-                builder.add(nameWithTags, value.intValue());
-            } else if (value instanceof Double) {
-                builder.add(nameWithTags, (Double) value);
-            } else if (value instanceof DoubleAccumulator) {
-                builder.add(nameWithTags, value.doubleValue());
-            } else if (value instanceof DoubleAdder) {
-                builder.add(nameWithTags, value.doubleValue());
-            } else if (value instanceof Float) {
-                builder.add(nameWithTags, value.floatValue());
-            } else if (value instanceof Integer) {
-                builder.add(nameWithTags, (Integer) value);
-            } else if (value instanceof Long) {
-                builder.add(nameWithTags, (Long) value);
-            } else if (value instanceof LongAccumulator) {
-                builder.add(nameWithTags, value.longValue());
-            } else if (value instanceof LongAdder) {
-                builder.add(nameWithTags, value.longValue());
-            } else if (value instanceof Short) {
-                builder.add(nameWithTags, value.intValue());
-            } else {
-                // Might be a developer-provided class which extends Number.
-                builder.add(nameWithTags, value.doubleValue());
-            }
-        // TODO remove following 'else' and 'builder.add' once MP metrics enforces restriction
+
+        if (value instanceof AtomicInteger) {
+            builder.add(nameWithTags, value.doubleValue());
+        } else if (value instanceof AtomicLong) {
+            builder.add(nameWithTags, value.longValue());
+        } else if (value instanceof BigDecimal) {
+            builder.add(nameWithTags, (BigDecimal) value);
+        } else if (value instanceof BigInteger) {
+            builder.add(nameWithTags, (BigInteger) value);
+        } else if (value instanceof Byte) {
+            builder.add(nameWithTags, value.intValue());
+        } else if (value instanceof Double) {
+            builder.add(nameWithTags, (Double) value);
+        } else if (value instanceof DoubleAccumulator) {
+            builder.add(nameWithTags, value.doubleValue());
+        } else if (value instanceof DoubleAdder) {
+            builder.add(nameWithTags, value.doubleValue());
+        } else if (value instanceof Float) {
+            builder.add(nameWithTags, value.floatValue());
+        } else if (value instanceof Integer) {
+            builder.add(nameWithTags, (Integer) value);
+        } else if (value instanceof Long) {
+            builder.add(nameWithTags, (Long) value);
+        } else if (value instanceof LongAccumulator) {
+            builder.add(nameWithTags, value.longValue());
+        } else if (value instanceof LongAdder) {
+            builder.add(nameWithTags, value.longValue());
+        } else if (value instanceof Short) {
+            builder.add(nameWithTags, value.intValue());
         } else {
-            builder.add(nameWithTags, String.valueOf(value));
+            // Might be a developer-provided class which extends Number.
+            builder.add(nameWithTags, value.doubleValue());
         }
     }
 

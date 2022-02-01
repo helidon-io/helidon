@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,19 +52,5 @@ public class TestNoOpRegistry {
         SimpleTimer simplerTimer = appRegistry.simpleTimer("testForUnsupportedOp");
         SimpleTimer otherSimpleTimer = appRegistry.simpleTimer("someOtherName");
         assertThat("Same metric instance for different names", otherSimpleTimer, is(not(sameInstance(simplerTimer))));
-    }
-
-    @Test
-    void checkRegisterExistingMetric() {
-        Metadata metadata = Metadata.builder()
-                .withName("myOwnSimpleTimer")
-                .withType(MetricType.SIMPLE_TIMER)
-                .build();
-        String metricName = "myOwnSimpleTimer";
-        SimpleTimer simpleTimer = NoOpMetricImpl.NoOpSimpleTimerImpl.create(MetricRegistry.Type.APPLICATION.getName(), metadata);
-        appRegistry.register(metricName, simpleTimer);
-        Assertions.assertThrows(IllegalArgumentException.class,
-                                () -> appRegistry.register(metricName, simpleTimer),
-                                "Expected failure due to duplicate metric registration");
     }
 }

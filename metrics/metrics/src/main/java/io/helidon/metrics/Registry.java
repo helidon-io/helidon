@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import io.helidon.metrics.api.AbstractRegistry;
@@ -55,12 +57,9 @@ public class Registry extends AbstractRegistry<HelidonMetric> {
         return new Registry(type, registrySettings);
     }
 
-    /**
-     * Update the registry settings for this registry.
-     *
-     * @param registrySettings new settings to use going forward
-     */
+    @Override
     public void update(RegistrySettings registrySettings) {
+        super.update(registrySettings);
         this.registrySettings.set(registrySettings);
     }
 
@@ -75,19 +74,19 @@ public class Registry extends AbstractRegistry<HelidonMetric> {
         MetricType metricType = deriveType(metadata.getTypeRaw(), metric);
         switch (metricType) {
             case COUNTER:
-                return HelidonCounter.create(registryType().getName(), metadata, (Counter) metric);
+                return HelidonCounter.create(type(), metadata, (Counter) metric);
             case GAUGE:
-                return HelidonGauge.create(registryType().getName(), metadata, (Gauge<?>) metric);
+                return HelidonGauge.create(type(), metadata, (Gauge) metric);
             case HISTOGRAM:
-                return HelidonHistogram.create(registryType().getName(), metadata, (Histogram) metric);
+                return HelidonHistogram.create(type(), metadata, (Histogram) metric);
             case METERED:
-                return HelidonMeter.create(registryType().getName(), metadata, (Meter) metric);
+                return HelidonMeter.create(type(), metadata, (Meter) metric);
             case TIMER:
-                return HelidonTimer.create(registryType().getName(), metadata, (Timer) metric);
+                return HelidonTimer.create(type(), metadata, (Timer) metric);
             case SIMPLE_TIMER:
-                return HelidonSimpleTimer.create(registryType().getName(), metadata, (SimpleTimer) metric);
+                return HelidonSimpleTimer.create(type(), metadata, (SimpleTimer) metric);
             case CONCURRENT_GAUGE:
-                return HelidonConcurrentGauge.create(registryType().getName(), metadata, (ConcurrentGauge) metric);
+                return HelidonConcurrentGauge.create(type(), metadata, (ConcurrentGauge) metric);
             case INVALID:
             default:
                 throw new IllegalArgumentException("Unexpected metric type " + metricType
@@ -95,13 +94,14 @@ public class Registry extends AbstractRegistry<HelidonMetric> {
         }
     }
 
-    @Override
-    protected RegistrySettings registrySettings() {
-        return registrySettings.get();
-    }
-
+    /**
+     * Creates a new instance.
+     *
+     * @param type registry type for the new registry
+     * @param registrySettings registry settings to influence the created registry
+     */
     protected Registry(Type type, RegistrySettings registrySettings) {
-        super(type, HelidonMetric.class);
+        super(type, HelidonMetric.class, registrySettings);
         this.registrySettings.set(registrySettings);
     }
 
@@ -118,6 +118,11 @@ public class Registry extends AbstractRegistry<HelidonMetric> {
     }
 
     @Override
+    protected <R extends Number> Gauge<R> createGauge(Metadata metadata, Supplier<R> supplier) {
+        return HelidonGauge.create(type(), metadata, supplier);
+    }
+
+    @Override
     protected Map<MetricType, BiFunction<String, Metadata, HelidonMetric>> prepareMetricFactories() {
         // Omit gauge because creating a gauge requires an existing delegate instance.
         // These factory methods do not use delegates.
@@ -127,6 +132,13 @@ public class Registry extends AbstractRegistry<HelidonMetric> {
                 MetricType.TIMER, HelidonTimer::create,
                 MetricType.SIMPLE_TIMER, HelidonSimpleTimer::create,
                 MetricType.CONCURRENT_GAUGE, HelidonConcurrentGauge::create);
+    }
+
+    @Override
+    protected <T, R extends Number> Gauge<R> createGauge(Metadata metadata,
+                                                              T object,
+                                                              Function<T, R> func) {
+        return HelidonGauge.create(type(), metadata, object, func);
     }
 
     // -- declarations which let us keep the methods in the superclass protected; we do not want them public.
