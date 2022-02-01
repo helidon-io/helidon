@@ -32,6 +32,10 @@
         Integration with TestNG to support tests with CDI injection
     </description>
 
+    <properties>
+        <helidon.services.skip>false</helidon.services.skip>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.microprofile.cdi</groupId>
