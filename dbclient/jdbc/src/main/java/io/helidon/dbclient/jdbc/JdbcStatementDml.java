@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,16 +53,9 @@ class JdbcStatementDml extends JdbcStatement<DbStatementDml, Single<Long>> imple
                                    CompletableFuture<Void> statementFuture,
                                    CompletableFuture<Long> queryFuture) {
 
-        return Single.create(connection())
-                .flatMapSingle(connection -> doExecute(dbContext, connection, statementFuture, queryFuture));
-    }
-
-    private Single<Long> doExecute(DbClientServiceContext dbContext,
-                                   Connection connection,
-                                   CompletableFuture<Void> statementFuture,
-                                   CompletableFuture<Long> queryFuture) {
-
-        executorService().submit(() -> callStatement(dbContext, connection, statementFuture, queryFuture));
+        executorService().submit(() -> {
+            connection().thenAccept(conn -> callStatement(dbContext, conn, statementFuture, queryFuture));
+        });
 
         // the query future is reused, as it completes with the number of updated records
         return Single.create(queryFuture);
