@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -57,10 +57,10 @@ The discovery phase is carried out as follows (in no particular order):
 
 If no `Application` subclasses are found, create a _synthetic_ `Application` subclass that includes
 all beans gathered in steps (2) and (3) and set the application path to be "/" &mdash;this is the path
-normally defined using the `@ApplicationPath` annotation. If one or more
-`Application` subclasses are found, use those subclasses (and their application paths) and discard
-the collections in steps (2) and (3), in favor of calling the corresponding methods provided by
-the subclasses.
+normally defined using the `@ApplicationPath` annotation.
+If one or more `Application` subclasses are found, call the `getClasses` and `getSingletons` methods
+in each subclass using the collections in steps (2) and (3) only as defaults, i.e. if these methods
+both return empty sets.
 
 NOTE: Helidon treats `@Path` and `@Provided` as bean-definining annotations but, as stated above,
 `Application` subclasses may require additional annotations depending on the discovery mode.
@@ -90,3 +90,19 @@ public class MyResource {
 This approach effectively moves the scope of `Application` subclass instances to
 request scope in order to access the correct subclass for the resource method being
 executed.
+
+== Injection Managers in Helidon
+
+Jersey does not currently provide support for multiple `Application` subclasses.
+As a result, it creates a single internal _injection manager_ for your entire application,
+but this is insufficient when multiple `Application` subclasses are present.
+Helidon creates a separate injection manager
+for each `Application` subclass, and a single parent injection manager for your
+application. Each `Application` subclass injection manager delegates to the parent
+injection manager.
+
+Due to an implementation strategy in Jersey, `ParamConverterProvider` 's must be
+registered in the parent manager for proper registration and initialization. Thus,
+providers of this type will be shared and accessible by all `Application` subclasses,
+even if your code tries to limit their access. This is likely to change in future
+versions of Jersey/Helidon and does not typically impact how your application runs.
