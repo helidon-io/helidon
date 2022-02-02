@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2016, 2021 Oracle and/or its affiliates.
+    Copyright (c) 2016, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -72,7 +72,7 @@
         <version.lib.shrinkwrap-resolver>3.0.1</version.lib.shrinkwrap-resolver>
         <version.lib.spotbugs-annotations>3.1.12</version.lib.spotbugs-annotations>
         <version.lib.surefire.testng>3.0.0-M5</version.lib.surefire.testng>
-        <version.lib.testng>7.4.0</version.lib.testng>
+        <version.lib.testng>7.5</version.lib.testng>
         <version.lib.zipkin.junit>2.12.5</version.lib.zipkin.junit>
         <version.lib.bedrock>5.0.11</version.lib.bedrock>
         <version.lib.awaitility>3.1.6</version.lib.awaitility>
@@ -1071,6 +1071,12 @@
                 <groupId>org.testng</groupId>
                 <artifactId>testng</artifactId>
                 <version>${version.lib.testng}</version>
+                    <exclusions>
+                        <exclusion>
+                            <groupId>com.google.code.findbugs</groupId>
+                            <artifactId>jsr305</artifactId>
+                        </exclusion>
+                    </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.jboss.arquillian.junit</groupId>
