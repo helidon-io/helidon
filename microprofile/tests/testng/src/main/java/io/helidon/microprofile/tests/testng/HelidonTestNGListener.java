@@ -135,7 +135,7 @@ public class HelidonTestNGListener implements IClassListener, ITestListener {
         Object[] instances = iTestClass.getInstances(false);
 
         for (Object instance : instances) {
-            injectTestToCDI(instance, iTestClass.getRealClass());
+            injectTestToCdi(instance, iTestClass.getRealClass());
         }
     }
 
@@ -198,7 +198,7 @@ public class HelidonTestNGListener implements IClassListener, ITestListener {
     /*
      * Helper method to inject TestNG initialized classes into CDI Container.
      */
-    private <T> void injectTestToCDI(Object bean, final Class<T> clazz) {
+    private <T> void injectTestToCdi(Object bean, final Class<T> clazz) {
         BeanManager beanManager = CDI.current().getBeanManager();
 
         AnnotatedType<T> annotatedType = beanManager.createAnnotatedType(clazz);
