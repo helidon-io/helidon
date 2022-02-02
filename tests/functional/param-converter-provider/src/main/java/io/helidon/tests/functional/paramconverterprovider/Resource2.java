@@ -16,9 +16,9 @@
 
 package io.helidon.tests.functional.paramconverterprovider;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.QueryParam;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.QueryParam;
 
 @Path("hello2")
 public class Resource2 {
