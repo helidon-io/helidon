@@ -1300,7 +1300,7 @@ public final class OidcConfig {
 
             config.get("client-timeout-millis").asLong().ifPresent(this::clientTimeoutMillis);
 
-            config.get("cors").as(CrossOriginConfig.class).ifPresent(this::crossOriginConfig);
+            config.get("cors").as(CrossOriginConfig::create).ifPresent(this::crossOriginConfig);
 
             return this;
         }
