@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,8 +31,6 @@ import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.container.ResourceInfo;
 import javax.ws.rs.core.Context;
 
-import io.helidon.lra.coordinator.client.CoordinatorClient;
-
 @ConstrainedTo(RuntimeType.SERVER)
 class JaxRsServerFilter implements ContainerRequestFilter, ContainerResponseFilter {
 
@@ -40,9 +38,6 @@ class JaxRsServerFilter implements ContainerRequestFilter, ContainerResponseFilt
 
     @Context
     private ResourceInfo resourceInfo;
-
-    @Inject
-    private CoordinatorClient coordinatorClient;
 
     @Inject
     private HandlerService handlerService;
