@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,7 +56,6 @@ import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
  * The BareResponseImpl.
  */
 class BareResponseImpl implements BareResponse {
-
     private static final Logger LOGGER = Logger.getLogger(BareResponseImpl.class.getName());
 
     // See HttpConversionUtil.ExtensionHeaderNames
@@ -76,6 +75,7 @@ class BareResponseImpl implements BareResponse {
     private final HttpHeaders requestHeaders;
     private final ChannelFuture channelClosedFuture;
     private final GenericFutureListener<? extends Future<? super Void>> channelClosedListener;
+    private final CompletableFuture<ChannelFutureListener> originalEntityAnalyzed;
 
     // Accessed by Subscriber method threads
     private Flow.Subscription subscription;
@@ -103,6 +103,7 @@ class BareResponseImpl implements BareResponse {
                      CompletableFuture<ChannelFutureListener> requestEntityAnalyzed,
                      long requestId) {
         this.requestContext = requestContext;
+        this.originalEntityAnalyzed = requestEntityAnalyzed;
         this.requestEntityAnalyzed = requestEntityAnalyzed;
         this.responseFuture = new CompletableFuture<>();
         this.headersFuture = new CompletableFuture<>();
@@ -192,26 +193,44 @@ class BareResponseImpl implements BareResponse {
         // Add keep alive header as per:
         // http://www.w3.org/Protocols/HTTP/1.1/draft-ietf-http-v11-spec-01.html#Connection
         // If already set (e.g. WebSocket upgrade), do not override
-        if (keepAlive) {
+        // if response Connection header is set explicitly to close, we can ignore the following
+        if (!keepAlive || HttpHeaderValues.CLOSE.contentEqualsIgnoreCase(response.headers().get(HttpHeaderNames.CONNECTION))) {
+            response.headers().remove(HttpHeaderNames.CONNECTION);
+            originalEntityAnalyzed.complete(ChannelFutureListener.CLOSE);
+        } else {
             if (!requestContext.requestCompleted()) {
                 LOGGER.finer(() -> log("Request content not fully read with keep-alive: true", channel));
-                if (!requestContext.hasRequests() || requestContext.requestCancelled()) {
-                    requestEntityAnalyzed = requestEntityAnalyzed.thenApply(listener -> {
-                        if (listener.equals(ChannelFutureListener.CLOSE)) {
-                            response.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.CLOSE);
-                        } else if (!headers.containsKey(HttpHeaderNames.CONNECTION.toString())) {
-                            response.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE);
-                        }
-                        return listener;
-                    });
-                    //We are not sure which Connection header value should be set.
-                    //If unhandled entity is only one content large, we can keep the keep-alive
-                    channel.read();
-                } else {
-                    response.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.CLOSE);
-                    requestEntityAnalyzed.complete(ChannelFutureListener.CLOSE);
-                    throw new IllegalStateException("Cannot request entity and send response without "
-                                                            + "waiting for it to be handled");
+
+                if (!isWebSocketUpgrade) {
+                    if (requestContext.isDataRequested()) {
+                        // there are pending requests, we have emitted some data and request was not explicitly canceled
+                        // this is a bug in code, where entity is requested and not fully processed
+                        // throwing an exception here is a breaking change (also this may be an intermittent problem
+                        // as it may depend on thread race)
+                        HttpRequest request = requestContext.request();
+                        LOGGER.warning("Entity was requested and not fully consumed before a response is sent. "
+                                               + "This is not supported. Connection will be closed. Please fix your route for "
+                                               + request.method() + " " + request.uri());
+
+                        // let's close this connection, as it is in an unexpected state
+                        response.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.CLOSE);
+                        originalEntityAnalyzed.complete(ChannelFutureListener.CLOSE);
+                    } else {
+                        // we want to consume the entity and keep alive
+                        // entity must be consumed here, so we do not close connection in forwarding handler
+                        // because of unconsumed payload (the following code will only succeed if there is no subscriber)
+                        requestContext.publisher()
+                                .forEach(DataChunk::release)
+                                .onComplete(() -> {
+                                    response.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE);
+                                    originalEntityAnalyzed.complete(ChannelFutureListener.CLOSE_ON_FAILURE);
+                                })
+                                .onError(t -> {
+                                    response.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.CLOSE);
+                                    originalEntityAnalyzed.complete(ChannelFutureListener.CLOSE);
+                                })
+                                .ignoreElement();
+                    }
                 }
             } else if (!headers.containsKey(HttpHeaderNames.CONNECTION.toString())) {
                 response.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE);
@@ -220,8 +239,8 @@ class BareResponseImpl implements BareResponse {
 
         // Content length optimization attempt
         if (!lengthOptimization) {
-            LOGGER.fine(() -> log("Writing headers %s", status));
             requestEntityAnalyzed = requestEntityAnalyzed.thenApply(listener -> {
+                LOGGER.fine(() -> log("Writing headers %s", status));
                 requestContext.runInScope(() -> orderedWrite(this::initWriteResponse));
                 return listener;
             });
