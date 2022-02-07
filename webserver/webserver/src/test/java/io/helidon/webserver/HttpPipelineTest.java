@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,7 +67,12 @@ public class HttpPipelineTest {
                         .put("/", (req, res) -> {
                             counter.set(0);
                             log("put server");
-                            res.send();
+                            req.content()
+                                    .as(String.class)
+                                    .forSingle(it -> {
+                                        log("put: " + it);
+                                        res.send();
+                                    });
                         })
                         .get("/", (req, res) -> {
                             log("get server");
@@ -99,8 +104,8 @@ public class HttpPipelineTest {
     public void testPipelining() throws Exception {
         try (SocketHttpClient s = new SocketHttpClient(webServer)) {
             s.request(Http.Method.PUT, "/");        // reset server
-            s.request(Http.Method.GET, "/");        // request_0
-            s.request(Http.Method.GET, "/");        // request_1
+            s.request(Http.Method.GET, null);        // request_0
+            s.request(Http.Method.GET, null);        // request_1
             log("put client");
             String reset = s.receive();
             assertThat(reset, notNullValue());
