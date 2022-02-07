@@ -7,15 +7,38 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
-## [2.4.2-SNAPSHOT]
+## [2.4.2]
 
 This is a bugfix release of Helidon.  It is recommended for all users of Helidon 2.
 
 ### Compatibility
 
-2.4.2 is API compatible with 2.3.0.
+2.4.2 is API compatible with 2.3.0. 
 
 ### CHANGES
+
+- WebServer: Fix wrong connection close [3830](https://github.com/oracle/helidon/pull/3830)
+- WebServer: New default for io.netty.allocator.maxOrder [3809](https://github.com/oracle/helidon/pull/3809)[3831](https://github.com/oracle/helidon/pull/3831)
+- WebServer: Swallowed error fix [3792](https://github.com/oracle/helidon/pull/3792)
+- WebServer: Add CORS support to OidcSupport [3844](https://github.com/oracle/helidon/pull/3844)
+- WebClient: Do not create close listener handlers for every new request [3853](https://github.com/oracle/helidon/pull/3853)
+- WebClient: Propagate any existing server context into a Webclient reactive code [3756](https://github.com/oracle/helidon/pull/3756)
+- WebClient: WebClient event group initialization changed - 2.x [3833](https://github.com/oracle/helidon/pull/3833)
+- LRA: LRA Custom headers propagation [3768](https://github.com/oracle/helidon/pull/3768)
+- JAX-RS: Special treatment for ParamConverterProviders with multiple apps [3846](https://github.com/oracle/helidon/pull/3846)
+- DBClient: Fix dbclient threading issues when DML operations are executed multiple times in a tight loop [3860](https://github.com/oracle/helidon/pull/3860)
+- Ensure all thread pools created by Helidon are named [3789](https://github.com/oracle/helidon/pull/3789)
+- Fault Tolerance: Only deactivate request context if it was inactive before migrating it [3813](https://github.com/oracle/helidon/pull/3813)
+- Native-image: Native image fix grpc for 2.x branch [3805](https://github.com/oracle/helidon/pull/3805)
+- OCI: Use resource /instance/canonicalRegionName to get region [3868](https://github.com/oracle/helidon/pull/3868)
+- Build: Integrate build tools 2.3.3 [3869](https://github.com/oracle/helidon/pull/3869)
+- Dependencies: Upgrade Neo4j to 4.4.3. for Helidon 2.x [3862](https://github.com/oracle/helidon/pull/3862)
+- Dependencies: Upgrade grpc-java to 1.41.2 [3822](https://github.com/oracle/helidon/pull/3822)
+- Dependencies: Upgrades Netty to 4.1.73.Final (helidon-2.x backport) [3798](https://github.com/oracle/helidon/pull/3798)
+- Dependencies: Upgrades log4j to 2.17.1 on helidon-2.x branch [3778](https://github.com/oracle/helidon/pull/3778)
+- Docs: New section about injection managers in docs [3851](https://github.com/oracle/helidon/pull/3851)
+- Examples: Change bare-mp archetype to use microprofile-core bundle [3787](https://github.com/oracle/helidon/pull/3787)
+- Examples: Clean unused dependencies in archetypes. [3828](https://github.com/oracle/helidon/pull/3828)
 
 ## [2.4.1]
 
@@ -1751,7 +1774,7 @@ If there is no authorization provider configured, ABAC provider will be configur
       otherwise they are ignored
 
 
-[2.4.2-SNAPSHOT]: https://github.com/oracle/helidon/compare/2.4.1...2.4.2-SNAPSHOT
+[2.4.2]: https://github.com/oracle/helidon/compare/2.4.1...2.4.2
 [2.4.1]: https://github.com/oracle/helidon/compare/2.4.0...2.4.1
 [2.4.0]: https://github.com/oracle/helidon/compare/2.3.4...2.4.0
 [2.3.4]: https://github.com/oracle/helidon/compare/2.3.3...2.3.4
