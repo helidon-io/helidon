@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@
 :!cors-config-table-exclude-keys:
 :basic-table-intro: The table below lists the configuration keys that identify the CORS characteristics.
 :helidon-variant: SE
+:cors-config-key-explanation: , identified by a configuration key of your choosing,
 
 You can use configuration in combination with the Helidon CORS SE API to add CORS support to your resources by
 replacing some Java code with declarative configuration. This also gives your users a way to override the
