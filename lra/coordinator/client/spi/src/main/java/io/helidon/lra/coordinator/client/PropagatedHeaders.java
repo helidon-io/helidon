@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -95,7 +96,7 @@ public interface PropagatedHeaders {
             for (Map.Entry<String, List<String>> entry : headers.entrySet()) {
                 String key = entry.getKey();
                 for (String prefix : prefixes) {
-                    if (key.startsWith(prefix)) {
+                    if (startsWithIgnoreCase(prefix, key)) {
                         filteredMap.put(key, Collections.unmodifiableList(entry.getValue()));
                     }
                 }
@@ -132,5 +133,23 @@ public interface PropagatedHeaders {
         public void clear() {
 
         }
+    }
+
+    /**
+     * Case-insensitive starts with check.
+     *
+     * @param prefix prefix to start with
+     * @param value  value to check
+     * @return true if the value starts with the prefix
+     */
+    private static boolean startsWithIgnoreCase(String prefix, String value) {
+        if (prefix == null || value == null) {
+            return Objects.equals(prefix, value);
+        }
+        int prefixLength = prefix.length();
+        if (prefixLength > value.length()) {
+            return false;
+        }
+        return value.regionMatches(true, 0, prefix, 0, prefixLength);
     }
 }
