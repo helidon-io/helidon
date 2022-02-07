@@ -98,14 +98,14 @@ import static org.hamcrest.Matchers.not;
 @AddBean(CoordinatorHeaderPropagationTest.TestResourceJaxRsCompensate.class)
 @AddBean(CoordinatorHeaderPropagationTest.TestResourceNonJaxRsCompensate.class)
 // Override context
-@AddConfig(key = CoordinatorClient.CONF_KEY_COORDINATOR_HEADERS_PROPAGATION_PREFIX + ".0", value = "xxx-tmm-")
+@AddConfig(key = CoordinatorClient.CONF_KEY_COORDINATOR_HEADERS_PROPAGATION_PREFIX + ".0", value = "Xxx-tmm-")
 @AddConfig(key = CoordinatorClient.CONF_KEY_COORDINATOR_HEADERS_PROPAGATION_PREFIX + ".1", value = "xbb-tmm-")
 @AddConfig(key = CoordinatorClient.CONF_KEY_COORDINATOR_HEADERS_PROPAGATION_PREFIX + ".2", value = "xcc-tmm-")
 class CoordinatorHeaderPropagationTest {
 
     private static final long TIMEOUT_SEC = 10L;
     private static final String PROPAGATED_HEADER = "xxx-tmm-propagated-header";
-    private static final String EXTRA_COORDINATOR_PROPAGATED_HEADER = "xbb-tmm-extra-start-header";
+    private static final String EXTRA_COORDINATOR_PROPAGATED_HEADER = "xBb-tmm-extra-start-header";
     private static final String NOT_PROPAGATED_HEADER = "non-propagated-header";
 
     private static volatile int port = -1;
