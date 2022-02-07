@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2021 Oracle and/or its affiliates.
+  ~ Copyright (c) 2021, 2022 Oracle and/or its affiliates.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -30,17 +30,6 @@
     <description>MicroProfile Long Running Actions implementation</description>
 
     <dependencies>
-        <dependency>
-            <!--
-            TODO 3.0.0-JAKARTA
-            need to use this version to work around the same groupId/artifactId and
-            different package names in Jakarta
-            Needed for MP LRA API -->
-            <groupId>javax.ws.rs</groupId>
-            <artifactId>javax.ws.rs-api</artifactId>
-            <scope>provided</scope>
-            <optional>true</optional>
-        </dependency>
         <dependency>
             <groupId>org.eclipse.microprofile.lra</groupId>
             <artifactId>microprofile-lra-api</artifactId>

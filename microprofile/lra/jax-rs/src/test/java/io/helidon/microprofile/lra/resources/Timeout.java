@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,8 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+
+import org.eclipse.microprofile.lra.LRAResponse;
 import org.eclipse.microprofile.lra.annotation.Compensate;
 import org.eclipse.microprofile.lra.annotation.ws.rs.LRA;
 
@@ -68,8 +70,7 @@ public class Timeout {
     public Response compensateWork(@HeaderParam(LRA_HTTP_CONTEXT_HEADER) URI lraId,
                                    @HeaderParam(LRA_HTTP_RECOVERY_HEADER) URI recoveryId) {
         basicTest.getCompletable(Timeout.CS_COMPENSATE).complete(lraId);
-        // TODO 3.0.0-JAKARTA
-        //TODO return LRAResponse.compensated();
-        return Response.ok().build();
+
+        return LRAResponse.compensated();
     }
 }

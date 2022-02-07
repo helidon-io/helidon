@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,13 +46,16 @@ public class MpConfigSourcesTest {
     void testHelidonMap() {
         Map<String, String> values = Map.of(
           "key.first", "first",
-          "key.second", "second"
+          "key.second", "second",
+          "key.third", "<>{}().,:;/|\\~`?!@#$%^&*-=+*"
         );
         org.eclipse.microprofile.config.spi.ConfigSource mpSource = MpConfigSources.create(ConfigSources.create(values).build());
 
         assertThat(mpSource.getValue("key.first"), is("first"));
         assertThat(mpSource.getValue("key.second"), is("second"));
+        assertThat(mpSource.getValue("key.third"), is("<>{}().,:;/|\\~`?!@#$%^&*-=+*"));
     }
+
     @Test
     void testHelidonParsable() {
         ParsableImpl helidonSource = new ParsableImpl();

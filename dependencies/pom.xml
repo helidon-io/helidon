@@ -118,7 +118,7 @@
         <version.lib.microprofile-reactive-streams-operators-core>2.0</version.lib.microprofile-reactive-streams-operators-core>
         <version.lib.microprofile-rest-client>3.0</version.lib.microprofile-rest-client>
         <version.lib.microprofile-tracing>3.0</version.lib.microprofile-tracing>
-        <version.lib.microprofile-lra-api>1.0</version.lib.microprofile-lra-api>
+        <version.lib.microprofile-lra-api>2.0-RC1</version.lib.microprofile-lra-api>
         <version.lib.microstream>05.00.02-MS-GA</version.lib.microstream>
         <version.lib.mockito>2.23.4</version.lib.mockito>
         <version.lib.mongodb.reactivestreams>1.11.0</version.lib.mongodb.reactivestreams>

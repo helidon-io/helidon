@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ import jakarta.annotation.PreDestroy;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.eclipse.microprofile.lra.LRAResponse;
 import org.eclipse.microprofile.lra.annotation.LRAStatus;
 import org.eclipse.microprofile.lra.annotation.ParticipantStatus;
 
@@ -57,9 +58,8 @@ class NonJaxRsResource {
 
     private final ExecutorService exec;
 
-    // TODO 3.0.0-JAKARTA
     private static final Map<ParticipantStatus, Supplier<Response>> PARTICIPANT_RESPONSE_BUILDERS =
-            Map.of(/*
+            Map.of(
                     ParticipantStatus.Compensating, () -> LRAResponse.compensating(ParticipantStatus.Compensating),
                     ParticipantStatus.Compensated, () -> LRAResponse.compensated(ParticipantStatus.Compensated),
                     ParticipantStatus.Active, () -> Response.ok(ParticipantStatus.Active.name()).build(),
@@ -68,7 +68,6 @@ class NonJaxRsResource {
                     ParticipantStatus.Completing, () -> LRAResponse.compensating(ParticipantStatus.Completing),
                     ParticipantStatus.Completed, () -> LRAResponse.compensating(ParticipantStatus.Completed),
                     ParticipantStatus.FailedToComplete, () -> LRAResponse.failedToComplete(ParticipantStatus.FailedToComplete)
-                    */
             );
 
     private final ParticipantService participantService;

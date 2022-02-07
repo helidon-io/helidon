@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package io.helidon.lra.coordinator.client.narayana;
 
 import java.net.URI;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -66,6 +67,7 @@ public class NarayanaClient implements CoordinatorClient {
         this.coordinatorTimeout = timeout;
         this.coordinatorTimeoutUnit = timeoutUnit;
         this.retry = Retry.builder()
+                .overallTimeout(Duration.ofMillis(timeoutUnit.toMillis(timeout)))
                 .retryPolicy(Retry.JitterRetryPolicy.builder()
                         .calls(RETRY_ATTEMPTS)
                         .build())
@@ -195,7 +197,7 @@ public class NarayanaClient implements CoordinatorClient {
                     switch (res.status().code()) {
                         case 412:
                             return connectionError(res.lastEndpointURI()
-                                    + "Too late to join LRA - LRAID: " + lraId, 412);
+                                    + " Too late to join LRA - LRAID: " + lraId, 412);
                         case 404:
                             // Narayana returns 404 for already terminated lras
                         case 410:

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 
 import java.net.URI;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.LazyValue;
@@ -52,7 +53,12 @@ public class CoordinatorTest {
 
         coordinatorService = CoordinatorService.builder()
                 .url(coordinatorUri::get)
-                .config(Config.builder(() -> ConfigSources.classpath("application.yaml").build())
+                .config(Config.builder(
+                                () -> ConfigSources.create(Map.of(
+                                        "helidon.lra.coordinator.db.connection.url", "jdbc:h2:file:./target/lra-coordinator"
+                                )).build(),
+                                () -> ConfigSources.classpath("application.yaml").build()
+                        )
                         .build().get(CoordinatorService.CONFIG_PREFIX))
                 .build();
         server = WebServer.builder()

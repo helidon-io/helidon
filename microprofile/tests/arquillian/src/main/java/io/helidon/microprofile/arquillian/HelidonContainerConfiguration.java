@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -109,6 +109,10 @@ public class HelidonContainerConfiguration implements ContainerConfiguration {
         if ((port <= 0) || (port > Short.MAX_VALUE)) {
             throw new ConfigurationException("port value of " + port + " is out of range");
         }
+    }
+
+    boolean hasCustomConfig(){
+        return !this.builderConsumers.isEmpty();
     }
 
     ConfigBuilder useBuilder(ConfigBuilder configBuilder) {

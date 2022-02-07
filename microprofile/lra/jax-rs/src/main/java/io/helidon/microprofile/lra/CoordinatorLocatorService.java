@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,7 +54,7 @@ public class CoordinatorLocatorService {
     CoordinatorLocatorService(@ConfigProperty(name = "mp.lra.coordinator.client") Optional<String> clientFqdn,
                               @ConfigProperty(name = CONF_KEY_COORDINATOR_URL, defaultValue = CONF_DEFAULT_COORDINATOR_URL)
                                       String coordinatorUrl,
-                              @ConfigProperty(name = CONF_KEY_COORDINATOR_TIMEOUT, defaultValue = "10")
+                              @ConfigProperty(name = CONF_KEY_COORDINATOR_TIMEOUT, defaultValue = "30")
                                       Long coordinatorTimeout,
                               @ConfigProperty(name = CONF_KEY_COORDINATOR_TIMEOUT_UNIT, defaultValue = "SECONDS")
                                       TimeUnit coordinatorTimeoutUnit) {
