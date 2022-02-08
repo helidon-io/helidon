@@ -116,7 +116,8 @@ public abstract class HelidonRestCdiExtension<T extends RestServiceSupport> impl
      *
      * @param adv the {@code AfterDeploymentValidation} event
      */
-    protected void clearAnnotationInfo(@Observes AfterDeploymentValidation adv) {
+    // method needs to be public so it is registered for reflection (native image)
+    public void clearAnnotationInfo(@Observes AfterDeploymentValidation adv) {
         if (logger.isLoggable(Level.FINE)) {
             Set<Class<?>> annotatedClassesIgnored = new HashSet<>(annotatedClasses);
             annotatedClassesIgnored.removeAll(annotatedClassesProcessed);
@@ -136,7 +137,8 @@ public abstract class HelidonRestCdiExtension<T extends RestServiceSupport> impl
      *
      * @param pmb event describing the managed bean being processed
      */
-    protected void observeManagedBeans(@Observes ProcessManagedBean<?> pmb) {
+    // method needs to be public so it is registered for reflection (native image)
+    public void observeManagedBeans(@Observes ProcessManagedBean<?> pmb) {
         AnnotatedType<?> type = pmb.getAnnotatedBeanClass();
         Class<?> clazz = type.getJavaClass();
         if (!annotatedClasses.contains(clazz)) {
@@ -234,7 +236,8 @@ public abstract class HelidonRestCdiExtension<T extends RestServiceSupport> impl
      * @param server the ServerCdiExtension
      * @return default routing
      */
-    protected Routing.Builder registerService(
+    // method needs to be public so it is registered for reflection (native image)
+    public Routing.Builder registerService(
             @Observes @Priority(LIBRARY_BEFORE + 10) @Initialized(ApplicationScoped.class) Object adv,
             BeanManager bm, ServerCdiExtension server) {
 
