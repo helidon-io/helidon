@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,9 @@ import io.helidon.microprofile.server.JaxRsCdiExtension;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.Dependent;
 import jakarta.enterprise.context.Initialized;
+import jakarta.enterprise.context.RequestScoped;
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.spi.AfterBeanDiscovery;
@@ -77,7 +79,19 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * JWT Authentication CDI extension class.
  */
 public class JwtAuthCdiExtension implements Extension {
+
+    private static final Set<Class<?>> CUSTOM_CLAIM_ALLOWED_TYPES;
+
+    static {
+        CUSTOM_CLAIM_ALLOWED_TYPES = Set.of(Long.class,
+                                            long.class,
+                                            String.class,
+                                            Boolean.class,
+                                            boolean.class);
+    }
+
     private final List<ClaimIP> qualifiers = new LinkedList<>();
+    private final List<ClaimIP> claimValueQualifiers = new LinkedList<>();
     private Config config;
 
     /**
@@ -123,7 +137,11 @@ public class JwtAuthCdiExtension implements Extension {
             pip.configureInjectionPoint()
                     .addQualifier(q);
 
-            qualifiers.add(new ClaimIP(q, type));
+            if (ft.getField0().getRawType().equals(ClaimValue.class)) {
+                claimValueQualifiers.add(new ClaimIP(q, type));
+            } else {
+                qualifiers.add(new ClaimIP(q, type));
+            }
         }
     }
 
@@ -135,7 +153,8 @@ public class JwtAuthCdiExtension implements Extension {
      */
     void registerClaimProducers(@Observes AfterBeanDiscovery abd, BeanManager bm) {
         // each injection point will have its own bean
-        qualifiers.forEach(q -> abd.addBean(new ClaimProducer(q.qualifier, q.type, bm)));
+        qualifiers.forEach(q -> abd.addBean(new ClaimProducer(q.qualifier, q.type, Dependent.class)));
+        claimValueQualifiers.forEach(q -> abd.addBean(new ClaimProducer(q.qualifier, q.type, RequestScoped.class)));
     }
 
     /**
@@ -310,12 +329,14 @@ public class JwtAuthCdiExtension implements Extension {
                                                   + " of type " + claimLiteral.fieldTypeString);
 
         } catch (IllegalArgumentException ignored) {
-            //If claim requested claim is the custom claim, its unwrapped field type has to be JsonValue or its subtype
-            if (!JsonValue.class.isAssignableFrom(clazz)) {
-                throw new DeploymentException("Field type has to be JsonValue or its subtype while using custom claim name. "
-                                                      + "Field " + claimLiteral.id + " can not be type: "
-                                                      + claimLiteral.fieldTypeString);
+            //If claim requested claim is the custom claim, its unwrapped field type has to be Long, Boolean, String or
+            // JsonValue (or its subtype)
+            if (CUSTOM_CLAIM_ALLOWED_TYPES.contains(clazz) || JsonValue.class.isAssignableFrom(clazz)) {
+                return;
             }
+            throw new DeploymentException("Field type has to be Long, Boolean, String or JsonValue (or its subtype) while using "
+                                                  + "custom claim name. Field " + claimLiteral.id + " can not be type: "
+                                                   + claimLiteral.fieldTypeString);
         }
     }
 
