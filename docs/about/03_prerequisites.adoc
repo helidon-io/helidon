@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -24,14 +24,14 @@ Everything you need to get started with Helidon is listed here.
 
 == Prerequisites
 
-Helidon requires Java 11 (or newer) and Maven. You need Docker if you
+Helidon 3 requires Java 17 (or newer) and Maven. You need Docker if you
 want to build and deploy Docker containers. If you want to
 deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster (you can
 <<about/05_kubernetes.adoc,install one on your desktop>>).
 
 [role="flex, sm7"]
 |=======
-|https://www.oracle.com/technetwork/java/javase/downloads[Java{nbsp}SE{nbsp}11] (http://jdk.java.net[Open{nbsp}JDK{nbsp}11]) or newer
+|https://www.oracle.com/technetwork/java/javase/downloads[Java{nbsp}SE{nbsp}17] (http://jdk.java.net[Open{nbsp}JDK{nbsp}17]) or newer
 |https://maven.apache.org/download.cgi[Maven 3.6.1+]
 |https://docs.docker.com/install/[Docker 18.09+]
 |https://kubernetes.io/docs/tasks/tools/install-kubectl/[Kubectl 1.16.5+]
@@ -53,11 +53,11 @@ kubectl version --short
 .Setting JAVA_HOME
 ----
 # On Mac
-export JAVA_HOME=`/usr/libexec/java_home -v 11`
+export JAVA_HOME=`/usr/libexec/java_home -v 17`
 
 # On Linux
 # Use the appropriate path to your JDK
-export JAVA_HOME=/usr/lib/jvm/jdk-11
+export JAVA_HOME=/usr/lib/jvm/jdk-17
 ----
 
 == Try the Quickstart Examples

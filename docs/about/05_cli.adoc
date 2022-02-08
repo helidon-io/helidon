@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -34,11 +34,11 @@ and you’re ready to go.
 
 == Prerequisites
 
-Helidon requires Java 11 (or newer) and Maven.
+Helidon 3 requires Java 17 (or newer) and Maven.
 
 [role="flex, sm7"]
 |=======
-|https://www.oracle.com/technetwork/java/javase/downloads[Java{nbsp}SE{nbsp}11] (http://jdk.java.net[Open{nbsp}JDK{nbsp}11]) or newer
+|https://www.oracle.com/technetwork/java/javase/downloads[Java{nbsp}SE{nbsp}17] (http://jdk.java.net[Open{nbsp}JDK{nbsp}17]) or newer
 |https://maven.apache.org/download.cgi[Maven 3.6.1+]
 |=======
 
@@ -55,15 +55,19 @@ mvn --version
 [source,bash]
 .MacOS
 ----
-curl -O https://helidon.io/cli/latest/darwin/helidon
+curl -L -O https://helidon.io/cli/latest/darwin/helidon
 chmod +x ./helidon
 sudo mv ./helidon /usr/local/bin/
 ----
 
+If you get a warning that "the developer cannot be verified" when running the CLI
+this is due to the Helidon CLI not being signed and notarized yet. You can disable
+this check by running: `xattr -d com.apple.quarantine helidon`
+
 [source,bash]
 .Linux
 ----
-curl -O https://helidon.io/cli/latest/linux/helidon
+curl -L -O https://helidon.io/cli/latest/linux/helidon
 chmod +x ./helidon
 sudo mv ./helidon /usr/local/bin/
 ----
