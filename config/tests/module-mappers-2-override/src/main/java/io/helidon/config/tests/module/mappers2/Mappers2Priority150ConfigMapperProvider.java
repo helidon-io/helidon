@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,10 +21,10 @@ import java.util.Map;
 import java.util.OptionalInt;
 import java.util.function.Function;
 
-import javax.annotation.Priority;
-
 import io.helidon.config.Config;
 import io.helidon.config.spi.ConfigMapperProvider;
+
+import jakarta.annotation.Priority;
 
 /**
  * Registers config mapper for {@link OptionalInt}, {@link Integer} and {@link java.math.BigInteger}.

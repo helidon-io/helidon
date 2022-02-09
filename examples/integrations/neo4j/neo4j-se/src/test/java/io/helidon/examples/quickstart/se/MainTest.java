@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,6 @@ package io.helidon.examples.quickstart.se;
 
 import java.util.concurrent.TimeUnit;
 
-import javax.json.JsonArray;
-
 import io.helidon.common.http.Http;
 import io.helidon.examples.integrations.neo4j.se.Main;
 import io.helidon.media.jsonp.JsonpSupport;
@@ -27,6 +25,7 @@ import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientResponse;
 import io.helidon.webserver.WebServer;
 
+import jakarta.json.JsonArray;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -82,7 +81,7 @@ public class MainTest {
                 .request(JsonArray.class)
                 .await();
 
-        assertEquals("The Matrix", result.getJsonObject(0).getString("title"));
+        assertEquals("The Matrix Reloaded", result.getJsonObject(0).getString("title"));
     }
 
     @Test

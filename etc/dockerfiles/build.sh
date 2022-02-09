@@ -58,12 +58,12 @@ else
 fi
 readonly MY_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; pwd -P)
 
-readonly GRAALVM_VERSION=21.1.0
+readonly GRAALVM_VERSION=21.3.0
 
-docker build -f ${MY_DIR}/Dockerfile.jdk11-graalvm -t helidon/jdk11-graalvm:${GRAALVM_VERSION} ${MY_DIR}
-docker build -f ${MY_DIR}/Dockerfile.jdk11-graalvm-maven -t helidon/jdk11-graalvm-maven:${GRAALVM_VERSION} ${MY_DIR}
+docker build -f ${MY_DIR}/Dockerfile.jdk17-graalvm -t helidon/jdk17-graalvm:${GRAALVM_VERSION} ${MY_DIR}
+docker build -f ${MY_DIR}/Dockerfile.jdk17-graalvm-maven -t helidon/jdk17-graalvm-maven:${GRAALVM_VERSION} ${MY_DIR}
 
 if [ "${PUSH}" = "true" ] ; then
-    docker push helidon/jdk11-graalvm:${GRAALVM_VERSION}
-    docker push helidon/jdk11-graalvm-maven:${GRAALVM_VERSION}
+    docker push helidon/jdk17-graalvm:${GRAALVM_VERSION}
+    docker push helidon/jdk17-graalvm-maven:${GRAALVM_VERSION}
 fi

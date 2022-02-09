@@ -19,7 +19,6 @@ package io.helidon.jersey.connector;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.security.AccessController;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -33,16 +32,15 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.logging.Logger;
 
-import javax.ws.rs.ProcessingException;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.core.Configuration;
-import javax.ws.rs.core.Response;
-
 import io.helidon.common.Version;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientRequestBuilder;
 import io.helidon.webclient.WebClientResponse;
 
+import jakarta.ws.rs.ProcessingException;
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.core.Configuration;
+import jakarta.ws.rs.core.Response;
 import org.glassfish.jersey.client.ClientAsyncExecutorLiteral;
 import org.glassfish.jersey.client.ClientConfig;
 import org.glassfish.jersey.client.ClientProperties;
@@ -60,8 +58,8 @@ import org.glassfish.jersey.spi.ExecutorServiceProvider;
  */
 class HelidonConnector implements Connector {
 
-    private static final String HELIDON_VERSION = "Helidon/" + Version.VERSION + " (java " + AccessController
-            .doPrivileged(PropertiesHelper.getSystemProperty("java.runtime.version")) + ")";
+    private static final String HELIDON_VERSION = "Helidon/" + Version.VERSION + " (java "
+            + PropertiesHelper.getSystemProperty("java.runtime.version") + ")";
     static final Logger LOGGER = Logger.getLogger(HelidonConnector.class.getName());
 
     private final WebClient webClient;

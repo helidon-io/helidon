@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,9 +53,9 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * </pre>
  * <p><b>Limitations</b><br>
  * <ul>
- *     <li>{@link javax.enterprise.context.RequestScoped} beans are NOT available for injection. Reactive services are
+ *     <li>{@link jakarta.enterprise.context.RequestScoped} beans are NOT available for injection. Reactive services are
  *     designed to be built without request scoped injection. You can still use beans in
- *     {@link javax.enterprise.context.ApplicationScoped} and {@link javax.enterprise.context.Dependent} scopes</li>
+ *     {@link jakarta.enterprise.context.ApplicationScoped} and {@link jakarta.enterprise.context.Dependent} scopes</li>
  * </ul>
  */
 @Target({TYPE, METHOD, FIELD})

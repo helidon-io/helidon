@@ -15,12 +15,11 @@
  */
 package io.helidon.microprofile.security;
 
-import javax.inject.Inject;
-
 import io.helidon.microprofile.tests.junit5.AddBean;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 import io.helidon.security.Security;
 
+import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.notNullValue;

@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 /**
@@ -23,6 +22,7 @@ module io.helidon.servicecommon.rest {
     requires java.logging;
 
     requires transitive io.helidon.config;
+    requires static io.helidon.config.metadata;
     requires transitive io.helidon.webserver;
     requires transitive io.helidon.webserver.cors;
 

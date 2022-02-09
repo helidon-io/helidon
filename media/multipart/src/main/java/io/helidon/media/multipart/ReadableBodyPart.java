@@ -104,7 +104,7 @@ public final class ReadableBodyPart implements BodyPart {
     /**
      * Builder class for creating {@link BodyPart} instances.
      */
-    public static final class Builder implements io.helidon.common.Builder<ReadableBodyPart> {
+    public static final class Builder implements io.helidon.common.Builder<Builder, ReadableBodyPart> {
 
         private ReadableBodyPartHeaders headers;
         private MessageBodyReadableContent content;

@@ -21,7 +21,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import javax.enterprise.context.NormalScope;
+import jakarta.enterprise.context.NormalScope;
 
 /**
  * An annotation indicating the bean that is annotated belongs to the
@@ -51,13 +51,13 @@ import javax.enterprise.context.NormalScope;
  * <p>Another way of thinking of {@link
  * ReferenceCounted @ReferenceCounted}-annotated classes is that they
  * behave as though they were members of a slightly shorter-lived
- * {@linkplain javax.enterprise.context.ApplicationScoped application
+ * {@linkplain jakarta.enterprise.context.ApplicationScoped application
  * scope}.</p>
  *
  * <p>Still another way of thinking of {@link
  * ReferenceCounted @ReferenceCounted}-annotated classes is that they
  * behave as though they were members of {@linkplain
- * javax.enterprise.context.RequestScoped request scope}, but with the
+ * jakarta.enterprise.context.RequestScoped request scope}, but with the
  * notional request starting upon first instantiation.</p>
  *
  * @see ReferenceCountedContext

@@ -569,7 +569,6 @@ public final class MediaType implements AcceptPredicate<MediaType> {
 
     /**
      * Tests if this media type has provided Structured Syntax {@code suffix} (RFC 6839).
-     * <p>
      *
      * @param suffix Suffix with or without '+' prefix. If null or empty then returns {@code true} if this media type
      *               has ANY suffix.
@@ -589,7 +588,7 @@ public final class MediaType implements AcceptPredicate<MediaType> {
     /**
      * A fluent API builder to create instances of {@link MediaType}.
      */
-    public static final class Builder implements io.helidon.common.Builder<MediaType> {
+    public static final class Builder implements io.helidon.common.Builder<Builder, MediaType> {
         private String type = AcceptPredicate.WILDCARD_VALUE;
         private String subtype = AcceptPredicate.WILDCARD_VALUE;
         private String charset;

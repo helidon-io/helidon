@@ -40,14 +40,15 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import javax.crypto.Mac;
-import javax.json.Json;
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonNumber;
-import javax.json.JsonObject;
-import javax.json.JsonObjectBuilder;
-import javax.json.JsonString;
-import javax.json.JsonValue;
-import javax.json.spi.JsonProvider;
+
+import jakarta.json.Json;
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonNumber;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonObjectBuilder;
+import jakarta.json.JsonString;
+import jakarta.json.JsonValue;
+import jakarta.json.spi.JsonProvider;
 
 /**
  * Utilities for JWT and JWK parsing.
@@ -248,7 +249,19 @@ public final class JwtUtil {
         return result;
     }
 
-    private static JsonValue toJson(Object object) {
+    /**
+     * Create a {@link jakarta.json.JsonValue} from an object.
+     * This will use correct types for known primitives, {@link io.helidon.security.jwt.JwtUtil.Address}
+     * otherwise it uses String value.
+     *
+     * @param object object to create json value from
+     * @return json value
+     */
+    public static JsonValue toJson(Object object) {
+        if (object instanceof JsonValue) {
+            return (JsonValue) object;
+        }
+
         if (object instanceof String) {
             return JSON_PROVIDER.createValue((String) object);
         }

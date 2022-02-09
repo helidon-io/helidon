@@ -15,9 +15,9 @@
  */
 package io.helidon.microprofile.security;
 
-import javax.inject.Inject;
-
 import io.helidon.security.Security;
+
+import jakarta.inject.Inject;
 
 /**
  * Test bean.

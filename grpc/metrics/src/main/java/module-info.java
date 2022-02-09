@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ module io.helidon.grpc.metrics {
     requires transitive io.helidon.grpc.core;
     requires static io.helidon.grpc.client;
     requires static io.helidon.grpc.server;
-    requires transitive io.helidon.metrics;
+    requires transitive io.helidon.metrics.api;
 
     requires microprofile.metrics.api;
 }

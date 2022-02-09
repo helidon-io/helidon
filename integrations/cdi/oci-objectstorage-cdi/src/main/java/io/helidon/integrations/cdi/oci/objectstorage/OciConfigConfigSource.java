@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider;
 import org.eclipse.microprofile.config.Config;
@@ -179,6 +180,11 @@ public final class OciConfigConfigSource implements ConfigSource {
   public Map<String, String> getProperties() {
     final Map<String, String> properties = this.properties;
     return properties == null || properties.isEmpty() ? Collections.emptyMap() : properties;
+  }
+
+  @Override
+  public Set<String> getPropertyNames() {
+    return Set.copyOf(getProperties().keySet());
   }
 
   private static Map<String, String> createProperties(final ConfigFileAuthenticationDetailsProvider provider) {

@@ -19,7 +19,7 @@
  */
 module io.helidon.integrations.vault {
     requires java.logging;
-    requires transitive java.json;
+    requires transitive jakarta.json;
 
     requires transitive io.helidon.config;
 

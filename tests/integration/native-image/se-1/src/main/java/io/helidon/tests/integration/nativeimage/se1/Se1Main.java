@@ -18,7 +18,7 @@ package io.helidon.tests.integration.nativeimage.se1;
 import java.nio.file.Paths;
 import java.util.Set;
 
-import javax.websocket.server.ServerEndpointConfig;
+import jakarta.websocket.server.ServerEndpointConfig;
 
 import io.helidon.common.LogConfig;
 import io.helidon.config.Config;

@@ -21,9 +21,6 @@ import java.math.BigInteger;
 import java.security.spec.KeySpec;
 import java.security.spec.RSAPrivateCrtKeySpec;
 
-import sun.security.util.DerInputStream;
-import sun.security.util.DerValue;
-
 final class DerUtils {
     private DerUtils() {
     }
@@ -43,8 +40,9 @@ final class DerUtils {
 
     static KeySpec pkcs1RsaKeySpec(byte[] bytes) {
         try {
-            DerInputStream derReader = new DerInputStream(bytes);
-            DerValue[] seq = derReader.getSequence(0);
+            // fully qualified class names allow us to compile this without failure
+            sun.security.util.DerInputStream derReader = new sun.security.util.DerInputStream(bytes);
+            sun.security.util.DerValue[] seq = derReader.getSequence(0);
             // skip version seq[0];
             BigInteger modulus = seq[1].getBigInteger();
             BigInteger publicExp = seq[2].getBigInteger();

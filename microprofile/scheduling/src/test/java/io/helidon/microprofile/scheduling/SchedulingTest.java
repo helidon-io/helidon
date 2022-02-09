@@ -23,8 +23,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import javax.inject.Inject;
-
 import io.helidon.microprofile.tests.junit5.AddBean;
 import io.helidon.microprofile.tests.junit5.AddBeans;
 import io.helidon.microprofile.tests.junit5.AddExtension;
@@ -35,12 +33,13 @@ import io.helidon.microprofile.tests.junit5.HelidonTest;
 import io.helidon.scheduling.CronInvocation;
 import io.helidon.scheduling.FixedRateInvocation;
 
+import jakarta.inject.Inject;
+import org.junit.jupiter.api.Test;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.lessThan;
-
-import org.junit.jupiter.api.Test;
 
 @HelidonTest
 @DisableDiscovery

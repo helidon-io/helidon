@@ -1,0 +1,123 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2021 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+:javadoc-base-url-api: {javadoc-base-url}io.helidon.config/io/helidon/oci
+
+= OCI Autonomous Transaction Processing
+:h1Prefix: SE
+:description: Helidon OCI Autonomous Transaction Processing integration
+:keywords: oci, atp
+:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+:feature-name: OCI Autonomous Transaction Processing
+
+The Helidon SE OCI Autonomous Transaction Processing integration provides a reactive API to ATP database in Oracle cloud.
+
+== Experimental
+
+WARNING: Helidon integration with Oracle Cloud Infrastructure is still experimental and not intended for production use. APIs and features have not yet been fully tested and are subject to change.
+
+include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+
+[source,xml]
+----
+        <dependency>
+            <groupId>io.helidon.integrations.oci</groupId>
+            <artifactId>helidon-integrations-oci-atp</artifactId>
+        </dependency>
+----
+
+
+== Setting up the Autonomous Transaction Processing
+
+
+In order to use the OCI Autonomous Transaction Processing integration, the following setup should be made:
+
+[source,java]
+----
+Config ociConfig = config.get("oci");
+
+OciAutonomousDbRx ociAutonomousDb = OciAutonomousDbRx.create(ociConfig);
+----
+
+Current configuration requires `~/.oci/config` to be available in the home folder. This configuration file can be downloaded from OCI.
+
+`Routing` should be added to the `WebServer`, in our case pointing to `/atp`:
+
+[source,java]
+----
+        WebServer.builder()
+                .config(config.get("server"))
+                .routing(Routing.builder()
+                                .register("/atp", new AtpService(autonomousDbRx, config)))
+                .build();
+----
+
+Additionally, in `application.yaml` OCI properties should be specified:
+
+[source,yaml]
+----
+oci:
+  atp:
+    ocid: "<ocid of your ATP database>"
+    walletPassword: "<password to encrypt the keys inside the wallet>"
+
+----
+
+The exact values are available from OCI console.
+
+image::oci/atpocid.png[OCI ATP, align="center"]
+
+== Using the Autonomous Transaction Processing
+
+In the Service we must specify the mapping for operations with the database and their handlers:
+
+[source,java]
+----
+@Override
+public void update(Routing.Rules rules) {
+    rules.get("/wallet", this::generateWallet);
+}
+----
+
+===  Generate Wallet
+
+To generate wallet file for OCI Autonomous Transaction Processing:
+
+[source,java]
+----
+    private void generateWallet(ServerRequest req, ServerResponse res) {
+        autonomousDbRx.generateWallet(GenerateAutonomousDatabaseWallet.Request.builder()) <1>
+                .flatMapOptional(ApiOptionalResponse::entity)
+                .map(GenerateAutonomousDatabaseWallet.Response::walletArchive) <2>
+                .ifEmpty(() -> LOGGER.severe("Unable to obtain wallet!"))
+                .flatMapSingle(this::createDbClient) <3>
+                .flatMap(dbClient -> dbClient.execute(exec -> exec.query("SELECT 'Hello world!!' FROM DUAL")))
+                .first()
+                .map(dbRow -> dbRow.column(1).as(String.class)) <4>
+                .ifEmpty(() -> res.status(404).send())
+                .onError(res::send)
+                .forSingle(res::send);
+    }
+----
+
+<1> Create the `Request` using `GenerateAutonomousDatabaseWallet.Request.builder()`
+<2> Retrieve 'walletArchive' from the response.
+<3> Create DBClient using info from 'walletArchive'
+<4> Read the first column from first row of result.
+
+For complete code, about how to create DBClient using wallet info, please see https://github.com/oracle/helidon/tree/master/examples/integrations/oci/atp-reactive[ATP Reactive Example]

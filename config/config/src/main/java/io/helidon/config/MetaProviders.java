@@ -23,8 +23,6 @@ import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.function.Function;
 
-import javax.annotation.Priority;
-
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.spi.ChangeWatcher;
 import io.helidon.config.spi.ChangeWatcherProvider;
@@ -36,6 +34,8 @@ import io.helidon.config.spi.PollingStrategy;
 import io.helidon.config.spi.PollingStrategyProvider;
 import io.helidon.config.spi.RetryPolicy;
 import io.helidon.config.spi.RetryPolicyProvider;
+
+import jakarta.annotation.Priority;
 
 /**
  * Access to Java service loaders for config sources, retry policies and polling strategies.

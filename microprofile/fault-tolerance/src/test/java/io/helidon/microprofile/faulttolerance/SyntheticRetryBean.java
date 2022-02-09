@@ -16,8 +16,7 @@
 
 package io.helidon.microprofile.faulttolerance;
 
-import javax.enterprise.inject.Vetoed;
-
+import jakarta.enterprise.inject.Vetoed;
 import org.eclipse.microprofile.faulttolerance.Retry;
 
 /**

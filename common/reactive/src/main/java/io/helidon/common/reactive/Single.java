@@ -33,6 +33,7 @@ import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.logging.Level;
 
 import io.helidon.common.mapper.Mapper;
 
@@ -222,6 +223,18 @@ public interface Single<T> extends Subscribable<T>, CompletionStage<T>, Awaitabl
     }
 
     /**
+     * Create a {@link Single} instance that publishes result of the given supplier to its subscriber(s).
+     *
+     * @param <T>  item type
+     * @param supplier item supplier to publish
+     * @return Single
+     * @throws NullPointerException if item is {@code null}
+     */
+    static <T> Single<T> create(Supplier<? extends T> supplier) {
+        return new SingleDeferredJust<>(supplier);
+    }
+
+    /**
      * Get a {@link Single} instance that never completes.
      *
      * @param <T> item type
@@ -296,6 +309,17 @@ public interface Single<T> extends Subscribable<T>, CompletionStage<T>, Awaitabl
     }
 
     /**
+     * Signals the default item supplied by specified supplier if the upstream is empty.
+     * @param supplier of the default value
+     * @return Multi
+     * @throws NullPointerException if {@code supplier} is {@code null}
+     */
+    default Single<T> defaultIfEmpty(Supplier<? extends T> supplier) {
+        Objects.requireNonNull(supplier, "supplier is null");
+        return new SingleDeferredDefaultIfEmpty<>(this, supplier);
+    }
+
+    /**
      * Map this {@link Single} instance to a publisher using the given {@link Mapper}.
      *
      * @param <U>    mapped items type
@@ -323,7 +347,8 @@ public interface Single<T> extends Subscribable<T>, CompletionStage<T>, Awaitabl
     }
 
     /**
-     * Map this {@link Single} instance to a {@link Single} using the given {@link Mapper}.
+     * Transforms item with supplied function and flatten resulting {@link io.helidon.common.reactive.Single}
+     * to downstream.
      *
      * @param <U>    mapped items type
      * @param mapper mapper
@@ -331,7 +356,39 @@ public interface Single<T> extends Subscribable<T>, CompletionStage<T>, Awaitabl
      * @throws NullPointerException if mapper is {@code null}
      */
     default <U> Single<U> flatMapSingle(Function<? super T, ? extends Single<? extends U>> mapper) {
+        Objects.requireNonNull(mapper, "mapper is null");
         return new SingleFlatMapSingle<>(this, mapper);
+    }
+
+    /**
+     * Transforms item with supplied function and flatten resulting {@link java.util.concurrent.CompletionStage} result
+     * to downstream. As reactive streams forbids null values, CompletionStage result is mapped to
+     * {@link java.util.Optional}.
+     *
+     * @param <U>    mapped items type
+     * @param mapper mapper
+     * @return Single
+     * @throws NullPointerException if mapper is {@code null}
+     */
+    default <U> Single<U> flatMapCompletionStage(Function<? super T, ? extends CompletionStage<? extends U>> mapper) {
+        Objects.requireNonNull(mapper, "mapper is null");
+        return flatMapSingle(t -> Single.create(mapper.apply(t)));
+    }
+
+    /**
+     * Transform item with supplied function and flatten resulting {@link java.util.Optional} to downstream
+     * as Single with its value as item if present or empty Single.
+     *
+     * @param <U>    mapped item type
+     * @param mapper mapper
+     * @return Single
+     * @throws NullPointerException if mapper is {@code null}
+     */
+    default <U> Single<U> flatMapOptional(Function<? super T, Optional<? extends U>> mapper) {
+        Objects.requireNonNull(mapper, "mapper is null");
+        return flatMapSingle(t -> mapper.apply(t)
+                .map(Single::just)
+                .orElseGet(Single::empty));
     }
 
     /**
@@ -365,13 +422,10 @@ public interface Single<T> extends Subscribable<T>, CompletionStage<T>, Awaitabl
      * @return Single
      */
     default Single<T> onCancel(Runnable onCancel) {
-        return new SingleTappedPublisher<>(this,
-                null,
-                null,
-                null,
-                null,
-                null,
-                onCancel);
+        return SingleTappedPublisher.builder(this)
+                .operatorName("Single.onCancel")
+                .onCancelCallback(onCancel)
+                .build();
     }
 
     /**
@@ -381,13 +435,10 @@ public interface Single<T> extends Subscribable<T>, CompletionStage<T>, Awaitabl
      * @return Single
      */
     default Single<T> onComplete(Runnable onComplete) {
-        return new SingleTappedPublisher<>(this,
-                null,
-                null,
-                null,
-                onComplete,
-                null,
-                null);
+        return SingleTappedPublisher.builder(this)
+                .operatorName("Single.onComplete")
+                .onCompleteCallback(onComplete)
+                .build();
     }
 
     /**
@@ -397,13 +448,10 @@ public interface Single<T> extends Subscribable<T>, CompletionStage<T>, Awaitabl
      * @return Single
      */
     default Single<T> onError(Consumer<? super Throwable> onErrorConsumer) {
-        return new SingleTappedPublisher<>(this,
-                null,
-                null,
-                onErrorConsumer,
-                null,
-                null,
-                null);
+        return SingleTappedPublisher.builder(this)
+                .operatorName("Single.onError")
+                .onErrorCallback(onErrorConsumer)
+                .build();
     }
 
     /**
@@ -475,13 +523,23 @@ public interface Single<T> extends Subscribable<T>, CompletionStage<T>, Awaitabl
      * @return Single
      */
     default Single<T> onTerminate(Runnable onTerminate) {
-        return new SingleTappedPublisher<>(this,
-                null,
-                null,
-                e -> onTerminate.run(),
-                onTerminate,
-                null,
-                onTerminate);
+        return SingleTappedPublisher.builder(this)
+                .operatorName("Single.onTerminate")
+                .onErrorCallback(e -> onTerminate.run())
+                .onCancelCallback(onTerminate)
+                .onCompleteCallback(onTerminate)
+                .build();
+    }
+
+    /**
+     * Executes given {@link java.lang.Runnable} when stream is finished without value(empty stream).
+     *
+     * @param ifEmpty {@link java.lang.Runnable} to be executed.
+     * @return Multi
+     */
+    default Single<T> ifEmpty(Runnable ifEmpty) {
+        Objects.requireNonNull(ifEmpty, "ifEmpty callback is null");
+        return new SingleIfEmptyPublisher<>(this, ifEmpty);
     }
 
     /**
@@ -491,8 +549,61 @@ public interface Single<T> extends Subscribable<T>, CompletionStage<T>, Awaitabl
      * @return Single
      */
     default Single<T> peek(Consumer<? super T> consumer) {
-        return new SingleTappedPublisher<>(this, null, consumer,
-                null, null, null, null);
+        return SingleTappedPublisher.builder(this)
+                .operatorName("Single.peek")
+                .onNextCallback(consumer)
+                .build();
+    }
+
+    /**
+     * Log all signals {@code onSubscribe}, {@code onNext},
+     * {@code onError}, {@code onComplete}, {@code cancel} and {@code request}
+     * coming to and from preceding operator.
+     *
+     * @return Multi
+     */
+    default Single<T> log() {
+        return Single.create(new LoggingPublisher<>(this, Level.INFO, false));
+    }
+
+    /**
+     * Log all signals {@code onSubscribe}, {@code onNext},
+     * {@code onError}, {@code onComplete}, {@code cancel} and {@code request}
+     * coming to and from preceding operator.
+     *
+     * @param level a logging level value
+     * @return Multi
+     */
+    default Single<T> log(Level level) {
+        return Single.create(new LoggingPublisher<>(this, level, false));
+    }
+
+    /**
+     * Log all signals {@code onSubscribe}, {@code onNext},
+     * {@code onError}, {@code onComplete}, {@code cancel} and {@code request}
+     * coming to and from preceding operator.
+     *
+     * @param level a logging level value
+     * @param loggerName custom logger name
+     * @return Multi
+     */
+    default Single<T> log(Level level, String loggerName) {
+        return Single.create(new LoggingPublisher<>(this, level, loggerName));
+    }
+
+    /**
+     * Log all signals {@code onSubscribe}, {@code onNext},
+     * {@code onError}, {@code onComplete}, {@code cancel} and {@code request}
+     * coming to and from preceding operator.
+     * <p>
+     * Enabled <b>trace</b> option has a negative impact on performance and should <b>NOT</b> be used in production.
+     *</p>
+     * @param level a logging level value
+     * @param trace if true position of operator is looked up from stack and logged
+     * @return Multi
+     */
+    default Single<T> log(Level level, boolean trace) {
+        return Single.create(new LoggingPublisher<>(this, level, trace));
     }
 
     /**

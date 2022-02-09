@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package io.helidon.messaging.connectors.aq;
@@ -24,13 +23,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.BiConsumer;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Instance;
-import javax.enterprise.inject.literal.NamedLiteral;
-import javax.enterprise.inject.spi.CDI;
-import javax.inject.Inject;
-import javax.jms.ConnectionFactory;
-import javax.jms.JMSException;
 import javax.sql.DataSource;
 
 import io.helidon.common.LazyValue;
@@ -41,7 +33,15 @@ import io.helidon.messaging.connectors.jms.ConnectionContext;
 import io.helidon.messaging.connectors.jms.JmsConnector;
 import io.helidon.messaging.connectors.jms.JmsMessage;
 import io.helidon.messaging.connectors.jms.SessionMetadata;
+import io.helidon.messaging.connectors.jms.shim.JakartaJms;
 
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Instance;
+import jakarta.enterprise.inject.literal.NamedLiteral;
+import jakarta.enterprise.inject.spi.CDI;
+import jakarta.inject.Inject;
+import jakarta.jms.ConnectionFactory;
+import jakarta.jms.JMSException;
 import oracle.jms.AQjmsConnectionFactory;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.messaging.spi.Connector;
@@ -55,7 +55,7 @@ public class AqConnectorImpl extends JmsConnector implements AqConnector {
 
     private static final LazyValue<Boolean> IS_CDI = LazyValue.create(() -> {
         try {
-            Class.forName("javax.enterprise.inject.spi.CDI", false, AqConnectorImpl.class.getClassLoader());
+            Class.forName("jakarta.enterprise.inject.spi.CDI", false, AqConnectorImpl.class.getClassLoader());
             CDI.current();
             return true;
         } catch (ClassNotFoundException | IllegalStateException e) {
@@ -94,22 +94,23 @@ public class AqConnectorImpl extends JmsConnector implements AqConnector {
             if (factory.exists()) {
                 // from config
                 try {
-                    return Optional.of(createAqFactory(factory));
-                } catch (JMSException e) {
+                    return Optional.of(JakartaJms.create(createAqFactory(factory)));
+                } catch (javax.jms.JMSException e) {
                     throw new MessagingException("Error when preparing AQjmsConnectionFactory " + factoryName.get(), e);
                 }
             } else {
                 // or named bean
                 return Optional.ofNullable(connectionFactories)
-                        .flatMap(s -> s.select(NamedLiteral.of(factoryName.get())).stream().findFirst());
+                        .flatMap(s -> s.select(NamedLiteral.of(factoryName.get())).stream().findFirst())
+                        .map(JakartaJms::create);
             }
         }
 
         // per channel config
         if (ctx.config().get(URL_ATTRIBUTE).exists() || ctx.config().get(DATASOURCE_ATTRIBUTE).exists()) {
             try {
-                return Optional.of(createAqFactory(ctx.config()));
-            } catch (JMSException e) {
+                return Optional.of(JakartaJms.create(createAqFactory(ctx.config())));
+            } catch (javax.jms.JMSException e) {
                 throw new MessagingException("Error when preparing AQjmsConnectionFactory", e);
             }
         }
@@ -118,10 +119,11 @@ public class AqConnectorImpl extends JmsConnector implements AqConnector {
         return Optional.ofNullable(connectionFactories)
                 .flatMap(s -> s.stream()
                         .findFirst()
-                );
+                )
+                .map(JakartaJms::create);
     }
 
-    private AQjmsConnectionFactory createAqFactory(Config c) throws JMSException {
+    private AQjmsConnectionFactory createAqFactory(Config c) throws javax.jms.JMSException {
         ConfigValue<String> user = c.get(USERNAME_ATTRIBUTE).asString();
         ConfigValue<String> password = c.get(PASSWORD_ATTRIBUTE).asString();
         ConfigValue<String> url = c.get(URL_ATTRIBUTE).asString();
@@ -165,7 +167,7 @@ public class AqConnectorImpl extends JmsConnector implements AqConnector {
 
 
     @Override
-    protected JmsMessage<?> createMessage(javax.jms.Message message,
+    protected JmsMessage<?> createMessage(jakarta.jms.Message message,
                                           Executor executor,
                                           SessionMetadata sessionMetadata) {
         return new AqMessageImpl<>(super.createMessage(message, executor, sessionMetadata), sessionMetadata);

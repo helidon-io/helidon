@@ -46,31 +46,127 @@
 </suppress>
 
 <!-- GraalVM -->
-<!-- This suppresses multiple CVEs related to running untrusted Java code.
-     The descriptions of these CVEs have the statement:
-       This vulnerability does not apply to Java deployments, typically in servers, that load and run only trusted code"
-     Therefore these do not apply to Helidon's use of GraalVM
+<!-- This suppresses multiple JDK CVEs related to running untrusted Java code.
+     These do not apply to Helidon's use of Java/GraalVM.
 -->
 <suppress>
    <notes><![CDATA[
-   file name: graal-sdk-21.1.0.jar
+   file name: graal-sdk-21.3.0.jar
    ]]></notes>
-   <packageUrl regex="true">^pkg:maven/org\.graalvm.*/.*@.*$</packageUrl>
-   <cve>CVE-2021-2341</cve>
+   <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
+   <cve>CVE-2022-21248</cve>
 </suppress>
 <suppress>
    <notes><![CDATA[
-   file name: graal-sdk-21.1.0.jar
+   file name: graal-sdk-21.3.0.jar
    ]]></notes>
-   <packageUrl regex="true">^pkg:maven/org\.graalvm.*/.*@.*$</packageUrl>
-   <cve>CVE-2021-2369</cve>
+   <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
+   <cve>CVE-2022-21271</cve>
 </suppress>
 <suppress>
    <notes><![CDATA[
-   file name: graal-sdk-21.1.0.jar
+   file name: graal-sdk-21.3.0.jar
    ]]></notes>
-   <packageUrl regex="true">^pkg:maven/org\.graalvm.*/.*@.*$</packageUrl>
-   <cve>CVE-2021-2388</cve>
+   <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
+   <cve>CVE-2022-21277</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: graal-sdk-21.3.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
+   <cve>CVE-2022-21282</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: graal-sdk-21.3.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
+   <cve>CVE-2022-21283</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: graal-sdk-21.3.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
+   <cve>CVE-2022-21291</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: graal-sdk-21.3.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
+   <cve>CVE-2022-21293</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: graal-sdk-21.3.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
+   <cve>CVE-2022-21294</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: graal-sdk-21.3.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
+   <cve>CVE-2022-21296</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: graal-sdk-21.3.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
+   <cve>CVE-2022-21299</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: graal-sdk-21.3.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
+   <cve>CVE-2022-21305</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: graal-sdk-21.3.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
+   <cve>CVE-2022-21340</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: graal-sdk-21.3.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
+   <cve>CVE-2022-21341</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: graal-sdk-21.3.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
+   <cve>CVE-2022-21349</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: graal-sdk-21.3.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
+   <cve>CVE-2022-21360</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: graal-sdk-21.3.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
+   <cve>CVE-2022-21365</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: graal-sdk-21.3.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
+   <cve>CVE-2022-21366</cve>
 </suppress>
 
 
@@ -104,11 +200,12 @@
 -->
 <suppress>
    <notes><![CDATA[
-   file name: google-http-client-1.37.0.jar
+   file name: google-http-client-apache-v2-1.40.1.jar
    ]]></notes>
-   <packageUrl regex="true">^pkg:maven/com\.google\.http\-client/google\-http\-client@.*$</packageUrl>
-   <cpe>cpe:/a:apache:httpclient</cpe>
+   <packageUrl regex="true">^pkg:maven/com\.google\.http\-client/google\-http\-client\-apache\-v2@.*$</packageUrl>
+   <cve>CVE-2020-13956</cve>
 </suppress>
+
 
 <!-- This CVE is against Neo4j through 3.4.18. We use Neo4j 4.2.4
      Helidon's Neo4j integration triggered a false positive due to it's 
@@ -129,7 +226,7 @@
    <notes><![CDATA[
    file name: neo4j-java-driver-4.2.4.jar (shaded: io.netty:netty-transport:4.1.60.Final)
    ]]></notes>
-   <packageUrl regex="true">^pkg:maven/io\.netty/netty\-.*@.*$</packageUrl>
+   <filePath regex="true">.*/neo4j\-java\-driver\-4\.2\.4\.jar.*</filePath>
    <cve>CVE-2021-21409</cve>
 </suppress>
 
@@ -141,6 +238,50 @@
    ]]></notes>
    <packageUrl regex="true">^pkg:maven/jakarta\.el/jakarta\.el\-api@.*$</packageUrl>
    <cve>CVE-2021-28170</cve>
+</suppress>
+
+
+<!-- These files are being detected as an old version of Netty and raises false positives for
+     a number of old Netty CVEs.
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: netty-incubator-transport-native-io_uring-0.0.8.Final-linux-x86_64.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/io\.netty\.incubator/netty\-incubator\-transport\-native\-io_uring@.*$</packageUrl>
+   <cpe>cpe:/a:netty:netty</cpe>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: netty-tcnative-classes-2.0.46.Final.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/io\.netty/netty\-tcnative\-classes@.*$</packageUrl>
+   <cpe>cpe:/a:netty:netty</cpe>
+</suppress>
+
+<!-- These are old CVEs related to config components of Eclipse IDE and Jenkins. They are generating
+     false positive for MicroProfile Config
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: microprofile-config-api-3.0-RC5.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.eclipse\.microprofile\.config/microprofile\-config\-api@.*$</packageUrl>
+   <cve>CVE-2008-7271</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: microprofile-config-api-3.0-RC5.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.eclipse\.microprofile\.config/microprofile\-config\-api@.*$</packageUrl>
+   <cve>CVE-2010-4647</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: microprofile-config-api-3.0-RC5.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.eclipse\.microprofile\.config/microprofile\-config\-api@.*$</packageUrl>
+   <cve>CVE-2018-1000413</cve>
 </suppress>
 
 </suppressions>

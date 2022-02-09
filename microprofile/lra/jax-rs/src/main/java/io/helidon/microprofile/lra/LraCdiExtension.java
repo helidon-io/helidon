@@ -32,32 +32,33 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
-import javax.annotation.Priority;
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.context.Initialized;
-import javax.enterprise.context.spi.CreationalContext;
-import javax.enterprise.event.Observes;
-import javax.enterprise.inject.spi.AnnotatedParameter;
-import javax.enterprise.inject.spi.AnnotatedType;
-import javax.enterprise.inject.spi.Bean;
-import javax.enterprise.inject.spi.BeanManager;
-import javax.enterprise.inject.spi.BeforeBeanDiscovery;
-import javax.enterprise.inject.spi.DeploymentException;
-import javax.enterprise.inject.spi.Extension;
-import javax.enterprise.inject.spi.ProcessAnnotatedType;
-import javax.enterprise.inject.spi.ProcessManagedBean;
-import javax.enterprise.inject.spi.WithAnnotations;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.OPTIONS;
-import javax.ws.rs.PATCH;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.core.Application;
-
 import io.helidon.common.Reflected;
+import io.helidon.microprofile.server.ServerCdiExtension;
+import io.helidon.webserver.Service;
 
+import jakarta.annotation.Priority;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.Initialized;
+import jakarta.enterprise.context.spi.CreationalContext;
+import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.spi.AnnotatedParameter;
+import jakarta.enterprise.inject.spi.AnnotatedType;
+import jakarta.enterprise.inject.spi.Bean;
+import jakarta.enterprise.inject.spi.BeanManager;
+import jakarta.enterprise.inject.spi.BeforeBeanDiscovery;
+import jakarta.enterprise.inject.spi.DeploymentException;
+import jakarta.enterprise.inject.spi.Extension;
+import jakarta.enterprise.inject.spi.ProcessAnnotatedType;
+import jakarta.enterprise.inject.spi.ProcessManagedBean;
+import jakarta.enterprise.inject.spi.WithAnnotations;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.OPTIONS;
+import jakarta.ws.rs.PATCH;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.core.Application;
 import org.eclipse.microprofile.lra.annotation.AfterLRA;
 import org.eclipse.microprofile.lra.annotation.Compensate;
 import org.eclipse.microprofile.lra.annotation.Complete;
@@ -72,7 +73,7 @@ import org.jboss.jandex.IndexReader;
 import org.jboss.jandex.IndexView;
 import org.jboss.jandex.Indexer;
 
-import static javax.interceptor.Interceptor.Priority.PLATFORM_AFTER;
+import static jakarta.interceptor.Interceptor.Priority.PLATFORM_AFTER;
 
 /**
  * MicroProfile Long Running Actions CDI extension.
@@ -112,7 +113,7 @@ public class LraCdiExtension implements Extension {
                 Forget.class,
                 Status.class,
                 Application.class,
-                ParticipantCdiResource.class).forEach(c -> runtimeIndex(DotName.createSimple(c.getName())));
+                NonJaxRsResource.class).forEach(c -> runtimeIndex(DotName.createSimple(c.getName())));
 
         List<URL> indexFiles;
         try {
@@ -144,13 +145,12 @@ public class LraCdiExtension implements Extension {
 
     private void registerInternalBeans(@Observes BeforeBeanDiscovery event) {
         Stream.of(
-                        CoordinatorLocatorService.class,
-                        HandlerService.class,
-                        InspectionService.class,
-                        ParticipantApp.class,
-                        ParticipantCdiResource.class,
-                        ParticipantService.class
-                )
+                CoordinatorLocatorService.class,
+                HandlerService.class,
+                InspectionService.class,
+                NonJaxRsResource.class,
+                ParticipantService.class
+        )
                 .forEach(clazz -> event
                         .addAnnotatedType(clazz, "lra-" + clazz.getName())
                         .add(ApplicationScoped.Literal.INSTANCE)
@@ -205,6 +205,20 @@ public class LraCdiExtension implements Extension {
         }
     }
 
+    private void beforeServerStart(
+            @Observes
+            @Priority(PLATFORM_AFTER + 99)
+            @Initialized(ApplicationScoped.class) Object event,
+            BeanManager beanManager) {
+
+        NonJaxRsResource nonJaxRsResource = resolve(NonJaxRsResource.class, beanManager);
+        Service nonJaxRsParticipantService = nonJaxRsResource.createNonJaxRsParticipantResource();
+        beanManager.getExtension(ServerCdiExtension.class)
+                .serverRoutingBuilder()
+                .register(nonJaxRsResource.contextPath(), nonJaxRsParticipantService);
+
+    }
+
     private void ready(
             @Observes
             @Priority(PLATFORM_AFTER + 101)
@@ -217,8 +231,7 @@ public class LraCdiExtension implements Extension {
         }
 
         // ------------- Validate LRA participant methods -------------
-        InspectionService inspectionService =
-                lookup(beanManager.resolve(beanManager.getBeans(InspectionService.class)), beanManager);
+        InspectionService inspectionService = resolve(InspectionService.class, beanManager);
 
         for (ClassInfo classInfo : index.getKnownClasses()) {
 
@@ -283,9 +296,13 @@ public class LraCdiExtension implements Extension {
         return index;
     }
 
+    static <T> T resolve(Class<T> beanType, BeanManager bm) {
+        return lookup(bm.resolve(bm.getBeans(beanType)), bm);
+    }
+
     @SuppressWarnings("unchecked")
     static <T> T lookup(Bean<?> bean, BeanManager beanManager) {
-        javax.enterprise.context.spi.Context context = beanManager.getContext(bean.getScope());
+        jakarta.enterprise.context.spi.Context context = beanManager.getContext(bean.getScope());
         Object instance = context.get(bean);
         if (instance == null) {
             CreationalContext<?> creationalContext = beanManager.createCreationalContext(bean);

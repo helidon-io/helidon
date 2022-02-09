@@ -20,12 +20,14 @@
 module io.helidon.messaging.connectors.aq {
     requires transitive io.helidon.messaging.connectors.jms;
     requires java.logging;
+    requires jakarta.jms.api;
     requires javax.jms.api;
     requires static io.helidon.config.mp;
     requires io.helidon.common.configurable;
     requires io.helidon.messaging;
-    requires static jakarta.enterprise.cdi.api;
-    requires static jakarta.inject.api;
+    requires io.helidon.messaging.jms.shim;
+    requires static jakarta.cdi;
+    requires static jakarta.inject;
     requires aqapi;
     requires java.sql;
 

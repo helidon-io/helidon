@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,10 +39,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.common.GenericType;
-import io.helidon.common.LazyValue;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.http.DataChunk;
@@ -62,7 +62,6 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelOption;
-import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
@@ -110,7 +109,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     }
 
     private final Map<String, String> properties;
-    private final LazyValue<NioEventLoopGroup> eventGroup;
+    private final NioEventLoopGroup eventGroup;
     private final WebClientConfiguration configuration;
     private final Http.RequestMethod method;
     private final WebClientRequestHeaders headers;
@@ -136,7 +135,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     private Long requestId;
     private boolean allowChunkedEncoding;
 
-    private WebClientRequestBuilderImpl(LazyValue<NioEventLoopGroup> eventGroup,
+    private WebClientRequestBuilderImpl(NioEventLoopGroup eventGroup,
                                         WebClientConfiguration configuration,
                                         Http.RequestMethod method) {
         this.properties = new HashMap<>();
@@ -167,9 +166,9 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         this.keepAlive = configuration.keepAlive();
     }
 
-    public static WebClientRequestBuilder create(LazyValue<NioEventLoopGroup> eventGroup,
-                                                 WebClientConfiguration configuration,
-                                                 Http.RequestMethod method) {
+    static WebClientRequestBuilder create(NioEventLoopGroup eventGroup,
+                                          WebClientConfiguration configuration,
+                                          Http.RequestMethod method) {
         return new WebClientRequestBuilderImpl(eventGroup, configuration, method);
     }
 
@@ -206,15 +205,19 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
             for (ChannelRecord channelRecord : channels) {
                 Channel channel = channelRecord.channel;
                 if (channel.isOpen() && channel.attr(IN_USE).get().compareAndSet(false, true)) {
-                    LOGGER.finest(() -> "Reusing -> " + channel.hashCode());
-                    LOGGER.finest(() -> "Setting in use -> true");
+                    if (LOGGER.isLoggable(Level.FINEST)) {
+                        LOGGER.finest(() -> "Reusing -> " + channel.hashCode() + ", settting in use -> true");
+                    }
                     return channelRecord.channelFuture;
                 }
-                LOGGER.finest(() -> "Not accepted -> " + channel.hashCode());
-                LOGGER.finest(() -> "Open -> " + channel.isOpen());
-                LOGGER.finest(() -> "In use -> " + channel.attr(IN_USE).get());
+                if (LOGGER.isLoggable(Level.FINEST)) {
+                    LOGGER.finest(() -> "Not accepted -> " + channel.hashCode() + ", open -> "
+                            + channel.isOpen() + ", in use -> " + channel.attr(IN_USE).get());
+                }
             }
-            LOGGER.finest(() -> "New connection to -> " + connectionIdent);
+            if (LOGGER.isLoggable(Level.FINEST)) {
+                LOGGER.finest(() -> "New connection to -> " + connectionIdent);
+            }
             URI uri = connectionIdent.base;
             ChannelFuture connect = bootstrap.connect(uri.getHost(), uri.getPort());
             Channel channel = connect.channel();
@@ -227,9 +230,10 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     }
 
     static void removeChannelFromCache(ConnectionIdent key, Channel channel) {
-        LOGGER.finest(() -> "Removing from channel cache.");
-        LOGGER.finest(() -> "Connection ident -> " + key);
-        LOGGER.finest(() -> "Channel -> " + channel.hashCode());
+        if (LOGGER.isLoggable(Level.FINEST)) {
+            LOGGER.finest(() -> "Removing from channel cache. Connection ident ->  " + key
+                    + ", channel -> " + channel.hashCode());
+        }
         CHANNEL_CACHE.get(key).remove(new ChannelRecord(channel));
     }
 
@@ -540,14 +544,13 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
                     });
         }
 
-        return Single.create(rcs.thenCompose(serviceRequest -> {
-            //Relative URI is used in request if no proxy set
-            URI requestURI = proxy == Proxy.noProxy() ? prepareRelativeURI() : finalUri;
+        Single<WebClientResponse> single =  Single.create(rcs.thenCompose(serviceRequest -> {
+            URI requestUri = relativizeNoProxy(finalUri, proxy, configuration.relativeUris());
             requestId = serviceRequest.requestId();
             HttpHeaders headers = toNettyHttpHeaders();
             DefaultHttpRequest request = new DefaultHttpRequest(toNettyHttpVersion(httpVersion),
                                                                 toNettyMethod(method),
-                                                                requestURI.toASCIIString(),
+                                                                requestUri.toASCIIString(),
                                                                 headers);
             boolean keepAlive = HttpUtil.isKeepAlive(request);
 
@@ -569,9 +572,8 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
 
             CompletableFuture<WebClientResponse> result = new CompletableFuture<>();
 
-            EventLoopGroup group = eventGroup.get();
             Bootstrap bootstrap = new Bootstrap();
-            bootstrap.group(group)
+            bootstrap.group(eventGroup)
                     .channel(NioSocketChannel.class)
                     .handler(new NettyClientInitializer(requestConfiguration))
                     .option(ChannelOption.SO_KEEPALIVE, keepAlive)
@@ -582,8 +584,10 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
                     : bootstrap.connect(finalUri.getHost(), finalUri.getPort());
 
             channelFuture.addListener((ChannelFutureListener) future -> {
-                LOGGER.finest(() -> "(client reqID: " + requestId + ") "
-                        + "Channel hashcode -> " + channelFuture.channel().hashCode());
+                if (LOGGER.isLoggable(Level.FINEST)) {
+                    LOGGER.finest(() -> "(client reqID: " + requestId + ") "
+                            + "Channel hashcode -> " + channelFuture.channel().hashCode());
+                }
                 channelFuture.channel().attr(REQUEST).set(clientRequest);
                 channelFuture.channel().attr(RESPONSE_RECEIVED).set(false);
                 channelFuture.channel().attr(RECEIVED).set(responseReceived);
@@ -607,6 +611,41 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
                 }
             });
             return result;
+        }));
+
+        return wrapWithContext(single);
+    }
+
+    /**
+     * Wraps a single into another that runs all subscriber methods using the current
+     * context. This will enable calls to {@code Contexts.context()} in reactive handlers
+     * to return a non-empty optional.
+     *
+     * @param single single to be wrapped
+     * @param <T> type parameter
+     * @return wrapped single
+     */
+    private <T> Single<T> wrapWithContext(Single<T> single) {
+        return Single.create(subscriber -> single.subscribe(new Flow.Subscriber<T>() {
+            @Override
+            public void onSubscribe(Flow.Subscription subscription) {
+                Contexts.runInContext(context, () -> subscriber.onSubscribe(subscription));
+            }
+
+            @Override
+            public void onNext(T item) {
+                Contexts.runInContext(context, () -> subscriber.onNext(item));
+            }
+
+            @Override
+            public void onError(Throwable throwable) {
+                Contexts.runInContext(context, () -> subscriber.onError(throwable));
+            }
+
+            @Override
+            public void onComplete() {
+                Contexts.runInContext(context, subscriber::onComplete);
+            }
         }));
     }
 
@@ -676,16 +715,29 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         return UriComponentEncoder.encode(fragment, UriComponentEncoder.Type.FRAGMENT);
     }
 
-    private URI prepareRelativeURI() {
-        String path = finalUri.getRawPath();
-        String fragment = finalUri.getRawFragment();
-        String query = finalUri.getRawQuery();
-        StringBuilder sb = new StringBuilder();
-        constructRelativeURI(sb, path, query, fragment);
-        return URI.create(sb.toString());
+
+    /**
+     * Relativize final URI if no proxy or if host in no-proxy list or if forced via
+     * the {@code relative-uris} config property.
+     *
+     * @param finalUri the final URI
+     * @param proxy the proxy
+     * @param relativeUris flag to force all URIs to be relative
+     * @return possibly converted URI
+     */
+    static URI relativizeNoProxy(URI finalUri, Proxy proxy, boolean relativeUris) {
+        if (proxy == Proxy.noProxy() || proxy.noProxyPredicate().apply(finalUri) || relativeUris) {
+            String path = finalUri.getRawPath();
+            String fragment = finalUri.getRawFragment();
+            String query = finalUri.getRawQuery();
+            StringBuilder sb = new StringBuilder();
+            constructRelativeURI(sb, path, query, fragment);
+            return URI.create(sb.toString());
+        }
+        return finalUri;
     }
 
-    private void constructRelativeURI(StringBuilder stringBuilder, String path, String query, String fragment) {
+    private static void constructRelativeURI(StringBuilder stringBuilder, String path, String query, String fragment) {
         if (path != null) {
             stringBuilder.append(path);
         }

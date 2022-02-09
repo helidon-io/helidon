@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,6 @@ package io.helidon.microprofile.grpc.core;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -31,11 +29,11 @@ import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.annotation.Priority;
-import javax.inject.Singleton;
-
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.grpc.core.MarshallerSupplier;
+
+import jakarta.annotation.Priority;
+import jakarta.inject.Singleton;
 
 /**
  * A base class for gRPC service and client descriptor builders.
@@ -153,16 +151,11 @@ public abstract class AbstractServiceBuilder {
      */
     protected List<Method> getAllDeclaredMethods(Class<?> clazz) {
         List<Method> result = new LinkedList<>();
-
-        AccessController.doPrivileged((PrivilegedAction<Object>) () -> {
-            Class current = clazz;
-            while (current != Object.class && current != null) {
-                result.addAll(Arrays.asList(current.getDeclaredMethods()));
-                current = current.getSuperclass();
-            }
-            return null;
-        });
-
+        Class current = clazz;
+        while (current != Object.class && current != null) {
+            result.addAll(Arrays.asList(current.getDeclaredMethods()));
+            current = current.getSuperclass();
+        }
         return result;
     }
 
@@ -231,8 +224,8 @@ public abstract class AbstractServiceBuilder {
      * Load the {@link io.helidon.microprofile.grpc.core.MethodHandlerSupplier} instances using the {@link java.util.ServiceLoader}
      * and return them in priority order.
      * <p>
-     * Priority is determined by the value obtained from the {@link javax.annotation.Priority} annotation on
-     * any implementation classes. Classes not annotated with {@link javax.annotation.Priority} have a
+     * Priority is determined by the value obtained from the {@link jakarta.annotation.Priority} annotation on
+     * any implementation classes. Classes not annotated with {@link jakarta.annotation.Priority} have a
      * priority of zero.
      *
      * @return a priority ordered list of {@link io.helidon.microprofile.grpc.core.MethodHandlerSupplier} instances

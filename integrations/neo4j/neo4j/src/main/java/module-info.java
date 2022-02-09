@@ -20,8 +20,8 @@
 module io.helidon.integrations.neo4j {
     requires java.logging;
 
-    requires static jakarta.enterprise.cdi.api;
-    requires static jakarta.inject.api;
+    requires static jakarta.cdi;
+    requires static jakarta.inject;
     requires static jakarta.interceptor.api;
     requires static io.helidon.config;
     requires static io.helidon.config.mp;
@@ -30,5 +30,5 @@ module io.helidon.integrations.neo4j {
 
     exports io.helidon.integrations.neo4j;
 
-    provides javax.enterprise.inject.spi.Extension with io.helidon.integrations.neo4j.Neo4jCdiExtension;
+    provides jakarta.enterprise.inject.spi.Extension with io.helidon.integrations.neo4j.Neo4jCdiExtension;
 }

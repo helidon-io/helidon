@@ -18,10 +18,13 @@ package io.helidon.microprofile.cdi;
 
 import java.util.concurrent.atomic.AtomicReference;
 
-import javax.enterprise.inject.spi.CDI;
-import javax.enterprise.inject.spi.CDIProvider;
+import jakarta.enterprise.inject.spi.CDI;
+import jakarta.enterprise.inject.spi.CDIProvider;
 
-class HelidonCdiProvider implements CDIProvider {
+/**
+ * Implementation of the CDI SPI.
+ */
+public class HelidonCdiProvider implements CDIProvider {
     private static final AtomicReference<CDI<Object>> CURRENT_CDI = new AtomicReference<>();
 
     @Override

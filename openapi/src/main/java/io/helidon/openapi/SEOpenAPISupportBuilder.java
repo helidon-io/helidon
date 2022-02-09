@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 package io.helidon.openapi;
 
@@ -34,10 +33,6 @@ import io.smallrye.openapi.api.OpenApiConfig;
 public final class SEOpenAPISupportBuilder extends OpenAPISupport.Builder<SEOpenAPISupportBuilder> {
 
     private final OpenAPIConfigImpl.Builder apiConfigBuilder = OpenAPIConfigImpl.builder();
-
-    protected SEOpenAPISupportBuilder() {
-        super(SEOpenAPISupportBuilder.class);
-    }
 
     /**
      * Set various builder attributes from the specified openapi {@code Config} object.

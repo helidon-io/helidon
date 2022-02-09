@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 package io.helidon.microprofile.metrics;
 
@@ -21,14 +20,13 @@ import java.lang.reflect.Executable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.inject.Inject;
-import javax.interceptor.InvocationContext;
-
-import io.helidon.metrics.Registry;
-import io.helidon.microprofile.metrics.MetricsCdiExtension.MetricWorkItem;
+import io.helidon.metrics.api.HelidonMetric;
 import io.helidon.servicecommon.restcdi.HelidonInterceptor;
 
+import jakarta.inject.Inject;
+import jakarta.interceptor.InvocationContext;
 import org.eclipse.microprofile.metrics.Metric;
+import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 
 /**
@@ -39,7 +37,7 @@ import org.eclipse.microprofile.metrics.MetricRegistry;
  * </p>
  * @param <M> type of metrics the interceptor handles
  */
-abstract class MetricsInterceptorBase<M extends Metric> extends HelidonInterceptor.Base<MetricWorkItem> {
+abstract class MetricsInterceptorBase<M extends Metric> extends HelidonInterceptor.Base<BasicMetricWorkItem> {
 
     static final Logger LOGGER = Logger.getLogger(MetricsInterceptorBase.class.getName());
 
@@ -72,28 +70,35 @@ abstract class MetricsInterceptorBase<M extends Metric> extends HelidonIntercept
     }
 
     @Override
-    public Iterable<MetricWorkItem> workItems(Executable executable) {
-        return extension.workItems(executable, annotationType);
+    public Iterable<BasicMetricWorkItem> workItems(Executable executable) {
+        return TypeFilteredIterable.create(extension.workItems(executable, annotationType), BasicMetricWorkItem.class);
     }
 
     @Override
-    public void preInvocation(InvocationContext context, MetricWorkItem workItem) {
-        verifyMetric(context, workItem, ActionType.PREINVOKE);
+    public void preInvocation(InvocationContext context, BasicMetricWorkItem workItem) {
+        verifyMetric(context, workItem.metricID(), workItem.metric(), ActionType.PREINVOKE);
         preInvoke(metricType.cast(workItem.metric()));
     }
 
-    void verifyMetric(InvocationContext context, MetricWorkItem workItem, ActionType actionType) {
-        Metric metric = workItem.metric();
-        if (Registry.isMarkedAsDeleted(metric)) {
-            throw new IllegalStateException("Attempt to use previously-removed metric" + workItem.metricID());
-        }
+    void verifyMetric(InvocationContext context, MetricID metricID, Metric metric, ActionType actionType) {
+        verifyMetric(metricID, metric);
         if (LOGGER.isLoggable(Level.FINEST)) {
             LOGGER.log(Level.FINEST, String.format(
                     "%s (%s) is accepting %s %s for processing on %s triggered by @%s",
-                    getClass().getSimpleName(), actionType, workItem.metric()
-                            .getClass()
-                            .getSimpleName(), workItem.metricID(),
-                    context.getMethod() != null ? context.getMethod() : context.getConstructor(), annotationType.getSimpleName()));
+                    getClass().getSimpleName(),
+                    actionType,
+                    metric.getClass()
+                            .getSimpleName(),
+                    metricID,
+                    context.getMethod() != null ? context.getMethod() : context.getConstructor(),
+                    annotationType.getSimpleName()));
+        }
+    }
+
+    static void verifyMetric(MetricID metricID,
+                             Metric metric) {
+        if (HelidonMetric.isMarkedAsDeleted(metric)) {
+            throw new IllegalStateException("Attempt to use previously-removed metric" + metricID);
         }
     }
 
@@ -109,7 +114,7 @@ abstract class MetricsInterceptorBase<M extends Metric> extends HelidonIntercept
      * @param <T> type of metrics the interceptor handles
      */
     abstract static class WithPostCompletion<T extends Metric> extends MetricsInterceptorBase<T>
-            implements HelidonInterceptor.WithPostCompletion<MetricWorkItem> {
+            implements HelidonInterceptor.WithPostCompletion<BasicMetricWorkItem> {
 
         private final Class<T> metricType;
 
@@ -119,8 +124,8 @@ abstract class MetricsInterceptorBase<M extends Metric> extends HelidonIntercept
         }
 
         @Override
-        public void postCompletion(InvocationContext context, Throwable throwable, MetricWorkItem workItem) {
-            verifyMetric(context, workItem, ActionType.COMPLETE);
+        public void postCompletion(InvocationContext context, Throwable throwable, BasicMetricWorkItem workItem) {
+            verifyMetric(context, workItem.metricID(), workItem.metric(), ActionType.COMPLETE);
             postComplete(metricType.cast(workItem.metric()));
         }
 

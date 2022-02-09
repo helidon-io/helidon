@@ -20,15 +20,6 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-
 import io.helidon.common.Base64Value;
 import io.helidon.integrations.oci.vault.CreateSecret;
 import io.helidon.integrations.oci.vault.Decrypt;
@@ -39,6 +30,14 @@ import io.helidon.integrations.oci.vault.OciVault;
 import io.helidon.integrations.oci.vault.Sign;
 import io.helidon.integrations.oci.vault.Verify;
 
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 /**

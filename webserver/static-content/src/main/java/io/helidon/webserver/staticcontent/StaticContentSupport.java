@@ -126,7 +126,7 @@ public interface StaticContentSupport extends Service {
      * @param <B> type of a subclass of a concrete builder
      */
     @SuppressWarnings("unchecked")
-    abstract class Builder<B extends Builder<B>> implements io.helidon.common.Builder<StaticContentSupport> {
+    abstract class Builder<B extends Builder<B>> implements io.helidon.common.Builder<B, StaticContentSupport> {
         private String welcomeFileName;
         private Function<String, String> resolvePathFunction = Function.identity();
 
@@ -157,7 +157,7 @@ public interface StaticContentSupport extends Service {
                 throw new IllegalArgumentException("Welcome file cannot be empty");
             }
             this.welcomeFileName = welcomeFileName;
-            return (B) this;
+            return identity();
         }
 
         /**
@@ -169,7 +169,7 @@ public interface StaticContentSupport extends Service {
          */
         public B pathMapper(Function<String, String> resolvePathFunction) {
             this.resolvePathFunction = resolvePathFunction;
-            return (B) this;
+            return identity();
         }
 
         String welcomeFileName() {

@@ -29,27 +29,28 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import javax.annotation.Priority;
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.context.Initialized;
-import javax.enterprise.event.Observes;
-import javax.enterprise.inject.spi.Extension;
-import javax.enterprise.inject.spi.ProcessManagedBean;
-import javax.ws.rs.Path;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Application;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.ext.ExceptionMapper;
-import javax.ws.rs.ext.Provider;
-
+import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.jersey.JerseySupport;
 
+import jakarta.annotation.Priority;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.Initialized;
+import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.spi.Extension;
+import jakarta.enterprise.inject.spi.ProcessManagedBean;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Application;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.ext.ExceptionMapper;
+import jakarta.ws.rs.ext.Provider;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.glassfish.jersey.internal.inject.InjectionManager;
 import org.glassfish.jersey.server.ResourceConfig;
 
-import static javax.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
+import static jakarta.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
 
 /**
  * Configure Jersey related things.
@@ -189,7 +190,7 @@ public class JaxRsCdiExtension implements Extension {
     }
 
     /**
-     * Add a jersey application to the server. Context will be introspected from {@link javax.ws.rs.ApplicationPath} annotation.
+     * Add a jersey application to the server. Context will be introspected from {@link jakarta.ws.rs.ApplicationPath} annotation.
      * You can also use {@link #addApplication(String, Application)}.
      *
      * @param application configured as needed
@@ -203,7 +204,7 @@ public class JaxRsCdiExtension implements Extension {
     /**
      * Add a jersey application to the server with an explicit context path.
      *
-     * @param contextRoot Context root to use for this application ({@link javax.ws.rs.ApplicationPath} is ignored)
+     * @param contextRoot Context root to use for this application ({@link jakarta.ws.rs.ApplicationPath} is ignored)
      * @param application configured as needed
      * @throws java.lang.IllegalStateException in case applications are already started
      */
@@ -276,19 +277,27 @@ public class JaxRsCdiExtension implements Extension {
         JerseySupport.Builder builder = JerseySupport.builder(jaxRsApplication.resourceConfig());
         builder.config(((io.helidon.config.Config) ConfigProvider.getConfig()).get("server.jersey"));
         builder.executorService(jaxRsApplication.executorService().orElseGet(defaultExecutorService));
-        builder.register(new ExceptionMapper<Exception>() {
-            @Override
-            public Response toResponse(Exception exception) {
-                if (exception instanceof WebApplicationException) {
-                    return ((WebApplicationException) exception).getResponse();
-                } else {
-                    LOGGER.log(Level.WARNING, exception, () -> "Internal server error");
-                    return Response.serverError().build();
-                }
-            }
-        });
+        builder.register(new CatchAllExceptionMapper());
         builder.injectionManager(injectionManager);
         return builder.build();
+    }
+
+    @Provider
+    private static class CatchAllExceptionMapper implements ExceptionMapper<Exception> {
+
+        @Context
+        private ServerRequest serverRequest;
+
+        @Override
+        public Response toResponse(Exception exception) {
+            serverRequest.context().register("unmappedException", exception);
+            if (exception instanceof WebApplicationException) {
+                return ((WebApplicationException) exception).getResponse();
+            } else {
+                LOGGER.log(Level.WARNING, exception, () -> "Internal server error");
+                return Response.serverError().build();
+            }
+        }
     }
 
     Optional<String> findContextRoot(io.helidon.config.Config config, JaxRsApplication jaxRsApplication) {

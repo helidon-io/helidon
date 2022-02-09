@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,15 @@
 
 package io.helidon.metrics;
 
+import java.time.Duration;
+import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
-import javax.json.Json;
-import javax.json.JsonNumber;
-import javax.json.JsonObject;
-import javax.json.JsonObjectBuilder;
-
+import jakarta.json.Json;
+import jakarta.json.JsonNumber;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonObjectBuilder;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
@@ -41,6 +42,8 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.closeTo;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.lessThan;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertAll;
@@ -68,6 +71,8 @@ class HelidonTimerTest {
     private static Metadata meta;
     private static TestClock dataSetTimerClock = TestClock.create();
 
+    private static final long DATA_SET_ELAPSED_TIME = Arrays.stream(SAMPLE_LONG_DATA).sum();
+
     @BeforeAll
     static void initClass() {
         meta = Metadata.builder()
@@ -82,7 +87,7 @@ class HelidonTimerTest {
         dataSetTimerID = new MetricID("response_time");
 
         for (long i : SAMPLE_LONG_DATA) {
-            dataSetTimer.update(i, TimeUnit.NANOSECONDS);
+            dataSetTimer.update(Duration.ofNanos(i));
         }
 
         timer = HelidonTimer.create("application", meta, timerClock);
@@ -91,7 +96,7 @@ class HelidonTimerTest {
 
         for (int i = 0; i < markSeconds; i++) {
             timerClock.add(1, TimeUnit.SECONDS);
-            timer.update(1, TimeUnit.SECONDS);
+            timer.update(Duration.ofSeconds(1));
         }
     }
 
@@ -120,6 +125,7 @@ class HelidonTimerTest {
         long diff = context.stop();
 
         assertThat(diff, is(TimeUnit.SECONDS.toNanos(1)));
+        assertThat("Elapsed time", timer.getElapsedTime(), is(equalTo(Duration.ofSeconds(1L))));
     }
 
     @Test
@@ -135,6 +141,7 @@ class HelidonTimerTest {
         assertThat(timer.getMeanRate(), closeTo(1.0, 0.01));
         assertThat(timer.getCount(), is(1L));
         assertThat(result, is("hello"));
+        assertThat("Elapsed time", timer.getElapsedTime(), is(equalTo(Duration.ofSeconds(1L))));
     }
 
     @Test
@@ -146,11 +153,13 @@ class HelidonTimerTest {
 
         assertThat(timer.getMeanRate(), closeTo(1.0, 0.01));
         assertThat(timer.getCount(), is(1L));
+        assertThat("Elapsed time", timer.getElapsedTime(), is(equalTo(Duration.ofSeconds(1L))));
     }
 
     @Test
     void testDataSet() {
         assertThat(dataSetTimer.getSnapshot().getValues(), is(SAMPLE_LONG_DATA));
+        assertThat("Elapsed time", dataSetTimer.getElapsedTime(), is(equalTo(Duration.ofNanos(DATA_SET_ELAPSED_TIME))));
     }
 
     @Test
@@ -185,6 +194,7 @@ class HelidonTimerTest {
 
         assertThat(metricData, notNullValue());
         assertThat("count", metricData.getJsonNumber("count").longValue(), is(withinTolerance(200L)));
+        assertThat("elapsedTime", metricData.getJsonNumber("elapsedTime").longValue(), is(greaterThan(0L))); // less than a second
         assertThat("min", metricData.getJsonNumber("min").longValue(), is(withinTolerance(0L)));
         assertThat("max", metricData.getJsonNumber("max").longValue(), is(withinTolerance(990L)));
         assertThat("mean", metricData.getJsonNumber("mean").doubleValue(),  is(withinTolerance(506.349)));
@@ -222,7 +232,8 @@ class HelidonTimerTest {
         assertThat(prometheusData, containsString("# TYPE application_response_time_seconds summary\n"
                                                           + "# HELP application_response_time_seconds Server response time for "
                                                           + "/index.html\n"
-                                                          + "application_response_time_seconds_count 200"));
+                                                          + "application_response_time_seconds_count 200\n"
+                                                          + "application_response_time_seconds_sum 0"));
     }
 
     @Test
@@ -232,7 +243,7 @@ class HelidonTimerTest {
         MetricID metricID = new MetricID("idleTimer");
 
         JsonObjectBuilder builder = MetricImpl.JSON.createObjectBuilder();
-        helidonTimer.update(1L, TimeUnit.MILLISECONDS);
+        helidonTimer.update(Duration.ofMillis(1L));
 
         for (int i = 1; i < 48; i++) {
             testClock.add(1L, TimeUnit.HOURS);
@@ -261,7 +272,7 @@ class HelidonTimerTest {
         Stream.of(24L, 28L, 32L, 36L)
                 .forEach(value -> {
                     testClock.addNanos(450, TimeUnit.MILLISECONDS);
-                    helidonTimer.update(value, TimeUnit.MILLISECONDS);
+                    helidonTimer.update(Duration.ofMillis(value));
                 });
         MetricID timerID = new MetricID(timerName);
         JsonObjectBuilder builder = Json.createObjectBuilder();

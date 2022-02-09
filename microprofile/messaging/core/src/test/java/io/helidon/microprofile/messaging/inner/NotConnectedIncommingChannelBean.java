@@ -17,9 +17,9 @@
 package io.helidon.microprofile.messaging.inner;
 
 import io.helidon.microprofile.messaging.AssertThrowException;
-import org.eclipse.microprofile.reactive.messaging.Incoming;
 
-import javax.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.ApplicationScoped;
+import org.eclipse.microprofile.reactive.messaging.Incoming;
 
 /**
  * This test is modified version of official tck test in version 1.0

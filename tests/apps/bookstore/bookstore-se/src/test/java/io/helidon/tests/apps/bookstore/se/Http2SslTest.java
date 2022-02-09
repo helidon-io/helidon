@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * Tests SSL/TLS with HTTP 2 upgrades.
+ * Tests SSL/TLS with HTTP 2 upgrades and compression.
  */
 public class Http2SslTest {
 
@@ -48,7 +48,7 @@ public class Http2SslTest {
 
     @BeforeAll
     public static void startServer() throws Exception {
-        webServer = TestServer.start(true, true);
+        webServer = TestServer.start(true, true, true);
         client = TestServer.newOkHttpClient(true);
     }
 
@@ -59,40 +59,12 @@ public class Http2SslTest {
 
     @Test
     public void testHelloWorldHttp2Ssl() throws Exception {
-        Request.Builder builder = TestServer.newRequestBuilder(webServer, "/books", true);
+        testHelloWorld(false);
+    }
 
-        Request getBooks = builder.build();
-        try (Response getBooksRes = client.newCall(getBooks).execute()) {
-            assertEquals(getBooksRes.code(), 200);
-            assertEquals(getBooksRes.protocol(), Protocol.HTTP_2);
-        }
-
-        Request postBook = builder.post(
-                RequestBody.create(APPLICATION_JSON, TestServer.getBookAsJson())).build();
-        try (Response postBookRes = client.newCall(postBook).execute()) {
-            assertEquals(postBookRes.code(), 200);
-            assertEquals(postBookRes.protocol(), Protocol.HTTP_2);
-        }
-
-        builder = TestServer.newRequestBuilder(webServer, "/books/123456", true);
-        Request getBook = builder.build();
-        try (Response getBookRes = client.newCall(getBook).execute()) {
-            assertEquals(getBookRes.code(), 200);
-            assertEquals(getBookRes.protocol(), Protocol.HTTP_2);
-        }
-
-        Request deleteBook = builder.delete().build();
-        try (Response deleteBookRes = client.newCall(deleteBook).execute()) {
-            assertEquals(deleteBookRes.code(), 200);
-            assertEquals(deleteBookRes.protocol(), Protocol.HTTP_2);
-
-        }
-
-        Request getNoBook = builder.build();
-        try (Response getNoBookRes = client.newCall(getNoBook).execute()) {
-            assertEquals(getNoBookRes.code(), 404);
-            assertEquals(getNoBookRes.protocol(), Protocol.HTTP_2);
-        }
+    @Test
+    public void testHelloWorldHttp2SslCompression() throws Exception {
+        testHelloWorld(true);
     }
 
     @Test
@@ -115,7 +87,7 @@ public class Http2SslTest {
 
     @Test
     public void testHelloWorldHttp2SslConcurrent() throws Exception {
-        ExecutorService executor = ThreadPoolSupplier.create().get();
+        ExecutorService executor = ThreadPoolSupplier.create("test-thread-pool").get();
         Request.Builder builder = TestServer.newRequestBuilder(webServer, "/books", true);
         Request getBooks = builder.build();
 
@@ -129,5 +101,42 @@ public class Http2SslTest {
                 fail(e);
             }
         });
+    }
+
+    private void testHelloWorld(boolean compression) throws Exception {
+        Request.Builder builder = TestServer.newRequestBuilder(webServer, "/books", true, compression);
+
+        Request getBooks = builder.build();
+        try (Response getBooksRes = client.newCall(getBooks).execute()) {
+            assertEquals(getBooksRes.code(), 200);
+            assertEquals(getBooksRes.protocol(), Protocol.HTTP_2);
+        }
+
+        Request postBook = builder.post(
+                RequestBody.create(APPLICATION_JSON, TestServer.getBookAsJson())).build();
+        try (Response postBookRes = client.newCall(postBook).execute()) {
+            assertEquals(postBookRes.code(), 200);
+            assertEquals(postBookRes.protocol(), Protocol.HTTP_2);
+        }
+
+        builder = TestServer.newRequestBuilder(webServer, "/books/123456", true, compression);
+        Request getBook = builder.build();
+        try (Response getBookRes = client.newCall(getBook).execute()) {
+            assertEquals(getBookRes.code(), 200);
+            assertEquals(getBookRes.protocol(), Protocol.HTTP_2);
+        }
+
+        Request deleteBook = builder.delete().build();
+        try (Response deleteBookRes = client.newCall(deleteBook).execute()) {
+            assertEquals(deleteBookRes.code(), 200);
+            assertEquals(deleteBookRes.protocol(), Protocol.HTTP_2);
+
+        }
+
+        Request getNoBook = builder.build();
+        try (Response getNoBookRes = client.newCall(getNoBook).execute()) {
+            assertEquals(getNoBookRes.code(), 404);
+            assertEquals(getNoBookRes.protocol(), Protocol.HTTP_2);
+        }
     }
 }

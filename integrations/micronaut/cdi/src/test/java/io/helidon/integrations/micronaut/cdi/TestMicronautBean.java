@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,13 +19,13 @@ package io.helidon.integrations.micronaut.cdi;
 @MicronautBeanDef
 public class TestMicronautBean implements TestBean {
     @Override
-    @µIntercepted
+    @MicroIntercepted
     public String µAnnotated() {
         return TestBean.super.µAnnotated();
     }
 
     @Override
-    @µIntercepted
+    @MicroIntercepted
     public String bothAnnotated() {
         return TestBean.super.bothAnnotated();
     }

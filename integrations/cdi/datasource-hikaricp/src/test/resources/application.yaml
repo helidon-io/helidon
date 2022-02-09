@@ -21,5 +21,5 @@ javax:
             dataSource:
                url: jdbc:h2:mem:test
                user: sa
-               password: ""
+               password: "${EMPTY}"
 

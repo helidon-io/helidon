@@ -80,6 +80,7 @@ class WebClientConfiguration {
     private final WebClientTls webClientTls;
     private final URI uri;
     private final boolean validateHeaders;
+    private final boolean relativeUris;
 
     /**
      * Creates a new instance of client configuration.
@@ -109,6 +110,7 @@ class WebClientConfiguration {
         this.uri = builder.uri;
         this.keepAlive = builder.keepAlive;
         this.validateHeaders = builder.validateHeaders;
+        this.relativeUris = builder.relativeUris;
     }
 
     /**
@@ -116,8 +118,8 @@ class WebClientConfiguration {
      *
      * @return a new builder instance
      */
-    static Builder builder() {
-        return new Builder();
+    static Builder<?, ?> builder() {
+        return new Builder<>();
     }
 
     /**
@@ -125,8 +127,8 @@ class WebClientConfiguration {
      *
      * @return a new builder instance
      */
-    Builder derive() {
-        return new Builder().update(this);
+    Builder<?, ?> derive() {
+        return new Builder<>().update(this);
     }
 
     Optional<SslContext> sslContext() {
@@ -277,11 +279,15 @@ class WebClientConfiguration {
         return validateHeaders;
     }
 
+    boolean relativeUris() {
+        return relativeUris;
+    }
+
     /**
      * A fluent API builder for {@link WebClientConfiguration}.
      */
     static class Builder<B extends Builder<B, T>, T extends WebClientConfiguration>
-            implements io.helidon.common.Builder<T>,
+            implements io.helidon.common.Builder<B, T>,
                        ParentingMediaContextBuilder<B>,
                        MediaContextBuilder<B> {
 
@@ -306,6 +312,7 @@ class WebClientConfiguration {
         private MessageBodyReaderContext readerContext;
         private MessageBodyWriterContext writerContext;
         private boolean validateHeaders;
+        private boolean relativeUris;
         @SuppressWarnings("unchecked")
         private B me = (B) this;
 
@@ -319,6 +326,7 @@ class WebClientConfiguration {
         }
 
         @Override
+        @SuppressWarnings("unchecked")
         public T build() {
             return (T) new WebClientConfiguration(this);
         }
@@ -467,6 +475,18 @@ class WebClientConfiguration {
          */
         public B defaultHeader(String key, List<String> values) {
             clientHeaders.put(key, values);
+            return me;
+        }
+
+        /**
+         * Can be set to {@code true} to force the use of relative URIs in all requests,
+         * regardless of the presence or absence of proxies or no-proxy lists.
+         *
+         * @param relativeUris relative URIs flag
+         * @return updated builder instance
+         */
+        public B relativeUris(boolean relativeUris) {
+            this.relativeUris = relativeUris;
             return me;
         }
 
@@ -654,6 +674,7 @@ class WebClientConfiguration {
                     .map(Proxy.Builder::build)
                     .ifPresent(this::proxy);
             config.get("media-support").as(MediaContext::create).ifPresent(this::mediaContext);
+            config.get("relative-uris").asBoolean().ifPresent(this::relativeUris);
             return me;
         }
 

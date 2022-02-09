@@ -20,11 +20,11 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
-import javax.json.JsonObject;
-
 import io.helidon.integrations.common.rest.ApiEntityResponse;
 import io.helidon.integrations.vault.VaultResponse;
 import io.helidon.integrations.vault.VaultToken;
+
+import jakarta.json.JsonObject;
 
 import static io.helidon.integrations.vault.VaultUtil.arrayToList;
 

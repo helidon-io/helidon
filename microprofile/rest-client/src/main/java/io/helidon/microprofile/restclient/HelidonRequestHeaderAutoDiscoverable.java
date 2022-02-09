@@ -15,10 +15,9 @@
  */
 package io.helidon.microprofile.restclient;
 
-import javax.ws.rs.ConstrainedTo;
-import javax.ws.rs.RuntimeType;
-import javax.ws.rs.core.FeatureContext;
-
+import jakarta.ws.rs.ConstrainedTo;
+import jakarta.ws.rs.RuntimeType;
+import jakarta.ws.rs.core.FeatureContext;
 import org.glassfish.jersey.internal.spi.ForcedAutoDiscoverable;
 
 /**

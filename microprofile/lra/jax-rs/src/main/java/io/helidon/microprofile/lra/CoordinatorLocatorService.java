@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package io.helidon.microprofile.lra;
@@ -25,15 +24,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Produces;
-import javax.enterprise.inject.spi.DeploymentException;
-import javax.inject.Inject;
-
 import io.helidon.common.Reflected;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.lra.coordinator.client.CoordinatorClient;
 
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Produces;
+import jakarta.enterprise.inject.spi.DeploymentException;
+import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import static io.helidon.lra.coordinator.client.CoordinatorClient.CONF_DEFAULT_COORDINATOR_URL;
@@ -56,7 +54,7 @@ public class CoordinatorLocatorService {
     CoordinatorLocatorService(@ConfigProperty(name = "mp.lra.coordinator.client") Optional<String> clientFqdn,
                               @ConfigProperty(name = CONF_KEY_COORDINATOR_URL, defaultValue = CONF_DEFAULT_COORDINATOR_URL)
                                       String coordinatorUrl,
-                              @ConfigProperty(name = CONF_KEY_COORDINATOR_TIMEOUT, defaultValue = "10")
+                              @ConfigProperty(name = CONF_KEY_COORDINATOR_TIMEOUT, defaultValue = "30")
                                       Long coordinatorTimeout,
                               @ConfigProperty(name = CONF_KEY_COORDINATOR_TIMEOUT_UNIT, defaultValue = "SECONDS")
                                       TimeUnit coordinatorTimeoutUnit) {

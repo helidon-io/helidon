@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,9 +28,11 @@ import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
+import io.helidon.common.context.ContextAwareExecutorService;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 
+import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -40,6 +42,9 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.not;
 
 /**
  * Unit test for {@link ThreadPoolSupplier}.
@@ -49,21 +54,27 @@ class ThreadPoolSupplierTest {
     private static ThreadPoolExecutor configuredInstance;
     private static ThreadPoolExecutor defaultInstance;
 
+    private static ThreadPoolSupplier builtSupplier;
+    private static ThreadPoolSupplier configuredSupplier;
+    private static ThreadPoolSupplier defaultSupplier;
+
+
     @BeforeAll
     static void initClass() {
-        defaultInstance = ensureOurExecutor(ThreadPoolSupplier.create().getThreadPool());
+        defaultSupplier = ThreadPoolSupplier.create("test-thread-pool");
+        defaultInstance = ensureOurExecutor(defaultSupplier.getThreadPool());
 
-        builtInstance = ensureOurExecutor(ThreadPoolSupplier.builder()
-                                          .threadNamePrefix("thread-pool-unit-test-")
-                                          .corePoolSize(2)
-                                          .daemon(true)
-                                          .prestart(true)
-                                          .queueCapacity(10)
-                                          .build()
-                                          .getThreadPool());
+        builtSupplier = ThreadPoolSupplier.builder()
+                .threadNamePrefix("thread-pool-unit-test-")
+                .corePoolSize(2)
+                .daemon(true)
+                .prestart(true)
+                .queueCapacity(10)
+                .build();
+        builtInstance = ensureOurExecutor(builtSupplier.getThreadPool());
 
-        configuredInstance = ensureOurExecutor(ThreadPoolSupplier.create(Config.create().get("unit.thread-pool"))
-                                               .getThreadPool());
+        configuredSupplier = ThreadPoolSupplier.create(Config.create().get("unit.thread-pool"));
+        configuredInstance = ensureOurExecutor(configuredSupplier.getThreadPool());
     }
 
     private static ThreadPoolExecutor ensureOurExecutor(ExecutorService threadPool) {
@@ -80,6 +91,7 @@ class ThreadPoolSupplierTest {
                      10000,
                      10,
                      true);
+        checkObserver(defaultSupplier, defaultInstance, "helidon-");
     }
 
     @Test
@@ -90,6 +102,7 @@ class ThreadPoolSupplierTest {
                      15,
                      0,
                      false);
+        checkObserver(configuredSupplier, configuredInstance, "thread-pool-config-unit-test-");
     }
 
     @Test
@@ -100,6 +113,7 @@ class ThreadPoolSupplierTest {
                      10,
                      2,
                      true);
+        checkObserver(builtSupplier, builtInstance, "thread-pool-unit-test-");
     }
 
     @Test
@@ -128,7 +142,7 @@ class ThreadPoolSupplierTest {
         try {
             log.addHandler(handler);
             Config config = Config.create(ConfigSources.create(Map.of(thresholdKey, threshold, rateKey, rate)));
-            ExecutorService executor = ThreadPoolSupplier.create(config).get();
+            ExecutorService executor = ThreadPoolSupplier.create(config, "test-thread-pool").get();
             Optional<ThreadPool> asThreadPool = ThreadPool.asThreadPool(executor);
             ThreadPool pool = asThreadPool.orElseThrow(() -> new RuntimeException("not a thread pool"));
             assertThat(pool.getGrowthThreshold(), is(Integer.parseInt(threshold)));
@@ -175,5 +189,20 @@ class ThreadPoolSupplierTest {
             .get();
 
         assertThat(isDaemon.get(), is(shouldBeDaemon));
+    }
+
+    private void checkObserver(ThreadPoolSupplier supplier, ExecutorService theInstance, String name) {
+        assertThat("Supplier collection",
+                   ObserverForTesting.instance.suppliers(),
+                   hasKey(supplier));
+        ObserverForTesting.SupplierInfo supplierInfo = ObserverForTesting.instance.suppliers().get(supplier);
+        assertThat("ExecutorService",
+                   supplierInfo.context().executorServices(),
+                   hasItem(theInstance instanceof ContextAwareExecutorService
+                                   ? ((ContextAwareExecutorService) theInstance).unwrap()
+                                   : theInstance));
+        ObserverForTesting.Context ctx = supplierInfo.context();
+        assertThat("Count of non-scheduled executor services registered", ctx.threadPoolCount(), CoreMatchers.is(not(0)));
+        assertThat("Count of scheduled executor services registered", ctx.scheduledCount(), CoreMatchers.is(0));
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,34 +15,34 @@
  */
 package io.helidon.microprofile.metrics;
 
-import io.helidon.webserver.ServerResponse;
-import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.annotation.Counted;
-import org.eclipse.microprofile.metrics.annotation.RegistryType;
-import org.eclipse.microprofile.metrics.annotation.SimplyTimed;
-import org.eclipse.microprofile.metrics.annotation.Timed;
-
-import javax.enterprise.context.RequestScoped;
-import javax.inject.Inject;
-import javax.json.Json;
-import javax.json.JsonBuilderFactory;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.container.AsyncResponse;
-import javax.ws.rs.container.Suspended;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import io.helidon.webserver.ServerResponse;
+
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
+import jakarta.json.Json;
+import jakarta.json.JsonBuilderFactory;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.container.AsyncResponse;
+import jakarta.ws.rs.container.Suspended;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.eclipse.microprofile.metrics.annotation.Counted;
+import org.eclipse.microprofile.metrics.annotation.RegistryType;
+import org.eclipse.microprofile.metrics.annotation.SimplyTimed;
+import org.eclipse.microprofile.metrics.annotation.Timed;
 
 /**
  * HelloWorldResource class.
@@ -162,6 +162,21 @@ public class HelloWorldResource {
     }
 
     @GET
+    @Path("/get-async")
+    @Produces(MediaType.TEXT_PLAIN)
+    public void getAsync(@Suspended final AsyncResponse asyncResponse) {
+        Thread thread = new Thread(() -> {
+            try {
+                Thread.sleep(5000);
+                asyncResponse.resume("This is a GET request with AsyncResponse");
+            } catch (Exception e) {
+                System.err.println(e);
+            }
+        });
+        thread.start();
+    }
+
+    @GET
     @Path("/slowWithArg/{name}")
     @Produces(MediaType.TEXT_PLAIN)
     @SimplyTimed(name = SLOW_MESSAGE_SIMPLE_TIMER, absolute = true)
@@ -201,6 +216,25 @@ public class HelloWorldResource {
             }
         });
     }
+
+    @GET
+    @Path("/mappedExc")
+    @Produces(MediaType.TEXT_PLAIN)
+    public void triggerMappedException() throws HelloWorldMappedException {
+        throw new HelloWorldMappedException();
+    }
+
+    @GET
+    @Path("/unmappedExc")
+    @Produces(MediaType.TEXT_PLAIN)
+    public void triggerUnmappedException() throws HelloWorldUnmappedException {
+        throw new HelloWorldUnmappedException();
+    }
+
+    public static class HelloWorldMappedException extends Exception {}
+
+    public static class HelloWorldUnmappedException extends Exception {}
+
 
     private long inflightRequestsCount() {
         return inflightRequestsCount(vendorRegistry);

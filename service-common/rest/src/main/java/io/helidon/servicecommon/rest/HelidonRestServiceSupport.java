@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 package io.helidon.servicecommon.rest;
 
@@ -41,7 +40,7 @@ import io.helidon.webserver.cors.CrossOriginConfig;
  * </p>
  *
  */
-public abstract class HelidonRestServiceSupport implements Service {
+public abstract class HelidonRestServiceSupport implements RestServiceSupport {
 
     private final String context;
     private final CorsEnabledServiceHelper corsEnabledServiceHelper;
@@ -56,9 +55,13 @@ public abstract class HelidonRestServiceSupport implements Service {
      * @param serviceName name of the service
      */
     protected HelidonRestServiceSupport(Logger logger, Builder<?, ?> builder, String serviceName) {
+        this(logger, builder.restServiceSettingsBuilder.build(), serviceName);
+    }
+
+    protected HelidonRestServiceSupport(Logger logger, RestServiceSettings restServiceSettings, String serviceName) {
         this.logger = logger;
-        this.context = builder.context;
-        corsEnabledServiceHelper = CorsEnabledServiceHelper.create(serviceName, builder.crossOriginConfig);
+        corsEnabledServiceHelper = CorsEnabledServiceHelper.create(serviceName, restServiceSettings.crossOriginConfig());
+        context = (restServiceSettings.webContext().startsWith("/") ? "" : "/") + restServiceSettings.webContext();
     }
 
     /**
@@ -83,6 +86,7 @@ public abstract class HelidonRestServiceSupport implements Service {
      * @param defaultRules default routing rules (also accepts {@link io.helidon.webserver.Routing.Builder}
      * @param serviceEndpointRoutingRules actual rules (if different from default) for the service endpoint
      */
+    @Override
     public final void configureEndpoint(Routing.Rules defaultRules, Routing.Rules serviceEndpointRoutingRules) {
         defaultRules.onNewWebServer(webserver -> {
             webServerStarted();
@@ -137,17 +141,16 @@ public abstract class HelidonRestServiceSupport implements Service {
      * @param <T> type of the concrete service
      * @param <B> type of the concrete builder for the service
      */
-    public abstract static class Builder<T extends HelidonRestServiceSupport, B extends Builder<T, B>>
-            implements io.helidon.common.Builder<T> {
+    public abstract static class Builder<B extends Builder<B, T>, T extends HelidonRestServiceSupport>
+            implements io.helidon.common.Builder<B, T> {
 
         private final Class<B> builderClass;
-        private String context;
         private Config config = Config.empty();
-        private CrossOriginConfig crossOriginConfig = null;
+        private RestServiceSettings.Builder restServiceSettingsBuilder = RestServiceSettings.builder();
 
         protected Builder(Class<B> builderClass, String defaultContext) {
             this.builderClass = builderClass;
-            this.context = defaultContext;
+            restServiceSettingsBuilder.webContext(defaultContext);
         }
 
         /**
@@ -166,6 +169,10 @@ public abstract class HelidonRestServiceSupport implements Service {
             webContextConfig(config)
                     .asString()
                     .ifPresent(this::webContext);
+
+            config.get(RestServiceSettings.Builder.ROUTING_NAME_CONFIG_KEY)
+                    .asString()
+                    .ifPresent(restServiceSettingsBuilder::routing);
 
             config.get(CorsEnabledServiceHelper.CORS_CONFIG_KEY)
                     .as(CrossOriginConfig::create)
@@ -190,11 +197,13 @@ public abstract class HelidonRestServiceSupport implements Service {
          * @return updated builder instance
          */
         public B webContext(String path) {
+            String context;
             if (path.startsWith("/")) {
-                this.context = path;
+                context = path;
             } else {
-                this.context = "/" + path;
+                context = "/" + path;
             }
+            restServiceSettingsBuilder.webContext(context);
             return me();
         }
 
@@ -206,7 +215,18 @@ public abstract class HelidonRestServiceSupport implements Service {
          */
         public B crossOriginConfig(CrossOriginConfig crossOriginConfig) {
             Objects.requireNonNull(crossOriginConfig, "CrossOriginConfig must be non-null");
-            this.crossOriginConfig = crossOriginConfig;
+            restServiceSettingsBuilder.crossOriginConfig(crossOriginConfig);
+            return me();
+        }
+
+        /**
+         * Sets the builder for the REST service settings.
+         *
+         * @param restServiceSettingsBuilder builder for REST service settings
+         * @return updated builder
+         */
+        public B restServiceSettings(RestServiceSettings.Builder restServiceSettingsBuilder) {
+            this.restServiceSettingsBuilder = restServiceSettingsBuilder;
             return me();
         }
 

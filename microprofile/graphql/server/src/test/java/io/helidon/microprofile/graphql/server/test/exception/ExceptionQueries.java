@@ -16,18 +16,17 @@
 
 package io.helidon.microprofile.graphql.server.test.exception;
 
-import io.helidon.microprofile.graphql.server.test.db.TestDB;
-import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithEnumName;
-import io.helidon.microprofile.graphql.server.test.types.SimpleContact;
-
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
-
 import java.io.IOException;
 import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.helidon.microprofile.graphql.server.test.db.TestDB;
+import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithEnumName;
+import io.helidon.microprofile.graphql.server.test.types.SimpleContact;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import org.eclipse.microprofile.graphql.GraphQLApi;
 import org.eclipse.microprofile.graphql.GraphQLException;
 import org.eclipse.microprofile.graphql.Name;

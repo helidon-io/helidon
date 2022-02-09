@@ -16,6 +16,7 @@
 
 package io.helidon.common;
 
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
@@ -25,16 +26,38 @@ import java.util.function.Supplier;
  * as instance builders (fluent API builder pattern), where method {@link java.util.function.Supplier#get()} would be
  * misleading.
  *
+ * @param <B> Type of the builder
  * @param <T> Type of the built instance
  */
 @FunctionalInterface
-public interface Builder<T> extends Supplier<T> {
+public interface Builder<B extends Builder<B, T>, T> extends Supplier<T> {
     /**
      * Build the instance from this builder.
      *
      * @return instance of the built type
      */
     T build();
+
+    /**
+     * Update the builder in a fluen API way.
+     *
+     * @param consumer consumer of the builder instance
+     * @return updated builder instance
+     */
+    default B update(Consumer<B> consumer) {
+        consumer.accept(identity());
+        return identity();
+    }
+
+    /**
+     * Instance of this builder as the correct type.
+     *
+     * @return this instance typed to correct type
+     */
+    @SuppressWarnings("unchecked")
+    default B identity() {
+        return (B) this;
+    }
 
     @Override
     default T get() {

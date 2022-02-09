@@ -21,7 +21,7 @@
  * @see io.helidon.integrations.oci.objectstorage.OciObjectStorageRx
  */
 module io.helidon.integrations.oci.objectstorage {
-    requires transitive java.json;
+    requires transitive jakarta.json;
     requires transitive io.helidon.common.reactive;
     requires transitive io.helidon.integrations.oci.connect;
     requires transitive io.helidon.config;

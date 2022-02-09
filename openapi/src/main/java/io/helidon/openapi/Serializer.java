@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 package io.helidon.openapi;
 
@@ -32,6 +31,7 @@ import io.smallrye.openapi.runtime.io.Format;
 import org.eclipse.microprofile.openapi.models.Extensible;
 import org.eclipse.microprofile.openapi.models.OpenAPI;
 import org.eclipse.microprofile.openapi.models.Reference;
+import org.eclipse.microprofile.openapi.models.media.Schema;
 import org.eclipse.microprofile.openapi.models.parameters.Parameter;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
@@ -156,9 +156,23 @@ class Serializer {
 
         private NodeTuple doRepresentJavaBeanProperty(Object javaBean, Property property, Object propertyValue, Tag customTag) {
             NodeTuple defaultTuple = super.representJavaBeanProperty(javaBean, property, propertyValue, customTag);
-            return (javaBean instanceof Reference) && property.getName().equals("ref")
-                    ? new NodeTuple(representData("$ref"), defaultTuple.getValueNode())
-                    : defaultTuple;
+            if ((javaBean instanceof Reference) && property.getName().equals("ref")) {
+                return new NodeTuple(representData("$ref"), defaultTuple.getValueNode());
+            }
+            if (javaBean instanceof Schema) {
+                /*
+                 * At most one of additionalPropertiesBoolean and additionalPropertiesSchema will return a non-null value.
+                 * Whichever one does (if either), replace the name with "additionalProperties" for output. Skip whatever is
+                 * returned from the deprecated additionalProperties method itself.
+                 */
+                String propertyName = property.getName();
+                if (propertyName.equals("additionalProperties")) {
+                    return null;
+                } else if (propertyName.startsWith("additionalProperties")) {
+                    return new NodeTuple(representData("additionalProperties"), defaultTuple.getValueNode());
+                }
+            }
+            return defaultTuple;
         }
 
         private Object adjustPropertyValue(Object propertyValue) {

@@ -440,7 +440,7 @@ class SchemaFieldDefinition extends AbstractDescriptiveElement implements Elemen
     /**
      * A fluent API {@link io.helidon.common.Builder} to build instances of {@link SchemaFieldDefinition}.
      */
-    public static class Builder implements io.helidon.common.Builder<SchemaFieldDefinition> {
+    public static class Builder implements io.helidon.common.Builder<Builder, SchemaFieldDefinition> {
         private String name;
         private String returnType;
         private boolean isArrayReturnType;

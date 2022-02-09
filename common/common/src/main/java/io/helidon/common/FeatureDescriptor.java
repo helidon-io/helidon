@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -114,7 +114,7 @@ final class FeatureDescriptor {
         return name;
     }
 
-    static class Builder implements io.helidon.common.Builder<FeatureDescriptor> {
+    static class Builder implements io.helidon.common.Builder<Builder, FeatureDescriptor> {
         private HelidonFlavor[] flavors = new HelidonFlavor[] {HelidonFlavor.SE, HelidonFlavor.MP};
         private String name;
         private String[] path;

@@ -23,8 +23,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import javax.enterprise.util.AnnotationLiteral;
-import javax.inject.Qualifier;
+import jakarta.enterprise.util.AnnotationLiteral;
+import jakarta.inject.Qualifier;
 
 /**
  * An annotation used to mark a class as representing a gRPC service.
@@ -50,7 +50,7 @@ public @interface Grpc {
     int version() default 0;
 
     /**
-     * An {@link AnnotationLiteral} for the {@link Grpc} annotation.
+     * An {@link jakarta.enterprise.util.AnnotationLiteral} for the {@link Grpc} annotation.
      */
     class Literal
             extends AnnotationLiteral<Grpc> implements Grpc {

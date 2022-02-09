@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,9 +15,9 @@
  */
 package io.helidon.microprofile.cdi;
 
-import javax.enterprise.inject.se.SeContainer;
-
 import io.helidon.common.context.Context;
+
+import jakarta.enterprise.inject.se.SeContainer;
 
 /**
  * Helidon CDI Container, separates initialization and runtime phases of the bootstrapping.

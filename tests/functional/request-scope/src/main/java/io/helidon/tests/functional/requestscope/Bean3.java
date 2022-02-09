@@ -17,8 +17,7 @@ package io.helidon.tests.functional.requestscope;
 
 import java.util.concurrent.atomic.AtomicLong;
 
-import javax.enterprise.context.ApplicationScoped;
-
+import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.faulttolerance.Fallback;
 
 @ApplicationScoped

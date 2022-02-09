@@ -22,8 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import javax.inject.Inject;
-
 import io.helidon.graphql.server.InvocationHandler;
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.queries.SimpleQueriesAndMutations;
@@ -31,6 +29,7 @@ import io.helidon.microprofile.graphql.server.test.types.DateTimePojo;
 import io.helidon.microprofile.graphql.server.test.types.SimpleDateTime;
 import io.helidon.microprofile.tests.junit5.AddBean;
 
+import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.graphql.server.GraphQlConstants.ERRORS;

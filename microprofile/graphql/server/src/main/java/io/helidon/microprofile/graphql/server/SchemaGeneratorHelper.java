@@ -43,11 +43,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.logging.Logger;
 
-import javax.json.bind.annotation.JsonbProperty;
-import javax.json.bind.annotation.JsonbTransient;
-
 import graphql.scalars.ExtendedScalars;
 import graphql.scalars.object.ObjectScalar;
+import jakarta.json.bind.annotation.JsonbProperty;
+import jakarta.json.bind.annotation.JsonbTransient;
 import org.eclipse.microprofile.graphql.DefaultValue;
 import org.eclipse.microprofile.graphql.Description;
 import org.eclipse.microprofile.graphql.Enum;
@@ -1735,7 +1734,7 @@ final class SchemaGeneratorHelper {
         /**
          * A fluent API {@link io.helidon.common.Builder} to build instances of {@link DiscoveredMethod}.
          */
-        public static class Builder implements io.helidon.common.Builder<DiscoveredMethod> {
+        public static class Builder implements io.helidon.common.Builder<Builder, DiscoveredMethod> {
             private String name;
             private String returnType;
             private int methodType;

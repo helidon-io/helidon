@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -123,9 +123,8 @@ public class TyrusWriterPublisher extends Writer implements Flow.Publisher<DataC
 
     // -- Utility methods -----------------------------------------------------
 
-    private static synchronized long decrement(AtomicLong requested) {
-        long value = requested.get();
-        return value == Long.MAX_VALUE ? requested.get() : requested.decrementAndGet();
+    private static void decrement(AtomicLong requested) {
+        requested.updateAndGet(value -> value == Long.MAX_VALUE ? Long.MAX_VALUE : value - 1);
     }
 
     private void writeNext(ByteBuffer byteBuffer, CompletionHandler<ByteBuffer> handler) {

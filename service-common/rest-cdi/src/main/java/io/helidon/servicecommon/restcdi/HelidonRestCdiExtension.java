@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 package io.helidon.servicecommon.restcdi;
 
@@ -30,33 +29,33 @@ import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.annotation.Priority;
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.context.Initialized;
-import javax.enterprise.event.Observes;
-import javax.enterprise.inject.Default;
-import javax.enterprise.inject.spi.AfterDeploymentValidation;
-import javax.enterprise.inject.spi.AnnotatedMember;
-import javax.enterprise.inject.spi.AnnotatedType;
-import javax.enterprise.inject.spi.Bean;
-import javax.enterprise.inject.spi.BeanManager;
-import javax.enterprise.inject.spi.Extension;
-import javax.enterprise.inject.spi.ProcessAnnotatedType;
-import javax.enterprise.inject.spi.ProcessManagedBean;
-import javax.enterprise.inject.spi.ProcessProducerField;
-import javax.enterprise.inject.spi.ProcessProducerMethod;
-import javax.interceptor.Interceptor;
-
 import io.helidon.config.Config;
 import io.helidon.config.mp.MpConfig;
 import io.helidon.microprofile.server.RoutingBuilders;
 import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.servicecommon.rest.HelidonRestServiceSupport;
+import io.helidon.servicecommon.rest.RestServiceSupport;
 import io.helidon.webserver.Routing;
 
+import jakarta.annotation.Priority;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.Initialized;
+import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.Default;
+import jakarta.enterprise.inject.spi.AfterDeploymentValidation;
+import jakarta.enterprise.inject.spi.AnnotatedMember;
+import jakarta.enterprise.inject.spi.AnnotatedType;
+import jakarta.enterprise.inject.spi.Bean;
+import jakarta.enterprise.inject.spi.BeanManager;
+import jakarta.enterprise.inject.spi.Extension;
+import jakarta.enterprise.inject.spi.ProcessAnnotatedType;
+import jakarta.enterprise.inject.spi.ProcessManagedBean;
+import jakarta.enterprise.inject.spi.ProcessProducerField;
+import jakarta.enterprise.inject.spi.ProcessProducerMethod;
+import jakarta.interceptor.Interceptor;
 import org.eclipse.microprofile.config.ConfigProvider;
 
-import static javax.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
+import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 
 /**
  * Abstract superclass of service-specific, REST-based CDI extensions.
@@ -80,9 +79,9 @@ import static javax.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
  *         metrics and registers them with the appropriate metrics registry.</li>
  *     </ul>
  *
- * @param <T> concrete type of {@code HelidonRestServiceSupport} used
+ * @param <T> type of {@code RestServiceSupport} used
  */
-public abstract class HelidonRestCdiExtension<T extends HelidonRestServiceSupport> implements Extension {
+public abstract class HelidonRestCdiExtension<T extends RestServiceSupport> implements Extension {
 
     private final Map<Bean<?>, AnnotatedMember<?>> producers = new HashMap<>();
 
@@ -117,7 +116,8 @@ public abstract class HelidonRestCdiExtension<T extends HelidonRestServiceSuppor
      *
      * @param adv the {@code AfterDeploymentValidation} event
      */
-    protected void clearAnnotationInfo(@Observes AfterDeploymentValidation adv) {
+    // method needs to be public so it is registered for reflection (native image)
+    public void clearAnnotationInfo(@Observes AfterDeploymentValidation adv) {
         if (logger.isLoggable(Level.FINE)) {
             Set<Class<?>> annotatedClassesIgnored = new HashSet<>(annotatedClasses);
             annotatedClassesIgnored.removeAll(annotatedClassesProcessed);
@@ -137,7 +137,8 @@ public abstract class HelidonRestCdiExtension<T extends HelidonRestServiceSuppor
      *
      * @param pmb event describing the managed bean being processed
      */
-    protected void observeManagedBeans(@Observes ProcessManagedBean<?> pmb) {
+    // method needs to be public so it is registered for reflection (native image)
+    public void observeManagedBeans(@Observes ProcessManagedBean<?> pmb) {
         AnnotatedType<?> type = pmb.getAnnotatedBeanClass();
         Class<?> clazz = type.getJavaClass();
         if (!annotatedClasses.contains(clazz)) {
@@ -235,11 +236,12 @@ public abstract class HelidonRestCdiExtension<T extends HelidonRestServiceSuppor
      * @param server the ServerCdiExtension
      * @return default routing
      */
-    protected Routing.Builder registerService(
+    // method needs to be public so it is registered for reflection (native image)
+    public Routing.Builder registerService(
             @Observes @Priority(LIBRARY_BEFORE + 10) @Initialized(ApplicationScoped.class) Object adv,
             BeanManager bm, ServerCdiExtension server) {
 
-        Config config = MpConfig.toHelidonConfig(ConfigProvider.getConfig()).get(configPrefix);
+        Config config = seComponentConfig();
         serviceSupport = serviceSupportFactory.apply(config);
 
         RoutingBuilders routingBuilders = RoutingBuilders.create(config);
@@ -249,6 +251,20 @@ public abstract class HelidonRestCdiExtension<T extends HelidonRestServiceSuppor
         return routingBuilders.defaultRoutingBuilder();
     }
 
+    /**
+     * Returns the SE config to use in setting up the component's SE service.
+     *
+     * @return the SE config node for the component-specific configuration
+     */
+    protected Config seComponentConfig() {
+        return MpConfig.toHelidonConfig(ConfigProvider.getConfig()).get(configPrefix);
+    }
+
+    /**
+     * Returns the SE service instance created during MP service registration.
+     *
+     * @return the SE service support object used by this MP service
+     */
     protected T serviceSupport() {
         return serviceSupport;
     }

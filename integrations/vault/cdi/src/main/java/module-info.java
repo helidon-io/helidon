@@ -23,8 +23,8 @@
 module io.helidon.integrations.vault.cdi {
     requires java.logging;
 
-    requires jakarta.inject.api;
-    requires jakarta.enterprise.cdi.api;
+    requires jakarta.inject;
+    requires jakarta.cdi;
 
     requires microprofile.config.api;
 
@@ -36,6 +36,6 @@ module io.helidon.integrations.vault.cdi {
 
     uses io.helidon.integrations.vault.spi.InjectionProvider;
 
-    provides javax.enterprise.inject.spi.Extension
+    provides jakarta.enterprise.inject.spi.Extension
             with io.helidon.integrations.vault.cdi.VaultCdiExtension;
 }

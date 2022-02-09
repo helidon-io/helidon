@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,7 +53,7 @@ public interface Http2Configuration {
     /**
      * Builder for {@link Http2Configuration}.
      */
-    final class Builder implements io.helidon.common.Builder<Http2Configuration> {
+    final class Builder implements io.helidon.common.Builder<Builder, Http2Configuration> {
 
         private boolean enableHttp2 = false;
         private int http2MaxContentLength = DEFAULT_MAX_CONTENT_LENGTH;

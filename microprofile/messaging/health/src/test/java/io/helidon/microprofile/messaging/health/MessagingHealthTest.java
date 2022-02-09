@@ -19,11 +19,6 @@ package io.helidon.microprofile.messaging.health;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import javax.enterprise.inject.se.SeContainer;
-import javax.enterprise.inject.spi.CDI;
-import javax.json.JsonObject;
-import javax.json.JsonValue;
-
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.microprofile.config.ConfigCdiExtension;
 import io.helidon.microprofile.health.HealthCdiExtension;
@@ -38,6 +33,10 @@ import io.helidon.microprofile.tests.junit5.DisableDiscovery;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 import io.helidon.webclient.WebClient;
 
+import jakarta.enterprise.inject.se.SeContainer;
+import jakarta.enterprise.inject.spi.CDI;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonValue;
 import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -45,8 +44,8 @@ import org.opentest4j.AssertionFailedError;
 
 import static io.helidon.microprofile.messaging.health.TestMessagingBean.CHANNEL_1;
 import static io.helidon.microprofile.messaging.health.TestMessagingBean.CHANNEL_2;
-import static org.eclipse.microprofile.health.HealthCheckResponse.State.DOWN;
-import static org.eclipse.microprofile.health.HealthCheckResponse.State.UP;
+import static org.eclipse.microprofile.health.HealthCheckResponse.Status.DOWN;
+import static org.eclipse.microprofile.health.HealthCheckResponse.Status.UP;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -54,12 +53,10 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * Tests for messaging health:
  * <pre>{@code
  * {
- *     "outcome": "UP",
  *     "status": "UP",
  *     "checks": [
  *         {
  *             "name": "messaging",
- *             "state": "UP",
  *             "status": "UP",
  *             "data": {
  *                 "test-channel-1": "UP",
@@ -149,9 +146,9 @@ public class MessagingHealthTest {
         assertThat(bean.getEmitter2().isCancelled(), equalTo(Boolean.TRUE));
     }
 
-    private void assertMessagingHealth(HealthCheckResponse.State rootState, Map<String, HealthCheckResponse.State> channels) {
+    private void assertMessagingHealth(HealthCheckResponse.Status rootState, Map<String, HealthCheckResponse.Status> channels) {
         JsonObject messaging = getHealthCheck("messaging");
-        assertThat(messaging.getString("state"), equalTo(rootState.name()));
+        assertThat(messaging.getString("status"), equalTo(rootState.name()));
         JsonObject data = messaging.getJsonObject("data");
         channels.forEach((name, state) -> assertThat(data.getString(name), equalTo(state.name())));
     }

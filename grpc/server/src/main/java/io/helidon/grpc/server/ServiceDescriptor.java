@@ -227,7 +227,7 @@ public class ServiceDescriptor {
          * Add one or more {@link ServerInterceptor} instances that will intercept calls
          * to this service.
          * <p>
-         * If the added interceptors are annotated with the {@link javax.annotation.Priority}
+         * If the added interceptors are annotated with the {@link jakarta.annotation.Priority}
          * annotation then that value will be used to assign a priority to use when applying
          * the interceptor otherwise a priority of {@link InterceptorPriorities#USER} will
          * be used.
@@ -252,7 +252,7 @@ public class ServiceDescriptor {
         /**
          * Register one or more {@link io.grpc.ServerInterceptor interceptors} for a named method of the service.
          * <p>
-         * If the added interceptors are annotated with the {@link javax.annotation.Priority}
+         * If the added interceptors are annotated with the {@link jakarta.annotation.Priority}
          * annotation then that value will be used to assign a priority to use when applying
          * the interceptor otherwise a priority of {@link InterceptorPriorities#USER} will
          * be used.
@@ -436,7 +436,7 @@ public class ServiceDescriptor {
     /**
      * A {@link ServiceDescriptor} builder.
      */
-    public static final class Builder implements Rules, io.helidon.common.Builder<ServiceDescriptor> {
+    public static final class Builder implements Rules, io.helidon.common.Builder<Builder, ServiceDescriptor> {
         private final Class<?> serviceClass;
 
         private String name;

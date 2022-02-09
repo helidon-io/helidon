@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package io.helidon.lra.coordinator;
@@ -20,7 +19,6 @@ package io.helidon.lra.coordinator;
 import java.net.URI;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -72,7 +70,7 @@ class LraDatabasePersistentRegistry implements LraPersistentRegistry {
 
     @Override
     public Multi<Lra> stream() {
-        return Multi.create(new HashSet<>(lraMap.values()));
+        return Multi.create(lraMap.values().stream());
     }
 
     @Override
@@ -136,7 +134,12 @@ class LraDatabasePersistentRegistry implements LraPersistentRegistry {
 
         lraMap.values()
                 .forEach(lra -> Optional.ofNullable(lra.parentId())
-                        .ifPresent(parentId -> lraMap.get(parseLRAId(parentId)).addChild(lra))
+                        .ifPresent(parentId -> {
+                            var parentLra = lraMap.get(parseLRAId(parentId));
+                            if (parentLra != null) {
+                                parentLra.addChild(lra);
+                            }
+                        })
                 );
     }
 

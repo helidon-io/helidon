@@ -20,11 +20,10 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.el.ELContext;
-import javax.el.PropertyNotWritableException;
-
 import io.helidon.security.util.AbacSupport;
 
+import jakarta.el.ELContext;
+import jakarta.el.PropertyNotWritableException;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 

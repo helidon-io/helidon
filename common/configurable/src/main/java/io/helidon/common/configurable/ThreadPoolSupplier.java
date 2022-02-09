@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,8 @@ import java.util.logging.Logger;
 import io.helidon.common.LazyValue;
 import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * Supplier of a custom thread pool.
@@ -42,7 +44,6 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
     private static final boolean DEFAULT_IS_DAEMON = true;
     private static final String DEFAULT_THREAD_NAME_PREFIX = "helidon-";
     private static final boolean DEFAULT_PRESTART = true;
-    private static final String DEFAULT_POOL_NAME_PREFIX = "helidon-thread-pool-";
     private static final int DEFAULT_GROWTH_RATE = 0; // Maintain JDK pool behavior when max > core
     private static final int DEFAULT_GROWTH_THRESHOLD = 1000;
 
@@ -68,11 +69,12 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
         this.isDaemon = builder.isDaemon;
         this.threadNamePrefix = builder.threadNamePrefix;
         this.prestart = builder.prestart;
-        this.name = builder.name == null ? DEFAULT_POOL_NAME_PREFIX + DEFAULT_NAME_COUNTER.incrementAndGet() : builder.name;
+        this.name = builder.name;
         this.growthThreshold = builder.growthThreshold;
         this.growthRate = builder.growthRate;
         this.rejectionHandler = builder.rejectionHandler == null ? DEFAULT_REJECTION_POLICY : builder.rejectionHandler;
         this.useVirtualThreads = builder.useVirtualThreads || builder.virtualThreadsEnforced;
+        ObserverManager.registerSupplier(this, name, "general", useVirtualThreads);
     }
 
     /**
@@ -89,9 +91,24 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
      *
      * @param config config instance
      * @return a new thread pool supplier configured from config
+     * @deprecated since 2.4.2, please use {@link #create(Config, String)}
      */
+    @Deprecated
     public static ThreadPoolSupplier create(Config config) {
         return builder().config(config)
+                .build();
+    }
+
+    /**
+     * Load supplier from configuration.
+     *
+     * @param config config instance
+     * @param name thread pool name
+     * @return a new thread pool supplier configured from config
+     */
+    public static ThreadPoolSupplier create(Config config, String name) {
+        return builder().name(name)
+                .config(config)
                 .build();
     }
 
@@ -99,16 +116,29 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
      * Create a new thread pool supplier with default configuration.
      *
      * @return a new thread pool supplier with default configuration
+     * @deprecated since 2.4.2, please use {@link #create(String)}
      */
+    @Deprecated
     public static ThreadPoolSupplier create() {
         return builder().build();
+    }
+
+    /**
+     * Create a new thread pool supplier with default configuration and
+     * a given name.
+     *
+     * @param name thread pool name
+     * @return a new thread pool supplier with default configuration
+     */
+    public static ThreadPoolSupplier create(String name) {
+        return builder().name(name).build();
     }
 
     ExecutorService getThreadPool() {
         if (useVirtualThreads) {
             if (VirtualExecutorUtil.isVirtualSupported()) {
                 LOGGER.fine("Using unbounded virtual executor service for pool " + name);
-                return VirtualExecutorUtil.executorService();
+                return ObserverManager.registerExecutorService(this, VirtualExecutorUtil.executorService());
             }
         }
 
@@ -126,7 +156,7 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
         if (prestart) {
             result.prestartAllCoreThreads();
         }
-        return result;
+        return ObserverManager.registerExecutorService(this, result);
     }
 
     @Override
@@ -146,7 +176,8 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
     /**
      * A fluent API builder for {@link ThreadPoolSupplier}.
      */
-    public static final class Builder implements io.helidon.common.Builder<ThreadPoolSupplier> {
+    @Configured
+    public static final class Builder implements io.helidon.common.Builder<Builder, ThreadPoolSupplier> {
         private int corePoolSize = DEFAULT_CORE_POOL_SIZE;
         private int maxPoolSize = DEFAULT_MAX_POOL_SIZE;
         private int keepAliveMinutes = DEFAULT_KEEP_ALIVE_MINUTES;
@@ -167,7 +198,10 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
         @Override
         public ThreadPoolSupplier build() {
             if (name == null) {
-                name = DEFAULT_POOL_NAME_PREFIX + DEFAULT_NAME_COUNTER.incrementAndGet();
+                if (DEFAULT_THREAD_NAME_PREFIX.equals(threadNamePrefix)) {
+                    LOGGER.warning("Neither a thread name prefix nor a pool name specified");
+                }
+                name = threadNamePrefix + "thread-pool-" + DEFAULT_NAME_COUNTER.incrementAndGet();
             }
             if (rejectionHandler == null) {
                 rejectionHandler = DEFAULT_REJECTION_POLICY;
@@ -189,6 +223,7 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
          * @param corePoolSize see {@link ThreadPoolExecutor#getCorePoolSize()}
          * @return updated builder instance
          */
+        @ConfiguredOption("10")
         public Builder corePoolSize(int corePoolSize) {
             this.corePoolSize = corePoolSize;
             return this;
@@ -200,6 +235,7 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
          * @param maxPoolSize see {@link ThreadPoolExecutor#getMaximumPoolSize()}
          * @return updated builder instance
          */
+        @ConfiguredOption("50")
         public Builder maxPoolSize(int maxPoolSize) {
             this.maxPoolSize = maxPoolSize;
             return this;
@@ -211,6 +247,7 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
          * @param keepAliveMinutes see {@link ThreadPoolExecutor#getKeepAliveTime(TimeUnit)}
          * @return updated builder instance
          */
+        @ConfiguredOption("3")
         public Builder keepAliveMinutes(int keepAliveMinutes) {
             this.keepAliveMinutes = keepAliveMinutes;
             return this;
@@ -222,6 +259,7 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
          * @param queueCapacity capacity of the queue backing the executor
          * @return updated builder instance
          */
+        @ConfiguredOption("10000")
         public Builder queueCapacity(int queueCapacity) {
             this.queueCapacity = queueCapacity;
             return this;
@@ -233,6 +271,7 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
          * @param daemon whether the threads are daemon threads
          * @return updated builder instance
          */
+        @ConfiguredOption(key = "is-daemon", value = "true")
         public Builder daemon(boolean daemon) {
             isDaemon = daemon;
             return this;
@@ -255,6 +294,7 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
          * @param growthThreshold the growth threshold
          * @return updated builder instance
          */
+        @ConfiguredOption("256")
         Builder growthThreshold(int growthThreshold) {
             this.growthThreshold = growthThreshold;
             return this;
@@ -274,6 +314,7 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
          * @param growthRate the growth rate
          * @return updated builder instance
          */
+        @ConfiguredOption("5")
         Builder growthRate(int growthRate) {
             this.growthRate = growthRate;
             return this;
@@ -296,6 +337,7 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
          * @param threadNamePrefix prefix of a thread name
          * @return updated builder instance
          */
+        @ConfiguredOption("helidon-")
         public Builder threadNamePrefix(String threadNamePrefix) {
             this.threadNamePrefix = threadNamePrefix;
             return this;
@@ -307,6 +349,7 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
          * @param prestart whether to prestart the threads
          * @return updated builder instance
          */
+        @ConfiguredOption(key = "should-prestart", value = "true")
         public Builder prestart(boolean prestart) {
             this.prestart = prestart;
             return this;
@@ -433,6 +476,7 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
          * @return updated builder instance
          * @see #virtualIfAvailable(boolean)
          */
+        @ConfiguredOption(value = "false", experimental = true)
         public Builder virtualEnforced(boolean enforceVirtualThreads) {
             this.virtualThreadsEnforced = enforceVirtualThreads;
             return this;
@@ -448,6 +492,7 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
          * @param useVirtualThreads whether to use virtual threads or not, defaults to {@code false}
          * @return updated builder instance
          */
+        @ConfiguredOption(key = "virtual-threads", value = "false", experimental = true)
         public Builder virtualIfAvailable(boolean useVirtualThreads) {
             this.useVirtualThreads = useVirtualThreads;
             return this;

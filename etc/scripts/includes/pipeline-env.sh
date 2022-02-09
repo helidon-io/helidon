@@ -46,6 +46,10 @@ if [ -z "${__PIPELINE_ENV_INCLUDED__}" ]; then
 
     . ${WS_DIR}/etc/scripts/includes/error_handlers.sh
 
+    if [ -z "${GRAALVM_HOME}" ]; then
+        export GRAALVM_HOME="/tools/graalvm-ce-java17-21.3.0"
+    fi
+
     require_env() {
         if [ -z "$(eval echo \$${1})" ] ; then
             echo "ERROR: ${1} not set in the environment"
@@ -57,16 +61,20 @@ if [ -z "${__PIPELINE_ENV_INCLUDED__}" ]; then
     # Modified shell variables: JAVA_HOME - JDK home directory
     #                           PATH      - executables search path
     graalvm() {
-        JAVA_HOME='/tools/graalvm-ce-java11-21.1.0'
+        JAVA_HOME=${GRAALVM_HOME}
         PATH="${PATH}:${JAVA_HOME}/bin"
     }
 
     if [ -n "${JENKINS_HOME}" ] ; then
         export PIPELINE="true"
-        export JAVA_HOME="/tools/jdk-11.0.12"
+        export JAVA_HOME="/tools/jdk-17"
         MAVEN_OPTS="${MAVEN_OPTS} -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
         MAVEN_OPTS="${MAVEN_OPTS} -Dorg.slf4j.simpleLogger.showDateTime=true"
         MAVEN_OPTS="${MAVEN_OPTS} -Dorg.slf4j.simpleLogger.dateTimeFormat=HH:mm:ss,SSS"
+        # Needed for archetype engine plugin
+        MAVEN_OPTS="${MAVEN_OPTS} --add-opens=java.base/java.util=ALL-UNNAMED"
+        # Needed for generating site
+        MAVEN_OPTS="${MAVEN_OPTS} --add-opens=java.desktop/com.sun.imageio.plugins.png=ALL-UNNAMED"
         export MAVEN_OPTS
         export PATH="/tools/apache-maven-3.6.3/bin:${JAVA_HOME}/bin:/tools/node-v12/bin:${PATH}"
         if [ -n "${GITHUB_SSH_KEY}" ] ; then

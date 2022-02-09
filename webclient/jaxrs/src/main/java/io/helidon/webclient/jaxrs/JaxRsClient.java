@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
 
 /**
- * Point of access to {@link javax.ws.rs.client.ClientBuilder} to support Helidon features,
+ * Point of access to {@link jakarta.ws.rs.client.ClientBuilder} to support Helidon features,
  * such as propagation of tracing, correct handling of {@link io.helidon.common.context.Context}.
  */
 public final class JaxRsClient {
@@ -49,7 +49,7 @@ public final class JaxRsClient {
      * </tr>
      * <tr>
      *     <td>executor</td>
-     *     <td>{@link io.helidon.common.configurable.ThreadPoolSupplier#create(io.helidon.config.Config)}</td>
+     *     <td>{@link io.helidon.common.configurable.ThreadPoolSupplier#create(io.helidon.config.Config, String)}</td>
      *     <td>Default executor service to use for asynchronous operations. For configuration options
      *      of {@code executor}, please refer to
      *      {@link io.helidon.common.configurable.ThreadPoolSupplier.Builder#config(io.helidon.config.Config)}</td>
@@ -59,7 +59,7 @@ public final class JaxRsClient {
      * @param config configuration to use to configure JAX-RS clients defaults
      */
     public static void configureDefaults(Config config) {
-        EXECUTOR_SUPPLIER.set(ThreadPoolSupplier.create(config));
+        EXECUTOR_SUPPLIER.set(ThreadPoolSupplier.create(config, "jaxrs-client-thread-pool"));
     }
 
     /**

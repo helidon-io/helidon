@@ -72,3 +72,4 @@ node/
 user.txt
 ObjectStore/
 PutObjectStoreDirHere/
+package-lock.json

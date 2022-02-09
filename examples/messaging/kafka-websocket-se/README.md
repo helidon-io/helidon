@@ -1,7 +1,7 @@
 # Helidon Messaging with Kafka Examples
 
 ## Prerequisites
-* Java 11+ 
+* Java 17+ 
 * Docker
 * [Kafka bootstrap server](../README.md) running on `localhost:9092`
 

@@ -329,6 +329,7 @@ public class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>> {
      * @param config configuration to load from
      * @return updated builder instance
      */
+    @SuppressWarnings("unchecked")
     public static <K, V> KafkaPublisher<K, V> create(Config config) {
         return (KafkaPublisher<K, V>) builder().config(config).build();
     }
@@ -338,7 +339,7 @@ public class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>> {
      * @param <K> Key type
      * @param <V> Value type
      */
-    public static final class Builder<K, V> implements io.helidon.common.Builder<KafkaPublisher<K, V>> {
+    public static final class Builder<K, V> implements io.helidon.common.Builder<Builder<K, V>, KafkaPublisher<K, V>> {
 
         private long pollTimeout = 50L;
         private long periodExecutions = 100L;

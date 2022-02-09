@@ -25,14 +25,15 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import javax.enterprise.inject.spi.Annotated;
-import javax.enterprise.inject.spi.AnnotatedMember;
-import javax.enterprise.inject.spi.AnnotatedMethod;
-import javax.enterprise.inject.spi.AnnotatedType;
-
+import jakarta.enterprise.inject.spi.Annotated;
+import jakarta.enterprise.inject.spi.AnnotatedMember;
+import jakarta.enterprise.inject.spi.AnnotatedMethod;
+import jakarta.enterprise.inject.spi.AnnotatedType;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
@@ -105,22 +106,51 @@ public final class MetricUtil {
     static <A extends Annotation> List<LookupResult<A>> lookupAnnotations(
             AnnotatedType<?> annotatedType,
             AnnotatedMember<?> annotatedMember,
-            Class<A> annotClass) {
-        List<LookupResult<A>> result = lookupAnnotations(annotatedMember, annotClass);
+            Class<A> annotClass,
+            Map<Class<?>, MetricsCdiExtension.StereotypeMetricsInfo> stereotypeTypes) {
+        List<LookupResult<A>> result = lookupAnnotations(annotatedMember, annotClass, stereotypeTypes);
         if (result.isEmpty()) {
-            result = lookupAnnotations(annotatedType, annotClass);
+            result = lookupAnnotations(annotatedType, annotClass, stereotypeTypes);
         }
         return result;
     }
 
-    static <A extends Annotation>  List<LookupResult<A>> lookupAnnotations(Annotated annotated,
-            Class<A> annotClass) {
-        // We have to filter by annotation class ourselves, because annotatedMethod.getAnnotations(Class) delegates
-        // to the Java method. That would bypass any annotations that had been added dynamically to the configurator.
-        return annotated.getAnnotations().stream()
+    static <A extends Annotation>  List<LookupResult<A>> lookupAnnotations(
+            Annotated annotated,
+            Class<A> annotClass,
+            Map<Class<?>, MetricsCdiExtension.StereotypeMetricsInfo> stereotypeMetricsInfo) {
+
+        return metricsAnnotationsOnElement(annotated, stereotypeMetricsInfo)
                 .filter(annotClass::isInstance)
                 .map(annotation -> new LookupResult<>(matchingType(annotated), annotClass.cast(annotation)))
                 .collect(Collectors.toList());
+    }
+
+    static Stream<Annotation> metricsAnnotationsOnElement(Annotated annotated,
+                                                          Map<Class<?>, MetricsCdiExtension.StereotypeMetricsInfo>
+                                                                  stereotypeMetricsInfo) {
+        // We have to filter by annotation class ourselves using annotated.getAnnotations(), because
+        // annotated.getAnnotations(Class) delegates to the Java method. That would bypass any annotations that had been
+        // added dynamically to the configurator.
+
+        // Further, we need to create lookup results not only for explicit metrics annotations on the annotated element but
+        // also any (possibly multiple) metrics annotations via stereotypes.
+
+        return Stream.concat(annotated.getAnnotations().stream()
+                                     .filter(a -> MetricsCdiExtension.ALL_METRIC_ANNOTATIONS.contains(a.annotationType())),
+                             annotated.getAnnotations().stream()
+                                     .filter(a -> stereotypeMetricsInfo.containsKey(a.annotationType()))
+                                     .flatMap(a -> stereotypeMetricsInfo.get(a.annotationType()).metricsAnnotations().stream())
+        );
+    }
+
+    static <T extends Annotation> Stream<T> metricsAnnotationsOnElement(Annotated annotated,
+                                                          Class<T> annotationType,
+                                                          Map<Class<?>, MetricsCdiExtension.StereotypeMetricsInfo>
+                                                                  stereotypeMetricsInfo) {
+        return metricsAnnotationsOnElement(annotated, stereotypeMetricsInfo)
+                .filter(annotationType::isInstance)
+                .map(annotationType::cast);
     }
 
     /**
@@ -198,7 +228,7 @@ public final class MetricUtil {
                     .withDescription(counted.description().trim())
                     .withType(MetricType.COUNTER)
                     .withUnit(counted.unit().trim())
-                    .reusable(counted.reusable()).build();
+                    .build();
             registry.counter(meta, tags(counted.tags()));
             LOGGER.fine(() -> "### Registered counter " + metricName);
         } else if (annotation instanceof Metered) {
@@ -211,7 +241,7 @@ public final class MetricUtil {
                     .withDescription(metered.description().trim())
                     .withType(MetricType.METERED)
                     .withUnit(metered.unit().trim())
-                    .reusable(metered.reusable()).build();
+                    .build();
             registry.meter(meta, tags(metered.tags()));
             LOGGER.fine(() -> "### Registered meter " + metricName);
         } else if (annotation instanceof ConcurrentGauge) {
@@ -237,7 +267,7 @@ public final class MetricUtil {
                     .withDescription(timed.description().trim())
                     .withType(MetricType.TIMER)
                     .withUnit(timed.unit().trim())
-                    .reusable(timed.reusable()).build();
+                    .build();
             registry.timer(meta, tags(timed.tags()));
             LOGGER.fine(() -> "### Registered timer " + metricName);
         } else if (annotation instanceof SimplyTimed) {
@@ -250,7 +280,7 @@ public final class MetricUtil {
                     .withDescription(simplyTimed.description().trim())
                     .withType(MetricType.SIMPLE_TIMER)
                     .withUnit(simplyTimed.unit().trim())
-                    .reusable(simplyTimed.reusable()).build();
+                    .build();
             registry.simpleTimer(meta, tags(simplyTimed.tags()));
             LOGGER.fine(() -> "### Registered simple timer " + metricName);
         }
@@ -292,7 +322,7 @@ public final class MetricUtil {
                     .withDescription(counted.description().trim())
                     .withType(MetricType.COUNTER)
                     .withUnit(counted.unit().trim())
-                    .reusable(counted.reusable()).build();
+                    .build();
             registry.counter(meta);
             LOGGER.fine(() -> "### Registered counter " + metricName);
         } else if (annotation instanceof Metered) {
@@ -305,7 +335,7 @@ public final class MetricUtil {
                     .withDescription(metered.description().trim())
                     .withType(MetricType.METERED)
                     .withUnit(metered.unit().trim())
-                    .reusable(metered.reusable()).build();
+                    .build();
             registry.meter(meta);
             LOGGER.fine(() -> "### Registered meter " + metricName);
         } else if (annotation instanceof ConcurrentGauge) {
@@ -331,7 +361,7 @@ public final class MetricUtil {
                     .withDescription(timed.description().trim())
                     .withType(MetricType.TIMER)
                     .withUnit(timed.unit().trim())
-                    .reusable(timed.reusable()).build();
+                    .build();
             registry.timer(meta);
             LOGGER.fine(() -> "### Registered timer " + metricName);
         } else if (annotation instanceof SimplyTimed) {
@@ -344,7 +374,7 @@ public final class MetricUtil {
                     .withDescription(simplyTimed.description().trim())
                     .withType(MetricType.SIMPLE_TIMER)
                     .withUnit(simplyTimed.unit().trim())
-                    .reusable(simplyTimed.reusable()).build();
+                    .build();
             registry.timer(meta);
             LOGGER.fine(() -> "### Registered simple timer " + metricName);
         }
@@ -419,10 +449,20 @@ public final class MetricUtil {
             this.annotation = annotation;
         }
 
+        /**
+         * Returns the matching type for this lookup result.
+         *
+         * @return matching type
+         */
         public MatchingType getType() {
             return type;
         }
 
+        /**
+         * Returns the annotation for the lookup result.
+         *
+         * @return the annotation
+         */
         public A getAnnotation() {
             return annotation;
         }

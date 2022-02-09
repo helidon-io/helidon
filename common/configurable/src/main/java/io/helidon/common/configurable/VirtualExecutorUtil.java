@@ -17,6 +17,7 @@
 package io.helidon.common.configurable;
 
 import java.lang.reflect.Method;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
@@ -31,6 +32,9 @@ final class VirtualExecutorUtil {
     private static final Logger LOGGER = Logger.getLogger(VirtualExecutorUtil.class.getName());
     private static final LazyValue<Boolean> SUPPORTED = LazyValue.create(VirtualExecutorUtil::findSupported);
     private static final LazyValue<ExecutorService> EXECUTOR_SERVICE = LazyValue.create(VirtualExecutorUtil::findExecutor);
+    // newer and older builds
+    private static final List<String> SUPPORTED_METHOD_NAMES = List.of("newVirtualThreadPerTaskExecutor",
+                                                                       "newVirtualThreadExecutor");
 
     private VirtualExecutorUtil() {
     }
@@ -73,6 +77,25 @@ final class VirtualExecutorUtil {
     }
 
     private static Method findMethod() throws ReflectiveOperationException {
-        return Executors.class.getDeclaredMethod("newVirtualThreadExecutor");
+        ReflectiveOperationException previous = null;
+
+        for (String methodName : SUPPORTED_METHOD_NAMES) {
+            try {
+                if (LOGGER.isLoggable(Level.FINEST)) {
+                    LOGGER.finest("Trying Loom executor method Executors." + methodName + "()");
+                }
+                return Executors.class.getDeclaredMethod(methodName);
+            } catch (ReflectiveOperationException e) {
+                if (previous == null) {
+                    previous = e;
+                } else {
+                    previous.addSuppressed(e);
+                }
+            }
+        }
+        if (previous == null) {
+            throw new NoSuchMethodException("Invalid Loom configuration, no methods defined.");
+        }
+        throw previous;
     }
 }

@@ -20,8 +20,8 @@
 module io.helidon.messaging.connectors.kafka {
     requires java.logging;
 
-    requires static jakarta.enterprise.cdi.api;
-    requires static jakarta.inject.api;
+    requires static jakarta.cdi;
+    requires static jakarta.inject;
     requires static kafka.clients;
     requires org.reactivestreams;
     requires transitive io.helidon.config;
@@ -36,6 +36,8 @@ module io.helidon.messaging.connectors.kafka {
     requires static svm;
     requires java.security.sasl;
     requires transitive org.slf4j;
+    // To allow KerberosLoginSubstitution
+    requires java.security.jgss;
 
     exports io.helidon.messaging.connectors.kafka;
 }

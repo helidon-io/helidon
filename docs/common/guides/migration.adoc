@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -17,24 +17,9 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 
-== Java 8 Runtime
+== Java 11 Runtime
 
-Java 8 is no longer supported. Java 11 or newer is required.
-
-== Common Utilities
-
-Since Helidon 2.x now requires Java 11 the helper classes that were provided for Java 8
-support have been removed. These have been replaced by the standard JDK classes:
-
-|===
-|Removed | Replacement
-
-|`io.helidon.reactive.Flow`|`java.util.concurrent.Flow`
-|`io.helidon.common.CollectionsHelper`|Factory methods of `Set`, `Map` and `List`
-|`io.helidon.common.OptionalHelper`|Methods of `java.util.Optional`
-|`io.helidon.common.StackWalker`|`java.lang.StackWalker`
-|`io.helidon.common.InputStreamHelper`|Methods of `java.io.InputStream`
-|===
+Java 11 is no longer supported in Helidon 3. Java 17 or newer is required.
 
 == Tracing
 

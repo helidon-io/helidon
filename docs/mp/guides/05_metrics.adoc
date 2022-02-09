@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -25,6 +25,8 @@
 :metrics-common: {common-guides}/metrics.adoc
 :lower-case-flavor: mp
 :intro-project-name: MicroProfile (MP)
+:helidon-tag: https://github.com/oracle/helidon/tree/{helidon-version}
+:thread-pool-example-link: {helidon-tag}/examples/webserver/threadpool
 
 include::{metrics-common}[tag=intro]
 include::{metrics-common}[tag=create-sample-project]
@@ -36,14 +38,24 @@ include::{metrics-common}[tag=build-and-run-intro]
 .Text response:
 ----
 # TYPE base_REST_request_total counter
-# HELP base_REST_request_total The number of invocations and total response time of RESTful resource methods since the start of the server.
+# HELP base_REST_request_total The number of invocations and total response time of this RESTful resource method since the start of the server. The metric will not record the elapsed time nor count of a REST request if it resulted in an unmapped exception. Also tracks the highest recorded time duration within the previous completed full minute and lowest recorded time duration within the previous completed full minute.
 base_REST_request_total{class="io.helidon.examples.quickstart.mp.GreetResource",method="getDefaultMessage"} 0
 # TYPE base_REST_request_elapsedTime_seconds gauge
 base_REST_request_elapsedTime_seconds{class="io.helidon.examples.quickstart.mp.GreetResource",method="getDefaultMessage"} 0.0
+# TYPE base_REST_request_maxTimeDuration_seconds gauge
+base_REST_request_maxTimeDuration_seconds{class="io.helidon.examples.quickstart.mp.GreetResource",method="getDefaultMessage"} NaN
+# TYPE base_REST_request_minTimeDuration_seconds gauge
+base_REST_request_minTimeDuration_seconds{class="io.helidon.examples.quickstart.mp.GreetResource",method="getDefaultMessage"} NaN
 base_REST_request_total{class="io.helidon.examples.quickstart.mp.GreetResource",method="getMessage_java.lang.String"} 0
 base_REST_request_elapsedTime_seconds{class="io.helidon.examples.quickstart.mp.GreetResource",method="getMessage_java.lang.String"} 0.0
-base_REST_request_total{class="io.helidon.examples.quickstart.mp.GreetResource",method="updateGreeting_javax.json.JsonObject"} 0
-base_REST_request_elapsedTime_seconds{class="io.helidon.examples.quickstart.mp.GreetResource",method="updateGreeting_javax.json.JsonObject"} 0.0
+base_REST_request_maxTimeDuration_seconds{class="io.helidon.examples.quickstart.mp.GreetResource",method="getMessage_java.lang.String"} NaN
+base_REST_request_minTimeDuration_seconds{class="io.helidon.examples.quickstart.mp.GreetResource",method="getMessage_java.lang.String"} NaN
+...
+# TYPE base_REST_request_unmappedException_total counter
+# HELP base_REST_request_unmappedException_total The total number of unmapped exceptions that occur from this RESTful resouce method since the start of the server.
+base_REST_request_unmappedException_total{class="io.helidon.examples.quickstart.mp.GreetResource",method="getDefaultMessage"} 0
+base_REST_request_unmappedException_total{class="io.helidon.examples.quickstart.mp.GreetResource",method="getMessage_java.lang.String"} 0
+...
 include::{metrics-common}[tag=metrics-prometheus-output]
 ----
 
@@ -56,12 +68,15 @@ include::{metrics-common}[tag=curl-metrics-json]
   "base": {
     "REST.request":
       {
-        "count;class=io.helidon.examples.quickstart.mp.GreetResource;method=getDefaultMessage":0,
-        "elapsedTime;class=io.helidon.examples.quickstart.mp.GreetResource;method=getDefaultMessage":0.0,
-        "count;class=io.helidon.examples.quickstart.mp.GreetResource;method=getMessage_java.lang.String":0,
-        "elapsedTime;class=io.helidon.examples.quickstart.mp.GreetResource;method=getMessage_java.lang.String":0.0,
-        "count;class=io.helidon.examples.quickstart.mp.GreetResource;method=updateGreeting_javax.json.JsonObject":0,
-        "elapsedTime;class=io.helidon.examples.quickstart.mp.GreetResource;method=updateGreeting_javax.json.JsonObject":0.0
+      "count;class=io.helidon.examples.quickstart.mp.GreetResource;method=getDefaultMessage": 0,
+      "elapsedTime;class=io.helidon.examples.quickstart.mp.GreetResource;method=getDefaultMessage": 0,
+      "maxTimeDuration;class=io.helidon.examples.quickstart.mp.GreetResource;method=getDefaultMessage": null,
+      "minTimeDuration;class=io.helidon.examples.quickstart.mp.GreetResource;method=getDefaultMessage": null,
+      "count;class=io.helidon.examples.quickstart.mp.GreetResource;method=getMessage_java.lang.String": 0,
+      "elapsedTime;class=io.helidon.examples.quickstart.mp.GreetResource;method=getMessage_java.lang.String": 0,
+      "maxTimeDuration;class=io.helidon.examples.quickstart.mp.GreetResource;method=getMessage_java.lang.String": null,
+      "minTimeDuration;class=io.helidon.examples.quickstart.mp.GreetResource;method=getMessage_java.lang.String": null,
+      ...
       },
 include::{metrics-common}[tag=base-metrics-json-output]
   },
@@ -70,6 +85,16 @@ include::{metrics-common}[tag=vendor-metrics-json-output]
 ----
 include::{metrics-common}[tag=get-single-metric]
 
+include::{metrics-common}[tag=built-in-metrics-discussion]
+
+include::{metrics-common}[tag=controlling-intro-part-1]
+* <<controlling-rest-request-metrics,Control `REST.request` metrics.>>
+include::{metrics-common}[tag=controlling-intro-part-2]
+[[controlling-rest-request-metrics]]
+
+include::{metrics-common}[tag=disabling-whole]
+
+[[controlling-rest-request-metrics]]
 ==== Controlling `REST.request` Metrics
 Helidon implements the optional family of metrics, all with the name `REST.request`, as described in the
 link:https://download.eclipse.org/microprofile/microprofile-metrics-2.3/microprofile-metrics-spec-2.3.html#_optional_rest[MicroProfile Metrics specification].
@@ -83,7 +108,7 @@ Note that the applications you generate using the full Helidon archetype _do_ en
 generated config file.
 You can see the results in the sample output shown in earlier example runs.
 
-include::{metrics-common}[tag=KPI]
+include::{metrics-common}[tags=controlling-by-component;controlling-by-registry]
 
 include::{metrics-common}[tag=metrics-metadata]
 
@@ -115,14 +140,14 @@ the `/cards` endpoint is called.
 package io.helidon.examples.quickstart.mp;
 
 import java.util.Collections;
-import javax.enterprise.context.RequestScoped;
-import javax.json.Json;
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObject;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.json.Json;
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonObject;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 
 @Path("/cards") //<1>
@@ -193,14 +218,14 @@ Note that when using multiple annotations on a method, you *must* give the metri
 package io.helidon.examples.quickstart.mp;
 
 import java.util.Collections;
-import javax.enterprise.context.RequestScoped;
-import javax.json.Json;
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObject;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.json.Json;
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonObject;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Metered;
@@ -217,7 +242,7 @@ public class GreetingCards {
   @Counted(name = "cardCount", absolute = true) //<1>
   @Metered(name = "cardMeter", absolute = true, unit = MetricUnits.MILLISECONDS) //<2>
   @Timed(name = "cardTimer", absolute = true, unit = MetricUnits.MILLISECONDS) //<3>
-  public JsonObject anyCard() throws InterruptedException {
+  public JsonObject anyCard() {
     return createResponse("Here are some random cards ...");
   }
 
@@ -245,29 +270,30 @@ curl -H "Accept: application/json"  http://localhost:8080/metrics/application
 ----
 {
   "cardCount": 2,
-  "cardMeter": {  // <1>
+  "cardMeter": { // <1>
     "count": 2,
-    "meanRate": 0.3664337145491488,
-    "oneMinRate": 0.4,
-    "fiveMinRate": 0.4,
-    "fifteenMinRate": 0.4
+    "meanRate": 0.15653506570241812,
+    "oneMinRate": 0,
+    "fiveMinRate": 0,
+    "fifteenMinRate": 0
   },
   "cardTimer": { // <2>
     "count": 2,
-    "meanRate": 0.36649792432150535,
-    "oneMinRate": 0.4,
-    "fiveMinRate": 0.4,
-    "fifteenMinRate": 0.4,
-    "min": 12944,
-    "max": 2078856,
-    "mean": 1045900.0,
-    "stddev": 1032956.0,
-    "p50": 2078856.0,
-    "p75": 2078856.0,
-    "p95": 2078856.0,
-    "p98": 2078856.0,
-    "p99": 2078856.0,
-    "p999": 2078856.0
+    "elapsedTime": 2,
+    "meanRate": 0.15651866263362785,
+    "oneMinRate": 0,
+    "fiveMinRate": 0,
+    "fifteenMinRate": 0,
+    "min": 0,
+    "max": 2,
+    "mean": 1.0506565,
+    "stddev": 1.0405735,
+    "p50": 2.09123,
+    "p75": 2.09123,
+    "p95": 2.09123,
+    "p98": 2.09123,
+    "p99": 2.09123,
+    "p999": 2.09123
   }
 }
 ----
@@ -277,7 +303,7 @@ curl -H "Accept: application/json"  http://localhost:8080/metrics/application
 
 ==== Reusing Metrics
 
-You can share a metric across multiple endpoints by specifying the reusable field in the metric annotation as
+You can share a metric across multiple endpoints simply by specifying the same metric annotation as
 demonstrated below.
 
 [source,java]
@@ -286,14 +312,14 @@ demonstrated below.
 package io.helidon.examples.quickstart.mp;
 
 import java.util.Collections;
-import javax.enterprise.context.RequestScoped;
-import javax.json.Json;
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObject;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.json.Json;
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonObject;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 
 @Path("/cards")
@@ -304,7 +330,7 @@ public class GreetingCards {
 
   @GET
   @Produces(MediaType.APPLICATION_JSON)
-  @Counted(name = "anyCard",absolute = true)
+  @Counted(name = "anyCard", absolute = true)
   public JsonObject anyCard() throws InterruptedException {
     return createResponse("Here are some cards ...");
   }
@@ -312,7 +338,7 @@ public class GreetingCards {
   @GET
   @Path("/birthday")
   @Produces(MediaType.APPLICATION_JSON)
-  @Counted(name = "specialEventCard", absolute = true, reusable = true)  // <1>
+  @Counted(name = "specialEventCard", absolute = true)  // <1>
   public JsonObject birthdayCard() throws InterruptedException {
     return createResponse("Here are some birthday cards ...");
   }
@@ -320,7 +346,7 @@ public class GreetingCards {
   @GET
   @Path("/wedding")
   @Produces(MediaType.APPLICATION_JSON)
-  @Counted(name = "specialEventCard", absolute = true, reusable = true)  // <2>
+  @Counted(name = "specialEventCard", absolute = true)  // <2>
   public JsonObject weddingCard() throws InterruptedException {
     return createResponse("Here are some wedding cards ...");
   }
@@ -365,14 +391,14 @@ needed to aggregate the counts, but they are left in the example to demonstrate 
 package io.helidon.examples.quickstart.mp;
 
 import java.util.Collections;
-import javax.enterprise.context.RequestScoped;
-import javax.json.Json;
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObject;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.json.Json;
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonObject;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 
 @Path("/cards")
@@ -441,15 +467,15 @@ package io.helidon.examples.quickstart.mp;
 
 import java.util.Collections;
 import java.util.Random;
-import javax.enterprise.context.RequestScoped;
-import javax.inject.Inject;
-import javax.json.Json;
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObject;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
+import jakarta.json.Json;
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonObject;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Metric;
@@ -540,9 +566,9 @@ package io.helidon.examples.quickstart.mp;
 
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicLong;
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.context.Initialized;
-import javax.enterprise.event.Observes;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.Initialized;
+import jakarta.enterprise.event.Observes;
 import org.eclipse.microprofile.metrics.annotation.Gauge;
 
 @ApplicationScoped // <1>
@@ -572,14 +598,14 @@ public class GreetingCardsAppMetrics {
 package io.helidon.examples.quickstart.mp;
 
 import java.util.Collections;
-import javax.enterprise.context.RequestScoped;
-import javax.json.Json;
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObject;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.json.Json;
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonObject;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 
 @Path("/cards")

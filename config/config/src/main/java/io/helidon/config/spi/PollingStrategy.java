@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,7 +69,6 @@ import io.helidon.config.PollingStrategies;
  *      seconds</td>
  *  </tr>
  * </table>
- * <p>
  * </li>
  * <li>{@code class} - fully-qualified class name of a custom polling strategy
  * implementation or a builder class that implements a {@code build()} method
@@ -79,7 +78,7 @@ import io.helidon.config.PollingStrategies;
  * For a given config source use either {@code type} or {@code class} to
  * indicate a polling strategy but not both. If both appear the config system
  * ignores the {@code class} setting.
- * <h3>Meta-configuration Support for Custom Polling Strategies</h3>
+ * <h2>Meta-configuration Support for Custom Polling Strategies</h2>
  * To support settings in meta-configuration, a custom polling strategy must
  * be capable of processing the meta configuration provided to
  * {@link io.helidon.config.spi.PollingStrategyProvider#create(String, io.helidon.config.Config)}

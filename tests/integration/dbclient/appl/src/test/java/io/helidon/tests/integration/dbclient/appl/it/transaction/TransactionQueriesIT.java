@@ -18,7 +18,7 @@ package io.helidon.tests.integration.dbclient.appl.it.transaction;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.json.JsonArray;
+import jakarta.json.JsonArray;
 
 import io.helidon.tests.integration.dbclient.appl.it.LogData;
 import io.helidon.tests.integration.dbclient.appl.it.VerifyData;

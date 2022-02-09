@@ -20,5 +20,6 @@ oracle:
         test:
           URL: jdbc:h2:mem:test
           connectionFactoryClassName: org.h2.jdbcx.JdbcDataSource
-          password: ""
+          password: "${EMPTY}"
           user: sa
+          serviceName: fred

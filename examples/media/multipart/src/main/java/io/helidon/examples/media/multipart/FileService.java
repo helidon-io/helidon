@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,6 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
-import javax.json.Json;
-import javax.json.JsonArrayBuilder;
-import javax.json.JsonBuilderFactory;
-
 import io.helidon.common.configurable.ThreadPoolSupplier;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
@@ -38,6 +34,10 @@ import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 
+import jakarta.json.Json;
+import jakarta.json.JsonArrayBuilder;
+import jakarta.json.JsonBuilderFactory;
+
 /**
  * File service.
  */
@@ -45,7 +45,7 @@ public final class FileService implements Service {
 
     private static final JsonBuilderFactory JSON_FACTORY = Json.createBuilderFactory(Map.of());
     private final FileStorage storage;
-    private final ExecutorService executor = ThreadPoolSupplier.create().get();
+    private final ExecutorService executor = ThreadPoolSupplier.create("multipart-thread-pool").get();
 
 
     /**

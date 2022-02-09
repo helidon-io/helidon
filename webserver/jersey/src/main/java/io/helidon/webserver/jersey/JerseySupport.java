@@ -32,12 +32,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.ws.rs.core.Application;
-import javax.ws.rs.core.Configurable;
-import javax.ws.rs.core.Configuration;
-import javax.ws.rs.core.GenericType;
-import javax.ws.rs.core.SecurityContext;
-
 import io.helidon.common.configurable.ServerThreadPoolSupplier;
 import io.helidon.common.configurable.ThreadPool;
 import io.helidon.common.context.Context;
@@ -53,9 +47,15 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
+import io.helidon.webserver.WebServer;
 import io.helidon.webserver.jersey.HelidonHK2InjectionManagerFactory.InjectionManagerWrapper;
 
 import io.opentracing.SpanContext;
+import jakarta.ws.rs.core.Application;
+import jakarta.ws.rs.core.Configurable;
+import jakarta.ws.rs.core.Configuration;
+import jakarta.ws.rs.core.GenericType;
+import jakarta.ws.rs.core.SecurityContext;
 import org.glassfish.jersey.CommonProperties;
 import org.glassfish.jersey.internal.MapPropertiesDelegate;
 import org.glassfish.jersey.internal.inject.InjectionManager;
@@ -300,7 +300,13 @@ public class JerseySupport implements Service {
 
                         service.execute(() -> { // No need to use submit() since the future is not used.
                             try {
-                                LOGGER.finer("Handling in Jersey started.");
+                                if (LOGGER.isLoggable(Level.FINER)) {
+                                    LOGGER.finer("Handling in Jersey started for connection: "
+                                                         + Contexts.context()
+                                            .flatMap(ctx -> ctx.get(WebServer.class.getName() + ".connection",
+                                                                    String.class))
+                                            .orElse("Unknown"));
+                                }
 
                                 // Register Application instance in context in case there is more
                                 // than one application. Class SecurityFilter requires this.
@@ -462,7 +468,7 @@ public class JerseySupport implements Service {
     /**
      * Builder for convenient way to create {@link JerseySupport}.
      */
-    public static final class Builder implements Configurable<Builder>, io.helidon.common.Builder<JerseySupport> {
+    public static final class Builder implements Configurable<Builder>, io.helidon.common.Builder<Builder, JerseySupport> {
 
         private ResourceConfig resourceConfig;
         private ExecutorService executorService;
@@ -592,7 +598,7 @@ public class JerseySupport implements Service {
 
         /**
          * Sets the executor service to use for a handling of asynchronous requests
-         * with {@link javax.ws.rs.container.AsyncResponse}.
+         * with {@link jakarta.ws.rs.container.AsyncResponse}.
          *
          * @param executorService the executor service to use for a handling of asynchronous requests
          * @return an updated instance

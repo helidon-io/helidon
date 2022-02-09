@@ -27,8 +27,6 @@ import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.json.JsonObject;
-
 import io.helidon.common.Base64Value;
 import io.helidon.common.Version;
 import io.helidon.common.crypto.HashDigest;
@@ -44,6 +42,8 @@ import io.helidon.security.Security;
 import io.helidon.webclient.WebClientRequestBuilder;
 import io.helidon.webclient.WebClientResponse;
 import io.helidon.webclient.security.WebClientSecurity;
+
+import jakarta.json.JsonObject;
 
 /**
  * OCI specific REST API.

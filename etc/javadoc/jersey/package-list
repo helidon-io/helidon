@@ -22,7 +22,6 @@ org.glassfish.jersey.inject.hk2
 org.glassfish.jersey.internal
 org.glassfish.jersey.jackson
 org.glassfish.jersey.jackson.internal
-org.glassfish.jersey.jackson1
 org.glassfish.jersey.jaxb
 org.glassfish.jersey.jaxb.internal
 org.glassfish.jersey.jdk.connector
@@ -50,7 +49,6 @@ org.glassfish.jersey.media.sse.internal
 org.glassfish.jersey.message
 org.glassfish.jersey.message.internal
 org.glassfish.jersey.microprofile.config
-org.glassfish.jersey.microprofile.restclient
 org.glassfish.jersey.model
 org.glassfish.jersey.model.internal
 org.glassfish.jersey.moxy.internal

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,11 @@
  */
 package io.helidon.microprofile.metrics;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.ws.rs.ApplicationPath;
-import javax.ws.rs.core.Application;
 import java.util.Set;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.ws.rs.ApplicationPath;
+import jakarta.ws.rs.core.Application;
 
 @ApplicationScoped
 @ApplicationPath("/")
@@ -26,6 +27,7 @@ public class HelloWorldApp extends Application {
 
     @Override
     public Set<Class<?>> getClasses() {
-        return Set.of(HelloWorldResource.class);
+        return Set.of(HelloWorldResource.class,
+                      HelloWorldExceptionMapper.class);
     }
 }

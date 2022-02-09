@@ -46,6 +46,8 @@ import io.helidon.common.http.MediaType;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.config.DeprecatedConfig;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.Grant;
@@ -68,8 +70,10 @@ import io.helidon.security.providers.common.OutboundConfig;
 import io.helidon.security.providers.common.OutboundTarget;
 import io.helidon.security.providers.common.TokenCredential;
 import io.helidon.security.providers.oidc.common.OidcConfig;
+import io.helidon.security.providers.oidc.common.OidcCookieHandler;
 import io.helidon.security.spi.AuthenticationProvider;
 import io.helidon.security.spi.OutboundSecurityProvider;
+import io.helidon.security.spi.SecurityProvider;
 import io.helidon.security.util.TokenHandler;
 import io.helidon.webclient.WebClientRequestBuilder;
 
@@ -101,6 +105,7 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
     private final OidcOutboundConfig outboundConfig;
     private final boolean useJwtGroups;
     private final BiConsumer<StringBuilder, String> scopeAppender;
+    private final OidcCookieHandler cookieHandler;
 
     private OidcProvider(Builder builder, OidcOutboundConfig oidcOutboundConfig) {
         this.optional = builder.optional;
@@ -108,6 +113,7 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
         this.propagate = builder.propagate && (oidcOutboundConfig.hasOutbound());
         this.useJwtGroups = builder.useJwtGroups;
         this.outboundConfig = oidcOutboundConfig;
+        this.cookieHandler = oidcConfig.tokenCookieHandler();
 
         attemptPattern = Pattern.compile(".*?" + oidcConfig.redirectAttemptParam() + "=(\\d+).*");
 
@@ -255,11 +261,24 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
             }
 
             if (oidcConfig.useCookie()) {
-                token = token
-                        .or(() -> findCookie(providerRequest.env().headers()));
-
                 if (token.isEmpty()) {
-                    missingLocations.add("cookie");
+                    // only do this for cookies
+                    Optional<Single<String>> cookie = cookieHandler.findCookie(providerRequest.env().headers());
+                    if (cookie.isEmpty()) {
+                        missingLocations.add("cookie");
+                    } else {
+                        return cookie.get()
+                                .flatMapSingle(it -> validateToken(providerRequest, it))
+                                .onErrorResumeWithSingle(throwable -> {
+                                    if (LOGGER.isLoggable(Level.FINEST)) {
+                                        LOGGER.log(Level.FINEST, "Invalid token in cookie", throwable);
+                                    }
+                                    return Single.just(errorResponse(providerRequest,
+                                                                     Http.Status.UNAUTHORIZED_401,
+                                                                     null,
+                                                                     "Invalid token"));
+                                });
+                    }
                 }
             }
         } catch (SecurityException e) {
@@ -277,26 +296,6 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
                                                                    "Missing token, could not find in either of: "
                                                                            + missingLocations));
         }
-    }
-
-    private Optional<String> findCookie(Map<String, List<String>> headers) {
-        List<String> cookies = headers.get("Cookie");
-        if ((null == cookies) || cookies.isEmpty()) {
-            return Optional.empty();
-        }
-
-        for (String cookie : cookies) {
-            //a=b; c=d; e=f
-            String[] cookieValues = cookie.split(";");
-            for (String cookieValue : cookieValues) {
-                String trimmed = cookieValue.trim();
-                if (trimmed.startsWith(oidcConfig.cookieValuePrefix())) {
-                    return Optional.of(trimmed.substring(oidcConfig.cookieValuePrefix().length()));
-                }
-            }
-        }
-
-        return Optional.empty();
     }
 
     private Set<String> expectedScopes(ProviderRequest request) {
@@ -358,12 +357,14 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
             scopeString = URLEncoder.encode(scopes.toString(), StandardCharsets.UTF_8);
 
             String authorizationEndpoint = oidcConfig.authorizationEndpointUri();
-
             String nonce = UUID.randomUUID().toString();
+            String redirectUri = redirectUri(providerRequest.env());
+
+
             StringBuilder queryString = new StringBuilder("?");
             queryString.append("client_id=").append(oidcConfig.clientId()).append("&");
             queryString.append("response_type=code&");
-            queryString.append("redirect_uri=").append(oidcConfig.redirectUriWithHost()).append("&");
+            queryString.append("redirect_uri=").append(redirectUri).append("&");
             queryString.append("scope=").append(scopeString).append("&");
             queryString.append("nonce=").append(nonce).append("&");
             queryString.append("state=").append(encodeState(state));
@@ -379,6 +380,17 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
         } else {
             return errorResponseNoRedirect(code, description, status);
         }
+    }
+
+    private String redirectUri(SecurityEnvironment env) {
+        for (Map.Entry<String, List<String>> entry : env.headers().entrySet()) {
+            if (entry.getKey().equalsIgnoreCase("host") && !entry.getValue().isEmpty()) {
+                String firstHost = entry.getValue().get(0);
+                return oidcConfig.redirectUriWithHost(env.transport() + "://" + firstHost);
+            }
+        }
+
+        return oidcConfig.redirectUriWithHost();
     }
 
     private CompletionStage<AuthenticationResponse> failOrAbstain(String message) {
@@ -450,14 +462,14 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
         return URLEncoder.encode(state, StandardCharsets.UTF_8);
     }
 
-    private CompletionStage<AuthenticationResponse> validateToken(ProviderRequest providerRequest, String token) {
+    private Single<AuthenticationResponse> validateToken(ProviderRequest providerRequest, String token) {
         SignedJwt signedJwt;
         try {
             signedJwt = SignedJwt.parseToken(token);
         } catch (Exception e) {
             //invalid token
             LOGGER.log(Level.FINEST, "Could not parse inbound token", e);
-            return CompletableFuture.completedFuture(AuthenticationResponse.failed("Invalid token", e));
+            return Single.just(AuthenticationResponse.failed("Invalid token", e));
         }
 
         return jwtValidator.apply(signedJwt, Errors.collector())
@@ -612,7 +624,10 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
     /**
      * Builder for {@link io.helidon.security.providers.oidc.OidcProvider}.
      */
-    public static final class Builder implements io.helidon.common.Builder<OidcProvider> {
+    @Configured(prefix = OidcProviderService.PROVIDER_CONFIG_KEY,
+                description = "Open ID Connect security provider",
+                provides = {AuthenticationProvider.class, SecurityProvider.class})
+    public static final class Builder implements io.helidon.common.Builder<Builder, OidcProvider> {
         private boolean optional = false;
         private OidcConfig oidcConfig;
         // identity propagation is disabled by default. In general we should not reuse the same token
@@ -700,6 +715,7 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
          * @param propagate whether to propagate identity (true) or not (false)
          * @return updated builder instance
          */
+        @ConfiguredOption("false")
         public Builder propagate(boolean propagate) {
             this.propagate = propagate;
             return this;
@@ -712,6 +728,7 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
          *
          * @return updated builder instance
          */
+        @ConfiguredOption(mergeWithParent = true)
         public Builder outboundConfig(OutboundConfig config) {
             this.outboundConfig = config;
             return this;
@@ -724,6 +741,7 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
          *
          * @return updated builder instance
          */
+        @ConfiguredOption(mergeWithParent = true)
         public Builder oidcConfig(OidcConfig config) {
             this.oidcConfig = config;
             return this;
@@ -732,11 +750,12 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
         /**
          * Whether authentication is required.
          * By default, request will fail if the authentication cannot be verified.
-         * If set to false, request will process and this provider will abstain.
+         * If set to true, request will process and this provider will abstain.
          *
          * @param optional whether authentication is optional (true) or required (false)
          * @return updated builder instance
          */
+        @ConfiguredOption("false")
         public Builder optional(boolean optional) {
             this.optional = optional;
             return this;
@@ -744,11 +763,12 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
 
         /**
          * Claim {@code groups} from JWT will be used to automatically add
-         *  groups to current subject (may be used with {@link javax.annotation.security.RolesAllowed} annotation).
+         *  groups to current subject (may be used with {@link jakarta.annotation.security.RolesAllowed} annotation).
          *
          * @param useJwtGroups whether to use {@code groups} claim from JWT to retrieve roles
          * @return updated builder instance
          */
+        @ConfiguredOption("true")
         public Builder useJwtGroups(boolean useJwtGroups) {
             this.useJwtGroups = useJwtGroups;
             return this;

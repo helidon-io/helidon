@@ -37,20 +37,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import javax.annotation.Priority;
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.context.BeforeDestroyed;
-import javax.enterprise.context.Initialized;
-import javax.enterprise.context.spi.CreationalContext;
-import javax.enterprise.event.Observes;
-import javax.enterprise.inject.spi.Bean;
-import javax.enterprise.inject.spi.BeanManager;
-import javax.enterprise.inject.spi.DeploymentException;
-import javax.enterprise.inject.spi.Extension;
-import javax.enterprise.inject.spi.ProcessManagedBean;
-import javax.enterprise.inject.spi.ProcessProducerField;
-import javax.enterprise.inject.spi.ProcessProducerMethod;
+import java.util.stream.Collectors;
 
 import io.helidon.common.Prioritized;
 import io.helidon.common.configurable.ServerThreadPoolSupplier;
@@ -65,13 +52,30 @@ import io.helidon.webserver.WebServer;
 import io.helidon.webserver.jersey.JerseySupport;
 import io.helidon.webserver.staticcontent.StaticContentSupport;
 
+import jakarta.annotation.Priority;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.BeforeDestroyed;
+import jakarta.enterprise.context.Initialized;
+import jakarta.enterprise.context.spi.CreationalContext;
+import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.spi.Bean;
+import jakarta.enterprise.inject.spi.BeanManager;
+import jakarta.enterprise.inject.spi.CDI;
+import jakarta.enterprise.inject.spi.DeploymentException;
+import jakarta.enterprise.inject.spi.Extension;
+import jakarta.enterprise.inject.spi.ProcessManagedBean;
+import jakarta.enterprise.inject.spi.ProcessProducerField;
+import jakarta.enterprise.inject.spi.ProcessProducerMethod;
+import jakarta.ws.rs.core.Application;
+import jakarta.ws.rs.ext.ParamConverterProvider;
 import org.eclipse.microprofile.config.ConfigProvider;
+import org.glassfish.jersey.internal.inject.Bindings;
 import org.glassfish.jersey.internal.inject.InjectionManager;
 import org.glassfish.jersey.internal.inject.Injections;
 
-import static javax.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
-import static javax.interceptor.Interceptor.Priority.PLATFORM_AFTER;
-import static javax.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
+import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
+import static jakarta.interceptor.Interceptor.Priority.PLATFORM_AFTER;
+import static jakarta.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
 
 /**
  * Extension to handle web server configuration and lifecycle.
@@ -233,6 +237,25 @@ public class ServerCdiExtension implements Extension {
             boolean singleManager = config.get("server.single-injection-manager").asBoolean().asOptional().orElse(false);
             InjectionManager shared = jaxRsApplications.size() == 1 || singleManager ? null
                     : Injections.createInjectionManager();
+
+            // If multiple apps, register all ParamConverterProvider's in shared manager to prevent
+            // only those associated with the first application to be installed by Jersey
+            if (shared != null) {
+                List<? extends Application> instances = jaxRsApplications.stream()
+                        .flatMap(app -> app.applicationClass().stream())
+                        .flatMap(c -> CDI.current().select(c).stream())
+                        .collect(Collectors.toList());
+                instances.stream()
+                        .flatMap(i -> i.getClasses().stream())
+                        .filter(ParamConverterProvider.class::isAssignableFrom)
+                        .forEach(c -> shared.register(Bindings.serviceAsContract(c).to(ParamConverterProvider.class)));
+                instances.stream()
+                        .flatMap(i -> i.getSingletons().stream())
+                        .filter(s -> s instanceof ParamConverterProvider)
+                        .forEach(s -> shared.register(Bindings.service(s)));
+            }
+
+            // Add all applications
             jaxRsApplications.forEach(it -> addApplication(jaxRs, it, shared));
         }
         STARTUP_LOGGER.finest("Registered jersey application(s)");

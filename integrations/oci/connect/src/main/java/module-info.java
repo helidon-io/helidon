@@ -30,8 +30,9 @@ module io.helidon.integrations.oci.connect {
     requires io.helidon.security.providers.httpsign;
     requires io.helidon.security.util;
     requires io.helidon.webclient.security;
+    requires static io.helidon.config.metadata;
 
-    requires transitive java.json;
+    requires transitive jakarta.json;
 
     requires transitive io.helidon.common.http;
     requires transitive io.helidon.common.reactive;

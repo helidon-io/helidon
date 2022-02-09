@@ -19,8 +19,7 @@ package io.helidon.metrics;
 import java.util.Objects;
 import java.util.concurrent.atomic.LongAdder;
 
-import javax.json.JsonObjectBuilder;
-
+import jakarta.json.JsonObjectBuilder;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricID;

@@ -20,9 +20,9 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Base64;
 
-import javax.json.JsonObject;
-
 import io.helidon.integrations.vault.VaultResponse;
+
+import jakarta.json.JsonObject;
 
 /**
  * Bytes of certificates as obtained from the server.

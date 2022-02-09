@@ -22,8 +22,8 @@
 @SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.integrations.jedis.cdi {
     requires transitive java.desktop; // For java.beans
-    requires transitive jakarta.enterprise.cdi.api;
-    requires jakarta.inject.api;
+    requires transitive jakarta.cdi;
+    requires jakarta.inject;
     requires java.sql;
     requires transitive microprofile.config.api;
     requires redis.clients.jedis;
@@ -31,6 +31,6 @@ module io.helidon.integrations.jedis.cdi {
 
     exports io.helidon.integrations.jedis.cdi;
 
-    provides javax.enterprise.inject.spi.Extension
+    provides jakarta.enterprise.inject.spi.Extension
             with io.helidon.integrations.jedis.cdi.JedisExtension;
 }

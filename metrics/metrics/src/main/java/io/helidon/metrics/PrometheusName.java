@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 package io.helidon.metrics;
 
@@ -79,11 +78,15 @@ class PrometheusName {
      * @return name with stat name with units
      */
     String nameStatUnits(String statName) {
-        return nameStat(statName) + "_" + prometheusUnit;
+        return nameStat(statName) + (prometheusUnit.isBlank() ? "" :  "_" + prometheusUnit);
     }
 
     String nameStat(String statName) {
         return prometheusName + "_" + statName;
+    }
+
+    String nameStatTags(String statName) {
+        return nameStat(statName) + prometheusTags;
     }
 
     /**

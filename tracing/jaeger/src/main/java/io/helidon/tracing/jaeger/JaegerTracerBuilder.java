@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 import io.helidon.config.Config;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.tracing.TracerBuilder;
 
 import io.jaegertracing.Configuration;
@@ -148,6 +150,7 @@ import io.opentracing.util.GlobalTracer;
  *
  * @see <a href="https://github.com/jaegertracing/jaeger-client-java/blob/master/jaeger-core/README.md">Jaeger configuration</a>
  */
+@Configured(prefix = "tracing", root = true, description = "Jaeger tracer configuration.")
 public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
     static final Logger LOGGER = Logger.getLogger(JaegerTracerBuilder.class.getName());
 
@@ -282,6 +285,8 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
      * @param password password to use
      * @return updated builder instance
      */
+    @ConfiguredOption(key = "username", type = String.class)
+    @ConfiguredOption(key = "password", type = String.class)
     public JaegerTracerBuilder basicAuth(String username, String password) {
         username(username);
         password(password);
@@ -294,6 +299,7 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
      * @param propagation propagation value
      * @return updated builder instance
      */
+    @ConfiguredOption(key = "propagation", kind = ConfiguredOption.Kind.LIST, type = Configuration.Propagation.class)
     public JaegerTracerBuilder addPropagation(Configuration.Propagation propagation) {
         this.propagations.add(propagation);
 
@@ -414,6 +420,7 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
      * @param logSpans whether to log spans
      * @return updated builder instance
      */
+    @ConfiguredOption
     public JaegerTracerBuilder logSpans(boolean logSpans) {
         this.reporterLogSpans = logSpans;
         return this;
@@ -425,6 +432,7 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
      * @param token token to authenticate
      * @return updated builder instance
      */
+    @ConfiguredOption
     public JaegerTracerBuilder token(String token) {
         this.token = token;
         return this;
@@ -632,12 +640,33 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
         this.reporterFlushIntervalMillis = aLong;
     }
 
-    enum SamplerType {
+    /**
+     * Sampler type definition.
+     * Available options are "const", "probabilistic", "ratelimiting" and "remote".
+     */
+    public enum SamplerType {
+        /**
+         * Constant sampler always makes the same decision for all traces.
+         * It either samples all traces {@code 1} or none of them {@code 0}.
+         */
         CONSTANT("const"),
+        /**
+         * Probabilistic sampler makes a random sampling decision with the
+         * probability of sampling equal to the value of the property.
+         */
         PROBABILISTIC("probabilistic"),
+        /**
+         * Rate Limiting sampler uses a leaky bucket rate limiter to ensure that
+         * traces are sampled with a certain constant rate.
+         */
         RATE_LIMITING("ratelimiting"),
+        /**
+         * Remote sampler consults Jaeger agent for the appropriate sampling
+         * strategy to use in the current service.
+         */
         REMOTE("remote");
         private final String config;
+
 
         SamplerType(String config) {
             this.config = config;

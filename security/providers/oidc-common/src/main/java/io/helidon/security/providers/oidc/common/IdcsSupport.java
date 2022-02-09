@@ -20,8 +20,6 @@ import java.net.URI;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
-import javax.json.JsonObject;
-
 import io.helidon.common.http.FormParams;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
@@ -29,6 +27,8 @@ import io.helidon.security.SecurityException;
 import io.helidon.security.jwt.jwk.JwkKeys;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientResponse;
+
+import jakarta.json.JsonObject;
 
 /**
  * Oracle IDCS specific implementations for {@code idcs} server type.

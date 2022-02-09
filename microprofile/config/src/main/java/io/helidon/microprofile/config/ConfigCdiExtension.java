@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,23 +16,17 @@
 
 package io.helidon.microprofile.config;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.Serializable;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
-import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
@@ -44,34 +38,35 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.context.Dependent;
-import javax.enterprise.context.spi.CreationalContext;
-import javax.enterprise.event.Observes;
-import javax.enterprise.inject.spi.AfterBeanDiscovery;
-import javax.enterprise.inject.spi.AfterDeploymentValidation;
-import javax.enterprise.inject.spi.Annotated;
-import javax.enterprise.inject.spi.AnnotatedField;
-import javax.enterprise.inject.spi.AnnotatedMethod;
-import javax.enterprise.inject.spi.AnnotatedParameter;
-import javax.enterprise.inject.spi.Bean;
-import javax.enterprise.inject.spi.BeanManager;
-import javax.enterprise.inject.spi.DeploymentException;
-import javax.enterprise.inject.spi.Extension;
-import javax.enterprise.inject.spi.InjectionPoint;
-import javax.enterprise.inject.spi.ProcessBean;
-import javax.enterprise.inject.spi.ProcessObserverMethod;
-import javax.inject.Provider;
-
 import io.helidon.common.NativeImageHelper;
+import io.helidon.config.ConfigException;
 import io.helidon.config.mp.MpConfig;
-import io.helidon.config.mp.MpConfigImpl;
-import io.helidon.config.mp.MpConfigProviderResolver;
 
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.Dependent;
+import jakarta.enterprise.context.spi.CreationalContext;
+import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.spi.AfterBeanDiscovery;
+import jakarta.enterprise.inject.spi.AfterDeploymentValidation;
+import jakarta.enterprise.inject.spi.Annotated;
+import jakarta.enterprise.inject.spi.AnnotatedField;
+import jakarta.enterprise.inject.spi.AnnotatedMethod;
+import jakarta.enterprise.inject.spi.AnnotatedParameter;
+import jakarta.enterprise.inject.spi.AnnotatedType;
+import jakarta.enterprise.inject.spi.Bean;
+import jakarta.enterprise.inject.spi.BeanManager;
+import jakarta.enterprise.inject.spi.Extension;
+import jakarta.enterprise.inject.spi.InjectionPoint;
+import jakarta.enterprise.inject.spi.ProcessAnnotatedType;
+import jakarta.enterprise.inject.spi.ProcessBean;
+import jakarta.enterprise.inject.spi.ProcessObserverMethod;
+import jakarta.enterprise.inject.spi.WithAnnotations;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
+import org.eclipse.microprofile.config.ConfigValue;
+import org.eclipse.microprofile.config.inject.ConfigProperties;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.eclipse.microprofile.config.spi.ConfigSource;
+import org.eclipse.microprofile.config.spi.Converter;
 
 /**
  * Extension to enable config injection in CDI container (all of {@link io.helidon.config.Config},
@@ -82,7 +77,6 @@ public class ConfigCdiExtension implements Extension {
     private static final Pattern SPLIT_PATTERN = Pattern.compile("(?<!\\\\),");
     private static final Pattern ESCAPED_COMMA_PATTERN = Pattern.compile("\\,", Pattern.LITERAL);
     private static final Annotation CONFIG_PROPERTY_LITERAL = new ConfigPropertyLiteral();
-
     // we must do manual boxing of primitive types, to make sure the injection points match
     // the producers
     private static final Map<Class<?>, Class<?>> REPLACED_TYPES = new HashMap<>();
@@ -100,6 +94,7 @@ public class ConfigCdiExtension implements Extension {
     }
 
     private final List<InjectionPoint> ips = new LinkedList<>();
+    private final Map<Class<?>, ConfigBeanDescriptor> configBeans = new HashMap<>();
 
     /**
      * Constructor invoked by CDI container.
@@ -124,6 +119,18 @@ public class ConfigCdiExtension implements Extension {
                 }
             }
         }
+    }
+
+    private void processAnnotatedType(@Observes @WithAnnotations(ConfigProperties.class) ProcessAnnotatedType<?> event) {
+        AnnotatedType<?> annotatedType = event.getAnnotatedType();
+        ConfigProperties configProperties = annotatedType.getAnnotation(ConfigProperties.class);
+        if (configProperties == null) {
+            // ignore classes that do not have this annotation on class level
+            return;
+        }
+        configBeans.put(annotatedType.getJavaClass(), ConfigBeanDescriptor.create(annotatedType, configProperties));
+        // we must veto this annotated type, as we need to create a custom bean to create an instance
+        event.veto();
     }
 
     private <X> void harvestConfigPropertyInjectionPointsFromEnabledObserverMethod(@Observes ProcessObserverMethod<?, X> event,
@@ -194,6 +201,14 @@ public class ConfigCdiExtension implements Extension {
                     .addQualifier(CONFIG_PROPERTY_LITERAL)
                     .produceWith(it -> produce(it.select(InjectionPoint.class).get()));
         });
+
+        configBeans.values().forEach(beanDescriptor -> abd.addBean()
+                .addType(beanDescriptor.type())
+                .addTransitiveTypeClosure(beanDescriptor.type())
+                // it is non-binding
+                .qualifiers(ConfigProperties.Literal.NO_PREFIX)
+                .scope(Dependent.class)
+                .produceWith(it -> beanDescriptor.produce(it.select(InjectionPoint.class).get(), ConfigProvider.getConfig())));
     }
 
     /**
@@ -207,6 +222,8 @@ public class ConfigCdiExtension implements Extension {
             ips.forEach(ip -> {
                 try {
                     beanManager.getInjectableReference(ip, cc);
+                } catch (NoSuchElementException e) {
+                    add.addDeploymentProblem(new ConfigException("Failed to validate injection point: " + ip, e));
                 } catch (Exception e) {
                     add.addDeploymentProblem(e);
                 }
@@ -231,7 +248,10 @@ public class ConfigCdiExtension implements Extension {
                                        + " container initialization. This will not work nicely with Graal native-image");
         }
 
-        Type type = ip.getType();
+        return produce(configKey, ip.getType(), defaultValue(annotation));
+    }
+
+    private Object produce(String configKey, Type type, String defaultValue) {
         /*
              Supported types
              group x:
@@ -251,14 +271,25 @@ public class ConfigCdiExtension implements Extension {
              */
         FieldTypes fieldTypes = FieldTypes.create(type);
         org.eclipse.microprofile.config.Config config = ConfigProvider.getConfig();
-        if (config instanceof MpConfigProviderResolver.ConfigDelegate) {
-            // get the actual instance to have access to Helidon specific methods
-            config = ((MpConfigProviderResolver.ConfigDelegate) config).delegate();
+
+        try {
+            config = config.unwrap(Config.class);
+        } catch (Exception ignored) {
+            // this is to get the delegated config instance from MpConfigProviderResolver
         }
-        String defaultValue = defaultValue(annotation);
+
+        if (fieldTypes.field0().rawType().equals(ConfigValue.class)) {
+            ConfigValue configValue = config.getConfigValue(configKey);
+            if (defaultValue != null && configValue.getValue() == null) {
+                return new DefaultConfigValue(configKey, defaultValue);
+            } else {
+                return configValue;
+            }
+        }
+
         Object value = configValue(config, fieldTypes, configKey, defaultValue);
 
-        if (null == value) {
+        if (value == null) {
             throw new NoSuchElementException("Cannot find value for key: " + configKey);
         }
         return value;
@@ -270,7 +301,7 @@ public class ConfigCdiExtension implements Extension {
         Class<?> type2 = fieldTypes.field2().rawType();
         if (type0.equals(type1)) {
             // not a generic
-            return withDefault(config, configKey, type0, defaultValue);
+            return withDefault(config, configKey, type0, defaultValue, true);
         }
 
         // generic declaration
@@ -282,7 +313,8 @@ public class ConfigCdiExtension implements Extension {
                                         type2);
     }
 
-    private static <T> T withDefault(Config config, String key, Class<T> type, String configuredDefault) {
+    private static <T> T withDefault(Config config, String key, Class<T> type, String configuredDefault, boolean required) {
+        String defaultValue = (configuredDefault == null || configuredDefault.isEmpty()) ? null : configuredDefault;
         // our type may be one of the explicit optionals
         if (OptionalInt.class.equals(type)) {
             return type.cast(config.getOptionalValue(key, Integer.class)
@@ -298,13 +330,26 @@ public class ConfigCdiExtension implements Extension {
                                      .orElseGet(OptionalDouble::empty));
         }
 
+        // If converter returns null, we should not resolve default value
         Optional<String> stringValue = config.getOptionalValue(key, String.class);
 
         if (stringValue.isEmpty()) {
-            return convert(key, config, configuredDefault, type);
+            return convert(key, config, defaultValue, type);
         }
 
-        return convert(key, config, stringValue.get(), type);
+        // we have a value
+        Converter<T> converter = config.getConverter(type)
+                .orElseThrow(() -> new IllegalArgumentException("There is no converter for type \"" + type
+                        .getName() + "\""));
+
+        T value = converter.convert(stringValue.get());
+        if (value == null && required) {
+            throw new NoSuchElementException(
+                    "Converter returned null for a required property. This is not allowed as per section 6.4. of "
+                            + "the specification. Key: " + key + ", configured value: " + stringValue + ", converter: "
+                            + converter.getClass().getName());
+        }
+        return value;
     }
 
     @SuppressWarnings("unchecked")
@@ -315,19 +360,13 @@ public class ConfigCdiExtension implements Extension {
         if (String.class.equals(type)) {
             return (T) value;
         }
-        if (config instanceof MpConfigImpl) {
-            return ((MpConfigImpl) config).getConverter(type)
+
+        return config.getConverter(type)
                     .orElseThrow(() -> new IllegalArgumentException("Did not find converter for type "
                                                                             + type.getName()
                                                                             + ", for key "
                                                                             + key))
                     .convert(value);
-        }
-
-        throw new IllegalArgumentException("Helidon CDI MP Config implementation requires Helidon config instance. "
-                                                   + "Current config is " + config.getClass().getName()
-                                                   + ", which is not supported, as we cannot convert arbitrary String values");
-
     }
 
     private static Object parameterizedConfigValue(Config config,
@@ -338,7 +377,7 @@ public class ConfigCdiExtension implements Extension {
                                                    Class<?> typeArg2) {
         if (Optional.class.isAssignableFrom(rawType)) {
             if (typeArg.equals(typeArg2)) {
-                return Optional.ofNullable(withDefault(config, configKey, typeArg, defaultValue));
+                return Optional.ofNullable(withDefault(config, configKey, typeArg, defaultValue, false));
             } else {
                 return Optional
                         .ofNullable(parameterizedConfigValue(config,
@@ -352,7 +391,7 @@ public class ConfigCdiExtension implements Extension {
             return asList(config, configKey, typeArg, defaultValue);
         } else if (Supplier.class.isAssignableFrom(rawType)) {
             if (typeArg.equals(typeArg2)) {
-                return (Supplier<?>) () -> withDefault(config, configKey, typeArg, defaultValue);
+                return (Supplier<?>) () -> withDefault(config, configKey, typeArg, defaultValue, true);
             } else {
                 return (Supplier<?>) () -> parameterizedConfigValue(config,
                                                                     configKey,
@@ -461,16 +500,6 @@ public class ConfigCdiExtension implements Extension {
         return keyFromAnnotation;
     }
 
-    private Type actualType(Type type) {
-        if (type instanceof ParameterizedType) {
-            ParameterizedType paramType = (ParameterizedType) type;
-            if (Provider.class.isAssignableFrom((Class<?>) paramType.getRawType())) {
-                return paramType.getActualTypeArguments()[0];
-            }
-        }
-        return type;
-    }
-
     private static String injectedName(InjectionPoint ip) {
         Annotated annotated = ip.getAnnotated();
         if (annotated instanceof AnnotatedField) {
@@ -493,172 +522,4 @@ public class ConfigCdiExtension implements Extension {
         return ip.getMember().getName();
     }
 
-    /**
-     * A three tier description of a field type (main type, first
-     * generic type, second generic type).
-     */
-    static final class FieldTypes {
-        private TypedField field0;
-        private TypedField field1;
-        private TypedField field2;
-
-        private static FieldTypes create(Type type) {
-            FieldTypes ft = new FieldTypes();
-
-            // if the first type is a Provider or an Instance, we do not want it and start from its child
-            TypedField firstType = getTypedField(type);
-            if (Provider.class.isAssignableFrom(firstType.rawType)) {
-                ft.field0 = getTypedField(firstType);
-                firstType = ft.field0;
-            } else {
-                ft.field0 = firstType;
-            }
-
-            ft.field1 = getTypedField(ft.field0);
-
-            // now suppliers, optionals may have two levels deep
-            if (firstType.rawType == Optional.class || firstType.rawType == Supplier.class) {
-                ft.field2 = getTypedField(ft.field1);
-            } else {
-                ft.field2 = ft.field1;
-            }
-
-            return ft;
-        }
-
-        private static TypedField getTypedField(Type type) {
-            if (type instanceof Class) {
-                return new TypedField((Class<?>) type);
-            } else if (type instanceof ParameterizedType) {
-                ParameterizedType paramType = (ParameterizedType) type;
-
-                return new TypedField((Class<?>) paramType.getRawType(), paramType);
-            }
-
-            throw new UnsupportedOperationException("No idea how to handle " + type);
-        }
-
-        private static TypedField getTypedField(TypedField field) {
-            if (field.isParameterized()) {
-                ParameterizedType paramType = field.paramType;
-                Type[] typeArgs = paramType.getActualTypeArguments();
-
-                if (typeArgs.length == 1) {
-                    Type typeArg = typeArgs[0];
-                    return getTypedField(typeArg);
-                }
-
-                if ((typeArgs.length == 2) && (field.rawType == Map.class)) {
-                    if ((typeArgs[0] == typeArgs[1]) && (typeArgs[0] == String.class)) {
-                        return new TypedField(String.class);
-                    }
-                }
-
-                throw new DeploymentException("Cannot create config property for " + field.rawType + ", params: " + Arrays
-                        .toString(typeArgs));
-            }
-
-            return field;
-        }
-
-        private TypedField field0() {
-            return field0;
-        }
-
-        private TypedField field1() {
-            return field1;
-        }
-
-        private TypedField field2() {
-            return field2;
-        }
-
-        private static final class TypedField {
-            private final Class<?> rawType;
-            private ParameterizedType paramType;
-
-            private TypedField(Class<?> rawType) {
-                this.rawType = rawType;
-            }
-
-            private TypedField(Class<?> rawType, ParameterizedType paramType) {
-                this.rawType = rawType;
-                this.paramType = paramType;
-            }
-
-            private boolean isParameterized() {
-                return paramType != null;
-            }
-
-            private Class<?> rawType() {
-                return rawType;
-            }
-
-            private ParameterizedType getParamType() {
-                return paramType;
-            }
-
-            @Override
-            public boolean equals(Object o) {
-                if (this == o) {
-                    return true;
-                }
-                if ((o == null) || (getClass() != o.getClass())) {
-                    return false;
-                }
-                TypedField that = (TypedField) o;
-                return Objects.equals(rawType, that.rawType)
-                        && Objects.equals(paramType, that.paramType);
-            }
-
-            @Override
-            public int hashCode() {
-                return Objects.hash(rawType, paramType);
-            }
-
-            @Override
-            public String toString() {
-                return "TypedField{"
-                        + "rawType=" + rawType
-                        + ", paramType=" + paramType
-                        + '}';
-            }
-        }
-    }
-
-    private static final class SerializableConfig implements org.eclipse.microprofile.config.Config, Serializable {
-
-        private static final long serialVersionUID = 1;
-
-        private transient org.eclipse.microprofile.config.Config theConfig;
-
-        private SerializableConfig() {
-            this.theConfig = ConfigProvider.getConfig();
-        }
-
-        @Override
-        public <T> T getValue(String propertyName, Class<T> propertyType) {
-            return theConfig.getValue(propertyName, propertyType);
-        }
-
-        @Override
-        public <T> Optional<T> getOptionalValue(String propertyName, Class<T> propertyType) {
-            return theConfig.getOptionalValue(propertyName, propertyType);
-        }
-
-        @Override
-        public Iterable<String> getPropertyNames() {
-            return theConfig.getPropertyNames();
-        }
-
-        @Override
-        public Iterable<ConfigSource> getConfigSources() {
-            return theConfig.getConfigSources();
-        }
-
-        private void readObject(ObjectInputStream ios) throws ClassNotFoundException, IOException {
-            ios.defaultReadObject();
-            this.theConfig = ConfigProvider.getConfig();
-        }
-    }
 }

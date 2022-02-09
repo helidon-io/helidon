@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -151,7 +151,7 @@ public abstract class ComponentTracingConfig extends Traceable {
     /**
      * Fluent API builder for {@link ComponentTracingConfig}.
      */
-    public static final class Builder implements io.helidon.common.Builder<ComponentTracingConfig> {
+    public static final class Builder implements io.helidon.common.Builder<Builder, ComponentTracingConfig> {
         private final Map<String, SpanTracingConfig> tracedSpans = new HashMap<>();
         private Optional<Boolean> enabled = Optional.empty();
         private final String name;

@@ -21,8 +21,8 @@ module io.helidon.health.checks {
     requires java.logging;
     requires java.management;
 
-    requires static jakarta.enterprise.cdi.api;
-    requires static jakarta.inject.api;
+    requires static jakarta.cdi;
+    requires static jakarta.inject;
 
     requires io.helidon.common;
     requires io.helidon.config;

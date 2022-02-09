@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -91,8 +91,8 @@ Based upon the Tyrus implementation, Helidon receives WebSocket API support.
 <<se/websocket/01_overview.adoc, Learn more about Websocket Support>>.
 
 
-* *Support for Java 11 APIs* +
-Helidon will require Java 11 or newer. 
+* *Support for Java 17 APIs* +
+Helidon will require Java 17 or newer. 
 <<about/03_prerequisites.adoc,  Learn more about the prerequisites for Helidon 2.0>>.
 
 

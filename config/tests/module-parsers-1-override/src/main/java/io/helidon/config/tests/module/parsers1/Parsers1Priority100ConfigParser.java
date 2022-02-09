@@ -16,10 +16,10 @@
 
 package io.helidon.config.tests.module.parsers1;
 
-import javax.annotation.Priority;
-
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigNode.ValueNode;
+
+import jakarta.annotation.Priority;
 
 /**
  * Testing implementation of {@code text/x-java-properties} media type

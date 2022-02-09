@@ -19,7 +19,7 @@
  */
 module io.helidon.security.integration.webserver {
     requires java.logging;
-    requires java.annotation;
+    requires jakarta.annotation;
 
     requires transitive io.helidon.security;
     requires transitive io.helidon.security.util;

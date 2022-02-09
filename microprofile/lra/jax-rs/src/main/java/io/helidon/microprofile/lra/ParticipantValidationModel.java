@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package io.helidon.microprofile.lra;
@@ -24,15 +23,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import javax.enterprise.inject.spi.DeploymentException;
-import javax.ws.rs.core.Response;
-
 import io.helidon.common.LazyValue;
+import io.helidon.common.reactive.Single;
 
+import jakarta.enterprise.inject.spi.DeploymentException;
+import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.lra.annotation.ParticipantStatus;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.ClassInfo;
@@ -100,6 +100,8 @@ class ParticipantValidationModel {
                 Response.class,
                 ParticipantStatus.class,
                 CompletionStage.class,
+                CompletableFuture.class,
+                Single.class,
                 void.class
         )
                 .map(Class::getName)

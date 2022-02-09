@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package io.helidon.microprofile.lra;
@@ -32,16 +31,15 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.UriBuilder;
-
 import io.helidon.lra.coordinator.client.Participant;
 
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.UriBuilder;
 import org.eclipse.microprofile.lra.annotation.AfterLRA;
 import org.eclipse.microprofile.lra.annotation.Compensate;
 import org.eclipse.microprofile.lra.annotation.Complete;
@@ -79,7 +77,7 @@ class ParticipantImpl implements Participant {
     private final Map<Class<? extends Annotation>, URI> compensatorLinks = new HashMap<>();
     private final Map<Class<? extends Annotation>, Set<Method>> methodMap;
 
-    ParticipantImpl(URI baseUri, Class<?> resourceClazz) {
+    ParticipantImpl(URI baseUri, String contextPath, Class<?> resourceClazz) {
         methodMap = scanForLRAMethods(resourceClazz);
         methodMap.entrySet().stream()
                 // Looking only for participant methods
@@ -99,9 +97,9 @@ class ParticipantImpl implements Participant {
                             .getDeclaredAnnotations())
                             .map(Annotation::annotationType)
                             .noneMatch(JAX_RS_ANNOTATIONS::contains)) {
-                        //no jar-rs annotation means LRA cdi method
+                        //no jax-rs method
                         URI uri = UriBuilder.fromUri(baseUri)
-                                .path(ParticipantCdiResource.CDI_PARTICIPANT_PATH) //Auxiliary Jax-Rs resource for cdi methods
+                                .path(contextPath) //Auxiliary non Jax-Rs resource
                                 .path(e.getKey().getSimpleName().toLowerCase())//@Complete -> /complete
                                 .path(resourceClazz.getName())
                                 .path(method.getName())

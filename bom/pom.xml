@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+    Copyright (c) 2017, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-parent</artifactId>
-        <version>2.4.0-SNAPSHOT</version>
+        <version>3.0.0-SNAPSHOT</version>
         <relativePath>../parent/pom.xml</relativePath>
     </parent>
     <groupId>io.helidon</groupId>
@@ -32,7 +32,7 @@
     <name>Helidon BOM POM</name>
 
     <properties>
-        <helidon.version>2.4.0-SNAPSHOT</helidon.version>
+        <helidon.version>3.0.0-SNAPSHOT</helidon.version>
     </properties>
 
     <dependencyManagement>
@@ -291,6 +291,16 @@
                 <artifactId>helidon-config-mp</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.config</groupId>
+                <artifactId>helidon-config-metadata</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.config</groupId>
+                <artifactId>helidon-config-metadata-processor</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
             <!-- security -->
             <dependency>
                 <groupId>io.helidon.security</groupId>
@@ -473,13 +483,6 @@
                 <groupId>io.helidon.microprofile.weld</groupId>
                 <artifactId>weld-se-core</artifactId>
                 <version>${helidon.version}</version>
-                <exclusions>
-                    <!-- need to exclude javax APIs - we have moved to Jakarta -->
-                    <exclusion>
-                        <groupId>javax.enterprise</groupId>
-                        <artifactId>cdi-api</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>io.helidon.microprofile.cdi</groupId>
@@ -520,6 +523,16 @@
             <dependency>
                 <groupId>io.helidon.metrics</groupId>
                 <artifactId>helidon-metrics</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.metrics</groupId>
+                <artifactId>helidon-metrics-api</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.metrics</groupId>
+                <artifactId>helidon-metrics-service-api</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
@@ -920,6 +933,16 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.helidon.integrations.jdbc</groupId>
+                <artifactId>helidon-integrations-jdbc</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.jta</groupId>
+                <artifactId>helidon-integrations-jta-jdbc</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.helidon.integrations.micrometer</groupId>
                 <artifactId>helidon-integrations-micrometer</artifactId>
                 <version>${helidon.version}</version>
@@ -1069,6 +1092,11 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.helidon.messaging</groupId>
+                <artifactId>helidon-messaging-jms-shim</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.helidon.messaging.aq</groupId>
                 <artifactId>helidon-messaging-aq</artifactId>
                 <version>${helidon.version}</version>
@@ -1077,6 +1105,11 @@
             <dependency>
                 <groupId>io.helidon.microprofile.tests</groupId>
                 <artifactId>helidon-microprofile-tests-junit5</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.microprofile.tests</groupId>
+                <artifactId>helidon-microprofile-tests-testng</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <!-- Logging -->

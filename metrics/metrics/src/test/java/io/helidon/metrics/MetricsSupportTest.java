@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,24 +16,22 @@
 
 package io.helidon.metrics;
 
-import java.util.Collections;
-import java.util.Map;
-
 import java.io.BufferedReader;
 import java.io.StringReader;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
-
-import javax.json.Json;
-import javax.json.JsonArray;
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonNumber;
-import javax.json.JsonObject;
-import javax.json.JsonObjectBuilder;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 
+import jakarta.json.Json;
+import jakarta.json.JsonArray;
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonNumber;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonObjectBuilder;
 import org.eclipse.microprofile.metrics.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.MetricID;
@@ -68,7 +66,7 @@ class MetricsSupportTest {
 
     @BeforeAll
     static void initClass() {
-        RegistryFactory rf = RegistryFactory.getInstance();
+        RegistryFactory rf = (RegistryFactory) io.helidon.metrics.api.RegistryFactory.getInstance();
         base = rf.getARegistry(MetricRegistry.Type.BASE);
         vendor = rf.getARegistry(MetricRegistry.Type.VENDOR);
         app = rf.getARegistry(MetricRegistry.Type.APPLICATION);
@@ -175,7 +173,7 @@ class MetricsSupportTest {
                 .sources(ConfigSources.create(Map.of(
                         "base.enabled", "false")))
                 .build();
-        RegistryFactory myRF = RegistryFactory.create(config);
+        RegistryFactory myRF = (RegistryFactory) io.helidon.metrics.api.RegistryFactory.create(config);
         Registry myBase = myRF.getARegistry(MetricRegistry.Type.BASE);
         assertFalse(myBase.getGauges().containsKey(METRIC_USED_HEAP), "Base registry incorrectly contains "
                 + METRIC_USED_HEAP + " when base was configured as disabled");

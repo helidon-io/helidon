@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,13 +29,11 @@ import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import javax.annotation.security.DenyAll;
-import javax.annotation.security.PermitAll;
-import javax.annotation.security.RolesAllowed;
-
 import io.helidon.common.Errors;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.security.AuthorizationResponse;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.ProviderRequest;
@@ -44,7 +42,12 @@ import io.helidon.security.SecurityResponse;
 import io.helidon.security.providers.abac.spi.AbacValidator;
 import io.helidon.security.providers.abac.spi.AbacValidatorService;
 import io.helidon.security.spi.AuthorizationProvider;
+import io.helidon.security.spi.SecurityProvider;
 import io.helidon.security.spi.SynchronousProvider;
+
+import jakarta.annotation.security.DenyAll;
+import jakarta.annotation.security.PermitAll;
+import jakarta.annotation.security.RolesAllowed;
 
 /**
  * Attribute based access control (ABAC) provider.
@@ -333,7 +336,10 @@ public final class AbacProvider extends SynchronousProvider implements Authoriza
     /**
      * A fluent API builder for {@link AbacProvider}.
      */
-    public static final class Builder implements io.helidon.common.Builder<AbacProvider> {
+    @Configured(prefix = "abac",
+                description = "Attribute Based Access Control provider",
+                provides = {SecurityProvider.class, AuthorizationProvider.class})
+    public static final class Builder implements io.helidon.common.Builder<Builder, AbacProvider> {
         private final List<AbacValidator<? extends AbacValidatorConfig>> validators = new ArrayList<>();
         private Config config = Config.empty();
         private boolean failOnUnvalidated = true;
@@ -377,6 +383,7 @@ public final class AbacProvider extends SynchronousProvider implements Authoriza
          * @param failOnUnvalidated true for failure on unvalidated, false if it is OK to fail some of the validations
          * @return updated builder instance
          */
+        @ConfiguredOption("true")
         public Builder failOnUnvalidated(boolean failOnUnvalidated) {
             this.failOnUnvalidated = failOnUnvalidated;
             return this;
@@ -388,6 +395,7 @@ public final class AbacProvider extends SynchronousProvider implements Authoriza
          * @param failIfNoneValidated true for failure on unvalidated, false if it is OK not to validate any attribute
          * @return updated builder instance
          */
+        @ConfiguredOption("true")
         public Builder failIfNoneValidated(boolean failIfNoneValidated) {
             this.failIfNoneValidated = failIfNoneValidated;
             return this;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,12 @@
 
 package io.helidon.metrics;
 
+import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.Callable;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import javax.json.JsonObjectBuilder;
-
+import jakarta.json.JsonObjectBuilder;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.Meter;
 import org.eclipse.microprofile.metrics.MetricID;
@@ -55,8 +54,13 @@ final class HelidonTimer extends MetricImpl implements Timer {
     }
 
     @Override
-    public void update(long duration, TimeUnit unit) {
-        delegate.update(duration, unit);
+    public void update(Duration duration) {
+        delegate.update(duration);
+    }
+
+    @Override
+    public Duration getElapsedTime() {
+        return delegate.getElapsedTime();
     }
 
     @Override
@@ -121,7 +125,7 @@ final class HelidonTimer extends MetricImpl implements Timer {
         appendPrometheusTimerStatElement(sb, name, "fifteen_min_rate_per_second", withHelpType, "gauge", getFifteenMinuteRate());
 
         DisplayableLabeledSnapshot snap = snapshot();
-        appendPrometheusHistogramElements(sb, name, withHelpType, getCount(), snap);
+        appendPrometheusHistogramElements(sb, name, withHelpType, getCount(), getElapsedTime(), snap);
     }
 
     @Override
@@ -131,16 +135,17 @@ final class HelidonTimer extends MetricImpl implements Timer {
 
     @Override
     public void jsonData(JsonObjectBuilder builder, MetricID metricID) {
-        JsonObjectBuilder myBuilder = JSON.createObjectBuilder()
-                .add(jsonFullKey("count", metricID), getCount())
-                .add(jsonFullKey("meanRate", metricID), getMeanRate())
-                .add(jsonFullKey("oneMinRate", metricID), getOneMinuteRate())
-                .add(jsonFullKey("fiveMinRate", metricID), getFiveMinuteRate())
-                .add(jsonFullKey("fifteenMinRate", metricID), getFifteenMinuteRate());
         Snapshot snapshot = getSnapshot();
         // Convert snapshot output according to units.
         long divisor = conversionFactor();
-        myBuilder = myBuilder.add(jsonFullKey("min", metricID), snapshot.getMin() / divisor)
+        JsonObjectBuilder myBuilder = JSON.createObjectBuilder()
+                .add(jsonFullKey("count", metricID), getCount())
+                .add(jsonFullKey("elapsedTime", metricID), jsonDuration(getElapsedTime()))
+                .add(jsonFullKey("meanRate", metricID), getMeanRate())
+                .add(jsonFullKey("oneMinRate", metricID), getOneMinuteRate())
+                .add(jsonFullKey("fiveMinRate", metricID), getFiveMinuteRate())
+                .add(jsonFullKey("fifteenMinRate", metricID), getFifteenMinuteRate())
+                .add(jsonFullKey("min", metricID), snapshot.getMin() / divisor)
                 .add(jsonFullKey("max", metricID), snapshot.getMax() / divisor)
                 .add(jsonFullKey("mean", metricID), snapshot.getMean() / divisor)
                 .add(jsonFullKey("stddev", metricID), snapshot.getStdDev() / divisor)
@@ -207,7 +212,7 @@ final class HelidonTimer extends MetricImpl implements Timer {
         if (withHelpType) {
             prometheusType(sb, name.nameStat(statName), typeName);
         }
-        sb.append(name.nameStat(statName))
+        sb.append(name.nameStatTags(statName))
                 .append(" ")
                 .append(value)
                 .append("\n");
@@ -230,7 +235,7 @@ final class HelidonTimer extends MetricImpl implements Timer {
         public long stop() {
             if (running.compareAndSet(true, false)) {
                 elapsed = clock.nanoTick() - startTime;
-                theTimer.update(elapsed, TimeUnit.NANOSECONDS);
+                theTimer.update(elapsed);
             }
 
             return elapsed;
@@ -246,6 +251,7 @@ final class HelidonTimer extends MetricImpl implements Timer {
         private final Meter meter;
         private final HelidonHistogram histogram;
         private final Clock clock;
+        private long elapsedTimeNanos;
 
         TimerImpl(String repoType, String name, Clock clock) {
             this.meter = HelidonMeter.create(repoType, Metadata.builder()
@@ -260,8 +266,13 @@ final class HelidonTimer extends MetricImpl implements Timer {
         }
 
         @Override
-        public void update(long duration, TimeUnit unit) {
-            update(unit.toNanos(duration));
+        public void update(Duration duration) {
+            update(duration.toNanos());
+        }
+
+        @Override
+        public Duration getElapsedTime() {
+            return Duration.ofNanos(elapsedTimeNanos);
         }
 
         @Override
@@ -325,12 +336,13 @@ final class HelidonTimer extends MetricImpl implements Timer {
             if (nanos >= 0) {
                 histogram.update(nanos);
                 meter.mark();
+                elapsedTimeNanos += nanos;
             }
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(super.hashCode(), meter, histogram);
+            return Objects.hash(super.hashCode(), meter, histogram, elapsedTimeNanos);
         }
 
         @Override
@@ -342,7 +354,7 @@ final class HelidonTimer extends MetricImpl implements Timer {
                 return false;
             }
             TimerImpl that = (TimerImpl) o;
-            return meter.equals(that.meter) && histogram.equals(that.histogram);
+            return meter.equals(that.meter) && histogram.equals(that.histogram) && elapsedTimeNanos == that.elapsedTimeNanos;
         }
     }
 
@@ -367,6 +379,7 @@ final class HelidonTimer extends MetricImpl implements Timer {
     protected String toStringDetails() {
         StringBuilder sb = new StringBuilder();
         sb.append(", count='").append(getCount()).append('\'');
+        sb.append(", elapsedTime='").append(getElapsedTime()).append('\'');
         sb.append(", fifteenMinuteRate='").append(getFifteenMinuteRate()).append('\'');
         sb.append(", fiveMinuteRate='").append(getFiveMinuteRate()).append('\'');
         sb.append(", meanRate='").append(getMeanRate()).append('\'');

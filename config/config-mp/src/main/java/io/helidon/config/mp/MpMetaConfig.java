@@ -137,7 +137,7 @@ final class MpMetaConfig {
             return name + "(" + ordinal + ")" + ", wrapping: " + delegate.toString();
         }
 
-        static class Builder implements io.helidon.common.Builder<MetaConfigSource> {
+        static class Builder implements io.helidon.common.Builder<Builder, MetaConfigSource> {
             private org.eclipse.microprofile.config.spi.ConfigSource delegate;
             private int ordinal;
             private boolean ordinalNotSet = true;

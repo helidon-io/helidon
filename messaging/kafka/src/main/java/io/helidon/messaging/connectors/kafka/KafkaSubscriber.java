@@ -74,6 +74,7 @@ public class KafkaSubscriber<K, V> implements Subscriber<Message<V>> {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public void onNext(Message<V> message) {
         Objects.requireNonNull(message);
         List<CompletableFuture<Void>> futureList = new ArrayList<>(topics.size());
@@ -151,6 +152,7 @@ public class KafkaSubscriber<K, V> implements Subscriber<Message<V>> {
      * @param config configuration to load from
      * @return updated builder instance
      */
+    @SuppressWarnings("unchecked")
     public static <K, V> KafkaSubscriber<K, V> create(Config config) {
         return (KafkaSubscriber<K, V>) builder().config(config).build();
     }
@@ -160,7 +162,7 @@ public class KafkaSubscriber<K, V> implements Subscriber<Message<V>> {
      * @param <K> Key type
      * @param <V> Value type
      */
-    public static final class Builder<K, V> implements io.helidon.common.Builder<KafkaSubscriber<K, V>> {
+    public static final class Builder<K, V> implements io.helidon.common.Builder<Builder<K, V>, KafkaSubscriber<K, V>> {
 
         private Supplier<Producer<K, V>> producerSupplier;
         private List<String> topics;

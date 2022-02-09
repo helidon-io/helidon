@@ -16,10 +16,13 @@
 
 package io.helidon.microprofile.metrics;
 
-import javax.enterprise.context.Dependent;
-import javax.enterprise.inject.Produces;
-
+import jakarta.annotation.PostConstruct;
+import jakarta.enterprise.context.Dependent;
+import jakarta.enterprise.inject.Produces;
+import jakarta.inject.Inject;
 import org.eclipse.microprofile.metrics.Counter;
+import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Metric;
 
 /**
@@ -28,13 +31,21 @@ import org.eclipse.microprofile.metrics.annotation.Metric;
 @Dependent
 public class ProducerBean {
 
-    @Produces
-    @Metric(name = "counter1", absolute = true) final Counter counter1 = new LongCounter();
+    @Inject
+    private MetricRegistry metricRegistry;
 
-    @Produces
-    @Metric(name = "counter2", absolute = true)
+    @Produces @Red
+    final Counter counter1 = new LongCounter();
+
+    @PostConstruct
+    private void init() {
+        metricRegistry.register("counter1", counter1);
+    }
+
+    @Produces @Green
     public Counter getCounter() {
         LongCounter counter = new LongCounter();
+        metricRegistry.register("counter2", counter);
         counter.inc();
         return counter;
     }

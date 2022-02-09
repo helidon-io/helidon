@@ -32,7 +32,7 @@ import one.microstream.storage.types.StorageEntityCacheEvaluator;
  * Builder for Microstream EmbeddedStorageManager.
  *
  */
-public class EmbeddedStorageManagerBuilder implements io.helidon.common.Builder<EmbeddedStorageManager> {
+public class EmbeddedStorageManagerBuilder implements io.helidon.common.Builder<EmbeddedStorageManagerBuilder, EmbeddedStorageManager> {
     private final EmbeddedStorageConfigurationBuilder configurationBuilder;
 
     private EmbeddedStorageManagerBuilder() {

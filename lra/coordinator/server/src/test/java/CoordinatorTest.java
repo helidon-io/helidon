@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,14 +12,11 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 import java.net.URI;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
-
-import javax.json.JsonArray;
-import javax.json.JsonValue;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.reactive.Multi;
@@ -32,6 +29,8 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.SocketConfiguration;
 import io.helidon.webserver.WebServer;
 
+import jakarta.json.JsonArray;
+import jakarta.json.JsonValue;
 import org.eclipse.microprofile.lra.annotation.LRAStatus;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
@@ -54,10 +53,16 @@ public class CoordinatorTest {
 
         coordinatorService = CoordinatorService.builder()
                 .url(coordinatorUri::get)
-                .config(Config.builder(() -> ConfigSources.classpath("application.yaml").build())
+                .config(Config.builder(
+                                () -> ConfigSources.create(Map.of(
+                                        "helidon.lra.coordinator.db.connection.url", "jdbc:h2:file:./target/lra-coordinator"
+                                )).build(),
+                                () -> ConfigSources.classpath("application.yaml").build()
+                        )
                         .build().get(CoordinatorService.CONFIG_PREFIX))
                 .build();
         server = WebServer.builder()
+                .host("localhost")
                 .addSocket(SocketConfiguration.builder()
                         .name(COORDINATOR_ROUTING_NAME)
                         .port(8077)
@@ -81,8 +86,12 @@ public class CoordinatorTest {
 
     @AfterAll
     static void afterAll() {
-        server.shutdown();
-        coordinatorService.shutdown();
+        if (server != null) {
+            server.shutdown();
+        }
+        if (coordinatorService != null) {
+            coordinatorService.shutdown();
+        }
     }
 
     @Test

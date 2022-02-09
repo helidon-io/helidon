@@ -19,14 +19,14 @@ package io.helidon.integrations.vault.auths.approle;
 import java.util.Optional;
 import java.util.logging.Logger;
 
-import javax.annotation.Priority;
-
 import io.helidon.config.Config;
 import io.helidon.integrations.common.rest.RestApi;
 import io.helidon.integrations.vault.Vault;
 import io.helidon.integrations.vault.VaultApiException;
 import io.helidon.integrations.vault.auths.common.NoVaultAuth;
 import io.helidon.integrations.vault.spi.VaultAuth;
+
+import jakarta.annotation.Priority;
 
 /**
  * Vault authentication for AppRole.
@@ -134,7 +134,7 @@ public class AppRoleVaultAuth implements VaultAuth {
     /**
      * Fluent API builder for {@link io.helidon.integrations.vault.auths.approle.AppRoleVaultAuth}.
      */
-    public static class Builder implements io.helidon.common.Builder<AppRoleVaultAuth> {
+    public static class Builder implements io.helidon.common.Builder<Builder, AppRoleVaultAuth> {
         private String appRoleId;
         private String secretId;
         private String path;

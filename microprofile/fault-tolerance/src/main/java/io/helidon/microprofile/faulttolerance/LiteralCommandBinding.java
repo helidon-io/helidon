@@ -16,7 +16,7 @@
 
 package io.helidon.microprofile.faulttolerance;
 
-import javax.enterprise.util.AnnotationLiteral;
+import jakarta.enterprise.util.AnnotationLiteral;
 
 /**
  * Class LiteralCommandBinding.

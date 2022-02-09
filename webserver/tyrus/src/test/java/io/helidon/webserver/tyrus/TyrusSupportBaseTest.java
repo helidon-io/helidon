@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,14 @@
 
 package io.helidon.webserver.tyrus;
 
-import java.net.InetAddress;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import javax.websocket.server.ServerEndpointConfig;
-
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 
+import jakarta.websocket.server.ServerEndpointConfig;
 import org.junit.jupiter.api.AfterAll;
 
 /**
@@ -51,8 +49,7 @@ public class TyrusSupportBaseTest {
             return webServer;
         }
 
-        WebServer.Builder builder = WebServer.builder()
-                .bindAddress(InetAddress.getLoopbackAddress());
+        WebServer.Builder builder = WebServer.builder().host("localhost");
 
 
         if (!testing) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -169,7 +169,7 @@ public final class AccessLogSupport implements Service {
     /**
      * A fluent API Builder for {@link io.helidon.webserver.accesslog.AccessLogSupport}.
      */
-    public static final class Builder implements io.helidon.common.Builder<AccessLogSupport> {
+    public static final class Builder implements io.helidon.common.Builder<Builder, AccessLogSupport> {
         private static final List<AccessLogEntry> COMMON_FORMAT = List.of(
                 HostLogEntry.create(),
                 UserIdLogEntry.create(),

@@ -16,12 +16,12 @@
 
 package io.helidon.media.common;
 
-import io.helidon.common.http.MediaType;
-import io.helidon.common.http.ReadOnlyParameters;
-
 import java.nio.charset.Charset;
 import java.nio.charset.UnsupportedCharsetException;
 import java.util.Optional;
+
+import io.helidon.common.http.MediaType;
+import io.helidon.common.http.ReadOnlyParameters;
 
 import org.junit.jupiter.api.Test;
 
@@ -29,7 +29,7 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Test content type charset.

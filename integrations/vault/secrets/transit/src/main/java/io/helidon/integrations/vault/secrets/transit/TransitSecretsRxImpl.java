@@ -16,14 +16,14 @@
 
 package io.helidon.integrations.vault.secrets.transit;
 
-import javax.json.JsonObject;
-
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Single;
 import io.helidon.integrations.common.rest.RestApi;
 import io.helidon.integrations.vault.ListSecrets;
 import io.helidon.integrations.vault.Vault;
 import io.helidon.integrations.vault.VaultOptionalResponse;
+
+import jakarta.json.JsonObject;
 
 class TransitSecretsRxImpl implements TransitSecretsRx {
     private final RestApi restApi;

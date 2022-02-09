@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package io.helidon.microprofile.lra;
@@ -22,14 +21,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
-
-import javax.annotation.Priority;
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.context.Initialized;
-import javax.enterprise.event.Observes;
-import javax.enterprise.inject.Produces;
-import javax.enterprise.inject.spi.BeanManager;
-import javax.inject.Inject;
 
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
@@ -41,7 +32,15 @@ import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.webclient.WebClient;
 import io.helidon.webserver.Service;
 
-import static javax.interceptor.Interceptor.Priority.PLATFORM_AFTER;
+import jakarta.annotation.Priority;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.Initialized;
+import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.Produces;
+import jakarta.enterprise.inject.spi.BeanManager;
+import jakarta.inject.Inject;
+
+import static jakarta.interceptor.Interceptor.Priority.PLATFORM_AFTER;
 
 @ApplicationScoped
 public class CoordinatorClusterDeploymentService {

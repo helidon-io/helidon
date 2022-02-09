@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.util.concurrent.Flow;
 
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
+import io.helidon.common.reactive.Single;
 
 /**
  * Bare (minimal) representation of HTTP Request. Used by {@link WebServer WebServer} implementations to invoke
@@ -113,4 +114,12 @@ public interface BareRequest {
      * @return a unique correlation ID associated with this request and its response
      */
     long requestId();
+
+    /**
+     * Request to close the connection and report success or failure asynchronously with returned single.
+     * After connection is closed it is not possible to use it again.
+     *
+     * @return Single completed when connection is closed.
+     */
+    Single<Void> closeConnection();
 }

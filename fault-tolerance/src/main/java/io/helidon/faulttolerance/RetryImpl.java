@@ -73,9 +73,14 @@ class RetryImpl implements Retry {
 
         long nanos = System.nanoTime() - context.startedNanos;
         if (nanos > maxTimeNanos) {
-            return Single.error(new TimeoutException("Execution took too long. Already executing: "
-                                                             + TimeUnit.NANOSECONDS.toMillis(nanos) + " ms, must timeout after: "
-                                                             + TimeUnit.NANOSECONDS.toMillis(maxTimeNanos) + " ms."));
+            TimeoutException te = new RetryTimeoutException(context.throwable(),
+                    "Execution took too long. Already executing: "
+                            + TimeUnit.NANOSECONDS.toMillis(nanos) + " ms, must timeout after: "
+                            + TimeUnit.NANOSECONDS.toMillis(maxTimeNanos) + " ms.");
+            if (context.hasThrowable()) {
+                te.initCause(context.throwable());
+            }
+            return Single.error(te);
         }
 
         if (currentCallIndex > 0) {
@@ -111,9 +116,10 @@ class RetryImpl implements Retry {
 
         long nanos = System.nanoTime() - context.startedNanos;
         if (nanos > maxTimeNanos) {
-            return Multi.error(new TimeoutException("Execution took too long. Already executing: "
-                                                             + TimeUnit.NANOSECONDS.toMillis(nanos) + " ms, must timeout after: "
-                                                             + TimeUnit.NANOSECONDS.toMillis(maxTimeNanos) + " ms."));
+            return Multi.error(new RetryTimeoutException(context.throwable(),
+                    "Execution took too long. Already executing: "
+                            + TimeUnit.NANOSECONDS.toMillis(nanos) + " ms, must timeout after: "
+                            + TimeUnit.NANOSECONDS.toMillis(maxTimeNanos) + " ms."));
         }
 
         if (currentCallIndex > 0) {
@@ -167,6 +173,10 @@ class RetryImpl implements Retry {
             this.supplier = supplier;
         }
 
+        boolean hasThrowable() {
+            return !thrown.isEmpty();
+        }
+
         Throwable throwable() {
             if (thrown.isEmpty()) {
                 return new IllegalStateException("Exception list is empty");
@@ -182,3 +192,4 @@ class RetryImpl implements Retry {
         }
     }
 }
+

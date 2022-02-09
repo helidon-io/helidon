@@ -1,5 +1,5 @@
 /*
- * Copyright (c)  2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,15 +29,17 @@ import io.helidon.common.reactive.Multi;
 import io.helidon.messaging.Channel;
 import io.helidon.messaging.Messaging;
 
+import org.apache.activemq.jndi.ActiveMQInitialContextFactory;
+import org.eclipse.microprofile.reactive.messaging.Message;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.apache.activemq.jndi.ActiveMQInitialContextFactory;
-import org.eclipse.microprofile.reactive.messaging.Message;
-import org.junit.jupiter.api.Test;
-
+@Disabled("3.0.0-JAKARTA")
 public class JmsSeTest extends AbstractJmsTest {
 
     @Test

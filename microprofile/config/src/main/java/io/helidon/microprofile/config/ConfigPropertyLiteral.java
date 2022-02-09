@@ -16,14 +16,14 @@
 
 package io.helidon.microprofile.config;
 
-import java.lang.annotation.Annotation;
-
+import jakarta.enterprise.util.AnnotationLiteral;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 /**
  * An implementation of the ConfigProperty annotation.
  */
-final class ConfigPropertyLiteral implements ConfigProperty {
+final class ConfigPropertyLiteral extends AnnotationLiteral<ConfigProperty> implements ConfigProperty {
+
     @Override
     public String name() {
         return "";
@@ -32,10 +32,5 @@ final class ConfigPropertyLiteral implements ConfigProperty {
     @Override
     public String defaultValue() {
         return UNCONFIGURED_VALUE;
-    }
-
-    @Override
-    public Class<? extends Annotation> annotationType() {
-        return ConfigProperty.class;
     }
 }

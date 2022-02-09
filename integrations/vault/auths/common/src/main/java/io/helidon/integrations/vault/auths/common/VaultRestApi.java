@@ -21,8 +21,6 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.json.JsonObject;
-
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Single;
 import io.helidon.integrations.common.rest.ApiRequest;
@@ -33,6 +31,8 @@ import io.helidon.integrations.vault.VaultOptionalResponse;
 import io.helidon.integrations.vault.VaultRestException;
 import io.helidon.integrations.vault.VaultUtil;
 import io.helidon.webclient.WebClientResponse;
+
+import jakarta.json.JsonObject;
 
 /**
  * REST API implementation with Vault specific features.

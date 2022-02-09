@@ -16,7 +16,10 @@
 
 package io.helidon.microprofile.metrics;
 
+import jakarta.inject.Inject;
+import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.MetricID;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -27,20 +30,26 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 public class ProducerTest extends MetricsBaseTest {
 
+    @Inject @Red
+    private Counter c1;
+
+    @Inject @Green
+    private Counter c2;
+
     private final MetricID counter1 = new MetricID("counter1");
     private final MetricID counter2 = new MetricID("counter2");
 
     @Test
     public void testFieldProducer() {
         ProducerBean bean = newBean(ProducerBean.class);
-        assertThat(getMetricRegistry().getCounters().keySet().contains(counter1), is(true));
+        assertThat(getMetricRegistry().getCounters().containsKey(counter1), is(true));
         assertThat(getMetricRegistry().getCounters().get(counter1).getCount(), is(0L));
     }
 
     @Test
     public void testMethodProducer() {
         ProducerBean bean = newBean(ProducerBean.class);
-        assertThat(getMetricRegistry().getCounters().keySet().contains(counter2), is(true));
+        assertThat(getMetricRegistry().getCounters().containsKey(counter2), is(true));
         assertThat(getMetricRegistry().getCounters().get(counter2).getCount(), is(1L));
     }
 }

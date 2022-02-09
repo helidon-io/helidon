@@ -20,8 +20,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
-import javax.json.JsonObject;
-
 import io.helidon.common.http.Headers;
 import io.helidon.common.http.MediaType;
 import io.helidon.config.Config;
@@ -32,6 +30,7 @@ import io.helidon.webclient.WebClientResponse;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.cors.CrossOriginConfig;
 
+import jakarta.json.JsonObject;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;

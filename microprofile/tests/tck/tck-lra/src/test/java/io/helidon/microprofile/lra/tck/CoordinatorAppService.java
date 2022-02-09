@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,18 +12,13 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package io.helidon.microprofile.lra.tck;
 
 import java.net.URI;
-
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.context.Destroyed;
-import javax.enterprise.event.Observes;
-import javax.enterprise.inject.Produces;
-import javax.inject.Inject;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 
 import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
@@ -33,8 +28,16 @@ import io.helidon.microprofile.server.RoutingName;
 import io.helidon.microprofile.server.RoutingPath;
 import io.helidon.microprofile.server.ServerCdiExtension;
 
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.Destroyed;
+import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.Produces;
+import jakarta.inject.Inject;
+
 @ApplicationScoped
 public class CoordinatorAppService {
+
+    private static final Logger LOGGER = Logger.getLogger(CoordinatorAppService.class.getName());
 
     @Inject
     Config config;
@@ -43,12 +46,14 @@ public class CoordinatorAppService {
     ServerCdiExtension serverCdiExtension;
 
     LazyValue<URI> coordinatorUri = LazyValue.create(() -> {
+        CoordinatorDeployer.started().await(30, TimeUnit.SECONDS);
         // Check if external coordinator is set or use internal with random port
         int randomPort = serverCdiExtension.port(CoordinatorDeployer.COORDINATOR_ROUTING_NAME);
         String port = System.getProperty("lra.coordinator.port", String.valueOf(randomPort));
         String urlProperty = System.getProperty("lra.coordinator.url", "");
         // Maven can't set null
         urlProperty = urlProperty.isEmpty() ? "http://localhost:" + port + "/lra-coordinator" : urlProperty;
+        LOGGER.info("Using LRA Coordinator: " + urlProperty);
         return URI.create(urlProperty);
     });
 

@@ -12,14 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 package io.helidon.microprofile.metrics;
 
-import javax.enterprise.context.Dependent;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-
+import jakarta.enterprise.context.Dependent;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 
 @Dependent
@@ -31,11 +29,11 @@ public class ResourceWithReusedMetricForInvocation {
 
     @GET
     @Path("method1")
-    @Counted(name = OTHER_REUSED_NAME, absolute=true,reusable = true, tags = {TAG_1, TAG_2})
+    @Counted(name = OTHER_REUSED_NAME, absolute=true, tags = {TAG_1, TAG_2})
     public String method1() {return "Hi from method 1";}
 
     @GET
     @Path("method2")
-    @Counted(name = OTHER_REUSED_NAME, absolute=true, reusable = true, tags = {TAG_1, TAG_2})
+    @Counted(name = OTHER_REUSED_NAME, absolute=true, tags = {TAG_1, TAG_2})
     public String method2() {return "Hi from method 2";}
 }

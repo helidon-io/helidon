@@ -23,45 +23,56 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.CompletionStage;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Stream;
 
-import javax.enterprise.inject.spi.Bean;
-import javax.enterprise.inject.spi.BeanManager;
-import javax.inject.Inject;
-
 import io.helidon.common.Reflected;
+import io.helidon.common.reactive.Single;
 import io.helidon.lra.coordinator.client.Participant;
 
+import jakarta.enterprise.inject.spi.Bean;
+import jakarta.enterprise.inject.spi.BeanManager;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 @Reflected
 class ParticipantService {
 
+    private static final Logger LOGGER = Logger.getLogger(ParticipantService.class.getName());
+
     private final LraCdiExtension lraCdiExtension;
     private final BeanManager beanManager;
+    private final String nonJaxRsContextPath;
     private final Optional<URI> participantUri;
 
     private final Map<Class<?>, Participant> participants = new HashMap<>();
 
     @Inject
     ParticipantService(LraCdiExtension lraCdiExtension,
-                              BeanManager beanManager,
-                              @ConfigProperty(name = "mp.lra.participant.url") Optional<URI> participantUri) {
+                       BeanManager beanManager,
+                       @ConfigProperty(name = NonJaxRsResource.CONFIG_CONTEXT_PATH_KEY,
+                               defaultValue = NonJaxRsResource.CONTEXT_PATH_DEFAULT) String nonJaxRsContextPath,
+                       @ConfigProperty(name = "mp.lra.participant.url") Optional<URI> participantUri) {
         this.lraCdiExtension = lraCdiExtension;
         this.beanManager = beanManager;
+        this.nonJaxRsContextPath = nonJaxRsContextPath;
         this.participantUri = participantUri;
     }
 
     Participant participant(URI defaultBaseUri, Class<?> clazz) {
         return participants.computeIfAbsent(clazz, c ->
                 // configured value overrides base uri
-                new ParticipantImpl(participantUri.orElse(defaultBaseUri), c));
+                new ParticipantImpl(participantUri.orElse(defaultBaseUri), nonJaxRsContextPath, c));
     }
 
     /**
      * Participant ID is expected to be classFqdn#methodName.
      */
-    Object invoke(String classFqdn, String methodName, URI lraId, Object secondParam) throws InvocationTargetException {
+    Single<Optional<?>> invoke(String classFqdn, String methodName, URI lraId, Object secondParam) {
         Class<?> clazz;
         try {
             clazz = Class.forName(classFqdn);
@@ -77,12 +88,54 @@ class ParticipantService {
                     .findFirst()
                     .orElseThrow(() -> new RuntimeException("Cant find participant method " + methodName
                             + " with participant method: " + classFqdn + "#" + methodName));
+
             int paramCount = method.getParameters().length;
-            return method.invoke(LraCdiExtension.lookup(bean, beanManager),
+
+            Object result = method.invoke(LraCdiExtension.lookup(bean, beanManager),
                     Stream.of(lraId, secondParam).limit(paramCount).toArray());
+
+            return resultToSingle(result);
+
         } catch (IllegalAccessException e) {
-            throw new RuntimeException("Cant invoke participant method " + methodName
-                    + " with participant method: " + classFqdn + "#" + methodName, e);
+            return Single.error(new RuntimeException("Cant invoke participant method " + methodName
+                    + " with participant method: " + classFqdn + "#" + methodName, e));
+        } catch (InvocationTargetException e) {
+            if (e.getTargetException() instanceof WebApplicationException) {
+                return Single.just(Optional.ofNullable(((WebApplicationException) e.getTargetException()).getResponse()));
+            } else {
+                return Single.error(e.getTargetException());
+            }
+        } catch (Throwable t) {
+            LOGGER.log(Level.SEVERE, t, () -> "Un-caught exception in non-jax-rs LRA method "
+                    + classFqdn + "#" + methodName
+                    + " LRA id: " + lraId);
+            return Single.error(t);
+        }
+    }
+
+    private Single<Optional<?>> resultToSingle(Object result) {
+        if (result == null) {
+            return Single.just(Optional.empty());
+        } else if (result instanceof Response) {
+            return Single.just((Response) result)
+                    .map(this::optionalMapper);
+        } else if (result instanceof Single) {
+            return ((Single<?>) result)
+                    .map(this::optionalMapper);
+        } else if (result instanceof CompletionStage) {
+            return Single.create(((CompletionStage<?>) result).thenApply(this::optionalMapper));
+        } else {
+            return Single.just(optionalMapper(result));
+        }
+    }
+
+    private Optional<?> optionalMapper(Object item) {
+        if (item == null) {
+            return Optional.empty();
+        } else if (item instanceof Optional) {
+            return (Optional<?>) item;
+        } else {
+            return Optional.of(item);
         }
     }
 }

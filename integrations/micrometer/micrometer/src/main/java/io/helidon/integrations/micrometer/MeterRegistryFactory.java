@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 package io.helidon.integrations.micrometer;
 
@@ -241,7 +240,7 @@ public final class MeterRegistryFactory {
     /**
      * Builder for constructing {@code MeterRegistryFactory} instances.
      */
-    public static class Builder implements io.helidon.common.Builder<MeterRegistryFactory> {
+    public static class Builder implements io.helidon.common.Builder<Builder, MeterRegistryFactory> {
 
         private final List<Enrollment> explicitRegistryEnrollments = new ArrayList<>();
 

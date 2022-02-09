@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-FROM maven:3.6-jdk-11 as build
+FROM maven:3.6.3-openjdk-17-slim as build
 
 WORKDIR /helidon    
 ARG HELIDON_BRANCH=master
@@ -23,33 +23,19 @@ ARG HELIDON_REPOSITORY=oracle/helidon
 ENV HELIDON_BRANCH ${HELIDON_BRANCH}
 ENV HELIDON_REPOSITORY ${HELIDON_REPOSITORY}
 
+RUN apt-get -qq update && apt-get -qq -y install wget unzip git
 RUN wget -q -O helidon_repo.zip https://github.com/${HELIDON_REPOSITORY}/archive/refs/heads/${HELIDON_BRANCH}.zip
 
-# Unzip and exclude modules coordinator don't need
-RUN unzip helidon_repo.zip -d ./helidon_repo  \
-    -x "helidon-${HELIDON_BRANCH}/microprofile/*" \
-    -x "helidon-${HELIDON_BRANCH}/openapi/*"  \
-    -x "helidon-${HELIDON_BRANCH}/messaging/*"  \
-    -x "helidon-${HELIDON_BRANCH}/graphql/*"  \
-    -x "helidon-${HELIDON_BRANCH}/tests/*"  \
-    -x "helidon-${HELIDON_BRANCH}/examples/*" \
-    -x "helidon-${HELIDON_BRANCH}/jersey/*" \
-    -x "*src/test/*"
+RUN unzip helidon_repo.zip -d ./helidon_repo
     
 RUN mv ./helidon_repo/*/* ./
-
-RUN sed -i '/<module>microprofile/d' ./pom.xml \
-&& sed -i '/<module>openapi/d' ./pom.xml \
-&& sed -i '/<module>messaging/d' ./pom.xml \
-&& sed -i '/<module>jersey/d' ./pom.xml \
-&& sed -i '/<module>graphql/d' ./pom.xml
 
 # Build only required modules
 RUN mvn install -pl :helidon-lra-coordinator-server -am -DskipTests
 
 RUN echo "Helidon LRA Coordinator build successfully fished"
 
-FROM openjdk:11-jre-slim
+FROM openjdk:17-jdk-slim
 WORKDIR /helidon
 
 COPY --from=build /helidon/lra/coordinator/server/target/helidon-lra-coordinator-server.jar ./

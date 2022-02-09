@@ -28,13 +28,13 @@ import org.eclipse.microprofile.health.HealthCheckResponse;
  */
 class HealthCheckResponseImpl extends HealthCheckResponse {
     private final String name;
-    private final State state;
+    private final Status status;
     private final TreeMap<String, Object> data;
 
-    HealthCheckResponseImpl(String name, State state, Map<String, Object> data) {
+    HealthCheckResponseImpl(String name, Status status, Map<String, Object> data) {
         // Since this constructor is internally called, I'm harsh on accepted values
         Objects.requireNonNull(name);
-        Objects.requireNonNull(state);
+        Objects.requireNonNull(status);
         Objects.requireNonNull(data);
 
         // I wrap the "data" map in a TreeMap for two reasons. First, I very much
@@ -48,7 +48,7 @@ class HealthCheckResponseImpl extends HealthCheckResponse {
         // and previously created instances should not be impacted if the source map was updated
         // subsequent to the previous instances being created!
         this.name = name;
-        this.state = state;
+        this.status = status;
         this.data = new TreeMap<>(data);
     }
 
@@ -58,8 +58,8 @@ class HealthCheckResponseImpl extends HealthCheckResponse {
     }
 
     @Override
-    public State getState() {
-        return state;
+    public Status getStatus() {
+        return status;
     }
 
     @Override

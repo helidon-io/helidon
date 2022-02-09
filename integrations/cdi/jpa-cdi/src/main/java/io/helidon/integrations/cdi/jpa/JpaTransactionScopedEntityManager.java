@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,31 +22,31 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-import javax.enterprise.context.ContextNotActiveException;
-import javax.enterprise.context.spi.Context;
-import javax.enterprise.inject.Any;
-import javax.enterprise.inject.Default;
-import javax.enterprise.inject.Instance;
-import javax.enterprise.inject.Vetoed;
-import javax.enterprise.inject.spi.Bean;
-import javax.enterprise.inject.spi.BeanManager;
-import javax.persistence.EntityGraph;
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.EntityTransaction;
-import javax.persistence.FlushModeType;
-import javax.persistence.LockModeType;
-import javax.persistence.PersistenceException;
-import javax.persistence.Query;
-import javax.persistence.StoredProcedureQuery;
-import javax.persistence.TypedQuery;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaDelete;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.CriteriaUpdate;
-import javax.persistence.metamodel.Metamodel;
-
 import io.helidon.integrations.cdi.referencecountedcontext.ReferenceCountedContext;
+
+import jakarta.enterprise.context.ContextNotActiveException;
+import jakarta.enterprise.context.spi.Context;
+import jakarta.enterprise.inject.Any;
+import jakarta.enterprise.inject.Default;
+import jakarta.enterprise.inject.Instance;
+import jakarta.enterprise.inject.Vetoed;
+import jakarta.enterprise.inject.spi.Bean;
+import jakarta.enterprise.inject.spi.BeanManager;
+import jakarta.persistence.EntityGraph;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.EntityTransaction;
+import jakarta.persistence.FlushModeType;
+import jakarta.persistence.LockModeType;
+import jakarta.persistence.PersistenceException;
+import jakarta.persistence.Query;
+import jakarta.persistence.StoredProcedureQuery;
+import jakarta.persistence.TypedQuery;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaDelete;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.CriteriaUpdate;
+import jakarta.persistence.metamodel.Metamodel;
 
 /**
  * A {@link DelegatingEntityManager} that adheres to the JPA
@@ -168,7 +168,7 @@ final class JpaTransactionScopedEntityManager extends DelegatingEntityManager {
         this.oppositeSynchronizationBean = Objects.requireNonNull(this.beanManager.resolve(beans));
 
         // This is a proxy whose scope will be
-        // javax.transaction.TransactionScoped, and therefore will be
+        // jakarta.transaction.TransactionScoped, and therefore will be
         // lazily "inflated".  In other words, the acquisition of this
         // reference here does not cause a contextual instance to be
         // created.  Invoking any method on it will cause the
@@ -320,7 +320,7 @@ final class JpaTransactionScopedEntityManager extends DelegatingEntityManager {
      *
      * Because the underlying delegate is often a
      * CdiTransactionScopedEntityManager in
-     * javax.transaction.TransactionScoped scope, and because that
+     * jakarta.transaction.TransactionScoped scope, and because that
      * scope's lifetime is equal to the current transaction's
      * lifetime, and because a transaction can roll back at any point
      * due to timeout on a background thread, it is *always* possible

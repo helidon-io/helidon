@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package io.helidon.common.reactive;
@@ -21,13 +20,13 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.junit.jupiter.api.Test;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-
-import org.junit.jupiter.api.Test;
 
 public class SingleTappedPublisherTest {
 
@@ -35,18 +34,11 @@ public class SingleTappedPublisherTest {
     public void onSubscribeCrash() {
 
         TestSubscriber<Integer> ts = new TestSubscriber<>();
-
-        new SingleTappedPublisher<>(
-                Single.<Integer>empty(),
-                s -> {
+        SingleTappedPublisher.builder(Single.<Integer>empty())
+                .onSubscribeCallback(s -> {
                     throw new IllegalArgumentException();
-                },
-                null,
-                null,
-                null,
-                null,
-                null
-        )
+                })
+                .build()
                 .subscribe(ts);
 
         assertThat(ts.getItems().isEmpty(), is(true));
@@ -61,18 +53,9 @@ public class SingleTappedPublisherTest {
         TestSubscriber<Integer> ts = new TestSubscriber<>();
 
         AtomicInteger calls = new AtomicInteger();
-
-        new SingleTappedPublisher<>(
-                Single.<Integer>empty(),
-                s -> {
-                    calls.getAndIncrement();
-                },
-                null,
-                null,
-                null,
-                null,
-                null
-        )
+        SingleTappedPublisher.builder(Single.<Integer>empty())
+                .onSubscribeCallback(s -> calls.getAndIncrement())
+                .build()
                 .subscribe(ts);
 
         assertThat(ts.getItems().isEmpty(), is(true));
@@ -178,21 +161,13 @@ public class SingleTappedPublisherTest {
         TestSubscriber<Integer> ts = new TestSubscriber<>();
 
         AtomicInteger calls = new AtomicInteger();
-
-        new SingleTappedPublisher<>(
-                Single.just(1),
-                null,
-                null,
-                null,
-                null,
-                r -> {
+        SingleTappedPublisher.builder(Single.just(1))
+                .onRequestCallback(r -> {
                     calls.getAndIncrement();
                     throw new IllegalArgumentException();
-                },
-                null
-        )
+                })
+                .build()
                 .subscribe(ts);
-
         ts.requestMax();
 
         assertEquals(ts.getItems(), Collections.singletonList(1));
@@ -210,17 +185,9 @@ public class SingleTappedPublisherTest {
 
         AtomicInteger calls = new AtomicInteger();
 
-        new SingleTappedPublisher<>(
-                Single.just(1),
-                null,
-                null,
-                null,
-                null,
-                r -> {
-                    calls.getAndIncrement();
-                },
-                null
-        )
+        SingleTappedPublisher.builder(Single.just(1))
+                .onRequestCallback(r -> calls.getAndIncrement())
+                .build()
                 .subscribe(ts);
 
         ts.requestMax();
@@ -239,20 +206,13 @@ public class SingleTappedPublisherTest {
 
         AtomicInteger calls = new AtomicInteger();
 
-        new SingleTappedPublisher<>(
-                Single.just(1),
-                null,
-                null,
-                e -> {
-                    calls.getAndIncrement();
-                },
-                null,
-                r -> {
+        SingleTappedPublisher.builder(Single.just(1))
+                .onErrorCallback(e -> calls.getAndIncrement())
+                .onRequestCallback(r -> {
                     calls.getAndIncrement();
                     throw new IllegalArgumentException();
-                },
-                null
-        )
+                })
+                .build()
                 .subscribe(ts);
 
         ts.requestMax();
@@ -271,21 +231,16 @@ public class SingleTappedPublisherTest {
 
         AtomicInteger calls = new AtomicInteger();
 
-        new SingleTappedPublisher<>(
-                Single.just(1),
-                null,
-                null,
-                e -> {
+        SingleTappedPublisher.builder(Single.just(1))
+                .onErrorCallback(e -> {
                     calls.getAndIncrement();
                     throw new IllegalArgumentException();
-                },
-                null,
-                r -> {
+                })
+                .onRequestCallback(r -> {
                     calls.getAndIncrement();
                     throw new IllegalArgumentException();
-                },
-                null
-        )
+                })
+                .build()
                 .subscribe(ts);
 
         ts.requestMax();
@@ -305,9 +260,9 @@ public class SingleTappedPublisherTest {
         AtomicInteger calls = new AtomicInteger();
 
         Single.just(1).onCancel(() -> {
-            calls.getAndIncrement();
-            throw new IllegalArgumentException();
-        })
+                    calls.getAndIncrement();
+                    throw new IllegalArgumentException();
+                })
                 .subscribe(ts);
 
         ts.getSubcription().cancel();
@@ -326,20 +281,15 @@ public class SingleTappedPublisherTest {
 
         AtomicInteger calls = new AtomicInteger();
 
-        new SingleTappedPublisher<>(
-                Single.just(1),
-                null,
-                null,
-                e -> {
+        SingleTappedPublisher.builder(Single.just(1))
+                .onErrorCallback(e -> {
                     calls.getAndIncrement();
-                },
-                null,
-                null,
-                () -> {
+                })
+                .onCancelCallback(() -> {
                     calls.getAndIncrement();
                     throw new IllegalArgumentException();
-                }
-        )
+                })
+                .build()
                 .subscribe(ts);
 
         ts.getSubcription().cancel();
@@ -358,21 +308,16 @@ public class SingleTappedPublisherTest {
 
         AtomicInteger calls = new AtomicInteger();
 
-        new SingleTappedPublisher<>(
-                Single.just(1),
-                null,
-                null,
-                e -> {
+        SingleTappedPublisher.builder(Single.just(1))
+                .onErrorCallback(e -> {
                     calls.getAndIncrement();
                     throw new IllegalArgumentException();
-                },
-                null,
-                null,
-                () -> {
+                })
+                .onCancelCallback(() -> {
                     calls.getAndIncrement();
                     throw new IllegalArgumentException();
-                }
-        )
+                })
+                .build()
                 .subscribe(ts);
 
         ts.getSubcription().cancel();

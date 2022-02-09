@@ -15,8 +15,8 @@
  */
 package io.helidon.dbclient.metrics;
 
+import java.time.Duration;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.TimeUnit;
 
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricRegistry;
@@ -61,7 +61,7 @@ final class DbClientTimer extends DbClientMetric<Timer> {
 
     private void update(Timer metric, long started) {
         long delta = System.nanoTime() - started;
-        metric.update(delta, TimeUnit.NANOSECONDS);
+        metric.update(Duration.ofNanos(delta));
     }
 
     @Override
@@ -71,7 +71,7 @@ final class DbClientTimer extends DbClientMetric<Timer> {
 
     @Override
     protected MetricType metricType() {
-        return MetricType.COUNTER;
+        return MetricType.TIMER;
     }
 
     @Override

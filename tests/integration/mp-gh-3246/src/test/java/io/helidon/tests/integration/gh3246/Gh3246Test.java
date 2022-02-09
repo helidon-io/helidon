@@ -18,9 +18,6 @@ package io.helidon.tests.integration.gh3246;
 
 import java.time.Instant;
 
-import javax.inject.Inject;
-import javax.ws.rs.client.WebTarget;
-
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.http.Http;
 import io.helidon.microprofile.tests.junit5.AddBean;
@@ -30,6 +27,8 @@ import io.helidon.security.jwt.SignedJwt;
 import io.helidon.security.jwt.jwk.JwkKeys;
 import io.helidon.security.jwt.jwk.JwkRSA;
 
+import jakarta.inject.Inject;
+import jakarta.ws.rs.client.WebTarget;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;

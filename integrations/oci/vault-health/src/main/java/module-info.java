@@ -28,8 +28,8 @@ module io.helidon.integrations.oci.vault.health {
     requires transitive io.helidon.integrations.oci.vault;
 
     requires static microprofile.config.api;
-    requires static jakarta.enterprise.cdi.api;
-    requires static jakarta.inject.api;
+    requires static jakarta.cdi;
+    requires static jakarta.inject;
 
     exports io.helidon.integrations.oci.vault.health;
 

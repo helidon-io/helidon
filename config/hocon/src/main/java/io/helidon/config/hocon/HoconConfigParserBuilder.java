@@ -32,7 +32,7 @@ import com.typesafe.config.ConfigResolveOptions;
  * It is possible to {@link #disableResolving() disable resolving} feature
  * or specify custom {@link #resolveOptions(ConfigResolveOptions) ConfigResolveOptions} instance.
  */
-public final class HoconConfigParserBuilder implements Builder<ConfigParser> {
+public final class HoconConfigParserBuilder implements Builder<HoconConfigParserBuilder, ConfigParser> {
 
     private boolean resolvingEnabled;
     private ConfigResolveOptions resolveOptions;

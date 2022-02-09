@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,9 @@ package io.helidon.microprofile.tracing;
 
 import java.util.function.Function;
 
-import javax.ws.rs.container.ContainerRequestContext;
-
 import io.helidon.tracing.jersey.TracingHelper;
 
+import jakarta.ws.rs.container.ContainerRequestContext;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 

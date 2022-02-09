@@ -20,8 +20,6 @@ import java.util.concurrent.CompletionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.json.JsonObject;
-
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.dbclient.DbClient;
@@ -31,6 +29,8 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
+
+import jakarta.json.JsonObject;
 
 /**
  * Example service using a database.
@@ -242,7 +242,7 @@ public class PokemonService implements Service {
      * @param response server response
      */
     private void sendRow(DbRow row, ServerResponse response) {
-        response.send(row.as(javax.json.JsonObject.class));
+        response.send(row.as(jakarta.json.JsonObject.class));
     }
 
     /**

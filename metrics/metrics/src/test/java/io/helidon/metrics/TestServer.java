@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,11 +12,10 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 package io.helidon.metrics;
 
-import javax.json.JsonObject;
+import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -27,11 +26,14 @@ import java.util.logging.Logger;
 import io.helidon.common.http.MediaType;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.webclient.WebClient;
+import io.helidon.webclient.WebClientRequestBuilder;
 import io.helidon.webclient.WebClientResponse;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.Service;
 import io.helidon.webserver.WebServer;
 
+import jakarta.json.JsonObject;
+import jakarta.json.JsonValue;
 import org.eclipse.microprofile.metrics.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.junit.jupiter.api.AfterAll;
@@ -41,7 +43,9 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 
 public class TestServer {
 
@@ -52,6 +56,8 @@ public class TestServer {
     private static final MetricsSupport.Builder NORMAL_BUILDER = MetricsSupport.builder();
 
     private static MetricsSupport metricsSupport;
+
+    private static final Duration CLIENT_TIMEOUT = Duration.ofSeconds(5);
 
     private WebClient.Builder webClientBuilder;
 
@@ -101,11 +107,11 @@ public class TestServer {
                 .accept(MediaType.APPLICATION_JSON)
                 .path("metrics")
                 .submit()
-                .await();
+                .await(CLIENT_TIMEOUT);
 
         assertThat("Normal metrics URL HTTP response", response.status().code(), is(200));
 
-        JsonObject metrics = response.content().as(JsonObject.class).await();
+        JsonObject metrics = response.content().as(JsonObject.class).await(CLIENT_TIMEOUT);
         assertThat("Vendor metrics in returned entity", metrics.containsKey("vendor"), is(true));
     }
 
@@ -117,11 +123,11 @@ public class TestServer {
                 .accept(MediaType.APPLICATION_JSON)
                 .path("metrics/vendor")
                 .submit()
-                .await();
+                .await(CLIENT_TIMEOUT);
 
         assertThat("Normal metrics/vendor URL HTTP response", response.status().code(), is(200));
 
-        JsonObject metrics = response.content().as(JsonObject.class).await();
+        JsonObject metrics = response.content().as(JsonObject.class).await(CLIENT_TIMEOUT);
         if (System.getenv("MP_METRICS_TAGS") == null) {
             // MP_METRICS_TAGS causes metrics to add tags to metric IDs. Just do this check in the simple case, without tags.
             assertThat("Vendor metrics requests.count in returned entity", metrics.containsKey("requests.count"), is(true));
@@ -142,9 +148,9 @@ public class TestServer {
 
     @Test
     void checkKPIDisabledByDefault() {
-        boolean isKPIEnabled = MetricsSupport.keyPerformanceIndicatorMetricsConfig().isExtended();
+        boolean isKPIEnabled = metricsSupport.keyPerformanceIndicatorMetricsConfig().isExtended();
 
-        MetricRegistry vendorRegistry = RegistryFactory.getInstance()
+        MetricRegistry vendorRegistry = io.helidon.metrics.api.RegistryFactory.getInstance()
                 .getRegistry(MetricRegistry.Type.VENDOR);
 
         Optional<ConcurrentGauge> inflightRequests =
@@ -153,5 +159,60 @@ public class TestServer {
                         .values().stream()
                         .findAny();
         assertThat("In-flight concurrent gauge metric exists", inflightRequests.isPresent(), is(isKPIEnabled));
+    }
+
+    @Test
+    void checkMetricsForExecutorService() {
+
+        String jsonKeyForCompleteTaskCountInThreadPool =
+                "executor-service.completed-task-count;poolIndex=0;supplierCategory=my-thread-thread-pool-1;supplierIndex=0";
+
+        WebClientRequestBuilder metricsRequestBuilder = webClientBuilder
+                .build()
+                .get()
+                .accept(MediaType.APPLICATION_JSON)
+                .path("metrics/vendor");
+
+        WebClientResponse response = metricsRequestBuilder
+                .submit()
+                .await(CLIENT_TIMEOUT);
+
+        assertThat("Normal metrics/vendor URL HTTP response", response.status().code(), is(200));
+
+        JsonObject metrics = response.content().as(JsonObject.class).await(CLIENT_TIMEOUT);
+
+        assertThat("JSON metrics results before accessing slow endpoint",
+                   metrics,
+                   hasKey(jsonKeyForCompleteTaskCountInThreadPool));
+
+        int completedTaskCount = metrics.getInt(jsonKeyForCompleteTaskCountInThreadPool);
+        assertThat("Completed task count before accessing slow endpoint", completedTaskCount, is(0));
+
+        WebClientResponse slowGreetResponse = webClientBuilder
+                .build()
+                .get()
+                .accept(MediaType.TEXT_PLAIN)
+                .path("greet/slow")
+                .submit()
+                .await(CLIENT_TIMEOUT);
+
+        assertThat("Slow greet access response status", slowGreetResponse.status().code(), is(200));
+
+        WebClientResponse secondMetricsResponse = metricsRequestBuilder
+                .submit()
+                .await(CLIENT_TIMEOUT);
+
+        assertThat("Second access to metrics", secondMetricsResponse.status().code(), is(200));
+
+        JsonObject secondMetrics = secondMetricsResponse.content().as(JsonObject.class).await(CLIENT_TIMEOUT);
+
+        assertThat("JSON metrics results after accessing slow endpoint",
+                   secondMetrics,
+                   hasKey(jsonKeyForCompleteTaskCountInThreadPool));
+
+
+        int secondCompletedTaskCount = secondMetrics.getInt(jsonKeyForCompleteTaskCountInThreadPool);
+
+        assertThat("Completed task count after accessing slow endpoint", secondCompletedTaskCount, is(1));
     }
 }

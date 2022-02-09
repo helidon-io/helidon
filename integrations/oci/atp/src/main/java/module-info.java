@@ -25,13 +25,15 @@ import io.helidon.integrations.oci.atp.OciAutonomousDbRx;
  * @see OciAutonomousDbRx
  */
 module io.helidon.integrations.oci.atp {
-    requires transitive java.json;
+    requires transitive jakarta.json;
     requires transitive io.helidon.common.reactive;
     requires transitive io.helidon.integrations.oci.connect;
     requires transitive io.helidon.config;
 
     requires io.helidon.integrations.common.rest;
     requires io.helidon.common.http;
+
+    requires oraclepki;
 
     exports io.helidon.integrations.oci.atp;
 

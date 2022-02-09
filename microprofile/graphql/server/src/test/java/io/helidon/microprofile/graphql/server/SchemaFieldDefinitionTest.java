@@ -18,7 +18,6 @@ package io.helidon.microprofile.graphql.server;
 
 import graphql.schema.DataFetcher;
 import graphql.schema.StaticDataFetcher;
-
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.microprofile.graphql.server.TestHelper.createArgument;

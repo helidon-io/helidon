@@ -16,7 +16,7 @@
 
 package io.helidon.microprofile.example.helloworld.implicit.cdi;
 
-import javax.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.ApplicationScoped;
 
 /**
  * Produce an ever increasing request id.

@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 package io.helidon.microprofile.openapi;
 
@@ -25,12 +24,11 @@ import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.util.Map;
 
-import javax.ws.rs.core.Application;
-
 import io.helidon.common.http.MediaType;
 import io.helidon.config.Config;
 import io.helidon.microprofile.server.Server;
 
+import jakarta.ws.rs.core.Application;
 import org.yaml.snakeyaml.Yaml;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;

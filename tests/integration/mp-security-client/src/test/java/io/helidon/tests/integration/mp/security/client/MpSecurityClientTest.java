@@ -22,12 +22,11 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
-import javax.json.Json;
-import javax.json.JsonObject;
-
 import io.helidon.common.http.Http;
 import io.helidon.microprofile.server.Server;
 
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;

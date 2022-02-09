@@ -16,5 +16,7 @@
 
 /**
  * Microprofile GraphQL server implementation.
+ *
+ * @see org.eclipse.microprofile.graphql
  */
 package io.helidon.microprofile.graphql.server;

@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.microprofile.tests</groupId>
         <artifactId>tck-project</artifactId>
-        <version>2.4.0-SNAPSHOT</version>
+        <version>3.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -67,6 +67,24 @@
             <artifactId>jakarta.activation-api</artifactId>
             <scope>test</scope>
         </dependency>
+        <!--
+            RestAssured xml-path, used by the TCK, requires the javax flavor of JAX-B, so add the API and impl.
+        -->
+        <!-- API, java.xml.bind module -->
+        <dependency>
+            <groupId>jakarta.xml.bind</groupId>
+            <artifactId>jakarta.xml.bind-api</artifactId>
+            <version>2.3.2</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Runtime, com.sun.xml.bind module -->
+        <dependency>
+            <groupId>org.glassfish.jaxb</groupId>
+            <artifactId>jaxb-runtime</artifactId>
+            <version>2.3.2</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -80,6 +98,10 @@
                         <dependency>org.eclipse.microprofile.openapi:microprofile-openapi-tck</dependency>
                     </dependenciesToScan>
                     <trimStackTrace>false</trimStackTrace>
+                    <!-- Following works around TCK test error when Application.getSingletons returns a non-empty set -->
+                    <systemPropertyVariables>
+                        <mp.openapi.extensions.helidon.use-jaxrs-semantics>false</mp.openapi.extensions.helidon.use-jaxrs-semantics>
+                    </systemPropertyVariables>
                 </configuration>
             </plugin>
         </plugins>

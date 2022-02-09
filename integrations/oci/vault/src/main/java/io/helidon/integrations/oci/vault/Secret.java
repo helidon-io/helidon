@@ -19,9 +19,9 @@ package io.helidon.integrations.oci.vault;
 import java.time.Instant;
 import java.util.Optional;
 
-import javax.json.JsonObject;
-
 import io.helidon.integrations.oci.connect.OciResponseParser;
+
+import jakarta.json.JsonObject;
 
 /**
  * A secret obtained from the vault. This object does not contain the actual secret content,

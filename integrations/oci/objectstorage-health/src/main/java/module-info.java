@@ -18,7 +18,7 @@
  * OCI Object Storage Health.
  */
 module io.helidon.integrations.oci.objectstorage.health {
-    requires transitive java.json;
+    requires transitive jakarta.json;
     requires transitive io.helidon.common.reactive;
     requires transitive io.helidon.integrations.oci.connect;
     requires transitive io.helidon.config;
@@ -30,8 +30,8 @@ module io.helidon.integrations.oci.objectstorage.health {
     requires io.helidon.integrations.oci.objectstorage;
 
     requires static microprofile.config.api;
-    requires static jakarta.enterprise.cdi.api;
-    requires static jakarta.inject.api;
+    requires static jakarta.cdi;
+    requires static jakarta.inject;
     requires java.logging;
 
     exports io.helidon.integrations.oci.objectstorage.health;

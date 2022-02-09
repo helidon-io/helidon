@@ -20,12 +20,6 @@ import java.util.Map;
 import java.util.concurrent.Flow;
 import java.util.function.Consumer;
 
-import javax.json.Json;
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObject;
-import javax.json.JsonReaderFactory;
-import javax.json.JsonWriterFactory;
-
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.RequestMethod;
@@ -36,6 +30,12 @@ import io.helidon.faulttolerance.FaultTolerance;
 import io.helidon.faulttolerance.FtHandler;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.webclient.WebClient;
+
+import jakarta.json.Json;
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonReaderFactory;
+import jakarta.json.JsonWriterFactory;
 
 /**
  * JSON based REST API operations.
@@ -275,7 +275,7 @@ public interface RestApi {
      * @param <B> type of the builder (a subclass of this class)
      * @param <T> type of the built {@link io.helidon.integrations.common.rest.RestApi}
      */
-    abstract class Builder<B extends Builder<B, T>, T extends RestApi> implements io.helidon.common.Builder<T> {
+    abstract class Builder<B extends Builder<B, T>, T extends RestApi> implements io.helidon.common.Builder<B, T> {
         private final WebClient.Builder webClientBuilder = WebClient.builder()
                 .followRedirects(true)
                 .keepAlive(true);

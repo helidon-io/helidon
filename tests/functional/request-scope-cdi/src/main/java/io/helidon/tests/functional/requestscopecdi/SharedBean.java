@@ -16,9 +16,10 @@
 
 package io.helidon.tests.functional.requestscopecdi;
 
-import javax.annotation.PostConstruct;
-import javax.enterprise.context.RequestScoped;
 import java.util.UUID;
+
+import jakarta.annotation.PostConstruct;
+import jakarta.enterprise.context.RequestScoped;
 
 @RequestScoped
 public class SharedBean {

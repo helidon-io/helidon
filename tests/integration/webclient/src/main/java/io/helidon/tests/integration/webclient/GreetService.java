@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,17 +18,20 @@ package io.helidon.tests.integration.webclient;
 
 import java.security.Principal;
 import java.util.Collections;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.json.Json;
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonException;
-import javax.json.JsonObject;
-
+import io.helidon.common.context.Context;
+import io.helidon.common.context.Contexts;
+import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.FormParams;
 import io.helidon.common.http.Http;
+import io.helidon.common.reactive.Multi;
 import io.helidon.config.Config;
 import io.helidon.security.SecurityContext;
 import io.helidon.webclient.WebClient;
@@ -37,6 +40,11 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
+
+import jakarta.json.Json;
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonException;
+import jakarta.json.JsonObject;
 
 /**
  * A simple service to greet you. Examples:
@@ -89,7 +97,9 @@ public class GreetService implements Service {
                 .get("/valuesPropagated", this::valuesPropagated)
                 .get("/obtainedQuery", this::obtainedQuery)
                 .get("/pattern with space", this::getDefaultMessageHandler)
-                .put("/greeting", this::updateGreetingHandler);
+                .put("/greeting", this::updateGreetingHandler)
+                .get("/connectionClose", this::connectionClose)
+                .get("/contextCheck", this::contextCheck);
     }
 
     private void contentLength(ServerRequest serverRequest, ServerResponse serverResponse) {
@@ -201,6 +211,28 @@ public class GreetService implements Service {
                 .exceptionally(ex -> processErrors(ex, request, response));
     }
 
+    private void connectionClose(ServerRequest request, ServerResponse response) {
+        response.send(Multi
+                .interval(100, 500, TimeUnit.MILLISECONDS,
+                        Executors.newSingleThreadScheduledExecutor())
+                .map(i -> "item" + i)
+                .limit(15)
+                .peek(s -> {
+                    if ("item2".equals(s)) {
+                        try {
+                            Main.webServer.shutdown().get(10, TimeUnit.SECONDS);
+                        } catch (Throwable t) {
+                            LOGGER.log(Level.SEVERE, "Webserver failed to shut down!", t);
+                        }
+                    }
+                })
+                .map(String::getBytes)
+                .map(DataChunk::create)
+                // force flush after each chunk
+                .flatMap(bb -> Multi.just(bb, DataChunk.create(true)))
+        );
+    }
+
     private void sendResponse(ServerResponse response, String name) {
         String msg = String.format("%s %s!", greeting.get(), name);
 
@@ -244,5 +276,44 @@ public class GreetService implements Service {
 
         greeting.set(jo.getString("greeting"));
         response.status(Http.Status.NO_CONTENT_204).send();
+    }
+
+    /**
+     * Checks the existence of a {@code Context} object in a WebClient thread.
+     *
+     * @param request the request
+     * @param response the response
+     */
+    private void contextCheck(ServerRequest request, ServerResponse response) {
+        WebClient webClient = WebClient.builder()
+                .baseUri("http://localhost:" + Main.serverPort + "/")
+                .build();
+
+        Optional<Context> context = Contexts.context();
+
+        // Verify that context was propagated with auth enabled
+        if (context.isEmpty()) {
+            response.status(Http.Status.INTERNAL_SERVER_ERROR_500).send();
+            return;
+        }
+
+        // Register instance in context
+        context.get().register(this);
+
+        // Ensure context is available in webclient threads
+        webClient.get()
+                .request()
+                .thenAccept(clientResponse -> {
+                    Context singleContext = Contexts.context().orElseThrow();
+                    Objects.requireNonNull(singleContext.get(GreetService.class));
+                    response.status(Http.Status.OK_200);
+                    response.send();
+                })
+                .exceptionally(throwable -> {
+                    response.status(Http.Status.INTERNAL_SERVER_ERROR_500);
+                    response.send();
+                    return null;
+                });
+
     }
 }

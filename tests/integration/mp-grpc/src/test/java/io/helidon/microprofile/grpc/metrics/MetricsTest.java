@@ -21,16 +21,6 @@ import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.enterprise.inject.Instance;
-import javax.enterprise.inject.spi.BeanManager;
-import javax.enterprise.inject.spi.CDI;
-import javax.json.Json;
-import javax.json.JsonNumber;
-import javax.json.JsonObject;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.core.MediaType;
-
 import io.helidon.common.LogConfig;
 import io.helidon.grpc.examples.common.StringServiceGrpc;
 import io.helidon.grpc.examples.common.Strings.StringMessage;
@@ -40,6 +30,15 @@ import io.helidon.microprofile.server.Server;
 
 import io.grpc.Channel;
 import io.grpc.ManagedChannelBuilder;
+import jakarta.enterprise.inject.Instance;
+import jakarta.enterprise.inject.spi.BeanManager;
+import jakarta.enterprise.inject.spi.CDI;
+import jakarta.json.Json;
+import jakarta.json.JsonNumber;
+import jakarta.json.JsonObject;
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.ClientBuilder;
+import jakarta.ws.rs.core.MediaType;
 import org.glassfish.jersey.client.ClientProperties;
 import org.glassfish.jersey.logging.LoggingFeature;
 import org.junit.jupiter.api.AfterAll;
@@ -58,7 +57,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * <p>
  * The {@link services.EchoService} and {@link services.StringService }beans should be discovered and deployed
  * automatically as they are annotated with both the {@link io.helidon.microprofile.grpc.core.Grpc} annotation
- * and the {@link javax.enterprise.context.ApplicationScoped} annotation. Their methods are annotated with various
+ * and the {@link jakarta.enterprise.context.ApplicationScoped} annotation. Their methods are annotated with various
  * microprofile metrics annotations so they should automatically generate the correct metrics.
  */
 @Disabled

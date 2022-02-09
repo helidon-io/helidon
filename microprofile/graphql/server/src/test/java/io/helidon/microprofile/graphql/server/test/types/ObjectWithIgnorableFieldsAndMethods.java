@@ -16,8 +16,7 @@
 
 package io.helidon.microprofile.graphql.server.test.types;
 
-import javax.json.bind.annotation.JsonbTransient;
-
+import jakarta.json.bind.annotation.JsonbTransient;
 import org.eclipse.microprofile.graphql.Ignore;
 import org.eclipse.microprofile.graphql.Name;
 

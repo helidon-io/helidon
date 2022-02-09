@@ -247,6 +247,11 @@ public class TestClient {
         public long requestId() {
             return 0;
         }
+
+        @Override
+        public Single<Void> closeConnection() {
+            throw new UnsupportedOperationException();
+        }
     }
 
     static class TestBareResponse implements BareResponse {

@@ -20,14 +20,13 @@ import java.net.URI;
 import java.util.Collections;
 import java.util.Set;
 
-import javax.enterprise.context.Dependent;
-import javax.enterprise.inject.se.SeContainerInitializer;
-import javax.websocket.Endpoint;
-import javax.websocket.server.ServerApplicationConfig;
-import javax.websocket.server.ServerEndpointConfig;
-
 import io.helidon.microprofile.server.RoutingPath;
 
+import jakarta.enterprise.context.Dependent;
+import jakarta.enterprise.inject.se.SeContainerInitializer;
+import jakarta.websocket.Endpoint;
+import jakarta.websocket.server.ServerApplicationConfig;
+import jakarta.websocket.server.ServerEndpointConfig;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 

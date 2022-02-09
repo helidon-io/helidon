@@ -52,8 +52,8 @@ import org.graalvm.nativeimage.hosted.RuntimeReflection;
 public class HelidonReflectionFeature implements Feature {
     private static final boolean ENABLED = NativeConfig.option("reflection.enable-feature", true);
 
-    private static final String AT_ENTITY = "javax.persistence.Entity";
-    private static final String AT_MAPPED_SUPERCLASS = "javax.persistence.MappedSuperclass";
+    private static final String AT_ENTITY = "jakarta.persistence.Entity";
+    private static final String AT_MAPPED_SUPERCLASS = "jakarta.persistence.MappedSuperclass";
     private static final String AT_REGISTER_REST_CLIENT = "org.eclipse.microprofile.rest.client.inject.RegisterRestClient";
 
     private final NativeTrace tracer = new NativeTrace();
@@ -175,11 +175,11 @@ public class HelidonReflectionFeature implements Feature {
     }
 
     private void addJaxRsConversions(BeforeAnalysisContext context) {
-        addJaxRsConversions(context, "javax.ws.rs.QueryParam");
-        addJaxRsConversions(context, "javax.ws.rs.PathParam");
-        addJaxRsConversions(context, "javax.ws.rs.HeaderParam");
-        addJaxRsConversions(context, "javax.ws.rs.MatrixParam");
-        addJaxRsConversions(context, "javax.ws.rs.BeanParam");
+        addJaxRsConversions(context, "jakarta.ws.rs.QueryParam");
+        addJaxRsConversions(context, "jakarta.ws.rs.PathParam");
+        addJaxRsConversions(context, "jakarta.ws.rs.HeaderParam");
+        addJaxRsConversions(context, "jakarta.ws.rs.MatrixParam");
+        addJaxRsConversions(context, "jakarta.ws.rs.BeanParam");
     }
 
     private void addJaxRsConversions(BeforeAnalysisContext context, String annotation) {

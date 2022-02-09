@@ -18,10 +18,10 @@ package io.helidon.integrations.oci.objectstorage;
 
 import java.util.Optional;
 
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObject;
-
 import io.helidon.integrations.common.rest.ApiResponse;
+
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonObject;
 
 /**
  * Delete Object request and response.
@@ -40,7 +40,7 @@ public final class DeleteObject {
         /**
          * Fluent API builder for configuring a request.
          * The request builder is passed as is, without a build method.
-         * The equivalent of a build method is {@link #toJson(javax.json.JsonBuilderFactory)}
+         * The equivalent of a build method is {@link #toJson(jakarta.json.JsonBuilderFactory)}
          * used by the {@link io.helidon.integrations.common.rest.RestApi}.
          *
          * @return new request builder

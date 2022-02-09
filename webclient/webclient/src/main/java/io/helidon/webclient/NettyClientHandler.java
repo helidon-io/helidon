@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package io.helidon.webclient;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -64,6 +63,10 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
     private static final Logger LOGGER = Logger.getLogger(NettyClientHandler.class.getName());
 
     private static final AttributeKey<WebClientServiceResponse> SERVICE_RESPONSE = AttributeKey.valueOf("serviceResponse");
+    /**
+     * Instance of the publisher used to handle response.
+     */
+    static final AttributeKey<BufferedEmittingPublisher> PUBLISHER = AttributeKey.valueOf("publisher");
 
     private static final List<HttpInterceptor> HTTP_INTERCEPTORS = new ArrayList<>();
 
@@ -112,6 +115,7 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
             LOGGER.finest(() -> "(client reqID: " + requestId + ") Initial http response message received");
 
             this.publisher = new HttpResponsePublisher(ctx);
+            channel.attr(PUBLISHER).set(this.publisher);
             this.responseCloser = new ResponseCloser(ctx);
             WebClientResponseImpl.Builder responseBuilder = WebClientResponseImpl.builder();
             responseBuilder.contentPublisher(publisher)
@@ -222,6 +226,17 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
         }
     }
 
+    @Override
+    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+        super.channelInactive(ctx);
+        // Connection closed without last HTTP content received. Some server problem
+        // so we need to fail the publisher and report an exception.
+        if (publisher != null && !responseCloser.isClosed()) {
+            WebClientException exception = new WebClientException("Connection reset by the host");
+            publisher.fail(exception);
+        }
+    }
+
     private boolean shouldResponseAutomaticallyClose(WebClientResponse clientResponse) {
         WebClientResponseHeaders headers = clientResponse.headers();
         if (clientResponse.status() == Http.Status.NO_CONTENT_204) {
@@ -256,28 +271,7 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
     }
 
     private Http.ResponseStatus helidonStatus(HttpResponseStatus nettyStatus) {
-        final int statusCode = nettyStatus.code();
-
-        Optional<Http.Status> status = Http.Status.find(statusCode);
-        if (status.isPresent()) {
-            return status.get();
-        }
-        return new Http.ResponseStatus() {
-            @Override
-            public int code() {
-                return statusCode;
-            }
-
-            @Override
-            public Family family() {
-                return Family.of(statusCode);
-            }
-
-            @Override
-            public String reasonPhrase() {
-                return nettyStatus.reasonPhrase();
-            }
-        };
+        return Http.ResponseStatus.create(nettyStatus.code(), nettyStatus.reasonPhrase());
     }
 
     private static final class HttpResponsePublisher extends BufferedEmittingPublisher<DataChunk> {

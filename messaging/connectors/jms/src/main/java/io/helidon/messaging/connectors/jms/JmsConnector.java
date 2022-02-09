@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package io.helidon.messaging.connectors.jms;
@@ -32,23 +31,6 @@ import java.util.function.BiConsumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.context.BeforeDestroyed;
-import javax.enterprise.event.Observes;
-import javax.enterprise.inject.Instance;
-import javax.enterprise.inject.literal.NamedLiteral;
-import javax.inject.Inject;
-import javax.jms.BytesMessage;
-import javax.jms.Connection;
-import javax.jms.ConnectionFactory;
-import javax.jms.Destination;
-import javax.jms.JMSException;
-import javax.jms.MessageConsumer;
-import javax.jms.MessageProducer;
-import javax.jms.Session;
-import javax.jms.TextMessage;
-import javax.jms.Topic;
-
 import io.helidon.common.Builder;
 import io.helidon.common.configurable.ScheduledThreadPoolSupplier;
 import io.helidon.common.configurable.ThreadPoolSupplier;
@@ -59,6 +41,22 @@ import io.helidon.config.mp.MpConfig;
 import io.helidon.messaging.MessagingException;
 import io.helidon.messaging.Stoppable;
 
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.BeforeDestroyed;
+import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.Instance;
+import jakarta.enterprise.inject.literal.NamedLiteral;
+import jakarta.inject.Inject;
+import jakarta.jms.BytesMessage;
+import jakarta.jms.Connection;
+import jakarta.jms.ConnectionFactory;
+import jakarta.jms.Destination;
+import jakarta.jms.JMSException;
+import jakarta.jms.MessageConsumer;
+import jakarta.jms.MessageProducer;
+import jakarta.jms.Session;
+import jakarta.jms.TextMessage;
+import jakarta.jms.Topic;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.messaging.spi.Connector;
@@ -257,21 +255,21 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
      * @param sessionMetadata JMS session metadata
      * @return reactive messaging message extended with custom JMS features
      */
-    protected JmsMessage<?> createMessage(javax.jms.Message message, Executor executor, SessionMetadata sessionMetadata) {
+    protected JmsMessage<?> createMessage(jakarta.jms.Message message, Executor executor, SessionMetadata sessionMetadata) {
         if (message instanceof TextMessage) {
             return new JmsTextMessage((TextMessage) message, executor, sessionMetadata);
         } else if (message instanceof BytesMessage) {
             return new JmsBytesMessage((BytesMessage) message, executor, sessionMetadata);
         } else {
-            return new AbstractJmsMessage<javax.jms.Message>(executor, sessionMetadata) {
+            return new AbstractJmsMessage<jakarta.jms.Message>(executor, sessionMetadata) {
 
                 @Override
-                public javax.jms.Message getJmsMessage() {
+                public jakarta.jms.Message getJmsMessage() {
                     return message;
                 }
 
                 @Override
-                public javax.jms.Message getPayload() {
+                public jakarta.jms.Message getPayload() {
                     return message;
                 }
             };
@@ -414,7 +412,7 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
             return;
         }
         try {
-            javax.jms.Message message = consumer.receive(pollTimeout);
+            jakarta.jms.Message message = consumer.receive(pollTimeout);
             if (message == null) {
                 return;
             }
@@ -442,7 +440,7 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
         return CompletableFuture
                 .supplyAsync(() -> {
                     try {
-                        javax.jms.Message jmsMessage;
+                        jakarta.jms.Message jmsMessage;
 
                         if (m instanceof OutgoingJmsMessage) {
                             // custom mapping, properties etc.
@@ -551,7 +549,7 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
     /**
      * Builder for {@link io.helidon.messaging.connectors.jms.JmsConnector}.
      */
-    public static class JmsConnectorBuilder implements Builder<JmsConnector> {
+    public static class JmsConnectorBuilder implements Builder<JmsConnectorBuilder, JmsConnector> {
 
         private final Map<String, ConnectionFactory> connectionFactoryMap = new HashMap<>();
         private ScheduledExecutorService scheduler;
@@ -559,7 +557,7 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
         private io.helidon.config.Config config;
 
         /**
-         * Add custom {@link javax.jms.ConnectionFactory ConnectionFactory} referencable by supplied name with
+         * Add custom {@link jakarta.jms.ConnectionFactory ConnectionFactory} referencable by supplied name with
          * {@link JmsConnector#NAMED_FACTORY_ATTRIBUTE}.
          *
          * @param name              referencable connection factory name

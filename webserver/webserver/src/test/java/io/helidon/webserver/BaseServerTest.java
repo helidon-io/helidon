@@ -20,6 +20,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 import io.helidon.webclient.WebClient;
+
 import org.junit.jupiter.api.AfterAll;
 
 class BaseServerTest {
@@ -47,6 +48,7 @@ class BaseServerTest {
 
     protected static void startServer(int port, Routing routing) throws Exception {
         webServer = WebServer.builder()
+                .host("localhost")
                 .port(port)
                 .routing(routing)
                 .build()

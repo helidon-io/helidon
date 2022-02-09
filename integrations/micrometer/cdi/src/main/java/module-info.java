@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 /**
@@ -22,11 +21,11 @@ module io.helidon.integrations.micrometer.cdi {
 
     requires java.logging;
 
-    requires static java.annotation;
+    requires static jakarta.annotation;
 
     requires static jakarta.activation;
-    requires static jakarta.enterprise.cdi.api;
-    requires static jakarta.inject.api;
+    requires static jakarta.cdi;
+    requires static jakarta.inject;
     requires static jakarta.interceptor.api;
 
     requires io.helidon.common.http;
@@ -46,5 +45,5 @@ module io.helidon.integrations.micrometer.cdi {
     // this is needed for CDI extensions that use non-public observer methods
     opens io.helidon.integrations.micrometer.cdi to weld.core.impl, io.helidon.microprofile.cdi;
 
-    provides javax.enterprise.inject.spi.Extension with io.helidon.integrations.micrometer.cdi.MicrometerCdiExtension;
+    provides jakarta.enterprise.inject.spi.Extension with io.helidon.integrations.micrometer.cdi.MicrometerCdiExtension;
 }

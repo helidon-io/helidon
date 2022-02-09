@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,8 +48,8 @@ public final class JmsConfigBuilder extends ConnectorConfigBuilder {
     }
 
     /**
-     * To select from manually configured {@link javax.jms.ConnectionFactory ConnectionFactories} over
-     * {@link JmsConnector.JmsConnectorBuilder#connectionFactory(String, javax.jms.ConnectionFactory)
+     * To select from manually configured {@link jakarta.jms.ConnectionFactory ConnectionFactories} over
+     * {@link JmsConnector.JmsConnectorBuilder#connectionFactory(String, jakarta.jms.ConnectionFactory)
      * JmsConnectorBuilder#connectionFactory()}.
      *
      * @param factoryName connection factory name

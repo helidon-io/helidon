@@ -21,9 +21,12 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Flow;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -46,10 +49,10 @@ class RetryTest {
     void testRetry() {
         Retry retry = Retry.builder()
                 .retryPolicy(Retry.JitterRetryPolicy.builder()
-                                     .calls(3)
-                                     .delay(Duration.ofMillis(50))
-                                     .jitter(Duration.ofMillis(50))
-                                     .build())
+                        .calls(3)
+                        .delay(Duration.ofMillis(50))
+                        .jitter(Duration.ofMillis(50))
+                        .build())
                 .overallTimeout(Duration.ofMillis(500))
                 .build();
 
@@ -68,10 +71,10 @@ class RetryTest {
     void testRetryOn() {
         Retry retry = Retry.builder()
                 .retryPolicy(Retry.JitterRetryPolicy.builder()
-                                     .calls(3)
-                                     .delay(Duration.ofMillis(100))
-                                     .jitter(Duration.ofMillis(50))
-                                     .build())
+                        .calls(3)
+                        .delay(Duration.ofMillis(100))
+                        .jitter(Duration.ofMillis(50))
+                        .build())
                 .overallTimeout(Duration.ofMillis(500))
                 .addApplyOn(RetryException.class)
                 .build();
@@ -96,10 +99,10 @@ class RetryTest {
     void testAbortOn() {
         Retry retry = Retry.builder()
                 .retryPolicy(Retry.JitterRetryPolicy.builder()
-                                     .calls(3)
-                                     .delay(Duration.ofMillis(100))
-                                     .jitter(Duration.ofMillis(50))
-                                     .build())
+                        .calls(3)
+                        .delay(Duration.ofMillis(100))
+                        .jitter(Duration.ofMillis(50))
+                        .build())
                 .overallTimeout(Duration.ofMillis(50000))
                 .addSkipOn(TerminalException.class)
                 .build();
@@ -124,10 +127,10 @@ class RetryTest {
     void testTimeout() {
         Retry retry = Retry.builder()
                 .retryPolicy(Retry.JitterRetryPolicy.builder()
-                                     .calls(3)
-                                     .delay(Duration.ofMillis(100))
-                                     .jitter(Duration.ZERO)
-                                     .build())
+                        .calls(3)
+                        .delay(Duration.ofMillis(100))
+                        .jitter(Duration.ZERO)
+                        .build())
                 .overallTimeout(Duration.ofMillis(50))
                 .build();
 
@@ -263,6 +266,48 @@ class RetryTest {
         ts.cdl.await(1, TimeUnit.SECONDS);
 
         assertThat("Last delay should increase", lastDelayCalls, contains(0L, 1L, 2L));
+    }
+
+    @Test
+    public void testExceptionCause() {
+        AtomicBoolean isTimeout = new AtomicBoolean(false);
+        AtomicBoolean isRuntime = new AtomicBoolean(false);
+
+        Retry.builder()
+                .retryPolicy(Retry.JitterRetryPolicy.builder().build())
+                .overallTimeout(Duration.ofSeconds(1))
+                .build().invoke(() -> CompletableFuture.runAsync(() -> {
+                    try {
+                        Thread.sleep(2000);
+                        throw new RuntimeException("Hello");
+                    } catch (InterruptedException e) {
+                        // falls through
+                    }
+                }))
+                .exceptionallyAccept(t -> {
+                    isTimeout.set(t instanceof TimeoutException);
+                    isRuntime.set(t.getCause() instanceof RuntimeException);
+                })
+                .await();
+
+        assertThat("Must be a TimeoutException", isTimeout.get(), is(true));
+        assertThat("Must be a RuntimeException", isRuntime.get(), is(true));
+    }
+
+    @Test
+    void testRetryCancel() {
+        AtomicBoolean cancelCalled = new AtomicBoolean();
+        Retry retry = Retry.builder().build();
+        Single<Void> single = retry.invoke(() ->
+                new CompletableFuture<>() {
+                    @Override
+                    public boolean cancel(boolean b) {
+                        cancelCalled.set(true);
+                        return super.cancel(b);
+                    }
+                });
+        single.cancel();
+        assertThat("Cancel must be called", cancelCalled.get(), is(true));
     }
 
     private static class TestSubscriber implements Flow.Subscriber<Integer> {

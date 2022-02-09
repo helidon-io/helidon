@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 package io.helidon.openapi;
 
@@ -21,7 +20,6 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.function.Consumer;
 
-import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
@@ -149,11 +147,24 @@ public class ServerTest {
      * response
      */
     @Test
-    public void checkExplicitResponseMediaType() throws Exception {
+    public void checkExplicitResponseMediaTypeViaHeaders() throws Exception {
         connectAndConsumePayload(MediaType.APPLICATION_OPENAPI_YAML);
         connectAndConsumePayload(MediaType.APPLICATION_YAML);
         connectAndConsumePayload(MediaType.APPLICATION_OPENAPI_JSON);
         connectAndConsumePayload(MediaType.APPLICATION_JSON);
+    }
+
+    @Test
+    void checkExplicitResponseMediaTypeViaQueryParameter() throws Exception {
+        TestUtil.connectAndConsumePayload(greetingWebServer.port(),
+                                          GREETING_PATH,
+                                          "format=JSON",
+                                          MediaType.APPLICATION_JSON);
+
+        TestUtil.connectAndConsumePayload(greetingWebServer.port(),
+                                          GREETING_PATH,
+                                          "format=YAML",
+                                          MediaType.APPLICATION_OPENAPI_YAML);
     }
 
     /**

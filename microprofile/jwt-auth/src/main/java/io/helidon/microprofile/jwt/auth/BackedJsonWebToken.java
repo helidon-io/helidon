@@ -20,12 +20,6 @@ import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 
-import javax.json.Json;
-import javax.json.JsonNumber;
-import javax.json.JsonObject;
-import javax.json.JsonString;
-import javax.json.JsonValue;
-
 import io.helidon.security.SecurityException;
 import io.helidon.security.jwt.Jwt;
 import io.helidon.security.jwt.JwtException;
@@ -33,6 +27,11 @@ import io.helidon.security.jwt.JwtUtil;
 import io.helidon.security.jwt.SignedJwt;
 import io.helidon.security.util.AbacSupport;
 
+import jakarta.json.Json;
+import jakarta.json.JsonNumber;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonString;
+import jakarta.json.JsonValue;
 import org.eclipse.microprofile.jwt.ClaimValue;
 import org.eclipse.microprofile.jwt.Claims;
 import org.eclipse.microprofile.jwt.JsonWebToken;
@@ -125,20 +124,22 @@ final class BackedJsonWebToken extends JsonWebTokenImpl {
         }
     }
 
-    private Object getClaim(Claims claims) {
+    @SuppressWarnings("unchecked")
+    @Override
+    public <T> T getClaim(Claims claims) {
         switch (claims) {
         case raw_token:
-            return signed.tokenContent();
+            return (T) signed.tokenContent();
         case groups:
-            return jwt.userGroups().map(HashSet::new).orElse(null);
+            return (T) jwt.userGroups().map(HashSet::new).orElse(null);
         case aud:
-            return jwt.audience().map(HashSet::new).orElse(null);
+            return (T) jwt.audience().map(HashSet::new).orElse(null);
         case email_verified:
-            return jwt.emailVerified().orElse(null);
+            return (T) jwt.emailVerified().orElse(null);
         case phone_number_verified:
-            return jwt.phoneNumberVerified().orElse(null);
+            return (T) jwt.phoneNumberVerified().orElse(null);
         case upn:
-            return jwt.userPrincipal().orElse(null);
+            return (T) jwt.userPrincipal().orElse(null);
         default:
             //do nothing, just continue to processing based on type
         }
@@ -146,7 +147,7 @@ final class BackedJsonWebToken extends JsonWebTokenImpl {
         String claimName = claims.name();
         Optional<JsonValue> json = getJsonValue(claimName);
 
-        return json.map(value -> convert(claims, value)).orElse(null);
+        return (T) json.map(value -> convert(claims, value)).orElse(null);
     }
 
     private Optional<JsonValue> getJsonValue(String claimName) {

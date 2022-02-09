@@ -36,6 +36,6 @@ module io.helidon.microprofile.grpc.server {
     uses io.helidon.microprofile.grpc.server.GrpcServerCdiExtension;
     uses io.helidon.microprofile.grpc.server.AnnotatedServiceConfigurer;
 
-    provides javax.enterprise.inject.spi.Extension
+    provides jakarta.enterprise.inject.spi.Extension
             with io.helidon.microprofile.grpc.server.GrpcServerCdiExtension;
 }

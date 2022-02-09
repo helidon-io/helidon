@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.security.examples.idcs;
 import java.util.Optional;
 
 import io.helidon.common.LogConfig;
+import io.helidon.common.context.Contexts;
 import io.helidon.common.http.MediaType;
 import io.helidon.config.Config;
 import io.helidon.security.Security;
@@ -57,6 +58,8 @@ public final class IdcsMain {
         Config config = buildConfig();
 
         Security security = Security.create(config.get("security"));
+        // this is needed for proper encryption/decryption of cookies
+        Contexts.globalContext().register(security);
 
         Routing.Builder routing = Routing.builder()
                 .register(WebSecurity.create(security, config.get("security")))
@@ -70,7 +73,8 @@ public final class IdcsMain {
                             .flatMap(SecurityContext::user)
                             .map(Subject::toString)
                             .orElse("Security context is null"));
-                });
+                })
+                .get("/loggedout", (req, res) -> res.send("You have been logged out"));
 
         theServer = WebServer.create(routing, config.get("server"));
 

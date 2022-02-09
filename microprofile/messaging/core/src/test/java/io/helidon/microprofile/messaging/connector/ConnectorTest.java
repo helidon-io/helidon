@@ -19,17 +19,18 @@ package io.helidon.microprofile.messaging.connector;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import javax.enterprise.inject.spi.DeploymentException;
-import javax.enterprise.util.AnnotationLiteral;
-
 import io.helidon.microprofile.messaging.AbstractCDITest;
+
+import jakarta.enterprise.inject.spi.DeploymentException;
+import jakarta.enterprise.util.AnnotationLiteral;
+import org.eclipse.microprofile.reactive.messaging.spi.Connector;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import org.eclipse.microprofile.reactive.messaging.spi.Connector;
-import org.junit.jupiter.api.Test;
-
+@Disabled
 public class ConnectorTest extends AbstractCDITest {
 
     @Override

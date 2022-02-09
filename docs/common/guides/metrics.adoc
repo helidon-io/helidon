@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -19,6 +19,8 @@
 :description: Helidon metrics
 :keywords: helidon, metrics, microprofile, guide
 :common-page-prefix-inc: ../../shared/common_prereqs/common_prereqs.adoc
+//:helidon-tag: https://github.com/oracle/helidon/tree/{helidon-version}
+//:thread-pool-example-link: {helidon-tag}/examples/webserver/threadpool
 :h1Prefix: MP
 
 // tag::intro[]
@@ -64,9 +66,26 @@ Helidon provides three scopes of metrics: base, vendor, and application. Here ar
 
 NOTE: The `/metrics` endpoint will return data for all scopes.
 
-The following example will demonstrate how to use the built-in metrics.  All examples are executed
+The built-in metrics fall into three categories:
+
+. JVM behavior (in the base registry),
+. basic key performance indicators for request handling (in the vendor registry), and
+. thread pool utilization (also in the vendor registry).
+
+A later section describes the <<basic-and-extended-kpi,key performance indicator metrics>> in detail.
+
+The following example demonstrates how to use the other built-in metrics.  All examples are executed
 from the root directory of your project (helidon-quickstart-{lower-case-flavor}).
 // end::using-built-in-metrics-intro[]
+
+// tag::metrics-dependency[]
+----
+<dependency>
+    <groupId>io.helidon.metrics</groupId>
+    <artifactId>helidon-metrics</artifactId>
+</dependency>
+----
+// end::metrics-dependency[]
 
 // tag::build-and-run-intro[]
 
@@ -77,7 +96,7 @@ mvn package -DskipTests=true
 java -jar target/helidon-quickstart-{lower-case-flavor}.jar
 ----
 
-NOTE: Metrics can be returned in either text format (the default), or JSON.  The text format uses Prometheus Text Format,
+NOTE: Metrics can be returned in either text format (the default), or JSON.  The text format uses OpenMetrics (Prometheus) Text Format,
 see https://prometheus.io/docs/instrumenting/exposition_formats/#text-format-details.
 
 [source,bash]
@@ -127,6 +146,13 @@ curl -H "Accept: application/json"  http://localhost:8080/metrics
 // end::base-metrics-json-output[]
 // tag::vendor-metrics-json-output[]
   "vendor": {
+    "executor-service.active-count;poolIndex=0;supplierCategory=helidon-thread-pool-2;supplierIndex=0": 0,
+    "executor-service.completed-task-count;poolIndex=0;supplierCategory=helidon-thread-pool-2;supplierIndex=0": 0,
+    "executor-service.largest-pool-size;poolIndex=0;supplierCategory=helidon-thread-pool-2;supplierIndex=0": 5,
+    "executor-service.pool-size;poolIndex=0;supplierCategory=helidon-thread-pool-2;supplierIndex=0": 5,
+    "executor-service.queue.remaining-capacity;poolIndex=0;supplierCategory=helidon-thread-pool-2;supplierIndex=0": 10000,
+    "executor-service.queue.size;poolIndex=0;supplierCategory=helidon-thread-pool-2;supplierIndex=0": 0,
+    "executor-service.task-count;poolIndex=0;supplierCategory=helidon-thread-pool-2;supplierIndex=0": 0,
     "requests.count": 6,
     "requests.meter": {
       "count": 6,
@@ -164,8 +190,176 @@ curl -H "Accept: application/json"  http://localhost:8080/metrics/vendor/request
 NOTE: You cannot get the individual fields of a metric. For example, you cannot target http://localhost:8080/metrics/vendor/requests.meter.count.
 // end::get-single-metric[]
 
+// tag::built-in-metrics-discussion[]
+The `base` metrics illustrated above provide some insight into the behavior of the JVM in which the server runs.
+
+The `vendor` metrics shown above appear in two groups:
+
+- Helidon thread pools +
++
+Helidon uses these thread pools for its own internal work, and your application can also use Helidon-managed thread pools if it needs to do work asynchronously. (See link:{thread-pool-example-link}[this example].)
+The metrics in this group show information about the thread pools which can help you assess how efficiently they are utilized.
+Helidon uses tags to distinguish the metrics which describe different thread pools.
+In some cases the specific metrics exposed depend on the particular type of thread pool.
+- basic key performance indicators +
++
+These metrics give an idea of the request traffic the server is handling. See the <<basic-and-extended-kpi,later section>> for more information on the basic and extended key performance indicator metrics.
+
+// end::built-in-metrics-discussion[]
+
+// tag::controlling[]
+// tag::controlling-intro[]
+// tag::controlling-intro-part-1[]
+=== Controlling Metrics Behavior
+By adding a `metrics` section to your application configuration you can control how the Helidon metrics subsystem behaves in any of several ways.
+
+*  <<disabling-entirely,Disable metrics subsystem entirely>>.
+// end::controlling-intro-part-1[]
+// tag::controlling-intro-part-2[]
+*  Identify groups of metrics to control:
+**  <<enabling-disabling-by-component,registered by a particular component>>, and
+**  <<enabling-disabling-by-registry,by metric registry>> (application, vendor, and base) and within a registry by metric names  which match patterns you provide.
+*  Select whether to collect <<basic-and-extended-kpi,extended key performance indicator metrics>>.
+// end::controlling-intro-part-2[]
+// end::controlling-intro[]
+
+// tag::disabling-whole[]
+// tag::disabling-whole-intro[]
+[[disabling-entirely]]
+==== Disabling Metrics Subsystem Entirely
+By default, if your application depends on the `helidon-metrics` Maven module then full-featured metrics are enabled.
+You can disable the metrics subsystem entirely using configuration:
+[source,properties]
+.Configuration properties file disabling metrics
+----
+metrics.enabled=false
+----
+// end::disabling-whole-intro[]
+
+// tag::disabling-whole-summary[]
+With metrics processing disabled, Helidon never updates any metrics and the `/metrics` endpoints respond with `404` plus a message that the metrics subsystem is disabled.
+// end::disabling-whole-summary[]
+// end::disabling-whole[]
+
+// tag::controlling-by-component[]
+// tag::controlling-by-component-intro[]
+[[enabling-disabling-by-component]]
+==== Enabling and Disabling Metrics Usage by a Component
+Helidon contains several components and integrations which register and update metrics.
+Depending on how the component is written, you might be able to disable just that component's use of metrics:
+[source,properties]
+.Configuration properties file disabling a component's use of metrics
+----
+some-component.metrics.enabled=false
+----
+Check the documentation for a specific component to find out whether that component uses metrics and whether it allows you to disable that use.
+// end::controlling-by-component-intro[]
+// tag::controlling-by-component-summary[]
+If you disable a component's use of metrics, Helidon does not register the component's metrics in the visible metrics registries nor do those metrics ever update their values. The response from the `/metrics` endpoint excludes that component's metrics.
+
+Note that if you disable metrics processing entirely, no component updates its metrics regardless of any component-level metrics settings.
+// end::controlling-by-component-summary[]
+// end::controlling-by-component[]
+
+// tag::controlling-by-registry[]
+// tag::controlling-by-registry-intro[]
+[[enabling-disabling-by-registry]]
+==== Controlling Metrics By Registry Type and Metric Name
+You can control the collection and reporting of metrics by registry type and metric name within registry type.
+
+===== Disabling All Metrics of a Given Registry Type
+To disable all metrics in a given registry type (application, vendor, or base), add one or more groups to the configuration:
+
+[source,properties]
+.Disabling `base` and `vendor` metrics (properties format)
+----
+metrics.registries.0.type = base
+metrics.registries.0.enabled = false
+metrics.registries.1.type = vendor
+metrics.registries.1.enabled = false
+----
+
+[source,yaml]
+.Disabling `base` and `vendor` metrics (YAML format)
+----
+metrics:
+  registries:
+    - type: base
+      enabled: false
+    - type: vendor
+      enables: false
+----
+
+===== Controlling Metrics by Metric Name
+You can be even more selective. Within a registry type you can configure up to two regular expression patterns:
+
+* one matching metric names to _exclude_, and
+* one matching metric names to _include_.
+
+Helidon updates and reports a metric only if two conditions hold:
+
+* the metric name _does not_ match the `exclude` regex pattern (if you define one), and
+* either
+** there is no `include` regex pattern, or
+** the metric name matches the `include` pattern.
+
+[CAUTION]
+====
+Make sure any `include` regex pattern you specify matches _all_ the metric names you want to capture.
+====
+Suppose your application creates and updates a group of metrics with names such as `myapp.xxx.queries`, `myapp.xxx.creates`, `myapp.xxx.updates`, and `myapp.xxx.deletes` where `xxx` can be either `supplier` or `customer`.
+
+The following example gathers all metrics _except_ those from your application regarding suppliers:
+[source,properties]
+.Disabling metrics by name (properties format)
+----
+metrics.registries.0.type = application
+metrics.registries.0.filter.exclude = myapp\.supplier\..*
+----
+
+The following settings select the particular subset of the metrics created in your application code representing updates of customers and suppliers:
+[source,properties]
+.Enabling metrics by name (properties format)
+----
+metrics.registries.0.type = application
+metrics.registries.0.filter.include = myapp\..*\.updates
+----
+
+If you use the YAML configuration format, enclose the regex patterns in single-quote marks:
+[source,yaml]
+.Enabling metrics by name (YAML format)
+----
+metrics:
+  registries:
+    - type: application
+      filter:
+        include: 'myapp\..*\.updates'
+----
+
+The next example selects only your application's metrics while excluding those which refer to deletions:
+[source,properties]
+.Combining `include` and `exclude`
+----
+metrics.registries.0.type = application
+metrics.registries.0.filter.include = myapp\..*
+metrics.registries.0.filter.exclude = myapp\..*/deletes
+----
+
+Helidon would not update or report the metric `myapp.supplier.queries`, for example.
+To  include metrics from your application for both updates and queries (but not for other operations), you could change the settings in the previous example to this:
+[source.properties]
+----
+metrics.registries.0.type = application
+metrics.registries.0.filter.include = myapp\..*\.updates|myapp\..*\.queries
+metrics.registries.0.filter.exclude = myapp\..*/deletes
+----
+
+// end::controlling-by-registry-intro[]
+// tag::controlling-by-registry[]
+
 // tag::KPI[]
-==== Key Performance Indicator (KPI) Metrics
+[[basic-and-extended-kpi]]
+==== Collecting Basic and Extended Key Performance Indicator (KPI) Metrics
 Any time you include the Helidon metrics module in your application, Helidon tracks two basic performance indicator metrics:
 
 * a `Counter` of all requests received (`requests.count`), and
@@ -185,23 +379,8 @@ You can enable and control these metrics using configuration:
 metrics.key-performance-indicators.extended = true
 metrics.key-performance-indicators.long-running.threshold-ms = 2000
 ----
-
-ifeval::["{h1Prefix}" == "SE"]
-Your Helidon {h1Prefix} application can also control the behavior of the KPI metrics programmatically.
-
-. Prepare a `KeyPerformanceIndicatorSettings` object, using its builder, and then pass the builder when invoking the `MetricsSupport.Builder#keyPerformanceIndicatorMetricsSettings()` method.
-. Prepare a `Config` object and pass it to the `MetricsSupport.Builder#keyPerformanceIndicatorMetricsConfig()` method.
-+
-[source,properties]
-+
-.Example KPI metrics config fragment
-----
-extended = true
-long-running.threshold-ms = 2000
-----
-endif::[]
-
 // end::KPI[]
+// end::controlling[]
 
 // tag::metrics-metadata[]
 === Metrics Metadata

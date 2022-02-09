@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,22 +19,31 @@ import java.sql.SQLException;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.context.BeforeDestroyed;
-import javax.enterprise.context.Initialized;
-import javax.enterprise.event.Observes;
-import javax.enterprise.inject.Instance;
-import javax.enterprise.inject.literal.NamedLiteral;
-import javax.inject.Inject;
-import javax.inject.Named;
 import javax.sql.DataSource;
 import javax.sql.XADataSource;
-import javax.transaction.Status;
-import javax.transaction.Synchronization;
-import javax.transaction.TransactionManager;
-import javax.transaction.TransactionScoped;
-import javax.transaction.TransactionSynchronizationRegistry;
+import javax.transaction.xa.XAResource;
+
+import io.helidon.integrations.jta.jdbc.JtaDataSource;
+import io.helidon.integrations.jta.jdbc.XADataSourceWrappingDataSource;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.BeforeDestroyed;
+import jakarta.enterprise.context.Initialized;
+import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.Instance;
+import jakarta.enterprise.inject.literal.NamedLiteral;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
+import jakarta.transaction.RollbackException;
+import jakarta.transaction.Status;
+import jakarta.transaction.Synchronization;
+import jakarta.transaction.SystemException;
+import jakarta.transaction.Transaction;
+import jakarta.transaction.TransactionManager;
+import jakarta.transaction.TransactionScoped;
+import jakarta.transaction.TransactionSynchronizationRegistry;
 
 @ApplicationScoped
 class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvider {
@@ -85,7 +94,7 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
     private final TransactionSynchronizationRegistry tsr;
 
     /**
-     * A thread-safe {@link Map} (usually a {@link ConcurrentHashMap})
+     * A {@link ConcurrentMap} (usually a {@link ConcurrentHashMap})
      * that stores {@link JtaDataSource} instances under their names.
      *
      * <p>This field is never {@code null}.</p>
@@ -93,15 +102,15 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
      * <h2>Design Notes</h2>
      *
      * <p>{@link DataSource} instances used by instances of this class
-     * are normally CDI contextual references, so are client proxies.
-     * Per the specification, a client proxy's {@link
+     * are normally CDI contextual references, so are often client
+     * proxies.  Per the specification, a client proxy's {@link
      * Object#equals(Object)} and {@link Object#hashCode()} methods do
      * not behave in such a way that their underlying contextual
      * instances can be tested for equality.  When these {@link
      * DataSource}s are wrapped by {@link JtaDataSource} instances, we
      * need to ensure that the same {@link JtaDataSource} is handed
      * out each time a given data source name is supplied.  This
-     * {@link Map} provides those semantics.</p>
+     * {@link ConcurrentMap} provides those semantics.</p>
      *
      * @see JtaDataSource
      *
@@ -109,7 +118,7 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
      * href="https://jakarta.ee/specifications/cdi/2.0/cdi-spec-2.0.html#client_proxy_invocation">section
      * 5.4.1 of the CDI 2.0 specification</a>
      */
-    private final Map<String, DataSource> dataSourcesByName;
+    private final ConcurrentMap<String, DataSource> dataSourcesByName;
 
 
     /*
@@ -260,11 +269,30 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
         throws SQLException {
         Objects.requireNonNull(xaDataSource);
         final DataSource returnValue =
-            this.dataSourcesByName.computeIfAbsent(dataSourceName == null ? NULL_DATASOURCE_NAME : dataSourceName,
-                                                   ignoredKey -> new XADataSourceWrappingDataSource(xaDataSource,
-                                                                                                    dataSourceName,
-                                                                                                    this.transactionManager));
+            this.dataSourcesByName
+            .computeIfAbsent(dataSourceName == null ? NULL_DATASOURCE_NAME : dataSourceName,
+                             ignoredKey -> new XADataSourceWrappingDataSource(xaDataSource,
+                                                                              this::enlistResource));
         return returnValue;
+    }
+
+    private boolean activeTransaction() {
+        try {
+            return this.transactionManager.getStatus() == Status.STATUS_ACTIVE;
+        } catch (final SystemException e) {
+            throw new IllegalStateException(e.getMessage(), e);
+        }
+    }
+
+    private void enlistResource(final XAResource resource) {
+        try {
+            final Transaction transaction = this.transactionManager.getTransaction();
+            if (transaction != null && transaction.getStatus() == Status.STATUS_ACTIVE) {
+                transaction.enlistResource(resource);
+            }
+        } catch (final RollbackException | SystemException e) {
+            throw new IllegalStateException(e.getMessage(), e);
+        }
     }
 
     /**
@@ -303,9 +331,7 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
         } else {
             returnValue =
                 this.dataSourcesByName.computeIfAbsent(dataSourceName == null ? NULL_DATASOURCE_NAME : dataSourceName,
-                                                       ignoredKey -> new JtaDataSource(dataSource,
-                                                                                       dataSourceName,
-                                                                                       this.transactionManager));
+                                                       k -> new JtaDataSource(dataSource, this::activeTransaction));
             this.registerSynchronizationIfTransactionIsActive(returnValue);
         }
         return returnValue;

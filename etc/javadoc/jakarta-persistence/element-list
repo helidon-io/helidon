@@ -1,4 +1,5 @@
-javax.persistence
-javax.persistence.criteria
-javax.persistence.metamodel
-javax.persistence.spi
+module:jakarta.persistence
+jakarta.persistence
+jakarta.persistence.criteria
+jakarta.persistence.metamodel
+jakarta.persistence.spi

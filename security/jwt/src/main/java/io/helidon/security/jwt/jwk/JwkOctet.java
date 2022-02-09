@@ -23,10 +23,11 @@ import java.util.Map;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
-import javax.json.JsonObject;
 
 import io.helidon.security.jwt.JwtException;
 import io.helidon.security.jwt.JwtUtil;
+
+import jakarta.json.JsonObject;
 
 /**
  * Symmetric cipher JSON web key.
@@ -89,6 +90,7 @@ public class JwkOctet extends Jwk {
 
     /**
      * Create an instance from Json object.
+     * Note that the {@code "k"} must be base64 encoded.
      *
      * @param json with definition of this octet web key
      * @return new instance of this class constructed from json
@@ -152,7 +154,7 @@ public class JwkOctet extends Jwk {
     /**
      * Builder for {@link JwkOctet}.
      */
-    public static final class Builder extends Jwk.Builder<Builder> implements io.helidon.common.Builder<JwkOctet> {
+    public static final class Builder extends Jwk.Builder<Builder> implements io.helidon.common.Builder<Builder, JwkOctet> {
         private byte[] key;
 
         private Builder() {
@@ -160,6 +162,7 @@ public class JwkOctet extends Jwk {
 
         /**
          * Update this builder from JWK in json format.
+         * Note that the {@code "k"} must be base64 encoded.
          *
          * @param json JsonObject with the JWK
          * @return updated builder instance, just call {@link #build()} to build the {@link JwkOctet} instance

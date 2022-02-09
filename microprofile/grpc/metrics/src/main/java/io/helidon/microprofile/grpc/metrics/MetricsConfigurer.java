@@ -72,7 +72,6 @@ public class MetricsConfigurer
         private final Function<A, Boolean> annotationAbsoluteFunction;
         private final Function<A, String> annotationDescriptorFunction;
         private final Function<A, String> annotationDisplayNameFunction;
-        private final Function<A, Boolean> annotationReusableFunction;
         private final Function<A, String> annotationUnitsFunction;
 
 
@@ -83,7 +82,6 @@ public class MetricsConfigurer
                 Function<A, Boolean> annotationAbsoluteFunction,
                 Function<A, String> annotationDescriptorFunction,
                 Function<A, String> annotationDisplayNameFunction,
-                Function<A, Boolean> annotationReusableFunction,
                 Function<A, String> annotationUnitsFunction) {
             this.annotationClass = annotationClass;
             this.gRpcMetricsSupplier = gRpcMetricsSupplier;
@@ -91,7 +89,6 @@ public class MetricsConfigurer
             this.annotationAbsoluteFunction = annotationAbsoluteFunction;
             this.annotationDescriptorFunction = annotationDescriptorFunction;
             this.annotationDisplayNameFunction = annotationDisplayNameFunction;
-            this.annotationReusableFunction = annotationReusableFunction;
             this.annotationUnitsFunction = annotationUnitsFunction;
         }
 
@@ -115,10 +112,6 @@ public class MetricsConfigurer
             return annotationDescriptorFunction.apply(am.getAnnotation(annotationClass));
         }
 
-        boolean reusable(AnnotatedMethod am) {
-            return annotationReusableFunction.apply(am.getAnnotation(annotationClass));
-        }
-
         String units(AnnotatedMethod am) {
             return annotationUnitsFunction.apply(am.getAnnotation(annotationClass));
         }
@@ -132,7 +125,6 @@ public class MetricsConfigurer
                     Counted::absolute,
                     Counted::description,
                     Counted::displayName,
-                    Counted::reusable,
                     Counted::unit),
             Metered.class, new MetricAnnotationInfo<Metered>(
                     Metered.class,
@@ -141,7 +133,6 @@ public class MetricsConfigurer
                     Metered::absolute,
                     Metered::description,
                     Metered::displayName,
-                    Metered::reusable,
                     Metered::unit),
             Timed.class, new MetricAnnotationInfo<Timed>(
                     Timed.class,
@@ -150,7 +141,6 @@ public class MetricsConfigurer
                     Timed::absolute,
                     Timed::description,
                     Timed::displayName,
-                    Timed::reusable,
                     Timed::unit),
             ConcurrentGauge.class, new MetricAnnotationInfo<ConcurrentGauge>(
                     ConcurrentGauge.class,
@@ -159,7 +149,6 @@ public class MetricsConfigurer
                     ConcurrentGauge::absolute,
                     ConcurrentGauge::description,
                     ConcurrentGauge::displayName,
-                    ConcurrentGauge::reusable,
                     ConcurrentGauge::unit),
             SimplyTimed.class, new MetricAnnotationInfo<SimplyTimed>(
                     SimplyTimed.class,
@@ -168,7 +157,6 @@ public class MetricsConfigurer
                     SimplyTimed::absolute,
                     SimplyTimed::description,
                     SimplyTimed::displayName,
-                    SimplyTimed::reusable,
                     SimplyTimed::unit)
     );
 
@@ -238,7 +226,6 @@ public class MetricsConfigurer
                     interceptor = interceptor.displayName(candidateDisplayName.trim());
                 }
                 interceptor = interceptor
-                        .reusable(mInfo.reusable(annotatedMethod))
                         .units(mInfo.units(annotatedMethod));
             }
 

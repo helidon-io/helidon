@@ -2,7 +2,7 @@
 
 ## Prerequisites
 * Docker
-* Java 11+
+* Java 17+
 
 ### Test Kafka server
 To make examples easily runnable, 

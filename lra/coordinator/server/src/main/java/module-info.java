@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 /**
@@ -20,7 +19,7 @@
  */
 module io.helidon.lra.coordinator {
     requires java.logging;
-    requires java.json;
+    requires jakarta.json;
     requires microprofile.lra.api;
     requires io.helidon.common.reactive;
     requires io.helidon.webclient;

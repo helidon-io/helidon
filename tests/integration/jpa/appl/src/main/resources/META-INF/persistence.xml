@@ -28,8 +28,8 @@
         <class>io.helidon.tests.integration.jpa.model.Trainer</class>
         <class>io.helidon.tests.integration.jpa.model.Pokemon</class>
         <properties>
-            <property name="javax.persistence.schema-generation.database.action" value="drop-and-create"/>
-            <property name="javax.persistence.schema-generation.create-source" value="metadata"/>
+            <property name="jakarta.persistence.schema-generation.database.action" value="drop-and-create"/>
+            <property name="jakarta.persistence.schema-generation.create-source" value="metadata"/>
             <property name="hibernate.dialect" value="${hibernate.dialect}"/>
             <property name="hibernate.hbm2ddl.auto" value="none"/>
             <property name="hibernate.temp.use_jdbc_metadata_defaults" value="false"/>

@@ -434,7 +434,7 @@ public interface Routing {
     /**
      * A {@link Routing} builder.
      */
-    class Builder implements Rules, io.helidon.common.Builder<Routing> {
+    class Builder implements Rules, io.helidon.common.Builder<Builder, Routing> {
 
         private final RouteListRoutingRules delegate = new RouteListRoutingRules();
         private final List<RequestRouting.ErrorHandlerRecord<?>> errorHandlerRecords = new ArrayList<>();

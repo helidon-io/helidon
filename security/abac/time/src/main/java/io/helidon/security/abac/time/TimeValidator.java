@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -297,7 +297,7 @@ public final class TimeValidator implements AbacValidator<TimeValidator.TimeConf
         /**
          * Fluent API builder for {@link TimeConfig}.
          */
-        public static final class Builder implements io.helidon.common.Builder<TimeConfig> {
+        public static final class Builder implements io.helidon.common.Builder<Builder, TimeConfig> {
             private final List<BetweenTime> betweenTimes = new ArrayList<>();
             private final Set<DayOfWeek> daysOfWeek = EnumSet.noneOf(DayOfWeek.class);
 

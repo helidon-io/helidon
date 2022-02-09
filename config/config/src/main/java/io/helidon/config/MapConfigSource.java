@@ -122,7 +122,7 @@ public class MapConfigSource extends AbstractConfigSource implements ConfigSourc
      * @param <T> type of the implementing builder
      */
     public abstract static class MapBuilder<T extends MapBuilder<T>> extends AbstractConfigSourceBuilder<T, Void>
-            implements io.helidon.common.Builder<MapConfigSource>,
+            implements io.helidon.common.Builder<Builder, MapConfigSource>,
                        PollableSource.Builder<T> {
 
         private Map<?, ?> map;

@@ -178,7 +178,7 @@ public final class OutboundTargetDefinition {
      * Fluent API builder to build {@link OutboundTargetDefinition} instances.
      * Call {@link #build()} to create a new instance.
      */
-    public static final class Builder implements io.helidon.common.Builder<OutboundTargetDefinition> {
+    public static final class Builder implements io.helidon.common.Builder<Builder, OutboundTargetDefinition> {
         private static final Logger LOGGER = Logger.getLogger(Builder.class.getName());
 
         private String keyId;

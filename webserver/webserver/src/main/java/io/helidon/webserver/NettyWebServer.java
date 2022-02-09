@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -103,14 +103,16 @@ class NettyWebServer implements WebServer {
      * @param config a server configuration instance
      * @param routing       a default routing instance
      * @param namedRoutings the named routings of the configured additional server sockets. If there is no
-     *                      named routing for a given named additional server socket configuration, a default
-     *                      routing is used.
+*                      named routing for a given named additional server socket configuration, a default
+     * @param directHandlers handler to customize response for events bypassing routing
      */
     NettyWebServer(ServerConfiguration config,
                    Routing routing,
                    Map<String, Routing> namedRoutings,
                    MessageBodyWriterContext writerContext,
-                   MessageBodyReaderContext readerContext) {
+                   MessageBodyReaderContext readerContext,
+                   DirectHandlers directHandlers) {
+
         Set<Map.Entry<String, SocketConfiguration>> sockets = config.sockets().entrySet();
 
         HelidonFeatures.print(HelidonFlavor.SE,
@@ -150,7 +152,8 @@ class NettyWebServer implements WebServer {
             HttpInitializer childHandler = new HttpInitializer(soConfig,
                                                                sslContext,
                                                                namedRoutings.getOrDefault(name, routing),
-                                                               this);
+                                                               this,
+                                                               directHandlers);
             initializers.put(name, childHandler);
             bootstrap.group(bossGroup, workerGroup)
                      .channelFactory(serverChannelFactory())
@@ -159,6 +162,11 @@ class NettyWebServer implements WebServer {
 
             bootstraps.put(name, bootstrap);
         }
+
+        // Log entry that also initializes NettyInitializer class
+        String maxOrderProp = NettyInitializer.getMaxOrderProperty();
+        String maxOrderValue = NettyInitializer.getMaxOrderValue();
+        LOGGER.fine(() -> maxOrderProp + " set to " + maxOrderValue);
     }
 
     private SslContext createSslContext(WebServerTls webServerTls) {

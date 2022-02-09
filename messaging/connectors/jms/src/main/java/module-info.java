@@ -20,8 +20,9 @@
 module io.helidon.messaging.connectors.jms {
     requires java.logging;
 
-    requires static jakarta.enterprise.cdi.api;
-    requires static jakarta.inject.api;
+    requires static jakarta.cdi;
+    requires static jakarta.inject;
+    requires jakarta.jms.api;
     requires org.reactivestreams;
     requires transitive io.helidon.config;
     requires io.helidon.config.mp;
@@ -32,7 +33,6 @@ module io.helidon.messaging.connectors.jms {
     requires io.helidon.common.configurable;
     requires io.helidon.messaging;
     requires microprofile.config.api;
-    requires javax.jms.api;
     requires java.naming;
 
     exports io.helidon.messaging.connectors.jms;

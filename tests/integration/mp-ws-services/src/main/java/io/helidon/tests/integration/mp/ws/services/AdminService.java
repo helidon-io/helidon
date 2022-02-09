@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,13 +15,13 @@
  */
 package io.helidon.tests.integration.mp.ws.services;
 
-import javax.annotation.Priority;
-import javax.enterprise.context.ApplicationScoped;
-
 import io.helidon.microprofile.server.RoutingName;
 import io.helidon.microprofile.server.RoutingPath;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.Service;
+
+import jakarta.annotation.Priority;
+import jakarta.enterprise.context.ApplicationScoped;
 
 /**
  * Service example.
