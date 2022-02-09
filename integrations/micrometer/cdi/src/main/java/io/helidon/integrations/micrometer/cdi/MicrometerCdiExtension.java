@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -122,7 +122,7 @@ public class MicrometerCdiExtension extends HelidonRestCdiExtension<MicrometerSu
      * @return default routing
      */
     @Override
-    protected Routing.Builder registerService(
+    public Routing.Builder registerService(
             @Observes @Priority(LIBRARY_BEFORE + 10) @Initialized(ApplicationScoped.class) Object adv,
             BeanManager bm, ServerCdiExtension serverCdiExtension) {
         Routing.Builder result = super.registerService(adv, bm, serverCdiExtension);

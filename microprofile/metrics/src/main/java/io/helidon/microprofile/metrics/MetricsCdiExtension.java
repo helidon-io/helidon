@@ -394,7 +394,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
     }
 
     @Override
-    protected void clearAnnotationInfo(@Observes AfterDeploymentValidation adv) {
+    public void clearAnnotationInfo(@Observes AfterDeploymentValidation adv) {
         super.clearAnnotationInfo(adv);
         methodsWithRestRequestMetrics.clear();
     }
@@ -644,7 +644,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
     // register metrics with server after security and when
     // application scope is initialized
     @Override
-    protected Routing.Builder registerService(@Observes @Priority(LIBRARY_BEFORE + 10) @Initialized(ApplicationScoped.class)
+    public Routing.Builder registerService(@Observes @Priority(LIBRARY_BEFORE + 10) @Initialized(ApplicationScoped.class)
                 Object adv,
                 BeanManager bm,
                 ServerCdiExtension server) {
