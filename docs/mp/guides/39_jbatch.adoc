@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021 Oracle and/or its affiliates.
+    Copyright (c) 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -55,7 +55,7 @@ For this example, add the IBM JBatch implementation and the `derby` embedded DB 
 
 In this demonstration you will first create sample input and output records and then the following jobs: `MyItemReader`, `MyItemProcessor` and `MyItemWriter`. Finally you will create `MyBatchlet` to demonstrate all possible usages of JBatch.
 
-=== 1. Create a unit of input information
+==== 1. Create a unit of input information
 
 [source, xml]
 .MyInputRecord
@@ -75,7 +75,7 @@ public class MyInputRecord {
 }
 ----
 
-=== 2. Create a unit of output information
+==== 2. Create a unit of output information
 
 [source, xml]
 .MyOutputRecord
@@ -95,7 +95,7 @@ public class MyOutputRecord {
 }
 ----
 
-=== 3. Create `MyItemReader` to extend `AbstractItemReader`
+==== 3. Create `MyItemReader` to extend `AbstractItemReader`
 
 `MyItemReader` should look like this:
 
@@ -120,7 +120,7 @@ public class MyItemReader extends AbstractItemReader {
 }
 ----
 
-=== 4. Create `MyItemProcessor` to implement `ItemProcessor`
+==== 4. Create `MyItemProcessor` to implement `ItemProcessor`
 
 The `MyItemProcessor` will perform some simple operations:
 
@@ -137,7 +137,7 @@ public class MyItemProcessor implements ItemProcessor {
 }
 ----
 
-=== 5. Create `MyItemWriter` to extend `AbstractItemWriter`
+==== 5. Create `MyItemWriter` to extend `AbstractItemWriter`
 
 The `MyItemWriter` should just print the result:
 
@@ -153,7 +153,7 @@ public class MyItemWriter extends AbstractItemWriter {
 }
 ----
 
-=== 6. Create `MyBatchlet` to extentd `AbstractBatchlet`
+==== 6. Create `MyBatchlet` to extentd `AbstractBatchlet`
 
 `MyBatchlet` simply completes the process:
 
@@ -305,5 +305,5 @@ This indicates that the batch job was called and executed successfully.
 
 This guide demonstrated how to use Helidon with JBatch even though Helidon is not a full EE container.
 
-For additional information, including additional examples, see <need link>. 
+For additional information, including additional examples, see <need link to Helidon repo>. 
 
