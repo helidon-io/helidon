@@ -137,7 +137,7 @@ public final class SecurityFeature implements Feature {
         private boolean prematchingAuthorization = FeatureConfig.DEFAULT_PREMATCHING_ATZ;
         private boolean prematchingAuthentication = FeatureConfig.DEFAULT_PREMATCHING_ATN;
         private boolean useAbortWith = FeatureConfig.DEFAULT_USE_ABORT_WITH;
-        private boolean authenticationRequiredIfPresent = FeatureConfig.DEFAULT_ATN_REQ_IF_PRESENT;
+        private boolean failOnFailureIfOptional = FeatureConfig.DEFAULT_ATN_FAIL_ON_FAILURE_IF_OPT;
 
         private Builder(Security security) {
             this.security = security;
@@ -224,17 +224,17 @@ public final class SecurityFeature implements Feature {
         }
 
         /**
-         * Whether authentication is required to pass if present in the request.
-         * When set to {@code true}, authentication formation is required to pass the validation,
-         * even when security is marked as optional.
+         * Whether to fail in case of authentication failure if authentication is optional.
+         * When set to {@code true}, authentication will fail in case of failure even when it is set
+         * as an optional.
          *
          * Default value is {@code false}.
          *
-         * @param atnReqIfPresent authentication required if present
+         * @param failOnFailureIfOptional fail on authentication failure if optional
          * @return updated builder instance
          */
-        private Builder authenticationRequiredIfPresent(Boolean atnReqIfPresent) {
-            this.authenticationRequiredIfPresent = atnReqIfPresent;
+        private Builder failOnFailureIfOptional(Boolean failOnFailureIfOptional) {
+            this.failOnFailureIfOptional = failOnFailureIfOptional;
             return this;
         }
 
@@ -296,7 +296,7 @@ public final class SecurityFeature implements Feature {
             config.get("prematching-authentication").asBoolean().ifPresent(this::usePrematchingAuthentication);
             config.get("prematching-authorization").asBoolean().ifPresent(this::usePrematchingAuthorization);
             config.get("use-abort-with").asBoolean().ifPresent(this::useAbortWith);
-            config.get("atn-required-if-present").asBoolean().ifPresent(this::authenticationRequiredIfPresent);
+            config.get("fail-on-failure-if-optional").asBoolean().ifPresent(this::failOnFailureIfOptional);
 
             Config myConfig = config.get("defaults");
             myConfig.get("authorize-annotated-only").asBoolean().ifPresent(this::authorizeAnnotatedOnly);
@@ -349,8 +349,8 @@ public final class SecurityFeature implements Feature {
             return useAbortWith;
         }
 
-        boolean authenticationRequiredIfPresent() {
-            return authenticationRequiredIfPresent;
+        boolean failOnFailureIfOptional() {
+            return failOnFailureIfOptional;
         }
     }
 

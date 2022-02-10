@@ -30,7 +30,7 @@ class FeatureConfig {
     static final boolean DEFAULT_PREMATCHING_ATN = false;
     static final boolean DEFAULT_PREMATCHING_ATZ = false;
     static final boolean DEFAULT_USE_ABORT_WITH = true;
-    static final boolean DEFAULT_ATN_REQ_IF_PRESENT = false;
+    static final boolean DEFAULT_ATN_FAIL_ON_FAILURE_IF_OPT = false;
 
     private final boolean debug;
     private final boolean authorizeAnnotatedOnly;
@@ -39,7 +39,7 @@ class FeatureConfig {
     private final List<QueryParamHandler> queryParamHandlers = new LinkedList<>();
     private final boolean authenticateAnnotatedOnly;
     private final boolean useAbortWith;
-    private final boolean authenticationRequiredIfPresent;
+    private final boolean failOnFailureIfOptional;
 
     FeatureConfig() {
         this.debug = DEFAULT_DEBUG;
@@ -48,7 +48,7 @@ class FeatureConfig {
         this.usePrematchingAtz = DEFAULT_PREMATCHING_ATZ;
         this.authenticateAnnotatedOnly = DEFAULT_ATN_ANNOTATED_ONLY;
         this.useAbortWith = DEFAULT_USE_ABORT_WITH;
-        this.authenticationRequiredIfPresent = DEFAULT_ATN_REQ_IF_PRESENT;
+        this.failOnFailureIfOptional = DEFAULT_ATN_FAIL_ON_FAILURE_IF_OPT;
     }
 
     FeatureConfig(SecurityFeature.Builder builder) {
@@ -64,15 +64,15 @@ class FeatureConfig {
 
         this.queryParamHandlers.addAll(builder.queryParamHandlers());
         this.useAbortWith = builder.useAbortWith();
-        this.authenticationRequiredIfPresent = builder.authenticationRequiredIfPresent();
+        this.failOnFailureIfOptional = builder.failOnFailureIfOptional();
     }
 
     boolean shouldAuthorizeAnnotatedOnly() {
         return authorizeAnnotatedOnly;
     }
 
-    boolean authenticationRequiredIfPresent() {
-        return authenticationRequiredIfPresent;
+    boolean failOnFailureIfOptional() {
+        return failOnFailureIfOptional;
     }
 
     boolean shouldAuthenticateAnnotatedOnly() {

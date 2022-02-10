@@ -40,7 +40,7 @@ class SecurityDefinition {
      * True if authentication is needed to execute.
      */
     private boolean requiresAuthentication;
-    private boolean requiredIfPresent;
+    private boolean failOnFailureIfOptional;
     private boolean authnOptional;
     private boolean authorizeByDefault;
     private boolean atzExplicit;
@@ -56,15 +56,15 @@ class SecurityDefinition {
     private SecurityDefinition() {
     }
 
-    SecurityDefinition(boolean authorizeAnnotatedOnly, boolean requiredIfPresent) {
+    SecurityDefinition(boolean authorizeAnnotatedOnly, boolean failOnFailureIfOptional) {
         this.authorizeByDefault = !authorizeAnnotatedOnly;
-        this.requiredIfPresent = requiredIfPresent;
+        this.failOnFailureIfOptional = failOnFailureIfOptional;
     }
 
     SecurityDefinition copyMe() {
         SecurityDefinition result = new SecurityDefinition();
         result.requiresAuthentication = this.requiresAuthentication;
-        result.requiredIfPresent = this.requiredIfPresent;
+        result.failOnFailureIfOptional = this.failOnFailureIfOptional;
         result.authnOptional = this.authnOptional;
         result.authenticator = this.authenticator;
         result.authorizer = this.authorizer;
@@ -132,8 +132,8 @@ class SecurityDefinition {
         return authnOptional;
     }
 
-    boolean requiredIfPresent() {
-        return requiredIfPresent;
+    boolean failOnFailureIfOptional() {
+        return failOnFailureIfOptional;
     }
 
     boolean requiresAuthorization() {

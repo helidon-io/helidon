@@ -215,7 +215,7 @@ abstract class SecurityFilterCommon {
             }
             return;
         case FAILURE:
-            if (methodSecurity.authenticationOptional() && !methodSecurity.requiredIfPresent()) {
+            if (methodSecurity.authenticationOptional() && !methodSecurity.failOnFailureIfOptional()) {
                 logger().finest("Authentication failed, but was optional, so assuming anonymous");
             } else {
                 context.setTraceDescription(response.description().orElse(responseStatus.toString()));

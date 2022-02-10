@@ -329,7 +329,7 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
         SecurityDefinition definition = (
                 (null == parent)
                         ? new SecurityDefinition(featureConfig().shouldAuthorizeAnnotatedOnly(),
-                                                 featureConfig().authenticationRequiredIfPresent())
+                                                 featureConfig().failOnFailureIfOptional())
                         : parent.copyMe());
         definition.add(atn);
         definition.add(atz);
