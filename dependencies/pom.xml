@@ -66,7 +66,7 @@
         <version.lib.hibernate>6.0.0.Beta1</version.lib.hibernate>
         <version.lib.hikaricp>5.0.0</version.lib.hikaricp>
         <version.lib.hystrix>1.5.18</version.lib.hystrix>
-        <version.lib.jackson>2.12.1</version.lib.jackson>
+        <version.lib.jackson>2.13.0</version.lib.jackson>
         <version.lib.jaegertracing>1.6.0</version.lib.jaegertracing>
         <version.lib.jakarta.activation-api>2.0.1</version.lib.jakarta.activation-api>
         <version.lib.jakarta.annotation-api>2.0.0</version.lib.jakarta.annotation-api>
