@@ -1,0 +1,27 @@
+[
+    {
+        "bean-class": "org.hibernate.validator.cdi.ValidationExtension",
+        "ifaces": [
+            "org.hibernate.validator.cdi.ValidationExtension"
+        ]
+    },
+    {
+        "bean-class": "org.hibernate.validator.internal.engine.ValidatorImpl",
+        "ifaces": [
+            "jakarta.validation.Validator",
+            "jakarta.validation.executable.ExecutableValidator"
+        ]
+    },
+    {
+        "bean-class": "org.hibernate.validator.cdi.internal.InjectingConstraintValidatorFactory",
+        "ifaces": [
+            "jakarta.validation.ConstraintValidatorFactory"
+        ]
+    },
+    {
+        "bean-class": "com.sun.el.ExpressionFactoryImpl",
+        "ifaces": [
+            "jakarta.el.ExpressionFactory"
+        ]
+    }
+]
