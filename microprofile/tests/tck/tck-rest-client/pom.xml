@@ -28,11 +28,6 @@
     <artifactId>tck-rest-client</artifactId>
     <name>Helidon Microprofile Tests TCK REST Client</name>
 
-    <properties>
-        <!-- 3.0.0-JAKARTA -->
-        <skipTests>true</skipTests>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>io.helidon.microprofile.tests</groupId>
