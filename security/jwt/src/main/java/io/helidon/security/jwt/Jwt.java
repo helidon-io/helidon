@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1255,6 +1255,12 @@ public class Jwt {
                 if (earliest().isAfter(it)) {
                     collector.fatal(token, "Token no longer valid, expiration: " + it);
                 }
+                token.issueTime().ifPresent(issued -> {
+                    if (issued.isAfter(it)) {
+                        collector.fatal(token, "Token issue date is after its expiration, "
+                                + "issue: " + it + ", expiration: " + it);
+                    }
+                });
             });
             // ensure we fail if mandatory and not present
             super.validate("expirationTime", expirationTime, collector);

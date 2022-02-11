@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -217,7 +217,7 @@ public final class EncryptedJwt {
             rsaCipher.init(Cipher.ENCRYPT_MODE, publicKey);
             return rsaCipher.doFinal(unencryptedKey);
         } catch (Exception e) {
-            throw new JwtException("Exception during aes key decryption occurred.", e);
+            throw new JwtException("Exception during rsa key decryption occurred.", e);
         }
     }
 
@@ -227,7 +227,7 @@ public final class EncryptedJwt {
             rsaCipher.init(Cipher.DECRYPT_MODE, privateKey);
             return rsaCipher.doFinal(encryptedKey);
         } catch (Exception e) {
-            throw new JwtException("Exception during aes key decryption occurred.", e);
+            throw new JwtException("Exception during rsa key decryption occurred.", e);
         }
     }
 
@@ -339,6 +339,8 @@ public final class EncryptedJwt {
             });
         } else if (jwk != null) {
             errors.fatal("Not supported JWK type: " + jwk.keyType() + ", JWK class: " + jwk.getClass().getName());
+        } else {
+            errors.fatal("No JWK found for key id: " + kid);
         }
 
         errors.collect().checkValid();

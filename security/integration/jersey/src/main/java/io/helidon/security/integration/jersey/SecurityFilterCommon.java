@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -215,7 +215,7 @@ abstract class SecurityFilterCommon {
             }
             return;
         case FAILURE:
-            if (methodSecurity.authenticationOptional()) {
+            if (methodSecurity.authenticationOptional() && !methodSecurity.failOnFailureIfOptional()) {
                 logger().finest("Authentication failed, but was optional, so assuming anonymous");
             } else {
                 context.setTraceDescription(response.description().orElse(responseStatus.toString()));

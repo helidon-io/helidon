@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,10 +22,9 @@ import java.lang.reflect.Type;
 import java.util.Optional;
 import java.util.Set;
 
-import jakarta.enterprise.context.Dependent;
 import jakarta.enterprise.context.spi.CreationalContext;
+import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.spi.Bean;
-import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.enterprise.inject.spi.CDI;
 import jakarta.enterprise.inject.spi.InjectionPoint;
 import jakarta.inject.Provider;
@@ -55,15 +54,16 @@ class ClaimProducer implements Bean<Object> {
 
     private final JwtAuthCdiExtension.MpClaimQualifier qualifier;
     private final Type type;
-    private final BeanManager bm;
+    private final Class<? extends Annotation> scope;
 
-    ClaimProducer(JwtAuthCdiExtension.MpClaimQualifier q, Type type, BeanManager bm) {
+    ClaimProducer(JwtAuthCdiExtension.MpClaimQualifier q, Type type, Class<? extends Annotation> scope) {
         this.qualifier = q;
-        this.bm = bm;
+        this.scope = scope;
         Type actualType = type;
         if (type instanceof ParameterizedType) {
             ParameterizedType paramType = (ParameterizedType) type;
-            if (Provider.class.equals(paramType.getRawType())) {
+            if (Provider.class.equals(paramType.getRawType())
+                    || Instance.class.equals(paramType.getRawType())) {
                 actualType = paramType.getActualTypeArguments()[0];
             }
         }
@@ -154,7 +154,7 @@ class ClaimProducer implements Bean<Object> {
 
     @Override
     public Class<? extends Annotation> getScope() {
-        return Dependent.class;
+        return scope;
     }
 
     @Override
