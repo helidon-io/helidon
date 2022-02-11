@@ -1,6 +1,6 @@
 [
   {
-    "name": "jakarta.validation.ConstraintValidatorFactory",
+    "name": "javax.validation.ConstraintValidatorFactory",
     "allDeclaredFields": true,
     "allDeclaredMethods": true,
     "allPublicMethods": true,
@@ -14,7 +14,7 @@
     "allDeclaredConstructors": true
   },
   {
-    "name": "jakarta.el.ExpressionFactory",
+    "name": "javax.el.ExpressionFactory",
     "allDeclaredFields": true,
     "allDeclaredMethods": true,
     "allPublicMethods": true,
