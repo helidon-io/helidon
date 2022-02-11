@@ -1,7 +1,7 @@
 package io.helidon.examples.microprofile.bean.validation;
 
 
-import jakarta.validation.constraints.NotNull;
+import javax.validation.constraints.NotNull;
 
 /**
  * Holder for a greeting, ensuring it is not null.

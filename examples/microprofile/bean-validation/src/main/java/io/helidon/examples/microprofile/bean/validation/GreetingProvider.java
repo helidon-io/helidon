@@ -15,9 +15,9 @@
  */
 package io.helidon.examples.microprofile.bean.validation;
 
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import jakarta.validation.Valid;
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
+import javax.validation.Valid;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 /**
