@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+# Copyright (c) 2018, 2022 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -75,6 +75,10 @@ if [ -z "${__PIPELINE_ENV_INCLUDED__}" ]; then
         MAVEN_OPTS="${MAVEN_OPTS} --add-opens=java.base/java.util=ALL-UNNAMED"
         # Needed for generating site
         MAVEN_OPTS="${MAVEN_OPTS} --add-opens=java.desktop/com.sun.imageio.plugins.png=ALL-UNNAMED"
+        # nexus-staging requires the following --add-opens
+        MAVEN_OPTS="${MAVEN_OPTS} --add-opens java.base/java.lang.reflect=ALL-UNNAMED"
+        MAVEN_OPTS="${MAVEN_OPTS} --add-opens java.base/java.text=ALL-UNNAMED"
+        MAVEN_OPTS="${MAVEN_OPTS} --add-opens java.desktop/java.awt.font=ALL-UNNAMED"
         export MAVEN_OPTS
         export PATH="/tools/apache-maven-3.6.3/bin:${JAVA_HOME}/bin:/tools/node-v12/bin:${PATH}"
         if [ -n "${GITHUB_SSH_KEY}" ] ; then
