@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,17 +20,22 @@ import java.lang.reflect.Method;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletionStage;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
 import io.helidon.common.Reflected;
+import io.helidon.common.context.Contexts;
 import io.helidon.common.reactive.Single;
+import io.helidon.lra.coordinator.client.CoordinatorClient;
 import io.helidon.lra.coordinator.client.Participant;
+import io.helidon.lra.coordinator.client.PropagatedHeaders;
 
 import jakarta.enterprise.inject.spi.Bean;
 import jakarta.enterprise.inject.spi.BeanManager;
@@ -48,6 +53,7 @@ class ParticipantService {
     private final BeanManager beanManager;
     private final String nonJaxRsContextPath;
     private final Optional<URI> participantUri;
+    private final Set<String> propagationPrefixes;
 
     private final Map<Class<?>, Participant> participants = new HashMap<>();
 
@@ -56,11 +62,16 @@ class ParticipantService {
                        BeanManager beanManager,
                        @ConfigProperty(name = NonJaxRsResource.CONFIG_CONTEXT_PATH_KEY,
                                defaultValue = NonJaxRsResource.CONTEXT_PATH_DEFAULT) String nonJaxRsContextPath,
-                       @ConfigProperty(name = "mp.lra.participant.url") Optional<URI> participantUri) {
+                       @ConfigProperty(name = "mp.lra.participant.url") Optional<URI> participantUri,
+                       @ConfigProperty(
+                               name = CoordinatorClient.CONF_KEY_COORDINATOR_HEADERS_PROPAGATION_PREFIX,
+                               defaultValue = ""
+                       ) Set<String> propagationPrefixes) {
         this.lraCdiExtension = lraCdiExtension;
         this.beanManager = beanManager;
         this.nonJaxRsContextPath = nonJaxRsContextPath;
         this.participantUri = participantUri;
+        this.propagationPrefixes = propagationPrefixes;
     }
 
     Participant participant(URI defaultBaseUri, Class<?> clazz) {
@@ -69,10 +80,21 @@ class ParticipantService {
                 new ParticipantImpl(participantUri.orElse(defaultBaseUri), nonJaxRsContextPath, c));
     }
 
+    PropagatedHeaders prepareCustomHeaderPropagation(Map<String, List<String>> headers) {
+        PropagatedHeaders propagatedHeaders = PropagatedHeaders.create(propagationPrefixes);
+        // Scan for compatible headers
+        propagatedHeaders.scan(headers);
+        return propagatedHeaders;
+    }
+
     /**
      * Participant ID is expected to be classFqdn#methodName.
      */
-    Single<Optional<?>> invoke(String classFqdn, String methodName, URI lraId, Object secondParam) {
+    Single<Optional<?>> invoke(String classFqdn,
+                               String methodName,
+                               URI lraId,
+                               Object secondParam,
+                               PropagatedHeaders propagatedHeaders) {
         Class<?> clazz;
         try {
             clazz = Class.forName(classFqdn);
@@ -90,6 +112,8 @@ class ParticipantService {
                             + " with participant method: " + classFqdn + "#" + methodName));
 
             int paramCount = method.getParameters().length;
+
+            setHeaderPropagationContext(propagatedHeaders);
 
             Object result = method.invoke(LraCdiExtension.lookup(bean, beanManager),
                     Stream.of(lraId, secondParam).limit(paramCount).toArray());
@@ -111,6 +135,12 @@ class ParticipantService {
                     + " LRA id: " + lraId);
             return Single.error(t);
         }
+    }
+
+    private void setHeaderPropagationContext(PropagatedHeaders propagatedHeaders) {
+        String key = PropagatedHeaders.class.getName();
+        Contexts.context()
+                .ifPresent(context -> context.register(key, propagatedHeaders));
     }
 
     private Single<Optional<?>> resultToSingle(Object result) {

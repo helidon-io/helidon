@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.microprofile.lra;
 
 import io.helidon.common.context.Contexts;
+import io.helidon.lra.coordinator.client.PropagatedHeaders;
 
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerResponseContext;
@@ -27,9 +28,11 @@ import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_CONTEXT
 
 class NonLraAnnotationHandler implements AnnotationHandler {
     private final Boolean propagate;
+    private final ParticipantService participantService;
 
-    NonLraAnnotationHandler(Boolean propagate) {
+    NonLraAnnotationHandler(Boolean propagate, ParticipantService participantService) {
         this.propagate = propagate;
+        this.participantService = participantService;
     }
 
     @Override
@@ -46,6 +49,13 @@ class NonLraAnnotationHandler implements AnnotationHandler {
         }
         // clear lra header
         requestContext.getHeaders().remove(LRA_HTTP_CONTEXT_HEADER);
+
+        // Custom headers propagation
+        PropagatedHeaders propagatedHeaders = participantService.prepareCustomHeaderPropagation(requestContext.getHeaders());
+        String key = PropagatedHeaders.class.getName();
+        requestContext.setProperty(key, propagatedHeaders);
+        Contexts.context()
+                .ifPresent(context -> context.register(key, propagatedHeaders));
     }
 
     @Override

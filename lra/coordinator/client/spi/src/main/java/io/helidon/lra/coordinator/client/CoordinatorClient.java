@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,11 @@ import org.eclipse.microprofile.lra.annotation.LRAStatus;
  * Abstraction over specific coordinator.
  */
 public interface CoordinatorClient {
+
+    /**
+     * Prefix of headers which should be propagated to the coordinator.
+     */
+    String CONF_KEY_COORDINATOR_HEADERS_PROPAGATION_PREFIX = "mp.lra.coordinator.headers-propagation.prefix";
 
     /**
      * URL of the coordinator to be used for orchestrating Long Running Actions.
@@ -63,8 +68,22 @@ public interface CoordinatorClient {
      * @param clientID id specifying originating method/resource
      * @param timeout  after what time should be LRA cancelled automatically
      * @return id of the new LRA
+     * @deprecated Use {@link io.helidon.lra.coordinator.client.CoordinatorClient#start(String, PropagatedHeaders, long)} instead
      */
-    Single<URI> start(String clientID, long timeout);
+    @Deprecated
+    default Single<URI> start(String clientID, long timeout) {
+        return start(clientID, PropagatedHeaders.noop(), timeout);
+    }
+
+    /**
+     * Ask coordinator to start new LRA and return its id.
+     *
+     * @param clientID id specifying originating method/resource
+     * @param headers  headers to be propagated to the coordinator
+     * @param timeout  after what time should be LRA cancelled automatically
+     * @return id of the new LRA
+     */
+    Single<URI> start(String clientID, PropagatedHeaders headers, long timeout);
 
     /**
      * Ask coordinator to start new LRA and return its id.
@@ -73,8 +92,24 @@ public interface CoordinatorClient {
      * @param clientID  id specifying originating method/resource
      * @param timeout   after what time should be LRA cancelled automatically
      * @return id of the new LRA
+     * @deprecated Use
+     * {@link io.helidon.lra.coordinator.client.CoordinatorClient#start(java.net.URI, String, PropagatedHeaders, long)} instead
      */
-    Single<URI> start(URI parentLRA, String clientID, long timeout);
+    @Deprecated
+    default Single<URI> start(URI parentLRA, String clientID, long timeout) {
+        return start(parentLRA, clientID, PropagatedHeaders.noop(), timeout);
+    }
+
+    /**
+     * Ask coordinator to start new LRA and return its id.
+     *
+     * @param parentLRA in case new LRA should be a child of already existing one
+     * @param clientID  id specifying originating method/resource
+     * @param headers   headers to be propagated to the coordinator
+     * @param timeout   after what time should be LRA cancelled automatically
+     * @return id of the new LRA
+     */
+    Single<URI> start(URI parentLRA, String clientID, PropagatedHeaders headers, long timeout);
 
     /**
      * Join existing LRA with participant.
@@ -83,24 +118,68 @@ public interface CoordinatorClient {
      * @param timeLimit   time limit in milliseconds after which should be LRA cancelled, 0 means never
      * @param participant participant metadata with URLs to be called when complete/compensate ...
      * @return recovery URI if supported by coordinator or empty
+     * @deprecated Use
+     * {@link io.helidon.lra.coordinator.client.CoordinatorClient#join(java.net.URI, PropagatedHeaders, long, Participant)} instead
      */
-    Single<Optional<URI>> join(URI lraId, long timeLimit, Participant participant);
+    @Deprecated
+    default Single<Optional<URI>> join(URI lraId, long timeLimit, Participant participant) {
+        return join(lraId, PropagatedHeaders.noop(), timeLimit, participant);
+    }
+
+    /**
+     * Join existing LRA with participant.
+     *
+     * @param lraId       id of existing LRA
+     * @param headers     headers to be propagated to the coordinator
+     * @param timeLimit   time limit in milliseconds after which should be LRA cancelled, 0 means never
+     * @param participant participant metadata with URLs to be called when complete/compensate ...
+     * @return recovery URI if supported by coordinator or empty
+     */
+    Single<Optional<URI>> join(URI lraId, PropagatedHeaders headers, long timeLimit, Participant participant);
 
     /**
      * Cancel LRA if its active. Should cause coordinator to compensate its participants.
      *
      * @param lraId id of the LRA to be cancelled
      * @return single future of the cancel call
+     * @deprecated Use
+     * {@link io.helidon.lra.coordinator.client.CoordinatorClient#cancel(java.net.URI, PropagatedHeaders)} instead
      */
-    Single<Void> cancel(URI lraId);
+    @Deprecated
+    default Single<Void> cancel(URI lraId) {
+        return cancel(lraId, PropagatedHeaders.noop());
+    }
+
+    /**
+     * Cancel LRA if its active. Should cause coordinator to compensate its participants.
+     *
+     * @param lraId   id of the LRA to be cancelled
+     * @param headers headers to be propagated to the coordinator
+     * @return single future of the cancel call
+     */
+    Single<Void> cancel(URI lraId, PropagatedHeaders headers);
 
     /**
      * Close LRA if its active. Should cause coordinator to complete its participants.
      *
      * @param lraId id of the LRA to be closed
      * @return single future of the cancel call
+     * @deprecated Use
+     * {@link io.helidon.lra.coordinator.client.CoordinatorClient#close(java.net.URI, PropagatedHeaders)} instead
      */
-    Single<Void> close(URI lraId);
+    @Deprecated
+    default Single<Void> close(URI lraId) {
+        return close(lraId, PropagatedHeaders.noop());
+    }
+
+    /**
+     * Close LRA if its active. Should cause coordinator to complete its participants.
+     *
+     * @param lraId   id of the LRA to be closed
+     * @param headers headers to be propagated to the coordinator
+     * @return single future of the cancel call
+     */
+    Single<Void> close(URI lraId, PropagatedHeaders headers);
 
     /**
      * Leave LRA. Supplied participant won't be part of specified LRA any more,
@@ -109,14 +188,44 @@ public interface CoordinatorClient {
      * @param lraId       id of the LRA that should be left by supplied participant
      * @param participant participant which will leave
      * @return single future of the cancel call
+     * @deprecated Use
+     * {@link io.helidon.lra.coordinator.client.CoordinatorClient#leave(java.net.URI, PropagatedHeaders, Participant)} instead
      */
-    Single<Void> leave(URI lraId, Participant participant);
+    @Deprecated
+    default Single<Void> leave(URI lraId, Participant participant) {
+        return leave(lraId, PropagatedHeaders.noop(), participant);
+    }
+
+    /**
+     * Leave LRA. Supplied participant won't be part of specified LRA any more,
+     * no compensation or completion will be executed on it.
+     *
+     * @param lraId       id of the LRA that should be left by supplied participant
+     * @param headers     headers to be propagated to the coordinator
+     * @param participant participant which will leave
+     * @return single future of the cancel call
+     */
+    Single<Void> leave(URI lraId, PropagatedHeaders headers, Participant participant);
 
     /**
      * Return status of specified LRA.
      *
      * @param lraId id of the queried LRA
      * @return {@link org.eclipse.microprofile.lra.annotation.LRAStatus} of the queried LRA
+     * @deprecated Use
+     * {@link io.helidon.lra.coordinator.client.CoordinatorClient#status(java.net.URI, PropagatedHeaders)} instead
      */
-    Single<LRAStatus> status(URI lraId);
+    @Deprecated
+    default Single<LRAStatus> status(URI lraId) {
+        return status(lraId, PropagatedHeaders.noop());
+    }
+
+    /**
+     * Return status of specified LRA.
+     *
+     * @param lraId   id of the queried LRA
+     * @param headers headers to be propagated to the coordinator
+     * @return {@link org.eclipse.microprofile.lra.annotation.LRAStatus} of the queried LRA
+     */
+    Single<LRAStatus> status(URI lraId, PropagatedHeaders headers);
 }
