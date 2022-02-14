@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-    Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -26,11 +26,6 @@
     <artifactId>tck-jwt-auth</artifactId>
     <name>Helidon Microprofile Tests TCK JWT-Auth</name>
 
-    <properties>
-        <!-- 3.0.0-JAKARTA -->
-        <skipTests>true</skipTests>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>org.eclipse.microprofile.jwt</groupId>
@@ -42,6 +37,14 @@
             <artifactId>microprofile-jwt-auth-tck</artifactId>
             <type>test-jar</type>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.bundles</groupId>
+            <artifactId>helidon-microprofile-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.jwt</groupId>
+            <artifactId>helidon-microprofile-jwt-auth</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.tests</groupId>

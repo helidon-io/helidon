@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,15 @@
 
 package io.helidon.config.yaml.mp;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -34,6 +36,7 @@ import java.util.Objects;
 import java.util.Set;
 
 import io.helidon.config.ConfigException;
+import io.helidon.config.MutabilitySupport;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.yaml.snakeyaml.Yaml;
@@ -92,10 +95,44 @@ public class YamlMpConfigSource implements ConfigSource {
      * @see #create(java.net.URL)
      */
     public static ConfigSource create(Path path) {
-        try {
-            return create(path.toUri().toURL());
-        } catch (MalformedURLException e) {
+        String name = path.toAbsolutePath().toString();
+
+        try (BufferedReader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
+            Map yamlMap = toMap(reader);
+            // this is a mutable HashMap that we can use
+            Map<String, String> props = fromMap(yamlMap == null ? Map.of() : yamlMap);
+
+            if ("true".equals(props.get("helidon.config.polling.enabled"))) {
+                String durationString = props.get("helidon.config.polling.duration");
+                Duration duration;
+                if (durationString == null) {
+                    duration = Duration.ofSeconds(10);
+                } else {
+                    duration = Duration.parse(durationString);
+                }
+                MutabilitySupport.poll(path, duration, changed -> update(path, props), changed -> props.clear());
+            } else if ("true".equals(props.get("helidon.config.watcher.enabled"))) {
+                MutabilitySupport.watch(path, changed -> update(path, props), changed -> props.clear());
+            }
+
+
+            return new YamlMpConfigSource(name, props);
+        } catch (IOException e) {
             throw new ConfigException("Failed to load YAML config source from path: " + path.toAbsolutePath(), e);
+        }
+    }
+
+    private static void update(Path path, Map<String, String> originalProps) {
+        try (BufferedReader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
+            Map yamlMap = toMap(reader);
+            // this is a mutable HashMap that we can use
+            Map<String, String> props = fromMap(yamlMap == null ? Map.of() : yamlMap);
+
+            // first delete those that no longer exist
+            originalProps.keySet().removeIf(it -> !props.containsKey(it));
+            originalProps.putAll(props);
+        } catch (IOException e) {
+            throw new ConfigException("Failed to load updated YAML config source from path: " + path.toAbsolutePath(), e);
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,29 @@
 
 package io.helidon.microprofile.lra;
 
+import io.helidon.common.context.Contexts;
+import io.helidon.lra.coordinator.client.PropagatedHeaders;
+
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerResponseContext;
 import jakarta.ws.rs.container.ResourceInfo;
 
 class NoopAnnotationHandler implements AnnotationHandler {
 
+    private final ParticipantService participantService;
+
+    NoopAnnotationHandler(ParticipantService participantService) {
+        this.participantService = participantService;
+    }
+
     @Override
     public void handleJaxRsBefore(ContainerRequestContext requestContext, ResourceInfo resourceInfo) {
+        // Custom headers propagation
+        PropagatedHeaders propagatedHeaders = participantService.prepareCustomHeaderPropagation(requestContext.getHeaders());
+        String key = PropagatedHeaders.class.getName();
+        requestContext.setProperty(key, propagatedHeaders);
+        Contexts.context()
+                .ifPresent(context -> context.register(key, propagatedHeaders));
     }
 
     @Override

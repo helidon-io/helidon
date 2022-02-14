@@ -1,7 +1,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -117,6 +117,25 @@ service-1: "${uri}/service1"
 service-2: "${uri}/service2"
 ----
 
+* *Change support* +
+Polling (or change watching) for file based config sources (not classpath based).
+
+To enable polling for a config source created using meta configuration (see below), or using
+`MpConfigSources.create(Path)`, or `YamlMpConfigSource.create(Path)`, use the following properties:
+
+[cols="3,5"]
+|===
+|Property |Description
+
+|`helidon.config.polling.enabled`   |To enable polling file for changes, uses timestamp to identify a change.
+
+|`helidon.config.polling.duration`   |Polling period duration, defaults to 10 seconds ('PT10S`) +
+See https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/time/Duration.html#parse(java.lang.CharSequence)
+
+|`helidon.config.watcher.enabled`  |To enable watching file for changes using the Java `WatchService`. +
+See https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/nio/file/WatchService.html
+
+|===
 
 * *Encryption* +
 You can encrypt secrets using a master password and store them in a configuration file.

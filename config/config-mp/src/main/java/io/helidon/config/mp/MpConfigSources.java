@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -34,6 +35,7 @@ import java.util.Set;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
+import io.helidon.config.MutabilitySupport;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
@@ -158,6 +160,19 @@ public final class MpConfigSources {
             throw new ConfigException("Failed to read properties from " + path.toAbsolutePath());
         }
 
+        if ("true".equals(props.getProperty("helidon.config.polling.enabled"))) {
+            String durationString = props.getProperty("helidon.config.polling.duration");
+            Duration duration;
+            if (durationString == null) {
+                duration = Duration.ofSeconds(10);
+            } else {
+                duration = Duration.parse(durationString);
+            }
+            MutabilitySupport.poll(path, duration, changed -> update(path, props), changed -> props.clear());
+        } else if ("true".equals(props.getProperty("helidon.config.watcher.enabled"))) {
+            MutabilitySupport.watch(path, changed -> update(path, props), changed -> props.clear());
+        }
+
         return create(name, props);
     }
 
@@ -184,12 +199,10 @@ public final class MpConfigSources {
      * @param properties serving as configuration data
      * @return a new config source
      */
+    @SuppressWarnings("rawtypes")
     public static ConfigSource create(String name, Properties properties) {
-        Map<String, String> result = new HashMap<>();
-        for (String key : properties.stringPropertyNames()) {
-            result.put(key, properties.getProperty(key));
-        }
-        return new MpMapSource(name, result);
+        Map map = properties;
+        return new MpMapSource(name, map);
     }
 
     /**
@@ -410,5 +423,18 @@ public final class MpConfigSources {
             return resource.substring(0, i) + "-" + profile + resource.substring(i);
         }
         return resource + "-" + profile;
+    }
+
+    private static void update(Path path, Properties originalProperties) {
+        Properties props = new Properties();
+
+        try (InputStream in = Files.newInputStream(path)) {
+            props.load(in);
+        } catch (IOException e) {
+            throw new ConfigException("Failed to read properties from " + path.toAbsolutePath());
+        }
+
+        originalProperties.keySet().removeIf(it -> !props.containsKey(it));
+        originalProperties.putAll(props);
     }
 }

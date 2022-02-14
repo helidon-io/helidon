@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@ class SecurityDefinition {
      * True if authentication is needed to execute.
      */
     private boolean requiresAuthentication;
+    private boolean failOnFailureIfOptional;
     private boolean authnOptional;
     private boolean authorizeByDefault;
     private boolean atzExplicit;
@@ -55,13 +56,15 @@ class SecurityDefinition {
     private SecurityDefinition() {
     }
 
-    SecurityDefinition(boolean authorizeAnnotatedOnly) {
+    SecurityDefinition(boolean authorizeAnnotatedOnly, boolean failOnFailureIfOptional) {
         this.authorizeByDefault = !authorizeAnnotatedOnly;
+        this.failOnFailureIfOptional = failOnFailureIfOptional;
     }
 
     SecurityDefinition copyMe() {
         SecurityDefinition result = new SecurityDefinition();
         result.requiresAuthentication = this.requiresAuthentication;
+        result.failOnFailureIfOptional = this.failOnFailureIfOptional;
         result.authnOptional = this.authnOptional;
         result.authenticator = this.authenticator;
         result.authorizer = this.authorizer;
@@ -127,6 +130,10 @@ class SecurityDefinition {
 
     boolean authenticationOptional() {
         return authnOptional;
+    }
+
+    boolean failOnFailureIfOptional() {
+        return failOnFailureIfOptional;
     }
 
     boolean requiresAuthorization() {

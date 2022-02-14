@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.security.jwt;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -69,7 +70,7 @@ public class JwtHeaders extends JwtClaims {
         this.subject = Optional.ofNullable(builder.subject);
         this.issuer = Optional.ofNullable(builder.issuer);
         this.audience = Optional.ofNullable(builder.audience);
-        this.headerClaims = Map.copyOf(builder.claims);
+        this.headerClaims = new LinkedHashMap<>(builder.claims);
     }
 
     /**
@@ -259,12 +260,12 @@ public class JwtHeaders extends JwtClaims {
             KNOWN_HEADER_CLAIMS = Map.copyOf(map);
         }
 
-        private final Map<String, JsonValue> claims = new HashMap<>();
+        private final Map<String, JsonValue> claims = new LinkedHashMap<>();
 
         private String type;
         private String algorithm;
         private String encryption;
-        private String contentType = "JWT";
+        private String contentType;
         private String keyId;
         private String subject;
         private String issuer;

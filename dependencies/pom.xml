@@ -66,7 +66,7 @@
         <version.lib.hibernate>6.0.0.Beta1</version.lib.hibernate>
         <version.lib.hikaricp>5.0.0</version.lib.hikaricp>
         <version.lib.hystrix>1.5.18</version.lib.hystrix>
-        <version.lib.jackson>2.12.1</version.lib.jackson>
+        <version.lib.jackson>2.13.1</version.lib.jackson>
         <version.lib.jaegertracing>1.6.0</version.lib.jaegertracing>
         <version.lib.jakarta.activation-api>2.0.1</version.lib.jakarta.activation-api>
         <version.lib.jakarta.annotation-api>2.0.0</version.lib.jakarta.annotation-api>
@@ -92,14 +92,14 @@
         <!-- Force upgrade version used by maven-jaxb2-plugin. Needed to support Java 16 -->
         <version.lib.jaxb-runtime>3.0.2</version.lib.jaxb-runtime>
         <version.lib.jedis>3.6.3</version.lib.jedis>
-        <version.lib.jersey>3.0.3</version.lib.jersey>
+        <version.lib.jersey>3.0.4</version.lib.jersey>
         <version.lib.jgit>5.11.1.202105131744-r</version.lib.jgit>
         <version.lib.jsonp-impl>2.0.1</version.lib.jsonp-impl>
         <version.lib.junit4>4.13.1</version.lib.junit4>
         <version.lib.junit>5.7.0</version.lib.junit>
         <version.lib.kafka>2.8.1</version.lib.kafka>
         <version.lib.log4j>2.17.1</version.lib.log4j>
-        <version.lib.logback>1.2.3</version.lib.logback>
+        <version.lib.logback>1.2.10</version.lib.logback>
         <version.lib.mariadb-java-client>2.6.2</version.lib.mariadb-java-client>
         <version.lib.maven-wagon>2.10</version.lib.maven-wagon>
         <version.lib.micrometer>1.6.6</version.lib.micrometer>

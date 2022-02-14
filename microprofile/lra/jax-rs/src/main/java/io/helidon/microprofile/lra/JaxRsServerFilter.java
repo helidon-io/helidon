@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,6 @@ import java.lang.reflect.Method;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.lra.coordinator.client.CoordinatorClient;
-
 import jakarta.inject.Inject;
 import jakarta.ws.rs.ConstrainedTo;
 import jakarta.ws.rs.RuntimeType;
@@ -40,9 +38,6 @@ class JaxRsServerFilter implements ContainerRequestFilter, ContainerResponseFilt
 
     @Context
     private ResourceInfo resourceInfo;
-
-    @Inject
-    private CoordinatorClient coordinatorClient;
 
     @Inject
     private HandlerService handlerService;

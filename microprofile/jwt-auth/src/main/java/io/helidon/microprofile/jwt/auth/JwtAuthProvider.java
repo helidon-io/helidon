@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -279,7 +279,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
                         }
                         // validate user principal is present
                         Jwt.addUserPrincipalValidator(validators);
-                        validators.add(Jwt.ExpirationValidator.create(false));
+                        validators.add(Jwt.ExpirationValidator.create(true));
 
                         Errors validate = jwt.validate(validators);
 
@@ -291,13 +291,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
                     } else {
                         return AuthenticationResponse.failed(errors.toString());
                     }
-                }).orElseGet(() -> {
-                    if (optional) {
-                        return AuthenticationResponse.abstain();
-                    } else {
-                        return AuthenticationResponse.failed("Header not available or in a wrong format");
-                    }
-                });
+                }).orElseGet(AuthenticationResponse::abstain);
     }
 
     private Optional<String> findCookie(Map<String, List<String>> headers) {

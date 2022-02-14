@@ -50,8 +50,8 @@ class HandlerService {
             Map.of(
                     LRA.class.getName(), LraAnnotationHandler::new,
                     Leave.class.getName(), (a, c, i, p, t) -> new LeaveAnnotationHandler(c, p),
-                    Status.class.getName(), (a, c, i, p, t) -> new NoopAnnotationHandler(),
-                    AfterLRA.class.getName(), (a, c, i, p, t) -> new NoopAnnotationHandler()
+                    Status.class.getName(), (a, c, i, p, t) -> new NoopAnnotationHandler(p),
+                    AfterLRA.class.getName(), (a, c, i, p, t) -> new NoopAnnotationHandler(p)
             );
 
     private static final Set<String> STAND_ALONE_ANNOTATIONS = Set.of(
@@ -93,7 +93,7 @@ class HandlerService {
     private List<AnnotationHandler> createHandlers(Method m) {
         Set<AnnotationInstance> lraAnnotations = inspectionService.lookUpLraAnnotations(m);
         if (lraAnnotations.isEmpty()) {
-            return List.of(new NonLraAnnotationHandler(propagate));
+            return List.of(new NonLraAnnotationHandler(propagate, participantService));
         }
 
         if (lraAnnotations.stream()
@@ -106,7 +106,7 @@ class HandlerService {
                 .map(a -> a.name().toString())
                 .anyMatch(STAND_ALONE_ANNOTATIONS::contains)) {
             // Status beats all others
-            return List.of(new NoopAnnotationHandler());
+            return List.of(new NoopAnnotationHandler(participantService));
         }
 
         return lraAnnotations.stream().map(lraAnnotation -> {

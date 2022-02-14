@@ -28,6 +28,7 @@ import io.helidon.common.reactive.Single;
 import io.helidon.lra.coordinator.client.CoordinatorClient;
 import io.helidon.lra.coordinator.client.CoordinatorConnectionException;
 import io.helidon.lra.coordinator.client.Participant;
+import io.helidon.lra.coordinator.client.PropagatedHeaders;
 
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.container.ContainerRequestContext;
@@ -64,10 +65,13 @@ class LraAnnotationHandler implements AnnotationHandler {
     public void handleJaxRsBefore(ContainerRequestContext reqCtx, ResourceInfo resourceInfo) {
         Method method = resourceInfo.getResourceMethod();
         URI baseUri = reqCtx.getUriInfo().getBaseUri();
+        PropagatedHeaders propagatedHeaders = participantService.prepareCustomHeaderPropagation(reqCtx.getHeaders());
         Participant participant = participantService.participant(baseUri, resourceInfo.getResourceClass());
         Optional<URI> existingLraId = getLraContext(reqCtx);
         long timeLimit = Duration.of(annotation.timeLimit(), annotation.timeUnit()).toMillis();
         String clientId = method.getDeclaringClass().getName() + "#" + method.getName();
+
+
 
         final URI lraId;
         try {
@@ -76,11 +80,11 @@ class LraAnnotationHandler implements AnnotationHandler {
                     if (existingLraId.isPresent()) {
                         URI parentLraId = existingLraId.get();
                         setParentContext(reqCtx, parentLraId);
-                        lraId = start(parentLraId, clientId, timeLimit);
+                        lraId = start(parentLraId, clientId, propagatedHeaders, timeLimit);
                     } else {
-                        lraId = start(clientId, timeLimit);
+                        lraId = start(clientId, propagatedHeaders, timeLimit);
                     }
-                    join(reqCtx, lraId, timeLimit, participant);
+                    join(reqCtx, lraId, propagatedHeaders, timeLimit, participant);
                     setLraContext(reqCtx, lraId);
                     break;
                 case NEVER:
@@ -97,7 +101,7 @@ class LraAnnotationHandler implements AnnotationHandler {
                 case SUPPORTS:
                     if (existingLraId.isPresent()) {
                         lraId = existingLraId.get();
-                        join(reqCtx, lraId, timeLimit, participant);
+                        join(reqCtx, lraId, propagatedHeaders, timeLimit, participant);
                         setLraContext(reqCtx, lraId);
                     }
                     break;
@@ -108,18 +112,18 @@ class LraAnnotationHandler implements AnnotationHandler {
                         reqCtx.abortWith(Response.status(Response.Status.PRECONDITION_FAILED).build());
                         return;
                     }
-                    // existing lra, fall thru to required
+                    // existing lra, fall through to required
                 case REQUIRED:
                     if (existingLraId.isPresent()) {
                         lraId = existingLraId.get();
-                        join(reqCtx, lraId, timeLimit, participant);
+                        join(reqCtx, lraId, propagatedHeaders, timeLimit, participant);
                         setLraContext(reqCtx, lraId);
                         break;
                     }
-                    // non existing lra, fall thru to requires_new
+                    // non-existing lra, fall through to requires_new
                 case REQUIRES_NEW:
-                    lraId = coordinatorClient.start(clientId, timeLimit).await();
-                    join(reqCtx, lraId, timeLimit, participant);
+                    lraId = start(clientId, propagatedHeaders, timeLimit);
+                    join(reqCtx, lraId, propagatedHeaders, timeLimit, participant);
                     setLraContext(reqCtx, lraId);
                     break;
                 default:
@@ -129,6 +133,8 @@ class LraAnnotationHandler implements AnnotationHandler {
             }
         } catch (CoordinatorConnectionException e) {
             throw new WebApplicationException(e.getMessage(), e.getCause(), e.status());
+        } finally {
+            setHeaderPropagationContext(reqCtx, propagatedHeaders);
         }
     }
 
@@ -142,6 +148,8 @@ class LraAnnotationHandler implements AnnotationHandler {
                         .flatMap(c -> c.get(LRA_HTTP_CONTEXT_HEADER, URI.class))
                 );
 
+        PropagatedHeaders propagatedHeaders = participantService.prepareCustomHeaderPropagation(reqCtx.getHeaders());
+
         Response.Status resStatus = resCtx.getStatusInfo().toEnum();
         Response.Status.Family resFamily = resCtx.getStatusInfo().getFamily();
         boolean end = annotation.end();
@@ -150,9 +158,9 @@ class LraAnnotationHandler implements AnnotationHandler {
 
         lraId.ifPresent(id -> {
             if (cancel) {
-                cancel(id);
+                cancel(id, propagatedHeaders);
             } else if (end) {
-                close(id);
+                close(id, propagatedHeaders);
             }
             resCtx.getHeaders().putSingle(LRA_HTTP_CONTEXT_HEADER, id);
         });
@@ -162,25 +170,36 @@ class LraAnnotationHandler implements AnnotationHandler {
                 .ifPresent(suppressedLra -> resCtx.getHeaders().putSingle(LRA_HTTP_CONTEXT_HEADER, suppressedLra));
     }
 
-    private URI start(String clientId, long timeOut) {
-        return awaitCoordinator(coordinatorClient.start(clientId, timeOut));
+    private URI start(String clientId, PropagatedHeaders headers, long timeOut) {
+        return awaitCoordinator(coordinatorClient.start(clientId, headers, timeOut));
     }
 
-    private URI start(URI parentLraId, String clientId, long timeOut) {
-        return awaitCoordinator(coordinatorClient.start(parentLraId, clientId, timeOut));
+    private URI start(URI parentLraId, String clientId, PropagatedHeaders headers, long timeOut) {
+        return awaitCoordinator(coordinatorClient.start(parentLraId, clientId, headers, timeOut));
     }
 
-    private void join(ContainerRequestContext reqCtx, URI lraId, long timeLimit, Participant participant) {
-        awaitCoordinator(coordinatorClient.join(lraId, timeLimit, participant))
+    private void join(ContainerRequestContext reqCtx,
+                      URI lraId,
+                      PropagatedHeaders propagatedHeaders,
+                      long timeLimit,
+                      Participant participant) {
+        awaitCoordinator(coordinatorClient.join(lraId, propagatedHeaders, timeLimit, participant))
                 .ifPresent(uri -> reqCtx.getHeaders().add(LRA_HTTP_RECOVERY_HEADER, uri.toASCIIString()));
     }
 
-    private void close(URI lraId) {
-        awaitCoordinator(coordinatorClient.close(lraId));
+    private void close(URI lraId, PropagatedHeaders headers) {
+        awaitCoordinator(coordinatorClient.close(lraId, headers));
     }
 
-    private void cancel(URI lraId) {
-        awaitCoordinator(coordinatorClient.cancel(lraId));
+    private void cancel(URI lraId, PropagatedHeaders headers) {
+        awaitCoordinator(coordinatorClient.cancel(lraId, headers));
+    }
+
+    private void setHeaderPropagationContext(ContainerRequestContext reqCtx, PropagatedHeaders propagatedHeaders) {
+        String key = PropagatedHeaders.class.getName();
+        reqCtx.setProperty(key, propagatedHeaders);
+        Contexts.context()
+                .ifPresent(context -> context.register(key, propagatedHeaders));
     }
 
     private void setLraContext(ContainerRequestContext reqCtx, URI lraId) {
