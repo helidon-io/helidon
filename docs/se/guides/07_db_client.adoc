@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021 Oracle and/or its affiliates.
+    Copyright (c) 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -20,17 +20,15 @@
 :h1Prefix: SE
 :description: Helidon db-client
 :keywords: helidon, db, client
+:common-page-prefix-inc: ../../shared/common_prereqs/common_prereqs.adoc
 
 This guide describes Helidon DB Client features and how to create a sample Helidon SE project
 that can be used to run some basic example using helidon db client.
 
-== What you need
+== What You Need
 
-[width=50%,role="flex, sm7"]
-|===
-|About 15 minutes
-|<<about/03_prerequisites.adoc,Helidon Prerequisites>>
-|===
+For this 15 minute tutorial, you will need the following:
+include::{common-page-prefix-inc}[tag=common-prereqs]
 
 == Introduction
 
@@ -39,7 +37,7 @@ In Helidon 2.0.0 we introduced the pre-release version of Helidon DB Client — 
 reactive API for working with databases in non-blocking way. Helidon team constantly updates this API in order
 to make it more user-friendly and efficient. For this matter, it is recommended to use the latest helidon version.
 
-=== Main features
+=== Main Features
 
 The main features of  Helidon DB Client are:
 
@@ -60,11 +58,9 @@ The DB Client works with native database statements that can be used inline in t
 in database configuration. By moving the native query code to configuration files, the Helidon DB Client allows you to
 switch to another database by changing the configuration files, not the code.
 
-== Get started with Helidon DB Client
+== Getting Started with Helidon DB Client
 
-Nothing better than practice to get in touch with all the features described earlier in this guide.
-This section helps you through your first application using Helidon DB Client. The objective is to
-create a library where customer can bring, get or remove a book.
+This section describes how to configure and use the key features of the Helidon DB Client.
 
 === Set up H2 database
 
@@ -333,7 +329,7 @@ private static Routing createRouting(Config config, DbClient dbClient) {
 <2> Add Health check to control the application behavior.
 <3> Register the LibraryService to the Routing.
 
-The library service does not exist yet but that is the next step of the guide. It has a  constructor with the
+The library service does not exist yet but that is the next step of the guide. It has a constructor with the
 DB Client as a parameter because it will manage the library. The DB Client health check uses the `select-book` statement
 from the configuration. As shown above, to create a DB Client health check, call the `DbClientHealthCheck.create` method
 and pass the concerned DbClient. Then add it to the health support builder and register it to the routing.
@@ -468,7 +464,7 @@ private void addBook(ServerRequest serverRequest, ServerResponse serverResponse)
 <1> The SQL statement requires the book name and its information. They are provided with `addParam` method.
 <2> A new book was added to library, so a HTTP 201 code is returned.
 
-When a user adds a new book, it uses HTTP PUT method where the book name is in the url and the information in the
+When a user adds a new book, it uses HTTP PUT method where the book name is in the URL and the information in the
 request content. To catch this content, the information is retrieved as a string and then the DB Client execute the
 `insert-book` script to add the book to the library. It requires two parameters, the book name and information which are
 passed to the dbClient thanks to `addParam` method. A HTTP 201 is sent back as a confirmation if no exception is thrown.
@@ -500,9 +496,9 @@ The application is ready to be built and ran.
 mvn package
 ----
 
-Note that the tests are passing as the GreetService process was not modified. During this guide, we only added independent
-new content to the existing application.
-Make sure H2 is running and start the helidon quickstart by this command:
+Note that the tests are passing as the GreetService process was not modified. For the purposes of this demonstration,
+we only added independent new content to the existing application.
+Make sure H2 is running and start the Helidon quickstart with this command:
 
 [source,bash]
 .Run the application
@@ -527,7 +523,7 @@ transfer-encoding: chunked
 connection: keep-alive
 ----
 
-There is currently no book inside the library, so the application return a 404. Yet the application created an empty
+There is currently no book inside the library, so the application returns a 404. Yet the application created an empty
 library table. Try to add a new book.
 
 [source,bash]
@@ -559,7 +555,7 @@ content-length: 6
 Fantasy
 ----
 
-The application accepted the request and return an HTTP 200 OK with the book genre which was added earlier.
+The application accepted the request and returned an HTTP 200 OK with the book genre that was added earlier.
 
 [source,bash]
 .Get Harry Potter from the library in Json
@@ -627,8 +623,7 @@ curl -H "Accept: application/json" http://localhost:8080/metrics/application | j
 }
 ----
 
-The select-book statement was invoked four time.
+The select-book statement was invoked four times.
 
-To conclude, this guide provides an introduction to Heldion DB Client with a simple example. If you want to learn more
-about it, visit the blog post https://medium.com/helidon/helidon-db-client-e12bbdc85b7, it describes in detail the APIs.
-You can have a look at helidon DB Client examples which show even more features and complex application.
+This guide provided an introduction to the Helidon DB Client's key features. If you want to learn more, see the
+Helidon DB Client samples in https://medium.com/helidon/helidon-db-client-e12bbdc85b7.
