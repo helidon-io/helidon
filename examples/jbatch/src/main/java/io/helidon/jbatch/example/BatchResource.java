@@ -16,8 +16,6 @@
  */
 package io.helidon.jbatch.example;
 
-
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -27,6 +25,7 @@ import java.util.Properties;
 import javax.batch.operations.JobOperator;
 import javax.batch.runtime.JobExecution;
 import javax.batch.runtime.StepExecution;
+import javax.enterprise.context.ApplicationScoped;
 import javax.json.Json;
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
@@ -44,35 +43,48 @@ import static javax.batch.runtime.BatchRuntime.getJobOperator;
  * Trigger a batch process using resource.
  */
 @Path("/batch")
+@ApplicationScoped
 public class BatchResource {
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
 
+    private JobOperator jobOperator;
+
+    private Long executionId;
 
     /**
      * Run a JBatch process when endpoint called.
      * @return JsonObject with the result.
-     * @throws Exception
      */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public JsonObject executeBatch() throws Exception{
+    public JsonObject executeBatch() {
 
         BatchSPIManager batchSPIManager = BatchSPIManager.getInstance();
         batchSPIManager.registerPlatformMode(BatchSPIManager.PlatformMode.SE);
         batchSPIManager.registerExecutorServiceProvider(new HelidonExecutorServiceProvider());
 
-        JobOperator jobOperator = getJobOperator();
-        Long executionId = jobOperator.start("myJob", new Properties());
-        Thread.sleep(3000);
-        JobExecution jobExecution = jobOperator.getJobExecution(executionId);
+        jobOperator = getJobOperator();
+        executionId = jobOperator.start("myJob", new Properties());
 
+        return JSON.createObjectBuilder()
+                .add("Started a job with Execution ID: ", executionId)
+                .build();
+    }
+
+    /**
+     * Check the job status.
+     * @return JsonObject with status.
+     */
+    @GET
+    @Path("/status")
+    public JsonObject status(){
+        JobExecution jobExecution = jobOperator.getJobExecution(executionId);
 
         List<StepExecution> stepExecutions = jobOperator.getStepExecutions(executionId);
         List<String> executedSteps = new ArrayList<>();
         for (StepExecution stepExecution : stepExecutions) {
             executedSteps.add(stepExecution.getStepName());
         }
-
 
         return JSON.createObjectBuilder()
                 .add("Steps executed", Arrays.toString(executedSteps.toArray()))
