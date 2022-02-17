@@ -16,9 +16,6 @@
 
 package io.helidon.tests.apps.bookstore.mp;
 
-import io.helidon.tests.apps.bookstore.common.Book;
-import io.helidon.tests.apps.bookstore.common.BookStore;
-
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -33,9 +30,16 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.Collection;
 
-@Path("/books")
+import io.helidon.tests.apps.bookstore.common.Book;
+import io.helidon.tests.apps.bookstore.common.BookStore;
+
+/**
+ * The {@link Path} annotation is inherited from the base class. Note that a
+ * CDI scope annotation such as {@code @RequestScoped} is required given that
+ * discovery mode for this application is annotated.
+ */
 @RequestScoped
-public class BookResource {
+public class BookResource extends BookResourceBase {
 
     private final BookStore bookStore;
 
