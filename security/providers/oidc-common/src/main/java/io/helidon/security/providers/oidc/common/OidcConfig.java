@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,6 +44,7 @@ import io.helidon.security.util.TokenHandler;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientRequestBuilder;
 import io.helidon.webclient.security.WebClientSecurity;
+import io.helidon.webserver.cors.CrossOriginConfig;
 
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
@@ -302,6 +303,11 @@ import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
  *     <td>{@code false}</td>
  *     <td>Whether logout support should be enabled. Requires encryption of cookies (and cookies must be used).</td>
  * </tr>
+ * <tr>
+ *     <td>{@code cors}</td>
+ *     <td>&nbsp;</td>
+ *     <td>Cross-origin resource sharing settings. See {@link io.helidon.webserver.cors.CrossOriginConfig}.</td>
+ * </tr>
  * </table>
  */
 public final class OidcConfig {
@@ -367,6 +373,7 @@ public final class OidcConfig {
     private final OidcCookieHandler idTokenCookieHandler;
     private final URI postLogoutUri;
     private final URI logoutEndpointUri;
+    private final CrossOriginConfig crossOriginConfig;
 
     private OidcConfig(Builder builder) {
         this.clientId = builder.clientId;
@@ -437,6 +444,8 @@ public final class OidcConfig {
                 this.scopeAudience = tmp + "/";
             }
         }
+        this.crossOriginConfig = builder.crossOriginConfig;
+
         LOGGER.finest(() -> "OIDC Scope audience: " + scopeAudience);
         LOGGER.finest(() -> "Redirect URI with host: " + frontendUri + redirectUri);
     }
@@ -938,6 +947,15 @@ public final class OidcConfig {
     }
 
     /**
+     * Cross-origin resource sharing settings.
+     *
+     * @return CORS settings
+     */
+    public CrossOriginConfig crossOriginConfig() {
+        return crossOriginConfig;
+    }
+
+    /**
      * Client Authentication methods that are used by Clients to authenticate to the Authorization
      * Server when using the Token Endpoint.
      */
@@ -1071,6 +1089,7 @@ public final class OidcConfig {
         private WebClient webClient;
         private Duration clientTimeout = Duration.ofSeconds(DEFAULT_TIMEOUT_SECONDS);
         private URI postLogoutUri;
+        private CrossOriginConfig crossOriginConfig;
 
         @Override
         public OidcConfig build() {
@@ -1280,6 +1299,8 @@ public final class OidcConfig {
 
             config.get("client-timeout-millis").asLong().ifPresent(this::clientTimeoutMillis);
 
+            config.get("cors").as(CrossOriginConfig::create).ifPresent(this::crossOriginConfig);
+
             return this;
         }
 
@@ -1336,6 +1357,17 @@ public final class OidcConfig {
          */
         public Builder cookieEncryptionEnabledIdToken(boolean cookieEncryptionEnabled) {
             this.idTokenCookieBuilder.encryptionEnabled(cookieEncryptionEnabled);
+            return this;
+        }
+
+        /**
+         * Assign cross-origin resource sharing settings.
+         *
+         * @param crossOriginConfig cross-origin settings to apply to the redirect endpoint
+         * @return updated builder instance
+         */
+        public Builder crossOriginConfig(CrossOriginConfig crossOriginConfig) {
+            this.crossOriginConfig = crossOriginConfig;
             return this;
         }
 
