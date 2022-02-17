@@ -34,9 +34,16 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-@Path("/books")
+import io.helidon.tests.apps.bookstore.common.Book;
+import io.helidon.tests.apps.bookstore.common.BookStore;
+
+/**
+ * The {@link Path} annotation is inherited from the base class. Note that a
+ * CDI scope annotation such as {@code @RequestScoped} is required given that
+ * discovery mode for this application is annotated.
+ */
 @RequestScoped
-public class BookResource {
+public class BookResource extends BookResourceBase {
 
     private final BookStore bookStore;
 
