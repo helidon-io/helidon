@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 
-import io.helidon.security.SecurityException;
 import io.helidon.security.jwt.Jwt;
 import io.helidon.security.jwt.JwtException;
 import io.helidon.security.jwt.JwtUtil;
@@ -32,7 +31,6 @@ import jakarta.json.JsonNumber;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonString;
 import jakarta.json.JsonValue;
-import org.eclipse.microprofile.jwt.ClaimValue;
 import org.eclipse.microprofile.jwt.Claims;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 
@@ -111,16 +109,9 @@ final class BackedJsonWebToken extends JsonWebTokenImpl {
                     ? (T) getJsonValue(claimName).orElse(null)
                     : (T) getClaim(claims);
         } catch (IllegalArgumentException ignored) {
-            //If claimName is name of the custom claim
-            Object value = getJsonValue(claimName).orElse(null);
-            if ((value != null)
-                    && (clazz != ClaimValue.class)
-                    && (clazz != Optional.class)
-                    && !clazz.isAssignableFrom(value.getClass())) {
-                throw new SecurityException("Cannot set instance of " + value.getClass().getName()
-                                                    + " to the field of type " + clazz.getName());
-            }
-            return (T) value;
+            return (T) getJsonValue(claimName)
+                    .map(val -> convertClass(clazz, val))
+                    .orElse(null);
         }
     }
 
@@ -161,6 +152,10 @@ final class BackedJsonWebToken extends JsonWebTokenImpl {
 
     private Object convert(Claims claims, JsonValue value) {
         Class<?> claimClass = claims.getType();
+        return convertClass(claimClass, value);
+    }
+
+    private Object convertClass(Class<?> claimClass, JsonValue value) {
         if (claimClass.equals(String.class)) {
             if (value instanceof JsonString) {
                 return ((JsonString) value).getString();
@@ -178,8 +173,13 @@ final class BackedJsonWebToken extends JsonWebTokenImpl {
             return value;
         }
 
-        if (value instanceof JsonString) {
-            return ((JsonString) value).getString();
+        if (Boolean.TYPE.equals(claimClass) || Boolean.class.equals(claimClass)){
+            if (JsonValue.TRUE.equals(value)) {
+                return true;
+            }
+            if (JsonValue.FALSE.equals(value)) {
+                return false;
+            }
         }
 
         return value;

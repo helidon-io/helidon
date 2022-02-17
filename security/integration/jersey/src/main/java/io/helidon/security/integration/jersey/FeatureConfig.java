@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ class FeatureConfig {
     static final boolean DEFAULT_PREMATCHING_ATN = false;
     static final boolean DEFAULT_PREMATCHING_ATZ = false;
     static final boolean DEFAULT_USE_ABORT_WITH = true;
+    static final boolean DEFAULT_ATN_FAIL_ON_FAILURE_IF_OPT = false;
 
     private final boolean debug;
     private final boolean authorizeAnnotatedOnly;
@@ -38,6 +39,7 @@ class FeatureConfig {
     private final List<QueryParamHandler> queryParamHandlers = new LinkedList<>();
     private final boolean authenticateAnnotatedOnly;
     private final boolean useAbortWith;
+    private final boolean failOnFailureIfOptional;
 
     FeatureConfig() {
         this.debug = DEFAULT_DEBUG;
@@ -46,6 +48,7 @@ class FeatureConfig {
         this.usePrematchingAtz = DEFAULT_PREMATCHING_ATZ;
         this.authenticateAnnotatedOnly = DEFAULT_ATN_ANNOTATED_ONLY;
         this.useAbortWith = DEFAULT_USE_ABORT_WITH;
+        this.failOnFailureIfOptional = DEFAULT_ATN_FAIL_ON_FAILURE_IF_OPT;
     }
 
     FeatureConfig(SecurityFeature.Builder builder) {
@@ -61,10 +64,15 @@ class FeatureConfig {
 
         this.queryParamHandlers.addAll(builder.queryParamHandlers());
         this.useAbortWith = builder.useAbortWith();
+        this.failOnFailureIfOptional = builder.failOnFailureIfOptional();
     }
 
     boolean shouldAuthorizeAnnotatedOnly() {
         return authorizeAnnotatedOnly;
+    }
+
+    boolean failOnFailureIfOptional() {
+        return failOnFailureIfOptional;
     }
 
     boolean shouldAuthenticateAnnotatedOnly() {

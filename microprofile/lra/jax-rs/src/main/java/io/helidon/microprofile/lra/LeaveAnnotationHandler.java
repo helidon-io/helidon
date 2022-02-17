@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,10 @@ package io.helidon.microprofile.lra;
 
 import java.net.URI;
 
+import io.helidon.common.context.Contexts;
 import io.helidon.lra.coordinator.client.CoordinatorClient;
 import io.helidon.lra.coordinator.client.Participant;
+import io.helidon.lra.coordinator.client.PropagatedHeaders;
 
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerResponseContext;
@@ -48,6 +50,12 @@ class LeaveAnnotationHandler implements AnnotationHandler {
                     reqCtx.setProperty(LRA_HTTP_CONTEXT_HEADER, lraId);
                 });
 
+        // Custom headers propagation
+        PropagatedHeaders propagatedHeaders = participantService.prepareCustomHeaderPropagation(reqCtx.getHeaders());
+        String key = PropagatedHeaders.class.getName();
+        reqCtx.setProperty(key, propagatedHeaders);
+        Contexts.context()
+                .ifPresent(context -> context.register(key, propagatedHeaders));
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -137,6 +137,7 @@ public final class SecurityFeature implements Feature {
         private boolean prematchingAuthorization = FeatureConfig.DEFAULT_PREMATCHING_ATZ;
         private boolean prematchingAuthentication = FeatureConfig.DEFAULT_PREMATCHING_ATN;
         private boolean useAbortWith = FeatureConfig.DEFAULT_USE_ABORT_WITH;
+        private boolean failOnFailureIfOptional = FeatureConfig.DEFAULT_ATN_FAIL_ON_FAILURE_IF_OPT;
 
         private Builder(Security security) {
             this.security = security;
@@ -223,6 +224,21 @@ public final class SecurityFeature implements Feature {
         }
 
         /**
+         * Whether to fail in case of authentication failure if authentication is optional.
+         * When set to {@code true}, authentication will fail in case of failure even when it is set
+         * as an optional.
+         *
+         * Default value is {@code false}.
+         *
+         * @param failOnFailureIfOptional fail on authentication failure if optional
+         * @return updated builder instance
+         */
+        private Builder failOnFailureIfOptional(Boolean failOnFailureIfOptional) {
+            this.failOnFailureIfOptional = failOnFailureIfOptional;
+            return this;
+        }
+
+        /**
          * Set debugging on.
          * Will return description from response in entity.
          *
@@ -280,6 +296,7 @@ public final class SecurityFeature implements Feature {
             config.get("prematching-authentication").asBoolean().ifPresent(this::usePrematchingAuthentication);
             config.get("prematching-authorization").asBoolean().ifPresent(this::usePrematchingAuthorization);
             config.get("use-abort-with").asBoolean().ifPresent(this::useAbortWith);
+            config.get("fail-on-failure-if-optional").asBoolean().ifPresent(this::failOnFailureIfOptional);
 
             Config myConfig = config.get("defaults");
             myConfig.get("authorize-annotated-only").asBoolean().ifPresent(this::authorizeAnnotatedOnly);
@@ -330,6 +347,10 @@ public final class SecurityFeature implements Feature {
 
         boolean useAbortWith() {
             return useAbortWith;
+        }
+
+        boolean failOnFailureIfOptional() {
+            return failOnFailureIfOptional;
         }
     }
 
