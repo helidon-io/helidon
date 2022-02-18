@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,8 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
+import io.helidon.webserver.cors.CorsSupport;
+import io.helidon.webserver.cors.CrossOriginConfig;
 
 import jakarta.json.JsonObject;
 
@@ -125,12 +127,14 @@ public final class OidcSupport implements Service {
     private final OidcCookieHandler tokenCookieHandler;
     private final OidcCookieHandler idTokenCookieHandler;
     private final boolean enabled;
+    private final CorsSupport corsSupport;
 
     private OidcSupport(Builder builder) {
         this.oidcConfig = builder.oidcConfig;
         this.enabled = builder.enabled;
         this.tokenCookieHandler = oidcConfig.tokenCookieHandler();
         this.idTokenCookieHandler = oidcConfig.idTokenCookieHandler();
+        this.corsSupport = prepareCrossOriginSupport(oidcConfig.redirectUri(), oidcConfig.crossOriginConfig());
     }
 
     /**
@@ -189,8 +193,14 @@ public final class OidcSupport implements Service {
     @Override
     public void update(Routing.Rules rules) {
         if (enabled) {
+            if (corsSupport != null) {
+                rules.any(oidcConfig.redirectUri(), corsSupport);
+            }
             rules.get(oidcConfig.redirectUri(), this::processOidcRedirect);
             if (oidcConfig.logoutEnabled()) {
+                if (corsSupport != null) {
+                    rules.any(oidcConfig.logoutUri(), corsSupport);
+                }
                 rules.get(oidcConfig.logoutUri(), this::processLogout);
             }
             rules.any(this::addRequestAsHeader);
@@ -422,6 +432,14 @@ public final class OidcSupport implements Service {
 
         res.status(Http.Status.BAD_REQUEST_400);
         res.send("{\"error\": \"" + error + "\", \"error_description\": \"" + errorDescription + "\"}");
+    }
+
+    private CorsSupport prepareCrossOriginSupport(String path, CrossOriginConfig crossOriginConfig) {
+        return crossOriginConfig == null
+                ? null
+                : CorsSupport.builder()
+                        .addCrossOrigin(path, crossOriginConfig)
+                        .build();
     }
 
     /**
