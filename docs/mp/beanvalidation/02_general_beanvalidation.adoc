@@ -15,27 +15,34 @@
     limitations under the License.
 
 ///////////////////////////////////////////////////////////////////////////////
+
 = General Bean Validation
 :h1Prefix: MP
 :pagename: general-bean-validation
 :description: General Bean Validation
 :keywords: helidon, webserver, bean validation, validation
 :bean-validation-spec-url: https://projects.eclipse.org/projects/ee4j.bean-validation
-:feature-name: Bean Validation
+:feature-name: General Bean Validation
 :common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+
 If BeanValidation is required outside JAX-RS/Jersey use cases, it is also available in Helidon.
 It follows the standard {bean-validation-spec-url}[Jakarta Bean
 Validation specification] which defines an API to validate Java beans.
+
 include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+
 [source, xml]
 ----
 <dependency>
-  <groupId>io.helidon.microprofile.bean-validation</groupId>
+  <groupId>io.helidon.microprofile.bean.validation</groupId>
   <artifactId>helidon-microprofile-bean-validation</artifactId>
 </dependency>
 ----
+
 == Validation Example in Helidon MP
+
 The following example shows a simple application with one field declared as _not null_ using `@NotNull` annotation:
+
 [source,java]
 ----
 public class GreetingHolder {
@@ -44,8 +51,10 @@ public class GreetingHolder {
     //...
 }
 ----
+
 Now, if in a bean there is a method parameter, annotated with `@Valid`, a _ValidationException_ will be thrown, if
 `GreetingHolder` with _null_ greeting is submitted:
+
 [source,java]
 ----
 @ApplicationScoped
@@ -57,5 +66,6 @@ public class GreetingProvider {
     }
 }
 ----
+
 More information about validations supported is available can be found in {bean-validation-spec-url}[Jakarta Bean
 Validation specification].
