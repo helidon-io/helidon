@@ -38,7 +38,7 @@ include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 MicroProfile Rest Client adds the capability to invoke remote microservices using a JAX-RS like interface to declare the
 operations.
 
-== Creating a New Nlient Uusing a Builder
+== Creating a New Client Using a Builder
 
 MicroProfile Rest Client can be created using a builder obtained from `RestClientBuilder.newBuilder()`.
 The builder provides methods to configure details for the client and to define the desired rest client interface.
@@ -90,7 +90,7 @@ annotations, and configuration.
 
 You can configure new providers, base URI/URL and other options of the client.
 See specification for full details:
-https://download.eclipse.org/microprofile/microprofile-rest-client-2.0/microprofile-rest-client-spec-2.0.html#_hostname_verification
+https://download.eclipse.org/microprofile/microprofile-rest-client-2.0/microprofile-rest-client-spec-2.0.html
 
 == Quickstart Example
 To be able to run and test this example, use the  https://helidon.io/docs/v2/#/mp/guides/02_quickstart[Helidon MP examples/quickstarts]
