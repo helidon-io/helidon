@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -318,22 +318,19 @@ public final class OutboundTargetDefinition {
          * @return updated builder instance
          */
         public Builder config(Config config) {
-            Builder builder = new Builder();
-
-            // mandatory
-            builder.keyId(config.get("key-id").asString().get());
-            config.get("header").asString().map(HttpSignHeader::valueOf).ifPresent(builder::header);
-            config.get("sign-headers").as(SignedHeadersConfig::create).ifPresent(builder::signedHeaders);
-            config.get("private-key").as(KeyConfig::create).ifPresent(builder::privateKeyConfig);
-            config.get("hmac.secret").asString().ifPresent(builder::hmacSecret);
+            this.keyId(config.get("key-id").asString().get());      // mandatory
+            config.get("header").asString().map(HttpSignHeader::valueOf).ifPresent(this::header);
+            config.get("sign-headers").as(SignedHeadersConfig::create).ifPresent(this::signedHeaders);
+            config.get("private-key").as(KeyConfig::create).ifPresent(this::privateKeyConfig);
+            config.get("hmac.secret").asString().ifPresent(this::hmacSecret);
 
             // last, as we configure defaults based on configuration
-            config.get("algorithm").asString().ifPresent(builder::algorithm);
+            config.get("algorithm").asString().ifPresent(this::algorithm);
 
             // backward compatibility with previous Helidon versions
             config.get("backward-compatible-eol").asBoolean().ifPresent(this::backwardCompatibleEol);
 
-            return builder;
+            return this;
         }
 
         /**
