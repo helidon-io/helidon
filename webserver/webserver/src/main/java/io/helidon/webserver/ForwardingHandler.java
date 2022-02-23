@@ -478,12 +478,18 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
      */
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+        // Log just cause as string
         LOGGER.fine(() -> log("Exception caught: %s", ctx, cause.toString()));
 
         // We ignore stream resets (RST_STREAM) from HTTP/2
         if (cause instanceof Http2Exception.StreamException
                 && ((Http2Exception.StreamException) cause).error() == Http2Error.CANCEL) {
             return;     // no action
+        }
+
+        // Log full exception in FINEST
+        if (LOGGER.isLoggable(Level.FINEST)) {
+            LOGGER.log(Level.FINEST, "Exception stack trace: " + ctx, cause);
         }
 
         // Otherwise, we fail publisher and close
@@ -616,7 +622,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
         if (requestContext != null) {
             requestContext.fail(cause);
         } else {
-            LOGGER.log(Level.SEVERE, "Error intercepted before request context established.", cause);
+            LOGGER.finest(() -> "Error before request context established or after completed: " + cause);
         }
     }
 
