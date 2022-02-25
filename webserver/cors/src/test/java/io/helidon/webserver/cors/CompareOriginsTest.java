@@ -42,6 +42,10 @@ public class CompareOriginsTest {
         assertThat(compareOrigins("http://localhost/", "http://localhost:80/bar"), is(true));
         assertThat(compareOrigins("https://localhost", "https://localhost:443/foo/bar/baz"), is(true));
         assertThat(compareOrigins("http://localhost/", "http://localhost:80/foo/bar/baz"), is(true));
+        assertThat(compareOrigins("http://localhost:80/foo", "http://localhost"), is(true));
+        assertThat(compareOrigins("http://localhost:80/bar", "http://localhost/"), is(true));
+        assertThat(compareOrigins("https://localhost:443/foo/bar/baz", "https://localhost"), is(true));
+        assertThat(compareOrigins("http://localhost:80/foo/bar/baz", "http://localhost/"), is(true));
     }
 
     @Test
