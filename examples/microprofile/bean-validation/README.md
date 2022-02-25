@@ -8,7 +8,7 @@ To be able to use bean validation add the following dependency:
 
 ```xml
 <dependency>
-    <groupId>io.helidon.microprofile.beanvalidation</groupId>
+    <groupId>io.helidon.microprofile.bean-validation</groupId>
     <artifactId>helidon-microprofile-bean-validation</artifactId>
 </dependency>
 ```

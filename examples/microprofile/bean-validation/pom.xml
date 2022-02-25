@@ -37,7 +37,7 @@
             <artifactId>helidon-microprofile-core</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.microprofile.bean.validation</groupId>
+            <groupId>io.helidon.microprofile.bean-validation</groupId>
             <artifactId>helidon-microprofile-bean-validation</artifactId>
         </dependency>
         <dependency>
