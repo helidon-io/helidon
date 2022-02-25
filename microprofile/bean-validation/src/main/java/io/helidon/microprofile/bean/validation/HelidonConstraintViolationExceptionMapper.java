@@ -29,7 +29,7 @@ import jakarta.ws.rs.ext.Provider;
  * error.
  */
 @Provider
-public class HelidonConstraintViolationException implements ExceptionMapper<ConstraintViolationException> {
+public class HelidonConstraintViolationExceptionMapper implements ExceptionMapper<ConstraintViolationException> {
 
     /**
      * Return Validation Exception, wrapped as a bad request.

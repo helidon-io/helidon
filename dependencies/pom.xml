@@ -125,7 +125,6 @@
         <version.lib.mssql-jdbc>8.4.1.jre8</version.lib.mssql-jdbc>
         <version.lib.neo4j>4.4.3</version.lib.neo4j>
         <version.lib.hibernate-validator>7.0.2.Final</version.lib.hibernate-validator>
-        <version.lib.el>3.0.0</version.lib.el>
         <version.lib.mysql-connector-java>8.0.22</version.lib.mysql-connector-java>
         <version.lib.narayana>5.12.0.Final</version.lib.narayana>
         <version.lib.netty>4.1.73.Final</version.lib.netty>
