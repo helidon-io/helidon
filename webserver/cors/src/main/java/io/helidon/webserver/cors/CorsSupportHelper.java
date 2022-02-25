@@ -660,8 +660,10 @@ class CorsSupportHelper<Q, R> {
                         if (c1 == ':') {
                             isHttps = (i == 5);
                             // Match "//"
-                            if (url1.charAt(i + 1) != url2.charAt(j + 1)
-                                    || url1.charAt(i + 2) != url2.charAt(j + 2)) {
+                            if (url1.charAt(i + 1) != '/'
+                                    || url1.charAt(i + 2) != '/'
+                                    || url2.charAt(j + 1) != '/'
+                                    || url2.charAt(j + 2) != '/') {
                                 return false;
                             }
                             i += 2;
