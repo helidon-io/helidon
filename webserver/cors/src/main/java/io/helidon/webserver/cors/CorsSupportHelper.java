@@ -719,7 +719,7 @@ class CorsSupportHelper<Q, R> {
                             if (n < 0) {
                                 return false;
                             }
-                            i += n;
+                            j += n;
                             state = CompareState.TRAILING;
                         } else if (c1 != c2) {
                             return false;
