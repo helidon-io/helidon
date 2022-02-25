@@ -16,7 +16,11 @@
  */
 package io.helidon.jbatch.example;
 
-import com.ibm.jbatch.spi.BatchSPIManager;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Properties;
 
 import javax.batch.operations.JobOperator;
 import javax.batch.runtime.JobExecution;
@@ -30,7 +34,8 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
-import java.util.*;
+
+import com.ibm.jbatch.spi.BatchSPIManager;
 
 import static javax.batch.runtime.BatchRuntime.getJobOperator;
 
@@ -67,6 +72,7 @@ public class BatchResource {
 
     /**
      * Check the job status.
+     * @param executionId the job ID.
      * @return JsonObject with status.
      */
     @GET

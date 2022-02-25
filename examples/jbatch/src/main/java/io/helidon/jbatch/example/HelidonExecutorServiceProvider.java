@@ -17,10 +17,11 @@
 package io.helidon.jbatch.example;
 
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+
+import io.helidon.common.configurable.ThreadPoolSupplier;
 
 import com.ibm.jbatch.spi.ExecutorServiceProvider;
-import io.helidon.common.configurable.ThreadPoolSupplier;
+
 
 /**
  * Executor service for batch processing.

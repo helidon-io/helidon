@@ -34,13 +34,13 @@
         <version.lib.jbatch-api>1.0.1</version.lib.jbatch-api>
         <version.lib.jbatch.container>1.0.3</version.lib.jbatch.container>
         <version.lib.derby>10.13.1.1</version.lib.derby>
-        <version.lib.jaxb-api>2.3.1</version.lib.jaxb-api>
+        <version.lib.jaxb-api>2.3.2</version.lib.jaxb-api>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>
-            <artifactId>helidon-microprofile</artifactId>
+            <artifactId>helidon-microprofile-core</artifactId>
         </dependency>
         <dependency>
             <groupId>org.jboss</groupId>
@@ -67,10 +67,11 @@
         </dependency>
 
         <dependency>
-            <groupId>javax.xml.bind</groupId>
-            <artifactId>jaxb-api</artifactId>
+            <groupId>jakarta.xml.bind</groupId>
+            <artifactId>jakarta.xml.bind-api</artifactId>
             <version>${version.lib.jaxb-api}</version>
         </dependency>
+
 
         <dependency>
             <groupId>org.glassfish.jaxb</groupId>
@@ -87,6 +88,10 @@
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.json</groupId>
+            <artifactId>jakarta.json-api</artifactId>
         </dependency>
     </dependencies>
 
