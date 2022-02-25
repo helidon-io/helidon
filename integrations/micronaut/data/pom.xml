@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-    Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.integrations.micronaut</groupId>
         <artifactId>helidon-integrations-micronaut-project</artifactId>
-        <version>3.0.0-SNAPSHOT</version>
+        <version>2.4.3-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-integrations-micronaut-data</artifactId>
@@ -67,13 +67,6 @@
             <groupId>io.micronaut.data</groupId>
             <artifactId>micronaut-data-model</artifactId>
             <scope>test</scope>
-            <exclusions>
-                <exclusion>
-                    <!-- 3.0.0-JAKARTA -->
-                    <groupId>io.micronaut</groupId>
-                    <artifactId>micronaut-validation</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.cdi</groupId>
@@ -155,12 +148,11 @@
                                     <artifactId>micronaut-inject-java</artifactId>
                                     <version>${version.lib.micronaut}</version>
                                 </path>
-                                <!-- 3.0.0-JAKARTA -->
-<!--                                <path>-->
-<!--                                    <groupId>io.micronaut</groupId>-->
-<!--                                    <artifactId>micronaut-validation</artifactId>-->
-<!--                                    <version>${version.lib.micronaut}</version>-->
-<!--                                </path>-->
+                                <path>
+                                    <groupId>io.micronaut</groupId>
+                                    <artifactId>micronaut-validation</artifactId>
+                                    <version>${version.lib.micronaut}</version>
+                                </path>
                                 <path>
                                     <groupId>io.micronaut.data</groupId>
                                     <artifactId>micronaut-data-processor</artifactId>

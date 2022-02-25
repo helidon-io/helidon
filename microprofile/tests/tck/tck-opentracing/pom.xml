@@ -22,14 +22,12 @@
     <parent>
         <artifactId>tck-project</artifactId>
         <groupId>io.helidon.microprofile.tests</groupId>
-        <version>3.0.0-SNAPSHOT</version>
+        <version>2.4.3-SNAPSHOT</version>
     </parent>
     <artifactId>tck-opentracing</artifactId>
     <name>Helidon Microprofile Tests TCK Opentracing</name>
 
     <properties>
-        <!-- 3.0.0-JAKARTA -->
-        <skipTests>true</skipTests>
         <!-- We force the version of jackson to 2.9.0 since that's -->
         <!-- what the TCK test forces us to use (via shrinkwrap)   -->
         <version.lib.jackson>2.9.0</version.lib.jackson>

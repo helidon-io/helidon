@@ -23,6 +23,9 @@ import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerResponseContext;
 import jakarta.ws.rs.container.ResourceInfo;
 
+import io.helidon.common.context.Contexts;
+import io.helidon.lra.coordinator.client.PropagatedHeaders;
+
 class NoopAnnotationHandler implements AnnotationHandler {
 
     private final ParticipantService participantService;

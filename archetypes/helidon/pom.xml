@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2020 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -23,16 +23,48 @@
     <parent>
         <groupId>io.helidon.archetypes</groupId>
         <artifactId>helidon-archetypes-project</artifactId>
-        <version>3.0.0-SNAPSHOT</version>
+        <version>2.4.3-SNAPSHOT</version>
     </parent>
-    <packaging>helidon-archetype</packaging>
-    <artifactId>helidon</artifactId>
-    <name>Helidon Archetype</name>
+    <packaging>helidon-archetype-catalog</packaging>
+    <artifactId>helidon-archetype-catalog</artifactId>
+    <name>Helidon Archetype Catalog</name>
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.build-tools.archetype</groupId>
-            <artifactId>helidon-archetype-engine-v2</artifactId>
+            <groupId>io.helidon.archetypes</groupId>
+            <artifactId>helidon-bare-se</artifactId>
+            <version>${project.version}</version>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.archetypes</groupId>
+            <artifactId>helidon-bare-mp</artifactId>
+            <version>${project.version}</version>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.archetypes</groupId>
+            <artifactId>helidon-quickstart-se</artifactId>
+            <version>${project.version}</version>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.archetypes</groupId>
+            <artifactId>helidon-quickstart-mp</artifactId>
+            <version>${project.version}</version>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.archetypes</groupId>
+            <artifactId>helidon-database-se</artifactId>
+            <version>${project.version}</version>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.archetypes</groupId>
+            <artifactId>helidon-database-mp</artifactId>
+            <version>${project.version}</version>
+            <optional>true</optional>
         </dependency>
     </dependencies>
 
@@ -40,21 +72,8 @@
         <!-- support command-line overrides -->
         <cli.build.tools.version>${version.helidon-cli}</cli.build.tools.version>
     </properties>
-
     <build>
         <plugins>
-            <plugin>
-                <groupId>io.helidon.build-tools</groupId>
-                <artifactId>helidon-archetype-maven-plugin</artifactId>
-                <configuration>
-                    <entrypoint>
-                        <presets>
-                            <text path="helidon-version" resolvable="false">${project.version}</text>
-                        </presets>
-                        <exec src="flavor.xml"/>
-                    </entrypoint>
-                </configuration>
-            </plugin>
             <plugin>
                 <groupId>io.helidon.build-tools</groupId>
                 <artifactId>helidon-stager-maven-plugin</artifactId>
@@ -69,14 +88,15 @@
                                 <directory target="${project.build.directory}">
                                     <archives>
                                         <archive target="cli-data/${project.version}/cli-data.zip">
-                                            <copy-artifacts>
-                                                <copy-artifact groupId="io.helidon.archetypes"
-                                                               artifactId="helidon"
-                                                               version="${project.version}"
-                                                               type="jar"/>
-                                            </copy-artifacts>
+                                            <unpack-artifacts>
+                                                <unpack-artifact groupId="io.helidon.archetypes"
+                                                                 artifactId="helidon-archetype-catalog"
+                                                                 version="${project.version}"
+                                                                 type="zip"
+                                                                 target="."/>
+                                            </unpack-artifacts>
                                             <templates>
-                                                <template source="src/main/cli/metadata.properties.mustache"
+                                                <template source="cli-metadata.properties.mustache"
                                                           target="metadata.properties">
                                                     <variables>
                                                         <variable name="buildtoolsVersion"
@@ -102,7 +122,7 @@
                 <artifactId>helidon-maven-plugin</artifactId>
                 <executions>
                     <execution>
-                        <phase>install</phase>
+                        <phase>validate</phase>
                         <goals>
                             <goal>log</goal>
                         </goals>
@@ -119,18 +139,18 @@
                         <message> |                \,,,,/       </message>
                         <message> |                 $(red _|_)         </message>
                         <message> |</message>
-                        <message> |  You can test the archetype locally with the Helidon CLI using the following arguments:</message>
+                        <message> |  You can test the archetypes locally with the Helidon CLI using the following arguments:</message>
                         <message> |</message>
                         <message> |     --reset --url file://${project.build.directory}/cli-data</message>
                         <message> |</message>
                         <message> |  For example:</message>
                         <message> |</message>
-                        <message> |     helidon init --reset --url file://${project.build.directory}/cli-data</message>
+                        <message> |     helidon init --batch --reset --url file://${project.build.directory}/cli-data</message>
                         <message> |</message>
                         <message> |  If you also want to test with a local Helidon CLI build, specify the version when building</message>
                         <message> |  this project, e.g.:</message>
                         <message> |</message>
-                        <message> |     mvn clean install -Dcli.build.tools.version=3.0.0-SNAPSHOT</message>
+                        <message> |     mvn clean install -Dcli.build.tools.version=2.0.0-SNAPSHOT</message>
                         <message> |</message>
                     </messages>
                 </configuration>

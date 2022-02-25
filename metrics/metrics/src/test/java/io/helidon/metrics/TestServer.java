@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,13 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 package io.helidon.metrics;
 
-import java.time.Duration;
+import javax.json.JsonObject;
+import javax.json.JsonValue;
+
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -32,8 +35,6 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.Service;
 import io.helidon.webserver.WebServer;
 
-import jakarta.json.JsonObject;
-import jakarta.json.JsonValue;
 import org.eclipse.microprofile.metrics.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.junit.jupiter.api.AfterAll;
@@ -43,9 +44,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
-import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
 
 public class TestServer {
 
@@ -56,8 +55,6 @@ public class TestServer {
     private static final MetricsSupport.Builder NORMAL_BUILDER = MetricsSupport.builder();
 
     private static MetricsSupport metricsSupport;
-
-    private static final Duration CLIENT_TIMEOUT = Duration.ofSeconds(5);
 
     private WebClient.Builder webClientBuilder;
 
@@ -107,11 +104,11 @@ public class TestServer {
                 .accept(MediaType.APPLICATION_JSON)
                 .path("metrics")
                 .submit()
-                .await(CLIENT_TIMEOUT);
+                .await();
 
         assertThat("Normal metrics URL HTTP response", response.status().code(), is(200));
 
-        JsonObject metrics = response.content().as(JsonObject.class).await(CLIENT_TIMEOUT);
+        JsonObject metrics = response.content().as(JsonObject.class).await();
         assertThat("Vendor metrics in returned entity", metrics.containsKey("vendor"), is(true));
     }
 
@@ -123,11 +120,11 @@ public class TestServer {
                 .accept(MediaType.APPLICATION_JSON)
                 .path("metrics/vendor")
                 .submit()
-                .await(CLIENT_TIMEOUT);
+                .await();
 
         assertThat("Normal metrics/vendor URL HTTP response", response.status().code(), is(200));
 
-        JsonObject metrics = response.content().as(JsonObject.class).await(CLIENT_TIMEOUT);
+        JsonObject metrics = response.content().as(JsonObject.class).await();
         if (System.getenv("MP_METRICS_TAGS") == null) {
             // MP_METRICS_TAGS causes metrics to add tags to metric IDs. Just do this check in the simple case, without tags.
             assertThat("Vendor metrics requests.count in returned entity", metrics.containsKey("requests.count"), is(true));
@@ -165,7 +162,7 @@ public class TestServer {
     void checkMetricsForExecutorService() {
 
         String jsonKeyForCompleteTaskCountInThreadPool =
-                "executor-service.completed-task-count;poolIndex=0;supplierCategory=my-thread-thread-pool-1;supplierIndex=0";
+                "executor-service.completed-task-count;poolIndex=0;supplierCategory=helidon-thread-pool-1;supplierIndex=0";
 
         WebClientRequestBuilder metricsRequestBuilder = webClientBuilder
                 .build()
@@ -175,17 +172,14 @@ public class TestServer {
 
         WebClientResponse response = metricsRequestBuilder
                 .submit()
-                .await(CLIENT_TIMEOUT);
+                .await();
 
         assertThat("Normal metrics/vendor URL HTTP response", response.status().code(), is(200));
 
-        JsonObject metrics = response.content().as(JsonObject.class).await(CLIENT_TIMEOUT);
+        JsonObject metrics = response.content().as(JsonObject.class).await();
 
-        assertThat("JSON metrics results before accessing slow endpoint",
-                   metrics,
-                   hasKey(jsonKeyForCompleteTaskCountInThreadPool));
-
-        int completedTaskCount = metrics.getInt(jsonKeyForCompleteTaskCountInThreadPool);
+        int completedTaskCount =
+                metrics.getInt(jsonKeyForCompleteTaskCountInThreadPool);
         assertThat("Completed task count before accessing slow endpoint", completedTaskCount, is(0));
 
         WebClientResponse slowGreetResponse = webClientBuilder
@@ -194,22 +188,17 @@ public class TestServer {
                 .accept(MediaType.TEXT_PLAIN)
                 .path("greet/slow")
                 .submit()
-                .await(CLIENT_TIMEOUT);
+                .await();
 
         assertThat("Slow greet access response status", slowGreetResponse.status().code(), is(200));
 
         WebClientResponse secondMetricsResponse = metricsRequestBuilder
                 .submit()
-                .await(CLIENT_TIMEOUT);
+                .await();
 
         assertThat("Second access to metrics", secondMetricsResponse.status().code(), is(200));
 
-        JsonObject secondMetrics = secondMetricsResponse.content().as(JsonObject.class).await(CLIENT_TIMEOUT);
-
-        assertThat("JSON metrics results after accessing slow endpoint",
-                   secondMetrics,
-                   hasKey(jsonKeyForCompleteTaskCountInThreadPool));
-
+        JsonObject secondMetrics = secondMetricsResponse.content().as(JsonObject.class).await();
 
         int secondCompletedTaskCount = secondMetrics.getInt(jsonKeyForCompleteTaskCountInThreadPool);
 

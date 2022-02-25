@@ -148,17 +148,17 @@ public final class GenerateAutonomousDatabaseWallet {
         /**
          * Returns JDBC URL with connection description for the given service based on tnsnames.ora in wallet.
          *
-         * @param serviceName
+         * @param tnsNetServiceName
          * @return String
          */
-        public String getJdbcUrl(String serviceName) throws IllegalStateException {
+        public String getJdbcUrl(String tnsNetServiceName) throws IllegalStateException {
             String jdbcUrl = null;
             try (ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(content))) {
                 ZipEntry entry = null;
                 while ((entry = zis.getNextEntry()) != null) {
                     if (entry.getName().equals("tnsnames.ora")) {
                         jdbcUrl = new String(zis.readAllBytes(), StandardCharsets.UTF_8)
-                                .replaceFirst(serviceName + "_high\\s+=\\s+", "jdbc:oracle:thin:@")
+                                .replaceFirst(tnsNetServiceName + "\\s+=\\s+", "jdbc:oracle:thin:@")
                                 .replaceAll("\\n[^\\n]+", "");
                     }
                     zis.closeEntry();

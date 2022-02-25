@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-bom</artifactId>
-        <version>3.0.0-SNAPSHOT</version>
+        <version>2.4.3-SNAPSHOT</version>
         <relativePath>../bom/pom.xml</relativePath>
     </parent>
     <artifactId>helidon-dependencies</artifactId>
@@ -36,19 +36,21 @@
         <!--
         Changing these versions requires approval for a new third party dependency!
         -->
+        <version.lib.activation-api>1.2.2</version.lib.activation-api>
         <version.lib.activemq>5.16.0</version.lib.activemq>
         <version.lib.animal-sniffer>1.18</version.lib.animal-sniffer>
         <version.lib.annotation-api>1.3.5</version.lib.annotation-api>
         <version.lib.brave-opentracing>1.0.0</version.lib.brave-opentracing>
-        <version.lib.byte-buddy>1.11.20</version.lib.byte-buddy>
+        <version.lib.cdi-api>2.0.2</version.lib.cdi-api>
         <version.lib.reactivestreams>1.0.3</version.lib.reactivestreams>
         <!-- commons-codec is for dependency convergence only -->
         <version.lib.commons-codec>1.15</version.lib.commons-codec>
         <version.lib.commons-logging>1.2</version.lib.commons-logging>
         <version.lib.cron-utils>9.1.6</version.lib.cron-utils>
         <version.lib.dropwizard.metrics>4.1.2</version.lib.dropwizard.metrics>
-        <version.lib.eclipselink>3.0.2</version.lib.eclipselink>
-        <version.lib.el-impl>4.0.2</version.lib.el-impl>
+        <version.lib.eclipselink>2.7.9</version.lib.eclipselink>
+        <version.lib.el-api>3.0.3</version.lib.el-api>
+        <version.lib.el-impl>3.0.4</version.lib.el-impl>
         <version.lib.etcd4j>2.18.0</version.lib.etcd4j>
         <version.lib.failsafe>2.3.1</version.lib.failsafe>
         <version.lib.google-api-client>1.32.2</version.lib.google-api-client>
@@ -61,71 +63,62 @@
         <version.lib.gson>2.8.9</version.lib.gson>
         <version.lib.grpc>1.44.0</version.lib.grpc>
         <version.lib.guava>30.0-jre</version.lib.guava>
-        <version.lib.h2>2.0.206</version.lib.h2>
+        <version.lib.h2>1.4.200</version.lib.h2>
         <version.lib.hamcrest>1.3</version.lib.hamcrest>
-        <version.lib.hibernate>6.0.0.Beta1</version.lib.hibernate>
+        <version.lib.hibernate>5.5.7.Final</version.lib.hibernate>
         <version.lib.hikaricp>5.0.0</version.lib.hikaricp>
         <version.lib.hystrix>1.5.18</version.lib.hystrix>
-        <version.lib.jackson>2.13.1</version.lib.jackson>
+        <version.lib.inject>1.0</version.lib.inject>
+        <version.lib.interceptor-api>1.2.5</version.lib.interceptor-api>
+        <version.lib.jackson>2.12.1</version.lib.jackson>
         <version.lib.jaegertracing>1.6.0</version.lib.jaegertracing>
-        <version.lib.jakarta.activation-api>2.0.1</version.lib.jakarta.activation-api>
-        <version.lib.jakarta.annotation-api>2.0.0</version.lib.jakarta.annotation-api>
-        <version.lib.jakarta.cdi-api>3.0.0</version.lib.jakarta.cdi-api>
-        <version.lib.jakarta.el-api>4.0.0</version.lib.jakarta.el-api>
-        <version.lib.jakarta.inject>2.0.0</version.lib.jakarta.inject>
-        <version.lib.jakarta.interceptor-api>2.0.0</version.lib.jakarta.interceptor-api>
-        <version.lib.jakarta.jaxrs-api>3.0.0</version.lib.jakarta.jaxrs-api>
-        <version.lib.jakarta.jms-api>3.0.0</version.lib.jakarta.jms-api>
-        <version.lib.jakarta.jsonb-api>2.0.0</version.lib.jakarta.jsonb-api>
-        <version.lib.jakarta.jsonp-api>2.0.1</version.lib.jakarta.jsonp-api>
-        <version.lib.jakarta.persistence-api>3.0.0</version.lib.jakarta.persistence-api>
-        <version.lib.jakarta.transaction-api>2.0.0</version.lib.jakarta.transaction-api>
-        <version.lib.jakarta.validation-api>3.0.0</version.lib.jakarta.validation-api>
-        <version.lib.jakarta.websockets-api>2.0.0</version.lib.jakarta.websockets-api>
-        <version.lib.jakarta.xml.bind-api>3.0.1</version.lib.jakarta.xml.bind-api>
-        <version.lib.jandex>2.4.1.Final</version.lib.jandex>
-        <version.lib.jaxb-core>3.0.2</version.lib.jaxb-core>
-        <version.lib.jaxb-impl>3.0.2</version.lib.jaxb-impl>
+        <version.lib.jandex>2.3.1.Final</version.lib.jandex>
+        <version.lib.jaxb-api>2.3.3</version.lib.jaxb-api>
+        <version.lib.jaxb-core>2.3.0.1</version.lib.jaxb-core>
+        <version.lib.jaxb-impl>2.3.5</version.lib.jaxb-impl>
+        <version.lib.jaxrs-api>2.1.6</version.lib.jaxrs-api>
         <version.lib.jboss.classfilewriter>1.2.5.Final</version.lib.jboss.classfilewriter>
-        <version.lib.jboss.logging>3.4.2.Final</version.lib.jboss.logging>
+        <version.lib.jboss.logging>3.2.1.Final</version.lib.jboss.logging>
+        <version.lib.jboss.transaction-api>1.0.0.Final</version.lib.jboss.transaction-api>
         <version.lib.jboss.transaction-spi>7.6.1.Final</version.lib.jboss.transaction-spi>
         <!-- Force upgrade version used by maven-jaxb2-plugin. Needed to support Java 16 -->
-        <version.lib.jaxb-runtime>3.0.2</version.lib.jaxb-runtime>
+        <version.lib.jaxb-runtime>2.3.3</version.lib.jaxb-runtime>
         <version.lib.jedis>3.6.3</version.lib.jedis>
-        <version.lib.jersey>3.0.4</version.lib.jersey>
+        <version.lib.jersey>2.35</version.lib.jersey>
         <version.lib.jgit>5.11.1.202105131744-r</version.lib.jgit>
-        <version.lib.jsonp-impl>2.0.1</version.lib.jsonp-impl>
+        <version.lib.jms-api>2.0</version.lib.jms-api>
+        <version.lib.jsonb-api>1.0.2</version.lib.jsonb-api>
+        <version.lib.jsonp-api>1.1.6</version.lib.jsonp-api>
+        <version.lib.jsonp-impl>1.1.6</version.lib.jsonp-impl>
         <version.lib.junit4>4.13.1</version.lib.junit4>
         <version.lib.junit>5.7.0</version.lib.junit>
         <version.lib.kafka>2.8.1</version.lib.kafka>
         <version.lib.log4j>2.17.1</version.lib.log4j>
-        <version.lib.logback>1.2.10</version.lib.logback>
+        <version.lib.logback>1.2.3</version.lib.logback>
         <version.lib.mariadb-java-client>2.6.2</version.lib.mariadb-java-client>
         <version.lib.maven-wagon>2.10</version.lib.maven-wagon>
         <version.lib.micrometer>1.6.6</version.lib.micrometer>
-        <version.lib.micronaut>3.1.3</version.lib.micronaut>
-        <version.lib.micronaut.data>3.1.2</version.lib.micronaut.data>
-        <version.lib.micronaut.sql>4.0.4</version.lib.micronaut.sql>
-        <version.lib.microprofile-config>3.0.1</version.lib.microprofile-config>
-        <version.lib.microprofile-fault-tolerance-api>4.0</version.lib.microprofile-fault-tolerance-api>
-        <version.lib.microprofile-graphql>2.0-RC1</version.lib.microprofile-graphql>
-        <version.lib.microprofile-health>4.0</version.lib.microprofile-health>
-        <version.lib.microprofile-jwt>2.0</version.lib.microprofile-jwt>
-        <version.lib.microprofile-metrics-api>4.0</version.lib.microprofile-metrics-api>
-        <version.lib.microprofile-openapi-api>3.0</version.lib.microprofile-openapi-api>
-        <version.lib.microprofile-reactive-messaging-api>2.0.1</version.lib.microprofile-reactive-messaging-api>
-        <version.lib.microprofile-reactive-streams-operators-api>2.0</version.lib.microprofile-reactive-streams-operators-api>
-        <version.lib.microprofile-reactive-streams-operators-core>2.0</version.lib.microprofile-reactive-streams-operators-core>
-        <version.lib.microprofile-rest-client>3.0</version.lib.microprofile-rest-client>
-        <version.lib.microprofile-tracing>3.0</version.lib.microprofile-tracing>
-        <version.lib.microprofile-lra-api>2.0-RC1</version.lib.microprofile-lra-api>
+        <version.lib.micronaut>2.5.13</version.lib.micronaut>
+        <version.lib.micronaut.data>2.5.0</version.lib.micronaut.data>
+        <version.lib.micronaut.sql>3.4.0</version.lib.micronaut.sql>
+        <version.lib.microprofile-config>1.4</version.lib.microprofile-config>
+        <version.lib.microprofile-fault-tolerance-api>2.1.1</version.lib.microprofile-fault-tolerance-api>
+        <version.lib.microprofile-graphql>1.1.0</version.lib.microprofile-graphql>
+        <version.lib.microprofile-health>2.2</version.lib.microprofile-health>
+        <version.lib.microprofile-jwt>1.1.1</version.lib.microprofile-jwt>
+        <version.lib.microprofile-metrics-api>2.3.2</version.lib.microprofile-metrics-api>
+        <version.lib.microprofile-openapi-api>1.2</version.lib.microprofile-openapi-api>
+        <version.lib.microprofile-reactive-messaging-api>1.0</version.lib.microprofile-reactive-messaging-api>
+        <version.lib.microprofile-reactive-streams-operators-api>1.0.1</version.lib.microprofile-reactive-streams-operators-api>
+        <version.lib.microprofile-reactive-streams-operators-core>1.0.1</version.lib.microprofile-reactive-streams-operators-core>
+        <version.lib.microprofile-rest-client>2.0</version.lib.microprofile-rest-client>
+        <version.lib.microprofile-tracing>1.3.3</version.lib.microprofile-tracing>
+        <version.lib.microprofile-lra-api>1.0</version.lib.microprofile-lra-api>
         <version.lib.microstream>05.00.02-MS-GA</version.lib.microstream>
         <version.lib.mockito>2.23.4</version.lib.mockito>
         <version.lib.mongodb.reactivestreams>1.11.0</version.lib.mongodb.reactivestreams>
         <version.lib.mssql-jdbc>8.4.1.jre8</version.lib.mssql-jdbc>
         <version.lib.neo4j>4.4.3</version.lib.neo4j>
-        <version.lib.hibernate-validator>7.0.2.Final</version.lib.hibernate-validator>
-        <version.lib.el>3.0.0</version.lib.el>
         <version.lib.mysql-connector-java>8.0.22</version.lib.mysql-connector-java>
         <version.lib.narayana>5.12.0.Final</version.lib.narayana>
         <version.lib.netty>4.1.73.Final</version.lib.netty>
@@ -138,16 +131,20 @@
         <version.lib.opentracing>0.33.0</version.lib.opentracing>
         <version.lib.opentracing.grpc>0.2.1</version.lib.opentracing.grpc>
         <version.lib.opentracing.tracerresolver>0.1.8</version.lib.opentracing.tracerresolver>
+        <version.lib.persistence-api>2.2.3</version.lib.persistence-api>
         <version.lib.postgresql>42.2.18</version.lib.postgresql>
         <version.lib.prometheus>0.9.0</version.lib.prometheus>
         <version.lib.slf4j>1.7.32</version.lib.slf4j>
-        <version.lib.smallrye-openapi>2.1.16</version.lib.smallrye-openapi>
+        <version.lib.smallrye-openapi>2.0.26</version.lib.smallrye-openapi>
         <version.lib.snakeyaml>1.27</version.lib.snakeyaml>
+        <version.lib.transaction-api>1.3.3</version.lib.transaction-api>
         <version.lib.typesafe-config>1.4.1</version.lib.typesafe-config>
-        <version.lib.tyrus>2.0.1</version.lib.tyrus>
-        <version.lib.weld-api>4.0.SP1</version.lib.weld-api>
-        <version.lib.weld>4.0.2.Final</version.lib.weld>
-        <version.lib.yasson>2.0.2</version.lib.yasson>
+        <version.lib.tyrus>1.17</version.lib.tyrus>
+        <version.lib.validation-api>2.0.2</version.lib.validation-api>
+        <version.lib.websockets-api>1.1.2</version.lib.websockets-api>
+        <version.lib.weld-api>3.1.SP2</version.lib.weld-api>
+        <version.lib.weld>3.1.6.Final</version.lib.weld>
+        <version.lib.yasson>1.0.8</version.lib.yasson>
         <version.lib.zipkin.sender-urlconnection>2.12.0</version.lib.zipkin.sender-urlconnection>
         <version.lib.zipkin>2.12.5</version.lib.zipkin>
         <version.lib.zookeeper>3.5.7</version.lib.zookeeper>
@@ -175,27 +172,6 @@
         -->
 
         <dependencies>
-            <!-- Section 0: dependencies to be removed, workaround -->
-            <!-- 3.0.0-JAKARTA -->
-            <dependency>
-                <!-- needed for grpc, as generated code contains java.annotation.Generated -->
-                <groupId>javax.annotation</groupId>
-                <artifactId>javax.annotation-api</artifactId>
-                <version>1.3.2</version>
-            </dependency>
-            <dependency>
-                <!-- needed for MP LRA, not yet ready for jakarta packages-->
-                <groupId>javax.ws.rs</groupId>
-                <artifactId>javax.ws.rs-api</artifactId>
-                <version>2.1.1</version>
-            </dependency>
-            <dependency>
-                <!-- used by hibernate plugin -->
-                <groupId>net.bytebuddy</groupId>
-                <artifactId>byte-buddy</artifactId>
-                <version>${version.lib.byte-buddy}</version>
-            </dependency>
-
             <!-- Section 1: direct third party dependencies -->
             <dependency>
                 <groupId>org.glassfish.jersey.core</groupId>
@@ -274,7 +250,7 @@
             <dependency>
                 <groupId>jakarta.xml.bind</groupId>
                 <artifactId>jakarta.xml.bind-api</artifactId>
-                <version>${version.lib.jakarta.xml.bind-api}</version>
+                <version>${version.lib.jaxb-api}</version>
             </dependency>
             <dependency>
                 <groupId>com.sun.xml.bind</groupId>
@@ -289,27 +265,27 @@
             <dependency>
                 <groupId>jakarta.ws.rs</groupId>
                 <artifactId>jakarta.ws.rs-api</artifactId>
-                <version>${version.lib.jakarta.jaxrs-api}</version>
+                <version>${version.lib.jaxrs-api}</version>
             </dependency>
             <dependency>
                 <groupId>jakarta.enterprise</groupId>
                 <artifactId>jakarta.enterprise.cdi-api</artifactId>
-                <version>${version.lib.jakarta.cdi-api}</version>
+                <version>${version.lib.cdi-api}</version>
             </dependency>
             <dependency>
                 <groupId>jakarta.el</groupId>
                 <artifactId>jakarta.el-api</artifactId>
-                <version>${version.lib.jakarta.el-api}</version>
+                <version>${version.lib.el-api}</version>
             </dependency>
             <dependency>
                 <groupId>jakarta.annotation</groupId>
                 <artifactId>jakarta.annotation-api</artifactId>
-                <version>${version.lib.jakarta.annotation-api}</version>
+                <version>${version.lib.annotation-api}</version>
             </dependency>
             <dependency>
                 <groupId>jakarta.interceptor</groupId>
                 <artifactId>jakarta.interceptor-api</artifactId>
-                <version>${version.lib.jakarta.interceptor-api}</version>
+                <version>${version.lib.interceptor-api}</version>
                 <exclusions>
                   <!-- Exclude EJB. See https://github.com/eclipse-ee4j/interceptor-api/issues/31 -->
                   <exclusion>
@@ -321,22 +297,22 @@
             <dependency>
                 <groupId>jakarta.inject</groupId>
                 <artifactId>jakarta.inject-api</artifactId>
-                <version>${version.lib.jakarta.inject}</version>
+                <version>${version.lib.inject}</version>
             </dependency>
             <dependency>
                 <groupId>jakarta.json</groupId>
                 <artifactId>jakarta.json-api</artifactId>
-                <version>${version.lib.jakarta.jsonp-api}</version>
+                <version>${version.lib.jsonp-api}</version>
             </dependency>
             <dependency>
                 <groupId>jakarta.json.bind</groupId>
                 <artifactId>jakarta.json.bind-api</artifactId>
-                <version>${version.lib.jakarta.jsonb-api}</version>
+                <version>${version.lib.jsonb-api}</version>
             </dependency>
             <dependency>
                 <groupId>jakarta.activation</groupId>
                 <artifactId>jakarta.activation-api</artifactId>
-                <version>${version.lib.jakarta.activation-api}</version>
+                <version>${version.lib.activation-api}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jgit</groupId>
@@ -344,19 +320,13 @@
                 <version>${version.lib.jgit}</version>
             </dependency>
             <dependency>
-                <groupId>jakarta.jms</groupId>
-                <artifactId>jakarta.jms-api</artifactId>
-                <version>${version.lib.jakarta.jms-api}</version>
+                <groupId>javax.jms</groupId>
+                <artifactId>javax.jms-api</artifactId>
+                <version>${version.lib.jms-api}</version>
             </dependency>
             <dependency>
                 <groupId>org.glassfish</groupId>
                 <artifactId>jakarta.json</artifactId>
-                <version>${version.lib.jsonp-impl}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.glassfish</groupId>
-                <artifactId>jakarta.json</artifactId>
-                <classifier>module</classifier>
                 <version>${version.lib.jsonp-impl}</version>
             </dependency>
             <dependency>
@@ -546,7 +516,7 @@
             <dependency>
                 <groupId>jakarta.websocket</groupId>
                 <artifactId>jakarta.websocket-api</artifactId>
-                <version>${version.lib.jakarta.websockets-api}</version>
+                <version>${version.lib.websockets-api}</version>
             </dependency>
             <dependency>
                 <groupId>org.glassfish.tyrus</groupId>
@@ -656,6 +626,14 @@
                         <groupId>org.osgi</groupId>
                         <artifactId>org.osgi.annotation.versioning</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>javax.inject</groupId>
+                        <artifactId>javax.inject</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>javax.enterprise</groupId>
+                        <artifactId>cdi-api</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
@@ -762,6 +740,10 @@
                         <groupId>org.eclipse.microprofile.reactive-streams-operators</groupId>
                         <artifactId>microprofile-reactive-streams-operators-core</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>javax.enterprise</groupId>
+                        <artifactId>cdi-api</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
@@ -822,17 +804,17 @@
             <dependency>
                 <groupId>jakarta.persistence</groupId>
                 <artifactId>jakarta.persistence-api</artifactId>
-                <version>${version.lib.jakarta.persistence-api}</version>
+                <version>${version.lib.persistence-api}</version>
             </dependency>
             <dependency>
                 <groupId>jakarta.transaction</groupId>
                 <artifactId>jakarta.transaction-api</artifactId>
-                <version>${version.lib.jakarta.transaction-api}</version>
+                <version>${version.lib.transaction-api}</version>
             </dependency>
             <dependency>
                 <groupId>jakarta.validation</groupId>
                 <artifactId>jakarta.validation-api</artifactId>
-                <version>${version.lib.jakarta.validation-api}</version>
+                <version>${version.lib.validation-api}</version>
             </dependency>
             <dependency>
                 <groupId>com.h2database</groupId>
@@ -883,14 +865,27 @@
                 <version>${version.lib.eclipselink}</version>
             </dependency>
             <dependency>
-                <groupId>org.hibernate.orm</groupId>
+                <groupId>org.hibernate</groupId>
                 <artifactId>hibernate-core</artifactId>
                 <version>${version.lib.hibernate}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.narayana.jta</groupId>
-                <artifactId>narayana-jta-jakarta</artifactId>
-                <version>${version.lib.narayana}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>javax.persistence</groupId>
+                        <artifactId>javax.persistence-api</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>javax.activation</groupId>
+                        <artifactId>javax.activation-api</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>javax.xml.bind</groupId>
+                        <artifactId>jaxb-api</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.jboss.spec.javax.transaction</groupId>
+                        <artifactId>jboss-transaction-api_1.2_spec</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.jboss.narayana.jta</groupId>
@@ -939,8 +934,18 @@
             </dependency>
             <dependency>
                 <groupId>org.jboss</groupId>
-                <artifactId>jboss-transaction-spi-jakarta</artifactId>
+                <artifactId>jboss-transaction-spi</artifactId>
                 <version>${version.lib.jboss.transaction-spi}</version>
+                <exclusions>
+                  <exclusion>
+                      <groupId>org.jboss.spec.javax.resource</groupId>
+                      <artifactId>jboss-connector-api_1.7_spec</artifactId>
+                  </exclusion>
+                  <exclusion>
+                      <groupId>org.jboss.spec.javax.transaction</groupId>
+                      <artifactId>jboss-transaction-api_1.2_spec</artifactId>
+                  </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.jboss.weld.environment</groupId>
@@ -1047,6 +1052,10 @@
                         <artifactId>microprofile-config-api</artifactId>
                     </exclusion>
                     <exclusion>
+                        <groupId>javax.enterprise</groupId>
+                        <artifactId>cdi-api</artifactId>
+                    </exclusion>
+                    <exclusion>
                         <groupId>javax.el</groupId>
                         <artifactId>javax.el-api</artifactId>
                     </exclusion>
@@ -1118,17 +1127,6 @@
                 <groupId>org.neo4j.driver</groupId>
                 <artifactId>neo4j-java-driver</artifactId>
                 <version>${version.lib.neo4j}</version>
-            </dependency>
-            <!-- Bean Validation -->
-            <dependency>
-                <groupId>org.hibernate.validator</groupId>
-                <artifactId>hibernate-validator</artifactId>
-                <version>${version.lib.hibernate-validator}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.hibernate.validator</groupId>
-                <artifactId>hibernate-validator-cdi</artifactId>
-                <version>${version.lib.hibernate-validator}</version>
             </dependency>
             <!-- Cron utils -->
             <dependency>
@@ -1309,12 +1307,12 @@
             </dependency>
             <dependency>
                 <groupId>io.netty</groupId>
-                <artifactId>netty-transport-native-unix-common</artifactId>
+                <artifactId>netty-common</artifactId>
                 <version>${version.lib.netty}</version>
             </dependency>
             <dependency>
                 <groupId>io.netty</groupId>
-                <artifactId>netty-common</artifactId>
+                <artifactId>netty-transport-native-unix-common</artifactId>
                 <version>${version.lib.netty}</version>
             </dependency>
             <dependency>
@@ -1322,6 +1320,11 @@
                 <groupId>com.google.errorprone</groupId>
                 <artifactId>error_prone_annotations</artifactId>
                 <version>${version.lib.google-error-prone}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.spec.javax.transaction</groupId>
+                <artifactId>jboss-transaction-api_1.2_spec</artifactId>
+                <version>${version.lib.jboss.transaction-api}</version>
             </dependency>
             <dependency>
                 <!-- if needed (as excluded from weld) -->

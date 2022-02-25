@@ -16,11 +16,13 @@
 
 package io.helidon.tests.functional.context.hello;
 
-import jakarta.enterprise.context.RequestScoped;
-import jakarta.ws.rs.WebApplicationException;
-import jakarta.ws.rs.ext.Provider;
-import jakarta.ws.rs.ext.ReaderInterceptor;
-import jakarta.ws.rs.ext.ReaderInterceptorContext;
+import javax.enterprise.context.RequestScoped;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.ext.Provider;
+import javax.ws.rs.ext.ReaderInterceptor;
+import javax.ws.rs.ext.ReaderInterceptorContext;
+import javax.ws.rs.ext.WriterInterceptor;
+import javax.ws.rs.ext.WriterInterceptorContext;
 import java.io.IOException;
 
 /**
@@ -31,6 +33,7 @@ import java.io.IOException;
 @Provider
 @RequestScoped
 public class RequestReaderInterceptor implements ReaderInterceptor {
+
 
     @Override
     public Object aroundReadFrom(ReaderInterceptorContext context) throws IOException, WebApplicationException {

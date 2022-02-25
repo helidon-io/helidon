@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,6 @@ package io.helidon.metrics.api;
 
 import java.util.Map;
 import java.util.function.BiFunction;
-import java.util.function.Function;
-import java.util.function.Supplier;
 
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Metadata;
@@ -31,7 +29,7 @@ import org.eclipse.microprofile.metrics.MetricType;
  */
 class NoOpMetricRegistry extends AbstractRegistry<NoOpMetric> {
 
-    static final Map<MetricType, BiFunction<String, Metadata, NoOpMetric>> NO_OP_METRIC_FACTORIES =
+    private static final Map<MetricType, BiFunction<String, Metadata, NoOpMetric>> NO_OP_METRIC_FACTORIES =
             Map.of(MetricType.COUNTER, NoOpMetricImpl.NoOpCounterImpl::create,
                    MetricType.GAUGE, NoOpMetricImpl.NoOpGaugeImpl::create,
                    MetricType.HISTOGRAM, NoOpMetricImpl.NoOpHistogramImpl::create,
@@ -48,7 +46,7 @@ class NoOpMetricRegistry extends AbstractRegistry<NoOpMetric> {
 
 
     private NoOpMetricRegistry(MetricRegistry.Type type) {
-        super(type, NoOpMetric.class, REGISTRY_SETTINGS);
+        super(type, NoOpMetric.class);
     }
 
     @Override
@@ -66,8 +64,13 @@ class NoOpMetricRegistry extends AbstractRegistry<NoOpMetric> {
     }
 
     @Override
+    protected RegistrySettings registrySettings() {
+        return REGISTRY_SETTINGS;
+    }
+
+    @Override
     protected <T extends Metric> NoOpMetricImpl toImpl(Metadata metadata, T metric) {
-        String registryTypeName = type();
+        String registryTypeName = registryType().getName();
         MetricType metricType = AbstractRegistry.deriveType(metadata.getTypeRaw(), metric);
         switch (metricType) {
         case COUNTER:
@@ -100,19 +103,5 @@ class NoOpMetricRegistry extends AbstractRegistry<NoOpMetric> {
                       NoOpMetricImpl.NoOpMeterImpl.class, MetricType.METERED,
                       NoOpMetricImpl.NoOpTimerImpl.class, MetricType.TIMER,
                       NoOpMetricImpl.NoOpSimpleTimerImpl.class, MetricType.SIMPLE_TIMER);
-    }
-
-    @Override
-    protected <T, R extends Number> Gauge<R> createGauge(Metadata metadata, T object, Function<T, R> func) {
-        return NoOpMetricImpl.NoOpGaugeImpl.create(type(),
-                                                   metadata,
-                                                   () -> func.apply(object));
-    }
-
-    @Override
-    protected <R extends Number> Gauge<R> createGauge(Metadata metadata, Supplier<R> supplier) {
-        return NoOpMetricImpl.NoOpGaugeImpl.create(type(),
-                                                  metadata,
-                                                  () -> supplier.get());
     }
 }

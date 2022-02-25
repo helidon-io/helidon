@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.applications</groupId>
         <artifactId>helidon-mp</artifactId>
-        <version>3.0.0-SNAPSHOT</version>
+        <version>2.4.3-SNAPSHOT</version>
         <relativePath>../../../../applications/mp/pom.xml</relativePath>
     </parent>
     <groupId>io.helidon.examples.integrations.neo4j</groupId>
@@ -33,6 +33,7 @@
 
     <properties>
         <neo4j-harness.version>4.4.3</neo4j-harness.version>
+        <jetty-util.version>11.0.7</jetty-util.version>
     </properties>
 
     <dependencies>
@@ -96,6 +97,12 @@
             </exclusions>
         </dependency>
         <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-util</artifactId>
+            <version>${jetty-util.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
             <scope>test</scope>
@@ -132,7 +139,12 @@
                      as the database process is separate from the application
                      -->
                     <argLine>
+                        --add-exports=java.base/sun.nio.ch=ALL-UNNAMED
                         --add-opens=java.base/java.lang=ALL-UNNAMED
+                        --add-opens=java.base/java.lang.reflect=ALL-UNNAMED
+                        --add-opens=java.base/java.io=ALL-UNNAMED
+                        --add-opens=java.base/java.nio=ALL-UNNAMED
+                        --add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED
                     </argLine>
                 </configuration>
             </plugin>

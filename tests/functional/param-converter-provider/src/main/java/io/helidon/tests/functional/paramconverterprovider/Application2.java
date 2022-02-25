@@ -16,8 +16,8 @@
 
 package io.helidon.tests.functional.paramconverterprovider;
 
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.ws.rs.core.Application;
+import javax.enterprise.context.ApplicationScoped;
+import javax.ws.rs.core.Application;
 import java.util.Set;
 
 @ApplicationScoped

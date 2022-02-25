@@ -16,6 +16,7 @@
 
 /**
  * Microprofile metrics specification implementation.
+ * See https://github.com/eclipse/microprofile-metrics/
  *
  * @see org.eclipse.microprofile.metrics
  */

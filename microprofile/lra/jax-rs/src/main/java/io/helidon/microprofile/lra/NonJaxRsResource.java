@@ -25,6 +25,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import javax.annotation.PreDestroy;
+import javax.inject.Inject;
+import javax.ws.rs.core.Response;
+
 import io.helidon.common.Reflected;
 import io.helidon.common.configurable.ThreadPoolSupplier;
 import io.helidon.common.http.HttpRequest;
@@ -36,9 +40,6 @@ import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 
-import jakarta.annotation.PreDestroy;
-import jakarta.inject.Inject;
-import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.lra.LRAResponse;
 import org.eclipse.microprofile.lra.annotation.LRAStatus;

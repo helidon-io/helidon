@@ -73,7 +73,7 @@ class ThreadPoolSupplierTest {
                 .build();
         builtInstance = ensureOurExecutor(builtSupplier.getThreadPool());
 
-        configuredSupplier = ThreadPoolSupplier.create(Config.create().get("unit.thread-pool"));
+        configuredSupplier = ThreadPoolSupplier.create(Config.create().get("unit.thread-pool"), "test-thread-pool");
         configuredInstance = ensureOurExecutor(configuredSupplier.getThreadPool());
     }
 

@@ -26,27 +26,28 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.stream.Collectors;
 
+import javax.annotation.Priority;
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.Initialized;
+import javax.enterprise.event.Observes;
+import javax.enterprise.inject.spi.AnnotatedConstructor;
+import javax.enterprise.inject.spi.AnnotatedField;
+import javax.enterprise.inject.spi.AnnotatedMethod;
+import javax.enterprise.inject.spi.AnnotatedType;
+import javax.enterprise.inject.spi.BeanManager;
+import javax.enterprise.inject.spi.BeforeBeanDiscovery;
+import javax.enterprise.inject.spi.Extension;
+import javax.enterprise.inject.spi.ProcessAnnotatedType;
+import javax.enterprise.inject.spi.ProcessManagedBean;
+import javax.enterprise.inject.spi.ProcessSyntheticBean;
+import javax.enterprise.util.AnnotationLiteral;
+import javax.inject.Inject;
+
 import io.helidon.common.configurable.ScheduledThreadPoolSupplier;
 import io.helidon.common.configurable.ThreadPoolSupplier;
 import io.helidon.config.mp.MpConfig;
 import io.helidon.faulttolerance.FaultTolerance;
 
-import jakarta.annotation.Priority;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.context.Initialized;
-import jakarta.enterprise.event.Observes;
-import jakarta.enterprise.inject.spi.AnnotatedConstructor;
-import jakarta.enterprise.inject.spi.AnnotatedField;
-import jakarta.enterprise.inject.spi.AnnotatedMethod;
-import jakarta.enterprise.inject.spi.AnnotatedType;
-import jakarta.enterprise.inject.spi.BeanManager;
-import jakarta.enterprise.inject.spi.BeforeBeanDiscovery;
-import jakarta.enterprise.inject.spi.Extension;
-import jakarta.enterprise.inject.spi.ProcessAnnotatedType;
-import jakarta.enterprise.inject.spi.ProcessManagedBean;
-import jakarta.enterprise.inject.spi.ProcessSyntheticBean;
-import jakarta.enterprise.util.AnnotationLiteral;
-import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.faulttolerance.Asynchronous;
@@ -57,7 +58,7 @@ import org.eclipse.microprofile.faulttolerance.Retry;
 import org.eclipse.microprofile.faulttolerance.Timeout;
 import org.glassfish.jersey.process.internal.RequestScope;
 
-import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
+import static javax.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 
 /**
  * Class FaultToleranceExtension.
@@ -232,30 +233,41 @@ public class FaultToleranceExtension implements Extension {
     }
 
     /**
-     * Validates annotations.
+     * Registers metrics for all FT methods and init executors.
+     *
+     * This registration must occur after the metrics extension has observed the event and prepared the registry factory.
      *
      * @param event Event information.
      */
-    void validateAnnotations(@Observes @Priority(LIBRARY_BEFORE + 10 + 5) @Initialized(ApplicationScoped.class)
-                                     Object event) {
+    void registerMetricsAndInitExecutors(@Observes @Priority(LIBRARY_BEFORE + 10 + 5) @Initialized(ApplicationScoped.class)
+                                                 Object event) {
         if (FaultToleranceMetrics.enabled()) {
             getRegisteredMethods().stream().forEach(beanMethod -> {
                 final Method method = beanMethod.method();
                 final Class<?> beanClass = beanMethod.beanClass();
 
+                // Counters for all methods
+                FaultToleranceMetrics.registerMetrics(method);
+
+                // Metrics depending on the annotationSet present
                 if (MethodAntn.isAnnotationPresent(beanClass, method, Retry.class)) {
+                    FaultToleranceMetrics.registerRetryMetrics(method);
                     new RetryAntn(beanClass, method).validate();
                 }
                 if (MethodAntn.isAnnotationPresent(beanClass, method, CircuitBreaker.class)) {
+                    FaultToleranceMetrics.registerCircuitBreakerMetrics(method);
                     new CircuitBreakerAntn(beanClass, method).validate();
                 }
                 if (MethodAntn.isAnnotationPresent(beanClass, method, Timeout.class)) {
+                    FaultToleranceMetrics.registerTimeoutMetrics(method);
                     new TimeoutAntn(beanClass, method).validate();
                 }
                 if (MethodAntn.isAnnotationPresent(beanClass, method, Bulkhead.class)) {
+                    FaultToleranceMetrics.registerBulkheadMetrics(method);
                     new BulkheadAntn(beanClass, method).validate();
                 }
                 if (MethodAntn.isAnnotationPresent(beanClass, method, Fallback.class)) {
+                    FaultToleranceMetrics.registerFallbackMetrics(method);
                     new FallbackAntn(beanClass, method).validate();
                 }
                 if (MethodAntn.isAnnotationPresent(beanClass, method, Asynchronous.class)) {
@@ -264,17 +276,17 @@ public class FaultToleranceExtension implements Extension {
             });
         }
 
-        // Initialize executors for MP FT - default size of 20
+        // Initialize executors for MP FT - default size of 16
         io.helidon.config.Config config = MpConfig.toHelidonConfig(ConfigProvider.getConfig());
         scheduledThreadPoolSupplier = ScheduledThreadPoolSupplier.builder()
                 .threadNamePrefix("ft-mp-schedule-")
-                .corePoolSize(20)
+                .corePoolSize(16)
                 .config(config.get("scheduled-executor"))
                 .build();
         FaultTolerance.scheduledExecutor(scheduledThreadPoolSupplier);
         threadPoolSupplier = ThreadPoolSupplier.builder()
                 .threadNamePrefix("ft-mp-")
-                .corePoolSize(20)
+                .corePoolSize(16)
                 .config(config.get("executor"))
                 .build();
         FaultTolerance.executor(threadPoolSupplier);

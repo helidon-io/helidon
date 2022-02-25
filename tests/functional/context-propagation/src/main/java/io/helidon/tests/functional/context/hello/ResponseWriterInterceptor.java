@@ -16,10 +16,10 @@
 
 package io.helidon.tests.functional.context.hello;
 
-import jakarta.enterprise.context.RequestScoped;
-import jakarta.ws.rs.ext.Provider;
-import jakarta.ws.rs.ext.WriterInterceptor;
-import jakarta.ws.rs.ext.WriterInterceptorContext;
+import javax.enterprise.context.RequestScoped;
+import javax.ws.rs.ext.Provider;
+import javax.ws.rs.ext.WriterInterceptor;
+import javax.ws.rs.ext.WriterInterceptorContext;
 import java.io.IOException;
 
 /**

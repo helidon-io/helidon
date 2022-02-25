@@ -81,7 +81,7 @@ class TimeoutTest {
                 .currentThread(currentThread)
                 .build();
         Single<Void> single = timeout.invoke(() ->
-                new CompletableFuture<>() {
+                new CompletableFuture<Void>() {
                     @Override
                     public boolean cancel(boolean b) {
                         cancelCalled.set(true);

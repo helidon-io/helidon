@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!--
 
-    Copyright (c) 2016, 2021 Oracle and/or its affiliates.
+    Copyright (c) 2016, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@
             files="examples/todo-app/.*"/>
 
     <suppress checks="FileLength"
-            files="config/config/src/main/java/io/helidon/config/Config.java|integrations/cdi/jpa-cdi/src/main/java/io/helidon/integrations/cdi/jpa/JpaExtension\.java"
+            files="config/config/src/main/java/io/helidon/config/Config.java|integrations/cdi/jpa-cdi/src/main/java/io/helidon/integrations/cdi/jpa/JpaExtension\.java|security/providers/oidc-common/src/main/java/io/helidon/security/providers/oidc/common/OidcConfig\.java"
             lines="1"/>
 
     <!-- Java comments with AsciiDoc tag:: and end:: in import section incorrectly flagged

@@ -31,10 +31,10 @@
     <name>jbatch-example</name>
 
     <properties>
-        <version.lib.jbatch-api>1.0.1</version.lib.jbatch-api>
-        <version.lib.jbatch.container>1.0.3</version.lib.jbatch.container>
-        <version.lib.derby>10.13.1.1</version.lib.derby>
-        <version.lib.jaxb-api>2.3.1</version.lib.jaxb-api>
+        <javax.batch-api.version>1.0.1</javax.batch-api.version>
+        <com.ibm.jbatch.container.version>1.0.3</com.ibm.jbatch.container.version>
+        <derby.version>10.13.1.1</derby.version>
+        <jaxb-api.version>2.3.1</jaxb-api.version>
     </properties>
 
     <dependencies>
@@ -51,31 +51,31 @@
         <dependency>
             <groupId>javax.batch</groupId>
             <artifactId>javax.batch-api</artifactId>
-            <version>${version.lib.jbatch-api}</version>
+            <version>${javax.batch-api.version}</version>
         </dependency>
 
 
         <dependency>
             <groupId>com.ibm.jbatch</groupId>
             <artifactId>com.ibm.jbatch.container</artifactId>
-            <version>${version.lib.jbatch.container}</version>
+            <version>${com.ibm.jbatch.container.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.derby</groupId>
             <artifactId>derby</artifactId>
-            <version>${version.lib.derby}</version>
+            <version>${derby.version}</version>
         </dependency>
 
         <dependency>
             <groupId>javax.xml.bind</groupId>
             <artifactId>jaxb-api</artifactId>
-            <version>${version.lib.jaxb-api}</version>
+            <version>${jaxb-api.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.glassfish.jaxb</groupId>
             <artifactId>jaxb-runtime</artifactId>
-            <version>${version.lib.jaxb-api}</version>
+            <version>${jaxb-api.version}</version>
         </dependency>
 
         <dependency>

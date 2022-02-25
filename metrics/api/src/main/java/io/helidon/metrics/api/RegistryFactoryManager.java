@@ -65,7 +65,8 @@ class RegistryFactoryManager {
     private static final RegistryFactoryProvider NO_OP_FACTORY_PROVIDER = (metricsSettings) -> NoOpRegistryFactory.create();
 
     // Might be changed via getInstance(MetricsSettings).
-    private static MetricsSettings metricsSettings = MetricsSettings.create();
+    private static MetricsSettings metricsSettings = MetricsSettings.create(
+            Config.create().get(MetricsSettings.Builder.METRICS_CONFIG_KEY));
 
     // Instance managed and returned by the {@link getInstance} methods. Use the latest-provided metrics settings.
     private static final LazyValue<RegistryFactory> INSTANCE = LazyValue.create(() -> create(metricsSettings));

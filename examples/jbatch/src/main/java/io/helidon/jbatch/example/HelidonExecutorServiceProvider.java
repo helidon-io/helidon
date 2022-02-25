@@ -20,7 +20,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import com.ibm.jbatch.spi.ExecutorServiceProvider;
-import io.helidon.common.configurable.ThreadPoolSupplier;
 
 /**
  * Executor service for batch processing.
@@ -28,6 +27,6 @@ import io.helidon.common.configurable.ThreadPoolSupplier;
 public class HelidonExecutorServiceProvider implements ExecutorServiceProvider {
     @Override
     public ExecutorService getExecutorService() {
-        return ThreadPoolSupplier.builder().corePoolSize(2).build().get();
+        return Executors.newFixedThreadPool(2);
     }
 }

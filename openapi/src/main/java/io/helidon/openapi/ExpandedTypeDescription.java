@@ -12,6 +12,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 package io.helidon.openapi;
 
@@ -78,7 +79,7 @@ class ExpandedTypeDescription extends TypeDescription {
 
     static final PropertyUtils PROPERTY_UTILS = new PropertyUtils();
 
-    private final Class<?> impl;
+    private Class<?> impl;
 
     /**
      * Factory method for ease of chaining other method invocations.
@@ -87,25 +88,15 @@ class ExpandedTypeDescription extends TypeDescription {
      * @param impl implementation class for the interface
      * @return resulting TypeDescription
      */
-    static ExpandedTypeDescription create(Class<?> clazz, Class<?> impl) {
+    static ExpandedTypeDescription create(Class<? extends Object> clazz, Class<?> impl) {
 
-        ExpandedTypeDescription result;
-        if (clazz.equals(Schema.class)) {
-            result = new SchemaTypeDescription(clazz, impl);
-        } else if (CustomConstructor.CHILD_MAP_TYPES.containsKey(clazz)) {
-            CustomConstructor.ChildMapType<?, ?> childMapType = CustomConstructor.CHILD_MAP_TYPES.get(clazz);
-            result = childMapType.typeDescriptionFactory().apply(impl);
-        } else if (CustomConstructor.CHILD_MAP_OF_LIST_TYPES.containsKey(clazz)) {
-            CustomConstructor.ChildMapListType<?, ?> childMapListType = CustomConstructor.CHILD_MAP_OF_LIST_TYPES.get(clazz);
-            result = childMapListType.typeDescriptionFunction().apply(impl);
-        } else {
-            result = new ExpandedTypeDescription(clazz, impl);
-        }
+        ExpandedTypeDescription result = clazz.equals(Schema.class)
+                ? new SchemaTypeDescription(clazz, impl) : new ExpandedTypeDescription(clazz, impl);
         result.setPropertyUtils(PROPERTY_UTILS);
         return result;
     }
 
-    private ExpandedTypeDescription(Class<?> clazz, Class<?> impl) {
+    private ExpandedTypeDescription(Class<? extends Object> clazz, Class<?> impl) {
         super(clazz, null, impl);
         this.impl = impl;
     }
@@ -240,50 +231,13 @@ class ExpandedTypeDescription extends TypeDescription {
      * Specific type description for {@code Schema}.
      * <p>
      *     The {@code Schema} node allows the {@code additionalProperties} subnode to be either
-     *     {@code Boolean} or another {@code Schema}, and the {@code Schema} class exposes getters and setters for
-     *     {@code additionalPropertiesBoolean}, and {@code additionalPropertiesSchema}.
+     *     {@code Boolean} or another {@code Schema}, and the {@code Schema} class exposes getters and setters for all of
+     *     {@code additionalProperties}, {@code additionalPropertiesBoolean}, and {@code additionalPropertiesSchema}.
      *     This type description customizes the handling of {@code additionalProperties} to account for all that.
      * </p>
      * @see io.helidon.openapi.Serializer (specifically doRepresentJavaBeanProperty) for output handling for additionalProperties
      */
     static final class SchemaTypeDescription extends ExpandedTypeDescription {
-
-        private static final PropertyDescriptor ADDL_PROPS_PROP_DESCRIPTOR = preparePropertyDescriptor();
-
-        private static final Property ADDL_PROPS_PROPERTY =
-                new MethodProperty(ADDL_PROPS_PROP_DESCRIPTOR) {
-
-                    @Override
-                    public void set(Object object, Object value) throws Exception {
-                        Schema s = Schema.class.cast(object);
-                        if (value instanceof Schema) {
-                            s.setAdditionalPropertiesSchema((Schema) value);
-                        } else {
-                            s.setAdditionalPropertiesBoolean((Boolean) value);
-                        }
-                    }
-
-                    @Override
-                    public Object get(Object object) {
-                        Schema s = Schema.class.cast(object);
-                        Boolean b = s.getAdditionalPropertiesBoolean();
-                        return b != null ? b : s.getAdditionalPropertiesSchema();
-                    }
-                };
-
-        private static PropertyDescriptor preparePropertyDescriptor() {
-            /*
-             * The PropertyDescriptor here is just a placeholder. We will not know until we are mapping a node in the model
-             * whether the additionalProperties is a boolean or a Schema. That is handled explicitly in setProperty below.
-             */
-            try {
-                return new PropertyDescriptor("additionalProperties",
-                                              Schema.class.getMethod("getAdditionalPropertiesSchema"),
-                                              Schema.class.getMethod("setAdditionalPropertiesSchema", Schema.class));
-            } catch (IntrospectionException | NoSuchMethodException e) {
-                throw new RuntimeException(e);
-            }
-        }
 
         @Override
         public boolean setupPropertyType(String key, Node valueNode) {
@@ -295,15 +249,11 @@ class ExpandedTypeDescription extends TypeDescription {
         }
 
         @Override
-        public Property getProperty(String name) {
-            return name.equals("additionalProperties") ? ADDL_PROPS_PROPERTY : super.getProperty(name);
-        }
-
-        @Override
         public boolean setProperty(Object targetBean, String propertyName, Object value) throws Exception {
-            if (!(targetBean instanceof Schema schema) || !propertyName.equals("additionalProperties")) {
+            if (!(targetBean instanceof Schema) || !propertyName.equals("additionalProperties")) {
                 return super.setProperty(targetBean, propertyName, value);
             }
+            Schema schema = (Schema) targetBean;
             if (value instanceof Boolean) {
                 schema.setAdditionalPropertiesBoolean((Boolean) value);
             } else if (value instanceof Schema) {
@@ -315,98 +265,8 @@ class ExpandedTypeDescription extends TypeDescription {
             return true;
         }
 
-        private SchemaTypeDescription(Class<?> clazz, Class<?> impl) {
+        private SchemaTypeDescription(Class<? extends Object> clazz, Class<?> impl) {
             super(clazz, impl);
-        }
-    }
-
-    /**
-     * Type description for parent/child model objects which resemble maps.
-     *
-     * @param <P> parent type
-     * @param <C> child type
-     */
-    static class MapLikeTypeDescription<P, C> extends ExpandedTypeDescription {
-
-        private final Class<P> parentType;
-        private final Class<C> childType;
-        private final CustomConstructor.ChildAdder<P, C> childAdder;
-
-        static <P, C> MapLikeTypeDescription<P, C> create(Class<P> parentType,
-                                                          Class<?> impl,
-                                                          Class<C> childType,
-                                                          CustomConstructor.ChildAdder<P, C> childAdder) {
-            return new MapLikeTypeDescription<>(parentType, impl, childType, childAdder);
-        }
-
-        MapLikeTypeDescription(Class<P> parentType,
-                               Class<?> impl,
-                               Class<C> childType,
-                               CustomConstructor.ChildAdder<P, C> childAdder) {
-            super(parentType, impl);
-            this.childType = childType;
-            this.parentType = parentType;
-            this.childAdder = childAdder;
-        }
-
-        @Override
-        public boolean setProperty(Object targetBean, String propertyName, Object value) throws Exception {
-            P parent = parentType.cast(targetBean);
-            C child = childType.cast(value);
-            childAdder.addChild(parent, propertyName, child);
-            return true;
-        }
-
-        protected Class<P> parentType() {
-            return parentType;
-        }
-
-        protected Class<C> childType() {
-            return childType;
-        }
-
-        protected CustomConstructor.ChildAdder<P, C> childAdder() {
-            return childAdder;
-        }
-    }
-
-    static class ListMapLikeTypeDescription<P, C> extends MapLikeTypeDescription<P, C> {
-
-        private final CustomConstructor.ChildNameAdder<P> childNameAdder;
-        private final CustomConstructor.ChildListAdder<P, C> childListAdder;
-
-        static <P, C> ListMapLikeTypeDescription<P, C> create(Class<P> parentType,
-                                                              Class<?> impl,
-                                                              Class<C> childType,
-                                                              CustomConstructor.ChildAdder<P, C> childAdder,
-                                                              CustomConstructor.ChildNameAdder<P> childNameAdder,
-                                                              CustomConstructor.ChildListAdder<P, C> childListAdder) {
-            return new ListMapLikeTypeDescription<>(parentType, impl, childType, childAdder, childNameAdder, childListAdder);
-        }
-
-        private ListMapLikeTypeDescription(Class<P> parentType,
-                                   Class<?> impl,
-                                   Class<C> childType,
-                                   CustomConstructor.ChildAdder<P, C> childAdder,
-                                   CustomConstructor.ChildNameAdder<P> childNameAdder,
-                                   CustomConstructor.ChildListAdder<P, C> childListAdder) {
-            super(parentType, impl, childType, childAdder);
-            this.childNameAdder = childNameAdder;
-            this.childListAdder = childListAdder;
-        }
-
-        @Override
-        @SuppressWarnings("unchecked")
-        public boolean setProperty(Object targetBean, String propertyName, Object value) throws Exception {
-            P parent = parentType().cast(targetBean);
-            if (value == null) {
-                childNameAdder.addChild(parent, propertyName);
-            } else if (value instanceof List) {
-                childListAdder.addChildren(parent, propertyName, (List<C>) value);
-            } else {
-                childAdder().addChild(parent, propertyName, childType().cast(value));
-            }
-            return true;
         }
     }
 

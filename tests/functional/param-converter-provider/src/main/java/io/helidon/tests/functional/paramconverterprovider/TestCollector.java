@@ -16,7 +16,7 @@
 
 package io.helidon.tests.functional.paramconverterprovider;
 
-import jakarta.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.ApplicationScoped;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
