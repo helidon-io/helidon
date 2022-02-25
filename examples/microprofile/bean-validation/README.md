@@ -8,7 +8,7 @@ To be able to use bean validation add the following dependency:
 
 ```xml
 <dependency>
-    <groupId>io.helidon.microprofile.beanvalidation</groupId>
+    <groupId>io.helidon.microprofile.bean-validation</groupId>
     <artifactId>helidon-microprofile-bean-validation</artifactId>
 </dependency>
 ```
@@ -18,7 +18,7 @@ To be able to use bean validation add the following dependency:
 With JDK11+
 ```bash
 mvn package
-java -jar target/helidon-quickstart-mp.jar
+java -jar target/helidon-examples-microprofile-bean-validation.jar
 ```
 
 ## Exercise the application
@@ -27,6 +27,13 @@ java -jar target/helidon-quickstart-mp.jar
 curl -X GET http://localhost:8080/greet
 {"message":"Hello World!"}
 
-curl -X GET http://localhost:8080/greet/null
-should not be null
+curl -X GET -I http://localhost:8080/greet/null
+
+
+HTTP/1.1 400 Bad Request
+Content-Type: application/json
+transfer-encoding: chunked
+connection: keep-alive
+
+
 ```

@@ -34,7 +34,7 @@ include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 [source, xml]
 ----
 <dependency>
-  <groupId>io.helidon.microprofile.bean.validation</groupId>
+  <groupId>io.helidon.microprofile.bean-validation</groupId>
   <artifactId>helidon-microprofile-bean-validation</artifactId>
 </dependency>
 ----
