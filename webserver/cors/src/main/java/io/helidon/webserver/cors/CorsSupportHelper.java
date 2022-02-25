@@ -664,7 +664,8 @@ class CorsSupportHelper<Q, R> {
                                     || url1.charAt(i + 2) != url2.charAt(j + 2)) {
                                 return false;
                             }
-                            i += 2; j += 2;
+                            i += 2;
+                            j += 2;
                             state = CompareState.HOST;
                         }
                         break;
