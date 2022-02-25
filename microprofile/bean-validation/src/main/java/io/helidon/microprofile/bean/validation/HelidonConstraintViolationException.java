@@ -16,9 +16,6 @@
 
 package io.helidon.microprofile.bean.validation;
 
-import java.util.Set;
-
-import javax.validation.ConstraintViolation;
 import javax.validation.ConstraintViolationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
@@ -32,36 +29,17 @@ import javax.ws.rs.ext.Provider;
  * error.
  */
 @Provider
-public class HelidonConstraintViolationException extends ConstraintViolationException implements ExceptionMapper {
-
-    /**
-     * Call super of ConstraintViolationException.
-     *
-     * @param message Exception message.
-     * @param constraintViolations List with violations.
-     */
-    public HelidonConstraintViolationException(String message, Set<? extends ConstraintViolation<?>> constraintViolations) {
-        super(message, constraintViolations);
-    }
-
-    /**
-     * Call super of ConstraintViolationException.
-     *
-     * @param constraintViolations List with violations.
-     */
-    public HelidonConstraintViolationException(Set<? extends ConstraintViolation<?>> constraintViolations) {
-        super(constraintViolations);
-    }
+public class HelidonConstraintViolationException implements ExceptionMapper<ConstraintViolationException> {
 
     /**
      * Return Validation Exception, wrapped as a bad request.
-     * @param throwable Validation exception
+     * @param exception Validation exception
      * @return BAR_REQUEST Response.
      */
     @Override
-    public Response toResponse(Throwable throwable) {
+    public Response toResponse(ConstraintViolationException exception) {
         return Response.status(Response.Status.BAD_REQUEST)
-                .entity(throwable.getMessage())
+                .entity(exception.getMessage())
                 .status(Response.Status.BAD_REQUEST.getStatusCode())
                 .build();
     }
