@@ -633,6 +633,37 @@ class CorsSupportHelper<Q, R> {
     }
 
     /**
+     * Validates default ports when absent.
+     *
+     * @param url the URL
+     * @param k index in URL to inspect
+     * @param length the URL length
+     * @param isHttps true if HTTPS
+     *
+     * @return Number of chars to advance or -1 if matching failed
+     */
+    static int checkDefaultPort(String url, int k, int length, boolean isHttps) {
+        if (isHttps) {
+            // Default port must be "443"
+            if (url.charAt(k + 1) != '4'
+                    || url.charAt(k + 2) != '4'
+                    || url.charAt(k + 3) != '3'
+                    || isDigit(charAt(url, k + 4, length))) {
+                return -1;
+            }
+            return 3;
+        } else {
+            // Default port must be "80"
+            if (url.charAt(k + 1) != '8'
+                    || url.charAt(k + 2) != '0'
+                    || isDigit(charAt(url, k + 3, length))) {
+                return -1;
+            }
+            return 2;
+        }
+    }
+
+    /**
      * Fast compare of two origins on protocol, host and port but ignoring paths.
      * Handles default ports 80 and 443 for http and https respectively. Comparison will
      * fail if origins are malformed.
@@ -675,46 +706,20 @@ class CorsSupportHelper<Q, R> {
                         if (c1 == ':') {
                             // Handle default port in url2
                             if (c2 != ':') {
-                                if (isHttps) {
-                                    // Default port must be "443"
-                                    if (url1.charAt(i + 1) != '4'
-                                            || url1.charAt(i + 2) != '4'
-                                            || url1.charAt(i + 3) != '3'
-                                            || isDigit(charAt(url1, i + 4, length1))) {
-                                        return false;
-                                    }
-                                    i += 3;
-                                } else {
-                                    // Default port must be "80"
-                                    if (url1.charAt(i + 1) != '8'
-                                            || url1.charAt(i + 2) != '0'
-                                            || isDigit(charAt(url1, i + 3, length1))) {
-                                        return false;
-                                    }
-                                    i += 2;
+                                int n = checkDefaultPort(url1, i, length1, isHttps);
+                                if (n < 0) {
+                                    return false;
                                 }
+                                i += n;
                                 state = CompareState.TRAILING;
                             }
                         } else if (c2 == ':') {
                             // Handle default port in url1
-                            if (isHttps) {
-                                // Default port must be "443"
-                                if (url2.charAt(j + 1) != '4'
-                                        || url2.charAt(j + 2) != '4'
-                                        || url2.charAt(j + 3) != '3'
-                                        || isDigit(charAt(url2, j + 4, length2))) {
-                                    return false;
-                                }
-                                j += 3;
-                            } else {
-                                // Default port must be "80"
-                                if (url2.charAt(j + 1) != '8'
-                                        || url2.charAt(j + 2) != '0'
-                                        || isDigit(charAt(url2, j + 3, length2))) {
-                                    return false;
-                                }
-                                j += 2;
+                            int n = checkDefaultPort(url2, j, length2, isHttps);
+                            if (n < 0) {
+                                return false;
                             }
+                            i += n;
                             state = CompareState.TRAILING;
                         } else if (c1 != c2) {
                             return false;
