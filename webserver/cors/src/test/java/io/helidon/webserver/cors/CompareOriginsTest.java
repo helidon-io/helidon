@@ -70,6 +70,9 @@ public class CompareOriginsTest {
         assertThat(compareOrigins("http://localhost/", "http://remotehost/"), is(false));
         assertThat(compareOrigins("https://localhost:443/", "https://remotehost/"), is(false));
         assertThat(compareOrigins("https://localhost/", "https://remotehost:443/"), is(false));
+        assertThat(compareOrigins("http://localhost", "https://localhost"), is(false));
+        assertThat(compareOrigins("http://localhost/", "http://localhost:443/"), is(false));
+        assertThat(compareOrigins("https://localhost/", "https://localhost:80/"), is(false));
     }
 
     @Test
@@ -77,6 +80,8 @@ public class CompareOriginsTest {
         assertThat(compareOrigins("foo", "foo"), is(false));
         assertThat(compareOrigins("http://", "http://"), is(false));
         assertThat(compareOrigins("http://localhost", "http://"), is(false));
+        assertThat(compareOrigins("http://localhost", "pttp://"), is(false));
+        assertThat(compareOrigins("", ""), is(false));
     }
 
 }
