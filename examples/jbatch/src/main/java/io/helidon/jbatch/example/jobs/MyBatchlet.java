@@ -31,7 +31,6 @@ public class MyBatchlet extends AbstractBatchlet {
     @Override
     public String process() {
         System.out.println("Running inside a batchlet");
-
         return "COMPLETED";
     }
 

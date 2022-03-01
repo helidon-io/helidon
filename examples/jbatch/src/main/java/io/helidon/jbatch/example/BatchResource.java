@@ -63,7 +63,7 @@ public class BatchResource {
         batchSPIManager.registerExecutorServiceProvider(new HelidonExecutorServiceProvider());
 
         jobOperator = getJobOperator();
-        Long executionId = jobOperator.start("myJob_" + System.currentTimeMillis(), new Properties());
+        Long executionId = jobOperator.start("myJob", new Properties());
 
         return JSON.createObjectBuilder()
                 .add("Started a job with Execution ID: ", executionId)
