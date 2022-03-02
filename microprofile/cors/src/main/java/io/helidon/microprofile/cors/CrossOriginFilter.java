@@ -18,7 +18,12 @@ package io.helidon.microprofile.cors;
 
 import java.util.Optional;
 
+import io.helidon.microprofile.cors.CorsSupportMp.RequestAdapterMp;
+import io.helidon.microprofile.cors.CorsSupportMp.ResponseAdapterMp;
+import io.helidon.webserver.cors.CrossOriginConfig;
+
 import jakarta.annotation.Priority;
+import jakarta.enterprise.inject.spi.CDI;
 import jakarta.ws.rs.Priorities;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
@@ -27,10 +32,6 @@ import jakarta.ws.rs.container.ContainerResponseFilter;
 import jakarta.ws.rs.container.ResourceInfo;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.Response;
-
-import io.helidon.microprofile.cors.CorsSupportMp.RequestAdapterMp;
-import io.helidon.microprofile.cors.CorsSupportMp.ResponseAdapterMp;
-import io.helidon.webserver.cors.CrossOriginConfig;
 
 /**
  * Class CrossOriginFilter.

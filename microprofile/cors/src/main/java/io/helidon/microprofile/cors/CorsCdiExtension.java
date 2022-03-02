@@ -25,23 +25,21 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 
+import io.helidon.config.Config;
+import io.helidon.config.mp.MpConfig;
+import io.helidon.webserver.cors.CrossOriginConfig;
+
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Initialized;
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.inject.spi.AnnotatedType;
-
 import jakarta.enterprise.inject.spi.Extension;
 import jakarta.enterprise.inject.spi.ProcessAnnotatedType;
 import jakarta.enterprise.inject.spi.ProcessManagedBean;
 import jakarta.enterprise.inject.spi.WithAnnotations;
 import jakarta.ws.rs.OPTIONS;
 import jakarta.ws.rs.Path;
-
-import io.helidon.config.Config;
-import io.helidon.config.mp.MpConfig;
-import io.helidon.webserver.cors.CrossOriginConfig;
-
 import org.eclipse.microprofile.config.ConfigProvider;
 
 import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
