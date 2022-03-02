@@ -22,7 +22,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 
-
+import com.ibm.jbatch.spi.BatchSPIManager;
 import jakarta.batch.operations.JobOperator;
 import jakarta.batch.runtime.JobExecution;
 import jakarta.batch.runtime.StepExecution;
@@ -36,7 +36,6 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 
-import com.ibm.jbatch.spi.BatchSPIManager;
 
 import static jakarta.batch.runtime.BatchRuntime.getJobOperator;
 
