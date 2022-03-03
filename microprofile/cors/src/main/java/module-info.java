@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ module io.helidon.microprofile.cors {
 
     requires jakarta.ws.rs;
     requires io.helidon.config;
+    requires io.helidon.config.mp;
     requires io.helidon.webserver.cors;
 
     // Following to help with JavaDoc...
@@ -33,8 +34,13 @@ module io.helidon.microprofile.cors {
     requires jersey.common;
     requires microprofile.config.api;
 
+    requires jakarta.interceptor.api;
+    requires jakarta.cdi;
+
     exports io.helidon.microprofile.cors;
 
     provides org.glassfish.jersey.internal.spi.AutoDiscoverable
             with io.helidon.microprofile.cors.CrossOriginAutoDiscoverable;
+
+    provides jakarta.enterprise.inject.spi.Extension with io.helidon.microprofile.cors.CorsCdiExtension;
 }
