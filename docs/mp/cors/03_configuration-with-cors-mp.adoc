@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -44,6 +44,7 @@
 :config-table-methods-column-header: Annotation Parameter
 :basic-table-intro: The table below lists the parameters for the `@CrossOriginConfig` annotation and the configuration keys that identify the CORS characteristics.
 :helidon-variant: MP
+:cors-config-key-explanation:
 
 Your application code establishes the CORS behavior of your endpoints using the `@CrossOrigin` annotation.
 You and your users can override that behavior, as well as the CORS behavior of the built-in services,
