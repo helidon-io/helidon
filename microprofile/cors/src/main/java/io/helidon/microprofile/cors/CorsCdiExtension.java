@@ -56,7 +56,7 @@ public class CorsCdiExtension implements Extension {
     /**
      * Key used for retrieving CORS-related configuration from MP configuration.
      */
-    public static final String CORS_CONFIG_KEY = "cors";
+    static final String CORS_CONFIG_KEY = "cors";
 
     private Supplier<Optional<CrossOriginConfig>> supplierOfCrossOriginConfigFromAnnotation;
 
