@@ -175,44 +175,16 @@ public final class OciExtension implements Extension {
             Set<Annotation> qualifiers = ip.getQualifiers();
             if (AbstractAuthenticationDetailsProvider.class.isAssignableFrom(baseClass)
                 || AdpStrategy.builderClasses().contains(baseClass)) {
+                // It's an ADP or something ADP-related.
                 this.harvest.computeIfAbsent(qualifiers, q -> new HashSet<>(11));
             } else {
                 Matcher m = CLIENT_PACKAGE_PATTERN.matcher(baseClass.getName());
                 if (m.matches() && !CLIENT_PACKAGE_FRAGMENT_DENY_LIST.contains(m.group(1))) {
+                    // It's a service client.
                     this.harvest.computeIfAbsent(qualifiers, q -> new HashSet<>(11)).add(baseClass);
                 }
             }
         }
-    }
-
-    private TypeAndQualifiers builderTaq(TypeAndQualifiers inputTaq, Consumer<? super Throwable> errorHandler) {
-        return taq(inputTaq, OciExtension::builder, errorHandler);
-    }
-
-    private TypeAndQualifiers clientTaq(TypeAndQualifiers inputTaq, Consumer<? super Throwable> errorHandler) {
-        return taq(inputTaq, OciExtension::client, errorHandler);
-    }
-
-    private TypeAndQualifiers taq(TypeAndQualifiers inputTaq,
-                                  UnaryOperator<String> munger,
-                                  Consumer<? super Throwable> errorHandler) {
-        TypeAndQualifiers outputTaq;
-        Class<?> outputClass;
-        Class<?> inputClass = inputTaq.toClass();
-        String input = inputClass.getName();
-        String output = munger.apply(input);
-        if (output.equals(input)) {
-            outputClass = inputClass;
-            outputTaq = inputTaq;
-        } else {
-            outputClass = loadClass(output, errorHandler);
-            if (outputClass == null) {
-                outputTaq = null;
-            } else {
-                outputTaq = inputTaq.with(outputClass);
-            }
-        }
-        return outputTaq;
     }
 
     private void afterBeanDiscovery(@Observes AfterBeanDiscovery event, BeanManager bm) {
@@ -393,6 +365,36 @@ public final class OciExtension implements Extension {
             }
         }
         return false;
+    }
+
+        private TypeAndQualifiers builderTaq(TypeAndQualifiers inputTaq, Consumer<? super Throwable> errorHandler) {
+        return taq(inputTaq, OciExtension::builder, errorHandler);
+    }
+
+    private TypeAndQualifiers clientTaq(TypeAndQualifiers inputTaq, Consumer<? super Throwable> errorHandler) {
+        return taq(inputTaq, OciExtension::client, errorHandler);
+    }
+
+    private TypeAndQualifiers taq(TypeAndQualifiers inputTaq,
+                                  UnaryOperator<String> munger,
+                                  Consumer<? super Throwable> errorHandler) {
+        TypeAndQualifiers outputTaq;
+        Class<?> outputClass;
+        Class<?> inputClass = inputTaq.toClass();
+        String input = inputClass.getName();
+        String output = munger.apply(input);
+        if (output.equals(input)) {
+            outputClass = inputClass;
+            outputTaq = inputTaq;
+        } else {
+            outputClass = loadClass(output, errorHandler);
+            if (outputClass == null) {
+                outputTaq = null;
+            } else {
+                outputTaq = inputTaq.with(outputClass);
+            }
+        }
+        return outputTaq;
     }
 
 
