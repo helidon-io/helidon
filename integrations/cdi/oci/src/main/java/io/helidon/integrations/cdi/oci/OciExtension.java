@@ -413,10 +413,9 @@ public final class OciExtension implements Extension {
 
             for (AdpStrategy s : EnumSet.allOf(AdpStrategy.class)) {
                 if (this.supply(s, qualifiersArray, bm, event::addDefinitionError)) {
-                    Type builderType = s.builderType();
-                    if (builderType != null) {
+                    if (s.usesBuilder()) {
                         event.addBean()
-                            .types(builderType)
+                            .types(s.builderType())
                             .qualifiers(qualifiers)
                             .scope(Singleton.class)
                             .produceWith(i -> s.produceBuilder(i, qualifiersArray));
@@ -435,7 +434,7 @@ public final class OciExtension implements Extension {
                 .types(AbstractAuthenticationDetailsProvider.class)
                 .qualifiers(qualifiers)
                 .scope(Singleton.class)
-                .produceWith(i -> produceAbstractAdp(i, qualifiersArray));
+                .produceWith(i -> AdpStrategy.autoProduce(i, qualifiersArray));
         }
     }
 
@@ -527,56 +526,6 @@ public final class OciExtension implements Extension {
                 throw new IllegalStateException(exception.getMessage(), exception);
             }
         }
-    }
-
-    private static AbstractAuthenticationDetailsProvider produceAbstractAdp(Instance<? super Object> i,
-                                                                            Annotation[] qualifiersArray) {
-        Config c = i.select(Config.class).get();
-        String[] strategyStringsArray = c.getOptionalValue("oci.config.strategy", String[].class).orElse(new String[0]);
-        Collection<AdpStrategy> strategies;
-        switch (strategyStringsArray.length) {
-        case 0:
-            strategies = EnumSet.allOf(AdpStrategy.class);
-            break;
-        case 1:
-            String soleStrategyString = strategyStringsArray[0];
-            if (soleStrategyString == null || soleStrategyString.isBlank() || soleStrategyString.equalsIgnoreCase("auto")) {
-                strategies = EnumSet.allOf(AdpStrategy.class);
-            } else {
-                strategies = EnumSet.of(AdpStrategy.of(soleStrategyString));
-            }
-            break;
-        default:
-            Set<String> strategyStrings = new LinkedHashSet<>(Arrays.asList(strategyStringsArray));
-            switch (strategyStrings.size()) {
-            case 0:
-                throw new AssertionError();
-            case 1:
-                strategies = EnumSet.of(AdpStrategy.of(strategyStrings.iterator().next()));
-                break;
-            default:
-                strategies = new ArrayList<>(strategyStrings.size());
-                for (String strategyString : strategyStrings) {
-                    strategies.add(AdpStrategy.of(strategyString));
-                }
-                strategies = Collections.unmodifiableCollection(strategies);
-                break;
-            }
-            break;
-        }
-        return produceAbstractAdp(i, c, qualifiersArray, strategies);
-    }
-
-    private static AbstractAuthenticationDetailsProvider produceAbstractAdp(Instance<? super Object> i,
-                                                                            Config c,
-                                                                            Annotation[] qualifiersArray,
-                                                                            Iterable<? extends AdpStrategy> strategies) {
-        for (final AdpStrategy s : strategies) {
-            if (s.isAvailable(i, c, qualifiersArray)) {
-                return s.select(i, c, qualifiersArray);
-            }
-        }
-        throw new UnsatisfiedResolutionException();
     }
 
     // May return null.
@@ -847,30 +796,65 @@ public final class OciExtension implements Extension {
             }
         };
 
+
+        /*
+         * Instance fields.
+         */
+
+
         private final Class<? extends AbstractAuthenticationDetailsProvider> c;
 
         private final Class<?> bc;
 
+        private final boolean isAbstract;
+
+
+        /*
+         * Constructors.
+         */
+
+
         AdpStrategy(Class<? extends AbstractAuthenticationDetailsProvider> c) {
-            this(c, null);
+            this(c, null, false);
         }
 
         AdpStrategy(Class<? extends AbstractAuthenticationDetailsProvider> c,
                     Class<?> bc) {
-            this.c = Objects.requireNonNull(c, "c");
-            this.bc = bc;
+            this(c, bc, false);
         }
 
-        TypeAndQualifiers taq(Annotation[] qualifiers) {
-            return new TypeAndQualifiers(this.c, qualifiers);
+        AdpStrategy(Class<? extends AbstractAuthenticationDetailsProvider> c,
+                    Class<?> bc,
+                    boolean isAbstract) {
+            this.c = Objects.requireNonNull(c, "c");
+            this.bc = bc;
+            this.isAbstract = isAbstract;
         }
+
+
+        /*
+         * Instance methods.
+         */
+
 
         Type type() {
             return this.c;
         }
 
+        TypeAndQualifiers taq(Annotation[] qualifiers) {
+            return new TypeAndQualifiers(this.type(), qualifiers);
+        }
+
         Type builderType() {
             return this.bc;
+        }
+
+        boolean usesBuilder() {
+            return this.builderType() != null;
+        }
+
+        final boolean isAbstract() {
+            return this.isAbstract;
         }
 
         abstract boolean isAvailable(Instance<? super Object> i, Config c, Annotation[] qualifiers);
@@ -893,10 +877,84 @@ public final class OciExtension implements Extension {
 
         abstract AbstractAuthenticationDetailsProvider produce(Instance<? super Object> i, Config c, Annotation[] qualifiers);
 
+
+        /*
+         * Static methods.
+         */
+
+
         private static AdpStrategy of(String name) {
             return valueOf(name.replace('-', '_').toUpperCase());
         }
 
+        private static AbstractAuthenticationDetailsProvider autoProduce(Instance<? super Object> i,
+                                                                         Annotation[] qualifiers) {
+            return autoProduce(i, i.select(Config.class).get(), qualifiers);
+        }
+
+        private static AbstractAuthenticationDetailsProvider autoProduce(Instance<? super Object> i,
+                                                                         Config c,
+                                                                         Annotation[] qualifiers) {
+        return
+            autoProduce(i,
+                        c,
+                        qualifiers,
+                        toStrategies(c.getOptionalValue("oci.config.strategy",
+                                                        String[].class)
+                                     .orElse(new String[0])));
+        }
+
+        private static AbstractAuthenticationDetailsProvider autoProduce(Instance<? super Object> i,
+                                                                         Config c,
+                                                                         Annotation[] qualifiers,
+                                                                         Iterable<? extends AdpStrategy> strategies) {
+            for (final AdpStrategy s : strategies) {
+                if (!s.isAbstract() && s.isAvailable(i, c, qualifiers)) {
+                    return s.select(i, c, qualifiers);
+                }
+            }
+            throw new UnsatisfiedResolutionException();
+        }
+
+        private static Collection<AdpStrategy> toStrategies(String[] strategyStringsArray) {
+            Collection<AdpStrategy> strategies;
+            switch (strategyStringsArray.length) {
+            case 0:
+                strategies = EnumSet.allOf(AdpStrategy.class);
+                break;
+            case 1:
+                strategies = toStrategies(strategyStringsArray[0]);
+                break;
+            default:
+                Set<String> strategyStrings = new LinkedHashSet<>(Arrays.asList(strategyStringsArray));
+                switch (strategyStrings.size()) {
+                case 0:
+                    throw new AssertionError();
+                case 1:
+                    strategies = EnumSet.of(AdpStrategy.of(strategyStrings.iterator().next()));
+                    break;
+                default:
+                    strategies = new ArrayList<>(strategyStrings.size());
+                    for (String strategyString : strategyStrings) {
+                        if (strategyString != null && !strategyString.isBlank() && !strategyString.equalsIgnoreCase("auto")) {
+                            strategies.add(AdpStrategy.of(strategyString));
+                        }
+                    }
+                    strategies = Collections.unmodifiableCollection(strategies);
+                    break;
+                }
+                break;
+            }
+            return strategies;
+        }
+
+        private static Collection<AdpStrategy> toStrategies(String strategyString) {
+            if (strategyString == null || strategyString.isBlank() || strategyString.equalsIgnoreCase("auto")) {
+                return EnumSet.allOf(AdpStrategy.class);
+            } else {
+                return EnumSet.of(AdpStrategy.of(strategyString));
+            }
+        }
     }
 
 }
