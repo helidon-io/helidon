@@ -209,7 +209,7 @@ public final class OciExtension implements Extension {
                     // input is a builder itself)? Maybe the user
                     // supplied one, in which case we should use
                     // hers. Otherwise install our own.
-                    TypeAndQualifiers builderTaq = builderTaq(inputTaq, event::addDefinitionError);
+                    TypeAndQualifiers builderTaq = taq(inputTaq, OciExtension::builder, event::addDefinitionError);
                     if (builderTaq == null) {
                         continue;
                     }
@@ -219,7 +219,7 @@ public final class OciExtension implements Extension {
                     // com.oracle.bmc.example.ExampleAsyncClient
                     // and/or com.oracle.bmc.example.ExampleClient so
                     // we can call its builder() method.)
-                    TypeAndQualifiers clientTaq = clientTaq(inputTaq, event::addDefinitionError);
+                    TypeAndQualifiers clientTaq = taq(inputTaq, OciExtension::client, event::addDefinitionError);
                     if (clientTaq == null) {
                         continue;
                     }
@@ -365,14 +365,6 @@ public final class OciExtension implements Extension {
             }
         }
         return false;
-    }
-
-        private TypeAndQualifiers builderTaq(TypeAndQualifiers inputTaq, Consumer<? super Throwable> errorHandler) {
-        return taq(inputTaq, OciExtension::builder, errorHandler);
-    }
-
-    private TypeAndQualifiers clientTaq(TypeAndQualifiers inputTaq, Consumer<? super Throwable> errorHandler) {
-        return taq(inputTaq, OciExtension::client, errorHandler);
     }
 
     private TypeAndQualifiers taq(TypeAndQualifiers inputTaq,
