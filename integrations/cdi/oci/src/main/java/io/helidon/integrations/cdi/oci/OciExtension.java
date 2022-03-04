@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles.Lookup;
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.net.ConnectException;
 import java.net.InetAddress;
@@ -28,12 +29,16 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.UnaryOperator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -122,17 +127,9 @@ public final class OciExtension implements Extension {
 
     private static final TypeLiteral<Event<Object>> EVENT_OBJECT_TYPE_LITERAL = new TypeLiteral<Event<Object>>() {};
 
-    // "auth" is in here even though this class does work with
-    // com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider
-    // instances.  That's because this list helps constrain the
-    // higher-level subpackages (ailanguage, objectstorage,
-    // loggingingestion, etc.) within the OCI SDK that adhere to the
-    // general pattern of end-user use
-    // (AbstractAuthenticationDetailsProvider instances are not a
-    // member of this set of subpackages).
-    private static final Set<String> PACKAGE_FRAGMENT_DENY_LIST = Set.of("auth", "circuitbreaker");
+    private static final Set<String> CLIENT_PACKAGE_FRAGMENT_DENY_LIST = Set.of("auth", "circuitbreaker");
 
-    private static final Pattern PACKAGE_PATTERN = Pattern.compile("^com\\.oracle\\.bmc\\.(.+)\\.([^.]+)$");
+    private static final Pattern CLIENT_PACKAGE_PATTERN = Pattern.compile("^com\\.oracle\\.bmc\\.(.+)\\.([^.]+)$");
 
     private static final Lookup PUBLIC_LOOKUP = publicLookup();
 
@@ -142,7 +139,7 @@ public final class OciExtension implements Extension {
      */
 
 
-    private final Collection<InjectionPoint> injectionPoints;
+    private final Map<Set<Annotation>, Set<Class<?>>> harvest;
 
     private final Set<TypeAndQualifiers> beanTypesAndQualifiers;
 
@@ -160,7 +157,7 @@ public final class OciExtension implements Extension {
     @Deprecated // for java.util.ServiceLoader use only
     public OciExtension() {
         super();
-        this.injectionPoints = new ArrayList<>();
+        this.harvest = new HashMap<>();
         this.beanTypesAndQualifiers = new HashSet<>();
     }
 
@@ -170,190 +167,166 @@ public final class OciExtension implements Extension {
      */
 
 
-    /**
-     * A <a
-     * href="https://jakarta.ee/specifications/cdi/2.0/cdi-spec-2.0.html#init_events"
-     * target="_top">container lifecycle observer method</a> called by
-     * the CDI container during the <a
-     * href="https://jakarta.ee/specifications/cdi/2.0/cdi-spec-2.0.html#initialization"
-     * target="_top">application initialization lifecycle</a> that
-     * examines the {@linkplain
-     * ProcessInjectionPoint#getInjectionPoint() event's associated
-     * <code>InjectionPoint</code>} to see if it is an OCI Java SDK
-     * class that fits the general OCI usage pattern as described in
-     * this extension's class documentation, and, if so, ensures that
-     * relevant CDI beans will be created if necessary to satisfy it.
-     *
-     * @param event the {@link ProcessInjectionPoint} event; will not
-     * be {@code null}
-     */
     private void processInjectionPoint(@Observes ProcessInjectionPoint<?, ?> event) {
         InjectionPoint ip = event.getInjectionPoint();
         Type baseType = ip.getAnnotated().getBaseType();
-        if (baseType instanceof Class) { // none of the OCI end-user classes is parameterized
-            Matcher m = PACKAGE_PATTERN.matcher(baseType.getTypeName());
-            if (m.matches() && !PACKAGE_FRAGMENT_DENY_LIST.contains(m.group(1))) {
-                this.injectionPoints.add(ip);
+        if (baseType instanceof Class) {
+            Class<?> baseClass = (Class<?>) baseType;
+            Set<Annotation> qualifiers = ip.getQualifiers();
+            if (AbstractAuthenticationDetailsProvider.class.isAssignableFrom(baseClass)
+                || AdpStrategy.builderClasses().contains(baseClass)) {
+                this.harvest.computeIfAbsent(qualifiers, q -> new HashSet<>(11));
+            } else {
+                Matcher m = CLIENT_PACKAGE_PATTERN.matcher(baseClass.getName());
+                if (m.matches() && !CLIENT_PACKAGE_FRAGMENT_DENY_LIST.contains(m.group(1))) {
+                    this.harvest.computeIfAbsent(qualifiers, q -> new HashSet<>(11)).add(baseClass);
+                }
             }
         }
     }
 
-    /**
-     * A <a
-     * href="https://jakarta.ee/specifications/cdi/2.0/cdi-spec-2.0.html#init_events"
-     * target="_top">container lifecycle observer method</a> called by
-     * the CDI container during the <a
-     * href="https://jakarta.ee/specifications/cdi/2.0/cdi-spec-2.0.html#initialization"
-     * target="_top">application initialization lifecycle</a> that
-     * adds relevant CDI beans to enable injection of OCI Java SDK objects.
-     *
-     * @param event the {@link AfterBeanDiscovery} event; will not
-     * be {@code null}
-     *
-     * @param bm the {@link BeanManager} being used by the container;
-     * will not be {@code null}
-     */
-    private void afterBeanDiscovery(@Observes AfterBeanDiscovery event, BeanManager bm) {
-        for (InjectionPoint ip : this.injectionPoints) {
-            Set<Annotation> qualifiers = ip.getQualifiers();
-            Annotation[] qualifiersArray = qualifiers.toArray(new Annotation[0]);
-            TypeAndQualifiers adpTaq = new TypeAndQualifiers(AbstractAuthenticationDetailsProvider.class, qualifiersArray);
-            if (!this.beanTypesAndQualifiers.contains(adpTaq)) {
-                installAdps(event, bm, qualifiers);
-                this.beanTypesAndQualifiers.add(adpTaq);
+    private TypeAndQualifiers builderTaq(TypeAndQualifiers inputTaq, Consumer<? super Throwable> errorHandler) {
+        return taq(inputTaq, OciExtension::builder, errorHandler);
+    }
+
+    private TypeAndQualifiers clientTaq(TypeAndQualifiers inputTaq, Consumer<? super Throwable> errorHandler) {
+        return taq(inputTaq, OciExtension::client, errorHandler);
+    }
+
+    private TypeAndQualifiers taq(TypeAndQualifiers inputTaq,
+                                  UnaryOperator<String> munger,
+                                  Consumer<? super Throwable> errorHandler) {
+        TypeAndQualifiers outputTaq;
+        Class<?> outputClass;
+        Class<?> inputClass = inputTaq.toClass();
+        String input = inputClass.getName();
+        String output = munger.apply(input);
+        if (output.equals(input)) {
+            outputClass = inputClass;
+            outputTaq = inputTaq;
+        } else {
+            outputClass = loadClass(output, errorHandler);
+            if (outputClass == null) {
+                outputTaq = null;
+            } else {
+                outputTaq = inputTaq.with(outputClass);
             }
-            Class<?> inputClass = (Class<?>) ip.getAnnotated().getBaseType();
-            TypeAndQualifiers inputTaq = new TypeAndQualifiers(inputClass, qualifiersArray);
-            if (this.supply(inputTaq, bm, event::addDefinitionError)) {
-                String input = inputClass.getName();
-                // input could be any of:
-                //
-                //   com.oracle.bmc.example.Example
-                //   com.oracle.bmc.example.ExampleAsync
-                //   com.oracle.bmc.example.ExampleAsyncClient
-                //   com.oracle.bmc.example.ExampleAsyncClient$Builder
-                //   com.oracle.bmc.example.ExampleClient
-                //   com.oracle.bmc.example.ExampleClient$Builder
-                //
-                // First, is there a builder (recalling that maybe
-                // input is a builder itself)? Maybe the user supplied
-                // one, in which case we should use hers. Otherwise
-                // install our own.
-                TypeAndQualifiers builderTaq;
-                Class<?> builderClass;
-                String builder = builder(input);
-                if (builder.equals(input)) {
-                    builderClass = inputClass;
-                    builderTaq = inputTaq;
-                } else {
-                    builderClass = loadClass(builder, event::addDefinitionError);
-                    if (builderClass == null) {
-                        continue;
-                    }
-                    builderTaq = new TypeAndQualifiers(builderClass, qualifiersArray);
-                }
-                // (No matter what else may happen, we'll need to
-                // load, e.g.,
-                // com.oracle.bmc.example.ExampleAsyncClient and/or
-                // com.oracle.bmc.example.ExampleClient.)
-                //
-                // (Among other reasons, this is because if we have to
-                // synthesize a builder (by invoking the static
-                // builder() method on a client class, e.g,
-                // com.oracle.bmc.example.ExampleAsyncClient or
-                // com.oracle.bmc.example.ExampleClient), we need to
-                // have loaded the class already.)
-                TypeAndQualifiers clientTaq;
-                Class<?> clientClass;
-                String client = client(input);
-                if (client.equals(input)) {
-                    clientClass = inputClass;
-                    clientTaq = inputTaq;
-                } else {
-                    clientClass = loadClass(client, event::addDefinitionError);
-                    if (clientClass == null) {
-                        continue;
-                    }
-                    clientTaq = new TypeAndQualifiers(clientClass, qualifiersArray);
-                }
-                if (this.supply(builderTaq, bm, event::addDefinitionError)) {
-                    // OK, we need to create:
+        }
+        return outputTaq;
+    }
+
+    private void afterBeanDiscovery(@Observes AfterBeanDiscovery event, BeanManager bm) {
+        for (Entry<Set<Annotation>, Set<Class<?>>> entry : this.harvest.entrySet()) {
+            Set<Annotation> qualifiers = entry.getKey();
+            Annotation[] qualifiersArray = qualifiers.toArray(new Annotation[0]);
+            installAdps(event, bm, qualifiers, qualifiersArray);
+            for (Class<?> inputClass : entry.getValue()) {
+                TypeAndQualifiers inputTaq = new TypeAndQualifiers(inputClass, qualifiersArray);
+                if (this.supply(inputTaq, bm, event::addDefinitionError)) {
+                    String input = inputClass.getName();
+                    // input could be any of:
                     //
+                    //   com.oracle.bmc.example.Example
+                    //   com.oracle.bmc.example.ExampleAsync
+                    //   com.oracle.bmc.example.ExampleAsyncClient
+                    //   com.oracle.bmc.example.ExampleAsyncClient$Builder
+                    //   com.oracle.bmc.example.ExampleClient
                     //   com.oracle.bmc.example.ExampleClient$Builder
                     //
-                    // or:
-                    //
-                    //   com.oracle.bmc.example.ExampleAsyncClient$Builder
-                    //
-                    // client will be one of:
-                    //
-                    // * com.oracle.bmc.example.ExampleClient
-                    // * com.oracle.bmc.example.ExampleAsyncClient
-                    //
-                    // We will call its static builder() method.
-                    MethodHandle builderMethod;
-                    try {
-                        builderMethod = PUBLIC_LOOKUP.findStatic(clientClass, "builder", methodType(builderClass));
-                    } catch (ReflectiveOperationException reflectiveOperationException) {
-                        event.addDefinitionError(reflectiveOperationException);
+                    // First, is there a builder (recalling that maybe
+                    // input is a builder itself)? Maybe the user
+                    // supplied one, in which case we should use
+                    // hers. Otherwise install our own.
+                    TypeAndQualifiers builderTaq = builderTaq(inputTaq, event::addDefinitionError);
+                    if (builderTaq == null) {
                         continue;
                     }
-                    event.addBean()
-                        .types(Set.of(builderClass))
-                        .qualifiers(qualifiers)
-                        .scope(Singleton.class)
-                        .produceWith(i -> produceClientBuilder(i, builderMethod, builderClass, qualifiersArray));
-                    this.beanTypesAndQualifiers.add(builderTaq);
-                }
-                if (builderTaq != inputTaq) {
-                    // input was not a builder itself.  Also input was
-                    // not supplied by the user.  We have already
-                    // ensured that input's builder will be made. So
-                    // now we can create input.
-                    Set<Type> types;
-                    if (clientTaq == inputTaq) {
-                        // OK, the injection point is for
-                        // ExampleClient (or ExampleAsyncClient).
-                        // Let's make sure there's no corresponding
-                        // user-supplied bean for Example (or
-                        // ExampleAsync).
+                    Class<?> builderClass = builderTaq.toClass();
+                    // (No matter what else may happen, we'll need to
+                    // load, e.g.,
+                    // com.oracle.bmc.example.ExampleAsyncClient
+                    // and/or com.oracle.bmc.example.ExampleClient so
+                    // we can call its builder() method.)
+                    TypeAndQualifiers clientTaq = clientTaq(inputTaq, event::addDefinitionError);
+                    if (clientTaq == null) {
+                        continue;
+                    }
+                    Class<?> clientClass = clientTaq.toClass();
+                    if (this.supply(builderTaq, bm, event::addDefinitionError)) {
+                        // OK, we need to create:
+                        //   com.oracle.bmc.example.ExampleClient$Builder
+                        // or:
+                        //   com.oracle.bmc.example.ExampleAsyncClient$Builder
                         //
-                        // Reassign inputClass to be, e.g., Example
-                        // (or ExampleAsync).
-                        inputClass = loadClass(thing(client), event::addDefinitionError);
-                        if (inputClass == null) {
+                        // client will be one of:
+                        // * com.oracle.bmc.example.ExampleClient
+                        // * com.oracle.bmc.example.ExampleAsyncClient
+                        //
+                        // We will call its static builder() method.
+                        MethodHandle builderMethod;
+                        try {
+                            builderMethod = PUBLIC_LOOKUP.findStatic(clientClass, "builder", methodType(builderClass));
+                        } catch (ReflectiveOperationException reflectiveOperationException) {
+                            event.addDefinitionError(reflectiveOperationException);
                             continue;
                         }
-                        inputTaq = new TypeAndQualifiers(inputClass, qualifiersArray);
-                        if (this.supply(inputTaq, bm, event::addDefinitionError)) {
-                            // OK, we can install one synthetic bean
-                            // (rather than two) to satisfy both
-                            // Example/ExampleClient and
-                            // ExampleAsync/ExampleAyncClient.
+                        event.addBean()
+                            .types(Set.of(builderClass))
+                            .qualifiers(qualifiers)
+                            .scope(Singleton.class)
+                            .produceWith(i -> produceClientBuilder(i, builderMethod, builderClass, qualifiersArray));
+                        this.beanTypesAndQualifiers.add(builderTaq);
+                    }
+                    if (builderTaq != inputTaq) {
+                        // input was not a builder itself.  Also input
+                        // was not supplied by the user.  We have
+                        // already ensured that input's builder will
+                        // be made. So now we can create input.
+                        Set<Type> types;
+                        if (clientTaq == inputTaq) {
+                            // OK, the injection point is for
+                            // ExampleClient (or ExampleAsyncClient).
+                            // Let's make sure there's no
+                            // corresponding user-supplied bean for
+                            // Example (or ExampleAsync).
+                            //
+                            // Reassign inputClass to be, e.g.,
+                            // Example (or ExampleAsync).
+                            inputClass = loadClass(thing(input), event::addDefinitionError);
+                            if (inputClass == null) {
+                                continue;
+                            }
+                            inputTaq = new TypeAndQualifiers(inputClass, qualifiersArray);
+                            if (this.supply(inputTaq, bm, event::addDefinitionError)) {
+                                // OK, we can install one synthetic
+                                // bean (rather than two) to satisfy
+                                // both Example/ExampleClient and
+                                // ExampleAsync/ExampleAyncClient.
+                                types = Set.of(clientClass, inputClass);
+                            } else {
+                                types = Set.of(clientClass);
+                            }
+                        } else if (isBuilder(input)) {
+                            throw new AssertionError("input: " + input);
+                        } else if (this.supply(clientTaq, bm, event::addDefinitionError)) {
                             types = Set.of(clientClass, inputClass);
                         } else {
-                            types = Set.of(clientClass);
+                            types = Set.of(inputClass);
                         }
-                    } else if (isBuilder(input)) {
-                        throw new AssertionError("input: " + input);
-                    } else if (this.supply(clientTaq, bm, event::addDefinitionError)) {
-                        types = Set.of(clientClass, inputClass);
-                    } else {
-                        types = Set.of(inputClass);
-                    }
-                    event.addBean()
-                        .types(types)
-                        .qualifiers(qualifiers)
-                        .scope(Singleton.class)
-                        .produceWith(i -> produceClient(i, builderClass))
-                        .disposeWith(OciExtension::disposeClient);
-                    for (Type type : types) {
-                        if (type.equals(inputClass)) {
-                            this.beanTypesAndQualifiers.add(inputTaq);
-                        } else if (type.equals(clientClass)) {
-                            this.beanTypesAndQualifiers.add(clientTaq);
-                        } else {
-                            throw new AssertionError("type: " + type.getTypeName());
+                        event.addBean()
+                            .types(types)
+                            .qualifiers(qualifiers)
+                            .scope(Singleton.class)
+                            .produceWith(i -> produceClient(i, builderClass))
+                            .disposeWith(OciExtension::disposeClient);
+                        for (Type type : types) {
+                            if (type.equals(inputClass)) {
+                                this.beanTypesAndQualifiers.add(inputTaq);
+                            } else if (type.equals(clientClass)) {
+                                this.beanTypesAndQualifiers.add(clientTaq);
+                            } else {
+                                throw new AssertionError("type: " + type.getTypeName());
+                            }
                         }
                     }
                 }
@@ -361,22 +334,10 @@ public final class OciExtension implements Extension {
         }
     }
 
-    /**
-     * A <a
-     * href="https://jakarta.ee/specifications/cdi/2.0/cdi-spec-2.0.html#init_events"
-     * target="_top">container lifecycle observer method</a> called by
-     * the CDI container during the <a
-     * href="https://jakarta.ee/specifications/cdi/2.0/cdi-spec-2.0.html#initialization"
-     * target="_top">application initialization lifecycle</a> that
-     * cleans up internal caches.
-     *
-     * @param event the {@link AfterDeploymentValidation} event; will
-     * not be {@code null}
-     */
     private void afterDeploymentValidation(@Observes AfterDeploymentValidation event) {
         // Cleanup
+        this.harvest.clear();
         this.beanTypesAndQualifiers.clear();
-        this.injectionPoints.clear();
     }
 
 
@@ -385,43 +346,26 @@ public final class OciExtension implements Extension {
      */
 
 
-    /**
-     * Called by the {@link #afterBeanDiscovery(AfterBeanDiscovery,
-     * BeanManager)} <a
-     * href="https://jakarta.ee/specifications/cdi/2.0/cdi-spec-2.0.html#init_events"
-     * target="_top">container lifecycle observer method</a> to
-     * install various beans supporting the injection of {@link
-     * AbstractAuthenticationDetailsProvider} instances.
-     *
-     * @param event the {@link AfterBeanDiscovery} event supplied to
-     * the {@link #afterBeanDiscovery(AfterBeanDiscovery,
-     * BeanManager)} method; will not be {@code null}
-     *
-     * @param bm the {@link BeanManager} supplied to
-     * the {@link #afterBeanDiscovery(AfterBeanDiscovery,
-     * BeanManager)} method; will not be {@code null}
-     *
-     * @param qualifiers the {@link Set} of qualifier annotations for
-     * which support will be installed; will not be {@code null}; must
-     * not be modified
-     */
-    private void installAdps(AfterBeanDiscovery event, BeanManager bm, Set<Annotation> qualifiers) {
-        Annotation[] qualifiersArray = qualifiers.toArray(new Annotation[0]);
-        if (this.supply(new TypeAndQualifiers(AbstractAuthenticationDetailsProvider.class, qualifiersArray),
-                        bm,
-                        event::addDefinitionError)) {
-
+    private void installAdps(AfterBeanDiscovery event,
+                             BeanManager bm,
+                             Set<Annotation> qualifiers,
+                             Annotation[] qualifiersArray) {
+        TypeAndQualifiers adpTaq = new TypeAndQualifiers(AbstractAuthenticationDetailsProvider.class, qualifiersArray);
+        if (this.supply(adpTaq, bm, event::addDefinitionError)) {
             for (AdpStrategy s : AdpStrategy.concreteStrategies()) {
-                if (this.supply(s, qualifiersArray, bm, event::addDefinitionError)) {
-                    if (s.usesBuilder()) {
+                Type type = s.type();
+                if (this.supply(new TypeAndQualifiers(type, qualifiersArray), bm, event::addDefinitionError)) {
+                    Type builderType = s.builderType();
+                    if (builderType != null
+                        && this.supply(new TypeAndQualifiers(builderType, qualifiersArray), bm, event::addDefinitionError)) {
                         event.addBean()
-                            .types(s.builderType())
+                            .types(builderType)
                             .qualifiers(qualifiers)
                             .scope(Singleton.class)
                             .produceWith(i -> s.produceBuilder(i, qualifiersArray));
                     }
                     event.addBean()
-                        .types(s.type())
+                        .types(type)
                         .qualifiers(qualifiers)
                         .scope(Singleton.class)
                         .produceWith(i -> s.produce(i, qualifiersArray));
@@ -435,36 +379,10 @@ public final class OciExtension implements Extension {
                 .qualifiers(qualifiers)
                 .scope(Singleton.class)
                 .produceWith(i -> AdpStrategy.AUTO.produce(i, qualifiersArray));
+            this.beanTypesAndQualifiers.add(adpTaq);
         }
     }
 
-    private boolean supply(AdpStrategy s,
-                           Annotation[] qualifiersArray,
-                           BeanManager bm,
-                           Consumer<? super Throwable> errorHandler) {
-        return !s.isAbstract() && this.supply(s.taq(qualifiersArray), bm, errorHandler);
-    }
-
-    /**
-     * Returns {@code true} if a {@linkplain
-     * AfterBeanDiscovery#addBean() synthetic bean should be added}
-     * for the supplied {@link Class}.
-     *
-     * @param c the {@link Class} in question; may be {@code null} in
-     * which case {@code false} will be returned
-     *
-     * @param bm a {@link BeanManager}; must not be {@code null}
-     *
-     * @param errorHandler a {@link Consumer} that should be prepared
-     * to accept any errors; must not be {@code null}
-     *
-     * @return {@code true} if a {@linkplain
-     * AfterBeanDiscovery#addBean() synthetic bean should be added}
-     * for the supplied {@link Class}; {@code false} otherwise
-     *
-     * @exception NullPointerException if {@code bm} or {@code
-     * errorHandler} is {@code null}
-     */
     private boolean supply(TypeAndQualifiers taq, BeanManager bm, Consumer<? super Throwable> errorHandler) {
         if (taq != null && !this.beanTypesAndQualifiers.contains(taq)) {
             try {
@@ -628,6 +546,28 @@ public final class OciExtension implements Extension {
                 this.qualifiers = qualifiers.toArray(new Annotation[0]);
             }
             this.hashCode = computeHashCode(this.type, this.qualifiers);
+        }
+
+        private Type type() {
+            return this.type;
+        }
+
+        private Annotation[] qualifiers() {
+            return this.qualifiers; // note: uncloned because this is a private class and we know what we're doing
+        }
+
+        private Class<?> toClass() {
+            if (this.type instanceof Class) {
+                return (Class<?>) this.type;
+            } else if (this.type instanceof ParameterizedType) {
+                return (Class<?>) ((ParameterizedType) this.type).getRawType();
+            } else {
+                return null;
+            }
+        }
+
+        private TypeAndQualifiers with(Class<?> c) {
+            return new TypeAndQualifiers(c, this.qualifiers);
         }
 
         @Override
@@ -881,10 +821,20 @@ public final class OciExtension implements Extension {
 
         private static final Collection<AdpStrategy> CONCRETE_STRATEGIES;
 
+        private static final Set<Class<?>> BUILDER_CLASSES;
+
         static {
             EnumSet<AdpStrategy> set = EnumSet.allOf(AdpStrategy.class);
             set.removeIf(AdpStrategy::isAbstract);
             CONCRETE_STRATEGIES = Collections.unmodifiableCollection(set);
+            Set<Class<?>> builderClasses = new HashSet<>(7);
+            for (AdpStrategy s : set) {
+                Type builderType = s.builderType();
+                if (builderType instanceof Class) {
+                    builderClasses.add((Class<?>) builderType);
+                }
+            }
+            BUILDER_CLASSES = Collections.unmodifiableSet(builderClasses);
         }
 
 
@@ -945,10 +895,6 @@ public final class OciExtension implements Extension {
             return this.builderType;
         }
 
-        boolean usesBuilder() {
-            return this.builderType() != null;
-        }
-
         final boolean isAbstract() {
             return this.isAbstract;
         }
@@ -982,6 +928,10 @@ public final class OciExtension implements Extension {
          * Static methods.
          */
 
+
+        private static Set<Class<?>> builderClasses() {
+            return BUILDER_CLASSES;
+        }
 
         private static AdpStrategy of(String name) {
             return valueOf(name.replace('-', '_').toUpperCase());
