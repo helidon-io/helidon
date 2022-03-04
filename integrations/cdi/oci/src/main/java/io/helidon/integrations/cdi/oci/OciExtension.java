@@ -909,7 +909,7 @@ public final class OciExtension implements Extension {
         abstract boolean isAvailable(Config c);
 
         private static AdpStrategy of(String name) {
-            return Enum.valueOf(AdpStrategy.class, name.replace('-', '_').toUpperCase());
+            return valueOf(name.replace('-', '_').toUpperCase());
         }
 
     }
