@@ -140,7 +140,7 @@ public final class OciExtension implements Extension {
 
     private final Map<Set<Annotation>, Set<Class<?>>> harvest;
 
-    private final Set<TypeAndQualifiers> beanTypesAndQualifiers;
+    private final Set<TypeAndQualifiers> processedTaqs;
 
 
     /*
@@ -157,7 +157,7 @@ public final class OciExtension implements Extension {
     public OciExtension() {
         super();
         this.harvest = new HashMap<>();
-        this.beanTypesAndQualifiers = new HashSet<>();
+        this.processedTaqs = new HashSet<>();
     }
 
 
@@ -179,7 +179,7 @@ public final class OciExtension implements Extension {
             } else {
                 Matcher m = CLIENT_PACKAGE_PATTERN.matcher(baseClass.getName());
                 if (m.matches() && !CLIENT_PACKAGE_FRAGMENT_DENY_LIST.contains(m.group(1))) {
-                    // It's a service client.
+                    // It's an OCI service client.
                     this.harvest.computeIfAbsent(qualifiers, q -> new HashSet<>(11)).add(baseClass);
                 }
             }
@@ -248,7 +248,7 @@ public final class OciExtension implements Extension {
                             .qualifiers(qualifiers)
                             .scope(Singleton.class)
                             .produceWith(i -> produceClientBuilder(i, builderMethod, builderClass, qualifiersArray));
-                        this.beanTypesAndQualifiers.add(builderTaq);
+                        this.processedTaqs.add(builderTaq);
                     }
                     if (builderTaq != inputTaq) {
                         // input was not a builder itself.  Also input
@@ -295,9 +295,9 @@ public final class OciExtension implements Extension {
                             .disposeWith(OciExtension::disposeClient);
                         for (Type type : types) {
                             if (type.equals(inputClass)) {
-                                this.beanTypesAndQualifiers.add(inputTaq);
+                                this.processedTaqs.add(inputTaq);
                             } else if (type.equals(clientClass)) {
-                                this.beanTypesAndQualifiers.add(clientTaq);
+                                this.processedTaqs.add(clientTaq);
                             } else {
                                 throw new AssertionError("type: " + type.getTypeName());
                             }
@@ -310,7 +310,7 @@ public final class OciExtension implements Extension {
 
     private void afterDeploymentValidation(@Observes AfterDeploymentValidation event) {
         this.harvest.clear();
-        this.beanTypesAndQualifiers.clear();
+        this.processedTaqs.clear();
     }
 
 
@@ -351,12 +351,12 @@ public final class OciExtension implements Extension {
                 .qualifiers(qualifiers)
                 .scope(Singleton.class)
                 .produceWith(i -> AdpStrategy.AUTO.produce(i, qualifiersArray));
-            this.beanTypesAndQualifiers.add(adpTaq);
+            this.processedTaqs.add(adpTaq);
         }
     }
 
     private boolean supply(TypeAndQualifiers taq, BeanManager bm, Consumer<? super Throwable> errorHandler) {
-        if (taq != null && !this.beanTypesAndQualifiers.contains(taq)) {
+        if (taq != null && !this.processedTaqs.contains(taq)) {
             try {
                 return bm.resolve(bm.getBeans(taq.type, taq.qualifiers)) == null;
             } catch (AmbiguousResolutionException e) {
