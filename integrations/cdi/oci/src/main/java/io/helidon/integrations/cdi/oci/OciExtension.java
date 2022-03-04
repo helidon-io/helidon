@@ -26,6 +26,7 @@ import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -840,19 +841,51 @@ public final class OciExtension implements Extension {
             }
 
             @Override
+            @SuppressWarnings("fallthrough")
             AbstractAuthenticationDetailsProvider produce(Instance<? super Object> instance,
                                                           Config config,
                                                           Annotation[] qualifiers) {
                 Collection<AdpStrategy> strategies =
                     concreteStrategies(config.getOptionalValue("oci.config.strategy", String[].class).orElse(new String[0]));
-                for (final AdpStrategy s : strategies) {
-                    if (!s.isAbstract() && s.isAvailable(instance, config, qualifiers)) {
-                        return s.select(instance, config, qualifiers);
+                switch (strategies.size()) {
+                case 0:
+                    throw new AssertionError();
+                case 1:
+                    AdpStrategy strategy = strategies.iterator().next();
+                    if (strategy != this) {
+                        // No availability check on purpose; there's
+                        // only one strategy that is not itself AUTO
+                        // and no fallback or magic.
+                        return strategy.select(instance, config, qualifiers);
                     }
+                    // (Edge case.)
+                    strategies = concreteStrategies();
+                    // fall-through
+                default:
+                    for (AdpStrategy s : strategies) {
+                        if (s != this && s.isAvailable(instance, config, qualifiers)) {
+                            return s.select(instance, config, qualifiers);
+                        }
+                    }
+                    break;
                 }
                 throw new UnsatisfiedResolutionException();
             }
         };
+
+
+        /*
+         * Static fields.
+         */
+
+
+        private static final Collection<AdpStrategy> CONCRETE_STRATEGIES;
+
+        static {
+            EnumSet<AdpStrategy> set = EnumSet.allOf(AdpStrategy.class);
+            set.removeIf(AdpStrategy::isAbstract);
+            CONCRETE_STRATEGIES = Collections.unmodifiableCollection(set);
+        }
 
 
         /*
@@ -954,20 +987,35 @@ public final class OciExtension implements Extension {
             return valueOf(name.replace('-', '_').toUpperCase());
         }
 
+        private static AdpStrategy ofConfigString(String strategyString) {
+            if (strategyString == null) {
+                return AUTO;
+            } else {
+                strategyString = strategyString.strip();
+                if (!strategyString.isBlank()) {
+                    return AUTO;
+                } else {
+                    return of(strategyString);
+                }
+            }
+        }
+
         private static Collection<AdpStrategy> concreteStrategies() {
-            EnumSet<AdpStrategy> set = EnumSet.allOf(AdpStrategy.class);
-            set.removeIf(AdpStrategy::isAbstract);
-            return set;
+            return CONCRETE_STRATEGIES;
         }
 
         private static Collection<AdpStrategy> concreteStrategies(String[] strategyStringsArray) {
             Collection<AdpStrategy> strategies;
+            AdpStrategy strategy;
             switch (strategyStringsArray.length) {
             case 0:
-                strategies = concreteStrategies();
-                break;
+                return concreteStrategies();
             case 1:
-                strategies = toStrategies(strategyStringsArray[0]);
+                strategy = ofConfigString(strategyStringsArray[0]);
+                if (strategy.isAbstract()) {
+                    return concreteStrategies();
+                }
+                strategies = EnumSet.of(strategy);
                 break;
             default:
                 Set<String> strategyStrings = new LinkedHashSet<>(Arrays.asList(strategyStringsArray));
@@ -975,36 +1023,29 @@ public final class OciExtension implements Extension {
                 case 0:
                     throw new AssertionError();
                 case 1:
-                    strategies = toStrategies(strategyStrings.iterator().next());
+                    strategy = ofConfigString(strategyStrings.iterator().next());
+                    if (strategy.isAbstract()) {
+                        return concreteStrategies();
+                    }
+                    strategies = EnumSet.of(strategy);
                     break;
                 default:
                     strategies = new ArrayList<>(strategyStrings.size());
                     for (String s : strategyStrings) {
-                        strategies.addAll(toStrategies(s));
+                        strategy = ofConfigString(s);
+                        if (!strategy.isAbstract()) {
+                            strategies.add(strategy);
+                        }
                     }
-                    break;
                 }
                 break;
             }
-            strategies.removeIf(AdpStrategy::isAbstract);
             if (strategies.isEmpty()) {
-                strategies = concreteStrategies();
+                return concreteStrategies();
             }
-            return strategies;
+            return Collections.unmodifiableCollection(strategies);
         }
 
-        private static Collection<AdpStrategy> toStrategies(String strategyString) {
-            if (strategyString == null) {
-                return EnumSet.of(AdpStrategy.AUTO);
-            } else {
-                strategyString = strategyString.strip();
-                if (!strategyString.isBlank()) {
-                    return EnumSet.of(AdpStrategy.AUTO);
-                } else {
-                    return EnumSet.of(AdpStrategy.of(strategyString));
-                }
-            }
-        }
     }
 
 }
