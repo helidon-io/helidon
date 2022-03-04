@@ -27,6 +27,7 @@ import java.util.logging.Logger;
 import javax.json.Json;
 import javax.json.JsonObject;
 
+import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.media.common.MessageBodyReadableContent;
 import io.helidon.media.jsonp.JsonpSupport;
@@ -113,7 +114,8 @@ class HealthServerTest {
                     .request()
                     .await();
 
-            assertThat("health response status", response.status().code(), is(200));
+            int expectedStatus = expectContent ? Http.Status.OK_200.code() : Http.Status.NO_CONTENT_204.code();
+            assertThat("health response status", response.status().code(), is(expectedStatus));
             MessageBodyReadableContent content = response.content();
             String textContent = null;
             try {
