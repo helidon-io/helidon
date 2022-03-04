@@ -52,7 +52,6 @@ import javax.enterprise.inject.spi.ProcessInjectionPoint;
 import javax.enterprise.util.TypeLiteral;
 import javax.inject.Singleton;
 
-import com.oracle.bmc.ConfigFileReader;
 import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider;
 import com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider;
 import com.oracle.bmc.auth.InstancePrincipalsAuthenticationDetailsProvider;
@@ -411,6 +410,8 @@ public final class OciExtension implements Extension {
         if (this.supply(new TypeAndQualifiers(AbstractAuthenticationDetailsProvider.class, qualifiersArray),
                         bm,
                         event::addDefinitionError)) {
+
+            // SimpleAuthenticationDetailsProviderBuilder and SimpleAuthenticationDetailsProvider
             if (this.supply(new TypeAndQualifiers(SimpleAuthenticationDetailsProviderBuilder.class, qualifiersArray),
                             bm,
                             event::addDefinitionError)) {
@@ -429,6 +430,8 @@ public final class OciExtension implements Extension {
                     .scope(Singleton.class)
                     .produceWith(i -> produceSimpleAdp(i, qualifiersArray));
             }
+
+            // ConfigFileAuthenticationDetailsProvider (doesn't use a builder)
             if (this.supply(new TypeAndQualifiers(ConfigFileAuthenticationDetailsProvider.class, qualifiersArray),
                             bm,
                             event::addDefinitionError)) {
@@ -438,6 +441,8 @@ public final class OciExtension implements Extension {
                     .scope(Singleton.class)
                     .produceWith(i -> produceFileAdp(i, qualifiersArray));
             }
+
+            // InstancePrincipalsAuthenticationDetailsProviderBuilder and InstancePrincipalsAuthenticationDetailsProvider
             if (this.supply(new TypeAndQualifiers(InstancePrincipalsAuthenticationDetailsProvider.class, qualifiersArray),
                             bm,
                             event::addDefinitionError)) {
@@ -456,6 +461,8 @@ public final class OciExtension implements Extension {
                     .scope(Singleton.class)
                     .produceWith(i -> produceResourcePrincipalAdp(i, qualifiersArray));
             }
+
+            // AbstractAuthenticationDetailsProvider
             event.addBean()
                 .types(AbstractAuthenticationDetailsProvider.class)
                 .qualifiers(qualifiers)
@@ -590,8 +597,8 @@ public final class OciExtension implements Extension {
                                                                             Annotation[] qualifiersArray,
                                                                             Iterable<? extends AdpStrategy> strategies) {
         for (final AdpStrategy s : strategies) {
-            if (s.isAvailable(c)) {
-                return s.produce(i, c, qualifiersArray);
+            if (s.isAvailable(i, c, qualifiersArray)) {
+                return s.select(i, c, qualifiersArray);
             }
         }
         throw new UnsatisfiedResolutionException();
@@ -619,19 +626,16 @@ public final class OciExtension implements Extension {
                 return new ConfigFileAuthenticationDetailsProvider(ociConfigPath.orElseThrow(), ociAuthProfile);
             }
         } catch (IOException ioException) {
-            // The ConfigFileReader does not throw a
-            // FileNotFoundException in this case (as it probably
-            // should).  We have no choice but to parse the error
-            // message.  See
-            // https://github.com/oracle/oci-java-sdk/blob/v2.15.0/bmc-common/src/main/java/com/oracle/bmc/ConfigFileReader.java#L94-L98.
+            // The underlying ConfigFileReader that does the real work
+            // does not throw a FileNotFoundException in this case (as
+            // it probably should).  We have no choice but to parse
+            // the error message.  See
+            // https://github.com/oracle/oci-java-sdk/blob/v2.18.0/bmc-common/src/main/java/com/oracle/bmc/ConfigFileReader.java#L94-L98.
             String message = ioException.getMessage();
-            if (message != null && message.endsWith(" because it does not exist or it is not a file.")) {
-                final Throwable cause = ioException.getCause();
-                if (cause == null) {
-                    throw new CreationException(message, new FileNotFoundException(message));
-                } else {
-                    throw new CreationException(message, new FileNotFoundException(message).initCause(cause));
-                }
+            if (message != null
+                && message.startsWith("Can't load the default config from ")
+                && message.endsWith(" because it does not exist or it is not a file.")) {
+                throw new CreationException(message, new FileNotFoundException(message).initCause(ioException));
             }
             throw new CreationException(message, ioException);
         }
@@ -825,46 +829,35 @@ public final class OciExtension implements Extension {
     private enum AdpStrategy {
 
         // NOTE: The ordering of the constants in this enum is
-        // extremely important as it governs the default "auto" case
-        // order!
+        // *extremely* important as it governs the default "auto" case
+        // order (EnumSets always traverse their members in
+        // declaration order)!
 
         CONFIG {
             @Override
-            AbstractAuthenticationDetailsProvider produce(Instance<? super Object> i, Config c, Annotation[] qualifiersArray) {
-                return OciExtension.produceSimpleAdp(i, c, qualifiersArray);
+            AbstractAuthenticationDetailsProvider select(Instance<? super Object> i, Config c, Annotation[] qualifiersArray) {
+                return i.select(SimpleAuthenticationDetailsProvider.class, qualifiersArray).get();
             }
             @Override
-            boolean isAvailable(Config c) {
+            boolean isAvailable(Instance<? super Object> i, Config c, Annotation[] qualifiersArray) {
                 return false; // Not yet implemented; hence the false return
             }
         },
 
         OCI_CONFIG_FILE {
             @Override
-            AbstractAuthenticationDetailsProvider produce(Instance<? super Object> i, Config c, Annotation[] qualifiersArray) {
-                return OciExtension.produceFileAdp(i, c, qualifiersArray);
+            AbstractAuthenticationDetailsProvider select(Instance<? super Object> i, Config c, Annotation[] qualifiersArray) {
+                return i.select(ConfigFileAuthenticationDetailsProvider.class, qualifiersArray).get();
             }
             @Override
-            boolean isAvailable(Config c) {
-                Optional<String> ociConfigPath = c.getOptionalValue("oci.config.path", String.class);
-                String ociAuthProfile = c.getOptionalValue("oci.auth.profile", String.class).orElse("DEFAULT");
+            boolean isAvailable(Instance<? super Object> i, Config c, Annotation[] qualifiersArray) {
                 try {
-                    if (ociConfigPath.isEmpty()) {
-                        ConfigFileReader.parseDefault(ociAuthProfile);
-                    } else {
-                        ConfigFileReader.parse(ociConfigPath.orElseThrow(), ociAuthProfile);
-                    }
-                } catch (IOException ioException) {
-                    // The ConfigFileReader does not throw a
-                    // FileNotFoundException in this case (as it
-                    // probably should).  We have no choice but to
-                    // parse the error message.  See
-                    // https://github.com/oracle/oci-java-sdk/blob/v2.15.0/bmc-common/src/main/java/com/oracle/bmc/ConfigFileReader.java#L94-L98.
-                    String message = ioException.getMessage();
-                    if (message != null && message.endsWith(" because it does not exist or it is not a file.")) {
+                    this.select(i, c, qualifiersArray);
+                } catch (CreationException creationException) {
+                    if (creationException.getCause() instanceof FileNotFoundException) {
                         return false;
                     }
-                    throw new CreationException(message, ioException);
+                    throw creationException;
                 }
                 return true;
             }
@@ -872,11 +865,11 @@ public final class OciExtension implements Extension {
 
         INSTANCE_PRINCIPALS {
             @Override
-            AbstractAuthenticationDetailsProvider produce(Instance<? super Object> i, Config c, Annotation[] qualifiersArray) {
-                return OciExtension.produceInstancePrincipalsAdp(i, c, qualifiersArray);
+            AbstractAuthenticationDetailsProvider select(Instance<? super Object> i, Config c, Annotation[] qualifiersArray) {
+                return i.select(InstancePrincipalsAuthenticationDetailsProvider.class, qualifiersArray).get();
             }
             @Override
-            boolean isAvailable(Config c) {
+            boolean isAvailable(Instance<? super Object> i, Config c, Annotation[] qualifiersArray) {
                 String ociImdsHostname = c.getOptionalValue("oci.imds.hostname", String.class).orElse("169.254.169.254");
                 int ociImdsTimeoutMillis =
                     c.getOptionalValue("oci.imds.timeout.milliseconds", Integer.class).orElse(Integer.valueOf(500));
@@ -892,21 +885,21 @@ public final class OciExtension implements Extension {
 
         RESOURCE_PRINCIPAL {
             @Override
-            AbstractAuthenticationDetailsProvider produce(Instance<? super Object> i, Config c, Annotation[] qualifiersArray) {
-                return OciExtension.produceResourcePrincipalAdp(i, c, qualifiersArray);
+            AbstractAuthenticationDetailsProvider select(Instance<? super Object> i, Config c, Annotation[] qualifiersArray) {
+                return i.select(ResourcePrincipalAuthenticationDetailsProvider.class, qualifiersArray).get();
             }
             @Override
-            boolean isAvailable(Config c) {
+            boolean isAvailable(Instance<? super Object> i, Config c, Annotation[] qualifiersArray) {
                 // https://github.com/oracle/oci-java-sdk/blob/v2.15.0/bmc-common/src/main/java/com/oracle/bmc/auth/ResourcePrincipalAuthenticationDetailsProvider.java#L246-L251
                 return System.getenv("OCI_RESOURCE_PRINCIPAL_VERSION") != null;
             }
         };
 
-        abstract AbstractAuthenticationDetailsProvider produce(Instance<? super Object> i,
-                                                               Config c,
-                                                               Annotation[] qualifiersArray);
+        abstract AbstractAuthenticationDetailsProvider select(Instance<? super Object> i,
+                                                              Config c,
+                                                              Annotation[] qualifiersArray);
 
-        abstract boolean isAvailable(Config c);
+        abstract boolean isAvailable(Instance<? super Object> i, Config c, Annotation[] qualifiersArray);
 
         private static AdpStrategy of(String name) {
             return valueOf(name.replace('-', '_').toUpperCase());
