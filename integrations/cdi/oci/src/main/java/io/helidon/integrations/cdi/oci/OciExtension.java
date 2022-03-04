@@ -843,12 +843,14 @@ public final class OciExtension implements Extension {
             AbstractAuthenticationDetailsProvider produce(Instance<? super Object> instance,
                                                           Config config,
                                                           Annotation[] qualifiers) {
-                return
-                    autoProduce(instance,
-                                config,
-                                qualifiers,
-                                toStrategies(config.getOptionalValue("oci.config.strategy", String[].class)
-                                             .orElse(new String[0])));
+                Collection<AdpStrategy> strategies =
+                    concreteStrategies(config.getOptionalValue("oci.config.strategy", String[].class).orElse(new String[0]));
+                for (final AdpStrategy s : strategies) {
+                    if (!s.isAbstract() && s.isAvailable(instance, config, qualifiers)) {
+                        return s.select(instance, config, qualifiers);
+                    }
+                }
+                throw new UnsatisfiedResolutionException();
             }
         };
 
@@ -952,29 +954,17 @@ public final class OciExtension implements Extension {
             return valueOf(name.replace('-', '_').toUpperCase());
         }
 
-        private static EnumSet<AdpStrategy> concreteStrategies() {
+        private static Collection<AdpStrategy> concreteStrategies() {
             EnumSet<AdpStrategy> set = EnumSet.allOf(AdpStrategy.class);
             set.removeIf(AdpStrategy::isAbstract);
             return set;
         }
 
-        private static AbstractAuthenticationDetailsProvider autoProduce(Instance<? super Object> instance,
-                                                                         Config config,
-                                                                         Annotation[] qualifiers,
-                                                                         Iterable<? extends AdpStrategy> strategies) {
-            for (final AdpStrategy s : strategies) {
-                if (!s.isAbstract() && s.isAvailable(instance, config, qualifiers)) {
-                    return s.select(instance, config, qualifiers);
-                }
-            }
-            throw new UnsatisfiedResolutionException();
-        }
-
-        private static Collection<AdpStrategy> toStrategies(String[] strategyStringsArray) {
+        private static Collection<AdpStrategy> concreteStrategies(String[] strategyStringsArray) {
             Collection<AdpStrategy> strategies;
             switch (strategyStringsArray.length) {
             case 0:
-                strategies = EnumSet.allOf(AdpStrategy.class);
+                strategies = concreteStrategies();
                 break;
             case 1:
                 strategies = toStrategies(strategyStringsArray[0]);
@@ -985,27 +975,34 @@ public final class OciExtension implements Extension {
                 case 0:
                     throw new AssertionError();
                 case 1:
-                    strategies = EnumSet.of(AdpStrategy.of(strategyStrings.iterator().next()));
+                    strategies = toStrategies(strategyStrings.iterator().next());
                     break;
                 default:
                     strategies = new ArrayList<>(strategyStrings.size());
-                    for (String strategyString : strategyStrings) {
-                        if (strategyString != null && !strategyString.isBlank() && !strategyString.equalsIgnoreCase("auto")) {
-                            strategies.add(AdpStrategy.of(strategyString));
-                        }
+                    for (String s : strategyStrings) {
+                        strategies.addAll(toStrategies(s));
                     }
                     break;
                 }
                 break;
             }
+            strategies.removeIf(AdpStrategy::isAbstract);
+            if (strategies.isEmpty()) {
+                strategies = concreteStrategies();
+            }
             return strategies;
         }
 
         private static Collection<AdpStrategy> toStrategies(String strategyString) {
-            if (strategyString == null || strategyString.isBlank() || strategyString.equalsIgnoreCase("auto")) {
-                return EnumSet.allOf(AdpStrategy.class);
+            if (strategyString == null) {
+                return EnumSet.of(AdpStrategy.AUTO);
             } else {
-                return EnumSet.of(AdpStrategy.of(strategyString));
+                strategyString = strategyString.strip();
+                if (!strategyString.isBlank()) {
+                    return EnumSet.of(AdpStrategy.AUTO);
+                } else {
+                    return EnumSet.of(AdpStrategy.of(strategyString));
+                }
             }
         }
     }
