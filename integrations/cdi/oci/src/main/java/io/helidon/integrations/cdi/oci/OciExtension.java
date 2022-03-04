@@ -557,15 +557,29 @@ public final class OciExtension implements Extension {
             strategies = EnumSet.allOf(AdpStrategy.class);
             break;
         case 1:
-            strategies = EnumSet.of(AdpStrategy.of(strategyStringsArray[0]));
+            String soleStrategyString = strategyStringsArray[0];
+            if (soleStrategyString == null || soleStrategyString.isBlank() || soleStrategyString.equalsIgnoreCase("auto")) {
+                strategies = EnumSet.allOf(AdpStrategy.class);
+            } else {
+                strategies = EnumSet.of(AdpStrategy.of(soleStrategyString));
+            }
             break;
         default:
             Set<String> strategyStrings = new LinkedHashSet<>(Arrays.asList(strategyStringsArray));
-            strategies = new ArrayList<>(strategyStrings.size());
-            for (String strategyString : strategyStrings) {
-                strategies.add(AdpStrategy.of(strategyString));
+            switch (strategyStrings.size()) {
+            case 0:
+                throw new AssertionError();
+            case 1:
+                strategies = EnumSet.of(AdpStrategy.of(strategyStrings.iterator().next()));
+                break;
+            default:
+                strategies = new ArrayList<>(strategyStrings.size());
+                for (String strategyString : strategyStrings) {
+                    strategies.add(AdpStrategy.of(strategyString));
+                }
+                strategies = Collections.unmodifiableCollection(strategies);
+                break;
             }
-            strategies = Collections.unmodifiableCollection(strategies);
             break;
         }
         return produceAbstractAdp(i, c, qualifiersArray, strategies);
@@ -581,41 +595,6 @@ public final class OciExtension implements Extension {
             }
         }
         throw new UnsatisfiedResolutionException();
-    }
-
-    private static AbstractAuthenticationDetailsProvider produceAutoAdp(Instance<? super Object> i,
-                                                                        Annotation[] qualifiersArray) {
-        return produceAutoAdp(i, i.select(Config.class).get(), qualifiersArray);
-    }
-
-    private static AbstractAuthenticationDetailsProvider produceAutoAdp(Instance<? super Object> i,
-                                                                        Config config,
-                                                                        Annotation[] qualifiersArray) {
-        try {
-            return produceFileAdp(i, config, qualifiersArray);
-        } catch (CreationException creationException) {
-            if (!(creationException.getCause() instanceof FileNotFoundException)) {
-                throw creationException;
-            }
-        }
-
-        String ociImdsHostname = config.getOptionalValue("oci.imds.hostname", String.class).orElse("169.254.169.254");
-        int ociImdsTimeoutMillis =
-            config.getOptionalValue("oci.imds.timeout.milliseconds", Integer.class).orElse(Integer.valueOf(500));
-        try {
-            if (InetAddress.getByName(ociImdsHostname).isReachable(ociImdsTimeoutMillis)) {
-                return produceInstancePrincipalsAdp(i, qualifiersArray);
-            }
-        } catch (ConnectException connectException) {
-        } catch (IOException ioException) {
-            throw new CreationException(ioException.getMessage(), ioException);
-        }
-
-        // https://github.com/oracle/oci-java-sdk/blob/v2.15.0/bmc-common/src/main/java/com/oracle/bmc/auth/ResourcePrincipalAuthenticationDetailsProvider.java#L246-L251
-        if (System.getenv("OCI_RESOURCE_PRINCIPAL_VERSION") != null) {
-            return produceResourcePrincipalAdp(i, qualifiersArray);
-        }
-        throw new UnsatisfiedResolutionException(AbstractAuthenticationDetailsProvider.class.getName());
     }
 
     private static ConfigFileAuthenticationDetailsProvider produceFileAdp(Instance<? super Object> i,
