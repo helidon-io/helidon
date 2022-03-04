@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,6 +45,7 @@ import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_MAX_AGE
 import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_REQUEST_HEADERS;
 import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_REQUEST_METHOD;
 import static io.helidon.webserver.cors.LogHelper.DECISION_LEVEL;
+import static java.lang.Character.isDigit;
 
 /**
  * Centralizes internal logic common to both SE and MP CORS support for processing requests and preparing responses.
@@ -432,7 +433,7 @@ class CorsSupportHelper<Q, R> {
         // If enabled but not whitelisted, deny request
         List<String> allowedOrigins = Arrays.asList(crossOriginConfig.allowOrigins());
         Optional<String> originOpt = requestAdapter.firstHeader(ORIGIN);
-        if (!allowedOrigins.contains("*") && !contains(originOpt, allowedOrigins, String::equals)) {
+        if (!allowedOrigins.contains("*") && !contains(originOpt, allowedOrigins, CorsSupportHelper::compareOrigins)) {
             return Optional.of(forbid(requestAdapter,
                     responseAdapter,
                     ORIGIN_NOT_IN_ALLOWED_LIST,
@@ -513,7 +514,7 @@ class CorsSupportHelper<Q, R> {
 
         // If enabled but not whitelisted, deny request
         List<String> allowedOrigins = Arrays.asList(crossOrigin.allowOrigins());
-        if (!allowedOrigins.contains("*") && !contains(originOpt, allowedOrigins, String::equals)) {
+        if (!allowedOrigins.contains("*") && !contains(originOpt, allowedOrigins, CorsSupportHelper::compareOrigins)) {
             return forbid(requestAdapter,
                     responseAdapter,
                     ORIGIN_NOT_IN_ALLOWED_LIST,
@@ -609,6 +610,135 @@ class CorsSupportHelper<Q, R> {
             }
         }
         return false;
+    }
+
+    /**
+     * Extract character at index {@code n} or return {@code '/'} if index is out
+     * of range.
+     *
+     * @param s the string
+     * @param n the index
+     * @param length the string length
+     * @return char at index or {@code '/'}.
+     */
+    static char charAt(String s, int n, int length) {
+        return n < length ? s.charAt(n) : '/';
+    }
+
+    /**
+     * Compare states in {@link #compareOrigins}.
+     */
+    enum CompareState {
+        PROTOCOL, HOST, TRAILING
+    }
+
+    /**
+     * Validates default ports when absent.
+     *
+     * @param url the URL
+     * @param k index in URL to inspect
+     * @param length the URL length
+     * @param isHttps true if HTTPS
+     *
+     * @return Number of chars to advance or -1 if matching failed
+     */
+    static int checkDefaultPort(String url, int k, int length, boolean isHttps) {
+        if (isHttps) {
+            // Default port must be "443"
+            if (url.charAt(k + 1) != '4'
+                    || url.charAt(k + 2) != '4'
+                    || url.charAt(k + 3) != '3'
+                    || isDigit(charAt(url, k + 4, length))) {
+                return -1;
+            }
+            return 3;
+        } else {
+            // Default port must be "80"
+            if (url.charAt(k + 1) != '8'
+                    || url.charAt(k + 2) != '0'
+                    || isDigit(charAt(url, k + 3, length))) {
+                return -1;
+            }
+            return 2;
+        }
+    }
+
+    /**
+     * Fast compare of two origins on protocol, host and port but ignoring paths.
+     * Handles default ports 80 and 443 for http and https respectively. Comparison will
+     * fail if origins are malformed.
+     *
+     * @param url1 first URL
+     * @param url2 second URL
+     * @return outcome of test
+     */
+    static Boolean compareOrigins(String url1, String url2) {
+        boolean isHttps = false;
+        int length1 = url1.length();
+        int length2 = url2.length();
+        CompareState state = CompareState.PROTOCOL;
+
+        try {
+            for (int i = 0, j = 0; i < length1 || j < length2; i++, j++) {
+                char c1 = charAt(url1, i, length1);
+                char c2 = charAt(url2, j, length2);
+
+                switch (state) {
+                    case PROTOCOL:
+                        if (c1 != c2) {
+                            return false;
+                        }
+                        if (c1 == ':') {
+                            isHttps = (i == 5);
+                            // Match "//"
+                            if (url1.charAt(i + 1) != '/'
+                                    || url1.charAt(i + 2) != '/'
+                                    || url2.charAt(j + 1) != '/'
+                                    || url2.charAt(j + 2) != '/') {
+                                return false;
+                            }
+                            i += 2;
+                            j += 2;
+                            state = CompareState.HOST;
+                        }
+                        break;
+                    case HOST:
+                        if (c1 == ':') {
+                            // Handle default port in url2
+                            if (c2 != ':') {
+                                int n = checkDefaultPort(url1, i, length1, isHttps);
+                                if (n < 0) {
+                                    return false;
+                                }
+                                i += n;
+                                state = CompareState.TRAILING;
+                            }
+                        } else if (c2 == ':') {
+                            // Handle default port in url1
+                            int n = checkDefaultPort(url2, j, length2, isHttps);
+                            if (n < 0) {
+                                return false;
+                            }
+                            j += n;
+                            state = CompareState.TRAILING;
+                        } else if (c1 != c2) {
+                            return false;
+                        } else if (c1 == '/' || (i == length1 - 1 && j == length2 - 1)) {
+                            state = CompareState.TRAILING;
+                        }
+                        break;
+                    case TRAILING:
+                        // Ignore trailing characters
+                        break;
+                    default:
+                        throw new IllegalStateException("Unknown state");
+                }
+            }
+        } catch (IndexOutOfBoundsException e) {
+            return false;
+        }
+
+        return state == CompareState.TRAILING;
     }
 
     /**
