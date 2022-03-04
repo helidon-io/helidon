@@ -87,7 +87,7 @@ provides these endpoints automatically as part of every MP microservice.
 External management tools (or `curl` or browsers) retrieve liveness via `/health/live` and
 readiness via `/health/ready`.
 
-Responses from the health endpoints report `200` (OK) or `503` (service unavailable) depending on the outcome of running the health checks.
+Responses from the health endpoints report `200` (OK), `204` (no content), or `503` (service unavailable) depending on the outcome of running the health checks.
 HTTP `GET` responses include JSON content showing the detailed results of all the health checks which the server executed after receiving the request.
 HTTP `HEAD` requests return only the status with no payload.
 

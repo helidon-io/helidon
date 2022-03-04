@@ -121,7 +121,8 @@ HealthCheck hc = this::exampleHealthCheck;
 [cols="1,5",role="flex, sm7"]
 .Health status codes
 |=======
-| `200` | The application is healthy.
+| `200` | The application is healthy (with health check details in the response).
+| `204` | The application is healthy (with _no_ health check details in the response).
 | `503` | The application is not healthy.
 | `500` | An error occurred while reporting the health.
 |=======
