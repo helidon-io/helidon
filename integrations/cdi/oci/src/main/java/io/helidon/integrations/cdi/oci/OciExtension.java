@@ -33,7 +33,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -188,7 +187,7 @@ public final class OciExtension implements Extension {
     }
 
     private void afterBeanDiscovery(@Observes AfterBeanDiscovery event, BeanManager bm) {
-        for (Entry<Set<Annotation>, Set<Class<?>>> entry : this.harvest.entrySet()) {
+        for (var entry : this.harvest.entrySet()) {
             Set<Annotation> qualifiers = entry.getKey();
             Annotation[] qualifiersArray = qualifiers.toArray(new Annotation[0]);
             installAdps(event, bm, qualifiers, qualifiersArray);
@@ -209,8 +208,9 @@ public final class OciExtension implements Extension {
                     // input is a builder itself)? Maybe the user
                     // supplied one, in which case we should use
                     // hers. Otherwise install our own.
-                    TypeAndQualifiers builderTaq = taq(inputTaq, OciExtension::builder, event::addDefinitionError);
+                    TypeAndQualifiers builderTaq = taq(inputTaq, OciExtension::clientBuilder, event::addDefinitionError);
                     if (builderTaq == null) {
+                        // A definition error will have been raised.
                         continue;
                     }
                     Class<?> builderClass = builderTaq.toClass();
@@ -221,6 +221,7 @@ public final class OciExtension implements Extension {
                     // we can call its builder() method.)
                     TypeAndQualifiers clientTaq = taq(inputTaq, OciExtension::client, event::addDefinitionError);
                     if (clientTaq == null) {
+                        // A definition error will have been raised.
                         continue;
                     }
                     Class<?> clientClass = clientTaq.toClass();
@@ -264,8 +265,9 @@ public final class OciExtension implements Extension {
                             //
                             // Reassign inputClass to be, e.g.,
                             // Example (or ExampleAsync).
-                            inputClass = loadClass(thing(input), event::addDefinitionError);
+                            inputClass = loadClass(clientInterface(input), event::addDefinitionError);
                             if (inputClass == null) {
+                                // A definition error will have been raised.
                                 continue;
                             }
                             inputTaq = new TypeAndQualifiers(inputClass, qualifiersArray);
@@ -274,14 +276,14 @@ public final class OciExtension implements Extension {
                                 // bean (rather than two) to satisfy
                                 // both Example/ExampleClient and
                                 // ExampleAsync/ExampleAyncClient.
-                                types = Set.of(clientClass, inputClass);
+                                types = Set.of(clientClass, inputTaq.toClass());
                             } else {
                                 types = Set.of(clientClass);
                             }
-                        } else if (isBuilder(input)) {
-                            throw new AssertionError("input: " + input);
                         } else if (this.supply(clientTaq, bm, event::addDefinitionError)) {
                             types = Set.of(clientClass, inputClass);
+                        } else if (isClientBuilder(input)) {
+                            throw new AssertionError("input: " + input);
                         } else {
                             types = Set.of(inputClass);
                         }
@@ -307,7 +309,6 @@ public final class OciExtension implements Extension {
     }
 
     private void afterDeploymentValidation(@Observes AfterDeploymentValidation event) {
-        // Cleanup
         this.harvest.clear();
         this.beanTypesAndQualifiers.clear();
     }
@@ -343,7 +344,6 @@ public final class OciExtension implements Extension {
                         .produceWith(i -> s.produce(i, qualifiersArray));
                 }
             }
-
             // Finally, AbstractAuthenticationDetailsProvider which
             // will make use of the stuff above.
             event.addBean()
@@ -371,15 +371,12 @@ public final class OciExtension implements Extension {
                                   UnaryOperator<String> munger,
                                   Consumer<? super Throwable> errorHandler) {
         TypeAndQualifiers outputTaq;
-        Class<?> outputClass;
-        Class<?> inputClass = inputTaq.toClass();
-        String input = inputClass.getName();
+        String input = inputTaq.toClass().getName();
         String output = munger.apply(input);
         if (output.equals(input)) {
-            outputClass = inputClass;
             outputTaq = inputTaq;
         } else {
-            outputClass = loadClass(output, errorHandler);
+            Class<?> outputClass = loadClass(output, errorHandler);
             if (outputClass == null) {
                 outputTaq = null;
             } else {
@@ -450,26 +447,6 @@ public final class OciExtension implements Extension {
         }
     }
 
-    /**
-     * Uses the supplied {@link Instance} to {@linkplain
-     * Instance#select(TypeLiteral, java.lang.Annotation...) obtain}
-     * an appropriate {@link Event} (broadcaster) that will fire the
-     * supplied {@code payload} after {@linkplain Class#cast(Object)
-     * casting} it to the supplied {@code type}.
-     *
-     * @param the {@link Instance}; must not be {@code null}
-     *
-     * @param type the type the supplied {@code payload} must bear;
-     * must not be {@code null}
-     *
-     * @param qualifiers the qualifiers to further refine the
-     * selection; must not be {@code null}
-     *
-     * @param payload the thing to be fired; must not be {@code null}
-     *
-     * @exception NullPointerException if any parameter is {@code
-     * null}
-     */
     private static <T> void fire(Instance<? super Object> instance, Class<T> type, Annotation[] qualifiers, Object payload) {
         instance.select(EVENT_OBJECT_TYPE_LITERAL).get().select(type, qualifiers).fire(type.cast(payload));
     }
@@ -481,14 +458,14 @@ public final class OciExtension implements Extension {
         return input.endsWith("Client") ? input : input + "Client";
     }
 
-    private static String thing(String input) {
+    private static String clientInterface(String input) {
         if (input.endsWith("$Builder")) {
             input = input.substring(0, input.length() - "$Builder".length());
         }
         return input.endsWith("Client") ? input.substring(0, input.length() - "Client".length()) : input;
     }
 
-    private static String builder(String input) {
+    private static String clientBuilder(String input) {
         if (input.endsWith("$Builder")) {
             return input;
         } else if (input.endsWith("Client")) {
@@ -498,7 +475,7 @@ public final class OciExtension implements Extension {
         }
     }
 
-    private static boolean isBuilder(String input) {
+    private static boolean isClientBuilder(String input) {
         return input.endsWith("$Builder");
     }
 
