@@ -302,7 +302,7 @@ public final class OciExtension implements Extension {
                         .types(Set.of(builderClass))
                         .qualifiers(qualifiers)
                         .scope(Singleton.class)
-                        .produceWith(i -> produceBuilder(i, builderMethod, builderClass, qualifiersArray));
+                        .produceWith(i -> produceClientBuilder(i, builderMethod, builderClass, qualifiersArray));
                     this.beanTypesAndQualifiers.add(builderTaq);
                 }
                 if (builderTaq != inputTaq) {
@@ -325,7 +325,7 @@ public final class OciExtension implements Extension {
                             continue;
                         }
                         inputTaq = new TypeAndQualifiers(inputClass, qualifiersArray);
-                        if (supply(inputTaq, bm, event::addDefinitionError)) {
+                        if (this.supply(inputTaq, bm, event::addDefinitionError)) {
                             // OK, we can install one synthetic bean
                             // (rather than two) to satisfy both
                             // Example/ExampleClient and
@@ -336,7 +336,7 @@ public final class OciExtension implements Extension {
                         }
                     } else if (isBuilder(input)) {
                         throw new AssertionError("input: " + input);
-                    } else if (supply(clientTaq, bm, event::addDefinitionError)) {
+                    } else if (this.supply(clientTaq, bm, event::addDefinitionError)) {
                         types = Set.of(clientClass, inputClass);
                     } else {
                         types = Set.of(inputClass);
@@ -411,64 +411,39 @@ public final class OciExtension implements Extension {
                         bm,
                         event::addDefinitionError)) {
 
-            // SimpleAuthenticationDetailsProviderBuilder and SimpleAuthenticationDetailsProvider
-            if (this.supply(new TypeAndQualifiers(SimpleAuthenticationDetailsProviderBuilder.class, qualifiersArray),
-                            bm,
-                            event::addDefinitionError)) {
-                event.addBean()
-                    .types(SimpleAuthenticationDetailsProviderBuilder.class)
-                    .qualifiers(qualifiers)
-                    .scope(Singleton.class)
-                    .produceWith(i -> produceSimpleAdpBuilder(i, qualifiersArray));
-            }
-            if (this.supply(new TypeAndQualifiers(SimpleAuthenticationDetailsProvider.class, qualifiersArray),
-                            bm,
-                            event::addDefinitionError)) {
-                event.addBean()
-                    .types(SimpleAuthenticationDetailsProvider.class)
-                    .qualifiers(qualifiers)
-                    .scope(Singleton.class)
-                    .produceWith(i -> produceSimpleAdp(i, qualifiersArray));
+            for (AdpStrategy s : EnumSet.allOf(AdpStrategy.class)) {
+                if (this.supply(s, qualifiersArray, bm, event::addDefinitionError)) {
+                    Type builderType = s.builderType();
+                    if (builderType != null) {
+                        event.addBean()
+                            .types(builderType)
+                            .qualifiers(qualifiers)
+                            .scope(Singleton.class)
+                            .produceWith(i -> s.produceBuilder(i, qualifiersArray));
+                    }
+                    event.addBean()
+                        .types(s.type())
+                        .qualifiers(qualifiers)
+                        .scope(Singleton.class)
+                        .produceWith(i -> s.produce(i, qualifiersArray));
+                }
             }
 
-            // ConfigFileAuthenticationDetailsProvider (doesn't use a builder)
-            if (this.supply(new TypeAndQualifiers(ConfigFileAuthenticationDetailsProvider.class, qualifiersArray),
-                            bm,
-                            event::addDefinitionError)) {
-                event.addBean()
-                    .types(ConfigFileAuthenticationDetailsProvider.class)
-                    .qualifiers(qualifiers)
-                    .scope(Singleton.class)
-                    .produceWith(i -> produceFileAdp(i, qualifiersArray));
-            }
-
-            // InstancePrincipalsAuthenticationDetailsProviderBuilder and InstancePrincipalsAuthenticationDetailsProvider
-            if (this.supply(new TypeAndQualifiers(InstancePrincipalsAuthenticationDetailsProvider.class, qualifiersArray),
-                            bm,
-                            event::addDefinitionError)) {
-                event.addBean()
-                    .types(InstancePrincipalsAuthenticationDetailsProvider.class)
-                    .qualifiers(qualifiers)
-                    .scope(Singleton.class)
-                    .produceWith(i -> produceInstancePrincipalsAdp(i, qualifiersArray));
-            }
-            if (this.supply(new TypeAndQualifiers(ResourcePrincipalAuthenticationDetailsProvider.class, qualifiersArray),
-                            bm,
-                            event::addDefinitionError)) {
-                event.addBean()
-                    .types(ResourcePrincipalAuthenticationDetailsProvider.class)
-                    .qualifiers(qualifiers)
-                    .scope(Singleton.class)
-                    .produceWith(i -> produceResourcePrincipalAdp(i, qualifiersArray));
-            }
-
-            // AbstractAuthenticationDetailsProvider
+            // Finally, AbstractAuthenticationDetailsProvider which
+            // will make use of the stuff above.
             event.addBean()
                 .types(AbstractAuthenticationDetailsProvider.class)
                 .qualifiers(qualifiers)
                 .scope(Singleton.class)
                 .produceWith(i -> produceAbstractAdp(i, qualifiersArray));
         }
+    }
+
+    private boolean supply(AdpStrategy s,
+                           Annotation[] qualifiersArray,
+                           BeanManager bm,
+                           Consumer<? super Throwable> errorHandler) {
+        return this.supply(s.taq(qualifiersArray), bm, errorHandler);
     }
 
     /**
@@ -509,10 +484,10 @@ public final class OciExtension implements Extension {
      */
 
 
-    private static Object produceBuilder(Instance<? super Object> i,
-                                         MethodHandle builderMethod,
-                                         Class<?> builderClass,
-                                         Annotation[] qualifiers) {
+    private static Object produceClientBuilder(Instance<? super Object> i,
+                                               MethodHandle builderMethod,
+                                               Class<?> builderClass,
+                                               Annotation[] qualifiers) {
         try {
             Object builderInstance = builderMethod.invoke();
             // Permit arbitrary customization.
@@ -602,98 +577,6 @@ public final class OciExtension implements Extension {
             }
         }
         throw new UnsatisfiedResolutionException();
-    }
-
-    private static ConfigFileAuthenticationDetailsProvider produceFileAdp(Instance<? super Object> i,
-                                                                          Annotation[] qualifiersArray) {
-        return produceFileAdp(i, i.select(Config.class).get(), qualifiersArray);
-    }
-
-    private static ConfigFileAuthenticationDetailsProvider produceFileAdp(Instance<? super Object> i,
-                                                                          Config c,
-                                                                          Annotation[] qualifiersArray) {
-        Optional<String> ociConfigPath = c.getOptionalValue("oci.config.path", String.class);
-        String ociAuthProfile = c.getOptionalValue("oci.auth.profile", String.class).orElse("DEFAULT");
-        return produceFileAdp(ociConfigPath, ociAuthProfile);
-    }
-
-    private static ConfigFileAuthenticationDetailsProvider produceFileAdp(Optional<String> ociConfigPath,
-                                                                          String ociAuthProfile) {
-        try {
-            if (ociConfigPath.isEmpty()) {
-                return new ConfigFileAuthenticationDetailsProvider(ociAuthProfile);
-            } else {
-                return new ConfigFileAuthenticationDetailsProvider(ociConfigPath.orElseThrow(), ociAuthProfile);
-            }
-        } catch (IOException ioException) {
-            // The underlying ConfigFileReader that does the real work
-            // does not throw a FileNotFoundException in this case (as
-            // it probably should).  We have no choice but to parse
-            // the error message.  See
-            // https://github.com/oracle/oci-java-sdk/blob/v2.18.0/bmc-common/src/main/java/com/oracle/bmc/ConfigFileReader.java#L94-L98.
-            String message = ioException.getMessage();
-            if (message != null
-                && message.startsWith("Can't load the default config from ")
-                && message.endsWith(" because it does not exist or it is not a file.")) {
-                throw new CreationException(message, new FileNotFoundException(message).initCause(ioException));
-            }
-            throw new CreationException(message, ioException);
-        }
-    }
-
-    private static InstancePrincipalsAuthenticationDetailsProviderBuilder
-        produceInstancePrincipalsAdpBuilder(Instance<? super Object> i, Annotation[] qualifiersArray) {
-        InstancePrincipalsAuthenticationDetailsProviderBuilder builder =
-            InstancePrincipalsAuthenticationDetailsProvider.builder();
-        fire(i, InstancePrincipalsAuthenticationDetailsProviderBuilder.class, qualifiersArray, builder);
-        return builder;
-    }
-
-    private static InstancePrincipalsAuthenticationDetailsProvider produceInstancePrincipalsAdp(Instance<? super Object> i,
-                                                                                                Annotation[] qualifiersArray) {
-        return produceInstancePrincipalsAdp(i, i.select(Config.class).get(), qualifiersArray);
-    }
-
-    private static InstancePrincipalsAuthenticationDetailsProvider produceInstancePrincipalsAdp(Instance<? super Object> i,
-                                                                                                Config c,
-                                                                                                Annotation[] qualifiersArray) {
-        return i.select(InstancePrincipalsAuthenticationDetailsProviderBuilder.class, qualifiersArray).get().build();
-    }
-
-
-    private static ResourcePrincipalAuthenticationDetailsProviderBuilder
-        produceResourcePrincipalAdpBuilder(Instance<? super Object> i, Annotation[] qualifiersArray) {
-        ResourcePrincipalAuthenticationDetailsProviderBuilder builder = ResourcePrincipalAuthenticationDetailsProvider.builder();
-        fire(i, ResourcePrincipalAuthenticationDetailsProviderBuilder.class, qualifiersArray, builder);
-        return builder;
-    }
-
-    private static InstancePrincipalsAuthenticationDetailsProvider produceResourcePrincipalAdp(Instance<? super Object> i,
-                                                                                               Annotation[] qualifiersArray) {
-        return produceResourcePrincipalAdp(i, i.select(Config.class).get(), qualifiersArray);
-    }
-
-    private static InstancePrincipalsAuthenticationDetailsProvider produceResourcePrincipalAdp(Instance<? super Object> i,
-                                                                                               Config c,
-                                                                                               Annotation[] qualifiersArray) {
-        return i.select(InstancePrincipalsAuthenticationDetailsProviderBuilder.class, qualifiersArray).get().build();
-    }
-
-    private static SimpleAuthenticationDetailsProvider produceSimpleAdp(Instance<? super Object> i, Annotation[] qualifiersArray) {
-        return produceSimpleAdp(i, i.select(Config.class).get(), qualifiersArray);
-    }
-
-    private static SimpleAuthenticationDetailsProvider produceSimpleAdp(Instance<? super Object> i,
-                                                                        Config c,
-                                                                        Annotation[] qualifiersArray) {
-        return i.select(SimpleAuthenticationDetailsProviderBuilder.class, qualifiersArray).get().build();
-    }
-
-    private static SimpleAuthenticationDetailsProviderBuilder produceSimpleAdpBuilder(Instance<? super Object> i,
-                                                                                      Annotation[] qualifiersArray) {
-        SimpleAuthenticationDetailsProviderBuilder builder = SimpleAuthenticationDetailsProvider.builder();
-        fire(i, SimpleAuthenticationDetailsProviderBuilder.class, qualifiersArray, builder);
-        return builder;
     }
 
     // May return null.
@@ -828,31 +711,41 @@ public final class OciExtension implements Extension {
 
     private enum AdpStrategy {
 
-        // NOTE: The ordering of the constants in this enum is
-        // *extremely* important as it governs the default "auto" case
-        // order (EnumSets always traverse their members in
-        // declaration order)!
+        // ------------
+        // PLEASE READ:
+        // ------------
+        //
+        // The ordering of the constants in this enum is *extremely*
+        // important! It governs the default "auto" case order
+        // (EnumSets always traverse their members in declaration
+        // order)! Do not reorder the constants unless you have a good
+        // reason.
 
-        CONFIG {
+        CONFIG(SimpleAuthenticationDetailsProvider.class,
+               SimpleAuthenticationDetailsProviderBuilder.class) {
             @Override
-            AbstractAuthenticationDetailsProvider select(Instance<? super Object> i, Config c, Annotation[] qualifiersArray) {
-                return i.select(SimpleAuthenticationDetailsProvider.class, qualifiersArray).get();
+            boolean isAvailable(Instance<? super Object> i, Config c, Annotation[] qualifiers) {
+                return false; // Not yet fully implemented; hence the false return
             }
+
             @Override
-            boolean isAvailable(Instance<? super Object> i, Config c, Annotation[] qualifiersArray) {
-                return false; // Not yet implemented; hence the false return
+            AbstractAuthenticationDetailsProvider produce(Instance<? super Object> i, Config c, Annotation[] qualifiers) {
+                return i.select(SimpleAuthenticationDetailsProviderBuilder.class, qualifiers).get().build();
+            }
+
+            @Override
+            SimpleAuthenticationDetailsProviderBuilder produceBuilder(Instance<? super Object> i, Config c, Annotation[] qualifiers) {
+                SimpleAuthenticationDetailsProviderBuilder builder = SimpleAuthenticationDetailsProvider.builder();
+                OciExtension.fire(i, SimpleAuthenticationDetailsProviderBuilder.class, qualifiers, builder);
+                return builder;
             }
         },
 
-        OCI_CONFIG_FILE {
+        OCI_CONFIG_FILE(ConfigFileAuthenticationDetailsProvider.class) {
             @Override
-            AbstractAuthenticationDetailsProvider select(Instance<? super Object> i, Config c, Annotation[] qualifiersArray) {
-                return i.select(ConfigFileAuthenticationDetailsProvider.class, qualifiersArray).get();
-            }
-            @Override
-            boolean isAvailable(Instance<? super Object> i, Config c, Annotation[] qualifiersArray) {
+            boolean isAvailable(Instance<? super Object> i, Config c, Annotation[] qualifiers) {
                 try {
-                    this.select(i, c, qualifiersArray);
+                    this.select(i, c, qualifiers);
                 } catch (CreationException creationException) {
                     if (creationException.getCause() instanceof FileNotFoundException) {
                         return false;
@@ -861,15 +754,47 @@ public final class OciExtension implements Extension {
                 }
                 return true;
             }
+
+            @Override
+            Object produceBuilder(Instance<? super Object> i, Config c, Annotation[] qualifiers) {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            AbstractAuthenticationDetailsProvider produce(Instance<? super Object> i, Config c, Annotation[] qualifiers) {
+                return
+                    this.produce(c.getOptionalValue("oci.config.path", String.class),
+                                 c.getOptionalValue("oci.auth.profile", String.class).orElse("DEFAULT"));
+            }
+
+            private AbstractAuthenticationDetailsProvider produce(Optional<String> ociConfigPath, String ociAuthProfile) {
+                try {
+                    if (ociConfigPath.isEmpty()) {
+                        return new ConfigFileAuthenticationDetailsProvider(ociAuthProfile);
+                    } else {
+                        return new ConfigFileAuthenticationDetailsProvider(ociConfigPath.orElseThrow(), ociAuthProfile);
+                    }
+                } catch (IOException ioException) {
+                    // The underlying ConfigFileReader that does the real work
+                    // does not throw a FileNotFoundException in this case (as
+                    // it probably should).  We have no choice but to parse
+                    // the error message.  See
+                    // https://github.com/oracle/oci-java-sdk/blob/v2.18.0/bmc-common/src/main/java/com/oracle/bmc/ConfigFileReader.java#L94-L98.
+                    String message = ioException.getMessage();
+                    if (message != null
+                        && message.startsWith("Can't load the default config from ")
+                        && message.endsWith(" because it does not exist or it is not a file.")) {
+                        throw new CreationException(message, new FileNotFoundException(message).initCause(ioException));
+                    }
+                    throw new CreationException(message, ioException);
+                }
+            }
         },
 
-        INSTANCE_PRINCIPALS {
+        INSTANCE_PRINCIPALS(InstancePrincipalsAuthenticationDetailsProvider.class,
+                            InstancePrincipalsAuthenticationDetailsProviderBuilder.class) {
             @Override
-            AbstractAuthenticationDetailsProvider select(Instance<? super Object> i, Config c, Annotation[] qualifiersArray) {
-                return i.select(InstancePrincipalsAuthenticationDetailsProvider.class, qualifiersArray).get();
-            }
-            @Override
-            boolean isAvailable(Instance<? super Object> i, Config c, Annotation[] qualifiersArray) {
+            boolean isAvailable(Instance<? super Object> i, Config c, Annotation[] qualifiers) {
                 String ociImdsHostname = c.getOptionalValue("oci.imds.hostname", String.class).orElse("169.254.169.254");
                 int ociImdsTimeoutMillis =
                     c.getOptionalValue("oci.imds.timeout.milliseconds", Integer.class).orElse(Integer.valueOf(500));
@@ -881,25 +806,92 @@ public final class OciExtension implements Extension {
                     throw new CreationException(ioException.getMessage(), ioException);
                 }
             }
+
+            @Override
+            InstancePrincipalsAuthenticationDetailsProviderBuilder produceBuilder(Instance<? super Object> i,
+                                                                                  Config c,
+                                                                                  Annotation[] qualifiers) {
+                InstancePrincipalsAuthenticationDetailsProviderBuilder builder =
+                    InstancePrincipalsAuthenticationDetailsProvider.builder();
+                OciExtension.fire(i, InstancePrincipalsAuthenticationDetailsProviderBuilder.class, qualifiers, builder);
+                return builder;
+            }
+
+            @Override
+            AbstractAuthenticationDetailsProvider produce(Instance<? super Object> i, Config c, Annotation[] qualifiers) {
+                return i.select(InstancePrincipalsAuthenticationDetailsProviderBuilder.class, qualifiers).get().build();
+            }
         },
 
-        RESOURCE_PRINCIPAL {
+        RESOURCE_PRINCIPAL(ResourcePrincipalAuthenticationDetailsProvider.class,
+                           ResourcePrincipalAuthenticationDetailsProviderBuilder.class) {
             @Override
-            AbstractAuthenticationDetailsProvider select(Instance<? super Object> i, Config c, Annotation[] qualifiersArray) {
-                return i.select(ResourcePrincipalAuthenticationDetailsProvider.class, qualifiersArray).get();
-            }
-            @Override
-            boolean isAvailable(Instance<? super Object> i, Config c, Annotation[] qualifiersArray) {
+            boolean isAvailable(Instance<? super Object> i, Config c, Annotation[] qualifiers) {
                 // https://github.com/oracle/oci-java-sdk/blob/v2.15.0/bmc-common/src/main/java/com/oracle/bmc/auth/ResourcePrincipalAuthenticationDetailsProvider.java#L246-L251
                 return System.getenv("OCI_RESOURCE_PRINCIPAL_VERSION") != null;
             }
+
+            @Override
+            ResourcePrincipalAuthenticationDetailsProviderBuilder produceBuilder(Instance<? super Object> i,
+                                                                                 Config c,
+                                                                                 Annotation[] qualifiers) {
+                ResourcePrincipalAuthenticationDetailsProviderBuilder builder =
+                    ResourcePrincipalAuthenticationDetailsProvider.builder();
+                OciExtension.fire(i, ResourcePrincipalAuthenticationDetailsProviderBuilder.class, qualifiers, builder);
+                return builder;
+            }
+
+            @Override
+            AbstractAuthenticationDetailsProvider produce(Instance<? super Object> i, Config c, Annotation[] qualifiers) {
+                return i.select(ResourcePrincipalAuthenticationDetailsProviderBuilder.class, qualifiers).get().build();
+            }
         };
 
-        abstract AbstractAuthenticationDetailsProvider select(Instance<? super Object> i,
-                                                              Config c,
-                                                              Annotation[] qualifiersArray);
+        private final Class<? extends AbstractAuthenticationDetailsProvider> c;
 
-        abstract boolean isAvailable(Instance<? super Object> i, Config c, Annotation[] qualifiersArray);
+        private final Class<?> bc;
+
+        AdpStrategy(Class<? extends AbstractAuthenticationDetailsProvider> c) {
+            this(c, null);
+        }
+
+        AdpStrategy(Class<? extends AbstractAuthenticationDetailsProvider> c,
+                    Class<?> bc) {
+            this.c = Objects.requireNonNull(c, "c");
+            this.bc = bc;
+        }
+
+        TypeAndQualifiers taq(Annotation[] qualifiers) {
+            return new TypeAndQualifiers(this.c, qualifiers);
+        }
+
+        Type type() {
+            return this.c;
+        }
+
+        Type builderType() {
+            return this.bc;
+        }
+
+        abstract boolean isAvailable(Instance<? super Object> i, Config c, Annotation[] qualifiers);
+
+        AbstractAuthenticationDetailsProvider select(Instance<? super Object> i,
+                                                     Config c,
+                                                     Annotation[] qualifiers) {
+            return i.select(this.c, qualifiers).get();
+        }
+
+        Object produceBuilder(Instance<? super Object> i, Annotation[] qualifiers) {
+            return this.produceBuilder(i, i.select(Config.class).get(), qualifiers);
+        }
+
+        abstract Object produceBuilder(Instance<? super Object> i, Config c, Annotation[] qualifiers);
+
+        AbstractAuthenticationDetailsProvider produce(Instance<? super Object> i, Annotation[] qualifiers) {
+            return this.produce(i, i.select(Config.class).get(), qualifiers);
+        }
+
+        abstract AbstractAuthenticationDetailsProvider produce(Instance<? super Object> i, Config c, Annotation[] qualifiers);
 
         private static AdpStrategy of(String name) {
             return valueOf(name.replace('-', '_').toUpperCase());
