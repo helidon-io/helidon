@@ -186,7 +186,11 @@ public final class HealthSupport extends HelidonRestServiceSupport {
         });
 
         result.thenAccept(hres -> {
-            res.status(hres.status());
+            int status = hres.status().code();
+            if (status == Http.Status.OK_200.code() && !sendDetails) {
+                status = Http.Status.NO_CONTENT_204.code();
+            }
+            res.status(status);
             if (sendDetails) {
                 res.send(jsonpWriter.marshall(hres.json));
             } else {
