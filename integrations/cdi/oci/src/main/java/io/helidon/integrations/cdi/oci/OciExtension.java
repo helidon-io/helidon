@@ -34,7 +34,6 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
@@ -170,17 +169,18 @@ public final class OciExtension implements Extension {
         InjectionPoint ip = event.getInjectionPoint();
         Type baseType = ip.getAnnotated().getBaseType();
         if (baseType instanceof Class) {
+            // All OCI constructs we're interested in are non-generic
+            // classes.
             Class<?> baseClass = (Class<?>) baseType;
-            Set<Annotation> qualifiers = ip.getQualifiers();
             if (AbstractAuthenticationDetailsProvider.class.isAssignableFrom(baseClass)
                 || AdpStrategy.builderClasses().contains(baseClass)) {
                 // It's an ADP or something ADP-related.
-                this.harvest.computeIfAbsent(qualifiers, q -> new HashSet<>(11));
+                this.harvest.computeIfAbsent(ip.getQualifiers(), qs -> new HashSet<>(11));
             } else {
                 Matcher m = CLIENT_PACKAGE_PATTERN.matcher(baseClass.getName());
                 if (m.matches() && !CLIENT_PACKAGE_FRAGMENT_DENY_LIST.contains(m.group(1))) {
                     // It's an OCI service client.
-                    this.harvest.computeIfAbsent(qualifiers, q -> new HashSet<>(11)).add(baseClass);
+                    this.harvest.computeIfAbsent(ip.getQualifiers(), qs -> new HashSet<>(11)).add(baseClass);
                 }
             }
         }
@@ -377,20 +377,14 @@ public final class OciExtension implements Extension {
     private TypeAndQualifiers taq(TypeAndQualifiers inputTaq,
                                   UnaryOperator<String> munger,
                                   Consumer<? super Throwable> errorHandler) {
-        TypeAndQualifiers outputTaq;
         String input = inputTaq.toClass().getName();
         String output = munger.apply(input);
         if (output.equals(input)) {
-            outputTaq = inputTaq;
+            return inputTaq;
         } else {
             Class<?> outputClass = loadClass(output, errorHandler);
-            if (outputClass == null) {
-                outputTaq = null;
-            } else {
-                outputTaq = inputTaq.with(outputClass);
-            }
+            return outputClass == null ? null : inputTaq.with(outputClass);
         }
-        return outputTaq;
     }
 
 
@@ -646,16 +640,16 @@ public final class OciExtension implements Extension {
                                                           Config config,
                                                           Annotation[] qualifiers) {
                 return
-                    this.produce(config.getOptionalValue("oci.config.path", String.class),
+                    this.produce(config.getOptionalValue("oci.config.path", String.class).orElse(null),
                                  config.getOptionalValue("oci.auth.profile", String.class).orElse("DEFAULT"));
             }
 
-            private AbstractAuthenticationDetailsProvider produce(Optional<String> ociConfigPath, String ociAuthProfile) {
+            private AbstractAuthenticationDetailsProvider produce(String ociConfigPath, String ociAuthProfile) {
                 try {
-                    if (ociConfigPath.isEmpty()) {
+                    if (ociConfigPath == null) {
                         return new ConfigFileAuthenticationDetailsProvider(ociAuthProfile);
                     } else {
-                        return new ConfigFileAuthenticationDetailsProvider(ociConfigPath.orElseThrow(), ociAuthProfile);
+                        return new ConfigFileAuthenticationDetailsProvider(ociConfigPath, ociAuthProfile);
                     }
                 } catch (IOException ioException) {
                     // The underlying ConfigFileReader that does the real work
@@ -764,7 +758,7 @@ public final class OciExtension implements Extension {
                                                           Config config,
                                                           Annotation[] qualifiers) {
                 Collection<AdpStrategy> strategies =
-                    concreteStrategies(config.getOptionalValue("oci.config.strategy", String[].class).orElse(new String[0]));
+                    concreteStrategies(config.getOptionalValue("oci.config.strategy", String[].class).orElse(null));
                 switch (strategies.size()) {
                 case 0:
                     throw new AssertionError();
@@ -931,7 +925,8 @@ public final class OciExtension implements Extension {
         private static Collection<AdpStrategy> concreteStrategies(String[] strategyStringsArray) {
             Collection<AdpStrategy> strategies;
             AdpStrategy strategy;
-            switch (strategyStringsArray.length) {
+            int length = strategyStringsArray == null ? 0 : strategyStringsArray.length;
+            switch (length) {
             case 0:
                 return concreteStrategies();
             case 1:
