@@ -36,7 +36,6 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import java.util.regex.Matcher;
@@ -206,7 +205,7 @@ public final class OciExtension implements Extension {
             installAdps(event, bm, qualifiers, qualifiersArray);
             for (Class<?> inputClass : entry.getValue()) {
                 TypeAndQualifiers inputTaq = new TypeAndQualifiers(inputClass, qualifiersArray);
-                if (this.supply(inputTaq, bm, event::addDefinitionError)) {
+                if (this.supply(inputTaq, bm)) {
                     String input = inputClass.getName();
                     // input could be any of:
                     //
@@ -227,7 +226,7 @@ public final class OciExtension implements Extension {
                     }
                     Class<?> builderClass = builderTaq.toClass();
                     Class<?> clientClass = clientTaq.toClass();
-                    if (this.supply(builderTaq, bm, event::addDefinitionError)) {
+                    if (this.supply(builderTaq, bm)) {
                         // OK, we need to create:
                         //   com.oracle.bmc.example.ExampleClient$Builder
                         // or:
@@ -273,7 +272,7 @@ public final class OciExtension implements Extension {
                             }
 
                             inputTaq = new TypeAndQualifiers(inputClass, qualifiersArray);
-                            if (this.supply(inputTaq, bm, event::addDefinitionError)) {
+                            if (this.supply(inputTaq, bm)) {
                                 // Nice; this means we only have to
                                 // install one synthetic bean (rather
                                 // than two) to satisfy both Example
@@ -283,7 +282,7 @@ public final class OciExtension implements Extension {
                             } else {
                                 types = Set.of(clientClass);
                             }
-                        } else if (this.supply(clientTaq, bm, event::addDefinitionError)) {
+                        } else if (this.supply(clientTaq, bm)) {
                             types = Set.of(clientClass, inputClass);
                         } else if (isClientBuilder(input)) {
                             throw new AssertionError("input: " + input);
@@ -339,7 +338,7 @@ public final class OciExtension implements Extension {
             Type builderType = s.builderType();
             if (builderType != null) {
                 TypeAndQualifiers builderTaq = new TypeAndQualifiers(builderType, qualifiersArray);
-                if (this.supply(builderTaq, bm, event::addDefinitionError)) {
+                if (this.supply(builderTaq, bm)) {
                     event.addBean()
                         .types(builderType)
                         .qualifiers(qualifiers)
@@ -350,7 +349,7 @@ public final class OciExtension implements Extension {
             }
             Type type = s.type();
             TypeAndQualifiers taq = new TypeAndQualifiers(type, qualifiersArray);
-            if (this.supply(taq, bm, event::addDefinitionError)) {
+            if (this.supply(taq, bm)) {
                 event.addBean()
                     .types(type)
                     .qualifiers(qualifiers)
@@ -363,7 +362,7 @@ public final class OciExtension implements Extension {
         // Now do the abstract one.  We already checked if
         // processedTaqs had it, so just do the beanManager resolution
         // stuff.
-        if (this.isUnresolved(abstractAdpTaq, bm, event::addDefinitionError)) {
+        if (this.isUnresolved(abstractAdpTaq, bm)) {
             event.addBean()
                 .types(AbstractAuthenticationDetailsProvider.class)
                 .qualifiers(qualifiers)
@@ -373,15 +372,16 @@ public final class OciExtension implements Extension {
         }
     }
 
-    private boolean supply(TypeAndQualifiers taq, BeanManager bm, Consumer<? super Throwable> errorHandler) {
-        return taq != null && !this.processedTaqs.contains(taq) && isUnresolved(taq, bm, errorHandler);
+    private boolean supply(TypeAndQualifiers taq, BeanManager bm) {
+        return taq != null && !this.processedTaqs.contains(taq) && isUnresolved(taq, bm);
     }
 
-    private boolean isUnresolved(TypeAndQualifiers taq, BeanManager bm, Consumer<? super Throwable> errorHandler) {
+    private boolean isUnresolved(TypeAndQualifiers taq, BeanManager bm) {
         try {
             return bm.resolve(bm.getBeans(taq.type(), taq.qualifiers())) == null;
         } catch (AmbiguousResolutionException e) {
-            errorHandler.accept(e);
+            // This will be handled by the container at validation
+            // time; we can swallow it here.
             return false;
         }
     }
