@@ -205,104 +205,102 @@ public final class OciExtension implements Extension {
             installAdps(event, bm, qualifiers, qualifiersArray);
             for (Class<?> inputClass : entry.getValue()) {
                 TypeAndQualifiers inputTaq = new TypeAndQualifiers(inputClass, qualifiersArray);
-                if (this.supply(inputTaq, bm)) {
-                    String input = inputClass.getName();
-                    // input could be any of:
-                    //
-                    //   com.oracle.bmc.example.Example
-                    //   com.oracle.bmc.example.ExampleAsync
-                    //   com.oracle.bmc.example.ExampleAsyncClient
-                    //   com.oracle.bmc.example.ExampleAsyncClient$Builder
-                    //   com.oracle.bmc.example.ExampleClient
+                if (!this.supply(inputTaq, bm)) {
+                    continue;
+                }
+                // input could be any of:
+                //
+                //   com.oracle.bmc.example.Example
+                //   com.oracle.bmc.example.ExampleAsync
+                //   com.oracle.bmc.example.ExampleAsyncClient
+                //   com.oracle.bmc.example.ExampleAsyncClient$Builder
+                //   com.oracle.bmc.example.ExampleClient
+                //   com.oracle.bmc.example.ExampleClient$Builder
+                TypeAndQualifiers builderTaq;
+                TypeAndQualifiers clientTaq;
+                try {
+                    builderTaq = taq(inputTaq, OciExtension::clientBuilder);
+                    clientTaq = taq(inputTaq, OciExtension::client);
+                } catch (ClassNotFoundException classNotFoundException) {
+                    event.addDefinitionError(classNotFoundException);
+                    continue;
+                }
+                Class<?> builderClass = builderTaq.toClass();
+                Class<?> clientClass = clientTaq.toClass();
+                if (this.supply(builderTaq, bm)) {
+                    // OK, we need to create:
                     //   com.oracle.bmc.example.ExampleClient$Builder
-                    TypeAndQualifiers builderTaq;
-                    TypeAndQualifiers clientTaq;
+                    // or:
+                    //   com.oracle.bmc.example.ExampleAsyncClient$Builder
+                    //
+                    // client will be one of:
+                    // * com.oracle.bmc.example.ExampleClient
+                    // * com.oracle.bmc.example.ExampleAsyncClient
+                    //
+                    // We will call its static builder() method.
+                    MethodHandle builderMethod;
                     try {
-                        builderTaq = taq(inputTaq, OciExtension::clientBuilder);
-                        clientTaq = taq(inputTaq, OciExtension::client);
-                    } catch (ClassNotFoundException classNotFoundException) {
-                        event.addDefinitionError(classNotFoundException);
+                        builderMethod = PUBLIC_LOOKUP.findStatic(clientClass, "builder", methodType(builderClass));
+                    } catch (ReflectiveOperationException reflectiveOperationException) {
+                        event.addDefinitionError(reflectiveOperationException);
                         continue;
                     }
-                    Class<?> builderClass = builderTaq.toClass();
-                    Class<?> clientClass = clientTaq.toClass();
-                    if (this.supply(builderTaq, bm)) {
-                        // OK, we need to create:
-                        //   com.oracle.bmc.example.ExampleClient$Builder
-                        // or:
-                        //   com.oracle.bmc.example.ExampleAsyncClient$Builder
+                    event.addBean()
+                        .types(Set.of(builderClass))
+                        .qualifiers(qualifiers)
+                        .scope(Singleton.class)
+                        .produceWith(i -> produceClientBuilder(i, builderMethod, builderClass, qualifiersArray));
+                    this.processedTaqs.add(builderTaq);
+                }
+                if (builderTaq != inputTaq) {
+                    // input was not a builder itself.  Also input
+                    // was not supplied by the user.
+                    Set<Type> types;
+                    if (clientTaq == inputTaq) {
+                        // OK, the injection point is for
+                        // ExampleClient (or ExampleAsyncClient).
+                        // Let's make sure there's no
+                        // corresponding user-supplied bean for
+                        // Example (or ExampleAsync).
                         //
-                        // client will be one of:
-                        // * com.oracle.bmc.example.ExampleClient
-                        // * com.oracle.bmc.example.ExampleAsyncClient
-                        //
-                        // We will call its static builder() method.
-                        MethodHandle builderMethod;
+                        // Reassign inputClass to be, e.g.,
+                        // Example (or ExampleAsync).
                         try {
-                            builderMethod = PUBLIC_LOOKUP.findStatic(clientClass, "builder", methodType(builderClass));
-                        } catch (ReflectiveOperationException reflectiveOperationException) {
-                            event.addDefinitionError(reflectiveOperationException);
+                            inputClass = loadClass(clientInterface(inputClass.getName()));
+                        } catch (ClassNotFoundException classNotFoundException) {
+                            event.addDefinitionError(classNotFoundException);
                             continue;
                         }
-                        event.addBean()
-                            .types(Set.of(builderClass))
-                            .qualifiers(qualifiers)
-                            .scope(Singleton.class)
-                            .produceWith(i -> produceClientBuilder(i, builderMethod, builderClass, qualifiersArray));
-                        this.processedTaqs.add(builderTaq);
-                    }
-                    if (builderTaq != inputTaq) {
-                        // input was not a builder itself.  Also input
-                        // was not supplied by the user.
-                        Set<Type> types;
-                        if (clientTaq == inputTaq) {
-                            // OK, the injection point is for
-                            // ExampleClient (or ExampleAsyncClient).
-                            // Let's make sure there's no
-                            // corresponding user-supplied bean for
-                            // Example (or ExampleAsync).
-                            //
-                            // Reassign inputClass to be, e.g.,
-                            // Example (or ExampleAsync).
-                            try {
-                                inputClass = loadClass(clientInterface(input));
-                            } catch (ClassNotFoundException classNotFoundException) {
-                                event.addDefinitionError(classNotFoundException);
-                                continue;
-                            }
 
-                            inputTaq = new TypeAndQualifiers(inputClass, qualifiersArray);
-                            if (this.supply(inputTaq, bm)) {
-                                // Nice; this means we only have to
-                                // install one synthetic bean (rather
-                                // than two) to satisfy both Example
-                                // and ExampleClient (or ExampleAsync
-                                // and ExampleAyncClient).
-                                types = Set.of(clientClass, inputClass);
-                            } else {
-                                types = Set.of(clientClass);
-                            }
-                        } else if (this.supply(clientTaq, bm)) {
+                        inputTaq = new TypeAndQualifiers(inputClass, qualifiersArray);
+                        if (this.supply(inputTaq, bm)) {
+                            // Nice; this means we only have to
+                            // install one synthetic bean (rather
+                            // than two) to satisfy both Example
+                            // and ExampleClient (or ExampleAsync
+                            // and ExampleAyncClient).
                             types = Set.of(clientClass, inputClass);
-                        } else if (isClientBuilder(input)) {
-                            throw new AssertionError("input: " + input);
                         } else {
-                            types = Set.of(inputClass);
+                            types = Set.of(clientClass);
                         }
-                        event.addBean()
-                            .types(types)
-                            .qualifiers(qualifiers)
-                            .scope(Singleton.class)
-                            .produceWith(i -> produceClient(i, builderClass))
-                            .disposeWith(OciExtension::disposeClient);
-                        for (Type type : types) {
-                            if (type == inputClass) {
-                                this.processedTaqs.add(inputTaq);
-                            } else if (type == clientClass) {
-                                this.processedTaqs.add(clientTaq);
-                            } else {
-                                throw new AssertionError("type: " + type.getTypeName());
-                            }
+                    } else if (this.supply(clientTaq, bm)) {
+                        types = Set.of(clientClass, inputClass);
+                    } else {
+                        types = Set.of(inputClass);
+                    }
+                    event.addBean()
+                        .types(types)
+                        .qualifiers(qualifiers)
+                        .scope(Singleton.class)
+                        .produceWith(i -> produceClient(i, builderClass))
+                        .disposeWith(OciExtension::disposeClient);
+                    for (Type type : types) {
+                        if (type == inputClass) {
+                            this.processedTaqs.add(inputTaq);
+                        } else if (type == clientClass) {
+                            this.processedTaqs.add(clientTaq);
+                        } else {
+                            throw new AssertionError("type: " + type.getTypeName());
                         }
                     }
                 }
