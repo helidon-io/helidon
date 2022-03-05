@@ -312,7 +312,12 @@ public final class OciExtension implements Extension {
                              BeanManager bm,
                              Set<Annotation> qualifiers,
                              Annotation[] qualifiersArray) {
-        // This can be optimized further; that's up next.
+        TypeAndQualifiers abstractAdpTaq = new TypeAndQualifiers(AbstractAuthenticationDetailsProvider.class, qualifiersArray);
+        if (this.processedTaqs.contains(abstractAdpTaq)) {
+            // If we already synthesized the abstract one, then by
+            // definition we did all the concrete ones too.
+            return;
+        }
 
         // Make sure all the concrete ones are in there.
         for (AdpStrategy s : AdpStrategy.concreteStrategies()) {
@@ -339,28 +344,29 @@ public final class OciExtension implements Extension {
                 this.processedTaqs.add(taq);
             }
         }
-        // Now do the abstract one.
-        TypeAndQualifiers adpTaq = new TypeAndQualifiers(AbstractAuthenticationDetailsProvider.class, qualifiersArray);
-        if (this.supply(adpTaq, bm, event::addDefinitionError)) {
+
+        // Now do the abstract one.  We already checked if processedTaqs had it, so just do the beanManager stuff.
+        if (this.isUnresolved(abstractAdpTaq, bm, event::addDefinitionError)) {
             event.addBean()
                 .types(AbstractAuthenticationDetailsProvider.class)
                 .qualifiers(qualifiers)
                 .scope(Singleton.class)
                 .produceWith(i -> AdpStrategy.AUTO.produce(i, qualifiersArray));
-            this.processedTaqs.add(adpTaq);
+            this.processedTaqs.add(abstractAdpTaq);
         }
     }
 
     private boolean supply(TypeAndQualifiers taq, BeanManager bm, Consumer<? super Throwable> errorHandler) {
-        if (taq != null && !this.processedTaqs.contains(taq)) {
-            try {
-                return bm.resolve(bm.getBeans(taq.type, taq.qualifiers)) == null;
-            } catch (AmbiguousResolutionException e) {
-                errorHandler.accept(e);
-                return false;
-            }
+        return taq != null && !this.processedTaqs.contains(taq) && isUnresolved(taq, bm, errorHandler);
+    }
+
+    private boolean isUnresolved(TypeAndQualifiers taq, BeanManager bm, Consumer<? super Throwable> errorHandler) {
+        try {
+            return bm.resolve(bm.getBeans(taq.type(), taq.qualifiers())) == null;
+        } catch (AmbiguousResolutionException e) {
+            errorHandler.accept(e);
+            return false;
         }
-        return false;
     }
 
     private TypeAndQualifiers taq(TypeAndQualifiers inputTaq,
