@@ -319,7 +319,8 @@ public final class OciExtension implements Extension {
             return;
         }
 
-        // Make sure all the concrete ones are in there.
+        // Make sure all the concrete ones and their builders are in
+        // there.
         for (AdpStrategy s : AdpStrategy.concreteStrategies()) {
             Type builderType = s.builderType();
             if (builderType != null) {
@@ -345,7 +346,9 @@ public final class OciExtension implements Extension {
             }
         }
 
-        // Now do the abstract one.  We already checked if processedTaqs had it, so just do the beanManager stuff.
+        // Now do the abstract one.  We already checked if
+        // processedTaqs had it, so just do the beanManager resolution
+        // stuff.
         if (this.isUnresolved(abstractAdpTaq, bm, event::addDefinitionError)) {
             event.addBean()
                 .types(AbstractAuthenticationDetailsProvider.class)
@@ -369,6 +372,8 @@ public final class OciExtension implements Extension {
         }
     }
 
+    // May return null if classloading fails. errorHandler will have
+    // been notified.
     private TypeAndQualifiers taq(TypeAndQualifiers inputTaq,
                                   UnaryOperator<String> munger,
                                   Consumer<? super Throwable> errorHandler) {
@@ -858,10 +863,6 @@ public final class OciExtension implements Extension {
 
         Type type() {
             return this.type;
-        }
-
-        TypeAndQualifiers taq(Annotation[] qualifiers) {
-            return new TypeAndQualifiers(this.type(), qualifiers);
         }
 
         Type builderType() {
