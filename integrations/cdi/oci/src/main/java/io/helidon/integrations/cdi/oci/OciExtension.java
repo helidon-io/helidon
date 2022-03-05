@@ -225,7 +225,6 @@ public final class OciExtension implements Extension {
                     event.addDefinitionError(classNotFoundException);
                     continue;
                 }
-                Class<?> builderClass = builderTaq.toClass();
                 Class<?> clientClass = clientTaq.toClass();
                 installClientBuilder(event, bm, builderTaq, clientClass);
                 if (builderTaq != inputTaq) {
@@ -268,7 +267,7 @@ public final class OciExtension implements Extension {
                         .types(types)
                         .qualifiers(qualifiers)
                         .scope(Singleton.class)
-                        .produceWith(i -> produceClient(i, builderClass))
+                        .produceWith(i -> produceClient(i, builderTaq.toClass()))
                         .disposeWith(OciExtension::disposeClient);
                     for (Type type : types) {
                         if (type == inputClass) {
