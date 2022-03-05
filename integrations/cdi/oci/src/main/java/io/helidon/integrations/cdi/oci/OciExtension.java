@@ -312,29 +312,36 @@ public final class OciExtension implements Extension {
                              BeanManager bm,
                              Set<Annotation> qualifiers,
                              Annotation[] qualifiersArray) {
-        TypeAndQualifiers adpTaq = new TypeAndQualifiers(AbstractAuthenticationDetailsProvider.class, qualifiersArray);
-        if (this.supply(adpTaq, bm, event::addDefinitionError)) {
-            for (AdpStrategy s : AdpStrategy.concreteStrategies()) {
-                Type type = s.type();
-                if (this.supply(new TypeAndQualifiers(type, qualifiersArray), bm, event::addDefinitionError)) {
-                    Type builderType = s.builderType();
-                    if (builderType != null
-                        && this.supply(new TypeAndQualifiers(builderType, qualifiersArray), bm, event::addDefinitionError)) {
-                        event.addBean()
-                            .types(builderType)
-                            .qualifiers(qualifiers)
-                            .scope(Singleton.class)
-                            .produceWith(i -> s.produceBuilder(i, qualifiersArray));
-                    }
+        // This can be optimized further; that's up next.
+
+        // Make sure all the concrete ones are in there.
+        for (AdpStrategy s : AdpStrategy.concreteStrategies()) {
+            Type builderType = s.builderType();
+            if (builderType != null) {
+                TypeAndQualifiers builderTaq = new TypeAndQualifiers(builderType, qualifiersArray);
+                if (this.supply(builderTaq, bm, event::addDefinitionError)) {
                     event.addBean()
-                        .types(type)
+                        .types(builderType)
                         .qualifiers(qualifiers)
                         .scope(Singleton.class)
-                        .produceWith(i -> s.produce(i, qualifiersArray));
+                        .produceWith(i -> s.produceBuilder(i, qualifiersArray));
+                    this.processedTaqs.add(builderTaq);
                 }
             }
-            // Finally, AbstractAuthenticationDetailsProvider which
-            // will make use of the stuff above.
+            Type type = s.type();
+            TypeAndQualifiers taq = new TypeAndQualifiers(type, qualifiersArray);
+            if (this.supply(taq, bm, event::addDefinitionError)) {
+                event.addBean()
+                    .types(type)
+                    .qualifiers(qualifiers)
+                    .scope(Singleton.class)
+                    .produceWith(i -> s.produce(i, qualifiersArray));
+                this.processedTaqs.add(taq);
+            }
+        }
+        // Now do the abstract one.
+        TypeAndQualifiers adpTaq = new TypeAndQualifiers(AbstractAuthenticationDetailsProvider.class, qualifiersArray);
+        if (this.supply(adpTaq, bm, event::addDefinitionError)) {
             event.addBean()
                 .types(AbstractAuthenticationDetailsProvider.class)
                 .qualifiers(qualifiers)
