@@ -216,17 +216,16 @@ public final class OciExtension implements Extension {
                     //   com.oracle.bmc.example.ExampleAsyncClient$Builder
                     //   com.oracle.bmc.example.ExampleClient
                     //   com.oracle.bmc.example.ExampleClient$Builder
-                    TypeAndQualifiers builderTaq = taq(inputTaq, OciExtension::clientBuilder, event::addDefinitionError);
-                    if (builderTaq == null) {
-                        // A definition error will have been raised.
+                    TypeAndQualifiers builderTaq;
+                    TypeAndQualifiers clientTaq;
+                    try {
+                        builderTaq = taq(inputTaq, OciExtension::clientBuilder);
+                        clientTaq = taq(inputTaq, OciExtension::client);
+                    } catch (ClassNotFoundException classNotFoundException) {
+                        event.addDefinitionError(classNotFoundException);
                         continue;
                     }
                     Class<?> builderClass = builderTaq.toClass();
-                    TypeAndQualifiers clientTaq = taq(inputTaq, OciExtension::client, event::addDefinitionError);
-                    if (clientTaq == null) {
-                        // A definition error will have been raised.
-                        continue;
-                    }
                     Class<?> clientClass = clientTaq.toClass();
                     if (this.supply(builderTaq, bm, event::addDefinitionError)) {
                         // OK, we need to create:
@@ -266,11 +265,13 @@ public final class OciExtension implements Extension {
                             //
                             // Reassign inputClass to be, e.g.,
                             // Example (or ExampleAsync).
-                            inputClass = loadClass(clientInterface(input), event::addDefinitionError);
-                            if (inputClass == null) {
-                                // A definition error will have been raised.
+                            try {
+                                inputClass = loadClass(clientInterface(input));
+                            } catch (ClassNotFoundException classNotFoundException) {
+                                event.addDefinitionError(classNotFoundException);
                                 continue;
                             }
+
                             inputTaq = new TypeAndQualifiers(inputClass, qualifiersArray);
                             if (this.supply(inputTaq, bm, event::addDefinitionError)) {
                                 // Nice; this means we only have to
@@ -388,15 +389,14 @@ public final class OciExtension implements Extension {
     // May return null if classloading fails. errorHandler will have
     // been notified.
     private TypeAndQualifiers taq(TypeAndQualifiers inputTaq,
-                                  UnaryOperator<String> munger,
-                                  Consumer<? super Throwable> errorHandler) {
+                                  UnaryOperator<String> munger)
+    throws ClassNotFoundException {
         String input = inputTaq.toClass().getName();
         String output = munger.apply(input);
         if (output.equals(input)) {
             return inputTaq;
         } else {
-            Class<?> outputClass = loadClass(output, errorHandler);
-            return outputClass == null ? null : inputTaq.with(outputClass);
+            return inputTaq.with(loadClass(output));
         }
     }
 
@@ -452,14 +452,8 @@ public final class OciExtension implements Extension {
         }
     }
 
-    // May return null.
-    private static Class<?> loadClass(String name, Consumer<? super Throwable> errorHandler) {
-        try {
-            return Class.forName(name, false, Thread.currentThread().getContextClassLoader());
-        } catch (ClassNotFoundException classNotFoundException) {
-            errorHandler.accept(classNotFoundException);
-            return null;
-        }
+    private static Class<?> loadClass(String name) throws ClassNotFoundException {
+        return Class.forName(name, false, Thread.currentThread().getContextClassLoader());
     }
 
     private static <T> void fire(Instance<? super Object> instance, Class<T> type, Annotation[] qualifiers, Object payload) {
