@@ -31,7 +31,7 @@ import com.oracle.bmc.ailanguage.AIServiceLanguageAsync;
 import com.oracle.bmc.ailanguage.AIServiceLanguageAsyncClient;
 import com.oracle.bmc.ailanguage.AIServiceLanguageClient;
 // End Arbitrary.
-// import io.helidon.integrations.cdi.oci.adp.AdpExtension;
+import com.oracle.bmc.monitoring.MonitoringClient;
 import io.helidon.microprofile.config.ConfigCdiExtension;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -39,6 +39,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
@@ -122,6 +123,16 @@ final class TestSpike {
      * Test methods.
      */
 
+
+    @Test
+    final void testMonitoringIsNotAvailable() {
+        // (See pom.xml for surefire configuration that excludes
+        // monitoring from the classpath at test time.)
+        //
+        // Note that therefore the observer methods in
+        // MonitoringObservers won't be loaded.
+        assertThrows(NoClassDefFoundError.class, () -> MonitoringClient.class.getName());
+    }
 
     @Test
     final void testSpike() {

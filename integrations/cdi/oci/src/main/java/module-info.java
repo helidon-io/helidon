@@ -21,10 +21,15 @@
 @SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.integrations.cdi.oci {
 
-    requires jakarta.inject.api;
+    requires java.annotation;
+    requires java.ws.rs;
     requires transitive jakarta.enterprise.cdi.api;
+    requires jakarta.inject.api;
+    requires jakarta.interceptor.api;
     requires microprofile.config.api;
     requires oci.java.sdk.common;
+
+    requires static oci.java.sdk.monitoring;
 
     exports io.helidon.integrations.cdi.oci;
 

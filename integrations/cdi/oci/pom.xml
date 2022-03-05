@@ -28,20 +28,15 @@
     <artifactId>helidon-integrations-cdi-oci</artifactId>
     <name>Helidon CDI Integrations OCI</name>
 
-    <properties>
-        <!-- <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude> -->
-    </properties>
-
     <build>
         <plugins>
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <systemPropertyVariables>
-                        <oci.objectstorage.compartmentId>${oci.objectstorage.compartmentId}</oci.objectstorage.compartmentId>
-                        <oci.objectstorage.namespaceName>${oci.objectstorage.namespaceName}</oci.objectstorage.namespaceName>
-                        <oci.objectstorage.region>${oci.objectstorage.region}</oci.objectstorage.region>
-                    </systemPropertyVariables>
+                    <!-- For testing conditional classloading situations. -->
+                    <classpathDependencyExcludes>
+                        <classpathDependencyExclude>com.oracle.oci.sdk:oci-java-sdk-monitoring</classpathDependencyExclude>
+                    </classpathDependencyExcludes>
                 </configuration>
             </plugin>
         </plugins>
@@ -53,6 +48,12 @@
             <groupId>com.oracle.oci.sdk</groupId>
             <artifactId>oci-java-sdk-common</artifactId>
             <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.oracle.oci.sdk</groupId>
+            <artifactId>oci-java-sdk-monitoring</artifactId>
+            <scope>compile</scope>
+            <optional>true</optional> <!-- note -->
         </dependency>
         <dependency>
             <groupId>org.eclipse.microprofile.config</groupId>
@@ -89,6 +90,8 @@
         -->
 
         <!-- Test-scoped dependencies. -->
+
+        <!-- Arbitrarily-selected OCI library used for testing universal applicability. -->
         <dependency>
             <groupId>com.oracle.oci.sdk</groupId>
             <artifactId>oci-java-sdk-ailanguage</artifactId>

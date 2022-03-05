@@ -49,6 +49,7 @@ import javax.enterprise.inject.UnsatisfiedResolutionException;
 import javax.enterprise.inject.spi.AfterBeanDiscovery;
 import javax.enterprise.inject.spi.AfterDeploymentValidation;
 import javax.enterprise.inject.spi.BeanManager;
+import javax.enterprise.inject.spi.BeforeBeanDiscovery;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.InjectionPoint;
 import javax.enterprise.inject.spi.ProcessInjectionPoint;
@@ -164,6 +165,21 @@ public final class OciExtension implements Extension {
      * Container lifecycle observer methods.
      */
 
+
+    private void beforeBeanDiscovery(@Observes BeforeBeanDiscovery event) {
+        // Unlike all other OCI service clients in the OCI portfolio,
+        // a monitoring client must use a very specific endpoint for
+        // one and only one of its several possible
+        // operations. MonitoringObservers, loaded conditionally
+        // below, fixes this problem.  See MonitoringObservers.java
+        // for more details.  If monitoring is not in use by the
+        // current application, this method is effectively a no-op.
+        try {
+            Class.forName("com.oracle.bmc.monitoring.Monitoring", false, Thread.currentThread().getContextClassLoader());
+            event.addAnnotatedType(MonitoringObservers.class, MonitoringObservers.class.getName());
+        } catch (ClassNotFoundException ok) {
+        }
+    }
 
     private void processInjectionPoint(@Observes ProcessInjectionPoint<?, ?> event) {
         InjectionPoint ip = event.getInjectionPoint();
@@ -745,7 +761,7 @@ public final class OciExtension implements Extension {
             }
         },
 
-        AUTO(AbstractAuthenticationDetailsProvider.class, true /* isAbstract */) {
+        AUTO(AbstractAuthenticationDetailsProvider.class, true) {
 
             @Override
             Object produceBuilder(Instance<? super Object> instance, Config config, Annotation[] qualifiers) {
