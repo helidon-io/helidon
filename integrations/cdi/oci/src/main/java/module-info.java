@@ -29,8 +29,6 @@ module io.helidon.integrations.cdi.oci {
     requires microprofile.config.api;
     requires oci.java.sdk.common;
 
-    requires static oci.java.sdk.monitoring;
-
     exports io.helidon.integrations.cdi.oci;
 
     provides javax.enterprise.inject.spi.Extension

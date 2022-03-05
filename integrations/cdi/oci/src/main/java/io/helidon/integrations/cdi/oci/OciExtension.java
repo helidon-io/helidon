@@ -24,6 +24,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.net.ConnectException;
 import java.net.InetAddress;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -40,6 +41,7 @@ import java.util.function.UnaryOperator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.annotation.Priority;
 import javax.enterprise.event.Event;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.AmbiguousResolutionException;
@@ -55,6 +57,12 @@ import javax.enterprise.inject.spi.InjectionPoint;
 import javax.enterprise.inject.spi.ProcessInjectionPoint;
 import javax.enterprise.util.TypeLiteral;
 import javax.inject.Singleton;
+import javax.ws.rs.Priorities;
+import javax.ws.rs.client.ClientRequestContext;
+import javax.ws.rs.client.ClientRequestFilter;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.core.UriBuilder;
 
 import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider;
 import com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider;
@@ -65,6 +73,7 @@ import com.oracle.bmc.auth.ResourcePrincipalAuthenticationDetailsProvider.Resour
 import com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider;
 import com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider.SimpleAuthenticationDetailsProviderBuilder;
 import com.oracle.bmc.common.ClientBuilderBase;
+import com.oracle.bmc.http.ClientConfigurator;
 import org.eclipse.microprofile.config.Config;
 
 import static java.lang.invoke.MethodHandles.publicLookup;
@@ -124,6 +133,10 @@ public final class OciExtension implements Extension {
      */
 
 
+    private static final Set<String> CLIENT_BUILDER_CLASSNAMES_NEEDING_CUSTOMIZED_ENDPOINT_RESOLUTION =
+        Set.of("com.oracle.bmc.monitoring.MonitoringAsyncClient$Builder",
+               "com.oracle.bmc.monitoring.MonitoringClient$Builder");
+
     private static final TypeLiteral<Event<Object>> EVENT_OBJECT_TYPE_LITERAL = new TypeLiteral<Event<Object>>() {};
 
     private static final Set<String> CLIENT_PACKAGE_FRAGMENT_DENY_LIST = Set.of("auth", "circuitbreaker");
@@ -165,21 +178,6 @@ public final class OciExtension implements Extension {
      * Container lifecycle observer methods.
      */
 
-
-    private void beforeBeanDiscovery(@Observes BeforeBeanDiscovery event) {
-        // Unlike all other OCI service clients in the OCI portfolio,
-        // a monitoring client must use a very specific endpoint for
-        // one and only one of its several possible
-        // operations. MonitoringObservers, loaded conditionally
-        // below, fixes this problem.  See MonitoringObservers.java
-        // for more details.  If monitoring is not in use by the
-        // current application, this method is effectively a no-op.
-        try {
-            Class.forName("com.oracle.bmc.monitoring.Monitoring", false, Thread.currentThread().getContextClassLoader());
-            event.addAnnotatedType(MonitoringObservers.class, MonitoringObservers.class.getName());
-        } catch (ClassNotFoundException ok) {
-        }
-    }
 
     private void processInjectionPoint(@Observes ProcessInjectionPoint<?, ?> event) {
         InjectionPoint ip = event.getInjectionPoint();
@@ -414,9 +412,10 @@ public final class OciExtension implements Extension {
                                                Class<?> builderClass,
                                                Annotation[] qualifiers) {
         try {
-            Object builderInstance = builderMethod.invoke();
+            ClientBuilderBase<?, ?> builderInstance = (ClientBuilderBase<?, ?>) builderMethod.invoke();
             // Permit arbitrary customization.
             fire(instance, builderClass, qualifiers, builderInstance);
+            customizeEndpointResolution(builderInstance);
             return builderInstance;
         } catch (RuntimeException runtimeException) {
             throw runtimeException;
@@ -425,6 +424,16 @@ public final class OciExtension implements Extension {
         } catch (Throwable error) {
             throw (Error) error;
         }
+    }
+
+    private static void customizeEndpointResolution(ClientBuilderBase<?, ?> clientBuilder) {
+        if (needsCustomizedEndpointResolution(clientBuilder.getClass())) {
+            clientBuilder.additionalClientConfigurator(PostMetricDataClientConfigurator.INSTANCE);
+        }
+    }
+
+    private static boolean needsCustomizedEndpointResolution(Class<?> clientBuilderClass) {
+        return CLIENT_BUILDER_CLASSNAMES_NEEDING_CUSTOMIZED_ENDPOINT_RESOLUTION.contains(clientBuilderClass.getName());
     }
 
     private static Object produceClient(Instance<? super Object> instance, final Class<?> builderClass) {
@@ -979,6 +988,140 @@ public final class OciExtension implements Extension {
                 return concreteStrategies();
             }
             return Collections.unmodifiableCollection(strategies);
+        }
+
+    }
+
+    private static class PostMetricDataClientConfigurator implements ClientConfigurator {
+
+
+        /*
+         * Static fields.
+         */
+
+
+        private static final PostMetricDataClientConfigurator INSTANCE = new PostMetricDataClientConfigurator();
+
+
+        /*
+         * Constructors.
+         */
+
+
+        private PostMetricDataClientConfigurator() {
+            super();
+        }
+
+
+        /*
+         * Instance methods.
+         */
+
+
+        @Override
+        public final void customizeBuilder(ClientBuilder builder) {
+            builder.register(PostMetricDataClientRequestFilter.INSTANCE,
+                             PostMetricDataClientRequestFilter.PRE_AUTHENTICATION_PRIORITY);
+        }
+
+        @Override
+        public final void customizeClient(Client client) {
+        }
+
+
+        /*
+         * Inner and nested classes.
+         */
+
+
+        private static class PostMetricDataClientRequestFilter implements ClientRequestFilter {
+
+
+            /*
+             * Static fields.
+             */
+
+
+            private static final PostMetricDataClientRequestFilter INSTANCE = new PostMetricDataClientRequestFilter();
+
+            private static final int PRE_AUTHENTICATION_PRIORITY = Priorities.AUTHENTICATION - 500; // 1000 - 500 = 500
+
+
+            /*
+             * Constructors.
+             */
+
+
+            private PostMetricDataClientRequestFilter() {
+                super();
+            }
+
+
+            /*
+             * Instance methods.
+             */
+
+
+            @Override
+            public final void filter(ClientRequestContext clientRequestContext) throws IOException {
+                // https://docs.oracle.com/en-us/iaas/tools/java/2.18.0/com/oracle/bmc/monitoring/MonitoringAsync.html#postMetricData-com.oracle.bmc.monitoring.requests.PostMetricDataRequest-com.oracle.bmc.responses.AsyncHandler-
+                //
+                // "The endpoints for this [particular POST] operation
+                // differ from other Monitoring operations. Replace
+                // the string telemetry with telemetry-ingestion in
+                // the endpoint, as in the following example:
+                // https://telemetry-ingestion.eu-frankfurt-1.oraclecloud.com"
+                //
+                // Doing this in an application that uses a
+                // MonitoringClient or a MonitoringAsyncClient from
+                // several threads, not all of which are POSTing, is,
+                // of course, unsafe.  This filter repairs this flaw
+                // and is installed by OCI-SDK-supported client
+                // customization facilities.
+                //
+                // The documented instructions above are imprecise.
+                // This filter implements what it seems was meant.
+                //
+                // The intent seems to be to replace "telemetry." with
+                // "telemetry-ingestion.", and even that could run
+                // afoul of things in the future (consider
+                // "super-telemetry.oraclecloud.com" where these rules
+                // might not be intended to apply).
+                //
+                // Additionally, we want to guard against a future
+                // where the hostname might *already* have
+                // "telemetry-ingestion" in it, so clearly we cannot
+                // simply replace "telemetry", wherever it occurs,
+                // with "telemetry-ingestion".
+                //
+                // So we reinterpret the above to mean: "In the
+                // hostname, replace the first occurrence of the
+                // String matching the regex ^telemetry\. with
+                // telemetry-ingestion." (but without using regexes,
+                // because they're overkill in this situation).
+                //
+                // This filter is written defensively with respect to
+                // nulls to ensure maximum non-interference: it gets
+                // out of the way at the first sign of trouble.
+                //
+                // This method is safe for concurrent use by multiple
+                // threads.
+                if ("POST".equalsIgnoreCase(clientRequestContext.getMethod())) {
+                    URI uri = clientRequestContext.getUri();
+                    if (uri != null) {
+                        String host = uri.getHost();
+                        if (host != null && host.startsWith("telemetry.")) {
+                            String path = uri.getPath();
+                            if (path != null && path.endsWith("/metrics")) {
+                                clientRequestContext.setUri(UriBuilder.fromUri(uri)
+                                                            .host("telemetry-ingestion." + host.substring("telemetry.".length()))
+                                                            .build());
+                            }
+                        }
+                    }
+                }
+            }
+
         }
 
     }
