@@ -203,22 +203,12 @@ public final class OciExtension implements Extension {
                     //   com.oracle.bmc.example.ExampleAsyncClient$Builder
                     //   com.oracle.bmc.example.ExampleClient
                     //   com.oracle.bmc.example.ExampleClient$Builder
-                    //
-                    // First, is there a builder (recalling that maybe
-                    // input is a builder itself)? Maybe the user
-                    // supplied one, in which case we should use
-                    // hers. Otherwise install our own.
                     TypeAndQualifiers builderTaq = taq(inputTaq, OciExtension::clientBuilder, event::addDefinitionError);
                     if (builderTaq == null) {
                         // A definition error will have been raised.
                         continue;
                     }
                     Class<?> builderClass = builderTaq.toClass();
-                    // (No matter what else may happen, we'll need to
-                    // load, e.g.,
-                    // com.oracle.bmc.example.ExampleAsyncClient
-                    // and/or com.oracle.bmc.example.ExampleClient so
-                    // we can call its builder() method.)
                     TypeAndQualifiers clientTaq = taq(inputTaq, OciExtension::client, event::addDefinitionError);
                     if (clientTaq == null) {
                         // A definition error will have been raised.
@@ -252,9 +242,7 @@ public final class OciExtension implements Extension {
                     }
                     if (builderTaq != inputTaq) {
                         // input was not a builder itself.  Also input
-                        // was not supplied by the user.  We have
-                        // already ensured that input's builder will
-                        // be made. So now we can create input.
+                        // was not supplied by the user.
                         Set<Type> types;
                         if (clientTaq == inputTaq) {
                             // OK, the injection point is for
@@ -272,11 +260,12 @@ public final class OciExtension implements Extension {
                             }
                             inputTaq = new TypeAndQualifiers(inputClass, qualifiersArray);
                             if (this.supply(inputTaq, bm, event::addDefinitionError)) {
-                                // OK, we can install one synthetic
-                                // bean (rather than two) to satisfy
-                                // both Example/ExampleClient and
-                                // ExampleAsync/ExampleAyncClient.
-                                types = Set.of(clientClass, inputTaq.toClass());
+                                // Nice; this means we only have to
+                                // install one synthetic bean (rather
+                                // than two) to satisfy both Example
+                                // and ExampleClient (or ExampleAsync
+                                // and ExampleAyncClient).
+                                types = Set.of(clientClass, inputClass);
                             } else {
                                 types = Set.of(clientClass);
                             }
@@ -294,9 +283,9 @@ public final class OciExtension implements Extension {
                             .produceWith(i -> produceClient(i, builderClass))
                             .disposeWith(OciExtension::disposeClient);
                         for (Type type : types) {
-                            if (type.equals(inputClass)) {
+                            if (type == inputClass) {
                                 this.processedTaqs.add(inputTaq);
-                            } else if (type.equals(clientClass)) {
+                            } else if (type == clientClass) {
                                 this.processedTaqs.add(clientTaq);
                             } else {
                                 throw new AssertionError("type: " + type.getTypeName());
