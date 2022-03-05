@@ -208,14 +208,14 @@ public final class OciExtension implements Extension {
                 if (!this.supply(inputTaq, bm)) {
                     continue;
                 }
-                // input could be any of:
+                // inputTaq could represent any of:
                 //
-                //   com.oracle.bmc.example.Example
-                //   com.oracle.bmc.example.ExampleAsync
-                //   com.oracle.bmc.example.ExampleAsyncClient
-                //   com.oracle.bmc.example.ExampleAsyncClient$Builder
-                //   com.oracle.bmc.example.ExampleClient
-                //   com.oracle.bmc.example.ExampleClient$Builder
+                //   @Some @Qualifier com.oracle.bmc.example.Example
+                //   @Some @Qualifier com.oracle.bmc.example.ExampleAsync
+                //   @Some @Qualifier com.oracle.bmc.example.ExampleAsyncClient
+                //   @Some @Qualifier com.oracle.bmc.example.ExampleAsyncClient$Builder
+                //   @Some @Qualifier com.oracle.bmc.example.ExampleClient
+                //   @Some @Qualifier com.oracle.bmc.example.ExampleClient$Builder
                 TypeAndQualifiers builderTaq;
                 TypeAndQualifiers clientTaq;
                 try {
@@ -227,31 +227,7 @@ public final class OciExtension implements Extension {
                 }
                 Class<?> builderClass = builderTaq.toClass();
                 Class<?> clientClass = clientTaq.toClass();
-                if (this.supply(builderTaq, bm)) {
-                    // OK, we need to create:
-                    //   com.oracle.bmc.example.ExampleClient$Builder
-                    // or:
-                    //   com.oracle.bmc.example.ExampleAsyncClient$Builder
-                    //
-                    // client will be one of:
-                    // * com.oracle.bmc.example.ExampleClient
-                    // * com.oracle.bmc.example.ExampleAsyncClient
-                    //
-                    // We will call its static builder() method.
-                    MethodHandle builderMethod;
-                    try {
-                        builderMethod = PUBLIC_LOOKUP.findStatic(clientClass, "builder", methodType(builderClass));
-                    } catch (ReflectiveOperationException reflectiveOperationException) {
-                        event.addDefinitionError(reflectiveOperationException);
-                        continue;
-                    }
-                    event.addBean()
-                        .types(Set.of(builderClass))
-                        .qualifiers(qualifiers)
-                        .scope(Singleton.class)
-                        .produceWith(i -> produceClientBuilder(i, builderMethod, builderClass, qualifiersArray));
-                    this.processedTaqs.add(builderTaq);
-                }
+                installClientBuilder(event, bm, builderTaq, clientClass);
                 if (builderTaq != inputTaq) {
                     // input was not a builder itself.  Also input
                     // was not supplied by the user.
@@ -367,6 +343,39 @@ public final class OciExtension implements Extension {
                 .scope(Singleton.class)
                 .produceWith(i -> AdpStrategy.AUTO.produce(i, qualifiersArray));
             this.processedTaqs.add(abstractAdpTaq);
+        }
+    }
+
+    private void installClientBuilder(AfterBeanDiscovery event,
+                                      BeanManager bm,
+                                      TypeAndQualifiers clientBuilderTaq,
+                                      Class<?> clientClass) {
+        if (this.supply(clientBuilderTaq, bm)) {
+            // OK, we need to create:
+            //   @Some @Qualifier com.oracle.bmc.example.ExampleClient$Builder
+            // or:
+            //   @Some @Qualifier com.oracle.bmc.example.ExampleAsyncClient$Builder
+            //
+            // client will be one of:
+            // * com.oracle.bmc.example.ExampleClient
+            // * com.oracle.bmc.example.ExampleAsyncClient
+            //
+            // We will call its static builder() method.
+            Class<?> clientBuilderClass = clientBuilderTaq.toClass();
+            MethodHandle builderMethod;
+            try {
+                builderMethod = PUBLIC_LOOKUP.findStatic(clientClass, "builder", methodType(clientBuilderClass));
+            } catch (ReflectiveOperationException reflectiveOperationException) {
+                event.addDefinitionError(reflectiveOperationException);
+                return;
+            }
+            Annotation[] qualifiersArray = clientBuilderTaq.qualifiers();
+            event.addBean()
+                .types(Set.of(clientBuilderClass))
+                .qualifiers(Set.of(qualifiersArray))
+                .scope(Singleton.class)
+                .produceWith(i -> produceClientBuilder(i, builderMethod, clientBuilderClass, qualifiersArray));
+            this.processedTaqs.add(clientBuilderTaq);
         }
     }
 
