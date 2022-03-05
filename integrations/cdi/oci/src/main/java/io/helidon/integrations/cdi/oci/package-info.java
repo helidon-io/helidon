@@ -15,7 +15,12 @@
  */
 
 /**
- * Provides classes and interfaces that integrate various OCI
- * classes into CDI 2.0-based applications.
+ * Provides classes and interfaces that integrate any service client
+ * from the <a
+ * href="https://docs.oracle.com/en-us/iaas/tools/java/latest/index.html"
+ * target="_top">Oracle Cloud Infrastructure Java SDK</a> into CDI
+ * 2.0-based applications.
+ *
+ * @see io.helidon.integrations.cdi.oci.OciExtension
  */
 package io.helidon.integrations.cdi.oci;

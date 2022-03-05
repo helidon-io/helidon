@@ -37,11 +37,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.annotation.Priority;
 import javax.enterprise.event.Event;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.AmbiguousResolutionException;
@@ -51,19 +51,19 @@ import javax.enterprise.inject.UnsatisfiedResolutionException;
 import javax.enterprise.inject.spi.AfterBeanDiscovery;
 import javax.enterprise.inject.spi.AfterDeploymentValidation;
 import javax.enterprise.inject.spi.BeanManager;
-import javax.enterprise.inject.spi.BeforeBeanDiscovery;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.InjectionPoint;
 import javax.enterprise.inject.spi.ProcessInjectionPoint;
 import javax.enterprise.util.TypeLiteral;
 import javax.inject.Singleton;
 import javax.ws.rs.Priorities;
-import javax.ws.rs.client.ClientRequestContext;
-import javax.ws.rs.client.ClientRequestFilter;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.ClientRequestContext;
+import javax.ws.rs.client.ClientRequestFilter;
 import javax.ws.rs.core.UriBuilder;
 
+import com.oracle.bmc.Service;
 import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider;
 import com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider;
 import com.oracle.bmc.auth.InstancePrincipalsAuthenticationDetailsProvider;
@@ -133,15 +133,14 @@ public final class OciExtension implements Extension {
      */
 
 
-    private static final Set<String> CLIENT_BUILDER_CLASSNAMES_NEEDING_CUSTOMIZED_ENDPOINT_RESOLUTION =
-        Set.of("com.oracle.bmc.monitoring.MonitoringAsyncClient$Builder",
-               "com.oracle.bmc.monitoring.MonitoringClient$Builder");
+    private static final String CLIENT_PACKAGE_PREFIX = Service.class.getPackageName() + ".";
 
-    private static final TypeLiteral<Event<Object>> EVENT_OBJECT_TYPE_LITERAL = new TypeLiteral<Event<Object>>() {};
+    private static final Pattern CLIENT_PACKAGE_PATTERN =
+        Pattern.compile("^" + CLIENT_PACKAGE_PREFIX + "(.+)\\.([^.]+)$");
 
     private static final Set<String> CLIENT_PACKAGE_FRAGMENT_DENY_LIST = Set.of("auth", "circuitbreaker");
 
-    private static final Pattern CLIENT_PACKAGE_PATTERN = Pattern.compile("^com\\.oracle\\.bmc\\.(.+)\\.([^.]+)$");
+    private static final TypeLiteral<Event<Object>> EVENT_OBJECT_TYPE_LITERAL = new TypeLiteral<Event<Object>>() {};
 
     private static final Lookup PUBLIC_LOOKUP = publicLookup();
 
@@ -426,16 +425,6 @@ public final class OciExtension implements Extension {
         }
     }
 
-    private static void customizeEndpointResolution(ClientBuilderBase<?, ?> clientBuilder) {
-        if (needsCustomizedEndpointResolution(clientBuilder.getClass())) {
-            clientBuilder.additionalClientConfigurator(PostMetricDataClientConfigurator.INSTANCE);
-        }
-    }
-
-    private static boolean needsCustomizedEndpointResolution(Class<?> clientBuilderClass) {
-        return CLIENT_BUILDER_CLASSNAMES_NEEDING_CUSTOMIZED_ENDPOINT_RESOLUTION.contains(clientBuilderClass.getName());
-    }
-
     private static Object produceClient(Instance<? super Object> instance, final Class<?> builderClass) {
         return
             ((ClientBuilderBase<?, ?>) instance.select(builderClass).get())
@@ -475,6 +464,13 @@ public final class OciExtension implements Extension {
 
     private static <T> void fire(Instance<? super Object> instance, Class<T> type, Annotation[] qualifiers, Object payload) {
         instance.select(EVENT_OBJECT_TYPE_LITERAL).get().select(type, qualifiers).fire(type.cast(payload));
+    }
+
+    private static void customizeEndpointResolution(ClientBuilderBase<?, ?> clientBuilder) {
+        EndpointAdjuster ea = EndpointAdjuster.of(clientBuilder.getClass().getName());
+        if (ea != null) {
+            clientBuilder.additionalClientConfigurator(ea);
+        }
     }
 
     private static String client(String input) {
@@ -992,138 +988,123 @@ public final class OciExtension implements Extension {
 
     }
 
-    private static class PostMetricDataClientConfigurator implements ClientConfigurator {
+    private enum EndpointAdjuster implements ClientConfigurator, ClientRequestFilter, Predicate<ClientRequestContext> {
 
-
-        /*
-         * Static fields.
-         */
-
-
-        private static final PostMetricDataClientConfigurator INSTANCE = new PostMetricDataClientConfigurator();
-
-
-        /*
-         * Constructors.
-         */
-
-
-        private PostMetricDataClientConfigurator() {
-            super();
-        }
-
-
-        /*
-         * Instance methods.
-         */
-
-
-        @Override
-        public final void customizeBuilder(ClientBuilder builder) {
-            builder.register(PostMetricDataClientRequestFilter.INSTANCE,
-                             PostMetricDataClientRequestFilter.PRE_AUTHENTICATION_PRIORITY);
-        }
-
-        @Override
-        public final void customizeClient(Client client) {
-        }
-
-
-        /*
-         * Inner and nested classes.
-         */
-
-
-        private static class PostMetricDataClientRequestFilter implements ClientRequestFilter {
-
-
-            /*
-             * Static fields.
-             */
-
-
-            private static final PostMetricDataClientRequestFilter INSTANCE = new PostMetricDataClientRequestFilter();
-
-            private static final int PRE_AUTHENTICATION_PRIORITY = Priorities.AUTHENTICATION - 500; // 1000 - 500 = 500
-
-
-            /*
-             * Constructors.
-             */
-
-
-            private PostMetricDataClientRequestFilter() {
-                super();
-            }
-
-
-            /*
-             * Instance methods.
-             */
-
-
-            @Override
-            public final void filter(ClientRequestContext clientRequestContext) throws IOException {
-                // https://docs.oracle.com/en-us/iaas/tools/java/2.18.0/com/oracle/bmc/monitoring/MonitoringAsync.html#postMetricData-com.oracle.bmc.monitoring.requests.PostMetricDataRequest-com.oracle.bmc.responses.AsyncHandler-
-                //
-                // "The endpoints for this [particular POST] operation
-                // differ from other Monitoring operations. Replace
-                // the string telemetry with telemetry-ingestion in
-                // the endpoint, as in the following example:
-                // https://telemetry-ingestion.eu-frankfurt-1.oraclecloud.com"
-                //
-                // Doing this in an application that uses a
-                // MonitoringClient or a MonitoringAsyncClient from
-                // several threads, not all of which are POSTing, is,
-                // of course, unsafe.  This filter repairs this flaw
-                // and is installed by OCI-SDK-supported client
-                // customization facilities.
-                //
-                // The documented instructions above are imprecise.
-                // This filter implements what it seems was meant.
-                //
-                // The intent seems to be to replace "telemetry." with
-                // "telemetry-ingestion.", and even that could run
-                // afoul of things in the future (consider
-                // "super-telemetry.oraclecloud.com" where these rules
-                // might not be intended to apply).
-                //
-                // Additionally, we want to guard against a future
-                // where the hostname might *already* have
-                // "telemetry-ingestion" in it, so clearly we cannot
-                // simply replace "telemetry", wherever it occurs,
-                // with "telemetry-ingestion".
-                //
-                // So we reinterpret the above to mean: "In the
-                // hostname, replace the first occurrence of the
-                // String matching the regex ^telemetry\. with
-                // telemetry-ingestion." (but without using regexes,
-                // because they're overkill in this situation).
-                //
-                // This filter is written defensively with respect to
-                // nulls to ensure maximum non-interference: it gets
-                // out of the way at the first sign of trouble.
-                //
-                // This method is safe for concurrent use by multiple
-                // threads.
-                if ("POST".equalsIgnoreCase(clientRequestContext.getMethod())) {
-                    URI uri = clientRequestContext.getUri();
-                    if (uri != null) {
-                        String host = uri.getHost();
-                        if (host != null && host.startsWith("telemetry.")) {
-                            String path = uri.getPath();
-                            if (path != null && path.endsWith("/metrics")) {
-                                clientRequestContext.setUri(UriBuilder.fromUri(uri)
-                                                            .host("telemetry-ingestion." + host.substring("telemetry.".length()))
-                                                            .build());
-                            }
+        MONITORING(crc -> {
+                if ("POST".equalsIgnoreCase(crc.getMethod())) {
+                    URI uri = crc.getUri();
+                    String host = uri.getHost();
+                    if (host != null && host.startsWith("telemetry.")) {
+                        String path = uri.getPath();
+                        if (path != null && path.endsWith("/metrics")) {
+                            return true;
                         }
                     }
                 }
-            }
+                return false;
+            },
+            h -> "telemetry-ingestion." + h.substring("telemetry.".length())
+            );
 
+        private static final int PRE_AUTHENTICATION_PRIORITY = Priorities.AUTHENTICATION - 500; // 1000 - 500 = 500
+
+        private static final Map<String, EndpointAdjuster> ENDPOINT_ADJUSTERS;
+
+        static {
+            Map<String, EndpointAdjuster> map = new HashMap<>();
+            for (EndpointAdjuster ea : EnumSet.allOf(EndpointAdjuster.class)) {
+                map.put(ea.clientBuilderClassName, ea);
+                map.put(ea.asyncClientBuilderClassName, ea);
+            }
+            ENDPOINT_ADJUSTERS = Collections.unmodifiableMap(map);
+        }
+
+        private final String clientBuilderClassName;
+
+        private final String asyncClientBuilderClassName;
+
+        private final Predicate<? super ClientRequestContext> p;
+
+        private final UnaryOperator<String> adjuster;
+
+        EndpointAdjuster(Predicate<? super ClientRequestContext> p,
+                         UnaryOperator<String> adjuster) {
+            String lowerCaseName = this.name().toLowerCase();
+            String titleCaseName = Character.toUpperCase(lowerCaseName.charAt(0)) + lowerCaseName.substring(1);
+            String prefix = CLIENT_PACKAGE_PREFIX + lowerCaseName + "." + titleCaseName;
+            this.clientBuilderClassName = prefix + "Client$Builder";
+            this.asyncClientBuilderClassName = prefix + "AsyncClient$Builder";
+            this.p = p;
+            this.adjuster = adjuster;
+        }
+
+        @Override // ClientConfigurator
+        public void customizeBuilder(ClientBuilder builder) {
+            builder.register(this, PRE_AUTHENTICATION_PRIORITY);
+        }
+
+        @Override // ClientConfigurator
+        public void customizeClient(Client client) {
+        }
+
+        @Override // Predicate
+        public final boolean test(ClientRequestContext crc) {
+            return this.p.test(crc);
+        }
+
+        @Override // ClientRequestFilter
+        public final void filter(ClientRequestContext crc) throws IOException {
+            if (this.test(crc)) {
+                this.adjust(crc, crc.getUri().getHost());
+            }
+        }
+
+        private void adjust(ClientRequestContext crc, String hostname) {
+            crc.setUri(UriBuilder.fromUri(crc.getUri()).host(this.adjuster.apply(hostname)).build());
+        }
+
+        private static EndpointAdjuster of(String clientBuilderClassName) {
+            return ENDPOINT_ADJUSTERS.get(clientBuilderClassName);
         }
 
     }
+
+    // https://docs.oracle.com/en-us/iaas/tools/java/2.18.0/com/oracle/bmc/monitoring/MonitoringAsync.html#postMetricData-com.oracle.bmc.monitoring.requests.PostMetricDataRequest-com.oracle.bmc.responses.AsyncHandler-
+    //
+    // "The endpoints for this [particular POST] operation differ from
+    // other Monitoring operations. Replace the string telemetry with
+    // telemetry-ingestion in the endpoint, as in the following
+    // example:
+    // https://telemetry-ingestion.eu-frankfurt-1.oraclecloud.com"
+    //
+    // Doing this in an application that uses a MonitoringClient or a
+    // MonitoringAsyncClient from several threads, not all of which
+    // are POSTing, is, of course, unsafe.  This filter repairs this
+    // flaw and is installed by OCI-SDK-supported client customization
+    // facilities.
+    //
+    // The documented instructions above are imprecise.  This filter
+    // implements what it seems was meant.
+    //
+    // The intent seems to be to replace "telemetry." with
+    // "telemetry-ingestion.", and even that could run afoul of things
+    // in the future (consider "super-telemetry.oraclecloud.com" where
+    // these rules might not be intended to apply).
+    //
+    // Additionally, we want to guard against a future where the
+    // hostname might *already* have "telemetry-ingestion" in it, so
+    // clearly we cannot simply replace "telemetry", wherever it
+    // occurs, with "telemetry-ingestion".
+    //
+    // So we reinterpret the above to mean: "In the hostname, replace
+    // the first occurrence of the String matching the regex
+    // ^telemetry\. with telemetry-ingestion." (but without using
+    // regexes, because they're overkill in this situation).
+    //
+    // This filter is written defensively with respect to nulls to
+    // ensure maximum non-interference: it gets out of the way at the
+    // first sign of trouble.
+    //
+    // This method is safe for concurrent use by multiple threads.
 
 }
