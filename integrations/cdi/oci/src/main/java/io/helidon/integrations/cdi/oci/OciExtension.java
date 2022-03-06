@@ -105,7 +105,7 @@ import static java.lang.invoke.MethodType.methodType;
  *
  * <li>{@code com.oracle.bmc.example.ExampleClient}</li>
  *
- * <li>{@code com.oracle.bmc.example.ExampleClientBuilder}</li>
+ * <li>{@code com.oracle.bmc.example.ExampleClient.Builder}</li>
  *
  * </ul>
  *
@@ -168,9 +168,8 @@ public final class OciExtension implements Extension {
                         + "$"); // (4)
 
     // OCI Java SDK subPackage fragments identifying subpackages whose
-    // classes and interfaces do not contain classes and interfaces
-    // that follow the service client pattern described above,
-    // i.e. that are more foundational.
+    // classes and interfaces do not follow the service client pattern
+    // described above, i.e. that are more foundational.
     private static final SortedSet<String> SERVICE_CLIENT_PACKAGE_FRAGMENT_DENY_LIST =
         Collections.unmodifiableSortedSet(new TreeSet<>(List.of("auth",
                                                                 "circuitbreaker",
@@ -653,54 +652,54 @@ public final class OciExtension implements Extension {
                             Type serviceAsyncClient,
                             Type serviceAsyncClientBuilder) {
             qualifiers = qualifiers == null ? EMPTY_ANNOTATION_ARRAY : qualifiers;
-            boolean empty = false;
+            boolean empty = true;
             if (serviceInterface == null) {
                 this.serviceInterface = null;
-                if (!empty) {
-                    empty = true;
-                }
             } else {
                 this.serviceInterface = new TypeAndQualifiers(serviceInterface, qualifiers);
+                if (empty) {
+                    empty = false;
+                }
             }
             if (serviceClient == null) {
                 this.serviceClient = null;
-                if (!empty) {
-                    empty = true;
-                }
             } else {
                 this.serviceClient = new TypeAndQualifiers(serviceClient, qualifiers);
+                if (empty) {
+                    empty = false;
+                }
             }
             if (serviceClientBuilder == null) {
                 this.serviceClientBuilder = null;
-                if (!empty) {
-                    empty = true;
-                }
             } else {
                 this.serviceClientBuilder = new TypeAndQualifiers(serviceClientBuilder, qualifiers);
+                if (empty) {
+                    empty = false;
+                }
             }
             if (serviceAsyncInterface == null) {
                 this.serviceAsyncInterface = null;
-                if (!empty) {
-                    empty = true;
-                }
             } else {
                 this.serviceAsyncInterface = new TypeAndQualifiers(serviceAsyncInterface, qualifiers);
+                if (empty) {
+                    empty = false;
+                }
             }
             if (serviceAsyncClient == null) {
                 this.serviceAsyncClient = null;
-                if (!empty) {
-                    empty = true;
-                }
             } else {
                 this.serviceAsyncClient = new TypeAndQualifiers(serviceAsyncClient, qualifiers);
+                if (empty) {
+                    empty = false;
+                }
             }
             if (serviceAsyncClientBuilder == null) {
                 this.serviceAsyncClientBuilder = null;
-                if (!empty) {
-                    empty = true;
-                }
             } else {
                 this.serviceAsyncClientBuilder = new TypeAndQualifiers(serviceAsyncClientBuilder, qualifiers);
+                if (empty) {
+                    empty = false;
+                }
             }
             this.empty = empty;
         }
