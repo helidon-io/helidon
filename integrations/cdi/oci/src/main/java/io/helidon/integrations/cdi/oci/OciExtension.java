@@ -142,27 +142,27 @@ public final class OciExtension implements Extension {
     //
     // Match Strings expected to be class names:
     //
-    // starting with OCI_PACKAGE_PREFIX...
-    // followed by the service client package fragment ("example")...
-    // followed by a period (".")...
-    // followed by one or more of the following:
-    //   "Example",
-    //   "ExampleAsync",
-    //   "ExampleAsyncClient",
-    //   "ExampleAsyncClient$Builder",
-    //   "ExampleClient",
-    //   "ExampleClient$Builder"...
-    // followed by the end of String.
+    // (0) ...starting with OCI_PACKAGE_PREFIX...
+    // (1) ...followed by the service client package fragment ("example")...
+    // (2) ...followed by a period (".")...
+    // (3) ...followed by one or more of the following:
+    //       "Example",
+    //       "ExampleAsync",
+    //       "ExampleAsyncClient",
+    //       "ExampleAsyncClient$Builder",
+    //       "ExampleClient",
+    //       "ExampleClient$Builder"...
+    // (4) ...followed by the end of String.
     //
     // Capturing group 0: the matched class name
     // Capturing group 1: the service client interface (OCI_PACKAGE_PREFIX + "example.Example")
     // Capturing group 2: "example"
     private static final Pattern SERVICE_CLIENT_CLASS_NAME_PATTERN =
-        Pattern.compile("^(" + OCI_PACKAGE_PREFIX
-                        + "([^.]+)"
-                        + "\\."
-                        + "(.+))(?:Async|Client(?:\\$Builder)?)?"
-                        + "$");
+        Pattern.compile("^(" + OCI_PACKAGE_PREFIX // (0)
+                        + "([^.]+)" // (1)
+                        + "\\." // (2)
+                        + "(.+))(?:Async|Client(?:\\$Builder)?)?" // (3)
+                        + "$"); // (4)
 
     // OCI Java SDK subPackage fragments identifying subpackages whose
     // classes and interfaces do not contain classes and interfaces
@@ -173,6 +173,8 @@ public final class OciExtension implements Extension {
     private static final TypeLiteral<Event<Object>> EVENT_OBJECT_TYPE_LITERAL = new TypeLiteral<Event<Object>>() {};
 
     private static final Lookup PUBLIC_LOOKUP = MethodHandles.publicLookup();
+
+    private static final Annotation[] EMPTY_ANNOTATION_ARRAY = new Annotation[0];
 
 
     /*
@@ -248,7 +250,7 @@ public final class OciExtension implements Extension {
                         Class<?> serviceClientBuilderClass =
                             baseClassName.equals(serviceClientBuilder) ? baseClass : loadClass(serviceClientBuilder);
                         this.serviceTaqs.put(qualifiers,
-                                             new ServiceTaqs(qualifiers.toArray(new Annotation[0]),
+                                             new ServiceTaqs(qualifiers.toArray(EMPTY_ANNOTATION_ARRAY),
                                                              serviceInterfaceClass,
                                                              serviceClientClass,
                                                              serviceClientBuilderClass,
@@ -298,12 +300,12 @@ public final class OciExtension implements Extension {
 
 
     /*
-     * Other instance methods.
+     * Static methods.
      */
 
 
     private static void installAdps(AfterBeanDiscovery event, BeanManager bm, Set<Annotation> qualifiers) {
-        Annotation[] qualifiersArray = qualifiers.toArray(new Annotation[0]);
+        Annotation[] qualifiersArray = qualifiers.toArray(EMPTY_ANNOTATION_ARRAY);
         for (AdpStrategy s : EnumSet.allOf(AdpStrategy.class)) {
             Type builderType = s.builderType();
             if (builderType != null) {
@@ -379,12 +381,6 @@ public final class OciExtension implements Extension {
         }
         return false;
     }
-
-
-    /*
-     * Static methods.
-     */
-
 
     private static Object produceClientBuilder(Instance<? super Object> instance,
                                                MethodHandle builderMethod,
@@ -498,9 +494,9 @@ public final class OciExtension implements Extension {
 
         private TypeAndQualifiers(final Type type, final Annotation[] qualifiers) {
             super();
-            this.type = type;
+            this.type = Objects.requireNonNull(type, "type");
             if (qualifiers == null) {
-                this.qualifiers = new Annotation[0];
+                this.qualifiers = EMPTY_ANNOTATION_ARRAY;
             } else {
                 // NOTE: we do not clone() qualifiers because this is
                 // a private class and we know what we're doing and we
@@ -513,11 +509,11 @@ public final class OciExtension implements Extension {
 
         private TypeAndQualifiers(final Type type, final Collection<? extends Annotation> qualifiers) {
             super();
-            this.type = type;
+            this.type = Objects.requireNonNull(type, "type");
             if (qualifiers == null || qualifiers.isEmpty()) {
-                this.qualifiers = new Annotation[0];
+                this.qualifiers = EMPTY_ANNOTATION_ARRAY;
             } else {
-                this.qualifiers = qualifiers.toArray(new Annotation[0]);
+                this.qualifiers = qualifiers.toArray(EMPTY_ANNOTATION_ARRAY);
             }
             this.hashCode = computeHashCode(this.type, this.qualifiers);
         }
@@ -631,6 +627,7 @@ public final class OciExtension implements Extension {
                             Type serviceAsyncInterface,
                             Type serviceAsyncClient,
                             Type serviceAsyncClientBuilder) {
+            qualifiers = qualifiers == null ? EMPTY_ANNOTATION_ARRAY : qualifiers;
             boolean empty;
             this.serviceInterface = new TypeAndQualifiers(serviceInterface, qualifiers);
             this.serviceClient = new TypeAndQualifiers(serviceClient, qualifiers);
@@ -646,14 +643,6 @@ public final class OciExtension implements Extension {
          * Instance methods.
          */
 
-
-        private Annotation[] qualifiers() {
-            TypeAndQualifiers serviceInterface = this.serviceInterface();
-            if (serviceInterface == null) {
-                throw new IllegalStateException("empty");
-            }
-            return serviceInterface.qualifiers();
-        }
 
         private TypeAndQualifiers serviceInterface() {
             return this.serviceInterface;
