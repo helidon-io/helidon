@@ -34,10 +34,13 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import java.util.regex.Matcher;
@@ -168,7 +171,21 @@ public final class OciExtension implements Extension {
     // classes and interfaces do not contain classes and interfaces
     // that follow the service client pattern described above,
     // i.e. that are more foundational.
-    private static final Set<String> SERVICE_CLIENT_PACKAGE_FRAGMENT_DENY_LIST = Set.of("auth", "circuitbreaker");
+    private static final SortedSet<String> SERVICE_CLIENT_PACKAGE_FRAGMENT_DENY_LIST =
+        Collections.unmodifiableSortedSet(new TreeSet<>(List.of("auth",
+                                                                "circuitbreaker",
+                                                                "common",
+                                                                "encryption",
+                                                                "helper",
+                                                                "http",
+                                                                "internal",
+                                                                "io",
+                                                                "model",
+                                                                "requests",
+                                                                "responses",
+                                                                "retrier",
+                                                                "util",
+                                                                "waiter")));
 
     private static final TypeLiteral<Event<Object>> EVENT_OBJECT_TYPE_LITERAL = new TypeLiteral<Event<Object>>() {};
 
@@ -207,7 +224,7 @@ public final class OciExtension implements Extension {
      */
 
 
-    private void processInjectionPoint(@Observes ProcessInjectionPoint<?, ?> event) throws ClassNotFoundException {
+    private void processInjectionPoint(@Observes ProcessInjectionPoint<?, ?> event) {
         InjectionPoint ip = event.getInjectionPoint();
         Type baseType = ip.getAnnotated().getBaseType();
         if (baseType instanceof Class) {
@@ -232,23 +249,17 @@ public final class OciExtension implements Extension {
                         //   ....example.ExampleClient
                         //   ....example.ExampleClient$Builder
                         String serviceInterface = m.group(1);
-                        Class<?> serviceInterfaceClass =
-                            baseClassName.equals(serviceInterface) ? baseClass : loadClass(serviceInterface);
+                        Class<?> serviceInterfaceClass = toClass(event, baseClass, serviceInterface);
                         String serviceAsyncInterface = serviceInterface + "Async";
-                        Class<?> serviceAsyncInterfaceClass =
-                            baseClassName.equals(serviceAsyncInterface) ? baseClass : loadClass(serviceAsyncInterface);
+                        Class<?> serviceAsyncInterfaceClass = toClass(event, baseClass, serviceAsyncInterface);
                         String serviceAsyncClient = serviceAsyncInterface + "Client";
-                        Class<?> serviceAsyncClientClass =
-                            baseClassName.equals(serviceAsyncClient) ? baseClass : loadClass(serviceAsyncClient);
+                        Class<?> serviceAsyncClientClass = toClass(event, baseClass, serviceAsyncClient);
                         String serviceAsyncClientBuilder = serviceAsyncClient + "$Builder";
-                        Class<?> serviceAsyncClientBuilderClass =
-                            baseClassName.equals(serviceAsyncClientBuilder) ? baseClass : loadClass(serviceAsyncClientBuilder);
+                        Class<?> serviceAsyncClientBuilderClass = toClass(event, baseClass, serviceAsyncClientBuilder);
                         String serviceClient = serviceInterface + "Client";
-                        Class<?> serviceClientClass =
-                            baseClassName.equals(serviceClient) ? baseClass : loadClass(serviceClient);
+                        Class<?> serviceClientClass = toClass(event, baseClass, serviceClient);
                         String serviceClientBuilder = serviceClient + "$Builder";
-                        Class<?> serviceClientBuilderClass =
-                            baseClassName.equals(serviceClientBuilder) ? baseClass : loadClass(serviceClientBuilder);
+                        Class<?> serviceClientBuilderClass = toClass(event, baseClass, serviceClientBuilder);
                         this.serviceTaqs.put(qualifiers,
                                              new ServiceTaqs(qualifiers.toArray(EMPTY_ANNOTATION_ARRAY),
                                                              serviceInterfaceClass,
@@ -455,6 +466,20 @@ public final class OciExtension implements Extension {
         }
     }
 
+    private static Class<?> toClass(ProcessInjectionPoint<?, ?> event,
+                                    Class<?> referenceClass,
+                                    String name) {
+        if (referenceClass.getName().equals(name)) {
+            return referenceClass;
+        }
+        try {
+            return loadClass(name);
+        } catch (ClassNotFoundException classNotFoundException) {
+            event.addDefinitionError(classNotFoundException);
+            return null;
+        }
+    }
+
     private static Class<?> loadClass(String name) throws ClassNotFoundException {
         return Class.forName(name, false, Thread.currentThread().getContextClassLoader());
     }
@@ -628,14 +653,56 @@ public final class OciExtension implements Extension {
                             Type serviceAsyncClient,
                             Type serviceAsyncClientBuilder) {
             qualifiers = qualifiers == null ? EMPTY_ANNOTATION_ARRAY : qualifiers;
-            boolean empty;
-            this.serviceInterface = new TypeAndQualifiers(serviceInterface, qualifiers);
-            this.serviceClient = new TypeAndQualifiers(serviceClient, qualifiers);
-            this.serviceClientBuilder = new TypeAndQualifiers(serviceClientBuilder, qualifiers);
-            this.serviceAsyncInterface = new TypeAndQualifiers(serviceAsyncInterface, qualifiers);
-            this.serviceAsyncClient = new TypeAndQualifiers(serviceAsyncClient, qualifiers);
-            this.serviceAsyncClientBuilder = new TypeAndQualifiers(serviceAsyncClientBuilder, qualifiers);
-            this.empty = false;
+            boolean empty = false;
+            if (serviceInterface == null) {
+                this.serviceInterface = null;
+                if (!empty) {
+                    empty = true;
+                }
+            } else {
+                this.serviceInterface = new TypeAndQualifiers(serviceInterface, qualifiers);
+            }
+            if (serviceClient == null) {
+                this.serviceClient = null;
+                if (!empty) {
+                    empty = true;
+                }
+            } else {
+                this.serviceClient = new TypeAndQualifiers(serviceClient, qualifiers);
+            }
+            if (serviceClientBuilder == null) {
+                this.serviceClientBuilder = null;
+                if (!empty) {
+                    empty = true;
+                }
+            } else {
+                this.serviceClientBuilder = new TypeAndQualifiers(serviceClientBuilder, qualifiers);
+            }
+            if (serviceAsyncInterface == null) {
+                this.serviceAsyncInterface = null;
+                if (!empty) {
+                    empty = true;
+                }
+            } else {
+                this.serviceAsyncInterface = new TypeAndQualifiers(serviceAsyncInterface, qualifiers);
+            }
+            if (serviceAsyncClient == null) {
+                this.serviceAsyncClient = null;
+                if (!empty) {
+                    empty = true;
+                }
+            } else {
+                this.serviceAsyncClient = new TypeAndQualifiers(serviceAsyncClient, qualifiers);
+            }
+            if (serviceAsyncClientBuilder == null) {
+                this.serviceAsyncClientBuilder = null;
+                if (!empty) {
+                    empty = true;
+                }
+            } else {
+                this.serviceAsyncClientBuilder = new TypeAndQualifiers(serviceAsyncClientBuilder, qualifiers);
+            }
+            this.empty = empty;
         }
 
 
