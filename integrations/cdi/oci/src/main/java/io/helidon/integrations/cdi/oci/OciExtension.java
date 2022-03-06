@@ -278,28 +278,30 @@ public final class OciExtension implements Extension {
             installAdps(event, bm, entry.getKey());
             ServiceTaqs serviceTaqs = entry.getValue();
             if (!serviceTaqs.isEmpty()) {
-                TypeAndQualifiers serviceClientBuilderTaq = serviceTaqs.serviceClientBuilder();
-                TypeAndQualifiers serviceClientTaq = serviceTaqs.serviceClient();
+                TypeAndQualifiers serviceAsyncClientBuilder = serviceTaqs.serviceAsyncClientBuilder();
+                TypeAndQualifiers serviceAsyncClient = serviceTaqs.serviceAsyncClient();
+                TypeAndQualifiers serviceAsyncInterface = serviceTaqs.serviceAsyncInterface();
+                TypeAndQualifiers serviceClientBuilder = serviceTaqs.serviceClientBuilder();
+                TypeAndQualifiers serviceClient = serviceTaqs.serviceClient();
+                TypeAndQualifiers serviceInterface = serviceTaqs.serviceInterface();
                 installServiceClientBuilder(event,
                                             bm,
-                                            serviceClientBuilderTaq,
-                                            serviceClientTaq.toClass());
+                                            serviceAsyncClientBuilder,
+                                            serviceAsyncClient);
                 installServiceClient(event,
                                      bm,
-                                     serviceClientTaq,
-                                     serviceTaqs.serviceInterface().type(),
-                                     serviceClientBuilderTaq.toClass());
-                TypeAndQualifiers serviceAsyncClientBuilderTaq = serviceTaqs.serviceAsyncClientBuilder();
-                TypeAndQualifiers serviceAsyncClientTaq = serviceTaqs.serviceAsyncClient();
+                                     serviceAsyncClient,
+                                     serviceAsyncInterface,
+                                     serviceAsyncClientBuilder);
                 installServiceClientBuilder(event,
                                             bm,
-                                            serviceAsyncClientBuilderTaq,
-                                            serviceAsyncClientTaq.toClass());
+                                            serviceClientBuilder,
+                                            serviceClient);
                 installServiceClient(event,
                                      bm,
-                                     serviceAsyncClientTaq,
-                                     serviceTaqs.serviceAsyncInterface().type(),
-                                     serviceAsyncClientBuilderTaq.toClass());
+                                     serviceClient,
+                                     serviceInterface,
+                                     serviceClientBuilder);
             }
         }
     }
@@ -343,8 +345,20 @@ public final class OciExtension implements Extension {
     private static boolean installServiceClientBuilder(AfterBeanDiscovery event,
                                                        BeanManager bm,
                                                        TypeAndQualifiers serviceClientBuilder,
+                                                       TypeAndQualifiers serviceClient) {
+        if (serviceClient != null) {
+            return installServiceClientBuilder(event,
+                                               bm,
+                                               serviceClientBuilder,
+                                               serviceClient.toClass());
+        }
+        return false;
+    }
+    private static boolean installServiceClientBuilder(AfterBeanDiscovery event,
+                                                       BeanManager bm,
+                                                       TypeAndQualifiers serviceClientBuilder,
                                                        Class<?> serviceClientClass) {
-        if (isUnresolved(bm, serviceClientBuilder)) {
+        if (serviceClientBuilder != null && isUnresolved(bm, serviceClientBuilder)) {
             Class<?> serviceClientBuilderClass = serviceClientBuilder.toClass();
             MethodHandle builderMethod;
             try {
@@ -367,27 +381,44 @@ public final class OciExtension implements Extension {
     private static boolean installServiceClient(AfterBeanDiscovery event,
                                                 BeanManager bm,
                                                 TypeAndQualifiers serviceClient,
+                                                TypeAndQualifiers serviceInterface,
+                                                TypeAndQualifiers serviceClientBuilder) {
+        if (serviceInterface != null && serviceClientBuilder != null) {
+            return installServiceClient(event,
+                                        bm,
+                                        serviceClient,
+                                        serviceInterface.type(),
+                                        serviceClientBuilder.toClass());
+        }
+        return false;
+    }
+
+    private static boolean installServiceClient(AfterBeanDiscovery event,
+                                                BeanManager bm,
+                                                TypeAndQualifiers serviceClient,
                                                 Type serviceInterfaceType,
                                                 Class<?> serviceClientBuilderClass) {
-        Annotation[] qualifiersArray = serviceClient.qualifiers();
-        Type serviceClientType = serviceClient.type();
-        try {
-            if (bm.resolve(bm.getBeans(serviceClientType, qualifiersArray)) == null) {
-                Set<Type> types = null;
-                if (bm.resolve(bm.getBeans(serviceInterfaceType, qualifiersArray)) == null) {
-                    types = Set.of(serviceClientType, serviceInterfaceType);
-                } else {
-                    types = Set.of(serviceClientType);
+        if (serviceClient != null) {
+            Annotation[] qualifiersArray = serviceClient.qualifiers();
+            Type serviceClientType = serviceClient.type();
+            try {
+                if (bm.resolve(bm.getBeans(serviceClientType, qualifiersArray)) == null) {
+                    Set<Type> types = null;
+                    if (bm.resolve(bm.getBeans(serviceInterfaceType, qualifiersArray)) == null) {
+                        types = Set.of(serviceClientType, serviceInterfaceType);
+                    } else {
+                        types = Set.of(serviceClientType);
+                    }
+                    event.addBean()
+                        .types(types)
+                        .qualifiers(Set.of(qualifiersArray))
+                        .scope(Singleton.class)
+                        .produceWith(i -> produceClient(i, serviceClientBuilderClass))
+                        .disposeWith(OciExtension::disposeClient);
+                    return true;
                 }
-                event.addBean()
-                    .types(types)
-                    .qualifiers(Set.of(qualifiersArray))
-                    .scope(Singleton.class)
-                    .produceWith(i -> produceClient(i, serviceClientBuilderClass))
-                    .disposeWith(OciExtension::disposeClient);
-                return true;
+            } catch (AmbiguousResolutionException ambiguousResolutionException) {
             }
-        } catch (AmbiguousResolutionException ambiguousResolutionException) {
         }
         return false;
     }
