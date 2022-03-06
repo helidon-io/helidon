@@ -34,6 +34,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -49,6 +50,7 @@ import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.UnsatisfiedResolutionException;
 import javax.enterprise.inject.spi.AfterBeanDiscovery;
 import javax.enterprise.inject.spi.AfterDeploymentValidation;
+import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.InjectionPoint;
@@ -134,8 +136,8 @@ public final class OciExtension implements Extension {
 
     private static final String CLIENT_PACKAGE_PREFIX = Service.class.getPackageName() + ".";
 
-    private static final Pattern CLIENT_PACKAGE_PATTERN =
-        Pattern.compile("^" + CLIENT_PACKAGE_PREFIX + "(.+)\\.([^.]+)$");
+    private static final Pattern CLIENT_PACKAGE_PATTERN2 =
+        Pattern.compile("^(com\\.oracle\\.bmc\\.([^.]+)\\.(.+))(Async|Client(\\$Builder)?)?$");
 
     private static final Set<String> CLIENT_PACKAGE_FRAGMENT_DENY_LIST = Set.of("auth", "circuitbreaker");
 
@@ -149,9 +151,7 @@ public final class OciExtension implements Extension {
      */
 
 
-    private final Map<Set<Annotation>, Set<Class<?>>> harvest;
-
-    private final Set<TypeAndQualifiers> processedTaqs;
+    private final Map<Set<Annotation>, ServiceTaqs> serviceTaqs;
 
 
     /*
@@ -167,8 +167,7 @@ public final class OciExtension implements Extension {
     @Deprecated // for java.util.ServiceLoader use only
     public OciExtension() {
         super();
-        this.harvest = new HashMap<>();
-        this.processedTaqs = new HashSet<>();
+        this.serviceTaqs = new HashMap<>();
     }
 
 
@@ -177,115 +176,96 @@ public final class OciExtension implements Extension {
      */
 
 
-    private void processInjectionPoint(@Observes ProcessInjectionPoint<?, ?> event) {
+    private void processInjectionPoint2(@Observes ProcessInjectionPoint<?, ?> event) throws ClassNotFoundException {
         InjectionPoint ip = event.getInjectionPoint();
         Type baseType = ip.getAnnotated().getBaseType();
         if (baseType instanceof Class) {
             // All OCI constructs we're interested in are non-generic
             // classes.
             Class<?> baseClass = (Class<?>) baseType;
+            Set<Annotation> qualifiers = ip.getQualifiers();
             if (AbstractAuthenticationDetailsProvider.class.isAssignableFrom(baseClass)
                 || AdpStrategy.builderClasses().contains(baseClass)) {
-                // It's an ADP or something ADP-related.
-                this.harvest.computeIfAbsent(ip.getQualifiers(), qs -> new HashSet<>(11));
+                this.serviceTaqs.computeIfAbsent(qualifiers, qs -> new ServiceTaqs());
             } else {
-                Matcher m = CLIENT_PACKAGE_PATTERN.matcher(baseClass.getName());
-                if (m.matches() && !CLIENT_PACKAGE_FRAGMENT_DENY_LIST.contains(m.group(1))) {
-                    // It's an OCI service client.
-                    this.harvest.computeIfAbsent(ip.getQualifiers(), qs -> new HashSet<>(11)).add(baseClass);
+                String baseClassName = baseClass.getName();
+                Matcher m = CLIENT_PACKAGE_PATTERN2.matcher(baseClassName);
+                if (m.matches() && !CLIENT_PACKAGE_FRAGMENT_DENY_LIST.contains(m.group(2))) {
+                    ServiceTaqs serviceTaqs = this.serviceTaqs.get(qualifiers);
+                    if (serviceTaqs == null || serviceTaqs.isEmpty()) {
+                        Annotation[] qualifiersArray = qualifiers.toArray(new Annotation[0]);
+                        String serviceInterface = m.group(1);
+                        Class<?> taqClass =
+                            baseClassName.equals(serviceInterface) ? baseClass : loadClass(serviceInterface);
+                        TypeAndQualifiers serviceInterfaceTaq = new TypeAndQualifiers(taqClass, qualifiersArray);
+                        String serviceClient = serviceInterface + "Client";
+                        taqClass =
+                            baseClassName.equals(serviceClient) ? baseClass : loadClass(serviceClient);
+                        TypeAndQualifiers serviceClientTaq = new TypeAndQualifiers(taqClass, qualifiersArray);
+                        String serviceClientBuilder = serviceClient + "$Builder";
+                        taqClass =
+                            baseClassName.equals(serviceClientBuilder) ? baseClass : loadClass(serviceClientBuilder);
+                        TypeAndQualifiers serviceClientBuilderTaq = new TypeAndQualifiers(taqClass, qualifiersArray);
+                        String serviceAsyncInterface = serviceInterface + "Async";
+                        taqClass =
+                            baseClassName.equals(serviceAsyncInterface) ? baseClass : loadClass(serviceAsyncInterface);
+                        TypeAndQualifiers serviceAsyncInterfaceTaq = new TypeAndQualifiers(taqClass, qualifiersArray);
+                        String serviceAsyncClient = serviceAsyncInterface + "Client";
+                        taqClass =
+                            baseClassName.equals(serviceAsyncClient) ? baseClass : loadClass(serviceAsyncClient);
+                        TypeAndQualifiers serviceAsyncClientTaq = new TypeAndQualifiers(taqClass, qualifiersArray);
+                        String serviceAsyncClientBuilder = serviceAsyncClient + "$Builder";
+                        taqClass =
+                            baseClassName.equals(serviceAsyncClientBuilder) ? baseClass : loadClass(serviceAsyncClientBuilder);
+                        TypeAndQualifiers serviceAsyncClientBuilderTaq = new TypeAndQualifiers(taqClass, qualifiersArray);
+                        this.serviceTaqs.put(qualifiers,
+                                          new ServiceTaqs(serviceInterfaceTaq,
+                                                          serviceClientTaq,
+                                                          serviceClientBuilderTaq,
+                                                          serviceAsyncInterfaceTaq,
+                                                          serviceAsyncClientTaq,
+                                                          serviceAsyncClientBuilderTaq));
+                    }
                 }
             }
         }
     }
 
-    private void afterBeanDiscovery(@Observes AfterBeanDiscovery event, BeanManager bm) {
-        for (var entry : this.harvest.entrySet()) {
+    private void afterBeanDiscovery2(@Observes AfterBeanDiscovery event, BeanManager bm) {
+        for (Entry<Set<Annotation>, ServiceTaqs> entry : this.serviceTaqs.entrySet()) {
             Set<Annotation> qualifiers = entry.getKey();
             Annotation[] qualifiersArray = qualifiers.toArray(new Annotation[0]);
             installAdps(event, bm, qualifiers, qualifiersArray);
-            for (Class<?> inputClass : entry.getValue()) {
-                TypeAndQualifiers inputTaq = new TypeAndQualifiers(inputClass, qualifiersArray);
-                if (!this.supply(inputTaq, bm)) {
-                    continue;
-                }
-                // inputTaq could represent any of:
-                //
-                //   @Some @Qualifier com.oracle.bmc.example.Example
-                //   @Some @Qualifier com.oracle.bmc.example.ExampleAsync
-                //   @Some @Qualifier com.oracle.bmc.example.ExampleAsyncClient
-                //   @Some @Qualifier com.oracle.bmc.example.ExampleAsyncClient$Builder
-                //   @Some @Qualifier com.oracle.bmc.example.ExampleClient
-                //   @Some @Qualifier com.oracle.bmc.example.ExampleClient$Builder
-                TypeAndQualifiers builderTaq;
-                TypeAndQualifiers clientTaq;
-                try {
-                    builderTaq = taq(inputTaq, OciExtension::clientBuilder);
-                    clientTaq = taq(inputTaq, OciExtension::client);
-                } catch (ClassNotFoundException classNotFoundException) {
-                    event.addDefinitionError(classNotFoundException);
-                    continue;
-                }
-                Class<?> clientClass = clientTaq.toClass();
-                installClientBuilder(event, bm, builderTaq, clientClass);
-                if (builderTaq != inputTaq) {
-                    // input was not a builder itself.  Also input
-                    // was not supplied by the user.
-                    Set<Type> types;
-                    if (clientTaq == inputTaq) {
-                        // OK, the injection point is for
-                        // ExampleClient (or ExampleAsyncClient).
-                        // Let's make sure there's no
-                        // corresponding user-supplied bean for
-                        // Example (or ExampleAsync).
-                        //
-                        // Reassign inputClass to be, e.g.,
-                        // Example (or ExampleAsync).
-                        try {
-                            inputClass = loadClass(clientInterface(inputClass.getName()));
-                        } catch (ClassNotFoundException classNotFoundException) {
-                            event.addDefinitionError(classNotFoundException);
-                            continue;
-                        }
-
-                        inputTaq = new TypeAndQualifiers(inputClass, qualifiersArray);
-                        if (this.supply(inputTaq, bm)) {
-                            // Nice; this means we only have to
-                            // install one synthetic bean (rather
-                            // than two) to satisfy both Example
-                            // and ExampleClient (or ExampleAsync
-                            // and ExampleAyncClient).
-                            types = Set.of(clientClass, inputClass);
-                        } else {
-                            types = Set.of(clientClass);
-                        }
-                    } else if (this.supply(clientTaq, bm)) {
-                        types = Set.of(clientClass, inputClass);
-                    } else {
-                        types = Set.of(inputClass);
-                    }
-                    event.addBean()
-                        .types(types)
-                        .qualifiers(qualifiers)
-                        .scope(Singleton.class)
-                        .produceWith(i -> produceClient(i, builderTaq.toClass()))
-                        .disposeWith(OciExtension::disposeClient);
-                    for (Type type : types) {
-                        if (type == inputClass) {
-                            this.processedTaqs.add(inputTaq);
-                        } else if (type == clientClass) {
-                            this.processedTaqs.add(clientTaq);
-                        } else {
-                            throw new AssertionError("type: " + type.getTypeName());
-                        }
-                    }
-                }
+            ServiceTaqs serviceTaqs = entry.getValue();
+            if (!serviceTaqs.isEmpty()) {
+                TypeAndQualifiers serviceClientBuilderTaq = serviceTaqs.serviceClientBuilder;
+                TypeAndQualifiers serviceClientTaq = serviceTaqs.serviceClient;
+                installServiceClientBuilder(event,
+                                            bm,
+                                            serviceClientBuilderTaq,
+                                            serviceClientTaq.toClass());
+                TypeAndQualifiers serviceAsyncClientBuilderTaq = serviceTaqs.serviceAsyncClientBuilder;
+                TypeAndQualifiers serviceAsyncClientTaq = serviceTaqs.serviceAsyncClient;
+                installServiceClientBuilder(event,
+                                            bm,
+                                            serviceAsyncClientBuilderTaq,
+                                            serviceAsyncClientTaq.toClass());
+                installServiceClient(event,
+                                     bm,
+                                     serviceClientTaq,
+                                     serviceTaqs.serviceInterface.toClass(),
+                                     serviceClientBuilderTaq.toClass());
+                installServiceClient(event,
+                                     bm,
+                                     serviceAsyncClientTaq,
+                                     serviceTaqs.serviceAsyncInterface.toClass(),
+                                     serviceAsyncClientBuilderTaq.toClass());
             }
         }
     }
 
     private void afterDeploymentValidation(@Observes AfterDeploymentValidation event) {
-        this.harvest.clear();
-        this.processedTaqs.clear();
+        this.serviceTaqs.clear();
     }
 
 
@@ -298,112 +278,125 @@ public final class OciExtension implements Extension {
                              BeanManager bm,
                              Set<Annotation> qualifiers,
                              Annotation[] qualifiersArray) {
-        TypeAndQualifiers abstractAdpTaq = new TypeAndQualifiers(AbstractAuthenticationDetailsProvider.class, qualifiersArray);
-        if (this.processedTaqs.contains(abstractAdpTaq)) {
-            // If we already synthesized the abstract one, then by
-            // definition we did all the concrete ones too.
-            return;
-        }
-
         // Make sure all the concrete ones and their builders are in
         // there.
         for (AdpStrategy s : AdpStrategy.concreteStrategies()) {
             Type builderType = s.builderType();
             if (builderType != null) {
                 TypeAndQualifiers builderTaq = new TypeAndQualifiers(builderType, qualifiersArray);
-                if (this.supply(builderTaq, bm)) {
+                if (isUnresolved(builderTaq, bm)) {
                     event.addBean()
                         .types(builderType)
                         .qualifiers(qualifiers)
                         .scope(Singleton.class)
                         .produceWith(i -> s.produceBuilder(i, qualifiersArray));
-                    this.processedTaqs.add(builderTaq);
                 }
             }
             Type type = s.type();
             TypeAndQualifiers taq = new TypeAndQualifiers(type, qualifiersArray);
-            if (this.supply(taq, bm)) {
+            if (isUnresolved(taq, bm)) {
                 event.addBean()
                     .types(type)
                     .qualifiers(qualifiers)
                     .scope(Singleton.class)
                     .produceWith(i -> s.produce(i, qualifiersArray));
-                this.processedTaqs.add(taq);
             }
         }
 
-        // Now do the abstract one.  We already checked if
-        // processedTaqs had it, so just do the beanManager resolution
-        // stuff.
-        if (this.isUnresolved(abstractAdpTaq, bm)) {
+        // Now do the abstract one.
+        TypeAndQualifiers abstractAdpTaq = new TypeAndQualifiers(AbstractAuthenticationDetailsProvider.class, qualifiersArray);
+        if (isUnresolved(abstractAdpTaq, bm)) {
             event.addBean()
                 .types(AbstractAuthenticationDetailsProvider.class)
                 .qualifiers(qualifiers)
                 .scope(Singleton.class)
                 .produceWith(i -> AdpStrategy.AUTO.produce(i, qualifiersArray));
-            this.processedTaqs.add(abstractAdpTaq);
         }
     }
 
-    private void installClientBuilder(AfterBeanDiscovery event,
-                                      BeanManager bm,
-                                      TypeAndQualifiers clientBuilderTaq,
-                                      Class<?> clientClass) {
-        if (this.supply(clientBuilderTaq, bm)) {
-            // OK, we need to create:
-            //   @Some @Qualifier com.oracle.bmc.example.ExampleClient$Builder
-            // or:
-            //   @Some @Qualifier com.oracle.bmc.example.ExampleAsyncClient$Builder
-            //
-            // client will be one of:
-            // * com.oracle.bmc.example.ExampleClient
-            // * com.oracle.bmc.example.ExampleAsyncClient
-            //
-            // We will call its static builder() method.
-            Class<?> clientBuilderClass = clientBuilderTaq.toClass();
+    private boolean installServiceClientBuilder(AfterBeanDiscovery event,
+                                                BeanManager bm,
+                                                TypeAndQualifiers serviceClientBuilder,
+                                                Class<?> serviceClientClass) {
+        if (isUnresolved(serviceClientBuilder, bm)) {
+            Class<?> serviceClientBuilderClass = serviceClientBuilder.toClass();
             MethodHandle builderMethod;
             try {
-                builderMethod = PUBLIC_LOOKUP.findStatic(clientClass, "builder", methodType(clientBuilderClass));
+                builderMethod = PUBLIC_LOOKUP.findStatic(serviceClientClass, "builder", methodType(serviceClientBuilderClass));
             } catch (ReflectiveOperationException reflectiveOperationException) {
                 event.addDefinitionError(reflectiveOperationException);
-                return;
+                return false;
             }
-            Annotation[] qualifiersArray = clientBuilderTaq.qualifiers();
+            Annotation[] qualifiersArray = serviceClientBuilder.qualifiers();
             event.addBean()
-                .types(Set.of(clientBuilderClass))
+                .types(Set.of(serviceClientBuilderClass))
                 .qualifiers(Set.of(qualifiersArray))
                 .scope(Singleton.class)
-                .produceWith(i -> produceClientBuilder(i, builderMethod, clientBuilderClass, qualifiersArray));
-            this.processedTaqs.add(clientBuilderTaq);
+                .produceWith(i -> produceClientBuilder(i, builderMethod, serviceClientBuilderClass, qualifiersArray));
+            return true;
         }
+        return false;
     }
 
-    private boolean supply(TypeAndQualifiers taq, BeanManager bm) {
-        return taq != null && !this.processedTaqs.contains(taq) && isUnresolved(taq, bm);
-    }
-
-    private boolean isUnresolved(TypeAndQualifiers taq, BeanManager bm) {
+    private boolean installServiceClient(AfterBeanDiscovery event,
+                                         BeanManager bm,
+                                         TypeAndQualifiers serviceClient,
+                                         Class<?> serviceInterfaceClass,
+                                         Class<?> serviceClientBuilderClass) {
+        Annotation[] qualifiersArray = serviceClient.qualifiers();
+        Class<?> serviceClientClass = serviceClient.toClass();
+        Bean<?> b;
         try {
-            return bm.resolve(bm.getBeans(taq.type(), taq.qualifiers())) == null;
-        } catch (AmbiguousResolutionException e) {
-            // This will be handled by the container at validation
-            // time; we can swallow it here.
+            b = bm.resolve(bm.getBeans(serviceClientClass, qualifiersArray));
+        } catch (AmbiguousResolutionException ambiguousResolutionException) {
             return false;
         }
+        if (b == null) {
+            Set<Type> types = null;
+            // Yay, no user-installed serviceClient bean
+            // Is there a user-installed serviceInterface bean? If so, we'll have to limit our serviceClient bean's types.
+            try {
+                b = bm.resolve(bm.getBeans(serviceInterfaceClass, qualifiersArray));
+            } catch (AmbiguousResolutionException ambiguousResolutionException) {
+                // There were many user-installed serviceInterface
+                // beans.  We're truly hosed, but that will happen
+                // later.  We know that this just means we have to
+                // limit our types.
+                types = Set.of(serviceClientClass);
+            }
+
+            if (b == null) {
+                assert types == null;
+                // No user-installed serviceInterface bean and no user-installed serviceClient bean.  It's a dream come true.
+                types = Set.of(serviceClientClass, serviceInterfaceClass);
+            } else if (types == null) {
+                types = Set.of(serviceClientClass);
+            }
+            event.addBean()
+                .types(types)
+                .qualifiers(Set.of(qualifiersArray))
+                .scope(Singleton.class)
+                .produceWith(i -> produceClient(i, serviceClientBuilderClass))
+                .disposeWith(OciExtension::disposeClient);
+            return true;
+        }
+        return false;
     }
 
-    // May return null if classloading fails. errorHandler will have
-    // been notified.
-    private TypeAndQualifiers taq(TypeAndQualifiers inputTaq,
-                                  UnaryOperator<String> munger)
-    throws ClassNotFoundException {
-        String input = inputTaq.toClass().getName();
-        String output = munger.apply(input);
-        if (output.equals(input)) {
-            return inputTaq;
-        } else {
-            return inputTaq.with(loadClass(output));
+    private static Bean<?> resolve(Type type, Annotation[] qualifiers, BeanManager bm) {
+        try {
+            return bm.resolve(bm.getBeans(type, qualifiers));
+        } catch (AmbiguousResolutionException e) {
+            return null;
         }
+    }
+
+    private static Bean<?> resolve(TypeAndQualifiers taq, BeanManager bm) {
+        return resolve(taq.type(), taq.qualifiers(), bm);
+    }
+
+    private static boolean isUnresolved(TypeAndQualifiers taq, BeanManager bm) {
+        return resolve(taq, bm) == null;
     }
 
 
@@ -480,11 +473,19 @@ public final class OciExtension implements Extension {
         return input.endsWith("Client") ? input : input + "Client";
     }
 
+    private static boolean isClient(String input) {
+        return input.endsWith("Client");
+    }
+
     private static String clientInterface(String input) {
         if (input.endsWith("$Builder")) {
             input = input.substring(0, input.length() - "$Builder".length());
         }
         return input.endsWith("Client") ? input.substring(0, input.length() - "Client".length()) : input;
+    }
+
+    private static boolean isClientInterface(String input) {
+        return !isClientBuilder(input) && !isClient(input);
     }
 
     private static String clientBuilder(String input) {
@@ -580,6 +581,11 @@ public final class OciExtension implements Extension {
             }
         }
 
+        @Override
+        public final String toString() {
+            return Arrays.asList(this.qualifiers()).toString() + " " + this.type().toString();
+        }
+
         private static int computeHashCode(Object type, Object[] qualifiers) {
             int hashCode = 17;
             int c = type == null ? 0 : type.hashCode();
@@ -587,6 +593,53 @@ public final class OciExtension implements Extension {
             c = qualifiers == null ? 0 : Arrays.hashCode(qualifiers);
             hashCode = 37 * hashCode + c;
             return hashCode;
+        }
+
+    }
+
+    private static class ServiceTaqs {
+
+        private final TypeAndQualifiers serviceInterface;
+
+        private final TypeAndQualifiers serviceClient;
+
+        private final TypeAndQualifiers serviceClientBuilder;
+
+        private final TypeAndQualifiers serviceAsyncInterface;
+
+        private final TypeAndQualifiers serviceAsyncClient;
+
+        private final TypeAndQualifiers serviceAsyncClientBuilder;
+
+        private final boolean empty;
+
+        private ServiceTaqs() {
+            this(null, null, null, null, null, null);
+        }
+
+        private ServiceTaqs(TypeAndQualifiers serviceInterface,
+                            TypeAndQualifiers serviceClient,
+                            TypeAndQualifiers serviceClientBuilder,
+                            TypeAndQualifiers serviceAsyncInterface,
+                            TypeAndQualifiers serviceAsyncClient,
+                            TypeAndQualifiers serviceAsyncClientBuilder) {
+            this.serviceInterface = serviceInterface;
+            this.serviceClient = serviceClient;
+            this.serviceClientBuilder = serviceClientBuilder;
+            this.serviceAsyncInterface = serviceAsyncInterface;
+            this.serviceAsyncClient = serviceAsyncClient;
+            this.serviceAsyncClientBuilder = serviceAsyncClientBuilder;
+            this.empty =
+                serviceInterface == null
+                && serviceClient == null
+                && serviceClientBuilder == null
+                && serviceAsyncInterface == null
+                && serviceAsyncClient == null
+                && serviceAsyncClientBuilder == null;
+        }
+
+        private boolean isEmpty() {
+            return this.empty;
         }
 
     }
