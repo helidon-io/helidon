@@ -19,6 +19,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -77,7 +78,6 @@ import com.oracle.bmc.common.ClientBuilderBase;
 import com.oracle.bmc.http.ClientConfigurator;
 import org.eclipse.microprofile.config.Config;
 
-import static java.lang.invoke.MethodHandles.publicLookup;
 import static java.lang.invoke.MethodType.methodType;
 
 /**
@@ -134,16 +134,43 @@ public final class OciExtension implements Extension {
      */
 
 
-    private static final String CLIENT_PACKAGE_PREFIX = Service.class.getPackageName() + ".";
+    // Evaluates to "com.oracle.bmc." as of the current version of the
+    // OCI Java SDK.
+    private static final String OCI_PACKAGE_PREFIX = Service.class.getPackageName() + ".";
 
-    private static final Pattern CLIENT_PACKAGE_PATTERN =
-        Pattern.compile("^(com\\.oracle\\.bmc\\.([^.]+)\\.(.+))(Async|Client(\\$Builder)?)?$");
+    // For an OCI service in a com.oracle.bmc subpackage named "example":
+    //
+    // Match Strings starting with "com.oracle.bmc."...
+    // followed by the service client package fragment ("example")...
+    // followed by a period (".")...
+    // followed by one or more of the following:
+    //   "Example",
+    //   "ExampleAsync",
+    //   "ExampleAsyncClient",
+    //   "ExampleAsyncClient$Builder",
+    //   "ExampleClient",
+    //   "ExampleClient$Builder"...
+    // followed by the end of String.
+    //
+    // (Capturing group 0: the matched String)
+    //  Capturing group 1: "com.oracle.bmc.example.Example"
+    //  Capturing group 2: "example"
+    private static final Pattern SERVICE_CLIENT_PACKAGE_PATTERN =
+        Pattern.compile("^(" + OCI_PACKAGE_PREFIX
+                        + "([^.]+)"
+                        + "\\."
+                        + "(.+))(?:Async|Client(?:\\$Builder)?)?"
+                        + "$");
 
-    private static final Set<String> CLIENT_PACKAGE_FRAGMENT_DENY_LIST = Set.of("auth", "circuitbreaker");
+    // Service client package fragments identifying subpackages whose
+    // classes and interfaces do not contain classes and interfaces
+    // that follow the service client pattern described above,
+    // i.e. that are more foundational.
+    private static final Set<String> SERVICE_CLIENT_PACKAGE_FRAGMENT_DENY_LIST = Set.of("auth", "circuitbreaker");
 
     private static final TypeLiteral<Event<Object>> EVENT_OBJECT_TYPE_LITERAL = new TypeLiteral<Event<Object>>() {};
 
-    private static final Lookup PUBLIC_LOOKUP = publicLookup();
+    private static final Lookup PUBLIC_LOOKUP = MethodHandles.publicLookup();
 
 
     /*
@@ -189,42 +216,37 @@ public final class OciExtension implements Extension {
                 this.serviceTaqs.computeIfAbsent(qualifiers, qs -> new ServiceTaqs());
             } else {
                 String baseClassName = baseClass.getName();
-                Matcher m = CLIENT_PACKAGE_PATTERN.matcher(baseClassName);
-                if (m.matches() && !CLIENT_PACKAGE_FRAGMENT_DENY_LIST.contains(m.group(2))) {
+                Matcher m = SERVICE_CLIENT_PACKAGE_PATTERN.matcher(baseClassName);
+                if (m.matches() && !SERVICE_CLIENT_PACKAGE_FRAGMENT_DENY_LIST.contains(m.group(2))) {
                     ServiceTaqs serviceTaqs = this.serviceTaqs.get(qualifiers);
                     if (serviceTaqs == null || serviceTaqs.isEmpty()) {
                         Annotation[] qualifiersArray = qualifiers.toArray(new Annotation[0]);
                         String serviceInterface = m.group(1);
-                        Class<?> taqClass =
+                        Class<?> serviceInterfaceClass =
                             baseClassName.equals(serviceInterface) ? baseClass : loadClass(serviceInterface);
-                        TypeAndQualifiers serviceInterfaceTaq = new TypeAndQualifiers(taqClass, qualifiersArray);
                         String serviceClient = serviceInterface + "Client";
-                        taqClass =
+                        Class<?> serviceClientClass =
                             baseClassName.equals(serviceClient) ? baseClass : loadClass(serviceClient);
-                        TypeAndQualifiers serviceClientTaq = new TypeAndQualifiers(taqClass, qualifiersArray);
                         String serviceClientBuilder = serviceClient + "$Builder";
-                        taqClass =
+                        Class<?> serviceClientBuilderClass =
                             baseClassName.equals(serviceClientBuilder) ? baseClass : loadClass(serviceClientBuilder);
-                        TypeAndQualifiers serviceClientBuilderTaq = new TypeAndQualifiers(taqClass, qualifiersArray);
                         String serviceAsyncInterface = serviceInterface + "Async";
-                        taqClass =
+                        Class<?> serviceAsyncInterfaceClass =
                             baseClassName.equals(serviceAsyncInterface) ? baseClass : loadClass(serviceAsyncInterface);
-                        TypeAndQualifiers serviceAsyncInterfaceTaq = new TypeAndQualifiers(taqClass, qualifiersArray);
                         String serviceAsyncClient = serviceAsyncInterface + "Client";
-                        taqClass =
+                        Class<?> serviceAsyncClientClass =
                             baseClassName.equals(serviceAsyncClient) ? baseClass : loadClass(serviceAsyncClient);
-                        TypeAndQualifiers serviceAsyncClientTaq = new TypeAndQualifiers(taqClass, qualifiersArray);
                         String serviceAsyncClientBuilder = serviceAsyncClient + "$Builder";
-                        taqClass =
+                        Class<?> serviceAsyncClientBuilderClass =
                             baseClassName.equals(serviceAsyncClientBuilder) ? baseClass : loadClass(serviceAsyncClientBuilder);
-                        TypeAndQualifiers serviceAsyncClientBuilderTaq = new TypeAndQualifiers(taqClass, qualifiersArray);
                         this.serviceTaqs.put(qualifiers,
-                                          new ServiceTaqs(serviceInterfaceTaq,
-                                                          serviceClientTaq,
-                                                          serviceClientBuilderTaq,
-                                                          serviceAsyncInterfaceTaq,
-                                                          serviceAsyncClientTaq,
-                                                          serviceAsyncClientBuilderTaq));
+                                             new ServiceTaqs(qualifiersArray,
+                                                          serviceInterfaceClass,
+                                                          serviceClientClass,
+                                                          serviceClientBuilderClass,
+                                                          serviceAsyncInterfaceClass,
+                                                          serviceAsyncClientClass,
+                                                          serviceAsyncClientBuilderClass));
                     }
                 }
             }
@@ -233,19 +255,18 @@ public final class OciExtension implements Extension {
 
     private void afterBeanDiscovery(@Observes AfterBeanDiscovery event, BeanManager bm) {
         for (Entry<Set<Annotation>, ServiceTaqs> entry : this.serviceTaqs.entrySet()) {
-            Set<Annotation> qualifiers = entry.getKey();
-            Annotation[] qualifiersArray = qualifiers.toArray(new Annotation[0]);
+            Annotation[] qualifiersArray = entry.getKey().toArray(new Annotation[0]);
             installAdps(event, bm, qualifiersArray);
             ServiceTaqs serviceTaqs = entry.getValue();
             if (!serviceTaqs.isEmpty()) {
-                TypeAndQualifiers serviceClientBuilderTaq = serviceTaqs.serviceClientBuilder;
-                TypeAndQualifiers serviceClientTaq = serviceTaqs.serviceClient;
+                TypeAndQualifiers serviceClientBuilderTaq = serviceTaqs.serviceClientBuilder();
+                TypeAndQualifiers serviceClientTaq = serviceTaqs.serviceClient();
                 installServiceClientBuilder(event,
                                             bm,
                                             serviceClientBuilderTaq,
                                             serviceClientTaq.toClass());
-                TypeAndQualifiers serviceAsyncClientBuilderTaq = serviceTaqs.serviceAsyncClientBuilder;
-                TypeAndQualifiers serviceAsyncClientTaq = serviceTaqs.serviceAsyncClient;
+                TypeAndQualifiers serviceAsyncClientBuilderTaq = serviceTaqs.serviceAsyncClientBuilder();
+                TypeAndQualifiers serviceAsyncClientTaq = serviceTaqs.serviceAsyncClient();
                 installServiceClientBuilder(event,
                                             bm,
                                             serviceAsyncClientBuilderTaq,
@@ -253,12 +274,12 @@ public final class OciExtension implements Extension {
                 installServiceClient(event,
                                      bm,
                                      serviceClientTaq,
-                                     serviceTaqs.serviceInterface.toClass(),
+                                     serviceTaqs.serviceInterface().toClass(),
                                      serviceClientBuilderTaq.toClass());
                 installServiceClient(event,
                                      bm,
                                      serviceAsyncClientTaq,
-                                     serviceTaqs.serviceAsyncInterface.toClass(),
+                                     serviceTaqs.serviceAsyncInterface().toClass(),
                                      serviceAsyncClientBuilderTaq.toClass());
             }
         }
@@ -562,28 +583,63 @@ public final class OciExtension implements Extension {
         private final boolean empty;
 
         private ServiceTaqs() {
-            this(null, null, null, null, null, null);
+            super();
+            this.serviceInterface = null;
+            this.serviceClient = null;
+            this.serviceClientBuilder = null;
+            this.serviceAsyncInterface = null;
+            this.serviceAsyncClient = null;
+            this.serviceAsyncClientBuilder = null;
+            this.empty = true;
         }
 
-        private ServiceTaqs(TypeAndQualifiers serviceInterface,
-                            TypeAndQualifiers serviceClient,
-                            TypeAndQualifiers serviceClientBuilder,
-                            TypeAndQualifiers serviceAsyncInterface,
-                            TypeAndQualifiers serviceAsyncClient,
-                            TypeAndQualifiers serviceAsyncClientBuilder) {
-            this.serviceInterface = serviceInterface;
-            this.serviceClient = serviceClient;
-            this.serviceClientBuilder = serviceClientBuilder;
-            this.serviceAsyncInterface = serviceAsyncInterface;
-            this.serviceAsyncClient = serviceAsyncClient;
-            this.serviceAsyncClientBuilder = serviceAsyncClientBuilder;
-            this.empty =
-                serviceInterface == null
-                && serviceClient == null
-                && serviceClientBuilder == null
-                && serviceAsyncInterface == null
-                && serviceAsyncClient == null
-                && serviceAsyncClientBuilder == null;
+        private ServiceTaqs(Annotation[] qualifiers,
+                            Type serviceInterface,
+                            Type serviceClient,
+                            Type serviceClientBuilder,
+                            Type serviceAsyncInterface,
+                            Type serviceAsyncClient,
+                            Type serviceAsyncClientBuilder) {
+            boolean empty;
+            this.serviceInterface = new TypeAndQualifiers(serviceInterface, qualifiers);
+            this.serviceClient = new TypeAndQualifiers(serviceClient, qualifiers);
+            this.serviceClientBuilder = new TypeAndQualifiers(serviceClientBuilder, qualifiers);
+            this.serviceAsyncInterface = new TypeAndQualifiers(serviceAsyncInterface, qualifiers);
+            this.serviceAsyncClient = new TypeAndQualifiers(serviceAsyncClient, qualifiers);
+            this.serviceAsyncClientBuilder = new TypeAndQualifiers(serviceAsyncClientBuilder, qualifiers);
+            this.empty = false;
+        }
+
+        private Annotation[] qualifiers() {
+            TypeAndQualifiers serviceInterface = this.serviceInterface();
+            if (serviceInterface == null) {
+                throw new IllegalStateException("empty");
+            }
+            return serviceInterface.qualifiers();
+        }
+
+        private TypeAndQualifiers serviceInterface() {
+            return this.serviceInterface;
+        }
+
+        private TypeAndQualifiers serviceClient() {
+            return this.serviceClient;
+        }
+
+        private TypeAndQualifiers serviceClientBuilder() {
+            return this.serviceClientBuilder;
+        }
+
+        private TypeAndQualifiers serviceAsyncInterface() {
+            return this.serviceAsyncInterface;
+        }
+
+        private TypeAndQualifiers serviceAsyncClient() {
+            return this.serviceAsyncClient;
+        }
+
+        private TypeAndQualifiers serviceAsyncClientBuilder() {
+            return this.serviceAsyncClientBuilder;
         }
 
         private boolean isEmpty() {
@@ -1032,7 +1088,7 @@ public final class OciExtension implements Extension {
                          UnaryOperator<String> adjuster) {
             String lowerCaseName = this.name().toLowerCase();
             String titleCaseName = Character.toUpperCase(lowerCaseName.charAt(0)) + lowerCaseName.substring(1);
-            String prefix = CLIENT_PACKAGE_PREFIX + lowerCaseName + "." + titleCaseName;
+            String prefix = OCI_PACKAGE_PREFIX + lowerCaseName + "." + titleCaseName;
             this.clientBuilderClassName = prefix + "Client$Builder";
             this.asyncClientBuilderClassName = prefix + "AsyncClient$Builder";
             this.p = p;
