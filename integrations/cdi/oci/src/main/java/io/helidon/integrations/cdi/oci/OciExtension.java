@@ -253,12 +253,10 @@ public final class OciExtension implements Extension {
                         Class<?> serviceAsyncInterfaceClass = toClass(event, baseClass, serviceAsyncInterface);
                         String serviceAsyncClient = serviceAsyncInterface + "Client";
                         Class<?> serviceAsyncClientClass = toClass(event, baseClass, serviceAsyncClient);
-                        String serviceAsyncClientBuilder = serviceAsyncClient + "$Builder";
-                        Class<?> serviceAsyncClientBuilderClass = toClass(event, baseClass, serviceAsyncClientBuilder);
+                        Class<?> serviceAsyncClientBuilderClass = toClass(event, baseClass, serviceAsyncClient + "$Builder");
                         String serviceClient = serviceInterface + "Client";
                         Class<?> serviceClientClass = toClass(event, baseClass, serviceClient);
-                        String serviceClientBuilder = serviceClient + "$Builder";
-                        Class<?> serviceClientBuilderClass = toClass(event, baseClass, serviceClientBuilder);
+                        Class<?> serviceClientBuilderClass = toClass(event, baseClass, serviceClient + "$Builder");
                         this.serviceTaqs.put(qualifiers,
                                              new ServiceTaqs(qualifiers.toArray(EMPTY_ANNOTATION_ARRAY),
                                                              serviceInterfaceClass,
