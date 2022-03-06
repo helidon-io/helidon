@@ -136,7 +136,7 @@ public final class OciExtension implements Extension {
 
     private static final String CLIENT_PACKAGE_PREFIX = Service.class.getPackageName() + ".";
 
-    private static final Pattern CLIENT_PACKAGE_PATTERN2 =
+    private static final Pattern CLIENT_PACKAGE_PATTERN =
         Pattern.compile("^(com\\.oracle\\.bmc\\.([^.]+)\\.(.+))(Async|Client(\\$Builder)?)?$");
 
     private static final Set<String> CLIENT_PACKAGE_FRAGMENT_DENY_LIST = Set.of("auth", "circuitbreaker");
@@ -176,7 +176,7 @@ public final class OciExtension implements Extension {
      */
 
 
-    private void processInjectionPoint2(@Observes ProcessInjectionPoint<?, ?> event) throws ClassNotFoundException {
+    private void processInjectionPoint(@Observes ProcessInjectionPoint<?, ?> event) throws ClassNotFoundException {
         InjectionPoint ip = event.getInjectionPoint();
         Type baseType = ip.getAnnotated().getBaseType();
         if (baseType instanceof Class) {
@@ -189,7 +189,7 @@ public final class OciExtension implements Extension {
                 this.serviceTaqs.computeIfAbsent(qualifiers, qs -> new ServiceTaqs());
             } else {
                 String baseClassName = baseClass.getName();
-                Matcher m = CLIENT_PACKAGE_PATTERN2.matcher(baseClassName);
+                Matcher m = CLIENT_PACKAGE_PATTERN.matcher(baseClassName);
                 if (m.matches() && !CLIENT_PACKAGE_FRAGMENT_DENY_LIST.contains(m.group(2))) {
                     ServiceTaqs serviceTaqs = this.serviceTaqs.get(qualifiers);
                     if (serviceTaqs == null || serviceTaqs.isEmpty()) {
@@ -231,11 +231,11 @@ public final class OciExtension implements Extension {
         }
     }
 
-    private void afterBeanDiscovery2(@Observes AfterBeanDiscovery event, BeanManager bm) {
+    private void afterBeanDiscovery(@Observes AfterBeanDiscovery event, BeanManager bm) {
         for (Entry<Set<Annotation>, ServiceTaqs> entry : this.serviceTaqs.entrySet()) {
             Set<Annotation> qualifiers = entry.getKey();
             Annotation[] qualifiersArray = qualifiers.toArray(new Annotation[0]);
-            installAdps(event, bm, qualifiers, qualifiersArray);
+            installAdps(event, bm, qualifiersArray);
             ServiceTaqs serviceTaqs = entry.getValue();
             if (!serviceTaqs.isEmpty()) {
                 TypeAndQualifiers serviceClientBuilderTaq = serviceTaqs.serviceClientBuilder;
@@ -276,11 +276,9 @@ public final class OciExtension implements Extension {
 
     private void installAdps(AfterBeanDiscovery event,
                              BeanManager bm,
-                             Set<Annotation> qualifiers,
                              Annotation[] qualifiersArray) {
-        // Make sure all the concrete ones and their builders are in
-        // there.
-        for (AdpStrategy s : AdpStrategy.concreteStrategies()) {
+        Set<Annotation> qualifiers = Set.of(qualifiersArray);
+        for (AdpStrategy s : EnumSet.allOf(AdpStrategy.class)) {
             Type builderType = s.builderType();
             if (builderType != null) {
                 TypeAndQualifiers builderTaq = new TypeAndQualifiers(builderType, qualifiersArray);
@@ -301,16 +299,6 @@ public final class OciExtension implements Extension {
                     .scope(Singleton.class)
                     .produceWith(i -> s.produce(i, qualifiersArray));
             }
-        }
-
-        // Now do the abstract one.
-        TypeAndQualifiers abstractAdpTaq = new TypeAndQualifiers(AbstractAuthenticationDetailsProvider.class, qualifiersArray);
-        if (isUnresolved(abstractAdpTaq, bm)) {
-            event.addBean()
-                .types(AbstractAuthenticationDetailsProvider.class)
-                .qualifiers(qualifiers)
-                .scope(Singleton.class)
-                .produceWith(i -> AdpStrategy.AUTO.produce(i, qualifiersArray));
         }
     }
 
@@ -466,42 +454,6 @@ public final class OciExtension implements Extension {
         }
     }
 
-    private static String client(String input) {
-        if (input.endsWith("$Builder")) {
-            return input.substring(0, input.length() - "$Builder".length());
-        }
-        return input.endsWith("Client") ? input : input + "Client";
-    }
-
-    private static boolean isClient(String input) {
-        return input.endsWith("Client");
-    }
-
-    private static String clientInterface(String input) {
-        if (input.endsWith("$Builder")) {
-            input = input.substring(0, input.length() - "$Builder".length());
-        }
-        return input.endsWith("Client") ? input.substring(0, input.length() - "Client".length()) : input;
-    }
-
-    private static boolean isClientInterface(String input) {
-        return !isClientBuilder(input) && !isClient(input);
-    }
-
-    private static String clientBuilder(String input) {
-        if (input.endsWith("$Builder")) {
-            return input;
-        } else if (input.endsWith("Client")) {
-            return input + "$Builder";
-        } else {
-            return input + "Client$Builder";
-        }
-    }
-
-    private static boolean isClientBuilder(String input) {
-        return input.endsWith("$Builder");
-    }
-
 
     /*
      * Inner and nested classes.
@@ -558,10 +510,6 @@ public final class OciExtension implements Extension {
             } else {
                 return null;
             }
-        }
-
-        private TypeAndQualifiers with(Class<?> c) {
-            return new TypeAndQualifiers(c, this.qualifiers);
         }
 
         @Override
