@@ -137,9 +137,12 @@ public final class OciExtension implements Extension {
     // OCI Java SDK.
     private static final String OCI_PACKAGE_PREFIX = Service.class.getPackageName() + ".";
 
-    // For an OCI service in a OCI_PACKAGE_PREFIX subpackage named "example":
+    // For an OCI service conceptually named "Example" in an
+    // OCI_PACKAGE_PREFIX subpackage named "example":
     //
-    // Match Strings starting with OCI_PACKAGE_PREFIX...
+    // Match Strings expected to be class names:
+    //
+    // starting with OCI_PACKAGE_PREFIX...
     // followed by the service client package fragment ("example")...
     // followed by a period (".")...
     // followed by one or more of the following:
@@ -151,17 +154,17 @@ public final class OciExtension implements Extension {
     //   "ExampleClient$Builder"...
     // followed by the end of String.
     //
-    // (Capturing group 0: the matched String)
-    //  Capturing group 1: OCI_PACKAGE_PREFIX + "example.Example"
-    //  Capturing group 2: "example"
-    private static final Pattern SERVICE_CLIENT_PACKAGE_PATTERN =
+    // Capturing group 0: the matched class name
+    // Capturing group 1: the service client interface (OCI_PACKAGE_PREFIX + "example.Example")
+    // Capturing group 2: "example"
+    private static final Pattern SERVICE_CLIENT_CLASS_NAME_PATTERN =
         Pattern.compile("^(" + OCI_PACKAGE_PREFIX
                         + "([^.]+)"
                         + "\\."
                         + "(.+))(?:Async|Client(?:\\$Builder)?)?"
                         + "$");
 
-    // Service client package fragments identifying subpackages whose
+    // OCI Java SDK subPackage fragments identifying subpackages whose
     // classes and interfaces do not contain classes and interfaces
     // that follow the service client pattern described above,
     // i.e. that are more foundational.
@@ -215,7 +218,7 @@ public final class OciExtension implements Extension {
                 this.serviceTaqs.computeIfAbsent(qualifiers, qs -> new ServiceTaqs());
             } else {
                 String baseClassName = baseClass.getName();
-                Matcher m = SERVICE_CLIENT_PACKAGE_PATTERN.matcher(baseClassName);
+                Matcher m = SERVICE_CLIENT_CLASS_NAME_PATTERN.matcher(baseClassName);
                 if (m.matches() && !SERVICE_CLIENT_PACKAGE_FRAGMENT_DENY_LIST.contains(m.group(2))) {
                     ServiceTaqs serviceTaqs = this.serviceTaqs.get(qualifiers);
                     if (serviceTaqs == null || serviceTaqs.isEmpty()) {
