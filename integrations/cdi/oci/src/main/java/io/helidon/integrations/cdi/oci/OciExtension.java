@@ -170,7 +170,7 @@ public final class OciExtension implements Extension {
     // OCI Java SDK subPackage fragments identifying subpackages whose
     // classes and interfaces do not follow the service client pattern
     // described above, i.e. that are more foundational.
-    private static final SortedSet<String> SERVICE_CLIENT_PACKAGE_FRAGMENT_DENY_LIST =
+    private static final SortedSet<String> SERVICE_CLIENT_PACKAGE_FRAGMENT_DENY_SET =
         Collections.unmodifiableSortedSet(new TreeSet<>(List.of("auth",
                                                                 "circuitbreaker",
                                                                 "common",
@@ -232,12 +232,12 @@ public final class OciExtension implements Extension {
             Class<?> baseClass = (Class<?>) baseType;
             Set<Annotation> qualifiers = ip.getQualifiers();
             if (AbstractAuthenticationDetailsProvider.class.isAssignableFrom(baseClass)
-                || AdpStrategy.builderClasses().contains(baseClass)) {
+                || AdpSelectionStrategy.builderClasses().contains(baseClass)) {
                 this.serviceTaqs.computeIfAbsent(qualifiers, qs -> new ServiceTaqs());
             } else {
                 String baseClassName = baseClass.getName();
                 Matcher m = SERVICE_CLIENT_CLASS_NAME_PATTERN.matcher(baseClassName);
-                if (m.matches() && !SERVICE_CLIENT_PACKAGE_FRAGMENT_DENY_LIST.contains(m.group(2))) {
+                if (m.matches() && !SERVICE_CLIENT_PACKAGE_FRAGMENT_DENY_SET.contains(m.group(2))) {
                     ServiceTaqs serviceTaqs = this.serviceTaqs.get(qualifiers);
                     if (serviceTaqs == null || serviceTaqs.isEmpty()) {
                         // Create types-and-qualifiers for, e.g.:
@@ -316,7 +316,7 @@ public final class OciExtension implements Extension {
 
     private static void installAdps(AfterBeanDiscovery event, BeanManager bm, Set<Annotation> qualifiers) {
         Annotation[] qualifiersArray = qualifiers.toArray(EMPTY_ANNOTATION_ARRAY);
-        for (AdpStrategy s : EnumSet.allOf(AdpStrategy.class)) {
+        for (AdpSelectionStrategy s : EnumSet.allOf(AdpSelectionStrategy.class)) {
             Type builderType = s.builderType();
             if (builderType != null) {
                 TypeAndQualifiers builderTaq = new TypeAndQualifiers(builderType, qualifiersArray);
@@ -494,9 +494,7 @@ public final class OciExtension implements Extension {
         }
     }
 
-    private static Class<?> toClass(ProcessInjectionPoint<?, ?> event,
-                                    Class<?> referenceClass,
-                                    String name) {
+    private static Class<?> toClass(ProcessInjectionPoint<?, ?> event, Class<?> referenceClass, String name) {
         if (referenceClass.getName().equals(name)) {
             return referenceClass;
         }
@@ -663,14 +661,13 @@ public final class OciExtension implements Extension {
 
 
         private ServiceTaqs() {
-            super();
-            this.serviceInterface = null;
-            this.serviceClient = null;
-            this.serviceClientBuilder = null;
-            this.serviceAsyncInterface = null;
-            this.serviceAsyncClient = null;
-            this.serviceAsyncClientBuilder = null;
-            this.empty = true;
+            this(EMPTY_ANNOTATION_ARRAY,
+                 null,
+                 null,
+                 null,
+                 null,
+                 null,
+                 null);
         }
 
         private ServiceTaqs(Annotation[] qualifiers,
@@ -769,7 +766,7 @@ public final class OciExtension implements Extension {
 
     }
 
-    private enum AdpStrategy {
+    private enum AdpSelectionStrategy {
 
         //
         // ------------
@@ -962,13 +959,13 @@ public final class OciExtension implements Extension {
             AbstractAuthenticationDetailsProvider produce(Instance<? super Object> instance,
                                                           Config config,
                                                           Annotation[] qualifiers) {
-                Collection<AdpStrategy> strategies =
+                Collection<? extends AdpSelectionStrategy> strategies =
                     concreteStrategies(config.getOptionalValue("oci.config.strategy", String[].class).orElse(null));
                 switch (strategies.size()) {
                 case 0:
                     throw new AssertionError();
                 case 1:
-                    AdpStrategy strategy = strategies.iterator().next();
+                    AdpSelectionStrategy strategy = strategies.iterator().next();
                     if (strategy != this) {
                         // No availability check on purpose; there's
                         // only one strategy that is not itself AUTO
@@ -979,7 +976,7 @@ public final class OciExtension implements Extension {
                     strategies = concreteStrategies();
                     // fall-through
                 default:
-                    for (AdpStrategy s : strategies) {
+                    for (AdpSelectionStrategy s : strategies) {
                         if (s != this && s.isAvailable(instance, config, qualifiers)) {
                             return s.select(instance, config, qualifiers);
                         }
@@ -996,16 +993,16 @@ public final class OciExtension implements Extension {
          */
 
 
-        private static final Collection<AdpStrategy> CONCRETE_STRATEGIES;
+        private static final Collection<AdpSelectionStrategy> CONCRETE_STRATEGIES;
 
         private static final Set<Class<?>> BUILDER_CLASSES;
 
         static {
-            EnumSet<AdpStrategy> set = EnumSet.allOf(AdpStrategy.class);
-            set.removeIf(AdpStrategy::isAbstract);
+            EnumSet<AdpSelectionStrategy> set = EnumSet.allOf(AdpSelectionStrategy.class);
+            set.removeIf(AdpSelectionStrategy::isAbstract);
             CONCRETE_STRATEGIES = Collections.unmodifiableCollection(set);
             Set<Class<?>> builderClasses = new HashSet<>(7);
-            for (AdpStrategy s : set) {
+            for (AdpSelectionStrategy s : set) {
                 Type builderType = s.builderType();
                 if (builderType instanceof Class) {
                     builderClasses.add((Class<?>) builderType);
@@ -1032,23 +1029,21 @@ public final class OciExtension implements Extension {
          */
 
 
-        AdpStrategy(Class<? extends AbstractAuthenticationDetailsProvider> type) {
+        AdpSelectionStrategy(Class<? extends AbstractAuthenticationDetailsProvider> type) {
             this(type, null, false);
         }
 
-        AdpStrategy(Class<? extends AbstractAuthenticationDetailsProvider> type,
-                    boolean isAbstract) {
+        AdpSelectionStrategy(Class<? extends AbstractAuthenticationDetailsProvider> type, boolean isAbstract) {
             this(type, null, isAbstract);
         }
 
-        AdpStrategy(Class<? extends AbstractAuthenticationDetailsProvider> type,
-                    Class<?> builderType) {
+        AdpSelectionStrategy(Class<? extends AbstractAuthenticationDetailsProvider> type, Class<?> builderType) {
             this(type, builderType, false);
         }
 
-        AdpStrategy(Class<? extends AbstractAuthenticationDetailsProvider> type,
-                    Class<?> builderType,
-                    boolean isAbstract) {
+        AdpSelectionStrategy(Class<? extends AbstractAuthenticationDetailsProvider> type,
+                             Class<?> builderType,
+                             boolean isAbstract) {
             this.type = Objects.requireNonNull(type, "type");
             this.builderType = builderType;
             this.isAbstract = isAbstract;
@@ -1106,11 +1101,11 @@ public final class OciExtension implements Extension {
             return BUILDER_CLASSES;
         }
 
-        private static AdpStrategy of(String name) {
+        private static AdpSelectionStrategy of(String name) {
             return valueOf(name.replace('-', '_').toUpperCase());
         }
 
-        private static AdpStrategy ofConfigString(String strategyString) {
+        private static AdpSelectionStrategy ofConfigString(String strategyString) {
             if (strategyString == null) {
                 return AUTO;
             } else {
@@ -1123,13 +1118,13 @@ public final class OciExtension implements Extension {
             }
         }
 
-        private static Collection<AdpStrategy> concreteStrategies() {
+        private static Collection<AdpSelectionStrategy> concreteStrategies() {
             return CONCRETE_STRATEGIES;
         }
 
-        private static Collection<AdpStrategy> concreteStrategies(String[] strategyStringsArray) {
-            Collection<AdpStrategy> strategies;
-            AdpStrategy strategy;
+        private static Collection<AdpSelectionStrategy> concreteStrategies(String[] strategyStringsArray) {
+            Collection<AdpSelectionStrategy> strategies;
+            AdpSelectionStrategy strategy;
             int length = strategyStringsArray == null ? 0 : strategyStringsArray.length;
             switch (length) {
             case 0:
