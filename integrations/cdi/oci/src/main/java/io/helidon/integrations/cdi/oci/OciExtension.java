@@ -265,17 +265,17 @@ public final class OciExtension implements Extension {
                                             bm,
                                             serviceClientBuilderTaq,
                                             serviceClientTaq.toClass());
+                installServiceClient(event,
+                                     bm,
+                                     serviceClientTaq,
+                                     serviceTaqs.serviceInterface().toClass(),
+                                     serviceClientBuilderTaq.toClass());
                 TypeAndQualifiers serviceAsyncClientBuilderTaq = serviceTaqs.serviceAsyncClientBuilder();
                 TypeAndQualifiers serviceAsyncClientTaq = serviceTaqs.serviceAsyncClient();
                 installServiceClientBuilder(event,
                                             bm,
                                             serviceAsyncClientBuilderTaq,
                                             serviceAsyncClientTaq.toClass());
-                installServiceClient(event,
-                                     bm,
-                                     serviceClientTaq,
-                                     serviceTaqs.serviceInterface().toClass(),
-                                     serviceClientBuilderTaq.toClass());
                 installServiceClient(event,
                                      bm,
                                      serviceAsyncClientTaq,
@@ -392,6 +392,12 @@ public final class OciExtension implements Extension {
         return false;
     }
 
+
+    /*
+     * Static methods.
+     */
+
+
     private static Bean<?> resolve(Type type, Annotation[] qualifiers, BeanManager bm) {
         try {
             return bm.resolve(bm.getBeans(type, qualifiers));
@@ -407,12 +413,6 @@ public final class OciExtension implements Extension {
     private static boolean isUnresolved(TypeAndQualifiers taq, BeanManager bm) {
         return resolve(taq, bm) == null;
     }
-
-
-    /*
-     * Static methods.
-     */
-
 
     private static Object produceClientBuilder(Instance<? super Object> instance,
                                                MethodHandle builderMethod,
@@ -483,11 +483,23 @@ public final class OciExtension implements Extension {
 
     private static class TypeAndQualifiers {
 
+
+        /*
+         * Instance fields.
+         */
+
+
         private final Type type;
 
         private final Annotation[] qualifiers;
 
         private final int hashCode;
+
+
+        /*
+         * Constructors.
+         */
+
 
         private TypeAndQualifiers(final Type type, final Annotation[] qualifiers) {
             super();
@@ -514,6 +526,12 @@ public final class OciExtension implements Extension {
             }
             this.hashCode = computeHashCode(this.type, this.qualifiers);
         }
+
+
+        /*
+         * Instance methods.
+         */
+
 
         private Type type() {
             return this.type;
@@ -555,6 +573,12 @@ public final class OciExtension implements Extension {
             return Arrays.asList(this.qualifiers()).toString() + " " + this.type().toString();
         }
 
+
+        /*
+         * Static methods.
+         */
+
+
         private static int computeHashCode(Object type, Object[] qualifiers) {
             int hashCode = 17;
             int c = type == null ? 0 : type.hashCode();
@@ -567,6 +591,12 @@ public final class OciExtension implements Extension {
     }
 
     private static class ServiceTaqs {
+
+
+        /*
+         * Instance fields.
+         */
+
 
         private final TypeAndQualifiers serviceInterface;
 
@@ -581,6 +611,12 @@ public final class OciExtension implements Extension {
         private final TypeAndQualifiers serviceAsyncClientBuilder;
 
         private final boolean empty;
+
+
+        /*
+         * Constructors.
+         */
+
 
         private ServiceTaqs() {
             super();
@@ -609,6 +645,12 @@ public final class OciExtension implements Extension {
             this.serviceAsyncClientBuilder = new TypeAndQualifiers(serviceAsyncClientBuilder, qualifiers);
             this.empty = false;
         }
+
+
+        /*
+         * Instance methods.
+         */
+
 
         private Annotation[] qualifiers() {
             TypeAndQualifiers serviceInterface = this.serviceInterface();
@@ -661,6 +703,12 @@ public final class OciExtension implements Extension {
         // order)! Do not reorder the constants unless you have a good
         // reason!
         //
+
+
+        /*
+         * Enum constants.
+         */
+
 
         CONFIG(SimpleAuthenticationDetailsProvider.class,
                SimpleAuthenticationDetailsProviderBuilder.class) {
@@ -1047,14 +1095,53 @@ public final class OciExtension implements Extension {
 
     private enum EndpointAdjuster implements ClientConfigurator, ClientRequestFilter, Predicate<ClientRequestContext> {
 
+
+        /*
+         * Enum constants.
+         */
+
+
+        // See
+        // https://docs.oracle.com/en-us/iaas/tools/java/2.18.0/com/oracle/bmc/monitoring/MonitoringAsync.html#postMetricData-com.oracle.bmc.monitoring.requests.PostMetricDataRequest-com.oracle.bmc.responses.AsyncHandler-:
+        //
+        //   The endpoints for this [particular POST] operation differ
+        //   from other Monitoring operations. Replace the string
+        //   telemetry with telemetry-ingestion in the endpoint, as in
+        //   the following example:
+        //
+        //   https://telemetry-ingestion.eu-frankfurt-1.oraclecloud.com"
+        //
+        // Doing this in an application that uses a MonitoringClient
+        // or a MonitoringAsyncClient from several threads, not all of
+        // which are POSTing, is, of course, unsafe, since a thread
+        // performing a GET operation using the client might use the
+        // POSTing endpoint.  This filter repairs this flaw and is
+        // installed by OCI-SDK-supported client customization
+        // facilities.
+        //
+        // The documented instructions above are imprecise.  This filter
+        // implements what it seems was actually meant:
+        //
+        //   The OCI hostname to which metrics should be POSTed must
+        //   be a specific hostname that is derived from, but not
+        //   equal to, the automatically computed hostname used for
+        //   all other HTTP operations initiated by the Monitoring
+        //   service client. This specific custom hostname must be
+        //   derived as follows:
+        //
+        //     If the automatically computed hostname begins with
+        //     "telemetry.", replace only that occurrence of
+        //     "telemetry."  with "telemetry-ingestion.".  The
+        //     resulting hostname is the derived hostname to use for
+        //     POSTing metrics and for no other purpose.
         MONITORING(crc -> {
                 if ("POST".equalsIgnoreCase(crc.getMethod())) {
                     URI uri = crc.getUri();
-                    String host = uri.getHost();
-                    if (host != null && host.startsWith("telemetry.")) {
-                        String path = uri.getPath();
-                        if (path != null && path.endsWith("/metrics")) {
-                            return true;
+                    if (uri != null) {
+                        String host = uri.getHost();
+                        if (host != null && host.startsWith("telemetry.")) {
+                            String path = uri.getPath();
+                            return path != null && path.endsWith("/metrics");
                         }
                     }
                 }
@@ -1063,7 +1150,11 @@ public final class OciExtension implements Extension {
             h -> "telemetry-ingestion." + h.substring("telemetry.".length())
             );
 
-        private static final int PRE_AUTHENTICATION_PRIORITY = Priorities.AUTHENTICATION - 500; // 1000 - 500 = 500
+
+        /*
+         * Static fields.
+         */
+
 
         private static final Map<String, EndpointAdjuster> ENDPOINT_ADJUSTERS;
 
@@ -1076,6 +1167,12 @@ public final class OciExtension implements Extension {
             ENDPOINT_ADJUSTERS = Collections.unmodifiableMap(map);
         }
 
+
+        /*
+         * Instance fields.
+         */
+
+
         private final String clientBuilderClassName;
 
         private final String asyncClientBuilderClassName;
@@ -1083,6 +1180,12 @@ public final class OciExtension implements Extension {
         private final Predicate<? super ClientRequestContext> p;
 
         private final UnaryOperator<String> adjuster;
+
+
+        /*
+         * Constructors.
+         */
+
 
         EndpointAdjuster(Predicate<? super ClientRequestContext> p,
                          UnaryOperator<String> adjuster) {
@@ -1095,16 +1198,22 @@ public final class OciExtension implements Extension {
             this.adjuster = adjuster;
         }
 
+
+        /*
+         * Instance methods.
+         */
+
+
         @Override // ClientConfigurator
         public void customizeBuilder(ClientBuilder builder) {
-            builder.register(this, PRE_AUTHENTICATION_PRIORITY);
+            builder.register(this, Map.of(ClientRequestFilter.class, Integer.valueOf(Priorities.AUTHENTICATION - 500)));
         }
 
         @Override // ClientConfigurator
         public void customizeClient(Client client) {
         }
 
-        @Override // Predicate
+        @Override // Predicate<ClientRequestContext>
         public final boolean test(ClientRequestContext crc) {
             return this.p.test(crc);
         }
@@ -1112,7 +1221,13 @@ public final class OciExtension implements Extension {
         @Override // ClientRequestFilter
         public final void filter(ClientRequestContext crc) throws IOException {
             if (this.test(crc)) {
-                this.adjust(crc, crc.getUri().getHost());
+                URI uri = crc.getUri();
+                if (uri != null) {
+                    String hostname = uri.getHost();
+                    if (hostname != null) {
+                        this.adjust(crc, hostname);
+                    }
+                }
             }
         }
 
@@ -1120,48 +1235,16 @@ public final class OciExtension implements Extension {
             crc.setUri(UriBuilder.fromUri(crc.getUri()).host(this.adjuster.apply(hostname)).build());
         }
 
+
+        /*
+         * Static methods.
+         */
+
+
         private static EndpointAdjuster of(String clientBuilderClassName) {
             return ENDPOINT_ADJUSTERS.get(clientBuilderClassName);
         }
 
     }
-
-    // https://docs.oracle.com/en-us/iaas/tools/java/2.18.0/com/oracle/bmc/monitoring/MonitoringAsync.html#postMetricData-com.oracle.bmc.monitoring.requests.PostMetricDataRequest-com.oracle.bmc.responses.AsyncHandler-
-    //
-    // "The endpoints for this [particular POST] operation differ from
-    // other Monitoring operations. Replace the string telemetry with
-    // telemetry-ingestion in the endpoint, as in the following
-    // example:
-    // https://telemetry-ingestion.eu-frankfurt-1.oraclecloud.com"
-    //
-    // Doing this in an application that uses a MonitoringClient or a
-    // MonitoringAsyncClient from several threads, not all of which
-    // are POSTing, is, of course, unsafe.  This filter repairs this
-    // flaw and is installed by OCI-SDK-supported client customization
-    // facilities.
-    //
-    // The documented instructions above are imprecise.  This filter
-    // implements what it seems was meant.
-    //
-    // The intent seems to be to replace "telemetry." with
-    // "telemetry-ingestion.", and even that could run afoul of things
-    // in the future (consider "super-telemetry.oraclecloud.com" where
-    // these rules might not be intended to apply).
-    //
-    // Additionally, we want to guard against a future where the
-    // hostname might *already* have "telemetry-ingestion" in it, so
-    // clearly we cannot simply replace "telemetry", wherever it
-    // occurs, with "telemetry-ingestion".
-    //
-    // So we reinterpret the above to mean: "In the hostname, replace
-    // the first occurrence of the String matching the regex
-    // ^telemetry\. with telemetry-ingestion." (but without using
-    // regexes, because they're overkill in this situation).
-    //
-    // This filter is written defensively with respect to nulls to
-    // ensure maximum non-interference: it gets out of the way at the
-    // first sign of trouble.
-    //
-    // This method is safe for concurrent use by multiple threads.
 
 }
