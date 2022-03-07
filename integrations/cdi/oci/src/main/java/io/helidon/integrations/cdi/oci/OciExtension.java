@@ -36,7 +36,6 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.SortedSet;
@@ -159,7 +158,7 @@ public final class OciExtension implements Extension {
     //       "Example",
     //       "ExampleAsync",
     //       "ExampleAsyncClient",
-    //       "ExampleAsyncClientBuilder", // streaming doesn't use a nested class
+    //       "ExampleAsyncClientBuilder", // com.oracle.bmc.streaming doesn't use a nested Builder class; all other services do
     //       "ExampleAsyncClient$Builder",
     //       "ExampleClient",
     //       "ExampleClientBuilder"...

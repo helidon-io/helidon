@@ -24,17 +24,29 @@ import javax.enterprise.inject.se.SeContainerInitializer;
 import javax.inject.Inject;
 
 import com.oracle.bmc.ConfigFileReader;
-// Arbitrary. If the tests work for this, they should work for all.
-// (Feel free to substitute other OCI imports.)
+// Arbitrary
+//
+// If the tests work for this, they should work for all.  (Feel free
+// to substitute other OCI imports.)
 import com.oracle.bmc.ailanguage.AIServiceLanguage;
 import com.oracle.bmc.ailanguage.AIServiceLanguageAsync;
 import com.oracle.bmc.ailanguage.AIServiceLanguageAsyncClient;
 import com.oracle.bmc.ailanguage.AIServiceLanguageClient;
-// End Arbitrary.
+// End Arbitrary
+//
 // Special
+//
 // Streaming is a strange case where they didn't really do builders
-// the same way as for every other service in the portfolio.
+// the same way as for every other service in the portfolio for no
+// particular reason.
+import com.oracle.bmc.streaming.Stream;
 import com.oracle.bmc.streaming.StreamAdmin;
+import com.oracle.bmc.streaming.StreamAdminClient;
+import com.oracle.bmc.streaming.StreamAsync;
+import com.oracle.bmc.streaming.StreamAsyncClient;
+import com.oracle.bmc.streaming.StreamAsyncClientBuilder;
+import com.oracle.bmc.streaming.StreamClient;
+import com.oracle.bmc.streaming.StreamClientBuilder;
 // End Special
 import io.helidon.microprofile.config.ConfigCdiExtension;
 import org.junit.jupiter.api.AfterAll;
@@ -190,13 +202,21 @@ final class TestSpike {
 
 
         @Inject
-        private ExampleBean(AIServiceLanguage t,
-                            AIServiceLanguageAsync at,
-                            AIServiceLanguageAsyncClient ac,
-                            AIServiceLanguageAsyncClient.Builder acb,
-                            AIServiceLanguageClient c,
-                            AIServiceLanguageClient.Builder cb,
-                            StreamAdmin oddball) {
+        private ExampleBean(AIServiceLanguage serviceInterface,
+                            AIServiceLanguageAsync serviceAsyncInterface,
+                            AIServiceLanguageAsyncClient serviceAsyncClient,
+                            AIServiceLanguageAsyncClient.Builder serviceAsyncClientBuilder,
+                            AIServiceLanguageClient serviceClient,
+                            AIServiceLanguageClient.Builder serviceClientBuilder,
+                            Stream streamingServiceInterface,
+                            StreamAdmin streamingAdminServiceInterface,
+                            StreamAdminClient streamingAdminServiceClient,
+                            StreamAdminClient.Builder streamingAdminServiceClientBuilder,
+                            StreamAsync streamingServiceAsyncInterface,
+                            StreamAsyncClient streamingServiceAsyncClient,
+                            StreamAsyncClientBuilder streamingServiceAsyncClientBuilder,
+                            StreamClient streamingServiceClient,
+                            StreamClientBuilder streamingServiceClientBuilder) {
             super();
         }
 
@@ -206,6 +226,18 @@ final class TestSpike {
 
         private static void customizeBuilder(@Observes AIServiceLanguageClient.Builder cb) {
             customizeBuilderCalled = true;
+        }
+
+        private static void customizeAsyncBuilder(@Observes StreamAsyncClientBuilder streamingAsyncClientBuilder) {
+            // See
+            // https://docs.oracle.com/en-us/iaas/Content/Streaming/Tasks/streaming-quickstart-oci-sdk-for-java.htm#:~:text=Streams%20are%20assigned%20a%20specific%20endpoint%20url
+            streamingAsyncClientBuilder.endpoint("BOGUS");
+        }
+
+        private static void customizeAsyncBuilder(@Observes StreamClientBuilder streamingClientBuilder) {
+            // See
+            // https://docs.oracle.com/en-us/iaas/Content/Streaming/Tasks/streaming-quickstart-oci-sdk-for-java.htm#:~:text=Streams%20are%20assigned%20a%20specific%20endpoint%20url
+            streamingClientBuilder.endpoint("BOGUS");
         }
 
     }
