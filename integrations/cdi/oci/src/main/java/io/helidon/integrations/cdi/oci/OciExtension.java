@@ -26,6 +26,10 @@ import java.lang.reflect.Type;
 import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.security.CodeSource;
+import java.security.ProtectionDomain;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -232,10 +236,10 @@ public final class OciExtension implements Extension {
             if (AbstractAuthenticationDetailsProvider.class.isAssignableFrom(baseClass)
                 || AdpSelectionStrategy.builderClasses().contains(baseClass)) {
                 this.serviceTaqs.add(new ServiceTaqs(qualifiers.toArray(EMPTY_ANNOTATION_ARRAY)));
-            } else {
+            } else if (!isCommonRuntime(baseClass)) {
                 String baseClassName = baseClass.getName();
                 Matcher m = SERVICE_CLIENT_CLASS_NAME_PATTERN.matcher(baseClassName);
-                if (m.matches() && !isCommonRuntime(baseClass)) {
+                if (m.matches()) {
                     Annotation[] qualifiersArray = qualifiers.toArray(EMPTY_ANNOTATION_ARRAY);
                     boolean lenient = this.lenient;
                     // Create types-and-qualifiers for, e.g.:
@@ -501,7 +505,49 @@ public final class OciExtension implements Extension {
     }
 
     private static boolean isCommonRuntime(Class<?> c) {
-        return c.getProtectionDomain().getCodeSource().equals(Service.class.getProtectionDomain().getCodeSource());
+        // See
+        // https://docs.oracle.com/en-us/iaas/tools/java/2.18.0/overview-summary.html#:~:text=Oracle%20Cloud%20Infrastructure%20Common%20Runtime.
+        //
+        // These are the packages and classes that make OCI services
+        // work, not the OCI service clients themselves, so we should
+        // never try to inject them in this extension (auth is treated
+        // specially elsewhere in this class).  There are places where
+        // we need to ensure that, even though their names might seem
+        // to follow the OCI service client naming pattern, they
+        // aren't considered to be OCI service client classes.  This
+        // method helps weed them out.  The javadoc contracts for
+        // Class#getProtectionDomain() and
+        // ProtectionDomain#getCodeSource() do not indicate that null
+        // can never be a return value, so we write this defensively.
+        // Additionally, although CodeSource#equals(Object) is
+        // defined, it compares URLs directly, which involves DNS
+        // lookups (!) so we compare the URI representations instead.
+        ProtectionDomain commonRuntimeProtectionDomain = Service.class.getProtectionDomain();
+        ProtectionDomain classProtectionDomain = c.getProtectionDomain();
+        if (commonRuntimeProtectionDomain == null) {
+            return classProtectionDomain == null;
+        } else if (classProtectionDomain == null) {
+            return false;
+        }
+        CodeSource commonRuntimeCodeSource = commonRuntimeProtectionDomain.getCodeSource();
+        CodeSource classCodeSource = classProtectionDomain.getCodeSource();
+        if (commonRuntimeCodeSource == null) {
+            return classCodeSource == null;
+        } else if (classCodeSource == null) {
+            return false;
+        }
+        URL commonRuntimeLocation = commonRuntimeCodeSource.getLocation();
+        URL classLocation = classCodeSource.getLocation();
+        if (commonRuntimeLocation == null) {
+            return classLocation == null;
+        } else if (classLocation == null) {
+            return false;
+        }
+        try {
+            return commonRuntimeLocation.toURI().equals(classLocation.toURI());
+        } catch (URISyntaxException uriSyntaxException) {
+            throw new AssertionError(uriSyntaxException.getMessage(), uriSyntaxException);
+        }
     }
 
     private static Class<?> toClass(ProcessInjectionPoint<?, ?> event, Class<?> referenceClass, String name, boolean lenient) {
