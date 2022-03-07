@@ -585,11 +585,7 @@ public final class OciExtension implements Extension {
             if (qualifiers == null) {
                 this.qualifiers = EMPTY_ANNOTATION_ARRAY;
             } else {
-                // NOTE: we do not clone() qualifiers because this is
-                // a private class and we know what we're doing and we
-                // avoid a lot of copying this way. Don't modify the
-                // incoming qualifiers array.
-                this.qualifiers = qualifiers;
+                this.qualifiers = qualifiers.clone();
             }
             this.hashCode = computeHashCode(this.type, this.qualifiers);
         }
@@ -616,7 +612,7 @@ public final class OciExtension implements Extension {
         }
 
         private Annotation[] qualifiers() {
-            return this.qualifiers; // note: uncloned because this is a private class and we know what we're doing
+            return this.qualifiers.clone();
         }
 
         private Class<?> toClass() {
@@ -827,8 +823,8 @@ public final class OciExtension implements Extension {
 
         private int computeHashCode() {
             int hashCode = 17;
-            Annotation[] qualifiers = this.qualifiers();
-            int c = qualifiers == null ? 0 : Arrays.hashCode(qualifiers);
+            Annotation[] qualifiersArray = this.qualifiers();
+            int c = qualifiersArray == null ? 0 : Arrays.hashCode(qualifiersArray);
             hashCode = 37 * hashCode + c;
             TypeAndQualifiers x = this.serviceInterface();
             c = x == null ? 0 : x.hashCode();
@@ -895,33 +891,33 @@ public final class OciExtension implements Extension {
         CONFIG(SimpleAuthenticationDetailsProvider.class,
                SimpleAuthenticationDetailsProviderBuilder.class) {
             @Override
-            boolean isAvailable(Instance<? super Object> instance, Config config, Annotation[] qualifiers) {
+            boolean isAvailable(Instance<? super Object> instance, Config config, Annotation[] qualifiersArray) {
                 return false; // Not yet fully implemented; hence the false return
             }
 
             @Override
             AbstractAuthenticationDetailsProvider produce(Instance<? super Object> instance,
                                                           Config config,
-                                                          Annotation[] qualifiers) {
-                return instance.select(SimpleAuthenticationDetailsProviderBuilder.class, qualifiers).get().build();
+                                                          Annotation[] qualifiersArray) {
+                return instance.select(SimpleAuthenticationDetailsProviderBuilder.class, qualifiersArray).get().build();
             }
 
             @Override
             SimpleAuthenticationDetailsProviderBuilder produceBuilder(Instance<? super Object> instance,
                                                                       Config config,
-                                                                      Annotation[] qualifiers) {
+                                                                      Annotation[] qualifiersArray) {
                 SimpleAuthenticationDetailsProviderBuilder builder = SimpleAuthenticationDetailsProvider.builder();
-                OciExtension.fire(instance, SimpleAuthenticationDetailsProviderBuilder.class, qualifiers, builder);
+                OciExtension.fire(instance, SimpleAuthenticationDetailsProviderBuilder.class, qualifiersArray, builder);
                 return builder;
             }
         },
 
         OCI_CONFIG_FILE(ConfigFileAuthenticationDetailsProvider.class) {
             @Override
-            boolean isAvailable(Instance<? super Object> instance, Config config, Annotation[] qualifiers) {
-                if (super.isAvailable(instance, config, qualifiers)) {
+            boolean isAvailable(Instance<? super Object> instance, Config config, Annotation[] qualifiersArray) {
+                if (super.isAvailable(instance, config, qualifiersArray)) {
                     try {
-                        this.select(instance, config, qualifiers);
+                        this.select(instance, config, qualifiersArray);
                     } catch (CreationException creationException) {
                         if (creationException.getCause() instanceof FileNotFoundException) {
                             return false;
@@ -934,19 +930,19 @@ public final class OciExtension implements Extension {
             }
 
             @Override
-            Object produceBuilder(Instance<? super Object> instance, Annotation[] qualifiers) {
+            Object produceBuilder(Instance<? super Object> instance, Annotation[] qualifiersArray) {
                 throw new UnsupportedOperationException();
             }
 
             @Override
-            Object produceBuilder(Instance<? super Object> instance, Config config, Annotation[] qualifiers) {
+            Object produceBuilder(Instance<? super Object> instance, Config config, Annotation[] qualifiersArray) {
                 throw new UnsupportedOperationException();
             }
 
             @Override
             AbstractAuthenticationDetailsProvider produce(Instance<? super Object> instance,
                                                           Config config,
-                                                          Annotation[] qualifiers) {
+                                                          Annotation[] qualifiersArray) {
                 return
                     this.produce(config.getOptionalValue("oci.config.path", String.class).orElse(null),
                                  config.getOptionalValue("oci.auth.profile", String.class).orElse("DEFAULT"));
@@ -979,8 +975,8 @@ public final class OciExtension implements Extension {
         INSTANCE_PRINCIPALS(InstancePrincipalsAuthenticationDetailsProvider.class,
                             InstancePrincipalsAuthenticationDetailsProviderBuilder.class) {
             @Override
-            boolean isAvailable(Instance<? super Object> instance, Config config, Annotation[] qualifiers) {
-                if (super.isAvailable(instance, config, qualifiers)) {
+            boolean isAvailable(Instance<? super Object> instance, Config config, Annotation[] qualifiersArray) {
+                if (super.isAvailable(instance, config, qualifiersArray)) {
                     String ociImdsHostname = config.getOptionalValue("oci.imds.hostname", String.class).orElse("169.254.169.254");
                     int ociImdsTimeoutMillis =
                         config.getOptionalValue("oci.imds.timeout.milliseconds", Integer.class).orElse(Integer.valueOf(500));
@@ -997,66 +993,68 @@ public final class OciExtension implements Extension {
 
             @Override
             InstancePrincipalsAuthenticationDetailsProviderBuilder produceBuilder(Instance<? super Object> instance,
-                                                                                  Annotation[] qualifiers) {
-                return this.produceBuilder(instance, null, qualifiers); // no need to find Config; it's not used
+                                                                                  Annotation[] qualifiersArray) {
+                return this.produceBuilder(instance, null, qualifiersArray); // no need to find Config; it's not used
             }
 
             @Override
             InstancePrincipalsAuthenticationDetailsProviderBuilder produceBuilder(Instance<? super Object> instance,
                                                                                   Config config,
-                                                                                  Annotation[] qualifiers) {
+                                                                                  Annotation[] qualifiersArray) {
                 InstancePrincipalsAuthenticationDetailsProviderBuilder builder =
                     InstancePrincipalsAuthenticationDetailsProvider.builder();
-                OciExtension.fire(instance, InstancePrincipalsAuthenticationDetailsProviderBuilder.class, qualifiers, builder);
+                fire(instance, InstancePrincipalsAuthenticationDetailsProviderBuilder.class, qualifiersArray, builder);
                 return builder;
             }
 
             @Override
             AbstractAuthenticationDetailsProvider produce(Instance<? super Object> instance,
                                                           Config config,
-                                                          Annotation[] qualifiers) {
-                return instance.select(InstancePrincipalsAuthenticationDetailsProviderBuilder.class, qualifiers).get().build();
+                                                          Annotation[] qualifiersArray) {
+                return
+                    instance.select(InstancePrincipalsAuthenticationDetailsProviderBuilder.class, qualifiersArray).get().build();
             }
         },
 
         RESOURCE_PRINCIPAL(ResourcePrincipalAuthenticationDetailsProvider.class,
                            ResourcePrincipalAuthenticationDetailsProviderBuilder.class) {
             @Override
-            boolean isAvailable(Instance<? super Object> instance, Config config, Annotation[] qualifiers) {
+            boolean isAvailable(Instance<? super Object> instance, Config config, Annotation[] qualifiersArray) {
                 return
-                    super.isAvailable(instance, config, qualifiers)
+                    super.isAvailable(instance, config, qualifiersArray)
                     // https://github.com/oracle/oci-java-sdk/blob/v2.15.0/bmc-common/src/main/java/com/oracle/bmc/auth/ResourcePrincipalAuthenticationDetailsProvider.java#L246-L251
                     && System.getenv("OCI_RESOURCE_PRINCIPAL_VERSION") != null;
             }
 
             @Override
             ResourcePrincipalAuthenticationDetailsProviderBuilder produceBuilder(Instance<? super Object> instance,
-                                                                                 Annotation[] qualifiers) {
-                return this.produceBuilder(instance, null, qualifiers); // no need to find Config; it's not used
+                                                                                 Annotation[] qualifiersArray) {
+                return this.produceBuilder(instance, null, qualifiersArray); // no need to find Config; it's not used
             }
 
             @Override
             ResourcePrincipalAuthenticationDetailsProviderBuilder produceBuilder(Instance<? super Object> instance,
                                                                                  Config config,
-                                                                                 Annotation[] qualifiers) {
+                                                                                 Annotation[] qualifiersArray) {
                 ResourcePrincipalAuthenticationDetailsProviderBuilder builder =
                     ResourcePrincipalAuthenticationDetailsProvider.builder();
-                OciExtension.fire(instance, ResourcePrincipalAuthenticationDetailsProviderBuilder.class, qualifiers, builder);
+                fire(instance, ResourcePrincipalAuthenticationDetailsProviderBuilder.class, qualifiersArray, builder);
                 return builder;
             }
 
             @Override
             AbstractAuthenticationDetailsProvider produce(Instance<? super Object> instance,
                                                           Config config,
-                                                          Annotation[] qualifiers) {
-                return instance.select(ResourcePrincipalAuthenticationDetailsProviderBuilder.class, qualifiers).get().build();
+                                                          Annotation[] qualifiersArray) {
+                return
+                    instance.select(ResourcePrincipalAuthenticationDetailsProviderBuilder.class, qualifiersArray).get().build();
             }
         },
 
         AUTO(AbstractAuthenticationDetailsProvider.class, true) {
 
             @Override
-            Object produceBuilder(Instance<? super Object> instance, Config config, Annotation[] qualifiers) {
+            Object produceBuilder(Instance<? super Object> instance, Config config, Annotation[] qualifiersArray) {
                 throw new UnsupportedOperationException();
             }
 
@@ -1064,7 +1062,7 @@ public final class OciExtension implements Extension {
             @SuppressWarnings("fallthrough")
             AbstractAuthenticationDetailsProvider produce(Instance<? super Object> instance,
                                                           Config config,
-                                                          Annotation[] qualifiers) {
+                                                          Annotation[] qualifiersArray) {
                 Collection<? extends AdpSelectionStrategy> strategies =
                     concreteStrategies(config.getOptionalValue("oci.config.strategy", String[].class).orElse(null));
                 switch (strategies.size()) {
@@ -1076,15 +1074,15 @@ public final class OciExtension implements Extension {
                         // No availability check on purpose; there's
                         // only one strategy that is not itself AUTO
                         // and no fallback or magic.
-                        return strategy.select(instance, config, qualifiers);
+                        return strategy.select(instance, config, qualifiersArray);
                     }
                     // (Edge case.)
                     strategies = concreteStrategies();
                     // fall-through
                 default:
                     for (AdpSelectionStrategy s : strategies) {
-                        if (s != this && s.isAvailable(instance, config, qualifiers)) {
-                            return s.select(instance, config, qualifiers);
+                        if (s != this && s.isAvailable(instance, config, qualifiersArray)) {
+                            return s.select(instance, config, qualifiersArray);
                         }
                     }
                     break;
@@ -1173,29 +1171,29 @@ public final class OciExtension implements Extension {
             return this.isAbstract;
         }
 
-        boolean isAvailable(Instance<? super Object> instance, Config config, Annotation[] qualifiers) {
+        boolean isAvailable(Instance<? super Object> instance, Config config, Annotation[] qualifiersArray) {
             return !this.isAbstract();
         }
 
         AbstractAuthenticationDetailsProvider select(Instance<? super Object> instance,
                                                      Config config,
-                                                     Annotation[] qualifiers) {
-            return instance.select(this.type, qualifiers).get();
+                                                     Annotation[] qualifiersArray) {
+            return instance.select(this.type, qualifiersArray).get();
         }
 
-        Object produceBuilder(Instance<? super Object> instance, Annotation[] qualifiers) {
-            return this.produceBuilder(instance, instance.select(Config.class).get(), qualifiers);
+        Object produceBuilder(Instance<? super Object> instance, Annotation[] qualifiersArray) {
+            return this.produceBuilder(instance, instance.select(Config.class).get(), qualifiersArray);
         }
 
-        abstract Object produceBuilder(Instance<? super Object> instance, Config config, Annotation[] qualifiers);
+        abstract Object produceBuilder(Instance<? super Object> instance, Config config, Annotation[] qualifiersArray);
 
-        AbstractAuthenticationDetailsProvider produce(Instance<? super Object> instance, Annotation[] qualifiers) {
-            return this.produce(instance, instance.select(Config.class).get(), qualifiers);
+        AbstractAuthenticationDetailsProvider produce(Instance<? super Object> instance, Annotation[] qualifiersArray) {
+            return this.produce(instance, instance.select(Config.class).get(), qualifiersArray);
         }
 
         abstract AbstractAuthenticationDetailsProvider produce(Instance<? super Object> instance,
                                                                Config config,
-                                                               Annotation[] qualifiers);
+                                                               Annotation[] qualifiersArray);
 
 
         /*
