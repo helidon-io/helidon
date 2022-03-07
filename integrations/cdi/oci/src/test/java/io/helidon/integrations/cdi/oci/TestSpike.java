@@ -19,6 +19,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.InetAddress;
 import javax.enterprise.event.Observes;
+import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.se.SeContainer;
 import javax.enterprise.inject.se.SeContainerInitializer;
 import javax.inject.Inject;
@@ -208,6 +209,7 @@ final class TestSpike {
                             AIServiceLanguageAsyncClient.Builder serviceAsyncClientBuilder,
                             AIServiceLanguageClient serviceClient,
                             AIServiceLanguageClient.Builder serviceClientBuilder,
+                            Instance<com.oracle.bmc.circuitbreaker.JaxRsCircuitBreaker> unresolvedJaxRsCircuitBreakerInstance,
                             Stream streamingServiceInterface,
                             StreamAdmin streamingAdminServiceInterface,
                             StreamAdminClient streamingAdminServiceClient,
@@ -218,6 +220,7 @@ final class TestSpike {
                             StreamClient streamingServiceClient,
                             StreamClientBuilder streamingServiceClientBuilder) {
             super();
+            assertTrue(unresolvedJaxRsCircuitBreakerInstance.isUnsatisfied());
         }
 
         private static void customizeAsyncBuilder(@Observes AIServiceLanguageAsyncClient.Builder acb) {

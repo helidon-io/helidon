@@ -34,12 +34,9 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import java.util.logging.Level;
@@ -175,25 +172,6 @@ public final class OciExtension implements Extension {
                         + ".+?)(?:Async)?(?:Client(?:\\$?Builder)?)?" // (3)
                         + "$"); // (4)
 
-    // OCI Java SDK subPackage fragments identifying subpackages whose
-    // classes and interfaces do not follow the service client pattern
-    // described above, i.e. that are more foundational.
-    private static final SortedSet<String> SERVICE_CLIENT_PACKAGE_FRAGMENT_DENY_SET =
-        Collections.unmodifiableSortedSet(new TreeSet<>(List.of("auth",
-                                                                "circuitbreaker",
-                                                                "common",
-                                                                "encryption",
-                                                                "helper",
-                                                                "http",
-                                                                "internal",
-                                                                "io",
-                                                                "model",
-                                                                "requests",
-                                                                "responses",
-                                                                "retrier",
-                                                                "util",
-                                                                "waiter")));
-
     private static final TypeLiteral<Event<Object>> EVENT_OBJECT_TYPE_LITERAL = new TypeLiteral<Event<Object>>() {};
 
     private static final Lookup PUBLIC_LOOKUP = MethodHandles.publicLookup();
@@ -257,7 +235,7 @@ public final class OciExtension implements Extension {
             } else {
                 String baseClassName = baseClass.getName();
                 Matcher m = SERVICE_CLIENT_CLASS_NAME_PATTERN.matcher(baseClassName);
-                if (m.matches() && !SERVICE_CLIENT_PACKAGE_FRAGMENT_DENY_SET.contains(m.group(2))) {
+                if (m.matches() && !isCommonRuntime(baseClass)) {
                     Annotation[] qualifiersArray = qualifiers.toArray(EMPTY_ANNOTATION_ARRAY);
                     boolean lenient = this.lenient;
                     // Create types-and-qualifiers for, e.g.:
@@ -269,29 +247,31 @@ public final class OciExtension implements Extension {
                     //   ....example.ExampleClient$Builder
                     String serviceInterface = m.group(1);
                     Class<?> serviceInterfaceClass = toClass(event, baseClass, serviceInterface, lenient);
-                    String serviceAsyncInterface = serviceInterface + "Async";
-                    Class<?> serviceAsyncInterfaceClass = toClass(event, baseClass, serviceAsyncInterface, lenient);
-                    String serviceAsyncClient = serviceAsyncInterface + "Client";
-                    Class<?> serviceAsyncClientClass = toClass(event, baseClass, serviceAsyncClient, lenient);
-                    Class<?> serviceAsyncClientBuilderClass =
-                        toClass(event, baseClass, serviceAsyncClient + "$Builder", true);
-                    if (serviceAsyncClientBuilderClass == null) {
-                        serviceAsyncClientBuilderClass = toClass(event, baseClass, serviceAsyncClient + "Builder", lenient);
+                    if (serviceInterfaceClass != null && serviceInterfaceClass.isInterface()) {
+                        String serviceAsyncInterface = serviceInterface + "Async";
+                        Class<?> serviceAsyncInterfaceClass = toClass(event, baseClass, serviceAsyncInterface, lenient);
+                        String serviceAsyncClient = serviceAsyncInterface + "Client";
+                        Class<?> serviceAsyncClientClass = toClass(event, baseClass, serviceAsyncClient, lenient);
+                        Class<?> serviceAsyncClientBuilderClass =
+                            toClass(event, baseClass, serviceAsyncClient + "$Builder", true);
+                        if (serviceAsyncClientBuilderClass == null) {
+                            serviceAsyncClientBuilderClass = toClass(event, baseClass, serviceAsyncClient + "Builder", lenient);
+                        }
+                        String serviceClient = serviceInterface + "Client";
+                        Class<?> serviceClientClass = toClass(event, baseClass, serviceClient, lenient);
+                        Class<?> serviceClientBuilderClass = toClass(event, baseClass, serviceClient + "$Builder", true);
+                        if (serviceClientBuilderClass == null) {
+                            serviceClientBuilderClass = toClass(event, baseClass, serviceClient + "Builder", lenient);
+                        }
+                        this.serviceTaqs.add(new ServiceTaqs(qualifiersArray));
+                        this.serviceTaqs.add(new ServiceTaqs(qualifiersArray,
+                                                             serviceInterfaceClass,
+                                                             serviceClientClass,
+                                                             serviceClientBuilderClass,
+                                                             serviceAsyncInterfaceClass,
+                                                             serviceAsyncClientClass,
+                                                             serviceAsyncClientBuilderClass));
                     }
-                    String serviceClient = serviceInterface + "Client";
-                    Class<?> serviceClientClass = toClass(event, baseClass, serviceClient, lenient);
-                    Class<?> serviceClientBuilderClass = toClass(event, baseClass, serviceClient + "$Builder", true);
-                    if (serviceClientBuilderClass == null) {
-                        serviceClientBuilderClass = toClass(event, baseClass, serviceClient + "Builder", lenient);
-                    }
-                    this.serviceTaqs.add(new ServiceTaqs(qualifiersArray));
-                    this.serviceTaqs.add(new ServiceTaqs(qualifiersArray,
-                                                         serviceInterfaceClass,
-                                                         serviceClientClass,
-                                                         serviceClientBuilderClass,
-                                                         serviceAsyncInterfaceClass,
-                                                         serviceAsyncClientClass,
-                                                         serviceAsyncClientBuilderClass));
                 }
             }
         }
@@ -346,7 +326,7 @@ public final class OciExtension implements Extension {
             Type builderType = s.builderType();
             if (builderType != null) {
                 TypeAndQualifiers builderTaq = new TypeAndQualifiers(builderType, qualifiersArray);
-                if (isUnresolved(bm, builderTaq)) {
+                if (isUnsatisfied(bm, builderTaq)) {
                     event.addBean()
                         .types(builderType)
                         .qualifiers(qualifiers)
@@ -356,7 +336,7 @@ public final class OciExtension implements Extension {
             }
             Type type = s.type();
             TypeAndQualifiers taq = new TypeAndQualifiers(type, qualifiersArray);
-            if (isUnresolved(bm, taq)) {
+            if (isUnsatisfied(bm, taq)) {
                 event.addBean()
                     .types(type)
                     .qualifiers(qualifiers)
@@ -382,7 +362,7 @@ public final class OciExtension implements Extension {
                                                        BeanManager bm,
                                                        TypeAndQualifiers serviceClientBuilder,
                                                        Class<?> serviceClientClass) {
-        if (serviceClientBuilder != null && isUnresolved(bm, serviceClientBuilder)) {
+        if (serviceClientBuilder != null && isUnsatisfied(bm, serviceClientBuilder)) {
             Class<?> serviceClientBuilderClass = serviceClientBuilder.toClass();
             MethodHandle builderMethod;
             try {
@@ -500,11 +480,11 @@ public final class OciExtension implements Extension {
         instance.select(EVENT_OBJECT_TYPE_LITERAL).get().select(type, qualifiers).fire(type.cast(payload));
     }
 
-    private static boolean isUnresolved(BeanManager bm, TypeAndQualifiers taq) {
-        return isUnresolved(bm, taq.type(), taq.qualifiers());
+    private static boolean isUnsatisfied(BeanManager bm, TypeAndQualifiers taq) {
+        return isUnsatisfied(bm, taq.type(), taq.qualifiers());
     }
 
-    private static boolean isUnresolved(BeanManager bm, Type type) {
+    private static boolean isUnsatisfied(BeanManager bm, Type type) {
         try {
             return bm.resolve(bm.getBeans(type)) == null;
         } catch (AmbiguousResolutionException ambiguousResolutionException) {
@@ -512,12 +492,16 @@ public final class OciExtension implements Extension {
         }
     }
 
-    private static boolean isUnresolved(BeanManager bm, Type type, Annotation[] qualifiers) {
+    private static boolean isUnsatisfied(BeanManager bm, Type type, Annotation[] qualifiers) {
         try {
             return bm.resolve(bm.getBeans(type, qualifiers)) == null;
         } catch (AmbiguousResolutionException ambiguousResolutionException) {
             return false;
         }
+    }
+
+    private static boolean isCommonRuntime(Class<?> c) {
+        return c.getProtectionDomain().getCodeSource().equals(Service.class.getProtectionDomain().getCodeSource());
     }
 
     private static Class<?> toClass(ProcessInjectionPoint<?, ?> event, Class<?> referenceClass, String name, boolean lenient) {
