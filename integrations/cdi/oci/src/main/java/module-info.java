@@ -27,6 +27,7 @@
 module io.helidon.integrations.cdi.oci {
 
     requires java.annotation;
+    requires java.logging;
     requires java.ws.rs;
     requires transitive jakarta.enterprise.cdi.api;
     requires jakarta.inject.api;

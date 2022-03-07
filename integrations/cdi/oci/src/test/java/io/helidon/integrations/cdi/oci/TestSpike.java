@@ -31,6 +31,11 @@ import com.oracle.bmc.ailanguage.AIServiceLanguageAsync;
 import com.oracle.bmc.ailanguage.AIServiceLanguageAsyncClient;
 import com.oracle.bmc.ailanguage.AIServiceLanguageClient;
 // End Arbitrary.
+// Special
+// Streaming is a strange case where they didn't really do builders
+// the same way as for every other service in the portfolio.
+import com.oracle.bmc.streaming.StreamAdmin;
+// End Special
 import io.helidon.microprofile.config.ConfigCdiExtension;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -190,7 +195,8 @@ final class TestSpike {
                             AIServiceLanguageAsyncClient ac,
                             AIServiceLanguageAsyncClient.Builder acb,
                             AIServiceLanguageClient c,
-                            AIServiceLanguageClient.Builder cb) {
+                            AIServiceLanguageClient.Builder cb,
+                            StreamAdmin oddball) {
             super();
         }
 
