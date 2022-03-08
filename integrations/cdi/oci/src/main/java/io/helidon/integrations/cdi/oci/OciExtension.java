@@ -585,7 +585,7 @@ public final class OciExtension implements Extension {
      */
     private static boolean isVetoed(Class<?> c) {
         // See
-        // https://docs.oracle.com/en-us/iaas/tools/java/2.18.0/overview-summary.html#:~:text=Oracle%20Cloud%20Infrastructure%20Common%20Runtime.
+        // https://docs.oracle.com/en-us/iaas/tools/java/latest/overview-summary.html#:~:text=Oracle%20Cloud%20Infrastructure%20Common%20Runtime.
         // None of these packages contains OCI service clients or
         // service client interfaces or service client builders. There
         // are other packages (com.oracle.bmc.encryption, as an
@@ -1004,6 +1004,8 @@ public final class OciExtension implements Extension {
                SimpleAuthenticationDetailsProviderBuilder.class) {
             @Override
             boolean isAvailable(Instance<? super Object> instance, Config config, Annotation[] qualifiersArray) {
+                // See
+                // https://docs.oracle.com/en-us/iaas/tools/java/latest/com/oracle/bmc/auth/SimpleAuthenticationDetailsProvider.SimpleAuthenticationDetailsProviderBuilder.html#method.summary
                 return
                     config.getOptionalValue("oci.config.fingerprint", String.class).isPresent()
                     && (config.getOptionalValue("oci.config.passPhrase", String.class).isPresent()
@@ -1027,6 +1029,8 @@ public final class OciExtension implements Extension {
                                                                       Config config,
                                                                       Annotation[] qualifiersArray) {
                 SimpleAuthenticationDetailsProviderBuilder builder = SimpleAuthenticationDetailsProvider.builder();
+                // See
+                // https://docs.oracle.com/en-us/iaas/tools/java/latest/com/oracle/bmc/auth/SimpleAuthenticationDetailsProvider.SimpleAuthenticationDetailsProviderBuilder.html#method.summary
                 config.getOptionalValue("oci.config.fingerprint", String.class).ifPresent(builder::fingerprint);
                 config.getOptionalValue("oci.config.passPhrase", String.class).ifPresent(builder::passPhrase);
                 config.getOptionalValue("oci.config.passphraseCharacters", char[].class).ifPresent(builder::passphraseCharacters);
@@ -1106,7 +1110,7 @@ public final class OciExtension implements Extension {
                     // does not throw a FileNotFoundException in this case (as
                     // it probably should).  We have no choice but to parse
                     // the error message.  See
-                    // https://github.com/oracle/oci-java-sdk/blob/v2.18.0/bmc-common/src/main/java/com/oracle/bmc/ConfigFileReader.java#L94-L98.
+                    // https://github.com/oracle/oci-java-sdk/blob/vlatest/bmc-common/src/main/java/com/oracle/bmc/ConfigFileReader.java#L94-L98.
                     String message = ioException.getMessage();
                     if (message != null
                         && message.startsWith("Can't load the default config from ")
@@ -1426,7 +1430,7 @@ public final class OciExtension implements Extension {
 
 
         // See
-        // https://docs.oracle.com/en-us/iaas/tools/java/2.18.0/com/oracle/bmc/monitoring/MonitoringAsync.html#postMetricData-com.oracle.bmc.monitoring.requests.PostMetricDataRequest-com.oracle.bmc.responses.AsyncHandler-:
+        // https://docs.oracle.com/en-us/iaas/tools/java/latest/com/oracle/bmc/monitoring/MonitoringAsync.html#postMetricData-com.oracle.bmc.monitoring.requests.PostMetricDataRequest-com.oracle.bmc.responses.AsyncHandler-:
         //
         //   The endpoints for this [particular POST] operation differ
         //   from other Monitoring operations. Replace the string
