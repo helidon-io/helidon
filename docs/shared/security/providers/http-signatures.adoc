@@ -110,6 +110,7 @@ The following table shows all configuration options of the provider and their de
 |`inbound.keys.*.hmac.secret` |{nbsp} |Secret shared by the service that signed the request and this service for `hmac-sha256` algorithm
 |`inbound.keys.*.public-key` |{nbsp} |Public key configuration, implies `rsa-sha256` algorithm
 |`inbound.keys.*.public-key.keystore` |{nbsp} |Keystore configuration for public key - full configuration as defined by `KeyStore` class
+|`outbound.*.signature.header` | `[SIGNATURE,AUTHORIZATION,CUSTOM]` |Headers supported by HTTP Signature. `CUSTOM` is provided using `io.helidon.security.util.TokenHandler`
 |`outbound` |{nbsp} |A list of outbound configurations
 |`outbound.*.name` |{nbsp} |Required name of outbound configuration
 |`outbound.*.username` |{nbsp} |Optional username used for outbound security; if not provided, current identity is propagated
