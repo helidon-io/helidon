@@ -26,6 +26,7 @@
 @SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.integrations.cdi.oci {
 
+  requires com.google.common; // OCI dependency
     requires java.annotation;
     requires java.logging;
     requires java.ws.rs;

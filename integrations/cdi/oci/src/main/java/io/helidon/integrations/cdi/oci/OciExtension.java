@@ -15,8 +15,12 @@
  */
 package io.helidon.integrations.cdi.oci;
 
+import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.lang.annotation.Annotation;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -28,6 +32,9 @@ import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.CodeSource;
 import java.security.ProtectionDomain;
 import java.util.ArrayList;
@@ -71,6 +78,7 @@ import javax.ws.rs.client.ClientRequestContext;
 import javax.ws.rs.client.ClientRequestFilter;
 import javax.ws.rs.core.UriBuilder;
 
+import com.oracle.bmc.Region;
 import com.oracle.bmc.Service;
 import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider;
 import com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider;
@@ -308,7 +316,6 @@ public final class OciExtension implements Extension {
                     // AbstractAuthenticationDetailsProvider (or a
                     // relevant builder).
                     this.serviceTaqs.add(new ServiceTaqs(qualifiersArray));
-
                     this.serviceTaqs.add(new ServiceTaqs(qualifiersArray,
                                                          serviceInterfaceClass,
                                                          serviceClientClass,
@@ -586,7 +593,8 @@ public final class OciExtension implements Extension {
         // This method does not currently veto all of them, nor is it
         // clear that it ever could.  The strategy employed here,
         // however, vetoes quite a large number of them correctly and
-        // very efficiently.
+        // very efficiently before more sophisticated tests are
+        // employed.
         //
         // "Veto" in this context means only that this extension will
         // not further process the class in question, not that it is
@@ -996,14 +1004,32 @@ public final class OciExtension implements Extension {
                SimpleAuthenticationDetailsProviderBuilder.class) {
             @Override
             boolean isAvailable(Instance<? super Object> instance, Config config, Annotation[] qualifiersArray) {
-                return false; // Not yet fully implemented; hence the false return
+                return
+                    config.getOptionalValue("oci.config.fingerprint", String.class).isPresent()
+                    && (config.getOptionalValue("oci.config.passPhrase", String.class).isPresent()
+                        || config.getOptionalValue("oci.config.passPhraseCharacters", char[].class).isPresent())
+                    && (config.getOptionalValue("oci.config.privateKey", String.class).isPresent()
+                        || config.getOptionalValue("oci.config.privateKeyPath", Path.class).isPresent())
+                    && config.getOptionalValue("oci.config.region", Region.class).isPresent()
+                    && config.getOptionalValue("oci.config.tenantId", String.class).isPresent()
+                    && config.getOptionalValue("oci.config.userId", String.class).isPresent();
             }
 
             @Override
             AbstractAuthenticationDetailsProvider produce(Instance<? super Object> instance,
                                                           Config config,
                                                           Annotation[] qualifiersArray) {
-                return instance.select(SimpleAuthenticationDetailsProviderBuilder.class, qualifiersArray).get().build();
+                SimpleAuthenticationDetailsProviderBuilder builder =
+                    instance.select(SimpleAuthenticationDetailsProviderBuilder.class, qualifiersArray).get();
+                config.getOptionalValue("oci.config.fingerprint", String.class).ifPresent(builder::fingerprint);
+                config.getOptionalValue("oci.config.passPhrase", String.class).ifPresent(builder::passPhrase);
+                config.getOptionalValue("oci.config.passphraseCharacters", char[].class).ifPresent(builder::passphraseCharacters);
+                config.getOptionalValue("oci.config.privateKey", String.class).ifPresent(pk -> privateKey(builder, pk));
+                config.getOptionalValue("oci.config.privateKeyPath", Path.class).ifPresent(p -> privateKeyPath(builder, p));
+                config.getOptionalValue("oci.config.region", Region.class).ifPresent(builder::region);
+                config.getOptionalValue("oci.config.tenantId", String.class).ifPresent(builder::tenantId);
+                config.getOptionalValue("oci.config.userId", String.class).ifPresent(builder::userId);
+                return builder.build();
             }
 
             @Override
@@ -1013,6 +1039,22 @@ public final class OciExtension implements Extension {
                 SimpleAuthenticationDetailsProviderBuilder builder = SimpleAuthenticationDetailsProvider.builder();
                 OciExtension.fire(instance, SimpleAuthenticationDetailsProviderBuilder.class, qualifiersArray, builder);
                 return builder;
+            }
+
+            private com.google.common.base.Supplier<InputStream> privateKey(SimpleAuthenticationDetailsProviderBuilder builder,
+                                                                            String privateKey) {
+                return () -> new ByteArrayInputStream(privateKey.getBytes(StandardCharsets.UTF_8));
+            }
+
+            private com.google.common.base.Supplier<InputStream> privateKeyPath(SimpleAuthenticationDetailsProviderBuilder builder,
+                                                                                Path privateKey) {
+                return () -> {
+                    try {
+                        return new BufferedInputStream(Files.newInputStream(privateKey));
+                    } catch (IOException ioException) {
+                        throw new UncheckedIOException(ioException.getMessage(), ioException);
+                    }
+                };
             }
         },
 
