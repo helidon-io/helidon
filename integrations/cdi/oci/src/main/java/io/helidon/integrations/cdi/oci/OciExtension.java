@@ -1028,61 +1028,47 @@ public final class OciExtension implements Extension {
             @Override
             @SuppressWarnings("checkstyle:LineLength")
             SimpleAuthenticationDetailsProviderBuilder produceBuilder(Instance<? super Object> instance,
-                                                                      Config config,
+                                                                      Config c,
                                                                       Annotation[] qualifiersArray) {
-                SimpleAuthenticationDetailsProviderBuilder builder = SimpleAuthenticationDetailsProvider.builder();
+                SimpleAuthenticationDetailsProviderBuilder b = SimpleAuthenticationDetailsProvider.builder();
                 // See
                 // https://docs.oracle.com/en-us/iaas/tools/java/latest/com/oracle/bmc/auth/SimpleAuthenticationDetailsProvider.SimpleAuthenticationDetailsProviderBuilder.html#method.summary
                 //
-                // Fallback logic is for backwards compatibility with
-                // a prior OCI-related extension.
-                config.getOptionalValue("oci.config.fingerprint", String.class)
-                    .ifPresentOrElse(builder::fingerprint,
-                                     () -> config.getOptionalValue("oci.auth.fingerprint", String.class)
-                                     .ifPresent(builder::fingerprint));
-                config.getOptionalValue("oci.config.passPhrase", String.class)
-                    .ifPresentOrElse(builder::passPhrase,
-                                     () -> config.getOptionalValue("oci.config.passPhraseCharacters", char[].class)
-                                     .ifPresentOrElse(builder::passphraseCharacters,
-                                                      () -> config.getOptionalValue("oci.auth.passPhraseCharacters",
-                                                                                    String.class)
-                                                      .ifPresent(builder::passPhrase)));
-                config.getOptionalValue("oci.config.privateKey", String.class)
-                    .ifPresentOrElse(pk -> privateKey(builder, pk),
-                                     () -> config.getOptionalValue("oci.auth.privateKey", String.class)
-                                     .ifPresentOrElse(pk -> privateKey(builder, pk),
-                                                      () -> config.getOptionalValue("oci.config.privateKeyPath", Path.class)
-                                                      .ifPresentOrElse(p -> privateKeyPath(builder, p),
-                                                                       () -> config.getOptionalValue("oci.auth.keyFile",
-                                                                                                     Path.class)
-                                                                       .ifPresentOrElse(p -> privateKeyPath(builder, p),
-                                                                                        () -> privateKeyPath(builder,
-                                                                                                             Paths.get(System.getProperty("user.home"),
-                                                                                                                       ".oci",
-                                                                                                                       "oci_api_key.pem"))))));
-                config.getOptionalValue("oci.config.region", Region.class)
-                    .ifPresent(builder::region);
-                config.getOptionalValue("oci.config.tenantId", String.class)
-                    .ifPresentOrElse(builder::tenantId,
-                                     () -> config.getOptionalValue("oci.config.tenancy", String.class)
-                                     .ifPresentOrElse(builder::tenantId,
-                                                      () -> config.getOptionalValue("oci.auth.tenancy", String.class)
-                                                      .ifPresent(builder::tenantId)));
-                config.getOptionalValue("oci.config.userId", String.class)
-                    .ifPresentOrElse(builder::userId,
-                                     () -> config.getOptionalValue("oci.config.user", String.class)
-                                     .ifPresentOrElse(builder::userId,
-                                                      () -> config.getOptionalValue("oci.auth.user", String.class)
-                                                      .ifPresent(builder::userId)));
-                OciExtension.fire(instance, SimpleAuthenticationDetailsProviderBuilder.class, qualifiersArray, builder);
-                return builder;
+                // Some fallback logic is for backwards compatibility
+                // with a prior OCI-related extension.
+                c.getOptionalValue("oci.config.fingerprint", String.class)
+                    .or(() -> c.getOptionalValue("oci.auth.fingerprint", String.class))
+                    .ifPresent(b::fingerprint);
+                c.getOptionalValue("oci.config.passPhrase", String.class)
+                    .or(() -> c.getOptionalValue("oci.config.passPhraseCharacters", String.class))
+                    .or(() -> c.getOptionalValue("oci.auth.passPhraseCharacters", String.class))
+                    .ifPresent(b::passPhrase);
+                c.getOptionalValue("oci.config.privateKey", String.class)
+                    .or(() -> c.getOptionalValue("oci.auth.privateKey", String.class))
+                    .ifPresentOrElse(pk -> b.privateKeySupplier(new StringPrivateKeySupplier(pk)),
+                                     () -> b.privateKeySupplier(new SimplePrivateKeySupplier(c.getOptionalValue("oci.config.privateKeyPath", String.class)
+                                                                                             .orElse(c.getOptionalValue("oci.auth.keyFile", String.class)
+                                                                                                     .orElse(Paths.get(System.getProperty("user.home"), ".oci", "oci_api_key.pem")
+                                                                                                             .toString())))));
+                c.getOptionalValue("oci.config.region", Region.class)
+                    .ifPresent(b::region);
+                c.getOptionalValue("oci.config.tenantId", String.class)
+                    .or(() -> c.getOptionalValue("oci.config.tenancy", String.class))
+                    .or(() -> c.getOptionalValue("oci.auth.tenancy", String.class))
+                    .ifPresent(b::tenantId);
+                c.getOptionalValue("oci.config.userId", String.class)
+                    .or(() -> c.getOptionalValue("oci.config.user", String.class))
+                    .or(() -> c.getOptionalValue("oci.auth.user", String.class))
+                    .ifPresent(b::userId);
+                OciExtension.fire(instance, SimpleAuthenticationDetailsProviderBuilder.class, qualifiersArray, b);
+                return b;
             }
 
             private void privateKey(SimpleAuthenticationDetailsProviderBuilder builder, String privateKey) {
                 builder.privateKeySupplier(new StringPrivateKeySupplier(privateKey));
             }
 
-            private void privateKeyPath(SimpleAuthenticationDetailsProviderBuilder builder, Path privateKey) {
+            private void privateKey(SimpleAuthenticationDetailsProviderBuilder builder, Path privateKey) {
                 builder.privateKeySupplier(new SimplePrivateKeySupplier(privateKey.toString()));
             }
         },
