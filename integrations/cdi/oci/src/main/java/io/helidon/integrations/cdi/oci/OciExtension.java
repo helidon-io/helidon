@@ -236,7 +236,7 @@ public final class OciExtension implements Extension {
             if (AbstractAuthenticationDetailsProvider.class.isAssignableFrom(baseClass)
                 || AdpSelectionStrategy.builderClasses().contains(baseClass)) {
                 this.serviceTaqs.add(new ServiceTaqs(qualifiers.toArray(EMPTY_ANNOTATION_ARRAY)));
-            } else if (!isCommonRuntime(baseClass)) {
+            } else if (!isVetoed(baseClass)) {
                 String baseClassName = baseClass.getName();
                 Matcher m = SERVICE_CLIENT_CLASS_NAME_PATTERN.matcher(baseClassName);
                 if (m.matches()) {
@@ -502,6 +502,10 @@ public final class OciExtension implements Extension {
         } catch (AmbiguousResolutionException ambiguousResolutionException) {
             return false;
         }
+    }
+
+    private static boolean isVetoed(Class<?> c) {
+        return isCommonRuntime(c);
     }
 
     private static boolean isCommonRuntime(Class<?> c) {
