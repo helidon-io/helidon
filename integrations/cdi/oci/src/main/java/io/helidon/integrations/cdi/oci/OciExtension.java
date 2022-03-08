@@ -250,32 +250,58 @@ public final class OciExtension implements Extension {
                     //   ....example.ExampleClient
                     //   ....example.ExampleClient$Builder
                     String serviceInterface = m.group(1);
+
                     Class<?> serviceInterfaceClass = toClass(event, baseClass, serviceInterface, lenient);
-                    if (serviceInterfaceClass != null && serviceInterfaceClass.isInterface()) {
-                        String serviceAsyncInterface = serviceInterface + "Async";
-                        Class<?> serviceAsyncInterfaceClass = toClass(event, baseClass, serviceAsyncInterface, lenient);
-                        String serviceAsyncClient = serviceAsyncInterface + "Client";
-                        Class<?> serviceAsyncClientClass = toClass(event, baseClass, serviceAsyncClient, lenient);
-                        Class<?> serviceAsyncClientBuilderClass =
-                            toClass(event, baseClass, serviceAsyncClient + "$Builder", true);
-                        if (serviceAsyncClientBuilderClass == null) {
-                            serviceAsyncClientBuilderClass = toClass(event, baseClass, serviceAsyncClient + "Builder", lenient);
-                        }
-                        String serviceClient = serviceInterface + "Client";
-                        Class<?> serviceClientClass = toClass(event, baseClass, serviceClient, lenient);
-                        Class<?> serviceClientBuilderClass = toClass(event, baseClass, serviceClient + "$Builder", true);
-                        if (serviceClientBuilderClass == null) {
-                            serviceClientBuilderClass = toClass(event, baseClass, serviceClient + "Builder", lenient);
-                        }
-                        this.serviceTaqs.add(new ServiceTaqs(qualifiersArray));
-                        this.serviceTaqs.add(new ServiceTaqs(qualifiersArray,
-                                                             serviceInterfaceClass,
-                                                             serviceClientClass,
-                                                             serviceClientBuilderClass,
-                                                             serviceAsyncInterfaceClass,
-                                                             serviceAsyncClientClass,
-                                                             serviceAsyncClientBuilderClass));
+                    if (serviceInterfaceClass == null || !serviceInterfaceClass.isInterface()) {
+                        return;
                     }
+
+                    String serviceAsyncInterface = serviceInterface + "Async";
+                    Class<?> serviceAsyncInterfaceClass = toClass(event, baseClass, serviceAsyncInterface, lenient);
+                    if (serviceAsyncInterfaceClass == null || !serviceAsyncInterfaceClass.isInterface()) {
+                        return;
+                    }
+
+                    String serviceClient = serviceInterface + "Client";
+                    Class<?> serviceClientClass = toClass(event, baseClass, serviceClient, lenient);
+                    if (serviceClientClass == null || !(serviceInterfaceClass.isAssignableFrom(serviceClientClass))) {
+                        return;
+                    }
+
+                    String serviceAsyncClient = serviceAsyncInterface + "Client";
+                    Class<?> serviceAsyncClientClass = toClass(event, baseClass, serviceAsyncClient, lenient);
+                    if (serviceAsyncClientClass == null
+                        || !(serviceAsyncInterfaceClass.isAssignableFrom(serviceAsyncClientClass))) {
+                        return;
+                    }
+
+                    Class<?> serviceClientBuilderClass = toClass(event, baseClass, serviceClient + "$Builder", true);
+                    if (serviceClientBuilderClass == null) {
+                        serviceClientBuilderClass = toClass(event, baseClass, serviceClient + "Builder", lenient);
+                    }
+                    if (serviceClientBuilderClass == null
+                        || !(ClientBuilderBase.class.isAssignableFrom(serviceClientBuilderClass))) {
+                        return;
+                    }
+
+                    Class<?> serviceAsyncClientBuilderClass =
+                        toClass(event, baseClass, serviceAsyncClient + "$Builder", true);
+                    if (serviceAsyncClientBuilderClass == null) {
+                        serviceAsyncClientBuilderClass = toClass(event, baseClass, serviceAsyncClient + "Builder", lenient);
+                    }
+                    if (serviceAsyncClientBuilderClass == null
+                        || !(ClientBuilderBase.class.isAssignableFrom(serviceAsyncClientBuilderClass))) {
+                        return;
+                    }
+
+                    this.serviceTaqs.add(new ServiceTaqs(qualifiersArray));
+                    this.serviceTaqs.add(new ServiceTaqs(qualifiersArray,
+                                                         serviceInterfaceClass,
+                                                         serviceClientClass,
+                                                         serviceClientBuilderClass,
+                                                         serviceAsyncInterfaceClass,
+                                                         serviceAsyncClientClass,
+                                                         serviceAsyncClientBuilderClass));
                 }
             }
         }
@@ -521,10 +547,6 @@ public final class OciExtension implements Extension {
     }
 
     private static boolean isVetoed(Class<?> c) {
-        return isCommonRuntime(c);
-    }
-
-    private static boolean isCommonRuntime(Class<?> c) {
         // See
         // https://docs.oracle.com/en-us/iaas/tools/java/2.18.0/overview-summary.html#:~:text=Oracle%20Cloud%20Infrastructure%20Common%20Runtime.
         //
@@ -535,17 +557,14 @@ public final class OciExtension implements Extension {
         // we need to ensure that, even though their names might seem
         // to follow the OCI service client naming pattern, they
         // aren't considered to be OCI service client classes.  This
-        // method helps weed them out.  The javadoc contracts for
-        // Class#getProtectionDomain() and
-        // ProtectionDomain#getCodeSource() do not indicate that null
-        // can never be a return value, so we write this defensively.
-        // Additionally, although CodeSource#equals(Object) is
-        // defined, it compares URLs directly, which involves DNS
-        // lookups (!) so we compare the URI representations instead.
+        // method helps, but does not itself entirely, weed them out.
         return equals(Service.class.getProtectionDomain(), c.getProtectionDomain());
     }
 
     private static boolean equals(ProtectionDomain pd0, ProtectionDomain pd1) {
+        // Compare ProtectionDomains' CodeSources' locations while
+        // avoiding testing URLs for equality directly since that
+        // involves DNS lookups (!).
         if (pd0 == null) {
             return pd1 == null;
         } else if (pd1 == null) {
