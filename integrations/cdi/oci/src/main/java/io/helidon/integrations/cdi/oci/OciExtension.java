@@ -386,7 +386,7 @@ public final class OciExtension implements Extension {
                                     "installServiceClientBuilder",
                                     reflectiveOperationException.getMessage(),
                                     reflectiveOperationException);
-                }
+                    }
                 } else {
                     event.addDefinitionError(reflectiveOperationException);
                 }
@@ -397,7 +397,7 @@ public final class OciExtension implements Extension {
                 .types(Set.of(serviceClientBuilderClass))
                 .qualifiers(Set.of(qualifiersArray))
                 .scope(Singleton.class)
-                .produceWith(i -> produceClientBuilder(i, builderMethod, serviceClientBuilderClass, qualifiersArray));
+                .produceWith(i -> produceClientBuilder(i, builderMethod, qualifiersArray));
             return true;
         }
         return false;
@@ -438,7 +438,7 @@ public final class OciExtension implements Extension {
                         .types(types)
                         .qualifiers(Set.of(qualifiersArray))
                         .scope(Singleton.class)
-                        .produceWith(i -> produceClient(i, serviceClientBuilderClass))
+                        .produceWith(i -> produceClient(i, serviceClientBuilderClass, qualifiersArray))
                         .disposeWith(OciExtension::disposeClient);
                     return true;
                 }
@@ -450,12 +450,11 @@ public final class OciExtension implements Extension {
 
     private static Object produceClientBuilder(Instance<? super Object> instance,
                                                MethodHandle builderMethod,
-                                               Class<?> builderClass,
                                                Annotation[] qualifiers) {
         try {
             ClientBuilderBase<?, ?> builderInstance = (ClientBuilderBase<?, ?>) builderMethod.invoke();
             // Permit arbitrary customization.
-            fire(instance, builderClass, qualifiers, builderInstance);
+            fire(instance, builderMethod.type().returnType(), qualifiers, builderInstance);
             customizeEndpointResolution(builderInstance);
             return builderInstance;
         } catch (RuntimeException runtimeException) {
@@ -470,10 +469,10 @@ public final class OciExtension implements Extension {
         }
     }
 
-    private static Object produceClient(Instance<? super Object> instance, final Class<?> builderClass) {
+    private static Object produceClient(Instance<? super Object> instance, Class<?> builderClass, Annotation[] qualifiersArray) {
         return
-            ((ClientBuilderBase<?, ?>) instance.select(builderClass).get())
-            .build(instance.select(AbstractAuthenticationDetailsProvider.class).get());
+            ((ClientBuilderBase<?, ?>) instance.select(builderClass, qualifiersArray).get())
+            .build(instance.select(AbstractAuthenticationDetailsProvider.class, qualifiersArray).get());
     }
 
     private static void disposeClient(Object client, Object ignored) {
@@ -543,31 +542,33 @@ public final class OciExtension implements Extension {
         // Additionally, although CodeSource#equals(Object) is
         // defined, it compares URLs directly, which involves DNS
         // lookups (!) so we compare the URI representations instead.
-        ProtectionDomain commonRuntimeProtectionDomain = Service.class.getProtectionDomain();
-        ProtectionDomain classProtectionDomain = c.getProtectionDomain();
-        if (commonRuntimeProtectionDomain == null) {
-            return classProtectionDomain == null;
-        } else if (classProtectionDomain == null) {
+        return equals(Service.class.getProtectionDomain(), c.getProtectionDomain());
+    }
+
+    private static boolean equals(ProtectionDomain pd0, ProtectionDomain pd1) {
+        if (pd0 == null) {
+            return pd1 == null;
+        } else if (pd1 == null) {
             return false;
         }
-        CodeSource commonRuntimeCodeSource = commonRuntimeProtectionDomain.getCodeSource();
-        CodeSource classCodeSource = classProtectionDomain.getCodeSource();
-        if (commonRuntimeCodeSource == null) {
-            return classCodeSource == null;
-        } else if (classCodeSource == null) {
+        CodeSource cs0 = pd0.getCodeSource();
+        CodeSource cs1 = pd1.getCodeSource();
+        if (cs0 == null) {
+            return cs1 == null;
+        } else if (cs1 == null) {
             return false;
         }
-        URL commonRuntimeLocation = commonRuntimeCodeSource.getLocation();
-        URL classLocation = classCodeSource.getLocation();
-        if (commonRuntimeLocation == null) {
-            return classLocation == null;
-        } else if (classLocation == null) {
+        URL url0 = cs0.getLocation();
+        URL url1 = cs1.getLocation();
+        if (url0 == null) {
+            return url1 == null;
+        } else if (url1 == null) {
             return false;
         }
         try {
-            return commonRuntimeLocation.toURI().equals(classLocation.toURI());
+            return url0.toURI().equals(url1.toURI());
         } catch (URISyntaxException uriSyntaxException) {
-            throw new AssertionError(uriSyntaxException.getMessage(), uriSyntaxException);
+            return url0.equals(url1);
         }
     }
 
