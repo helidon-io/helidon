@@ -206,6 +206,7 @@ public final class OciExtension implements Extension {
     @Deprecated // for java.util.ServiceLoader use only
     public OciExtension() {
         super();
+        this.lenient = true;
         this.serviceTaqs = new HashSet<>();
     }
 
@@ -216,12 +217,15 @@ public final class OciExtension implements Extension {
 
 
     private void beforeBeanDiscovery(@Observes BeforeBeanDiscovery event) {
-        this.lenient =
-            ConfigProvider.getConfig()
-            .getOptionalValue(this.getClass().getName() + ".lenient",
-                              Boolean.class)
-            .orElse(Boolean.TRUE)
-            .booleanValue();
+        try {
+            this.lenient =
+                ConfigProvider.getConfig()
+                .getOptionalValue(this.getClass().getName() + ".lenient", Boolean.class)
+                .orElse(Boolean.TRUE)
+                .booleanValue();
+        } catch (IllegalArgumentException conversionException) {
+            this.lenient = true;
+        }
     }
 
     private void processInjectionPoint(@Observes ProcessInjectionPoint<?, ?> event) {
@@ -235,6 +239,10 @@ public final class OciExtension implements Extension {
             Set<Annotation> qualifiers = ip.getQualifiers();
             if (AbstractAuthenticationDetailsProvider.class.isAssignableFrom(baseClass)
                 || AdpSelectionStrategy.builderClasses().contains(baseClass)) {
+                // Use an "empty" ServiceTaqs as an indicator of
+                // demand for some kind of
+                // AbstractAuthenticationDetailsProvider (or a
+                // relevant builder).
                 this.serviceTaqs.add(new ServiceTaqs(qualifiers.toArray(EMPTY_ANNOTATION_ARRAY)));
             } else if (!isVetoed(baseClass)) {
                 String baseClassName = baseClass.getName();
@@ -242,6 +250,7 @@ public final class OciExtension implements Extension {
                 if (m.matches()) {
                     Annotation[] qualifiersArray = qualifiers.toArray(EMPTY_ANNOTATION_ARRAY);
                     boolean lenient = this.lenient;
+
                     // Create types-and-qualifiers for, e.g.:
                     //   ....example.Example
                     //   ....example.ExampleAsync
@@ -256,22 +265,9 @@ public final class OciExtension implements Extension {
                         return;
                     }
 
-                    String serviceAsyncInterface = serviceInterface + "Async";
-                    Class<?> serviceAsyncInterfaceClass = toClass(event, baseClass, serviceAsyncInterface, lenient);
-                    if (serviceAsyncInterfaceClass == null || !serviceAsyncInterfaceClass.isInterface()) {
-                        return;
-                    }
-
                     String serviceClient = serviceInterface + "Client";
                     Class<?> serviceClientClass = toClass(event, baseClass, serviceClient, lenient);
                     if (serviceClientClass == null || !(serviceInterfaceClass.isAssignableFrom(serviceClientClass))) {
-                        return;
-                    }
-
-                    String serviceAsyncClient = serviceAsyncInterface + "Client";
-                    Class<?> serviceAsyncClientClass = toClass(event, baseClass, serviceAsyncClient, lenient);
-                    if (serviceAsyncClientClass == null
-                        || !(serviceAsyncInterfaceClass.isAssignableFrom(serviceAsyncClientClass))) {
                         return;
                     }
 
@@ -281,6 +277,19 @@ public final class OciExtension implements Extension {
                     }
                     if (serviceClientBuilderClass == null
                         || !(ClientBuilderBase.class.isAssignableFrom(serviceClientBuilderClass))) {
+                        return;
+                    }
+
+                    String serviceAsyncInterface = serviceInterface + "Async";
+                    Class<?> serviceAsyncInterfaceClass = toClass(event, baseClass, serviceAsyncInterface, lenient);
+                    if (serviceAsyncInterfaceClass == null || !serviceAsyncInterfaceClass.isInterface()) {
+                        return;
+                    }
+
+                    String serviceAsyncClient = serviceAsyncInterface + "Client";
+                    Class<?> serviceAsyncClientClass = toClass(event, baseClass, serviceAsyncClient, lenient);
+                    if (serviceAsyncClientClass == null
+                        || !(serviceAsyncInterfaceClass.isAssignableFrom(serviceAsyncClientClass))) {
                         return;
                     }
 
@@ -294,7 +303,12 @@ public final class OciExtension implements Extension {
                         return;
                     }
 
+                    // Use an "empty" ServiceTaqs as an indicator of
+                    // demand for some kind of
+                    // AbstractAuthenticationDetailsProvider (or a
+                    // relevant builder).
                     this.serviceTaqs.add(new ServiceTaqs(qualifiersArray));
+
                     this.serviceTaqs.add(new ServiceTaqs(qualifiersArray,
                                                          serviceInterfaceClass,
                                                          serviceClientClass,
@@ -546,18 +560,37 @@ public final class OciExtension implements Extension {
         }
     }
 
+    /**
+     * Returns {@code true} if the supplied {@link Class} is known to
+     * not be directly related to an Oracle Cloud Infrastructure
+     * service.
+     *
+     * <p>The check is not exhaustive.</p>
+     *
+     * @param c the {@link Class} in question; must not be {@code
+     * null}
+     *
+     * @return {@code true} if the supplied {@link Class} is known to
+     * not be directly related to an Oracle Cloud Infrastructure
+     * service
+     *
+     * @exception NullPointerException if {@code c} is {@code null}
+     */
     private static boolean isVetoed(Class<?> c) {
         // See
         // https://docs.oracle.com/en-us/iaas/tools/java/2.18.0/overview-summary.html#:~:text=Oracle%20Cloud%20Infrastructure%20Common%20Runtime.
+        // None of these packages contains OCI service clients or
+        // service client interfaces or service client builders. There
+        // are other packages (com.oracle.bmc.encryption, as an
+        // arbitrary example) that should also conceptually be vetoed.
+        // This method does not currently veto all of them, nor is it
+        // clear that it ever could.  The strategy employed here,
+        // however, vetoes quite a large number of them correctly and
+        // very efficiently.
         //
-        // These are the packages and classes that make OCI services
-        // work, not the OCI service clients themselves, so we should
-        // never try to inject them in this extension (auth is treated
-        // specially elsewhere in this class).  There are places where
-        // we need to ensure that, even though their names might seem
-        // to follow the OCI service client naming pattern, they
-        // aren't considered to be OCI service client classes.  This
-        // method helps, but does not itself entirely, weed them out.
+        // "Veto" in this context means only that this extension will
+        // not further process the class in question, not that it is
+        // ineligible for further processing.
         return equals(Service.class.getProtectionDomain(), c.getProtectionDomain());
     }
 
