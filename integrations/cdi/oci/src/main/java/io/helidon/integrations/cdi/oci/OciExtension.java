@@ -282,6 +282,7 @@ public final class OciExtension implements Extension {
     }
 
     private void afterBeanDiscovery(@Observes AfterBeanDiscovery event, BeanManager bm) {
+        boolean lenient = this.lenient;
         for (ServiceTaqs serviceTaqs : this.serviceTaqs) {
             if (serviceTaqs.isEmpty()) {
                 installAdps(event, bm, serviceTaqs.qualifiers());
@@ -295,7 +296,8 @@ public final class OciExtension implements Extension {
                 installServiceClientBuilder(event,
                                             bm,
                                             serviceAsyncClientBuilder,
-                                            serviceAsyncClient);
+                                            serviceAsyncClient,
+                                            lenient);
                 installServiceClient(event,
                                      bm,
                                      serviceAsyncClient,
@@ -304,7 +306,8 @@ public final class OciExtension implements Extension {
                 installServiceClientBuilder(event,
                                             bm,
                                             serviceClientBuilder,
-                                            serviceClient);
+                                            serviceClient,
+                                            lenient);
                 installServiceClient(event,
                                      bm,
                                      serviceClient,
@@ -353,26 +356,40 @@ public final class OciExtension implements Extension {
     private static boolean installServiceClientBuilder(AfterBeanDiscovery event,
                                                        BeanManager bm,
                                                        TypeAndQualifiers serviceClientBuilder,
-                                                       TypeAndQualifiers serviceClient) {
+                                                       TypeAndQualifiers serviceClient,
+                                                       boolean lenient) {
         if (serviceClient != null) {
             return installServiceClientBuilder(event,
                                                bm,
                                                serviceClientBuilder,
-                                               serviceClient.toClass());
+                                               serviceClient.toClass(),
+                                               lenient);
         }
         return false;
     }
+
     private static boolean installServiceClientBuilder(AfterBeanDiscovery event,
                                                        BeanManager bm,
                                                        TypeAndQualifiers serviceClientBuilder,
-                                                       Class<?> serviceClientClass) {
+                                                       Class<?> serviceClientClass,
+                                                       boolean lenient) {
         if (serviceClientBuilder != null && isUnsatisfied(bm, serviceClientBuilder)) {
             Class<?> serviceClientBuilderClass = serviceClientBuilder.toClass();
             MethodHandle builderMethod;
             try {
                 builderMethod = PUBLIC_LOOKUP.findStatic(serviceClientClass, "builder", methodType(serviceClientBuilderClass));
             } catch (ReflectiveOperationException reflectiveOperationException) {
-                event.addDefinitionError(reflectiveOperationException);
+                if (lenient) {
+                    if (LOGGER.isLoggable(Level.WARNING)) {
+                        LOGGER.logp(Level.WARNING,
+                                    OciExtension.class.getName(),
+                                    "installServiceClientBuilder",
+                                    reflectiveOperationException.getMessage(),
+                                    reflectiveOperationException);
+                }
+                } else {
+                    event.addDefinitionError(reflectiveOperationException);
+                }
                 return false;
             }
             Annotation[] qualifiersArray = serviceClientBuilder.qualifiers();
