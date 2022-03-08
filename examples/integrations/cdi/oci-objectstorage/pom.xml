@@ -52,7 +52,7 @@
         <!-- Runtime-scoped dependencies. -->
         <dependency>
             <groupId>io.helidon.integrations.cdi</groupId>
-            <artifactId>helidon-integrations-cdi-oci-objectstorage</artifactId>
+            <artifactId>helidon-integrations-cdi-oci</artifactId>
             <scope>runtime</scope>
         </dependency>
         <dependency>

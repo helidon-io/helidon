@@ -1437,7 +1437,7 @@ public final class OciExtension implements Extension {
         //   telemetry with telemetry-ingestion in the endpoint, as in
         //   the following example:
         //
-        //   https://telemetry-ingestion.eu-frankfurt-1.oraclecloud.com"
+        //   https://telemetry-ingestion.eu-frankfurt-1.oraclecloud.com
         //
         // Doing this in an application that uses a MonitoringClient
         // or a MonitoringAsyncClient from several threads, not all of
