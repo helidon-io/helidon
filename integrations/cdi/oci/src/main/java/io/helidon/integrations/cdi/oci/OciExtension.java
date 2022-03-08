@@ -15,12 +15,8 @@
  */
 package io.helidon.integrations.cdi.oci;
 
-import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.UncheckedIOException;
 import java.lang.annotation.Annotation;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -32,8 +28,6 @@ import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.CodeSource;
@@ -89,6 +83,8 @@ import com.oracle.bmc.auth.ResourcePrincipalAuthenticationDetailsProvider;
 import com.oracle.bmc.auth.ResourcePrincipalAuthenticationDetailsProvider.ResourcePrincipalAuthenticationDetailsProviderBuilder;
 import com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider;
 import com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider.SimpleAuthenticationDetailsProviderBuilder;
+import com.oracle.bmc.auth.SimplePrivateKeySupplier;
+import com.oracle.bmc.auth.StringPrivateKeySupplier;
 import com.oracle.bmc.common.ClientBuilderBase;
 import com.oracle.bmc.http.ClientConfigurator;
 import org.eclipse.microprofile.config.Config;
@@ -1007,6 +1003,9 @@ public final class OciExtension implements Extension {
             boolean isAvailable(Instance<? super Object> instance, Config config, Annotation[] qualifiersArray) {
                 // See
                 // https://docs.oracle.com/en-us/iaas/tools/java/latest/com/oracle/bmc/auth/SimpleAuthenticationDetailsProvider.SimpleAuthenticationDetailsProviderBuilder.html#method.summary
+                //
+                // ".auth." keys are for backwards compatibility with a
+                // prior OCI-related extension.
                 return
                     (config.getOptionalValue("oci.config.fingerprint", String.class).isPresent()
                      || config.getOptionalValue("oci.auth.fingerprint", String.class).isPresent())
@@ -1034,6 +1033,9 @@ public final class OciExtension implements Extension {
                 SimpleAuthenticationDetailsProviderBuilder builder = SimpleAuthenticationDetailsProvider.builder();
                 // See
                 // https://docs.oracle.com/en-us/iaas/tools/java/latest/com/oracle/bmc/auth/SimpleAuthenticationDetailsProvider.SimpleAuthenticationDetailsProviderBuilder.html#method.summary
+                //
+                // Fallback logic is for backwards compatibility with
+                // a prior OCI-related extension.
                 config.getOptionalValue("oci.config.fingerprint", String.class)
                     .ifPresentOrElse(builder::fingerprint,
                                      () -> config.getOptionalValue("oci.auth.fingerprint", String.class)
@@ -1076,20 +1078,12 @@ public final class OciExtension implements Extension {
                 return builder;
             }
 
-            private com.google.common.base.Supplier<InputStream> privateKey(SimpleAuthenticationDetailsProviderBuilder builder,
-                                                                            String privateKey) {
-                return () -> new ByteArrayInputStream(privateKey.getBytes(StandardCharsets.UTF_8));
+            private void privateKey(SimpleAuthenticationDetailsProviderBuilder builder, String privateKey) {
+                builder.privateKeySupplier(new StringPrivateKeySupplier(privateKey));
             }
 
-            private com.google.common.base.Supplier<InputStream> privateKeyPath(SimpleAuthenticationDetailsProviderBuilder builder,
-                                                                                Path privateKey) {
-                return () -> {
-                    try {
-                        return new BufferedInputStream(Files.newInputStream(privateKey));
-                    } catch (IOException ioException) {
-                        throw new UncheckedIOException(ioException.getMessage(), ioException);
-                    }
-                };
+            private void privateKeyPath(SimpleAuthenticationDetailsProviderBuilder builder, Path privateKey) {
+                builder.privateKeySupplier(new SimplePrivateKeySupplier(privateKey.toString()));
             }
         },
 
