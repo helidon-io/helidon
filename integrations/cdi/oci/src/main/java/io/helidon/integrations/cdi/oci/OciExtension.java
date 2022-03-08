@@ -1019,8 +1019,14 @@ public final class OciExtension implements Extension {
             AbstractAuthenticationDetailsProvider produce(Instance<? super Object> instance,
                                                           Config config,
                                                           Annotation[] qualifiersArray) {
-                SimpleAuthenticationDetailsProviderBuilder builder =
-                    instance.select(SimpleAuthenticationDetailsProviderBuilder.class, qualifiersArray).get();
+                return instance.select(SimpleAuthenticationDetailsProviderBuilder.class, qualifiersArray).get().build();
+            }
+
+            @Override
+            SimpleAuthenticationDetailsProviderBuilder produceBuilder(Instance<? super Object> instance,
+                                                                      Config config,
+                                                                      Annotation[] qualifiersArray) {
+                SimpleAuthenticationDetailsProviderBuilder builder = SimpleAuthenticationDetailsProvider.builder();
                 config.getOptionalValue("oci.config.fingerprint", String.class).ifPresent(builder::fingerprint);
                 config.getOptionalValue("oci.config.passPhrase", String.class).ifPresent(builder::passPhrase);
                 config.getOptionalValue("oci.config.passphraseCharacters", char[].class).ifPresent(builder::passphraseCharacters);
@@ -1029,14 +1035,8 @@ public final class OciExtension implements Extension {
                 config.getOptionalValue("oci.config.region", Region.class).ifPresent(builder::region);
                 config.getOptionalValue("oci.config.tenantId", String.class).ifPresent(builder::tenantId);
                 config.getOptionalValue("oci.config.userId", String.class).ifPresent(builder::userId);
-                return builder.build();
-            }
-
-            @Override
-            SimpleAuthenticationDetailsProviderBuilder produceBuilder(Instance<? super Object> instance,
-                                                                      Config config,
-                                                                      Annotation[] qualifiersArray) {
-                SimpleAuthenticationDetailsProviderBuilder builder = SimpleAuthenticationDetailsProvider.builder();
+                // Currently, an observer method can override
+                // configuration. Subject to debate.
                 OciExtension.fire(instance, SimpleAuthenticationDetailsProviderBuilder.class, qualifiersArray, builder);
                 return builder;
             }
