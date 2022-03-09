@@ -980,6 +980,7 @@ public final class OciExtension implements Extension {
 
     private enum AdpSelectionStrategy {
 
+
         //
         // ------------
         // PLEASE READ:
@@ -1000,6 +1001,7 @@ public final class OciExtension implements Extension {
 
         CONFIG(SimpleAuthenticationDetailsProvider.class,
                SimpleAuthenticationDetailsProviderBuilder.class) {
+
             @Override
             boolean isAvailable(Instance<? super Object> instance, Config config, Annotation[] qualifiersArray) {
                 // See
@@ -1008,8 +1010,9 @@ public final class OciExtension implements Extension {
                 // ".auth." keys are for backwards compatibility with a
                 // prior OCI-related extension.
                 return
-                    (config.getOptionalValue("oci.config.fingerprint", String.class).isPresent()
-                     || config.getOptionalValue("oci.auth.fingerprint", String.class).isPresent())
+                    super.isAvailable(instance, config, qualifiersArray)
+                    && (config.getOptionalValue("oci.config.fingerprint", String.class).isPresent()
+                        || config.getOptionalValue("oci.auth.fingerprint", String.class).isPresent())
                     && config.getOptionalValue("oci.config.region", Region.class).isPresent()
                     && (config.getOptionalValue("oci.config.tenantId", String.class).isPresent()
                         || config.getOptionalValue("oci.config.tenancy", String.class).isPresent()
@@ -1074,7 +1077,8 @@ public final class OciExtension implements Extension {
             }
         },
 
-        OCI_CONFIG_FILE(ConfigFileAuthenticationDetailsProvider.class) {
+        CONFIG_FILE(ConfigFileAuthenticationDetailsProvider.class) {
+
             @Override
             boolean isAvailable(Instance<? super Object> instance, Config config, Annotation[] qualifiersArray) {
                 if (super.isAvailable(instance, config, qualifiersArray)) {
@@ -1136,6 +1140,7 @@ public final class OciExtension implements Extension {
 
         INSTANCE_PRINCIPALS(InstancePrincipalsAuthenticationDetailsProvider.class,
                             InstancePrincipalsAuthenticationDetailsProviderBuilder.class) {
+
             @Override
             boolean isAvailable(Instance<? super Object> instance, Config config, Annotation[] qualifiersArray) {
                 if (super.isAvailable(instance, config, qualifiersArray)) {
@@ -1180,11 +1185,12 @@ public final class OciExtension implements Extension {
 
         RESOURCE_PRINCIPAL(ResourcePrincipalAuthenticationDetailsProvider.class,
                            ResourcePrincipalAuthenticationDetailsProviderBuilder.class) {
+
             @Override
             boolean isAvailable(Instance<? super Object> instance, Config config, Annotation[] qualifiersArray) {
                 return
                     super.isAvailable(instance, config, qualifiersArray)
-                    // https://github.com/oracle/oci-java-sdk/blob/v2.15.0/bmc-common/src/main/java/com/oracle/bmc/auth/ResourcePrincipalAuthenticationDetailsProvider.java#L246-L251
+                    // https://github.com/oracle/oci-java-sdk/blob/v2.18.0/bmc-common/src/main/java/com/oracle/bmc/auth/ResourcePrincipalAuthenticationDetailsProvider.java#L246-L251
                     && System.getenv("OCI_RESOURCE_PRINCIPAL_VERSION") != null;
             }
 
@@ -1376,7 +1382,7 @@ public final class OciExtension implements Extension {
                 return AUTO;
             } else {
                 strategyString = strategyString.strip();
-                if (!strategyString.isBlank()) {
+                if (strategyString.isBlank()) {
                     return AUTO;
                 } else {
                     return of(strategyString);

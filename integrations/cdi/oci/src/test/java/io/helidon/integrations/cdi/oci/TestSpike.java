@@ -224,7 +224,8 @@ final class TestSpike {
                             Instance<com.oracle.bmc.circuitbreaker.JaxRsCircuitBreaker> unresolvedJaxRsCircuitBreakerInstance,
                             // Streaming turns out to be the only
                             // convention-violating service in the
-                            // entire portfolio.  Specifically, its
+                            // entire portfolio, and the violation is
+                            // extremely minor.  Specifically, its
                             // root subpackage features two main
                             // domain objects (Stream, StreamAdmin)
                             // and only one of them (StreamAdmin)
@@ -279,13 +280,13 @@ final class TestSpike {
         private static void customizeAsyncBuilder(@Observes StreamAsyncClientBuilder streamingAsyncClientBuilder) {
             // See
             // https://docs.oracle.com/en-us/iaas/Content/Streaming/Tasks/streaming-quickstart-oci-sdk-for-java.htm#:~:text=Streams%20are%20assigned%20a%20specific%20endpoint%20url
-            streamingAsyncClientBuilder.endpoint("BOGUS");
+            streamingAsyncClientBuilder.endpoint("forTestingOnly");
         }
 
         private static void customizeAsyncBuilder(@Observes StreamClientBuilder streamingClientBuilder) {
             // See
             // https://docs.oracle.com/en-us/iaas/Content/Streaming/Tasks/streaming-quickstart-oci-sdk-for-java.htm#:~:text=Streams%20are%20assigned%20a%20specific%20endpoint%20url
-            streamingClientBuilder.endpoint("BOGUS");
+            streamingClientBuilder.endpoint("forTestingOnly");
         }
 
     }
