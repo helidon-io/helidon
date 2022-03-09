@@ -39,6 +39,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Objects;
@@ -1227,29 +1228,35 @@ public final class OciExtension implements Extension {
             }
 
             @Override
-            @SuppressWarnings("fallthrough")
+            @SuppressWarnings("fallthrough") // note
             AbstractAuthenticationDetailsProvider produce(Instance<? super Object> instance,
                                                           Config config,
                                                           Annotation[] qualifiersArray) {
                 Collection<? extends AdpSelectionStrategy> strategies =
-                    concreteStrategies(config.getOptionalValue("oci.config.strategy", String[].class).orElse(null));
+                    concreteStrategies(config.getOptionalValue("oci.config.strategies", String[].class)
+                                       .or(() -> config.getOptionalValue("oci.config.strategy", String[].class))
+                                       .orElse(null));
                 switch (strategies.size()) {
-                case 0:
-                    throw new AssertionError();
                 case 1:
                     AdpSelectionStrategy strategy = strategies.iterator().next();
                     if (strategy != this) {
-                        // No availability check on purpose; there's
-                        // only one strategy that is not itself AUTO
-                        // and no fallback or magic.
+                        // No availability check on purpose.  We have
+                        // only one strategy.  It is not itself AUTO
+                        // so there's no fallback, so we don't try to
+                        // help out in any way.
                         return strategy.select(instance, config, qualifiersArray);
+                    } else {
+                        // (Edge case.) Somehow the sole strategy was us
+                        // (AUTO), so that means cycle through the
+                        // concrete ones.
+                        strategies = concreteStrategies();
                     }
-                    // (Edge case.)
-                    strategies = concreteStrategies();
-                    // fall-through
+                    // fall-through on purpose
                 default:
-                    for (AdpSelectionStrategy s : strategies) {
-                        if (s != this && s.isAvailable(instance, config, qualifiersArray)) {
+                    Iterator<? extends AdpSelectionStrategy> i = strategies.iterator();
+                    while (i.hasNext()) {
+                        AdpSelectionStrategy s = i.next();
+                        if (s != this && (!i.hasNext() || s.isAvailable(instance, config, qualifiersArray))) {
                             return s.select(instance, config, qualifiersArray);
                         }
                     }
