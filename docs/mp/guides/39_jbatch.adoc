@@ -195,7 +195,7 @@ public class MyBatchlet extends AbstractBatchlet {
 ----
 
 == Update the Descriptor File
-Put all of this into your job descriptor xml file as shown in this example:
+Add this code to your job descriptor.xml file:
 
 [source,java]
 .Updated descriptor file
@@ -228,47 +228,63 @@ Create a small endpoint to activate the job:
 .new endpoint
 
 ----
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    public JsonObject executeBatch() throws Exception{
+private JobOperator jobOperator;
 
-        BatchSPIManager batchSPIManager = BatchSPIManager.getInstance();
-        batchSPIManager.registerPlatformMode(BatchSPIManager.PlatformMode.SE);
-        batchSPIManager.registerExecutorServiceProvider(new HelidonExecutorServiceProvider());
+/**
+ * Run a JBatch process when endpoint called.
+ * @return JsonObject with the result.
+ */
+@GET
+@Produces(MediaType.APPLICATION_JSON)
+public JsonObject executeBatch() {
 
-        JobOperator jobOperator = getJobOperator();
-        Long executionId = jobOperator.start("myJob", new Properties());
-        Thread.sleep(3000);
-        JobExecution jobExecution = jobOperator.getJobExecution(executionId);
+    BatchSPIManager batchSPIManager = BatchSPIManager.getInstance();
+    batchSPIManager.registerPlatformMode(BatchSPIManager.PlatformMode.SE);
+    batchSPIManager.registerExecutorServiceProvider(new HelidonExecutorServiceProvider());
 
+    jobOperator = getJobOperator();
+    Long executionId = jobOperator.start("myJob", new Properties());
 
-        List<StepExecution> stepExecutions = jobOperator.getStepExecutions(executionId);
-        List<String> executedSteps = new ArrayList<>();
-        for (StepExecution stepExecution : stepExecutions) {
-            executedSteps.add(stepExecution.getStepName());
-        }
+    return JSON.createObjectBuilder()
+            .add("Started a job with Execution ID: ", executionId)
+            .build();
+}
 
+/**
+ * Check the job status.
+ * @param executionId the job ID.
+ * @return JsonObject with status.
+ */
+@GET
+@path("/batch")
+@ApplicationScoped
+public class BatchResource {
+private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
 
-        return JSON.createObjectBuilder()
-                .add("Steps executed", Arrays.toString(executedSteps.toArray()))
-                .add("Status", jobExecution.getBatchStatus().toString())
-                .build();
+    List<StepExecution> stepExecutions = jobOperator.getStepExecutions(executionId);
+    List<String> executedSteps = new ArrayList<>();
+    for (StepExecution stepExecution : stepExecutions) {
+        executedSteps.add(stepExecution.getStepName());
     }
+
+    return JSON.createObjectBuilder()
+            .add("Steps executed", Arrays.toString(executedSteps.toArray()))
+            .add("Status", jobExecution.getBatchStatus().toString())
+            .build();
 }
 ----
 
 Helidon specifies to JBatch that it should run in Standalone (SE) mode. It will also register the `HelidonExecutorServiceProvider` which is actually relatively small. For our example we need something really small, like a `FixedTheadPool` with 2 threads. This provider is used to tell our JBatch engine exactly which ExecutorSevice to use.
 
-[source, xml]
+[source, java]
 .HelidonExecutorServiceProvider
 
 ----
-public class HelidonExecutorServiceProvider implements
-ExecutorServiceProvider {
-    @Override
-    public ExecutorService getExecutorService() {
-        return Executors.newFixedThreadPool(2);
-    }
+public class HelidonExecutorServiceProvider implements ExecutorServiceProvider {
+@OverRide
+public ExecutorService getExecutorService() {
+return ThreadPoolSupplier.builder().corePoolSize(2).build().get();
+}
 }
 ----
 
@@ -316,10 +332,28 @@ and the following result:
 [source,bash]
 
 ----
-{"Steps executed":"[step1, step2]","Status":"COMPLETED"}
+{"Started a job with Execution ID: ":1}
 ----
 
 This indicates that the batch job was called and executed successfully.
+
+
+=== Check the Status
+[source,bash]
+----
+
+curl -X GET http://localhost:8080/batch/status/1
+----
+
+NOTE: In this example the job ID is 1, but make sure that you enter your specfic job ID in the string. 
+
+The results should look something like this: 
+
+[source,bash]
+
+----
+{"Steps executed":"[step1, step2]","Status":"COMPLETED"}
+----
 
 == Summary
 

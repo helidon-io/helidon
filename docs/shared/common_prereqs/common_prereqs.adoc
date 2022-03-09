@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021 Oracle and/or its affiliates.
+    Copyright (c) 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -57,11 +57,11 @@ kubectl version --short
 .Setting JAVA_HOME
 ----
 # On Mac
-export JAVA_HOME=`/usr/libexec/java_home -v 11`
+export JAVA_HOME=`/usr/libexec/java_home -v 17`
 
 # On Linux
 # Use the appropriate path to your JDK
-export JAVA_HOME=/usr/lib/jvm/jdk-11
+export JAVA_HOME=/usr/lib/jvm/jdk-17
 ----
 // end::common-prereqs[]
 
@@ -91,11 +91,11 @@ kubectl version --short
 .Setting JAVA_HOME
 ----
 # On Mac
-export JAVA_HOME=`/usr/libexec/java_home -v 11`
+export JAVA_HOME=`/usr/libexec/java_home -v 17`
 
 # On Linux
 # Use the appropriate path to your JDK
-export JAVA_HOME=/usr/lib/jvm/jdk-11
+export JAVA_HOME=/usr/lib/jvm/jdk-17
 ----
 
 // end::common-prereqs-helm[]
@@ -125,11 +125,11 @@ kubectl version --short
 .Setting JAVA_HOME
 ----
 # On Mac
-export JAVA_HOME=`/usr/libexec/java_home -v 11`
+export JAVA_HOME=`/usr/libexec/java_home -v 17`
 
 # On Linux
 # Use the appropriate path to your JDK
-export JAVA_HOME=/usr/lib/jvm/jdk-11
+export JAVA_HOME=/usr/lib/jvm/jdk-17
 ----
 // end::common-prereqs-curl[]
 
@@ -159,10 +159,10 @@ kubectl version --short
 .Setting JAVA_HOME
 ----
 # On Mac
-export JAVA_HOME=`/usr/libexec/java_home -v 11`
+export JAVA_HOME=`/usr/libexec/java_home -v 17`
 
 # On Linux
 # Use the appropriate path to your JDK
-export JAVA_HOME=/usr/lib/jvm/jdk-11
+export JAVA_HOME=/usr/lib/jvm/jdk-17
 ----
 // end::common-prereqs-graal[]
