@@ -44,5 +44,6 @@
         <module>request-scope-cdi</module>
         <module>jax-rs-multiple-apps</module>
         <module>param-converter-provider</module>
+        <module>config-profiles</module>
     </modules>
 </project>
