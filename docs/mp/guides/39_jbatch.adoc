@@ -61,7 +61,8 @@ In this demonstration you will first create sample input and output records and 
 public class MyInputRecord {
     private int id;
 
-        public MyInputRecord(int id) {
+    
+    public MyInputRecord(int id) {
         this.id = id;
     }
 
@@ -228,49 +229,46 @@ Create a small endpoint to activate the job:
 .new endpoint
 
 ----
-private JobOperator jobOperator;
-
-/**
- * Run a JBatch process when endpoint called.
- * @return JsonObject with the result.
- */
-@GET
-@Produces(MediaType.APPLICATION_JSON)
-public JsonObject executeBatch() {
-
-    BatchSPIManager batchSPIManager = BatchSPIManager.getInstance();
-    batchSPIManager.registerPlatformMode(BatchSPIManager.PlatformMode.SE);
-    batchSPIManager.registerExecutorServiceProvider(new HelidonExecutorServiceProvider());
-
-    jobOperator = getJobOperator();
-    Long executionId = jobOperator.start("myJob", new Properties());
-
-    return JSON.createObjectBuilder()
-            .add("Started a job with Execution ID: ", executionId)
-            .build();
-}
-
-/**
- * Check the job status.
- * @param executionId the job ID.
- * @return JsonObject with status.
- */
-@GET
-@path("/batch")
+@Path("/batch")
 @ApplicationScoped
 public class BatchResource {
-private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
+    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
 
-    List<StepExecution> stepExecutions = jobOperator.getStepExecutions(executionId);
-    List<String> executedSteps = new ArrayList<>();
-    for (StepExecution stepExecution : stepExecutions) {
-        executedSteps.add(stepExecution.getStepName());
+    private JobOperator jobOperator;
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public JsonObject executeBatch() {
+
+        BatchSPIManager batchSPIManager = BatchSPIManager.getInstance();
+        batchSPIManager.registerPlatformMode(BatchSPIManager.PlatformMode.SE);
+        batchSPIManager.registerExecutorServiceProvider(new HelidonExecutorServiceProvider());
+
+        jobOperator = getJobOperator();
+        Long executionId = jobOperator.start("myJob", new Properties());
+
+        return JSON.createObjectBuilder()
+                .add("Started a job with Execution ID: ", executionId)
+                .build();
     }
 
-    return JSON.createObjectBuilder()
-            .add("Steps executed", Arrays.toString(executedSteps.toArray()))
-            .add("Status", jobExecution.getBatchStatus().toString())
-            .build();
+   
+    @GET
+    @Path("/status/{execution-id}")
+    public JsonObject status(@PathParam("execution-id") Long executionId){
+        JobExecution jobExecution = jobOperator.getJobExecution(executionId);
+
+        List<StepExecution> stepExecutions = jobOperator.getStepExecutions(executionId);
+        List<String> executedSteps = new ArrayList<>();
+        for (StepExecution stepExecution : stepExecutions) {
+            executedSteps.add(stepExecution.getStepName());
+        }
+
+        return JSON.createObjectBuilder()
+                .add("Steps executed", Arrays.toString(executedSteps.toArray()))
+                .add("Status", jobExecution.getBatchStatus().toString())
+                .build();
+    }
 }
 ----
 
