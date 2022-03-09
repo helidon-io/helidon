@@ -256,71 +256,73 @@ public final class OciExtension implements Extension {
                 if (m.matches()) {
                     Annotation[] qualifiersArray = qualifiers.toArray(EMPTY_ANNOTATION_ARRAY);
                     boolean lenient = this.lenient;
+                    ServiceTaqs serviceTaqsForAuth = null;
 
                     // Create types-and-qualifiers for, e.g.:
                     //   ....example.Example
-                    //   ....example.ExampleAsync
-                    //   ....example.ExampleAsyncClient
-                    //   ....example.ExampleAsyncClient$Builder
                     //   ....example.ExampleClient
                     //   ....example.ExampleClient$Builder
                     String serviceInterface = m.group(1);
-
                     Class<?> serviceInterfaceClass = toClass(event, baseClass, serviceInterface, lenient);
-                    if (serviceInterfaceClass == null || !serviceInterfaceClass.isInterface()) {
-                        return;
+                    if (serviceInterfaceClass != null && serviceInterfaceClass.isInterface()) {
+                        String serviceClient = serviceInterface + "Client";
+                        Class<?> serviceClientClass = toClass(event, baseClass, serviceClient, lenient);
+                        if (serviceClientClass != null && (serviceInterfaceClass.isAssignableFrom(serviceClientClass))) {
+                            Class<?> serviceClientBuilderClass = toClass(event, baseClass, serviceClient + "$Builder", true);
+                            if (serviceClientBuilderClass == null) {
+                                serviceClientBuilderClass =
+                                    toClass(event, baseClass, serviceClient + "Builder", lenient);
+                            }
+                            if (serviceClientBuilderClass != null
+                                && (ClientBuilderBase.class.isAssignableFrom(serviceClientBuilderClass))) {
+                                this.serviceTaqs.add(new ServiceTaqs(qualifiersArray,
+                                                                     serviceInterfaceClass,
+                                                                     serviceClientClass,
+                                                                     serviceClientBuilderClass));
+                                // Use an "empty" ServiceTaqs as an indicator of
+                                // demand for some kind of
+                                // AbstractAuthenticationDetailsProvider (or a
+                                // relevant builder).
+                                serviceTaqsForAuth = new ServiceTaqs(qualifiersArray);
+                                this.serviceTaqs.add(serviceTaqsForAuth);
+                            }
+                        }
                     }
 
-                    String serviceClient = serviceInterface + "Client";
-                    Class<?> serviceClientClass = toClass(event, baseClass, serviceClient, lenient);
-                    if (serviceClientClass == null || !(serviceInterfaceClass.isAssignableFrom(serviceClientClass))) {
-                        return;
-                    }
-
-                    Class<?> serviceClientBuilderClass = toClass(event, baseClass, serviceClient + "$Builder", true);
-                    if (serviceClientBuilderClass == null) {
-                        serviceClientBuilderClass = toClass(event, baseClass, serviceClient + "Builder", lenient);
-                    }
-                    if (serviceClientBuilderClass == null
-                        || !(ClientBuilderBase.class.isAssignableFrom(serviceClientBuilderClass))) {
-                        return;
-                    }
-
+                    // Create types-and-qualifiers for, e.g.:
+                    //   ....example.ExampleAsync
+                    //   ....example.ExampleAsyncClient
+                    //   ....example.ExampleAsyncClient$Builder
                     String serviceAsyncInterface = serviceInterface + "Async";
                     Class<?> serviceAsyncInterfaceClass = toClass(event, baseClass, serviceAsyncInterface, lenient);
-                    if (serviceAsyncInterfaceClass == null || !serviceAsyncInterfaceClass.isInterface()) {
-                        return;
+                    if (serviceAsyncInterfaceClass != null && serviceAsyncInterfaceClass.isInterface()) {
+                        String serviceAsyncClient = serviceAsyncInterface + "Client";
+                        Class<?> serviceAsyncClientClass = toClass(event, baseClass, serviceAsyncClient, lenient);
+                        if (serviceAsyncClientClass != null
+                            && (serviceAsyncInterfaceClass.isAssignableFrom(serviceAsyncClientClass))) {
+                            Class<?> serviceAsyncClientBuilderClass =
+                                toClass(event, baseClass, serviceAsyncClient + "$Builder", true);
+                            if (serviceAsyncClientBuilderClass == null) {
+                                serviceAsyncClientBuilderClass =
+                                    toClass(event, baseClass, serviceAsyncClient + "Builder", lenient);
+                            }
+                            if (serviceAsyncClientBuilderClass != null
+                                && (ClientBuilderBase.class.isAssignableFrom(serviceAsyncClientBuilderClass))) {
+                                this.serviceTaqs.add(new ServiceTaqs(qualifiersArray,
+                                                                     serviceAsyncInterfaceClass,
+                                                                     serviceAsyncClientClass,
+                                                                     serviceAsyncClientBuilderClass));
+                                if (serviceTaqsForAuth == null) {
+                                    // Use an "empty" ServiceTaqs as
+                                    // an indicator of demand for some
+                                    // kind of
+                                    // AbstractAuthenticationDetailsProvider
+                                    // (or a relevant builder).
+                                    this.serviceTaqs.add(new ServiceTaqs(qualifiersArray));
+                                }
+                            }
+                        }
                     }
-
-                    String serviceAsyncClient = serviceAsyncInterface + "Client";
-                    Class<?> serviceAsyncClientClass = toClass(event, baseClass, serviceAsyncClient, lenient);
-                    if (serviceAsyncClientClass == null
-                        || !(serviceAsyncInterfaceClass.isAssignableFrom(serviceAsyncClientClass))) {
-                        return;
-                    }
-
-                    Class<?> serviceAsyncClientBuilderClass =
-                        toClass(event, baseClass, serviceAsyncClient + "$Builder", true);
-                    if (serviceAsyncClientBuilderClass == null) {
-                        serviceAsyncClientBuilderClass = toClass(event, baseClass, serviceAsyncClient + "Builder", lenient);
-                    }
-                    if (serviceAsyncClientBuilderClass == null
-                        || !(ClientBuilderBase.class.isAssignableFrom(serviceAsyncClientBuilderClass))) {
-                        return;
-                    }
-
-                    // Use an "empty" ServiceTaqs as an indicator of
-                    // demand for some kind of
-                    // AbstractAuthenticationDetailsProvider (or a
-                    // relevant builder).
-                    this.serviceTaqs.add(new ServiceTaqs(qualifiersArray));
-                    this.serviceTaqs.add(new ServiceTaqs(qualifiersArray,
-                                                         serviceInterfaceClass,
-                                                         serviceClientClass,
-                                                         serviceClientBuilderClass,
-                                                         serviceAsyncInterfaceClass,
-                                                         serviceAsyncClientClass,
-                                                         serviceAsyncClientBuilderClass));
                 }
             }
         }
@@ -332,22 +334,9 @@ public final class OciExtension implements Extension {
             if (serviceTaqs.isEmpty()) {
                 installAdps(event, bm, serviceTaqs.qualifiers());
             } else {
-                TypeAndQualifiers serviceAsyncClientBuilder = serviceTaqs.serviceAsyncClientBuilder();
-                TypeAndQualifiers serviceAsyncClient = serviceTaqs.serviceAsyncClient();
-                TypeAndQualifiers serviceAsyncInterface = serviceTaqs.serviceAsyncInterface();
                 TypeAndQualifiers serviceClientBuilder = serviceTaqs.serviceClientBuilder();
                 TypeAndQualifiers serviceClient = serviceTaqs.serviceClient();
                 TypeAndQualifiers serviceInterface = serviceTaqs.serviceInterface();
-                installServiceClientBuilder(event,
-                                            bm,
-                                            serviceAsyncClientBuilder,
-                                            serviceAsyncClient,
-                                            lenient);
-                installServiceClient(event,
-                                     bm,
-                                     serviceAsyncClient,
-                                     serviceAsyncInterface,
-                                     serviceAsyncClientBuilder);
                 installServiceClientBuilder(event,
                                             bm,
                                             serviceClientBuilder,
@@ -791,12 +780,6 @@ public final class OciExtension implements Extension {
 
         private final TypeAndQualifiers serviceClientBuilder;
 
-        private final TypeAndQualifiers serviceAsyncInterface;
-
-        private final TypeAndQualifiers serviceAsyncClient;
-
-        private final TypeAndQualifiers serviceAsyncClientBuilder;
-
         private final boolean empty;
 
         private final int hashCode;
@@ -811,17 +794,11 @@ public final class OciExtension implements Extension {
             this(EMPTY_ANNOTATION_ARRAY,
                  null,
                  null,
-                 null,
-                 null,
-                 null,
                  null);
         }
 
         private ServiceTaqs(Annotation[] qualifiers) {
             this(qualifiers,
-                 null,
-                 null,
-                 null,
                  null,
                  null,
                  null);
@@ -830,10 +807,7 @@ public final class OciExtension implements Extension {
         private ServiceTaqs(Annotation[] qualifiers,
                             Type serviceInterface,
                             Type serviceClient,
-                            Type serviceClientBuilder,
-                            Type serviceAsyncInterface,
-                            Type serviceAsyncClient,
-                            Type serviceAsyncClientBuilder) {
+                            Type serviceClientBuilder) {
             qualifiers = qualifiers == null ? EMPTY_ANNOTATION_ARRAY : qualifiers;
             this.qualifiers = qualifiers;
             boolean empty = true;
@@ -857,30 +831,6 @@ public final class OciExtension implements Extension {
                 this.serviceClientBuilder = null;
             } else {
                 this.serviceClientBuilder = new TypeAndQualifiers(serviceClientBuilder, qualifiers);
-                if (empty) {
-                    empty = false;
-                }
-            }
-            if (serviceAsyncInterface == null) {
-                this.serviceAsyncInterface = null;
-            } else {
-                this.serviceAsyncInterface = new TypeAndQualifiers(serviceAsyncInterface, qualifiers);
-                if (empty) {
-                    empty = false;
-                }
-            }
-            if (serviceAsyncClient == null) {
-                this.serviceAsyncClient = null;
-            } else {
-                this.serviceAsyncClient = new TypeAndQualifiers(serviceAsyncClient, qualifiers);
-                if (empty) {
-                    empty = false;
-                }
-            }
-            if (serviceAsyncClientBuilder == null) {
-                this.serviceAsyncClientBuilder = null;
-            } else {
-                this.serviceAsyncClientBuilder = new TypeAndQualifiers(serviceAsyncClientBuilder, qualifiers);
                 if (empty) {
                     empty = false;
                 }
@@ -911,18 +861,6 @@ public final class OciExtension implements Extension {
             return this.serviceClientBuilder;
         }
 
-        private TypeAndQualifiers serviceAsyncInterface() {
-            return this.serviceAsyncInterface;
-        }
-
-        private TypeAndQualifiers serviceAsyncClient() {
-            return this.serviceAsyncClient;
-        }
-
-        private TypeAndQualifiers serviceAsyncClientBuilder() {
-            return this.serviceAsyncClientBuilder;
-        }
-
         private boolean isEmpty() {
             return this.empty;
         }
@@ -946,15 +884,6 @@ public final class OciExtension implements Extension {
             x = this.serviceClientBuilder();
             c = x == null ? 0 : x.hashCode();
             hashCode = 37 * hashCode + c;
-            x = this.serviceAsyncInterface();
-            c = x == null ? 0 : x.hashCode();
-            hashCode = 37 * hashCode + c;
-            x = this.serviceAsyncClient();
-            c = x == null ? 0 : x.hashCode();
-            hashCode = 37 * hashCode + c;
-            x = this.serviceAsyncClientBuilder();
-            c = x == null ? 0 : x.hashCode();
-            hashCode = 37 * hashCode + c;
             return hashCode;
         }
 
@@ -968,10 +897,7 @@ public final class OciExtension implements Extension {
                     Arrays.equals(this.qualifiers(), her.qualifiers())
                     && Objects.equals(this.serviceInterface(), her.serviceInterface())
                     && Objects.equals(this.serviceClient(), her.serviceClient())
-                    && Objects.equals(this.serviceClientBuilder(), her.serviceClientBuilder())
-                    && Objects.equals(this.serviceAsyncInterface(), her.serviceAsyncInterface())
-                    && Objects.equals(this.serviceAsyncClient(), her.serviceAsyncClient())
-                    && Objects.equals(this.serviceAsyncClientBuilder(), her.serviceAsyncClientBuilder());
+                    && Objects.equals(this.serviceClientBuilder(), her.serviceClientBuilder());
             } else {
                 return false;
             }
