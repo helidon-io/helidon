@@ -279,10 +279,10 @@ Helidon specifies to JBatch that it should run in Standalone (SE) mode. It will 
 
 ----
 public class HelidonExecutorServiceProvider implements ExecutorServiceProvider {
-@OverRide
-public ExecutorService getExecutorService() {
-return ThreadPoolSupplier.builder().corePoolSize(2).build().get();
-}
+    @Override
+    public ExecutorService getExecutorService() {
+        return ThreadPoolSupplier.builder().corePoolSize(2).build().get();
+    }
 }
 ----
 
