@@ -257,7 +257,6 @@ public final class OciExtension implements Extension {
                     Annotation[] qualifiersArray = qualifiers.toArray(EMPTY_ANNOTATION_ARRAY);
                     boolean lenient = this.lenient;
                     ServiceTaqs serviceTaqsForAuth = null;
-
                     // Create types-and-qualifiers for, e.g.:
                     //   ....example.Example
                     //   ....example.ExampleClient
@@ -267,14 +266,14 @@ public final class OciExtension implements Extension {
                     if (serviceInterfaceClass != null && serviceInterfaceClass.isInterface()) {
                         String serviceClient = serviceInterface + "Client";
                         Class<?> serviceClientClass = toClass(event, baseClass, serviceClient, lenient);
-                        if (serviceClientClass != null && (serviceInterfaceClass.isAssignableFrom(serviceClientClass))) {
+                        if (serviceClientClass != null && serviceInterfaceClass.isAssignableFrom(serviceClientClass)) {
                             Class<?> serviceClientBuilderClass = toClass(event, baseClass, serviceClient + "$Builder", true);
                             if (serviceClientBuilderClass == null) {
                                 serviceClientBuilderClass =
                                     toClass(event, baseClass, serviceClient + "Builder", lenient);
                             }
                             if (serviceClientBuilderClass != null
-                                && (ClientBuilderBase.class.isAssignableFrom(serviceClientBuilderClass))) {
+                                && ClientBuilderBase.class.isAssignableFrom(serviceClientBuilderClass)) {
                                 this.serviceTaqs.add(new ServiceTaqs(qualifiersArray,
                                                                      serviceInterfaceClass,
                                                                      serviceClientClass,
@@ -288,7 +287,6 @@ public final class OciExtension implements Extension {
                             }
                         }
                     }
-
                     // Create types-and-qualifiers for, e.g.:
                     //   ....example.ExampleAsync
                     //   ....example.ExampleAsyncClient
@@ -299,7 +297,7 @@ public final class OciExtension implements Extension {
                         String serviceAsyncClient = serviceAsyncInterface + "Client";
                         Class<?> serviceAsyncClientClass = toClass(event, baseClass, serviceAsyncClient, lenient);
                         if (serviceAsyncClientClass != null
-                            && (serviceAsyncInterfaceClass.isAssignableFrom(serviceAsyncClientClass))) {
+                            && serviceAsyncInterfaceClass.isAssignableFrom(serviceAsyncClientClass)) {
                             Class<?> serviceAsyncClientBuilderClass =
                                 toClass(event, baseClass, serviceAsyncClient + "$Builder", true);
                             if (serviceAsyncClientBuilderClass == null) {
@@ -307,7 +305,7 @@ public final class OciExtension implements Extension {
                                     toClass(event, baseClass, serviceAsyncClient + "Builder", lenient);
                             }
                             if (serviceAsyncClientBuilderClass != null
-                                && (ClientBuilderBase.class.isAssignableFrom(serviceAsyncClientBuilderClass))) {
+                                && ClientBuilderBase.class.isAssignableFrom(serviceAsyncClientBuilderClass)) {
                                 this.serviceTaqs.add(new ServiceTaqs(qualifiersArray,
                                                                      serviceAsyncInterfaceClass,
                                                                      serviceAsyncClientClass,
@@ -588,7 +586,13 @@ public final class OciExtension implements Extension {
         // not further process the class in question.  The class
         // remains eligible for further processing; i.e. this is not a
         // CDI veto.
-        return equals(Service.class.getProtectionDomain(), c.getProtectionDomain());
+        return
+            equals(Service.class.getProtectionDomain(), c.getProtectionDomain())
+            || ConfigProvider.getConfig()
+            .getOptionalValue("oci.vetoes", String[].class)
+            .<Set<String>>map(Set::of)
+            .orElse(Set.of())
+            .contains(c.getName());
     }
 
     private static boolean equals(ProtectionDomain pd0, ProtectionDomain pd1) {
