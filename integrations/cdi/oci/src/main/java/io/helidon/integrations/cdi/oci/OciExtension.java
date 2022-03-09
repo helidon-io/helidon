@@ -560,7 +560,7 @@ public final class OciExtension implements Extension {
      * not be directly related to an Oracle Cloud Infrastructure
      * service.
      *
-     * <p>The check is not exhaustive.</p>
+     * <p>The check is fast and deliberately not exhaustive.</p>
      *
      * @param c the {@link Class} in question; must not be {@code
      * null}
@@ -585,37 +585,41 @@ public final class OciExtension implements Extension {
         // employed.
         //
         // "Veto" in this context means only that this extension will
-        // not further process the class in question, not that it is
-        // ineligible for further processing.
+        // not further process the class in question.  The class
+        // remains eligible for further processing; i.e. this is not a
+        // CDI veto.
         return equals(Service.class.getProtectionDomain(), c.getProtectionDomain());
     }
 
     private static boolean equals(ProtectionDomain pd0, ProtectionDomain pd1) {
-        // Compare ProtectionDomains' CodeSources' locations while
-        // avoiding testing URLs for equality directly since that
-        // involves DNS lookups (!).
         if (pd0 == null) {
             return pd1 == null;
         } else if (pd1 == null) {
             return false;
         }
-        CodeSource cs0 = pd0.getCodeSource();
-        CodeSource cs1 = pd1.getCodeSource();
+        return equals(pd0.getCodeSource(), pd1.getCodeSource());
+    }
+
+    private static boolean equals(CodeSource cs0, CodeSource cs1) {
         if (cs0 == null) {
             return cs1 == null;
         } else if (cs1 == null) {
             return false;
         }
-        URL url0 = cs0.getLocation();
-        URL url1 = cs1.getLocation();
+        return equals(cs0.getLocation(), cs1.getLocation());
+    }
+
+    private static boolean equals(URL url0, URL url1) {
         if (url0 == null) {
             return url1 == null;
         } else if (url1 == null) {
             return false;
         }
         try {
-            return url0.toURI().equals(url1.toURI());
+            return Objects.equals(url0.toURI(), url1.toURI());
         } catch (URISyntaxException uriSyntaxException) {
+            // Use URL#equals(Object) only as a last resort, since it
+            // involves DNS lookups (!).
             return url0.equals(url1);
         }
     }
@@ -625,7 +629,7 @@ public final class OciExtension implements Extension {
             return referenceClass;
         }
         try {
-            return loadClass(name);
+            return loadClassUnresolved(name);
         } catch (ClassNotFoundException classNotFoundException) {
             if (lenient) {
                 if (LOGGER.isLoggable(Level.FINE)) {
@@ -642,8 +646,9 @@ public final class OciExtension implements Extension {
         }
     }
 
-    private static Class<?> loadClass(String name) throws ClassNotFoundException {
-        return Class.forName(name, false, Thread.currentThread().getContextClassLoader());
+    private static Class<?> loadClassUnresolved(String name) throws ClassNotFoundException {
+        ClassLoader cl = Thread.currentThread().getContextClassLoader();
+        return Class.forName(name, false, cl == null ? OciExtension.class.getClassLoader() : cl);
     }
 
     private static void customizeEndpointResolution(ClientBuilderBase<?, ?> clientBuilder) {
