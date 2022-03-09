@@ -196,6 +196,8 @@ public final class OciExtension implements Extension {
 
     private final Set<ServiceTaqs> serviceTaqs;
 
+    private Set<String> additionalVetoes;
+
     private boolean lenient;
 
 
@@ -213,6 +215,7 @@ public final class OciExtension implements Extension {
     public OciExtension() {
         super();
         this.lenient = true;
+        this.additionalVetoes = Set.of();
         this.serviceTaqs = new HashSet<>();
     }
 
@@ -232,6 +235,10 @@ public final class OciExtension implements Extension {
         } catch (IllegalArgumentException conversionException) {
             this.lenient = true;
         }
+        this.additionalVetoes = ConfigProvider.getConfig()
+            .getOptionalValue("oci.vetoes", String[].class)
+            .<Set<String>>map(Set::of)
+            .orElse(Set.of());
     }
 
     private void processInjectionPoint(@Observes ProcessInjectionPoint<?, ?> event) {
@@ -250,7 +257,7 @@ public final class OciExtension implements Extension {
                 // AbstractAuthenticationDetailsProvider (or a
                 // relevant builder).
                 this.serviceTaqs.add(new ServiceTaqs(qualifiers.toArray(EMPTY_ANNOTATION_ARRAY)));
-            } else if (!isVetoed(baseClass)) {
+            } else if (!this.isVetoed(baseClass)) {
                 String baseClassName = baseClass.getName();
                 Matcher m = SERVICE_CLIENT_CLASS_NAME_PATTERN.matcher(baseClassName);
                 if (m.matches()) {
@@ -353,6 +360,49 @@ public final class OciExtension implements Extension {
         this.serviceTaqs.clear();
     }
 
+
+    /*
+     * Additional instance methods.
+     */
+
+
+    /**
+     * Returns {@code true} if the supplied {@link Class} is known to
+     * not be directly related to an Oracle Cloud Infrastructure
+     * service.
+     *
+     * <p>The check is fast and deliberately not exhaustive.</p>
+     *
+     * @param c the {@link Class} in question; must not be {@code
+     * null}
+     *
+     * @return {@code true} if the supplied {@link Class} is known to
+     * not be directly related to an Oracle Cloud Infrastructure
+     * service
+     *
+     * @exception NullPointerException if {@code c} is {@code null}
+     */
+    private boolean isVetoed(Class<?> c) {
+        // See
+        // https://docs.oracle.com/en-us/iaas/tools/java/latest/overview-summary.html#:~:text=Oracle%20Cloud%20Infrastructure%20Common%20Runtime.
+        // None of these packages contains OCI service clients or
+        // service client interfaces or service client builders. There
+        // are other packages (com.oracle.bmc.encryption, as an
+        // arbitrary example) that should also conceptually be vetoed.
+        // This method does not currently veto all of them, nor is it
+        // clear that it ever could.  The strategy employed here,
+        // however, vetoes quite a large number of them correctly and
+        // very efficiently before more sophisticated tests are
+        // employed.
+        //
+        // "Veto" in this context means only that this extension will
+        // not further process the class in question.  The class
+        // remains eligible for further processing; i.e. this is not a
+        // CDI veto.
+        return
+            equals(Service.class.getProtectionDomain(), c.getProtectionDomain())
+            || this.additionalVetoes.contains(c.getName());
+    }
 
     /*
      * Static methods.
@@ -551,48 +601,6 @@ public final class OciExtension implements Extension {
         } catch (AmbiguousResolutionException ambiguousResolutionException) {
             return false;
         }
-    }
-
-    /**
-     * Returns {@code true} if the supplied {@link Class} is known to
-     * not be directly related to an Oracle Cloud Infrastructure
-     * service.
-     *
-     * <p>The check is fast and deliberately not exhaustive.</p>
-     *
-     * @param c the {@link Class} in question; must not be {@code
-     * null}
-     *
-     * @return {@code true} if the supplied {@link Class} is known to
-     * not be directly related to an Oracle Cloud Infrastructure
-     * service
-     *
-     * @exception NullPointerException if {@code c} is {@code null}
-     */
-    private static boolean isVetoed(Class<?> c) {
-        // See
-        // https://docs.oracle.com/en-us/iaas/tools/java/latest/overview-summary.html#:~:text=Oracle%20Cloud%20Infrastructure%20Common%20Runtime.
-        // None of these packages contains OCI service clients or
-        // service client interfaces or service client builders. There
-        // are other packages (com.oracle.bmc.encryption, as an
-        // arbitrary example) that should also conceptually be vetoed.
-        // This method does not currently veto all of them, nor is it
-        // clear that it ever could.  The strategy employed here,
-        // however, vetoes quite a large number of them correctly and
-        // very efficiently before more sophisticated tests are
-        // employed.
-        //
-        // "Veto" in this context means only that this extension will
-        // not further process the class in question.  The class
-        // remains eligible for further processing; i.e. this is not a
-        // CDI veto.
-        return
-            equals(Service.class.getProtectionDomain(), c.getProtectionDomain())
-            || ConfigProvider.getConfig()
-            .getOptionalValue("oci.vetoes", String[].class)
-            .<Set<String>>map(Set::of)
-            .orElse(Set.of())
-            .contains(c.getName());
     }
 
     private static boolean equals(ProtectionDomain pd0, ProtectionDomain pd1) {
