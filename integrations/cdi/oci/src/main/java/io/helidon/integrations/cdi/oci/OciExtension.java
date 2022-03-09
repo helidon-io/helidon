@@ -498,7 +498,7 @@ public final class OciExtension implements Extension {
         try {
             ClientBuilderBase<?, ?> builderInstance = (ClientBuilderBase<?, ?>) builderMethod.invoke();
             // Permit arbitrary customization.
-            fire(instance, builderMethod.type().returnType(), qualifiers, builderInstance);
+            fire(instance, qualifiers, builderInstance);
             customizeEndpointResolution(builderInstance);
             return builderInstance;
         } catch (RuntimeException runtimeException) {
@@ -540,8 +540,9 @@ public final class OciExtension implements Extension {
         }
     }
 
-    private static <T> void fire(Instance<? super Object> instance, Class<T> type, Annotation[] qualifiers, Object payload) {
-        instance.select(EVENT_OBJECT_TYPE_LITERAL).get().select(type, qualifiers).fire(type.cast(payload));
+    @SuppressWarnings("unchecked")
+    private static <T> void fire(Instance<? super Object> instance, Annotation[] qualifiers, T payload) {
+        instance.select(EVENT_OBJECT_TYPE_LITERAL).get().select((Class<T>) payload.getClass(), qualifiers).fire(payload);
     }
 
     private static boolean isUnsatisfied(BeanManager bm, TypeAndQualifiers taq) {
@@ -1060,7 +1061,7 @@ public final class OciExtension implements Extension {
                     .or(() -> c.getOptionalValue("oci.config.user", String.class))
                     .or(() -> c.getOptionalValue("oci.auth.user", String.class))
                     .ifPresent(b::userId);
-                OciExtension.fire(instance, SimpleAuthenticationDetailsProviderBuilder.class, qualifiersArray, b);
+                fire(instance, qualifiersArray, b);
                 return b;
             }
 
@@ -1164,7 +1165,7 @@ public final class OciExtension implements Extension {
                                                                                   Annotation[] qualifiersArray) {
                 InstancePrincipalsAuthenticationDetailsProviderBuilder builder =
                     InstancePrincipalsAuthenticationDetailsProvider.builder();
-                fire(instance, InstancePrincipalsAuthenticationDetailsProviderBuilder.class, qualifiersArray, builder);
+                fire(instance, qualifiersArray, builder);
                 return builder;
             }
 
@@ -1199,7 +1200,7 @@ public final class OciExtension implements Extension {
                                                                                  Annotation[] qualifiersArray) {
                 ResourcePrincipalAuthenticationDetailsProviderBuilder builder =
                     ResourcePrincipalAuthenticationDetailsProvider.builder();
-                fire(instance, ResourcePrincipalAuthenticationDetailsProviderBuilder.class, qualifiersArray, builder);
+                fire(instance, qualifiersArray, builder);
                 return builder;
             }
 
