@@ -1,0 +1,361 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2022 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Helidon with JBatch Guide
+:h1Prefix: MP
+:description: Helidon 
+:keywords: helidon, microprofile, guide, Jakarta Batch Project, Jakarta Batch 
+:common-page-prefix-inc: ../../shared/common_prereqs/common_prereqs.adoc
+
+This guide describes how Helidon and Jakarta Batch (JBatch) can be used together to execute batch jobs in environments that do not fully support EE environments. 
+
+== What You Need
+
+For this 20 minute tutorial, you will need the following:
+include::{common-page-prefix-inc}[tag=common-prereqs]
+
+NOTE: This guide assumes you are familiar with the https://projects.eclipse.org/projects/ee4j.batch[Jakarta Batch project specification] from the Ecplipse Foundation project site. 
+
+== Dependencies
+For this example, add the IBM JBatch implementation and the `derby` embedded DB (since JPA and JPA are not available by default) dependencies to the testing module:
+
+[source,xml]
+.Maven dependencies
+----
+<dependencies>
+  <dependency>            
+     <groupId>com.ibm.jbatch</groupId>                 
+     <artifactId>com.ibm.jbatch.container</artifactId>              
+ </dependency>
+  <dependency>            
+     <groupId>org.apache.derby</groupId>                 
+     <artifactId>derby</artifactId>      
+  </dependency>
+<dependencies>
+----
+
+== Add Sample Jobs
+
+In this demonstration you will first create sample input and output records and then the following jobs: `MyItemReader`, `MyItemProcessor` and `MyItemWriter`. Finally you will create `MyBatchlet` to demonstrate all possible usages of JBatch.
+
+==== 1. Create a unit of input information
+
+[source,java]
+.MyInputRecord
+----
+public class MyInputRecord {
+    private int id;
+
+    
+    public MyInputRecord(int id) {
+        this.id = id;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    @Override
+    public String toString() {
+        return "MyInputRecord: " + id;
+    }
+}
+----
+
+==== 2. Create a unit of output information
+
+[source,java]
+.MyOutputRecord
+----
+public class MyOutputRecord {
+
+    private int id;
+
+    public MyOutputRecord(int id) {
+        this.id = id;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    @Override
+    public String toString() {
+        return "MyOutputRecord: " + id;
+    }
+}
+----
+
+==== 3. Create `MyItemReader` to extend `AbstractItemReader`
+
+`MyItemReader` should look like this:
+
+[source,java]
+.MyItemReader
+
+----
+public class MyItemReader extends AbstractItemReader {
+
+    private final StringTokenizer tokens;
+
+    public MyItemReader() {
+        tokens = new StringTokenizer("1,2,3,4,5,6,7,8,9,10", ",");
+    }
+
+    /**
+     * Perform read Item.
+     * @return Stage result.
+     */
+    @Override
+    public MyInputRecord readItem() {
+        if (tokens.hasMoreTokens()) {
+            return new MyInputRecord(Integer.valueOf(tokens.nextToken()));
+        }
+        return null;
+    }
+}
+----
+
+==== 4. Create `MyItemProcessor` to implement `ItemProcessor`
+
+The `MyItemProcessor` will perform some simple operations:
+
+[source,java]
+.MyItemProcessor
+
+----
+public class MyItemProcessor implements ItemProcessor {
+
+    @Override
+    public MyOutputRecord processItem(Object t) {
+        System.out.println("processItem: " + t);
+
+        return (((MyInputRecord) t).getId() % 2 == 0) ? null : new MyOutputRecord(((MyInputRecord) t).getId() * 2);
+    }
+}
+----
+
+==== 5. Create `MyItemWriter` to extend `AbstractItemWriter`
+
+`MyItemWriter` prints the result:
+
+[source,java]
+.MyItemWriter
+
+----
+public class MyItemWriter extends AbstractItemWriter {
+
+    @Override
+    public void writeItems(List list) {
+        System.out.println("writeItems: " + list);
+    }
+}
+----
+
+==== 6. Create `MyBatchlet` to extentd `AbstractBatchlet`
+
+`MyBatchlet` simply completes the process:
+
+[source,java]
+.MyBatchlet
+
+----
+public class MyBatchlet extends AbstractBatchlet {
+    
+    @Override
+    public String process() {
+        System.out.println("Running inside a batchlet");
+
+        return "COMPLETED";
+    }
+
+}
+----
+
+== Update the Descriptor File
+Add this code to your job descriptor.xml file:
+
+[source,java]
+.Updated descriptor file
+
+----
+<job id="myJob" xmlns="http://xmlns.jcp.org/xml/ns/javaee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/jobXML_1_0.xsd" version="1.0">
+    <step id="step1" next="step2">
+        <chunk item-count="3"> <1>
+            <reader ref="io.helidon.jbatch.example.jobs.MyItemReader"/>
+            <processor ref="io.helidon.jbatch.example.jobs.MyItemProcessor"/>
+            <writer ref="io.helidon.jbatch.example.jobs.MyItemWriter"/>
+        </chunk>    
+    </step>
+    <step id="step2" > <2>
+        <batchlet ref="io.helidon.jbatch.example.jobs.MyBatchlet"/>
+    </step>
+</job>
+----
+<1> The first step of the job includes `MyItemReader`, `MyItemProcessor` and `MyItemWriter`.
+
+<2> The second step of the job includes `MyBatchlet`.
+
+NOTE: You must specify the fully qualified names in the `ref` properties, like “io.helidon.jbatch.example.jobs.MyItemReader”, otherwise it will not work.
+
+== Create an Endpoint
+Create a small endpoint to activate the job:
+
+[source,java]
+.new endpoint
+
+----
+@Path("/batch")
+@ApplicationScoped
+public class BatchResource {
+    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
+
+    private JobOperator jobOperator;
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public JsonObject executeBatch() {
+
+        BatchSPIManager batchSPIManager = BatchSPIManager.getInstance();
+        batchSPIManager.registerPlatformMode(BatchSPIManager.PlatformMode.SE);
+        batchSPIManager.registerExecutorServiceProvider(new HelidonExecutorServiceProvider());
+
+        jobOperator = getJobOperator();
+        Long executionId = jobOperator.start("myJob", new Properties());
+
+        return JSON.createObjectBuilder()
+                .add("Started a job with Execution ID: ", executionId)
+                .build();
+    }
+
+   
+    @GET
+    @Path("/status/{execution-id}")
+    public JsonObject status(@PathParam("execution-id") Long executionId){
+        JobExecution jobExecution = jobOperator.getJobExecution(executionId);
+
+        List<StepExecution> stepExecutions = jobOperator.getStepExecutions(executionId);
+        List<String> executedSteps = new ArrayList<>();
+        for (StepExecution stepExecution : stepExecutions) {
+            executedSteps.add(stepExecution.getStepName());
+        }
+
+        return JSON.createObjectBuilder()
+                .add("Steps executed", Arrays.toString(executedSteps.toArray()))
+                .add("Status", jobExecution.getBatchStatus().toString())
+                .build();
+    }
+}
+----
+
+Helidon specifies to JBatch that it should run in Standalone (SE) mode. It will also register the `HelidonExecutorServiceProvider` which is actually relatively small. For our example we need something really small, like a `FixedTheadPool` with 2 threads. This provider is used to tell our JBatch engine exactly which ExecutorSevice to use.
+
+[source, java]
+.HelidonExecutorServiceProvider
+
+----
+public class HelidonExecutorServiceProvider implements ExecutorServiceProvider {
+    @Override
+    public ExecutorService getExecutorService() {
+        return ThreadPoolSupplier.builder().corePoolSize(2).build().get();
+    }
+}
+----
+
+== Run the Code 
+
+[source,bash]
+
+----
+mvn package
+java -jar target/helidon-jbatch-example.jar 
+----
+
+
+== Call the Endpoint
+
+[source,bash]
+
+----
+curl -X GET http://localhost:8080/batch
+----
+
+You should receive the following log:
+
+[source,bash]
+
+----
+processItem: MyInputRecord: 1
+processItem: MyInputRecord: 2
+processItem: MyInputRecord: 3
+writeItems: [MyOutputRecord: 2, MyOutputRecord: 6]
+processItem: MyInputRecord: 4
+processItem: MyInputRecord: 5
+processItem: MyInputRecord: 6
+writeItems: [MyOutputRecord: 10]
+processItem: MyInputRecord: 7
+processItem: MyInputRecord: 8
+processItem: MyInputRecord: 9
+writeItems: [MyOutputRecord: 14, MyOutputRecord: 18]
+processItem: MyInputRecord: 10
+Running inside a batchlet
+----
+
+and the following result:
+
+[source,bash]
+
+----
+{"Started a job with Execution ID: ":1}
+----
+
+This indicates that the batch job was called and executed successfully.
+
+
+=== Check the Status
+[source,bash]
+----
+
+curl -X GET http://localhost:8080/batch/status/1
+----
+
+NOTE: In this example the job ID is 1, but make sure that you enter your specfic job ID in the string. 
+
+The results should look something like this: 
+
+[source,bash]
+
+----
+{"Steps executed":"[step1, step2]","Status":"COMPLETED"}
+----
+
+== Summary
+
+This guide demonstrated how to use Helidon with JBatch even though Helidon is not a full EE container.
+
+ 
+
