@@ -44,6 +44,7 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import java.util.logging.Level;
@@ -59,7 +60,6 @@ import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.UnsatisfiedResolutionException;
 import javax.enterprise.inject.spi.AfterBeanDiscovery;
 import javax.enterprise.inject.spi.AfterDeploymentValidation;
-import javax.enterprise.inject.spi.Annotated;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.BeforeBeanDiscovery;
 import javax.enterprise.inject.spi.Extension;
@@ -242,94 +242,100 @@ public final class OciExtension implements Extension {
 
     private void processInjectionPoint(@Observes ProcessInjectionPoint<?, ?> event) {
         InjectionPoint ip = event.getInjectionPoint();
-        Annotated annotated = ip.getAnnotated();
-        Type baseType = annotated.getBaseType();
-        if (baseType instanceof Class) {
+        Type baseType = ip.getAnnotated().getBaseType();
+        if (!(baseType instanceof Class)) {
             // Optimization: all OCI constructs we're interested in
             // are non-generic classes.
-            Class<?> baseClass = (Class<?>) baseType;
-            String baseClassName = baseClass.getName();
-            if (baseClassName.startsWith(OCI_PACKAGE_PREFIX)) {
-                Set<Annotation> qualifiers = ip.getQualifiers();
-                if (AbstractAuthenticationDetailsProvider.class.isAssignableFrom(baseClass)
-                    || AdpSelectionStrategy.builderClasses().contains(baseClass)) {
+            return;
+        }
+        Class<?> baseClass = (Class<?>) baseType;
+        String baseClassName = baseClass.getName();
+        if (!baseClassName.startsWith(OCI_PACKAGE_PREFIX)) {
+            // Optimization: the only classes we're interested in are
+            // OCI classes.
+            return;
+        }
+        Set<Annotation> qualifiers = ip.getQualifiers();
+        if (AbstractAuthenticationDetailsProvider.class.isAssignableFrom(baseClass)
+            || AdpSelectionStrategy.builderClasses().contains(baseClass)) {
+            // Use an "empty" ServiceTaqs as an indicator of
+            // demand for some kind of
+            // AbstractAuthenticationDetailsProvider (or a
+            // relevant builder).
+            this.serviceTaqs.add(new ServiceTaqs(qualifiers.toArray(EMPTY_ANNOTATION_ARRAY)));
+            return;
+        }
+        Matcher m = SERVICE_CLIENT_CLASS_NAME_SUBSTRING_PATTERN.matcher(baseClassName.substring(OCI_PACKAGE_PREFIX.length()));
+        if (!m.matches() || this.isVetoed(baseClass)) {
+            return;
+        }
+        this.processValidInjectionPoint(event::addDefinitionError, baseClass, qualifiers, OCI_PACKAGE_PREFIX + m.group(1));
+    }
+
+    private void processValidInjectionPoint(Consumer<? super ClassNotFoundException> errorHandler,
+                                            Class<?> baseClass,
+                                            Set<Annotation> qualifiers,
+                                            String serviceInterface) {
+        Annotation[] qualifiersArray = qualifiers.toArray(EMPTY_ANNOTATION_ARRAY);
+        boolean lenient = this.lenient;
+        ServiceTaqs serviceTaqsForAuth = null;
+        // Create types-and-qualifiers for, e.g.:
+        //   ....example.Example
+        //   ....example.ExampleClient
+        //   ....example.ExampleClient$Builder
+        Class<?> serviceInterfaceClass = toClassUnresolved(errorHandler, baseClass, serviceInterface, lenient);
+        if (serviceInterfaceClass != null && serviceInterfaceClass.isInterface()) {
+            String serviceClient = serviceInterface + "Client";
+            Class<?> serviceClientClass = toClassUnresolved(errorHandler, baseClass, serviceClient, lenient);
+            if (serviceClientClass != null && serviceInterfaceClass.isAssignableFrom(serviceClientClass)) {
+                Class<?> serviceClientBuilderClass = toClassUnresolved(errorHandler, baseClass, serviceClient + "$Builder", true);
+                if (serviceClientBuilderClass == null) {
+                    serviceClientBuilderClass = toClassUnresolved(errorHandler, serviceClient + "Builder", lenient);
+                }
+                if (serviceClientBuilderClass != null
+                    && ClientBuilderBase.class.isAssignableFrom(serviceClientBuilderClass)) {
+                    this.serviceTaqs.add(new ServiceTaqs(qualifiersArray,
+                                                         serviceInterfaceClass,
+                                                         serviceClientClass,
+                                                         serviceClientBuilderClass));
                     // Use an "empty" ServiceTaqs as an indicator of
                     // demand for some kind of
                     // AbstractAuthenticationDetailsProvider (or a
                     // relevant builder).
-                    this.serviceTaqs.add(new ServiceTaqs(qualifiers.toArray(EMPTY_ANNOTATION_ARRAY)));
-                } else {
-                    Matcher m =
-                        SERVICE_CLIENT_CLASS_NAME_SUBSTRING_PATTERN.matcher(baseClassName.substring(OCI_PACKAGE_PREFIX.length()));
-                    if (m.matches() && !this.isVetoed(baseClass)) {
-                        Annotation[] qualifiersArray = qualifiers.toArray(EMPTY_ANNOTATION_ARRAY);
-                        boolean lenient = this.lenient;
-                        ServiceTaqs serviceTaqsForAuth = null;
-                        // Create types-and-qualifiers for, e.g.:
-                        //   ....example.Example
-                        //   ....example.ExampleClient
-                        //   ....example.ExampleClient$Builder
-                        String serviceInterface = OCI_PACKAGE_PREFIX + m.group(1);
-                        Class<?> serviceInterfaceClass = toClassUnresolved(event, baseClass, serviceInterface, lenient);
-                        if (serviceInterfaceClass != null && serviceInterfaceClass.isInterface()) {
-                            String serviceClient = serviceInterface + "Client";
-                            Class<?> serviceClientClass = toClassUnresolved(event, baseClass, serviceClient, lenient);
-                            if (serviceClientClass != null && serviceInterfaceClass.isAssignableFrom(serviceClientClass)) {
-                                Class<?> serviceClientBuilderClass =
-                                    toClassUnresolved(event, baseClass, serviceClient + "$Builder", true);
-                                if (serviceClientBuilderClass == null) {
-                                    serviceClientBuilderClass =
-                                        toClassUnresolved(event, baseClass, serviceClient + "Builder", lenient);
-                                }
-                                if (serviceClientBuilderClass != null
-                                    && ClientBuilderBase.class.isAssignableFrom(serviceClientBuilderClass)) {
-                                    this.serviceTaqs.add(new ServiceTaqs(qualifiersArray,
-                                                                         serviceInterfaceClass,
-                                                                         serviceClientClass,
-                                                                         serviceClientBuilderClass));
-                                    // Use an "empty" ServiceTaqs as an indicator of
-                                    // demand for some kind of
-                                    // AbstractAuthenticationDetailsProvider (or a
-                                    // relevant builder).
-                                    serviceTaqsForAuth = new ServiceTaqs(qualifiersArray);
-                                    this.serviceTaqs.add(serviceTaqsForAuth);
-                                }
-                            }
-                        }
-                        // Create types-and-qualifiers for, e.g.:
-                        //   ....example.ExampleAsync
-                        //   ....example.ExampleAsyncClient
-                        //   ....example.ExampleAsyncClient$Builder
-                        String serviceAsyncInterface = serviceInterface + "Async";
-                        Class<?> serviceAsyncInterfaceClass = toClassUnresolved(event, baseClass, serviceAsyncInterface, lenient);
-                        if (serviceAsyncInterfaceClass != null && serviceAsyncInterfaceClass.isInterface()) {
-                            String serviceAsyncClient = serviceAsyncInterface + "Client";
-                            Class<?> serviceAsyncClientClass = toClassUnresolved(event, baseClass, serviceAsyncClient, lenient);
-                            if (serviceAsyncClientClass != null
-                                && serviceAsyncInterfaceClass.isAssignableFrom(serviceAsyncClientClass)) {
-                                Class<?> serviceAsyncClientBuilderClass =
-                                    toClassUnresolved(event, baseClass, serviceAsyncClient + "$Builder", true);
-                                if (serviceAsyncClientBuilderClass == null) {
-                                    serviceAsyncClientBuilderClass =
-                                        toClassUnresolved(event, baseClass, serviceAsyncClient + "Builder", lenient);
-                                }
-                                if (serviceAsyncClientBuilderClass != null
-                                    && ClientBuilderBase.class.isAssignableFrom(serviceAsyncClientBuilderClass)) {
-                                    this.serviceTaqs.add(new ServiceTaqs(qualifiersArray,
-                                                                         serviceAsyncInterfaceClass,
-                                                                         serviceAsyncClientClass,
-                                                                         serviceAsyncClientBuilderClass));
-                                    if (serviceTaqsForAuth == null) {
-                                        // Use an "empty" ServiceTaqs as
-                                        // an indicator of demand for some
-                                        // kind of
-                                        // AbstractAuthenticationDetailsProvider
-                                        // (or a relevant builder).
-                                        this.serviceTaqs.add(new ServiceTaqs(qualifiersArray));
-                                    }
-                                }
-                            }
-                        }
+                    serviceTaqsForAuth = new ServiceTaqs(qualifiersArray);
+                    this.serviceTaqs.add(serviceTaqsForAuth);
+                }
+            }
+        }
+        // Create types-and-qualifiers for, e.g.:
+        //   ....example.ExampleAsync
+        //   ....example.ExampleAsyncClient
+        //   ....example.ExampleAsyncClient$Builder
+        String serviceAsyncInterface = serviceInterface + "Async";
+        Class<?> serviceAsyncInterfaceClass = toClassUnresolved(errorHandler, baseClass, serviceAsyncInterface, lenient);
+        if (serviceAsyncInterfaceClass != null && serviceAsyncInterfaceClass.isInterface()) {
+            String serviceAsyncClient = serviceAsyncInterface + "Client";
+            Class<?> serviceAsyncClientClass = toClassUnresolved(errorHandler, baseClass, serviceAsyncClient, lenient);
+            if (serviceAsyncClientClass != null
+                && serviceAsyncInterfaceClass.isAssignableFrom(serviceAsyncClientClass)) {
+                Class<?> serviceAsyncClientBuilderClass =
+                    toClassUnresolved(errorHandler, baseClass, serviceAsyncClient + "$Builder", true);
+                if (serviceAsyncClientBuilderClass == null) {
+                    serviceAsyncClientBuilderClass = toClassUnresolved(errorHandler, serviceAsyncClient + "Builder", lenient);
+                }
+                if (serviceAsyncClientBuilderClass != null
+                    && ClientBuilderBase.class.isAssignableFrom(serviceAsyncClientBuilderClass)) {
+                    this.serviceTaqs.add(new ServiceTaqs(qualifiersArray,
+                                                         serviceAsyncInterfaceClass,
+                                                         serviceAsyncClientClass,
+                                                         serviceAsyncClientBuilderClass));
+                    if (serviceTaqsForAuth == null) {
+                        // Use an "empty" ServiceTaqs as
+                        // an indicator of demand for some
+                        // kind of
+                        // AbstractAuthenticationDetailsProvider
+                        // (or a relevant builder).
+                        this.serviceTaqs.add(new ServiceTaqs(qualifiersArray));
                     }
                 }
             }
@@ -639,11 +645,17 @@ public final class OciExtension implements Extension {
         }
     }
 
-    private static Class<?> toClassUnresolved(ProcessInjectionPoint<?, ?> event,
+    private static Class<?> toClassUnresolved(Consumer<? super ClassNotFoundException> errorHandler,
+                                              String name,
+                                              boolean lenient) {
+        return toClassUnresolved(errorHandler, null, name, lenient);
+    }
+
+    private static Class<?> toClassUnresolved(Consumer<? super ClassNotFoundException> errorHandler,
                                               Class<?> referenceClass,
                                               String name,
                                               boolean lenient) {
-        if (referenceClass.getName().equals(name)) {
+        if (referenceClass != null && referenceClass.getName().equals(name)) {
             return referenceClass;
         }
         try {
@@ -658,7 +670,7 @@ public final class OciExtension implements Extension {
                                 classNotFoundException);
                 }
             } else {
-                event.addDefinitionError(classNotFoundException);
+                errorHandler.accept(classNotFoundException);
             }
             return null;
         }
