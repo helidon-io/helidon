@@ -27,8 +27,8 @@ import javax.inject.Inject;
 import com.oracle.bmc.ConfigFileReader;
 // Arbitrary
 //
-// If the tests work for this, they should work for all.  (Feel free
-// to substitute other OCI imports.)
+// If the tests work for this, they will work for all.  (Feel free
+// to substitute other OCI service imports.)
 import com.oracle.bmc.ailanguage.AIServiceLanguage;
 import com.oracle.bmc.ailanguage.AIServiceLanguageAsync;
 import com.oracle.bmc.ailanguage.AIServiceLanguageAsyncClient;
@@ -39,7 +39,8 @@ import com.oracle.bmc.ailanguage.AIServiceLanguageClient;
 //
 // Streaming is a strange case where they didn't really do builders
 // the same way as for every other service in the portfolio for no
-// particular reason.
+// particular reason (some builders are top-level classes, not nested
+// classes). We test this single outlier explicitly here.
 import com.oracle.bmc.streaming.Stream;
 import com.oracle.bmc.streaming.StreamAdmin;
 import com.oracle.bmc.streaming.StreamAdminClient;
@@ -121,7 +122,6 @@ final class TestSpike {
         this.container = SeContainerInitializer.newInstance()
             .disableDiscovery()
             .addExtensions(new ConfigCdiExtension(),
-                           // new AdpExtension(),
                            new OciExtension())
             .addBeanClasses(ExampleBean.class)
             .initialize();
@@ -143,9 +143,15 @@ final class TestSpike {
 
     @Test
     final void testSpike() {
+        // Simulate demand for an injected ExampleBean. This will
+        // cause ExampleBean to get created, which will cause its
+        // constructor to be injected with OCI services.  See the
+        // ExampleBean class below.
         this.container.select(ExampleBean.class).get();
+
         assertTrue(ExampleBean.customizeAsyncBuilderCalled);
         ExampleBean.customizeAsyncBuilderCalled = false;
+
         assertTrue(ExampleBean.customizeBuilderCalled);
         ExampleBean.customizeBuilderCalled = false;
     }
@@ -169,7 +175,7 @@ final class TestSpike {
     private static final boolean imdsAvailable() {
         try {
             return InetAddress.getByName(System.getProperty("oci.imds.hostname", "169.254.169.254"))
-                .isReachable(Integer.getInteger("oci.imds.timeout", 500).intValue());
+                .isReachable(Integer.getInteger("oci.imds.timeout", 100).intValue());
         } catch (final IOException ignored) {
             return false;
         }
@@ -225,18 +231,19 @@ final class TestSpike {
                             // Streaming turns out to be the only
                             // convention-violating service in the
                             // entire portfolio, and the violation is
-                            // extremely minor.  Specifically, its
-                            // root subpackage features two main
-                            // domain objects (Stream, StreamAdmin)
-                            // and only one of them (StreamAdmin)
-                            // fully follows the service client
-                            // pattern.  The other one (Stream)
-                            // features a builder class that is not a
-                            // nested class (StreamClientBuilder) but
-                            // maybe should be.  We test this
-                            // explicitly here because, again, it is
-                            // the only service in the entire
-                            // portfolio that breaks the pattern.
+                            // extremely minor, and appears to be a
+                            // mistake.  Specifically, its root
+                            // subpackage features two main domain
+                            // objects (Stream, StreamAdmin) and only
+                            // one of them (StreamAdmin) fully follows
+                            // the service client pattern.  The other
+                            // one (Stream) features a builder class
+                            // that is not a nested class
+                            // (StreamClientBuilder) but maybe should
+                            // be.  We test this explicitly here
+                            // because, again, it is the only service
+                            // in the entire portfolio that breaks the
+                            // pattern.
                             Stream streamingServiceInterface,
                             StreamAdmin streamingAdminServiceInterface,
                             StreamAdminClient streamingAdminServiceClient,
@@ -255,7 +262,7 @@ final class TestSpike {
             //
             // First, JaxRsCircuitBreaker is part of the common
             // runtime (see
-            // https://docs.oracle.com/en-us/iaas/tools/java/2.18.0/overview-summary.html#:~:text=Oracle%20Cloud%20Infrastructure%20Common%20Runtime),
+            // https://docs.oracle.com/en-us/iaas/tools/java/latest/overview-summary.html#:~:text=Oracle%20Cloud%20Infrastructure%20Common%20Runtime),
             // and hence is not a service itself.
             //
             // Second, there are no JaxRsCircuitBreakerAsync,
@@ -269,24 +276,24 @@ final class TestSpike {
             assertTrue(unresolvedJaxRsCircuitBreakerInstance.isUnsatisfied());
         }
 
-        private static void customizeAsyncBuilder(@Observes AIServiceLanguageAsyncClient.Builder acb) {
+        private static void customizeAsyncBuilder(@Observes AIServiceLanguageAsyncClient.Builder asyncClientBuilder) {
             customizeAsyncBuilderCalled = true;
         }
 
-        private static void customizeBuilder(@Observes AIServiceLanguageClient.Builder cb) {
+        private static void customizeBuilder(@Observes AIServiceLanguageClient.Builder clientBuilder) {
             customizeBuilderCalled = true;
         }
 
-        private static void customizeAsyncBuilder(@Observes StreamAsyncClientBuilder streamingAsyncClientBuilder) {
+        private static void customizeAsyncBuilder(@Observes StreamAsyncClientBuilder asyncClientBuilder) {
             // See
             // https://docs.oracle.com/en-us/iaas/Content/Streaming/Tasks/streaming-quickstart-oci-sdk-for-java.htm#:~:text=Streams%20are%20assigned%20a%20specific%20endpoint%20url
-            streamingAsyncClientBuilder.endpoint("forTestingOnly");
+            asyncClientBuilder.endpoint("forTestingOnly");
         }
 
-        private static void customizeAsyncBuilder(@Observes StreamClientBuilder streamingClientBuilder) {
+        private static void customizeAsyncBuilder(@Observes StreamClientBuilder clientBuilder) {
             // See
             // https://docs.oracle.com/en-us/iaas/Content/Streaming/Tasks/streaming-quickstart-oci-sdk-for-java.htm#:~:text=Streams%20are%20assigned%20a%20specific%20endpoint%20url
-            streamingClientBuilder.endpoint("forTestingOnly");
+            clientBuilder.endpoint("forTestingOnly");
         }
 
     }

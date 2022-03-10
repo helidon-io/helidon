@@ -34,7 +34,10 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <systemPropertyVariables>
+                        <io.helidon.logging.config.disabled>true</io.helidon.logging.config.disabled>
+                        <java.util.logging.config.file>${project.build.testOutputDirectory}/logging.properties</java.util.logging.config.file>
                         <oci.config.strategy>${oci.config.strategy}</oci.config.strategy>
+                        <org.jboss.logging.provider>jdk</org.jboss.logging.provider>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>
@@ -42,7 +45,9 @@
     </build>
 
     <dependencies>
+
         <!-- Compile-scoped dependencies. -->
+
         <dependency>
             <groupId>com.oracle.oci.sdk</groupId>
             <artifactId>oci-java-sdk-common</artifactId>
@@ -55,6 +60,7 @@
         </dependency>
 
         <!-- Provided-scoped dependencies. -->
+
         <dependency>
             <groupId>jakarta.enterprise</groupId>
             <artifactId>jakarta.enterprise.cdi-api</artifactId>
@@ -62,15 +68,16 @@
         </dependency>
 
         <!-- Runtime-scoped dependencies. -->
+
         <dependency>
-            <groupId>org.jboss</groupId>
-            <artifactId>jandex</artifactId>
+            <groupId>io.helidon.microprofile.config</groupId>
+            <artifactId>helidon-microprofile-config</artifactId>
             <scope>runtime</scope>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>io.helidon.microprofile.config</groupId>
-            <artifactId>helidon-microprofile-config</artifactId>
+            <groupId>org.jboss</groupId>
+            <artifactId>jandex</artifactId>
             <scope>runtime</scope>
             <optional>true</optional>
         </dependency>
@@ -83,6 +90,7 @@
             <artifactId>oci-java-sdk-ailanguage</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- Streaming OCI library because it is the only OCI service that doesn't quite match the other OCI services' design patterns. -->
         <dependency>
             <groupId>com.oracle.oci.sdk</groupId>
             <artifactId>oci-java-sdk-streaming</artifactId>
@@ -105,8 +113,9 @@
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-simple</artifactId>
+            <artifactId>slf4j-jdk14</artifactId>
             <scope>test</scope>
         </dependency>
+
     </dependencies>
 </project>

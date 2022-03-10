@@ -41,6 +41,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -178,8 +179,8 @@ public final class OciExtension implements Extension {
     // Capturing group 1: Capturing group 2 and base noun ("example.Example")
     // Capturing group 2: "example"
     private static final Pattern SERVICE_CLIENT_CLASS_NAME_SUBSTRING_PATTERN =
-        Pattern.compile("^(([^.]+)" // (1)
-                        + "\\." // (2)
+        Pattern.compile("^(([^.]+)" // (1) (as many non-periods as possible)
+                        + "\\." // (2) (a single period)
                         + ".+?)(?:Async)?(?:Client(?:\\$?Builder)?)?" // (3)
                         + "$"); // (4)
 
@@ -199,6 +200,8 @@ public final class OciExtension implements Extension {
 
     private Set<String> additionalVetoes;
 
+    private final Set<String> unloadableClassNames;
+
     private boolean lenient;
 
 
@@ -217,6 +220,7 @@ public final class OciExtension implements Extension {
         super();
         this.lenient = true;
         this.additionalVetoes = Set.of();
+        this.unloadableClassNames = new HashSet<>(7);
         this.serviceTaqs = new HashSet<>();
     }
 
@@ -247,14 +251,15 @@ public final class OciExtension implements Extension {
         Type baseType = ip.getAnnotated().getBaseType();
         if (!(baseType instanceof Class)) {
             // Optimization: all OCI constructs we're interested in
-            // are non-generic classes.
+            // are non-generic classes (and not therefore
+            // ParameterizedTypes or GenericArrayTypes).
             return;
         }
         Class<?> baseClass = (Class<?>) baseType;
         String baseClassName = baseClass.getName();
         if (!baseClassName.startsWith(OCI_PACKAGE_PREFIX)) {
-            // Optimization: the only classes we're interested in are
-            // OCI classes.
+            // Optimization: the set of classes we're interested in is
+            // a subset of general OCI-related classes.
             return;
         }
         Set<Annotation> qualifiers = ip.getQualifiers();
@@ -270,7 +275,10 @@ public final class OciExtension implements Extension {
         if (!m.matches() || this.isVetoed(baseClass)) {
             return;
         }
-        this.processValidInjectionPoint(event::addDefinitionError, baseClass, qualifiers, OCI_PACKAGE_PREFIX + m.group(1));
+        this.processServiceClientInjectionPoint(event::addDefinitionError,
+                                                baseClass,
+                                                qualifiers,
+                                                OCI_PACKAGE_PREFIX + m.group(1));
     }
 
     private void afterBeanDiscovery(@Observes AfterBeanDiscovery event, BeanManager bm) {
@@ -289,6 +297,7 @@ public final class OciExtension implements Extension {
 
     private void afterDeploymentValidation(@Observes AfterDeploymentValidation event) {
         this.serviceTaqs.clear();
+        this.unloadableClassNames.clear();
     }
 
 
@@ -342,10 +351,10 @@ public final class OciExtension implements Extension {
         return false;
     }
 
-    private void processValidInjectionPoint(Consumer<? super ClassNotFoundException> errorHandler,
-                                            Class<?> baseClass,
-                                            Set<Annotation> qualifiers,
-                                            String serviceInterface) {
+    private void processServiceClientInjectionPoint(Consumer<? super ClassNotFoundException> errorHandler,
+                                                    Class<?> baseClass,
+                                                    Set<Annotation> qualifiers,
+                                                    String serviceInterfaceName) {
         Annotation[] qualifiersArray = qualifiers.toArray(EMPTY_ANNOTATION_ARRAY);
         ServiceTaqs serviceTaqsForAuth = null;
         boolean lenient = this.lenient;
@@ -353,9 +362,9 @@ public final class OciExtension implements Extension {
         //   ....example.Example
         //   ....example.ExampleClient
         //   ....example.ExampleClient$Builder
-        Class<?> serviceInterfaceClass = toClassUnresolved(errorHandler, baseClass, serviceInterface, lenient);
+        Class<?> serviceInterfaceClass = toClassUnresolved(errorHandler, baseClass, serviceInterfaceName, lenient);
         if (serviceInterfaceClass != null && serviceInterfaceClass.isInterface()) {
-            String serviceClient = serviceInterface + "Client";
+            String serviceClient = serviceInterfaceName + "Client";
             Class<?> serviceClientClass = toClassUnresolved(errorHandler, baseClass, serviceClient, lenient);
             if (serviceClientClass != null && serviceInterfaceClass.isAssignableFrom(serviceClientClass)) {
                 Class<?> serviceClientBuilderClass = toClassUnresolved(errorHandler, baseClass, serviceClient + "$Builder", true);
@@ -381,7 +390,7 @@ public final class OciExtension implements Extension {
         //   ....example.ExampleAsync
         //   ....example.ExampleAsyncClient
         //   ....example.ExampleAsyncClient$Builder
-        String serviceAsyncInterface = serviceInterface + "Async";
+        String serviceAsyncInterface = serviceInterfaceName + "Async";
         Class<?> serviceAsyncInterfaceClass = toClassUnresolved(errorHandler, baseClass, serviceAsyncInterface, lenient);
         if (serviceAsyncInterfaceClass != null && serviceAsyncInterfaceClass.isInterface()) {
             String serviceAsyncClient = serviceAsyncInterface + "Client";
@@ -408,6 +417,44 @@ public final class OciExtension implements Extension {
                     }
                 }
             }
+        }
+    }
+
+    private Class<?> toClassUnresolved(Consumer<? super ClassNotFoundException> errorHandler,
+                                       String name,
+                                       boolean lenient) {
+        return toClassUnresolved(errorHandler, null, name, lenient);
+    }
+
+    private Class<?> toClassUnresolved(Consumer<? super ClassNotFoundException> errorHandler,
+                                       Class<?> referenceClass,
+                                       String name,
+                                       boolean lenient) {
+        if (referenceClass != null && referenceClass.getName().equals(name)) {
+            return referenceClass;
+        }
+        try {
+            return loadClassUnresolved(name);
+        } catch (ClassNotFoundException classNotFoundException) {
+            if (lenient) {
+                if (this.unloadableClassNames.add(name)
+                    && LOGGER.isLoggable(Level.FINE)) {
+                    LogRecord logRecord = new LogRecord(Level.FINE, "classNotFound");
+                    logRecord.setLoggerName(LOGGER.getName());
+                    logRecord.setParameters(new Object[] {name});
+                    logRecord.setResourceBundle(LOGGER.getResourceBundle());
+                    logRecord.setResourceBundleName(LOGGER.getResourceBundleName());
+                    logRecord.setSourceClassName(OciExtension.class.getName());
+                    logRecord.setSourceMethodName("toClassUnresolved");
+                    if (LOGGER.isLoggable(Level.FINEST)) {
+                        logRecord.setThrown(classNotFoundException);
+                    }
+                    LOGGER.log(logRecord);
+                }
+            } else {
+                errorHandler.accept(classNotFoundException);
+            }
+            return null;
         }
     }
 
@@ -478,7 +525,9 @@ public final class OciExtension implements Extension {
                         logRecord.setResourceBundleName(LOGGER.getResourceBundleName());
                         logRecord.setSourceClassName(OciExtension.class.getName());
                         logRecord.setSourceMethodName("installServiceClientBuilder");
-                        logRecord.setThrown(reflectiveOperationException);
+                        if (LOGGER.isLoggable(Level.FINEST)) {
+                            logRecord.setThrown(reflectiveOperationException);
+                        }
                         LOGGER.log(logRecord);
                     }
                 } else {
@@ -486,12 +535,21 @@ public final class OciExtension implements Extension {
                 }
                 return false;
             }
+            Set<Type> types = Set.of(serviceClientBuilderClass);
             Annotation[] qualifiersArray = serviceClientBuilder.qualifiers();
+            Set<Annotation> qualifiers = Set.of(qualifiersArray);
             event.addBean()
-                .types(Set.of(serviceClientBuilderClass))
-                .qualifiers(Set.of(qualifiersArray))
+                .addTransitiveTypeClosure(serviceClientBuilderClass)
+                .qualifiers(qualifiers)
                 .scope(Singleton.class)
                 .produceWith(i -> produceClientBuilder(i, builderMethod, qualifiersArray));
+            if (LOGGER.isLoggable(Level.FINE)) {
+                LOGGER.logp(Level.FINE,
+                            OciExtension.class.getName(),
+                            "installServiceClientBuilder",
+                            "serviceClientBuilderInstalled",
+                            new Object[] {types, qualifiers});
+            }
             return true;
         }
         return false;
@@ -524,9 +582,9 @@ public final class OciExtension implements Extension {
                 if (bm.resolve(bm.getBeans(serviceClientType, qualifiersArray)) == null) {
                     Set<Type> types = null;
                     if (bm.resolve(bm.getBeans(serviceInterfaceType, qualifiersArray)) == null) {
-                        types = Set.of(serviceClientType, serviceInterfaceType);
+                        types = Set.of(AutoCloseable.class, Object.class, serviceClientType, serviceInterfaceType);
                     } else {
-                        types = Set.of(serviceClientType);
+                        types = Set.of(AutoCloseable.class, Object.class, serviceClientType);
                     }
                     event.addBean()
                         .types(types)
@@ -645,41 +703,6 @@ public final class OciExtension implements Extension {
             // Use URL#equals(Object) only as a last resort, since it
             // involves DNS lookups (!).
             return url0.equals(url1);
-        }
-    }
-
-    private static Class<?> toClassUnresolved(Consumer<? super ClassNotFoundException> errorHandler,
-                                              String name,
-                                              boolean lenient) {
-        return toClassUnresolved(errorHandler, null, name, lenient);
-    }
-
-    private static Class<?> toClassUnresolved(Consumer<? super ClassNotFoundException> errorHandler,
-                                              Class<?> referenceClass,
-                                              String name,
-                                              boolean lenient) {
-        if (referenceClass != null && referenceClass.getName().equals(name)) {
-            return referenceClass;
-        }
-        try {
-            return loadClassUnresolved(name);
-        } catch (ClassNotFoundException classNotFoundException) {
-            if (lenient) {
-                if (LOGGER.isLoggable(Level.FINE)) {
-                    LogRecord logRecord = new LogRecord(Level.FINE, "classNotFound");
-                    logRecord.setLoggerName(LOGGER.getName());
-                    logRecord.setParameters(new Object[] {name});
-                    logRecord.setResourceBundle(LOGGER.getResourceBundle());
-                    logRecord.setResourceBundleName(LOGGER.getResourceBundleName());
-                    logRecord.setSourceClassName(OciExtension.class.getName());
-                    logRecord.setSourceMethodName("toClassUnresolved");
-                    logRecord.setThrown(classNotFoundException);
-                    LOGGER.log(logRecord);
-                }
-            } else {
-                errorHandler.accept(classNotFoundException);
-            }
-            return null;
         }
     }
 
@@ -1095,7 +1118,7 @@ public final class OciExtension implements Extension {
                     // does not throw a FileNotFoundException in this case (as
                     // it probably should).  We have no choice but to parse
                     // the error message.  See
-                    // https://github.com/oracle/oci-java-sdk/blob/vlatest/bmc-common/src/main/java/com/oracle/bmc/ConfigFileReader.java#L94-L98.
+                    // https://github.com/oracle/oci-java-sdk/blob/2.19.0/bmc-common/src/main/java/com/oracle/bmc/ConfigFileReader.java#L94-L98.
                     String message = ioException.getMessage();
                     if (message != null
                         && message.startsWith("Can't load the default config from ")
@@ -1115,7 +1138,7 @@ public final class OciExtension implements Extension {
                 if (super.isAvailable(instance, config, qualifiersArray)) {
                     String ociImdsHostname = config.getOptionalValue("oci.imds.hostname", String.class).orElse("169.254.169.254");
                     int ociImdsTimeoutMillis =
-                        config.getOptionalValue("oci.imds.timeout.milliseconds", Integer.class).orElse(Integer.valueOf(500));
+                        config.getOptionalValue("oci.imds.timeout.milliseconds", Integer.class).orElse(Integer.valueOf(100));
                     try {
                         return InetAddress.getByName(ociImdsHostname).isReachable(ociImdsTimeoutMillis);
                     } catch (ConnectException connectException) {
@@ -1159,7 +1182,7 @@ public final class OciExtension implements Extension {
             boolean isAvailable(Instance<? super Object> instance, Config config, Annotation[] qualifiersArray) {
                 return
                     super.isAvailable(instance, config, qualifiersArray)
-                    // https://github.com/oracle/oci-java-sdk/blob/v2.18.0/bmc-common/src/main/java/com/oracle/bmc/auth/ResourcePrincipalAuthenticationDetailsProvider.java#L246-L251
+                    // https://github.com/oracle/oci-java-sdk/blob/v2.19.0/bmc-common/src/main/java/com/oracle/bmc/auth/ResourcePrincipalAuthenticationDetailsProvider.java#L246-L251
                     && System.getenv("OCI_RESOURCE_PRINCIPAL_VERSION") != null;
             }
 
@@ -1190,6 +1213,9 @@ public final class OciExtension implements Extension {
 
         AUTO(AbstractAuthenticationDetailsProvider.class, true) {
 
+            private final Logger logger = Logger.getLogger(this.getClass().getName(),
+                                                           OciExtension.class.getName() + "Messages");
+
             @Override
             Object produceBuilder(Instance<? super Object> instance, Config config, Annotation[] qualifiersArray) {
                 throw new UnsupportedOperationException();
@@ -1212,6 +1238,13 @@ public final class OciExtension implements Extension {
                         // only one strategy.  It is not itself AUTO
                         // so there's no fallback, so we don't try to
                         // help out in any way.
+                        if (logger.isLoggable(Level.CONFIG)) {
+                            logger.logp(Level.CONFIG,
+                                        this.getClass().getName(),
+                                        "produce",
+                                        "usingStrategy",
+                                        new Object[] {strategy, strategy.configName(), strategy.type().getTypeName()});
+                        }
                         return strategy.select(instance, config, qualifiersArray);
                     } else {
                         // (Edge case.) Somehow the sole strategy was us
@@ -1225,7 +1258,20 @@ public final class OciExtension implements Extension {
                     while (i.hasNext()) {
                         AdpSelectionStrategy s = i.next();
                         if (s != this && (!i.hasNext() || s.isAvailable(instance, config, qualifiersArray))) {
+                            if (logger.isLoggable(Level.CONFIG)) {
+                                logger.logp(Level.CONFIG,
+                                            this.getClass().getName(),
+                                            "produce",
+                                            "usingStrategy",
+                                            new Object[] {s, s.configName(), s.type().getTypeName()});
+                            }
                             return s.select(instance, config, qualifiersArray);
+                        } else if (logger.isLoggable(Level.FINE)) {
+                            logger.logp(Level.FINE,
+                                        this.getClass().getName(),
+                                        "produce",
+                                        "strategyUnavailable",
+                                        new Object[] {s, s.configName(), s.type().getTypeName()});
                         }
                     }
                     break;
@@ -1238,6 +1284,10 @@ public final class OciExtension implements Extension {
         /*
          * Static fields.
          */
+
+
+        private static final Logger LOGGER = Logger.getLogger(AdpSelectionStrategy.class.getName(),
+                                                              OciExtension.class.getName() + "Messages");
 
 
         private static final Collection<AdpSelectionStrategy> CONCRETE_STRATEGIES;
@@ -1301,6 +1351,10 @@ public final class OciExtension implements Extension {
          * Instance methods.
          */
 
+
+        String configName() {
+            return this.name().replace('_', '-').toLowerCase();
+        }
 
         Type type() {
             return this.type;
@@ -1375,13 +1429,15 @@ public final class OciExtension implements Extension {
             int length = strategyStringsArray == null ? 0 : strategyStringsArray.length;
             switch (length) {
             case 0:
-                return concreteStrategies();
+                strategies = List.of();
+                break;
             case 1:
                 strategy = ofConfigString(strategyStringsArray[0]);
                 if (strategy.isAbstract()) {
-                    return concreteStrategies();
+                    strategies = List.of();
+                } else {
+                    strategies = EnumSet.of(strategy);
                 }
-                strategies = EnumSet.of(strategy);
                 break;
             default:
                 Set<String> strategyStrings = new LinkedHashSet<>(Arrays.asList(strategyStringsArray));
@@ -1391,9 +1447,10 @@ public final class OciExtension implements Extension {
                 case 1:
                     strategy = ofConfigString(strategyStrings.iterator().next());
                     if (strategy.isAbstract()) {
-                        return concreteStrategies();
+                        strategies = List.of();
+                    } else {
+                        strategies = EnumSet.of(strategy);
                     }
-                    strategies = EnumSet.of(strategy);
                     break;
                 default:
                     strategies = new ArrayList<>(strategyStrings.size());
