@@ -48,6 +48,7 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import java.util.logging.Level;
+import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -147,13 +148,14 @@ public final class OciExtension implements Extension {
      */
 
 
-    private static final Logger LOGGER = Logger.getLogger(OciExtension.class.getName());
+    private static final Logger LOGGER =
+        Logger.getLogger(OciExtension.class.getName(), OciExtension.class.getName() + "Messages");
 
     // Evaluates to "com.oracle.bmc." as of the current version of the
     // OCI Java SDK.
     private static final String OCI_PACKAGE_PREFIX = Service.class.getPackageName() + ".";
 
-    // For an OCI service conceptually named "Example" in an
+    // For any OCI service conceptually named "Example" in an
     // OCI_PACKAGE_PREFIX subpackage named "example":
     //
     // Match Strings expected to be class names that start with
@@ -172,7 +174,7 @@ public final class OciExtension implements Extension {
     //       "ExampleClient$Builder"...
     // (4) ...followed by the end of String.
     //
-    // Capturing group 0: the matched class name
+    // Capturing group 0: the matched substring ("example.ExampleClientBuilder")
     // Capturing group 1: Capturing group 2 and base noun ("example.Example")
     // Capturing group 2: "example"
     private static final Pattern SERVICE_CLIENT_CLASS_NAME_SUBSTRING_PATTERN =
@@ -236,7 +238,7 @@ public final class OciExtension implements Extension {
         }
         this.additionalVetoes = ConfigProvider.getConfig()
             .getOptionalValue("oci.vetoes", String[].class)
-            .<Set<String>>map(Set::of)
+            .map(Set::<String>of)
             .orElse(Set.of());
     }
 
@@ -258,10 +260,9 @@ public final class OciExtension implements Extension {
         Set<Annotation> qualifiers = ip.getQualifiers();
         if (AbstractAuthenticationDetailsProvider.class.isAssignableFrom(baseClass)
             || AdpSelectionStrategy.builderClasses().contains(baseClass)) {
-            // Use an "empty" ServiceTaqs as an indicator of
-            // demand for some kind of
-            // AbstractAuthenticationDetailsProvider (or a
-            // relevant builder).
+            // Use an "empty" ServiceTaqs as an indicator of demand
+            // for some kind of AbstractAuthenticationDetailsProvider
+            // (or a relevant builder).
             this.serviceTaqs.add(new ServiceTaqs(qualifiers.toArray(EMPTY_ANNOTATION_ARRAY)));
             return;
         }
@@ -272,13 +273,82 @@ public final class OciExtension implements Extension {
         this.processValidInjectionPoint(event::addDefinitionError, baseClass, qualifiers, OCI_PACKAGE_PREFIX + m.group(1));
     }
 
+    private void afterBeanDiscovery(@Observes AfterBeanDiscovery event, BeanManager bm) {
+        boolean lenient = this.lenient;
+        for (ServiceTaqs serviceTaqs : this.serviceTaqs) {
+            if (serviceTaqs.isEmpty()) {
+                installAdps(event, bm, serviceTaqs.qualifiers());
+            } else {
+                TypeAndQualifiers serviceClientBuilder = serviceTaqs.serviceClientBuilder();
+                TypeAndQualifiers serviceClient = serviceTaqs.serviceClient();
+                installServiceClientBuilder(event, bm, serviceClientBuilder, serviceClient, lenient);
+                installServiceClient(event, bm, serviceClient, serviceTaqs.serviceInterface(), serviceClientBuilder);
+            }
+        }
+    }
+
+    private void afterDeploymentValidation(@Observes AfterDeploymentValidation event) {
+        this.serviceTaqs.clear();
+    }
+
+
+    /*
+     * Additional instance methods.
+     */
+
+
+    /**
+     * Returns {@code true} if the supplied {@link Class} is known to
+     * not be directly related to an Oracle Cloud Infrastructure
+     * service.
+     *
+     * <p>The check is fast and deliberately not exhaustive.</p>
+     *
+     * @param c the {@link Class} in question; must not be {@code
+     * null}; will be a {@link Class} whose {@linkplain
+     * Class#getPackageName() package name} starts with the value of
+     * the {@link #OCI_PACKAGE_PREFIX} field
+     *
+     * @return {@code true} if the supplied {@link Class} is known to
+     * not be directly related to an Oracle Cloud Infrastructure
+     * service
+     *
+     * @exception NullPointerException if {@code c} is {@code null}
+     */
+    private boolean isVetoed(Class<?> c) {
+        // See
+        // https://docs.oracle.com/en-us/iaas/tools/java/latest/overview-summary.html#:~:text=Oracle%20Cloud%20Infrastructure%20Common%20Runtime.
+        // None of these packages contains OCI service clients or
+        // service client interfaces or service client builders. There
+        // are other packages (com.oracle.bmc.encryption, as an
+        // arbitrary example) that should also conceptually be vetoed.
+        // This method does not currently veto all of them, nor is it
+        // clear that it ever could.  The strategy employed here,
+        // however, vetoes quite a large number of them correctly and
+        // very efficiently before more sophisticated tests are
+        // employed.
+        //
+        // "Veto" in this context means only that this extension will
+        // not further process the class in question.  The class
+        // remains eligible for further processing; i.e. this is not a
+        // CDI veto.
+        if (equals(Service.class.getProtectionDomain(), c.getProtectionDomain())
+            || this.additionalVetoes.contains(c.getName())) {
+            if (LOGGER.isLoggable(Level.FINE)) {
+                LOGGER.logp(Level.FINE, OciExtension.class.getName(), "isVetoed", "classVetoed", c);
+            }
+            return true;
+        }
+        return false;
+    }
+
     private void processValidInjectionPoint(Consumer<? super ClassNotFoundException> errorHandler,
                                             Class<?> baseClass,
                                             Set<Annotation> qualifiers,
                                             String serviceInterface) {
         Annotation[] qualifiersArray = qualifiers.toArray(EMPTY_ANNOTATION_ARRAY);
-        boolean lenient = this.lenient;
         ServiceTaqs serviceTaqsForAuth = null;
+        boolean lenient = this.lenient;
         // Create types-and-qualifiers for, e.g.:
         //   ....example.Example
         //   ....example.ExampleClient
@@ -330,11 +400,10 @@ public final class OciExtension implements Extension {
                                                          serviceAsyncClientClass,
                                                          serviceAsyncClientBuilderClass));
                     if (serviceTaqsForAuth == null) {
-                        // Use an "empty" ServiceTaqs as
-                        // an indicator of demand for some
-                        // kind of
-                        // AbstractAuthenticationDetailsProvider
-                        // (or a relevant builder).
+                        // Use an "empty" ServiceTaqs as an indicator
+                        // of demand for some kind of
+                        // AbstractAuthenticationDetailsProvider (or a
+                        // relevant builder).
                         this.serviceTaqs.add(new ServiceTaqs(qualifiersArray));
                     }
                 }
@@ -342,76 +411,6 @@ public final class OciExtension implements Extension {
         }
     }
 
-    private void afterBeanDiscovery(@Observes AfterBeanDiscovery event, BeanManager bm) {
-        boolean lenient = this.lenient;
-        for (ServiceTaqs serviceTaqs : this.serviceTaqs) {
-            if (serviceTaqs.isEmpty()) {
-                installAdps(event, bm, serviceTaqs.qualifiers());
-            } else {
-                TypeAndQualifiers serviceClientBuilder = serviceTaqs.serviceClientBuilder();
-                TypeAndQualifiers serviceClient = serviceTaqs.serviceClient();
-                TypeAndQualifiers serviceInterface = serviceTaqs.serviceInterface();
-                installServiceClientBuilder(event,
-                                            bm,
-                                            serviceClientBuilder,
-                                            serviceClient,
-                                            lenient);
-                installServiceClient(event,
-                                     bm,
-                                     serviceClient,
-                                     serviceInterface,
-                                     serviceClientBuilder);
-            }
-        }
-    }
-
-    private void afterDeploymentValidation(@Observes AfterDeploymentValidation event) {
-        this.serviceTaqs.clear();
-    }
-
-
-    /*
-     * Additional instance methods.
-     */
-
-
-    /**
-     * Returns {@code true} if the supplied {@link Class} is known to
-     * not be directly related to an Oracle Cloud Infrastructure
-     * service.
-     *
-     * <p>The check is fast and deliberately not exhaustive.</p>
-     *
-     * @param c the {@link Class} in question; must not be {@code
-     * null}
-     *
-     * @return {@code true} if the supplied {@link Class} is known to
-     * not be directly related to an Oracle Cloud Infrastructure
-     * service
-     *
-     * @exception NullPointerException if {@code c} is {@code null}
-     */
-    private boolean isVetoed(Class<?> c) {
-        // See
-        // https://docs.oracle.com/en-us/iaas/tools/java/latest/overview-summary.html#:~:text=Oracle%20Cloud%20Infrastructure%20Common%20Runtime.
-        // None of these packages contains OCI service clients or
-        // service client interfaces or service client builders. There
-        // are other packages (com.oracle.bmc.encryption, as an
-        // arbitrary example) that should also conceptually be vetoed.
-        // This method does not currently veto all of them, nor is it
-        // clear that it ever could.  The strategy employed here,
-        // however, vetoes quite a large number of them correctly and
-        // very efficiently before more sophisticated tests are
-        // employed.
-        //
-        // "Veto" in this context means only that this extension will
-        // not further process the class in question.  The class
-        // remains eligible for further processing; i.e. this is not a
-        // CDI veto.
-        return
-            equals(Service.class.getProtectionDomain(), c.getProtectionDomain())
-            || this.additionalVetoes.contains(c.getName());
-    }
 
     /*
      * Static methods.
@@ -472,11 +471,15 @@ public final class OciExtension implements Extension {
             } catch (ReflectiveOperationException reflectiveOperationException) {
                 if (lenient) {
                     if (LOGGER.isLoggable(Level.WARNING)) {
-                        LOGGER.logp(Level.WARNING,
-                                    OciExtension.class.getName(),
-                                    "installServiceClientBuilder",
-                                    reflectiveOperationException.getMessage(),
-                                    reflectiveOperationException);
+                        LogRecord logRecord = new LogRecord(Level.WARNING, "builderMethodNotFound");
+                        logRecord.setLoggerName(LOGGER.getName());
+                        logRecord.setParameters(new Object[] {serviceClientClass});
+                        logRecord.setResourceBundle(LOGGER.getResourceBundle());
+                        logRecord.setResourceBundleName(LOGGER.getResourceBundleName());
+                        logRecord.setSourceClassName(OciExtension.class.getName());
+                        logRecord.setSourceMethodName("installServiceClientBuilder");
+                        logRecord.setThrown(reflectiveOperationException);
+                        LOGGER.log(logRecord);
                     }
                 } else {
                     event.addDefinitionError(reflectiveOperationException);
@@ -663,11 +666,15 @@ public final class OciExtension implements Extension {
         } catch (ClassNotFoundException classNotFoundException) {
             if (lenient) {
                 if (LOGGER.isLoggable(Level.FINE)) {
-                    LOGGER.logp(Level.FINE,
-                                OciExtension.class.getName(),
-                                "toClass",
-                                classNotFoundException.getMessage(),
-                                classNotFoundException);
+                    LogRecord logRecord = new LogRecord(Level.FINE, "classNotFound");
+                    logRecord.setLoggerName(LOGGER.getName());
+                    logRecord.setParameters(new Object[] {name});
+                    logRecord.setResourceBundle(LOGGER.getResourceBundle());
+                    logRecord.setResourceBundleName(LOGGER.getResourceBundleName());
+                    logRecord.setSourceClassName(OciExtension.class.getName());
+                    logRecord.setSourceMethodName("toClassUnresolved");
+                    logRecord.setThrown(classNotFoundException);
+                    LOGGER.log(logRecord);
                 }
             } else {
                 errorHandler.accept(classNotFoundException);
