@@ -16,11 +16,12 @@
 
 package io.helidon.tests.configprofile;
 
-import javax.json.Json;
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObject;
 import java.util.Collections;
 import java.util.concurrent.atomic.AtomicReference;
+
+import jakarta.json.Json;
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonObject;
 
 import io.helidon.config.Config;
 import io.helidon.webserver.Routing;
