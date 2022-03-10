@@ -270,15 +270,16 @@ public final class OciExtension implements Extension {
                         //   ....example.ExampleClient
                         //   ....example.ExampleClient$Builder
                         String serviceInterface = OCI_PACKAGE_PREFIX + m.group(1);
-                        Class<?> serviceInterfaceClass = toClass(event, baseClass, serviceInterface, lenient);
+                        Class<?> serviceInterfaceClass = toClassUnresolved(event, baseClass, serviceInterface, lenient);
                         if (serviceInterfaceClass != null && serviceInterfaceClass.isInterface()) {
                             String serviceClient = serviceInterface + "Client";
-                            Class<?> serviceClientClass = toClass(event, baseClass, serviceClient, lenient);
+                            Class<?> serviceClientClass = toClassUnresolved(event, baseClass, serviceClient, lenient);
                             if (serviceClientClass != null && serviceInterfaceClass.isAssignableFrom(serviceClientClass)) {
-                                Class<?> serviceClientBuilderClass = toClass(event, baseClass, serviceClient + "$Builder", true);
+                                Class<?> serviceClientBuilderClass =
+                                    toClassUnresolved(event, baseClass, serviceClient + "$Builder", true);
                                 if (serviceClientBuilderClass == null) {
                                     serviceClientBuilderClass =
-                                        toClass(event, baseClass, serviceClient + "Builder", lenient);
+                                        toClassUnresolved(event, baseClass, serviceClient + "Builder", lenient);
                                 }
                                 if (serviceClientBuilderClass != null
                                     && ClientBuilderBase.class.isAssignableFrom(serviceClientBuilderClass)) {
@@ -300,17 +301,17 @@ public final class OciExtension implements Extension {
                         //   ....example.ExampleAsyncClient
                         //   ....example.ExampleAsyncClient$Builder
                         String serviceAsyncInterface = serviceInterface + "Async";
-                        Class<?> serviceAsyncInterfaceClass = toClass(event, baseClass, serviceAsyncInterface, lenient);
+                        Class<?> serviceAsyncInterfaceClass = toClassUnresolved(event, baseClass, serviceAsyncInterface, lenient);
                         if (serviceAsyncInterfaceClass != null && serviceAsyncInterfaceClass.isInterface()) {
                             String serviceAsyncClient = serviceAsyncInterface + "Client";
-                            Class<?> serviceAsyncClientClass = toClass(event, baseClass, serviceAsyncClient, lenient);
+                            Class<?> serviceAsyncClientClass = toClassUnresolved(event, baseClass, serviceAsyncClient, lenient);
                             if (serviceAsyncClientClass != null
                                 && serviceAsyncInterfaceClass.isAssignableFrom(serviceAsyncClientClass)) {
                                 Class<?> serviceAsyncClientBuilderClass =
-                                    toClass(event, baseClass, serviceAsyncClient + "$Builder", true);
+                                    toClassUnresolved(event, baseClass, serviceAsyncClient + "$Builder", true);
                                 if (serviceAsyncClientBuilderClass == null) {
                                     serviceAsyncClientBuilderClass =
-                                        toClass(event, baseClass, serviceAsyncClient + "Builder", lenient);
+                                        toClassUnresolved(event, baseClass, serviceAsyncClient + "Builder", lenient);
                                 }
                                 if (serviceAsyncClientBuilderClass != null
                                     && ClientBuilderBase.class.isAssignableFrom(serviceAsyncClientBuilderClass)) {
@@ -638,7 +639,10 @@ public final class OciExtension implements Extension {
         }
     }
 
-    private static Class<?> toClass(ProcessInjectionPoint<?, ?> event, Class<?> referenceClass, String name, boolean lenient) {
+    private static Class<?> toClassUnresolved(ProcessInjectionPoint<?, ?> event,
+                                              Class<?> referenceClass,
+                                              String name,
+                                              boolean lenient) {
         if (referenceClass.getName().equals(name)) {
             return referenceClass;
         }
