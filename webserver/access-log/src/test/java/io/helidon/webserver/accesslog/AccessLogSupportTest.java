@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.util.Arrays;
 import io.helidon.common.context.Context;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpRequest;
+import io.helidon.webserver.PathMatcher;
 import io.helidon.webserver.RequestHeaders;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
@@ -157,5 +158,18 @@ class AccessLogSupportTest {
         String expected = "20071203101530 \"first,second\"";
 
         assertThat(logRecord, is(expected));
+    }
+
+    @Test
+    void testExcludePaths() {
+        AccessLogSupport accessLog = AccessLogSupport.builder()
+                .excludePaths("/metrics", "/health*")
+                .build();
+        assertThat(accessLog.excludePaths().size(), is(2));
+        PathMatcher pathMatcher1 = accessLog.excludePaths().get(0);
+        assertThat(pathMatcher1.match("/metrics").matches(), is(true));
+        PathMatcher pathMatcher2 = accessLog.excludePaths().get(1);
+        assertThat(pathMatcher2.match("/health").matches(), is(true));
+        assertThat(pathMatcher2.match("/healthy").matches(), is(true));
     }
 }
