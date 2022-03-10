@@ -65,9 +65,9 @@ See this [document](HELIDON-CLI.md) for more info.
 
 ## Build
 
-You need JDK 11+ to build Helidon.
+You need JDK 17+ to build Helidon.
 
-You also need Maven. We recommend 3.5 or newer.
+You also need Maven. We recommend 3.6.1 or newer.
 
 Building the documentation requires the `dot` utility from Graphviz.
 This is included in many Linux distributions. For other platforms
