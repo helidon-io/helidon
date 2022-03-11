@@ -22,6 +22,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.net.ConnectException;
 import java.net.InetAddress;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -90,8 +91,8 @@ enum AdpSelectionStrategy {
             // See
             // https://docs.oracle.com/en-us/iaas/tools/java/latest/com/oracle/bmc/auth/SimpleAuthenticationDetailsProvider.SimpleAuthenticationDetailsProviderBuilder.html#method.summary
             //
-            // ".auth." keys are for backwards compatibility with a
-            // prior OCI-related extension.
+            // Some fallback logic is for backwards compatibility with
+            // a prior OCI-related extension.
             return
                 super.isAvailable(selector, config, qualifiersArray)
                 && (config.getOptionalValue("oci.config.fingerprint", String.class).isPresent()
@@ -162,7 +163,8 @@ enum AdpSelectionStrategy {
                 try {
                     this.get(selector, config, qualifiersArray);
                 } catch (UncheckedIOException uncheckedIoException) {
-                    if (uncheckedIoException.getCause() instanceof FileNotFoundException) {
+                    Object cause = uncheckedIoException;
+                    if (cause instanceof FileNotFoundException || cause instanceof NoSuchFileException) {
                         return false;
                     }
                     throw uncheckedIoException;
@@ -173,26 +175,32 @@ enum AdpSelectionStrategy {
         }
 
         @Override
-        Object produceBuilder(Selector selector, Config config, Annotation[] qualifiersArray) {
+        Void produceBuilder(Selector selector, Config config, Annotation[] qualifiersArray) {
             throw new UnsupportedOperationException();
         }
 
         @Override
         ConfigFileAuthenticationDetailsProvider produce(Selector selector, Config config, Annotation[] qualifiersArray) {
             return
-                this.produce(config.getOptionalValue("oci.config.path", String.class).orElse(null),
+                this.produce(config.getOptionalValue("oci.config.path", String.class).orElse(null), // null on purpose
                              config.getOptionalValue("oci.auth.profile", String.class).orElse("DEFAULT"));
         }
 
         private ConfigFileAuthenticationDetailsProvider produce(String ociConfigPath, String ociAuthProfile) {
             try {
                 if (ociConfigPath == null) {
+                    // Don't get clever and try to use ~/.oci/config
+                    // as a default value; there is OCI-managed logic
+                    // to figure out the proper default; we want to
+                    // make sure it's used
                     return new ConfigFileAuthenticationDetailsProvider(ociAuthProfile);
                 } else {
                     return new ConfigFileAuthenticationDetailsProvider(ociConfigPath, ociAuthProfile);
                 }
             } catch (FileNotFoundException fileNotFoundException) {
                 throw new UncheckedIOException(fileNotFoundException.getMessage(), fileNotFoundException);
+            } catch (NoSuchFileException noSuchFileException) {
+                throw new UncheckedIOException(noSuchFileException.getMessage(), noSuchFileException);
             } catch (IOException ioException) {
                 // The underlying ConfigFileReader that does the real
                 // work does not throw a FileNotFoundException in this
@@ -514,10 +522,6 @@ enum AdpSelectionStrategy {
     }
 
     interface Selector {
-
-        default <T> Supplier<T> select(Class<T> c) {
-            return select(c, null);
-        }
 
         <T> Supplier<T> select(Class<T> c, Annotation[] as);
 
