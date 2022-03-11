@@ -95,15 +95,15 @@ enum AdpSelectionStrategy {
             // a prior OCI-related extension.
             return
                 super.isAvailable(selector, config, qualifiersArray)
-                && (config.getOptionalValue("oci.config.fingerprint", String.class).isPresent()
-                    || config.getOptionalValue("oci.auth.fingerprint", String.class).isPresent())
-                && config.getOptionalValue("oci.config.region", Region.class).isPresent()
-                && (config.getOptionalValue("oci.config.tenantId", String.class).isPresent()
-                    || config.getOptionalValue("oci.config.tenancy", String.class).isPresent()
-                    || config.getOptionalValue("oci.auth.tenancy", String.class).isPresent())
-                && (config.getOptionalValue("oci.config.userId", String.class).isPresent()
-                    || config.getOptionalValue("oci.config.user", String.class).isPresent()
-                    || config.getOptionalValue("oci.auth.user", String.class).isPresent());
+                && (config.get("oci.config.fingerprint", String.class).isPresent()
+                    || config.get("oci.auth.fingerprint", String.class).isPresent())
+                && config.get("oci.config.region", Region.class).isPresent()
+                && (config.get("oci.config.tenantId", String.class).isPresent()
+                    || config.get("oci.config.tenancy", String.class).isPresent()
+                    || config.get("oci.auth.tenancy", String.class).isPresent())
+                && (config.get("oci.config.userId", String.class).isPresent()
+                    || config.get("oci.config.user", String.class).isPresent()
+                    || config.get("oci.auth.user", String.class).isPresent());
         }
 
         @Override
@@ -115,31 +115,36 @@ enum AdpSelectionStrategy {
             //
             // Some fallback logic is for backwards compatibility with
             // a prior OCI-related extension.
-            c.getOptionalValue("oci.config.fingerprint", String.class)
-                .or(() -> c.getOptionalValue("oci.auth.fingerprint", String.class))
+            c.get("oci.config.fingerprint", String.class)
+                .or(() -> c.get("oci.auth.fingerprint", String.class))
                 .ifPresent(b::fingerprint);
-            c.getOptionalValue("oci.config.passPhrase", String.class)
-                .or(() -> c.getOptionalValue("oci.config.passPhraseCharacters", String.class))
-                .or(() -> c.getOptionalValue("oci.auth.passPhraseCharacters", String.class))
+            c.get("oci.config.passPhrase", String.class)
+                .or(() -> c.get("oci.config.passPhraseCharacters", String.class))
+                .or(() -> c.get("oci.auth.passPhraseCharacters", String.class))
                 .ifPresent(b::passPhrase);
-            c.getOptionalValue("oci.config.privateKey", String.class)
-                .or(() -> c.getOptionalValue("oci.auth.privateKey", String.class))
+            c.get("oci.config.privateKey", String.class)
+                .or(() -> c.get("oci.auth.privateKey", String.class))
                 .ifPresentOrElse(pk -> b.privateKeySupplier(new StringPrivateKeySupplier(pk)),
-                                 () -> b.privateKeySupplier(new SimplePrivateKeySupplier(c.getOptionalValue("oci.config.privateKeyPath", String.class)
-                                                                                         .orElse(c.getOptionalValue("oci.auth.keyFile", String.class)
+                                 () -> b.privateKeySupplier(new SimplePrivateKeySupplier(c.get("oci.config.privateKeyPath",
+                                                                                               String.class)
+                                                                                         .orElse(c.get("oci.auth.keyFile",
+                                                                                                       String.class)
+                                                                                                 // See
+                                                                                                 // https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm#apisigningkey_topic_How_to_Generate_an_API_Signing_Key_Mac_Linux__ol_t5v_lwz_zmb
+                                                                                                 // for default file naming rationale.
                                                                                                  .orElse(Paths.get(System.getProperty("user.home"),
                                                                                                                    ".oci",
                                                                                                                    "oci_api_key.pem")
                                                                                                          .toString())))));
-            c.getOptionalValue("oci.config.region", Region.class)
+            c.get("oci.config.region", Region.class)
                 .ifPresent(b::region);
-            c.getOptionalValue("oci.config.tenantId", String.class)
-                .or(() -> c.getOptionalValue("oci.config.tenancy", String.class))
-                .or(() -> c.getOptionalValue("oci.auth.tenancy", String.class))
+            c.get("oci.config.tenantId", String.class)
+                .or(() -> c.get("oci.config.tenancy", String.class))
+                .or(() -> c.get("oci.auth.tenancy", String.class))
                 .ifPresent(b::tenantId);
-            c.getOptionalValue("oci.config.userId", String.class)
-                .or(() -> c.getOptionalValue("oci.config.user", String.class))
-                .or(() -> c.getOptionalValue("oci.auth.user", String.class))
+            c.get("oci.config.userId", String.class)
+                .or(() -> c.get("oci.config.user", String.class))
+                .or(() -> c.get("oci.auth.user", String.class))
                 .ifPresent(b::userId);
             return b;
         }
@@ -182,8 +187,8 @@ enum AdpSelectionStrategy {
         @Override
         ConfigFileAuthenticationDetailsProvider produce(Selector selector, Config config, Annotation[] qualifiersArray) {
             return
-                this.produce(config.getOptionalValue("oci.config.path", String.class).orElse(null), // null on purpose
-                             config.getOptionalValue("oci.auth.profile", String.class).orElse("DEFAULT"));
+                this.produce(config.get("oci.config.path", String.class).orElse(null), // null on purpose
+                             config.get("oci.auth.profile", String.class).orElse("DEFAULT"));
         }
 
         private ConfigFileAuthenticationDetailsProvider produce(String ociConfigPath, String ociAuthProfile) {
@@ -229,9 +234,9 @@ enum AdpSelectionStrategy {
         @Override
         boolean isAvailable(Selector selector, Config config, Annotation[] qualifiersArray) {
             if (super.isAvailable(selector, config, qualifiersArray)) {
-                String ociImdsHostname = config.getOptionalValue("oci.imds.hostname", String.class).orElse("169.254.169.254");
+                String ociImdsHostname = config.get("oci.imds.hostname", String.class).orElse("169.254.169.254");
                 int ociImdsTimeoutMillis =
-                    config.getOptionalValue("oci.imds.timeout.milliseconds", Integer.class).orElse(Integer.valueOf(100));
+                    config.get("oci.imds.timeout.milliseconds", Integer.class).orElse(Integer.valueOf(100));
                 try {
                     return InetAddress.getByName(ociImdsHostname).isReachable(ociImdsTimeoutMillis);
                 } catch (ConnectException connectException) {
@@ -305,8 +310,8 @@ enum AdpSelectionStrategy {
                                                       Config config,
                                                       Annotation[] qualifiersArray) {
             Collection<? extends AdpSelectionStrategy> strategies =
-                concreteStrategies(config.getOptionalValue("oci.config.strategies", String[].class)
-                                   .or(() -> config.getOptionalValue("oci.config.strategy", String[].class))
+                concreteStrategies(config.get("oci.config.strategies", String[].class)
+                                   .or(() -> config.get("oci.config.strategy", String[].class))
                                    .orElse(null));
             switch (strategies.size()) {
             case 1:
@@ -522,15 +527,21 @@ enum AdpSelectionStrategy {
         return Collections.unmodifiableCollection(strategies);
     }
 
+
+    /*
+     * Inner and nested classes.
+     */
+
+
     interface Selector {
 
-        <T> Supplier<T> select(Class<T> c, Annotation[] as);
+        <T> Supplier<T> select(Class<T> type, Annotation... qualifiers);
 
     }
 
     interface Config {
 
-        <T> Optional<T> getOptionalValue(String propertyName, Class<T> propertyType);
+        <T> Optional<T> get(String name, Class<T> type);
 
     }
 

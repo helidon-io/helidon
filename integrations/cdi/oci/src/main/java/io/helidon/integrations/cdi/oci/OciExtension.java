@@ -178,13 +178,13 @@ public final class OciExtension implements Extension {
      */
 
 
+    private boolean lenient;
+
     private final Set<ServiceTaqs> serviceTaqs;
 
-    private Set<String> additionalVetoes;
+    private final Set<String> additionalVetoes;
 
     private final Set<String> unloadableClassNames;
-
-    private boolean lenient;
 
 
     /*
@@ -201,9 +201,9 @@ public final class OciExtension implements Extension {
     public OciExtension() {
         super();
         this.lenient = true;
-        this.additionalVetoes = Set.of();
-        this.unloadableClassNames = new HashSet<>(7);
         this.serviceTaqs = new HashSet<>();
+        this.additionalVetoes = new HashSet<>(7);
+        this.unloadableClassNames = new HashSet<>(7);
     }
 
 
@@ -222,10 +222,10 @@ public final class OciExtension implements Extension {
         } catch (IllegalArgumentException conversionException) {
             this.lenient = true;
         }
-        this.additionalVetoes = ConfigProvider.getConfig()
-            .getOptionalValue("oci.vetoes", String[].class)
-            .map(Set::<String>of)
-            .orElse(Set.of());
+        this.additionalVetoes.addAll(ConfigProvider.getConfig()
+                                     .getOptionalValue("oci.vetoes", String[].class)
+                                     .map(Set::<String>of)
+                                     .orElse(Set.of()));
     }
 
     private void processInjectionPoint(@Observes ProcessInjectionPoint<?, ?> event) {
@@ -278,8 +278,9 @@ public final class OciExtension implements Extension {
     }
 
     private void afterDeploymentValidation(@Observes AfterDeploymentValidation event) {
-        this.serviceTaqs.clear();
         this.unloadableClassNames.clear();
+        this.additionalVetoes.clear();
+        this.serviceTaqs.clear();
     }
 
 
@@ -476,7 +477,8 @@ public final class OciExtension implements Extension {
                                             Instance<? super Object> instance,
                                             Annotation[] qualifiersArray) {
         Object builder = s.produceBuilder(SelectorShim.of(instance), ConfigShim.of(instance), qualifiersArray);
-        fire(instance, qualifiersArray, builder);
+        // Permit arbitrary customization.
+        fire(instance, builder, qualifiersArray);
         return builder;
     }
 
@@ -594,7 +596,7 @@ public final class OciExtension implements Extension {
         try {
             ClientBuilderBase<?, ?> builderInstance = (ClientBuilderBase<?, ?>) builderMethod.invoke();
             // Permit arbitrary customization.
-            fire(instance, qualifiers, builderInstance);
+            fire(instance, builderInstance, qualifiers);
             customizeEndpointResolution(builderInstance);
             return builderInstance;
         } catch (RuntimeException runtimeException) {
@@ -604,8 +606,10 @@ public final class OciExtension implements Extension {
                 Thread.currentThread().interrupt();
             }
             throw new CreationException(exception.getMessage(), exception);
-        } catch (Throwable error) {
-            throw (Error) error;
+        } catch (Error error) {
+            throw error;
+        } catch (Throwable impossible) {
+            throw new AssertionError(impossible.getMessage(), impossible);
         }
     }
 
@@ -637,7 +641,7 @@ public final class OciExtension implements Extension {
     }
 
     @SuppressWarnings("unchecked")
-    private static <T> void fire(Instance<? super Object> instance, Annotation[] qualifiers, T payload) {
+    private static <T> void fire(Instance<? super Object> instance, T payload, Annotation[] qualifiers) {
         instance.select(EVENT_OBJECT_TYPE_LITERAL).get().select((Class<T>) payload.getClass(), qualifiers).fire(payload);
     }
 
@@ -778,12 +782,12 @@ public final class OciExtension implements Extension {
             }
         }
 
-        @Override
+        @Override // Object
         public final int hashCode() {
             return this.hashCode;
         }
 
-        @Override
+        @Override // Object
         public final boolean equals(Object other) {
             if (other == this) {
                 return true;
@@ -795,7 +799,7 @@ public final class OciExtension implements Extension {
             }
         }
 
-        @Override
+        @Override // Object
         public final String toString() {
             return Arrays.asList(this.qualifiers()).toString() + " " + this.type().toString();
         }
@@ -1042,7 +1046,7 @@ public final class OciExtension implements Extension {
 
         private final String asyncClientBuilderClassName;
 
-        private final Predicate<? super ClientRequestContext> p;
+        private final Predicate<? super ClientRequestContext> suitabilityTester;
 
         private final UnaryOperator<String> adjuster;
 
@@ -1052,14 +1056,14 @@ public final class OciExtension implements Extension {
          */
 
 
-        EndpointAdjuster(Predicate<? super ClientRequestContext> p,
+        EndpointAdjuster(Predicate<? super ClientRequestContext> suitabilityTester,
                          UnaryOperator<String> adjuster) {
             String lowerCaseName = this.name().toLowerCase();
             String titleCaseName = Character.toUpperCase(lowerCaseName.charAt(0)) + lowerCaseName.substring(1);
             String prefix = OCI_PACKAGE_PREFIX + lowerCaseName + "." + titleCaseName;
             this.clientBuilderClassName = prefix + "Client$Builder";
             this.asyncClientBuilderClassName = prefix + "AsyncClient$Builder";
-            this.p = p;
+            this.suitabilityTester = suitabilityTester;
             this.adjuster = adjuster;
         }
 
@@ -1074,13 +1078,9 @@ public final class OciExtension implements Extension {
             builder.register(this, Map.of(ClientRequestFilter.class, Integer.valueOf(Priorities.AUTHENTICATION - 500)));
         }
 
-        @Override // ClientConfigurator
-        public void customizeClient(Client client) {
-        }
-
         @Override // Predicate<ClientRequestContext>
         public final boolean test(ClientRequestContext crc) {
-            return this.p.test(crc);
+            return this.suitabilityTester.test(crc);
         }
 
         @Override // ClientRequestFilter
@@ -1100,6 +1100,10 @@ public final class OciExtension implements Extension {
             crc.setUri(UriBuilder.fromUri(crc.getUri()).host(this.adjuster.apply(hostname)).build());
         }
 
+        @Override // ClientConfigurator
+        public void customizeClient(Client client) {
+        }
+
 
         /*
          * Static methods.
@@ -1114,17 +1118,41 @@ public final class OciExtension implements Extension {
 
     private static class SelectorShim implements AdpSelectionStrategy.Selector {
 
+
+        /*
+         * Instance fields.
+         */
+
+
         private final Instance<? super Object> instance;
+
+
+        /*
+         * Constructors.
+         */
+
 
         private SelectorShim(Instance<? super Object> instance) {
             super();
-            this.instance = instance;
+            this.instance = Objects.requireNonNull(instance, "instance");
         }
 
-        @Override
-        public final <T> Supplier<T> select(Class<T> c, Annotation[] a) {
-            return this.instance.select(c, a)::get;
+
+        /*
+         * Instance methods.
+         */
+
+
+        @Override // AdpSelectionStrategy.Selector
+        public final <T> Supplier<T> select(Class<T> type, Annotation... qualifiers) {
+            return this.instance.select(type, qualifiers)::get;
         }
+
+
+        /*
+         * Static methods.
+         */
+
 
         private static SelectorShim of(Instance<? super Object> instance) {
             return new SelectorShim(instance);
@@ -1134,16 +1162,41 @@ public final class OciExtension implements Extension {
 
     private static class ConfigShim implements AdpSelectionStrategy.Config {
 
+
+        /*
+         * Instance fields.
+         */
+
+
         private final Config config;
 
+
+        /*
+         * Constructors.
+         */
+
+
         private ConfigShim(Config config) {
-            this.config = config;
+            super();
+            this.config = Objects.requireNonNull(config, "config");
         }
 
-        @Override
-        public final <T> Optional<T> getOptionalValue(String propertyName, Class<T> propertyType) {
+
+        /*
+         * Instance methods.
+         */
+
+
+        @Override // AdpSelectionStrategy.Config
+        public final <T> Optional<T> get(String propertyName, Class<T> propertyType) {
             return config.getOptionalValue(propertyName, propertyType);
         }
+
+
+        /*
+         * Static methods.
+         */
+
 
         private static ConfigShim of(Config config) {
             return new ConfigShim(config);
