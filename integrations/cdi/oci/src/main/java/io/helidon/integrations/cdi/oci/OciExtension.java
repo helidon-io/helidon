@@ -78,50 +78,386 @@ import org.eclipse.microprofile.config.ConfigProvider;
 import static java.lang.invoke.MethodType.methodType;
 
 /**
- * An {@link Extension} that allows injection of any client from the
- * <a
+ * An {@link Extension} that enables the {@linkplain
+ * javax.inject.Inject injection} of any <em>service interface</em>,
+ * <em>service client</em>, <em>service client builder</em>,
+ * <em>asynchronous service interface</em>, <em>asynchronous service
+ * client</em>, or <em>asynchronous service client builder</em> from
+ * the <a
  * href="https://docs.oracle.com/en-us/iaas/tools/java/latest/index.html"
  * target="_top">Oracle Cloud Infrastructure Java SDK</a>.
  *
- * <p>For any service, {@code com.oracle.bmc.example.Example}, this
- * {@linkplain Extension extension} enables the {@linkplain
- * javax.inject.Inject injection} in a CDI 2.0 application of the
- * following types:</p>
+ * <p>The terms <em>service interface</em>, <em>service client</em>,
+ * <em>service client builder</em>, <em>asynchronous service
+ * interface</em>, <em>asynchronous service client</em>, and
+ * <em>asynchronous service client builder</em> are defined as
+ * follows:</p>
  *
- * <ul>
+ * <dl>
  *
- * <li>{@code com.oracle.bmc.example.Example}</li>
+ * <dt>Service</dt>
  *
- * <li>{@code com.oracle.bmc.example.ExampleAsync}</li>
+ * <dd>An <a
+ * href="https://docs.oracle.com/en-us/iaas/Content/API/SDKDocs/javasdk.htm#Services_Supported"
+ * target="_top">Oracle Cloud Infrastructure service supported by the
+ * Oracle Cloud Infrastructure Java SDK</a>.</dd>
  *
- * <li>{@code com.oracle.bmc.example.ExampleAsyncClient}</li>
+ * <dt>Service interface</dt>
  *
- * <li>{@code com.oracle.bmc.example.ExampleAsyncClient.Builder}</li>
+ * <dd>A Java interface describing the functionality of a service.
+ * Distinguished from an <em>asynchronous service interface</em>.
  *
- * <li>{@code com.oracle.bmc.example.ExampleClient}</li>
+ * <p>For a hypothetical service named <strong>Cloud Example</strong>,
+ * the corresponding service interface will be in a package named
+ * <code>com.oracle.bmc.</code><strong><code>cloudexample</code></strong>.
+ * The service interface's {@linkplain Class#getSimpleName() simple
+ * name} is often also named after the service,
+ * e.g. <strong><code>CloudExample</code></strong>, but need not
+ * be.</p></dd>
  *
- * <li>{@code com.oracle.bmc.example.ExampleClient.Builder}</li>
+ * <dt>Service client</dt>
  *
- * </ul>
+ * <dd>A concrete Java class that implements the service interface and
+ * has the same {@linkplain Class#getPackageName() package name} as
+ * it.  Distinguished from an <em>asynchronous service client</em>.
  *
- * <p>Additionally, this class enables the {@linkplain
+ * <p>The service client's {@linkplain Class#getSimpleName() simple
+ * name} is formed by appending the {@linkplain Class#getSimpleName()
+ * simple name} of the <em>service interface</em> with
+ * <code>Client</code>.  The {@linkplain Class#getName() class name}
+ * for the service client for the hypothetical {@code
+ * com.oracle.bmc.cloudexample.CloudExample} service interface
+ * described above will thus be
+ * <code>com.oracle.bmc.</code><strong><code>cloudexample</code></strong><code>.</code><strong><code>CloudExampleClient</code></strong>.</p></dd>
+ *
+ * <dt>Service client builder</dt>
+ *
+ * <dd>A concrete Java "builder" class that creates possibly
+ * customized instances of its corresponding service client.
+ * Distinguished from an <em>asynchronous service client builder</em>.
+ *
+ * <p>The service client builder is nearly always a nested class of
+ * the service client whose instances it builds with a {@linkplain
+ * Class#getSimpleName() simple name} of {@code Builder}.  (In the <a
+ * href="https://docs.oracle.com/en-us/iaas/tools/java/latest/com/oracle/bmc/streaming/StreamClientBuilder.html"
+ * target="_top">single case in the entirety of the Oracle Cloud
+ * Infrastructure Java SDK where this pattern is not followed</a>, the
+ * service client builder's {@linkplain Class#getSimpleName() simple
+ * name} is formed by adding {@code Builder} to the service client's
+ * {@linkplain Class#getSimpleName() simple name}.)  The {@linkplain
+ * Class#getName() class name} for the service client builder for the
+ * hypothetical {@code com.oracle.bmc.cloudexample.CloudExampleClient}
+ * service client described above will thus be
+ * <code>com.oracle.bmc.</code><strong><code>cloudexample</code></strong><code>.</code><strong><code>CloudExampleClient$Builder</code></strong>.</p></dd>
+ *
+ * <dt>Asynchronous service interface</dt>
+ *
+ * <dd>A Java interface describing the functionality of a service.
+ * Distinguished from a <em>service interface</em>.
+ *
+ * <p>For a hypothetical service named <strong>Cloud Example</strong>,
+ * the corresponding service interface will be in the same package as
+ * that of the service interface.  The asynchronous service
+ * interface's {@linkplain Class#getSimpleName() simple name} is
+ * formed by adding {@code Async} to the service interface's
+ * {@linkplain Class#getSimpleName() simple name}.  The {@linkplain
+ * Class#getName() class name} for the asynchronous service interface
+ * for the hypothetical {@code
+ * com.oracle.bmc.cloudexample.CloudExample} service interface
+ * described above will thus be
+ * <code>com.oracle.bmc.</code><strong><code>cloudexample</code></strong><code>.</code><strong><code>CloudExampleAsync</code></strong>.</p></dd>
+ *
+ * <dt>Asynchronous service client</dt>
+ *
+ * <dd>A concrete Java class that implements the asynchronous service interface and
+ * has the same {@linkplain Class#getPackageName() package name} as
+ * it.  Distinguised from a <em>service client</em>.
+ *
+ * <p>The asynchronous service client's {@linkplain
+ * Class#getSimpleName() simple name} is formed by appending the
+ * {@linkplain Class#getSimpleName() simple name} of the
+ * <em>asynchronous service interface</em> with <code>Client</code>.
+ * The {@linkplain Class#getName() class name} for the service client
+ * for the hypothetical {@code
+ * com.oracle.bmc.cloudexample.CloudExample} service interface
+ * described above will thus be
+ * <code>com.oracle.bmc.</code><strong><code>cloudexample</code></strong><code>.</code><strong><code>CloudExampleAsyncClient</code></strong>.</p></dd>
+ *
+ * <dt>Asynchronous service client builder</dt>
+ *
+ * <dd>A concrete Java "builder" class that creates possibly
+ * customized instances of its corresponding asynchronous service
+ * client.  Distinguished from a <em>service client builder</em>.
+ *
+ * <p>The asynchronous service client builder is nearly always a
+ * nested class of the asynchronous service client whose instances it
+ * builds with a {@linkplain Class#getSimpleName() simple name} of
+ * {@code Builder}.  (In the <a
+ * href="https://docs.oracle.com/en-us/iaas/tools/java/latest/com/oracle/bmc/streaming/StreamAsyncClientBuilder.html"
+ * target="_top">single case in the entirety of the Oracle Cloud
+ * Infrastructure Java SDK where this pattern is not followed</a>, the
+ * asynchronous service client builder's {@linkplain Class#getName()
+ * class name} is formed by adding {@code Builder} to the asynchronous
+ * service client's {@linkplain Class#getName() class name}.)  The
+ * {@linkplain Class#getName() class name} for the service client
+ * builder for the hypothetical {@code
+ * com.oracle.bmc.cloudexample.CloudExampleAsyncClient} service client
+ * described above will thus be
+ * <code>com.oracle.bmc.</code><strong><code>cloudexample</code></strong><code>.</code><strong><code>CloudExampleAsyncClient$Builder</code></strong>.</p></dd>
+ *
+ * </dl>
+ *
+ * <p>Additionally, for any given <em>service interface</em>,
+ * <em>service client</em>, <em>service client builder</em>,
+ * <em>asynchronous service interface</em>, <em>asynchronous service
+ * client</em>, or <em>asynchronous service client builder</em>, this
+ * {@linkplain Extension extension} also enables the {@linkplain
  * javax.inject.Inject injection} of an appropriate {@link
- * AbstractAuthenticationDetailsProvider}, which is a foundational
- * construct needed to use any higher-level service from the Oracle
- * Cloud Infrastructure Java SDK.</p>
- *
- * <p>This {@link Extension extension} deliberately does <em>not</em>
- * provide such features for any class residing under the following
- * packages:</p>
- *
- * <ul>
- *
- * <li>{@code com.oracle.bmc.circuitbreaker}</li>
- *
- * </ul>
+ * AbstractAuthenticationDetailsProvider}, which allows the
+ * corresponding service client to authenticate with the service.</p>
  *
  * <p>In all cases, user-supplied beans will be preferred over any
  * otherwise installed by this {@linkplain Extension extension}.</p>
+ *
+ * <p>This extension uses the following <a
+ * href="https://github.com/eclipse/microprofile-config#configuration-for-microprofile"
+ * target="_top">MicroProfile Config</a> property names:</p>
+ *
+ * <table>
+ *
+ *   <caption><a
+ *   href="https://github.com/eclipse/microprofile-config#configuration-for-microprofile"
+ *   target="_top">MicroProfile Config</a> property names</caption>
+ *
+ *   <thead>
+ *
+ *     <tr>
+ *
+ *       <th scope="col">Name</th>
+ *
+ *       <th scope="col">Type</th>
+ *
+ *       <th scope="col">Description</th>
+ *
+ *       <th scope="col">Default Value</th>
+ *
+ *       <th scope="col">Notes</th>
+ *
+ *     </tr>
+ *
+ *   </thead>
+ *
+ *   <tbody>
+ *
+ *   <tr>
+ *
+ *     <th scope="row">{@code oci.auth-strategies}</th>
+ *
+ *     <td>{@link String String[]}</td>
+ *
+ *     <td>A comma-separated list of descriptors describing the
+ *     strategy, or strategies, to use to select an appropriate {@link
+ *     AbstractAuthenticationDetailsProvider} when one is called
+ *     for.</td>
+ *
+ *     <td>{@code auto}</td>
+ *
+ *     <td>Zero or more of the following:
+ *
+ *     <ul>
+ *     <li>{@code auto}</li>
+ *     <li>{@code config}</li>
+ *     <li>{@code config-file}</li>
+ *     <li>{@code instance-principals}</li>
+ *     <li>{@code resource-principal}</li>
+ *     </ul>
+ *
+ *     <p>A strategy descriptor of {@code config} will cause a {@link
+ *     com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider} to be
+ *     used, populated with other MicroProfile Config properties
+ *     described here.</p>
+ *
+ *     <p>A strategy descriptor of {@code config-file} will cause a
+ *     {@link
+ *     com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider} to
+ *     be used, customized with other MicroProfile Config properties
+ *     described here.</p>
+ *
+ *     <p>A strategy descriptor of {@code instance-principals} will
+ *     cause an {@link
+ *     com.oracle.bmc.auth.InstancePrincipalsAuthenticationDetailsProvider}
+ *     to be used.</p>
+ *
+ *     <p>A strategy descriptor of {@code resource-principal} will
+ *     cause a {@link
+ *     com.oracle.bmc.auth.ResourcePrincipalAuthenticationDetailsProvider}
+ *     to be used.</p>
+ *
+ *     <p>If there are many strategy descriptors supplied, the first
+ *     one that is deemed to be available or suitable will be used and
+ *     all others will be ignored.</p>
+ *
+ *     <p>If {@code auto} is present in the list, or if no value for
+ *     this property exists, the behavior will be as if {@code
+ *     config,config-file,instance-principals,resource-principal} were
+ *     supplied instead.</p>
+ *
+ *     </td>
+ *
+ *   </tr>
+ *
+ *   <tr>
+ *
+ *     <th scope="row">{@code oci.config.path}</th>
+ *
+ *     <td>{@link String}</td>
+ *
+ *     <td>A {@link String} that is {@linkplain
+ *     com.oracle.bmc.ConfigFileReader#parse(String) a path to a valid
+ *     OCI configuration file}</td>
+ *     <td>A {@linkplain com.oracle.bmc.ConfigFileReader#parseDefault()
+ *     default location}</td>
+ *     <td>This configuration property has an effect only when {@code
+ *     config-file} is, explicitly or implicitly, present in the value
+ *     for the {@code oci.auth-strategies} configuration property
+ *     described elsewhere in this table.</td>
+ *
+ *   </tr>
+ *
+ *   <tr>
+ *
+ *     <th scope="row">{@code oci.config.profile}</th>
+ *
+ *     <td>{@link String}</td>
+ *
+ *     <td>An <a
+ *     href="https://docs.oracle.com/en-us/iaas/Content/API/Concepts/sdkconfig.htm#File_Entries"
+ *     target="_top">OCI configuration file profile</a>.</td>
+ *
+ *     <td>{@link
+ *     com.oracle.bmc.ConfigFileReader#DEFAULT_PROFILE_NAME
+ *     DEFAULT}</td>
+ *
+ *     <td>This configuration property has an effect only when {@code
+ *     config-file} is, explicitly or implicitly, present in the value
+ *     for the {@code oci.auth-strategies} configuration property
+ *     described elsewhere in this table.</td>
+ *
+ *   </tr>
+ *
+ *   <tr>
+ *
+ *     <th scope="row">{@code oci.auth.fingerprint}</th>
+ *
+ *     <td>{@link String}</td>
+ *
+ *     <td>An <a
+ *     href="https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm#four"
+ *     target="_top">API signing key's fingerprint</a>.</td>
+ *
+ *     <td></td>
+ *
+ *     <td>This configuration property has an effect only when {@code
+ *     config} is, explicitly or implicitly, present in the value
+ *     for the {@code oci.auth-strategies} configuration property
+ *     described elsewhere in this table.</td>
+ *
+ *   </tr>
+ *
+ *   <tr>
+ *
+ *     <th scope="row">{@code oci.auth.region}</th>
+ *
+ *     <td>{@link com.oracle.bmc.Region} ({@link String} representation)</td>
+ *
+ *     <td>A <a
+ *     href="https://docs.oracle.com/en-us/iaas/Content/General/Concepts/regions.htm#About__The"
+ *     target="_top">region identifier</a>.</td>
+ *
+ *     <td></td>
+ *
+ *     <td>This configuration property has an effect only when {@code
+ *     config} is, explicitly or implicitly, present in the value
+ *     for the {@code oci.auth-strategies} configuration property
+ *     described elsewhere in this table.</td>
+ *
+ *   </tr>
+ *
+ *   <tr>
+ *
+ *     <th scope="row">{@code oci.auth.tenant-id}</th>
+ *
+ *     <td>{@link String}</td>
+ *
+ *     <td>An <a
+ *     href="https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm#five"
+ *     target="_top">OCID of a tenancy</a>.</td>
+ *
+ *     <td></td>
+ *
+ *     <td>This configuration property has an effect only when {@code
+ *     config} is, explicitly or implicitly, present in the value
+ *     for the {@code oci.auth-strategies} configuration property
+ *     described elsewhere in this table.</td>
+ *
+ *   </tr>
+ *
+ *   <tr>
+ *
+ *     <th scope="row">{@code oci.auth.user-id}</th>
+ *
+ *     <td>{@link String}</td>
+ *
+ *     <td>An <a
+ *     href="https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm#five"
+ *     target="_top">OCID of a user</a>.</td>
+ *
+ *     <td></td>
+ *
+ *     <td>This configuration property has an effect only when {@code
+ *     config} is, explicitly or implicitly, present in the value
+ *     for the {@code oci.auth-strategies} configuration property
+ *     described elsewhere in this table.</td>
+ *
+ *   </tr>
+ *
+ *   <tr>
+ *
+ *     <th scope="row">{@code oci.extension.classname-vetoes}</th>
+ *
+ *     <td>{@link String String[]}</td>
+ *
+ *     <td>A comma-separated list of {@linkplain Class#getName() class
+ *     names} beginning with {@code com.oracle.bmc.} that should be
+ *     skipped, even if they match the service pattern described
+ *     above.</td>
+ *
+ *     <td></td>
+ *
+ *     <td>It is recommended not to supply a value for this
+ *     property name except in extraordinary circumstances.</td>
+ *
+ *   </tr>
+ *
+ *   <tr>
+ *
+ *     <th scope="row">{@code oci.extension.lenient-classloading}</th>
+ *
+ *     <td>{@link Boolean boolean}</td>
+ *
+ *     <td>If {@code true}, classes that cannot be loaded will not
+ *     cause a definition error and will simply be skipped
+ *     (recommended).</td>
+ *
+ *     <td>{@code true}</td>
+ *
+ *     <td></td>
+ *
+ *   </tr>
+ *
+ *   </tbody>
+ *
+ * </table>
  */
 public final class OciExtension implements Extension {
 
@@ -134,8 +470,8 @@ public final class OciExtension implements Extension {
     private static final Logger LOGGER =
         Logger.getLogger(OciExtension.class.getName(), OciExtension.class.getName() + "Messages");
 
-    // Evaluates to "com.oracle.bmc." (yes, bmc) as of the current
-    // version of the OCI Java SDK.
+    // Evaluates to "com.oracle.bmc." (yes, bmc, not oci) as of the
+    // current version of the public OCI Java SDK.
     private static final String OCI_PACKAGE_PREFIX = Service.class.getPackageName() + ".";
 
     // For any OCI service conceptually named "Example" in an
@@ -178,7 +514,7 @@ public final class OciExtension implements Extension {
      */
 
 
-    private boolean lenient;
+    private boolean lenientClassloading;
 
     private final Set<ServiceTaqs> serviceTaqs;
 
@@ -200,7 +536,7 @@ public final class OciExtension implements Extension {
     @Deprecated // for java.util.ServiceLoader use only
     public OciExtension() {
         super();
-        this.lenient = true;
+        this.lenientClassloading = true;
         this.serviceTaqs = new HashSet<>();
         this.additionalVetoes = new HashSet<>(7);
         this.unloadableClassNames = new HashSet<>(7);
@@ -214,16 +550,16 @@ public final class OciExtension implements Extension {
 
     private void beforeBeanDiscovery(@Observes BeforeBeanDiscovery event) {
         try {
-            this.lenient =
+            this.lenientClassloading =
                 ConfigProvider.getConfig()
-                .getOptionalValue(this.getClass().getName() + ".lenient", Boolean.class)
+                .getOptionalValue("oci.extension.lenient-classloading", Boolean.class)
                 .orElse(Boolean.TRUE)
                 .booleanValue();
         } catch (IllegalArgumentException conversionException) {
-            this.lenient = true;
+            this.lenientClassloading = true;
         }
         this.additionalVetoes.addAll(ConfigProvider.getConfig()
-                                     .getOptionalValue("oci.vetoes", String[].class)
+                                     .getOptionalValue("oci.extension.classname-vetoes", String[].class)
                                      .map(Set::<String>of)
                                      .orElse(Set.of()));
     }
@@ -264,7 +600,7 @@ public final class OciExtension implements Extension {
     }
 
     private void afterBeanDiscovery(@Observes AfterBeanDiscovery event, BeanManager bm) {
-        boolean lenient = this.lenient;
+        boolean lenient = this.lenientClassloading;
         for (ServiceTaqs serviceTaqs : this.serviceTaqs) {
             if (serviceTaqs.isEmpty()) {
                 installAdps(event, bm, serviceTaqs.qualifiers());
@@ -340,7 +676,7 @@ public final class OciExtension implements Extension {
                                                     String serviceInterfaceName) {
         Annotation[] qualifiersArray = qualifiers.toArray(EMPTY_ANNOTATION_ARRAY);
         ServiceTaqs serviceTaqsForAuth = null;
-        boolean lenient = this.lenient;
+        boolean lenient = this.lenientClassloading;
         // Create types-and-qualifiers for, e.g.:
         //   ....example.Example
         //   ....example.ExampleClient
@@ -492,25 +828,25 @@ public final class OciExtension implements Extension {
                                                        BeanManager bm,
                                                        TypeAndQualifiers serviceClientBuilder,
                                                        TypeAndQualifiers serviceClient,
-                                                       boolean lenient) {
+                                                       boolean lenientClassloading) {
         if (serviceClient == null) {
             return false;
         }
-        return installServiceClientBuilder(event, bm, serviceClientBuilder, serviceClient.toClass(), lenient);
+        return installServiceClientBuilder(event, bm, serviceClientBuilder, serviceClient.toClass(), lenientClassloading);
     }
 
     private static boolean installServiceClientBuilder(AfterBeanDiscovery event,
                                                        BeanManager bm,
                                                        TypeAndQualifiers serviceClientBuilder,
                                                        Class<?> serviceClientClass,
-                                                       boolean lenient) {
+                                                       boolean lenientClassloading) {
         if (serviceClientBuilder != null && isUnsatisfied(bm, serviceClientBuilder)) {
             Class<?> serviceClientBuilderClass = serviceClientBuilder.toClass();
             MethodHandle builderMethod;
             try {
                 builderMethod = PUBLIC_LOOKUP.findStatic(serviceClientClass, "builder", methodType(serviceClientBuilderClass));
             } catch (ReflectiveOperationException reflectiveOperationException) {
-                if (lenient) {
+                if (lenientClassloading) {
                     if (LOGGER.isLoggable(Level.WARNING)) {
                         LogRecord logRecord = new LogRecord(Level.WARNING, "builderMethodNotFound");
                         logRecord.setLoggerName(LOGGER.getName());

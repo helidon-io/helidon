@@ -99,14 +99,11 @@ enum AdpSelectionStrategy {
             // a prior OCI-related extension.
             return
                 super.isAvailable(selector, c, qualifiersArray)
-                && (c.get("oci.config.fingerprint", String.class).isPresent()
-                    || c.get("oci.auth.fingerprint", String.class).isPresent())
-                && c.get("oci.config.region", String.class).isPresent()
-                && (c.get("oci.config.tenantId", String.class).isPresent()
-                    || c.get("oci.config.tenancy", String.class).isPresent()
+                && c.get("oci.auth.fingerprint", String.class).isPresent()
+                && c.get("oci.auth.region", String.class).isPresent()
+                && (c.get("oci.auth.tenant-id", String.class).isPresent()
                     || c.get("oci.auth.tenancy", String.class).isPresent())
-                && (c.get("oci.config.userId", String.class).isPresent()
-                    || c.get("oci.config.user", String.class).isPresent()
+                && (c.get("oci.auth.user-id", String.class).isPresent()
                     || c.get("oci.auth.user", String.class).isPresent());
         }
 
@@ -124,17 +121,15 @@ enum AdpSelectionStrategy {
             //
             // Some fallback logic is for backwards compatibility with
             // a prior OCI-related extension.
-            c.get("oci.config.fingerprint", String.class)
-                .or(() -> c.get("oci.auth.fingerprint", String.class))
+            c.get("oci.auth.fingerprint", String.class)
                 .ifPresent(b::fingerprint);
-            c.get("oci.config.passPhrase", String.class)
-                .or(() -> c.get("oci.config.passPhraseCharacters", String.class))
-                .or(() -> c.get("oci.auth.passPhraseCharacters", String.class))
+            c.get("oci.auth.passphrase", String.class)
+                .or(() -> c.get("oci.auth.passphraseCharacters", String.class))
                 .ifPresent(b::passPhrase);
-            c.get("oci.config.privateKey", String.class)
+            c.get("oci.auth.private-key", String.class)
                 .or(() -> c.get("oci.auth.privateKey", String.class))
                 .ifPresentOrElse(pk -> b.privateKeySupplier(new StringPrivateKeySupplier(pk)),
-                                 () -> b.privateKeySupplier(new SimplePrivateKeySupplier(c.get("oci.config.privateKeyPath",
+                                 () -> b.privateKeySupplier(new SimplePrivateKeySupplier(c.get("oci.auth.private-key-path",
                                                                                                String.class)
                                                                                          .orElse(c.get("oci.auth.keyFile",
                                                                                                        String.class)
@@ -142,14 +137,12 @@ enum AdpSelectionStrategy {
                                                                                                                    ".oci",
                                                                                                                    "oci_api_key.pem")
                                                                                                          .toString())))));
-            c.get("oci.config.region", Region.class)
+            c.get("oci.auth.region", Region.class)
                 .ifPresent(b::region);
-            c.get("oci.config.tenantId", String.class)
-                .or(() -> c.get("oci.config.tenancy", String.class))
+            c.get("oci.auth.tenant-id", String.class)
                 .or(() -> c.get("oci.auth.tenancy", String.class))
                 .ifPresent(b::tenantId);
-            c.get("oci.config.userId", String.class)
-                .or(() -> c.get("oci.config.user", String.class))
+            c.get("oci.auth.user-id", String.class)
                 .or(() -> c.get("oci.auth.user", String.class))
                 .ifPresent(b::userId);
             return b;
@@ -194,7 +187,9 @@ enum AdpSelectionStrategy {
         ConfigFileAuthenticationDetailsProvider produce(Selector selector, Config c, Annotation[] qualifiersArray) {
             return
                 this.produce(c.get("oci.config.path", String.class).orElse(null), // null on purpose; use OCI defaulting logic
-                             c.get("oci.auth.profile", String.class).orElse("DEFAULT"));
+                             c.get("oci.config.profile", String.class)
+                             .orElse(c.get("oci.auth.profile", String.class)
+                                     .orElse("DEFAULT")));
         }
 
         private ConfigFileAuthenticationDetailsProvider produce(String ociConfigPath, String ociAuthProfile) {
@@ -322,8 +317,8 @@ enum AdpSelectionStrategy {
         @Override
         AbstractAuthenticationDetailsProvider produce(Selector selector, Config c, Annotation[] qualifiersArray) {
             Collection<? extends AdpSelectionStrategy> strategies =
-                concreteStrategies(c.get("oci.config.strategies", String[].class)
-                                   .or(() -> c.get("oci.config.strategy", String[].class))
+                concreteStrategies(c.get("oci.auth-strategies", String[].class)
+                                   .or(() -> c.get("oci.auth-strategy", String[].class))
                                    .orElse(null));
             switch (strategies.size()) {
             case 1:
