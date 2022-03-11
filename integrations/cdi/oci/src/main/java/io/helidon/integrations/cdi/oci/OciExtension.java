@@ -150,10 +150,10 @@ public final class OciExtension implements Extension {
     //       "Example",
     //       "ExampleAsync",
     //       "ExampleAsyncClient",
-    //       "ExampleAsyncClientBuilder", // com.oracle.bmc.streaming mistakenly doesn't use a nested Builder class; all other services do
+    //       "ExampleAsyncClientBuilder", // ...bmc.streaming mistakenly doesn't use a nested Builder class; all other services do
     //       "ExampleAsyncClient$Builder",
     //       "ExampleClient",
-    //       "ExampleClientBuilder"...
+    //       "ExampleClientBuilder",
     //       "ExampleClient$Builder"...
     // (4) ...followed by the end of String.
     //

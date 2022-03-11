@@ -52,6 +52,10 @@ import com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider.SimpleAuthenticat
 import com.oracle.bmc.auth.SimplePrivateKeySupplier;
 import com.oracle.bmc.auth.StringPrivateKeySupplier;
 
+/**
+ * A strategy for finding and building various kinds of {@link
+ * AbstractAuthenticationDetailsProvider} instances.
+ */
 enum AdpSelectionStrategy {
 
 
@@ -73,6 +77,11 @@ enum AdpSelectionStrategy {
      */
 
 
+    /**
+     * An {@link AdpSelectionStrategy} that works with {@link
+     * SimpleAuthenticationDetailsProvider} instances configured from
+     * configuration.
+     */
     CONFIG(SimpleAuthenticationDetailsProvider.class,
            SimpleAuthenticationDetailsProviderBuilder.class) {
 
@@ -141,6 +150,10 @@ enum AdpSelectionStrategy {
 
     },
 
+    /**
+     * An {@link AdpSelectionStrategy} that works with {@link
+     * ConfigFileAuthenticationDetailsProvider} instances.
+     */
     CONFIG_FILE(ConfigFileAuthenticationDetailsProvider.class) {
 
         @Override
@@ -198,6 +211,10 @@ enum AdpSelectionStrategy {
         }
     },
 
+    /**
+     * An {@link AdpSelectionStrategy} that works with {@link
+     * InstancePrincipalsAuthenticationDetailsProvider} instances.
+     */
     INSTANCE_PRINCIPALS(InstancePrincipalsAuthenticationDetailsProvider.class,
                         InstancePrincipalsAuthenticationDetailsProviderBuilder.class) {
 
@@ -231,6 +248,10 @@ enum AdpSelectionStrategy {
         }
     },
 
+    /**
+     * An {@link AdpSelectionStrategy} that works with {@link
+     * ResourcePrincipalAuthenticationDetailsProvider} instances.
+     */
     RESOURCE_PRINCIPAL(ResourcePrincipalAuthenticationDetailsProvider.class,
                        ResourcePrincipalAuthenticationDetailsProviderBuilder.class) {
 
@@ -255,6 +276,11 @@ enum AdpSelectionStrategy {
         }
     },
 
+    /**
+     * An {@link AdpSelectionStrategy} that selects the most
+     * appropriate other {@link AdpSelectionStrategy} by consulting
+     * configuration.
+     */
     AUTO(AbstractAuthenticationDetailsProvider.class, true) {
 
         private final Logger logger = Logger.getLogger(this.getClass().getName(),
@@ -325,9 +351,6 @@ enum AdpSelectionStrategy {
      * Static fields.
      */
 
-
-    private static final Logger LOGGER = Logger.getLogger(AdpSelectionStrategy.class.getName(),
-                                                          AdpSelectionStrategy.class.getName() + "Messages");
 
     private static final Collection<AdpSelectionStrategy> CONCRETE_STRATEGIES;
 
