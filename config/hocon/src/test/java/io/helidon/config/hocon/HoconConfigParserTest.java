@@ -20,6 +20,8 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -32,6 +34,8 @@ import java.util.stream.Collectors;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigMappingException;
 import io.helidon.config.ConfigSources;
+import io.helidon.config.ConfigValue;
+import io.helidon.config.FileConfigSource;
 import io.helidon.config.MissingValueException;
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigNode.ListNode;
@@ -41,6 +45,7 @@ import io.helidon.config.spi.ConfigParser.Content;
 import io.helidon.config.spi.ConfigParserException;
 
 import com.typesafe.config.ConfigResolveOptions;
+import org.hamcrest.core.Is;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.config.ConfigValues.simpleValue;
@@ -60,6 +65,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * Tests {@link HoconConfigParser}.
  */
 public class HoconConfigParserTest {
+
+    private static final String RELATIVE_PATH_TO_RESOURCE = "/src/test/resources/";
 
     @Test
     public void testResolveEnabled() {
@@ -298,9 +305,63 @@ public class HoconConfigParserTest {
         assertThat(properties, hasItems("test", ""));
     }
 
+    @Test
+    public void testResolveIncludesAreEnabledByDefaultAtProvider() {
+        // try the classpath way...
+        Function<String, Optional<String>> fn = (prefixPath) -> {
+            ConfigParser parser = HoconConfigParser.create();
+            ObjectNode node = parser.parse((StringContent) ()
+                -> "include required(classpath(\"" + prefixPath + "included.conf\"))");
+
+            assertThat(node.toString(), node.entrySet(), hasSize(1));
+
+            return node.get("foo").value();
+        };
+
+        assertThat(fn.apply("").get(), is("bar1"));
+        assertThat(fn.apply("includeconfig/").get(), is("bar2"));
+
+        // try the file path way...
+        fn = (prefixPath) -> {
+            ConfigParser parser = HoconConfigParser.create();
+            ObjectNode node = parser.parse((StringContent) ()
+                -> "include required(file(\"" + getDir() + prefixPath + "included.conf\"))");
+            assertThat(node.toString(), node.entrySet(), hasSize(1));
+            return node.get("foo").value();
+        };
+
+        assertThat("top level", fn.apply("").get(), is("bar1"));
+        assertThat("nested level", fn.apply("includeconfig/").get(), is("bar2"));
+    }
+
+    @Test
+    public void testConfigBuilderIncludesAreDisabledByDefault() {
+        Function<String, ConfigValue<String>> fn = (prefixPath) -> {
+            Path path = Paths.get(getDir() + prefixPath + "includer.conf");
+            FileConfigSource configSource = ConfigSources.file(path).build();
+
+            assertThat(configSource.exists(), Is.is(true));
+
+            Config config = Config.builder()
+                .addSource(configSource)
+                .build();
+            return config.get("foo").asString();
+        };
+
+        assertThat("top level", fn.apply("").get(), is("bar1"));
+
+        // TODO: this actually resolves to "bar1" incorrectly
+//        assertThat("nested level", fn.apply("includeconfig/").get(), is("bar2"));
+    }
+
+
     //
     // helper
     //
+
+    private static String getDir() {
+        return Paths.get("").toAbsolutePath() + RELATIVE_PATH_TO_RESOURCE;
+    }
 
     @FunctionalInterface
     private interface StringContent extends Content {
