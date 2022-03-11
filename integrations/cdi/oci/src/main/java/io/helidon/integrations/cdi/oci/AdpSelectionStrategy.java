@@ -54,8 +54,8 @@ import com.oracle.bmc.auth.SimplePrivateKeySupplier;
 import com.oracle.bmc.auth.StringPrivateKeySupplier;
 
 /**
- * A strategy for finding and building various kinds of {@link
- * AbstractAuthenticationDetailsProvider} instances.
+ * A strategy for finding and building various well-known kinds of
+ * {@link AbstractAuthenticationDetailsProvider} instances.
  */
 enum AdpSelectionStrategy {
 
@@ -285,8 +285,9 @@ enum AdpSelectionStrategy {
     },
 
     /**
-     * An {@link AdpSelectionStrategy} that selects the most
-     * appropriate other {@link AdpSelectionStrategy} by consulting
+     * An {@linkplain #isAbstract() abstract} {@link
+     * AdpSelectionStrategy} that selects the most appropriate
+     * concrete {@link AdpSelectionStrategy} by consulting
      * configuration.
      */
     AUTO(AbstractAuthenticationDetailsProvider.class, true) {
