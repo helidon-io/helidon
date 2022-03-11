@@ -22,7 +22,6 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.net.ConnectException;
 import java.net.InetAddress;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -98,17 +97,8 @@ enum AdpSelectionStrategy {
         }
 
         @Override
-        AbstractAuthenticationDetailsProvider produce(Selector selector,
-                                                      Config config,
-                                                      Annotation[] qualifiersArray) {
-            return selector.select(SimpleAuthenticationDetailsProviderBuilder.class, qualifiersArray).get().build();
-        }
-
-        @Override
         @SuppressWarnings("checkstyle:LineLength")
-        SimpleAuthenticationDetailsProviderBuilder produceBuilder(Selector selector,
-                                                                  Config c,
-                                                                  Annotation[] qualifiersArray) {
+        SimpleAuthenticationDetailsProviderBuilder produceBuilder(Selector selector, Config c, Annotation[] qualifiersArray) {
             SimpleAuthenticationDetailsProviderBuilder b = SimpleAuthenticationDetailsProvider.builder();
             // See
             // https://docs.oracle.com/en-us/iaas/tools/java/latest/com/oracle/bmc/auth/SimpleAuthenticationDetailsProvider.SimpleAuthenticationDetailsProviderBuilder.html#method.summary
@@ -127,7 +117,9 @@ enum AdpSelectionStrategy {
                 .ifPresentOrElse(pk -> b.privateKeySupplier(new StringPrivateKeySupplier(pk)),
                                  () -> b.privateKeySupplier(new SimplePrivateKeySupplier(c.getOptionalValue("oci.config.privateKeyPath", String.class)
                                                                                          .orElse(c.getOptionalValue("oci.auth.keyFile", String.class)
-                                                                                                 .orElse(Paths.get(System.getProperty("user.home"), ".oci", "oci_api_key.pem")
+                                                                                                 .orElse(Paths.get(System.getProperty("user.home"),
+                                                                                                                   ".oci",
+                                                                                                                   "oci_api_key.pem")
                                                                                                          .toString())))));
             c.getOptionalValue("oci.config.region", Region.class)
                 .ifPresent(b::region);
@@ -139,18 +131,14 @@ enum AdpSelectionStrategy {
                 .or(() -> c.getOptionalValue("oci.config.user", String.class))
                 .or(() -> c.getOptionalValue("oci.auth.user", String.class))
                 .ifPresent(b::userId);
-            // Remember, caller will have to arrange for further
-            // customization.
             return b;
         }
 
-        private void privateKey(SimpleAuthenticationDetailsProviderBuilder builder, String privateKey) {
-            builder.privateKeySupplier(new StringPrivateKeySupplier(privateKey));
+        @Override
+        SimpleAuthenticationDetailsProvider produce(Selector selector, Config config, Annotation[] qualifiersArray) {
+            return selector.select(SimpleAuthenticationDetailsProviderBuilder.class, qualifiersArray).get().build();
         }
 
-        private void privateKey(SimpleAuthenticationDetailsProviderBuilder builder, Path privateKey) {
-            builder.privateKeySupplier(new SimplePrivateKeySupplier(privateKey.toString()));
-        }
     },
 
     CONFIG_FILE(ConfigFileAuthenticationDetailsProvider.class) {
@@ -159,7 +147,7 @@ enum AdpSelectionStrategy {
         boolean isAvailable(Selector selector, Config config, Annotation[] qualifiersArray) {
             if (super.isAvailable(selector, config, qualifiersArray)) {
                 try {
-                    this.select(selector, config, qualifiersArray);
+                    this.get(selector, config, qualifiersArray);
                 } catch (UncheckedIOException uncheckedIoException) {
                     if (uncheckedIoException.getCause() instanceof FileNotFoundException) {
                         return false;
@@ -172,31 +160,26 @@ enum AdpSelectionStrategy {
         }
 
         @Override
-        Object produceBuilder(Selector selector, Annotation[] qualifiersArray) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
         Object produceBuilder(Selector selector, Config config, Annotation[] qualifiersArray) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        AbstractAuthenticationDetailsProvider produce(Selector selector,
-                                                      Config config,
-                                                      Annotation[] qualifiersArray) {
+        ConfigFileAuthenticationDetailsProvider produce(Selector selector, Config config, Annotation[] qualifiersArray) {
             return
                 this.produce(config.getOptionalValue("oci.config.path", String.class).orElse(null),
                              config.getOptionalValue("oci.auth.profile", String.class).orElse("DEFAULT"));
         }
 
-        private AbstractAuthenticationDetailsProvider produce(String ociConfigPath, String ociAuthProfile) {
+        private ConfigFileAuthenticationDetailsProvider produce(String ociConfigPath, String ociAuthProfile) {
             try {
                 if (ociConfigPath == null) {
                     return new ConfigFileAuthenticationDetailsProvider(ociAuthProfile);
                 } else {
                     return new ConfigFileAuthenticationDetailsProvider(ociConfigPath, ociAuthProfile);
                 }
+            } catch (FileNotFoundException fileNotFoundException) {
+                throw new UncheckedIOException(fileNotFoundException.getMessage(), fileNotFoundException);
             } catch (IOException ioException) {
                 // The underlying ConfigFileReader that does the real
                 // work does not throw a FileNotFoundException in this
@@ -237,27 +220,14 @@ enum AdpSelectionStrategy {
 
         @Override
         InstancePrincipalsAuthenticationDetailsProviderBuilder produceBuilder(Selector selector,
-                                                                              Annotation[] qualifiersArray) {
-            return this.produceBuilder(selector, null, qualifiersArray); // no need to find Config; it's not used
-        }
-
-        @Override
-        InstancePrincipalsAuthenticationDetailsProviderBuilder produceBuilder(Selector selector,
                                                                               Config config,
                                                                               Annotation[] qualifiersArray) {
-            InstancePrincipalsAuthenticationDetailsProviderBuilder builder =
-                InstancePrincipalsAuthenticationDetailsProvider.builder();
-            // Remember, caller will have to arrange for further
-            // customization.
-            return builder;
+            return InstancePrincipalsAuthenticationDetailsProvider.builder();
         }
 
         @Override
-        AbstractAuthenticationDetailsProvider produce(Selector selector,
-                                                      Config config,
-                                                      Annotation[] qualifiersArray) {
-            return
-                selector.select(InstancePrincipalsAuthenticationDetailsProviderBuilder.class, qualifiersArray).get().build();
+        InstancePrincipalsAuthenticationDetailsProvider produce(Selector selector, Config config, Annotation[] qualifiersArray) {
+            return selector.select(InstancePrincipalsAuthenticationDetailsProviderBuilder.class, qualifiersArray).get().build();
         }
     },
 
@@ -274,42 +244,28 @@ enum AdpSelectionStrategy {
 
         @Override
         ResourcePrincipalAuthenticationDetailsProviderBuilder produceBuilder(Selector selector,
-                                                                             Annotation[] qualifiersArray) {
-            return this.produceBuilder(selector, null, qualifiersArray); // no need to find Config; it's not used
-        }
-
-        @Override
-        ResourcePrincipalAuthenticationDetailsProviderBuilder produceBuilder(Selector selector,
                                                                              Config config,
                                                                              Annotation[] qualifiersArray) {
-            ResourcePrincipalAuthenticationDetailsProviderBuilder builder =
-                ResourcePrincipalAuthenticationDetailsProvider.builder();
-            // Remember, caller will have to arrange for further
-            // customization.
-            return builder;
+            return ResourcePrincipalAuthenticationDetailsProvider.builder();
         }
 
         @Override
-        AbstractAuthenticationDetailsProvider produce(Selector selector,
-                                                      Config config,
-                                                      Annotation[] qualifiersArray) {
-            return
-                selector.select(ResourcePrincipalAuthenticationDetailsProviderBuilder.class, qualifiersArray).get().build();
+        ResourcePrincipalAuthenticationDetailsProvider produce(Selector selector, Config config, Annotation[] qualifiersArray) {
+            return selector.select(ResourcePrincipalAuthenticationDetailsProviderBuilder.class, qualifiersArray).get().build();
         }
     },
 
     AUTO(AbstractAuthenticationDetailsProvider.class, true) {
 
         private final Logger logger = Logger.getLogger(this.getClass().getName(),
-                                                       OciExtension.class.getName() + "Messages");
+                                                       AdpSelectionStrategy.class.getName() + "Messages");
 
         @Override
-        Object produceBuilder(Selector selector, Config config, Annotation[] qualifiersArray) {
+        Void produceBuilder(Selector selector, Config config, Annotation[] qualifiersArray) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        @SuppressWarnings("fallthrough") // note
         AbstractAuthenticationDetailsProvider produce(Selector selector,
                                                       Config config,
                                                       Annotation[] qualifiersArray) {
@@ -320,31 +276,28 @@ enum AdpSelectionStrategy {
             switch (strategies.size()) {
             case 1:
                 AdpSelectionStrategy strategy = strategies.iterator().next();
-                if (strategy != this) {
-                    // No availability check on purpose.  We have only
-                    // one strategy.  It is not itself AUTO so there's
-                    // no fallback, so we don't try to help out in any
-                    // way.
-                    if (logger.isLoggable(Level.CONFIG)) {
-                        logger.logp(Level.CONFIG,
-                                    this.getClass().getName(),
-                                    "produce",
-                                    "usingStrategy",
-                                    new Object[] {strategy, strategy.configName(), strategy.type().getTypeName()});
-                    }
-                    return strategy.select(selector, config, qualifiersArray);
-                } else {
-                    // (Edge case.) Somehow the sole strategy was us
-                    // (AUTO), so that means cycle through the
-                    // concrete ones.
-                    strategies = concreteStrategies();
+                if (strategy == this) {
+                    // concreteStrategies(String[]) bug
+                    throw new IllegalStateException("concreteStrategies(String[]) returned " + this.name());
                 }
-                // fall-through on purpose
+                // No availability check on purpose.
+                if (logger.isLoggable(Level.CONFIG)) {
+                    logger.logp(Level.CONFIG,
+                                this.getClass().getName(),
+                                "produce",
+                                "usingStrategy",
+                                new Object[] {strategy, strategy.configName(), strategy.type().getTypeName()});
+                }
+                return strategy.get(selector, config, qualifiersArray);
             default:
                 Iterator<? extends AdpSelectionStrategy> i = strategies.iterator();
                 while (i.hasNext()) {
                     AdpSelectionStrategy s = i.next();
-                    if (s != this && (!i.hasNext() || s.isAvailable(selector, config, qualifiersArray))) {
+                    if (s == this) {
+                        // concreteStrategies(String[]) bug
+                        throw new IllegalStateException("concreteStrategies(String[]) returned " + this.name());
+                    }
+                    if (!i.hasNext() || s.isAvailable(selector, config, qualifiersArray)) {
                         if (logger.isLoggable(Level.CONFIG)) {
                             logger.logp(Level.CONFIG,
                                         this.getClass().getName(),
@@ -352,7 +305,7 @@ enum AdpSelectionStrategy {
                                         "usingStrategy",
                                         new Object[] {s, s.configName(), s.type().getTypeName()});
                         }
-                        return s.select(selector, config, qualifiersArray);
+                        return s.get(selector, config, qualifiersArray);
                     } else if (logger.isLoggable(Level.FINE)) {
                         logger.logp(Level.FINE,
                                     this.getClass().getName(),
@@ -424,9 +377,7 @@ enum AdpSelectionStrategy {
         this(type, builderType, false);
     }
 
-    AdpSelectionStrategy(Class<? extends AbstractAuthenticationDetailsProvider> type,
-                         Class<?> builderType,
-                         boolean isAbstract) {
+    AdpSelectionStrategy(Class<? extends AbstractAuthenticationDetailsProvider> type, Class<?> builderType, boolean isAbstract) {
         this.type = Objects.requireNonNull(type, "type");
         this.builderType = builderType;
         this.isAbstract = isAbstract;
@@ -458,25 +409,13 @@ enum AdpSelectionStrategy {
         return !this.isAbstract();
     }
 
-    AbstractAuthenticationDetailsProvider select(Selector selector,
-                                                 Config config,
-                                                 Annotation[] qualifiersArray) {
+    AbstractAuthenticationDetailsProvider get(Selector selector, Config config, Annotation[] qualifiersArray) {
         return selector.select(this.type, qualifiersArray).get();
-    }
-
-    Object produceBuilder(Selector selector, Annotation[] qualifiersArray) {
-        return this.produceBuilder(selector, selector.select(Config.class).get(), qualifiersArray);
     }
 
     abstract Object produceBuilder(Selector selector, Config config, Annotation[] qualifiersArray);
 
-    AbstractAuthenticationDetailsProvider produce(Selector selector, Annotation[] qualifiersArray) {
-        return this.produce(selector, selector.select(Config.class).get(), qualifiersArray);
-    }
-
-    abstract AbstractAuthenticationDetailsProvider produce(Selector selector,
-                                                           Config config,
-                                                           Annotation[] qualifiersArray);
+    abstract AbstractAuthenticationDetailsProvider produce(Selector selector, Config config, Annotation[] qualifiersArray);
 
 
     /*
@@ -497,11 +436,7 @@ enum AdpSelectionStrategy {
             return AUTO;
         } else {
             strategyString = strategyString.strip();
-            if (strategyString.isBlank()) {
-                return AUTO;
-            } else {
-                return of(strategyString);
-            }
+            return strategyString.isBlank() ? AUTO : of(strategyString);
         }
     }
 

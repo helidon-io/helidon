@@ -134,8 +134,8 @@ public final class OciExtension implements Extension {
     private static final Logger LOGGER =
         Logger.getLogger(OciExtension.class.getName(), OciExtension.class.getName() + "Messages");
 
-    // Evaluates to "com.oracle.bmc." as of the current version of the
-    // OCI Java SDK.
+    // Evaluates to "com.oracle.bmc." (yes, bmc) as of the current
+    // version of the OCI Java SDK.
     private static final String OCI_PACKAGE_PREFIX = Service.class.getPackageName() + ".";
 
     // For any OCI service conceptually named "Example" in an
@@ -150,7 +150,7 @@ public final class OciExtension implements Extension {
     //       "Example",
     //       "ExampleAsync",
     //       "ExampleAsyncClient",
-    //       "ExampleAsyncClientBuilder", // com.oracle.bmc.streaming doesn't use a nested Builder class; all other services do
+    //       "ExampleAsyncClientBuilder", // com.oracle.bmc.streaming mistakenly doesn't use a nested Builder class; all other services do
     //       "ExampleAsyncClient$Builder",
     //       "ExampleClient",
     //       "ExampleClientBuilder"...
@@ -475,10 +475,7 @@ public final class OciExtension implements Extension {
     private static Object produceAdpBuilder(AdpSelectionStrategy s,
                                             Instance<? super Object> instance,
                                             Annotation[] qualifiersArray) {
-        Object builder =
-            s.produceBuilder(new SelectorShim(instance),
-                             new ConfigShim(instance.select(Config.class).get()),
-                             qualifiersArray);
+        Object builder = s.produceBuilder(SelectorShim.of(instance), ConfigShim.of(instance), qualifiersArray);
         fire(instance, qualifiersArray, builder);
         return builder;
     }
@@ -486,8 +483,7 @@ public final class OciExtension implements Extension {
     private static AbstractAuthenticationDetailsProvider produceAdp(AdpSelectionStrategy s,
                                      Instance<? super Object> instance,
                                      Annotation[] qualifiersArray) {
-        return
-            s.produce(new SelectorShim(instance), new ConfigShim(instance.select(Config.class).get()), qualifiersArray);
+        return s.produce(SelectorShim.of(instance), ConfigShim.of(instance), qualifiersArray);
     }
 
     private static boolean installServiceClientBuilder(AfterBeanDiscovery event,
@@ -495,14 +491,10 @@ public final class OciExtension implements Extension {
                                                        TypeAndQualifiers serviceClientBuilder,
                                                        TypeAndQualifiers serviceClient,
                                                        boolean lenient) {
-        if (serviceClient != null) {
-            return installServiceClientBuilder(event,
-                                               bm,
-                                               serviceClientBuilder,
-                                               serviceClient.toClass(),
-                                               lenient);
+        if (serviceClient == null) {
+            return false;
         }
-        return false;
+        return installServiceClientBuilder(event, bm, serviceClientBuilder, serviceClient.toClass(), lenient);
     }
 
     private static boolean installServiceClientBuilder(AfterBeanDiscovery event,
@@ -560,14 +552,10 @@ public final class OciExtension implements Extension {
                                                 TypeAndQualifiers serviceClient,
                                                 TypeAndQualifiers serviceInterface,
                                                 TypeAndQualifiers serviceClientBuilder) {
-        if (serviceInterface != null && serviceClientBuilder != null) {
-            return installServiceClient(event,
-                                        bm,
-                                        serviceClient,
-                                        serviceInterface.type(),
-                                        serviceClientBuilder.toClass());
+        if (serviceInterface == null || serviceClientBuilder == null) {
+            return false;
         }
-        return false;
+        return installServiceClient(event, bm, serviceClient, serviceInterface.type(), serviceClientBuilder.toClass());
     }
 
     private static boolean installServiceClient(AfterBeanDiscovery event,
@@ -1138,6 +1126,10 @@ public final class OciExtension implements Extension {
             return this.instance.select(c, a)::get;
         }
 
+        private static SelectorShim of(Instance<? super Object> instance) {
+            return new SelectorShim(instance);
+        }
+
     }
 
     private static class ConfigShim implements AdpSelectionStrategy.Config {
@@ -1151,6 +1143,14 @@ public final class OciExtension implements Extension {
         @Override
         public final <T> Optional<T> getOptionalValue(String propertyName, Class<T> propertyType) {
             return config.getOptionalValue(propertyName, propertyType);
+        }
+
+        private static ConfigShim of(Config config) {
+            return new ConfigShim(config);
+        }
+
+        private static ConfigShim of(Instance<? super Object> instance) {
+            return of(instance.select(Config.class).get());
         }
 
     }
