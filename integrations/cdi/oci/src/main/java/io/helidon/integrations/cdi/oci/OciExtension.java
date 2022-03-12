@@ -1032,14 +1032,6 @@ public final class OciExtension implements Extension {
         return isUnsatisfied(bm, taq.type(), taq.qualifiers());
     }
 
-    private static boolean isUnsatisfied(BeanManager bm, Type type) {
-        try {
-            return bm.resolve(bm.getBeans(type)) == null;
-        } catch (AmbiguousResolutionException ambiguousResolutionException) {
-            return false;
-        }
-    }
-
     private static boolean isUnsatisfied(BeanManager bm, Type type, Annotation[] qualifiers) {
         try {
             return bm.resolve(bm.getBeans(type, qualifiers)) == null;

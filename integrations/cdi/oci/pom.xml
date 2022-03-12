@@ -28,6 +28,10 @@
     <artifactId>helidon-integrations-cdi-oci</artifactId>
     <name>Helidon CDI Integrations OCI</name>
 
+    <properties>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
+    </properties>
+    
     <build>
         <plugins>
             <plugin>

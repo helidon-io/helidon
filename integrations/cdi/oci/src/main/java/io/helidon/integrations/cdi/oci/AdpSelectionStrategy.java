@@ -167,7 +167,7 @@ enum AdpSelectionStrategy {
                 try {
                     this.get(selector, c, qualifiersArray);
                 } catch (UncheckedIOException uncheckedIoException) {
-                    Object cause = uncheckedIoException;
+                    Object cause = uncheckedIoException.getCause();
                     if (cause instanceof FileNotFoundException || cause instanceof NoSuchFileException) {
                         return false;
                     }
@@ -306,8 +306,8 @@ enum AdpSelectionStrategy {
      */
     AUTO(AbstractAuthenticationDetailsProvider.class, true) {
 
-        private final Logger logger = Logger.getLogger(this.getClass().getName(),
-                                                       AdpSelectionStrategy.class.getName() + "Messages");
+        private final transient Logger logger = Logger.getLogger(this.getClass().getName(),
+                                                                 AdpSelectionStrategy.class.getName() + "Messages");
 
         @Override
         Void produceBuilder(Selector selector, Config c, Annotation[] qualifiersArray) {
