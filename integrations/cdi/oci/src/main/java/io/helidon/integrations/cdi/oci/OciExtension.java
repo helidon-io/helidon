@@ -123,9 +123,9 @@ import static java.lang.invoke.MethodType.methodType;
  *
  * <p>The service client's {@linkplain Class#getSimpleName() simple
  * name} is formed by appending the {@linkplain Class#getSimpleName()
- * simple name} of the <em>service interface</em> with
- * <code>Client</code>.  The {@linkplain Class#getName() class name}
- * for the service client for the hypothetical {@code
+ * simple name} of the service interface with <code>Client</code>.
+ * The {@linkplain Class#getName() class name} for the service client
+ * for the hypothetical {@code
  * com.oracle.bmc.cloudexample.CloudExample} service interface
  * described above will thus be
  * <code>com.oracle.bmc.</code><strong><code>cloudexample</code></strong><code>.</code><strong><code>CloudExampleClient</code></strong>.</p></dd>
@@ -207,12 +207,11 @@ import static java.lang.invoke.MethodType.methodType;
  *
  * </dl>
  *
- * <p>Additionally, for any given <em>service interface</em>,
- * <em>service client</em>, <em>service client builder</em>,
- * <em>asynchronous service interface</em>, <em>asynchronous service
- * client</em>, or <em>asynchronous service client builder</em>, this
- * {@linkplain Extension extension} also enables the {@linkplain
- * javax.inject.Inject injection} of an appropriate {@link
+ * <p>Additionally, for any given service interface, service client,
+ * service client builder, asynchronous service interface,
+ * asynchronous service client, or asynchronous service client
+ * builder, this {@linkplain Extension extension} also enables the
+ * {@linkplain javax.inject.Inject injection} of an appropriate {@link
  * AbstractAuthenticationDetailsProvider}, which allows the
  * corresponding service client to authenticate with the service.</p>
  *
@@ -249,211 +248,210 @@ import static java.lang.invoke.MethodType.methodType;
  *
  *   <tbody>
  *
- *   <tr>
+ *     <tr>
  *
- *     <th scope="row">{@code oci.auth-strategies}</th>
+ *       <th scope="row">{@code oci.auth-strategies}</th>
  *
- *     <td>{@link String String[]}</td>
+ *       <td>{@link String String[]}</td>
  *
- *     <td>A comma-separated list of descriptors describing the
- *     strategy, or strategies, to use to select an appropriate {@link
- *     AbstractAuthenticationDetailsProvider} when one is called
- *     for.</td>
+ *       <td>A comma-separated list of descriptors describing the
+ *       strategy, or strategies, to use to select an appropriate
+ *       {@link AbstractAuthenticationDetailsProvider} when one is
+ *       called for.</td>
  *
- *     <td>{@code auto}</td>
+ *       <td>{@code auto}</td>
  *
- *     <td>Zero or more of the following:
+ *       <td>Zero or more of the following:
  *
- *     <ul>
- *     <li>{@code auto}</li>
- *     <li>{@code config}</li>
- *     <li>{@code config-file}</li>
- *     <li>{@code instance-principals}</li>
- *     <li>{@code resource-principal}</li>
- *     </ul>
+ *         <ul>
+ *           <li>{@code auto}</li>
+ *           <li>{@code config}</li>
+ *           <li>{@code config-file}</li>
+ *           <li>{@code instance-principals}</li>
+ *           <li>{@code resource-principal}</li>
+ *         </ul>
  *
- *     <p>A strategy descriptor of {@code config} will cause a {@link
- *     com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider} to be
- *     used, populated with other MicroProfile Config properties
- *     described here.</p>
+ *         <p>A strategy descriptor of {@code config} will cause a
+ *         {@link
+ *         com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider} to
+ *         be used, populated with other MicroProfile Config
+ *         properties described here.</p>
  *
- *     <p>A strategy descriptor of {@code config-file} will cause a
- *     {@link
- *     com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider} to
- *     be used, customized with other MicroProfile Config properties
- *     described here.</p>
+ *         <p>A strategy descriptor of {@code config-file} will cause
+ *         a {@link
+ *         com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider}
+ *         to be used, customized with other MicroProfile Config
+ *         properties described here.</p>
  *
- *     <p>A strategy descriptor of {@code instance-principals} will
- *     cause an {@link
- *     com.oracle.bmc.auth.InstancePrincipalsAuthenticationDetailsProvider}
- *     to be used.</p>
+ *         <p>A strategy descriptor of {@code instance-principals}
+ *         will cause an {@link
+ *         com.oracle.bmc.auth.InstancePrincipalsAuthenticationDetailsProvider}
+ *         to be used.</p>
  *
- *     <p>A strategy descriptor of {@code resource-principal} will
- *     cause a {@link
- *     com.oracle.bmc.auth.ResourcePrincipalAuthenticationDetailsProvider}
- *     to be used.</p>
+ *         <p>A strategy descriptor of {@code resource-principal} will
+ *         cause a {@link
+ *         com.oracle.bmc.auth.ResourcePrincipalAuthenticationDetailsProvider}
+ *         to be used.</p>
  *
- *     <p>If there are many strategy descriptors supplied, the first
- *     one that is deemed to be available or suitable will be used and
- *     all others will be ignored.</p>
+ *         <p>If there are many strategy descriptors supplied, the
+ *         first one that is deemed to be available or suitable will
+ *         be used and all others will be ignored.</p>
  *
- *     <p>If {@code auto} is present in the list, or if no value for
- *     this property exists, the behavior will be as if {@code
- *     config,config-file,instance-principals,resource-principal} were
- *     supplied instead.</p>
+ *         <p>If {@code auto} is present in the list, or if no value
+ *         for this property exists, the behavior will be as if {@code
+ *         config,config-file,instance-principals,resource-principal}
+ *         were supplied instead.</p></td>
  *
- *     </td>
+ *     </tr>
  *
- *   </tr>
+ *     <tr>
  *
- *   <tr>
+ *       <th scope="row">{@code oci.config.path}</th>
  *
- *     <th scope="row">{@code oci.config.path}</th>
+ *       <td>{@link String}</td>
  *
- *     <td>{@link String}</td>
+ *       <td>A {@link String} that is {@linkplain
+ *       com.oracle.bmc.ConfigFileReader#parse(String) a path to a
+ *       valid OCI configuration file}</td> <td>A {@linkplain
+ *       com.oracle.bmc.ConfigFileReader#parseDefault() default
+ *       location}</td> <td>This configuration property has an effect
+ *       only when {@code config-file} is, explicitly or implicitly,
+ *       present in the value for the {@code oci.auth-strategies}
+ *       configuration property described elsewhere in this
+ *       table.</td>
  *
- *     <td>A {@link String} that is {@linkplain
- *     com.oracle.bmc.ConfigFileReader#parse(String) a path to a valid
- *     OCI configuration file}</td>
- *     <td>A {@linkplain com.oracle.bmc.ConfigFileReader#parseDefault()
- *     default location}</td>
- *     <td>This configuration property has an effect only when {@code
- *     config-file} is, explicitly or implicitly, present in the value
- *     for the {@code oci.auth-strategies} configuration property
- *     described elsewhere in this table.</td>
+ *     </tr>
  *
- *   </tr>
+ *     <tr>
  *
- *   <tr>
+ *       <th scope="row">{@code oci.config.profile}</th>
  *
- *     <th scope="row">{@code oci.config.profile}</th>
+ *       <td>{@link String}</td>
  *
- *     <td>{@link String}</td>
+ *       <td>An <a
+ *       href="https://docs.oracle.com/en-us/iaas/Content/API/Concepts/sdkconfig.htm#File_Entries"
+ *       target="_top">OCI configuration file profile</a>.</td>
  *
- *     <td>An <a
- *     href="https://docs.oracle.com/en-us/iaas/Content/API/Concepts/sdkconfig.htm#File_Entries"
- *     target="_top">OCI configuration file profile</a>.</td>
+ *       <td>{@link
+ *       com.oracle.bmc.ConfigFileReader#DEFAULT_PROFILE_NAME
+ *       DEFAULT}</td>
  *
- *     <td>{@link
- *     com.oracle.bmc.ConfigFileReader#DEFAULT_PROFILE_NAME
- *     DEFAULT}</td>
+ *       <td>This configuration property has an effect only when
+ *       {@code config-file} is, explicitly or implicitly, present in
+ *       the value for the {@code oci.auth-strategies} configuration
+ *       property described elsewhere in this table.</td>
  *
- *     <td>This configuration property has an effect only when {@code
- *     config-file} is, explicitly or implicitly, present in the value
- *     for the {@code oci.auth-strategies} configuration property
- *     described elsewhere in this table.</td>
+ *     </tr>
  *
- *   </tr>
+ *     <tr>
  *
- *   <tr>
+ *       <th scope="row">{@code oci.auth.fingerprint}</th>
  *
- *     <th scope="row">{@code oci.auth.fingerprint}</th>
+ *       <td>{@link String}</td>
  *
- *     <td>{@link String}</td>
+ *       <td>An <a
+ *       href="https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm#four"
+ *       target="_top">API signing key's fingerprint</a>.</td>
  *
- *     <td>An <a
- *     href="https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm#four"
- *     target="_top">API signing key's fingerprint</a>.</td>
+ *       <td></td>
  *
- *     <td></td>
+ *       <td>This configuration property has an effect only when
+ *       {@code config} is, explicitly or implicitly, present in the
+ *       value for the {@code oci.auth-strategies} configuration
+ *       property described elsewhere in this table.</td>
  *
- *     <td>This configuration property has an effect only when {@code
- *     config} is, explicitly or implicitly, present in the value
- *     for the {@code oci.auth-strategies} configuration property
- *     described elsewhere in this table.</td>
+ *     </tr>
  *
- *   </tr>
+ *     <tr>
  *
- *   <tr>
+ *       <th scope="row">{@code oci.auth.region}</th>
  *
- *     <th scope="row">{@code oci.auth.region}</th>
+ *       <td>{@link com.oracle.bmc.Region} ({@link String} representation)</td>
  *
- *     <td>{@link com.oracle.bmc.Region} ({@link String} representation)</td>
+ *       <td>A <a
+ *       href="https://docs.oracle.com/en-us/iaas/Content/General/Concepts/regions.htm#About__The"
+ *       target="_top">region identifier</a>.</td>
  *
- *     <td>A <a
- *     href="https://docs.oracle.com/en-us/iaas/Content/General/Concepts/regions.htm#About__The"
- *     target="_top">region identifier</a>.</td>
+ *       <td></td>
  *
- *     <td></td>
+ *       <td>This configuration property has an effect only when
+ *       {@code config} is, explicitly or implicitly, present in the
+ *       value for the {@code oci.auth-strategies} configuration
+ *       property described elsewhere in this table.</td>
  *
- *     <td>This configuration property has an effect only when {@code
- *     config} is, explicitly or implicitly, present in the value
- *     for the {@code oci.auth-strategies} configuration property
- *     described elsewhere in this table.</td>
+ *     </tr>
  *
- *   </tr>
+ *     <tr>
  *
- *   <tr>
+ *       <th scope="row">{@code oci.auth.tenant-id}</th>
  *
- *     <th scope="row">{@code oci.auth.tenant-id}</th>
+ *       <td>{@link String}</td>
  *
- *     <td>{@link String}</td>
+ *       <td>An <a
+ *       href="https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm#five"
+ *       target="_top">OCID of a tenancy</a>.</td>
  *
- *     <td>An <a
- *     href="https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm#five"
- *     target="_top">OCID of a tenancy</a>.</td>
+ *       <td></td>
  *
- *     <td></td>
+ *       <td>This configuration property has an effect only when
+ *       {@code config} is, explicitly or implicitly, present in the
+ *       value for the {@code oci.auth-strategies} configuration
+ *       property described elsewhere in this table.</td>
  *
- *     <td>This configuration property has an effect only when {@code
- *     config} is, explicitly or implicitly, present in the value
- *     for the {@code oci.auth-strategies} configuration property
- *     described elsewhere in this table.</td>
+ *     </tr>
  *
- *   </tr>
+ *     <tr>
  *
- *   <tr>
+ *       <th scope="row">{@code oci.auth.user-id}</th>
  *
- *     <th scope="row">{@code oci.auth.user-id}</th>
+ *       <td>{@link String}</td>
  *
- *     <td>{@link String}</td>
+ *       <td>An <a
+ *       href="https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm#five"
+ *       target="_top">OCID of a user</a>.</td>
  *
- *     <td>An <a
- *     href="https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm#five"
- *     target="_top">OCID of a user</a>.</td>
+ *       <td></td>
  *
- *     <td></td>
+ *       <td>This configuration property has an effect only when
+ *       {@code config} is, explicitly or implicitly, present in the
+ *       value for the {@code oci.auth-strategies} configuration
+ *       property described elsewhere in this table.</td>
  *
- *     <td>This configuration property has an effect only when {@code
- *     config} is, explicitly or implicitly, present in the value
- *     for the {@code oci.auth-strategies} configuration property
- *     described elsewhere in this table.</td>
+ *     </tr>
  *
- *   </tr>
+ *     <tr>
  *
- *   <tr>
+ *       <th scope="row">{@code oci.extension.classname-vetoes}</th>
  *
- *     <th scope="row">{@code oci.extension.classname-vetoes}</th>
+ *       <td>{@link String String[]}</td>
  *
- *     <td>{@link String String[]}</td>
+ *       <td>A comma-separated list of {@linkplain Class#getName()
+ *       class names} beginning with {@code com.oracle.bmc.} that
+ *       should be skipped, even if they match the service pattern
+ *       described above.</td>
  *
- *     <td>A comma-separated list of {@linkplain Class#getName() class
- *     names} beginning with {@code com.oracle.bmc.} that should be
- *     skipped, even if they match the service pattern described
- *     above.</td>
+ *       <td></td>
  *
- *     <td></td>
+ *       <td>It is recommended not to supply a value for this property
+ *       name except in extraordinary circumstances.</td>
  *
- *     <td>It is recommended not to supply a value for this
- *     property name except in extraordinary circumstances.</td>
+ *     </tr>
  *
- *   </tr>
+ *     <tr>
  *
- *   <tr>
+ *       <th scope="row">{@code oci.extension.lenient-classloading}</th>
  *
- *     <th scope="row">{@code oci.extension.lenient-classloading}</th>
+ *       <td>{@link Boolean boolean}</td>
  *
- *     <td>{@link Boolean boolean}</td>
+ *       <td>If {@code true}, classes that cannot be loaded will not
+ *       cause a definition error and will simply be skipped
+ *       (recommended).</td>
  *
- *     <td>If {@code true}, classes that cannot be loaded will not
- *     cause a definition error and will simply be skipped
- *     (recommended).</td>
+ *       <td>{@code true}</td>
  *
- *     <td>{@code true}</td>
+ *       <td></td>
  *
- *     <td></td>
- *
- *   </tr>
+ *     </tr>
  *
  *   </tbody>
  *
