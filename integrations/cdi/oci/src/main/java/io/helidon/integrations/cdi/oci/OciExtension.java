@@ -547,17 +547,16 @@ public final class OciExtension implements Extension {
 
 
     private void beforeBeanDiscovery(@Observes BeforeBeanDiscovery event) {
+        Config c = ConfigProvider.getConfig();
         try {
             this.lenientClassloading =
-                ConfigProvider.getConfig()
-                .getOptionalValue("oci.extension.lenient-classloading", Boolean.class)
+                c.getOptionalValue("oci.extension.lenient-classloading", Boolean.class)
                 .orElse(Boolean.TRUE)
                 .booleanValue();
         } catch (IllegalArgumentException conversionException) {
             this.lenientClassloading = true;
         }
-        this.additionalVetoes.addAll(ConfigProvider.getConfig()
-                                     .getOptionalValue("oci.extension.classname-vetoes", String[].class)
+        this.additionalVetoes.addAll(c.getOptionalValue("oci.extension.classname-vetoes", String[].class)
                                      .map(Set::<String>of)
                                      .orElse(Set.of()));
     }
@@ -598,14 +597,13 @@ public final class OciExtension implements Extension {
     }
 
     private void afterBeanDiscovery(@Observes AfterBeanDiscovery event, BeanManager bm) {
-        boolean lenient = this.lenientClassloading;
         for (ServiceTaqs serviceTaqs : this.serviceTaqs) {
             if (serviceTaqs.isEmpty()) {
                 installAdps(event, bm, serviceTaqs.qualifiers());
             } else {
                 TypeAndQualifiers serviceClientBuilder = serviceTaqs.serviceClientBuilder();
                 TypeAndQualifiers serviceClient = serviceTaqs.serviceClient();
-                installServiceClientBuilder(event, bm, serviceClientBuilder, serviceClient, lenient);
+                installServiceClientBuilder(event, bm, serviceClientBuilder, serviceClient, this.lenientClassloading);
                 installServiceClient(event, bm, serviceClient, serviceTaqs.serviceInterface(), serviceClientBuilder);
             }
         }
