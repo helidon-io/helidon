@@ -138,6 +138,11 @@ public class FileConfigSourceTest {
         assertThat(configSource, notNullValue());
     }
 
+    @Test
+    public void testDefaultBasePath() {
+        assertThat(FileConfigSource.defaultBasePath(), notNullValue());
+    }
+
     private static String getDir() {
         return Paths.get("").toAbsolutePath() + RELATIVE_PATH_TO_RESOURCE;
     }

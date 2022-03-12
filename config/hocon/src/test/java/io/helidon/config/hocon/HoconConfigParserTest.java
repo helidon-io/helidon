@@ -32,6 +32,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import io.helidon.config.Config;
+import io.helidon.config.ConfigException;
 import io.helidon.config.ConfigMappingException;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.ConfigValue;
@@ -306,7 +307,7 @@ public class HoconConfigParserTest {
     }
 
     @Test
-    public void testResolveIncludesAreEnabledByDefaultAtProvider() {
+    public void testResolveIncludesAreEnabledByDefaultFromLightbendImpl() {
         // try the classpath way...
         Function<String, Optional<String>> fn = (prefixPath) -> {
             ConfigParser parser = HoconConfigParser.create();
@@ -336,22 +337,39 @@ public class HoconConfigParserTest {
 
     @Test
     public void testConfigBuilderIncludesAreDisabledByDefault() {
-        Function<String, ConfigValue<String>> fn = (prefixPath) -> {
-            Path path = Paths.get(getDir() + prefixPath + "includer.conf");
-            FileConfigSource configSource = ConfigSources.file(path).build();
+        Path path = Paths.get(getDir() + "includer.conf");
+        FileConfigSource configSource = ConfigSources.file(path).build();
 
-            assertThat(configSource.exists(), Is.is(true));
+        assertThat(configSource.exists(), Is.is(true));
 
-            Config config = Config.builder()
-                .addSource(configSource)
-                .build();
-            return config.get("foo").asString();
-        };
+        Config.Builder builder = Config.builder().addSource(configSource);
+        Throwable err = assertThrows(ConfigException.class, builder::build);
+        assertThat(err.getMessage(),
+            is("includes are disabled by default - to enable includes set helidon.config.includes.allow=true"));
+    }
 
-        assertThat("top level", fn.apply("").get(), is("bar1"));
+    @Test
+    public void testConfigBuilderIncludesSupportNestedDirectories() {
+        System.setProperty(HoconConfigParserBuilder.HELIDON_CONFIG_INCLUDES_ALLOW, "true");
+        try {
+            Function<String, ConfigValue<String>> fn = (prefixPath) -> {
+                Path path = Paths.get(getDir() + prefixPath + "includer.conf");
+                FileConfigSource configSource = ConfigSources.file(path).build();
 
-        // TODO: this actually resolves to "bar1" incorrectly
-//        assertThat("nested level", fn.apply("includeconfig/").get(), is("bar2"));
+                assertThat(configSource.exists(), Is.is(true));
+
+                Config config = Config.builder()
+                    .addSource(configSource)
+                    .build();
+                return config.get("foo").asString();
+            };
+
+            assertThat("top level", fn.apply("").get(), is("bar1"));
+            // note: this once resolved to "bar1" incorrectly - fixed in issue 3926
+            assertThat("nested level", fn.apply("includeconfig/").get(), is("bar2"));
+        } finally {
+            System.clearProperty(HoconConfigParserBuilder.HELIDON_CONFIG_INCLUDES_ALLOW);
+        }
     }
 
 

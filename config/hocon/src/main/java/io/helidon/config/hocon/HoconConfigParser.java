@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.io.InputStreamReader;
 import java.util.Objects;
 import java.util.Set;
 
+import com.typesafe.config.ConfigParseOptions;
 import io.helidon.config.ConfigException;
 import io.helidon.config.spi.ConfigNode.ListNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
@@ -71,20 +72,39 @@ public class HoconConfigParser implements ConfigParser {
 
     private final boolean resolvingEnabled;
     private final ConfigResolveOptions resolveOptions;
+    private final ConfigParseOptions parseOptions;
 
     /**
      * Initializes parser.
      *
      * @param resolvingEnabled resolving substitutions support enabled
-     * @param resolveOptions   resolving options
+     * @param resolveOptions   resolving options (required if resolvingEnabled)
+     * @param parseOptions     parse options (required)
      */
-    HoconConfigParser(boolean resolvingEnabled, ConfigResolveOptions resolveOptions) {
+    HoconConfigParser(boolean resolvingEnabled, ConfigResolveOptions resolveOptions, ConfigParseOptions parseOptions) {
         if (resolvingEnabled) {
             Objects.requireNonNull(resolveOptions, "resolveOptions parameter is mandatory");
         }
 
         this.resolvingEnabled = resolvingEnabled;
         this.resolveOptions = resolveOptions;
+        this.parseOptions = Objects.requireNonNull(parseOptions, "parseOptions parameter is mandatory");
+    }
+
+    /**
+     * Initializes parser.
+     *
+     * @param resolvingEnabled resolving substitutions support enabled
+     * @param resolveOptions   resolving options (required if resolvingEnabled)
+     *
+     * @deprecated Use {@link #builder()} to construct a customized instance, or {@link #create()} to get an instance with
+     * defaults
+     */
+    @Deprecated
+    HoconConfigParser(boolean resolvingEnabled, ConfigResolveOptions resolveOptions) {
+        this(resolvingEnabled, resolveOptions,
+            HoconConfigParserBuilder.defaultParseOptions(resolveOptions,
+                HoconConfigParserBuilder.defaultBasePath(), HoconConfigParserBuilder.defaultAllowIncludes()));
     }
 
     /**
@@ -126,7 +146,7 @@ public class HoconConfigParser implements ConfigParser {
     public ObjectNode parse(Content content) {
         Config typesafeConfig;
         try (InputStreamReader readable = new InputStreamReader(content.data(), content.charset())) {
-            typesafeConfig = ConfigFactory.parseReader(readable);
+            typesafeConfig = ConfigFactory.parseReader(readable, parseOptions);
             if (resolvingEnabled) {
                 typesafeConfig = typesafeConfig.resolve(resolveOptions);
             }

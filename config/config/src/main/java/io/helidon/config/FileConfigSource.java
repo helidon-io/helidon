@@ -18,8 +18,10 @@ package io.helidon.config;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.logging.Logger;
 
@@ -44,6 +46,9 @@ public class FileConfigSource extends AbstractConfigSource
     private static final Logger LOGGER = Logger.getLogger(FileConfigSource.class.getName());
     private static final String PATH_KEY = "path";
 
+    private static Path lastUsedBasePath;
+    private static Path defaultBasePath;
+
     private final Path filePath;
 
     /**
@@ -55,6 +60,30 @@ public class FileConfigSource extends AbstractConfigSource
         super(builder);
 
         this.filePath = builder.path;
+        lastUsedBasePath = builder.path.getParent();
+    }
+
+    /**
+     * Defaults to CWD, or the last path that was used in this JVM after using {@link FileConfigSource}.
+     *
+     * @return the default config path
+     *
+     * @see
+     */
+    public static Path defaultBasePath() {
+        if (Objects.nonNull(defaultBasePath)) {
+            return defaultBasePath;
+        }
+
+        return Objects.nonNull(lastUsedBasePath)
+            ? lastUsedBasePath : FileSystems.getDefault().getPath(".");
+    }
+
+    /**
+     * Makes the default base file path sticky to this JVM.
+     */
+    public static void setDefaultBasePath(Path basePath) {
+        defaultBasePath = lastUsedBasePath = basePath;
     }
 
     /**
@@ -182,7 +211,7 @@ public class FileConfigSource extends AbstractConfigSource
         /**
          * Configure the path to read configuration from (mandatory).
          *
-         * @param path path of a file to use
+         * @param path path of a file to use (required)
          * @return updated builder instance
          */
         public Builder path(Path path) {
