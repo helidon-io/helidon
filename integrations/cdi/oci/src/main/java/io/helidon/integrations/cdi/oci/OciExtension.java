@@ -456,6 +456,57 @@ import static java.lang.invoke.MethodType.methodType;
  *   </tbody>
  *
  * </table>
+ *
+ * <h2>Basic Usage</h2>
+ *
+ * <p>To use this extension, make sure it is on your project's runtime
+ * classpath.  To {@linkplain javax.inject.Inject inject} a service
+ * interface named
+ * <code>com.oracle.bmc.</code><strong><code>cloudexample</code></strong><code>.CloudExample</code>,
+ * you will also need to ensure that its containing artifact is on
+ * your compile classpath (i.e. <a
+ * href="https://search.maven.org/search?q=oci-java-sdk-"
+ * target="_top"><code>oci-java-sdk-</code><strong><code>cloudexample</code></strong><code>-$VERSION.jar</code></a>
+ * (where {@code $VERSION} would be replaced by a suitable version
+ * number).</p>
+ *
+ * <h2>Advanced Usage</h2>
+ *
+ * <p>In the course of providing {@linkplain javax.inject.Inject
+ * injection support} for a service interface, this {@linkplain
+ * Extension extension} will create service client builder and
+ * asynchronous service client builder instances by invoking the
+ * {@code static} {@code builder()} method that is present on all
+ * service client classes.  The resulting service client or
+ * asynchronous service client will be built by that builder's {@link
+ * ClientBuilderBase#build(AbstractAuthenticationDetailsProvider)
+ * build(AbstractAuthenticationDetailsProvider)} method.</p>
+ *
+ * <p>A user may wish to customize this builder so that the resulting
+ * service client reflects the customization.  She has two
+ * options:</p>
+ *
+ * <ol>
+ *
+ * <li>She may supply her own bean with the service client builder
+ * type as one of its <a
+ * href="https://jakarta.ee/specifications/cdi/2.0/cdi-spec-2.0.html#bean_types"
+ * target="_top">bean types</a>.  In this case, this {@linkplain
+ * Extension extension} does not supply the service client builder and
+ * the user is in full control of how her service client is
+ * constructed.</li>
+ *
+ * <li>She may customize the service client builder supplied by this
+ * {@linkplain Extension extension}.  To do this, she <a
+ * href="https://jakarta.ee/specifications/cdi/2.0/cdi-spec-2.0.html#observes"
+ * target="_top">declares an observer method</a> that observes the
+ * service client builder object that is effectively returned from the
+ * {@code static} service client {@code builder()} method.  In this
+ * observer method, she may call any method on the supplied service
+ * client builder, or asynchronous service client builder, and her
+ * customizations will be retained.</li>
+ *
+ * </ol>
  */
 public final class OciExtension implements Extension {
 
