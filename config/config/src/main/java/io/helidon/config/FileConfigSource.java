@@ -66,9 +66,7 @@ public class FileConfigSource extends AbstractConfigSource
     /**
      * Defaults to CWD, or the last path that was used in this JVM after using {@link FileConfigSource}.
      *
-     * @return the default config path
-     *
-     * @see
+     * @return the default config context root path
      */
     public static Path defaultBasePath() {
         if (Objects.nonNull(defaultBasePath)) {

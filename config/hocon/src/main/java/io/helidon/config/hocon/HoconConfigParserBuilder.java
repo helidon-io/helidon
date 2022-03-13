@@ -65,7 +65,6 @@ public final class HoconConfigParserBuilder implements Builder<HoconConfigParser
     HoconConfigParserBuilder() {
         resolvingEnabled = true;
         resolveOptions = ConfigResolveOptions.defaults();
-        allowIncludes = false;
     }
 
     /**
