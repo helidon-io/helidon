@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -117,10 +117,14 @@ public final class HealthSupport extends HelidonRestServiceSupport {
     protected void postConfigureEndpoint(Routing.Rules defaultRules, Routing.Rules serviceEndpointRoutingRules) {
         if (enabled) {
             serviceEndpointRoutingRules
-                    .get(context(), this::callAll)
-                    .get(context() + "/live", this::callLiveness)
-                    .get(context() + "/ready", this::callReadiness)
-                    .get(context() + "/started", this::callStartup);
+                    .get(context(), this::getAll)
+                    .get(context() + "/live", this::getLiveness)
+                    .get(context() + "/ready", this::getReadiness)
+                    .get(context() + "/started", this::getStartup)
+                    .head(context(), this::headAll)
+                    .head(context() + "/live", this::headLiveness)
+                    .head(context() + "/ready", this::headReadiness)
+                    .head(context() + "/started", this::headStartup);
         }
     }
 
@@ -130,23 +134,47 @@ public final class HealthSupport extends HelidonRestServiceSupport {
                .forEach(adder);
     }
 
-    private void callAll(ServerRequest req, ServerResponse res) {
-        invoke(res, allChecks);
+    private void getAll(ServerRequest req, ServerResponse res) {
+        get(res, allChecks);
     }
 
-    private void callLiveness(ServerRequest req, ServerResponse res) {
-        invoke(res, livenessChecks);
+    private void getLiveness(ServerRequest req, ServerResponse res) {
+        get(res, livenessChecks);
     }
 
-    private void callReadiness(ServerRequest req, ServerResponse res) {
-        invoke(res, readinessChecks);
+    private void getReadiness(ServerRequest req, ServerResponse res) {
+        get(res, readinessChecks);
     }
 
-    private void callStartup(ServerRequest req, ServerResponse res) {
-        invoke(res, startupChecks);
+    private void getStartup(ServerRequest req, ServerResponse res) {
+        get(res, startupChecks);
     }
 
-    void invoke(ServerResponse res, List<HealthCheck> healthChecks) {
+    private void headAll(ServerRequest req, ServerResponse res) {
+        head(res, allChecks);
+    }
+
+    private void headLiveness(ServerRequest req, ServerResponse res) {
+        head(res, livenessChecks);
+    }
+
+    private void headReadiness(ServerRequest req, ServerResponse res) {
+        head(res, readinessChecks);
+    }
+
+    private void headStartup(ServerRequest req, ServerResponse res) {
+        head(res, startupChecks);
+    }
+
+    private void get(ServerResponse res, List<HealthCheck> healthChecks) {
+        invoke(res, healthChecks, true);
+    }
+
+    private void head(ServerResponse res, List<HealthCheck> healthChecks) {
+        invoke(res, healthChecks, false);
+    }
+
+    void invoke(ServerResponse res, List<HealthCheck> healthChecks, boolean sendDetails) {
         // timeout on the asynchronous execution
         Single<HealthResponse> result = timeout.invoke(() -> async.invoke(() -> callHealthChecks(healthChecks)));
 
@@ -158,10 +186,17 @@ public final class HealthSupport extends HelidonRestServiceSupport {
         });
 
         result.thenAccept(hres -> {
-            res.status(hres.status());
-            res.send(jsonpWriter.marshall(hres.json));
+            int status = hres.status().code();
+            if (status == Http.Status.OK_200.code() && !sendDetails) {
+                status = Http.Status.NO_CONTENT_204.code();
+            }
+            res.status(status);
+            if (sendDetails) {
+                res.send(jsonpWriter.marshall(hres.json));
+            } else {
+                res.send();
+            }
         });
-
     }
 
     HealthResponse callHealthChecks(List<HealthCheck> healthChecks) {

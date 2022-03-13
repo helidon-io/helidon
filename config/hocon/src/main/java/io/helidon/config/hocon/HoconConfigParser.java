@@ -17,6 +17,7 @@
 package io.helidon.config.hocon;
 
 import java.io.InputStreamReader;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
@@ -61,6 +62,9 @@ public class HoconConfigParser implements ConfigParser {
      * A String constant representing {@value} media type.
      */
     public static final String MEDIA_TYPE_APPLICATION_JSON = "application/json";
+
+    private static final List<String> SUPPORTED_SUFFIXES = List.of("json", "conf");
+
 
     /**
      * Priority of the parser used if registered by {@link io.helidon.config.Config.Builder} automatically.
@@ -135,6 +139,11 @@ public class HoconConfigParser implements ConfigParser {
      */
     public static HoconConfigParserBuilder builder() {
         return new HoconConfigParserBuilder();
+    }
+
+    @Override
+    public List<String> supportedSuffixes() {
+        return SUPPORTED_SUFFIXES;
     }
 
     @Override

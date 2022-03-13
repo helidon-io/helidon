@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -88,6 +88,10 @@ A MicroProfile-compliant service reports its health via known REST endpoints. He
 provides these endpoints automatically as part of every MP microservice.
 
 External management tools (or `curl` or browsers) retrieve health checks using the REST endpoints in the following table which summarizes the types of health checks in MicroProfile Health.
+Responses from the health endpoints report `200` (OK), `204` (no content), or `503` (service unavailable) depending on the outcome of running the health checks.
+HTTP `GET` responses include JSON content showing the detailed results of all the health checks which the server executed after receiving the request.
+HTTP `HEAD` requests return only the status with no payload.
+
 
 .Types of Health Checks
 |===
