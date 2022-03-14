@@ -18,7 +18,7 @@
  * Provides classes and interfaces that integrate the OCI object
  * storage service into CDI 2.0-based applications.
  *
- * @deprecated Please see the {@link
+ * @deprecated Please see the {@code
  * io.helidon.integrations.cdi.oci.OciExtension} class for more
  * information.
  */
