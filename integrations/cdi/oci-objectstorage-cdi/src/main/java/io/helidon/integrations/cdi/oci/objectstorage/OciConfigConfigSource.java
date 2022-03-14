@@ -29,7 +29,7 @@ import org.eclipse.microprofile.config.spi.ConfigSource;
  * A {@link ConfigSource} implementation that is backed by a {@link
  * ConfigFileAuthenticationDetailsProvider}.
  *
- * @deprecated Please see the {@link
+ * @deprecated Please see the {@code
  * io.helidon.integrations.cdi.oci.OciExtension} class for more
  * information.
  */

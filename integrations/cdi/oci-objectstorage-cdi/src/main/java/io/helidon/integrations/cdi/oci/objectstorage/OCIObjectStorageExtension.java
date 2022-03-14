@@ -46,7 +46,7 @@ import org.eclipse.microprofile.config.ConfigProvider;
  *
  * @see com.oracle.bmc.objectstorage.ObjectStorage
  *
- * @deprecated Please see the {@link
+ * @deprecated Please see the {@code
  * io.helidon.integrations.cdi.oci.OciExtension} class instead.
  */
 @Deprecated(forRemoval = true, since = "2.43")
