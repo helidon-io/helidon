@@ -466,8 +466,8 @@ import static java.lang.invoke.MethodType.methodType;
  * you will also need to ensure that its containing artifact is on
  * your compile classpath (i.e. <a
  * href="https://search.maven.org/search?q=oci-java-sdk-"
- * target="_top"><code>oci-java-sdk-</code><strong><code>cloudexample</code></strong><code>-$VERSION.jar</code></a>
- * (where {@code $VERSION} would be replaced by a suitable version
+ * target="_top"><code>oci-java-sdk-</code><strong><code>cloudexample</code></strong><code>-$VERSION.jar</code></a>,
+ * where {@code $VERSION} would be replaced by a suitable version
  * number).</p>
  *
  * <h2>Advanced Usage</h2>
@@ -489,22 +489,25 @@ import static java.lang.invoke.MethodType.methodType;
  * <ol>
  *
  * <li>She may supply her own bean with the service client builder
- * type as one of its <a
+ * type (or asynchronous client builder type) as one of its <a
  * href="https://jakarta.ee/specifications/cdi/2.0/cdi-spec-2.0.html#bean_types"
  * target="_top">bean types</a>.  In this case, this {@linkplain
- * Extension extension} does not supply the service client builder and
- * the user is in full control of how her service client is
- * constructed.</li>
+ * Extension extension} does not supply the service client builder (or
+ * asynchronous service client builder) and the user is in full
+ * control of how her service client (or asynchronous service client)
+ * is constructed.</li>
  *
- * <li>She may customize the service client builder supplied by this
- * {@linkplain Extension extension}.  To do this, she <a
+ * <li>She may customize the service client builder (or asynchronous
+ * service client builder) supplied by this {@linkplain Extension
+ * extension}.  To do this, she <a
  * href="https://jakarta.ee/specifications/cdi/2.0/cdi-spec-2.0.html#observes"
  * target="_top">declares an observer method</a> that observes the
- * service client builder object that is effectively returned from the
- * {@code static} service client {@code builder()} method.  In this
- * observer method, she may call any method on the supplied service
- * client builder, or asynchronous service client builder, and her
- * customizations will be retained.</li>
+ * service client builder object (or asynchronous service client
+ * builder object) that is returned from the {@code static} service
+ * client (or asynchronous service client) {@code builder()} method.
+ * In her observer method, she may call any method on the supplied
+ * service client builder (or asynchronous service client builder) and
+ * her customizations will be retained.</li>
  *
  * </ol>
  */
@@ -976,24 +979,23 @@ public final class OciExtension implements Extension {
     private static Object produceClientBuilder(Instance<? super Object> instance,
                                                MethodHandle builderMethod,
                                                Annotation[] qualifiers) {
+        ClientBuilderBase<?, ?> builderInstance;
         try {
-            ClientBuilderBase<?, ?> builderInstance = (ClientBuilderBase<?, ?>) builderMethod.invoke();
-            // Permit arbitrary customization.
-            fire(instance, builderInstance, qualifiers);
-            customizeEndpointResolution(builderInstance);
-            return builderInstance;
-        } catch (RuntimeException runtimeException) {
-            throw runtimeException;
+            builderInstance = (ClientBuilderBase<?, ?>) builderMethod.invoke();
+        } catch (RuntimeException | Error runtimeExceptionOrError) {
+            throw runtimeExceptionOrError;
         } catch (Exception exception) {
             if (exception instanceof InterruptedException) {
                 Thread.currentThread().interrupt();
             }
             throw new CreationException(exception.getMessage(), exception);
-        } catch (Error error) {
-            throw error;
         } catch (Throwable impossible) {
             throw new AssertionError(impossible.getMessage(), impossible);
         }
+        // Permit arbitrary customization.
+        fire(instance, builderInstance, qualifiers);
+        customizeEndpointResolution(builderInstance);
+        return builderInstance;
     }
 
     private static Object produceClient(Instance<? super Object> instance, Class<?> builderClass, Annotation[] qualifiersArray) {
