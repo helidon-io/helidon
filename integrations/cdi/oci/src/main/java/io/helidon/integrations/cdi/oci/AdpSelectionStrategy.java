@@ -19,7 +19,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Type;
 import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.URI;
@@ -90,7 +89,7 @@ enum AdpSelectionStrategy {
     CONFIG(SimpleAuthenticationDetailsProvider.class,
            SimpleAuthenticationDetailsProviderBuilder.class) {
 
-        @Override
+        @Override // AdpSelectionStrategy
         boolean isAvailable(Selector selector, Config c, Annotation[] qualifiersArray) {
             // See
             // https://docs.oracle.com/en-us/iaas/tools/java/latest/com/oracle/bmc/auth/SimpleAuthenticationDetailsProvider.SimpleAuthenticationDetailsProviderBuilder.html#method.summary
@@ -107,7 +106,7 @@ enum AdpSelectionStrategy {
                     || c.get("oci.auth.user", String.class).isPresent());
         }
 
-        @Override
+        @Override // AdpSelectionStrategy
         @SuppressWarnings("checkstyle:LineLength")
         SimpleAuthenticationDetailsProviderBuilder produceBuilder(Selector selector, Config c, Annotation[] qualifiersArray) {
             SimpleAuthenticationDetailsProviderBuilder b = SimpleAuthenticationDetailsProvider.builder();
@@ -148,7 +147,7 @@ enum AdpSelectionStrategy {
             return b;
         }
 
-        @Override
+        @Override // AdpSelectionStrategy
         SimpleAuthenticationDetailsProvider produce(Selector selector, Config c, Annotation[] qualifiersArray) {
             return selector.select(SimpleAuthenticationDetailsProviderBuilder.class, qualifiersArray).get().build();
         }
@@ -161,7 +160,7 @@ enum AdpSelectionStrategy {
      */
     CONFIG_FILE(ConfigFileAuthenticationDetailsProvider.class) {
 
-        @Override
+        @Override // AdpSelectionStrategy
         boolean isAvailable(Selector selector, Config c, Annotation[] qualifiersArray) {
             if (super.isAvailable(selector, c, qualifiersArray)) {
                 try {
@@ -178,12 +177,12 @@ enum AdpSelectionStrategy {
             return false;
         }
 
-        @Override
+        @Override // AdpSelectionStrategy
         Void produceBuilder(Selector selector, Config c, Annotation[] qualifiersArray) {
             throw new UnsupportedOperationException();
         }
 
-        @Override
+        @Override // AdpSelectionStrategy
         ConfigFileAuthenticationDetailsProvider produce(Selector selector, Config c, Annotation[] qualifiersArray) {
             return
                 this.produce(c.get("oci.config.path", String.class).orElse(null), // null on purpose; use OCI defaulting logic
@@ -234,7 +233,7 @@ enum AdpSelectionStrategy {
 
         private final String defaultImdsHostname = URI.create(METADATA_SERVICE_BASE_URL).getHost();
 
-        @Override
+        @Override // AdpSelectionStrategy
         boolean isAvailable(Selector selector, Config c, Annotation[] qualifiersArray) {
             if (super.isAvailable(selector, c, qualifiersArray)) {
                 InetAddress imds = null;
@@ -261,12 +260,12 @@ enum AdpSelectionStrategy {
             return false;
         }
 
-        @Override
+        @Override // AdpSelectionStrategy
         InstancePrincipalsAuthenticationDetailsProviderBuilder produceBuilder(Selector s, Config c, Annotation[] qs) {
             return InstancePrincipalsAuthenticationDetailsProvider.builder();
         }
 
-        @Override
+        @Override // AdpSelectionStrategy
         InstancePrincipalsAuthenticationDetailsProvider produce(Selector selector, Config c, Annotation[] qualifiersArray) {
             return selector.select(InstancePrincipalsAuthenticationDetailsProviderBuilder.class, qualifiersArray).get().build();
         }
@@ -279,7 +278,7 @@ enum AdpSelectionStrategy {
     RESOURCE_PRINCIPAL(ResourcePrincipalAuthenticationDetailsProvider.class,
                        ResourcePrincipalAuthenticationDetailsProviderBuilder.class) {
 
-        @Override
+        @Override // AdpSelectionStrategy
         boolean isAvailable(Selector selector, Config c, Annotation[] qualifiersArray) {
             return
                 super.isAvailable(selector, c, qualifiersArray)
@@ -287,12 +286,12 @@ enum AdpSelectionStrategy {
                 && System.getenv("OCI_RESOURCE_PRINCIPAL_VERSION") != null;
         }
 
-        @Override
+        @Override // AdpSelectionStrategy
         ResourcePrincipalAuthenticationDetailsProviderBuilder produceBuilder(Selector s, Config c, Annotation[] qualifiersArray) {
             return ResourcePrincipalAuthenticationDetailsProvider.builder();
         }
 
-        @Override
+        @Override // AdpSelectionStrategy
         ResourcePrincipalAuthenticationDetailsProvider produce(Selector selector, Config c, Annotation[] qualifiersArray) {
             return selector.select(ResourcePrincipalAuthenticationDetailsProviderBuilder.class, qualifiersArray).get().build();
         }
@@ -306,15 +305,15 @@ enum AdpSelectionStrategy {
      */
     AUTO(AbstractAuthenticationDetailsProvider.class, true) {
 
-        private final transient Logger logger = Logger.getLogger(this.getClass().getName(),
-                                                                 AdpSelectionStrategy.class.getName() + "Messages");
+        private final transient Logger logger =
+            Logger.getLogger(this.getClass().getName(), AdpSelectionStrategy.class.getName() + "Messages");
 
-        @Override
+        @Override // AdpSelectionStrategy
         Void produceBuilder(Selector selector, Config c, Annotation[] qualifiersArray) {
             throw new UnsupportedOperationException();
         }
 
-        @Override
+        @Override // AdpSelectionStrategy
         AbstractAuthenticationDetailsProvider produce(Selector selector, Config c, Annotation[] qualifiersArray) {
             Collection<? extends AdpSelectionStrategy> strategies =
                 concreteStrategies(c.get("oci.auth-strategies", String[].class)
@@ -383,9 +382,9 @@ enum AdpSelectionStrategy {
         CONCRETE_STRATEGIES = Collections.unmodifiableCollection(set);
         Set<Class<?>> builderClasses = new HashSet<>(7);
         for (AdpSelectionStrategy s : set) {
-            Type builderType = s.builderType();
-            if (builderType instanceof Class) {
-                builderClasses.add((Class<?>) builderType);
+            Class<?> builderType = s.builderType();
+            if (builderType != null) {
+                builderClasses.add(builderType);
             }
         }
         BUILDER_CLASSES = Collections.unmodifiableSet(builderClasses);
@@ -433,16 +432,20 @@ enum AdpSelectionStrategy {
      */
 
 
-    String configName() {
+    final String configName() {
         return this.name().replace('_', '-').toLowerCase();
     }
 
-    Type type() {
+    final Class<? extends AbstractAuthenticationDetailsProvider> type() {
         return this.type;
     }
 
-    Type builderType() {
+    final Class<?> builderType() {
         return this.builderType;
+    }
+
+    final AbstractAuthenticationDetailsProvider get(Selector selector, Config c, Annotation[] qualifiersArray) {
+        return selector.select(this.type(), qualifiersArray).get();
     }
 
     final boolean isAbstract() {
@@ -451,10 +454,6 @@ enum AdpSelectionStrategy {
 
     boolean isAvailable(Selector selector, Config c, Annotation[] qualifiersArray) {
         return !this.isAbstract();
-    }
-
-    AbstractAuthenticationDetailsProvider get(Selector selector, Config c, Annotation[] qualifiersArray) {
-        return selector.select(this.type, qualifiersArray).get();
     }
 
     abstract Object produceBuilder(Selector selector, Config c, Annotation[] qualifiersArray);

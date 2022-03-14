@@ -78,14 +78,18 @@ import org.eclipse.microprofile.config.ConfigProvider;
 import static java.lang.invoke.MethodType.methodType;
 
 /**
- * An {@link Extension} that enables the {@linkplain
- * javax.inject.Inject injection} of any <em>service interface</em>,
- * <em>service client</em>, <em>service client builder</em>,
- * <em>asynchronous service interface</em>, <em>asynchronous service
- * client</em>, or <em>asynchronous service client builder</em> from
- * the <a
+ * A <a
+ * href="https://jakarta.ee/specifications/cdi/2.0/cdi-spec-2.0.html#spi"
+ * target="_top">CDI 2.0 portable extension</a> that enables the
+ * {@linkplain javax.inject.Inject injection} of any <em>service
+ * interface</em>, <em>service client</em>, <em>service client
+ * builder</em>, <em>asynchronous service interface</em>,
+ * <em>asynchronous service client</em>, or <em>asynchronous service
+ * client builder</em> from the <a
  * href="https://docs.oracle.com/en-us/iaas/tools/java/latest/index.html"
  * target="_top">Oracle Cloud Infrastructure Java SDK</a>.
+ *
+ * <h2>Terminology</h2>
  *
  * <p>The terms <em>service interface</em>, <em>service client</em>,
  * <em>service client builder</em>, <em>asynchronous service
@@ -218,9 +222,69 @@ import static java.lang.invoke.MethodType.methodType;
  * <p>In all cases, user-supplied beans will be preferred over any
  * otherwise installed by this {@linkplain Extension extension}.</p>
  *
+ * <h2>Basic Usage</h2>
+ *
+ * <p>To use this extension, make sure it is on your project's runtime
+ * classpath.  To {@linkplain javax.inject.Inject inject} a service
+ * interface named
+ * <code>com.oracle.bmc.</code><strong><code>cloudexample</code></strong><code>.CloudExample</code>
+ * (or an analogous asynchronous service interface), you will also
+ * need to ensure that its containing artifact is on your compile
+ * classpath (e.g. <a
+ * href="https://search.maven.org/search?q=oci-java-sdk-"
+ * target="_top"><code>oci-java-sdk-</code><strong><code>cloudexample</code></strong><code>-$VERSION.jar</code></a>,
+ * where {@code $VERSION} should be replaced by a suitable version
+ * number).</p>
+ *
+ * <h2>Advanced Usage</h2>
+ *
+ * <p>In the course of providing {@linkplain javax.inject.Inject
+ * injection support} for a service interface or an asynchronous
+ * service interface, this {@linkplain Extension extension} will
+ * create service client builder and asynchronous service client
+ * builder instances by invoking the {@code static} {@code builder()}
+ * method that is present on all service client classes, and will then
+ * add those instances as beans.  The resulting service client or
+ * asynchronous service client will be built by that builder's {@link
+ * ClientBuilderBase#build(AbstractAuthenticationDetailsProvider)
+ * build(AbstractAuthenticationDetailsProvider)} method and will
+ * itself be added as a bean.</p>
+ *
+ * <p>A user may wish to customize this builder so that the resulting
+ * service client or asynchronous service client reflects the
+ * customization.  She has two options:</p>
+ *
+ * <ol>
+ *
+ * <li>She may supply her own bean with the service client builder
+ * type (or asynchronous client builder type) as one of its <a
+ * href="https://jakarta.ee/specifications/cdi/2.0/cdi-spec-2.0.html#bean_types"
+ * target="_top">bean types</a>.  In this case, this {@linkplain
+ * Extension extension} does not supply the service client builder (or
+ * asynchronous service client builder) and the user is in full
+ * control of how her service client (or asynchronous service client)
+ * is constructed.</li>
+ *
+ * <li>She may customize the service client builder (or asynchronous
+ * service client builder) supplied by this {@linkplain Extension
+ * extension}.  To do this, she <a
+ * href="https://jakarta.ee/specifications/cdi/2.0/cdi-spec-2.0.html#observes"
+ * target="_top">declares an observer method</a> that observes the
+ * service client builder object (or asynchronous service client
+ * builder object) that is returned from the {@code static} service
+ * client (or asynchronous service client) {@code builder()} method.
+ * In her observer method, she may call any method on the supplied
+ * service client builder (or asynchronous service client builder) and
+ * her customizations will be retained.</li>
+ *
+ * </ol>
+ *
+ * <h2>Configuration</h2>
+ *
  * <p>This extension uses the following <a
  * href="https://github.com/eclipse/microprofile-config#configuration-for-microprofile"
- * target="_top">MicroProfile Config</a> property names:</p>
+ * target="_top">MicroProfile Config</a> property names (note,
+ * however, that no configuration is required):</p>
  *
  * <table>
  *
@@ -457,59 +521,11 @@ import static java.lang.invoke.MethodType.methodType;
  *
  * </table>
  *
- * <h2>Basic Usage</h2>
+ * @see Extension
  *
- * <p>To use this extension, make sure it is on your project's runtime
- * classpath.  To {@linkplain javax.inject.Inject inject} a service
- * interface named
- * <code>com.oracle.bmc.</code><strong><code>cloudexample</code></strong><code>.CloudExample</code>,
- * you will also need to ensure that its containing artifact is on
- * your compile classpath (i.e. <a
- * href="https://search.maven.org/search?q=oci-java-sdk-"
- * target="_top"><code>oci-java-sdk-</code><strong><code>cloudexample</code></strong><code>-$VERSION.jar</code></a>,
- * where {@code $VERSION} would be replaced by a suitable version
- * number).</p>
- *
- * <h2>Advanced Usage</h2>
- *
- * <p>In the course of providing {@linkplain javax.inject.Inject
- * injection support} for a service interface, this {@linkplain
- * Extension extension} will create service client builder and
- * asynchronous service client builder instances by invoking the
- * {@code static} {@code builder()} method that is present on all
- * service client classes.  The resulting service client or
- * asynchronous service client will be built by that builder's {@link
- * ClientBuilderBase#build(AbstractAuthenticationDetailsProvider)
- * build(AbstractAuthenticationDetailsProvider)} method.</p>
- *
- * <p>A user may wish to customize this builder so that the resulting
- * service client reflects the customization.  She has two
- * options:</p>
- *
- * <ol>
- *
- * <li>She may supply her own bean with the service client builder
- * type (or asynchronous client builder type) as one of its <a
- * href="https://jakarta.ee/specifications/cdi/2.0/cdi-spec-2.0.html#bean_types"
- * target="_top">bean types</a>.  In this case, this {@linkplain
- * Extension extension} does not supply the service client builder (or
- * asynchronous service client builder) and the user is in full
- * control of how her service client (or asynchronous service client)
- * is constructed.</li>
- *
- * <li>She may customize the service client builder (or asynchronous
- * service client builder) supplied by this {@linkplain Extension
- * extension}.  To do this, she <a
- * href="https://jakarta.ee/specifications/cdi/2.0/cdi-spec-2.0.html#observes"
- * target="_top">declares an observer method</a> that observes the
- * service client builder object (or asynchronous service client
- * builder object) that is returned from the {@code static} service
- * client (or asynchronous service client) {@code builder()} method.
- * In her observer method, she may call any method on the supplied
- * service client builder (or asynchronous service client builder) and
- * her customizations will be retained.</li>
- *
- * </ol>
+ * @see <a
+ * href="https://docs.oracle.com/en-us/iaas/tools/java/latest/index.html"
+ * target="_top">Oracle Cloud Infrastructure Java SDK</a>
  */
 public final class OciExtension implements Extension {
 
