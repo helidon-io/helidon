@@ -25,7 +25,7 @@
 :feature-name: General Bean Validation
 :common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 
-If BeanValidation is required outside JAX-RS/Jersey use cases, it is also available in Helidon.
+If bean validation is required outside JAX-RS/Jersey use cases, it is also available in Helidon.
 It follows the standard {bean-validation-spec-url}[Jakarta Bean
 Validation specification] which defines an API to validate Java beans.
 
@@ -53,7 +53,7 @@ public class GreetingHolder {
 ----
 
 Now, if in a bean there is a method parameter, annotated with `@Valid`, a _ValidationException_ will be thrown, if
-`GreetingHolder` with _null_ greeting is submitted:
+`GreetingHolder` with _null_ greeting is passed:
 
 [source,java]
 ----
@@ -66,6 +66,8 @@ public class GreetingProvider {
     }
 }
 ----
+
+NOTE: `beans.xml` is required to identify beans and for bean validation to work properly.
 
 More information about validations supported is available can be found in {bean-validation-spec-url}[Jakarta Bean
 Validation specification].
