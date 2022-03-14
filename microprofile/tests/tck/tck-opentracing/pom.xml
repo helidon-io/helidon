@@ -28,11 +28,7 @@
     <name>Helidon Microprofile Tests TCK Opentracing</name>
 
     <properties>
-        <!-- 3.0.0-JAKARTA -->
-        <skipTests>true</skipTests>
-        <!-- We force the version of jackson to 2.9.0 since that's -->
-        <!-- what the TCK test forces us to use (via shrinkwrap)   -->
-        <version.lib.jackson>2.9.0</version.lib.jackson>
+        <version.lib.jackson>2.13.2</version.lib.jackson>
     </properties>
 
     <dependencies>
@@ -134,16 +130,10 @@
                     </suiteXmlFiles>
                 </configuration>
                 <dependencies>
-                    <!--
-                        Forcing resolution of opentracing-api:0.31.0
-                        to workaround proxy issues with shrinkwrap maven.
-                        Cannot override managed version of opentracing-api since
-                        0.31.0 is not compatible with Helidon
-                    -->
                     <dependency>
                         <groupId>io.opentracing</groupId>
                         <artifactId>opentracing-api</artifactId>
-                        <version>0.31.0</version>
+                        <version>0.33.0</version>
                     </dependency>
                 </dependencies>
             </plugin>
