@@ -89,6 +89,18 @@ enum AdpSelectionStrategy {
     CONFIG(SimpleAuthenticationDetailsProvider.class,
            SimpleAuthenticationDetailsProviderBuilder.class) {
 
+        private static final String OCI_AUTH_FINGERPRINT = "oci.auth.fingerprint";
+
+        private static final String OCI_AUTH_PASSPHRASE = "oci.auth.passphrase";
+
+        private static final String OCI_AUTH_PRIVATE_KEY = "oci.auth.private-key";
+
+        private static final String OCI_AUTH_REGION = "oci.auth.region";
+
+        private static final String OCI_AUTH_TENANT_ID = "oci.auth.tenant-id";
+
+        private static final String OCI_AUTH_USER_ID = "oci.auth.user-id";
+
         @Override // AdpSelectionStrategy
         boolean isAvailable(Selector selector, Config c, Annotation[] qualifiersArray) {
             // See
@@ -98,12 +110,10 @@ enum AdpSelectionStrategy {
             // a prior OCI-related extension.
             return
                 super.isAvailable(selector, c, qualifiersArray)
-                && c.get("oci.auth.fingerprint", String.class).isPresent()
-                && c.get("oci.auth.region", String.class).isPresent()
-                && (c.get("oci.auth.tenant-id", String.class).isPresent()
-                    || c.get("oci.auth.tenancy", String.class).isPresent())
-                && (c.get("oci.auth.user-id", String.class).isPresent()
-                    || c.get("oci.auth.user", String.class).isPresent());
+                && c.get(OCI_AUTH_FINGERPRINT, String.class).isPresent()
+                && c.get(OCI_AUTH_REGION, String.class).isPresent()
+                && (c.get(OCI_AUTH_TENANT_ID, String.class).isPresent() || c.get("oci.auth.tenancy", String.class).isPresent())
+                && (c.get(OCI_AUTH_USER_ID, String.class).isPresent() || c.get("oci.auth.user", String.class).isPresent());
         }
 
         @Override // AdpSelectionStrategy
@@ -120,29 +130,20 @@ enum AdpSelectionStrategy {
             //
             // Some fallback logic is for backwards compatibility with
             // a prior OCI-related extension.
-            c.get("oci.auth.fingerprint", String.class)
+            c.get(OCI_AUTH_FINGERPRINT, String.class)
                 .ifPresent(b::fingerprint);
-            c.get("oci.auth.passphrase", String.class)
-                .or(() -> c.get("oci.auth.passphraseCharacters", String.class))
+            c.get(OCI_AUTH_PASSPHRASE, String.class).or(() -> c.get(OCI_AUTH_PASSPHRASE + "Characters", String.class))
                 .ifPresent(b::passPhrase);
-            c.get("oci.auth.private-key", String.class)
-                .or(() -> c.get("oci.auth.privateKey", String.class))
+            c.get(OCI_AUTH_PRIVATE_KEY, String.class).or(() -> c.get("oci.auth.privateKey", String.class))
                 .ifPresentOrElse(pk -> b.privateKeySupplier(new StringPrivateKeySupplier(pk)),
-                                 () -> b.privateKeySupplier(new SimplePrivateKeySupplier(c.get("oci.auth.private-key-path",
-                                                                                               String.class)
-                                                                                         .orElse(c.get("oci.auth.keyFile",
-                                                                                                       String.class)
-                                                                                                 .orElse(Paths.get(System.getProperty("user.home"),
-                                                                                                                   ".oci",
-                                                                                                                   "oci_api_key.pem")
-                                                                                                         .toString())))));
-            c.get("oci.auth.region", Region.class)
+                                 () -> b.privateKeySupplier(new SimplePrivateKeySupplier(c.get(OCI_AUTH_PRIVATE_KEY + "-path", String.class)
+                                                                                         .orElse(c.get("oci.auth.keyFile", String.class)
+                                                                                                 .orElse(Paths.get(System.getProperty("user.home"), ".oci", "oci_api_key.pem").toString())))));
+            c.get(OCI_AUTH_REGION, Region.class)
                 .ifPresent(b::region);
-            c.get("oci.auth.tenant-id", String.class)
-                .or(() -> c.get("oci.auth.tenancy", String.class))
+            c.get(OCI_AUTH_TENANT_ID, String.class).or(() -> c.get("oci.auth.tenancy", String.class))
                 .ifPresent(b::tenantId);
-            c.get("oci.auth.user-id", String.class)
-                .or(() -> c.get("oci.auth.user", String.class))
+            c.get(OCI_AUTH_USER_ID, String.class).or(() -> c.get("oci.auth.user", String.class))
                 .ifPresent(b::userId);
             return b;
         }
