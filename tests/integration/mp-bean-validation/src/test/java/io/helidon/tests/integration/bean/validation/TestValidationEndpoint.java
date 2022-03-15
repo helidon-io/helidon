@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
-package io.helidon.examples.microprofile.bean.validation;
+package io.helidon.tests.integration.bean.validation;
 
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 import org.junit.jupiter.api.Test;
@@ -25,7 +25,9 @@ import jakarta.ws.rs.core.Response;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-
+/**
+ * When enabled, endpoints with bean validation should return response with BAD REQUEST status.
+ */
 @HelidonTest
 public class TestValidationEndpoint {
 
@@ -33,7 +35,9 @@ public class TestValidationEndpoint {
     private WebTarget webTarget;
 
 
-
+    /**
+     * This Endpoint should always fail with BAD REQUEST, as bean validation fails with Not Null.
+     */
     @Test
     public void testValidation() {
 
@@ -47,11 +51,14 @@ public class TestValidationEndpoint {
 
     }
 
+    /**
+     * This test should always work, since no validation is performed.
+     */
     @Test
     public void testNormalUsage(){
 
         Response.StatusType statusInfo = webTarget
-                .path("/greet/")
+                .path("/greet")
                 .request()
                 .get()
                 .getStatusInfo();

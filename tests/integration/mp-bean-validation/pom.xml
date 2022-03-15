@@ -27,9 +27,9 @@
         <version>3.0.0-SNAPSHOT</version>
         <relativePath>../../../applications/mp/pom.xml</relativePath>
     </parent>
-    <groupId>io.helidon.examples.microprofile</groupId>
-    <artifactId>helidon-examples-microprofile-bean-validation</artifactId>
-    <name>Helidon Bean Validation Example</name>
+    <groupId>io.helidon.tests.integration</groupId>
+    <artifactId>io-helidon-tests-integration-bean-validation</artifactId>
+    <name>Helidon Bean Validation Integration Tests</name>
 
     <dependencies>
         <dependency>
@@ -49,6 +49,16 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.tests</groupId>
+            <artifactId>helidon-microprofile-tests-junit5</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webclient</groupId>
+            <artifactId>helidon-webclient</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
