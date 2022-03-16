@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,8 +57,7 @@ public final class ContentDisposition {
 
     private static final CharMatcher LINEAR_WHITE_SPACE = CharMatcher.anyOf(" \t\r\n");
 
-    private static final CharMatcher QUOTED_TEXT_MATCHER = CharMatcher.ascii()
-            .and(CharMatcher.noneOf("\"\\\r"));
+    private static final CharMatcher QUOTED_TEXT_MATCHER = CharMatcher.noneOf("\"\\\r");
 
     private static final String NAME_PARAMETER = "name";
     private static final String FILENAME_PARAMETER = "filename";

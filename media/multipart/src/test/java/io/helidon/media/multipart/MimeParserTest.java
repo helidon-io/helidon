@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -599,6 +599,24 @@ public class MimeParserTest {
     }
 
     @Test
+    public void testHeaderUTF8() {
+        String boundary = "boundary";
+        final byte[] chunk1 = ("--" + boundary + "\n"
+                + "Content-Disposition: form-data; name=\"file[]\"; filename=\"\u60A8\u597D.txt\"\n"
+                + "\n"
+                + "part1\n"
+                + "--" + boundary + "--").getBytes();
+        List<MimePart> parts = parse(boundary, chunk1).parts;
+        assertThat(parts.size(), is(equalTo(1)));
+        MimePart part1 = parts.get(0);
+        assertThat(part1.headers.size(), is(equalTo(1)));
+        assertThat(part1.headers.get("Content-Disposition"),
+                hasItems("form-data; name=\"file[]\"; filename=\"\u60A8\u597D.txt\""));
+        assertThat(part1.content, is(notNullValue()));
+        assertThat(new String(part1.content), is(equalTo("part1")));
+    }
+
+    @Test
     public void testHeaderValueWithWhiteSpacesOnly() {
         String boundary = "boundary";
         final byte[] chunk1 = ("--" + boundary + "\n"
@@ -728,9 +746,9 @@ public class MimeParserTest {
         final MimeParser.ParserEvent lastEvent;
 
         ParserResult(List<MimePart> parts,
-                            Map<String, List<String>> partHeaders,
-                            byte[] partContent,
-                            MimeParser.ParserEvent lastEvent) {
+                     Map<String, List<String>> partHeaders,
+                     byte[] partContent,
+                     MimeParser.ParserEvent lastEvent) {
             this.parts = parts;
             this.partHeaders = partHeaders;
             this.partContent = partContent;
