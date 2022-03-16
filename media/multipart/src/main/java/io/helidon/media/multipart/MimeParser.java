@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -245,7 +245,7 @@ final class MimeParser {
     }
 
     private static final Logger LOGGER = Logger.getLogger(MimeParser.class.getName());
-    private static final Charset HEADER_ENCODING = StandardCharsets.ISO_8859_1;
+    private static final Charset HEADER_ENCODING = StandardCharsets.UTF_8;
 
     /**
      * All states.
