@@ -24,7 +24,7 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Function;
 
-import javax.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.ApplicationScoped;
 
 import io.helidon.common.reactive.Multi;
 import io.helidon.microprofile.messaging.CountableTestBean;
