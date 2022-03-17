@@ -41,41 +41,41 @@ class WebTracingConfigTest {
 
         // Check list of disabled paths
         List<String> paths = pathConfigs.stream().map(PathTracingConfig::path).collect(Collectors.toList());
-        assertThat(paths.size(), is(4));
-        assertThat(paths, contains("/metrics", "/metrics/{+}", "/health", "/openapi"));
+        assertThat(paths.size(), is(5));
+        assertThat(paths, contains("/metrics", "/metrics/{+}", "/health", "/health/{+}", "/openapi"));
 
         // Check they are all disabled
         long ignored = pathConfigs.stream()
                 .map(PathTracingConfig::tracedConfig)
                 .filter(tc -> tc.equals(TracingConfig.DISABLED))
                 .count();
-        assertThat(ignored, is(4L));
+        assertThat(ignored, is(5L));
     }
 
     /**
-     * Tests a default override where "/health" is enabled.
+     * Tests a default override where "/openapi" is enabled.
      */
     @Test
     void testEnableHealth() {
         // Collect all path configs
         WebTracingConfig tracingConfig = WebTracingConfig.builder()
                 .addPathConfig(PathTracingConfig.builder()
-                        .path("/health")
+                        .path("/openapi")
                         .tracingConfig(TracingConfig.ENABLED)
                         .build())
                 .build();
         List<PathTracingConfig> pathConfigs = new ArrayList<>();
         tracingConfig.pathConfigs().forEach(pathConfigs::add);
 
-        // Get list of /health paths
+        // Get list of /openapi paths
         List<PathTracingConfig> healthPathConfigs = pathConfigs
                 .stream()
-                .filter(p -> p.path().equals("/health"))
+                .filter(p -> p.path().equals("/openapi"))
                 .collect(Collectors.toList());
         assertThat(healthPathConfigs.size(), is(2));
-        assertThat(healthPathConfigs.get(0).path(), is("/health"));
+        assertThat(healthPathConfigs.get(0).path(), is("/openapi"));
         assertThat(healthPathConfigs.get(0).tracedConfig(), is(TracingConfig.DISABLED));
-        assertThat(healthPathConfigs.get(1).path(), is("/health"));
+        assertThat(healthPathConfigs.get(1).path(), is("/openapi"));
         assertThat(healthPathConfigs.get(1).tracedConfig(), is(TracingConfig.ENABLED));
     }
 }
