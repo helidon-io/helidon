@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,11 @@
 package io.helidon.media.multipart;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -32,8 +32,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.hasItems;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -59,7 +59,7 @@ public class MimeParserTest {
 
     // TODO test mixed with nested boundaries
     @Test
-    public void testSkipPreambule() {
+    public void testSkipPreamble() {
         String boundary = "boundary";
         final byte[] chunk1 = ("--" + boundary
                 + "          \t     \t  \t "
@@ -79,7 +79,7 @@ public class MimeParserTest {
     }
 
     @Test
-    public void testNoPreambule() {
+    public void testNoPreamble() {
         String boundary = "boundary";
         final byte[] chunk1 = ("--" + boundary
                 + "Content-Id: part1\n"
@@ -432,6 +432,46 @@ public class MimeParserTest {
     }
 
     @Test
+    public void testIncompleteClosingBoundary() {
+        String boundary = "boundary";
+        final byte[] chunk1 = ("--" + boundary + "\n"
+                + "Content-Id: part1\n"
+                + "\n"
+                + "this-is-the-body-of-part1\n"
+                + "--" + boundary + "-").getBytes();
+        final byte[] chunk2 = "-".getBytes();
+
+        List<MimePart> parts = parse(boundary, List.of(chunk1, chunk2)).parts;
+        assertThat(parts.size(), is(equalTo(1)));
+
+        MimePart part1 = parts.get(0);
+        assertThat(part1.headers.size(), is(equalTo(1)));
+        assertThat(part1.headers.get("Content-Id"), hasItems("part1"));
+        assertThat(part1.content, is(notNullValue()));
+        assertThat(new String(part1.content), is(equalTo("this-is-the-body-of-part1")));
+    }
+
+    @Test
+    public void testAmbiguousClosingBoundary() {
+        String boundary = "boundary";
+        final byte[] chunk1 = ("--" + boundary + "\n"
+                + "Content-Id: part1\n"
+                + "\n"
+                + "this-is-the-body-of-part1\n"
+                + "--" + boundary).getBytes();
+        final byte[] chunk2 = "--".getBytes();
+
+        List<MimePart> parts = parse(boundary, List.of(chunk1, chunk2)).parts;
+        assertThat(parts.size(), is(equalTo(1)));
+
+        MimePart part1 = parts.get(0);
+        assertThat(part1.headers.size(), is(equalTo(1)));
+        assertThat(part1.headers.get("Content-Id"), hasItems("part1"));
+        assertThat(part1.content, is(notNullValue()));
+        assertThat(new String(part1.content), is(equalTo("this-is-the-body-of-part1")));
+    }
+
+    @Test
     public void testPreamble() {
         String boundary = "boundary";
         final byte[] chunk1 = ("\n\n\n\r\r\r\n\n\n\n\r\n"
@@ -688,12 +728,8 @@ public class MimeParserTest {
                         assertThat(name, notNullValue());
                         assertThat(name.length(), not(equalTo(0)));
                         assertThat(value, notNullValue());
-                        List<String> values = partHeaders.get(name);
-                        if (values == null) {
-                            values = new ArrayList<>();
-                            partHeaders.put(name, values);
-                        }
-                        values.add(value);
+                        partHeaders.computeIfAbsent(name, k -> new ArrayList<>())
+                                   .add(value);
                         break;
                     case BODY:
                         for (VirtualBuffer.BufferEntry content : event.asBodyEvent().body()) {
