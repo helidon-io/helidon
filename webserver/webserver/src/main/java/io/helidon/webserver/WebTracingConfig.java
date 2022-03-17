@@ -165,6 +165,10 @@ public abstract class WebTracingConfig {
                     .tracingConfig(TracingConfig.DISABLED)
                     .build());
             addPathConfig(PathTracingConfig.builder()
+                    .path("/health/{+}")
+                    .tracingConfig(TracingConfig.DISABLED)
+                    .build());
+            addPathConfig(PathTracingConfig.builder()
                     .path("/openapi")
                     .tracingConfig(TracingConfig.DISABLED)
                     .build());
