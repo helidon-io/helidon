@@ -250,7 +250,7 @@ final class MimeParser {
     }
 
     private static final Logger LOGGER = Logger.getLogger(MimeParser.class.getName());
-    private static final Charset HEADER_ENCODING = StandardCharsets.ISO_8859_1;
+    private static final Charset HEADER_ENCODING = StandardCharsets.UTF_8;
 
     /**
      * All states.
