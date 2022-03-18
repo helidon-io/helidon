@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -18,6 +18,11 @@
 
 :description: Helidon Security OIDC Provider
 :keywords: helidon, security, oidc
+:cors-inc:  ../../cors/common_shared.adoc
+:basic-table-intro: The table below lists the configuration keys that identify the CORS characteristics.
+:cors-config-key-explanation: , identified with the configuration key 'cors',
+:common-page-prefix-inc: ../../shared/cors/common_shared.adoc
+:cors-config-table-exclude-methods: true
 
 [source,text]
 .Provider class name
@@ -45,6 +50,9 @@ security:
       identity-uri: "http://your-tenant.identity-server.com"
       frontend-uri: "http://my-service:8080"
       audience: "http://my-service"
+      cors:
+        allow-origins: ["http://foo.com", "http://there.com"]
+        allow-methods: ["PUT", "DELETE"]
       outbound:
         - name: "internal-services"
           hosts: ["*.example.org"]
@@ -68,6 +76,7 @@ an important distinction when more than one provider is used
 |`frontend-uri` |{nbsp} |Full URI of this service for redirects back from OIDC server
 |`issuer` |`issuer` from OIDC metadata |Issuer of token - each JWT is validated to check the issuer
 |`audience` | {nbsp} |Audience of a token - each JWT is validated to check the audience
+|`cors` | {nbsp} | Cross-origin resource sharing settings (see <<cors>> below)
 |`proxy-protocol` |`http` |Proxy protocol to use when proxy is used
 |`proxy-host` |`null` |Proxy host to use. When defined, triggers usage of proxy for HTTP requests
 |`proxy-port` |`80` |Port of the proxy server to use
@@ -142,4 +151,8 @@ introspection endpoint depending on configuration
 5. We validate that we have sufficient scopes to proceed, and return `403` if not
 6. Handling is returned to security to process other security providers
 
+[[cors]]
+===== CORS Settings
+As an experimental feature, you can set up cross-origin handling for the redirect and logout endpoints in an optional `cors` block inside the `oidc` configuration.
 
+include::{cors-inc}[tag=basic-cross-origin-config-no-heading-or-intro]

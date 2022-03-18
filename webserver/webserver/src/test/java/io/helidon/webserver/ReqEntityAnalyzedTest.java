@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,13 +19,12 @@ package io.helidon.webserver;
 
 import java.nio.ByteBuffer;
 import java.time.Duration;
-import java.util.Optional;
-import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.http.DataChunk;
+import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Multi;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientResponse;
@@ -34,9 +33,9 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.RepeatedTest;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 public class ReqEntityAnalyzedTest {
     private static final Duration TIME_OUT = Duration.ofSeconds(5);
@@ -88,14 +87,23 @@ public class ReqEntityAnalyzedTest {
                     .onError(Throwable::printStackTrace)
                     .await(TIME_OUT);
 
-            webClientResponse.content().as(String.class)
-                    .forSingle(s -> assertEquals("Server:0Server:1Server:2", s, "Wrong response!"))
+            assertThat(webClientResponse.status(), is(Http.Status.OK_200));
+
+            String response = webClientResponse.content()
+                    .as(String.class)
                     .await(TIME_OUT);
 
-        } catch (CompletionException e) {
-            fail(e);
+            assertThat(response, is("Server:0Server:1Server:2"));
+        } catch (Exception e) {
+            // this is expected - we do not support parallel read of entity
+            if (e.getMessage().contains("reset by the host")) {
+                return;
+            }
+            throw e;
         } finally {
-            Optional.ofNullable(webClientResponse).ifPresent(WebClientResponse::close);
+            if (webClientResponse != null) {
+                webClientResponse.close();
+            }
         }
     }
 

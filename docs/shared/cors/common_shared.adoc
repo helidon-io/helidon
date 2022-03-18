@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2020 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@
 :helidon-variant: SE
 :common-page-prefix-inc:
 :actual-cors-dependency-src:
+
 
 = CORS Shared content
 
@@ -79,9 +80,10 @@ link:{javadoc-base-url-api}/MappedCrossOriginConfig.html[`MappedCrossOriginConfi
 //tag::basic-cross-origin-config[]
 [[basic-cross-origin-config]]
 === Basic Cross-Origin Configuration
-In configuration, Helidon represents basic CORS information as a section, identified by a configuration
-key of your choosing, that contains
+In configuration, Helidon represents basic CORS information as a section{cors-config-key-explanation} that contains
 one or more key/value pairs. Each key-value pair assigns one characteristic of CORS behavior.
+
+//tag::basic-cross-origin-config-no-heading-or-intro[]
 
 [subs=attributes+]
 {basic-table-intro}
@@ -109,6 +111,7 @@ endif::[]
   allow-methods: ["PUT", "DELETE"]
 ...
 ----
+//end::basic-cross-origin-config-no-heading-or-intro[]
 //end::basic-cross-origin-config[]
 
 

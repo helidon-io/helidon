@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -28,14 +29,16 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-
+import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Single;
 import io.helidon.faulttolerance.Retry;
 import io.helidon.lra.coordinator.client.CoordinatorClient;
 import io.helidon.lra.coordinator.client.CoordinatorConnectionException;
 import io.helidon.lra.coordinator.client.Participant;
+import io.helidon.lra.coordinator.client.PropagatedHeaders;
 import io.helidon.webclient.WebClient;
+import io.helidon.webclient.WebClientRequestHeaders;
 import io.helidon.webclient.WebClientResponse;
 
 import org.eclipse.microprofile.lra.annotation.LRAStatus;
@@ -75,16 +78,16 @@ public class NarayanaClient implements CoordinatorClient {
     }
 
     @Override
-    public Single<URI> start(String clientID, long timeout) {
-        return startInternal(null, clientID, timeout);
+    public Single<URI> start(String clientID, PropagatedHeaders headers, long timeout) {
+        return startInternal(null, clientID, headers, timeout);
     }
 
     @Override
-    public Single<URI> start(URI parentLRAUri, String clientID, long timeout) {
-        return startInternal(parentLRAUri, clientID, timeout);
+    public Single<URI> start(URI parentLRAUri, String clientID, PropagatedHeaders headers, long timeout) {
+        return startInternal(parentLRAUri, clientID, headers, timeout);
     }
 
-    private Single<URI> startInternal(URI parentLRA, String clientID, long timeout) {
+    private Single<URI> startInternal(URI parentLRA, String clientID, PropagatedHeaders headers, long timeout) {
         // We need to call coordinator which knows parent LRA
         URI baseUri = Optional.ofNullable(parentLRA)
                 .map(p -> parseBaseUri(p.toASCIIString()))
@@ -93,6 +96,7 @@ public class NarayanaClient implements CoordinatorClient {
         return retry.invoke(() -> prepareWebClient(baseUri)
                 .post()
                 .path("start")
+                .headers(copyHeaders(headers)) // header propagation
                 .queryParam(QUERY_PARAM_CLIENT_ID, Optional.ofNullable(clientID).orElse(""))
                 .queryParam(QUERY_PARAM_TIME_LIMIT, String.valueOf(timeout))
                 .queryParam(QUERY_PARAM_PARENT_LRA, parentLRA == null ? "" : parentLRA.toASCIIString())
@@ -104,13 +108,15 @@ public class NarayanaClient implements CoordinatorClient {
                                 connectionError("Unexpected response " + status + " from coordinator "
                                         + res.lastEndpointURI() + ": " + cont, null));
                     } else {
+                        //propagate supported headers from coordinator
+                        headers.scan(res.headers().toMap());
                         return Single.just(res);
                     }
                 })
                 .map(res -> res
                         .headers()
                         .location()
-                        // TRM doesn't send lraId as LOCATION
+                        // TMM doesn't send lraId as LOCATION
                         .or(() -> res.headers()
                                 .first(LRA_HTTP_CONTEXT_HEADER)
                                 .map(URI::create))
@@ -125,10 +131,11 @@ public class NarayanaClient implements CoordinatorClient {
     }
 
     @Override
-    public Single<Void> cancel(URI lraId) {
+    public Single<Void> cancel(URI lraId, PropagatedHeaders headers) {
         return retry.invoke(() -> prepareWebClient(lraId)
                 .put()
                 .path("/cancel")
+                .headers(copyHeaders(headers)) // header propagation
                 .submit()
                 .map(WebClientResponse::status)
                 .flatMap(status -> {
@@ -152,10 +159,11 @@ public class NarayanaClient implements CoordinatorClient {
     }
 
     @Override
-    public Single<Void> close(URI lraId) {
+    public Single<Void> close(URI lraId, PropagatedHeaders headers) {
         return retry.invoke(() -> prepareWebClient(lraId)
                 .put()
                 .path("/close")
+                .headers(copyHeaders(headers)) // header propagation
                 .submit()
                 .map(WebClientResponse::status)
                 .flatMap(status -> {
@@ -181,6 +189,7 @@ public class NarayanaClient implements CoordinatorClient {
 
     @Override
     public Single<Optional<URI>> join(URI lraId,
+                                      PropagatedHeaders headers,
                                       long timeLimit,
                                       Participant p) {
         String links = compensatorLinks(p);
@@ -190,6 +199,7 @@ public class NarayanaClient implements CoordinatorClient {
                 .queryParam(QUERY_PARAM_TIME_LIMIT, String.valueOf(timeLimit))
                 .headers(h -> {
                     h.add(HEADER_LINK, links); // links are expected either in header
+                    headers.toMap().forEach(h::add); // header propagation
                     return h;
                 })
                 .submit(links) // or as a body
@@ -218,10 +228,11 @@ public class NarayanaClient implements CoordinatorClient {
     }
 
     @Override
-    public Single<Void> leave(URI lraId, Participant p) {
+    public Single<Void> leave(URI lraId, PropagatedHeaders headers, Participant p) {
         return retry.invoke(() -> prepareWebClient(lraId)
                 .put()
                 .path("/remove")
+                .headers(copyHeaders(headers)) // header propagation
                 .submit(compensatorLinks(p))
                 .flatMap(res -> {
                     switch (res.status().code()) {
@@ -245,10 +256,11 @@ public class NarayanaClient implements CoordinatorClient {
 
 
     @Override
-    public Single<LRAStatus> status(URI lraId) {
+    public Single<LRAStatus> status(URI lraId, PropagatedHeaders headers) {
         return retry.invoke(() -> prepareWebClient(lraId)
                 .get()
                 .path("/status")
+                .headers(copyHeaders(headers)) // header propagation
                 .request()
                 .flatMap(res -> {
                     switch (res.status().code()) {
@@ -326,6 +338,13 @@ public class NarayanaClient implements CoordinatorClient {
             throw new RuntimeException("Error when parsing lra uri: " + lraUri);
         }
         return URI.create(m.group(1));
+    }
+
+    private Function<WebClientRequestHeaders, Headers> copyHeaders(PropagatedHeaders headers) {
+        return wcHeaders -> {
+            headers.toMap().forEach(wcHeaders::add);
+            return wcHeaders;
+        };
     }
 
     private <T> Single<T> connectionError(String message, int status) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package io.helidon.microprofile.lra;
 
 import java.net.URI;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
@@ -33,6 +34,7 @@ import io.helidon.common.configurable.ThreadPoolSupplier;
 import io.helidon.common.http.HttpRequest;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
+import io.helidon.lra.coordinator.client.PropagatedHeaders;
 import io.helidon.webserver.RequestHeaders;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
@@ -108,6 +110,8 @@ class NonJaxRsResource {
                             .map(URI::create)
                             .orElse(null);
 
+                    PropagatedHeaders propagatedHeaders = participantService.prepareCustomHeaderPropagation(headers.toMap());
+
                     String fqdn = path.param("fqdn");
                     String method = path.param("methodName");
                     String type = path.param("type");
@@ -115,8 +119,10 @@ class NonJaxRsResource {
                     switch (type) {
                         case "compensate":
                         case "complete":
-                            Single.defer(() -> participantService.invoke(fqdn, method, lraId, parentId))
+                            Single.<Optional<?>>empty()
                                     .observeOn(exec)
+                                    .onCompleteResumeWithSingle(o ->
+                                            participantService.invoke(fqdn, method, lraId, parentId, propagatedHeaders))
                                     .forSingle(result -> result.ifPresentOrElse(
                                             r -> sendResult(res, r),
                                             res::send
@@ -127,15 +133,18 @@ class NonJaxRsResource {
                             req.content()
                                     .as(String.class)
                                     .map(LRAStatus::valueOf)
-                                    .flatMapSingle(s -> Single.defer(() -> participantService.invoke(fqdn, method, lraId, s)))
                                     .observeOn(exec)
+                                    .flatMapSingle(s -> Single.defer(() ->
+                                            participantService.invoke(fqdn, method, lraId, s, propagatedHeaders)))
                                     .onComplete(res::send)
                                     .onError(t -> sendError(lraId, req, res, t))
                                     .ignoreElement();
                             break;
                         case "status":
-                            Single.defer(() -> participantService.invoke(fqdn, method, lraId, null))
+                            Single.<Optional<?>>empty()
                                     .observeOn(exec)
+                                    .onCompleteResumeWithSingle(o ->
+                                            participantService.invoke(fqdn, method, lraId, null, propagatedHeaders))
                                     .forSingle(result -> result.ifPresentOrElse(
                                             r -> sendResult(res, r),
                                             // If the participant has already responded successfully
@@ -146,8 +155,10 @@ class NonJaxRsResource {
                                     .exceptionallyAccept(t -> sendError(lraId, req, res, t));
                             break;
                         case "forget":
-                            Single.defer(() -> participantService.invoke(fqdn, method, lraId, parentId))
+                            Single.<Optional<?>>empty()
                                     .observeOn(exec)
+                                    .onCompleteResumeWithSingle(o ->
+                                            participantService.invoke(fqdn, method, lraId, parentId, propagatedHeaders))
                                     .onComplete(res::send)
                                     .onError(t -> sendError(lraId, req, res, t))
                                     .ignoreElement();

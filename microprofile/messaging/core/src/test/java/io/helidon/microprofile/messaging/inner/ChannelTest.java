@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,6 @@ import io.helidon.microprofile.messaging.AsyncTestBean;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.platform.commons.util.ClassFilter;
@@ -62,9 +61,6 @@ public class ChannelTest extends AbstractCDITest {
                     cdiContainer = startCdiContainer(Collections.emptyMap(), testCase.getClazzes()));
         } else {
             cdiContainer = startCdiContainer(Collections.emptyMap(), testCase.getClazzes());
-            testCase.getAsyncBeanClasses()
-                    .map(c -> CDI.current().select(c).get())
-                    .forEach(AsyncTestBean::tearDown);
             // Wait till all messages are delivered
             testCase.getCountableBeanClasses()
                     .map(c -> CDI.current().select(c).get())
@@ -72,6 +68,9 @@ public class ChannelTest extends AbstractCDITest {
             testCase.getCompletableBeanClasses()
                     .map(c -> CDI.current().select(c).get())
                     .forEach(AssertableTestBean::assertValid);
+            testCase.getAsyncBeanClasses()
+                    .map(c -> CDI.current().select(c).get())
+                    .forEach(AsyncTestBean::tearDown);
         }
     }
 }
