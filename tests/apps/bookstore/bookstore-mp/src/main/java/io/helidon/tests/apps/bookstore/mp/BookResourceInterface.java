@@ -27,19 +27,19 @@ import javax.ws.rs.core.Response;
 import io.helidon.tests.apps.bookstore.common.Book;
 
 /**
- * This class exists only to verify inheritance of {@link Path} in
+ * This interfaces exists only to verify inheritance of {@link Path} in
  * this application. This is an extension to the JAX-RS spec supported
  * by Jersey.
  */
-@Path("/books")
-public abstract class BookResourceBase {
+@Path("/books2")
+public interface BookResourceInterface {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    abstract public Response getBooks();
+    Response getBooks();
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    abstract public Response postBook(Book book);
+    Response postBook(Book book);
 
 }
