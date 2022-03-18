@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.config.git;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.nio.file.DirectoryStream;
 import java.nio.file.FileVisitResult;
@@ -29,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -186,6 +188,22 @@ public class GitConfigSource extends AbstractConfigSource
                         .stamp(dad.digest())
                         .mediaType(MediaTypes.detectType(targetPath))
                         .build());
+    }
+
+    @Override
+    public Function<String, Optional<InputStream>> relativeResolver() {
+        return it -> {
+            Path path = targetPath.getParent().resolve(it);
+            if (Files.exists(path) && Files.isReadable(path) && !Files.isDirectory(path)) {
+                try {
+                    return Optional.of(Files.newInputStream(path));
+                } catch (IOException e) {
+                    throw new ConfigException("Failed to read configuration from path: " + path.toAbsolutePath(), e);
+                }
+            } else {
+                return Optional.empty();
+            }
+        };
     }
 
     @Override
