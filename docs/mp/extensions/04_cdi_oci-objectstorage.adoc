@@ -16,7 +16,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= CDI extension for OCI Object storage
+= CDI extension for OCI
 :h1Prefix: MP
 :description: Helidon CDI extension for Oracle Cloud Infrastructure Object Storage
 :keywords: helidon, java, microservices, microprofile, extensions, cdi, oci, object storage
