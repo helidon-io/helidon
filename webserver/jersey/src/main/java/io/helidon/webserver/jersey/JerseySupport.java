@@ -273,13 +273,14 @@ public class JerseySupport implements Service {
 
         private void doAccept(ServerRequest req, ServerResponse res) {
             CompletableFuture<Void> whenHandleFinishes = new CompletableFuture<>();
-            ResponseWriter responseWriter = new ResponseWriter(res, req, whenHandleFinishes);
             ContainerRequest requestContext = new ContainerRequest(baseUri(req),
                                                                    req.absoluteUri(),
                                                                    req.method().name(),
                                                                    new WebServerSecurityContext(),
                                                                    new MapPropertiesDelegate(),
-                                                                    resourceConfig);
+                                                                   resourceConfig);
+            ResponseWriter responseWriter = new ResponseWriter(requestContext, res, req, whenHandleFinishes);
+
             // set headers
             req.headers().toMap().forEach(requestContext::headers);
 
