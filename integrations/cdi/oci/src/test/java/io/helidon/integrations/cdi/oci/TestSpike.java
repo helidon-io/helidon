@@ -18,11 +18,12 @@ package io.helidon.integrations.cdi.oci;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.InetAddress;
+
+import javax.enterprise.context.Dependent;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.Instance;
-import javax.enterprise.inject.se.SeContainer;
-import javax.enterprise.inject.se.SeContainerInitializer;
 import javax.inject.Inject;
+import javax.inject.Provider;
 
 import com.oracle.bmc.ConfigFileReader;
 // Arbitrary
@@ -51,25 +52,24 @@ import com.oracle.bmc.streaming.StreamClient;
 import com.oracle.bmc.streaming.StreamClientBuilder;
 // End Special
 import io.helidon.microprofile.config.ConfigCdiExtension;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
+
+import io.helidon.microprofile.tests.junit5.AddBean;
+import io.helidon.microprofile.tests.junit5.AddExtension;
+import io.helidon.microprofile.tests.junit5.DisableDiscovery;
+import io.helidon.microprofile.tests.junit5.HelidonTest;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-final class TestSpike {
-
-
-    /*
-     * Static fields.
-     */
-
-
-    private static String mpInitializerAllow;
+@AddBean(TestSpike.ExampleBean.class)
+@AddExtension(ConfigCdiExtension.class)
+@AddExtension(OciExtension.class)
+@DisableDiscovery
+@HelidonTest
+class TestSpike {
 
 
     /*
@@ -77,7 +77,8 @@ final class TestSpike {
      */
 
 
-    private SeContainer container;
+    @Inject
+    private Provider<ExampleBean> exampleBeanProvider;
 
 
     /*
@@ -91,63 +92,18 @@ final class TestSpike {
 
 
     /*
-     * Static setup and teardown methods.
-     */
-
-
-    @BeforeAll
-    static void beforeAll() {
-        mpInitializerAllow = System.getProperty("mp.initializer.allow", "false");
-        System.setProperty("mp.initializer.no-warn", "true");
-        System.setProperty("mp.initializer.allow", "true");
-    }
-
-    @AfterAll
-    static void afterAll() {
-        System.setProperty("mp.initializer.allow", mpInitializerAllow);
-    }
-
-
-    /*
-     * Instance setup and teardown methods.
-     */
-
-
-    @BeforeEach
-    @SuppressWarnings("deprecation") // OK to use deprecated extension constructors
-    final void beforeEach() throws IOException {
-        // Don't run tests if there's NO ADP anywhere; they'll show up
-        // as "skipped" in the test run.
-        assumeTrue(imdsAvailable() || configFileExists());
-        this.container = SeContainerInitializer.newInstance()
-            .disableDiscovery()
-            .addExtensions(new ConfigCdiExtension(),
-                           new OciExtension())
-            .addBeanClasses(ExampleBean.class)
-            .initialize();
-    }
-
-    @AfterEach
-    final void afterEach() {
-        final SeContainer container = this.container;
-        if (container != null) {
-            container.close();
-        }
-    }
-
-
-    /*
      * Test methods.
      */
 
 
     @Test
-    final void testSpike() {
-        // Simulate demand for an injected ExampleBean. This will
-        // cause ExampleBean to get created, which will cause its
-        // constructor to be injected with OCI services.  See the
-        // ExampleBean class below.
-        this.container.select(ExampleBean.class).get();
+    void testSpike() throws IOException {
+        // Don't run this test if there's NO ADP anywhere; it will
+        // show up as "skipped" in the test run.
+        assumeTrue(imdsAvailable() || configFileExists());
+
+        ExampleBean bean = this.exampleBeanProvider.get();
+        assertNotNull(bean);
 
         assertTrue(ExampleBean.customizeAsyncBuilderCalled);
         ExampleBean.customizeAsyncBuilderCalled = false;
@@ -190,7 +146,8 @@ final class TestSpike {
     /**
      * An example bean that a user might write.
      */
-    private static final class ExampleBean {
+    @Dependent
+    static class ExampleBean {
 
 
         /*
@@ -207,6 +164,12 @@ final class TestSpike {
          * Constructors.
          */
 
+
+        // Required by the CDI specification.
+        @Deprecated
+        ExampleBean() {
+            super();
+        }
 
         @Inject
         private ExampleBean(// The service* parameters below are

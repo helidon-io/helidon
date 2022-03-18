@@ -41,8 +41,6 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
-import java.util.logging.Level;
-import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -535,8 +533,7 @@ public final class OciExtension implements Extension {
      */
 
 
-    private static final Logger LOGGER =
-        Logger.getLogger(OciExtension.class.getName(), OciExtension.class.getName() + "Messages");
+    private static final Logger LOGGER = Logger.getLogger(OciExtension.class.getName());
 
     // Evaluates to "com.oracle.bmc." (yes, bmc, not oci) as of the
     // current version of the public OCI Java SDK.
@@ -728,9 +725,7 @@ public final class OciExtension implements Extension {
         // CDI veto.
         if (equals(Service.class.getProtectionDomain(), c.getProtectionDomain())
             || this.additionalVetoes.contains(c.getName())) {
-            if (LOGGER.isLoggable(Level.FINE)) {
-                LOGGER.logp(Level.FINE, OciExtension.class.getName(), "isVetoed", "classVetoed", c);
-            }
+            LOGGER.fine(() -> "Vetoed " + c);
             return true;
         }
         return false;
@@ -822,19 +817,8 @@ public final class OciExtension implements Extension {
             return loadClassUnresolved(name);
         } catch (ClassNotFoundException classNotFoundException) {
             if (lenient) {
-                if (this.unloadableClassNames.add(name)
-                    && LOGGER.isLoggable(Level.FINE)) {
-                    LogRecord logRecord = new LogRecord(Level.FINE, "classNotFound");
-                    logRecord.setLoggerName(LOGGER.getName());
-                    logRecord.setParameters(new Object[] {name});
-                    logRecord.setResourceBundle(LOGGER.getResourceBundle());
-                    logRecord.setResourceBundleName(LOGGER.getResourceBundleName());
-                    logRecord.setSourceClassName(OciExtension.class.getName());
-                    logRecord.setSourceMethodName("toClassUnresolved");
-                    if (LOGGER.isLoggable(Level.FINEST)) {
-                        logRecord.setThrown(classNotFoundException);
-                    }
-                    LOGGER.log(logRecord);
+                if (this.unloadableClassNames.add(name)) {
+                    LOGGER.finer("class " + name + " not found");
                 }
             } else {
                 errorHandler.accept(classNotFoundException);
@@ -913,19 +897,7 @@ public final class OciExtension implements Extension {
                 builderMethod = PUBLIC_LOOKUP.findStatic(serviceClientClass, "builder", methodType(serviceClientBuilderClass));
             } catch (ReflectiveOperationException reflectiveOperationException) {
                 if (lenientClassloading) {
-                    if (LOGGER.isLoggable(Level.WARNING)) {
-                        LogRecord logRecord = new LogRecord(Level.WARNING, "builderMethodNotFound");
-                        logRecord.setLoggerName(LOGGER.getName());
-                        logRecord.setParameters(new Object[] {serviceClientClass});
-                        logRecord.setResourceBundle(LOGGER.getResourceBundle());
-                        logRecord.setResourceBundleName(LOGGER.getResourceBundleName());
-                        logRecord.setSourceClassName(OciExtension.class.getName());
-                        logRecord.setSourceMethodName("installServiceClientBuilder");
-                        if (LOGGER.isLoggable(Level.FINEST)) {
-                            logRecord.setThrown(reflectiveOperationException);
-                        }
-                        LOGGER.log(logRecord);
-                    }
+                    LOGGER.warning(() -> serviceClientClass.getName() + ".builder() not found");
                 } else {
                     event.addDefinitionError(reflectiveOperationException);
                 }
@@ -939,13 +911,7 @@ public final class OciExtension implements Extension {
                 .qualifiers(qualifiers)
                 .scope(Singleton.class)
                 .produceWith(i -> produceClientBuilder(i, builderMethod, qualifiersArray));
-            if (LOGGER.isLoggable(Level.FINE)) {
-                LOGGER.logp(Level.FINE,
-                            OciExtension.class.getName(),
-                            "installServiceClientBuilder",
-                            "serviceClientBuilderInstalled",
-                            new Object[] {types, qualifiers});
-            }
+            LOGGER.fine(() -> "Added synthetic bean: " + qualifiers + " " + types);
             return true;
         }
         return false;

@@ -31,7 +31,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -39,7 +38,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.oracle.bmc.Region;
@@ -306,8 +304,7 @@ enum AdpSelectionStrategy {
      */
     AUTO(AbstractAuthenticationDetailsProvider.class, true) {
 
-        private final transient Logger logger =
-            Logger.getLogger(this.getClass().getName(), AdpSelectionStrategy.class.getName() + "Messages");
+        private final transient Logger logger = Logger.getLogger(this.getClass().getName());
 
         @Override // AdpSelectionStrategy
         Void produceBuilder(Selector selector, Config c, Annotation[] qualifiersArray) {
@@ -320,51 +317,23 @@ enum AdpSelectionStrategy {
                 concreteStrategies(c.get("oci.auth-strategies", String[].class)
                                    .or(() -> c.get("oci.auth-strategy", String[].class))
                                    .orElse(null));
-            switch (strategies.size()) {
-            case 1:
-                AdpSelectionStrategy strategy = strategies.iterator().next();
-                if (strategy == this) {
+            for (AdpSelectionStrategy s : strategies) {
+                if (s == this) {
                     // concreteStrategies(String[]) bug
                     throw new IllegalStateException("concreteStrategies(String[]) returned " + this.name());
+                } else if (s.isAvailable(selector, c, qualifiersArray)) {
+                    logger.config(() -> "Using authentication strategy " + s.configName()
+                                  + "; selected AbstractAuthenticationDetailsProvider " + s.type().getTypeName());
+                    return s.get(selector, c, qualifiersArray);
+                } else {
+                    logger.fine(() -> "Skipping authentication strategy " + s.configName() + " because it is not available");
                 }
-                // No availability check on purpose.
-                if (logger.isLoggable(Level.CONFIG)) {
-                    logger.logp(Level.CONFIG,
-                                this.getClass().getName(),
-                                "produce",
-                                "usingStrategy",
-                                new Object[] {strategy, strategy.configName(), strategy.type().getTypeName()});
-                }
-                return strategy.get(selector, c, qualifiersArray);
-            default:
-                Iterator<? extends AdpSelectionStrategy> i = strategies.iterator();
-                while (i.hasNext()) {
-                    AdpSelectionStrategy s = i.next();
-                    if (s == this) {
-                        // concreteStrategies(String[]) bug
-                        throw new IllegalStateException("concreteStrategies(String[]) returned " + this.name());
-                    }
-                    if (!i.hasNext() || s.isAvailable(selector, c, qualifiersArray)) {
-                        if (logger.isLoggable(Level.CONFIG)) {
-                            logger.logp(Level.CONFIG,
-                                        this.getClass().getName(),
-                                        "produce",
-                                        "usingStrategy",
-                                        new Object[] {s, s.configName(), s.type().getTypeName()});
-                        }
-                        return s.get(selector, c, qualifiersArray);
-                    } else if (logger.isLoggable(Level.FINE)) {
-                        logger.logp(Level.FINE,
-                                    this.getClass().getName(),
-                                    "produce",
-                                    "strategyUnavailable",
-                                    new Object[] {s, s.configName(), s.type().getTypeName()});
-                    }
-                }
-                break;
             }
-            throw new NoSuchElementException();
+            throw new NoSuchElementException("No instances of "
+                                             + AbstractAuthenticationDetailsProvider.class.getName()
+                                             + " available for use");
         }
+
     };
 
 
