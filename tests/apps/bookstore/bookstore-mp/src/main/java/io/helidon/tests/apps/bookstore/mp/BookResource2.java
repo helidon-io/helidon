@@ -33,17 +33,17 @@ import io.helidon.tests.apps.bookstore.common.Book;
 import io.helidon.tests.apps.bookstore.common.BookStore;
 
 /**
- * The {@link Path} annotation is inherited from the base class. Note that a
+ * The {@link Path} annotation is inherited from the base type. Note that a
  * CDI scope annotation such as {@code @RequestScoped} is required given that
  * discovery mode for this application is annotated.
  */
 @RequestScoped
-public class BookResource extends BookResourceBase {
+public class BookResource2 implements BookResourceInterface {
 
     private final BookStore bookStore;
 
     @Inject
-    public BookResource(BookStore bookStore) {
+    public BookResource2(BookStore bookStore) {
         this.bookStore = bookStore;
     }
 

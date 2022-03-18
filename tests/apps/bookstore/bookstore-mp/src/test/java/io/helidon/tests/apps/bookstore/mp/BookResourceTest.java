@@ -72,6 +72,40 @@ class BookResourceTest {
         assertBookStoreSize(0);
     }
 
+    @Test
+    void testBooks2() {
+        assertBookStoreSize(0);
+
+        Response res = webTarget.path("/books2")
+                .request()
+                .post(Entity.json(getBookAsJson()));
+        assertEquals(Response.Status.OK.getStatusCode(), res.getStatus());
+
+        assertBookStoreSize(1);
+
+        res = webTarget.path("/books2/123456")
+                .request()
+                .get();
+        assertEquals(Response.Status.OK.getStatusCode(), res.getStatus());
+        assertNotNull(res.getHeaderString("content-length"));
+
+        assertBookStoreSize(1);
+
+        res = webTarget.path("/books2/123456")
+                .request()
+                .put(Entity.json(getBookAsJson()));
+        assertEquals(Response.Status.OK.getStatusCode(), res.getStatus());
+
+        assertBookStoreSize(1);
+
+        res = webTarget.path("/books2/123456")
+                .request()
+                .delete();
+        assertEquals(Response.Status.OK.getStatusCode(), res.getStatus());
+
+        assertBookStoreSize(0);
+    }
+
     private String getBookAsJson() {
         InputStream is = getClass().getClassLoader().getResourceAsStream("book.json");
         if (is != null) {
