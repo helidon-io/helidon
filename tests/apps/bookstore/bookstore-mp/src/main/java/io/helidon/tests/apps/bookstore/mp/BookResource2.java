@@ -16,39 +16,34 @@
 
 package io.helidon.tests.apps.bookstore.mp;
 
-import java.util.Collection;
-
-import io.helidon.tests.apps.bookstore.common.Book;
-import io.helidon.tests.apps.bookstore.common.BookStore;
-
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.util.Collection;
 
 import io.helidon.tests.apps.bookstore.common.Book;
 import io.helidon.tests.apps.bookstore.common.BookStore;
 
 /**
- * The {@link Path} annotation is inherited from the base class. Note that a
+ * The {@link Path} annotation is inherited from the base type. Note that a
  * CDI scope annotation such as {@code @RequestScoped} is required given that
  * discovery mode for this application is annotated.
  */
 @RequestScoped
-public class BookResource extends BookResourceBase {
+public class BookResource2 implements BookResourceInterface {
 
     private final BookStore bookStore;
 
     @Inject
-    public BookResource(BookStore bookStore) {
+    public BookResource2(BookStore bookStore) {
         this.bookStore = bookStore;
     }
 

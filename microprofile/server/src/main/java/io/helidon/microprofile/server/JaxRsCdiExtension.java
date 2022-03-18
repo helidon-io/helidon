@@ -329,7 +329,7 @@ public class JaxRsCdiExtension implements Extension {
     }
 
     /**
-     * Checks presence of annotation on class or any of its superclasses.
+     * Checks presence of annotation on class or any of its supertypes.
      *
      * @param clazz the class
      * @param annotation the annotation
@@ -339,6 +339,14 @@ public class JaxRsCdiExtension implements Extension {
         if (clazz == null || clazz == Object.class) {
             return false;
         }
-        return clazz.isAnnotationPresent(annotation) || hasAnnotation(clazz.getSuperclass(), annotation);
+        if (clazz.isAnnotationPresent(annotation) || hasAnnotation(clazz.getSuperclass(), annotation)) {
+            return true;
+        }
+        for (Class<?> type : clazz.getInterfaces()) {
+            if (hasAnnotation(type, annotation)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
