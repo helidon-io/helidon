@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import jakarta.ws.rs.core.MediaType;
 import org.glassfish.jersey.server.ContainerException;
+import org.glassfish.jersey.server.ContainerRequest;
 import org.glassfish.jersey.server.ContainerResponse;
 import org.glassfish.jersey.server.spi.ContainerResponseWriter;
 
@@ -50,12 +51,17 @@ import org.glassfish.jersey.server.spi.ContainerResponseWriter;
 class ResponseWriter implements ContainerResponseWriter {
     private static final Logger LOGGER = Logger.getLogger(ResponseWriter.class.getName());
 
+    private final ContainerRequest requestContext;
     private final ServerResponse res;
     private final ServerRequest req;
     private final CompletableFuture<Void> whenHandleFinishes;
     private DataChunkOutputStream publisher;
 
-    ResponseWriter(ServerResponse res, ServerRequest req, CompletableFuture<Void> whenHandleFinishes) {
+    ResponseWriter(ContainerRequest requestContext,
+                   ServerResponse res,
+                   ServerRequest req,
+                   CompletableFuture<Void> whenHandleFinishes) {
+        this.requestContext = requestContext;
         this.res = res;
         this.req = req;
         this.whenHandleFinishes = whenHandleFinishes;
@@ -68,8 +74,10 @@ class ResponseWriter implements ContainerResponseWriter {
         for (Map.Entry<String, List<String>> entry : context.getStringHeaders().entrySet()) {
             res.headers().put(entry.getKey(), entry.getValue());
         }
-
-        if (context.getStatus() == 404 && contentLength == 0) {
+        if (context.getStatus() == 404
+                && contentLength == 0
+                && requestContext.getUriInfo().getMatchedModelResource() == null) {
+            // this should only get invoked when we get the default 404 (nothing invoked)
             whenHandleFinishes.thenRun(() -> {
                 LOGGER.finer("Skipping the handling and forwarding to downstream WebServer filters.");
                 req.next();

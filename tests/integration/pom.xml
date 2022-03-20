@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -47,6 +47,7 @@
         <module>mp-gh-2421</module>
         <module>mp-gh-2461</module>
         <module>mp-gh-3246</module>
+        <module>mp-gh-3974</module>
         <module>kafka</module>
         <module>jms</module>
         <module>config</module>
