@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -140,6 +140,39 @@ public abstract class WebTracingConfig {
     public static class Builder implements io.helidon.common.Builder<Builder, WebTracingConfig> {
         private final List<PathTracingConfig> pathTracingConfigs = new LinkedList<>();
         private TracingConfig tracedConfig = TracingConfig.ENABLED;
+
+        /**
+         * OpenTracing spec states that certain MP paths need to be disabled by default.
+         * Note that if a user changes the default location of any of these using
+         * web-context's, then they would need to provide these exclusions manually.
+         *
+         * The default path configs below are overridable via configuration. For example,
+         * health could be enabled by setting {@code tracing.paths.0.path=/health} and
+         * {@code tracing.paths.0.enabled=true}.
+         */
+        Builder() {
+            addPathConfig(PathTracingConfig.builder()
+                    .path("/metrics")
+                    .tracingConfig(TracingConfig.DISABLED)
+                    .build());
+            // Simplified matching for base, vendor and application paths
+            addPathConfig(PathTracingConfig.builder()
+                    .path("/metrics/{+}")
+                    .tracingConfig(TracingConfig.DISABLED)
+                    .build());
+            addPathConfig(PathTracingConfig.builder()
+                    .path("/health")
+                    .tracingConfig(TracingConfig.DISABLED)
+                    .build());
+            addPathConfig(PathTracingConfig.builder()
+                    .path("/health/{+}")
+                    .tracingConfig(TracingConfig.DISABLED)
+                    .build());
+            addPathConfig(PathTracingConfig.builder()
+                    .path("/openapi")
+                    .tracingConfig(TracingConfig.DISABLED)
+                    .build());
+        }
 
         @Override
         public WebTracingConfig build() {
