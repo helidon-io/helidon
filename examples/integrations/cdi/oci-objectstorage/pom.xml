@@ -52,7 +52,7 @@
         <!-- Runtime-scoped dependencies. -->
         <dependency>
             <groupId>io.helidon.integrations.cdi</groupId>
-            <artifactId>helidon-integrations-cdi-oci-objectstorage</artifactId>
+            <artifactId>helidon-integrations-cdi-oci</artifactId>
             <scope>runtime</scope>
         </dependency>
         <dependency>
@@ -69,6 +69,11 @@
         <dependency>
             <groupId>io.helidon.microprofile.config</groupId>
             <artifactId>helidon-microprofile-config</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-jdk14</artifactId>
             <scope>runtime</scope>
         </dependency>
     </dependencies>

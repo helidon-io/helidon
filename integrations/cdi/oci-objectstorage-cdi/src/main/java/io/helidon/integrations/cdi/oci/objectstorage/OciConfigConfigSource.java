@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,12 @@ import org.eclipse.microprofile.config.spi.ConfigSource;
 /**
  * A {@link ConfigSource} implementation that is backed by a {@link
  * ConfigFileAuthenticationDetailsProvider}.
+ *
+ * @deprecated Please see the {@code
+ * io.helidon.integrations.cdi.oci.OciExtension} class for more
+ * information.
  */
+@Deprecated(forRemoval = true, since = "2.43")
 public final class OciConfigConfigSource implements ConfigSource {
 
   private volatile Map<String, String> properties;
