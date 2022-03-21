@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,9 +59,11 @@ public class Grant implements AbacSupport, Principal {
      * Creates a fluent API builder to build new instances of this class.
      *
      * @return builder instance
+     * @param <T> type of builder
      */
-    public static Builder<?> builder() {
-        return new Builder<>();
+    @SuppressWarnings("unchecked")
+    public static <T extends Builder<T>> T builder() {
+        return (T) new Builder<T>();
     }
 
     @Override
