@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,12 @@
 
 package io.helidon.tracing.zipkin;
 
+import java.net.URI;
 import java.util.List;
 
 import io.helidon.config.Config;
 import io.helidon.tracing.Tag;
 import io.helidon.tracing.TracerBuilder;
-
 import io.opentracing.Span;
 import io.opentracing.Tracer;
 import io.opentracing.noop.NoopTracer;
@@ -31,6 +31,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -62,6 +63,29 @@ class ZipkinTracerBuilderTest {
         assertThat(zBuilder.sender(), nullValue());
         assertThat(zBuilder.userInfo(), nullValue());
         assertThat(zBuilder.isEnabled(), is(ZipkinTracerBuilder.DEFAULT_ENABLED));
+    }
+
+    @Test
+    void testConfigSuppressPort() {
+        /* Make sure if config sets port to -1 that we do not default it to something else */
+        TracerBuilder<?> builder = TracerBuilder.create(config.get("tracing.zipkin-defaults-suppress-port"));
+        ZipkinTracerBuilder zBuilder = (ZipkinTracerBuilder) builder;
+        assertThat(zBuilder.port(), is(-1));
+
+        Tracer tracer = zBuilder.build();
+        assertThat(tracer, notNullValue());
+    }
+
+    @Test
+    void testConfigSuppressPortUri() {
+        /* Create builder using Uri with no port number. Make sure we don't add a port number */
+        TracerBuilder<?> builder = TracerBuilder.create("unit-test-suppress-port-uri")
+                .collectorUri(URI.create("https://localhost/path"));
+        ZipkinTracerBuilder zBuilder = (ZipkinTracerBuilder) builder;
+        assertThat(zBuilder.port(), is(-1));
+
+        Tracer tracer = zBuilder.build();
+        assertThat(tracer, notNullValue());
     }
 
     @Test
