@@ -47,6 +47,7 @@ public class ChannelTest extends AbstractCDITest {
                         ChannelTest.class.getPackage().getName(),
                         ClassFilter.of(c -> Objects.nonNull(c.getAnnotation(ApplicationScoped.class))))
                 .stream()
+//                .filter(aClass -> aClass.getSimpleName().contains("ProcessorPublisherBuilderMsg2MsgPrepImplicitAckBean"))
                 .map(CdiTestCase::from);
     }
 

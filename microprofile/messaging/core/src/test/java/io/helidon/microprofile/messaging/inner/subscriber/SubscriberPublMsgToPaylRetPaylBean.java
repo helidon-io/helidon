@@ -46,9 +46,8 @@ public class SubscriberPublMsgToPaylRetPaylBean implements AssertableTestBean {
     }
 
     @Incoming("string-payload")
-    public String consumePayloadsAndReturnSomething(String payload) {
+    public void consumePayloadsAndReturnSomething(String payload) {
         resultData.add(payload);
-        return payload;
     }
 
     @Override

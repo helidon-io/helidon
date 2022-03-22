@@ -51,13 +51,13 @@ class MethodSignatureResolverTest {
 
     @Incoming("in-channel-name")
     @ExpectedSignatureType(MethodSignatureType.INCOMING_COMPLETION_STAGE_2_MSG)
-    CompletionStage<String> incoming_completion_stage_2_msg(Message<String> msg) {
+    CompletionStage<Void> incoming_completion_stage_2_msg(Message<String> msg) {
         return null;
     }
 
     @Incoming("in-channel-name")
     @ExpectedSignatureType(MethodSignatureType.INCOMING_COMPLETION_STAGE_2_PAYL)
-    CompletionStage<String> incoming_completion_stage_2_payl(String payload) {
+    CompletionStage<Void> incoming_completion_stage_2_payl(String payload) {
         return null;
     }
 

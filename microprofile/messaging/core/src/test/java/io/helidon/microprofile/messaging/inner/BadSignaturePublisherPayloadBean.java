@@ -17,6 +17,9 @@
 package io.helidon.microprofile.messaging.inner;
 
 import jakarta.enterprise.context.ApplicationScoped;
+
+import io.helidon.microprofile.messaging.AssertThrowException;
+
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;
@@ -28,8 +31,7 @@ import org.reactivestreams.Publisher;
  * https://github.com/eclipse/microprofile-reactive-messaging
  */
 @ApplicationScoped
-//TODO: Uncomment when TCK issue is solved https://github.com/eclipse/microprofile-reactive-messaging/issues/79
-//@AssertThrowException(Exception.class)
+@AssertThrowException(Exception.class)
 public class BadSignaturePublisherPayloadBean extends AbstractShapeTestBean {
 
     @Outgoing("string-payload")

@@ -197,8 +197,18 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
             LOGGER.log(Level.INFO, "Failed to start container", e);
             throw new DeploymentException("Failed to copy the archive assets into the deployment directory", e);
         } catch (InvocationTargetException e) {
+
+            try {
+                context.runnerClass
+                        .getDeclaredMethod("abortedCleanup")
+                        .invoke(context.runner);
+            } catch (IllegalAccessException | NoSuchMethodException | InvocationTargetException ex) {
+                ex.printStackTrace();
+            }
+
             throw lookForSupressedDeploymentException(e.getTargetException())
-                    .map(d -> new org.jboss.arquillian.container.spi.client.container.DeploymentException("Oj!", d))
+                    .map(d ->
+                            new org.jboss.arquillian.container.spi.client.container.DeploymentException("Deployment failure!", d))
                     .orElseThrow(() -> new DefinitionException(e));
         } catch (ReflectiveOperationException e) {
             LOGGER.log(Level.INFO, "Failed to start container", e);

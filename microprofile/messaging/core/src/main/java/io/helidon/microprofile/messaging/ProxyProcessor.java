@@ -50,18 +50,37 @@ class ProxyProcessor implements Processor<Object, Object> {
 
         switch (processorMethod.getType()) {
             case PROCESSOR_PUBLISHER_BUILDER_MSG_2_PUBLISHER_BUILDER_MSG:
+                publisher = ((PublisherBuilder<Object>) processorMethod.invoke(ReactiveStreams.fromPublisher(this)))
+                        .map(MessageUtils::wrap)
+                        .buildRs();
+                break;
             case PROCESSOR_PUBLISHER_BUILDER_PAYL_2_PUBLISHER_BUILDER_PAYL:
-                PublisherBuilder<Object> paramPublisherBuilder = ReactiveStreams.fromPublisher(this);
-                publisher = ((PublisherBuilder<Object>) processorMethod
-                        .invoke(paramPublisherBuilder)).buildRs();
+                publisher = ((PublisherBuilder<Object>)
+                        processorMethod.invoke(ReactiveStreams.fromPublisher(this).map(MessageUtils::unwrap)))
+                        .map(MessageUtils::wrap)
+                        .buildRs();
                 break;
             case PROCESSOR_PUBLISHER_MSG_2_PUBLISHER_MSG:
+                publisher = ReactiveStreams.fromPublisher(processorMethod.invoke(this))
+                        .map(MessageUtils::wrap)
+                        .buildRs();
+                break;
             case PROCESSOR_PUBLISHER_PAYL_2_PUBLISHER_PAYL:
-                publisher = processorMethod.invoke(this);
+                publisher = ReactiveStreams.fromPublisher(
+                                processorMethod.invoke(
+                                        ReactiveStreams.fromPublisher(this)
+                                                .map(MessageUtils::unwrap)
+                                                .buildRs()
+                                )
+                        )
+                        .map(MessageUtils::wrap)
+                        .buildRs();
                 break;
             case PROCESSOR_PROCESSOR_BUILDER_MSG_2_VOID:
-                processor = ((ProcessorBuilder<Object, Object>) processorMethod
-                        .invoke()).buildRs();
+                processor = ReactiveStreams.builder()
+                        .via((ProcessorBuilder<Object, Object>) processorMethod.invoke())
+                        .map(MessageUtils::wrap)
+                        .buildRs();
                 publisher = processor;
                 break;
             case PROCESSOR_PROCESSOR_BUILDER_PAYL_2_VOID:
@@ -73,7 +92,10 @@ class ProxyProcessor implements Processor<Object, Object> {
                 publisher = processor;
                 break;
             case PROCESSOR_PROCESSOR_MSG_2_VOID:
-                processor = processorMethod.invoke();
+                processor = ReactiveStreams.builder()
+                        .via((Processor<Object, Object>) processorMethod.invoke())
+                        .map(MessageUtils::wrap)
+                        .buildRs();
                 publisher = processor;
                 break;
             case PROCESSOR_PROCESSOR_PAYL_2_VOID:

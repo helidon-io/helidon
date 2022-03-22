@@ -17,17 +17,20 @@
 package io.helidon.microprofile.messaging.health;
 
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.health.common.BuiltInHealthCheck;
-import io.helidon.microprofile.messaging.MessagingCdiExtension;
+import io.helidon.microprofile.messaging.MessagingChannelProcessor;
 
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
 import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.eclipse.microprofile.health.HealthCheckResponseBuilder;
 import org.eclipse.microprofile.health.Readiness;
+import org.eclipse.microprofile.reactive.messaging.Message;
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
 
 /**
  * MicroProfile Reactive Messaging readiness check.
@@ -36,26 +39,30 @@ import org.eclipse.microprofile.health.Readiness;
 @Readiness
 @ApplicationScoped
 @BuiltInHealthCheck
-public class MessagingReadinessCheck implements HealthCheck {
+public class MessagingReadinessCheck implements HealthCheck, MessagingChannelProcessor {
 
-    private final MessagingCdiExtension messagingCdiExtension;
-
-    @Inject
-    MessagingReadinessCheck(MessagingCdiExtension messagingCdiExtension) {
-        this.messagingCdiExtension = messagingCdiExtension;
-    }
+    private final Map<String, Boolean> readyChannels = new ConcurrentHashMap<>();
 
     @Override
     public HealthCheckResponse call() {
-        Map<String, Boolean> channelsHealth = messagingCdiExtension.channelsReadiness();
         AtomicBoolean isUp = new AtomicBoolean(true);
         HealthCheckResponseBuilder b = HealthCheckResponse.builder()
                 .name("messaging");
-        channelsHealth.forEach((channelName, up) -> {
+        readyChannels.forEach((channelName, up) -> {
             isUp.compareAndSet(true, up);
             b.withData(channelName, up ? "UP" : "DOWN");
         });
         b.status(isUp.get());
         return b.build();
+    }
+
+    @Override
+    public void onSubscribe(String channelName, Subscriber<Message<?>> subscriber, Subscription subscription) {
+        readyChannels.put(channelName, true);
+    }
+
+    @Override
+    public void onInit(String channelName) {
+        readyChannels.put(channelName, false);
     }
 }

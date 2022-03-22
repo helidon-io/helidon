@@ -16,7 +16,9 @@
 
 package io.helidon.microprofile.messaging;
 
-import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
@@ -26,14 +28,26 @@ import org.reactivestreams.Subscription;
  *
  * @param <T> type of the subscriber value
  */
-class ProxySubscriber<T> implements Subscriber<T> {
+class ProxySubscriber implements Subscriber<Object> {
+
+    private static final Logger LOGGER = Logger.getLogger(ProxySubscriber.class.getName());
 
     private final IncomingMethod method;
-    private final Subscriber<T> originalSubscriber;
+    private final Subscriber<Object> originalSubscriber;
+    private final boolean unwrap;
 
-    ProxySubscriber(IncomingMethod method, Subscriber<T> originalSubscriber) {
+    private ProxySubscriber(IncomingMethod method, Subscriber<Object> originalSubscriber, boolean unwrap) {
         this.method = method;
         this.originalSubscriber = originalSubscriber;
+        this.unwrap = unwrap;
+    }
+
+    static ProxySubscriber wrapped(IncomingMethod method, Subscriber<Object> originalSubscriber) {
+        return new ProxySubscriber(method, originalSubscriber, false);
+    }
+
+    static ProxySubscriber unwrapped(IncomingMethod method, Subscriber<Object> originalSubscriber) {
+        return new ProxySubscriber(method, originalSubscriber, true);
     }
 
     @Override
@@ -42,9 +56,21 @@ class ProxySubscriber<T> implements Subscriber<T> {
     }
 
     @Override
-    public void onNext(T o) {
-        originalSubscriber.onNext(preProcess(o));
-        postProcess(o);
+    public void onNext(Object item) {
+        Message<?> msg = (Message<?>) item;
+        AckCtx ackCtx = AckCtx.create(method, msg);
+        ackCtx.preAck();
+        try {
+            if (unwrap) {
+                originalSubscriber.onNext(MessageUtils.unwrap(msg));
+            } else {
+                originalSubscriber.onNext(msg);
+            }
+            ackCtx.postAck();
+        } catch (Throwable t) {
+            ackCtx.postNack(t);
+            LOGGER.log(Level.SEVERE, "Error thrown by subscriber on channel " + method.getIncomingChannelName(), t);
+        }
     }
 
     @Override
@@ -55,23 +81,5 @@ class ProxySubscriber<T> implements Subscriber<T> {
     @Override
     public void onComplete() {
         originalSubscriber.onComplete();
-    }
-
-    private T preProcess(T incomingValue) {
-        if (method.getAckStrategy().equals(Acknowledgment.Strategy.PRE_PROCESSING)
-                && incomingValue instanceof Message) {
-            Message<?> incomingMessage = (Message<?>) incomingValue;
-            incomingMessage.ack();
-        }
-
-        return incomingValue;
-    }
-
-    private void postProcess(T incomingValue) {
-        if (method.getAckStrategy().equals(Acknowledgment.Strategy.POST_PROCESSING)
-                && incomingValue instanceof Message) {
-            Message<?> incomingMessage = (Message<?>) incomingValue;
-            incomingMessage.ack();
-        }
     }
 }

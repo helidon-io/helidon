@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.microprofile.messaging;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.concurrent.CompletionStage;
 
 import io.helidon.common.Errors;
 import io.helidon.config.Config;
@@ -26,10 +27,11 @@ import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.enterprise.inject.spi.DeploymentException;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;
 import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
+import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.reactivestreams.Publisher;
 
 
-class OutgoingMethod extends AbstractMessagingMethod {
+class OutgoingMethod extends AbstractMessagingMethod implements OutgoingMember {
 
     private Publisher<?> publisher;
 
@@ -67,7 +69,20 @@ class OutgoingMethod extends AbstractMessagingMethod {
             }
         } else {
             // Invoke on each request publisher
-            publisher = new InternalPublisher(getMethod(), getBeanInstance());
+            publisher = ReactiveStreams.generate(() -> {
+                        try {
+                            return getMethod().invoke(getBeanInstance());
+                        } catch (IllegalAccessException | InvocationTargetException e) {
+                            throw new RuntimeException(e);
+                        }
+                    })
+                    .flatMap(o -> {
+                        if (o instanceof CompletionStage) {
+                            return ReactiveStreams.fromCompletionStageNullable((CompletionStage<?>) o).map(MessageUtils::wrap);
+                        } else {
+                            return ReactiveStreams.of(MessageUtils.wrap(o));
+                        }
+                    }).buildRs();
         }
     }
 
@@ -88,4 +103,13 @@ class OutgoingMethod extends AbstractMessagingMethod {
         return publisher;
     }
 
+    @Override
+    public Publisher<?> getPublisher(String unused) {
+        return getPublisher();
+    }
+
+    @Override
+    public String getDescription() {
+        return "outgoing method " + getMethod().getName();
+    }
 }

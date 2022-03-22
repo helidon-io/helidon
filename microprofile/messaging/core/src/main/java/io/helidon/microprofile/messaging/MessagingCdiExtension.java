@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,59 +16,79 @@
 
 package io.helidon.microprofile.messaging;
 
+import java.lang.reflect.Type;
+import java.util.HashSet;
 import java.util.Map;
-import java.util.logging.Logger;
-import java.util.stream.Collectors;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Consumer;
 
-import io.helidon.common.Errors;
+import io.helidon.common.reactive.Multi;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.Dependent;
 import jakarta.enterprise.context.Initialized;
 import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.spi.AfterBeanDiscovery;
 import jakarta.enterprise.inject.spi.AfterDeploymentValidation;
 import jakarta.enterprise.inject.spi.BeanManager;
-import jakarta.enterprise.inject.spi.DeploymentException;
 import jakarta.enterprise.inject.spi.Extension;
 import jakarta.enterprise.inject.spi.ProcessAnnotatedType;
+import jakarta.enterprise.inject.spi.ProcessInjectionPoint;
 import jakarta.enterprise.inject.spi.ProcessManagedBean;
 import jakarta.enterprise.inject.spi.WithAnnotations;
+import org.eclipse.microprofile.reactive.messaging.Channel;
+import org.eclipse.microprofile.reactive.messaging.Emitter;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
+import org.eclipse.microprofile.reactive.messaging.OnOverflow;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;
 import org.eclipse.microprofile.reactive.messaging.spi.Connector;
+import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
+import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
+import org.reactivestreams.FlowAdapters;
+import org.reactivestreams.Publisher;
 
 import static jakarta.interceptor.Interceptor.Priority.PLATFORM_AFTER;
+import static jakarta.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
 
 /**
  * MicroProfile Reactive Messaging CDI Extension.
  */
 public class MessagingCdiExtension implements Extension {
-    private static final Logger LOGGER = Logger.getLogger(MessagingCdiExtension.class.getName());
 
     private final ChannelRouter channelRouter = new ChannelRouter();
+    private final Set<Consumer<AfterBeanDiscovery>> aotBeanRegistrations = new HashSet<>();
+    private final FormerHealthProbe formerHealthProbe = new FormerHealthProbe();
+
+    /**
+     * Initialize messaging CDI extension.
+     */
+    public MessagingCdiExtension() {
+        channelRouter.getChannelProcessors().register(formerHealthProbe);
+    }
 
     /**
      * Get names of all channels accompanied by boolean if cancel or onError signal has been intercepted in it.
      *
      * @return map of channels
+     * @deprecated Use {@link MessagingChannelProcessor} instead.
      */
+    @Deprecated
     public Map<String, Boolean> channelsLiveness() {
-        return channelRouter.getChannelMap()
-                .entrySet()
-                .stream()
-                .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().isLive().get()));
+        return formerHealthProbe.getLiveChannels();
     }
 
     /**
      * Get names of all channels accompanied by boolean if onSubscribe signal has been intercepted in it.
      *
      * @return map of channels
+     * @deprecated Use {@link MessagingChannelProcessor} instead.
      */
+    @Deprecated
     public Map<String, Boolean> channelsReadiness() {
-        return channelRouter.getChannelMap()
-                .entrySet()
-                .stream()
-                .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().isReady().get()));
+        return formerHealthProbe.getReadyChannels();
     }
 
     private void registerChannelMethods(
@@ -83,25 +103,125 @@ public class MessagingCdiExtension implements Extension {
         if (null != event.getAnnotatedBeanClass().getAnnotation(Connector.class)) {
             channelRouter.registerConnectorFactory(event.getBean());
         }
+        // Lookup channel processors
+        if (MessagingChannelProcessor.class.isAssignableFrom(event.getAnnotatedBeanClass().getJavaClass())) {
+            channelRouter.registerChannelProcessor(event.getBean());
+        }
         // Gather bean references
         channelRouter.registerBeanReference(event.getBean());
     }
 
     private void deploymentValidation(@Observes AfterDeploymentValidation event) {
-        Errors.Collector errors = channelRouter.getErrors();
-        boolean hasFatal = errors.hasFatal();
-        Errors errorMessages = errors.collect();
-        if (hasFatal) {
-            throw new DeploymentException(errorMessages.toString());
-        } else {
-            errorMessages.log(LOGGER);
-        }
+        channelRouter.validate();
     }
 
-    private void makeConnections(@Observes @Priority(PLATFORM_AFTER + 101) @Initialized(ApplicationScoped.class) Object event,
+    <T extends Emitter<?>> void emitterInjectionPoints(@Observes ProcessInjectionPoint<?, T> pip) {
+        String channelName = configureInternalChannel(pip);
+        String fieldName = pip.getInjectionPoint().getMember().getName();
+        // No @Channel annotation
+        if (Objects.isNull(channelName)) return;
+
+        OnOverflow onOverflow = Optional.ofNullable(pip.getInjectionPoint().getAnnotated().getAnnotation(OnOverflow.class))
+                .orElse(Literals.defaultOnOverflow());
+
+        OutgoingEmitter emitter = OutgoingEmitter.create(channelName, fieldName, onOverflow);
+
+        aotBeanRegistrations.add(abd -> {
+            channelRouter.registerEmitter(emitter);
+            abd.addBean()
+                    .addType(Literals.emitterType())
+                    .beanClass(Emitter.class)
+                    .addQualifiers(Literals.channel(emitter.getChannelName()), Literals.internalChannel(emitter.getChannelName()))
+                    .scope(Dependent.class)
+                    .createWith(instance -> emitter);
+        });
+    }
+
+    <T extends Publisher<?>> void publisherInjectionPoints(@Observes ProcessInjectionPoint<?, T> pip) {
+        String channelName = configureInternalChannel(pip);
+        String fieldName = pip.getInjectionPoint().getMember().getName();
+        // No @Channel annotation
+        if (Objects.isNull(channelName)) return;
+
+        Type type = pip.getInjectionPoint().getType();
+
+        aotBeanRegistrations.add(abd -> {
+            IncomingPublisher injectedPublisher =
+                    new IncomingPublisher(channelName, fieldName, MessageUtils.hasGenericMessageType(type));
+            channelRouter.registerPublisher(injectedPublisher);
+            abd.addBean()
+                    .addType(Literals.publisherType())
+                    .beanClass(Publisher.class)
+                    .addQualifiers(Literals.channel(channelName), Literals.internalChannel(channelName))
+                    .scope(Dependent.class)
+                    .createWith(instance -> injectedPublisher.getProcessor());
+        });
+    }
+
+    <T extends PublisherBuilder<?>> void publisherBuilderInjectionPoints(@Observes ProcessInjectionPoint<?, T> pip) {
+        String channelName = configureInternalChannel(pip);
+        String fieldName = pip.getInjectionPoint().getMember().getName();
+        // No @Channel annotation
+        if (Objects.isNull(channelName)) return;
+
+        Type type = pip.getInjectionPoint().getType();
+
+        aotBeanRegistrations.add(abd -> {
+            IncomingPublisher injectedPublisher =
+                    new IncomingPublisher(channelName, fieldName, MessageUtils.hasGenericMessageType(type));
+            channelRouter.registerPublisher(injectedPublisher);
+            abd.addBean()
+                    .addType(Literals.publisherBuilderType())
+                    .beanClass(PublisherBuilder.class)
+                    .addQualifiers(Literals.channel(channelName), Literals.internalChannel(channelName))
+                    .scope(Dependent.class)
+                    .createWith(instance -> ReactiveStreams.fromPublisher(injectedPublisher.getProcessor()));
+        });
+    }
+
+    <T extends Multi<?>> void multiInjectionPoints(@Observes ProcessInjectionPoint<?, T> pip) {
+        String channelName = configureInternalChannel(pip);
+        String fieldName = pip.getInjectionPoint().getMember().getName();
+        // No @Channel annotation
+        if (Objects.isNull(channelName)) return;
+
+        Type type = pip.getInjectionPoint().getType();
+
+        aotBeanRegistrations.add(abd -> {
+            IncomingPublisher injectedPublisher =
+                    new IncomingPublisher(channelName, fieldName, MessageUtils.hasGenericMessageType(type));
+            channelRouter.registerPublisher(injectedPublisher);
+            abd.addBean()
+                    .addType(Literals.multiType())
+                    .beanClass(Multi.class)
+                    .addQualifiers(Literals.channel(channelName), Literals.internalChannel(channelName))
+                    .scope(Dependent.class)
+                    .createWith(instance -> Multi.create(FlowAdapters.toFlowPublisher(injectedPublisher.getProcessor())));
+        });
+    }
+
+    void afterBeanDiscovery(@Priority(PLATFORM_BEFORE + 10) @Observes final AfterBeanDiscovery event, BeanManager bm) {
+        aotBeanRegistrations.forEach(abdConsumer -> abdConsumer.accept(event));
+    }
+
+    void makeConnections(@Observes @Priority(PLATFORM_AFTER + 101) @Initialized(ApplicationScoped.class) Object event,
                                  BeanManager beanManager) {
         // Subscribe subscribers, publish publishers and invoke "onAssembly" methods
         channelRouter.connect(beanManager);
+    }
+
+    private <T> String configureInternalChannel(ProcessInjectionPoint<?, T> pip) {
+        return pip.getInjectionPoint().getQualifiers()
+                .stream()
+                .filter(a -> Channel.class.equals(a.annotationType()))
+                .map(Channel.class::cast)
+                .map(Channel::value)
+                .peek(s -> {
+                    // side effect -> adds internal annotation with proper qualifier
+                    pip.configureInjectionPoint().addQualifier(Literals.internalChannel(s));
+                })
+                .findFirst()
+                .orElse(null);
     }
 
 }

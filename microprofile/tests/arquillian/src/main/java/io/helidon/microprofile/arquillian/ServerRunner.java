@@ -16,9 +16,12 @@
 
 package io.helidon.microprofile.arquillian;
 
+import java.lang.reflect.Field;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
 import io.helidon.microprofile.server.Server;
+import io.helidon.microprofile.server.ServerCdiExtension;
 
 import jakarta.ws.rs.ApplicationPath;
 import org.eclipse.microprofile.config.Config;
@@ -79,6 +82,21 @@ public class ServerRunner {
         if (null != server) {
             LOGGER.finest(() -> "Stopping server");
             server.stop();
+        }
+    }
+
+    /**
+     * Cleanup after abort.
+     */
+    public void abortedCleanup() {
+        stop();
+        try {
+            Field running = ServerCdiExtension.class.getDeclaredField("IN_PROGRESS_OR_RUNNING");
+            running.setAccessible(true);
+            AtomicBoolean isRunning = (AtomicBoolean) running.get(null);
+            isRunning.set(false);
+        } catch (Throwable t) {
+            t.printStackTrace();
         }
     }
 }

@@ -36,7 +36,7 @@ import org.reactivestreams.Subscriber;
  * ...
  * }</pre>
  */
-class IncomingConnector implements SubscribingConnector {
+class IncomingConnector implements SubscribingConnector, IncomingMember {
 
     private final Config config;
     private final String connectorName;
@@ -62,8 +62,13 @@ class IncomingConnector implements SubscribingConnector {
     public Subscriber<? super Object> getSubscriber(String channelName) {
         Subscriber<? super Object> subscriber = subscriberMap.computeIfAbsent(
                 channelName, cn -> (Subscriber<? super Object>) (Subscriber<?>)
-                connectorFactory.getSubscriberBuilder(getConnectorConfig(channelName)).build());
+                        connectorFactory.getSubscriberBuilder(getConnectorConfig(channelName)).build());
         return subscriber;
+    }
+
+    @Override
+    public String getDescription() {
+        return "connector " + getConnectorName();
     }
 
     @Override

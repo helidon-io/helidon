@@ -27,7 +27,6 @@ import io.helidon.config.Config;
 
 import jakarta.enterprise.inject.spi.AnnotatedMethod;
 import jakarta.enterprise.inject.spi.BeanManager;
-import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
@@ -44,7 +43,7 @@ import org.reactivestreams.Subscriber;
  *     }
  * }</pre>
  */
-class IncomingMethod extends AbstractMessagingMethod {
+class IncomingMethod extends AbstractMessagingMethod implements IncomingMember {
 
     private static final Logger LOGGER = Logger.getLogger(IncomingMethod.class.getName());
 
@@ -70,34 +69,102 @@ class IncomingMethod extends AbstractMessagingMethod {
         super.init(beanManager, config);
         switch (getType()) {
             case INCOMING_SUBSCRIBER_MSG_2_VOID:
+                Subscriber<? super Object> originalMsgSubscriber = invoke();
+                subscriber = ReactiveStreams.builder()
+                        .to(ProxySubscriber.wrapped(this, originalMsgSubscriber))
+                        .build();
+                break;
             case INCOMING_SUBSCRIBER_PAYL_2_VOID:
-                Subscriber<? super Object> originalPaylSubscriber = invoke();
-                Subscriber<? super Object> unwrappedSubscriber =
-                        UnwrapProcessor.of(this.getMethod(), originalPaylSubscriber);
-                subscriber = new ProxySubscriber<>(this, unwrappedSubscriber);
+                Subscriber<? super Object> originalPaySubscriber = invoke();
+                subscriber = ReactiveStreams.builder()
+                        .to(ProxySubscriber.unwrapped(this, originalPaySubscriber))
+                        .build();
                 break;
             case INCOMING_SUBSCRIBER_BUILDER_MSG_2_VOID:
-            case INCOMING_SUBSCRIBER_BUILDER_PAYL_2_VOID:
-                SubscriberBuilder<? super Object, ?> originalSubscriberBuilder = invoke();
-                Subscriber<? super Object> unwrappedBuilder =
-                        UnwrapProcessor.of(this.getMethod(), originalSubscriberBuilder.build());
-                subscriber = new ProxySubscriber<>(this, unwrappedBuilder);
+                SubscriberBuilder<? super Object, ?> originalMsgSubscriberBuilder = invoke();
+                subscriber = ReactiveStreams.builder()
+                        .to(ProxySubscriber.wrapped(this, originalMsgSubscriberBuilder.build()))
+                        .build();
                 break;
-
-            // Remove PROCESSOR_PAYL_2_PAYL when TCK issue is solved
-            // https://github.com/eclipse/microprofile-reactive-messaging/issues/79
-            case PROCESSOR_PAYL_2_PAYL:
+            case INCOMING_SUBSCRIBER_BUILDER_PAYL_2_VOID:
+                SubscriberBuilder<? super Object, ?> originalPaySubscriberBuilder = invoke();
+                subscriber = ReactiveStreams.builder()
+                        .to(ProxySubscriber.unwrapped(this, originalPaySubscriberBuilder.build()))
+                        .build();
+                break;
             case INCOMING_VOID_2_PAYL:
                 subscriber = ReactiveStreams.builder()
-                        .forEach(this::invoke)
+                        .peek(in -> {
+                            Message<?> inMsg = (Message<?>) in;
+                            AckCtx ackCtx = AckCtx.create(this, inMsg);
+                            ackCtx.preAck();
+                            invoke(inMsg.getPayload())
+                                    .thenRun(ackCtx::postAck)
+                                    .exceptionally(t -> {
+                                        ackCtx.postNack(t);
+                                        LOGGER.log(Level.SEVERE, t,
+                                                () -> "Error when invoking @Incoming method " + getMethod().getName());
+                                        return null;
+                                    });
+                        })
+                        .onError(t -> LOGGER.log(Level.SEVERE, t,
+                                () -> "Error intercepted on channel " + getIncomingChannelName()))
+                        .ignore()
                         .build();
                 break;
             case INCOMING_COMPLETION_STAGE_2_MSG:
+                subscriber = ReactiveStreams.builder()
+                        .flatMap(o -> {
+                            Message<?> inMsg = (Message<?>) o;
+                            AckCtx ackCtx = AckCtx.create(this, inMsg);
+                            ackCtx.preAck();
+                            try {
+                                CompletionStage<Void> result = invoke(inMsg);
+                                return ReactiveStreams.fromCompletionStageNullable(result
+                                        // on error resume
+                                        .exceptionally(t -> {
+                                            LOGGER.log(Level.SEVERE, t,
+                                                    () -> "Error when invoking @Incoming method " + getMethod().getName());
+                                            ackCtx.postNack(t);
+                                            return null;
+                                        })
+                                        .thenRun(ackCtx::postAck));
+                            } catch (Throwable t) {
+                                LOGGER.log(Level.SEVERE, t,
+                                        () -> "Error when invoking @Incoming method " + getMethod().getName());
+                                ackCtx.postNack(t);
+                                return ReactiveStreams.empty();
+                            }
+                        })
+                        .onError(t -> LOGGER.log(Level.SEVERE, t,
+                                () -> "Error intercepted in channel " + getIncomingChannelName()))
+                        .ignore()
+                        .build();
+                break;
             case INCOMING_COMPLETION_STAGE_2_PAYL:
                 subscriber = ReactiveStreams.builder()
-                        .flatMap(o -> ReactiveStreams.fromCompletionStageNullable(invoke(o)))
+                        .flatMap(o -> {
+                            Message<?> inMsg = (Message<?>) o;
+                            AckCtx ackCtx = AckCtx.create(this, inMsg);
+                            ackCtx.preAck();
+                            try {
+                                CompletionStage<Void> result = invoke(inMsg.getPayload());
+                                return ReactiveStreams.fromCompletionStageNullable(result
+                                        // on error resume
+                                        .exceptionally(t -> {
+                                            ackCtx.postNack(t);
+                                            return null;
+                                        })
+                                        .thenRun(ackCtx::postAck));
+                            } catch (Throwable t) {
+                                LOGGER.log(Level.SEVERE, t,
+                                        () -> "Error when invoking @Incoming method " + getMethod().getName());
+                                ackCtx.postNack(t);
+                                return ReactiveStreams.empty();
+                            }
+                        })
                         .onError(t -> LOGGER.log(Level.SEVERE, t,
-                                () -> "Error when invoking @Incoming method " + getMethod().getName()))
+                                () -> "Error intercepted in channel " + getIncomingChannelName()))
                         .ignore()
                         .build();
                 break;
@@ -106,44 +173,27 @@ class IncomingMethod extends AbstractMessagingMethod {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private CompletionStage<Void> invoke(Object incoming) {
         Method method = getMethod();
         try {
-            Class<?> paramType = method.getParameterTypes()[0];
-            Object preProcessedMessage = preProcess(incoming, paramType);
-            Object methodResult = method.invoke(getBeanInstance(), preProcessedMessage);
-            return postProcess(incoming, methodResult);
-        } catch (Exception e) {
+            Object methodResult = method.invoke(getBeanInstance(), incoming);
+            if (methodResult instanceof CompletionStage<?>) {
+                return (CompletionStage<Void>) methodResult;
+            }
+            return CompletableFuture.completedFuture(null);
+        } catch (Throwable e) {
             return CompletableFuture.failedFuture(e);
         }
     }
 
-    private Object preProcess(final Object incomingValue, final Class<?> expectedParamType) {
-        if (getAckStrategy().equals(Acknowledgment.Strategy.PRE_PROCESSING)
-                && incomingValue instanceof Message) {
-            Message<?> incomingMessage = (Message<?>) incomingValue;
-            incomingMessage.ack();
-        }
-
-        return MessageUtils.unwrap(incomingValue, expectedParamType);
-    }
-
-    @SuppressWarnings("unchecked")
-    private CompletionStage<Void> postProcess(final Object incomingValue, final Object outgoingValue) {
-        if (getAckStrategy().equals(Acknowledgment.Strategy.POST_PROCESSING)
-                && incomingValue instanceof Message) {
-
-            Message<?> incomingMessage = (Message<?>) incomingValue;
-            incomingMessage.ack();
-        }
-        if (outgoingValue instanceof CompletionStage) {
-            return (CompletionStage<Void>) outgoingValue;
-        }
-        return CompletableFuture.completedFuture(null);
-    }
-
-    Subscriber<? super Object> getSubscriber() {
+    @Override
+    public Subscriber<? super Object> getSubscriber(String unused) {
         return subscriber;
     }
 
+    @Override
+    public String getDescription() {
+        return "incoming method " + getMethod().getName();
+    }
 }
