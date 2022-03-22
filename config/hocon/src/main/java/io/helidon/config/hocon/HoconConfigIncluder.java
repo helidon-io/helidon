@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -53,8 +54,12 @@ class HoconConfigIncluder implements ConfigIncluder {
                                         what, context.parseOptions().getOriginDescription()));
         Optional<InputStream> maybeStream = relativeResourceFunction.apply(what);
         if (maybeStream.isEmpty()) {
+            if (Objects.nonNull(context.parseOptions()) && !context.parseOptions().getAllowMissing()) {
+                throw new ConfigParserException(what + " is missing");
+            }
             return ConfigFactory.empty().root();
         }
+
         try (InputStreamReader readable = new InputStreamReader(maybeStream.get(), charset)) {
             return ConfigFactory.parseReader(readable, parseOptions).root();
         } catch (IOException e) {
@@ -66,13 +71,12 @@ class HoconConfigIncluder implements ConfigIncluder {
         this.charset = charset;
     }
 
-    HoconConfigIncluder parseOptions(ConfigParseOptions parseOptions) {
+    void parseOptions(ConfigParseOptions parseOptions) {
         this.parseOptions = parseOptions;
-        return this;
     }
 
-    HoconConfigIncluder relativeResourceFunction(Function<String, Optional<InputStream>> relativeResourceFunction) {
+    void relativeResourceFunction(Function<String, Optional<InputStream>> relativeResourceFunction) {
         this.relativeResourceFunction = relativeResourceFunction;
-        return this;
     }
+
 }

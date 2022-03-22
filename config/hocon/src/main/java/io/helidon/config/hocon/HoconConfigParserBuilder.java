@@ -62,6 +62,7 @@ public final class HoconConfigParserBuilder implements Builder<ConfigParser> {
      * By default {@link ConfigResolveOptions#defaults()} is used.
      *
      * @param resolveOptions resolve options
+     *
      * @return modified builder instance
      */
     public HoconConfigParserBuilder resolveOptions(ConfigResolveOptions resolveOptions) {
