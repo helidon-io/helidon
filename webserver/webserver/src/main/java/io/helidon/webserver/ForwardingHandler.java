@@ -367,7 +367,9 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
 
         String contentLength = request.headers().get(HttpHeaderNames.CONTENT_LENGTH);
 
+        // HTTP WebSocket client sends a content length of 0 together with Connection: Upgrade
         if ("0".equals(contentLength)
+                               && !"upgrade".equalsIgnoreCase(request.headers().get(HttpHeaderNames.CONNECTION))
                 || (contentLength == null
                              && !"upgrade".equalsIgnoreCase(request.headers().get(HttpHeaderNames.CONNECTION))
                              && !"chunked".equalsIgnoreCase(request.headers().get(HttpHeaderNames.TRANSFER_ENCODING))
