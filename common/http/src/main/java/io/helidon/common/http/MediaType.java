@@ -325,24 +325,26 @@ public final class MediaType implements AcceptPredicate<MediaType> {
                 String attribute = tokenizer.consumeToken(TOKEN_MATCHER);
                 tokenizer.consumeCharacter('=');
                 final String value;
-                if ('"' == tokenizer.previewChar()) {
-                    tokenizer.consumeCharacter('"');
-                    StringBuilder valueBuilder = new StringBuilder();
-                    while ('"' != tokenizer.previewChar()) {
-                        if ('\\' == tokenizer.previewChar()) {
-                            tokenizer.consumeCharacter('\\');
-                            valueBuilder.append(tokenizer.consumeCharacter(CharMatcher.ascii()));
-                        } else {
-                            valueBuilder.append(tokenizer.consumeToken(QUOTED_TEXT_MATCHER));
+                if (tokenizer.hasMore()) {
+                    if ('"' == tokenizer.previewChar()) {
+                        tokenizer.consumeCharacter('"');
+                        StringBuilder valueBuilder = new StringBuilder();
+                        while ('"' != tokenizer.previewChar()) {
+                            if ('\\' == tokenizer.previewChar()) {
+                                tokenizer.consumeCharacter('\\');
+                                valueBuilder.append(tokenizer.consumeCharacter(CharMatcher.ascii()));
+                            } else {
+                                valueBuilder.append(tokenizer.consumeToken(QUOTED_TEXT_MATCHER));
+                            }
                         }
+                        value = valueBuilder.toString();
+                        tokenizer.consumeCharacter('"');
+                    } else {
+                        value = tokenizer.consumeTokenIfPresent(TOKEN_MATCHER);
                     }
-                    value = valueBuilder.toString();
-                    tokenizer.consumeCharacter('"');
-                } else {
-                    value = tokenizer.consumeTokenIfPresent(TOKEN_MATCHER);
-                }
-                if (value != null) {
-                    parameters.put(attribute, value);
+                    if (value != null) {
+                        parameters.put(attribute, value);
+                    }
                 }
             }
             return create(type, subtype, parameters);

@@ -79,9 +79,8 @@ class MediaTypeTest {
 
     @Test
     void parseEmptyParameterValue() {
-        MediaType mediaType = MediaType.parse("unknown-type/unknown-subtype; option1=; option2=value2; option3=\"\"");
-
-        assertThat(mediaType.parameters(), is(Map.of("option2", "value2", "option3", "")));
+        assertThat(MediaType.parse("type/subtype; o1=").parameters(), is(Map.of()));
+        assertThat(MediaType.parse("type/subtype; o1=; o2=v2").parameters(), is(Map.of("o2", "v2")));
     }
 
     @Test
