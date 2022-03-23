@@ -167,7 +167,7 @@ final class OidcMetadata {
             if (relativePath == null || relativePath.isEmpty()) {
                 return basePath;
             }
-            if (basePath.charAt(basePath.length() - 1) == '/') {
+            if (endsWithSlash(basePath)) {
                 return startsWithSlash(relativePath) ? basePath + relativePath.substring(1) : basePath + relativePath;
             }
             return startsWithSlash(relativePath) ? basePath + relativePath : basePath + "/" + relativePath;
