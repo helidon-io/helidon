@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ public final class Tokenizer {
      * position the to next character if matched.
      *
      * @param matcher matcher to use
-     * @return token matched
+     * @return token matched, or {@code null} if not matched
      * @throws IllegalStateException if {@link #hasMore() } returns
      * {@code false}
      */
@@ -54,7 +54,8 @@ public final class Tokenizer {
         checkState(hasMore(), "No more elements!");
         int startPosition = position;
         position = matcher.negate().indexIn(input, startPosition);
-        return hasMore() ? input.substring(startPosition, position)
+        return position == startPosition ? null
+                : hasMore() ? input.substring(startPosition, position)
                 : input.substring(startPosition);
     }
 
