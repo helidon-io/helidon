@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,6 +75,12 @@ class MediaTypeTest {
         MediaType mediaType = MediaType.parse("unknown-type/unknown-subtype; option=value1; option=value2");
 
         assertThat(mediaType.parameters(), is(Map.of("option", "value2")));
+    }
+
+    @Test
+    void parseEmptyParameterValue() {
+        assertThat(MediaType.parse("type/subtype; o1=").parameters(), is(Map.of()));
+        assertThat(MediaType.parse("type/subtype; o1=; o2=v2").parameters(), is(Map.of("o2", "v2")));
     }
 
     @Test
