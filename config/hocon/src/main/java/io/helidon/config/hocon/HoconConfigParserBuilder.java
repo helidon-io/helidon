@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import io.helidon.common.Builder;
 import io.helidon.config.spi.ConfigParser;
 
 import com.typesafe.config.Config;
+import com.typesafe.config.ConfigParseOptions;
 import com.typesafe.config.ConfigResolveOptions;
 
 /**
@@ -36,10 +37,13 @@ public final class HoconConfigParserBuilder implements Builder<HoconConfigParser
 
     private boolean resolvingEnabled;
     private ConfigResolveOptions resolveOptions;
+    private ConfigParseOptions parseOptions;
+    private HoconConfigIncluder configIncluder;
 
     HoconConfigParserBuilder() {
         resolvingEnabled = true;
         resolveOptions = ConfigResolveOptions.defaults();
+        parseOptions = ConfigParseOptions.defaults();
     }
 
     /**
@@ -58,6 +62,7 @@ public final class HoconConfigParserBuilder implements Builder<HoconConfigParser
      * By default {@link ConfigResolveOptions#defaults()} is used.
      *
      * @param resolveOptions resolve options
+     *
      * @return modified builder instance
      */
     public HoconConfigParserBuilder resolveOptions(ConfigResolveOptions resolveOptions) {
@@ -72,7 +77,30 @@ public final class HoconConfigParserBuilder implements Builder<HoconConfigParser
      */
     @Override
     public HoconConfigParser build() {
-        return new HoconConfigParser(resolvingEnabled, resolveOptions);
+        return new HoconConfigParser(this);
     }
 
+    HoconConfigIncluder includer() {
+        if (configIncluder == null) {
+            configIncluder = new HoconConfigIncluder();
+            parseOptions = parseOptions.appendIncluder(configIncluder);
+        }
+        return configIncluder;
+    }
+
+    ConfigParseOptions parseOptions() {
+        if (configIncluder == null) {
+            configIncluder = new HoconConfigIncluder();
+            parseOptions = parseOptions.appendIncluder(configIncluder);
+        }
+        return parseOptions;
+    }
+
+    ConfigResolveOptions resolveOptions() {
+        return resolveOptions;
+    }
+
+    boolean resolvingEnabled() {
+        return resolvingEnabled;
+    }
 }
