@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,12 @@
 package io.helidon.config;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.logging.Logger;
 
 import io.helidon.common.media.type.MediaTypes;
@@ -128,6 +130,22 @@ public class FileConfigSource extends AbstractConfigSource
         MediaTypes.detectType(filePath).ifPresent(builder::mediaType);
 
         return Optional.of(builder.build());
+    }
+
+    @Override
+    public Function<String, Optional<InputStream>> relativeResolver() {
+        return it -> {
+            Path path = filePath.getParent().resolve(it);
+            if (Files.exists(path) && Files.isReadable(path) && !Files.isDirectory(path)) {
+                try {
+                    return Optional.of(Files.newInputStream(path));
+                } catch (IOException e) {
+                    throw new ConfigException("Failed to read configuration from path: " + path.toAbsolutePath(), e);
+                }
+            } else {
+                return Optional.empty();
+            }
+        };
     }
 
     @Override
