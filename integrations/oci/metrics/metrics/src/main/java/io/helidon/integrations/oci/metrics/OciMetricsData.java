@@ -28,7 +28,6 @@ import java.util.stream.Stream;
 
 import com.oracle.bmc.monitoring.model.Datapoint;
 import com.oracle.bmc.monitoring.model.MetricDataDetails;
-
 import org.eclipse.microprofile.metrics.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
@@ -56,8 +55,6 @@ class OciMetricsData {
     private final String namespace;
     private final String resourceGroup;
     private final boolean descriptionEnabled;
-
-    public static String dimensionScopeName = "scope";
 
     OciMetricsData(
             Map<MetricRegistry, MetricRegistry.Type> metricRegistries,
@@ -211,7 +208,7 @@ class OciMetricsData {
         List<Datapoint> datapoints = datapoints(metadata, value);
         String metricName = nameFormatter.format(metricId, suffix, metadata);
         LOGGER.finest(String.format(
-                "Metric data details will be sent with the following values: name=%s  namespace=%s, dimensions=%s, datapoints.timestamp=%s datapoints.value=%f",
+                "Metric details: name=%s, namespace=%s, dimensions=%s, datapoints.timestamp=%s datapoints.value=%f",
                 metricName,
                 namespace,
                 dimensions,
@@ -231,7 +228,7 @@ class OciMetricsData {
     private Map<String, String> dimensions(MetricID metricId, MetricRegistry metricRegistry) {
         String registryType = metricRegistries.get(metricRegistry).getName();
         Map<String, String> result = new HashMap<>(metricId.getTags());
-        result.put(dimensionScopeName, registryType);
+        result.put("scope", registryType);
         return result;
     }
 

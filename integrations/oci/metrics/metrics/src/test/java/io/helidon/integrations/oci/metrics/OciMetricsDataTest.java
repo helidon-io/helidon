@@ -38,6 +38,7 @@ public class OciMetricsDataTest {
     private final OciMetricsSupport.NameFormatter nameFormatter = new OciMetricsSupport.NameFormatter() { };
     private Type[] types = {Type.BASE, Type.VENDOR, Type.APPLICATION};
     private RegistryFactory registryFactory = RegistryFactory.getInstance();
+    private String dimensionScopeName = "scope";
 
     @BeforeEach
     private void beforeEach() {
@@ -75,11 +76,11 @@ public class OciMetricsDataTest {
         List<MetricDataDetails> allMetricDataDetails = ociMetricsData.getMetricDataDetails();
         allMetricDataDetails.stream().forEach((c) -> {
             if (c.getName().contains(counterName)) {
-                assertThat(c.getDimensions().get(OciMetricsData.dimensionScopeName), is(equalTo(Type.BASE.getName())));
+                assertThat(c.getDimensions().get(dimensionScopeName), is(equalTo(Type.BASE.getName())));
             } else if (c.getName().contains(meterName)) {
-                assertThat(c.getDimensions().get(OciMetricsData.dimensionScopeName), is(equalTo(Type.VENDOR.getName())));
+                assertThat(c.getDimensions().get(dimensionScopeName), is(equalTo(Type.VENDOR.getName())));
             } else if (c.getName().contains(timerName)) {
-                assertThat(c.getDimensions().get(OciMetricsData.dimensionScopeName), is(equalTo(Type.APPLICATION.getName())));
+                assertThat(c.getDimensions().get(dimensionScopeName), is(equalTo(Type.APPLICATION.getName())));
             }
             else {
                 fail("Unknown metric: " + c.getName());
@@ -121,7 +122,7 @@ public class OciMetricsDataTest {
         List<MetricDataDetails> allMetricDataDetails = ociMetricsData.getMetricDataDetails();
         MetricDataDetails metricDataDetails = allMetricDataDetails.get(0);
         Map<String, String> dimensions = metricDataDetails.getDimensions();
-        assertThat(dimensions.get(OciMetricsData.dimensionScopeName), is(equalTo(Type.BASE.getName())));
+        assertThat(dimensions.get(dimensionScopeName), is(equalTo(Type.BASE.getName())));
         assertThat(dimensions.get(dummyTagName), is(equalTo(dummyTagValue)));
     }
 }

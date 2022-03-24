@@ -229,7 +229,7 @@ public class OciMetricsSupport implements Service {
 
         /**
          * Sets the initial delay before metrics are sent to OCI (defaults to {@value #DEFAULT_SCHEDULER_INITIAL_DELAY}).
-         * 
+         *
          * @param value initial delay, expressed in time units set by {@link #schedulingTimeUnit(TimeUnit)}
          * @return updated builder
          */

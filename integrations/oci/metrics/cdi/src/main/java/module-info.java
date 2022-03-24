@@ -19,7 +19,7 @@
  */
 module io.helidon.integrations.oci.metrics.cdi {
     requires io.helidon.config.mp;
-    requires transitive io.helidon.integrations.oci.metrics;
+    requires io.helidon.integrations.oci.metrics;
     requires io.helidon.microprofile.config;
     requires io.helidon.microprofile.server;
 
