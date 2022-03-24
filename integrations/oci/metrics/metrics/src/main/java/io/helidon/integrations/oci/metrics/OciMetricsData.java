@@ -16,8 +16,19 @@
  */
 package io.helidon.integrations.oci.metrics;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.logging.Logger;
+import java.util.stream.Stream;
+
 import com.oracle.bmc.monitoring.model.Datapoint;
 import com.oracle.bmc.monitoring.model.MetricDataDetails;
+
 import org.eclipse.microprofile.metrics.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
@@ -30,16 +41,6 @@ import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.SimpleTimer;
 import org.eclipse.microprofile.metrics.Snapshot;
 import org.eclipse.microprofile.metrics.Timer;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.logging.Logger;
-import java.util.stream.Stream;
 
 class OciMetricsData {
     /** Local logger instance. */
@@ -107,7 +108,8 @@ class OciMetricsData {
         return Stream.of(metricDataDetails(metricRegistry, metricId, null, counter.getCount()));
     }
 
-    private Stream<MetricDataDetails> forConcurrentGauge(MetricRegistry metricRegistry, MetricID metricId, ConcurrentGauge concurrentGauge) {
+    private Stream<MetricDataDetails> forConcurrentGauge(
+            MetricRegistry metricRegistry, MetricID metricId, ConcurrentGauge concurrentGauge) {
         Stream.Builder<MetricDataDetails> result = Stream.builder();
         long count = concurrentGauge.getCount();
         result.add(metricDataDetails(metricRegistry, metricId, null, count));
@@ -198,7 +200,8 @@ class OciMetricsData {
         return result.build();
     }
 
-    private MetricDataDetails metricDataDetails(MetricRegistry metricRegistry, MetricID metricId, String suffix, double value) {
+    private MetricDataDetails metricDataDetails(
+            MetricRegistry metricRegistry, MetricID metricId, String suffix, double value) {
         if (Double.isNaN(value)) {
             return null;
         }

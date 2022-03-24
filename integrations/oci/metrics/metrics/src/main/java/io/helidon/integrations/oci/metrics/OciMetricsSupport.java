@@ -20,10 +20,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
@@ -331,8 +331,8 @@ public class OciMetricsSupport implements Service {
          *     If this method is never invoked, defaults to {@code APPLICATION}.
          * </p>
          *
-         * @param value
-         * @return
+         * @param value list of metric scopes to process
+         * @return updated builder
          */
         @ConfiguredOption
         public Builder scopes(List<String> value) {
