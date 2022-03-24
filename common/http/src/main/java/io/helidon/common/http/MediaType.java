@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -325,23 +325,27 @@ public final class MediaType implements AcceptPredicate<MediaType> {
                 String attribute = tokenizer.consumeToken(TOKEN_MATCHER);
                 tokenizer.consumeCharacter('=');
                 final String value;
-                if ('"' == tokenizer.previewChar()) {
-                    tokenizer.consumeCharacter('"');
-                    StringBuilder valueBuilder = new StringBuilder();
-                    while ('"' != tokenizer.previewChar()) {
-                        if ('\\' == tokenizer.previewChar()) {
-                            tokenizer.consumeCharacter('\\');
-                            valueBuilder.append(tokenizer.consumeCharacter(CharMatcher.ascii()));
-                        } else {
-                            valueBuilder.append(tokenizer.consumeToken(QUOTED_TEXT_MATCHER));
+                if (tokenizer.hasMore()) {
+                    if ('"' == tokenizer.previewChar()) {
+                        tokenizer.consumeCharacter('"');
+                        StringBuilder valueBuilder = new StringBuilder();
+                        while ('"' != tokenizer.previewChar()) {
+                            if ('\\' == tokenizer.previewChar()) {
+                                tokenizer.consumeCharacter('\\');
+                                valueBuilder.append(tokenizer.consumeCharacter(CharMatcher.ascii()));
+                            } else {
+                                valueBuilder.append(tokenizer.consumeToken(QUOTED_TEXT_MATCHER));
+                            }
                         }
+                        value = valueBuilder.toString();
+                        tokenizer.consumeCharacter('"');
+                    } else {
+                        value = tokenizer.consumeTokenIfPresent(TOKEN_MATCHER);
                     }
-                    value = valueBuilder.toString();
-                    tokenizer.consumeCharacter('"');
-                } else {
-                    value = tokenizer.consumeToken(TOKEN_MATCHER);
+                    if (value != null) {
+                        parameters.put(attribute, value);
+                    }
                 }
-                parameters.put(attribute, value);
             }
             return create(type, subtype, parameters);
         } catch (IllegalStateException e) {
