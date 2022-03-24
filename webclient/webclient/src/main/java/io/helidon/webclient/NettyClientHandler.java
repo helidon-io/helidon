@@ -188,6 +188,10 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
                                     });
                         }
                         responseFuture.complete(clientResponse);
+                    }).exceptionally(t -> {
+                        responseFuture.completeExceptionally(t);
+                        responseCloser.close();
+                        return null;
                     });
                 }
             });
