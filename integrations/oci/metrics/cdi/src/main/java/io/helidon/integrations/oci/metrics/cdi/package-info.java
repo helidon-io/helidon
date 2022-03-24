@@ -14,7 +14,8 @@
  * limitations under the License.
  *
  */
+
 /**
- * Integration with OCI metrics via CDI
+ * Integration with OCI metrics via CDI.
  */
 package io.helidon.integrations.oci.metrics.cdi;

@@ -227,60 +227,60 @@ public class OciMetricsSupport implements Service {
             return new OciMetricsSupport(this);
         }
 
-        @ConfiguredOption
         /**
          * Sets the initial delay before metrics are sent to OCI (defaults to {@value #DEFAULT_SCHEDULER_INITIAL_DELAY}).
          * 
          * @param value initial delay, expressed in time units set by {@link #schedulingTimeUnit(TimeUnit)}
          * @return updated builder
          */
+        @ConfiguredOption
         public Builder initialDelay(long value) {
             initialDelay = value;
             return this;
         }
 
-        @ConfiguredOption
         /**
          * Sets the delay between successive transmissions of metrics to OCI (defaults to {@value #DEFAULT_SCHEDULER_DELAY}).
          *
          * @param value delay, expressed in time units set by {@link #schedulingTimeUnit(TimeUnit)}
          * @return updated builder
          */
+        @ConfiguredOption
         public Builder delay(long value) {
             delay = value;
             return this;
         }
 
-        @ConfiguredOption
         /**
          * Sets the time unit applied to the initial delay and delay values (defaults to {@value #DEFAULT_SCHEDULER_TIME_UNIT}).
          * @param timeUnit
          * @return updated builder
          */
+        @ConfiguredOption
         public Builder schedulingTimeUnit(TimeUnit timeUnit) {
             schedulingTimeUnit = timeUnit;
             return this;
         }
 
-        @ConfiguredOption
         /**
          * Sets the compartment ID.
          *
          * @param value compartment ID
          * @return updated builder
          */
+        @ConfiguredOption
         public Builder compartmentId(String value) {
             compartmentId = value;
             return this;
         }
 
-        @ConfiguredOption
         /**
          * Sets the namespace.
          *
          * @param value namespace
          * @return updated builder
          */
+        @ConfiguredOption
         public Builder namespace(String value) {
             namespace = value;
             return this;
@@ -301,31 +301,30 @@ public class OciMetricsSupport implements Service {
             return this;
         }
 
-        @ConfiguredOption
         /**
          * Sets the resource group.
          *
          * @param value resource group
          * @return updated builder
          */
+        @ConfiguredOption
         public Builder resourceGroup(String value) {
             resourceGroup = value;
             return this;
         }
 
-        @ConfiguredOption
         /**
          * Sets whether the description should be enabled or not.
          *
          * @param value enabled
          * @return updated builder
          */
+        @ConfiguredOption
         public Builder descriptionEnabled(boolean value) {
             descriptionEnabled = value;
             return this;
         }
 
-        @ConfiguredOption
         /**
          * Sets which metrics scopes (e.g., base, vendor, application) should be sent to OCI.
          * <p>
@@ -335,6 +334,7 @@ public class OciMetricsSupport implements Service {
          * @param value
          * @return
          */
+        @ConfiguredOption
         public Builder scopes(List<String> value) {
             Map<String, Type> scopeTypes = Map.of(
                     "base", Type.BASE,
@@ -345,7 +345,7 @@ public class OciMetricsSupport implements Service {
                 this.scopes =  new ArrayList<Type>(scopeTypes.values()).toArray(new Type[scopeTypes.size()]);
             } else {
                 List<Type> convertedScope = new ArrayList<>();
-                for(String element: value) {
+                for (String element: value) {
                     Type scopeItem = scopeTypes.get(element);
                     if (scopeItem != null) {
                         convertedScope.add(scopeItem);
@@ -356,7 +356,6 @@ public class OciMetricsSupport implements Service {
             return this;
         }
 
-        @ConfiguredOption
         /**
          * Sets whether metrics transmission to OCI is enabled.
          * <p>
@@ -365,6 +364,7 @@ public class OciMetricsSupport implements Service {
          * @param value whether metrics transmission should be enabled
          * @return updated builder
          */
+        @ConfiguredOption
         public Builder enabled(boolean value) {
             enabled = value;
             return this;

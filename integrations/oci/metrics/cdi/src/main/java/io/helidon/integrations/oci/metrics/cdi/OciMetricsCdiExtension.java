@@ -25,8 +25,8 @@ import javax.enterprise.inject.spi.Extension;
 
 import io.helidon.config.Config;
 import io.helidon.config.mp.MpConfig;
-import io.helidon.microprofile.server.RoutingBuilders;
 import io.helidon.integrations.oci.metrics.OciMetricsSupport;
+import io.helidon.microprofile.server.RoutingBuilders;
 
 import com.oracle.bmc.monitoring.Monitoring;
 import org.eclipse.microprofile.config.ConfigProvider;
