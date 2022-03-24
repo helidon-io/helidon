@@ -19,31 +19,19 @@
  */
 module io.helidon.integrations.oci.metrics {
     requires java.logging;
-    // requires java.json;
 
-    /*
-    requires io.helidon.common.reactive;
-    requires io.helidon.integrations.common.rest;
-    requires transitive io.helidon.integrations.oci.connect;
+    requires transitive io.helidon.config;
+    requires transitive io.helidon.common;
     requires io.helidon.common.http;
-    requires io.helidon.common;
-     */
-    requires io.helidon.config;
-    requires io.helidon.metrics.api;
     requires io.helidon.webserver;
-
+    requires io.helidon.config.metadata;
+    requires io.helidon.metrics.api;
     requires io.helidon.microprofile.config;
     requires io.helidon.microprofile.server;
 
-    requires jakarta.enterprise.cdi.api;
-    requires jakarta.interceptor.api;
-
     requires oci.java.sdk.monitoring;
-    requires io.helidon.config.mp;
+
+    requires transitive microprofile.metrics.api;
 
     exports io.helidon.integrations.oci.metrics;
-
-    provides javax.enterprise.inject.spi.Extension with io.helidon.integrations.oci.metrics.OciMetricsCdiExtension;
-
-    opens io.helidon.integrations.oci.metrics to weld.core.impl, io.helidon.microprofile.cdi;
-}
+ }

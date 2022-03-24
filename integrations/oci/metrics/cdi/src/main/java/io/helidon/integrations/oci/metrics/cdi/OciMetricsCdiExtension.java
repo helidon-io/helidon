@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
-package io.helidon.integrations.oci.metrics;
+package io.helidon.integrations.oci.metrics.cdi;
 
 import javax.annotation.Priority;
 import javax.enterprise.context.ApplicationScoped;
@@ -26,6 +26,7 @@ import javax.enterprise.inject.spi.Extension;
 import io.helidon.config.Config;
 import io.helidon.config.mp.MpConfig;
 import io.helidon.microprofile.server.RoutingBuilders;
+import io.helidon.integrations.oci.metrics.OciMetricsSupport;
 
 import com.oracle.bmc.monitoring.Monitoring;
 import org.eclipse.microprofile.config.ConfigProvider;
@@ -33,7 +34,7 @@ import org.eclipse.microprofile.config.ConfigProvider;
 import static javax.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 
 /**
- * POC OCI metrics integration CDI extension.
+ * OCI metrics integration CDI extension.
  */
 public class OciMetricsCdiExtension implements Extension {
 
@@ -41,10 +42,6 @@ public class OciMetricsCdiExtension implements Extension {
         org.eclipse.microprofile.config.Config config = ConfigProvider.getConfig();
         Config helidonConfig = MpConfig.toHelidonConfig(config).get("ocimetrics");
 
-        // TODO:
-        //  1. Figure out if CDI extension shutdown monitoring is still necessary to clean up the OCI resources
-        //  2. Check if this will create a new instance of tge monitoringClient. Otherwise, if it is reusing something
-        //     that has already been created elsewhere, is there a negative impact?
         Monitoring monitoringClient = CDI.current()
                 .select(Monitoring.class)
                 .get();
