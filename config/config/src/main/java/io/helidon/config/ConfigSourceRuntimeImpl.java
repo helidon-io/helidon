@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -462,7 +462,7 @@ class ConfigSourceRuntimeImpl implements ConfigSourceRuntime {
                         Optional<ConfigParser> parser = configSource.parser();
 
                         if (parser.isPresent()) {
-                            return parser.get().parse(content);
+                            return parser.get().parse(content, configSource.relativeResolver());
                         }
 
                         // media type should either be configured on config source, or in content
@@ -474,7 +474,7 @@ class ConfigSourceRuntimeImpl implements ConfigSourceRuntime {
                                 throw new ConfigException("Cannot find suitable parser for '" + mediaType
                                         .get() + "' media type for config source " + configSource.description());
                             }
-                            return parser.get().parse(content);
+                            return parser.get().parse(content, configSource.relativeResolver());
                         }
 
                         throw new ConfigException("Could not find media type of config source " + configSource.description());

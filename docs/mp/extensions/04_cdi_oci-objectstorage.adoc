@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -16,11 +16,12 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= CDI extension for OCI Object storage
+= CDI extension for OCI
 :h1Prefix: MP
-:description: Helidon CDI extension for HikariCP
+:description: Helidon CDI extension for Oracle Cloud Infrastructure Object Storage
 :keywords: helidon, java, microservices, microprofile, extensions, cdi, oci, object storage
-:cdi-extension-api-url: https://docs.jboss.org/cdi/spec/2.0/cdi-spec.html#spi
+:cdi-extension-api-url: https://jakarta.ee/specifications/cdi/2.0/cdi-spec-2.0.html#spi
+:jsr330-singleton-api-url: https://jakarta.ee/specifications/dependency-injection/1.0/apidocs/javax/inject/singleton
 :oci-objstore-url: https://docs.cloud.oracle.com/iaas/Content/Object/Concepts/objectstorageoverview.htm
 :oci-javasdk-url: https://docs.cloud.oracle.com/iaas/Content/API/SDKDocs/javasdk.htm
 :feature-name: OCI Object Storage Support
@@ -36,7 +37,7 @@ include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 ----
 <dependency>
      <groupId>io.helidon.integrations.cdi</groupId>
-     <artifactId>helidon-integrations-cdi-oci-objectstorage</artifactId>
+     <artifactId>helidon-integrations-cdi-oci</artifactId>
 </dependency>
 ----
 
@@ -61,7 +62,7 @@ include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 ----
 
 The extension implements this injection point by creating an Object Storage client
- object in the link:{cdi-applicationscoped-api-url}[application scope].
+ object in the link:{jsr330-singleton-api-url}[singleton scope].
 
 You can configure the object using
  <<microprofile/02_server-configuration.adoc, MicroProfile config>>. For example,
