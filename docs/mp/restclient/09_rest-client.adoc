@@ -90,7 +90,7 @@ annotations, and configuration.
 
 You can configure new providers, base URI/URL and other options of the client.
 See specification for full details:
-https://download.eclipse.org/microprofile/microprofile-rest-client-2.0/microprofile-rest-client-spec-2.0.html
+https://download.eclipse.org/microprofile/microprofile-rest-client-3.0/microprofile-rest-client-spec-3.0.html
 
 == Quickstart Example
 To be able to run and test this example, use the  https://helidon.io/docs/v2/#/mp/guides/02_quickstart[Helidon MP examples/quickstarts]
