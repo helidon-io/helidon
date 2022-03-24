@@ -214,7 +214,7 @@ public class OciMetricsSupport implements Service {
         private String namespace;
         private NameFormatter nameFormatter = DEFAULT_NAME_FORMATTER;
         private String resourceGroup;
-        private Type[] scopes = new Type[] {Type.APPLICATION};
+        private Type[] scopes;
         private boolean descriptionEnabled = true;
         private boolean enabled = true;
         private Monitoring monitoringClient;
@@ -228,7 +228,8 @@ public class OciMetricsSupport implements Service {
         }
 
         /**
-         * Sets the initial delay before metrics are sent to OCI (defaults to {@value #DEFAULT_SCHEDULER_INITIAL_DELAY}).
+         * Sets the initial delay before metrics are sent to OCI
+         * (defaults to {@value #DEFAULT_SCHEDULER_INITIAL_DELAY}).
          *
          * @param value initial delay, expressed in time units set by {@link #schedulingTimeUnit(TimeUnit)}
          * @return updated builder
@@ -240,7 +241,8 @@ public class OciMetricsSupport implements Service {
         }
 
         /**
-         * Sets the delay between successive transmissions of metrics to OCI (defaults to {@value #DEFAULT_SCHEDULER_DELAY}).
+         * Sets the delay between successive transmissions of metrics to OCI
+         * (defaults to {@value #DEFAULT_SCHEDULER_DELAY}).
          *
          * @param value delay, expressed in time units set by {@link #schedulingTimeUnit(TimeUnit)}
          * @return updated builder
@@ -252,8 +254,10 @@ public class OciMetricsSupport implements Service {
         }
 
         /**
-         * Sets the time unit applied to the initial delay and delay values (defaults to {@value #DEFAULT_SCHEDULER_TIME_UNIT}).
-         * @param timeUnit
+         * Sets the time unit applied to the initial delay and delay values
+         * (defaults to {@value #DEFAULT_SCHEDULER_TIME_UNIT}).
+         *
+         * @param timeUnit unit of time
          * @return updated builder
          */
         @ConfiguredOption
@@ -328,7 +332,7 @@ public class OciMetricsSupport implements Service {
         /**
          * Sets which metrics scopes (e.g., base, vendor, application) should be sent to OCI.
          * <p>
-         *     If this method is never invoked, defaults to {@code APPLICATION}.
+         *     If this method is never invoked, defaults to all scopes.
          * </p>
          *
          * @param value list of metric scopes to process
