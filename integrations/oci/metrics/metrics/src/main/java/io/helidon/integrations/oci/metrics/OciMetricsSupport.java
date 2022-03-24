@@ -254,8 +254,7 @@ public class OciMetricsSupport implements Service {
         }
 
         /**
-         * Sets the time unit applied to the initial delay and delay values
-         * (defaults to {@value #DEFAULT_SCHEDULER_TIME_UNIT}).
+         * Sets the time unit applied to the initial delay and delay values (defaults to {@code TimeUnit.SECONDS}).
          *
          * @param timeUnit unit of time
          * @return updated builder
