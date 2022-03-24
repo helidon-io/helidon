@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -57,4 +57,4 @@ public class ProtectedApplication extends Application{
 
 Learn more about JWT authentication: +
 
-https://download.eclipse.org/microprofile/microprofile-jwt-auth-1.1.1/microprofile-jwt-auth-spec.html#_introduction[Eclipse MicroProfile Interoperable JWT RBAC]
+https://download.eclipse.org/microprofile/microprofile-jwt-auth-2.0/microprofile-jwt-auth-spec-2.0.pdf#_introduction[Eclipse MicroProfile Interoperable JWT RBAC]
