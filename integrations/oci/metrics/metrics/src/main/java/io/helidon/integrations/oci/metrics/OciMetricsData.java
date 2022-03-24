@@ -84,7 +84,6 @@ class OciMetricsData {
     }
 
     Stream<MetricDataDetails> metricDataDetails(MetricRegistry metricRegistry, MetricID metricId, Metric metric) {
-        System.out.println("Metric ID is " + metricId);
         if (metric instanceof Counter) {
             return forCounter(metricRegistry, metricId, ((Counter) metric));
         } else if (metric instanceof ConcurrentGauge) {

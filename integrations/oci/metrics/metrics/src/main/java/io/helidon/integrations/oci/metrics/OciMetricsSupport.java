@@ -171,7 +171,6 @@ public class OciMetricsSupport implements Service {
     @Override
     public void update(Routing.Rules rules) {
         rules.onNewWebServer(this::prepareShutdown);
-        System.out.println("Update is called!!!");
 
         if (!enabled) {
             LOGGER.info("Metric push to OCI is disabled!");

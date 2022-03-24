@@ -70,12 +70,10 @@ public class OciMetricsDataTest {
         baseMetricRegistry.counter(counterName).inc();
         vendorMetricRegistry.meter(meterName).mark();
         appMetricRegistry.timer(timerName).time();
-        System.out.println("MetricRegistry is " + baseMetricRegistry);
         OciMetricsData ociMetricsData = new OciMetricsData(
                 metricRegistries, nameFormatter, "compartmentId", "namespace", "resourceGroup", false);
         List<MetricDataDetails> allMetricDataDetails = ociMetricsData.getMetricDataDetails();
         allMetricDataDetails.stream().forEach((c) -> {
-            System.out.println(c.getName());
             if (c.getName().contains(counterName)) {
                 assertThat(c.getDimensions().get(OciMetricsData.dimensionScopeName), is(equalTo(Type.BASE.getName())));
             } else if (c.getName().contains(meterName)) {
