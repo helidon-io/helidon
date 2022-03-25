@@ -1,0 +1,11 @@
+# Use a profile (without a name) to use a random port in tests
+# If a profile would be used for production sources, this should be
+# a named profile (such as config-profile-dev.yaml) and you would need
+# to switch profile for tests using system property config.profile
+sources:
+  - type: "inlined"
+    properties:
+      server.port: 0
+  - type: "classpath"
+    properties:
+      resource: "application.yaml"
