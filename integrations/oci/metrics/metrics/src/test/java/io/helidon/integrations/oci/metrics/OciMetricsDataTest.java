@@ -27,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import io.helidon.metrics.api.RegistryFactory;
 
@@ -36,15 +37,19 @@ import com.oracle.bmc.monitoring.model.MetricDataDetails;
 
 public class OciMetricsDataTest {
     private final OciMetricsSupport.NameFormatter nameFormatter = new OciMetricsSupport.NameFormatter() { };
-    private Type[] types = {Type.BASE, Type.VENDOR, Type.APPLICATION};
-    private RegistryFactory registryFactory = RegistryFactory.getInstance();
-    private String dimensionScopeName = "scope";
+    private final Type[] types = {Type.BASE, Type.VENDOR, Type.APPLICATION};
+    private final String dimensionScopeName = "scope";
+
+    private final RegistryFactory rf = RegistryFactory.getInstance();
+    private final MetricRegistry baseMetricRegistry = rf.getRegistry(Type.BASE);
+    private final MetricRegistry vendorMetricRegistry = rf.getRegistry(Type.VENDOR);
+    private final MetricRegistry appMetricRegistry = rf.getRegistry(Type.APPLICATION);
 
     @BeforeEach
     private void beforeEach() {
         // clear all registry
         for (Type type: types) {
-            MetricRegistry metricRegistry = registryFactory.getRegistry(type);
+            MetricRegistry metricRegistry = rf.getRegistry(type);
             metricRegistry.removeMatching(new MetricFilter() {
                 @Override
                 public boolean matches(MetricID metricID, Metric metric) {
@@ -61,16 +66,16 @@ public class OciMetricsDataTest {
         String timerName = "DummyTimer";
 
         Map<MetricRegistry, Type> metricRegistries = new HashMap<>();
-        RegistryFactory rf = RegistryFactory.getInstance();
-        MetricRegistry baseMetricRegistry = rf.getRegistry(Type.BASE);
-        MetricRegistry vendorMetricRegistry = rf.getRegistry(Type.VENDOR);
-        MetricRegistry appMetricRegistry = rf.getRegistry(Type.APPLICATION);
         metricRegistries.put(baseMetricRegistry, Type.BASE);
         metricRegistries.put(vendorMetricRegistry, Type.VENDOR);
         metricRegistries.put(appMetricRegistry, Type.APPLICATION);
         baseMetricRegistry.counter(counterName).inc();
+        int counterMetricCount = 1;
         vendorMetricRegistry.meter(meterName).mark();
-        appMetricRegistry.timer(timerName).time();
+        int meterMetricCount = 5;
+        appMetricRegistry.timer(timerName).update(100, TimeUnit.MILLISECONDS);
+        int timerMetricCount = 4;
+        int totalMetricCount = counterMetricCount + meterMetricCount + timerMetricCount;
         OciMetricsData ociMetricsData = new OciMetricsData(
                 metricRegistries, nameFormatter, "compartmentId", "namespace", "resourceGroup", false);
         List<MetricDataDetails> allMetricDataDetails = ociMetricsData.getMetricDataDetails();
@@ -86,7 +91,7 @@ public class OciMetricsDataTest {
                 fail("Unknown metric: " + c.getName());
             }
         });
-        assertThat(allMetricDataDetails.size(), is(equalTo(3)));
+        assertThat(allMetricDataDetails.size(), is(equalTo(totalMetricCount)));
     }
 
     @Test
@@ -96,9 +101,8 @@ public class OciMetricsDataTest {
         String resourceGroup = "dummy_resourceGroup";
 
         Map<MetricRegistry, Type> metricRegistries = new HashMap<>();
-        MetricRegistry metricRegistry = registryFactory.getRegistry(Type.BASE);
-        metricRegistry.counter("dummy.counter").inc();
-        metricRegistries.put(registryFactory.getRegistry(Type.BASE), Type.BASE);
+        baseMetricRegistry.counter("dummy.counter").inc();
+        metricRegistries.put(baseMetricRegistry, Type.BASE);
         OciMetricsData ociMetricsData = new OciMetricsData(
                 metricRegistries, nameFormatter, compartmentId, namespace, resourceGroup, false);
         List<MetricDataDetails> allMetricDataDetails = ociMetricsData.getMetricDataDetails();
@@ -114,9 +118,8 @@ public class OciMetricsDataTest {
         String dummyTagValue = "DummyValue";
 
         Map<MetricRegistry, Type> metricRegistries = new HashMap<>();
-        MetricRegistry metricRegistry = registryFactory.getRegistry(Type.BASE);
-        metricRegistry.counter("dummy.counter", new Tag(dummyTagName, dummyTagValue)).inc();
-        metricRegistries.put(registryFactory.getRegistry(Type.BASE), Type.BASE);
+        baseMetricRegistry.counter("dummy.counter", new Tag(dummyTagName, dummyTagValue)).inc();
+        metricRegistries.put(baseMetricRegistry, Type.BASE);
         OciMetricsData ociMetricsData = new OciMetricsData(
                 metricRegistries, nameFormatter, "compartmentId", "namespace", "resourceGroup", false);
         List<MetricDataDetails> allMetricDataDetails = ociMetricsData.getMetricDataDetails();

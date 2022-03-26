@@ -24,12 +24,11 @@ module io.helidon.integrations.oci.metrics {
     requires transitive io.helidon.common;
     requires io.helidon.common.http;
     requires io.helidon.webserver;
-    requires io.helidon.config.metadata;
+    requires static io.helidon.config.metadata;
     requires io.helidon.metrics.api;
-    requires io.helidon.microprofile.config;
-    requires io.helidon.microprofile.server;
 
     requires oci.java.sdk.monitoring;
+    requires oci.java.sdk.common;
 
     requires transitive microprofile.metrics.api;
 

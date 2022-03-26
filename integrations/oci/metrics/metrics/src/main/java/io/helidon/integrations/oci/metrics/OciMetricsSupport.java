@@ -19,7 +19,9 @@ package io.helidon.integrations.oci.metrics;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -28,6 +30,7 @@ import java.util.logging.Logger;
 import java.util.stream.Stream;
 
 import io.helidon.config.Config;
+import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.metrics.api.RegistryFactory;
 import io.helidon.webserver.Routing;
@@ -48,9 +51,9 @@ import org.eclipse.microprofile.metrics.MetricUnits;
 /**
  * OCI Metrics Support
  * <p>
- * Because this service does not create an endpoint, a calling SE app does not need to add this service to its routing rules.
- * But the caller does need to invoke {@link #update(Routing.Rules)} and pass the routing rules so, when the
- * web server shuts down, this service can shut down in an orderly way.
+ * Even though this service does not create an endpoint, a calling SE app should still register it by invoking
+ * {@link Routing.Rules#register(io.helidon.webserver.Service...)}, as it should with any service it uses. That allows
+ * this service to detect when the webserver shuts down so it can shut down as well.
  * </p>
  */
 public class OciMetricsSupport implements Service {
@@ -168,6 +171,26 @@ public class OciMetricsSupport implements Service {
         scheduledExecutorService.scheduleAtFixedRate(this::pushMetrics, initialDelay, delay, schedulingTimeUnit);
     }
 
+    private void pushMetrics() {
+        List<MetricDataDetails> allMetricDataDetails = ociMetricsData.getMetricDataDetails();
+
+        PostMetricDataDetails postMetricDataDetails = PostMetricDataDetails.builder()
+                .metricData(allMetricDataDetails)
+                .build();
+
+        PostMetricDataRequest postMetricDataRequest = PostMetricDataRequest.builder()
+                .postMetricDataDetails(postMetricDataDetails)
+                .build();
+        if (allMetricDataDetails.size() > 0) {
+            LOGGER.finest(String.format("Pushing %d metrics to OCI", allMetricDataDetails.size()));
+            try {
+                this.monitoringClient.postMetricData(postMetricDataRequest);
+            } catch (Throwable e) {
+                LOGGER.warning(String.format("Unable to send metrics to OCI: %s", e.getMessage()));
+            }
+        }
+    }
+
     @Override
     public void update(Routing.Rules rules) {
         rules.onNewWebServer(this::prepareShutdown);
@@ -199,13 +222,20 @@ public class OciMetricsSupport implements Service {
     }
 
     /**
-     * Builder for OciMetricsSupport.
+     * Fluent API builder to create {@link OciMetricsSupport}.
      */
+    @Configured
     public static class Builder implements io.helidon.common.Builder<OciMetricsSupport> {
 
         private static final long DEFAULT_SCHEDULER_INITIAL_DELAY = 1L;
         private static final long DEFAULT_SCHEDULER_DELAY = 60L;
         private static final TimeUnit DEFAULT_SCHEDULER_TIME_UNIT = TimeUnit.SECONDS;
+
+        private static final Map<String, Type> SCOPE_TYPES = Map.of(
+                Type.BASE.getName(), Type.BASE,
+                Type.VENDOR.getName(), Type.VENDOR,
+                Type.APPLICATION.getName(), Type.APPLICATION
+        );
 
         private long initialDelay = DEFAULT_SCHEDULER_INITIAL_DELAY;
         private long delay = DEFAULT_SCHEDULER_DELAY;
@@ -214,7 +244,7 @@ public class OciMetricsSupport implements Service {
         private String namespace;
         private NameFormatter nameFormatter = DEFAULT_NAME_FORMATTER;
         private String resourceGroup;
-        private Type[] scopes;
+        private Type[] scopes = getAllMetricScopes();
         private boolean descriptionEnabled = true;
         private boolean enabled = true;
         private Monitoring monitoringClient;
@@ -339,17 +369,12 @@ public class OciMetricsSupport implements Service {
          */
         @ConfiguredOption
         public Builder scopes(List<String> value) {
-            Map<String, Type> scopeTypes = Map.of(
-                    "base", Type.BASE,
-                    "vendor", Type.VENDOR,
-                    "application", Type.APPLICATION
-            );
-            if (value == null || value.size() == 0) {
-                this.scopes =  new ArrayList<Type>(scopeTypes.values()).toArray(new Type[scopeTypes.size()]);
+            if (value == null || value.isEmpty()) {
+                this.scopes = getAllMetricScopes();
             } else {
                 List<Type> convertedScope = new ArrayList<>();
                 for (String element: value) {
-                    Type scopeItem = scopeTypes.get(element);
+                    Type scopeItem = SCOPE_TYPES.get(element.toLowerCase(Locale.ROOT).trim());
                     if (scopeItem != null) {
                         convertedScope.add(scopeItem);
                     }
@@ -381,6 +406,7 @@ public class OciMetricsSupport implements Service {
         public Builder config(Config config) {
             config.get("initialDelay").asLong().ifPresent(this::initialDelay);
             config.get("delay").asLong().ifPresent(this::delay);
+            config.get("schedulingTimeUnit").as(Builder::toSchedulingTimeUnit).ifPresent(this::schedulingTimeUnit);
             config.get("compartmentId").asString().ifPresent(this::compartmentId);
             config.get("namespace").asString().ifPresent(this::namespace);
             config.get("resourceGroup").asString().ifPresent(this::resourceGroup);
@@ -400,25 +426,17 @@ public class OciMetricsSupport implements Service {
             this.monitoringClient = monitoringClient;
             return this;
         }
-    }
 
-    private void pushMetrics() {
-        List<MetricDataDetails> allMetricDataDetails = ociMetricsData.getMetricDataDetails();
+        private static Type[] getAllMetricScopes() {
+            return new ArrayList<>(SCOPE_TYPES.values()).toArray(new Type[SCOPE_TYPES.size()]);
+        }
 
-        PostMetricDataDetails postMetricDataDetails = PostMetricDataDetails.builder()
-                .metricData(allMetricDataDetails)
-                .build();
-
-        PostMetricDataRequest postMetricDataRequest = PostMetricDataRequest.builder()
-                .postMetricDataDetails(postMetricDataDetails)
-                .build();
-        if (allMetricDataDetails.size() > 0) {
-            LOGGER.finest(String.format("Pushing %d metrics to OCI", allMetricDataDetails.size()));
-            try {
-                this.monitoringClient.postMetricData(postMetricDataRequest);
-            } catch (Throwable e) {
-                LOGGER.warning(String.format("Unable to send metrics to OCI: %s", e.getMessage()));
+        private static TimeUnit toSchedulingTimeUnit(Config value) {
+            Optional<String> timeUnitValue = value.asString().map(s -> s.toUpperCase(Locale.ROOT));
+            if (timeUnitValue.isEmpty() || timeUnitValue.get().isBlank()) {
+                throw new IllegalArgumentException("Required value for schedulingTimeUnit is missing");
             }
+            return TimeUnit.valueOf(timeUnitValue.get());
         }
     }
 }

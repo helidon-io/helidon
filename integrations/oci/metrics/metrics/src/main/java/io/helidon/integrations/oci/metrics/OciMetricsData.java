@@ -161,11 +161,10 @@ class OciMetricsData {
                                          metricId,
                                          "min_seconds",
                                          snapshot.getMin()));
-            metricDataDetails(metricRegistry,
-                              metricId,
-                              "max_seconds",
-                              snapshot.getMax());
-
+            result.add(metricDataDetails(metricRegistry,
+                                         metricId,
+                                        "max_seconds",
+                                         snapshot.getMax()));
         }
         return result.build();
     }
@@ -188,11 +187,10 @@ class OciMetricsData {
                                          metricId,
                                          "min" + unitsSuffix,
                                          snapshot.getMin()));
-            metricDataDetails(metricRegistry,
-                              metricId,
-                              "max" + unitsSuffix,
-                              snapshot.getMax());
-
+            result.add(metricDataDetails(metricRegistry,
+                                         metricId,
+                                         "max" + unitsSuffix,
+                                         snapshot.getMax()));
         }
         return result.build();
     }
