@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,10 @@ import io.helidon.integrations.common.rest.ApiOptionalResponse;
  * Blocking API to access OCI Vault.
  * All methods block the current thread. This implementation is not suitable for reactive programming.
  * Use {@link io.helidon.integrations.oci.vault.OciVaultRx} in reactive code.
+ *
+ * @deprecated use OCI SDK instead
  */
+@Deprecated(since = "2.5.0", forRemoval = true)
 public interface OciVault {
     /**
      * Create blocking Vault from its reactive counterpart.

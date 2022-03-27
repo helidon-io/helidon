@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,10 @@ import io.helidon.integrations.common.rest.ApiRestException;
 
 /**
  * Exception used when OCI REST call returned and we have HTTP status and headers, and possibly an entity.
+ *
+ * @deprecated use OCI SDK instead
  */
+@Deprecated(since = "2.5.0", forRemoval = true)
 public class OciRestException extends ApiRestException {
     private final String errorCode;
     private final String errorMessage;
