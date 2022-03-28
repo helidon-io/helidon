@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,9 @@ import io.helidon.integrations.common.rest.ApiJsonRequest;
  * Adds support for {@link #retryToken}.
  *
  * @param <T> type of the request
+ * @deprecated OCI SDK instead
  */
+@Deprecated(since = "2.5.0", forRemoval = true)
 public abstract class OciRequestBase<T extends OciRequestBase<T>> extends ApiJsonRequest<T> {
     private static final DateTimeFormatter INSTANT_FORMATTER = new DateTimeFormatterBuilder()
             .parseCaseInsensitive()
@@ -96,9 +98,18 @@ public abstract class OciRequestBase<T extends OciRequestBase<T>> extends ApiJso
     }
 
     /**
+     * Endpoint (if configured).
+     *
+     * @return configured endpoint or empty
+     */
+    public Optional<String> endpoint() {
+        return Optional.ofNullable(endpoint);
+    }
+
+    /**
      * Add a timestamp to the JSON. Uses the timestamp as defined in OCI API.
      *
-     * @param name name of the property
+     * @param name    name of the property
      * @param instant instant value
      * @return updated request
      */
@@ -111,15 +122,6 @@ public abstract class OciRequestBase<T extends OciRequestBase<T>> extends ApiJso
             throw new OciApiException("Host prefix must be defined to find correct OCI host.");
         }
         return hostPrefix;
-    }
-
-    /**
-     * Endpoint (if configured).
-     *
-     * @return configured endpoint or empty
-     */
-    public Optional<String> endpoint() {
-        return Optional.ofNullable(endpoint);
     }
 
     Optional<String> retryToken() {
