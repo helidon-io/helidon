@@ -15,7 +15,7 @@
  */
 
 /**
- * Integration with OCI Metrics.
+ * Integrating with OCI Metrics.
  */
 module io.helidon.integrations.oci.metrics {
     requires java.logging;

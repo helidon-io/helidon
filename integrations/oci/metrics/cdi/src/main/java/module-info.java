@@ -15,7 +15,7 @@
  */
 
 /**
- * Integration with OCI Metrics via CDI.
+ * Integrating with OCI Metrics Using CDI.
  */
 module io.helidon.integrations.oci.metrics.cdi {
     requires io.helidon.config.mp;
