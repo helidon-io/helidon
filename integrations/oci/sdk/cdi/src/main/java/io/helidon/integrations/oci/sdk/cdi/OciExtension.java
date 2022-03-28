@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.integrations.cdi.oci;
+package io.helidon.integrations.oci.sdk.cdi;
 
 import java.io.IOException;
 import java.lang.annotation.Annotation;

@@ -42,7 +42,6 @@
         <module>jpa-cdi</module>
         <module>jta-cdi</module>
         <module>jta-weld</module>
-        <module>oci</module>
         <module>oci-objectstorage-cdi</module>
     </modules>
 </project>

@@ -21,23 +21,6 @@
  * target="_top">Oracle Cloud Infrastructure Java SDK</a> into CDI
  * 2.0-based applications.
  *
- * @see io.helidon.integrations.cdi.oci.OciExtension
+ * @see io.helidon.integrations.oci.sdk.cdi.OciExtension
  */
-@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
-module io.helidon.integrations.cdi.oci {
-
-    requires com.google.common; // OCI dependency
-    requires java.annotation;
-    requires java.logging;
-    requires java.ws.rs;
-    requires transitive jakarta.enterprise.cdi.api;
-    requires jakarta.inject.api;
-    requires jakarta.interceptor.api;
-    requires microprofile.config.api;
-    requires oci.java.sdk.common;
-
-    exports io.helidon.integrations.cdi.oci;
-
-    provides javax.enterprise.inject.spi.Extension
-        with io.helidon.integrations.cdi.oci.OciExtension;
-}
+package io.helidon.integrations.oci.sdk.cdi;
