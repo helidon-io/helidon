@@ -93,6 +93,7 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
+            <version>${version.lib.junit4}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
