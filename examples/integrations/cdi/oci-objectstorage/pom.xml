@@ -41,7 +41,6 @@
             <groupId>com.oracle.oci.sdk</groupId>
             <artifactId>oci-java-sdk-objectstorage</artifactId>
             <scope>compile</scope>
-            <type>pom</type>
         </dependency>
         <dependency>
             <groupId>org.eclipse.microprofile.config</groupId>

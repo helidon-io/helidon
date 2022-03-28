@@ -840,7 +840,6 @@
                 <groupId>com.oracle.oci.sdk</groupId>
                 <artifactId>oci-java-sdk-objectstorage</artifactId>
                 <version>${version.lib.oci-java-sdk-objectstorage}</version>
-                <type>pom</type>
                 <exclusions>
                     <exclusion>
                         <groupId>org.glassfish.hk2.external</groupId>
