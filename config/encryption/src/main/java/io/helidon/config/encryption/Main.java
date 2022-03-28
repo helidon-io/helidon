@@ -52,11 +52,12 @@ public final class Main {
 
     private static void help() {
         System.out.println("To encrypt password using master password to be used in a property file:");
-        System.out.println("java -jar <path-to-app-libs-dir>/helidon-config-encryption-{helidon-version}.jar aes masterPassword secretToEncrypt");
+        System.out.println("java -jar <path-to-app-libs-dir>/helidon-config-encryption-{helidon-version}.jar "
+                + "aes masterPassword secretToEncrypt");
         System.out.println();
         System.out.println("To encrypt password using public key to be used in a property file:");
-        System.out.println("java -jar <path-to-app-libs-dir>/helidon-config-encryption-{helidon-version}.jar rsa /path/to/pkcs12keystore keystorePassphrase "
-                                   + "publicCertAlias secretToEncrypt");
+        System.out.println("java -jar <path-to-app-libs-dir>/helidon-config-encryption-{helidon-version}.jar "
+               + "rsa /path/to/pkcs12keystore keystorePassphrase publicCertAlias secretToEncrypt");
     }
 
     enum Algorithm {
