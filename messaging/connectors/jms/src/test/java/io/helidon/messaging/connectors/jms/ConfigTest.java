@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,6 +12,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package io.helidon.messaging.connectors.jms;
@@ -42,9 +43,11 @@ import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.eclipse.microprofile.reactive.streams.operators.SubscriberBuilder;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -56,6 +59,7 @@ public class ConfigTest {
 
     private static JmsConnector conn;
     private static final HashMap<String, Object> results = new HashMap<>();
+    private ArgumentCaptor<String> producerPropertyCapture;
 
     @BeforeEach
     void before() throws JMSException {
@@ -67,11 +71,13 @@ public class ConfigTest {
         Queue queue = Mockito.mock(Queue.class);
         Topic topic = Mockito.mock(Topic.class);
         MessageConsumer consumer = Mockito.mock(MessageConsumer.class);
-        MessageProducer producer = Mockito.mock(MessageProducer.class);
+        CustMessageProducer producer = Mockito.mock(CustMessageProducer.class);
         jakarta.jms.Message msg = Mockito.mock(jakarta.jms.Message.class);
         Mockito.when(connectionFactory.createConnection()).thenReturn(jmsConnection);
         Mockito.when(instance.select(NamedLiteral.of("test-factory"))).thenReturn(instance);
         Mockito.when(instance.stream()).thenReturn(Stream.of(connectionFactory));
+        producerPropertyCapture = ArgumentCaptor.forClass(String.class);
+        Mockito.doNothing().when(producer).setCustomProperty(producerPropertyCapture.capture());
         Mockito.when(connectionFactory.createConnection(Mockito.anyString(), Mockito.anyString())).thenAnswer(i -> {
             results.put(JmsConnector.USERNAME_ATTRIBUTE, i.getArgument(0));
             results.put(JmsConnector.PASSWORD_ATTRIBUTE, i.getArgument(1));
@@ -150,6 +156,38 @@ public class ConfigTest {
         assertThat(results, hasEntry(JmsConnector.USERNAME_ATTRIBUTE, "Jack"));
         assertThat(results, hasEntry(JmsConnector.PASSWORD_ATTRIBUTE, "O'Neil"));
         assertThat(results, hasEntry(JmsConnector.TRANSACTED_ATTRIBUTE, JmsConnector.TRANSACTED_DEFAULT));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void producerPropertyConfigCameCase() {
+        SubscriberBuilder<Message<String>, Void> subscriberBuilder =
+                (SubscriberBuilder<Message<String>, Void>) conn.getSubscriberBuilder(conf(Map.of(
+                        JmsConnector.CHANNEL_NAME_ATTRIBUTE, "test-1",
+                        JmsConnector.CONNECTOR_ATTRIBUTE, JmsConnector.CONNECTOR_NAME,
+                        JmsConnector.NAMED_FACTORY_ATTRIBUTE, "test-factory",
+                        JmsConnector.DESTINATION_ATTRIBUTE, "testQueue1",
+                        JmsConnector.USERNAME_ATTRIBUTE, "Jack",
+                        JmsConnector.PASSWORD_ATTRIBUTE, "O'Neil",
+                        "producer.customProperty", "test prop value"
+                )));
+        assertThat(producerPropertyCapture.getValue(), Matchers.is("test prop value"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void producerPropertyConfigKebabCase() {
+        SubscriberBuilder<Message<String>, Void> subscriberBuilder =
+                (SubscriberBuilder<Message<String>, Void>) conn.getSubscriberBuilder(conf(Map.of(
+                        JmsConnector.CHANNEL_NAME_ATTRIBUTE, "test-1",
+                        JmsConnector.CONNECTOR_ATTRIBUTE, JmsConnector.CONNECTOR_NAME,
+                        JmsConnector.NAMED_FACTORY_ATTRIBUTE, "test-factory",
+                        JmsConnector.DESTINATION_ATTRIBUTE, "testQueue1",
+                        JmsConnector.USERNAME_ATTRIBUTE, "Jack",
+                        JmsConnector.PASSWORD_ATTRIBUTE, "O'Neil",
+                        "producer.custom-property", "test prop value"
+                )));
+        assertThat(producerPropertyCapture.getValue(), Matchers.is("test prop value"));
     }
 
     @Test
@@ -239,5 +277,9 @@ public class ConfigTest {
             fail(e);
             return null;
         }
+    }
+
+    public static interface CustMessageProducer extends MessageProducer{
+        public void setCustomProperty(String prop);
     }
 }
