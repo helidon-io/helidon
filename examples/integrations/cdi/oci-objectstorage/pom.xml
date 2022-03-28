@@ -51,7 +51,7 @@
 
         <!-- Runtime-scoped dependencies. -->
         <dependency>
-            <groupId>io.helidon.integrations.oci.sdk.cdi</groupId>
+            <groupId>io.helidon.integrations.oci.sdk</groupId>
             <artifactId>helidon-integrations-oci-sdk-cdi</artifactId>
             <scope>runtime</scope>
         </dependency>
