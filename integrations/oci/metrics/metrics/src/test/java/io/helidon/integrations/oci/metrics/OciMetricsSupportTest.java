@@ -156,17 +156,15 @@ public class OciMetricsSupportTest {
         appMetricRegistry.counter("appDummyCounter2").inc();
         appMetricRegistry.counter("appDummyCounter3").inc();
 
-        validateMetricCount(Arrays.asList(new String[]{}), 6);
-        validateMetricCount(
-                Arrays.asList(new String[]{Type.BASE.getName(), Type.VENDOR.getName(), Type.APPLICATION.getName()}), 6);
-        validateMetricCount(Arrays.asList(new String[]{Type.BASE.getName()}), 1);
-        validateMetricCount(Arrays.asList(new String[]{Type.VENDOR.getName()}), 2);
-        validateMetricCount(Arrays.asList(new String[]{Type.APPLICATION.getName()}), 3);
-        validateMetricCount(
-                Arrays.asList(new String[]{"base", "vendor", "application"}), 6);
-        validateMetricCount(Arrays.asList(new String[]{"base"}), 1);
-        validateMetricCount(Arrays.asList(new String[]{"vendor"}), 2);
-        validateMetricCount(Arrays.asList(new String[]{"application"}), 3);
+        validateMetricCount(new String[]{}, 6);
+        validateMetricCount(new String[]{Type.BASE.getName(), Type.VENDOR.getName(), Type.APPLICATION.getName()}, 6);
+        validateMetricCount(new String[]{Type.BASE.getName()}, 1);
+        validateMetricCount(new String[]{Type.VENDOR.getName()}, 2);
+        validateMetricCount(new String[]{Type.APPLICATION.getName()}, 3);
+        validateMetricCount(new String[]{"base", "vendor", "application"}, 6);
+        validateMetricCount(new String[]{"base"}, 1);
+        validateMetricCount(new String[]{"vendor"}, 2);
+        validateMetricCount(new String[]{"application"}, 3);
     }
 
     @Test
@@ -249,7 +247,7 @@ public class OciMetricsSupportTest {
         validateMetricCount(ociMetricsSupportBuilder, expectedMetricCount);
     }
 
-    private void validateMetricCount(List<String> scopes, int expectedMetricCount) {
+    private void validateMetricCount(String[] scopes, int expectedMetricCount) {
         OciMetricsSupport.Builder ociMetricsSupportBuilder = OciMetricsSupport.builder()
                 .namespace("namespace")
                 .compartmentId("compartmentId")

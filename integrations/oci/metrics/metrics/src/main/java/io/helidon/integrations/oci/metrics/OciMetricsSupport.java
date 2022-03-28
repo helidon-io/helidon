@@ -16,6 +16,7 @@
  */
 package io.helidon.integrations.oci.metrics;
 
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -364,11 +365,15 @@ public class OciMetricsSupport implements Service {
          *     If this method is never invoked, defaults to all scopes.
          * </p>
          *
-         * @param value list of metric scopes to process
+         * @param value array of metric scopes to process
          * @return updated builder
          */
         @ConfiguredOption
-        public Builder scopes(List<String> value) {
+        public Builder scopes(String[] value) {
+            return scopes(Arrays.asList(value));
+        }
+
+        private Builder scopes(List<String> value) {
             if (value == null || value.isEmpty()) {
                 this.scopes = getAllMetricScopes();
             } else {
@@ -410,7 +415,7 @@ public class OciMetricsSupport implements Service {
             config.get("compartmentId").asString().ifPresent(this::compartmentId);
             config.get("namespace").asString().ifPresent(this::namespace);
             config.get("resourceGroup").asString().ifPresent(this::resourceGroup);
-            config.get("scopes").asList(String.class).ifPresentOrElse(this::scopes, () -> scopes(null));
+            config.get("scopes").asList(String.class).ifPresent(this::scopes);
             config.get("enabled").asBoolean().ifPresent(this::enabled);
             config.get("descriptionEnabled").asBoolean().ifPresent(this::descriptionEnabled);
             return this;
