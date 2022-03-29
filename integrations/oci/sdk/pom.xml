@@ -16,14 +16,23 @@
     limitations under the License.
 
 -->
-<FindBugsFilter
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xmlns="https://github.com/spotbugs/filter/3.0.0"
-        xsi:schemaLocation="https://github.com/spotbugs/filter/3.0.0
-                            https://raw.githubusercontent.com/spotbugs/spotbugs/3.1.0/spotbugs/etc/findbugsfilter.xsd">
 
-    <Match>
-        <Class name="io.helidon.integrations.cdi.oci.OciExtension" />
-        <Bug pattern="DMI_BLOCKING_METHODS_ON_URL, REDOS" />
-    </Match>
-</FindBugsFilter>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>io.helidon.integrations.oci</groupId>
+        <artifactId>helidon-integrations-oci-project</artifactId>
+        <version>2.4.3-SNAPSHOT</version>
+    </parent>
+    <packaging>pom</packaging>
+    <groupId>io.helidon.integrations.oci.sdk</groupId>
+    <artifactId>helidon-integrations-oci-sdk-project</artifactId>
+    <name>Helidon Integrations OCI SDK Project</name>
+
+    <modules>
+        <module>cdi</module>
+    </modules>
+
+</project>

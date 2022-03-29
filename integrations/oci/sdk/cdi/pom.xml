@@ -16,17 +16,22 @@
     limitations under the License.
 
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="http://maven.apache.org/POM/4.0.0"
+        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.helidon.integrations.cdi</groupId>
-        <artifactId>helidon-integrations-cdi-project</artifactId>
+        <groupId>io.helidon.integrations.oci.sdk</groupId>
+        <artifactId>helidon-integrations-oci-sdk-project</artifactId>
         <version>2.4.3-SNAPSHOT</version>
     </parent>
-    <artifactId>helidon-integrations-cdi-oci</artifactId>
-    <name>Helidon CDI Integrations OCI</name>
+    <artifactId>helidon-integrations-oci-sdk-cdi</artifactId>
+    <name>Helidon Integrations OCI SDK CDI</name>
+
+    <description>
+        CDI support for the OCI SDK
+    </description>
 
     <properties>
         <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
@@ -127,5 +132,5 @@
             </plugin>
         </plugins>
     </build>
-
+    
 </project>
