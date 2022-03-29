@@ -1,5 +1,0 @@
-{
-    "classes": [
-        "org.hibernate.dialect.H2Dialect"
-    ]
-}
