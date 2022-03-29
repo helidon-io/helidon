@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,11 +52,12 @@ public final class Main {
 
     private static void help() {
         System.out.println("To encrypt password using master password to be used in a property file:");
-        System.out.println("java -jar secure-config-version.jar aes masterPassword secretToEncrypt");
+        System.out.println("java -jar <path-to-app-libs-dir>/helidon-config-encryption-{helidon-version}.jar "
+                + "aes masterPassword secretToEncrypt");
         System.out.println();
         System.out.println("To encrypt password using public key to be used in a property file:");
-        System.out.println("java -jar secure-config-version.jar rsa /path/to/pkcs12keystore keystorePassphrase "
-                                   + "publicCertAlias secretToEncrypt");
+        System.out.println("java -jar <path-to-app-libs-dir>/helidon-config-encryption-{helidon-version}.jar "
+               + "rsa /path/to/pkcs12keystore keystorePassphrase publicCertAlias secretToEncrypt");
     }
 
     enum Algorithm {
