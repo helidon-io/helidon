@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -21,11 +21,12 @@
 :description: Helidon extensions
 :keywords: helidon, java, microservices, microprofile, extensions
 :cdi-extension-api-url: https://docs.jboss.org/cdi/spec/2.0/cdi-spec.html#spi
+:mp-pages-ref-prefix: mp/extensions
+:mp-using-cdi-ref: {mp-pages-ref-prefix}/02_cdi_datasource-hikaricp.adoc
 
-== CDI extensions
+== CDI Extensions
 
-Helidon provides link:{cdi-extension-api-url}[CDI portable extensions] that you
- can use to inject the following objects into your Helidon MicroProfile
+Helidon provides link:{cdi-extension-api-url}[CDI portable extensions] that you can use to inject the following objects into your Helidon MicroProfile
  applications:
 
 [PILLARS]
@@ -33,14 +34,14 @@ Helidon provides link:{cdi-extension-api-url}[CDI portable extensions] that you
 
 [CARD]
 .HikariCP data sources
-[link=extensions/02_cdi_datasource-hikaricp.adoc]
+[link=mp/extensions/02_cdi_datasource-hikaricp.adoc]
 --
 Create and inject a HikariCP data source in your application code.
 --
 
 [CARD]
 .Oracle UCP data sources
-[link=extensions/02_cdi_datasource-ucp.adoc]
+[link=mp/extensions/02_cdi_datasource-ucp.adoc]
 --
 Create and inject an Oracle Universal Connection Pool data source in
 your application code.
@@ -48,14 +49,14 @@ your application code.
 
 [CARD]
 .Jedis clients
-[link=extensions/03_cdi_jedis.adoc]
+[link=mp/extensions/03_cdi_jedis.adoc]
 --
 Create and inject a Jedis pool in your application code.
 --
 
 [CARD]
 .OCI Object Storage clients
-[link=extensions/04_cdi_oci-objectstorage.adoc]
+[link=mp/extensions/04_cdi_oci-objectstorage.adoc]
 --
 Create and inject an Oracle Cloud Infrastructure Object Storage client in your
  application code.
@@ -63,7 +64,7 @@ Create and inject an Oracle Cloud Infrastructure Object Storage client in your
 
 [CARD]
 .Java Transaction API objects
-[link=extensions/05_cdi_jta.adoc]
+[link=mp/extensions/05_cdi_jta.adoc]
 --
 Use the Java Transaction API in your application code.
 --
