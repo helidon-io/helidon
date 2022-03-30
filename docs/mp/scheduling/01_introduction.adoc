@@ -103,8 +103,6 @@ public void methodName(CronInvocation inv) {
 }
 ----
 
-=== Overriding Scheduled properties
-
 `Scheduled` annotation properties can be overridden using `application.yaml` properties
 
 [source,yaml]
@@ -118,8 +116,8 @@ fully.quallified.ClassName.methodName:
 
 .Configuration properties
 [width="90%",cols="3,10",frame="topbot",options="header"]
-|=======================================================================================================================
+|====
 | Property              | Description
 | cron                  | String containing cron setup
 | concurrent            | Boolean, equivalent `concurrentExecution` property of `@Scheduled`. Default `true`.
-|=======================================================================================================================
+|====
