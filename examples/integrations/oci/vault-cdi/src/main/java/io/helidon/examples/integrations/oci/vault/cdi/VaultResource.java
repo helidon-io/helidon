@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021. 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -206,7 +206,7 @@ public class VaultResource {
     @Path("/secret/{id}")
     public String deleteSecret(@PathParam("id") String secretOcid) {
         // has to be for quite a long period of time - did not work with less than 30 days
-        Date deleteTime = new Date(Instant.now().plus(30, ChronoUnit.DAYS).toEpochMilli());
+        Date deleteTime = Date.from(Instant.now().plus(30, ChronoUnit.DAYS));
 
         vaults.scheduleSecretDeletion(ScheduleSecretDeletionRequest.builder()
                                               .secretId(secretOcid)

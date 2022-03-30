@@ -25,5 +25,7 @@ module io.helidon.examples.integrations.oci.vault.reactive {
     requires oci.java.sdk.vault;
     requires oci.java.sdk.common;
 
+    requires java.logging;
+
     exports io.helidon.examples.integrations.oci.vault.reactive;
 }

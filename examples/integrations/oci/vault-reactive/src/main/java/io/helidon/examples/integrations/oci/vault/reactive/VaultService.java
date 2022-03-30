@@ -27,7 +27,7 @@ import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 
-import com.oracle.bmc.keymanagement.KmsCryptoAsyncClient;
+import com.oracle.bmc.keymanagement.KmsCryptoAsync;
 import com.oracle.bmc.keymanagement.model.DecryptDataDetails;
 import com.oracle.bmc.keymanagement.model.EncryptDataDetails;
 import com.oracle.bmc.keymanagement.model.SignDataDetails;
@@ -36,11 +36,11 @@ import com.oracle.bmc.keymanagement.requests.DecryptRequest;
 import com.oracle.bmc.keymanagement.requests.EncryptRequest;
 import com.oracle.bmc.keymanagement.requests.SignRequest;
 import com.oracle.bmc.keymanagement.requests.VerifyRequest;
-import com.oracle.bmc.secrets.SecretsAsyncClient;
+import com.oracle.bmc.secrets.SecretsAsync;
 import com.oracle.bmc.secrets.model.Base64SecretBundleContentDetails;
 import com.oracle.bmc.secrets.model.SecretBundleContentDetails;
 import com.oracle.bmc.secrets.requests.GetSecretBundleRequest;
-import com.oracle.bmc.vault.VaultsAsyncClient;
+import com.oracle.bmc.vault.VaultsAsync;
 import com.oracle.bmc.vault.model.Base64SecretContentDetails;
 import com.oracle.bmc.vault.model.CreateSecretDetails;
 import com.oracle.bmc.vault.model.ScheduleSecretDeletionDetails;
@@ -51,17 +51,17 @@ import com.oracle.bmc.vault.requests.ScheduleSecretDeletionRequest;
 import static io.helidon.examples.integrations.oci.vault.reactive.OciHandler.ociHandler;
 
 class VaultService implements Service {
-    private final SecretsAsyncClient secrets;
-    private final VaultsAsyncClient vaults;
-    private final KmsCryptoAsyncClient crypto;
+    private final SecretsAsync secrets;
+    private final VaultsAsync vaults;
+    private final KmsCryptoAsync crypto;
     private final String vaultOcid;
     private final String compartmentOcid;
     private final String encryptionKeyOcid;
     private final String signatureKeyOcid;
 
-    VaultService(SecretsAsyncClient secrets,
-                 VaultsAsyncClient vaults,
-                 KmsCryptoAsyncClient crypto,
+    VaultService(SecretsAsync secrets,
+                 VaultsAsync vaults,
+                 KmsCryptoAsync crypto,
                  String vaultOcid,
                  String compartmentOcid,
                  String encryptionKeyOcid,
@@ -103,7 +103,7 @@ class VaultService implements Service {
 
     private void deleteSecret(ServerRequest req, ServerResponse res) {
         // has to be for quite a long period of time - did not work with less than 30 days
-        Date deleteTime = new Date(Instant.now().plus(30, ChronoUnit.DAYS).toEpochMilli());
+        Date deleteTime = Date.from(Instant.now().plus(30, ChronoUnit.DAYS));
 
         String secretOcid = req.path().param("id");
 

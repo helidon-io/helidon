@@ -17,11 +17,13 @@
 package io.helidon.examples.integrations.oci.vault.reactive;
 
 import java.util.function.Consumer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import com.oracle.bmc.responses.AsyncHandler;
 
 final class OciHandler {
-    private static final System.Logger LOGGER = System.getLogger(OciHandler.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(OciHandler.class.getName());
 
     private OciHandler() {
     }
@@ -35,7 +37,7 @@ final class OciHandler {
 
             @Override
             public void onError(REQ req, Throwable error) {
-                LOGGER.log(System.Logger.Level.WARNING, "OCI Exception", error);
+                LOGGER.log(Level.WARNING, "OCI Exception", error);
                 if (error instanceof RuntimeException) {
                     throw (RuntimeException) error;
                 }
