@@ -28,6 +28,7 @@ import java.util.function.BiConsumer;
 import io.helidon.common.LazyValue;
 import io.helidon.common.LogConfig;
 import io.helidon.common.context.Contexts;
+import io.helidon.media.common.MediaContext;
 import io.helidon.webclient.WebClient;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.SocketConfiguration;
@@ -57,6 +58,9 @@ class WebServerJunitExtension implements BeforeAllCallback,
     private final LazyValue<WebClient> httpClient =
             LazyValue.create(() -> WebClient.builder()
                     .baseUri("http://localhost:" + server.port())
+                    .mediaContext(MediaContext.builder()
+                                          .discoverServices(true)
+                                          .build())
                     .build());
     private URI uri;
 

@@ -17,90 +17,95 @@
 package io.helidon.examples.quickstart.se;
 
 import java.util.Collections;
-import java.util.concurrent.TimeUnit;
 
 import javax.json.Json;
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
 
-import io.helidon.media.jsonp.JsonpSupport;
+import io.helidon.common.http.Http;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientResponse;
 import io.helidon.webserver.WebServer;
+import io.helidon.webserver.testsupport.SetUpServer;
+import io.helidon.webserver.testsupport.WebServerTest;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+@WebServerTest
 class MainTest {
 
-    private static WebServer webServer;
-    private static WebClient webClient;
     private static final JsonBuilderFactory JSON_BUILDER = Json.createBuilderFactory(Collections.emptyMap());
-    private static final JsonObject TEST_JSON_OBJECT;
 
-    static {
-        TEST_JSON_OBJECT = JSON_BUILDER.createObjectBuilder()
-                .add("greeting", "Hola")
-                .build();
+    private final WebClient webClient;
+
+    MainTest(WebClient webClient) {
+        this.webClient = webClient;
     }
 
-    @BeforeAll
-    static void startTheServer() {
-        webServer = Main.startServer().await();
-
-        webClient = WebClient.builder()
-                .baseUri("http://localhost:" + webServer.port())
-                .addMediaSupport(JsonpSupport.create())
-                .build();
-    }
-
-    @AfterAll
-    static void stopServer() {
-        if (webServer != null) {
-            webServer.shutdown()
-                    .await(10, TimeUnit.SECONDS);
-        }
+    @SetUpServer
+    static void server(WebServer.Builder builder) {
+        Main.configure(builder);
     }
 
     @Test
-    void testHelloWorld() {
-        JsonObject jsonObject;
-        WebClientResponse response;
-
-        jsonObject = webClient.get()
+    void testDefaultGreeting() {
+        JsonObject jsonObject = webClient.get()
                 .path("/greet")
                 .request(JsonObject.class)
                 .await();
         assertEquals("Hello World!", jsonObject.getString("message"));
+    }
 
-        jsonObject = webClient.get()
+    @Test
+    void testNamedGreeting() {
+        JsonObject jsonObject = webClient.get()
                 .path("/greet/Joe")
                 .request(JsonObject.class)
                 .await();
         assertEquals("Hello Joe!", jsonObject.getString("message"));
+    }
 
-        response = webClient.put()
+    @Test
+    void testChangeGreeting() {
+        WebClientResponse response = webClient.put()
                 .path("/greet/greeting")
-                .submit(TEST_JSON_OBJECT)
+                .submit(JSON_BUILDER.createObjectBuilder()
+                                .add("greeting", "Hola")
+                                .build())
                 .await();
-        assertEquals(204, response.status().code());
+        assertEquals(Http.Status.NO_CONTENT_204, response.status());
 
-        jsonObject = webClient.get()
+        // make sure it was changed
+        JsonObject jsonObject = webClient.get()
                 .path("/greet/Joe")
                 .request(JsonObject.class)
                 .await();
         assertEquals("Hola Joe!", jsonObject.getString("message"));
 
-        response = webClient.get()
+        // change back to original value
+        response = webClient.put()
+                .path("/greet/greeting")
+                .submit(JSON_BUILDER.createObjectBuilder()
+                                .add("greeting", "Hello")
+                                .build())
+                .await();
+        assertEquals(Http.Status.NO_CONTENT_204, response.status());
+    }
+
+    @Test
+    void testHealth() {
+        WebClientResponse response = webClient.get()
                 .path("/health")
                 .request()
                 .await();
         assertEquals(200, response.status().code());
+    }
 
-        response = webClient.get()
+    @Test
+    void testMetrics() {
+        WebClientResponse response = webClient.get()
                 .path("/metrics")
                 .request()
                 .await();

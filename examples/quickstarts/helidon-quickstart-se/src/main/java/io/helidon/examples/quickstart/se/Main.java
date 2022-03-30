@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package io.helidon.examples.quickstart.se;
 
 import io.helidon.common.LogConfig;
-import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.health.HealthSupport;
 import io.helidon.health.checks.HealthChecks;
@@ -42,47 +41,35 @@ public final class Main {
      * @param args command line arguments.
      */
     public static void main(final String[] args) {
-        startServer();
-    }
-
-    /**
-     * Start the server.
-     * @return the created {@link WebServer} instance
-     */
-    static Single<WebServer> startServer() {
-
         // load logging configuration
         LogConfig.configureRuntime();
 
-        // By default this will pick up application.yaml from the classpath
+        WebServer server = WebServer.builder()
+                .update(Main::configure) // configure routing and server
+                .build() // create a server instance
+                .start() // start the server
+                .await(); // wait for the server to be started
+
+        System.out.println("WEB server is up! http://localhost:" + server.port() + "/greet");
+        server.whenShutdown().thenRun(() -> System.out.println("WEB server is DOWN. Good bye!"));
+
+    }
+
+    /**
+     * Configure the server builder.
+     */
+    static void configure(WebServer.Builder builder) {
         Config config = Config.create();
-
-        WebServer server = WebServer.builder(createRouting(config))
+        builder.routing(createRouting(config))
                 .config(config.get("server"))
-                .addMediaSupport(JsonpSupport.create())
-                .build();
-
-        Single<WebServer> webserver = server.start();
-
-        // Try to start the server. If successful, print some info and arrange to
-        // print a message at shutdown. If unsuccessful, print the exception.
-        webserver.thenAccept(ws -> {
-                    System.out.println("WEB server is up! http://localhost:" + ws.port() + "/greet");
-                    ws.whenShutdown().thenRun(() -> System.out.println("WEB server is DOWN. Good bye!"));
-                })
-                .exceptionallyAccept(t -> {
-                    System.err.println("Startup failed: " + t.getMessage());
-                    t.printStackTrace(System.err);
-                });
-
-        return webserver;
+                .addMediaSupport(JsonpSupport.create());
     }
 
     /**
      * Creates new {@link Routing}.
      *
-     * @return routing configured with JSON support, a health check, and a service
      * @param config configuration of this server
+     * @return routing configured with a health check, metrics, and a service
      */
     private static Routing createRouting(Config config) {
 
