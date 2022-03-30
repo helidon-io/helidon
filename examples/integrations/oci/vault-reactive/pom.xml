@@ -43,16 +43,28 @@
             <artifactId>helidon-webserver</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.integrations.oci</groupId>
-            <artifactId>helidon-integrations-oci-vault</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config-yaml</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.integrations.oci</groupId>
-            <artifactId>helidon-integrations-oci-vault-health</artifactId>
+            <groupId>io.helidon.integrations.oci.sdk</groupId>
+            <artifactId>helidon-integrations-oci-sdk-cdi</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.oracle.oci.sdk</groupId>
+            <artifactId>oci-java-sdk-keymanagement</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.oracle.oci.sdk</groupId>
+            <artifactId>oci-java-sdk-secrets</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.oracle.oci.sdk</groupId>
+            <artifactId>oci-java-sdk-vault</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.inject</groupId>
+            <artifactId>jakarta.inject-api</artifactId>
         </dependency>
     </dependencies>
 

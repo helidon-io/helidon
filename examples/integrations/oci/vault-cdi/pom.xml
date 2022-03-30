@@ -43,20 +43,20 @@
             <artifactId>helidon-microprofile</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.integrations.oci</groupId>
-            <artifactId>helidon-integrations-oci-cdi</artifactId>
+            <groupId>io.helidon.integrations.oci.sdk</groupId>
+            <artifactId>helidon-integrations-oci-sdk-cdi</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.integrations.oci</groupId>
-            <artifactId>helidon-integrations-oci-vault</artifactId>
+            <groupId>com.oracle.oci.sdk</groupId>
+            <artifactId>oci-java-sdk-keymanagement</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.integrations.oci</groupId>
-            <artifactId>helidon-integrations-oci-vault-health</artifactId>
+            <groupId>com.oracle.oci.sdk</groupId>
+            <artifactId>oci-java-sdk-secrets</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config-yaml-mp</artifactId>
+            <groupId>com.oracle.oci.sdk</groupId>
+            <artifactId>oci-java-sdk-vault</artifactId>
         </dependency>
     </dependencies>
 
