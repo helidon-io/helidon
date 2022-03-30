@@ -13,19 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.helidon.webserver.testsupport;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * A simple HTTP like client suitable for tests of {@code Web Server} {@link io.helidon.webserver.Routing Routing}.
- *
- * @see io.helidon.webserver.testsupport.TestClient
+ * A static method to set up server using {@link io.helidon.webserver.WebServer.Builder}.
  */
-module io.helidon.webserver.test.support {
-    requires io.helidon.webserver;
-    requires transitive io.helidon.webclient;
-    requires io.helidon.common.http;
-
-    requires java.logging;
-    requires org.junit.jupiter.api;
-    requires hamcrest.all;
-
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.METHOD)
+public @interface SetUpServer {
 }

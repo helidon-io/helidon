@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -752,6 +752,13 @@ public interface WebServer {
             return this;
         }
 
+        /**
+         * Builder of default socket, mutable with currently configured values.
+         * @return default socket configuration builder
+         */
+        public SocketConfiguration.Builder defaultSocketBuilder() {
+            return configurationBuilder.defaultSocketBuilder();
+        }
 
         /**
          * Sets an <a href="http://opentracing.io">opentracing.io</a>

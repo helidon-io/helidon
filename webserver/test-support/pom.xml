@@ -47,6 +47,10 @@
             <artifactId>helidon-common-reactive</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.webclient</groupId>
+            <artifactId>helidon-webclient</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest-all</artifactId>
             <scope>compile</scope>
