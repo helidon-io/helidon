@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,46 +16,42 @@
 
 package io.helidon.webserver.tyrus;
 
-import javax.websocket.server.ServerEndpointConfig;
-import java.net.URI;
 import java.util.Collections;
 
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import javax.websocket.server.ServerEndpointConfig;
 
-import static org.junit.jupiter.api.Assertions.fail;
+import io.helidon.webserver.Routing;
+import io.helidon.webserver.WebServer;
+import io.helidon.webserver.testsupport.SetUpRoute;
+import io.helidon.webserver.testsupport.WebServerTest;
+
+import org.junit.jupiter.api.Test;
 
 /**
  * Class EchoServiceTest.
  */
-public class EchoServiceProgTest extends TyrusSupportBaseTest {
+@WebServerTest
+class EchoServiceProgTest extends TyrusSupportBaseTest {
+    EchoServiceProgTest(WebServer ws) {
+        super(ws);
+    }
 
-    @BeforeAll
-    public static void startServer() throws Exception {
+    @SetUpRoute
+    static void routing(Routing.Rules rules) {
         ServerEndpointConfig.Builder builder = ServerEndpointConfig.Builder.create(
                 EchoEndpointProg.class, "/echo");
         builder.encoders(Collections.singletonList(UppercaseCodec.class));
         builder.decoders(Collections.singletonList(UppercaseCodec.class));
-        webServer(true, builder.build());
+        routing(rules, builder.build());
     }
 
     @Test
-    public void testEchoSingle() {
-        try {
-            URI uri = URI.create("ws://localhost:" + webServer().port() + "/tyrus/echo");
-            new EchoClient(uri).echo("One");
-        } catch (Exception e) {
-            fail("Unexpected exception " + e);
-        }
+    void testEchoSingle() throws Exception {
+        new EchoClient(uri("tyrus/echo")).echo("One");
     }
 
     @Test
-    public void testEchoMultiple() {
-        try {
-            URI uri = URI.create("ws://localhost:" + webServer().port() + "/tyrus/echo");
-            new EchoClient(uri).echo("One", "Two", "Three");
-        } catch (Exception e) {
-            fail("Unexpected exception " + e);
-        }
+    void testEchoMultiple() throws Exception {
+        new EchoClient(uri("tyrus/echo")).echo("One", "Two", "Three");
     }
 }

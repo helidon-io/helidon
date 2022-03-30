@@ -16,7 +16,6 @@
 
 package io.helidon.webserver.tyrus;
 
-import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.WebSocket;
 import java.util.concurrent.CompletableFuture;
@@ -27,28 +26,36 @@ import java.util.concurrent.TimeoutException;
 
 import javax.websocket.server.ServerEndpointConfig;
 
-import org.junit.jupiter.api.BeforeAll;
+import io.helidon.webserver.Routing;
+import io.helidon.webserver.WebServer;
+import io.helidon.webserver.testsupport.SetUpRoute;
+import io.helidon.webserver.testsupport.WebServerTest;
+
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+@WebServerTest
 class HttpClientTest extends TyrusSupportBaseTest {
-    @BeforeAll
-    static void startServer() throws ExecutionException, InterruptedException, TimeoutException {
+    HttpClientTest(WebServer ws) {
+        super(ws);
+    }
+
+    @SetUpRoute
+    static void routing(Routing.Rules rules) {
         ServerEndpointConfig.Builder builder = ServerEndpointConfig.Builder.create(
                 EchoEndpoint.class, "/");
-        webServer(true, builder.build());
+        routing(rules, builder.build());
     }
 
     @Test
     void testJdkClient() throws ExecutionException, InterruptedException, TimeoutException {
-        URI uri = URI.create("ws://localhost:" + webServer().port() + "/tyrus/echo");
         ClientListener listener = new ClientListener();
 
         WebSocket webSocket = HttpClient.newHttpClient()
                 .newWebSocketBuilder()
-                .buildAsync(uri, listener)
+                .buildAsync(uri("tyrus/echo"), listener)
                 .get();
 
         webSocket.sendText("message", true);

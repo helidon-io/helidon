@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,40 +16,34 @@
 
 package io.helidon.webserver.tyrus;
 
-import java.net.URI;
+import io.helidon.webserver.Routing;
+import io.helidon.webserver.WebServer;
+import io.helidon.webserver.testsupport.SetUpRoute;
+import io.helidon.webserver.testsupport.WebServerTest;
 
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Class EchoServiceTest.
  */
-public class EchoServiceTest extends TyrusSupportBaseTest {
+@WebServerTest
+class EchoServiceTest extends TyrusSupportBaseTest {
+    EchoServiceTest(WebServer ws) {
+        super(ws);
+    }
 
-    @BeforeAll
-    public static void startServer() throws Exception {
-        webServer(true, EchoEndpoint.class);
+    @SetUpRoute
+    static void routing(Routing.Rules rules) {
+        routing(rules, EchoEndpoint.class);
     }
 
     @Test
-    public void testEchoSingle() {
-        try {
-            URI uri = URI.create("ws://localhost:" + webServer().port() + "/tyrus/echo");
-            new EchoClient(uri).echo("One");
-        } catch (Exception e) {
-            fail("Unexpected exception " + e);
-        }
+    void testEchoSingle() throws Exception {
+        new EchoClient(uri("tyrus/echo")).echo("One");
     }
 
     @Test
-    public void testEchoMultiple() {
-        try {
-            URI uri = URI.create("ws://localhost:" + webServer().port() + "/tyrus/echo");
-            new EchoClient(uri).echo("One", "Two", "Three");
-        } catch (Exception e) {
-            fail("Unexpected exception " + e);
-        }
+    void testEchoMultiple() throws Exception {
+        new EchoClient(uri("tyrus/echo")).echo("One", "Two", "Three");
     }
 }

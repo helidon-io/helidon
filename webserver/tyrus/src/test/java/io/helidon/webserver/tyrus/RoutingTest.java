@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,40 +16,35 @@
 
 package io.helidon.webserver.tyrus;
 
-import java.net.URI;
+import io.helidon.webserver.Routing;
+import io.helidon.webserver.WebServer;
+import io.helidon.webserver.testsupport.SetUpRoute;
+import io.helidon.webserver.testsupport.WebServerTest;
 
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Class RoutingTest.
  */
-public class RoutingTest extends TyrusSupportBaseTest {
+@WebServerTest
+class RoutingTest extends TyrusSupportBaseTest {
 
-    @BeforeAll
-    public static void startServer() throws Exception {
-        webServer(true, EchoEndpoint.class, DoubleEchoEndpoint.class);
+    RoutingTest(WebServer ws) {
+        super(ws);
+    }
+
+    @SetUpRoute
+    static void routing(Routing.Rules rules) {
+        routing(rules, EchoEndpoint.class, DoubleEchoEndpoint.class);
     }
 
     @Test
-    public void testEcho() {
-        try {
-            URI uri = URI.create("ws://localhost:" + webServer().port() + "/tyrus/echo");
-            new EchoClient(uri).echo("One");
-        } catch (Exception e) {
-            fail("Unexpected exception " + e);
-        }
+    void testEcho() throws Exception {
+        new EchoClient(uri("tyrus/echo")).echo("One");
     }
 
     @Test
-    public void testDoubleEcho() {
-        try {
-            URI uri = URI.create("ws://localhost:" + webServer().port() + "/tyrus/doubleEcho");
-            new EchoClient(uri, (s1, s2) -> s2.equals(s1 + s1)).echo("One");
-        } catch (Exception e) {
-            fail("Unexpected exception " + e);
-        }
+    void testDoubleEcho() throws Exception {
+        new EchoClient(uri("tyrus/doubleEcho"), (s1, s2) -> s2.equals(s1 + s1)).echo("One");
     }
 }

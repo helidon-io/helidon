@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,76 +16,48 @@
 
 package io.helidon.webserver.tyrus;
 
-import java.net.InetAddress;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.net.URI;
+import java.util.function.Consumer;
 
 import javax.websocket.server.ServerEndpointConfig;
 
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 
-import org.junit.jupiter.api.AfterAll;
-
 /**
  * The TyrusSupportBaseTest.
  */
-public class TyrusSupportBaseTest {
+abstract class TyrusSupportBaseTest {
+    private final int port;
 
-    private static WebServer webServer;
-
-    @AfterAll
-    public static void stopServer() {
-        webServer.shutdown();
-        webServer = null;
+    protected TyrusSupportBaseTest(WebServer ws) {
+        this.port = ws.port();
     }
 
-    WebServer webServer() {
-        return webServer;
-    }
-
-    synchronized static WebServer webServer(boolean testing, Object... endpoints)
-            throws InterruptedException, TimeoutException, ExecutionException {
-        if (webServer != null) {
-            return webServer;
-        }
-
-        WebServer.Builder builder = WebServer.builder().host("localhost");
-
-
-        if (!testing) {
-            // in case we're running as main an not in test, run on a fixed port
-            builder.port(8080);
-        }
-
-        // Register each of the endpoints
-        TyrusSupport.Builder tyrusSupportBuilder = TyrusSupport.builder();
-        for (Object o : endpoints) {
-            if (o instanceof ServerEndpointConfig) {
-                tyrusSupportBuilder.register((ServerEndpointConfig) o);
-            } else if (o instanceof Class<?>) {
-                tyrusSupportBuilder.register((Class<?>) o);
-            } else {
-                throw new IllegalArgumentException("Illegal argument " + o.toString());
+    protected static void routing(Routing.Rules rules, Class<?>... classes) {
+        routing(rules, it -> {
+            for (Class<?> clazz : classes) {
+                it.register(clazz);
             }
-        }
+        });
+    }
 
-        webServer = builder
-                .routing(Routing.builder().register(
-                        "/tyrus", tyrusSupportBuilder.build()))
-                .build();
+    @SafeVarargs
+    protected static <T extends ServerEndpointConfig> void routing(Routing.Rules rules, T... endpoints) {
+        routing(rules, it -> {
+            for (T endpoint : endpoints) {
+                it.register(endpoint);
+            }
+        });
+    }
 
-        webServer.start()
-                .toCompletableFuture()
-                .get(10, TimeUnit.SECONDS);
+    protected URI uri(String path) {
+        return URI.create("ws://localhost:" + port + "/" + path);
+    }
 
-        if (!testing) {
-            System.out.println("WebServer Tyrus application started.");
-            System.out.println("Hit CTRL+C to stop.");
-            Thread.currentThread().join();
-        }
-
-        return webServer;
+    private static void routing(Routing.Rules rules, Consumer<TyrusSupport.Builder> updater) {
+        TyrusSupport.Builder tyrusSupportBuilder = TyrusSupport.builder();
+        updater.accept(tyrusSupportBuilder);
+        rules.register("/tyrus", tyrusSupportBuilder.build());
     }
 }
