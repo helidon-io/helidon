@@ -16,44 +16,27 @@
 
 package io.helidon.tests.integration.security.mapper;
 
-import javax.enterprise.inject.se.SeContainer;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
+import javax.inject.Inject;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
 
-import io.helidon.microprofile.cdi.HelidonContainer;
-import io.helidon.microprofile.server.ServerCdiExtension;
-
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
+import io.helidon.microprofile.tests.junit5.AddBean;
+import io.helidon.microprofile.tests.junit5.HelidonTest;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+@HelidonTest
+@AddBean(RestrictedResource.class)
 class RestrictedResourceTest {
-    private static WebTarget target;
-    private static HelidonContainer instance;
 
-    @BeforeAll
-    static void initClass() {
-        instance = HelidonContainer.instance();
-        SeContainer container = instance.start();
-        Client adminClient = ClientBuilder.newBuilder().build();
-        int port = container.getBeanManager().getExtension(ServerCdiExtension.class).port();
-        String uri = "http://localhost:" + port;
-        target = adminClient.target(uri);
-    }
-
-    @AfterAll
-    static void destroyClass() {
-        instance.shutdown();
-    }
+    @Inject
+    private WebTarget webTarget;
 
     @Test
     void testRestricted() {
-        Response response = target.path("restricted")
+        Response response = webTarget.path("restricted")
                 .request()
                 .get();
 

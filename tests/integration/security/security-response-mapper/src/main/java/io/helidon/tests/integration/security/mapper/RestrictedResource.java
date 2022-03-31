@@ -21,12 +21,11 @@ import javax.ws.rs.Path;
 
 import io.helidon.security.annotations.Authenticated;
 
-@Path("/")
+@Path("restricted")
 @Authenticated
 public class RestrictedResource {
 
     @GET
-    @Path("/restricted")
     @Restricted
     public String restricted() {
         return "Never called";
