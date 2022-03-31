@@ -47,10 +47,6 @@
             <artifactId>helidon-config-yaml</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.integrations.oci.sdk</groupId>
-            <artifactId>helidon-integrations-oci-sdk-cdi</artifactId>
-        </dependency>
-        <dependency>
             <groupId>com.oracle.oci.sdk</groupId>
             <artifactId>oci-java-sdk-keymanagement</artifactId>
         </dependency>
@@ -63,8 +59,10 @@
             <artifactId>oci-java-sdk-vault</artifactId>
         </dependency>
         <dependency>
+            <!-- required by SDK -->
             <groupId>jakarta.inject</groupId>
             <artifactId>jakarta.inject-api</artifactId>
+            <scope>runtime</scope>
         </dependency>
     </dependencies>
 
