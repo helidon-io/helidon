@@ -350,7 +350,7 @@ abstract class SecurityFilterCommon {
         }
 
         // Run security response mappers if available, or revert to old logic for compatibility
-        if (RESPONSE_MAPPERS.stream().findAny().isPresent()) {
+        if (!RESPONSE_MAPPERS.isEmpty()) {
             RESPONSE_MAPPERS.forEach(m -> m.aborted(response, responseBuilder));
         } else if (featureConfig.isDebug()) {
             response.description().ifPresent(responseBuilder::entity);
