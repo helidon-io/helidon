@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,4 +44,5 @@ module io.helidon.security.integration.jersey {
     opens io.helidon.security.integration.jersey to hk2.locator,hk2.utils,weld.core.impl, io.helidon.microprofile.cdi;
 
     uses io.helidon.security.providers.common.spi.AnnotationAnalyzer;
+    uses io.helidon.security.integration.jersey.SecurityResponseMapper;
 }
