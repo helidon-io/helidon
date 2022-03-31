@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.ServiceLoader;
 import java.util.logging.Logger;
 
 import javax.ws.rs.WebApplicationException;
@@ -344,7 +345,11 @@ abstract class SecurityFilterCommon {
             updateHeaders(responseHeaders, responseBuilder);
         }
 
-        if (featureConfig.isDebug()) {
+        // Run security response mappers if available, or revert to old logic for compatibility
+        ServiceLoader<SecurityResponseMapper> loader = ServiceLoader.load(SecurityResponseMapper.class);
+        if (loader.stream().findAny().isPresent()) {
+            loader.forEach(m -> m.aborted(response, responseBuilder));
+        } else if (featureConfig.isDebug()) {
             response.description().ifPresent(responseBuilder::entity);
         }
 
