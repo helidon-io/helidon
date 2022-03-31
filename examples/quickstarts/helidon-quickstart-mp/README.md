@@ -4,7 +4,7 @@ This example implements a simple Hello World REST service using MicroProfile.
 
 ## Build and run
 
-With JDK11+
+With JDK17+
 ```bash
 mvn package
 java -jar target/helidon-quickstart-mp.jar
@@ -80,7 +80,7 @@ You can build a native executable in 2 different ways:
 ### Local build
 
 Download Graal VM at https://www.graalvm.org/downloads. We recommend
-version `20.1.0` or later.
+version `21.3.0` or later.
 
 ```
 # Setup the environment
