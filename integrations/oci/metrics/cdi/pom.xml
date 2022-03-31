@@ -20,11 +20,10 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.helidon.integrations.oci</groupId>
+        <groupId>io.helidon.integrations.oci.metrics</groupId>
         <artifactId>helidon-integrations-oci-metrics-project</artifactId>
         <version>2.4.3-SNAPSHOT</version>
     </parent>
-    <groupId>io.helidon.integrations.oci.metrics</groupId>
     <artifactId>helidon-integrations-oci-metrics-cdi</artifactId>
     <name>Helidon Integrations OCI Metrics CDI</name>
     <description>Helidon Metrics to OCI via CDI</description>
