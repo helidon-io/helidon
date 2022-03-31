@@ -31,7 +31,7 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.integrations.oci</groupId>
+            <groupId>io.helidon.integrations.oci.metrics</groupId>
             <artifactId>helidon-integrations-oci-metrics</artifactId>
         </dependency>
         <dependency>
