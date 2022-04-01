@@ -38,6 +38,9 @@ final class OciHandler {
             @Override
             public void onError(REQ req, Throwable error) {
                 LOGGER.log(Level.WARNING, "OCI Exception", error);
+                if (error instanceof Error) {
+                    throw (Error) error;
+                }
                 if (error instanceof RuntimeException) {
                     throw (RuntimeException) error;
                 }

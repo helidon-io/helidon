@@ -30,7 +30,7 @@ import javax.ws.rs.PathParam;
 
 import io.helidon.common.Base64Value;
 
-import com.oracle.bmc.keymanagement.KmsCryptoClient;
+import com.oracle.bmc.keymanagement.KmsCrypto;
 import com.oracle.bmc.keymanagement.model.DecryptDataDetails;
 import com.oracle.bmc.keymanagement.model.EncryptDataDetails;
 import com.oracle.bmc.keymanagement.model.SignDataDetails;
@@ -39,11 +39,11 @@ import com.oracle.bmc.keymanagement.requests.DecryptRequest;
 import com.oracle.bmc.keymanagement.requests.EncryptRequest;
 import com.oracle.bmc.keymanagement.requests.SignRequest;
 import com.oracle.bmc.keymanagement.requests.VerifyRequest;
-import com.oracle.bmc.secrets.SecretsClient;
+import com.oracle.bmc.secrets.Secrets;
 import com.oracle.bmc.secrets.model.Base64SecretBundleContentDetails;
 import com.oracle.bmc.secrets.model.SecretBundleContentDetails;
 import com.oracle.bmc.secrets.requests.GetSecretBundleRequest;
-import com.oracle.bmc.vault.VaultsClient;
+import com.oracle.bmc.vault.Vaults;
 import com.oracle.bmc.vault.model.Base64SecretContentDetails;
 import com.oracle.bmc.vault.model.CreateSecretDetails;
 import com.oracle.bmc.vault.model.ScheduleSecretDeletionDetails;
@@ -57,18 +57,18 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
  */
 @Path("/vault")
 public class VaultResource {
-    private final SecretsClient secrets;
-    private final KmsCryptoClient crypto;
-    private final VaultsClient vaults;
+    private final Secrets secrets;
+    private final KmsCrypto crypto;
+    private final Vaults vaults;
     private final String vaultOcid;
     private final String compartmentOcid;
     private final String encryptionKeyOcid;
     private final String signatureKeyOcid;
 
     @Inject
-    VaultResource(SecretsClient secrets,
-                  KmsCryptoClient crypto,
-                  VaultsClient vaults,
+    VaultResource(Secrets secrets,
+                  KmsCrypto crypto,
+                  Vaults vaults,
                   @ConfigProperty(name = "app.vault.vault-ocid")
                   String vaultOcid,
                   @ConfigProperty(name = "app.vault.compartment-ocid")
