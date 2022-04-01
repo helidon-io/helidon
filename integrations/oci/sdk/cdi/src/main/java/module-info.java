@@ -40,4 +40,6 @@ module io.helidon.integrations.oci.sdk.cdi {
 
     provides javax.enterprise.inject.spi.Extension
         with io.helidon.integrations.oci.sdk.cdi.OciExtension;
+
+    opens io.helidon.integrations.oci.sdk.cdi to weld.core.impl;
 }
