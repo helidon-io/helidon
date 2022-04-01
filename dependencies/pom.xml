@@ -119,7 +119,7 @@
         <version.lib.mongodb.reactivestreams>1.11.0</version.lib.mongodb.reactivestreams>
         <version.lib.mssql-jdbc>8.4.1.jre8</version.lib.mssql-jdbc>
         <version.lib.neo4j>4.4.3</version.lib.neo4j>
-        <version.lib.mysql-connector-java>8.0.22</version.lib.mysql-connector-java>
+        <version.lib.mysql-connector-java>8.0.28</version.lib.mysql-connector-java>
         <version.lib.narayana>5.12.0.Final</version.lib.narayana>
         <version.lib.netty>4.1.73.Final</version.lib.netty>
         <version.lib.netty-io_uring>0.0.8.Final</version.lib.netty-io_uring>
@@ -133,7 +133,7 @@
         <version.lib.opentracing.grpc>0.2.1</version.lib.opentracing.grpc>
         <version.lib.opentracing.tracerresolver>0.1.8</version.lib.opentracing.tracerresolver>
         <version.lib.persistence-api>2.2.3</version.lib.persistence-api>
-        <version.lib.postgresql>42.2.18</version.lib.postgresql>
+        <version.lib.postgresql>42.3.3</version.lib.postgresql>
         <version.lib.prometheus>0.9.0</version.lib.prometheus>
         <version.lib.slf4j>1.7.32</version.lib.slf4j>
         <version.lib.smallrye-openapi>2.0.26</version.lib.smallrye-openapi>
