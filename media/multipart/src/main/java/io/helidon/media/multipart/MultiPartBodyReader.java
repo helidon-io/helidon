@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,10 @@ import io.helidon.media.common.MessageBodyReaderContext;
 
 /**
  * {@link ReadableMultiPart} reader.
+ *
+ * @deprecated Use {@link BodyPartBodyStreamReader} instead. This interface will be removed at 3.0.0 version.
  */
+@Deprecated(since = "2.5.0", forRemoval = true)
 public final class MultiPartBodyReader implements MessageBodyReader<MultiPart> {
 
     private static final BytesToChunks BYTES_TO_CHUNKS = new BytesToChunks();
