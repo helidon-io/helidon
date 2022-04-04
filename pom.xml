@@ -60,6 +60,7 @@
         <version.lib.groovy-all>2.4.14</version.lib.groovy-all>
         <!-- Silence javadoc error org.jboss.logging.annotations.Message$Format not found -->
         <version.lib.jboss-logging-annotations>2.2.1.Final</version.lib.jboss-logging-annotations>
+        <version.lib.junit4>4.13.1</version.lib.junit4>
         <version.lib.kafka-junit5>3.2.3</version.lib.kafka-junit5>
         <version.lib.netty.tcnative>2.0.46.Final</version.lib.netty.tcnative>
         <version.lib.restito>0.9.1</version.lib.restito>
@@ -114,7 +115,7 @@
         <version.plugin.source>3.0.1</version.plugin.source>
         <version.plugin.spotbugs>4.4.2.2</version.plugin.spotbugs>
         <version.plugin.findsecbugs>1.11.0</version.plugin.findsecbugs>
-        <version.plugin.dependency-check>6.0.2</version.plugin.dependency-check>
+        <version.plugin.dependency-check>6.5.3</version.plugin.dependency-check>
         <version.plugin.surefire>3.0.0-M5</version.plugin.surefire>
         <version.plugin.toolchains>1.1</version.plugin.toolchains>
         <version.plugin.version-plugin>2.3</version.plugin.version-plugin>
@@ -159,6 +160,7 @@
         <javadoc.link.jersey>https://eclipse-ee4j.github.io/jersey.github.io/apidocs/${version.lib.jersey}/jersey</javadoc.link.jersey>
         <javadoc.link.typesafe-config>https://static.javadoc.io/com.typesafe/config/${version.lib.typesafe-config}</javadoc.link.typesafe-config>
         <javadoc.link.netty-transport>https://static.javadoc.io/io.netty/netty-transport/${version.lib.netty}</javadoc.link.netty-transport>
+        <javadoc.link.oci>https://docs.oracle.com/en-us/iaas/tools/java/${version.lib.oci}</javadoc.link.oci>
         <javadoc.link.opentracing>https://static.javadoc.io/io.opentracing/opentracing-api/${version.lib.opentracing}</javadoc.link.opentracing>
         <javadoc.link.prometheus>https://static.javadoc.io/io.prometheus/simpleclient/${version.lib.prometheus}</javadoc.link.prometheus>
         <javadoc.link.zipkin>https://static.javadoc.io/io.zipkin.reporter2/zipkin-reporter/2.12.3</javadoc.link.zipkin>
@@ -276,6 +278,10 @@
                             <offlineLink>
                                 <url>${javadoc.link.netty-transport}</url>
                                 <location>${javadoc.packagelist.dir}/netty-transport</location>
+                            </offlineLink>
+                            <offlineLink>
+                                <url>${javadoc.link.oci}</url>
+                                <location>${javadoc.packagelist.dir}/oci</location>
                             </offlineLink>
                             <offlineLink>
                                 <url>${javadoc.link.opentracing}</url>

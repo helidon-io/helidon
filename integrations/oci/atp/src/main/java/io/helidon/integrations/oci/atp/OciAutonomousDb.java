@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,9 @@ import io.helidon.integrations.common.rest.ApiOptionalResponse;
  * Blocking OCI ATP API.
  * All methods block the current thread. This implementation is not suitable for reactive programming.
  * Use {@link OciAutonomousDbRx} in reactive code.
+ * @deprecated  OCI SDK instead
  */
+@Deprecated(since = "2.5.0", forRemoval = true)
 public interface OciAutonomousDb {
     /**
      * Create a blocking ATP integration from its reactive counterpart.

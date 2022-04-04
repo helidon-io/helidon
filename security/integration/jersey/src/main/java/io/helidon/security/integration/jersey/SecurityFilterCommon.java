@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.ServiceLoader;
 import java.util.logging.Logger;
 
 import javax.ws.rs.WebApplicationException;
@@ -27,6 +28,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
+import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.AuthorizationResponse;
@@ -47,6 +49,9 @@ import org.glassfish.jersey.server.ContainerRequest;
  */
 abstract class SecurityFilterCommon {
     static final String PROP_FILTER_CONTEXT = "io.helidon.security.jersey.FilterContext";
+
+    private static final List<SecurityResponseMapper> RESPONSE_MAPPERS = HelidonServiceLoader
+            .builder(ServiceLoader.load(SecurityResponseMapper.class)).build().asList();
 
     @Context
     private Security security;
@@ -344,7 +349,10 @@ abstract class SecurityFilterCommon {
             updateHeaders(responseHeaders, responseBuilder);
         }
 
-        if (featureConfig.isDebug()) {
+        // Run security response mappers if available, or revert to old logic for compatibility
+        if (!RESPONSE_MAPPERS.isEmpty()) {
+            RESPONSE_MAPPERS.forEach(m -> m.aborted(response, responseBuilder));
+        } else if (featureConfig.isDebug()) {
             response.description().ifPresent(responseBuilder::entity);
         }
 

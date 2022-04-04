@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -96,7 +96,7 @@ The following table shows all configuration options of the provider and their de
 |`optional` |`false` |If set to `true`, failure to authenticate will return `ABSTAIN` result instead of `FAILURE`. This is
     an important distinction when more than one provider is used
 |`realm` | `helidon` |Realm used for challenge when request does not have a signature
-|`headers` | `[SIGNATURE,AUTHORIZATION]` |Headers to look for inbound signatures and to store outbound signatures
+|`headers` | `[SIGNATURE,AUTHORIZATION,CUSTOM]` |Headers to look for inbound signatures and to store outbound signatures. `CUSTOM` is provided using `io.helidon.security.util.TokenHandler`
 |`sign-headers` | `always = ["date"]` |Headers to be signed
 |`sign-headers.*.method` |default for all methods |Method this configuration is valid for
 |`sign-headers.*.always` | {nbsp} |Array of headers to be always required in the request signature
@@ -120,9 +120,11 @@ The following table shows all configuration options of the provider and their de
 |`outbound.*.methods` |any method |An array of HTTP methods this outbound configuration should be used for
 |`outbound.*.signature` |{nbsp} |Configuration related to outbound signature configuration
 |`outbound.*.signature.key-id` |{nbsp} |Key id to use in the outbound signature (to map to appropriate public key in target service's configuration)
+|`outbound.*.signature.header` | `[SIGNATURE,AUTHORIZATION,CUSTOM]` |Headers supported by HTTP Signature. `CUSTOM` is provided using `io.helidon.security.util.TokenHandler`
 |`outbound.*.signature.hmac.secret` |{nbsp} |Shared secret for hmac
 |`outbound.*.signature.private-key` |{nbsp} |Private key configuration for rsa based signatures
 |`outbound.*.signature.private-key.keystore` |{nbsp} |Keystore configuration for private key - full configuration as defined by `KeyStore` class
+
 |===
 
 ==== Signature basics

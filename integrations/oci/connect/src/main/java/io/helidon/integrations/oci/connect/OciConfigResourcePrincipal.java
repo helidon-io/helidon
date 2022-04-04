@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,9 @@ import io.helidon.common.reactive.Single;
  * This is used when running within functions.
  *
  * TODO THIS CLASS IS NOT YET IMPLEMENTED AND WILL THROW AN EXCEPTION
+ * @deprecated  OCI SDK instead
  */
+@Deprecated(since = "2.5.0", forRemoval = true)
 public class OciConfigResourcePrincipal implements OciConfigProvider {
     private static final String OCI_RESOURCE_PRINCIPAL_VERSION = "OCI_RESOURCE_PRINCIPAL_VERSION";
     private static final String RP_VERSION_2_2 = "2.2";

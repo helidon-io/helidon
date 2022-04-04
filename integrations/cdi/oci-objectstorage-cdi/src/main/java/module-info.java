@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,15 +17,20 @@
 /**
  * Provides classes and interfaces that integrate the OCI object
  * storage service into CDI 2.0-based applications.
+ *
+ * @deprecated Please use the {@code io.helidon.integrations.cdi.oci} 
+ * module instead.
  */
+@Deprecated
+@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.integrations.cdi.oci.objectstorage {
 
     requires jakarta.inject.api;
     requires oci.java.sdk.common;
     requires oci.java.sdk.objectstorage.generated;
     requires oci.java.sdk.objectstorage.extensions;
-    requires jakarta.enterprise.cdi.api;
-    requires microprofile.config.api;
+    requires transitive jakarta.enterprise.cdi.api;
+    requires transitive microprofile.config.api;
 
     exports io.helidon.integrations.cdi.oci.objectstorage;
 

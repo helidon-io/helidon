@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2021 Oracle and/or its affiliates.
+# Copyright (c) 2021, 2022 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -32,13 +32,3 @@ app:
     encryption-key-ocid: "${oci.properties.vault-key-ocid}"
     signature-key-ocid: "${oci.properties.vault-rsa-key-ocid}"
 
-#
-# The following properties under oci are accessed by Helidon
-#
-oci:
-  vault:
-    healthchecks: [ "${oci.properties.vault-ocid}" ]
-  custom:
-    vault:
-      # named OCI configuration
-      cryptographic-endpoint: "${oci.properties.cryptographic-endpoint}"

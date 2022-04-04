@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,9 @@
 
 package io.helidon.config.spi;
 
+import java.io.InputStream;
 import java.util.Optional;
+import java.util.function.Function;
 
 import io.helidon.config.ConfigException;
 
@@ -52,6 +54,15 @@ public interface ParsableSource extends Source {
      * @return media type if configured or detected from content
      */
     Optional<String> mediaType();
+
+    /**
+     * Resolve relative resource to the current resource.
+     *
+     * @return a function to resolve resource name into an input stream
+     */
+    default Function<String, Optional<InputStream>> relativeResolver() {
+        return it -> Optional.empty();
+    }
 
     /**
      * A builder for a parsable source.

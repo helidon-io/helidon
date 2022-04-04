@@ -1,0 +1,5 @@
+
+sources:
+  - type: "classpath"
+    properties:
+      resource: "app-prod.yaml"

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -132,24 +132,47 @@ public final class HealthSupport implements Service {
             return;
         }
         rules.any(webContext, corsEnabledServiceHelper.processor())
-                .get(webContext, this::callAll)
-                .get(webContext + "/live", this::callLiveness)
-                .get(webContext + "/ready", this::callReadiness);
+                .get(webContext, this::getAll)
+                .get(webContext + "/live", this::getLiveness)
+                .get(webContext + "/ready", this::getReadiness)
+                .head(webContext, this::headAll)
+                .head(webContext + "/live", this::headLiveness)
+                .head(webContext + "/ready", this::headReadiness);
     }
 
-    private void callAll(ServerRequest req, ServerResponse res) {
-        invoke(res, allChecks);
+    private void getAll(ServerRequest req, ServerResponse res) {
+        get(res, allChecks);
     }
 
-    private void callLiveness(ServerRequest req, ServerResponse res) {
-        invoke(res, livenessChecks);
+    private void getLiveness(ServerRequest req, ServerResponse res) {
+        get(res, livenessChecks);
     }
 
-    private void callReadiness(ServerRequest req, ServerResponse res) {
-        invoke(res, readinessChecks);
+    private void getReadiness(ServerRequest req, ServerResponse res) {
+        get(res, readinessChecks);
     }
 
-    void invoke(ServerResponse res, List<HealthCheck> healthChecks) {
+    private void headAll(ServerRequest req, ServerResponse res) {
+        head(res, allChecks);
+    }
+
+    private void headLiveness(ServerRequest req, ServerResponse res) {
+        head(res, livenessChecks);
+    }
+
+    private void headReadiness(ServerRequest req, ServerResponse res) {
+        head(res, readinessChecks);
+    }
+
+    private void get(ServerResponse res, List<HealthCheck> healthChecks) {
+        invoke(res, healthChecks, true);
+    }
+
+    private void head(ServerResponse res, List<HealthCheck> healthChecks) {
+        invoke(res, healthChecks, false);
+    }
+
+    void invoke(ServerResponse res, List<HealthCheck> healthChecks, boolean sendDetails) {
         // timeout on the asynchronous execution
         Single<HealthResponse> result = timeout.invoke(() -> async.invoke(() -> callHealthChecks(healthChecks)));
 
@@ -161,10 +184,17 @@ public final class HealthSupport implements Service {
         });
 
         result.thenAccept(hres -> {
-            res.status(hres.status());
-            res.send(jsonpWriter.marshall(hres.json));
+            int status = hres.status().code();
+            if (status == Http.Status.OK_200.code() && !sendDetails) {
+                status = Http.Status.NO_CONTENT_204.code();
+            }
+            res.status(status);
+            if (sendDetails) {
+                res.send(jsonpWriter.marshall(hres.json));
+            } else {
+                res.send();
+            }
         });
-
     }
 
     HealthResponse callHealthChecks(List<HealthCheck> healthChecks) {
