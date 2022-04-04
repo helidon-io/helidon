@@ -52,8 +52,7 @@ public class GreetingHolder {
 }
 ----
 
-Now, if in a bean there is a method parameter, annotated with `@Valid`, a _ValidationException_ will be thrown, if
-`GreetingHolder` with _null_ greeting is passed:
+If the bean contains a method parameter annotated with @Valid, and GreetingHolder with _null_greeting is passed, then a _ValidationException_ will be thrown:
 
 [source,java]
 ----
@@ -69,5 +68,4 @@ public class GreetingProvider {
 
 NOTE: `beans.xml` is required to identify beans and for bean validation to work properly.
 
-More information about validations supported is available can be found in {bean-validation-spec-url}[Jakarta Bean
-Validation specification].
+For more information about the supported validations, see {bean-validation-spec-url}[Jakarta Bean Validation specification].
