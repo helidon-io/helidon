@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
 
-    Copyright (c) 2020 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -36,15 +36,8 @@
     <h1>Uploaded files</h1>
     <div id="repository"></div>
 
-    <h1>Upload (buffered)</h1>
+    <h1>Upload</h1>
     <form action="/api" method="post" enctype="multipart/form-data">
-      Select a file to upload:
-      <input id="files" type="file" name="file[]" multiple />
-      <input type="submit" value="Upload!" name="submit">
-    </form>
-
-    <h1>Upload (stream)</h1>
-    <form action="/api?stream" method="post" enctype="multipart/form-data">
       Select a file to upload:
       <input id="files" type="file" name="file[]" multiple />
       <input type="submit" value="Upload!" name="submit">
