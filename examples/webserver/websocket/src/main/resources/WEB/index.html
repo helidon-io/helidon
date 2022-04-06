@@ -27,7 +27,7 @@
                document.getElementById("title").innerHTML = "WebSocket is supported by your Browser!";
                ws = new WebSocket("ws://localhost:8080/websocket/board");
                ws.onopen = function() {
-                  document.getElementById("result").innerHTML += "<p>WebSocket openned</p>";
+                  document.getElementById("result").innerHTML += "<p>WebSocket opened</p>";
                };
                ws.onmessage = function (evt) { 
                   var received_msg = evt.data;
