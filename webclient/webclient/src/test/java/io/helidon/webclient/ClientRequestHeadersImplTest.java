@@ -168,4 +168,13 @@ public class ClientRequestHeadersImplTest {
         assertThat(clientRequestHeaders.contentType(), is(MediaType.APPLICATION_YAML));
     }
 
+    @Test
+    public void testCopyHeaders() {
+        clientRequestHeaders.contentType(MediaType.APPLICATION_XML);
+        clientRequestHeaders.put(Http.Header.CONTENT_TYPE.toLowerCase(), MediaType.APPLICATION_JSON.toString());
+        clientRequestHeaders.put("CoNtEnT-TyPe", MediaType.APPLICATION_YAML.toString());
+        WebClientRequestHeaders copy = new WebClientRequestHeadersImpl(clientRequestHeaders);
+        assertThat(copy.contentType(), is(MediaType.APPLICATION_YAML));
+    }
+
 }

@@ -52,7 +52,7 @@ class WebClientRequestHeadersImpl implements WebClientRequestHeaders {
     }
 
     WebClientRequestHeadersImpl(WebClientRequestHeaders headers) {
-        headers.toMap().forEach((key, values) -> headers.computeIfAbsent(key, k -> new ArrayList<>()).addAll(values));
+        headers.toMap().forEach((key, values) -> this.headers.computeIfAbsent(key, k -> new ArrayList<>()).addAll(values));
     }
 
     @Override
