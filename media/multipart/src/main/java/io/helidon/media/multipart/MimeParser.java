@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -83,12 +83,14 @@ final class MimeParser {
 
         /**
          * Get the event type.
+         *
          * @return EVENT_TYPE
          */
         abstract EventType type();
 
         /**
          * Get this event as a {@link HeaderEvent}.
+         *
          * @return HeaderEvent
          */
         HeaderEvent asHeaderEvent() {
@@ -97,6 +99,7 @@ final class MimeParser {
 
         /**
          * Get this event as a {@link BodyEvent}.
+         *
          * @return HeaderEvent
          */
         BodyEvent asBodyEvent() {
@@ -229,6 +232,7 @@ final class MimeParser {
 
         /**
          * Create a new exception with the specified message.
+         *
          * @param message exception message
          */
         private ParsingException(String message) {
@@ -237,6 +241,7 @@ final class MimeParser {
 
         /**
          * Create a new exception with the specified cause.
+         *
          * @param cause exception cause
          */
         private ParsingException(Throwable cause) {
@@ -245,7 +250,7 @@ final class MimeParser {
     }
 
     private static final Logger LOGGER = Logger.getLogger(MimeParser.class.getName());
-    private static final Charset HEADER_ENCODING = StandardCharsets.ISO_8859_1;
+    private static final Charset HEADER_ENCODING = StandardCharsets.UTF_8;
 
     /**
      * All states.
@@ -344,8 +349,8 @@ final class MimeParser {
      * Push new data to the parsing buffer.
      *
      * @param data new data add to the parsing buffer
-     * @throws ParsingException if the parser state is not consistent
      * @return buffer id
+     * @throws ParsingException if the parser state is not consistent
      */
     int offer(ByteBuffer data) throws ParsingException {
         if (closed) {
@@ -358,6 +363,9 @@ final class MimeParser {
                 break;
             case DATA_REQUIRED:
                 // resume the previous state
+                if (LOGGER.isLoggable(Level.FINER)) {
+                    LOGGER.log(Level.FINER, "Resume state. resumeState={1}", resumeState);
+                }
                 state = resumeState;
                 resumeState = null;
                 id = buf.offer(data, position);
@@ -409,6 +417,7 @@ final class MimeParser {
 
     /**
      * Advances parsing.
+     *
      * @throws ParsingException if an error occurs during parsing
      */
     Iterator<ParserEvent> parseIterator() {
@@ -574,8 +583,12 @@ final class MimeParser {
                 position = bufLen - (bl + 1);
                 return buf.slice(bodyBegin, position);
             }
-            // remaining data can be an complete boundary, force it to be
+            // remaining data can be a complete boundary, force it to be
             // processed during next iteration
+            return Collections.emptyList();
+        } else if (bndStart + bl + 1 >= bufLen) {
+            // found a boundary at the very end of the buffer
+            // it may be a "closing" boundary, require more data
             return Collections.emptyList();
         }
 
@@ -724,7 +737,7 @@ final class MimeParser {
             }
         }
         position = offset + hdrLen + lwsp;
-        if (hdrLen == 0){
+        if (hdrLen == 0) {
             return "";
         }
         return new String(buf.getBytes(offset, hdrLen), HEADER_ENCODING);
@@ -733,7 +746,7 @@ final class MimeParser {
     /**
      * Boyer-Moore search method.
      * Copied from {@link java.util.regex.Pattern}
-     *
+     * <p>
      * Pre calculates arrays needed to generate the bad character shift and the
      * good suffix shift. Only the last seven bits are used to see if chars
      * match; This keeps the tables small and covers the heavily used ASCII
@@ -809,6 +822,7 @@ final class MimeParser {
 
     /**
      * Get the bytes representation of a string.
+     *
      * @param str string to convert
      * @return byte[]
      */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,10 +65,11 @@ public class HoconConfigParserTest {
     public void testResolveEnabled() {
         ConfigParser parser = HoconConfigParser.create();
         ObjectNode node = parser.parse((StringContent) () -> ""
-                + "aaa = 1 \n"
-                + "bbb = ${aaa} \n"
-                + "ccc = \"${aaa}\" \n"
-                + "ddd = ${?zzz}");
+                                               + "aaa = 1 \n"
+                                               + "bbb = ${aaa} \n"
+                                               + "ccc = \"${aaa}\" \n"
+                                               + "ddd = ${?zzz}",
+                                       it -> Optional.empty());
 
         assertThat(node.entrySet(), hasSize(3));
         assertThat(node.get("aaa"), valueNode("1"));
@@ -81,10 +82,11 @@ public class HoconConfigParserTest {
         ConfigParserException cpe = assertThrows(ConfigParserException.class, () -> {
             ConfigParser parser = HoconConfigParser.builder().disableResolving().build();
             parser.parse((StringContent) () -> ""
-                    + "aaa = 1 \n"
-                    + "bbb = ${aaa} \n"
-                    + "ccc = \"${aaa}\" \n"
-                    + "ddd = ${?zzz}");
+                                 + "aaa = 1 \n"
+                                 + "bbb = ${aaa} \n"
+                                 + "ccc = \"${aaa}\" \n"
+                                 + "ddd = ${?zzz}",
+                         it -> Optional.empty());
         });
 
         assertThat(cpe.getMessage(),
@@ -98,7 +100,7 @@ public class HoconConfigParserTest {
     @Test
     public void testResolveEnabledEnvVar() {
         ConfigParser parser = HoconConfigParser.create();
-        ObjectNode node = parser.parse((StringContent) () -> "env-var = ${HOCON_TEST_PROPERTY}");
+        ObjectNode node = parser.parse((StringContent) () -> "env-var = ${HOCON_TEST_PROPERTY}", it -> Optional.empty());
 
         assertThat(node.entrySet(), hasSize(1));
         assertThat(node.get("env-var"), valueNode("This Is My ENV VARS Value."));
@@ -110,7 +112,7 @@ public class HoconConfigParserTest {
             ConfigParser parser = HoconConfigParser.builder()
                     .resolveOptions(ConfigResolveOptions.noSystem())
                     .build();
-            parser.parse((StringContent) () -> "env-var = ${HOCON_TEST_PROPERTY}");
+            parser.parse((StringContent) () -> "env-var = ${HOCON_TEST_PROPERTY}", it -> Optional.empty());
         });
 
         assertThat(cpe.getMessage(),
@@ -124,7 +126,7 @@ public class HoconConfigParserTest {
     @Test
     public void testEmpty() {
         HoconConfigParser parser = HoconConfigParser.create();
-        ObjectNode node = parser.parse((StringContent) () -> "");
+        ObjectNode node = parser.parse((StringContent) () -> "", it -> Optional.empty());
 
         assertThat(node.entrySet(), hasSize(0));
     }
@@ -132,7 +134,7 @@ public class HoconConfigParserTest {
     @Test
     public void testSingleValue() {
         HoconConfigParser parser = HoconConfigParser.create();
-        ObjectNode node = parser.parse((StringContent) () -> "aaa = bbb");
+        ObjectNode node = parser.parse((StringContent) () -> "aaa = bbb", it -> Optional.empty());
 
         assertThat(node.entrySet(), hasSize(1));
         assertThat(node.get("aaa"), valueNode("bbb"));
@@ -141,7 +143,7 @@ public class HoconConfigParserTest {
     @Test
     public void testStringListValue() {
         HoconConfigParser parser = HoconConfigParser.create();
-        ObjectNode node = parser.parse((StringContent) () -> "aaa = [ bbb, ccc, ddd ]");
+        ObjectNode node = parser.parse((StringContent) () -> "aaa = [ bbb, ccc, ddd ]", it -> Optional.empty());
 
         assertThat(node.entrySet(), hasSize(1));
 
@@ -156,11 +158,12 @@ public class HoconConfigParserTest {
     public void testComplexValue() {
         HoconConfigParser parser = HoconConfigParser.create();
         ObjectNode node = parser.parse((StringContent) () -> ""
-                + "aaa =  \"bbb\"\n"
-                + "arr = [ bbb, 13, true, 3.14159 ] \n"
-                + "obj1 = { aaa = bbb, ccc = false } \n"
-                + "arr2 = [ aaa, false, { bbb = 3.14159, c = true }, { ooo { ppp { xxx = yyy }}} ]"
-        );
+                                               + "aaa =  \"bbb\"\n"
+                                               + "arr = [ bbb, 13, true, 3.14159 ] \n"
+                                               + "obj1 = { aaa = bbb, ccc = false } \n"
+                                               + "arr2 = [ aaa, false, { bbb = 3.14159, c = true }, { ooo { ppp { xxx = yyy }}}"
+                                               + " ]",
+                                       it -> Optional.empty());
 
         assertThat(node.entrySet(), hasSize(4));
         assertThat(node.get("aaa"), valueNode("bbb"));
@@ -357,10 +360,6 @@ public class HoconConfigParserTest {
             this.storagePassphrase = storagePassphrase;
         }
 
-        private List<Integer> copyBasicRange(List<Integer> source) {
-            return (source != null) ? new ArrayList<>(source) : Collections.emptyList();
-        }
-
         public String getGreeting() {
             return greeting;
         }
@@ -379,6 +378,10 @@ public class HoconConfigParserTest {
 
         public String getStoragePassphrase() {
             return storagePassphrase;
+        }
+
+        private List<Integer> copyBasicRange(List<Integer> source) {
+            return (source != null) ? new ArrayList<>(source) : Collections.emptyList();
         }
     }
 

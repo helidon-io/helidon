@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,11 @@
 
 package io.helidon.tests.apps.bookstore.mp;
 
-import io.helidon.tests.apps.bookstore.common.Book;
-import io.helidon.tests.apps.bookstore.common.BookStore;
-
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
-import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -33,9 +29,16 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.Collection;
 
-@Path("/books")
+import io.helidon.tests.apps.bookstore.common.Book;
+import io.helidon.tests.apps.bookstore.common.BookStore;
+
+/**
+ * The {@link Path} annotation is inherited from the base class. Note that a
+ * CDI scope annotation such as {@code @RequestScoped} is required given that
+ * discovery mode for this application is annotated.
+ */
 @RequestScoped
-public class BookResource {
+public class BookResource extends BookResourceBase {
 
     private final BookStore bookStore;
 
@@ -44,15 +47,13 @@ public class BookResource {
         this.bookStore = bookStore;
     }
 
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
+    @Override
     public Response getBooks() {
         Collection<Book> books = bookStore.getAll();
         return Response.ok(books).build();
     }
 
-    @POST
-    @Consumes(MediaType.APPLICATION_JSON)
+    @Override
     public Response postBook(Book book) {
         if (bookStore.contains(book.getIsbn())) {
             return Response.status(Response.Status.CONFLICT).build();

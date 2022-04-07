@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,9 @@ import io.helidon.integrations.common.rest.ApiException;
  * This exception is used when the API invocation fails before we receive an HTTP
  * response.
  * {@link io.helidon.integrations.oci.connect.OciRestException} is used otherwise.
+ * @deprecated  OCI SDK instead
  */
+@Deprecated(since = "2.5.0", forRemoval = true)
 public class OciApiException extends ApiException {
     /**
      * Exception without a message and cause.

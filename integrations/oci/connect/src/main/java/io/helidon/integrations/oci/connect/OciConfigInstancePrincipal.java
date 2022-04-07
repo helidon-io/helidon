@@ -71,7 +71,9 @@ import io.helidon.webclient.security.WebClientSecurity;
  * <p>
  * Configuration:
  * <a href="https://docs.oracle.com/en-us/iaas/Content/Identity/Tasks/callingservicesfrominstances.htm">OCI Instance Security</a>
+ * @deprecated  OCI SDK instead
  */
+@Deprecated(since = "2.5.0", forRemoval = true)
 public class OciConfigInstancePrincipal implements OciConfigProvider {
     private static final Logger LOGGER = Logger.getLogger(OciConfigInstancePrincipal.class.getName());
     private static final String DEFAULT_METADATA_SERVICE_URL = "http://169.254.169.254/opc/v2/";

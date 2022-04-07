@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 
 import io.helidon.config.ConfigParsers;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
@@ -77,8 +78,24 @@ public interface ConfigParser {
      * @param content a content to be parsed
      * @return parsed hierarchical configuration representation
      * @throws ConfigParserException in case of problem to parse configuration from the source
+     * @deprecated use {@link #parse(io.helidon.config.spi.ConfigParser.Content, java.util.function.Function)} instead
      */
+    @Deprecated
     ObjectNode parse(Content content) throws ConfigParserException;
+
+    /**
+     * Parses a specified {@link ConfigContent} into a {@link ObjectNode hierarchical configuration representation}.
+     * <p>
+     * Never returns {@code null}.
+     *
+     * @param content a content to be parsed
+     * @param relativeResolver function to resolve relative resources to this resource (if supported by the source)
+     * @return parsed hierarchical configuration representation
+     * @throws ConfigParserException in case of problem to parse configuration from the source
+     */
+    default ObjectNode parse(Content content, Function<String, Optional<InputStream>> relativeResolver) {
+        return parse(content);
+    }
 
     /**
      * Config parser can define supported file suffixes. If such are defined, Helidon will
