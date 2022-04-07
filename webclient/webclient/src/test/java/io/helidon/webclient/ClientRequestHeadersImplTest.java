@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -156,6 +156,25 @@ public class ClientRequestHeadersImplTest {
         clientRequestHeaders.ifRange(templateString);
         assertThat(clientRequestHeaders.ifRangeString(), is(Optional.of(templateString)));
         assertThrows(DateTimeParseException.class, () -> clientRequestHeaders.ifRangeDate());
+    }
+
+    @Test
+    public void testCaseInsensitivity() {
+        clientRequestHeaders.contentType(MediaType.APPLICATION_XML);
+        assertThat(clientRequestHeaders.contentType(), is(MediaType.APPLICATION_XML));
+        clientRequestHeaders.put(Http.Header.CONTENT_TYPE.toLowerCase(), MediaType.APPLICATION_JSON.toString());
+        assertThat(clientRequestHeaders.contentType(), is(MediaType.APPLICATION_JSON));
+        clientRequestHeaders.put("CoNtEnT-TyPe", MediaType.APPLICATION_YAML.toString());
+        assertThat(clientRequestHeaders.contentType(), is(MediaType.APPLICATION_YAML));
+    }
+
+    @Test
+    public void testCopyHeaders() {
+        clientRequestHeaders.contentType(MediaType.APPLICATION_XML);
+        clientRequestHeaders.put(Http.Header.CONTENT_TYPE.toLowerCase(), MediaType.APPLICATION_JSON.toString());
+        clientRequestHeaders.put("CoNtEnT-TyPe", MediaType.APPLICATION_YAML.toString());
+        WebClientRequestHeaders copy = new WebClientRequestHeadersImpl(clientRequestHeaders);
+        assertThat(copy.contentType(), is(MediaType.APPLICATION_YAML));
     }
 
 }
