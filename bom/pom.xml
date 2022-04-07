@@ -1000,6 +1000,11 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.helidon.integrations.oci.sdk</groupId>
+                <artifactId>helidon-integrations-oci-sdk-cdi</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.helidon.integrations.oci</groupId>
                 <artifactId>helidon-integrations-oci-telemetry</artifactId>
                 <version>${helidon.version}</version>
