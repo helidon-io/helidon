@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.CompletableFuture;
@@ -45,6 +46,7 @@ import java.util.logging.Logger;
 import io.helidon.common.GenericType;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
+import io.helidon.common.context.spi.DataPropagationProvider;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
@@ -52,6 +54,7 @@ import io.helidon.common.http.HttpRequest;
 import io.helidon.common.http.MediaType;
 import io.helidon.common.http.Parameters;
 import io.helidon.common.reactive.Single;
+import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.media.common.MessageBodyReadableContent;
 import io.helidon.media.common.MessageBodyReaderContext;
 import io.helidon.media.common.MessageBodyWriterContext;
@@ -83,6 +86,9 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     private static final Logger LOGGER = Logger.getLogger(WebClientRequestBuilderImpl.class.getName());
 
     private static final Map<ConnectionIdent, Set<ChannelRecord>> CHANNEL_CACHE = new ConcurrentHashMap<>();
+    private static final List<DataPropagationProvider> PROPAGATION_PROVIDERS = HelidonServiceLoader
+            .builder(ServiceLoader.load(DataPropagationProvider.class)).build().asList();
+
     static final AttributeKey<WebClientRequestImpl> REQUEST = AttributeKey.valueOf("request");
     static final AttributeKey<CompletableFuture<WebClientServiceResponse>> RECEIVED = AttributeKey.valueOf("received");
     static final AttributeKey<CompletableFuture<WebClientServiceResponse>> COMPLETED = AttributeKey.valueOf("completed");
@@ -612,8 +618,13 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
             });
             return result;
         }));
-
         return wrapWithContext(single);
+    }
+
+    @SuppressWarnings(value = "unchecked")
+    private void runInContext(Map<Class<?>, Object> data, Runnable command) {
+        PROPAGATION_PROVIDERS.forEach(provider -> provider.propagateData(data.get(provider.getClass())));
+        Contexts.runInContext(context, command);
     }
 
     /**
@@ -626,25 +637,27 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
      * @return wrapped single
      */
     private <T> Single<T> wrapWithContext(Single<T> single) {
-        return Single.create(subscriber -> single.subscribe(new Flow.Subscriber<T>() {
+        Map<Class<?>, Object> contextProperties = new HashMap<>();
+        PROPAGATION_PROVIDERS.forEach(provider -> contextProperties.put(provider.getClass(), provider.data()));
+        return Single.create(subscriber -> single.subscribe(new Flow.Subscriber<>() {
             @Override
             public void onSubscribe(Flow.Subscription subscription) {
-                Contexts.runInContext(context, () -> subscriber.onSubscribe(subscription));
+                runInContext(contextProperties, () -> subscriber.onSubscribe(subscription));
             }
 
             @Override
             public void onNext(T item) {
-                Contexts.runInContext(context, () -> subscriber.onNext(item));
+                runInContext(contextProperties, () -> subscriber.onNext(item));
             }
 
             @Override
             public void onError(Throwable throwable) {
-                Contexts.runInContext(context, () -> subscriber.onError(throwable));
+                runInContext(contextProperties, () -> subscriber.onError(throwable));
             }
 
             @Override
             public void onComplete() {
-                Contexts.runInContext(context, subscriber::onComplete);
+                runInContext(contextProperties, subscriber::onComplete);
             }
         }));
     }
