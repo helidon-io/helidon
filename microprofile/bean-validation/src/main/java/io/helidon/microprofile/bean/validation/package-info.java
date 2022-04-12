@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 /**
- * General Bean Validation.
+ * General Bean Validation. Used to enable validation
+ * and to handle validation exceptions and map them to JAX-RS response.
  */
 package io.helidon.microprofile.bean.validation;

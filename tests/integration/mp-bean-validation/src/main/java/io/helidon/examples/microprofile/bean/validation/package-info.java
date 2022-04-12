@@ -13,29 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.tests.integration.bean.validation;
-
-
-import javax.validation.constraints.NotNull;
 
 /**
- * Holder for a greeting, ensuring it is not null.
+ * Bean Validation integration tests.
  */
-public class GreetingHolder {
-
-    /**
-     * Explicitly declare as not eligible for null.
-     */
-    @NotNull
-    private String greeting;
-
-    GreetingHolder(String greeting) {
-        this.greeting = greeting;
-    }
-
-    String getGreeting() {
-        return greeting;
-    }
-
-}
-
+package io.helidon.examples.microprofile.bean.validation;

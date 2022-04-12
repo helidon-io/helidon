@@ -35,14 +35,7 @@
     <packaging>jar</packaging>
 
     <dependencies>
-        <dependency>
-            <groupId>jakarta.validation</groupId>
-            <artifactId>jakarta.validation-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.hibernate.validator</groupId>
-            <artifactId>hibernate-validator</artifactId>
-        </dependency>
+
         <dependency>
             <groupId>org.hibernate.validator</groupId>
             <artifactId>hibernate-validator-cdi</artifactId>
@@ -54,11 +47,6 @@
         <dependency>
             <groupId>jakarta.ws.rs</groupId>
             <artifactId>jakarta.ws.rs-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>jakarta.xml.bind</groupId>
-            <artifactId>jakarta.xml.bind-api</artifactId>
             <scope>provided</scope>
         </dependency>
 

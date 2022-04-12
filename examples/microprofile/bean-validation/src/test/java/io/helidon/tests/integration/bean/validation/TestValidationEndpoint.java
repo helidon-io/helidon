@@ -42,7 +42,7 @@ public class TestValidationEndpoint {
     public void testValidation() {
 
         Response.StatusType statusInfo = webTarget
-                .path("/greet/null")
+                .path("/valid/email")
                 .request()
                 .get()
                 .getStatusInfo();
@@ -58,7 +58,7 @@ public class TestValidationEndpoint {
     public void testNormalUsage(){
 
         Response.StatusType statusInfo = webTarget
-                .path("/greet")
+                .path("/valid/e@mail.com")
                 .request()
                 .get()
                 .getStatusInfo();
