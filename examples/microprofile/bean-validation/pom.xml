@@ -40,11 +40,18 @@
             <groupId>io.helidon.microprofile.bean-validation</groupId>
             <artifactId>helidon-microprofile-bean-validation</artifactId>
         </dependency>
+
         <dependency>
             <groupId>org.jboss</groupId>
             <artifactId>jandex</artifactId>
             <scope>runtime</scope>
             <optional>true</optional>
+        </dependency>
+
+        <dependency>
+            <groupId>io.helidon.microprofile.tests</groupId>
+            <artifactId>helidon-microprofile-tests-junit5</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>

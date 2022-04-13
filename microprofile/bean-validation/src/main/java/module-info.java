@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 /**
- * General Bean Validation module.
+ * General Bean Validation. This module is used to enable validation
+ * and to handle validation exceptions and map them to JAX-RS response.
  */
 module helidon.microprofile.bean.validation {
     requires jakarta.activation;
