@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,13 @@
 
 package io.helidon.config.hocon;
 
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 
 import io.helidon.config.ConfigException;
 import io.helidon.config.spi.ConfigNode.ListNode;
@@ -30,6 +34,7 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigList;
 import com.typesafe.config.ConfigObject;
+import com.typesafe.config.ConfigParseOptions;
 import com.typesafe.config.ConfigResolveOptions;
 import jakarta.annotation.Priority;
 
@@ -60,42 +65,39 @@ public class HoconConfigParser implements ConfigParser {
      * A String constant representing {@value} media type.
      */
     public static final String MEDIA_TYPE_APPLICATION_JSON = "application/json";
-
     /**
      * Priority of the parser used if registered by {@link io.helidon.config.Config.Builder} automatically.
      */
     public static final int PRIORITY = ConfigParser.PRIORITY + 100;
-
+    private static final List<String> SUPPORTED_SUFFIXES = List.of("json", "conf");
     private static final Set<String> SUPPORTED_MEDIA_TYPES =
             Set.of(MEDIA_TYPE_APPLICATION_HOCON, MEDIA_TYPE_APPLICATION_JSON);
 
     private final boolean resolvingEnabled;
     private final ConfigResolveOptions resolveOptions;
+    private final ConfigParseOptions parseOptions;
+    private final HoconConfigIncluder includer;
 
-    /**
-     * Initializes parser.
-     *
-     * @param resolvingEnabled resolving substitutions support enabled
-     * @param resolveOptions   resolving options
-     */
-    HoconConfigParser(boolean resolvingEnabled, ConfigResolveOptions resolveOptions) {
+    HoconConfigParser(HoconConfigParserBuilder builder) {
+        this.resolvingEnabled = builder.resolvingEnabled();
+        this.resolveOptions = builder.resolveOptions();
+        this.parseOptions = Objects.requireNonNull(builder.parseOptions());
+        this.includer = builder.includer();
+
         if (resolvingEnabled) {
             Objects.requireNonNull(resolveOptions, "resolveOptions parameter is mandatory");
         }
-
-        this.resolvingEnabled = resolvingEnabled;
-        this.resolveOptions = resolveOptions;
     }
 
     /**
      * To be used by Java Service Loader only!!!
      *
      * @deprecated Use {@link #builder()} to construct a customized instance, or {@link #create()} to get an instance with
-     * defaults
+     *         defaults
      */
     @Deprecated
     public HoconConfigParser() {
-        this(true, ConfigResolveOptions.defaults());
+        this(builder());
     }
 
     /**
@@ -124,9 +126,18 @@ public class HoconConfigParser implements ConfigParser {
 
     @Override
     public ObjectNode parse(Content content) {
+        return parse(content, it -> Optional.empty());
+    }
+
+    @Override
+    public synchronized ObjectNode parse(Content content, Function<String, Optional<InputStream>> relativeResolver) {
+        includer.parseOptions(parseOptions);
+        includer.relativeResourceFunction(relativeResolver);
+        includer.charset(content.charset());
+
         Config typesafeConfig;
         try (InputStreamReader readable = new InputStreamReader(content.data(), content.charset())) {
-            typesafeConfig = ConfigFactory.parseReader(readable);
+            typesafeConfig = ConfigFactory.parseReader(readable, parseOptions);
             if (resolvingEnabled) {
                 typesafeConfig = typesafeConfig.resolve(resolveOptions);
             }
@@ -137,6 +148,11 @@ public class HoconConfigParser implements ConfigParser {
         } catch (Exception e) {
             throw new ConfigParserException("Cannot read from source: " + e.getLocalizedMessage(), e);
         }
+    }
+
+    @Override
+    public List<String> supportedSuffixes() {
+        return SUPPORTED_SUFFIXES;
     }
 
     private static ObjectNode fromConfig(ConfigObject config) {

@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@
 :filter-java: {mp-openapi-prefix}/api/src/main/java/org/eclipse/microprofile/openapi/OASFilter.java
 :feature-name: OpenAPI
 :common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+:common-openapi-doc: ../../shared/openapi/openapi-shared.adoc
 
 Easily allow your Helidon SE application to serve an OpenAPI document
 that describes your application's endpoints.
@@ -156,18 +157,7 @@ servers for given operations
 |===
 For more information on what these settings do consult the MicroProfile OpenAPI spec.
 
-Helidon SE also supports additional properties.
-
-.Helidon SE-specific OpenAPI Config Properties
-|===
-|Property |Use
-
-|`openapi.web-context` |Path which serves the OpenAPI document (defaults to `/openapi`)
-|`openapi.static-file` |Full path to the static OpenAPI file (defaults to 
- `META-INF/openapi.yml`,
- `META-INF/openapi.yaml`, or
- `META-INF/openapi.json`)
-|===
+include::{common-openapi-doc}[common-config]
 
 Set these config properties in one of the config sources your app uses so the
 Helidon config system will load them. Often developers use `application.yaml` at the 

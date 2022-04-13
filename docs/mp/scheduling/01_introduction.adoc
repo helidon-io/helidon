@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -83,7 +83,7 @@ For more complicated interval definition, cron expression can be leveraged with
 [source,java]
 .Example of scheduling with cron expression
 ----
-@Scheduled("0 15 8 ? * *")
+@Scheduled("0 15 8 ? * *", concurrentExecution = false)
 public void methodName() {
     System.out.println("Executer every day at 8:15");
 }
@@ -95,10 +95,29 @@ Metadata like human-readable interval description or configured values are avail
 CronInvocation injected as method parameter.
 
 [source,java]
-.Example with ivocation metadata
+.Example with invocation metadata
 ----
 @Scheduled("0 15 8 ? * *")
 public void methodName(CronInvocation inv) {
     System.out.println("Method invoked " + inv.description());
 }
 ----
+
+`Scheduled` annotation properties can be overridden using `application.yaml` properties
+
+[source,yaml]
+.Overriding annotated values from config
+----
+fully.quallified.ClassName.methodName:
+  schedule:
+    cron: "* * * * * ?"
+    concurrent: false
+----
+
+.Configuration properties
+[width="90%",cols="3,10",frame="topbot",options="header"]
+|====
+| Property              | Description
+| cron                  | String containing cron setup
+| concurrent            | Boolean, equivalent `concurrentExecution` property of `@Scheduled`. Default `true`.
+|====

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,9 +34,16 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-@Path("/books")
+import io.helidon.tests.apps.bookstore.common.Book;
+import io.helidon.tests.apps.bookstore.common.BookStore;
+
+/**
+ * The {@link Path} annotation is inherited from the base class. Note that a
+ * CDI scope annotation such as {@code @RequestScoped} is required given that
+ * discovery mode for this application is annotated.
+ */
 @RequestScoped
-public class BookResource {
+public class BookResource extends BookResourceBase {
 
     private final BookStore bookStore;
 
@@ -45,15 +52,13 @@ public class BookResource {
         this.bookStore = bookStore;
     }
 
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
+    @Override
     public Response getBooks() {
         Collection<Book> books = bookStore.getAll();
         return Response.ok(books).build();
     }
 
-    @POST
-    @Consumes(MediaType.APPLICATION_JSON)
+    @Override
     public Response postBook(Book book) {
         if (bookStore.contains(book.getIsbn())) {
             return Response.status(Response.Status.CONFLICT).build();

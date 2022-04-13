@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,6 +66,40 @@ class BookResourceTest {
         assertBookStoreSize(1);
 
         res = webTarget.path("/books/123456")
+                .request()
+                .delete();
+        assertEquals(Response.Status.OK.getStatusCode(), res.getStatus());
+
+        assertBookStoreSize(0);
+    }
+
+    @Test
+    void testBooks2() {
+        assertBookStoreSize(0);
+
+        Response res = webTarget.path("/books2")
+                .request()
+                .post(Entity.json(getBookAsJson()));
+        assertEquals(Response.Status.OK.getStatusCode(), res.getStatus());
+
+        assertBookStoreSize(1);
+
+        res = webTarget.path("/books2/123456")
+                .request()
+                .get();
+        assertEquals(Response.Status.OK.getStatusCode(), res.getStatus());
+        assertNotNull(res.getHeaderString("content-length"));
+
+        assertBookStoreSize(1);
+
+        res = webTarget.path("/books2/123456")
+                .request()
+                .put(Entity.json(getBookAsJson()));
+        assertEquals(Response.Status.OK.getStatusCode(), res.getStatus());
+
+        assertBookStoreSize(1);
+
+        res = webTarget.path("/books2/123456")
                 .request()
                 .delete();
         assertEquals(Response.Status.OK.getStatusCode(), res.getStatus());

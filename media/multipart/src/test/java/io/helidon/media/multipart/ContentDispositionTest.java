@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -245,5 +245,17 @@ public class ContentDispositionTest {
                 .modificationDate(zonedDateTime)
                 .build();
         assertThat(cd.toString(), is(equalTo(template)));
+    }
+
+    @Test
+    public void testNonAsciiFilename() {
+        ContentDisposition cd = ContentDisposition.parse("form-data; name=\"file[]\"; filename=\"\u60A8\u597D.txt\"");
+        assertThat(cd.type(), is(equalTo("form-data")));
+        assertThat(cd.name().isPresent(), is(equalTo(true)));
+        assertThat(cd.name().get(), is(equalTo("file[]")));
+        assertThat(cd.filename().isPresent(), is(equalTo(true)));
+        assertThat(cd.filename().get(), is(equalTo("\u60A8\u597D.txt")));
+        assertThat(cd.parameters(), is(notNullValue()));
+        assertThat(cd.parameters().size(), is(equalTo(2)));
     }
 }

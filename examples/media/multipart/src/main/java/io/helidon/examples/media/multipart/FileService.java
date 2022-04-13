@@ -27,7 +27,6 @@ import io.helidon.common.http.MediaType;
 import io.helidon.common.reactive.IoMulti;
 import io.helidon.media.multipart.ContentDisposition;
 import io.helidon.media.multipart.ReadableBodyPart;
-import io.helidon.media.multipart.ReadableMultiPart;
 import io.helidon.webserver.ResponseHeaders;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
@@ -80,55 +79,24 @@ public final class FileService implements Service {
     }
 
     private void upload(ServerRequest req, ServerResponse res) {
-        if (req.queryParams().first("stream").isPresent()) {
-            streamUpload(req, res);
-        } else {
-            bufferedUpload(req, res);
-        }
-    }
-
-    private void bufferedUpload(ServerRequest req, ServerResponse res) {
-        req.content().as(ReadableMultiPart.class)
-                .flatMapIterable(multiPart -> multiPart.fields("file[]"))
-                .flatMap(part -> part.content()
-                        .map(DataChunk::data)
-                        .flatMapIterable(Arrays::asList)
-                        .to(IoMulti.writeToFile(storage.create(part.filename()))
-                                .executor(executor)
-                                .build())
-                )
-                .onError(throwable -> {
-                    res.status(Http.Status.INTERNAL_SERVER_ERROR_500);
-                    res.send(throwable.toString());
-                })
-                .onComplete(() -> {
-                    res.status(Http.Status.MOVED_PERMANENTLY_301);
-                    res.headers().put(Http.Header.LOCATION, "/ui");
-                    res.send();
-                })
-                .ignoreElements();
-    }
-
-    private void streamUpload(ServerRequest req, ServerResponse res) {
         req.content().asStream(ReadableBodyPart.class)
-                .forEach(part -> {
-                    if ("file[]".equals(part.name())) {
-                        part.content().map(DataChunk::data)
-                                .flatMapIterable(Arrays::asList)
-                                .to(IoMulti.writeToFile(storage.create(part.filename()))
-                                        .executor(executor)
-                                        .build());
-                    } else {
-                        // when streaming unconsumed parts needs to be drained
-                        part.drain();
-                    }
-                })
-                .onError(res::send)
-                .onComplete(() -> {
-                    res.status(Http.Status.MOVED_PERMANENTLY_301);
-                    res.headers().put(Http.Header.LOCATION, "/ui");
-                    res.send();
-                }).ignoreElement();
+           .forEach(part -> {
+               if ("file[]".equals(part.name())) {
+                   part.content().map(DataChunk::data)
+                       .flatMapIterable(Arrays::asList)
+                       .to(IoMulti.writeToFile(storage.create(part.filename()))
+                                  .executor(executor)
+                                  .build());
+               } else {
+                   // when streaming unconsumed parts needs to be drained
+                   part.drain();
+               }
+           })
+           .onError(res::send)
+           .onComplete(() -> {
+               res.status(Http.Status.MOVED_PERMANENTLY_301);
+               res.headers().put(Http.Header.LOCATION, "/ui");
+               res.send();
+           }).ignoreElement();
     }
-
 }

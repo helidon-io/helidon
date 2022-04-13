@@ -17,7 +17,7 @@
 /**
  * <h2>Helidon MP CORS Support</h2>
  * Adding the Helidon MP CORS module to your application enables CORS support automatically, implementing the configuration in
- * the {@value io.helidon.microprofile.cors.CrossOriginFilter#CORS_CONFIG_KEY} section of your MicroProfile configuration.
+ * the {@value io.helidon.microprofile.cors.CorsCdiExtension#CORS_CONFIG_KEY} section of your MicroProfile configuration.
  * <p>
  * Many MP developers will use the {@link io.helidon.microprofile.cors.CrossOrigin} annotation on the endpoint implementations in
  * their code to set up the CORS behavior, but any values in configuration will override the annotations or set up CORS for

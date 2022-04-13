@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package io.helidon.webserver.accesslog;
 
 import java.time.Clock;
 import java.time.ZonedDateTime;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -24,8 +25,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import io.helidon.config.Config;
+import io.helidon.webserver.PathMatcher;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
@@ -49,12 +52,21 @@ public final class AccessLogSupport implements Service {
     private final Logger logger;
     private final boolean enabled;
     private final Clock clock;
+    private final List<PathMatcher> excludePaths;
 
     private AccessLogSupport(Builder builder) {
         this.enabled = builder.enabled;
         this.logFormat = builder.entries;
         this.clock = builder.clock;
         this.logger = Logger.getLogger(builder.loggerName);
+
+        if (builder.excludePaths != null) {
+            this.excludePaths = builder.excludePaths.stream()
+                    .map(PathMatcher::create)
+                    .collect(Collectors.toList());
+        } else {
+            this.excludePaths = Collections.emptyList();
+        }
     }
 
     /**
@@ -95,17 +107,28 @@ public final class AccessLogSupport implements Service {
     }
 
     private void handle(ServerRequest req, ServerResponse res) {
+        // Check if this path should be excluded from access log
+        if (excludePaths.size() > 0) {
+            for (PathMatcher matcher : excludePaths) {
+                PathMatcher.Result r = matcher.match(req.path().toString());
+                if (r.matches()) {
+                    req.next();
+                    return;
+                }
+            }
+        }
+
         ZonedDateTime now = ZonedDateTime.now(clock);
         long nanoNow = System.nanoTime();
 
         logFormat.forEach(entry -> entry.accept(req, res));
 
-        res.whenSent().thenAccept(aResponse -> log(req, aResponse, now, nanoNow))
-                .exceptionally((
-                                       throwable -> {
-                                           log(req, res, now, nanoNow);
-                                           return null;
-                                       }));
+        res.whenSent()
+                .thenAccept(aResponse -> log(req, aResponse, now, nanoNow))
+                .exceptionally(throwable -> {
+                    log(req, res, now, nanoNow);
+                    return null;
+                });
 
         req.next();
     }
@@ -166,6 +189,10 @@ public final class AccessLogSupport implements Service {
         return sb.toString();
     }
 
+    List<PathMatcher> excludePaths() {
+        return excludePaths;
+    }
+
     /**
      * A fluent API Builder for {@link io.helidon.webserver.accesslog.AccessLogSupport}.
      */
@@ -194,6 +221,7 @@ public final class AccessLogSupport implements Service {
         private Clock clock = Clock.systemDefaultZone();
         private String loggerName = DEFAULT_LOGGER_NAME;
         private boolean enabled = true;
+        private List<String> excludePaths;
 
         private Builder() {
         }
@@ -398,6 +426,7 @@ public final class AccessLogSupport implements Service {
             config.get("enabled").asBoolean().ifPresent(this::enabled);
             config.get("logger-name").asString().ifPresent(this::loggerName);
             config.get("format").asString().ifPresent(this::configLogFormat);
+            config.get("exclude-paths").asList(String.class).ifPresent(this::excludePaths);
             return this;
         }
 
@@ -422,6 +451,30 @@ public final class AccessLogSupport implements Service {
          */
         public Builder clock(Clock clock) {
             this.clock = clock;
+            return this;
+        }
+
+        /**
+         * List of path patterns to exclude in access log.
+         *
+         * @param excludePaths list of exclude paths
+         * @return updated builder instance
+         * @see io.helidon.webserver.PathMatcher
+         */
+        public Builder excludePaths(String... excludePaths) {
+            this.excludePaths = List.of(excludePaths);
+            return this;
+        }
+
+        /**
+         * List of path patterns to exclude in access log.
+         *
+         * @param excludePaths list of exclude paths
+         * @return updated builder instance
+         * @see io.helidon.webserver.PathMatcher
+         */
+        public Builder excludePaths(List<String> excludePaths) {
+            this.excludePaths = excludePaths;
             return this;
         }
 

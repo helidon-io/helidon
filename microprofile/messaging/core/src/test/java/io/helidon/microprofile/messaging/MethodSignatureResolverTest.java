@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,6 +68,12 @@ class MethodSignatureResolverTest {
     }
 
     @Incoming("in-channel-name")
+    @ExpectedSignatureType(MethodSignatureType.INCOMING_SUBSCRIBER_BUILDER_MSG_2_VOID)
+    SubscriberBuilder<ExtendedMessage<String>, Void> incoming_subscriber_builder_msg_2_void1() {
+        return null;
+    }
+
+    @Incoming("in-channel-name")
     @ExpectedSignatureType(MethodSignatureType.INCOMING_SUBSCRIBER_BUILDER_PAYL_2_VOID)
     SubscriberBuilder<String, Void> incoming_subscriber_builder_payl_2_void() {
         return null;
@@ -76,6 +82,12 @@ class MethodSignatureResolverTest {
     @Incoming("in-channel-name")
     @ExpectedSignatureType(MethodSignatureType.INCOMING_SUBSCRIBER_MSG_2_VOID)
     Subscriber<Message<String>> incoming_subscriber_msg_2_void() {
+        return null;
+    }
+
+    @Incoming("in-channel-name")
+    @ExpectedSignatureType(MethodSignatureType.INCOMING_SUBSCRIBER_MSG_2_VOID)
+    Subscriber<ExtendedMessage<String>> incoming_subscriber_msg_2_void1() {
         return null;
     }
 
@@ -97,6 +109,12 @@ class MethodSignatureResolverTest {
     }
 
     @Outgoing("out-channel-name")
+    @ExpectedSignatureType(MethodSignatureType.OUTGOING_PUBLISHER_BUILDER_MSG_2_VOID)
+    PublisherBuilder<ExtendedMessage<String>> outgoing_publisher_builder_msg_2_void1() {
+        return null;
+    }
+
+    @Outgoing("out-channel-name")
     @ExpectedSignatureType(MethodSignatureType.OUTGOING_PUBLISHER_BUILDER_PAYL_2_VOID)
     PublisherBuilder<String> outgoing_publisher_builder_payl_2_void() {
         return null;
@@ -105,6 +123,12 @@ class MethodSignatureResolverTest {
     @Outgoing("out-channel-name")
     @ExpectedSignatureType(MethodSignatureType.OUTGOING_PUBLISHER_MSG_2_VOID)
     Publisher<Message<String>> outgoing_publisher_msg_2_void() {
+        return null;
+    }
+
+    @Outgoing("out-channel-name")
+    @ExpectedSignatureType(MethodSignatureType.OUTGOING_PUBLISHER_MSG_2_VOID)
+    Publisher<ExtendedMessage<String>> outgoing_publisher_msg_2_void1() {
         return null;
     }
 
@@ -121,6 +145,12 @@ class MethodSignatureResolverTest {
     }
 
     @Outgoing("out-channel-name")
+    @ExpectedSignatureType(MethodSignatureType.OUTGOING_COMPLETION_STAGE_MSG_2_VOID)
+    CompletionStage<ExtendedMessage<String>> outgoing_completion_stage_msg_2_void1() {
+        return null;
+    }
+
+    @Outgoing("out-channel-name")
     @ExpectedSignatureType(MethodSignatureType.OUTGOING_COMPLETION_STAGE_PAYL_2_VOID)
     CompletionStage<String> outgoing_completion_stage_payl_2_void() {
         return null;
@@ -129,6 +159,12 @@ class MethodSignatureResolverTest {
     @Outgoing("out-channel-name")
     @ExpectedSignatureType(MethodSignatureType.OUTGOING_MSG_2_VOID)
     Message<String> outgoing_msg_2_void() {
+        return null;
+    }
+
+    @Outgoing("out-channel-name")
+    @ExpectedSignatureType(MethodSignatureType.OUTGOING_MSG_2_VOID)
+    ExtendedMessage<String> outgoing_msg_2_void1() {
         return null;
     }
 
@@ -142,6 +178,27 @@ class MethodSignatureResolverTest {
     @Outgoing("out-channel-name")
     @ExpectedSignatureType(MethodSignatureType.PROCESSOR_PROCESSOR_BUILDER_MSG_2_VOID)
     ProcessorBuilder<Message<String>, Message<String>> processor_processor_builder_msg_2_void() {
+        return null;
+    }
+
+    @Incoming("in-channel-name")
+    @Outgoing("out-channel-name")
+    @ExpectedSignatureType(MethodSignatureType.PROCESSOR_PROCESSOR_BUILDER_MSG_2_VOID)
+    ProcessorBuilder<ExtendedMessage<String>, ExtendedMessage<String>> processor_processor_builder_msg_2_void1() {
+        return null;
+    }
+
+    @Incoming("in-channel-name")
+    @Outgoing("out-channel-name")
+    @ExpectedSignatureType(MethodSignatureType.PROCESSOR_PROCESSOR_BUILDER_MSG_2_VOID)
+    ProcessorBuilder<ExtendedMessage<String>, Message<String>> processor_processor_builder_msg_2_void2() {
+        return null;
+    }
+
+    @Incoming("in-channel-name")
+    @Outgoing("out-channel-name")
+    @ExpectedSignatureType(MethodSignatureType.PROCESSOR_PROCESSOR_BUILDER_MSG_2_VOID)
+    ProcessorBuilder<Message<String>, ExtendedMessage<String>> processor_processor_builder_msg_2_void3() {
         return null;
     }
 
@@ -161,6 +218,27 @@ class MethodSignatureResolverTest {
 
     @Incoming("in-channel-name")
     @Outgoing("out-channel-name")
+    @ExpectedSignatureType(MethodSignatureType.PROCESSOR_PROCESSOR_MSG_2_VOID)
+    Processor<ExtendedMessage<String>, ExtendedMessage<Integer>> processor_processor_msg_2_void1() {
+        return null;
+    }
+
+    @Incoming("in-channel-name")
+    @Outgoing("out-channel-name")
+    @ExpectedSignatureType(MethodSignatureType.PROCESSOR_PROCESSOR_MSG_2_VOID)
+    Processor<ExtendedMessage<String>, Message<Integer>> processor_processor_msg_2_void2() {
+        return null;
+    }
+
+    @Incoming("in-channel-name")
+    @Outgoing("out-channel-name")
+    @ExpectedSignatureType(MethodSignatureType.PROCESSOR_PROCESSOR_MSG_2_VOID)
+    Processor<Message<String>, ExtendedMessage<Integer>> processor_processor_msg_2_void3() {
+        return null;
+    }
+
+    @Incoming("in-channel-name")
+    @Outgoing("out-channel-name")
     @ExpectedSignatureType(MethodSignatureType.PROCESSOR_PROCESSOR_PAYL_2_VOID)
     Processor<String, Integer> processor_processor_payl_2_void() {
         return null;
@@ -170,6 +248,27 @@ class MethodSignatureResolverTest {
     @Outgoing("out-channel-name")
     @ExpectedSignatureType(MethodSignatureType.PROCESSOR_PUBLISHER_BUILDER_MSG_2_PUBLISHER_BUILDER_MSG)
     PublisherBuilder<Message<String>> processor_publisher_builder_msg_2_publisher_builder_msg(PublisherBuilder<Message<String>> pub) {
+        return null;
+    }
+
+    @Incoming("in-channel-name")
+    @Outgoing("out-channel-name")
+    @ExpectedSignatureType(MethodSignatureType.PROCESSOR_PUBLISHER_BUILDER_MSG_2_PUBLISHER_BUILDER_MSG)
+    PublisherBuilder<ExtendedMessage<String>> processor_publisher_builder_msg_2_publisher_builder_msg1(PublisherBuilder<ExtendedMessage<String>> pub) {
+        return null;
+    }
+
+    @Incoming("in-channel-name")
+    @Outgoing("out-channel-name")
+    @ExpectedSignatureType(MethodSignatureType.PROCESSOR_PUBLISHER_BUILDER_MSG_2_PUBLISHER_BUILDER_MSG)
+    PublisherBuilder<ExtendedMessage<String>> processor_publisher_builder_msg_2_publisher_builder_msg2(PublisherBuilder<Message<String>> pub) {
+        return null;
+    }
+
+    @Incoming("in-channel-name")
+    @Outgoing("out-channel-name")
+    @ExpectedSignatureType(MethodSignatureType.PROCESSOR_PUBLISHER_BUILDER_MSG_2_PUBLISHER_BUILDER_MSG)
+    PublisherBuilder<Message<String>> processor_publisher_builder_msg_2_publisher_builder_msg3(PublisherBuilder<ExtendedMessage<String>> pub) {
         return null;
     }
 
@@ -189,6 +288,27 @@ class MethodSignatureResolverTest {
 
     @Incoming("in-channel-name")
     @Outgoing("out-channel-name")
+    @ExpectedSignatureType(MethodSignatureType.PROCESSOR_PUBLISHER_BUILDER_MSG_2_MSG)
+    PublisherBuilder<ExtendedMessage<String>> processor_publisher_builder_msg_2_msg2(ExtendedMessage<String> msg) {
+        return null;
+    }
+
+    @Incoming("in-channel-name")
+    @Outgoing("out-channel-name")
+    @ExpectedSignatureType(MethodSignatureType.PROCESSOR_PUBLISHER_BUILDER_MSG_2_MSG)
+    PublisherBuilder<ExtendedMessage<String>> processor_publisher_builder_msg_2_msg3(Message<String> msg) {
+        return null;
+    }
+
+    @Incoming("in-channel-name")
+    @Outgoing("out-channel-name")
+    @ExpectedSignatureType(MethodSignatureType.PROCESSOR_PUBLISHER_BUILDER_MSG_2_MSG)
+    PublisherBuilder<Message<String>> processor_publisher_builder_msg_2_msg4(ExtendedMessage<String> msg) {
+        return null;
+    }
+
+    @Incoming("in-channel-name")
+    @Outgoing("out-channel-name")
     @ExpectedSignatureType(MethodSignatureType.PROCESSOR_PUBLISHER_BUILDER_PAYL_2_PAYL)
     PublisherBuilder<String> processor_publisher_builder_payl_2_payl(String payload) {
         return null;
@@ -203,6 +323,27 @@ class MethodSignatureResolverTest {
 
     @Incoming("in-channel-name")
     @Outgoing("out-channel-name")
+    @ExpectedSignatureType(MethodSignatureType.PROCESSOR_PUBLISHER_MSG_2_PUBLISHER_MSG)
+    Publisher<ExtendedMessage<String>> processor_publisher_msg_2_publisher_msg1(Publisher<ExtendedMessage<String>> pub) {
+        return null;
+    }
+
+    @Incoming("in-channel-name")
+    @Outgoing("out-channel-name")
+    @ExpectedSignatureType(MethodSignatureType.PROCESSOR_PUBLISHER_MSG_2_PUBLISHER_MSG)
+    Publisher<Message<String>> processor_publisher_msg_2_publisher_msg2(Publisher<ExtendedMessage<String>> pub) {
+        return null;
+    }
+
+    @Incoming("in-channel-name")
+    @Outgoing("out-channel-name")
+    @ExpectedSignatureType(MethodSignatureType.PROCESSOR_PUBLISHER_MSG_2_PUBLISHER_MSG)
+    Publisher<ExtendedMessage<String>> processor_publisher_msg_2_publisher_msg3(Publisher<Message<String>> pub) {
+        return null;
+    }
+
+    @Incoming("in-channel-name")
+    @Outgoing("out-channel-name")
     @ExpectedSignatureType(MethodSignatureType.PROCESSOR_PUBLISHER_PAYL_2_PUBLISHER_PAYL)
     Publisher<String> processor_publisher_payl_2_publisher_payl(Publisher<String> pub) {
         return null;
@@ -211,7 +352,28 @@ class MethodSignatureResolverTest {
     @Incoming("in-channel-name")
     @Outgoing("out-channel-name")
     @ExpectedSignatureType(MethodSignatureType.PROCESSOR_PUBLISHER_MSG_2_MSG)
-    Publisher<Message<String>> processor_publisher_msg_2_msg(Message<String> msg) {
+    Publisher<Message<String>> processor_publisher_msg_2_msgxxx(Message<String> msg) {
+        return null;
+    }
+
+    @Incoming("in-channel-name")
+    @Outgoing("out-channel-name")
+    @ExpectedSignatureType(MethodSignatureType.PROCESSOR_PUBLISHER_MSG_2_MSG)
+    Publisher<ExtendedMessage<String>> processor_publisher_msg_2_msg(ExtendedMessage<String> msg) {
+        return null;
+    }
+
+    @Incoming("in-channel-name")
+    @Outgoing("out-channel-name")
+    @ExpectedSignatureType(MethodSignatureType.PROCESSOR_PUBLISHER_MSG_2_MSG)
+    Publisher<Message<String>> processor_publisher_msg_2_msg2(ExtendedMessage<String> msg) {
+        return null;
+    }
+
+    @Incoming("in-channel-name")
+    @Outgoing("out-channel-name")
+    @ExpectedSignatureType(MethodSignatureType.PROCESSOR_PUBLISHER_MSG_2_MSG)
+    Publisher<ExtendedMessage<String>> processor_publisher_msg_2_msg3(Message<String> msg) {
         return null;
     }
 
@@ -226,6 +388,30 @@ class MethodSignatureResolverTest {
     @Outgoing("out-channel-name")
     @ExpectedSignatureType(MethodSignatureType.PROCESSOR_COMPL_STAGE_MSG_2_MSG)
     CompletionStage<Message<String>> processor_compl_stage_msg_2_msg(Message<String> msg) {
+        return null;
+    }
+
+
+    @Incoming("in-channel-name")
+    @Outgoing("out-channel-name")
+    @ExpectedSignatureType(MethodSignatureType.PROCESSOR_COMPL_STAGE_MSG_2_MSG)
+    CompletionStage<ExtendedMessage<String>> processor_compl_stage_msg_2_msg(ExtendedMessage<String> msg) {
+        return null;
+    }
+
+
+    @Incoming("in-channel-name")
+    @Outgoing("out-channel-name")
+    @ExpectedSignatureType(MethodSignatureType.PROCESSOR_COMPL_STAGE_MSG_2_MSG)
+    CompletionStage<Message<String>> processor_compl_stage_msg_2_msg1(ExtendedMessage<String> msg) {
+        return null;
+    }
+
+
+    @Incoming("in-channel-name")
+    @Outgoing("out-channel-name")
+    @ExpectedSignatureType(MethodSignatureType.PROCESSOR_COMPL_STAGE_MSG_2_MSG)
+    CompletionStage<ExtendedMessage<String>> processor_compl_stage_msg_2_msg2(Message<String> msg) {
         return null;
     }
 

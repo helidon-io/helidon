@@ -100,5 +100,14 @@
                 "allowWrite": true
             }
         ]
+    },
+    {
+        "name": "java.time.Instant",
+        "methods": [
+            {
+                "name": "now",
+                "parameterTypes": []
+            }
+        ]
     }
 ]

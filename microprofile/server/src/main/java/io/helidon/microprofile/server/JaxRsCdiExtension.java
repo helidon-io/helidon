@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package io.helidon.microprofile.server;
 
+import java.lang.annotation.Annotation;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -70,8 +71,8 @@ public class JaxRsCdiExtension implements Extension {
     }
 
     private void collectResourceClasses(@Observes ProcessManagedBean<?> processManagedBean) {
-        if (processManagedBean.getAnnotated().isAnnotationPresent(Path.class)) {
-            Class<?> resourceClass = processManagedBean.getAnnotatedBeanClass().getJavaClass();
+        Class<?> resourceClass = processManagedBean.getAnnotatedBeanClass().getJavaClass();
+        if (hasAnnotation(resourceClass, Path.class)) {
             if (resourceClass.isInterface()) {
                 // we are only interested in classes - interface is most likely a REST client API
                 return;
@@ -325,5 +326,27 @@ public class JaxRsCdiExtension implements Extension {
             throw new IllegalStateException("You are attempting to modify applications in JAX-RS after they were registered "
                                                     + "with the server");
         }
+    }
+
+    /**
+     * Checks presence of annotation on class or any of its supertypes.
+     *
+     * @param clazz the class
+     * @param annotation the annotation
+     * @return outcome of test
+     */
+    private static boolean hasAnnotation(Class<?> clazz, Class<? extends Annotation> annotation) {
+        if (clazz == null || clazz == Object.class) {
+            return false;
+        }
+        if (clazz.isAnnotationPresent(annotation) || hasAnnotation(clazz.getSuperclass(), annotation)) {
+            return true;
+        }
+        for (Class<?> type : clazz.getInterfaces()) {
+            if (hasAnnotation(type, annotation)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
