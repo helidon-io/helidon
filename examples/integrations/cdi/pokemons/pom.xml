@@ -116,8 +116,13 @@
             <scope>runtime</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.microprofile.bean-validation</groupId>
-            <artifactId>helidon-microprofile-bean-validation</artifactId>
+            <groupId>org.hibernate.validator</groupId>
+            <artifactId>hibernate-validator-cdi</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish</groupId>
+            <artifactId>jakarta.el</artifactId>
             <scope>runtime</scope>
         </dependency>
 
