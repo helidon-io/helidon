@@ -24,6 +24,7 @@
 .MD
 .p12
 .txt
+.sql
 jaxb.index
 /MANIFEST.MF
 /README

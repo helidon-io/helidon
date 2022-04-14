@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -17,10 +17,10 @@
 
 -->
 <persistence version="2.2"
-             xmlns="http://xmlns.jcp.org/xml/ns/persistence"
+             xmlns="https://jakarta.ee/xml/ns/persistence"
              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-             xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/persistence
-                                 http://xmlns.jcp.org/xml/ns/persistence/persistence_2_2.xsd">
+             xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence
+                                 https://jakarta.eee/xml/ns/persistence/persistence_2_2.xsd">
   <persistence-unit name="test" transaction-type="JTA">
     <jta-data-source>test</jta-data-source>
     <class>io.helidon.examples.integrations.cdi.pokemon.Pokemon</class>
