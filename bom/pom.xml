@@ -1149,6 +1149,12 @@
                 <artifactId>helidon-integrations-neo4j-metrics</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <!-- Bean Validation -->
+            <dependency>
+                <groupId>io.helidon.microprofile.bean-validation</groupId>
+                <artifactId>helidon-microprofile-bean-validation</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
             <!-- Helidon tests tools -->
             <dependency>
                 <groupId>io.helidon.tests.integration.tools</groupId>

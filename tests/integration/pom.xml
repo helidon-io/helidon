@@ -52,6 +52,7 @@
         <module>jms</module>
         <module>config</module>
         <module>jep290</module>
+        <module>mp-bean-validation</module>
     </modules>
 
     <profiles>
