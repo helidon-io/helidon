@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,85 +16,63 @@
 
 package io.helidon.examples.quickstart.mp;
 
-import io.helidon.microprofile.server.Server;
+import io.helidon.microprofile.tests.junit5.HelidonTest;
 
-import jakarta.enterprise.inject.se.SeContainer;
-import jakarta.enterprise.inject.spi.CDI;
+import jakarta.inject.Inject;
 import jakarta.json.JsonObject;
-import jakarta.ws.rs.client.Client;
-import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.Entity;
+import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+@HelidonTest
 class MainTest {
-    private static Server server;
+    private final WebTarget target;
 
-    @BeforeAll
-    public static void startTheServer() throws Exception {
-        server = Server.create().start();
+    @Inject
+    MainTest(WebTarget target) {
+        this.target = target;
     }
 
     @Test
     void testHelloWorld() {
 
-        Client client = ClientBuilder.newClient();
-
-        JsonObject jsonObject = client
-                .target(getConnectionString("/greet"))
+        JsonObject jsonObject = target.path("/greet")
                 .request()
                 .get(JsonObject.class);
         Assertions.assertEquals("Hello World!", jsonObject.getString("message"),
                 "default message");
 
-        jsonObject = client
-                .target(getConnectionString("/greet/Joe"))
+        jsonObject = target.path("/greet/Joe")
                 .request()
                 .get(JsonObject.class);
         Assertions.assertEquals("Hello Joe!", jsonObject.getString("message"),
                 "hello Joe message");
 
-        try (Response r = client
-                .target(getConnectionString("/greet/greeting"))
+        try (Response r = target.path("/greet/greeting")
                 .request()
                 .put(Entity.entity("{\"greeting\" : \"Hola\"}", MediaType.APPLICATION_JSON))) {
             Assertions.assertEquals(204, r.getStatus(), "PUT status code");
         }
 
-        jsonObject = client
-                .target(getConnectionString("/greet/Jose"))
+        jsonObject = target.path("/greet/Jose")
                 .request()
                 .get(JsonObject.class);
         Assertions.assertEquals("Hola Jose!", jsonObject.getString("message"),
                 "hola Jose message");
 
-        try (Response r = client
-                .target(getConnectionString("/metrics"))
+        try (Response r = target.path("/metrics")
                 .request()
                 .get()) {
             Assertions.assertEquals(200, r.getStatus(), "GET metrics status code");
         }
 
-        try (Response r = client
-                .target(getConnectionString("/health"))
+        try (Response r = target.path("/health")
                 .request()
                 .get()) {
             Assertions.assertEquals(200, r.getStatus(), "GET health status code");
         }
-    }
-
-    @AfterAll
-    static void destroyClass() {
-        CDI<Object> current = CDI.current();
-        ((SeContainer) current).close();
-    }
-
-    private String getConnectionString(String path) {
-        return "http://localhost:" + server.port() + path;
     }
 }

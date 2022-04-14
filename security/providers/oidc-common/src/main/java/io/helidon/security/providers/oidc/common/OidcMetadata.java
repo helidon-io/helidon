@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -141,7 +141,7 @@ final class OidcMetadata {
         }
 
         private void load() {
-            URI wellKnown = identityUri.resolve(DEFAULT_OIDC_METADATA_URI);
+            URI wellKnown = identityUri.resolve(fixPath(identityUri.getPath(), DEFAULT_OIDC_METADATA_URI));
 
             try {
                 this.metadata = webClient.get()
@@ -155,6 +155,30 @@ final class OidcMetadata {
                         + ": " + e.getMessage()
                         + " from " + wellKnown);
             }
+        }
+
+        static String fixPath(String basePath, String relativePath) {
+            if (basePath == null || basePath.isEmpty()) {
+                if (relativePath == null || relativePath.isEmpty()) {
+                    return "/";
+                }
+                return startsWithSlash(relativePath) ? relativePath : "/" + relativePath;
+            }
+            if (relativePath == null || relativePath.isEmpty()) {
+                return basePath;
+            }
+            if (endsWithSlash(basePath)) {
+                return startsWithSlash(relativePath) ? basePath + relativePath.substring(1) : basePath + relativePath;
+            }
+            return startsWithSlash(relativePath) ? basePath + relativePath : basePath + "/" + relativePath;
+        }
+
+        private static boolean startsWithSlash(String toTest) {
+            return toTest.charAt(0) == '/';
+        }
+
+        private static boolean endsWithSlash(String toTest) {
+            return toTest.charAt(toTest.length() - 1) == '/';
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -247,7 +247,7 @@ final class MethodSignatureResolver {
         if (hasNoParams()) return false;
         Class<?> firstParam = parameterTypes[0];
         return msgType == MsgType.MESSAGE && Message.class.isAssignableFrom(firstParam)
-                || msgType == MsgType.PAYLOAD && !Message.class.equals(firstParam);
+                || msgType == MsgType.PAYLOAD && !Message.class.isAssignableFrom(firstParam);
     }
 
     private boolean hasFirstParamClassWithGeneric(Class<?> clazz, MsgType msgType) {
@@ -262,9 +262,9 @@ final class MethodSignatureResolver {
 
         if (msgType == MsgType.MESSAGE) {
             if (!(actualTypeArguments[0] instanceof ParameterizedType)) return false;
-            return Message.class.equals(((ParameterizedType) actualTypeArguments[0]).getRawType());
+            return Message.class.isAssignableFrom((Class<?>) ((ParameterizedType) actualTypeArguments[0]).getRawType());
         } else {
-            return !Message.class.equals(firstParam);
+            return !Message.class.isAssignableFrom((Class<?>) ((ParameterizedType) firstParam).getRawType());
         }
     }
 
@@ -280,12 +280,13 @@ final class MethodSignatureResolver {
 
         if (msgType == MsgType.MESSAGE) {
             if (!(actualTypeArguments[0] instanceof ParameterizedType)) return false;
-            return Message.class.equals(((ParameterizedType) actualTypeArguments[0]).getRawType());
+            return Message.class.isAssignableFrom((Class<?>) ((ParameterizedType) actualTypeArguments[0]).getRawType());
         } else if (msgType == MsgType.WILDCARD) {
             return actualTypeArguments[0] instanceof WildcardType;
         } else {
             if ((actualTypeArguments[0] instanceof ParameterizedType)) {
-                if (Message.class.equals(((ParameterizedType) actualTypeArguments[0]).getRawType())) return false;
+                Class<?> type = (Class<?>) ((ParameterizedType) actualTypeArguments[0]).getRawType();
+                return !Message.class.isAssignableFrom(type);
             }
             return !Message.class.equals(actualTypeArguments[0]);
         }

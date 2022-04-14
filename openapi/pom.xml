@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -122,8 +122,7 @@
         </dependency>
         <dependency>
             <groupId>io.smallrye</groupId>
-            <artifactId>smallrye-open-api</artifactId>
-            <type>pom</type>
+            <artifactId>smallrye-open-api-core</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>com.fasterxml.jackson.core</groupId>
@@ -138,6 +137,10 @@
                     <artifactId>jackson-dataformat-yaml</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>io.smallrye</groupId>
+            <artifactId>smallrye-open-api-jaxrs</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.media</groupId>

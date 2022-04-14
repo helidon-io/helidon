@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -121,13 +121,14 @@ HealthCheck hc = this::exampleHealthCheck;
 [cols="1,5",role="flex, sm7"]
 .Health status codes
 |=======
-| `200` | The application is healthy.
+| `200` | The application is healthy (with health check details in the response).
+| `204` | The application is healthy (with _no_ health check details in the response).
 | `503` | The application is not healthy.
 | `500` | An error occurred while reporting the health.
 |=======
 
-The HTTP response also contains a JSON payload that describes the statuses for
- all health checks.
+HTTP `GET` responses include JSON content showing the detailed results of all the health checks which the server executed after receiving the request.
+HTTP `HEAD` requests return only the status with no payload.
 
 [source,java]
 .Create the health support service:

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import java.util.List;
 /**
  * Writeable multipart entity.
  */
-public class WriteableMultiPart implements MultiPart<WriteableBodyPart> {
+public class WriteableMultiPart {
 
     private final List<WriteableBodyPart> parts;
 
@@ -31,7 +31,11 @@ public class WriteableMultiPart implements MultiPart<WriteableBodyPart> {
         this.parts = parts;
     }
 
-    @Override
+    /**
+     * Get all the nested body parts.
+     *
+     * @return list of {@link BodyPart}
+     */
     public List<WriteableBodyPart> bodyParts() {
         return parts;
     }

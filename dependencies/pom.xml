@@ -64,10 +64,10 @@
         <version.lib.h2>2.0.206</version.lib.h2>
         <version.lib.hamcrest>1.3</version.lib.hamcrest>
         <version.lib.hibernate>6.0.0.Beta1</version.lib.hibernate>
-        <version.lib.hibernate-validator>7.0.2.Final</version.lib.hibernate-validator>
         <version.lib.hikaricp>5.0.0</version.lib.hikaricp>
         <version.lib.hystrix>1.5.18</version.lib.hystrix>
-        <version.lib.jackson>2.13.1</version.lib.jackson>
+        <!-- This is the BOM version for Jackson Databind 2.13.2.1 -->
+        <version.lib.jackson>2.13.2.20220324</version.lib.jackson>
         <version.lib.jaegertracing>1.6.0</version.lib.jaegertracing>
         <version.lib.jakarta.activation-api>2.0.1</version.lib.jakarta.activation-api>
         <version.lib.jakarta.annotation-api>2.0.0</version.lib.jakarta.annotation-api>
@@ -96,7 +96,6 @@
         <version.lib.jersey>3.0.4</version.lib.jersey>
         <version.lib.jgit>5.11.1.202105131744-r</version.lib.jgit>
         <version.lib.jsonp-impl>2.0.1</version.lib.jsonp-impl>
-        <version.lib.junit4>4.13.1</version.lib.junit4>
         <version.lib.junit>5.7.0</version.lib.junit>
         <version.lib.kafka>2.8.1</version.lib.kafka>
         <version.lib.log4j>2.17.1</version.lib.log4j>
@@ -124,7 +123,9 @@
         <version.lib.mockito>2.23.4</version.lib.mockito>
         <version.lib.mongodb.reactivestreams>1.11.0</version.lib.mongodb.reactivestreams>
         <version.lib.mssql-jdbc>8.4.1.jre8</version.lib.mssql-jdbc>
-        <version.lib.mysql-connector-java>8.0.22</version.lib.mysql-connector-java>
+        <version.lib.neo4j>4.4.3</version.lib.neo4j>
+        <version.lib.hibernate-validator>7.0.2.Final</version.lib.hibernate-validator>
+        <version.lib.mysql-connector-java>8.0.28</version.lib.mysql-connector-java>
         <version.lib.narayana>5.12.0.Final</version.lib.narayana>
         <version.lib.neo4j>4.4.3</version.lib.neo4j>
         <version.lib.netty>4.1.73.Final</version.lib.netty>
@@ -137,12 +138,12 @@
         <version.lib.opentracing>0.33.0</version.lib.opentracing>
         <version.lib.opentracing.grpc>0.2.1</version.lib.opentracing.grpc>
         <version.lib.opentracing.tracerresolver>0.1.8</version.lib.opentracing.tracerresolver>
-        <version.lib.postgresql>42.2.18</version.lib.postgresql>
+        <version.lib.postgresql>42.3.3</version.lib.postgresql>
         <version.lib.prometheus>0.9.0</version.lib.prometheus>
         <version.lib.slf4j>1.7.32</version.lib.slf4j>
         <version.lib.smallrye-openapi>2.1.16</version.lib.smallrye-openapi>
-        <version.lib.snakeyaml>1.27</version.lib.snakeyaml>
-        <version.lib.typesafe-config>1.4.1</version.lib.typesafe-config>
+        <version.lib.snakeyaml>1.30</version.lib.snakeyaml>
+        <version.lib.typesafe-config>1.4.2</version.lib.typesafe-config>
         <version.lib.tyrus>2.0.1</version.lib.tyrus>
         <version.lib.weld-api>4.0.SP1</version.lib.weld-api>
         <version.lib.weld>4.0.2.Final</version.lib.weld>
@@ -886,17 +887,6 @@
                 <artifactId>hibernate-core</artifactId>
                 <version>${version.lib.hibernate}</version>
             </dependency>
-            <!-- Bean Validation -->
-            <dependency>
-                <groupId>org.hibernate.validator</groupId>
-                <artifactId>hibernate-validator</artifactId>
-                <version>${version.lib.hibernate-validator}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.hibernate.validator</groupId>
-                <artifactId>hibernate-validator-cdi</artifactId>
-                <version>${version.lib.hibernate-validator}</version>
-            </dependency>
             <dependency>
                 <groupId>org.jboss.narayana.jta</groupId>
                 <artifactId>narayana-jta-jakarta</artifactId>
@@ -916,12 +906,6 @@
                         <artifactId>jconsole</artifactId>
                     </exclusion>
                 </exclusions>
-            </dependency>
-            <!-- Neo4j -->
-            <dependency>
-                <groupId>org.neo4j.driver</groupId>
-                <artifactId>neo4j-java-driver</artifactId>
-                <version>${version.lib.neo4j}</version>
             </dependency>
             <dependency>
                 <groupId>org.jboss.weld</groupId>
@@ -1128,6 +1112,23 @@
                 <groupId>io.micronaut</groupId>
                 <artifactId>micronaut-aop</artifactId>
                 <version>${version.lib.micronaut}</version>
+            </dependency>
+            <!-- Neo4j -->
+            <dependency>
+                <groupId>org.neo4j.driver</groupId>
+                <artifactId>neo4j-java-driver</artifactId>
+                <version>${version.lib.neo4j}</version>
+            </dependency>
+            <!-- Bean Validation -->
+            <dependency>
+                <groupId>org.hibernate.validator</groupId>
+                <artifactId>hibernate-validator</artifactId>
+                <version>${version.lib.hibernate-validator}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.hibernate.validator</groupId>
+                <artifactId>hibernate-validator-cdi</artifactId>
+                <version>${version.lib.hibernate-validator}</version>
             </dependency>
             <!-- Cron utils -->
             <dependency>

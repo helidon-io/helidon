@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,7 +64,7 @@ public class HealthCheckIT {
                 .asJsonObject();
         LogData.logJsonObject(Level.FINER, pingDmlValue);
         if (pingDmlValue.containsKey("config")) {
-            pingDml = Boolean.valueOf(pingDmlValue.getString("config"));
+            pingDml = Boolean.parseBoolean(pingDmlValue.getString("config"));
         }
     }
 
@@ -78,7 +78,7 @@ public class HealthCheckIT {
                 .callServiceAndGetData("testHealthCheck")
                 .asJsonObject();
         LogData.logJsonObject(Level.FINER, data);
-        assertThat(data.getString("status"), equalTo(HealthCheckResponse.State.UP.name()));
+        assertThat(data.getString("status"), equalTo(HealthCheckResponse.Status.UP.name()));
     }
 
     /**
@@ -94,7 +94,7 @@ public class HealthCheckIT {
                         QueryParams.single(QueryParams.NAME, hcName))
                 .asJsonObject();
         LogData.logJsonObject(Level.FINER, data);
-        assertThat(data.getString("status"), equalTo(HealthCheckResponse.State.UP.name()));
+        assertThat(data.getString("status"), equalTo(HealthCheckResponse.Status.UP.name()));
         assertThat(data.getString("name"), equalTo(hcName));
     }
 
@@ -112,7 +112,7 @@ public class HealthCheckIT {
                 .callServiceAndGetData("testHealthCheckWithCustomNamedDML")
                 .asJsonObject();
         LogData.logJsonObject(Level.FINER, data);
-        assertThat(data.getString("status"), equalTo(HealthCheckResponse.State.UP.name()));
+        assertThat(data.getString("status"), equalTo(HealthCheckResponse.Status.UP.name()));
     }
 
     /**
@@ -129,7 +129,7 @@ public class HealthCheckIT {
                 .callServiceAndGetData("testHealthCheckWithCustomDML")
                 .asJsonObject();
         LogData.logJsonObject(Level.FINER, data);
-        assertThat(data.getString("status"), equalTo(HealthCheckResponse.State.UP.name()));
+        assertThat(data.getString("status"), equalTo(HealthCheckResponse.Status.UP.name()));
     }
 
     /**
@@ -142,7 +142,7 @@ public class HealthCheckIT {
                 .callServiceAndGetData("testHealthCheckWithCustomNamedQuery")
                 .asJsonObject();
         LogData.logJsonObject(Level.FINER, data);
-        assertThat(data.getString("status"), equalTo(HealthCheckResponse.State.UP.name()));
+        assertThat(data.getString("status"), equalTo(HealthCheckResponse.Status.UP.name()));
     }
 
     /**
@@ -155,7 +155,7 @@ public class HealthCheckIT {
                 .callServiceAndGetData("testHealthCheckWithCustomQuery")
                 .asJsonObject();
         LogData.logJsonObject(Level.FINER, data);
-        assertThat(data.getString("status"), equalTo(HealthCheckResponse.State.UP.name()));
+        assertThat(data.getString("status"), equalTo(HealthCheckResponse.Status.UP.name()));
     }
 
 

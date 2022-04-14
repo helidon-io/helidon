@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 MicroProfile Rest Client adds the capability to invoke remote microservices using a JAX-RS like interface to declare the
 operations.
 
-== Creating a new client using a builder
+== Creating a New Client Using a Builder
 
 MicroProfile Rest Client can be created using a builder obtained from `RestClientBuilder.newBuilder()`.
 The builder provides methods to configure details for the client and to define the desired rest client interface.
@@ -53,7 +53,7 @@ SomeResource someResource = RestClientBuilder.newBuilder()
 someResource.someMethod(apiModel);
 ----
 
-== Creating new client - CDI
+== Creating a New Client - CDI
 A rest client interface can be annotated with `@RegisterRestClient` to automatically register it with CDI.
 The `RegisterRestClient` annotation has a property `baseUri` that can be used to define the base endpoint of this client.
 This value can be overridden using configuration.
@@ -84,17 +84,17 @@ client.sampleMethod();
 
 ----
 
-== Rest client configuration
+== Rest Client Configuration
 Rest client implementation allows you to configure its parameters by builder,
 annotations, and configuration.
 
 You can configure new providers, base URI/URL and other options of the client.
 See specification for full details:
-https://download.eclipse.org/microprofile/microprofile-rest-client-1.2.1/microprofile-rest-client-1.2.1.html
+https://download.eclipse.org/microprofile/microprofile-rest-client-3.0/microprofile-rest-client-spec-3.0.html
 
-== Quickstart example
-To be able to run and test this example, please head to the Helidon examples/quickstarts
-and start the helidon-quickstart-mp. Then create project with
+== Quickstart Example
+To be able to run and test this example, use the  https://helidon.io/docs/v2/#/mp/guides/02_quickstart[Helidon MP examples/quickstarts]
+and start the helidon-quickstart-mp. Then create a project with
 the dependency on the Helidon rest client implementation and create the following rest client
 interface:
 

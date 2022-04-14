@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import java.util.Enumeration;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.media.type.MediaTypes;
@@ -49,10 +50,10 @@ public class ClasspathConfigSource extends AbstractConfigSource implements Confi
         this.resourceUrl = builder.url;
 
         mediaType = LazyValue.create(() -> {
-            if (null == resourceUrl) {
+            if (resourceUrl == null) {
                 return MediaTypes.detectType(resource);
             } else {
-                return MediaTypes.detectType(resource);
+                return MediaTypes.detectType(resourceUrl);
             }
         });
     }
@@ -160,7 +161,7 @@ public class ClasspathConfigSource extends AbstractConfigSource implements Confi
 
     @Override
     public Optional<Content> load() throws ConfigException {
-        if (null == resourceUrl) {
+        if (resourceUrl == null) {
             return Optional.empty();
         }
 
@@ -177,6 +178,30 @@ public class ClasspathConfigSource extends AbstractConfigSource implements Confi
         mediaType.get().ifPresent(builder::mediaType);
 
         return Optional.of(builder.build());
+    }
+
+    @Override
+    public Function<String, Optional<InputStream>> relativeResolver() {
+        return it -> {
+            // this works the same on windows and Unix systems (classpath is always forward slashes)
+            int lastSlash = resource.lastIndexOf('/');
+            String resourceToFind;
+            if (lastSlash > -1) {
+                resourceToFind = resource.substring(0, lastSlash + 1) + it;
+            } else {
+                resourceToFind = it;
+            }
+
+            URL resourceUrl = ClasspathConfigSource.class.getClassLoader().getResource(resourceToFind);
+            if (resourceUrl == null) {
+                return Optional.empty();
+            }
+            try {
+                return Optional.of(resourceUrl.openStream());
+            } catch (IOException e) {
+                throw new ConfigException("Failed to read configuration from classpath, resource: " + resourceToFind, e);
+            }
+        };
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +19,13 @@ package io.helidon.config;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.Charset;
 import java.time.Instant;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -149,6 +151,45 @@ public final class UrlConfigSource extends AbstractConfigSource
         }
     }
 
+    @Override
+    public Function<String, Optional<InputStream>> relativeResolver() {
+        String path = url.getPath();
+        return it -> {
+            int lastSlash = path.lastIndexOf('/');
+            if (lastSlash == -1) {
+                lastSlash = path.lastIndexOf('\\');
+            }
+            String pathToFind;
+            if (lastSlash == -1) {
+                pathToFind = it;
+            } else {
+                pathToFind = path.substring(0, lastSlash + 1) + it;
+            }
+
+            try {
+                URL urlToFind = new URI(url.getProtocol(),
+                                        url.getUserInfo(),
+                                        url.getHost(),
+                                        url.getPort(),
+                                        pathToFind,
+                                        url.getQuery(),
+                                        null)
+                        .toURL();
+                URLConnection connection = urlToFind.openConnection();
+                if (connection instanceof HttpURLConnection) {
+                    return httpStream(connection);
+                } else {
+                    return Optional.of(connection.getInputStream());
+                }
+            } catch (ConfigException e) {
+                throw e;
+            } catch (Exception e) {
+                throw new ConfigException("Configuration at url '" + url + "' with path + " + path
+                                                  + " is not accessible.", e);
+            }
+        };
+    }
+
     private Optional<Content> genericContent(URLConnection urlConnection) throws IOException {
         InputStream is = urlConnection.getInputStream();
 
@@ -159,6 +200,24 @@ public final class UrlConfigSource extends AbstractConfigSource
         this.probeContentType().ifPresent(builder::mediaType);
 
         return Optional.ofNullable(builder.build());
+    }
+
+    private Optional<InputStream> httpStream(URLConnection urlConnection) throws IOException {
+        HttpURLConnection connection = (HttpURLConnection) urlConnection;
+        connection.setRequestMethod(GET_METHOD);
+        try {
+            connection.connect();
+        } catch (IOException e) {
+            // considering this to be unavailable
+            LOGGER.log(Level.FINEST, "Failed to connect to " + url + ", considering this source to be missing", e);
+            return Optional.empty();
+        }
+
+        if (STATUS_NOT_FOUND == connection.getResponseCode()) {
+            return Optional.empty();
+        }
+
+        return Optional.of(connection.getInputStream());
     }
 
     private Optional<Content> httpContent(HttpURLConnection connection) throws IOException {

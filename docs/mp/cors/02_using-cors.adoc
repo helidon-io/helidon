@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -73,12 +73,23 @@ To add CORS support to your Helidon MP application:
 
 
 == Adding CORS Support to Your Helidon MP Application
-Adding CORS behavior to your Helidon MP application involves two simple changes to your application code:
+Adding CORS behavior to your Helidon MP application involves three simple steps:
 
-. For each resource and subresource in each resource class, make sure you have a Java method annotated with
-`@OPTIONS` and with the correct `@Path`. Create these methods for each resource if you do not already have them.
-. To each of those methods, add a `@CrossOrigin` annotation that describes the cross-origin sharing you want
+For reach resource class in your application:
+
+. Identify the resources and subresources--in other words, the paths--supported in each.
+. For each of those resources and subresources make sure you have a Java method annotated with
+`@OPTIONS` and with the correct `@Path`. Create these methods for each resource (for each path) if you do not already have them.
+. To each of those `@OPTIONS` methods add a `@CrossOrigin` annotation that describes the cross-origin sharing you want
 for that resource.
+
+[NOTE]
+.Using @CrossOrigin Correctly
+====
+Use the `@CrossOrigin` annotation _only_ on methods which also have the `@OPTIONS` annotation. Remember that the `@CrossOrigin` settings apply to a given path and therefore to all Java resource methods which share that path.
+
+Helidon MP aborts the server start-up if a resource method other than an `@OPTIONS` method has the `@CrossOrigin` annotation.
+====
 
 The Helidon MP CORS implementation automatically uses the `@CrossOrigin` annotation you add to each `@OPTIONS` method to
 enforce cross-origin sharing behavior for the resource identified by that method's `@Path` annotation.

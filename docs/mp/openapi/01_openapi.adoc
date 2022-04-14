@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@
 :feature-name: MicroProfile OpenAPI
 :common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 :microprofile-bundle: true
+:common-openapi-doc: ../../shared/openapi/openapi-shared.adoc
 
 Easily allow your Helidon MP application to serve an OpenAPI document
 that describes your application's endpoints.
@@ -173,9 +174,13 @@ class name of your class.
 
 === Update your application configuration
 Beyond the two config properties that denote the model reader and filter, Helidon
-MP OpenAPI supports a number of others. These are described in the 
+MP OpenAPI supports a number of other mandated settings. These are described in the
 link:{mp-openapi-spec}#configuration[configuration section] of the MicroProfile 
 OpenAPI spec.
+
+include::{common-openapi-doc}[common-config]
+Assign these settings in `META-INF/microprofile-config.properties`.
+
 
 == Accessing the OpenAPI document
 Now your Helidon MP application will automatically respond to an additional endpoint --
