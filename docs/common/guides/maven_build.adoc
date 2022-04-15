@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@
 Helidon supports Maven by providing the following:
 
 1. The Helidon Application parent POM
-2. Dependency managment via the Helidon BOM and Dependencies POMs
+2. Dependency management via the Helidon BOM and Dependencies POMs
 3. The `helidon-maven-plugin`
 
 == The Helidon Application POM
@@ -57,7 +57,7 @@ Helidon provides two POMs that are used together for dependency management:
 
 
 When you use a Helidon Application POM as your project's parent pom, you
-inheritent Helidon's dependency management. If
+inherent Helidon's dependency management. If
 you have your own parent, then you can import Helidon dependency management
 like this:
 
@@ -96,7 +96,7 @@ Helidon provides a Maven plugin that, among other things, provides the following
 1. native-image: Build a <<{helidon-lc-flavor}/guides/36_graalnative.adoc,GraalVM native image>>.
 2. jlink-image:  Build a <<{helidon-lc-flavor}/guides/37_jlink_image.adoc,custom runtime Java image>>.
 
-For full documentation of the plugin please see the https://github.com/oracle/helidon-build-tools/tree/master/helidon-maven-plugin[Helidon Maven Plugin README].
+For full documentation of the plugin please see the https://github.com/oracle/helidon-build-tools/tree/master/maven-plugins/helidon-maven-plugin[Helidon Maven Plugin README].
 
 If you use the Helidon application parent POM you will have this plugin configured
 for you. If you need to customize the `helidon-maven-plugin` you can do so in a few ways:
