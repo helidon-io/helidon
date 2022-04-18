@@ -57,7 +57,7 @@ Helidon provides two POMs that are used together for dependency management:
 
 
 When you use a Helidon Application POM as your project's parent pom, you
-inherent Helidon's dependency management. If
+inherit Helidon's dependency management. If
 you have your own parent, then you can import Helidon dependency management
 like this:
 
