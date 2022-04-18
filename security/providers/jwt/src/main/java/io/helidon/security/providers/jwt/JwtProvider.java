@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -174,7 +174,7 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
                 if (validate.isValid()) {
                     return AuthenticationResponse.success(buildSubject(jwt, signedJwt));
                 } else {
-                    return failOrAbstain("Audience is invalid or missing: " + expectedAudience);
+                    return failOrAbstain(errors.toString());
                 }
             } else {
                 return failOrAbstain(errors.toString());
