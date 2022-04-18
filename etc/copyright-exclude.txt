@@ -34,6 +34,7 @@ jaxb.index
 .p12
 .bin
 .vm
+.sql
 src/main/proto/
 src/test/resources/keystore/
 etc/javadoc/

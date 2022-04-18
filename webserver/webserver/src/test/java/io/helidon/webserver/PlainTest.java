@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -256,7 +256,7 @@ public class PlainTest {
     }
 
     @Test
-    public void getWithLargePayloadCausesConnectionClose() throws Exception {
+    public void getWithLargePayloadDoesNotCauseConnectionClose() throws Exception {
         // open
         try (SocketHttpClient s = new SocketHttpClient(webServer)) {
             // get
@@ -264,7 +264,7 @@ public class PlainTest {
 
             // assert
             assertThat(entityFromResponse(s.receive(), true), is("9\nIt works!\n0\n\n"));
-            SocketHttpClient.assertConnectionIsClosed(s);
+            SocketHttpClient.assertConnectionIsOpen(s);
         }
     }
 
@@ -295,14 +295,14 @@ public class PlainTest {
     }
 
     @Test
-    public void deferredGetWithLargePayloadCausesConnectionClose() throws Exception {
+    public void deferredGetWithLargePayloadDoesNotCauseConnectionClose() throws Exception {
         // open
         try (SocketHttpClient s = new SocketHttpClient(webServer)) {
             // get
             s.request(Http.Method.GET, "/deferred", SocketHttpClient.longData(100_000).toString());
             // assert
             assertThat(entityFromResponse(s.receive(), true), is("d\nI'm deferred!\n0\n\n"));
-            SocketHttpClient.assertConnectionIsClosed(s);
+            SocketHttpClient.assertConnectionIsOpen(s);
         }
     }
 
@@ -334,7 +334,7 @@ public class PlainTest {
     }
 
     @Test
-    public void unconsumedLargePostDataCausesConnectionClose() throws Exception {
+    public void unconsumedLargePostDataDoesNotCauseConnectionClose() throws Exception {
         // open
         try (SocketHttpClient s = new SocketHttpClient(webServer)) {
             // get
@@ -342,12 +342,12 @@ public class PlainTest {
 
             // assert
             assertThat(entityFromResponse(s.receive(), true), is("15\nPayload not consumed!\n0\n\n"));
-            SocketHttpClient.assertConnectionIsClosed(s);
+            SocketHttpClient.assertConnectionIsOpen(s);
         }
     }
 
     @Test
-    public void unconsumedDeferredLargePostDataCausesConnectionClose() throws Exception {
+    public void unconsumedDeferredLargePostDataDoesNotCauseConnectionClose() throws Exception {
         // open
         try (SocketHttpClient s = new SocketHttpClient(webServer)) {
             // get
@@ -355,7 +355,7 @@ public class PlainTest {
 
             // assert
             assertThat(entityFromResponse(s.receive(), true), is("d\nI'm deferred!\n0\n\n"));
-            SocketHttpClient.assertConnectionIsClosed(s);
+            SocketHttpClient.assertConnectionIsOpen(s);
         }
     }
 

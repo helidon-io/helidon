@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class MainTest {
+class MainTest {
 
     private static WebServer webServer;
     private static WebClient webClient;
@@ -48,7 +48,7 @@ public class MainTest {
     }
 
     @BeforeAll
-    public static void startTheServer() {
+    static void startTheServer() {
         webServer = Main.startServer().await();
 
         webClient = WebClient.builder()
@@ -58,7 +58,7 @@ public class MainTest {
     }
 
     @AfterAll
-    public static void stopServer() {
+    static void stopServer() {
         if (webServer != null) {
             webServer.shutdown()
                     .await(10, TimeUnit.SECONDS);
@@ -66,7 +66,7 @@ public class MainTest {
     }
 
     @Test
-    public void testHelloWorld() {
+    void testHelloWorld() {
         JsonObject jsonObject;
         WebClientResponse response;
 

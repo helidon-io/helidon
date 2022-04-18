@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@ module io.helidon.security.providers.oidc.common {
     requires io.helidon.media.jsonp;
     requires io.helidon.common.crypto;
     requires static io.helidon.config.metadata;
+    requires io.helidon.webserver.cors;
 
     // these are deprecated and will be removed in 3.x
     requires jersey.client;

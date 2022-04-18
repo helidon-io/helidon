@@ -1,0 +1,10 @@
+{
+  "sources": [
+    {
+      "type": "classpath",
+      "properties": {
+        "resource": "app-dev.json"
+      }
+    }
+  ]
+}

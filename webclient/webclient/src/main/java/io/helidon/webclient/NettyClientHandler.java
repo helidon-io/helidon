@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -154,16 +154,6 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
                 }
             }
 
-            channel.closeFuture()
-                    .addListener(f -> {
-                        // Connection closed without last HTTP content received. Some server problem
-                        // so we need to fail the publisher and report an exception.
-                        if (!responseCloser.isClosed()) {
-                            WebClientException exception = new WebClientException("Connection reset by the host");
-                            publisher.fail(exception);
-                        }
-                    });
-
             requestConfiguration.cookieManager().put(requestConfiguration.requestURI(),
                                                      clientResponse.headers().toMap());
 
@@ -198,6 +188,10 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
                                     });
                         }
                         responseFuture.complete(clientResponse);
+                    }).exceptionally(t -> {
+                        responseFuture.completeExceptionally(t);
+                        responseCloser.close();
+                        return null;
                     });
                 }
             });
@@ -233,6 +227,17 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
             } else {
                 responseCloser.close();
             }
+        }
+    }
+
+    @Override
+    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+        super.channelInactive(ctx);
+        // Connection closed without last HTTP content received. Some server problem
+        // so we need to fail the publisher and report an exception.
+        if (publisher != null && !responseCloser.isClosed()) {
+            WebClientException exception = new WebClientException("Connection reset by the host");
+            publisher.fail(exception);
         }
     }
 

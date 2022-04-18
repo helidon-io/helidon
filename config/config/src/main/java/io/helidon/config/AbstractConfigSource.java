@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -159,7 +159,8 @@ public abstract class AbstractConfigSource extends AbstractSource implements Con
                                    // value node must have a value
                                    .data(toStream(valueNode.get()))
                                    .charset(StandardCharsets.UTF_8)
-                                   .build());
+                                   .build(),
+                           it -> Optional.empty());
     }
 
     private InputStream toStream(String string) {

@@ -2,22 +2,6 @@
 <suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
 <!-- For information see https://jeremylong.github.io/DependencyCheck/general/suppression.html -->
 
-<!-- Applies to Processing:Processing -->
-<suppress>
-   <notes><![CDATA[
-   file name: jsonp-jaxrs-1.1.6.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/org\.glassfish/jsonp\-jaxrs@.*$</packageUrl>
-   <cpe>cpe:/a:processing:processing</cpe>
-</suppress>
-<suppress>
-   <notes><![CDATA[
-   file name: jakarta.json-api-1.1.6.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/jakarta\.json/jakarta\.json\-api@.*$</packageUrl>
-   <cpe>cpe:/a:processing:processing</cpe>
-</suppress>
-
 <!-- This CVE is against the etcd server. We ship a Java client -->
 <suppress>
    <notes><![CDATA[
@@ -25,24 +9,6 @@
    ]]></notes>
    <packageUrl regex="true">^pkg:maven/org\.mousio/etcd4j@.*$</packageUrl>
    <cpe>cpe:/a:etcd:etcd</cpe>
-</suppress>
-
-<!-- This CVE is against the Java Websocket project.  Not the Jakarta WebSocket API.
-     See https://github.com/TooTallNate/Java-WebSocket/security/advisories/GHSA-gw55-jm4h-x339
--->
-<suppress>
-   <notes><![CDATA[
-   file name: jakarta.websocket-api-1.1.2.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/jakarta\.websocket/jakarta\.websocket\-api@.*$</packageUrl>
-   <cpe>cpe:/a:java-websocket_project:java-websocket</cpe>
-</suppress>
-<suppress>
-   <notes><![CDATA[
-   file name: javax.websocket-api-1.1.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/javax\.websocket/javax\.websocket\-api@.*$</packageUrl>
-   <cpe>cpe:/a:java-websocket_project:java-websocket</cpe>
 </suppress>
 
 <!-- GraalVM -->
@@ -169,19 +135,6 @@
    <cve>CVE-2022-21366</cve>
 </suppress>
 
-
-<!-- junit 4 -->
-<!-- This CVE is fixed in junit 4.13.1 and only applies when using Java 1.6
-     or earlier. We use version 4.13.1 and require Java 11 or above
-     so this CVE does not apply -->
-<suppress>
-   <notes><![CDATA[
-   file name: junit-4.13.1.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/junit/junit@.*$</packageUrl>
-   <vulnerabilityName>CVE-2020-15250</vulnerabilityName>
-</suppress>
-
 <!-- grpc -->
 <!-- This was applying the version of opentracing-grpc to grpc
      which triggered CVEs for older versions of grpc and grpc-js
@@ -194,20 +147,7 @@
    <cpe>cpe:/a:grpc:grpc</cpe>
 </suppress>
 
-<!-- Apache HttpClient / Google HTTP Client -->
-<!-- This was associating the Google HTTP client version number to Apache HttpClient generating a false positive for
-     an Apache HttpClient CVE for versions 4.5.12 and earlier (we use 4.5.13 in Helidon).
--->
-<suppress>
-   <notes><![CDATA[
-   file name: google-http-client-apache-v2-1.40.1.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/com\.google\.http\-client/google\-http\-client\-apache\-v2@.*$</packageUrl>
-   <cve>CVE-2020-13956</cve>
-</suppress>
-
-
-<!-- This CVE is against Neo4j through 3.4.18. We use Neo4j 4.2.4
+<!-- This CVE is against Neo4j through 3.4.18. We use Neo4j 4.x
      Helidon's Neo4j integration triggered a false positive due to it's 
      version being < 3.4.18
 -->
@@ -219,19 +159,9 @@
    <cve>CVE-2021-34371</cve>
 </suppress>
 
-<!-- The Neo4j java driver contains a shaded copy of a couple of Netty artifacts.
-     This CVE is against netty-codec-http2 which is not included in the Neo4j driver.
--->
-<suppress>
-   <notes><![CDATA[
-   file name: neo4j-java-driver-4.2.4.jar (shaded: io.netty:netty-transport:4.1.60.Final)
-   ]]></notes>
-   <filePath regex="true">.*/neo4j\-java\-driver\-4\.2\.4\.jar.*</filePath>
-   <cve>CVE-2021-21409</cve>
-</suppress>
-
 <!-- This CVE was fixed in the EL implementations com.sun.el:el-ri:3.0.4 and org.glassfish:jakarta.el:3.0.4
-     which we have upgraded to. But the scan triggers a false positive on the API: jakarta.el:jakarta.el-api:3.0.3 -->
+     which we have upgraded to. But the scan triggers a false positive on the API: jakarta.el:jakarta.el-api:3.0.3
+-->
 <suppress>
    <notes><![CDATA[
    file name: jakarta.el-api-3.0.3.jar
@@ -249,13 +179,6 @@
    file name: netty-incubator-transport-native-io_uring-0.0.8.Final-linux-x86_64.jar
    ]]></notes>
    <packageUrl regex="true">^pkg:maven/io\.netty\.incubator/netty\-incubator\-transport\-native\-io_uring@.*$</packageUrl>
-   <cpe>cpe:/a:netty:netty</cpe>
-</suppress>
-<suppress>
-   <notes><![CDATA[
-   file name: netty-tcnative-classes-2.0.46.Final.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/io\.netty/netty\-tcnative\-classes@.*$</packageUrl>
    <cpe>cpe:/a:netty:netty</cpe>
 </suppress>
 

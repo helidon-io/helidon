@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,7 +71,9 @@ import io.helidon.webclient.security.WebClientSecurity;
  * <p>
  * Configuration:
  * <a href="https://docs.oracle.com/en-us/iaas/Content/Identity/Tasks/callingservicesfrominstances.htm">OCI Instance Security</a>
+ * @deprecated  OCI SDK instead
  */
+@Deprecated(since = "2.5.0", forRemoval = true)
 public class OciConfigInstancePrincipal implements OciConfigProvider {
     private static final Logger LOGGER = Logger.getLogger(OciConfigInstancePrincipal.class.getName());
     private static final String DEFAULT_METADATA_SERVICE_URL = "http://169.254.169.254/opc/v2/";
@@ -569,7 +571,7 @@ public class OciConfigInstancePrincipal implements OciConfigProvider {
 
             // returns string, such as eu-frankfurt-1
             return webClient.get()
-                            .path("/instance/region")
+                            .path("/instance/canonicalRegionName")
                             .request(String.class)
                             .await(10, TimeUnit.SECONDS);
         }

@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class MainTest {
+class MainTest {
 
     private static WebServer webServer;
     private static WebClient webClient;
@@ -33,7 +33,7 @@ public class MainTest {
     }
 
     @BeforeAll
-    public static void startTheServer() {
+    static void startTheServer() {
         webServer = Main.startServer().await();
 
         webClient = WebClient.builder()
@@ -43,7 +43,7 @@ public class MainTest {
     }
 
     @AfterAll
-    public static void stopServer() throws Exception {
+    static void stopServer() throws Exception {
         if (webServer != null) {
             webServer.shutdown()
                     .toCompletableFuture()
@@ -52,7 +52,7 @@ public class MainTest {
     }
 
     @Test
-    public void testHelloWorld() {
+    void testHelloWorld() {
         JsonObject jsonObject;
         WebClientResponse response;
 

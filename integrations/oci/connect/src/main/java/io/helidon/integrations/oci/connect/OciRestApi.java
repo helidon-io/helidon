@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,7 +48,9 @@ import io.helidon.webclient.security.WebClientSecurity;
 /**
  * OCI specific REST API.
  * This class uses HTTP Signatures to sign requests.
+ * @deprecated  OCI SDK instead
  */
+@Deprecated(since = "2.5.0", forRemoval = true)
 public class OciRestApi extends RestApiBase {
     private static final Logger LOGGER = Logger.getLogger(OciRestApi.class.getName());
     private static final HashDigest HASH_DIGEST = HashDigest.create(HashDigest.ALGORITHM_SHA_256);

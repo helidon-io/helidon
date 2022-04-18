@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 
 package io.helidon.messaging.connectors.jms;
 
+import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -29,8 +31,10 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.BeforeDestroyed;
@@ -383,6 +387,7 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
             Session session = sessionEntry.session();
             Destination destination = createDestination(session, ctx);
             MessageProducer producer = session.createProducer(destination);
+            configureProducer(producer, ctx);
             AtomicReference<MessageMappers.MessageMapper> mapper = new AtomicReference<>();
             return ReactiveStreams.<Message<?>>builder()
                     .flatMapCompletionStage(m -> consume(m, session, mapper, producer, config))
@@ -392,6 +397,37 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
         } catch (JMSException e) {
             throw new MessagingException("Error when creating JMS producer.", e);
         }
+    }
+
+    private void configureProducer(MessageProducer producer, ConnectionContext ctx) {
+        io.helidon.config.Config config = ctx.config().get("producer");
+        if (!config.exists()) return;
+
+        Class<? extends MessageProducer> clazz = producer.getClass();
+        Map<String, Method> setterMethods = Arrays.stream(clazz.getDeclaredMethods())
+                .filter(m -> m.getParameterCount() == 1)
+                .collect(Collectors.toMap(m -> ConfigHelper.stripSet(m.getName()), Function.identity()));
+        config.detach()
+                .traverse()
+                .forEach(c -> {
+                    String key = c.key().name();
+                    String normalizedKey = ConfigHelper.kebabCase2CameCase(key);
+                    Method m = setterMethods.get(normalizedKey);
+                    if (m == null) {
+                        LOGGER.log(Level.WARNING,
+                                "JMS producer property " + key + " can't be set for producer " + clazz.getName());
+                        return;
+                    }
+                    try {
+                        m.invoke(producer, c.as(m.getParameterTypes()[0]).get());
+                    } catch (Throwable e) {
+                        LOGGER.log(Level.WARNING,
+                                "Error when setting JMS producer property " + key
+                                        + " on " + clazz.getName()
+                                        + "." + m.getName(),
+                                e);
+                    }
+                });
     }
 
     private void produce(
