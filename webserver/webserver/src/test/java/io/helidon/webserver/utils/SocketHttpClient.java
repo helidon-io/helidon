@@ -55,6 +55,7 @@ public class SocketHttpClient implements AutoCloseable {
     private static final Pattern FIRST_LINE_PATTERN = Pattern.compile("HTTP/\\d+\\.\\d+ (\\d\\d\\d) (.*)");
 
     private final Socket socket;
+    private final BufferedReader socketReader;
 
     /**
      * Creates the instance linked with the provided webserver.
@@ -65,6 +66,7 @@ public class SocketHttpClient implements AutoCloseable {
     public SocketHttpClient(WebServer webServer) throws IOException {
         socket = new Socket("localhost", webServer.port());
         socket.setSoTimeout(10000);
+        socketReader = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
     }
 
     /**
@@ -258,12 +260,11 @@ public class SocketHttpClient implements AutoCloseable {
      * @throws IOException in case of an IO error
      */
     public String receive() throws IOException {
-        BufferedReader br = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
         StringBuilder sb = new StringBuilder();
         String t;
         boolean ending = false;
         int contentLength = -1;
-        while ((t = br.readLine()) != null) {
+        while ((t = socketReader.readLine()) != null) {
 
             LOGGER.finest("Received: " + t);
 
@@ -277,7 +278,7 @@ public class SocketHttpClient implements AutoCloseable {
 
             if ("".equalsIgnoreCase(t) && contentLength >= 0) {
                 char[] content = new char[contentLength];
-                br.read(content);
+                socketReader.read(content);
                 sb.append(content);
                 break;
             }
