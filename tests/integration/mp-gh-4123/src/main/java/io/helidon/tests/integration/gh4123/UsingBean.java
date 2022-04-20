@@ -16,8 +16,8 @@
 
 package io.helidon.tests.integration.gh4123;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 
 @ApplicationScoped
 public class UsingBean {

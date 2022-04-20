@@ -16,10 +16,9 @@
 
 package io.helidon.tests.integration.gh4123;
 
-import javax.inject.Inject;
-
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 
+import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;

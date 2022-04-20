@@ -16,7 +16,7 @@
 
 package io.helidon.tests.integration.gh4123;
 
-import javax.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
 public class ContractBean implements SomeContract {

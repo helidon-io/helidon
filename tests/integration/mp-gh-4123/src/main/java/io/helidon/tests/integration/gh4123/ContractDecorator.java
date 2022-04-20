@@ -16,9 +16,9 @@
 
 package io.helidon.tests.integration.gh4123;
 
-import javax.decorator.Decorator;
-import javax.decorator.Delegate;
-import javax.inject.Inject;
+import jakarta.decorator.Decorator;
+import jakarta.decorator.Delegate;
+import jakarta.inject.Inject;
 
 @Decorator
 public abstract class ContractDecorator implements SomeContract {
