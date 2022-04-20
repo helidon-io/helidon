@@ -169,7 +169,7 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
             Errors errors = signedJwt.verifySignature(verifyKeys, defaultJwk);
             if (errors.isValid()) {
                 Jwt jwt = signedJwt.getJwt();
-                // verify the audience is correct
+                // perform all validations, including expected audience verification
                 Errors validate = jwt.validate(null, expectedAudience);
                 if (validate.isValid()) {
                     return AuthenticationResponse.success(buildSubject(jwt, signedJwt));
