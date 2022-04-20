@@ -16,6 +16,9 @@
 
 package io.helidon.microprofile.arquillian;
 
+import java.lang.reflect.Method;
+import java.util.Optional;
+
 import jakarta.enterprise.context.control.RequestContextController;
 import jakarta.enterprise.context.spi.CreationalContext;
 import jakarta.enterprise.inject.se.SeContainer;
@@ -26,8 +29,6 @@ import org.jboss.arquillian.container.test.spi.client.protocol.Protocol;
 import org.jboss.arquillian.core.spi.LoadableExtension;
 import org.jboss.arquillian.test.spi.TestEnricher;
 import org.jboss.arquillian.testenricher.cdi.CDIInjectionEnricher;
-import java.lang.reflect.Method;
-import java.util.Optional;
 
 /**
  * An arquillian LoadableExtension defining the {@link HelidonDeployableContainer}.
