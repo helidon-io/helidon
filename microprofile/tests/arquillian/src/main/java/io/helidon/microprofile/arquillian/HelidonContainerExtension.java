@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,9 @@
  */
 
 package io.helidon.microprofile.arquillian;
+
+import java.lang.reflect.Method;
+import java.util.Optional;
 
 import jakarta.enterprise.context.control.RequestContextController;
 import jakarta.enterprise.context.spi.CreationalContext;
@@ -71,6 +74,15 @@ class HelidonContainerExtension implements LoadableExtension {
                 }
             }
             return requestContextController;
+        }
+
+        @Override
+        public Object[] resolve(Method method) {
+            return Optional.ofNullable(method.getAnnotation(org.testng.annotations.Test.class))
+                           .filter(test -> !test.dataProvider().isEmpty())
+                           // Don't resolve TestNG data providers parameters as cdi beans
+                           .map(unused -> new Object[0])
+                           .orElseGet(() -> super.resolve(method));
         }
 
         private static CDI<Object> cdi() {

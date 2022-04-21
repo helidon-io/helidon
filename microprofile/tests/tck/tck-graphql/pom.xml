@@ -30,7 +30,7 @@
 
     <properties>
         <!-- 3.0.0-JAKARTA -->
-        <skipTests>true</skipTests>
+        <skipTests>false</skipTests>
     </properties>
 
     <dependencies>
