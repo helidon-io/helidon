@@ -59,7 +59,7 @@
         <version.lib.graphql-java>15.0</version.lib.graphql-java>
         <version.lib.graphql-java.extended.scalars>15.0.0</version.lib.graphql-java.extended.scalars>
         <version.lib.gson>2.8.9</version.lib.gson>
-        <version.lib.grpc>1.44.0</version.lib.grpc>
+        <version.lib.grpc>1.45.1</version.lib.grpc>
         <version.lib.guava>30.0-jre</version.lib.guava>
         <version.lib.h2>2.0.206</version.lib.h2>
         <version.lib.hamcrest>1.3</version.lib.hamcrest>
