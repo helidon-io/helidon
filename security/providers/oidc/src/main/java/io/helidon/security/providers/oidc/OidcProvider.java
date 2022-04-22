@@ -16,6 +16,7 @@
 
 package io.helidon.security.providers.oidc;
 
+import java.lang.System.Logger.Level;
 import java.lang.annotation.Annotation;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -33,8 +34,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -93,7 +92,7 @@ import static io.helidon.security.providers.oidc.common.OidcConfig.postJsonRespo
  * </ul>
  */
 public final class OidcProvider implements AuthenticationProvider, OutboundSecurityProvider {
-    private static final Logger LOGGER = Logger.getLogger(OidcProvider.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(OidcProvider.class.getName());
 
     private final boolean optional;
     private final OidcConfig oidcConfig;
@@ -270,8 +269,8 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
                         return cookie.get()
                                 .flatMapSingle(it -> validateToken(providerRequest, it))
                                 .onErrorResumeWithSingle(throwable -> {
-                                    if (LOGGER.isLoggable(Level.FINEST)) {
-                                        LOGGER.log(Level.FINEST, "Invalid token in cookie", throwable);
+                                    if (LOGGER.isLoggable(Level.DEBUG)) {
+                                        LOGGER.log(Level.DEBUG, "Invalid token in cookie", throwable);
                                     }
                                     return Single.just(errorResponse(providerRequest,
                                                                      Http.Status.UNAUTHORIZED_401,
@@ -282,14 +281,16 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
                 }
             }
         } catch (SecurityException e) {
-            LOGGER.log(Level.FINEST, "Failed to extract token from one of the configured locations", e);
+            LOGGER.log(Level.DEBUG, "Failed to extract token from one of the configured locations", e);
             return failOrAbstain("Failed to extract one of the configured tokens" + e);
         }
 
         if (token.isPresent()) {
             return validateToken(providerRequest, token.get());
         } else {
-            LOGGER.finest(() -> "Missing token, could not find in either of: " + missingLocations);
+            if (LOGGER.isLoggable(Level.DEBUG)) {
+                LOGGER.log(Level.DEBUG, "Missing token, could not find in either of: " + missingLocations);
+            }
             return CompletableFuture.completedFuture(errorResponse(providerRequest,
                                                                    Http.Status.UNAUTHORIZED_401,
                                                                    null,
@@ -469,7 +470,7 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
             signedJwt = SignedJwt.parseToken(token);
         } catch (Exception e) {
             //invalid token
-            LOGGER.log(Level.FINEST, "Could not parse inbound token", e);
+            LOGGER.log(Level.DEBUG, "Could not parse inbound token", e);
             return Single.just(AuthenticationResponse.failed("Invalid token", e));
         }
 
@@ -478,7 +479,7 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
                                                    signedJwt,
                                                    it))
                 .onErrorResume(t -> {
-                    LOGGER.log(Level.FINEST, "Failed to validate request", t);
+                    LOGGER.log(Level.DEBUG, "Failed to validate request", t);
                     return AuthenticationResponse.failed("Failed to validate JWT", t);
                 });
     }
@@ -518,7 +519,7 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
                                      "Scopes " + missingScopes + " are missing");
             }
         } else {
-            if (LOGGER.isLoggable(Level.FINEST)) {
+            if (LOGGER.isLoggable(Level.DEBUG)) {
                 // only log errors when details requested
                 errors.log(LOGGER);
                 validationErrors.log(LOGGER);

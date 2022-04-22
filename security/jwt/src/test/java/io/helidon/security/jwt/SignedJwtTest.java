@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,6 @@
  */
 
 package io.helidon.security.jwt;
-
-import java.util.logging.Logger;
 
 import io.helidon.common.Errors;
 import io.helidon.common.configurable.Resource;
@@ -37,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * Unit test for {@link SignedJwt}.
  */
 public class SignedJwtTest {
-    private static final Logger LOGGER = Logger.getLogger(SignedJwtTest.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(SignedJwtTest.class.getName());
 
     private static final String AUTH_0_TOKEN =
             "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6IlF6QkNNRE0xUVRJMk1qUkZNVEZETkRCRFJUWXdSa1U0UkRkRU16VTVSVGN3TkRSQk5qaENOUSJ9.eyJpc3MiOiJodHRwczovL2xhbmdvc2guZXUuYXV0aDAuY29tLyIsInN1YiI6ImF1dGgwfDU5NGEzNzJkNDUxN2FmMTA0ZjFiZGUzMCIsImF1ZCI6InliZlBpcnBwUTZaT094U0dLa2pnTWUxa2ZGTGZkbXlQIiwiZXhwIjoxNDk4MDgzOTI2LCJpYXQiOjE0OTgwNDc5MjZ9.nyMs5VfDV7Njd6hnQmbrSp_xVbIdvdP3ChzEtdffH2FWMqeW34gZT7dKJfgirdcBfXD4cDNDF2yjKZTe9-yCLWCFYtrfpvS_nlbt1hVM5ZR2HsGFSKdws0gOTsKCOTnD0SmfiQHCP-tzu87qWcVIwQcm-7AuLSfQ3WPxHAGPcQDOZiJBfcpBN4OGPKF0qq7PdNzBDDHmzpt2TbSsHmnSW-QbWZ1QHr52jsRCl1O_UTYHo2HE3ShE3WWBgYcJdJhgXNkhvJJh95oqmq_bfH5Saw-REmg-roU1bAh_yzFkmVSnhKmzHff432glRxcgDgF87kqJNodMD6UN6wRVt9vAPg";

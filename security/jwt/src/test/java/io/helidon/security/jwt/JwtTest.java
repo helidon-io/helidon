@@ -21,7 +21,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.logging.Logger;
 
 import io.helidon.common.Errors;
 import io.helidon.security.jwt.jwk.JwkRSA;
@@ -35,7 +34,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * Unit test for {@link Jwt}.
  */
 public class JwtTest {
-    private static final Logger LOGGER = Logger.getLogger(JwtTest.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(JwtTest.class.getName());
 
     @Test
     public void testBuilderBasicJwt() {
