@@ -43,7 +43,7 @@ class ProcessorMethod extends AbstractMessagingMethod implements OutgoingMember,
     private static final Logger LOGGER = Logger.getLogger(ProcessorMethod.class.getName());
 
     private final LazyValue<Boolean> compatibilityMode = LazyValue.create(() ->
-            ConfigProvider.getConfig().getOptionalValue("mp.messaging.helidon-compatibility-mode", Boolean.class)
+            ConfigProvider.getConfig().getOptionalValue("mp.messaging.helidon.propagate-errors", Boolean.class)
                     .orElse(false)
     );
     private Processor<Object, Object> processor;
