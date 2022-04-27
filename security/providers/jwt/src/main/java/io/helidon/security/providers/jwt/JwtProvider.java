@@ -174,7 +174,7 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
                 if (validate.isValid()) {
                     return AuthenticationResponse.success(buildSubject(jwt, signedJwt));
                 } else {
-                    return failOrAbstain(errors.toString());
+                    return failOrAbstain(validate.toString());
                 }
             } else {
                 return failOrAbstain(errors.toString());
