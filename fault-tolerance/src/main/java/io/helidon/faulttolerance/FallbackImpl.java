@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.faulttolerance;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Flow;
 import java.util.function.Function;
@@ -48,7 +49,12 @@ class FallbackImpl<T> implements Fallback<T> {
                     if (delayedTask.hadData() || errorChecker.shouldSkip(cause)) {
                         return Multi.error(cause);
                     } else {
-                        return Multi.create(fallbackMulti.apply(cause));
+                        return Multi.create(fallbackMulti.apply(cause))
+                                .onErrorResumeWith(t2 -> {
+                                    // Copy exception structure of Single<T> case
+                                    t2.addSuppressed(new CompletionException(throwable));
+                                    return Multi.error(t2);
+                                });
                     }
                 });
     }
