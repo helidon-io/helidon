@@ -32,13 +32,18 @@ import org.glassfish.jersey.internal.util.collection.Ref;
 import org.glassfish.jersey.process.internal.RequestScoped;
 
 /**
- * Feature which enables injection of empty {@link SecurityContext}.
+ * Feature which enables injection of empty {@link SecurityContext} when security is disabled.
  */
 @ConstrainedTo(RuntimeType.SERVER)
 public final class SecurityDisabledFeature implements Feature {
 
     private final Security security;
 
+    /**
+     * Create a new instance of security feature for a security component.
+     *
+     * @param security Fully configured security component to integrate with Jersey
+     */
     public SecurityDisabledFeature(Security security) {
         this.security = security;
     }
@@ -47,7 +52,7 @@ public final class SecurityDisabledFeature implements Feature {
     public boolean configure(FeatureContext context) {
         RuntimeType runtimeType = context.getConfiguration().getRuntimeType();
         //register server
-        if (runtimeType != RuntimeType.SERVER) {
+        if (runtimeType != RuntimeType.SERVER || security.enabled()) {
             return false;
         }
 
