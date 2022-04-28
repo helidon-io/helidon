@@ -73,4 +73,23 @@ class IncludeTest {
         assertThat(cpe.getMessage(), is("bogus.conf is missing"));
     }
 
+    @Test
+    void testClasspathIncludesNoExtension() {
+        Config config = Config.create(ClasspathConfigSource.create("conf/application4.conf"));
+
+        String value = config.get("app.greeting").asString().orElse(null);
+
+        assertThat("app.greeting should be loaded from application.conf", value, notNullValue());
+        assertThat(value, is("Hello"));
+
+        value = config.get("server.host").asString().orElse(null);
+
+        assertThat("server.host should be loaded from included.conf", value, notNullValue());
+        assertThat(value, is("localhost"));
+
+        value = config.get("server.port").asString().orElse(null);
+
+        assertThat("server.port should be loaded from sub/included.conf", value, notNullValue());
+        assertThat(value, is("8080"));
+    }
 }
