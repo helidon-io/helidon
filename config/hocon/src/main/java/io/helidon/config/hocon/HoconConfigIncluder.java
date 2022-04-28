@@ -16,6 +16,7 @@
 
 package io.helidon.config.hocon;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -36,6 +37,8 @@ import static java.lang.System.Logger.Level.TRACE;
 
 class HoconConfigIncluder implements ConfigIncluder {
     private static final System.Logger LOGGER = System.getLogger(HoconConfigIncluder.class.getName());
+    private static final String HOCON_EXTENSION = ".conf";
+
     private ConfigParseOptions parseOptions;
     private Function<String, Optional<InputStream>> relativeResourceFunction;
     private Charset charset;
@@ -52,7 +55,7 @@ class HoconConfigIncluder implements ConfigIncluder {
     public ConfigObject include(ConfigIncludeContext context, String what) {
         LOGGER.log(TRACE, String.format("Received request to include resource %s, %s",
                                         what, context.parseOptions().getOriginDescription()));
-        Optional<InputStream> maybeStream = relativeResourceFunction.apply(what);
+        Optional<InputStream> maybeStream = relativeResourceFunction.apply(patchName(what));
         if (maybeStream.isEmpty()) {
             if (Objects.nonNull(context.parseOptions()) && !context.parseOptions().getAllowMissing()) {
                 throw new ConfigParserException(what + " is missing");
@@ -79,4 +82,19 @@ class HoconConfigIncluder implements ConfigIncluder {
         this.relativeResourceFunction = relativeResourceFunction;
     }
 
+    /**
+     * Adds default Hocon extension if not present.
+     *
+     * @param what file name
+     * @return file name with extension
+     */
+    static String patchName(String what) {
+        Optional<String> base = Optional.of(what)
+                .filter(f -> f.contains(File.separator))
+                .map(f -> f.substring(f.lastIndexOf(File.separator) + 1));
+        Optional<String> ext = Optional.of(base.orElse(what))
+                .filter(f -> f.contains("."))
+                .map(f -> f.substring(f.lastIndexOf(".") + 1));
+        return ext.isPresent() ? what : what + HOCON_EXTENSION;
+    }
 }
