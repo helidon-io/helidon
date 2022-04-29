@@ -86,7 +86,7 @@ class ThreadPoolSupplierTest {
     @Test
     void testDefaultInstance() throws ExecutionException, InterruptedException {
         testInstance(defaultInstance,
-                     "helidon-",
+                     "helidon-test-thread-pool-",
                      10,
                      10000,
                      10,
@@ -159,6 +159,39 @@ class ThreadPoolSupplierTest {
         } finally {
             log.removeHandler(handler);
         }
+    }
+
+    @Test
+    void testNameAndThreadPrefixName() throws ExecutionException, InterruptedException {
+        // Name      | threadNamePrefix| Derived Name           | Derived threadNamePrefix |
+        // --------- |-----------------| ---------------------- | ------------------------ |
+        // none      | none            | helidon-thread-pool-N  | helidon-                 |
+        // "mypool"  | none            | mypool                 | helidon-mypool-          |
+        // none      | "mythread-"     | mythread-thread-pool-N | mythread-                |
+        // "mypool"  | "mythread-"     | mypool                 | mythread-                |
+
+        ThreadPoolSupplier supplier = ThreadPoolSupplier.builder().build();
+        ThreadPool pool = (ThreadPool)ensureOurExecutor(supplier.getThreadPool());
+        testNaming(pool, "helidon-thread-pool-", "helidon-");
+
+        supplier = ThreadPoolSupplier.builder().name("mypool").build();
+        pool = (ThreadPool)ensureOurExecutor(supplier.getThreadPool());
+        testNaming(pool, "mypool", "helidon-mypool-");
+
+        supplier = ThreadPoolSupplier.builder().threadNamePrefix("mythread-").build();
+        pool = (ThreadPool)ensureOurExecutor(supplier.getThreadPool());
+        testNaming(pool, "mythread-thread-pool-", "mythread-");
+
+        supplier = ThreadPoolSupplier.builder().name("mypool").threadNamePrefix("mythread-").build();
+        pool = (ThreadPool)ensureOurExecutor(supplier.getThreadPool());
+        testNaming(pool, "mypool", "mythread-");
+    }
+
+    private void testNaming(ThreadPool pool, String name, String threadNamePrefix) throws ExecutionException, InterruptedException {
+        AtomicReference<String> threadName = new AtomicReference<>();
+        pool.submit(() -> threadName.set(Thread.currentThread().getName())).get();
+        assertThat(pool.getName(), startsWith(name));
+        assertThat(threadName.get(), startsWith(threadNamePrefix));
     }
 
     private void testInstance(ThreadPoolExecutor theInstance,
