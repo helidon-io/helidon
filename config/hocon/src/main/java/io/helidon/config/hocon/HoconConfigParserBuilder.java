@@ -41,18 +41,28 @@ public final class HoconConfigParserBuilder implements Builder<ConfigParser> {
     private HoconConfigIncluder configIncluder;
 
     HoconConfigParserBuilder() {
-        resolvingEnabled = true;
+        resolvingEnabled = false;
         resolveOptions = ConfigResolveOptions.defaults();
         parseOptions = ConfigParseOptions.defaults();
     }
 
     /**
-     * Disables HOCON resolving substitutions support.
+     * Disables HOCON resolving substitutions support. Default is {@code false}.
      *
      * @return modified builder instance
      */
     public HoconConfigParserBuilder disableResolving() {
         resolvingEnabled = false;
+        return this;
+    }
+
+    /**
+     * Enables HOCON resolving substitutions support. Default is {@code false}.
+     *
+     * @return modified builder instance
+     */
+    public HoconConfigParserBuilder enableResolving() {
+        this.resolvingEnabled = true;
         return this;
     }
 
