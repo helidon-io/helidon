@@ -23,15 +23,10 @@
 :microprofile-bundle: false
 = :keywords: helidon, se, performance, tuning
 
+In this guide you fill find basic advises for performance tuning of your Helidon application. Most of them target Netty tuning, as Helidon is based on it.
+You should also consider configuring/tuning Java heap size as per any Java application.
 
-== Basic tuning for Helidon SE
-
-1. Configure the size of the Netty worker thread pool
-2. Configure Netty's maxOrder setting if using Helidon 2.4.1 or earlier
-3. Configure/tune Java heap size as per any Java application
-
-
-=== 1) Configure Netty worker thread pool size
+== Configure Netty worker thread pool size
 
 The Netty worker thread-pool is what handles your incoming requests. It defaults to 2*NCPU. To set it to something else you can set `worker-count` in `resources/application.yaml`:
 
@@ -43,7 +38,7 @@ server:
   worker-count: 2
 ----
 
-=== 2) Configure Netty's maxOrder (Helidon 2.4.1 or earlier)
+== Configure Netty's maxOrder (Helidon 2.4.1 or earlier)
 
 In some situations Netty can aggressively allocate memory per request. This has been addressed in recent versions of Helidon and Netty, but if you are running an earlier version set this system property when you start your Helidon application:
 

@@ -24,16 +24,7 @@
 = :keywords: helidon, microprofile, micro-profile, performance, tuning
 
 
-== Basic tuning for Helidon MP
-
-1. Use `io.helidon.microprofile.bundles:helidon-microprofile-core` dependency instead of full (`helidon-microprofile`) dependency.
-2. Configure the size of the Netty worker thread pool
-3. Configure the size of Helidon's server thread pool
-4. Configure Netty's maxOrder setting if using Helidon 2.4.1 or earlier
-5. Configure/tune Java heap size as per any Java application
-
-
-=== 1) Use `io.helidon.microprofile.bundles:helidon-microprofile-core`
+== Use `io.helidon.microprofile.bundles:helidon-microprofile-core`
 
 Use `helidon-microprofile-core` dependency (and not the `helidon-microprofile` dependency) and add only what you use. For example:
 
@@ -57,8 +48,11 @@ Use `helidon-microprofile-core` dependency (and not the `helidon-microprofile` d
 </dependency>
 ----
 
+In this guide you fill find basic advises for performance tuning of your Helidon application. Most of them target Netty tuning, as Helidon is based on it.
+You should also consider configuring/tuning Java heap size as per any Java application.
 
-=== 2) Configure Netty worker thread pool size
+
+== Configure Netty worker thread pool size
 
 The Netty worker thread-pool is what handles your incoming requests. It defaults to 2*NCPU. To set it to something else you can set this property in `microprofile-config.properties`:
 
@@ -67,9 +61,9 @@ The Netty worker thread-pool is what handles your incoming requests. It defaults
 server.worker-count=4
 ----
 
-=== 3) Configure Helidon server pool size
+=== Configure Helidon server pool size
 
-The Helidon server thread-pool takes requests from Netty and invokes your JAX-RS endpoints.  You can control lts configuration in `microprofile-config.properties` (Note that this threadpool does not exist in Helidon SE).
+The Helidon server thread-pool takes requests from Netty and invokes your JAX-RS endpoints.  You can control lts configuration in `microprofile-config.properties`. This is Helidon MP specific only.
 
 [source,properties]
 ----
@@ -84,7 +78,7 @@ To verify settings increase the log level for Helidon's executor service by addi
 io.helidon.common.configurable.ThreadPool.level=FINE
 ----
 
-=== 4) Configure Netty's maxOrder (Helidon 2.4.1 or earlier)
+=== Configure Netty's maxOrder (Helidon 2.4.1 or earlier)
 
 In some situations Netty can aggressively allocate memory per request. This has been addressed in recent versions of Helidon and Netty, but if you are running an earlier version set this system property when you start your Helidon application:
 
