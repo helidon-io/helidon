@@ -34,6 +34,8 @@ import javax.net.ssl.SSLException;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.context.Context;
+import io.helidon.common.http.Http.Header;
+import io.helidon.common.http.Http.HeaderValue;
 import io.helidon.config.Config;
 import io.helidon.config.DeprecatedConfig;
 import io.helidon.config.metadata.Configured;
@@ -486,16 +488,15 @@ class WebClientConfiguration {
         /**
          * Adds default header to every request.
          *
-         * @param key    header name
-         * @param values header value
+         * @param value  header value
          * @return updated builder instance
          */
         @ConfiguredOption(key = "headers",
                           type = Map.class,
                           description = "Default headers to be used in each request. "
                                   + "Each list entry has to have \"name\" and \"value\" node")
-        public B defaultHeader(String key, List<String> values) {
-            clientHeaders.put(key, values);
+        public B defaultHeader(HeaderValue value) {
+            clientHeaders.set(value);
             return me;
         }
 
@@ -736,8 +737,13 @@ class WebClientConfiguration {
         private void headers(Config configHeaders) {
             configHeaders.asNodeList()
                     .ifPresent(headers -> headers
-                            .forEach(header -> defaultHeader(header.get("name").asString().get(),
-                                                             header.get("value").asList(String.class).get())));
+                            .forEach(header ->
+                                             defaultHeader(HeaderValue.create(Header.create(header.get("name")
+                                                                                                    .asString()
+                                                                                                    .get()),
+                                                                                header.get("value")
+                                                                                        .asList(String.class)
+                                                                                        .get()))));
         }
 
         private void cookies(Config cookies) {

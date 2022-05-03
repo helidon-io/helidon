@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,7 +58,8 @@ class WebClientCookieManager extends CookieManager {
         addAllDefaultHeaders(toReturn);
         if (acceptCookies) {
             Map<String, List<String>> cookies = super.get(uri, requestHeaders);
-            cookies.get(Http.Header.COOKIE).forEach(s -> toReturn.get(Http.Header.COOKIE).add(s));
+            cookies.get(Http.Header.COOKIE.defaultCase())
+                    .forEach(s -> toReturn.get(Http.Header.COOKIE.defaultCase()).add(s));
         }
         return Collections.unmodifiableMap(toReturn);
     }
@@ -66,7 +67,7 @@ class WebClientCookieManager extends CookieManager {
     private void addAllDefaultHeaders(Map<String, List<String>> toReturn) {
         List<String> defaultCookieList = new ArrayList<>();
         defaultCookies.forEach((key, value) -> defaultCookieList.add(key + "=" + value));
-        toReturn.put(Http.Header.COOKIE, defaultCookieList);
+        toReturn.put(Http.Header.COOKIE.defaultCase(), defaultCookieList);
     }
 
     @Override

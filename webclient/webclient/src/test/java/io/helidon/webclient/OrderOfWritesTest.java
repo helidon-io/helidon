@@ -37,7 +37,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.sun.net.httpserver.HttpServer;
 
-public class OrderOfWritesTest {
+class OrderOfWritesTest {
     private static final Duration TIME_OUT = Duration.ofSeconds(5);
 
     @Test

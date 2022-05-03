@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package io.helidon.webclient;
 
 import java.net.URI;
 import java.net.URL;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Flow;
@@ -28,10 +29,10 @@ import io.helidon.common.context.Context;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.HttpRequest;
-import io.helidon.common.http.MediaType;
-import io.helidon.common.http.Parameters;
+import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.reactive.Single;
+import io.helidon.common.uri.UriPath;
+import io.helidon.common.uri.UriQuery;
 import io.helidon.media.common.MessageBodyReaderContext;
 import io.helidon.media.common.MessageBodyWriterContext;
 import io.helidon.webclient.spi.WebClientService;
@@ -159,7 +160,6 @@ public interface WebClientRequestBuilder {
      * @return this instance of {@link WebClientRequestBuilder}
      * @throws NullPointerException if the specified name is null.
      * @see #headers()
-     * @see Parameters#add(String, String...)
      * @see Http.Header header names constants
      */
     default WebClientRequestBuilder addHeader(String name, String... values) {
@@ -175,11 +175,45 @@ public interface WebClientRequestBuilder {
      * @return this instance of {@link WebClientRequestBuilder}
      * @throws NullPointerException if the specified name is null.
      * @see #headers()
-     * @see Parameters#add(String, Iterable)
      * @see Http.Header header names constants
      */
-    default WebClientRequestBuilder addHeader(String name, Iterable<String> values) {
-        headers().add(name, values);
+    default WebClientRequestBuilder addHeader(String name, List<String> values) {
+        addHeader(Http.Header.create(name), values);
+        return this;
+    }
+
+    /**
+     * Adds header value.
+     *
+     * @param value header value
+     * @return updated builder
+     */
+    default WebClientRequestBuilder addHeader(Http.HeaderValue value) {
+        headers().add(value);
+        return this;
+    }
+
+    /**
+     * Adds header values for a specified name.
+     *
+     * @param name header name
+     * @param values  value(s)
+     * @return updated builder
+     */
+    default WebClientRequestBuilder addHeader(Http.HeaderName name, String... values) {
+        headers().add(Http.HeaderValue.create(name, values));
+        return this;
+    }
+
+    /**
+     * Adds header values for a specified name.
+     *
+     * @param name header name
+     * @param values  value(s)
+     * @return updated builder
+     */
+    default WebClientRequestBuilder addHeader(Http.HeaderName name, List<String> values) {
+        headers().add(Http.HeaderValue.create(name, values));
         return this;
     }
 
@@ -190,9 +224,8 @@ public interface WebClientRequestBuilder {
      * @return this instance of {@link WebClientRequestBuilder}
      * @throws NullPointerException if the specified {@code parameters} are null.
      * @see #headers()
-     * @see Parameters#addAll(Parameters)
      */
-    default WebClientRequestBuilder addHeaders(Parameters parameters){
+    default WebClientRequestBuilder addHeaders(Headers parameters){
         headers().addAll(parameters);
         return this;
     }
@@ -202,12 +235,12 @@ public interface WebClientRequestBuilder {
      *
      * Appends these query parameters to the query parameters defined in the request uri.
      *
-     * Copy all query parameters from supplied {@link Parameters} instance.
+     * Copy all query parameters from supplied {@link io.helidon.common.uri.UriQuery} instance.
      *
      * @param queryParams to copy
      * @return updated builder instance
      */
-    WebClientRequestBuilder queryParams(Parameters queryParams);
+    WebClientRequestBuilder queryParams(UriQuery queryParams);
 
     /**
      * Returns reader context of the request builder.
@@ -267,7 +300,7 @@ public interface WebClientRequestBuilder {
      * @param path path
      * @return updated builder instance
      */
-    WebClientRequestBuilder path(HttpRequest.Path path);
+    WebClientRequestBuilder path(UriPath path);
 
     /**
      * Path of the request.
@@ -285,7 +318,7 @@ public interface WebClientRequestBuilder {
      * @param contentType content type
      * @return updated builder instance
      */
-    WebClientRequestBuilder contentType(MediaType contentType);
+    WebClientRequestBuilder contentType(HttpMediaType contentType);
 
     /**
      * Media types which are accepted in the response.
@@ -293,7 +326,7 @@ public interface WebClientRequestBuilder {
      * @param mediaTypes media types
      * @return updated builder instance
      */
-    WebClientRequestBuilder accept(MediaType... mediaTypes);
+    WebClientRequestBuilder accept(HttpMediaType... mediaTypes);
 
     /**
      * Whether connection should be kept alive after request.
@@ -422,8 +455,68 @@ public interface WebClientRequestBuilder {
     /**
      * Request to a server. Contains all information about used request headers, configuration etc.
      */
-    interface ClientRequest extends HttpRequest {
+    interface ClientRequest {
+        /**
+         * Returns an HTTP request method. See also {@link Http.Method HTTP standard methods} utility class.
+         *
+         * @return an HTTP method
+         * @see Http.Method
+         */
+        Http.Method method();
 
+        /**
+         * Returns an HTTP version from the request line.
+         * <p>
+         * See {@link Http.Version HTTP Version} enumeration for supported versions.
+         * <p>
+         * If communication starts as a {@code HTTP/1.1} with {@code h2c} upgrade, then it will be automatically
+         * upgraded and this method returns {@code HTTP/2.0}.
+         *
+         * @return an HTTP version
+         */
+        Http.Version version();
+
+        /**
+         * Returns a Request-URI (or alternatively path) as defined in request line.
+         *
+         * @return a request URI
+         */
+        URI uri();
+
+        /**
+         * Returns an encoded query string without leading '?' character.
+         *
+         * @return an encoded query string
+         */
+        String query();
+
+        /**
+         * Returns query parameters.
+         *
+         * @return an parameters representing query parameters
+         */
+        UriQuery queryParams();
+
+        /**
+         * Returns a path which was accepted by matcher in actual routing. It is path without a context root
+         * of the routing.
+         * <p>
+         * Use {@link io.helidon.common.uri.UriPath#absolute()} method to obtain absolute request URI path representation.
+         * <p>
+         * Returned {@link io.helidon.common.uri.UriPath} also provides access to path template parameters.
+         * An absolute path then provides access to
+         * all (including) context parameters if any. In case of conflict between parameter names, most recent value is returned.
+         *
+         * @return a path
+         */
+        UriPath path();
+
+        /**
+         * Returns a decoded request URI fragment without leading hash '#' character.
+         *
+         * @return a decoded URI fragment
+         */
+        String fragment();
         /**
          * Headers which are used in current request.
          *

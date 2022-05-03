@@ -20,7 +20,6 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.ServiceLoader;
 import java.util.concurrent.TimeUnit;
@@ -137,7 +136,7 @@ public interface WebClient {
      * @param method request method
      * @return client request builder
      */
-    WebClientRequestBuilder method(Http.RequestMethod method);
+    WebClientRequestBuilder method(Http.Method method);
 
     /**
      * Fluent API builder for {@link io.helidon.webclient.WebClient}.
@@ -318,7 +317,7 @@ public interface WebClient {
          * @return updated builder instance
          */
         public Builder addHeader(String header, String... value) {
-            configuration.defaultHeader(header, Arrays.asList(value));
+            configuration.defaultHeader(Http.HeaderValue.create(Http.Header.create(header), value));
             return this;
         }
 

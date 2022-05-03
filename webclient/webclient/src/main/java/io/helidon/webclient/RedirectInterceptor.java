@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.util.logging.Logger;
 
 import io.helidon.common.http.Http;
 
+import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
 
@@ -36,9 +37,9 @@ class RedirectInterceptor implements HttpInterceptor {
     public void handleInterception(HttpResponse httpResponse,
                                    WebClientRequestImpl clientRequest,
                                    CompletableFuture<WebClientResponse> responseFuture) {
-        if (httpResponse.headers().contains(Http.Header.LOCATION)) {
+        if (httpResponse.headers().contains(HttpHeaderNames.LOCATION)) {
             long requestId = clientRequest.configuration().requestId();
-            String newUri = httpResponse.headers().get(Http.Header.LOCATION);
+            String newUri = httpResponse.headers().get(HttpHeaderNames.LOCATION);
             LOGGER.finest(() -> "(client reqID: " + requestId + ") Redirecting to " + newUri);
             WebClientRequestBuilder requestBuilder = WebClientRequestBuilderImpl
                     .create(clientRequest);

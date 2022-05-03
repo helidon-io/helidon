@@ -19,22 +19,23 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.Set;
-import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.function.Function;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
+import io.helidon.common.http.Headers;
+import io.helidon.common.http.HeadersClientRequest;
+import io.helidon.common.http.HeadersWritable;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.MediaType;
-import io.helidon.common.http.Parameters;
+import io.helidon.common.http.Http.HeaderValue;
+import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.media.type.MediaType;
 
 import io.netty.handler.codec.http.cookie.ClientCookieEncoder;
 import io.netty.handler.codec.http.cookie.DefaultCookie;
@@ -46,113 +47,118 @@ class WebClientRequestHeadersImpl implements WebClientRequestHeaders {
 
     private static final DateTimeFormatter FORMATTER = Http.DateTime.RFC_1123_DATE_TIME.withZone(ZoneId.of("GMT"));
 
-    private final Map<String, List<String>> headers = new ConcurrentSkipListMap<>(String.CASE_INSENSITIVE_ORDER);
+    private final HeadersClientRequest headers = HeadersClientRequest.create(HeadersWritable.create());
 
     WebClientRequestHeadersImpl() {
     }
 
     WebClientRequestHeadersImpl(WebClientRequestHeaders headers) {
-        headers.toMap().forEach((key, values) -> this.headers.computeIfAbsent(key, k -> new ArrayList<>()).addAll(values));
+        for (HeaderValue header : headers) {
+            this.headers.add(header);
+        }
     }
 
     @Override
-    public WebClientRequestHeaders unsetHeader(String name) {
+    public WebClientRequestHeaders unsetHeader(Http.HeaderName name) {
         headers.remove(name);
         return this;
     }
 
     @Override
     public WebClientRequestHeaders addCookie(String name, String value) {
-        add(Http.Header.COOKIE, ClientCookieEncoder.STRICT.encode(new DefaultCookie(name, value)));
+        headers.add(HeaderValue.create(Http.Header.COOKIE, ClientCookieEncoder.STRICT.encode(new DefaultCookie(name, value))));
         return this;
     }
 
     @Override
     public WebClientRequestHeaders contentType(MediaType contentType) {
-        put(Http.Header.CONTENT_TYPE, contentType.toString());
+        headers.contentType(contentType);
         return this;
     }
 
     @Override
     public WebClientRequestHeaders contentLength(long length) {
-        put(Http.Header.CONTENT_LENGTH, Long.toString(length));
+        headers.contentLength(length);
         return this;
     }
 
     @Override
-    public WebClientRequestHeaders addAccept(MediaType mediaType) {
-        add(Http.Header.ACCEPT, mediaType.toString());
+    public WebClientRequestHeaders addAccept(HttpMediaType mediaType) {
+        headers.add(HeaderValue.create(Http.Header.ACCEPT, mediaType.text()));
         return this;
     }
 
     @Override
     public WebClientRequestHeaders ifModifiedSince(ZonedDateTime time) {
-        put(Http.Header.IF_MODIFIED_SINCE, time.format(FORMATTER));
+        headers.set(HeaderValue.create(Http.Header.IF_MODIFIED_SINCE,
+                                       true,
+                                       false,
+                                       time.format(FORMATTER)));
         return this;
     }
 
     @Override
     public WebClientRequestHeaders ifUnmodifiedSince(ZonedDateTime time) {
-        put(Http.Header.IF_UNMODIFIED_SINCE, time.format(FORMATTER));
+        headers.set(HeaderValue.create(Http.Header.IF_UNMODIFIED_SINCE,
+                                       true,
+                                       false,
+                                       time.format(FORMATTER)));
         return this;
     }
 
     @Override
     public WebClientRequestHeaders ifNoneMatch(String... etags) {
-        put(Http.Header.IF_NONE_MATCH, processEtags(etags));
+        headers.set(HeaderValue.create(Http.Header.IF_NONE_MATCH, processEtags(etags)));
         return this;
     }
 
     @Override
     public WebClientRequestHeaders ifMatch(String... etags) {
-        put(Http.Header.IF_MATCH, processEtags(etags));
+        headers.set(HeaderValue.create(Http.Header.IF_MATCH, processEtags(etags)));
         return this;
     }
 
     @Override
     public WebClientRequestHeaders ifRange(ZonedDateTime time) {
-        put(Http.Header.IF_RANGE, time.format(FORMATTER));
+        headers.set(HeaderValue.create(Http.Header.IF_RANGE, time.format(FORMATTER)));
         return this;
     }
 
     @Override
     public WebClientRequestHeaders ifRange(String etag) {
-        put(Http.Header.IF_RANGE, processEtags(etag));
+        headers.set(HeaderValue.create(Http.Header.IF_RANGE, processEtags(etag)));
         return this;
     }
 
     @Override
-    public List<MediaType> acceptedTypes() {
-        List<MediaType> mediaTypes = new ArrayList<>();
-        headers.computeIfAbsent(Http.Header.ACCEPT, k -> new ArrayList<>())
-                .forEach(s -> mediaTypes.add(MediaType.parse(s)));
-        return Collections.unmodifiableList(mediaTypes);
+    public List<HttpMediaType> acceptedTypes() {
+        return headers.acceptedTypes();
     }
 
     @Override
-    public MediaType contentType() {
-        List<String> contentType = headers.computeIfAbsent(Http.Header.CONTENT_TYPE, k -> new ArrayList<>());
-        return contentType.size() == 0 ? MediaType.WILDCARD : MediaType.parse(contentType.get(0));
+    public Optional<HttpMediaType> contentType() {
+        return headers.contentType();
     }
 
     @Override
-    public Optional<Long> contentLength() {
-        return Optional.ofNullable(headers.get(Http.Header.CONTENT_LENGTH)).map(list -> Long.parseLong(list.get(0)));
+    public OptionalLong contentLength() {
+        return headers.contentLength();
     }
 
     @Override
     public Optional<ZonedDateTime> ifModifiedSince() {
-        return parseToDate(Http.Header.IF_MODIFIED_SINCE);
+        return headers.ifModifiedSince();
     }
 
     @Override
     public Optional<ZonedDateTime> ifUnmodifiedSince() {
-        return parseToDate(Http.Header.IF_UNMODIFIED_SINCE);
+        return headers.ifUnmodifiedSince();
     }
+
 
     @Override
     public List<String> ifNoneMatch() {
-        return all(Http.Header.IF_NONE_MATCH)
+        return all(Http.Header.IF_NONE_MATCH, List::of)
                 .stream()
                 .map(this::unquoteETag)
                 .collect(Collectors.toList());
@@ -160,7 +166,7 @@ class WebClientRequestHeadersImpl implements WebClientRequestHeaders {
 
     @Override
     public List<String> ifMatch() {
-        return all(Http.Header.IF_MATCH)
+        return all(Http.Header.IF_MATCH, List::of)
                 .stream()
                 .map(this::unquoteETag)
                 .collect(Collectors.toList());
@@ -182,103 +188,105 @@ class WebClientRequestHeadersImpl implements WebClientRequestHeaders {
     }
 
     @Override
-    public Optional<String> first(String name) {
-        return Optional.ofNullable(headers.get(name)).map(list -> list.get(0));
+    public List<String> all(Http.HeaderName name, Supplier<List<String>> defaultSupplier) {
+        return headers.all(name, defaultSupplier);
     }
 
     @Override
-    public List<String> all(String headerName) {
-        return Collections.unmodifiableList(headers.getOrDefault(headerName, new ArrayList<>()));
+    public boolean contains(Http.HeaderName name) {
+        return headers.contains(name);
     }
 
     @Override
-    public List<String> put(String key, String... values) {
-        List<String> list = headers.put(key, Arrays.asList(values));
-        return Collections.unmodifiableList(list == null ? new ArrayList<>() : list);
+    public boolean contains(HeaderValue value) {
+        return headers.contains(value);
     }
 
     @Override
-    public List<String> put(String key, Iterable<String> values) {
-        List<String> list = headers.put(key, iterableToList(values));
-        return Collections.unmodifiableList(list == null ? new ArrayList<>() : list);
+    public HeaderValue get(Http.HeaderName name) {
+        return headers.get(name);
     }
 
     @Override
-    public List<String> putIfAbsent(String key, String... values) {
-        List<String> list = headers.putIfAbsent(key, Arrays.asList(values));
-        return Collections.unmodifiableList(list == null ? new ArrayList<>() : list);
+    public int size() {
+        return headers.size();
     }
 
     @Override
-    public List<String> putIfAbsent(String key, Iterable<String> values) {
-        List<String> list = headers.putIfAbsent(key, iterableToList(values));
-        return Collections.unmodifiableList(list == null ? new ArrayList<>() : list);
-    }
-
-    @Override
-    public List<String> computeIfAbsent(String key, Function<String, Iterable<String>> values) {
-        List<String> associatedHeaders = headers.get(key);
-        if (associatedHeaders == null) {
-            return put(key, values.apply(key));
-        }
-        return Collections.unmodifiableList(associatedHeaders);
-    }
-
-    @Override
-    public List<String> computeSingleIfAbsent(String key, Function<String, String> value) {
-        List<String> associatedHeaders = headers.get(key);
-        if (associatedHeaders == null) {
-            return put(key, value.apply(key));
-        }
-        return Collections.unmodifiableList(associatedHeaders);
-    }
-
-    @Override
-    public WebClientRequestHeaders putAll(Parameters parameters) {
-        headers.putAll(parameters.toMap());
+    public WebClientRequestHeaders setIfAbsent(HeaderValue header) {
+        headers.setIfAbsent(header);
         return this;
+    }
+
+    @Override
+    public WebClientRequestHeaders add(HeaderValue header) {
+        headers.add(header);
+        return this;
+    }
+
+    @Override
+    public WebClientRequestHeaders remove(Http.HeaderName name) {
+        headers.remove(name);
+        return this;
+    }
+
+    @Override
+    public WebClientRequestHeaders remove(Http.HeaderName name, Consumer<HeaderValue> removedConsumer) {
+        headers.remove(name, removedConsumer);
+        return this;
+    }
+
+    @Override
+    public WebClientRequestHeaders set(HeaderValue header) {
+        headers.set(header);
+        return this;
+    }
+
+    @Override
+    public WebClientRequestHeaders contentType(HttpMediaType contentType) {
+        headers.contentType(contentType);
+        return this;
+    }
+
+    @Override
+    public WebClientRequestHeaders putAll(Headers headers) {
+        for (HeaderValue header : headers) {
+            this.headers.set(header);
+        }
+        return this;
+    }
+
+    @Override
+    public Iterator<HeaderValue> iterator() {
+        return headers.iterator();
+    }
+
+    public Optional<String> first(Http.HeaderName name) {
+        if (headers.contains(name)) {
+            return Optional.of(headers.get(name).value());
+        }
+        return Optional.empty();
     }
 
     @Override
     public WebClientRequestHeaders add(String key, String... values) {
-        headers.computeIfAbsent(key, k -> new ArrayList<>()).addAll(Arrays.asList(values));
+        headers.add(HeaderValue.create(Http.Header.create(key), values));
         return this;
     }
 
     @Override
-    public WebClientRequestHeaders add(String key, Iterable<String> values) {
-        headers.computeIfAbsent(key, k -> new ArrayList<>()).addAll(iterableToList(values));
+    public WebClientRequestHeaders addAll(Headers headers) {
+        for (HeaderValue header : headers) {
+            this.headers.add(header);
+        }
         return this;
     }
 
-    @Override
-    public WebClientRequestHeaders addAll(Parameters parameters) {
-        parameters.toMap().forEach(this::add);
-        return this;
-    }
-
-    @Override
-    public List<String> remove(String key) {
-        List<String> value = headers.remove(key);
-        return value == null ? new ArrayList<>() : value;
-    }
-
-    @Override
-    public Map<String, List<String>> toMap() {
-        return Collections.unmodifiableMap(new HashMap<>(headers));
-    }
-
-    private List<String> iterableToList(Iterable<String> iterable) {
-        return StreamSupport
-                .stream(iterable.spliterator(), false)
-                .collect(Collectors.toList());
-    }
-
-    private Optional<ZonedDateTime> parseToDate(String header) {
+    private Optional<ZonedDateTime> parseToDate(Http.HeaderName header) {
         return first(header).map(Http.DateTime::parse);
     }
 
-    private Iterable<String> processEtags(String... etags) {
+    private List<String> processEtags(String... etags) {
         Set<String> set = new HashSet<>();
         if (etags.length > 0) {
             if (etags.length == 1 && etags[0].equals("*")) {
@@ -289,7 +297,7 @@ class WebClientRequestHeadersImpl implements WebClientRequestHeaders {
                 }
             }
         }
-        return set;
+        return new ArrayList<>(set);
     }
 
     private String unquoteETag(String etag) {

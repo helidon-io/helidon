@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@ import java.net.URI;
 import java.util.Map;
 
 import io.helidon.common.http.Http;
-import io.helidon.common.http.Parameters;
-import io.helidon.common.http.ReadOnlyParameters;
+import io.helidon.common.uri.UriPath;
+import io.helidon.common.uri.UriQuery;
 
 /**
  * Implementation of client request.
@@ -30,10 +30,10 @@ class WebClientRequestImpl implements WebClientRequestBuilder.ClientRequest {
     private final URI uri;
     private final RequestConfiguration requestConfiguration;
     private final WebClientRequestHeaders clientRequestHeaders;
-    private final Http.RequestMethod requestMethod;
+    private final Http.Method requestMethod;
     private final Http.Version httpVersion;
-    private final Parameters queryParams;
-    private final Path path;
+    private final UriQuery queryParams;
+    private final UriPath path;
     private final Proxy proxy;
     private final String query;
     private final String fragment;
@@ -45,7 +45,7 @@ class WebClientRequestImpl implements WebClientRequestBuilder.ClientRequest {
         requestMethod = builder.method();
         httpVersion = builder.httpVersion();
         uri = builder.uri();
-        queryParams = new ReadOnlyParameters(builder.queryParams());
+        queryParams = builder.queryParams();
         query = builder.query();
         fragment = builder.fragment();
         path = builder.path();
@@ -86,7 +86,7 @@ class WebClientRequestImpl implements WebClientRequestBuilder.ClientRequest {
     }
 
     @Override
-    public Http.RequestMethod method() {
+    public Http.Method method() {
         return requestMethod;
     }
 
@@ -106,12 +106,12 @@ class WebClientRequestImpl implements WebClientRequestBuilder.ClientRequest {
     }
 
     @Override
-    public Parameters queryParams() {
+    public UriQuery queryParams() {
         return queryParams;
     }
 
     @Override
-    public Path path() {
+    public UriPath path() {
         return path;
     }
 

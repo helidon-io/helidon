@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,34 +17,27 @@ package io.helidon.webclient;
 
 import java.net.URI;
 import java.time.ZonedDateTime;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalLong;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.MediaType;
-import io.helidon.common.http.Parameters;
-import io.helidon.common.http.ReadOnlyParameters;
+import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.http.SetCookie;
 
 /**
  * Implementation of {@link WebClientResponseHeaders}.
  */
-class WebClientResponseHeadersImpl extends ReadOnlyParameters implements WebClientResponseHeaders {
+class WebClientResponseHeadersImpl implements WebClientResponseHeaders {
+    private final Headers headers;
 
-    private WebClientResponseHeadersImpl(Map<String, List<String>> headers) {
-        super(headers);
-    }
-
-    /**
-     * Creates {@link WebClientResponseHeaders} instance which contains data from {@link Parameters} instance.
-     *
-     * @param parameters headers in parameters instance
-     * @return response headers instance
-     */
-    static WebClientResponseHeaders create(Parameters parameters) {
-        return create(parameters.toMap());
+    private WebClientResponseHeadersImpl(Headers headers) {
+        this.headers = headers;
     }
 
     /**
@@ -53,13 +46,13 @@ class WebClientResponseHeadersImpl extends ReadOnlyParameters implements WebClie
      * @param headers response headers in map
      * @return response headers instance
      */
-    static WebClientResponseHeadersImpl create(Map<String, List<String>> headers) {
+    static WebClientResponseHeadersImpl create(Headers headers) {
         return new WebClientResponseHeadersImpl(headers);
     }
 
     @Override
     public List<SetCookie> setCookies() {
-        return all(Http.Header.SET_COOKIE)
+        return all(Http.Header.SET_COOKIE, List::of)
                 .stream()
                 .map(SetCookie::parse)
                 .collect(Collectors.toList());
@@ -86,8 +79,8 @@ class WebClientResponseHeadersImpl extends ReadOnlyParameters implements WebClie
     }
 
     @Override
-    public Optional<MediaType> contentType() {
-        return first(Http.Header.CONTENT_TYPE).map(MediaType::parse);
+    public Optional<HttpMediaType> contentType() {
+        return first(Http.Header.CONTENT_TYPE).map(HttpMediaType::create);
     }
 
     @Override
@@ -96,15 +89,50 @@ class WebClientResponseHeadersImpl extends ReadOnlyParameters implements WebClie
     }
 
     @Override
-    public Optional<Long> contentLength() {
-        return first(Http.Header.CONTENT_LENGTH)
-                .map(Long::parseLong)
-                .or(Optional::empty);
+    public OptionalLong contentLength() {
+        return headers.contentLength();
     }
 
     @Override
     public List<String> transferEncoding() {
-        return all(Http.Header.TRANSFER_ENCODING);
+        return all(Http.Header.TRANSFER_ENCODING, List::of);
+    }
+
+    @Override
+    public List<String> all(Http.HeaderName name, Supplier<List<String>> defaultSupplier) {
+        return headers.all(name, defaultSupplier);
+    }
+
+    @Override
+    public boolean contains(Http.HeaderName name) {
+        return headers.contains(name);
+    }
+
+    @Override
+    public boolean contains(Http.HeaderValue value) {
+        return headers.contains(value);
+    }
+
+    @Override
+    public Http.HeaderValue get(Http.HeaderName name) {
+        return headers.get(name);
+    }
+
+    @Override
+    public int size() {
+        return headers.size();
+    }
+
+    @Override
+    public Iterator<Http.HeaderValue> iterator() {
+        return headers.iterator();
+    }
+
+    private Optional<String> first(Http.HeaderName headerName) {
+        if (headers.contains(headerName)) {
+            return Optional.of(headers.get(headerName).value());
+        }
+        return Optional.empty();
     }
 
     private String unquoteETag(String etag) {

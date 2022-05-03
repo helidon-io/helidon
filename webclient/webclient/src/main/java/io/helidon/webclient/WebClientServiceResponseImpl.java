@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,9 +25,9 @@ class WebClientServiceResponseImpl implements WebClientServiceResponse {
 
     private final Context context;
     private final WebClientResponseHeaders headers;
-    private final Http.ResponseStatus status;
+    private final Http.Status status;
 
-    WebClientServiceResponseImpl(Context context, WebClientResponseHeaders headers, Http.ResponseStatus status) {
+    WebClientServiceResponseImpl(Context context, WebClientResponseHeaders headers, Http.Status status) {
         this.context = context;
         this.headers = headers;
         this.status = status;
@@ -44,7 +44,7 @@ class WebClientServiceResponseImpl implements WebClientServiceResponse {
     }
 
     @Override
-    public Http.ResponseStatus status() {
+    public Http.Status status() {
         return status;
     }
 

@@ -17,7 +17,9 @@ package io.helidon.webclient;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -36,6 +38,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.HttpContent;
+import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpObject;
@@ -131,7 +134,7 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
                 responseBuilder.addHeader(name, values);
             }
 
-            String connection = nettyHeaders.get(Http.Header.CONNECTION, HttpHeaderValues.CLOSE.toString());
+            String connection = nettyHeaders.get(HttpHeaderNames.CONNECTION, HttpHeaderValues.CLOSE.toString());
             if (connection.equals(HttpHeaderValues.CLOSE.toString())) {
                 ctx.channel().attr(WILL_CLOSE).set(true);
             }
@@ -154,12 +157,21 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
                 }
             }
 
+            Map<String, List<String>> cookieMap = new HashMap<>();
+            WebClientResponseHeaders responseHeaders = clientResponse.headers();
+
+            if (responseHeaders.contains(Http.Header.SET_COOKIE)) {
+                cookieMap.put(Http.Header.SET_COOKIE.defaultCase(), responseHeaders.get(Http.Header.SET_COOKIE).allValues());
+            }
+            if (responseHeaders.contains(Http.Header.SET_COOKIE2)) {
+                cookieMap.put(Http.Header.SET_COOKIE2.defaultCase(), responseHeaders.get(Http.Header.SET_COOKIE2).allValues());
+            }
             requestConfiguration.cookieManager().put(requestConfiguration.requestURI(),
-                                                     clientResponse.headers().toMap());
+                                                     cookieMap);
 
             WebClientServiceResponse clientServiceResponse =
                     new WebClientServiceResponseImpl(requestConfiguration.context().get(),
-                                                     clientResponse.headers(),
+                                                     responseHeaders,
                                                      clientResponse.status());
 
             channel.attr(SERVICE_RESPONSE).set(clientServiceResponse);
@@ -252,9 +264,9 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
     }
 
     private boolean noContentLength(WebClientResponseHeaders headers) {
-        return headers.contentLength()
-                .map(value -> value == 0)
-                .orElse(true);
+        long l = headers.contentLength().orElse(0);
+
+        return l == 0;
     }
 
     private boolean notChunked(WebClientResponseHeaders headers) {
@@ -274,8 +286,8 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
         ctx.close();
     }
 
-    private Http.ResponseStatus helidonStatus(HttpResponseStatus nettyStatus) {
-        return Http.ResponseStatus.create(nettyStatus.code(), nettyStatus.reasonPhrase());
+    private Http.Status helidonStatus(HttpResponseStatus nettyStatus) {
+        return Http.Status.create(nettyStatus.code(), nettyStatus.reasonPhrase());
     }
 
     private static final class HttpResponsePublisher extends BufferedEmittingPublisher<DataChunk> {

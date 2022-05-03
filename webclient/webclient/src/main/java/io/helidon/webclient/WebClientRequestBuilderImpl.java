@@ -31,7 +31,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
-import java.util.StringTokenizer;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
@@ -51,10 +50,11 @@ import io.helidon.common.context.spi.DataPropagationProvider;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.HttpRequest;
-import io.helidon.common.http.MediaType;
-import io.helidon.common.http.Parameters;
+import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.reactive.Single;
+import io.helidon.common.uri.UriPath;
+import io.helidon.common.uri.UriQuery;
+import io.helidon.common.uri.UriQueryWriteable;
 import io.helidon.media.common.MessageBodyReadableContent;
 import io.helidon.media.common.MessageBodyReaderContext;
 import io.helidon.media.common.MessageBodyWriterContext;
@@ -117,9 +117,9 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     private final Map<String, String> properties;
     private final NioEventLoopGroup eventGroup;
     private final WebClientConfiguration configuration;
-    private final Http.RequestMethod method;
+    private final Http.Method method;
     private final WebClientRequestHeaders headers;
-    private final WebClientQueryParams queryParams;
+    private final UriQueryWriteable queryParams;
     private final MessageBodyReaderContext readerContext;
     private final MessageBodyWriterContext writerContext;
 
@@ -133,7 +133,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     private boolean skipUriEncoding;
     private int redirectionCount;
     private RequestConfiguration requestConfiguration;
-    private HttpRequest.Path path;
+    private UriPath path;
     private List<WebClientService> services;
     private Duration readTimeout;
     private Duration connectTimeout;
@@ -143,7 +143,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
 
     private WebClientRequestBuilderImpl(NioEventLoopGroup eventGroup,
                                         WebClientConfiguration configuration,
-                                        Http.RequestMethod method) {
+                                        Http.Method method) {
         this.properties = new HashMap<>();
         this.eventGroup = eventGroup;
         this.configuration = configuration;
@@ -151,10 +151,10 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         this.uri = configuration.uri();
         this.skipUriEncoding = false;
         this.allowChunkedEncoding = true;
-        this.path = ClientPath.create(null, "", new HashMap<>());
+        this.path = UriPath.create("");
         //Default headers added to the current headers of the request
         this.headers = new WebClientRequestHeadersImpl(this.configuration.headers());
-        this.queryParams = new WebClientQueryParams();
+        this.queryParams = UriQueryWriteable.create();
         this.httpVersion = Http.Version.V1_1;
         this.redirectionCount = 0;
         this.services = configuration.clientServices();
@@ -174,7 +174,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
 
     static WebClientRequestBuilder create(NioEventLoopGroup eventGroup,
                                           WebClientConfiguration configuration,
-                                          Http.RequestMethod method) {
+                                          Http.Method method) {
         return new WebClientRequestBuilderImpl(eventGroup, configuration, method);
     }
 
@@ -266,7 +266,6 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     @Override
     public WebClientRequestBuilder skipUriEncoding() {
         this.skipUriEncoding = true;
-        this.queryParams.skipEncoding();
         return this;
     }
 
@@ -295,7 +294,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
 
     @Override
     public WebClientRequestBuilder queryParam(String name, String... values) {
-        queryParams.add(name, values);
+        queryParams.set(name, values);
         return this;
     }
 
@@ -322,9 +321,12 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     }
 
     @Override
-    public WebClientRequestBuilder queryParams(Parameters queryParams) {
+    public WebClientRequestBuilder queryParams(UriQuery queryParams) {
         Objects.requireNonNull(queryParams);
-        queryParams.toMap().forEach((name, params) -> queryParam(name, params.toArray(new String[0])));
+        for (String name : queryParams.names()) {
+            queryParam(name, queryParams.all(name).toArray(new String[0]));
+        }
+
         return this;
     }
 
@@ -353,26 +355,26 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     }
 
     @Override
-    public WebClientRequestBuilder path(HttpRequest.Path path) {
+    public WebClientRequestBuilder path(UriPath path) {
         this.path = path;
         return this;
     }
 
     @Override
     public WebClientRequestBuilder path(String path) {
-        this.path = ClientPath.create(null, path, new HashMap<>());
+        this.path = UriPath.create(path);
         return this;
     }
 
     @Override
-    public WebClientRequestBuilder contentType(MediaType contentType) {
+    public WebClientRequestBuilder contentType(HttpMediaType contentType) {
         this.headers.contentType(contentType);
         this.writerContext.contentType(contentType);
         return this;
     }
 
     @Override
-    public WebClientRequestBuilder accept(MediaType... mediaTypes) {
+    public WebClientRequestBuilder accept(HttpMediaType... mediaTypes) {
         Arrays.stream(mediaTypes).forEach(headers::addAccept);
         return this;
     }
@@ -459,7 +461,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         return requestId;
     }
 
-    Http.RequestMethod method() {
+    Http.Method method() {
         return method;
     }
 
@@ -471,7 +473,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         return finalUri;
     }
 
-    Parameters queryParams() {
+    UriQuery queryParams() {
         return queryParams;
     }
 
@@ -480,27 +482,17 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     }
 
     String queryFromParams() {
-        StringBuilder queries = new StringBuilder();
-        for (Map.Entry<String, List<String>> entry : queryParams.pickCorrectParameters().toMap().entrySet()) {
-            for (String value : entry.getValue()) {
-                if (queries.length() > 0) {
-                    queries.append("&");
-                }
-                if (entry.getKey().isEmpty()) {
-                    queries.append(value);
-                } else {
-                    queries.append(entry.getKey()).append("=").append(value);
-                }
-            }
+        if (skipUriEncoding) {
+            return queryParams.toString();
         }
-        return queries.toString();
+        return queryParams.rawValue();
     }
 
     String fragment() {
         return fragment;
     }
 
-    HttpRequest.Path path() {
+    UriPath path() {
         return path;
     }
 
@@ -693,7 +685,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
                                                  + "Please specify correct port to use.");
         }
         String path = resolvePath();
-        this.path = ClientPath.create(null, path, new HashMap<>());
+        this.path = UriPath.create(path);
         //We need null values for query and fragment if we dont want to have trailing ?# chars
         String query = resolveQuery();
         String fragment = resolveFragment();
@@ -787,7 +779,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
 
     private String resolvePath() {
         String uriPath = uri.getRawPath();
-        String extendedPath = this.path.toRawString();
+        String extendedPath = this.path.rawPath();
         String finalPath;
         if (uriPath.endsWith("/") && extendedPath.startsWith("/")) {
             finalPath = uriPath.substring(0, uriPath.length() - 1) + extendedPath;
@@ -804,7 +796,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         return UriComponentEncoder.encode(finalPath, UriComponentEncoder.Type.PATH);
     }
 
-    private HttpMethod toNettyMethod(Http.RequestMethod method) {
+    private HttpMethod toNettyMethod(Http.Method method) {
         //This method creates also new netty HttpMethod.
         return HttpMethod.valueOf(method.name());
     }
@@ -817,15 +809,17 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         HttpHeaders headers = new DefaultHttpHeaders(this.configuration.validateHeaders());
         try {
             Map<String, List<String>> cookieHeaders = this.configuration.cookieManager().get(finalUri, new HashMap<>());
-            List<String> cookies = new ArrayList<>(cookieHeaders.get(Http.Header.COOKIE));
-            cookies.addAll(this.headers.values(Http.Header.COOKIE));
+            List<String> cookies = new ArrayList<>(cookieHeaders.get(Http.Header.COOKIE.defaultCase()));
+            cookies.addAll(this.headers.all(Http.Header.COOKIE, List::of));
             if (!cookies.isEmpty()) {
-                headers.add(Http.Header.COOKIE, String.join("; ", cookies));
+                headers.set(HttpHeaderNames.COOKIE, String.join("; ", cookies));
             }
         } catch (IOException e) {
             throw new WebClientException("An error occurred while setting cookies.", e);
         }
-        this.headers.toMap().forEach(headers::add);
+        for (Http.HeaderValue header : this.headers) {
+            headers.add(header.name(), header.allValues());
+        }
         addHeaderIfAbsent(headers, HttpHeaderNames.HOST, finalUri.getHost() + ":" + finalUri.getPort());
         addHeaderIfAbsent(headers, HttpHeaderNames.CONNECTION, keepAlive ? HttpHeaderValues.KEEP_ALIVE : HttpHeaderValues.CLOSE);
         addHeaderIfAbsent(headers, HttpHeaderNames.ACCEPT_ENCODING, HttpHeaderValues.GZIP);
@@ -836,111 +830,6 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     private void addHeaderIfAbsent(HttpHeaders headers, AsciiString header, Object headerValue) {
         if (!headers.contains(header)) {
             headers.set(header, headerValue);
-        }
-    }
-
-    /**
-     * {@link HttpRequest.Path} client implementation.
-     * Temporal implementation until {@link HttpRequest.Path} has implementation in common.
-     */
-    private static class ClientPath implements HttpRequest.Path {
-
-        private final String path;
-        private final String rawPath;
-        private final Map<String, String> params;
-        private final ClientPath absolutePath;
-        private List<String> segments;
-
-        /**
-         * Creates new instance.
-         *
-         * @param path         actual relative URI path.
-         * @param rawPath      actual relative URI path without any decoding.
-         * @param params       resolved path parameters.
-         * @param absolutePath absolute path.
-         */
-        ClientPath(String path, String rawPath, Map<String, String> params,
-                   ClientPath absolutePath) {
-
-            this.path = path;
-            this.rawPath = rawPath;
-            this.params = params == null ? Collections.emptyMap() : params;
-            this.absolutePath = absolutePath;
-        }
-
-        @Override
-        public String param(String name) {
-            return params.get(name);
-        }
-
-        @Override
-        public List<String> segments() {
-            List<String> result = segments;
-            // No synchronisation needed, worth case is multiple splitting.
-            if (result == null) {
-                StringTokenizer stok = new StringTokenizer(path, "/");
-                result = new ArrayList<>();
-                while (stok.hasMoreTokens()) {
-                    result.add(stok.nextToken());
-                }
-                this.segments = result;
-            }
-            return result;
-        }
-
-        @Override
-        public String toString() {
-            return path;
-        }
-
-        @Override
-        public String toRawString() {
-            return rawPath;
-        }
-
-        @Override
-        public HttpRequest.Path absolute() {
-            return absolutePath == null ? this : absolutePath;
-        }
-
-        static HttpRequest.Path create(ClientPath contextual, String path,
-                                       Map<String, String> params) {
-
-            return create(contextual, path, path, params);
-        }
-
-        static HttpRequest.Path create(ClientPath contextual, String path, String rawPath,
-                                       Map<String, String> params) {
-
-            if (contextual == null) {
-                return new ClientPath(path, rawPath, params, null);
-            } else {
-                return contextual.createSubpath(path, rawPath, params);
-            }
-        }
-
-        HttpRequest.Path createSubpath(String path, String rawPath,
-                                       Map<String, String> params) {
-
-            if (params == null) {
-                params = Collections.emptyMap();
-            }
-            if (absolutePath == null) {
-                HashMap<String, String> map =
-                        new HashMap<>(this.params.size() + params.size());
-                map.putAll(this.params);
-                map.putAll(params);
-                return new ClientPath(path, rawPath, params, new ClientPath(this.path, this.rawPath, map, null));
-            } else {
-                int size = this.params.size() + params.size()
-                        + absolutePath.params.size();
-                HashMap<String, String> map = new HashMap<>(size);
-                map.putAll(absolutePath.params);
-                map.putAll(this.params);
-                map.putAll(params);
-                return new ClientPath(path, rawPath, params, new ClientPath(absolutePath.path, absolutePath.rawPath, map,
-                        /* absolute path */ null));
-            }
         }
     }
 

@@ -21,59 +21,76 @@ import java.time.format.DateTimeParseException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalLong;
 
-import io.helidon.common.http.Http;
-import io.helidon.common.http.MediaType;
+import io.helidon.common.http.Http.Header;
+import io.helidon.common.http.Http.HeaderValue;
+import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.media.type.MediaTypes;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.common.http.Http.Header.CONTENT_TYPE;
+import static io.helidon.common.http.Http.Header.IF_MATCH;
+import static io.helidon.common.http.Http.Header.IF_MODIFIED_SINCE;
+import static io.helidon.common.http.Http.Header.IF_NONE_MATCH;
+import static io.helidon.common.http.Http.Header.IF_UNMODIFIED_SINCE;
+import static io.helidon.common.testing.OptionalMatcher.optionalEmpty;
+import static io.helidon.common.testing.OptionalMatcher.optionalValue;
+import static io.helidon.common.testing.http.HttpHeaderMatcher.hasHeader;
+import static io.helidon.common.testing.http.HttpHeaderMatcher.noHeader;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class ClientRequestHeadersImplTest {
+class ClientRequestHeadersImplTest {
+    private static final HttpMediaType YAML = HttpMediaType.create(MediaTypes.APPLICATION_YAML);
+    private static final HttpMediaType XML = HttpMediaType.create(MediaTypes.APPLICATION_XML);
+    private static final HttpMediaType JSON = HttpMediaType.create(MediaTypes.APPLICATION_JSON);
+    private static final HttpMediaType TEXT = HttpMediaType.create(MediaTypes.TEXT_PLAIN);
 
     private WebClientRequestHeaders clientRequestHeaders;
 
     @BeforeEach
-    public void beforeEach() {
+    void beforeEach() {
         clientRequestHeaders = new WebClientRequestHeadersImpl();
     }
 
     @Test
-    public void testAcceptedTypes() {
-        List<MediaType> expectedTypes = List.of(MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON);
+    void testAcceptedTypes() {
+        List<HttpMediaType> expectedTypes = List.of(HttpMediaType.PLAINTEXT_UTF_8, HttpMediaType.JSON_UTF_8);
 
-        clientRequestHeaders.addAccept(MediaType.TEXT_PLAIN);
-        clientRequestHeaders.add(Http.Header.ACCEPT, MediaType.APPLICATION_JSON.toString());
+        clientRequestHeaders.addAccept(HttpMediaType.PLAINTEXT_UTF_8);
+        clientRequestHeaders.add(HeaderValue.create(Header.ACCEPT, HttpMediaType.JSON_UTF_8.text()));
 
         assertThat(clientRequestHeaders.acceptedTypes(), is(expectedTypes));
     }
 
     @Test
-    public void testContentType() {
-        assertThat(clientRequestHeaders.contentType(), is(MediaType.WILDCARD));
+    void testContentType() {
+        assertThat(clientRequestHeaders.contentType(), optionalEmpty());
 
-        clientRequestHeaders.add(Http.Header.CONTENT_TYPE, MediaType.APPLICATION_XML.toString());
-        assertThat(clientRequestHeaders.contentType(), is(MediaType.APPLICATION_XML));
+        clientRequestHeaders.add(CONTENT_TYPE, HttpMediaType.create(MediaTypes.APPLICATION_XML).text());
+        assertThat(clientRequestHeaders.contentType(), optionalValue(is(XML)));
 
-        clientRequestHeaders.contentType(MediaType.APPLICATION_JSON);
-        assertThat(clientRequestHeaders.contentType(), is(MediaType.APPLICATION_JSON));
+        clientRequestHeaders.contentType(MediaTypes.APPLICATION_JSON);
+        assertThat(clientRequestHeaders.contentType(), optionalValue(is(JSON)));
     }
 
     @Test
-    public void testContentLength() {
+    void testContentLength() {
         long contentLengthTemplate = 123;
 
-        assertThat(clientRequestHeaders.contentLength(), is(Optional.empty()));
+        assertThat(clientRequestHeaders, noHeader(Header.CONTENT_LENGTH));
+        assertThat(clientRequestHeaders.contentLength(), is(OptionalLong.empty()));
 
         clientRequestHeaders.contentLength(contentLengthTemplate);
-        assertThat(clientRequestHeaders.contentLength(), is(Optional.of(contentLengthTemplate)));
+        assertThat(clientRequestHeaders.contentLength(), is(OptionalLong.of(contentLengthTemplate)));
     }
 
     @Test
-    public void testIfModifiedSince() {
+    void testIfModifiedSince() {
         String template = "Mon, 30 Nov 2015 22:45:59 GMT";
         ZonedDateTime zonedDateTemplate =
                 ZonedDateTime.of(2015, 11, 30, 22, 45, 59, 0, ZoneId.of("Z"));
@@ -84,12 +101,12 @@ public class ClientRequestHeadersImplTest {
 
         clientRequestHeaders.ifModifiedSince(ifModifiedSince);
 
-        assertThat(clientRequestHeaders.first(Http.Header.IF_MODIFIED_SINCE), is(Optional.of(template)));
+        assertThat(clientRequestHeaders, hasHeader(HeaderValue.create(IF_MODIFIED_SINCE, template)));
         assertThat(clientRequestHeaders.ifModifiedSince(), is(Optional.of(zonedDateTemplate)));
     }
 
     @Test
-    public void testIfUnmodifiedSince() {
+    void testIfUnmodifiedSince() {
         String template = "Mon, 30 Nov 2015 22:45:59 GMT";
         ZonedDateTime zonedDateTemplate =
                 ZonedDateTime.of(2015, 11, 30, 22, 45, 59, 0, ZoneId.of("Z"));
@@ -100,12 +117,12 @@ public class ClientRequestHeadersImplTest {
 
         clientRequestHeaders.ifUnmodifiedSince(ifUnmodifiedSince);
 
-        assertThat(clientRequestHeaders.first(Http.Header.IF_UNMODIFIED_SINCE), is(Optional.of(template)));
+        assertThat(clientRequestHeaders, hasHeader(HeaderValue.create(IF_UNMODIFIED_SINCE, template)));
         assertThat(clientRequestHeaders.ifUnmodifiedSince(), is(Optional.of(zonedDateTemplate)));
     }
 
     @Test
-    public void testIfNoneMatch() {
+    void testIfNoneMatch() {
         List<String> unquotedTemplate = List.of("test", "test2");
         List<String> quotedTemplate = List.of("\"test\"", "\"test2\"");
         List<String> star = List.of("*");
@@ -114,15 +131,15 @@ public class ClientRequestHeadersImplTest {
 
         clientRequestHeaders.ifNoneMatch(unquotedTemplate.toArray(new String[0]));
         assertThat(clientRequestHeaders.ifNoneMatch(), is(unquotedTemplate));
-        assertThat(clientRequestHeaders.all(Http.Header.IF_NONE_MATCH), is(quotedTemplate));
+        assertThat(clientRequestHeaders, hasHeader(HeaderValue.create(IF_NONE_MATCH, quotedTemplate)));
 
         clientRequestHeaders.ifNoneMatch(star.toArray(new String[0]));
         assertThat(clientRequestHeaders.ifNoneMatch(), is(star));
-        assertThat(clientRequestHeaders.all(Http.Header.IF_NONE_MATCH), is(star));
+        assertThat(clientRequestHeaders, hasHeader(HeaderValue.create(IF_NONE_MATCH, star)));
     }
 
     @Test
-    public void testIfMatch() {
+    void testIfMatch() {
         List<String> unquotedTemplate = List.of("test", "test2");
         List<String> quotedTemplate = List.of("\"test\"", "\"test2\"");
         List<String> star = List.of("*");
@@ -131,15 +148,15 @@ public class ClientRequestHeadersImplTest {
 
         clientRequestHeaders.ifMatch(unquotedTemplate.toArray(new String[0]));
         assertThat(clientRequestHeaders.ifMatch(), is(unquotedTemplate));
-        assertThat(clientRequestHeaders.all(Http.Header.IF_MATCH), is(quotedTemplate));
+        assertThat(clientRequestHeaders, hasHeader(HeaderValue.create(IF_MATCH, quotedTemplate)));
 
         clientRequestHeaders.ifMatch(star.toArray(new String[0]));
         assertThat(clientRequestHeaders.ifMatch(), is(star));
-        assertThat(clientRequestHeaders.all(Http.Header.IF_MATCH), is(star));
+        assertThat(clientRequestHeaders, hasHeader(HeaderValue.create(IF_MATCH, star)));
     }
 
     @Test
-    public void testIfRange() {
+    void testIfRange() {
         String template = "Mon, 30 Nov 2015 22:45:59 GMT";
         String templateString = "testString";
         ZonedDateTime zonedDateTemplate =
@@ -159,22 +176,22 @@ public class ClientRequestHeadersImplTest {
     }
 
     @Test
-    public void testCaseInsensitivity() {
-        clientRequestHeaders.contentType(MediaType.APPLICATION_XML);
-        assertThat(clientRequestHeaders.contentType(), is(MediaType.APPLICATION_XML));
-        clientRequestHeaders.put(Http.Header.CONTENT_TYPE.toLowerCase(), MediaType.APPLICATION_JSON.toString());
-        assertThat(clientRequestHeaders.contentType(), is(MediaType.APPLICATION_JSON));
-        clientRequestHeaders.put("CoNtEnT-TyPe", MediaType.APPLICATION_YAML.toString());
-        assertThat(clientRequestHeaders.contentType(), is(MediaType.APPLICATION_YAML));
+    void testCaseInsensitivity() {
+        clientRequestHeaders.contentType(MediaTypes.APPLICATION_XML);
+        assertThat(clientRequestHeaders.contentType(), optionalValue(is(XML)));
+        clientRequestHeaders.set(Header.create(CONTENT_TYPE.lowerCase()), MediaTypes.APPLICATION_JSON.text());
+        assertThat(clientRequestHeaders.contentType(), optionalValue(is(JSON)));
+        clientRequestHeaders.set(Header.create("CoNtEnT-TyPe"), MediaTypes.APPLICATION_YAML.text());
+        assertThat(clientRequestHeaders.contentType(), optionalValue(is(YAML)));
     }
 
     @Test
-    public void testCopyHeaders() {
-        clientRequestHeaders.contentType(MediaType.APPLICATION_XML);
-        clientRequestHeaders.put(Http.Header.CONTENT_TYPE.toLowerCase(), MediaType.APPLICATION_JSON.toString());
-        clientRequestHeaders.put("CoNtEnT-TyPe", MediaType.APPLICATION_YAML.toString());
+    void testCopyHeaders() {
+        clientRequestHeaders.contentType(MediaTypes.APPLICATION_XML);
+        clientRequestHeaders.set(Header.create(CONTENT_TYPE.lowerCase()), MediaTypes.APPLICATION_JSON.text());
+        clientRequestHeaders.set(Header.create("CoNtEnT-TyPe"), MediaTypes.APPLICATION_YAML.text());
         WebClientRequestHeaders copy = new WebClientRequestHeadersImpl(clientRequestHeaders);
-        assertThat(copy.contentType(), is(MediaType.APPLICATION_YAML));
+        assertThat(copy.contentType(), optionalValue(is(YAML)));
     }
 
 }
