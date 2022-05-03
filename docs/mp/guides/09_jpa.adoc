@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ https://jakarta.ee/specifications/persistence/2.2/[Java Persistence
 API (JPA)] from within a Helidon MP application.
 
 == What You Need
-For this 30 minute tutrial, you'll need the following:
+For this 30 minute tutorial, you'll need the following:
 
 include::{common-page-prefix-inc}[tag=common-prereqs-curl]
 
@@ -146,15 +146,19 @@ Add the following dependencies in your `pom.xml`:
 [source,xml]
 .`pom.xml`
 ----
+ <dependency>
+    <artifactId>jakarta.ws.rs-api</artifactId>
+    <scope>compile</scope>
+</dependency>
 <dependency>
     <groupId>jakarta.persistence</groupId>
     <artifactId>jakarta.persistence-api</artifactId>
-    <scope>provided</scope>
+    <scope>compile</scope>
 </dependency>
 <dependency>
     <groupId>jakarta.transaction</groupId>
     <artifactId>jakarta.transaction-api</artifactId>
-    <scope>provided</scope>
+    <scope>compile</scope>
 </dependency>
 ----
 
@@ -275,47 +279,47 @@ public class Greeting implements Serializable { <4>
 }
 ----
 
-<1> (Some of the annotations in this example, like this one, have
+<1> (Some annotations in this example, like this one, have
 sensible defaults, but the example specifies them explicitly for
 clarity.)  This
-https://jakarta.ee/specifications/persistence/2.2/apidocs/javax/persistence/access[`Access`
+https://jakarta.ee/specifications/persistence/3.0/apidocs/javax/persistence/access[`Access`
 annotation] says that JPA will access this class' fields directly,
 rather than via getter and setter methods.
 
 <2> The
-https://jakarta.ee/specifications/persistence/2.2/apidocs/javax/persistence/entity[`Entity`
+https://jakarta.ee/specifications/persistence/3.0/apidocs/javax/persistence/entity[`Entity`
 annotation] identifies this class as a JPA entity.  The
-https://jakarta.ee/specifications/persistence/2.2/apidocs/javax/persistence/entity#name()[`name`
+https://jakarta.ee/specifications/persistence/3.0/apidocs/javax/persistence/entity#name()[`name`
 element] value can be used in JPQL queries.
 
 <3> The
-https://jakarta.ee/specifications/persistence/2.2/apidocs/javax/persistence/table[`Table`
+https://jakarta.ee/specifications/persistence/3.0/apidocs/javax/persistence/table[`Table`
 annotation] identifies the database table to which this class will be
 mapped.
 
 <4> JPA entities should be
-https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/Serializable.html[`Serializable`].
+https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/io/Serializable.html[`Serializable`].
 
 <5> The
-https://jakarta.ee/specifications/persistence/2.2/apidocs/javax/persistence/column[`Column`
+https://jakarta.ee/specifications/persistence/3.0/apidocs/javax/persistence/column[`Column`
 annotation] specifies what column in the database the annotated field
 maps to.  The elements of the `Column` annotation further describe the
 column.
 
 <6> The
-https://jakarta.ee/specifications/persistence/2.2/apidocs/javax/persistence/id[`Id`
+https://jakarta.ee/specifications/persistence/3.0/apidocs/javax/persistence/id[`Id`
 annotation] indicates this field will be mapped to the primary key of
 the database table.
 
 <7> The
-https://jakarta.ee/specifications/persistence/2.2/apidocs/javax/persistence/basic[`Basic`
+https://jakarta.ee/specifications/persistence/3.0/apidocs/javax/persistence/basic[`Basic`
 annotation] indicates this field will be mapped to an ordinary
 ("basic") column.
 
 <8> All JPA entities need a zero-argument constructor, but it doesn't
 have to be `public`.  This constructor satisfies this requirement.  It
 is marked
-https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Deprecated.html[`Deprecated`]
+https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/Deprecated.html[`Deprecated`]
 and is non-`public` so that normal users have to supply data for the
 `salutation` and `response` fields via the other constructor.
 
@@ -329,11 +333,11 @@ Add the following file under `src/main/resources/META-INF`:
 .`src/main/resources/META-INF/persistence.xml`
 ----
 <?xml version="1.0" encoding="UTF-8"?>
-<persistence version="2.2" <1>
-             xmlns="http://xmlns.jcp.org/xml/ns/persistence"
+<persistence version="3.0" <1>
+             xmlns="https://jakarta.ee/xml/ns/persistence"
              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-             xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/persistence
-                                 http://xmlns.jcp.org/xml/ns/persistence/persistence_2_2.xsd">
+             xsi:schemaLocation="https://jakarta.ee/xml/xml/ns/persistence
+                                 https://jakarta.ee/xml/xml/ns/persistence/persistence_3_0.xsd">
     <persistence-unit name="greeting" transaction-type="JTA"> <2>
         <description>A persistence unit for the greeting example.</description>
         <jta-data-source>greetingDataSource</jta-data-source> <3>
@@ -351,7 +355,7 @@ Add the following file under `src/main/resources/META-INF`:
 </persistence>
 ----
 
-<1> Helidon MP's JPA extension supports JPA 2.2.
+<1> Helidon MP's JPA extension supports JPA 3.0.
 
 <2> Note that `JTA` is the transaction type.  JTA transactions are
 fully supported.
@@ -362,20 +366,20 @@ fully supported.
 <4> The `Greeting` class you created is listed here.
 
 <5> The properties listed here are in general
-https://www.eclipse.org/eclipselink/documentation/2.7/jpa/extensions/persistenceproperties_ref.htm[EclipseLink
+https://www.eclipse.org/eclipselink/documentation/3.0/jpa/extensions/persistenceproperties_ref.htm[EclipseLink
 properties].  Many are optional, but a few (detailed below) are required.
 
-<6> https://www.eclipse.org/eclipselink/documentation/2.7/jpa/extensions/persistenceproperties_ref.htm#target-database[This
+<6> https://www.eclipse.org/eclipselink/documentation/3.0/jpa/extensions/persistenceproperties_ref.htm#target-database[This
 property] is required when EclipseLink is the JPA provider.  It is set
 to `org.eclipse.persistence.platform.database.H2Platform` because this
 example uses the H2 database.
 
-<7> https://www.eclipse.org/eclipselink/documentation/2.7/jpa/extensions/persistenceproperties_ref.htm#target-server[This
+<7> https://www.eclipse.org/eclipselink/documentation/3.0/jpa/extensions/persistenceproperties_ref.htm#target-server[This
 property] is required, and when EclipseLink is the JPA provider must
 have the value
 `io.helidon.integrations.cdi.eclipselink.CDISEPlatform`.
 
-<8> https://www.eclipse.org/eclipselink/documentation/2.7/jpa/extensions/persistenceproperties_ref.htm#weaving[This
+<8> https://www.eclipse.org/eclipselink/documentation/3.0/jpa/extensions/persistenceproperties_ref.htm#weaving[This
 property] is required when EclipseLink is the JPA provider and must be
 set to `false`.
 
@@ -457,9 +461,9 @@ private EntityManager em;
 ----
 
 <1> The
-https://jakarta.ee/specifications/persistence/2.2/apidocs/javax/persistence/persistencecontext[`@PersistenceContext`
+https://jakarta.ee/specifications/persistence/3.0/apidocs/javax/persistence/persistencecontext[`@PersistenceContext`
 annotation] indicates that you want an
-https://jakarta.ee/specifications/persistence/2.2/apidocs/javax/persistence/entitymanager[`EntityManager`]
+https://jakarta.ee/specifications/persistence/3.0/apidocs/javax/persistence/entitymanager[`EntityManager`]
 injected here.
 
 == Use the Injected `EntityManager`
