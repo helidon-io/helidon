@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,10 +31,11 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.common.http.Http;
-import io.helidon.common.http.MediaType;
+import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.media.type.MediaType;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.config.yaml.YamlConfigParser;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 
@@ -81,8 +82,8 @@ public class TestUtil {
      * @throws IOException in case of errors reading the HTTP response payload
      */
     public static String stringYAMLFromResponse(HttpURLConnection cnx) throws IOException {
-        MediaType returnedMediaType = mediaTypeFromResponse(cnx);
-        assertTrue(MediaType.APPLICATION_OPENAPI_YAML.test(returnedMediaType),
+        HttpMediaType returnedMediaType = mediaTypeFromResponse(cnx);
+        assertTrue(HttpMediaType.create(MediaTypes.APPLICATION_OPENAPI_YAML).test(returnedMediaType),
                 "Unexpected returned media type");
         return stringFromResponse(cnx, returnedMediaType);
     }
@@ -103,11 +104,11 @@ public class TestUtil {
     public static MediaType connectAndConsumePayload(
             int port, String path, MediaType expectedMediaType) throws Exception {
         HttpURLConnection cnx = getURLConnection(port, "GET", path, expectedMediaType);
-        MediaType actualMT = validateResponseMediaType(cnx, expectedMediaType);
-        if (actualMT.test(MediaType.APPLICATION_OPENAPI_YAML) || actualMT.test(MediaType.APPLICATION_YAML)) {
+        HttpMediaType actualMT = validateResponseMediaType(cnx, expectedMediaType);
+        if (actualMT.test(MediaTypes.APPLICATION_OPENAPI_YAML) || actualMT.test(MediaTypes.APPLICATION_YAML)) {
             yamlFromResponse(cnx);
-        } else if (actualMT.test(MediaType.APPLICATION_OPENAPI_JSON)
-                || actualMT.test(MediaType.APPLICATION_JSON)) {
+        } else if (actualMT.test(MediaTypes.APPLICATION_OPENAPI_JSON)
+                || actualMT.test(MediaTypes.APPLICATION_JSON)) {
             jsonFromResponse(cnx);
         } else {
             throw new IllegalArgumentException(
@@ -119,11 +120,11 @@ public class TestUtil {
     static MediaType connectAndConsumePayload(
             int port, String path, String queryParameter, MediaType expectedMediaType) throws Exception {
         HttpURLConnection cnx = getURLConnection(port, "GET", path, queryParameter);
-        MediaType actualMT = validateResponseMediaType(cnx, expectedMediaType);
-        if (actualMT.test(MediaType.APPLICATION_OPENAPI_YAML) || actualMT.test(MediaType.APPLICATION_YAML)) {
+        HttpMediaType actualMT = validateResponseMediaType(cnx, expectedMediaType);
+        if (actualMT.test(MediaTypes.APPLICATION_OPENAPI_YAML) || actualMT.test(MediaTypes.APPLICATION_YAML)) {
             yamlFromResponse(cnx);
-        } else if (actualMT.test(MediaType.APPLICATION_OPENAPI_JSON)
-                || actualMT.test(MediaType.APPLICATION_JSON)) {
+        } else if (actualMT.test(MediaTypes.APPLICATION_OPENAPI_JSON)
+                || actualMT.test(MediaTypes.APPLICATION_JSON)) {
             jsonFromResponse(cnx);
         } else {
             throw new IllegalArgumentException(
@@ -139,14 +140,10 @@ public class TestUtil {
      * @param cnx the HttpURLConnection from which to get the content type
      * @return the MediaType corresponding to the content type in the response
      */
-    public static MediaType mediaTypeFromResponse(HttpURLConnection cnx) {
-        MediaType returnedMediaType = MediaType.parse(cnx.getContentType());
-        if (!returnedMediaType.charset().isPresent()) {
-            returnedMediaType = MediaType.builder()
-                    .type(returnedMediaType.type())
-                    .subtype(returnedMediaType.subtype())
-                    .charset(Charset.defaultCharset().name())
-                    .build();
+    public static HttpMediaType mediaTypeFromResponse(HttpURLConnection cnx) {
+        HttpMediaType returnedMediaType = HttpMediaType.create(cnx.getContentType());
+        if (returnedMediaType.charset().isEmpty()) {
+            returnedMediaType = returnedMediaType.withCharset(Charset.defaultCharset().name());
         }
         return returnedMediaType;
     }
@@ -162,10 +159,10 @@ public class TestUtil {
      * config
      */
     public static Config configFromResponse(HttpURLConnection cnx) throws IOException {
-        MediaType mt = mediaTypeFromResponse(cnx);
-        String configMT = MediaType.APPLICATION_OPENAPI_YAML.test(mt)
-                ? YamlConfigParser.MEDIA_TYPE_APPLICATION_YAML
-                : MediaType.APPLICATION_JSON.toString();
+        HttpMediaType mt = mediaTypeFromResponse(cnx);
+        MediaType configMT = HttpMediaType.create(MediaTypes.APPLICATION_OPENAPI_YAML).test(mt)
+                ? MediaTypes.APPLICATION_X_YAML
+                : MediaTypes.APPLICATION_JSON;
         String yaml = stringYAMLFromResponse(cnx);
         return Config.create(ConfigSources.create(yaml, configMT));
     }
@@ -181,7 +178,7 @@ public class TestUtil {
      */
     @SuppressWarnings(value = "unchecked")
     public static Map<String, Object> yamlFromResponse(HttpURLConnection cnx) throws IOException {
-        MediaType returnedMediaType = mediaTypeFromResponse(cnx);
+        HttpMediaType returnedMediaType = mediaTypeFromResponse(cnx);
         Yaml yaml = new Yaml();
         Charset cs = Charset.defaultCharset();
         if (returnedMediaType.charset().isPresent()) {
@@ -266,7 +263,7 @@ public class TestUtil {
      * @throws Exception in case of errors reading the content type from the
      * response
      */
-    public static MediaType validateResponseMediaType(
+    public static HttpMediaType validateResponseMediaType(
             HttpURLConnection cnx,
             MediaType expectedMediaType) throws Exception {
         assertEquals(Http.Status.OK_200.code(), cnx.getResponseCode(),
@@ -274,8 +271,8 @@ public class TestUtil {
         MediaType expectedMT = expectedMediaType != null
                 ? expectedMediaType
                 : OpenAPISupport.DEFAULT_RESPONSE_MEDIA_TYPE;
-        MediaType actualMT = mediaTypeFromResponse(cnx);
-        assertTrue(expectedMT.test(actualMT),
+        HttpMediaType actualMT = mediaTypeFromResponse(cnx);
+        assertTrue(HttpMediaType.create(expectedMT).test(actualMT),
                 "Expected response media type "
                         + expectedMT.toString()
                         + " but received "
@@ -374,7 +371,7 @@ public class TestUtil {
      * specified {@code MediaType}
      * @throws IOException in case of errors reading the response payload
      */
-    public static String stringFromResponse(HttpURLConnection cnx, MediaType mediaType) throws IOException {
+    public static String stringFromResponse(HttpURLConnection cnx, HttpMediaType mediaType) throws IOException {
         try (final InputStreamReader isr = new InputStreamReader(
                 cnx.getInputStream(), mediaType.charset().get())) {
             StringBuilder sb = new StringBuilder();

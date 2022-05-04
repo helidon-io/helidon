@@ -43,7 +43,8 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import io.helidon.common.http.Http;
-import io.helidon.common.http.MediaType;
+import io.helidon.common.media.type.MediaType;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
@@ -108,10 +109,10 @@ public abstract class OpenAPISupport implements Service {
      * Default media type used in responses in absence of incoming Accept
      * header.
      */
-    public static final MediaType DEFAULT_RESPONSE_MEDIA_TYPE = MediaType.APPLICATION_OPENAPI_YAML;
+    public static final MediaType DEFAULT_RESPONSE_MEDIA_TYPE = MediaTypes.APPLICATION_OPENAPI_YAML;
 
     private enum QueryParameterRequestedFormat {
-        JSON(MediaType.APPLICATION_JSON), YAML(MediaType.APPLICATION_OPENAPI_YAML);
+        JSON(MediaTypes.APPLICATION_JSON), YAML(MediaTypes.APPLICATION_OPENAPI_YAML);
 
         static QueryParameterRequestedFormat chooseFormat(String format) {
             return QueryParameterRequestedFormat.valueOf(format);
@@ -581,16 +582,16 @@ public abstract class OpenAPISupport implements Service {
     enum OpenAPIMediaType {
 
         JSON(Format.JSON,
-                new MediaType[]{MediaType.APPLICATION_OPENAPI_JSON,
-                    MediaType.APPLICATION_JSON},
+                new MediaType[]{MediaTypes.APPLICATION_OPENAPI_JSON,
+                    MediaTypes.APPLICATION_JSON},
                 "json"),
         YAML(Format.YAML,
-                new MediaType[]{MediaType.APPLICATION_OPENAPI_YAML,
-                    MediaType.APPLICATION_X_YAML,
-                    MediaType.APPLICATION_YAML,
-                    MediaType.TEXT_PLAIN,
-                    MediaType.TEXT_X_YAML,
-                    MediaType.TEXT_YAML},
+                new MediaType[]{MediaTypes.APPLICATION_OPENAPI_YAML,
+                    MediaTypes.APPLICATION_X_YAML,
+                    MediaTypes.APPLICATION_YAML,
+                    MediaTypes.TEXT_PLAIN,
+                    MediaTypes.TEXT_X_YAML,
+                    MediaTypes.TEXT_YAML},
                 "yaml", "yml");
 
         private static final OpenAPIMediaType DEFAULT_TYPE = YAML;
@@ -658,14 +659,14 @@ public abstract class OpenAPISupport implements Service {
          */
         private static MediaType[] preferredOrdering() {
             return new MediaType[]{
-                    MediaType.APPLICATION_OPENAPI_YAML,
-                    MediaType.APPLICATION_X_YAML,
-                    MediaType.APPLICATION_YAML,
-                    MediaType.APPLICATION_OPENAPI_JSON,
-                    MediaType.APPLICATION_JSON,
-                    MediaType.TEXT_X_YAML,
-                    MediaType.TEXT_YAML,
-                    MediaType.TEXT_PLAIN
+                    MediaTypes.APPLICATION_OPENAPI_YAML,
+                    MediaTypes.APPLICATION_X_YAML,
+                    MediaTypes.APPLICATION_YAML,
+                    MediaTypes.APPLICATION_OPENAPI_JSON,
+                    MediaTypes.APPLICATION_JSON,
+                    MediaTypes.TEXT_X_YAML,
+                    MediaTypes.TEXT_YAML,
+                    MediaTypes.TEXT_PLAIN
             };
         }
     }

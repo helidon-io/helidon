@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,8 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.function.Consumer;
 
-import io.helidon.common.http.MediaType;
+import io.helidon.common.media.type.MediaType;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.webserver.WebServer;
@@ -93,7 +94,7 @@ public class ServerTest {
                 greetingWebServer.port(),
                 "GET",
                 GREETING_PATH,
-                MediaType.APPLICATION_OPENAPI_YAML);
+                MediaTypes.APPLICATION_OPENAPI_YAML);
         Map<String, Object> openAPIDocument = TestUtil.yamlFromResponse(cnx);
 
         ArrayList<Map<String, Object>> servers = TestUtil.as(
@@ -129,7 +130,7 @@ public class ServerTest {
                 greetingWebServer.port(),
                 "GET",
                 GREETING_PATH,
-                MediaType.APPLICATION_OPENAPI_YAML);
+                MediaTypes.APPLICATION_OPENAPI_YAML);
         Config c = TestUtil.configFromResponse(cnx);
         assertEquals("Sets the greeting prefix",
                 TestUtil.fromConfig(c, "paths./greet/greeting.put.summary"));
@@ -148,10 +149,10 @@ public class ServerTest {
      */
     @Test
     public void checkExplicitResponseMediaTypeViaHeaders() throws Exception {
-        connectAndConsumePayload(MediaType.APPLICATION_OPENAPI_YAML);
-        connectAndConsumePayload(MediaType.APPLICATION_YAML);
-        connectAndConsumePayload(MediaType.APPLICATION_OPENAPI_JSON);
-        connectAndConsumePayload(MediaType.APPLICATION_JSON);
+        connectAndConsumePayload(MediaTypes.APPLICATION_OPENAPI_YAML);
+        connectAndConsumePayload(MediaTypes.APPLICATION_YAML);
+        connectAndConsumePayload(MediaTypes.APPLICATION_OPENAPI_JSON);
+        connectAndConsumePayload(MediaTypes.APPLICATION_JSON);
     }
 
     @Test
@@ -159,12 +160,12 @@ public class ServerTest {
         TestUtil.connectAndConsumePayload(greetingWebServer.port(),
                                           GREETING_PATH,
                                           "format=JSON",
-                                          MediaType.APPLICATION_JSON);
+                                          MediaTypes.APPLICATION_JSON);
 
         TestUtil.connectAndConsumePayload(greetingWebServer.port(),
                                           GREETING_PATH,
                                           "format=YAML",
-                                          MediaType.APPLICATION_OPENAPI_YAML);
+                                          MediaTypes.APPLICATION_OPENAPI_YAML);
     }
 
     /**
@@ -198,7 +199,7 @@ public class ServerTest {
                 timeWebServer.port(),
                 "GET",
                 TIME_PATH,
-                MediaType.APPLICATION_OPENAPI_YAML);
+                MediaTypes.APPLICATION_OPENAPI_YAML);
         if (headerSetter != null) {
             headerSetter.accept(cnx);
         }
@@ -217,12 +218,12 @@ public class ServerTest {
                 timeWebServer.port(),
                 "GET",
                 TIME_PATH,
-                MediaType.APPLICATION_OPENAPI_YAML);
+                MediaTypes.APPLICATION_OPENAPI_YAML);
         HttpURLConnection greetingCnx = TestUtil.getURLConnection(
                 greetingWebServer.port(),
                 "GET",
                 GREETING_PATH,
-                MediaType.APPLICATION_OPENAPI_YAML);
+                MediaTypes.APPLICATION_OPENAPI_YAML);
         Config greetingConfig = TestUtil.configFromResponse(greetingCnx);
         Config timeConfig = TestUtil.configFromResponse(timeCnx);
         assertFalse(timeConfig.get("paths./greet/greeting.put.summary").exists(),
