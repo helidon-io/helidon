@@ -183,8 +183,9 @@ class WebClientRequestHeadersImpl implements WebClientRequestHeaders {
     }
 
     @Override
-    public void clear() {
+    public WebClientRequestHeaders clear() {
         this.headers.clear();
+        return this;
     }
 
     @Override
@@ -281,6 +282,7 @@ class WebClientRequestHeadersImpl implements WebClientRequestHeaders {
         }
         return this;
     }
+
 
     private Optional<ZonedDateTime> parseToDate(Http.HeaderName header) {
         return first(header).map(Http.DateTime::parse);

@@ -30,6 +30,7 @@ import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.media.type.MediaType;
 import io.helidon.common.reactive.Single;
 import io.helidon.common.uri.UriPath;
 import io.helidon.common.uri.UriQuery;
@@ -321,12 +322,38 @@ public interface WebClientRequestBuilder {
     WebClientRequestBuilder contentType(HttpMediaType contentType);
 
     /**
-     * Media types which are accepted in the response.
+     * Content type of the request.
+     *
+     * @param contentType content type
+     * @return updated builder instance
+     */
+    default WebClientRequestBuilder contentType(MediaType contentType) {
+        return contentType(HttpMediaType.create(contentType));
+    }
+
+    /**
+     * Media types which are accepted in the response, support for quality factor and additional parameters.
      *
      * @param mediaTypes media types
      * @return updated builder instance
      */
     WebClientRequestBuilder accept(HttpMediaType... mediaTypes);
+
+    /**
+     * Media types which are accepted in the response.
+     *
+     * @param mediaTypes media types
+     * @return updated builder instance
+     */
+    default WebClientRequestBuilder accept(MediaType... mediaTypes) {
+        HttpMediaType[] httpMediaTypes = new HttpMediaType[mediaTypes.length];
+        for (int i = 0; i < httpMediaTypes.length; i++) {
+            httpMediaTypes[i] = HttpMediaType.create(mediaTypes[i]);
+
+        }
+        accept(httpMediaTypes);
+        return this;
+    }
 
     /**
      * Whether connection should be kept alive after request.

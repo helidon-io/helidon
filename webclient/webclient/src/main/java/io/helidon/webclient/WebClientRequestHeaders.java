@@ -168,11 +168,6 @@ public interface WebClientRequestHeaders extends HeadersClientRequest {
     Optional<String> ifRangeString();
 
     /**
-     * Clears all currently set headers.
-     */
-    void clear();
-
-    /**
      * Add each header, replacing values if header already exists.
      *
      * @param parameters headers

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,15 +84,15 @@ abstract class WebClientMetric implements WebClientService {
         return errors;
     }
 
-    boolean shouldContinueOnSuccess(Http.RequestMethod method, int status) {
+    boolean shouldContinueOnSuccess(Http.Method method, int status) {
         return handlesMethod(method) && measureSuccess() && status < ERROR_STATUS_CODE;
     }
 
-    boolean shouldContinueOnError(Http.RequestMethod method) {
+    boolean shouldContinueOnError(Http.Method method) {
         return handlesMethod(method) && measureErrors();
     }
 
-    boolean shouldContinueOnError(Http.RequestMethod method, int status) {
+    boolean shouldContinueOnError(Http.Method method, int status) {
         if (status >= ERROR_STATUS_CODE) {
             return shouldContinueOnError(method);
         }
@@ -121,7 +121,7 @@ abstract class WebClientMetric implements WebClientService {
         return String.format(nameFormat(), request.method().name(), request.uri().getHost());
     }
 
-    boolean handlesMethod(Http.RequestMethod method) {
+    boolean handlesMethod(Http.Method method) {
         return methods().isEmpty() || methods().contains(method.name());
     }
 

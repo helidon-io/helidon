@@ -23,7 +23,7 @@ import io.helidon.common.context.Context;
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Single;
 import io.helidon.common.uri.UriPath;
-import io.helidon.common.uri.UriQuery;
+import io.helidon.common.uri.UriQueryWriteable;
 
 /**
  * Implementation of the {@link WebClientServiceRequest} interface.
@@ -146,7 +146,7 @@ class WebClientServiceRequestImpl implements WebClientServiceRequest {
     }
 
     @Override
-    public UriQuery queryParams() {
+    public UriQueryWriteable queryParams() {
         return requestBuilder.queryParams();
     }
 

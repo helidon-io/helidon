@@ -128,11 +128,9 @@ class WebClientResponseHeadersImpl implements WebClientResponseHeaders {
         return headers.iterator();
     }
 
-    private Optional<String> first(Http.HeaderName headerName) {
-        if (headers.contains(headerName)) {
-            return Optional.of(headers.get(headerName).value());
-        }
-        return Optional.empty();
+    @Override
+    public List<HttpMediaType> acceptedTypes() {
+        return List.of();
     }
 
     private String unquoteETag(String etag) {

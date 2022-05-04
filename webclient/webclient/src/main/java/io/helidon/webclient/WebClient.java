@@ -315,9 +315,23 @@ public interface WebClient {
          * @param header header name
          * @param value  header values
          * @return updated builder instance
+         * @deprecated use {@link #addHeader(io.helidon.common.http.Http.HeaderName, String...)} instead
          */
+        @Deprecated(forRemoval = true)
         public Builder addHeader(String header, String... value) {
             configuration.defaultHeader(Http.HeaderValue.create(Http.Header.create(header), value));
+            return this;
+        }
+
+        /**
+         * Add a default header (such as accept).
+         *
+         * @param header header name
+         * @param value  header values
+         * @return updated builder instance
+         */
+        public Builder addHeader(Http.HeaderName header, String... value) {
+            configuration.defaultHeader(Http.HeaderValue.create(header, value));
             return this;
         }
 

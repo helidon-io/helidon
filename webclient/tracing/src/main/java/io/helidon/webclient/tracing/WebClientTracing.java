@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import io.helidon.common.http.Http;
 import io.helidon.common.LazyValue;
 import io.helidon.common.reactive.Single;
 import io.helidon.tracing.HeaderConsumer;

@@ -22,7 +22,7 @@ import io.helidon.common.context.Context;
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Single;
 import io.helidon.common.uri.UriPath;
-import io.helidon.common.uri.UriQuery;
+import io.helidon.common.uri.UriQueryWriteable;
 import io.helidon.webclient.spi.WebClientService;
 
 /**
@@ -68,7 +68,7 @@ public interface WebClientServiceRequest {
      *
      * @return an parameters representing query parameters
      */
-    UriQuery queryParams();
+    UriQueryWriteable queryParams();
 
     /**
      * Returns a path which was accepted by matcher in actual routing. It is path without a context root

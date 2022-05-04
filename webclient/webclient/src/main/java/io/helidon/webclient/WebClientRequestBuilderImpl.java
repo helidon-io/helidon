@@ -473,7 +473,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         return finalUri;
     }
 
-    UriQuery queryParams() {
+    UriQueryWriteable queryParams() {
         return queryParams;
     }
 
