@@ -60,7 +60,7 @@ class JsonbBodyStreamWriter implements MessageBodyStreamWriter<Object> {
     @Override
     public Multi<DataChunk> write(Flow.Publisher<?> publisher, GenericType<?> type, MessageBodyWriterContext context) {
 
-        MediaType contentType = context.findAccepted(MediaType.JSON_PREDICATE, MediaType.APPLICATION_JSON);
+        HttpMediaType contentType = context.findAccepted(HttpMediaType.JSON_PREDICATE, HttpMediaType.APPLICATION_JSON);
         context.contentType(contentType);
 
         AtomicBoolean first = new AtomicBoolean(true);

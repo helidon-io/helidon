@@ -19,7 +19,7 @@ import java.util.concurrent.Flow.Publisher;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
-import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.media.common.MessageBodyStreamWriter;
 import io.helidon.media.common.MessageBodyWriterContext;
 
@@ -44,7 +44,7 @@ public final class BodyPartBodyStreamWriter implements MessageBodyStreamWriter<W
                                       GenericType<? extends WriteableBodyPart> type,
                                       MessageBodyWriterContext context) {
 
-        context.contentType(MediaType.MULTIPART_FORM_DATA);
+        context.contentType(MediaTypes.MULTIPART_FORM_DATA);
         MultiPartEncoder encoder = MultiPartEncoder.create(boundary, context);
         content.subscribe(encoder);
         return encoder;

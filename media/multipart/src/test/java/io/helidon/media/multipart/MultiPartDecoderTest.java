@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
 import io.helidon.common.http.DataChunk;
+import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Multi;
 
 import org.junit.jupiter.api.Test;
@@ -44,7 +45,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * Tests {@link MultiPartDecoder}.
  */
 public class MultiPartDecoderTest {
-
+    private static final Http.HeaderName CONTENT_ID = Http.Header.create("Content-Id");
     @Test
     public void testOnePartInOneChunk() {
         String boundary = "boundary";
@@ -59,7 +60,7 @@ public class MultiPartDecoderTest {
 
         Consumer<BodyPart> consumer = (part) -> {
             latch.countDown();
-            assertThat(part.headers().values("Content-Id"),
+            assertThat(part.headers().values(CONTENT_ID),
                     hasItems("part1"));
             DataChunkSubscriber subscriber = new DataChunkSubscriber();
             part.content().subscribe(subscriber);
@@ -103,7 +104,7 @@ public class MultiPartDecoderTest {
         Consumer<BodyPart> consumer = (part) -> {
             latch.countDown();
             if (latch.getCount() == 3) {
-                assertThat(part.headers().values("Content-Id"), hasItems("part1"));
+                assertThat(part.headers().values(CONTENT_ID), hasItems("part1"));
                 DataChunkSubscriber subscriber = new DataChunkSubscriber();
                 part.content().subscribe(subscriber);
                 subscriber.content().thenAccept(body -> {
@@ -111,7 +112,7 @@ public class MultiPartDecoderTest {
                     assertThat(body, is(equalTo("body 1")));
                 });
             } else {
-                assertThat(part.headers().values("Content-Id"), hasItems("part2"));
+                assertThat(part.headers().values(CONTENT_ID), hasItems("part2"));
                 DataChunkSubscriber subscriber = new DataChunkSubscriber();
                 part.content().subscribe(subscriber);
                 subscriber.content().thenAccept(body -> {
@@ -144,7 +145,7 @@ public class MultiPartDecoderTest {
         final CountDownLatch latch = new CountDownLatch(2);
         Consumer<BodyPart> consumer = (part) -> {
             latch.countDown();
-            assertThat(part.headers().values("Content-Id"), hasItems("part1"));
+            assertThat(part.headers().values(CONTENT_ID), hasItems("part1"));
             DataChunkSubscriber subscriber = new DataChunkSubscriber();
             part.content().subscribe(subscriber);
             subscriber.content().thenAccept(body -> {
@@ -180,7 +181,7 @@ public class MultiPartDecoderTest {
         final CountDownLatch latch = new CountDownLatch(2);
         Consumer<BodyPart> consumer = (part) -> {
             latch.countDown();
-            assertThat(part.headers().values("Content-Id"), hasItems("part1"));
+            assertThat(part.headers().values(CONTENT_ID), hasItems("part1"));
             DataChunkSubscriber subscriber = new DataChunkSubscriber();
             part.content().subscribe(subscriber);
             subscriber.content().thenAccept(body -> {
@@ -220,9 +221,9 @@ public class MultiPartDecoderTest {
         final CountDownLatch latch = new CountDownLatch(2);
         Consumer<BodyPart> consumer = (part) -> {
             latch.countDown();
-            assertThat(part.headers().values("Content-Id"), hasItems("part1"));
-            assertThat(part.headers().values("Content-Type"), hasItems("text/plain"));
-            assertThat(part.headers().values("Set-Cookie"), hasItems("bob=alice", "foo=bar"));
+            assertThat(part.headers().values(CONTENT_ID), hasItems("part1"));
+            assertThat(part.headers().values(Http.Header.CONTENT_TYPE), hasItems("text/plain"));
+            assertThat(part.headers().values(Http.Header.SET_COOKIE), hasItems("bob=alice", "foo=bar"));
             DataChunkSubscriber subscriber = new DataChunkSubscriber();
             part.content().subscribe(subscriber);
             subscriber.content().thenAccept(body -> {
@@ -258,7 +259,7 @@ public class MultiPartDecoderTest {
         Consumer<BodyPart> consumer = (part) -> {
             latch.countDown();
             if (latch.getCount()== 3) {
-                assertThat(part.headers().values("Content-Id"), hasItems("part1"));
+                assertThat(part.headers().values(CONTENT_ID), hasItems("part1"));
                 DataChunkSubscriber subscriber = new DataChunkSubscriber();
                 part.content().subscribe(subscriber);
                 subscriber.content().thenAccept(body -> {
@@ -266,7 +267,7 @@ public class MultiPartDecoderTest {
                     assertThat(body, is(equalTo("body 1")));
                 });
             } else {
-                assertThat(part.headers().values("Content-Id"), hasItems("part2"));
+                assertThat(part.headers().values(CONTENT_ID), hasItems("part2"));
                 DataChunkSubscriber subscriber = new DataChunkSubscriber();
                 part.content().subscribe(subscriber);
                 subscriber.content().thenAccept(body -> {
@@ -303,7 +304,7 @@ public class MultiPartDecoderTest {
         Consumer<BodyPart> consumer = (part) -> {
             latch.countDown();
             if (latch.getCount()== 1) {
-                assertThat(part.headers().values("Content-Id"), hasItems("part1"));
+                assertThat(part.headers().values(CONTENT_ID), hasItems("part1"));
                 DataChunkSubscriber subscriber1 = new DataChunkSubscriber();
                 part.content().subscribe(subscriber1);
                 subscriber1.content().thenAccept(body -> {
@@ -377,7 +378,7 @@ public class MultiPartDecoderTest {
         Consumer<BodyPart> consumer = (part) -> {
             latch.countDown();
             if (latch.getCount() == 2) {
-                assertThat(part.headers().values("Content-Id"), hasItems("part1"));
+                assertThat(part.headers().values(CONTENT_ID), hasItems("part1"));
             }
             part.content().subscribe(new Subscriber<DataChunk>() {
 

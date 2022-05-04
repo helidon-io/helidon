@@ -29,7 +29,7 @@ import io.helidon.common.reactive.Single;
  */
 @SuppressWarnings("deprecation")
 public final class MessageBodyReadableContent
-        implements MessageBodyReaders, MessageBodyFilters, MessageBodyContent {
+        implements MessageBodyReaders, MessageBodyFilters, MessageBodyContent, Multi<DataChunk> {
 
     private final Publisher<DataChunk> publisher;
     private final MessageBodyReaderContext context;

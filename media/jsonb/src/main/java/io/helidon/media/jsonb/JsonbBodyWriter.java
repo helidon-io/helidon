@@ -56,7 +56,7 @@ class JsonbBodyWriter implements MessageBodyWriter<Object> {
     public Publisher<DataChunk> write(Single<? extends Object> content,  GenericType<? extends Object> type,
             MessageBodyWriterContext context) {
 
-        MediaType contentType = context.findAccepted(MediaType.JSON_PREDICATE, MediaType.APPLICATION_JSON);
+        HttpMediaType contentType = context.findAccepted(HttpMediaType.JSON_PREDICATE, HttpMediaType.APPLICATION_JSON);
         context.contentType(contentType);
         return content.flatMap(new ObjectToChunks(jsonb, context.charset()));
     }

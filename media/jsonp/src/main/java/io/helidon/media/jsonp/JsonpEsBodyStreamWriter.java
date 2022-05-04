@@ -23,6 +23,8 @@ import java.util.concurrent.Flow;
 import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.media.type.MediaType;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.reactive.Multi;
 import io.helidon.media.common.MessageBodyStreamWriter;
 import io.helidon.media.common.MessageBodyWriterContext;
@@ -33,12 +35,12 @@ import jakarta.json.JsonWriterFactory;
 
 /**
  * Message body writer for {@link jakarta.json.JsonStructure} sub-classes (JSON-P).
- * This writer is for {@link MediaType#TEXT_EVENT_STREAM} with no element-type parameter or element-type="application/json".
+ * This writer is for {@link MediaTypes#TEXT_EVENT_STREAM} with no element-type parameter or element-type="application/json".
  */
 class JsonpEsBodyStreamWriter implements MessageBodyStreamWriter<JsonStructure> {
 
-    private static final MediaType TEXT_EVENT_STREAM_JSON = MediaType
-            .parse("text/event-stream;element-type=\"application/json\"");
+    private static final HttpMediaType TEXT_EVENT_STREAM_JSON = HttpMediaType
+            .create("text/event-stream;element-type=\"application/json\"");
     private static final byte[] DATA = "data: ".getBytes(StandardCharsets.UTF_8);
     private static final byte[] NL = "\n\n".getBytes(StandardCharsets.UTF_8);
 
@@ -55,7 +57,7 @@ class JsonpEsBodyStreamWriter implements MessageBodyStreamWriter<JsonStructure> 
         }
         return context.contentType()
                 .or(() -> findMediaType(context))
-                .filter(mediaType -> mediaType.equals(TEXT_EVENT_STREAM_JSON) || mediaType.equals(MediaType.TEXT_EVENT_STREAM))
+                .filter(mediaType -> mediaType.equals(TEXT_EVENT_STREAM_JSON) || mediaType.equals(MediaTypes.TEXT_EVENT_STREAM))
                 .map(it -> PredicateResult.COMPATIBLE)
                 .orElse(PredicateResult.NOT_SUPPORTED);
     }
@@ -83,9 +85,9 @@ class JsonpEsBodyStreamWriter implements MessageBodyStreamWriter<JsonStructure> 
                         DataChunk.create(NL)));
     }
 
-    private Optional<MediaType> findMediaType(MessageBodyWriterContext context) {
+    private Optional<HttpMediaType> findMediaType(MessageBodyWriterContext context) {
         try {
-            return Optional.of(context.findAccepted(MediaType.JSON_EVENT_STREAM_PREDICATE, TEXT_EVENT_STREAM_JSON));
+            return Optional.of(context.findAccepted(HttpMediaType.JSON_EVENT_STREAM_PREDICATE, TEXT_EVENT_STREAM_JSON));
         } catch (IllegalStateException ignore) {
             //Not supported. Ignore exception.
             return Optional.empty();

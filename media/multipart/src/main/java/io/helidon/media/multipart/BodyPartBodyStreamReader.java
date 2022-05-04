@@ -42,12 +42,12 @@ public final class BodyPartBodyStreamReader implements MessageBodyStreamReader<R
             MessageBodyReaderContext context) {
 
         String boundary = null;
-        MediaType contentType = context.contentType().orElse(null);
+        HttpMediaType contentType = context.contentType().orElse(null);
         if (contentType != null) {
             boundary = contentType.parameters().get("boundary");
         }
         if (boundary == null) {
-            throw new IllegalStateException("boudary header is missing");
+            throw new IllegalStateException("boundary header is missing");
         }
         MultiPartDecoder decoder = MultiPartDecoder.create(boundary, context);
         publisher.subscribe(decoder);

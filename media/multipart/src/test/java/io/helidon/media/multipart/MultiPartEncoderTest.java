@@ -68,7 +68,7 @@ public class MultiPartEncoderTest {
         String message = encodeParts(boundary,
                 WriteableBodyPart.builder()
                         .headers(WriteableBodyPartHeaders.builder()
-                                .contentType(MediaType.TEXT_PLAIN)
+                                .contentType(HttpMediaType.TEXT_PLAIN)
                                 .build())
                         .entity("part1")
                         .build());

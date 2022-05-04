@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import io.helidon.common.http.DataChunk;
+import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.SubscriptionHelper;
 import io.helidon.media.common.MessageBodyReadableContent;
@@ -284,7 +285,7 @@ public class MultiPartDecoder implements Processor<DataChunk, ReadableBodyPart> 
                         break;
                     case HEADER:
                         MimeParser.HeaderEvent headerEvent = event.asHeaderEvent();
-                        bodyPartHeaderBuilder.header(headerEvent.name(), headerEvent.value());
+                        bodyPartHeaderBuilder.header(Http.Header.create(headerEvent.name()), headerEvent.value());
                         break;
                     case END_HEADERS:
                         bodyPartPublisher = new DataChunkPublisher();
@@ -375,7 +376,7 @@ public class MultiPartDecoder implements Processor<DataChunk, ReadableBodyPart> 
 
         // create a reader context for the part
         MessageBodyReaderContext partContext = MessageBodyReaderContext.create(context,
-                /* eventListener */ null, headers, Optional.of(headers.contentType()));
+                /* eventListener */ null, headers, Optional.of(headers.partContentType()));
 
         // create a readable content for the part
         MessageBodyReadableContent partContent = MessageBodyReadableContent.create(bodyPartPublisher,

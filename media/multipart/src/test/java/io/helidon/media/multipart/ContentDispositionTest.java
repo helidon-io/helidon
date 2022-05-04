@@ -18,6 +18,7 @@ package io.helidon.media.multipart;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
+import io.helidon.common.http.ContentDisposition;
 import io.helidon.common.http.Http;
 
 import org.junit.jupiter.api.Test;
@@ -29,7 +30,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
- * Tests {@link ContentDisposition}.
+ * Tests {@link io.helidon.common.http.ContentDisposition}.
  */
 public class ContentDispositionTest {
 
@@ -64,8 +65,8 @@ public class ContentDispositionTest {
     public void testName() {
         ContentDisposition cd = ContentDisposition.parse("form-data; name=user");
         assertThat(cd.type(), is(equalTo("form-data")));
-        assertThat(cd.name().isPresent(), is(equalTo(true)));
-        assertThat(cd.name().get(), is(equalTo("user")));
+        assertThat(cd.contentName().isPresent(), is(equalTo(true)));
+        assertThat(cd.contentName().get(), is(equalTo("user")));
         assertThat(cd.parameters(), is(notNullValue()));
         assertThat(cd.parameters().size(), is(equalTo(1)));
     }
@@ -154,8 +155,8 @@ public class ContentDispositionTest {
     public void testCaseInsensitiveType() {
         ContentDisposition cd = ContentDisposition.parse("aTTachMENT; name=bar");
         assertThat(cd.type(), is(equalTo("attachment")));
-        assertThat(cd.name().isPresent(), is(equalTo(true)));
-        assertThat(cd.name().get(), is(equalTo("bar")));
+        assertThat(cd.contentName().isPresent(), is(equalTo(true)));
+        assertThat(cd.contentName().get(), is(equalTo("bar")));
         assertThat(cd.parameters(), is(notNullValue()));
         assertThat(cd.parameters().size(), is(equalTo(1)));
     }
@@ -251,8 +252,8 @@ public class ContentDispositionTest {
     public void testNonAsciiFilename() {
         ContentDisposition cd = ContentDisposition.parse("form-data; name=\"file[]\"; filename=\"\u60A8\u597D.txt\"");
         assertThat(cd.type(), is(equalTo("form-data")));
-        assertThat(cd.name().isPresent(), is(equalTo(true)));
-        assertThat(cd.name().get(), is(equalTo("file[]")));
+        assertThat(cd.contentName().isPresent(), is(equalTo(true)));
+        assertThat(cd.contentName().get(), is(equalTo("file[]")));
         assertThat(cd.filename().isPresent(), is(equalTo(true)));
         assertThat(cd.filename().get(), is(equalTo("\u60A8\u597D.txt")));
         assertThat(cd.parameters(), is(notNullValue()));

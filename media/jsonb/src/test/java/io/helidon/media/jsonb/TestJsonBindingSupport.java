@@ -45,10 +45,10 @@ public class TestJsonBindingSupport {
         final String personJson = "{\"name\":\"Frank\"}";
         final TestResponse response = TestClient.create(routing, JsonbSupport.create())
             .path("/foo")
-            .post(MediaPublisher.create(MediaType.APPLICATION_JSON.withCharset("UTF-8"), personJson));
+            .post(MediaPublisher.create(HttpMediaType.JSON_UTF_8, personJson));
 
         assertThat(response.headers().first(Http.Header.CONTENT_TYPE).orElse(null),
-                is(MediaType.APPLICATION_JSON.toString()));
+                is(HttpMediaType.APPLICATION_JSON.text()));
         final String json = response.asString().get(10, TimeUnit.SECONDS);
         assertThat(json, is(personJson));
     }
@@ -66,10 +66,9 @@ public class TestJsonBindingSupport {
         final String personsJson = "[{\"name\":\"Frank\"},{\"name\":\"John\"}]";
         final TestResponse response = TestClient.create(routing, JsonbSupport.create())
             .path("/foo")
-            .post(MediaPublisher.create(MediaType.APPLICATION_JSON.withCharset("UTF-8"),
-                    personsJson));
+            .post(MediaPublisher.create(HttpMediaType.JSON_UTF_8, personsJson));
         assertThat(response.headers().first(Http.Header.CONTENT_TYPE).orElse(null),
-                is(MediaType.APPLICATION_JSON.toString()));
+                is(HttpMediaType.APPLICATION_JSON.text()));
         final String json = response.asString().get(10, TimeUnit.SECONDS);
         assertThat(json, is(personsJson));
     }

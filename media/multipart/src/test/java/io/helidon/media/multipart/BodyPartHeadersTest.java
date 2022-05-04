@@ -15,10 +15,14 @@
  */
 package io.helidon.media.multipart;
 
+import io.helidon.common.http.ContentDisposition;
+import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpMediaType;
 
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.common.http.Http.Header.CONTENT_DISPOSITION;
+import static io.helidon.common.http.Http.Header.CONTENT_TYPE;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
@@ -33,35 +37,35 @@ public class BodyPartHeadersTest {
     @Test
     public void testHeaderNameCaseInsensitive(){
         ReadableBodyPartHeaders headers = ReadableBodyPartHeaders.builder()
-                .header("content-type", "text/plain")
-                .header("Content-ID", "test")
-                .header("my-header", "abc=def; blah; key=value")
-                .header("My-header", "foo=bar")
+                .header(CONTENT_TYPE, "text/plain")
+                .header(Http.Header.create("Content-ID"), "test")
+                .header(Http.Header.create("my-header"), "abc=def; blah; key=value")
+                .header(Http.Header.create("My-header"), "foo=bar")
                 .build();
-        assertThat(headers.values("Content-Type"), hasItems("text/plain"));
-        assertThat(headers.values("Content-Id"), hasItems("test"));
-        assertThat(headers.values("my-header"),
+        assertThat(headers.values(Http.Header.create("Content-Type")), hasItems("text/plain"));
+        assertThat(headers.values(Http.Header.create("Content-Id")), hasItems("test"));
+        assertThat(headers.values(Http.Header.create("my-header")),
                 hasItems("abc=def; blah; key=value", "foo=bar"));
     }
 
     @Test
     public void testContentType() {
         ReadableBodyPartHeaders headers = ReadableBodyPartHeaders.builder()
-                .header("content-type", "application/json")
+                .header(CONTENT_TYPE, "application/json")
                 .build();
         assertThat(headers.contentType(), is(notNullValue()));
         assertThat(headers.contentType(),
-                is(equalTo(MediaType.APPLICATION_JSON)));
+                is(equalTo(HttpMediaType.APPLICATION_JSON)));
     }
 
     @Test
     public void testBuilderWithContentType() {
         WriteableBodyPartHeaders headers = WriteableBodyPartHeaders.builder()
-                .contentType(MediaType.APPLICATION_JSON)
+                .contentType(HttpMediaType.APPLICATION_JSON)
                 .build();
         assertThat(headers.contentType(), is(notNullValue()));
         assertThat(headers.contentType(),
-                is(equalTo(MediaType.APPLICATION_JSON)));
+                is(equalTo(HttpMediaType.APPLICATION_JSON)));
     }
 
     @Test
@@ -69,28 +73,28 @@ public class BodyPartHeadersTest {
         ReadableBodyPartHeaders headers = ReadableBodyPartHeaders.builder()
                 .build();
         assertThat(headers.contentType(), is(notNullValue()));
-        assertThat(headers.contentType(), is(equalTo(MediaType.TEXT_PLAIN)));
+        assertThat(headers.contentType(), is(equalTo(HttpMediaType.TEXT_PLAIN)));
     }
 
     @Test
     public void testDefaultContentTypeForFile() {
         ReadableBodyPartHeaders headers = ReadableBodyPartHeaders.builder()
-                .header("Content-Disposition", "form-data; filename=foo")
+                .header(CONTENT_DISPOSITION, "form-data; filename=foo")
                 .build();
         assertThat(headers.contentType(), is(notNullValue()));
         assertThat(headers.contentType(),
-                is(equalTo(MediaType.APPLICATION_OCTET_STREAM)));
+                is(equalTo(HttpMediaType.APPLICATION_OCTET_STREAM)));
     }
 
     @Test
     public void testContentDisposition() {
         ReadableBodyPartHeaders headers = ReadableBodyPartHeaders.builder()
-                .header("Content-Disposition", "form-data; name=foo")
+                .header(CONTENT_DISPOSITION, "form-data; name=foo")
                 .build();
         assertThat(headers.contentDisposition(), is(notNullValue()));
         ContentDisposition cd = headers.contentDisposition();
         assertThat(cd.type(), is(equalTo("form-data")));
-        assertThat(cd.name().isPresent(), is(equalTo(true)));
-        assertThat(cd.name().get(), is(equalTo("foo")));
+        assertThat(cd.contentName().isPresent(), is(equalTo(true)));
+        assertThat(cd.contentName().get(), is(equalTo("foo")));
     }
 }

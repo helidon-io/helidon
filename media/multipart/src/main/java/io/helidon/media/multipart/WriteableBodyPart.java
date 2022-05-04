@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import java.util.concurrent.Flow.Publisher;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
-import io.helidon.common.http.Parameters;
+import io.helidon.common.http.HeadersWritable;
 import io.helidon.common.reactive.Single;
 import io.helidon.common.reactive.SubscriptionHelper;
 import io.helidon.media.common.MessageBodyWriterContext;
@@ -128,7 +128,7 @@ public final class WriteableBodyPart implements BodyPart {
         }
 
         /**
-         * Name which will be used in {@link ContentDisposition}.
+         * Name which will be used in {@link io.helidon.common.http.ContentDisposition}.
          *
          * This value will be ignored if an actual instance of {@link WriteableBodyPartHeaders} is set.
          *
@@ -141,7 +141,7 @@ public final class WriteableBodyPart implements BodyPart {
         }
 
         /**
-         * Filename which will be used in {@link ContentDisposition}.
+         * Filename which will be used in {@link io.helidon.common.http.ContentDisposition}.
          *
          * This value will be ignored if an actual instance of {@link WriteableBodyPartHeaders} is set.
          *
@@ -188,10 +188,10 @@ public final class WriteableBodyPart implements BodyPart {
 
         private final Object entity;
         private final GenericType<Object> type;
-        private final Parameters headers;
+        private final HeadersWritable<?> headers;
         private Publisher<DataChunk> publisher;
 
-        EntityBodyPartContent(Object entity, Parameters headers) {
+        EntityBodyPartContent(Object entity, WriteableBodyPartHeaders headers) {
             this.entity = Objects.requireNonNull(entity, "entity cannot be null!");
             this.headers = Objects.requireNonNull(headers, "headers cannot be null");
             type = GenericType.<Object>create(entity.getClass());
@@ -218,10 +218,10 @@ public final class WriteableBodyPart implements BodyPart {
 
         private final Publisher<T> stream;
         private final GenericType<T> type;
-        private final Parameters headers;
+        private final HeadersWritable<?> headers;
         private Publisher<DataChunk> publisher;
 
-        EntityStreamBodyPartContent(Publisher<T> stream, GenericType<T> type, Parameters headers) {
+        EntityStreamBodyPartContent(Publisher<T> stream, GenericType<T> type, HeadersWritable<?> headers) {
             this.stream = Objects.requireNonNull(stream, "entity cannot be null!");
             this.type = Objects.requireNonNull(type, "type cannot be null!");
             this.headers = Objects.requireNonNull(headers, "headers cannot be null");

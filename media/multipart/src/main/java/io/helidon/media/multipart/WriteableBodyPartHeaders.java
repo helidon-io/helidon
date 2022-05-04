@@ -15,61 +15,26 @@
  */
 package io.helidon.media.multipart;
 
-import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
-import io.helidon.common.http.HashParameters;
+import io.helidon.common.http.ContentDisposition;
+import io.helidon.common.http.HeadersWritable;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.media.type.MediaTypes;
 
 /**
  * Writeable body part headers.
  */
-public final class WriteableBodyPartHeaders extends HashParameters implements BodyPartHeaders {
+public final class WriteableBodyPartHeaders implements BodyPartHeaders, HeadersWritable<WriteableBodyPartHeaders> {
 
-    private WriteableBodyPartHeaders(Map<String, List<String>> params) {
-        super(params);
-    }
+    private final HeadersWritable<?> delegate;
 
-    @Override
-    public MediaType contentType() {
-        return first(Http.Header.CONTENT_TYPE)
-                .map(MediaType::parse)
-                .orElseGet(this::defaultContentType);
-    }
-
-    /**
-     * Sets the MIME type of the body part.
-     *
-     * @param contentType Media type of the content.
-     */
-    public void contentType(MediaType contentType) {
-        if (contentType == null) {
-            remove(Http.Header.CONTENT_TYPE);
-        } else {
-            put(Http.Header.CONTENT_TYPE, contentType.toString());
-        }
-    }
-
-    @Override
-    public ContentDisposition contentDisposition() {
-        return first(Http.Header.CONTENT_DISPOSITION)
-                .map(ContentDisposition::parse)
-                .orElse(ContentDisposition.EMPTY);
-    }
-
-    /**
-     * Sets the value of
-     * {@value io.helidon.common.http.Http.Header#CONTENT_DISPOSITION} header.
-     *
-     * @param contentDisposition content disposition
-     */
-    public void contentDisposition(ContentDisposition contentDisposition) {
-        if (contentDisposition != null) {
-            put(Http.Header.CONTENT_DISPOSITION, contentDisposition.toString());
-        }
+    private WriteableBodyPartHeaders(HeadersWritable<?> delegate) {
+        this.delegate = delegate;
     }
 
     /**
@@ -84,10 +49,107 @@ public final class WriteableBodyPartHeaders extends HashParameters implements Bo
     /**
      * Create a new instance of {@link WriteableBodyPartHeaders} with empty
      * headers.
+     *
      * @return WriteableBodyPartHeaders
      */
     public static WriteableBodyPartHeaders create() {
-        return new WriteableBodyPartHeaders(null);
+        return new WriteableBodyPartHeaders(HeadersWritable.create());
+    }
+
+    @Override
+    public List<String> all(Http.HeaderName name, Supplier<List<String>> defaultSupplier) {
+        return delegate.all(name, defaultSupplier);
+    }
+
+    @Override
+    public boolean contains(Http.HeaderName name) {
+        return delegate.contains(name);
+    }
+
+    @Override
+    public boolean contains(Http.HeaderValue value) {
+        return delegate.contains(value);
+    }
+
+    @Override
+    public Http.HeaderValue get(Http.HeaderName name) {
+        return delegate.get(name);
+    }
+
+    @Override
+    public int size() {
+        return delegate.size();
+    }
+
+    @Override
+    public List<HttpMediaType> acceptedTypes() {
+        return delegate.acceptedTypes();
+    }
+
+    @Override
+    public WriteableBodyPartHeaders setIfAbsent(Http.HeaderValue header) {
+        delegate.setIfAbsent(header);
+        return this;
+    }
+
+    @Override
+    public WriteableBodyPartHeaders add(Http.HeaderValue header) {
+        delegate.add(header);
+        return this;
+    }
+
+    @Override
+    public WriteableBodyPartHeaders remove(Http.HeaderName name) {
+        delegate.remove(name);
+        return this;
+    }
+
+    @Override
+    public WriteableBodyPartHeaders remove(Http.HeaderName name, Consumer<Http.HeaderValue> removedConsumer) {
+        delegate.remove(name, removedConsumer);
+        return this;
+    }
+
+    @Override
+    public WriteableBodyPartHeaders set(Http.HeaderValue header) {
+        delegate.set(header);
+        return this;
+    }
+
+    @Override
+    public WriteableBodyPartHeaders clear() {
+        delegate.clear();
+        return this;
+    }
+
+    @Override
+    public Iterator<Http.HeaderValue> iterator() {
+        return delegate.iterator();
+    }
+
+    @Override
+    public HttpMediaType partContentType() {
+        return contentType()
+                .orElseGet(this::defaultContentType);
+    }
+
+    @Override
+    public ContentDisposition contentDisposition() {
+        return first(Http.Header.CONTENT_DISPOSITION)
+                .map(ContentDisposition::parse)
+                .orElse(ContentDisposition.empty());
+    }
+
+    /**
+     * Sets the value of
+     * {@link io.helidon.common.http.Http.Header#CONTENT_DISPOSITION} header.
+     *
+     * @param contentDisposition content disposition
+     */
+    public void contentDisposition(ContentDisposition contentDisposition) {
+        if (contentDisposition != null) {
+            set(Http.Header.CONTENT_DISPOSITION, contentDisposition.toString());
+        }
     }
 
     /**
@@ -98,7 +160,7 @@ public final class WriteableBodyPartHeaders extends HashParameters implements Bo
         /**
          * The headers map.
          */
-        private final Map<String, List<String>> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        private final HeadersWritable<?> headers = HeadersWritable.create();
         private String name;
         private String fileName;
 
@@ -111,26 +173,28 @@ public final class WriteableBodyPartHeaders extends HashParameters implements Bo
         /**
          * Add a new header.
          *
-         * @param name header name
+         * @param name  header name
          * @param value header value
          * @return this builder
          */
-        public Builder header(String name, String value) {
-            headers.computeIfAbsent(name, k -> new ArrayList<>()).add(value);
+        public Builder header(Http.HeaderName name, String value) {
+            headers.add(name, value);
             return this;
         }
 
         /**
          * Add a {@code Content-Type} header.
+         *
          * @param contentType value for the {@code Content-Type} header
          * @return this builder
          */
-        public Builder contentType(MediaType contentType) {
-           return header(Http.Header.CONTENT_TYPE, contentType.toString());
+        public Builder contentType(HttpMediaType contentType) {
+            return header(Http.Header.CONTENT_TYPE, contentType.toString());
         }
 
         /**
          * Add a {@code Content-Disposition} header.
+         *
          * @param contentDisp content disposition
          * @return this builder
          */
@@ -166,12 +230,12 @@ public final class WriteableBodyPartHeaders extends HashParameters implements Bo
 
         @Override
         public WriteableBodyPartHeaders build() {
-            if (!headers.containsKey(Http.Header.CONTENT_DISPOSITION) && name != null) {
+            if (!headers.contains(Http.Header.CONTENT_DISPOSITION) && name != null) {
                 ContentDisposition.Builder builder = ContentDisposition.builder().name(this.name);
                 if (fileName != null) {
                     builder.filename(fileName);
-                    if (!headers.containsKey(Http.Header.CONTENT_TYPE)) {
-                        contentType(MediaType.APPLICATION_OCTET_STREAM);
+                    if (!headers.contains(Http.Header.CONTENT_TYPE)) {
+                        contentType(HttpMediaType.create(MediaTypes.APPLICATION_OCTET_STREAM));
                     }
                 }
                 contentDisposition(builder.build());

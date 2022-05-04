@@ -54,7 +54,7 @@ class JsonpBodyStreamWriter implements MessageBodyStreamWriter<JsonStructure> {
                                   GenericType<? extends JsonStructure> type,
                                   MessageBodyWriterContext context) {
 
-        MediaType contentType = context.findAccepted(MediaType.JSON_PREDICATE, MediaType.APPLICATION_JSON);
+        HttpMediaType contentType = context.findAccepted(HttpMediaType.JSON_PREDICATE, HttpMediaType.APPLICATION_JSON);
         context.contentType(contentType);
 
         // we do not have join operator

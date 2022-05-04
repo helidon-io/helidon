@@ -24,6 +24,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
 import io.helidon.media.common.MessageBodyStreamWriter;
@@ -35,11 +36,12 @@ import jakarta.json.JsonWriterFactory;
 
 /**
  * Message body writer for {@link JsonStructure} sub-classes (JSON-P).
- * This writer is for {@link MediaType#APPLICATION_X_NDJSON} media type.
+ * This writer is for {@link io.helidon.common.media.type.MediaTypes#APPLICATION_X_NDJSON} media type.
  */
 class JsonpNdBodyStreamWriter implements MessageBodyStreamWriter<JsonStructure> {
 
     private static final byte[] NL = "\n".getBytes(StandardCharsets.UTF_8);
+    public static final HttpMediaType MEDIA_TYPE = HttpMediaType.create(MediaTypes.APPLICATION_X_NDJSON);
 
     private final JsonWriterFactory jsonWriterFactory;
 
@@ -54,7 +56,7 @@ class JsonpNdBodyStreamWriter implements MessageBodyStreamWriter<JsonStructure> 
         }
         return context.contentType()
                 .or(() -> findMediaType(context))
-                .filter(mediaType -> mediaType.equals(MediaType.APPLICATION_X_NDJSON))
+                .filter(mediaType -> mediaType.equals(MEDIA_TYPE))
                 .map(it -> PredicateResult.COMPATIBLE)
                 .orElse(PredicateResult.NOT_SUPPORTED);
     }
@@ -64,9 +66,9 @@ class JsonpNdBodyStreamWriter implements MessageBodyStreamWriter<JsonStructure> 
                                   GenericType<? extends JsonStructure> type,
                                   MessageBodyWriterContext context) {
 
-        MediaType contentType = context.contentType()
+        HttpMediaType contentType = context.contentType()
                 .or(() -> findMediaType(context))
-                .orElse(MediaType.APPLICATION_X_NDJSON);
+                .orElse(MEDIA_TYPE);
 
         context.contentType(contentType);
 
@@ -88,9 +90,9 @@ class JsonpNdBodyStreamWriter implements MessageBodyStreamWriter<JsonStructure> 
                 });
     }
 
-    private Optional<MediaType> findMediaType(MessageBodyWriterContext context) {
+    private Optional<HttpMediaType> findMediaType(MessageBodyWriterContext context) {
         try {
-            return Optional.of(context.findAccepted(MediaType.APPLICATION_X_NDJSON));
+            return Optional.of(context.findAccepted(MEDIA_TYPE));
         } catch (IllegalStateException ignore) {
             //Not supported. Ignore exception.
             return Optional.empty();

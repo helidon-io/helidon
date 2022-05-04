@@ -15,44 +15,27 @@
  */
 package io.helidon.media.multipart;
 
-import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.function.Supplier;
 
+import io.helidon.common.http.ContentDisposition;
+import io.helidon.common.http.Headers;
+import io.helidon.common.http.HeadersWritable;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpMediaType;
-import io.helidon.common.http.ReadOnlyParameters;
 
 /**
  * Readable body part headers.
  */
-public final class ReadableBodyPartHeaders extends ReadOnlyParameters implements BodyPartHeaders {
+public final class ReadableBodyPartHeaders implements BodyPartHeaders {
 
     private final Object internalLock = new Object();
+    private final Headers headers;
     private ContentDisposition contentDisposition;
 
-    private ReadableBodyPartHeaders(Map<String, List<String>> params) {
-        super(params);
-    }
-
-    @Override
-    public MediaType contentType() {
-        return first(Http.Header.CONTENT_TYPE)
-                .map(MediaType::parse)
-                .orElseGet(this::defaultContentType);
-    }
-
-    @Override
-    public ContentDisposition contentDisposition() {
-        if (contentDisposition == null) {
-            synchronized (internalLock) {
-                contentDisposition = first(Http.Header.CONTENT_DISPOSITION)
-                        .map(ContentDisposition::parse)
-                        .orElse(ContentDisposition.EMPTY);
-            }
-        }
-        return contentDisposition;
+    private ReadableBodyPartHeaders(Headers headers) {
+        this.headers = headers;
     }
 
     /**
@@ -66,10 +49,64 @@ public final class ReadableBodyPartHeaders extends ReadOnlyParameters implements
 
     /**
      * Create a new instance of {@link ReadableBodyPartHeaders}.
+     *
      * @return ReadableBodyPartHeaders
      */
     public static ReadableBodyPartHeaders create() {
         return new ReadableBodyPartHeaders(null);
+    }
+
+    @Override
+    public List<String> all(Http.HeaderName name, Supplier<List<String>> defaultSupplier) {
+        return headers.all(name, defaultSupplier);
+    }
+
+    @Override
+    public boolean contains(Http.HeaderName name) {
+        return headers.contains(name);
+    }
+
+    @Override
+    public boolean contains(Http.HeaderValue value) {
+        return headers.contains(value);
+    }
+
+    @Override
+    public Http.HeaderValue get(Http.HeaderName name) {
+        return headers.get(name);
+    }
+
+    @Override
+    public int size() {
+        return headers.size();
+    }
+
+    @Override
+    public List<HttpMediaType> acceptedTypes() {
+        return headers.acceptedTypes();
+    }
+
+    @Override
+    public Iterator<Http.HeaderValue> iterator() {
+        return headers.iterator();
+    }
+
+    @Override
+    public HttpMediaType partContentType() {
+        return contentType()
+                .orElseGet(this::defaultContentType);
+    }
+
+    @Override
+    public ContentDisposition contentDisposition() {
+        if (contentDisposition == null) {
+            synchronized (internalLock) {
+                contentDisposition = first(Http.Header.CONTENT_DISPOSITION)
+                        .map(ContentDisposition::parse)
+                        .orElse(ContentDisposition.empty());
+            }
+        }
+        return contentDisposition;
     }
 
     /**
@@ -80,8 +117,7 @@ public final class ReadableBodyPartHeaders extends ReadOnlyParameters implements
         /**
          * The headers map.
          */
-        private final Map<String, List<String>> headers
-                = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        private final HeadersWritable<?> headers = HeadersWritable.create();
 
         /**
          * Force the use of {@link ReadableBodyPartHeaders#builder() }.
@@ -89,26 +125,21 @@ public final class ReadableBodyPartHeaders extends ReadOnlyParameters implements
         private Builder() {
         }
 
-        /**
-         * Add a new header.
-         *
-         * @param name header name
-         * @param value header value
-         * @return this builder
-         */
-        Builder header(String name, String value) {
-            List<String> values = headers.get(name);
-            if (values == null) {
-                values = new ArrayList<>();
-                headers.put(name, values);
-            }
-            values.add(value);
-            return this;
-        }
-
         @Override
         public ReadableBodyPartHeaders build() {
             return new ReadableBodyPartHeaders(headers);
+        }
+
+        /**
+         * Add a new header.
+         *
+         * @param name  header name
+         * @param value header value
+         * @return this builder
+         */
+        Builder header(Http.HeaderName name, String value) {
+            headers.add(name, value);
+            return this;
         }
     }
 }
