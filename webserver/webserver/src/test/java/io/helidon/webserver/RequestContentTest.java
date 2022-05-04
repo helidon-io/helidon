@@ -240,7 +240,7 @@ public class RequestContentTest {
             @Override
             public <U> Single<U> read(Publisher<DataChunk> publisher, GenericType<U> type,
                                       MessageBodyReaderContext context) {
-                throw new IllegalStateException("failed read");
+                throw new IllegalStateException("failed-read");
             }
 
             @Override

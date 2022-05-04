@@ -16,6 +16,7 @@
 
 package io.helidon.webserver;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
@@ -318,7 +319,7 @@ public final class RequestPredicate {
         Objects.requireNonNull(name, "query param name");
         Objects.requireNonNull(predicate, "query param predicate");
         return and((req) -> req.queryParams()
-                .all(name)
+                .all(name, List::of)
                 .stream()
                 .anyMatch(predicate));
     }
@@ -367,7 +368,7 @@ public final class RequestPredicate {
         Objects.requireNonNull(predicate, "cookie predicate");
         return and((req) -> req.headers()
                 .cookies()
-                .all(name)
+                .all(name, List::of)
                 .stream()
                 .anyMatch(predicate));
     }

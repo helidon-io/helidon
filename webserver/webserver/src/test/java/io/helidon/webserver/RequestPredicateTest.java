@@ -550,8 +550,8 @@ public class RequestPredicateTest {
         final RoutingChecker checker = new RoutingChecker();
         Routing routing = Routing.builder()
                 .get("/contentType2", RequestPredicate.create()
-                        .hasContentType(HttpMediaType.PLAINTEXT_UTF_8,
-                                HttpMediaType.JSON_UTF_8)
+                        .hasContentType(HttpMediaType.TEXT_PLAIN,
+                                HttpMediaType.APPLICATION_JSON)
                         .thenApply((req, resp) -> {
                             checker.handlerInvoked("hasContentType");
                         }).otherwise((req, res) -> {
@@ -561,7 +561,7 @@ public class RequestPredicateTest {
 
         assertThrows(NullPointerException.class, () -> {
             RequestPredicate.create()
-                    .hasContentType(new HttpMediaType[0]);
+                    .hasContentType((HttpMediaType[]) null);
         });
 
         routing.route(mockRequest("/contentType2", Map.of(CONTENT_TYPE,
@@ -598,8 +598,8 @@ public class RequestPredicateTest {
         final RoutingChecker checker = new RoutingChecker();
         Routing routing = Routing.builder()
                 .any("/multiple", RequestPredicate.create()
-                        .accepts(HttpMediaType.PLAINTEXT_UTF_8)
-                        .hasContentType(HttpMediaType.PLAINTEXT_UTF_8)
+                        .accepts(HttpMediaType.TEXT_PLAIN)
+                        .hasContentType(HttpMediaType.TEXT_PLAIN)
                         .containsQueryParameter("my-param")
                         .containsCookie("my-cookie")
                         .isOfMethod(Http.Method.GET)
@@ -653,7 +653,7 @@ public class RequestPredicateTest {
         final RoutingChecker checker = new RoutingChecker();
         Routing routing = Routing.builder()
                 .get("/or", RequestPredicate.create()
-                        .hasContentType(HttpMediaType.PLAINTEXT_UTF_8)
+                        .hasContentType(HttpMediaType.TEXT_PLAIN)
                         .or((req) -> req.headers().contains(MY_HEADER))
                         .thenApply((req, resp) -> {
                             checker.handlerInvoked("hasAnyCondition");
@@ -681,7 +681,7 @@ public class RequestPredicateTest {
         final RoutingChecker checker = new RoutingChecker();
         Routing routing = Routing.builder()
                 .get("/negate", RequestPredicate.create()
-                        .hasContentType(HttpMediaType.PLAINTEXT_UTF_8)
+                        .hasContentType(HttpMediaType.TEXT_PLAIN)
                         .containsCookie("my-cookie")
                         .negate()
                         .thenApply((req, resp) -> {
