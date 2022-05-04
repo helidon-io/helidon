@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
-import io.helidon.common.http.MediaType;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.mp.MpConfigSources;
@@ -55,7 +55,7 @@ public class CoordinatorDeployer {
 
         containerConfig.addConfigBuilderConsumer(configBuilder -> {
             var is = CoordinatorService.class.getResourceAsStream("/application.yaml");
-            configBuilder.withSources(MpConfigSources.create(ConfigSources.create(is, MediaType.APPLICATION_X_YAML.toString())),
+            configBuilder.withSources(MpConfigSources.create(ConfigSources.create(is, MediaTypes.APPLICATION_X_YAML)),
                     MpConfigSources.create(Map.of(
                             // Force client to use random port first time with 0
                             // reuse port second time(TckRecoveryTests does redeploy)

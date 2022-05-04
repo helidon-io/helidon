@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -114,7 +114,7 @@ public class HeaderTest extends TestParent {
         @Override
         public Single<WebClientServiceResponse> response(WebClientRequestBuilder.ClientRequest request,
                                                          WebClientServiceResponse response) {
-            List<String> userAgent = request.headers().all(Http.Header.USER_AGENT);
+            List<String> userAgent = request.headers().all(Http.Header.USER_AGENT, List::of);
             assertThat(userAgent, hasSize(1));
             assertThat(userAgent, contains(user));
             return Single.just(response);

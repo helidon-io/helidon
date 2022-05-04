@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -131,7 +131,7 @@ public class UriPartTest extends TestParent {
     @Test
     public void testPathNotDecoded() {
         WebClient webClient = createNewClient(request -> {
-            assertThat(request.path().toRawString(), is("/greet/path%26"));
+            assertThat(request.path().rawPath(), is("/greet/path%26"));
             return Single.just(request);
         });
         assertThrows(CompletionException.class, () -> webClient.get()

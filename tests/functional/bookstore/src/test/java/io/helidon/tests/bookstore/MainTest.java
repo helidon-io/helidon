@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ import java.util.Queue;
 import java.util.logging.Logger;
 
 import io.helidon.common.http.Http;
-import io.helidon.common.http.MediaType;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientResponse;
@@ -371,7 +371,7 @@ class MainTest {
 
         // Get Prometheus style metrics
         webClient.get()
-                .accept(MediaType.WILDCARD)
+                .accept(MediaTypes.WILDCARD)
                 .path("/metrics")
                 .request(String.class)
                 // Make sure we got prometheus metrics
@@ -381,7 +381,7 @@ class MainTest {
 
         // Get JSON encoded metrics
         webClient.get()
-                .accept(MediaType.APPLICATION_JSON)
+                .accept(MediaTypes.APPLICATION_JSON)
                 .path("/metrics")
                 .request(JsonObject.class)
                 // Makes sure we got JSON metrics
@@ -393,7 +393,7 @@ class MainTest {
 
         // Get JSON encoded metrics/base
         webClient.get()
-                .accept(MediaType.APPLICATION_JSON)
+                .accept(MediaTypes.APPLICATION_JSON)
                 .path("/metrics/base")
                 .request(JsonObject.class)
                 // Makes sure we got JSON metrics
@@ -405,7 +405,7 @@ class MainTest {
 
         // Get JSON encoded health check
         webClient.get()
-                .accept(MediaType.APPLICATION_JSON)
+                .accept(MediaTypes.APPLICATION_JSON)
                 .path("/health")
                 .request(JsonObject.class)
                 .thenAccept(it -> {
@@ -435,7 +435,7 @@ class MainTest {
                 .build();
 
         webClient.get()
-                .accept(MediaType.APPLICATION_JSON)
+                .accept(MediaTypes.APPLICATION_JSON)
                 .skipUriEncoding()
                 .path("/boo%6bs")
                 .request()
@@ -451,7 +451,7 @@ class MainTest {
                 .get();
 
         webClient.get()
-                .accept(MediaType.APPLICATION_JSON)
+                .accept(MediaTypes.APPLICATION_JSON)
                 .path("/badurl")
                 .request()
                 .thenAccept(it -> assertThat("Checking encode URL response", it.status(), is(Http.Status.NOT_FOUND_404)))
