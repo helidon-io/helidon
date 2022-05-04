@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,6 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 import io.helidon.common.mapper.Mapper;
 import io.helidon.common.mapper.spi.MapperProvider;
@@ -108,13 +107,13 @@ public class DbClientMapperProvider implements MapperProvider {
     }
 
     @Override
-    public <SOURCE, TARGET> Optional<Mapper<?, ?>> mapper(Class<SOURCE> sourceClass, Class<TARGET> targetClass) {
+    public ProviderResponse mapper(Class<?> sourceClass, Class<?> targetClass, String qualifier) {
         Map<Class<?>, Mapper<?, ?>> targetMap = MAPPERS.get(sourceClass);
         if (targetMap == null) {
-            return Optional.empty();
+            return ProviderResponse.unsupported();
         }
         Mapper<?, ?> mapper = targetMap.get(targetClass);
-        return mapper == null ? Optional.empty() : Optional.of(mapper);
+        return mapper == null ? ProviderResponse.unsupported() : new ProviderResponse(Support.SUPPORTED, mapper);
     }
 
     /**

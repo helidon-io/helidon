@@ -36,6 +36,11 @@ import io.helidon.dbclient.spi.DbMapperProvider;
  */
 public interface DbClient {
     /**
+     * Qualifier used for mapping using {@link io.helidon.common.mapper.MapperManager#map(Object, Class, Class, String)}.
+     */
+    String MAPPING_QUALIFIER = "dbclient";
+
+    /**
      * Execute database statements in transaction.
      *
      * @param <T>      statement execution result type, MUST be either a {@link io.helidon.common.reactive.Multi}

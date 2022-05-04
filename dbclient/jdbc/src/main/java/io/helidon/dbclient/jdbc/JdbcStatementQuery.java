@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,6 +41,7 @@ import io.helidon.common.mapper.MapperException;
 import io.helidon.common.mapper.MapperManager;
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
+import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.DbClientServiceContext;
 import io.helidon.dbclient.DbColumn;
 import io.helidon.dbclient.DbMapperManager;
@@ -352,7 +353,7 @@ class JdbcStatementQuery extends JdbcStatement<DbStatementQuery, Multi<DbRow>> i
                         Class<SRC> theClass = (Class<SRC>) value.getClass();
 
                         try {
-                            return mapperManager.map(value, theClass, type);
+                            return mapperManager.map(value, theClass, type, DbClient.MAPPING_QUALIFIER);
                         } catch (MapperException e) {
                             if (type.equals(String.class)) {
                                 return (T) String.valueOf(value);
@@ -364,7 +365,7 @@ class JdbcStatementQuery extends JdbcStatement<DbStatementQuery, Multi<DbRow>> i
                     @SuppressWarnings("unchecked")
                     <SRC, T> T map(SRC value, GenericType<T> type) {
                         Class<SRC> theClass = (Class<SRC>) value.getClass();
-                        return mapperManager.map(value, GenericType.create(theClass), type);
+                        return mapperManager.map(value, GenericType.create(theClass), type, DbClient.MAPPING_QUALIFIER);
                     }
 
                     @Override

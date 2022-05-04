@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,7 +76,7 @@ public class MapperTest {
     public void testSqlDateToLocalDate() {
         OffsetDateTime dt = currentDate();
         java.sql.Date source = new java.sql.Date(dt.toInstant().toEpochMilli());
-        LocalDate target = mm.map(source, java.sql.Date.class, LocalDate.class);
+        LocalDate target = mm.map(source, java.sql.Date.class, LocalDate.class, "dbclient");
         assertThat(target.toEpochSecond(LocalTime.MIN, dt.getOffset()), is(source.getTime()/1000));
     }    
 
@@ -84,7 +84,7 @@ public class MapperTest {
     public void testSqlDateToUtilDate() {
         OffsetDateTime dt = OffsetDateTime.now();
         java.sql.Date source = new java.sql.Date(dt.toInstant().toEpochMilli());
-        Date target = mm.map(source, java.sql.Date.class, Date.class);
+        Date target = mm.map(source, java.sql.Date.class, Date.class, "dbclient");
         assertThat(target.getTime(), is(source.getTime()));
     }    
 
@@ -92,7 +92,7 @@ public class MapperTest {
     public void testSqlTimeToLocalTime() {
         OffsetDateTime dt = currentTime();
         java.sql.Time source = new java.sql.Time(dt.toInstant().toEpochMilli());
-        LocalTime target = mm.map(source, java.sql.Time.class, LocalTime.class);
+        LocalTime target = mm.map(source, java.sql.Time.class, LocalTime.class, "dbclient");
 
         assertThat(target, is(source.toLocalTime()));
     }    
@@ -101,21 +101,21 @@ public class MapperTest {
     public void testSqlTimeToUtilDate() {
         OffsetDateTime dt = OffsetDateTime.now();
         java.sql.Time source = new java.sql.Time(dt.toInstant().toEpochMilli());
-        Date target = mm.map(source, java.sql.Time.class, Date.class);
+        Date target = mm.map(source, java.sql.Time.class, Date.class, "dbclient");
         assertThat(target.getTime(), is(source.getTime()));
     }    
 
     @Test
     public void testSqlTimestampToGregorianCalendar() {
         Timestamp source = new Timestamp(System.currentTimeMillis());
-        GregorianCalendar target = mm.map(source, Timestamp.class, GregorianCalendar.class);
+        GregorianCalendar target = mm.map(source, Timestamp.class, GregorianCalendar.class, "dbclient");
         assertThat(target.getTimeInMillis(), is(source.getTime()));
     }
 
     @Test
     public void testSqlTimestampToCalendar() {
         Timestamp source = new Timestamp(System.currentTimeMillis());
-        Calendar target = mm.map(source, Timestamp.class, Calendar.class);
+        Calendar target = mm.map(source, Timestamp.class, Calendar.class, "dbclient");
         assertThat(target.getTimeInMillis(), is(source.getTime()));
     }
 
@@ -124,21 +124,21 @@ public class MapperTest {
         // Need to know time zone too.
         OffsetDateTime dt = OffsetDateTime.now();
         Timestamp source = new Timestamp(dt.toInstant().toEpochMilli());
-        LocalDateTime target = mm.map(source, Timestamp.class, LocalDateTime.class);
+        LocalDateTime target = mm.map(source, Timestamp.class, LocalDateTime.class, "dbclient");
         assertThat(target.atOffset(dt.getOffset()).toInstant().toEpochMilli(), is(source.getTime()));
     }
 
     @Test
     public void testSqlTimestampToUtilDate() {
         Timestamp source = new Timestamp(System.currentTimeMillis());
-        Date target = mm.map(source, Timestamp.class, Date.class);
+        Date target = mm.map(source, Timestamp.class, Date.class, "dbclient");
         assertThat(target.getTime(), is(source.getTime()));
     }
 
     @Test
     public void testSqlTimestampToZonedDateTime() {
         Timestamp source = new Timestamp(System.currentTimeMillis());
-        ZonedDateTime target = mm.map(source, Timestamp.class, ZonedDateTime.class);
+        ZonedDateTime target = mm.map(source, Timestamp.class, ZonedDateTime.class, "dbclient");
         assertThat(target.toInstant().toEpochMilli(), is(source.getTime()));
     }
 
