@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,12 @@ import jakarta.json.bind.JsonbConfig;
 public class JsonbProvider implements MediaSupportProvider {
 
     private static final String JSON_B = "json-b";
+
+    /**
+     * Constructor required for {@link java.util.ServiceLoader}.
+     */
+    public JsonbProvider() {
+    }
 
     @Override
     public MediaSupport create(Config config) {

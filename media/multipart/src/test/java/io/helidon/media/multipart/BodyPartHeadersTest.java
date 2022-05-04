@@ -53,8 +53,8 @@ public class BodyPartHeadersTest {
         ReadableBodyPartHeaders headers = ReadableBodyPartHeaders.builder()
                 .header(CONTENT_TYPE, "application/json")
                 .build();
-        assertThat(headers.contentType(), is(notNullValue()));
-        assertThat(headers.contentType(),
+        assertThat(headers.partContentType(), is(notNullValue()));
+        assertThat(headers.partContentType(),
                 is(equalTo(HttpMediaType.APPLICATION_JSON)));
     }
 
@@ -64,7 +64,7 @@ public class BodyPartHeadersTest {
                 .contentType(HttpMediaType.APPLICATION_JSON)
                 .build();
         assertThat(headers.contentType(), is(notNullValue()));
-        assertThat(headers.contentType(),
+        assertThat(headers.partContentType(),
                 is(equalTo(HttpMediaType.APPLICATION_JSON)));
     }
 
@@ -72,8 +72,8 @@ public class BodyPartHeadersTest {
     public void testDefaultContentType() {
         ReadableBodyPartHeaders headers = ReadableBodyPartHeaders.builder()
                 .build();
-        assertThat(headers.contentType(), is(notNullValue()));
-        assertThat(headers.contentType(), is(equalTo(HttpMediaType.TEXT_PLAIN)));
+        assertThat(headers.partContentType(), is(notNullValue()));
+        assertThat(headers.partContentType(), is(equalTo(HttpMediaType.TEXT_PLAIN)));
     }
 
     @Test
@@ -81,8 +81,8 @@ public class BodyPartHeadersTest {
         ReadableBodyPartHeaders headers = ReadableBodyPartHeaders.builder()
                 .header(CONTENT_DISPOSITION, "form-data; filename=foo")
                 .build();
-        assertThat(headers.contentType(), is(notNullValue()));
-        assertThat(headers.contentType(),
+        assertThat(headers.partContentType(), is(notNullValue()));
+        assertThat(headers.partContentType(),
                 is(equalTo(HttpMediaType.APPLICATION_OCTET_STREAM)));
     }
 

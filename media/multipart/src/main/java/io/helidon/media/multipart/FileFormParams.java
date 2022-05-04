@@ -46,6 +46,13 @@ public interface FileFormParams {
             return new FileFormParamsImpl(builder.build().bodyParts());
         }
 
+        /**
+         * Add a parameter.
+         *
+         * @param name parameter name
+         * @param values parameter value
+         * @return updated builder
+         */
         public Builder add(String name, String... values) {
             for (String value : values) {
                 builder.bodyPart(name, value);

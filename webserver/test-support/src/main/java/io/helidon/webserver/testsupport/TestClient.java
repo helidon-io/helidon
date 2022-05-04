@@ -143,7 +143,7 @@ public class TestClient {
     TestResponse call(Http.Method method,
                       Http.Version version,
                       URI path,
-                      Map<String, List<String>> headers,
+                      TestRequestHeaders headers,
                       Flow.Publisher<DataChunk> publisher) throws InterruptedException, TimeoutException {
         TestWebServer webServer = new TestWebServer(mediaContext);
         TestBareRequest req = new TestBareRequest(method, version, path, headers, publisher, webServer);
@@ -172,7 +172,7 @@ public class TestClient {
         TestBareRequest(Http.Method method,
                         Http.Version version,
                         URI path,
-                        Map<String, List<String>> headers,
+                        TestRequestHeaders headers,
                         Flow.Publisher<DataChunk> publisher,
                         TestWebServer webServer) {
 
@@ -180,7 +180,7 @@ public class TestClient {
             this.method = Objects.requireNonNull(method, "Parameter 'method' is null!");
             this.version = Objects.requireNonNull(version, "Parameter 'version' is null!");
             this.path = Objects.requireNonNull(path, "Parameter 'path' is null!");
-            this.headers = new RequestHeadersMap(headers);
+            this.headers = headers;
             if (publisher == null) {
                 this.publisher = Single.empty();
             } else {

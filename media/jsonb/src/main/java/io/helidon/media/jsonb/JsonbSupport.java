@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -140,7 +140,7 @@ public final class JsonbSupport implements MediaSupport {
 
     /**
      * Return a default JSON-B entity event stream writer.
-     * This writer is for {@link io.helidon.common.http.MediaType#TEXT_EVENT_STREAM} content type.
+     * This writer is for {@link io.helidon.common.media.type.MediaTypes#TEXT_EVENT_STREAM} content type.
      *
      * @return new JSON-B body stream writer instance
      */
@@ -150,7 +150,7 @@ public final class JsonbSupport implements MediaSupport {
 
     /**
      * Create a new JSON-B entity stream writer based on {@link Jsonb} instance.
-     * This writer is for {@link io.helidon.common.http.MediaType#TEXT_EVENT_STREAM} content type.
+     * This writer is for {@link io.helidon.common.media.type.MediaTypes#TEXT_EVENT_STREAM} content type.
      *
      * @param jsonb jsonb instance
      * @return new JSON-B body stream writer instance
@@ -162,7 +162,7 @@ public final class JsonbSupport implements MediaSupport {
 
     /**
      * Return a default JSON-B entity event stream writer.
-     * This writer is for {@link io.helidon.common.http.MediaType#APPLICATION_X_NDJSON} content type.
+     * This writer is for {@link io.helidon.common.media.type.MediaTypes#APPLICATION_X_NDJSON} content type.
      *
      * @return new JSON-B body stream writer instance
      */
@@ -172,7 +172,7 @@ public final class JsonbSupport implements MediaSupport {
 
     /**
      * Create a new JSON-B entity stream writer based on {@link Jsonb} instance.
-     * This writer is for {@link io.helidon.common.http.MediaType#APPLICATION_X_NDJSON} content type.
+     * This writer is for {@link io.helidon.common.media.type.MediaTypes#APPLICATION_X_NDJSON} content type.
      *
      * @param jsonb jsonb instance
      * @return new JSON-B body stream writer instance
@@ -210,7 +210,7 @@ public final class JsonbSupport implements MediaSupport {
     }
 
     /**
-     * Return JSON-B stream writer instance for {@link io.helidon.common.http.MediaType#TEXT_EVENT_STREAM} content type.
+     * Return JSON-B stream writer instance for {@link io.helidon.common.media.type.MediaTypes#TEXT_EVENT_STREAM} content type.
      *
      * @return JSON-B event stream writer instance
      */
@@ -219,7 +219,7 @@ public final class JsonbSupport implements MediaSupport {
     }
 
     /**
-     * Return JSON-B stream writer instance for {@link io.helidon.common.http.MediaType#APPLICATION_X_NDJSON} content type.
+     * Return JSON-B stream writer instance for {@link io.helidon.common.media.type.MediaTypes#APPLICATION_X_NDJSON} content type.
      *
      * @return JSON-B event stream writer instance
      */

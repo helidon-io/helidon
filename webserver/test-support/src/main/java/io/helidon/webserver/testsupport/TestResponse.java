@@ -34,7 +34,7 @@ import io.helidon.webserver.WebServer;
 public class TestResponse {
 
     private final Http.Status status;
-    private final HeadersWritable headers;
+    private final HeadersWritable<?> headers;
     // todo Needs much better solution.
     private final TestClient.TestBareResponse bareResponse;
 
@@ -50,6 +50,7 @@ public class TestResponse {
                  TestClient.TestBareResponse bareResponse) {
         this.status = status;
         this.headers = HeadersWritable.create();
+        headers.forEach((key, value) -> this.headers.set(Http.Header.create(key), value));
         this.bareResponse = bareResponse;
     }
 

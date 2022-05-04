@@ -430,7 +430,12 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
                         if (mt.isWildcardType() || mt.isWildcardSubtype()) {
                             return defaultType;
                         }
-                        return acceptedType;
+                        if (acceptedType.test(defaultType)) {
+                            // if application/json; q=0.4 and default is application/json; charset="UTF-8" I want to use default
+                            return defaultType;
+                        }
+                        // return a type without quality factor and other parameters
+                        return HttpMediaType.create(acceptedType.mediaType());
                     }
                 }
             }
