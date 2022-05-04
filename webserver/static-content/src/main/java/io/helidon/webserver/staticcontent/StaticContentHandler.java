@@ -34,6 +34,9 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 
+import static io.helidon.common.http.Http.Header.IF_MATCH;
+import static io.helidon.common.http.Http.Header.IF_NONE_MATCH;
+
 /**
  * Base implementation of static content support.
  */
@@ -146,17 +149,21 @@ abstract class StaticContentHandler implements StaticContentSupport {
         etag = unquoteETag(etag);
         // Put ETag into the response
         responseHeaders.set(Http.Header.ETAG, '"' + etag + '"');
+
         // Process If-None-Match header
-        List<String> ifNoneMatches = requestHeaders.all(Http.Header.IF_NONE_MATCH, List::of);
-        for (String ifNoneMatch : ifNoneMatches) {
-            ifNoneMatch = unquoteETag(ifNoneMatch);
-            if ("*".equals(ifNoneMatch) || ifNoneMatch.equals(etag)) {
-                throw new HttpException("Accepted by If-None-Match header!", Http.Status.NOT_MODIFIED_304);
+        if (requestHeaders.contains(IF_NONE_MATCH)) {
+            List<String> ifNoneMatches = requestHeaders.values(IF_NONE_MATCH);
+            for (String ifNoneMatch : ifNoneMatches) {
+                ifNoneMatch = unquoteETag(ifNoneMatch);
+                if ("*".equals(ifNoneMatch) || ifNoneMatch.equals(etag)) {
+                    throw new HttpException("Accepted by If-None-Match header!", Http.Status.NOT_MODIFIED_304);
+                }
             }
         }
         // Process If-Match header
-        List<String> ifMatches = requestHeaders.all(Http.Header.IF_MATCH, List::of);
-        if (!ifMatches.isEmpty()) {
+        if (requestHeaders.contains(IF_MATCH)) {
+            List<String> ifMatches = requestHeaders.values(Http.Header.IF_MATCH);
+
             boolean ifMatchChecked = false;
             for (String ifMatch : ifMatches) {
                 ifMatch = unquoteETag(ifMatch);

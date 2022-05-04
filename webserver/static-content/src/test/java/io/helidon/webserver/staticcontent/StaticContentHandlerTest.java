@@ -36,6 +36,8 @@ import io.helidon.webserver.ServerResponse;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+import static io.helidon.common.http.Http.Header.IF_MATCH;
+import static io.helidon.common.http.Http.Header.IF_NONE_MATCH;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.mock;
@@ -63,8 +65,8 @@ class StaticContentHandlerTest {
     @Test
     void etag_InNonMatch_NotAccept() {
         RequestHeaders req = mock(RequestHeaders.class);
-        when(req.values(Http.Header.IF_NONE_MATCH)).thenReturn(List.of("\"ccc\"", "\"ddd\""));
-        when(req.values(Http.Header.IF_MATCH)).thenReturn(Collections.emptyList());
+        when(req.values(IF_NONE_MATCH)).thenReturn(List.of("\"ccc\"", "\"ddd\""));
+        when(req.values(IF_MATCH)).thenReturn(Collections.emptyList());
         ResponseHeaders res = mock(ResponseHeaders.class);
         StaticContentHandler.processEtag("aaa", req, res);
         verify(res).set(Http.Header.ETAG, "\"aaa\"");
@@ -73,8 +75,9 @@ class StaticContentHandlerTest {
     @Test
     void etag_InNonMatch_Accept() {
         RequestHeaders req = mock(RequestHeaders.class);
-        when(req.values(Http.Header.IF_NONE_MATCH)).thenReturn(List.of("\"ccc\"", "W/\"aaa\""));
-        when(req.values(Http.Header.IF_MATCH)).thenReturn(Collections.emptyList());
+        when(req.contains(IF_NONE_MATCH)).thenReturn(true);
+        when(req.values(IF_NONE_MATCH)).thenReturn(List.of("\"ccc\"", "W/\"aaa\""));
+        when(req.contains(IF_MATCH)).thenReturn(false);
         ResponseHeaders res = mock(ResponseHeaders.class);
         assertHttpException(() -> StaticContentHandler.processEtag("aaa", req, res), Http.Status.NOT_MODIFIED_304);
         verify(res).set(Http.Header.ETAG, "\"aaa\"");
@@ -83,8 +86,9 @@ class StaticContentHandlerTest {
     @Test
     void etag_InMatch_NotAccept() {
         RequestHeaders req = mock(RequestHeaders.class);
-        when(req.values(Http.Header.IF_MATCH)).thenReturn(List.of("\"ccc\"", "\"ddd\""));
-        when(req.values(Http.Header.IF_NONE_MATCH)).thenReturn(Collections.emptyList());
+        when(req.contains(IF_MATCH)).thenReturn(true);
+        when(req.values(IF_MATCH)).thenReturn(List.of("\"ccc\"", "\"ddd\""));
+        when(req.contains(IF_NONE_MATCH)).thenReturn(false);
         ResponseHeaders res = mock(ResponseHeaders.class);
         assertHttpException(() -> StaticContentHandler.processEtag("aaa", req, res), Http.Status.PRECONDITION_FAILED_412);
         verify(res).set(Http.Header.ETAG, "\"aaa\"");
@@ -93,8 +97,8 @@ class StaticContentHandlerTest {
     @Test
     void etag_InMatch_Accept() {
         RequestHeaders req = mock(RequestHeaders.class);
-        when(req.values(Http.Header.IF_MATCH)).thenReturn(List.of("\"ccc\"", "\"aaa\""));
-        when(req.values(Http.Header.IF_NONE_MATCH)).thenReturn(Collections.emptyList());
+        when(req.values(IF_MATCH)).thenReturn(List.of("\"ccc\"", "\"aaa\""));
+        when(req.values(IF_NONE_MATCH)).thenReturn(Collections.emptyList());
         ResponseHeaders res = mock(ResponseHeaders.class);
         StaticContentHandler.processEtag("aaa", req, res);
         verify(res).set(Http.Header.ETAG, "\"aaa\"");
