@@ -26,7 +26,7 @@ import java.util.Arrays;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class SignatureTypeConsistencyTest {
+class SignatureTypeConsistencyTest {
 
     /**
      * To keep consistency between {@link io.helidon.microprofile.messaging.MethodSignatureType}

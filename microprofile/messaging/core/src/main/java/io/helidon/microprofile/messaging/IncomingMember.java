@@ -19,6 +19,9 @@ package io.helidon.microprofile.messaging;
 
 import org.reactivestreams.Subscriber;
 
+/**
+ * Represents incoming messaging method or field with injected publisher or multi.
+ */
 interface IncomingMember {
     Subscriber<? super Object> getSubscriber(String channelName);
 

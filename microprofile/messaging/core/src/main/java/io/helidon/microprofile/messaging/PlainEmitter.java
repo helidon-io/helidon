@@ -28,6 +28,9 @@ import org.eclipse.microprofile.reactive.messaging.OnOverflow;
 import org.reactivestreams.FlowAdapters;
 import org.reactivestreams.Publisher;
 
+/**
+ * Emitter used for {@link org.eclipse.microprofile.reactive.messaging.OnOverflow.Strategy#DROP}.
+ */
 class PlainEmitter extends OutgoingEmitter {
 
     private final EmittingPublisher<Object> ep = EmittingPublisher.create();
@@ -38,34 +41,59 @@ class PlainEmitter extends OutgoingEmitter {
 
     @Override
     @SuppressWarnings("rawtypes")
-    public synchronized CompletionStage<Void> send(Object p) {
-        validate(p);
-        CompletableFuture<Void> acked = new CompletableFuture<>();
-        this.send(MessageUtils.create(p, acked));
-        return acked;
+    public CompletionStage<Void> send(Object p) {
+        try {
+            lock().lock();
+            validate(p);
+            CompletableFuture<Void> acked = new CompletableFuture<>();
+            this.send(MessageUtils.create(p, acked));
+            return acked;
+        } finally {
+            lock().unlock();
+        }
     }
 
     @Override
-    public synchronized <M extends Message<? extends Object>> void send(M m) {
-        validate(m);
-        ep.emit(m);
+    public <M extends Message<? extends Object>> void send(M m) {
+        try {
+            lock().lock();
+            validate(m);
+            ep.emit(m);
+        } finally {
+            lock().unlock();
+        }
     }
 
     @Override
-    public synchronized void complete() {
-        super.complete();
-        ep.complete();
+    public void complete() {
+        try {
+            lock().lock();
+            super.complete();
+            ep.complete();
+        } finally {
+            lock().unlock();
+        }
     }
 
     @Override
-    public synchronized void error(Exception e) {
-        super.error(e);
-        ep.fail(e);
+    public void error(Exception e) {
+        try {
+            lock().lock();
+            super.error(e);
+            ep.fail(e);
+        } finally {
+            lock().unlock();
+        }
     }
 
     @Override
-    public synchronized boolean isCancelled() {
-        return ep.isCancelled() || ep.isCompleted();
+    public boolean isCancelled() {
+        try {
+            lock().lock();
+            return ep.isCancelled() || ep.isCompleted();
+        } finally {
+            lock().unlock();
+        }
     }
 
     @Override

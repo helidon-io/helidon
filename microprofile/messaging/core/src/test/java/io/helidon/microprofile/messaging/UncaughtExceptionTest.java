@@ -37,7 +37,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 
 @HelidonTest
-public class UncaughtExceptionTest {
+class UncaughtExceptionTest {
 
     private static final Logger incomingMethodLogger = Logger.getLogger(IncomingMethod.class.getName());
 

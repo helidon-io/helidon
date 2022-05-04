@@ -18,6 +18,8 @@
 package io.helidon.microprofile.messaging;
 
 
+import java.util.Optional;
+
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
@@ -105,12 +107,12 @@ public interface MessagingChannelProcessor {
 
     /**
      * Messaging channel name associated with this processor.
-     * If the channel name is null this processor is applied to the all channel.
+     * If the channel name is empty this processor is applied to the all channels.
      *
-     * @return Channel name or null
+     * @return Channel name or empty for all channels
      */
-    default String channelName() {
+    default Optional<String> channelName() {
         // any channel
-        return null;
+        return Optional.empty();
     }
 }

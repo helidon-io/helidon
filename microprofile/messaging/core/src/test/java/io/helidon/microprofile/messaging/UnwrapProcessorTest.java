@@ -33,7 +33,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.reactivestreams.Subscriber;
 
-public class UnwrapProcessorTest {
+class UnwrapProcessorTest {
 
     public SubscriberBuilder<String, Void> testMethodSubscriberBuilderString() {
         return ReactiveStreams.<String>builder().forEach(System.out::println);

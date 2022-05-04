@@ -26,7 +26,7 @@ import static org.hamcrest.Matchers.is;
 
 import org.junit.jupiter.api.Test;
 
-public class ConnectorConfigTest {
+class ConnectorConfigTest {
     private static final String TEST_CHANNEL_VALUE = "test-channel-value";
     private static final String TEST_CONNECTOR_VALUE = "test-connector-value";
     private static final String TEST_KEY = "test-key";

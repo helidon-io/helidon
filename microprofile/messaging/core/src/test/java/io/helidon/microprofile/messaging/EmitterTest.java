@@ -17,11 +17,12 @@
 
 package io.helidon.microprofile.messaging;
 
-import jakarta.inject.Inject;
-
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import io.helidon.common.reactive.Single;
 import io.helidon.microprofile.config.ConfigCdiExtension;
 import io.helidon.microprofile.server.JaxRsCdiExtension;
 import io.helidon.microprofile.server.ServerCdiExtension;
@@ -36,6 +37,12 @@ import org.eclipse.microprofile.reactive.messaging.Message;
 import org.glassfish.jersey.ext.cdi1x.internal.CdiComponentProvider;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import jakarta.inject.Inject;
+
 @HelidonTest
 @DisableDiscovery
 @AddExtension(ConfigCdiExtension.class)
@@ -43,28 +50,28 @@ import org.junit.jupiter.api.Test;
 @AddExtension(MessagingCdiExtension.class)
 @AddExtension(JaxRsCdiExtension.class)
 @AddExtension(CdiComponentProvider.class)
-public class EmitterTest {
+class EmitterTest {
+
+    private final CountDownLatch countDownLatch = new CountDownLatch(3);
+    private final List<String> payloads = Collections.synchronizedList(new ArrayList<>(3));
 
     @Inject
-    @Channel("kanal1")
+    @Channel("channel-1")
     private Emitter<String> emitter;
 
-    @Incoming("kanal1")
+    @Incoming("channel-1")
     public void rec(String payload) {
-        System.out.println("Received " + payload);
+        payloads.add(payload);
+        countDownLatch.countDown();
     }
 
-//    @Incoming("kanal1")
-//    public void rec2(String payload) {
-//        System.out.println("Received " + payload);
-//    }
-
     @Test
-    void name() {
+    void name() throws InterruptedException {
         emitter.send(Message.of("Test1"));
         emitter.send("Test2");
         emitter.send(Message.of("Test3"));
         emitter.complete();
-      //  Single.never().await(10, TimeUnit.SECONDS);
+        assertTrue(countDownLatch.await(10, TimeUnit.SECONDS));
+        assertThat(payloads, contains("Test1", "Test2", "Test3"));
     }
 }

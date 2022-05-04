@@ -19,6 +19,9 @@ package io.helidon.microprofile.messaging;
 
 import org.reactivestreams.Publisher;
 
+/**
+ * Represents outgoing messaging method or field with Emitter, class member producing data to the channel.
+ */
 interface OutgoingMember {
     Publisher<?> getPublisher(String channelName);
 

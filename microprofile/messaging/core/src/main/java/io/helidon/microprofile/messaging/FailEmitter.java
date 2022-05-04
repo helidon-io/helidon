@@ -19,6 +19,9 @@ package io.helidon.microprofile.messaging;
 
 import org.eclipse.microprofile.reactive.messaging.OnOverflow;
 
+/**
+ * Emitter used for {@link org.eclipse.microprofile.reactive.messaging.OnOverflow.Strategy#FAIL}.
+ */
 class FailEmitter extends PlainEmitter {
     FailEmitter(String channelName, String fieldName, OnOverflow onOverflow) {
         super(channelName, fieldName, onOverflow);

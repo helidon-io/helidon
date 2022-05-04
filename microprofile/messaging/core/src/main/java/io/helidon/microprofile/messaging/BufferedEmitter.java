@@ -27,6 +27,9 @@ import org.eclipse.microprofile.reactive.messaging.OnOverflow;
 import org.reactivestreams.FlowAdapters;
 import org.reactivestreams.Publisher;
 
+/**
+ * Emitter used for {@link org.eclipse.microprofile.reactive.messaging.OnOverflow.Strategy#BUFFER}.
+ */
 class BufferedEmitter extends OutgoingEmitter {
 
     private final BufferedEmittingPublisher<Object> bep = BufferedEmittingPublisher.create();
@@ -37,34 +40,59 @@ class BufferedEmitter extends OutgoingEmitter {
 
     @Override
     @SuppressWarnings("rawtypes")
-    public synchronized CompletionStage<Void> send(Object p) {
-        validate(p);
-        CompletableFuture<Void> acked = new CompletableFuture<>();
-        this.send(MessageUtils.create(p, acked));
-        return acked;
+    public CompletionStage<Void> send(Object p) {
+        try {
+            lock().lock();
+            validate(p);
+            CompletableFuture<Void> acked = new CompletableFuture<>();
+            this.send(MessageUtils.create(p, acked));
+            return acked;
+        } finally {
+            lock().unlock();
+        }
     }
 
     @Override
-    public synchronized <M extends Message<? extends Object>> void send(M m) {
-        validate(m);
-        bep.emit(m);
+    public <M extends Message<? extends Object>> void send(M m) {
+        try {
+            lock().lock();
+            validate(m);
+            bep.emit(m);
+        } finally {
+            lock().unlock();
+        }
     }
 
     @Override
-    public synchronized void complete() {
-        super.complete();
-        bep.complete();
+    public void complete() {
+        try {
+            lock().lock();
+            super.complete();
+            bep.complete();
+        } finally {
+            lock().unlock();
+        }
     }
 
     @Override
-    public synchronized void error(Exception e) {
-        super.error(e);
-        bep.fail(e);
+    public void error(Exception e) {
+        try {
+            lock().lock();
+            super.error(e);
+            bep.fail(e);
+        } finally {
+            lock().unlock();
+        }
     }
 
     @Override
-    public synchronized boolean isCancelled() {
-        return bep.isCancelled() || bep.isCompleted();
+    public boolean isCancelled() {
+        try {
+            lock().lock();
+            return bep.isCancelled() || bep.isCompleted();
+        } finally {
+            lock().unlock();
+        }
     }
 
     @Override
@@ -72,10 +100,12 @@ class BufferedEmitter extends OutgoingEmitter {
         return bep.hasRequests();
     }
 
+    @Override
     public Publisher<?> getPublisher() {
         return FlowAdapters.toPublisher(bep);
     }
 
+    @Override
     public void validate(Object payload) {
         super.validate(payload);
         if (getOverflowStrategy().equals(OnOverflow.Strategy.BUFFER)) {

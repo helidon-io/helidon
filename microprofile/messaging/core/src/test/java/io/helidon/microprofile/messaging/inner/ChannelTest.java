@@ -34,7 +34,7 @@ import org.junit.platform.commons.util.ReflectionUtils;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class ChannelTest extends AbstractCDITest {
+class ChannelTest extends AbstractCDITest {
 
     @Override
     public void setUp() {
@@ -47,7 +47,6 @@ public class ChannelTest extends AbstractCDITest {
                         ChannelTest.class.getPackage().getName(),
                         ClassFilter.of(c -> Objects.nonNull(c.getAnnotation(ApplicationScoped.class))))
                 .stream()
-//                .filter(aClass -> aClass.getSimpleName().contains("ProcessorPublisherBuilderMsg2MsgPrepImplicitAckBean"))
                 .map(CdiTestCase::from);
     }
 

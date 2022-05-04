@@ -28,6 +28,9 @@ import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
+/**
+ * Emitter used for {@link org.eclipse.microprofile.reactive.messaging.OnOverflow.Strategy#NONE}.
+ */
 class NoneEmitter extends OutgoingEmitter implements Subscription {
 
     private volatile Subscriber<? super Object> subscriber;
@@ -36,15 +39,6 @@ class NoneEmitter extends OutgoingEmitter implements Subscription {
 
     NoneEmitter(String channelName, String fieldName, OnOverflow onOverflow) {
         super(channelName, fieldName, onOverflow);
-    }
-
-    @Override
-    Publisher<?> getPublisher() {
-        return (Publisher<Object>) s -> {
-            Objects.requireNonNull(s);
-            NoneEmitter.this.subscriber = s;
-            s.onSubscribe(this);
-        };
     }
 
     @Override
@@ -64,43 +58,65 @@ class NoneEmitter extends OutgoingEmitter implements Subscription {
     }
 
     @Override
-    public synchronized CompletionStage<Void> send(Object msg) {
-        if (subscriber == null) {
-            return CompletableFuture.failedStage(new IllegalStateException("Not subscribed yet!"));
-        }
-        validate(msg);
-        CompletableFuture<Void> acked = new CompletableFuture<>();
-        send(MessageUtils.create(msg, acked));
-        return acked;
-    }
-
-    @Override
-    public synchronized <M extends Message<? extends Object>> void send(M msg) {
-        validate(msg);
-        if (subscriber != null) {
-            if (requested.getAndUpdate(r -> r > 0 ? r != Long.MAX_VALUE ? r - 1 : Long.MAX_VALUE : 0) < 1) {
-                return;
+    public CompletionStage<Void> send(Object msg) {
+        try {
+            lock().lock();
+            if (subscriber == null) {
+                return CompletableFuture.failedStage(new IllegalStateException("Not subscribed yet!"));
             }
-            subscriber.onNext(msg);
+            validate(msg);
+            CompletableFuture<Void> acked = new CompletableFuture<>();
+            send(MessageUtils.create(msg, acked));
+            return acked;
+        } finally {
+            lock().unlock();
         }
     }
 
     @Override
-    public synchronized void error(Exception e) {
-        this.cancelled = true;
-        super.error(e);
-        if (subscriber != null) {
-            subscriber.onError(e);
-            subscriber = null;
+    public <M extends Message<? extends Object>> void send(M msg) {
+        try {
+            lock().lock();
+            validate(msg);
+            if (subscriber != null) {
+                if (requested.getAndUpdate(r -> r > 0 ? r != Long.MAX_VALUE ? r - 1 : Long.MAX_VALUE : 0) < 1) {
+                    return;
+                }
+                subscriber.onNext(msg);
+            }
+        } finally {
+            lock().unlock();
         }
     }
 
     @Override
-    public synchronized void complete() {
-        super.complete();
-        if (subscriber != null) {
-            subscriber.onComplete();
-            subscriber = null;
+    public void error(Exception e) {
+        try {
+            lock().lock();
+
+            this.cancelled = true;
+            super.error(e);
+            if (subscriber != null) {
+                subscriber.onError(e);
+                subscriber = null;
+            }
+        } finally {
+            lock().unlock();
+        }
+    }
+
+    @Override
+    public void complete() {
+        try {
+            lock().lock();
+
+            super.complete();
+            if (subscriber != null) {
+                subscriber.onComplete();
+                subscriber = null;
+            }
+        } finally {
+            lock().unlock();
         }
     }
 
@@ -112,5 +128,14 @@ class NoneEmitter extends OutgoingEmitter implements Subscription {
     @Override
     public boolean hasRequests() {
         return requested.get() > 0;
+    }
+
+    @Override
+    Publisher<?> getPublisher() {
+        return (Publisher<Object>) s -> {
+            Objects.requireNonNull(s);
+            NoneEmitter.this.subscriber = s;
+            s.onSubscribe(this);
+        };
     }
 }

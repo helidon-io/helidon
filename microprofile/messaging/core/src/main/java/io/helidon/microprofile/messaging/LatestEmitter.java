@@ -30,6 +30,9 @@ import org.eclipse.microprofile.reactive.messaging.OnOverflow;
 import org.reactivestreams.FlowAdapters;
 import org.reactivestreams.Publisher;
 
+/**
+ * Emitter used for {@link org.eclipse.microprofile.reactive.messaging.OnOverflow.Strategy#LATEST}.
+ */
 class LatestEmitter extends OutgoingEmitter {
 
     private static final Logger LOGGER = Logger.getLogger(LatestEmitter.class.getName());
@@ -49,50 +52,69 @@ class LatestEmitter extends OutgoingEmitter {
     }
 
     @Override
-    public synchronized CompletionStage<Void> send(Object p) {
-        validate(p);
-        CompletableFuture<Void> acked = new CompletableFuture<>();
-        this.send(MessageUtils.create(p, acked));
-        return acked;
+    public CompletionStage<Void> send(Object p) {
+        try {
+            lock().lock();
+            validate(p);
+            CompletableFuture<Void> acked = new CompletableFuture<>();
+            this.send(MessageUtils.create(p, acked));
+            return acked;
+        } finally {
+            lock().unlock();
+        }
     }
 
     @Override
-    public synchronized <M extends Message<? extends Object>> void send(M m) {
-        validate(m);
-        bep.emit(m);
+    public <M extends Message<? extends Object>> void send(M m) {
+        try {
+            lock().lock();
+
+            validate(m);
+            bep.emit(m);
+        } finally {
+            lock().unlock();
+        }
     }
 
     @Override
-    public synchronized void complete() {
-        super.complete();
-        bep.complete();
+    public void complete() {
+        try {
+            lock().lock();
+
+            super.complete();
+            bep.complete();
+        } finally {
+            lock().unlock();
+        }
     }
 
     @Override
-    public synchronized void error(Exception e) {
-        super.error(e);
-        bep.fail(e);
+    public void error(Exception e) {
+        try {
+            lock().lock();
+
+            super.error(e);
+            bep.fail(e);
+        } finally {
+            lock().unlock();
+        }
     }
 
     @Override
-    public synchronized boolean isCancelled() {
-        return bep.isCancelled() || bep.isCompleted();
+    public boolean isCancelled() {
+        try {
+            lock().lock();
+
+            return bep.isCancelled() || bep.isCompleted();
+        } finally {
+            lock().unlock();
+        }
     }
 
     @Override
     public boolean hasRequests() {
         return bep.hasRequests();
     }
-
-    @Override
-    long getBufferLimit() {
-        return 3;
-    }
-
-    private synchronized Object dropFirst() {
-        return this.buffer.pollFirst();
-    }
-
 
     @Override
     public void validate(Object payload) {
@@ -104,6 +126,20 @@ class LatestEmitter extends OutgoingEmitter {
             if (LOGGER.isLoggable(Level.FINE)) {
                 LOGGER.log(Level.FINE, "Dropped first item: " + MessageUtils.unwrap(dropped));
             }
+        }
+    }
+
+    @Override
+    long getBufferLimit() {
+        return 3;
+    }
+
+    private Object dropFirst() {
+        try {
+            lock().lock();
+            return this.buffer.pollFirst();
+        } finally {
+            lock().unlock();
         }
     }
 }

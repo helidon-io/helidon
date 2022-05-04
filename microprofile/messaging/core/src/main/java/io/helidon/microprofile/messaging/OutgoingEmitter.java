@@ -17,6 +17,9 @@
 
 package io.helidon.microprofile.messaging;
 
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
 import io.helidon.common.LazyValue;
 
 import org.eclipse.microprofile.config.ConfigProvider;
@@ -30,6 +33,8 @@ abstract class OutgoingEmitter implements Emitter<Object>, OutgoingMember {
     private final String fieldName;
     private final OnOverflow onOverflow;
     private final LazyValue<Long> bufferLimit;
+
+    private final Lock lock = new ReentrantLock();
     private volatile boolean completed = false;
 
     static OutgoingEmitter create(String channelName, String fieldName, OnOverflow onOverflow) {
@@ -73,6 +78,20 @@ abstract class OutgoingEmitter implements Emitter<Object>, OutgoingMember {
         this.completed = true;
     }
 
+    @Override
+    public Publisher<?> getPublisher(String unused) {
+        return getPublisher();
+    }
+
+    @Override
+    public String getDescription() {
+        return "emitter " + getFieldName();
+    }
+
+    protected Lock lock(){
+        return this.lock;
+    }
+
     void validate(Object item) {
         if (item == null) {
             throw new IllegalArgumentException("Null is not allowed in emitter");
@@ -99,14 +118,4 @@ abstract class OutgoingEmitter implements Emitter<Object>, OutgoingMember {
     }
 
     abstract Publisher<?> getPublisher();
-
-    @Override
-    public Publisher<?> getPublisher(String unused) {
-        return getPublisher();
-    }
-
-    @Override
-    public String getDescription() {
-        return "emitter " + getFieldName();
-    }
 }

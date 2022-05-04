@@ -37,11 +37,13 @@ class ChannelProcessors {
     private final List<MessagingChannelProcessor> wildCardProcessors = new ArrayList<>();
 
     void register(MessagingChannelProcessor channelProcessor) {
-        if (channelProcessor.channelName() != null) {
-            channelProcessorMap.computeIfAbsent(channelProcessor.channelName(), s -> new ArrayList<>()).add(channelProcessor);
-        } else {
-            wildCardProcessors.add(channelProcessor);
-        }
+        channelProcessor.channelName()
+                .ifPresentOrElse(
+                        channelName ->
+                                channelProcessorMap.computeIfAbsent(channelName, s -> new ArrayList<>()).add(channelProcessor),
+                        () ->
+                                wildCardProcessors.add(channelProcessor)
+                );
     }
 
     private long priority(MessagingChannelProcessor channelProcessor) {

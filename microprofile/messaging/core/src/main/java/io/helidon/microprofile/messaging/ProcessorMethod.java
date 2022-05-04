@@ -19,6 +19,7 @@ package io.helidon.microprofile.messaging;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -56,7 +57,6 @@ class ProcessorMethod extends AbstractMessagingMethod implements OutgoingMember,
     }
 
     @Override
-    @SuppressWarnings({"unchecked", "checkstyle:methodlength"})
     public void init(BeanManager beanManager, Config config) {
         super.init(beanManager, config);
         if (getType().isInvokeAtAssembly()) {
@@ -64,158 +64,29 @@ class ProcessorMethod extends AbstractMessagingMethod implements OutgoingMember,
         } else {
             switch (getType()) {
                 case PROCESSOR_PUBLISHER_MSG_2_MSG:
-                    processor = ReactiveStreams.builder()
-                            .flatMap(in -> {
-                                Message<?> inMsg = (Message<?>) in;
-                                AckCtx ackCtx = AckCtx.create(this, inMsg);
-                                try {
-                                    ackCtx.preAck();
-                                    return ReactiveStreams.fromPublisher(invoke(inMsg))
-                                            .onError(ackCtx::postNack)
-                                            .onErrorResumeWith(this::resumeOnError)
-                                            .peek(out -> ackCtx.postAck())
-                                            .map(MessageUtils::wrap);
-                                } catch (Throwable t) {
-                                    ackCtx.postNack(t);
-                                    return resumeOnError(t);
-                                }
-                            })
-                            .buildRs();
+                    processor = invokeProcessor(msg -> ReactiveStreams.fromPublisher(invoke(msg)));
                     break;
                 case PROCESSOR_PUBLISHER_PAYL_2_PAYL:
-                    processor = ReactiveStreams.builder()
-                            .flatMap(in -> {
-                                Message<?> inMsg = (Message<?>) in;
-                                AckCtx ackCtx = AckCtx.create(this, inMsg);
-                                try {
-                                    ackCtx.preAck();
-                                    return ReactiveStreams.fromPublisher(invoke(inMsg.getPayload()))
-                                            .onError(ackCtx::postNack)
-                                            .onErrorResumeWith(this::resumeOnError)
-                                            .peek(out -> ackCtx.postAck())
-                                            .map(MessageUtils::wrap);
-                                } catch (Throwable t) {
-                                    ackCtx.postNack(t);
-                                    return resumeOnError(t);
-                                }
-                            })
-                            .buildRs();
+                    processor = invokeProcessor(msg -> ReactiveStreams.fromPublisher(invoke(msg.getPayload())));
                     break;
                 case PROCESSOR_PUBLISHER_BUILDER_MSG_2_MSG:
-                    processor = ReactiveStreams.builder()
-                            .flatMap(in -> {
-                                Message<?> inMsg = (Message<?>) in;
-                                AckCtx ackCtx = AckCtx.create(this, inMsg);
-                                try {
-                                    ackCtx.preAck();
-                                    return ((PublisherBuilder<Object>) invoke(inMsg))
-                                            .onError(ackCtx::postNack)
-                                            .onErrorResumeWith(this::resumeOnError)
-                                            .peek(out -> ackCtx.postAck())
-                                            .map(MessageUtils::wrap);
-                                } catch (Throwable t) {
-                                    ackCtx.postNack(t);
-                                    return resumeOnError(t);
-                                }
-                            })
-                            .buildRs();
+                    processor = invokeProcessor(this::invoke);
                     break;
                 case PROCESSOR_PUBLISHER_BUILDER_PAYL_2_PAYL:
-                    processor = ReactiveStreams.builder()
-                            .flatMap(in -> {
-                                Message<?> inMsg = (Message<?>) in;
-                                AckCtx ackCtx = AckCtx.create(this, inMsg);
-                                try {
-                                    ackCtx.preAck();
-                                    return ((PublisherBuilder<Object>) invoke(inMsg.getPayload()))
-                                            .onError(ackCtx::postNack)
-                                            .onErrorResumeWith(this::resumeOnError)
-                                            .peek(out -> ackCtx.postAck())
-                                            .map(MessageUtils::wrap);
-                                } catch (Throwable t) {
-                                    ackCtx.postNack(t);
-                                    return resumeOnError(t);
-                                }
-                            })
-                            .buildRs();
+                    processor = invokeProcessor(msg -> invoke(msg.getPayload()));
                     break;
                 case PROCESSOR_MSG_2_MSG:
-                    processor = ReactiveStreams.builder()
-                            .flatMap(in -> {
-                                Message<?> inMsg = (Message<?>) in;
-                                AckCtx ackCtx = AckCtx.create(this, inMsg);
-                                try {
-                                    ackCtx.preAck();
-                                    return ReactiveStreams.<Object>fromCompletionStageNullable(
-                                                    CompletableFuture.completedStage((Message<?>) invoke(inMsg))
-                                            )
-                                            .onError(ackCtx::postNack)
-                                            .onErrorResumeWith(this::resumeOnError)
-                                            .peek(out -> ackCtx.postAck())
-                                            .map(MessageUtils::wrap);
-                                } catch (Throwable t) {
-                                    ackCtx.postNack(t);
-                                    return resumeOnError(t);
-                                }
-                            })
-                            .buildRs();
+                    processor = invokeProcessor(msg ->
+                            ReactiveStreams.fromCompletionStageNullable(CompletableFuture.completedStage(invoke(msg))));
                     break;
                 case PROCESSOR_PAYL_2_PAYL:
-                    processor = ReactiveStreams.builder()
-                            .flatMap(in -> {
-                                Message<?> inMsg = (Message<?>) in;
-                                AckCtx ackCtx = AckCtx.create(this, inMsg);
-                                try {
-                                    ackCtx.preAck();
-                                    return ReactiveStreams.of((Object) invoke(inMsg.getPayload()))
-                                            .onError(ackCtx::postNack)
-                                            .peek(out -> ackCtx.postAck())
-                                            .onErrorResumeWith(this::resumeOnError)
-                                            .map(MessageUtils::wrap);
-                                } catch (Throwable t) {
-                                    ackCtx.postNack(t);
-                                    return resumeOnError(t);
-                                }
-                            })
-                            .buildRs();
+                    processor = invokeProcessor(msg -> ReactiveStreams.of((Object) invoke(msg.getPayload())));
                     break;
                 case PROCESSOR_COMPL_STAGE_MSG_2_MSG:
-                    processor = ReactiveStreams.builder()
-                            .flatMap(in -> {
-                                Message<?> inMsg = (Message<?>) in;
-                                AckCtx ackCtx = AckCtx.create(this, inMsg);
-                                try {
-                                    ackCtx.preAck();
-                                    return ReactiveStreams.fromCompletionStageNullable(invoke(inMsg))
-                                            .onError(ackCtx::postNack)
-                                            .onErrorResumeWith(this::resumeOnError)
-                                            .peek(out -> ackCtx.postAck())
-                                            .map(MessageUtils::wrap);
-                                } catch (Throwable t) {
-                                    ackCtx.postNack(t);
-                                    return resumeOnError(t);
-                                }
-                            })
-                            .buildRs();
+                    processor = invokeProcessor(msg -> ReactiveStreams.fromCompletionStageNullable(invoke(msg)));
                     break;
                 case PROCESSOR_COMPL_STAGE_PAYL_2_PAYL:
-                    processor = ReactiveStreams.builder()
-                            .flatMap(in -> {
-                                Message<?> inMsg = (Message<?>) in;
-                                AckCtx ackCtx = AckCtx.create(this, inMsg);
-                                try {
-                                    ackCtx.preAck();
-                                    return ReactiveStreams.fromCompletionStage(invoke(inMsg.getPayload()))
-                                            .onError(ackCtx::postNack)
-                                            .onErrorResumeWith(this::resumeOnError)
-                                            .peek(out -> ackCtx.postAck())
-                                            .map(MessageUtils::wrap);
-                                } catch (Throwable t) {
-                                    ackCtx.postNack(t);
-                                    return resumeOnError(t);
-                                }
-                            })
-                            .buildRs();
+                    processor = invokeProcessor(msg -> ReactiveStreams.fromCompletionStage(invoke(msg.getPayload())));
                     break;
                 default:
                     throw new MessagingDeploymentException("Invalid messaging method signature " + getMethod());
@@ -223,7 +94,34 @@ class ProcessorMethod extends AbstractMessagingMethod implements OutgoingMember,
         }
     }
 
-    private PublisherBuilder<?> resumeOnError(Throwable t) {
+    /**
+     * Invoke processor method with ack/nack logic.
+     *
+     * @param publisherBuilder function for actual invoking processor method with
+     *                         message parameter and publisher builder as a result.
+     * @return processor created from invoked processor method
+     */
+    private Processor<Object, Object> invokeProcessor(Function<Message<?>, PublisherBuilder<Object>> publisherBuilder) {
+        return ReactiveStreams.builder()
+                .flatMap(in -> {
+                    Message<?> inMsg = (Message<?>) in;
+                    AckCtx ackCtx = AckCtx.create(this, inMsg);
+                    try {
+                        ackCtx.preAck();
+                        return publisherBuilder.apply(inMsg)
+                                .onError(ackCtx::postNack)
+                                .onErrorResumeWith(this::resumeOnError)
+                                .peek(out -> ackCtx.postAck())
+                                .map(MessageUtils::wrap);
+                    } catch (Throwable t) {
+                        ackCtx.postNack(t);
+                        return resumeOnError(t);
+                    }
+                })
+                .buildRs();
+    }
+
+    private PublisherBuilder<Object> resumeOnError(Throwable t) {
         if (compatibilityMode.get()) {
             return ReactiveStreams.failed(t);
         }
