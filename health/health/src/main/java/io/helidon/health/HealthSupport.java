@@ -215,7 +215,7 @@ public final class HealthSupport extends HelidonRestServiceSupport {
                 .findFirst()
                 .orElse(Status.UP);
 
-        Http.ResponseStatus httpStatus = responses.stream()
+        Http.Status httpStatus = responses.stream()
                 .filter(HcResponse::internalError)
                 .findFirst()
                 .map(it -> Http.Status.INTERNAL_SERVER_ERROR_500)
@@ -578,15 +578,15 @@ public final class HealthSupport extends HelidonRestServiceSupport {
     }
 
     static final class HealthResponse {
-        private final Http.ResponseStatus status;
+        private final Http.Status status;
         private final JsonObject json;
 
-        private HealthResponse(Http.ResponseStatus status, JsonObject json) {
+        private HealthResponse(Http.Status status, JsonObject json) {
             this.status = status;
             this.json = json;
         }
 
-        Http.ResponseStatus status() {
+        Http.Status status() {
             return status;
         }
 

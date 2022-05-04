@@ -23,11 +23,8 @@ import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import jakarta.json.Json;
-import jakarta.json.JsonObject;
-
 import io.helidon.common.http.Http;
-import io.helidon.common.http.MediaType;
+import io.helidon.common.http.HttpMediaType;
 import io.helidon.media.common.MessageBodyReadableContent;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.webclient.WebClient;
@@ -37,6 +34,8 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.Service;
 import io.helidon.webserver.WebServer;
 
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -143,7 +142,7 @@ class HealthServerTest {
         try {
             response = requestFactory.get()
                     .path(requestPath)
-                    .accept(MediaType.APPLICATION_JSON)
+                    .accept(HttpMediaType.APPLICATION_JSON)
                     .request()
                     .await();
 
