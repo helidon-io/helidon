@@ -14,58 +14,57 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.messaging.inner.ack.incoming;
+package io.helidon.microprofile.messaging.inner.ack.processor;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.microprofile.messaging.AssertableTestBean;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.reactivestreams.Publisher;
-import org.reactivestreams.Subscriber;
-
-import static org.hamcrest.Matchers.is;
 
 /**
  * This test is modified version of official tck test in version 1.0
  * https://github.com/eclipse/microprofile-reactive-messaging
  */
 @ApplicationScoped
-public class IncomingSubscriberMsgPostImplicitAckBean implements AssertableTestBean {
+public class ProcessorMsg2MsgPrepManualAckBean implements AssertableTestBean {
 
-    private static final String TEST_MSG = "test-data";
     private final CompletableFuture<Void> ackFuture = new CompletableFuture<>();
     private final AtomicBoolean completedBeforeProcessor = new AtomicBoolean(false);
-    private final AtomicReference<String> interceptedMessage = new AtomicReference<>();
 
-    @Outgoing("test-channel")
+    @Outgoing("inner-processor")
     public Publisher<Message<String>> produceMessage() {
-        return ReactiveStreams.of(Message.of(TEST_MSG, () -> {
+        return ReactiveStreams.of(Message.of("test-data", () -> {
             ackFuture.complete(null);
             return CompletableFuture.completedFuture(null);
         })).buildRs();
     }
 
-    @Incoming("test-channel")
-    public Subscriber<Message<String>> receiveMessage() {
-        return ReactiveStreams.<Message<String>>builder()
-                .forEach(m -> {
-                    completedBeforeProcessor.set(ackFuture.isDone());
-                    interceptedMessage.set(m.getPayload());
-                })
-                .build();
+    @Incoming("inner-processor")
+    @Outgoing("inner-consumer")
+    // Manual ack is default ack strategy since 2.0 spec
+    public Message<String> process(Message<String> msg) {
+        return Message.of(msg.getPayload(), msg::ack);
+    }
+
+    @Incoming("inner-consumer")
+    @Acknowledgment(Acknowledgment.Strategy.MANUAL)
+    public CompletionStage<Void> receiveMessage(Message<String> msg) {
+        completedBeforeProcessor.set(ackFuture.isDone());
+        return msg.ack();
     }
 
     @Override
     public void assertValid() {
         await("Message not acked!", ackFuture);
-        assertWithOrigin("Should be acked in post-process!", !completedBeforeProcessor.get());
-        assertWithOrigin("Payload corruption!", interceptedMessage.get(), is(TEST_MSG));
+        assertWithOrigin("Should be acked in manually!", !completedBeforeProcessor.get());
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.lang.reflect.Type;
 import java.security.InvalidParameterException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import jakarta.enterprise.inject.spi.DeploymentException;
@@ -38,15 +39,55 @@ class MessageUtils {
     private MessageUtils() {
     }
 
+    static <P> Message<P> create(P payload, CompletableFuture<Void> ack) {
+        return new Message<P>() {
+            @Override
+            public P getPayload() {
+                return payload;
+            }
+
+            @Override
+            public Supplier<CompletionStage<Void>> getAck() {
+                return () -> {
+                    ack.complete(null);
+                    return CompletableFuture.completedStage(null);
+                };
+            }
+
+            @Override
+            public Function<Throwable, CompletionStage<Void>> getNack() {
+                return throwable -> {
+                    ack.completeExceptionally(throwable);
+                    return CompletableFuture.failedStage(throwable);
+                };
+            }
+
+            @Override
+            public CompletionStage<Void> ack() {
+                return getAck().get();
+            }
+
+            @Override
+            public CompletionStage<Void> nack(Throwable reason) {
+                return getNack().apply(reason);
+            }
+
+            @Override
+            public String toString() {
+                return String.valueOf(payload);
+            }
+        };
+    }
+
     static Object wrap(Object o) {
-        if (o instanceof Message) {
+        if (Message.class.isAssignableFrom(o.getClass())) {
             return o;
         }
         return Message.of(o);
     }
 
     static Object unwrap(Object o) {
-        if (o instanceof Message) {
+        if (Message.class.isAssignableFrom(o.getClass())) {
             return ((Message<?>) o).getPayload();
         }
         return o;
@@ -157,10 +198,23 @@ class MessageUtils {
         throw new InvalidParameterException("Unsupported method for unwrapping " + method);
     }
 
-    private static boolean isMessageType(Type type) {
+    static boolean isMessageType(Type type) {
         if (type instanceof ParameterizedType) {
             ParameterizedType parameterizedType = (ParameterizedType) type;
             return Message.class.equals(parameterizedType.getRawType());
+        }
+        return false;
+    }
+
+    static boolean hasGenericMessageType(Type type) {
+        if (type instanceof ParameterizedType) {
+            ParameterizedType parameterizedType = (ParameterizedType) type;
+            Type[] args = parameterizedType.getActualTypeArguments();
+            if (args.length > 0 && args[0] instanceof ParameterizedType) {
+                ParameterizedType firstArg = (ParameterizedType) args[0];
+                return Message.class.isAssignableFrom((Class<?>) firstArg.getRawType());
+            }
+            return false;
         }
         return false;
     }

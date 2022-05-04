@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.common.reactive;
 
+import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -34,7 +35,7 @@ import java.util.function.Consumer;
  */
 public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
 
-    private final ConcurrentLinkedQueue<T> buffer = new ConcurrentLinkedQueue<>();
+    private final Queue<T> buffer;
     private volatile Throwable error;
     private BiConsumer<Long, Long> requestCallback = null;
     private Consumer<? super T> onEmitCallback = null;
@@ -60,17 +61,12 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
     //         against a completion (isCancelled() and isComplete() are both true)
     private boolean cancelled;
 
-    protected BufferedEmittingPublisher() {
+    protected BufferedEmittingPublisher(Queue<T> queue) {
+        buffer = queue;
     }
 
-    /**
-     * Create new {@link BufferedEmittingPublisher}.
-     *
-     * @param <T> type of emitted item
-     * @return new instance of BufferedEmittingPublisher
-     */
-    public static <T> BufferedEmittingPublisher<T> create() {
-        return new BufferedEmittingPublisher<T>();
+    protected BufferedEmittingPublisher() {
+        buffer = new ConcurrentLinkedQueue<>();
     }
 
     @Override
@@ -486,6 +482,62 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
             //         it may happen during request(), which is expected to finish without
             //         throwing
             throw ise;
+        }
+    }
+
+    /**
+     * Create new {@link BufferedEmittingPublisher}.
+     *
+     * @param <T> type of emitted item
+     * @return new instance of BufferedEmittingPublisher
+     */
+    public static <T> BufferedEmittingPublisher<T> create() {
+        BufferedEmittingPublisher<T> bep = BufferedEmittingPublisher.<T>builder().build();
+        return bep;
+    }
+
+    /**
+     * Create new builder for BufferedEmittingPublisher.
+     *
+     * @param <T> type of the expected payload
+     * @return new builder
+     */
+    public static <T> BufferedEmittingPublisher.Builder<T> builder() {
+        return new BufferedEmittingPublisher.Builder<>();
+    }
+
+    /**
+     * Fluent API builder to create {@link io.helidon.common.reactive.BufferedEmittingPublisher}.
+     *
+     * @param <T> type of the expected payload
+     */
+    public static class Builder<T> implements io.helidon.common.Builder<BufferedEmittingPublisher.Builder<T>, BufferedEmittingPublisher<T>> {
+
+        private Queue<T> queue;
+
+        private Builder() {
+        }
+
+        /**
+         * Set up custom buffer queue implementation for the emitter to use.
+         *
+         * @param queue to be used as a buffer
+         * @return this builder
+         */
+        public BufferedEmittingPublisher.Builder<T> buffer(Queue<T> queue) {
+            this.queue = queue;
+            return this;
+        }
+
+        @Override
+        public BufferedEmittingPublisher<T> build() {
+            BufferedEmittingPublisher<T> bep;
+            if (queue != null) {
+                bep = new BufferedEmittingPublisher<>(queue);
+            } else {
+                bep = new BufferedEmittingPublisher<>();
+            }
+            return bep;
         }
     }
 }

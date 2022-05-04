@@ -17,13 +17,13 @@
 package io.helidon.microprofile.messaging.health;
 
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.health.common.BuiltInHealthCheck;
-import io.helidon.microprofile.messaging.MessagingCdiExtension;
+import io.helidon.microprofile.messaging.MessagingChannelProcessor;
 
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
 import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.eclipse.microprofile.health.HealthCheckResponseBuilder;
@@ -36,26 +36,40 @@ import org.eclipse.microprofile.health.Liveness;
 @Liveness
 @ApplicationScoped
 @BuiltInHealthCheck
-public class MessagingLivenessCheck implements HealthCheck {
+public class MessagingLivenessCheck implements HealthCheck, MessagingChannelProcessor {
 
-    private final MessagingCdiExtension messagingCdiExtension;
-
-    @Inject
-    MessagingLivenessCheck(MessagingCdiExtension messagingCdiExtension) {
-        this.messagingCdiExtension = messagingCdiExtension;
-    }
+    private final Map<String, Boolean> liveChannels = new ConcurrentHashMap<>();
 
     @Override
     public HealthCheckResponse call() {
-        Map<String, Boolean> channelsHealth = messagingCdiExtension.channelsLiveness();
         HealthCheckResponseBuilder b = HealthCheckResponse.builder()
                 .name("messaging");
         AtomicBoolean isUp = new AtomicBoolean(true);
-        channelsHealth.forEach((channelName, up) -> {
+        liveChannels.forEach((channelName, up) -> {
             isUp.compareAndSet(true, up);
             b.withData(channelName, up ? "UP" : "DOWN");
         });
         b.status(isUp.get());
         return b.build();
+    }
+
+    @Override
+    public void onError(String channelName, Throwable t) {
+        liveChannels.put(channelName, false);
+    }
+
+    @Override
+    public void onCancel(String channelName) {
+        liveChannels.put(channelName, false);
+    }
+
+    @Override
+    public void onComplete(String channelName) {
+        liveChannels.put(channelName, false);
+    }
+
+    @Override
+    public void onInit(String channelName) {
+        liveChannels.put(channelName, true);
     }
 }

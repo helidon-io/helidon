@@ -58,13 +58,13 @@ final class MethodSignatureResolver {
         genericParameterTypes = method.getGenericParameterTypes();
 
         // INCOMING METHODS
-        // CompletionStage<?> method(Message<I> msg)
+        // CompletionStage<Void> method(Message<I> msg)
         addRule(MethodSignatureType.INCOMING_COMPLETION_STAGE_2_MSG,
-                () -> returnsClassWithGenericParams(CompletionStage.class, MsgType.PAYLOAD)
+                () -> returnsClassWithGenericParams(CompletionStage.class, MsgType.VOID)
                         && hasFirstParam(MsgType.MESSAGE));
-        // CompletionStage<?> method(I payload)
+        // CompletionStage<Void> method(I payload)
         addRule(MethodSignatureType.INCOMING_COMPLETION_STAGE_2_PAYL,
-                () -> returnsClassWithGenericParams(CompletionStage.class, MsgType.PAYLOAD)
+                () -> returnsClassWithGenericParams(CompletionStage.class, MsgType.VOID)
                         && hasFirstParam(MsgType.PAYLOAD)
                         && isIncoming());
         // SubscriberBuilder<Message<I>> method()
@@ -283,6 +283,8 @@ final class MethodSignatureResolver {
             return Message.class.isAssignableFrom((Class<?>) ((ParameterizedType) actualTypeArguments[0]).getRawType());
         } else if (msgType == MsgType.WILDCARD) {
             return actualTypeArguments[0] instanceof WildcardType;
+        } else if (msgType == MsgType.VOID) {
+            return Void.class.equals(actualTypeArguments[0]);
         } else {
             if ((actualTypeArguments[0] instanceof ParameterizedType)) {
                 Class<?> type = (Class<?>) ((ParameterizedType) actualTypeArguments[0]).getRawType();
@@ -310,6 +312,6 @@ final class MethodSignatureResolver {
     }
 
     private enum MsgType {
-        MESSAGE, PAYLOAD, WILDCARD;
+        MESSAGE, PAYLOAD, WILDCARD, VOID;
     }
 }

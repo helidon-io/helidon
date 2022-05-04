@@ -33,5 +33,6 @@
     <modules>
         <module>core</module>
         <module>health</module>
+        <module>metrics</module>
     </modules>
 </project>

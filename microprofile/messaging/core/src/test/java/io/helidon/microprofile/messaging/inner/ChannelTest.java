@@ -34,7 +34,7 @@ import org.junit.platform.commons.util.ReflectionUtils;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class ChannelTest extends AbstractCDITest {
+class ChannelTest extends AbstractCDITest {
 
     @Override
     public void setUp() {

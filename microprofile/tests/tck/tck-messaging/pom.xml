@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2020 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -29,23 +29,18 @@
     <artifactId>tck-messaging</artifactId>
     <name>Helidon Microprofile Tests TCK Messaging</name>
 
-    <properties>
-        <!-- 3.0.0-JAKARTA -->
-        <skipTests>true</skipTests>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>io.helidon.microprofile.messaging</groupId>
             <artifactId>helidon-microprofile-messaging</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>io.helidon.microprofile.reactive-streams</groupId>
-                    <artifactId>helidon-microprofile-reactive-streams</artifactId>
-                </exclusion>
-            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.messaging</groupId>
+            <artifactId>helidon-microprofile-messaging-metrics</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.tests</groupId>
@@ -54,23 +49,8 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <!-- Workaround for TCKs expecting smallrye-like operators behaviour -->
-            <!-- https://github.com/eclipse/microprofile-reactive-messaging/issues/95 -->
-            <groupId>io.smallrye.reactive</groupId>
-            <artifactId>smallrye-reactive-streams-operators</artifactId>
-            <version>1.0.10</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.reactivex.rxjava2</groupId>
-            <artifactId>rxjava</artifactId>
-            <version>2.2.13</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>org.eclipse.microprofile.reactive.messaging</groupId>
             <artifactId>microprofile-reactive-messaging-tck</artifactId>
-            <scope>test</scope>
         </dependency>
     </dependencies>
 
@@ -85,6 +65,21 @@
                         <dependency>org.eclipse.microprofile.reactive.messaging:microprofile-reactive-messaging-tck
                         </dependency>
                     </dependenciesToScan>
+                    <excludes>
+                        <!--
+                            Enable tests after upgrade to higher version of tck tests than 3.0-RC2
+                        -->
+                        <exclude>**/AsynchronousMessageProcessorAckTest.java</exclude>
+                        <exclude>**/AsynchronousMessageSubscriberAckTest.java</exclude>
+                        <exclude>**/AsynchronousPayloadProcessorAckTest.java</exclude>
+                        <exclude>**/AsynchronousPayloadSubscriberAckTest.java</exclude>
+                        <exclude>**/MessageProcessorAckTest.java</exclude>
+                        <exclude>**/PayloadProcessorAckTest.java</exclude>
+                        <exclude>**/PayloadSubscriberAckTest.java</exclude>
+                        <exclude>**/DefaultOverflowStrategyOverflowTest.java</exclude>
+                        <exclude>**/ThrowExceptionOverflowStrategyOverflowTest.java</exclude>
+                        <exclude>**/EmitterOfMessageAcknowledgementTest.java</exclude>
+                    </excludes>
                 </configuration>
                 <dependencies>
                     <dependency>

@@ -37,7 +37,7 @@ import org.reactivestreams.Subscriber;
  * ...
  * }</pre>
  */
-class OutgoingConnector implements PublishingConnector {
+class OutgoingConnector implements PublishingConnector, OutgoingMember {
 
     private final Config config;
     private final String connectorName;
@@ -74,6 +74,11 @@ class OutgoingConnector implements PublishingConnector {
                 .getPublisherBuilder(getConnectorConfig(channelName))
                 .buildRs());
         return publisher;
+    }
+
+    @Override
+    public String getDescription() {
+        return "connector " + getConnectorName();
     }
 
     @Override

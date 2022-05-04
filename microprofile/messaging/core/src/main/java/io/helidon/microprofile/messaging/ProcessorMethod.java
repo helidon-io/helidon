@@ -18,23 +18,35 @@ package io.helidon.microprofile.messaging;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.concurrent.CompletionStage;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import io.helidon.common.Errors;
+import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
 
 import jakarta.enterprise.inject.spi.AnnotatedMethod;
 import jakarta.enterprise.inject.spi.BeanManager;
-import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;
 import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.reactivestreams.Processor;
+import org.reactivestreams.Publisher;
+import org.reactivestreams.Subscriber;
 
-class ProcessorMethod extends AbstractMessagingMethod {
+class ProcessorMethod extends AbstractMessagingMethod implements OutgoingMember, IncomingMember {
 
+    private static final Logger LOGGER = Logger.getLogger(ProcessorMethod.class.getName());
+
+    private final LazyValue<Boolean> compatibilityMode = LazyValue.create(() ->
+            ConfigProvider.getConfig().getOptionalValue("mp.messaging.helidon.propagate-errors", Boolean.class)
+                    .orElse(false)
+    );
     private Processor<Object, Object> processor;
     private UniversalChannel outgoingChannel;
 
@@ -45,7 +57,6 @@ class ProcessorMethod extends AbstractMessagingMethod {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public void init(BeanManager beanManager, Config config) {
         super.init(beanManager, config);
         if (getType().isInvokeAtAssembly()) {
@@ -53,36 +64,29 @@ class ProcessorMethod extends AbstractMessagingMethod {
         } else {
             switch (getType()) {
                 case PROCESSOR_PUBLISHER_MSG_2_MSG:
-                    processor = ReactiveStreams.builder()
-                            .flatMap(in -> ReactiveStreams.<Message<?>>fromPublisher(invoke(in))
-                                    .map(out -> postProcess(in, out)))
-                            .buildRs();
+                    processor = invokeProcessor(msg -> ReactiveStreams.fromPublisher(invoke(msg)));
                     break;
                 case PROCESSOR_PUBLISHER_PAYL_2_PAYL:
-                    processor = ReactiveStreams.builder()
-                            .flatMap(in -> ReactiveStreams.fromPublisher(invoke(in))
-                                    .map(out -> postProcess(in, out)))
-                            .buildRs();
+                    processor = invokeProcessor(msg -> ReactiveStreams.fromPublisher(invoke(msg.getPayload())));
                     break;
                 case PROCESSOR_PUBLISHER_BUILDER_MSG_2_MSG:
+                    processor = invokeProcessor(this::invoke);
+                    break;
                 case PROCESSOR_PUBLISHER_BUILDER_PAYL_2_PAYL:
-                    processor = ReactiveStreams.builder()
-                            .flatMap(in -> ((PublisherBuilder<Object>) invoke(in))
-                                    .map(out -> postProcess(in, out)))
-                            .buildRs();
+                    processor = invokeProcessor(msg -> invoke(msg.getPayload()));
                     break;
                 case PROCESSOR_MSG_2_MSG:
+                    processor = invokeProcessor(msg ->
+                            ReactiveStreams.fromCompletionStageNullable(CompletableFuture.completedStage(invoke(msg))));
+                    break;
                 case PROCESSOR_PAYL_2_PAYL:
-                    processor = ReactiveStreams.builder()
-                            .map(in -> postProcess(in, (invoke(in))))
-                            .buildRs();
+                    processor = invokeProcessor(msg -> ReactiveStreams.of((Object) invoke(msg.getPayload())));
                     break;
                 case PROCESSOR_COMPL_STAGE_MSG_2_MSG:
+                    processor = invokeProcessor(msg -> ReactiveStreams.fromCompletionStageNullable(invoke(msg)));
+                    break;
                 case PROCESSOR_COMPL_STAGE_PAYL_2_PAYL:
-                    processor = ReactiveStreams.builder()
-                            .flatMap(in -> ReactiveStreams.fromCompletionStageNullable((CompletionStage<?>) invoke(in))
-                                    .map(out -> postProcess(in, out)))
-                            .buildRs();
+                    processor = invokeProcessor(msg -> ReactiveStreams.fromCompletionStage(invoke(msg.getPayload())));
                     break;
                 default:
                     throw new MessagingDeploymentException("Invalid messaging method signature " + getMethod());
@@ -90,13 +94,49 @@ class ProcessorMethod extends AbstractMessagingMethod {
         }
     }
 
+    /**
+     * Invoke processor method with ack/nack logic.
+     *
+     * @param publisherBuilder function for actual invoking processor method with
+     *                         message parameter and publisher builder as a result.
+     * @return processor created from invoked processor method
+     */
+    private Processor<Object, Object> invokeProcessor(Function<Message<?>, PublisherBuilder<Object>> publisherBuilder) {
+        return ReactiveStreams.builder()
+                .flatMap(in -> {
+                    Message<?> inMsg = (Message<?>) in;
+                    AckCtx ackCtx = AckCtx.create(this, inMsg);
+                    try {
+                        ackCtx.preAck();
+                        return publisherBuilder.apply(inMsg)
+                                .onError(ackCtx::postNack)
+                                .onErrorResumeWith(this::resumeOnError)
+                                .peek(out -> ackCtx.postAck())
+                                .map(MessageUtils::wrap);
+                    } catch (Throwable t) {
+                        ackCtx.postNack(t);
+                        return resumeOnError(t);
+                    }
+                })
+                .buildRs();
+    }
+
+    private PublisherBuilder<Object> resumeOnError(Throwable t) {
+        if (compatibilityMode.get()) {
+            return ReactiveStreams.failed(t);
+        }
+        LOGGER.log(Level.SEVERE, "Error intercepted in processor method "
+                + this.getMethod().getDeclaringClass().getSimpleName() + "#" + this.getMethod().getName()
+                + " incoming channel: " + this.getIncomingChannelName()
+                + " outgoing channel: " + this.getOutgoingChannelName(), t);
+        return ReactiveStreams.empty();
+    }
+
     @SuppressWarnings("unchecked")
-    <R> R invoke(Object incomingValue){
+    <R> R invoke(Object incomingValue) {
         Method method = getMethod();
-        //Params size is already validated by ProcessorMethod
-        Class<?> paramType = method.getParameterTypes()[0];
         try {
-            return (R) method.invoke(getBeanInstance(), preProcess(incomingValue, paramType));
+            return (R) method.invoke(getBeanInstance(), incomingValue);
         } catch (IllegalAccessException | InvocationTargetException e) {
             throw new RuntimeException(e);
         }
@@ -120,26 +160,6 @@ class ProcessorMethod extends AbstractMessagingMethod {
         }
     }
 
-    private Object preProcess(final Object incomingValue, final Class<?> expectedParamType) {
-        if (getAckStrategy().equals(Acknowledgment.Strategy.PRE_PROCESSING)
-                && incomingValue instanceof Message) {
-            Message<?> incomingMessage = (Message<?>) incomingValue;
-            incomingMessage.ack();
-        }
-
-        return MessageUtils.unwrap(incomingValue, expectedParamType);
-    }
-
-    private Object postProcess(final Object incomingValue, final Object outgoingValue) {
-        Message<?> wrappedOutgoing = (Message<?>) MessageUtils.unwrap(outgoingValue, Message.class);
-        if (getAckStrategy().equals(Acknowledgment.Strategy.POST_PROCESSING)) {
-            Message<?> wrappedIncoming = (Message<?>) MessageUtils.unwrap(incomingValue, Message.class);
-            wrappedOutgoing = (Message<?>) MessageUtils.unwrap(outgoingValue, Message.class, wrappedIncoming::ack);
-        }
-        return wrappedOutgoing;
-    }
-
-
     Processor<Object, Object> getProcessor() {
         return processor;
     }
@@ -152,4 +172,18 @@ class ProcessorMethod extends AbstractMessagingMethod {
         this.outgoingChannel = outgoingChannel;
     }
 
+    @Override
+    public Publisher<?> getPublisher(String unused) {
+        return getProcessor();
+    }
+
+    @Override
+    public String getDescription() {
+        return "processor " + getMethod().getName();
+    }
+
+    @Override
+    public Subscriber<? super Object> getSubscriber(String unused) {
+        return getProcessor();
+    }
 }

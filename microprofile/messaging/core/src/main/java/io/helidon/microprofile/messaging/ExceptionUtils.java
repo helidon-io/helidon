@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,14 +48,5 @@ final class ExceptionUtils {
     static MessagingDeploymentException createNoOutgoingMethodForChannel(String channelName) {
         return new MessagingDeploymentException(
                 String.format("No outgoing method or connector for channel %s found!", channelName));
-    }
-
-    /**
-     * Raised when {@link io.helidon.microprofile.messaging.CompletableQueue} max size is reached.
-     *
-     * @param maxSize maxim allowed size of queue
-     */
-    static MessagingException createCompletableQueueOverflow(long maxSize) {
-        return new MessagingException(String.format("Maximum size %d of queue overflow!", maxSize));
     }
 }

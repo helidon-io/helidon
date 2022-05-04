@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.logging.Logger;
 
 import io.helidon.common.Errors;
 import io.helidon.config.Config;
@@ -29,6 +30,7 @@ import jakarta.enterprise.context.spi.CreationalContext;
 import jakarta.enterprise.inject.spi.AnnotatedMethod;
 import jakarta.enterprise.inject.spi.Bean;
 import jakarta.enterprise.inject.spi.BeanManager;
+import jakarta.enterprise.inject.spi.DefinitionException;
 import jakarta.enterprise.inject.spi.DeploymentException;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
@@ -41,6 +43,8 @@ import org.eclipse.microprofile.reactive.messaging.spi.OutgoingConnectorFactory;
  * Orchestrator for all found channels, methods and connectors.
  */
 class ChannelRouter {
+    private static final Logger LOGGER = Logger.getLogger(ChannelRouter.class.getName());
+
     private final Errors.Collector errors = Errors.collector();
     private final Config config = (Config) ConfigProvider.getConfig();
 
@@ -52,10 +56,12 @@ class ChannelRouter {
 
     private final List<Bean<?>> incomingConnectorFactoryList = new ArrayList<>();
     private final List<Bean<?>> outgoingConnectorFactoryList = new ArrayList<>();
+    private final List<Bean<?>> channelProcessorBeans = new ArrayList<>();
+    private final ChannelProcessors channelProcessors = new ChannelProcessors();
     private BeanManager beanManager;
 
     /**
-     * Register bean reference with at least one annotated messaging method method.
+     * Register bean reference with at least one annotated messaging method.
      *
      * @param bean {@link jakarta.enterprise.inject.spi.Bean} with messaging methods reference
      * @see org.eclipse.microprofile.reactive.messaging.Incoming
@@ -65,10 +71,6 @@ class ChannelRouter {
         connectableBeanMethods.stream()
                 .filter(m -> m.getDeclaringType() == bean.getBeanClass())
                 .forEach(m -> m.setDeclaringBean(bean));
-    }
-
-    Map<String, UniversalChannel> getChannelMap(){
-        return channelMap;
     }
 
     /**
@@ -82,6 +84,7 @@ class ChannelRouter {
         // fast publishers would call onNext before all bean references are resolved
         incomingConnectorFactoryList.forEach(this::addOutgoingConnector);
         outgoingConnectorFactoryList.forEach(this::addIncomingConnector);
+        channelProcessorBeans.forEach(this::addChannelProcessor);
         connectableBeanMethods.forEach(m -> m.init(beanManager, config));
 
         channelMap.values().forEach(UniversalChannel::findConnectors);
@@ -103,6 +106,14 @@ class ChannelRouter {
         } else if (m.isAnnotationPresent(Outgoing.class)) {
             this.addOutgoingMethod(m);
         }
+    }
+
+    void registerEmitter(OutgoingEmitter emitter) {
+        this.getOrCreateChannel(emitter.getChannelName()).setOutgoing(emitter);
+    }
+
+    void registerPublisher(IncomingPublisher injectedPublisher) {
+        this.getOrCreateChannel(injectedPublisher.getChannelName()).setIncoming(injectedPublisher);
     }
 
     /**
@@ -136,11 +147,46 @@ class ChannelRouter {
         return Optional.ofNullable(outgoingConnectorMap.get(connectorName));
     }
 
+    void validate(){
+        boolean hasFatal = errors.hasFatal();
+        Errors errorMessages = errors.collect();
+        if (hasFatal) {
+            throw new DefinitionException(errorMessages.toString());
+        } else {
+            errorMessages.log(LOGGER);
+        }
+        getConfig().get("mp.messaging.outgoing")
+                .ifExists(c -> c.traverse()
+                        .limit(1)
+                        .forEach(channelConfig -> {
+                            getOrCreateChannel(channelConfig.key().name());
+                        }));
+        getConfig().get("mp.messaging.incoming")
+                .ifExists(c -> c.traverse()
+                        .limit(1)
+                        .forEach(channelConfig -> {
+                            getOrCreateChannel(channelConfig.key().name());
+                        }));
+    }
+
+    ChannelProcessors getChannelProcessors(){
+        return channelProcessors;
+    }
+
     private void addIncomingConnector(Bean<?> bean) {
         OutgoingConnectorFactory outgoingConnectorFactory = lookup(bean, beanManager);
         String connectorName = bean.getBeanClass().getAnnotation(Connector.class).value();
         IncomingConnector incomingConnector = new IncomingConnector(connectorName, outgoingConnectorFactory, this);
         incomingConnectorMap.put(connectorName, incomingConnector);
+    }
+
+    void registerChannelProcessor(Bean<?> bean) {
+        channelProcessorBeans.add(bean);
+    }
+
+    private void addChannelProcessor(Bean<?> bean) {
+        MessagingChannelProcessor channelProcessor = lookup(bean, beanManager);
+        channelProcessors.register(channelProcessor);
     }
 
     private void addOutgoingConnector(Bean<?> bean) {
@@ -190,10 +236,10 @@ class ChannelRouter {
         connectableBeanMethods.add(channelMethod);
     }
 
-    private UniversalChannel getOrCreateChannel(String channelName) {
+    UniversalChannel getOrCreateChannel(String channelName) {
         UniversalChannel universalChannel = channelMap.get(channelName);
         if (universalChannel == null) {
-            universalChannel = new UniversalChannel(this);
+            universalChannel = new UniversalChannel(channelName, this);
             channelMap.put(channelName, universalChannel);
         }
         return universalChannel;
@@ -211,9 +257,5 @@ class ChannelRouter {
             throw new DeploymentException("Instance of bean " + bean.getName() + " not found");
         }
         return (T) instance;
-    }
-
-    Errors.Collector getErrors() {
-        return errors;
     }
 }
