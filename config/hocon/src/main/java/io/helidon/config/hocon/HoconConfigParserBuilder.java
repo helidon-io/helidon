@@ -50,19 +50,22 @@ public final class HoconConfigParserBuilder implements Builder<ConfigParser> {
      * Disables HOCON resolving substitutions support. Default is {@code false}.
      *
      * @return modified builder instance
+     * @see #resolvingEnabled
      */
+    @Deprecated(since = "2.5.1", forRemoval = true)
     public HoconConfigParserBuilder disableResolving() {
         resolvingEnabled = false;
         return this;
     }
 
     /**
-     * Enables HOCON resolving substitutions support. Default is {@code false}.
+     * Enables/disables HOCON resolving substitutions support. Default is {@code false}.
      *
+     * @param enabled use to enable or disable substitution
      * @return modified builder instance
      */
-    public HoconConfigParserBuilder enableResolving() {
-        this.resolvingEnabled = true;
+    public HoconConfigParserBuilder resolvingEnabled(boolean enabled) {
+        this.resolvingEnabled = enabled;
         return this;
     }
 

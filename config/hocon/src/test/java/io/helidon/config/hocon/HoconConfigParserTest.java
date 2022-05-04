@@ -57,7 +57,7 @@ public class HoconConfigParserTest {
 
     @Test
     public void testResolveEnabled() {
-        ConfigParser parser = HoconConfigParser.create(true);
+        ConfigParser parser = createResolvingParser();
         ObjectNode node = parser.parse((StringContent) () -> ""
                                                + "aaa = 1 \n"
                                                + "bbb = ${aaa} \n"
@@ -73,7 +73,7 @@ public class HoconConfigParserTest {
 
     @Test
     public void testResolveEnabledEnvVar() {
-        ConfigParser parser = HoconConfigParser.create(true);
+        ConfigParser parser = createResolvingParser();
         ObjectNode node = parser.parse((StringContent) () -> "env-var = ${HOCON_TEST_PROPERTY}", it -> Optional.empty());
 
         assertThat(node.entrySet(), hasSize(1));
@@ -82,7 +82,7 @@ public class HoconConfigParserTest {
 
     @Test
     public void testEmpty() {
-        HoconConfigParser parser = HoconConfigParser.create(true);
+        ConfigParser parser = createResolvingParser();
         ObjectNode node = parser.parse((StringContent) () -> "", it -> Optional.empty());
 
         assertThat(node.entrySet(), hasSize(0));
@@ -90,7 +90,7 @@ public class HoconConfigParserTest {
 
     @Test
     public void testSingleValue() {
-        HoconConfigParser parser = HoconConfigParser.create(true);
+        ConfigParser parser = createResolvingParser();
         ObjectNode node = parser.parse((StringContent) () -> "aaa = bbb", it -> Optional.empty());
 
         assertThat(node.entrySet(), hasSize(1));
@@ -99,7 +99,7 @@ public class HoconConfigParserTest {
 
     @Test
     public void testStringListValue() {
-        HoconConfigParser parser = HoconConfigParser.create(true);
+        ConfigParser parser = createResolvingParser();
         ObjectNode node = parser.parse((StringContent) () -> "aaa = [ bbb, ccc, ddd ]", it -> Optional.empty());
 
         assertThat(node.entrySet(), hasSize(1));
@@ -113,7 +113,7 @@ public class HoconConfigParserTest {
 
     @Test
     public void testComplexValue() {
-        HoconConfigParser parser = HoconConfigParser.create(true);
+        ConfigParser parser = createResolvingParser();
         ObjectNode node = parser.parse((StringContent) () -> ""
                                                + "aaa =  \"bbb\"\n"
                                                + "arr = [ bbb, 13, true, 3.14159 ] \n"
@@ -355,5 +355,9 @@ public class HoconConfigParserTest {
                     config.get("storagePassphrase").asString().get()
             );
         }
+    }
+
+    private static ConfigParser createResolvingParser() {
+        return HoconConfigParser.builder().resolvingEnabled(true).build();
     }
 }
