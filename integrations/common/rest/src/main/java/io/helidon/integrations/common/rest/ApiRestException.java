@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ import io.helidon.common.http.Http;
  */
 public abstract class ApiRestException extends ApiException {
     private final String requestId;
-    private final Http.ResponseStatus status;
+    private final Http.Status status;
     private final Headers headers;
     private final String apiSpecificError;
 
@@ -53,7 +53,7 @@ public abstract class ApiRestException extends ApiException {
      *
      * @return status
      */
-    public Http.ResponseStatus status() {
+    public Http.Status status() {
         return status;
     }
 
@@ -92,7 +92,7 @@ public abstract class ApiRestException extends ApiException {
     public abstract static class BaseBuilder<B extends BaseBuilder<B>> {
         private String message;
         private String requestId;
-        private Http.ResponseStatus status;
+        private Http.Status status;
         private Headers headers;
         private String apiSpecificError;
         private Throwable cause;
@@ -125,7 +125,7 @@ public abstract class ApiRestException extends ApiException {
          * @param status returned status
          * @return updated builder
          */
-        public B status(Http.ResponseStatus status) {
+        public B status(Http.Status status) {
             this.status = status;
             return me();
         }

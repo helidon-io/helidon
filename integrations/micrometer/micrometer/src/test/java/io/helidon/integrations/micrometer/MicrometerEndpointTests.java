@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
 
 import io.helidon.common.http.Http;
-import io.helidon.common.http.MediaType;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.webclient.WebClient;
@@ -39,7 +39,7 @@ public class MicrometerEndpointTests {
 
     @Test
     public void testDefaultEndpoint() throws ExecutionException, InterruptedException {
-        runTest(MicrometerSupport.DEFAULT_CONTEXT, () -> MicrometerSupport.create());
+        runTest(MicrometerSupport.DEFAULT_CONTEXT, MicrometerSupport::create);
     }
 
     @Test
@@ -87,7 +87,7 @@ public class MicrometerEndpointTests {
                     .baseUri(String.format("http://localhost:%d%s", webServer.port(), contextForRequest))
                     .build()
                     .get()
-                    .accept(MediaType.TEXT_PLAIN)
+                    .accept(MediaTypes.TEXT_PLAIN)
                     .request()
                     .get();
 

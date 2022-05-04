@@ -41,7 +41,7 @@ public interface Vault {
     /**
      * HTTP {@code LIST} method used by several Vault engines.
      */
-    Http.RequestMethod LIST = Http.RequestMethod.create("LIST");
+    Http.Method LIST = Http.Method.create("LIST");
 
     /**
      * Fluent API builder to construct new instances.

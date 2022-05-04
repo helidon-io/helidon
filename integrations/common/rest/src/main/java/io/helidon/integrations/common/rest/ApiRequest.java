@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import io.helidon.common.http.MediaType;
+import io.helidon.common.media.type.MediaType;
 
 import jakarta.json.JsonBuilderFactory;
 import jakarta.json.JsonObject;
@@ -53,8 +53,9 @@ public interface ApiRequest<T extends ApiRequest<T>> {
     T addQueryParam(String name, String... value);
 
     /**
-     * The media type header, defaults to {@link io.helidon.common.http.MediaType#APPLICATION_JSON} when JSON entity is present,
-     * to {@link io.helidon.common.http.MediaType#APPLICATION_OCTET_STREAM} for publisher base requests, empty otherwise.
+     * The media type header, defaults to {@link io.helidon.common.media.type.MediaTypes#APPLICATION_JSON} when JSON
+     * entity is present, to {@link io.helidon.common.media.type.MediaTypes#APPLICATION_OCTET_STREAM} for publisher
+     * base requests, empty otherwise.
      *
      * @param mediaType media type of request
      * @return updated request
@@ -62,8 +63,9 @@ public interface ApiRequest<T extends ApiRequest<T>> {
     T requestMediaType(MediaType mediaType);
 
     /**
-     * The accept header, defaults to {@link io.helidon.common.http.MediaType#APPLICATION_JSON} for most requests, except
-     * for requests that return publisher, which default to {@link io.helidon.common.http.MediaType#APPLICATION_OCTET_STREAM}.
+     * The accept header, defaults to {@link io.helidon.common.media.type.MediaTypes#APPLICATION_JSON} for most requests, except
+     * for requests that return publisher, which default to
+     * {@link io.helidon.common.media.type.MediaTypes#APPLICATION_OCTET_STREAM}.
      *
      * @param mediaType accepted media type
      * @return updated request
@@ -108,7 +110,7 @@ public interface ApiRequest<T extends ApiRequest<T>> {
      * Request media type.
      *
      * @return media type if configured
-     * @see #requestMediaType(io.helidon.common.http.MediaType)
+     * @see #requestMediaType(io.helidon.common.media.type.MediaType)
      */
     Optional<MediaType> requestMediaType();
 
@@ -116,7 +118,7 @@ public interface ApiRequest<T extends ApiRequest<T>> {
      * Response media type.
      *
      * @return media type if configured
-     * @see #responseMediaType(io.helidon.common.http.MediaType)
+     * @see #responseMediaType(io.helidon.common.media.type.MediaType)
      */
     Optional<MediaType> responseMediaType();
 

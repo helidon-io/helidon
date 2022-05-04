@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import java.util.function.Consumer;
 
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.Http.RequestMethod;
+import io.helidon.common.http.Http.Method;
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
@@ -160,7 +160,7 @@ public interface RestApi {
      *
      * @return future with metadata if successful. future with error otherwise
      */
-    <T extends ApiResponse> Single<T> invoke(RequestMethod method,
+    <T extends ApiResponse> Single<T> invoke(Method method,
                                              String path,
                                              ApiRequest<?> request,
                                              ApiResponse.Builder<?, T> responseBuilder);
@@ -177,14 +177,14 @@ public interface RestApi {
      *
      * @return future with entity and metadata if successful, future with error otherwise
      */
-    <T extends ApiEntityResponse> Single<T> invokeWithResponse(RequestMethod method,
+    <T extends ApiEntityResponse> Single<T> invokeWithResponse(Method method,
                                                                String path,
                                                                ApiRequest<?> request,
                                                                ApiEntityResponse.Builder<?, T, JsonObject> responseBuilder);
 
     /**
      * The request media type should be provided in request, falls back to
-     * {@link io.helidon.common.http.MediaType#APPLICATION_OCTET_STREAM}.
+     * {@link io.helidon.common.media.type.MediaTypes#APPLICATION_OCTET_STREAM}.
      *
      * @param method method to invoke
      * @param path path to invoke
@@ -195,7 +195,7 @@ public interface RestApi {
      *
      * @return future with the response or error
      */
-    <T extends ApiResponse> Single<T> invokeBytesRequest(Http.RequestMethod method,
+    <T extends ApiResponse> Single<T> invokeBytesRequest(Http.Method method,
                                                          String path,
                                                          ApiRequest<?> request,
                                                          Flow.Publisher<DataChunk> byteRequest,
@@ -205,7 +205,7 @@ public interface RestApi {
      * Invoke API call that is expected to return bytes as a publisher.
      *
      * The accepted media type must be provided in request, falls back to
-     * {@link io.helidon.common.http.MediaType#APPLICATION_OCTET_STREAM}.
+     * {@link io.helidon.common.media.type.MediaTypes#APPLICATION_OCTET_STREAM}.
      *
      * @param method method to invoke
      * @param path path to invoke
@@ -218,7 +218,7 @@ public interface RestApi {
      * @return future with the response
      */
     <R, T extends ApiOptionalResponse<R>>
-    Single<T> invokePublisherResponse(RequestMethod method,
+    Single<T> invokePublisherResponse(Method method,
                                       String path,
                                       ApiRequest<?> request,
                                       ApiOptionalResponse.BuilderBase<?, T, Multi<DataChunk>, R> responseBuilder);
@@ -227,10 +227,10 @@ public interface RestApi {
      * Invoke API call that is expected to return bytes.
      * This method collects all bytes in memory, so it cannot be used for large data.
      * See
-     * {@link #invokePublisherResponse(io.helidon.common.http.Http.RequestMethod, String, ApiRequest, io.helidon.integrations.common.rest.ApiOptionalResponse.BuilderBase)}.
+     * {@link #invokePublisherResponse(io.helidon.common.http.Http.Method, String, ApiRequest, io.helidon.integrations.common.rest.ApiOptionalResponse.BuilderBase)}.
      *
      * The accepted media type must be provided in request, falls back to
-     * {@link io.helidon.common.http.MediaType#APPLICATION_OCTET_STREAM}.
+     * {@link io.helidon.common.media.type.MediaTypes#APPLICATION_OCTET_STREAM}.
      *
      * @param method method to invoke
      * @param path path to invoke
@@ -243,7 +243,7 @@ public interface RestApi {
      * @return future with the response
      */
     <R, T extends ApiOptionalResponse<R>>
-    Single<T> invokeBytesResponse(RequestMethod method,
+    Single<T> invokeBytesResponse(Method method,
                                   String path,
                                   ApiRequest<?> request,
                                   ApiOptionalResponse.BuilderBase<?, T, byte[], R> responseBuilder);
@@ -264,7 +264,7 @@ public interface RestApi {
      *
      */
     <R, T extends ApiOptionalResponse<R>>
-    Single<T> invokeOptional(RequestMethod method,
+    Single<T> invokeOptional(Method method,
                              String path,
                              ApiRequest<?> request,
                              ApiOptionalResponse.BuilderBase<?, T, JsonObject, R> responseBuilder);

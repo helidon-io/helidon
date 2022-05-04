@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.common.http.Http;
-import io.helidon.common.http.MediaType;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientResponse;
 import io.helidon.webserver.WebServer;
@@ -57,7 +57,7 @@ public class MicrometerSimplePrometheusTest {
         MeterRegistryFactory factory = MeterRegistryFactory.builder()
                 .enrollRegistry(registry, req -> {
                     // If there is no media type, assume text/plain which means, for us, Prometheus.
-                    if (req.headers().acceptedTypes().contains(MediaType.TEXT_PLAIN)
+                    if (req.headers().bestAccepted(MediaTypes.TEXT_PLAIN).isPresent()
                             || req.queryParams().first("type").orElse("").equals("prometheus")) {
                         return Optional.of(MicrometerPrometheusRegistrySupport.PrometheusHandler.create(registry));
                     } else {
@@ -86,7 +86,7 @@ public class MicrometerSimplePrometheusTest {
         counter1.increment(3);
         gauge1.set(4);
         WebClientResponse response = webClient.get()
-                .accept(MediaType.TEXT_PLAIN)
+                .accept(MediaTypes.TEXT_PLAIN)
                 .path("/micrometer")
                 .request()
                 .get();
@@ -103,7 +103,7 @@ public class MicrometerSimplePrometheusTest {
         counter1.increment(3);
         gauge1.set(4);
         WebClientResponse response = webClient.get()
-                .accept(MediaType.builder().type(MediaType.TEXT_PLAIN.type()).subtype("special").build())
+                .accept(MediaTypes.create(MediaTypes.TEXT_PLAIN.type(), "special"))
                 .path("/micrometer")
                 .queryParam("type", "prometheus")
                 .request()
@@ -117,7 +117,7 @@ public class MicrometerSimplePrometheusTest {
     @Test
     public void checkNoMatch() throws ExecutionException, InterruptedException {
         WebClientResponse response = webClient.get()
-                .accept(MediaType.builder().type(MediaType.TEXT_PLAIN.type()).subtype("special").build())
+                .accept(MediaTypes.create(MediaTypes.TEXT_PLAIN.type(), "special"))
                 .path("/micrometer")
                 .request()
                 .get();

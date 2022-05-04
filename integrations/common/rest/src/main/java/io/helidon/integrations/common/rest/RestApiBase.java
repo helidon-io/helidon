@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import java.util.logging.Logger;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.MediaType;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.reactive.Collector;
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
@@ -73,7 +73,7 @@ public abstract class RestApiBase implements RestApi {
 
     @Override
     public <T extends ApiResponse> Single<T>
-    invoke(Http.RequestMethod method,
+    invoke(Http.Method method,
            String path,
            ApiRequest<?> request,
            ApiResponse.Builder<?, T> responseBuilder) {
@@ -87,7 +87,7 @@ public abstract class RestApiBase implements RestApi {
 
     @Override
     public <T extends ApiEntityResponse> Single<T>
-    invokeWithResponse(Http.RequestMethod method,
+    invokeWithResponse(Http.Method method,
                        String path,
                        ApiRequest<?> request,
                        ApiEntityResponse.Builder<?, T, JsonObject> responseBuilder) {
@@ -102,7 +102,7 @@ public abstract class RestApiBase implements RestApi {
     }
 
     @Override
-    public <T extends ApiResponse> Single<T> invokeBytesRequest(Http.RequestMethod method,
+    public <T extends ApiResponse> Single<T> invokeBytesRequest(Http.Method method,
                                                                 String path,
                                                                 ApiRequest<?> request,
                                                                 Flow.Publisher<DataChunk> byteRequest,
@@ -130,7 +130,7 @@ public abstract class RestApiBase implements RestApi {
 
     @Override
     public <R, T extends ApiOptionalResponse<R>>
-    Single<T> invokePublisherResponse(Http.RequestMethod method,
+    Single<T> invokePublisherResponse(Http.Method method,
                                       String path,
                                       ApiRequest<?> request,
                                       ApiOptionalResponse.BuilderBase<?, T, Multi<DataChunk>, R> responseBuilder) {
@@ -139,7 +139,7 @@ public abstract class RestApiBase implements RestApi {
 
         LOGGER.finest(() -> requestId + ": Invoking " + method + " on path " + path + " with publisher response");
 
-        request.responseMediaType(request.responseMediaType().orElse(MediaType.WILDCARD));
+        request.responseMediaType(request.responseMediaType().orElse(MediaTypes.WILDCARD));
 
         Supplier<Single<WebClientResponse>> responseSupplier = responseSupplier(method, path, request, requestId);
 
@@ -149,7 +149,7 @@ public abstract class RestApiBase implements RestApi {
 
     @Override
     public <R, T extends ApiOptionalResponse<R>>
-    Single<T> invokeBytesResponse(Http.RequestMethod method,
+    Single<T> invokeBytesResponse(Http.Method method,
                                   String path,
                                   ApiRequest<?> request,
                                   ApiOptionalResponse.BuilderBase<?, T, byte[], R> responseBuilder) {
@@ -158,7 +158,7 @@ public abstract class RestApiBase implements RestApi {
 
         LOGGER.finest(() -> requestId + ": Invoking " + method + " on path " + path + " with bytes response");
 
-        request.responseMediaType(request.responseMediaType().orElse(MediaType.WILDCARD));
+        request.responseMediaType(request.responseMediaType().orElse(MediaTypes.WILDCARD));
 
         Supplier<Single<WebClientResponse>> responseSupplier = responseSupplier(method, path, request, requestId);
 
@@ -168,7 +168,7 @@ public abstract class RestApiBase implements RestApi {
 
     @Override
     public <R, T extends ApiOptionalResponse<R>>
-    Single<T> invokeOptional(Http.RequestMethod method,
+    Single<T> invokeOptional(Http.Method method,
                              String path,
                              ApiRequest<?> request,
                              ApiOptionalResponse.BuilderBase<?, T, JsonObject, R> responseBuilder) {
@@ -196,7 +196,7 @@ public abstract class RestApiBase implements RestApi {
      * @param requestId request ID to use for this request
      * @return supplier of response that is used with fault tolerance
      */
-    protected Supplier<Single<WebClientResponse>> responseSupplier(Http.RequestMethod method,
+    protected Supplier<Single<WebClientResponse>> responseSupplier(Http.Method method,
                                                                    String path,
                                                                    ApiRequest<?> request,
                                                                    String requestId) {
@@ -230,7 +230,7 @@ public abstract class RestApiBase implements RestApi {
     protected void addQueryParams(WebClientRequestBuilder requestBuilder,
                                   String path,
                                   ApiRequest<?> request,
-                                  Http.RequestMethod method,
+                                  Http.Method method,
                                   String requestId) {
         request.queryParams()
                 .forEach((name, values) -> {
@@ -256,10 +256,10 @@ public abstract class RestApiBase implements RestApi {
     protected void addHeaders(WebClientRequestBuilder requestBuilder,
                               String path,
                               ApiRequest<?> request,
-                              Http.RequestMethod method,
+                              Http.Method method,
                               String requestId) {
         WebClientRequestHeaders headers = requestBuilder.headers();
-        request.headers().forEach(headers::add);
+        request.headers().forEach((key, value) -> headers.set(Http.Header.create(key), value));
     }
 
     /**
@@ -282,15 +282,15 @@ public abstract class RestApiBase implements RestApi {
     protected <R, T extends ApiOptionalResponse<R>>
     Single<T> handleBytesResponse(String path,
                                   ApiRequest<?> request,
-                                  Http.RequestMethod method,
+                                  Http.Method method,
                                   String requestId,
                                   WebClientResponse response,
                                   ApiOptionalResponse.BuilderBase<?, T, byte[], R> responseBuilder) {
 
-        Http.ResponseStatus status = response.status();
-        boolean success = (Http.Status.Family.of(status.code()) == Http.ResponseStatus.Family.SUCCESSFUL)
+        Http.Status status = response.status();
+        boolean success = (Http.Status.Family.of(status.code()) == Http.Status.Family.SUCCESSFUL)
                 || isSuccess(path, request, method, requestId, status);
-        boolean isEntityExpected = (Http.Status.Family.of(status.code()) == Http.ResponseStatus.Family.SUCCESSFUL)
+        boolean isEntityExpected = (Http.Status.Family.of(status.code()) == Http.Status.Family.SUCCESSFUL)
                 || isEntityExpected(path, request, method, requestId, status);
 
         if (success) {
@@ -343,16 +343,16 @@ public abstract class RestApiBase implements RestApi {
     protected <R, T extends ApiOptionalResponse<R>>
     Single<T> handlePublisherResponse(String path,
                                       ApiRequest<?> request,
-                                      Http.RequestMethod method,
+                                      Http.Method method,
                                       String requestId,
                                       WebClientResponse response,
                                       ApiOptionalResponse.BuilderBase<?, T, Multi<DataChunk>, R> responseBuilder) {
 
-        Http.ResponseStatus status = response.status();
+        Http.Status status = response.status();
 
-        boolean success = (Http.Status.Family.of(status.code()) == Http.ResponseStatus.Family.SUCCESSFUL)
+        boolean success = (Http.Status.Family.of(status.code()) == Http.Status.Family.SUCCESSFUL)
                 || isSuccess(path, request, method, requestId, status);
-        boolean isEntityExpected = (Http.Status.Family.of(status.code()) == Http.ResponseStatus.Family.SUCCESSFUL)
+        boolean isEntityExpected = (Http.Status.Family.of(status.code()) == Http.Status.Family.SUCCESSFUL)
                 || isEntityExpected(path, request, method, requestId, status);
 
         if (success) {
@@ -383,9 +383,9 @@ public abstract class RestApiBase implements RestApi {
      */
     protected boolean isSuccess(String path,
                                 ApiRequest<?> request,
-                                Http.RequestMethod method,
+                                Http.Method method,
                                 String requestId,
-                                Http.ResponseStatus status) {
+                                Http.Status status) {
         if (status == Http.Status.NOT_FOUND_404) {
             return true;
         }
@@ -393,7 +393,7 @@ public abstract class RestApiBase implements RestApi {
             return true;
         }
 
-        Http.ResponseStatus.Family family = Http.Status.Family.of(status.code());
+        Http.Status.Family family = Http.Status.Family.of(status.code());
         switch (family) {
         // we do have not modified handled, we also follow redirects - so this is an error
         case REDIRECTION:
@@ -409,7 +409,7 @@ public abstract class RestApiBase implements RestApi {
     /**
      * This method is only called for methods that return an optional entity.
      * If a method (such as
-     * {@link RestApi#invokeWithResponse(io.helidon.common.http.Http.RequestMethod, String, ApiRequest, io.helidon.integrations.common.rest.ApiEntityResponse.Builder)})
+     * {@link RestApi#invokeWithResponse(io.helidon.common.http.Http.Method, String, ApiRequest, io.helidon.integrations.common.rest.ApiEntityResponse.Builder)})
      *  receives a status that would not yield an entity (such as 404), it is automatically an error.
      * Also this method is never called for codes in the success family.
      *
@@ -423,10 +423,10 @@ public abstract class RestApiBase implements RestApi {
      */
     protected boolean isEntityExpected(String path,
                                        ApiRequest<?> request,
-                                       Http.RequestMethod method,
+                                       Http.Method method,
                                        String requestId,
-                                       Http.ResponseStatus status) {
-        Http.ResponseStatus.Family family = Http.Status.Family.of(status.code());
+                                       Http.Status status) {
+        Http.Status.Family family = Http.Status.Family.of(status.code());
         switch (family) {
         // we do have not modified handled, we also follow redirects - so this is an error
         case REDIRECTION:
@@ -459,16 +459,16 @@ public abstract class RestApiBase implements RestApi {
     protected <R, T extends ApiOptionalResponse<R>>
     Single<T> handleOptionalJsonResponse(String path,
                                          ApiRequest<?> request,
-                                         Http.RequestMethod method,
+                                         Http.Method method,
                                          String requestId,
                                          WebClientResponse response,
                                          ApiOptionalResponse.BuilderBase<?, T, JsonObject, R> responseBuilder) {
 
-        Http.ResponseStatus status = response.status();
+        Http.Status status = response.status();
 
-        boolean success = (Http.Status.Family.of(status.code()) == Http.ResponseStatus.Family.SUCCESSFUL)
+        boolean success = (Http.Status.Family.of(status.code()) == Http.Status.Family.SUCCESSFUL)
                 || isSuccess(path, request, method, requestId, status);
-        boolean isEntityExpected = (Http.Status.Family.of(status.code()) == Http.ResponseStatus.Family.SUCCESSFUL)
+        boolean isEntityExpected = (Http.Status.Family.of(status.code()) == Http.Status.Family.SUCCESSFUL)
                 || isEntityExpected(path, request, method, requestId, status);
 
         if (success) {
@@ -509,7 +509,7 @@ public abstract class RestApiBase implements RestApi {
      */
     protected <T> Single<T> emptyResponse(String path,
                                           ApiRequest<?> request,
-                                          Http.RequestMethod method,
+                                          Http.Method method,
                                           String requestId,
                                           WebClientResponse response,
                                           ResponseBuilder<?, T, ?> responseBuilder) {
@@ -538,7 +538,7 @@ public abstract class RestApiBase implements RestApi {
     protected <T>
     T jsonOkResponse(String path,
                      ApiRequest<?> request,
-                     Http.RequestMethod method,
+                     Http.Method method,
                      String requestId,
                      WebClientResponse response,
                      JsonObject json,
@@ -569,14 +569,14 @@ public abstract class RestApiBase implements RestApi {
     protected <T extends ApiEntityResponse> Single<T>
     handleJsonResponse(String path,
                        ApiRequest<?> request,
-                       Http.RequestMethod method,
+                       Http.Method method,
                        String requestId,
                        WebClientResponse response,
                        ApiEntityResponse.Builder<?, T, JsonObject> responseBuilder) {
 
-        Http.ResponseStatus status = response.status();
+        Http.Status status = response.status();
 
-        if (Http.Status.Family.of(status.code()) == Http.ResponseStatus.Family.SUCCESSFUL) {
+        if (Http.Status.Family.of(status.code()) == Http.Status.Family.SUCCESSFUL) {
             LOGGER.finest(() -> requestId + ": " + method + " on path " + path + " returned " + status);
             return response.content()
                     .as(JsonObject.class)
@@ -604,13 +604,13 @@ public abstract class RestApiBase implements RestApi {
      */
     protected <T extends ApiResponse> Single<T> handleResponse(String path,
                                                                ApiRequest<?> request,
-                                                               Http.RequestMethod method,
+                                                               Http.Method method,
                                                                String requestId,
                                                                WebClientResponse response,
                                                                ApiResponse.Builder<?, T> responseBuilder) {
-        Http.ResponseStatus status = response.status();
+        Http.Status status = response.status();
 
-        boolean success = (Http.Status.Family.of(status.code()) == Http.ResponseStatus.Family.SUCCESSFUL);
+        boolean success = (Http.Status.Family.of(status.code()) == Http.Status.Family.SUCCESSFUL);
 
         if (success) {
             LOGGER.finest(() -> requestId + ": " + method + " on path " + path + " returned " + status);
@@ -637,7 +637,7 @@ public abstract class RestApiBase implements RestApi {
      */
     protected <T extends ApiResponse> Single<T> errorResponse(String path,
                                                               ApiRequest<?> request,
-                                                              Http.RequestMethod method,
+                                                              Http.Method method,
                                                               String requestId,
                                                               WebClientResponse response) {
 
@@ -686,7 +686,7 @@ public abstract class RestApiBase implements RestApi {
      */
     protected Throwable readErrorFailedEntity(String path,
                                               ApiRequest<?> request,
-                                              Http.RequestMethod method,
+                                              Http.Method method,
                                               String requestId,
                                               WebClientResponse response,
                                               Throwable throwable) {
@@ -714,7 +714,7 @@ public abstract class RestApiBase implements RestApi {
      */
     protected Throwable readError(String path,
                                   ApiRequest<?> request,
-                                  Http.RequestMethod method,
+                                  Http.Method method,
                                   String requestId,
                                   WebClientResponse response,
                                   String entity) {
@@ -742,7 +742,7 @@ public abstract class RestApiBase implements RestApi {
      */
     protected Throwable readError(String path,
                                   ApiRequest<?> request,
-                                  Http.RequestMethod method,
+                                  Http.Method method,
                                   String requestId,
                                   WebClientResponse response) {
 
@@ -771,7 +771,7 @@ public abstract class RestApiBase implements RestApi {
      */
     protected Throwable readError(String path,
                                   ApiRequest<?> request,
-                                  Http.RequestMethod method,
+                                  Http.Method method,
                                   String requestId,
                                   WebClientResponse response,
                                   JsonObject errorObject) {
@@ -804,7 +804,7 @@ public abstract class RestApiBase implements RestApi {
      */
     protected <T extends ApiResponse> Single<T> noEntityOkResponse(String path,
                                                                    ApiRequest<?> request,
-                                                                   Http.RequestMethod method,
+                                                                   Http.Method method,
                                                                    String requestId,
                                                                    WebClientResponse response,
                                                                    ApiResponse.Builder<?, T> responseBuilder) {
@@ -830,13 +830,13 @@ public abstract class RestApiBase implements RestApi {
      */
     protected Supplier<Single<WebClientResponse>> requestJsonPayload(String path,
                                                                      ApiRequest<?> request,
-                                                                     Http.RequestMethod method,
+                                                                     Http.Method method,
                                                                      String requestId,
                                                                      WebClientRequestBuilder requestBuilder,
                                                                      JsonObject jsonObject) {
 
-        requestBuilder.accept(request.responseMediaType().orElse(MediaType.APPLICATION_JSON));
-        requestBuilder.contentType(request.requestMediaType().orElse(MediaType.APPLICATION_JSON));
+        requestBuilder.accept(request.responseMediaType().orElse(MediaTypes.APPLICATION_JSON));
+        requestBuilder.contentType(request.requestMediaType().orElse(MediaTypes.APPLICATION_JSON));
         AtomicBoolean updated = new AtomicBoolean();
         return () -> {
             // we should only update request builder once - if a retry is done, it should not be reset
@@ -870,12 +870,12 @@ public abstract class RestApiBase implements RestApi {
      */
     protected Supplier<Single<WebClientResponse>> requestBytesPayload(String path,
                                                                       ApiRequest<?> request,
-                                                                      Http.RequestMethod method,
+                                                                      Http.Method method,
                                                                       String requestId,
                                                                       WebClientRequestBuilder requestBuilder,
                                                                       Flow.Publisher<DataChunk> publisher) {
-        requestBuilder.accept(request.responseMediaType().orElse(MediaType.APPLICATION_JSON));
-        requestBuilder.contentType(request.requestMediaType().orElse(MediaType.APPLICATION_OCTET_STREAM));
+        requestBuilder.accept(request.responseMediaType().orElse(MediaTypes.APPLICATION_JSON));
+        requestBuilder.contentType(request.requestMediaType().orElse(MediaTypes.APPLICATION_OCTET_STREAM));
         AtomicBoolean updated = new AtomicBoolean();
 
         return () -> {
@@ -901,7 +901,7 @@ public abstract class RestApiBase implements RestApi {
      */
     protected Supplier<Single<WebClientResponse>> requestPayload(String path,
                                                                  ApiRequest<?> request,
-                                                                 Http.RequestMethod method,
+                                                                 Http.Method method,
                                                                  String requestId,
                                                                  WebClientRequestBuilder requestBuilder) {
 
@@ -935,7 +935,7 @@ public abstract class RestApiBase implements RestApi {
     protected Single<WebClientRequestBuilder> updateRequestBuilder(WebClientRequestBuilder requestBuilder,
                                                                    String path,
                                                                    ApiRequest<?> request,
-                                                                   Http.RequestMethod method,
+                                                                   Http.Method method,
                                                                    String requestId) {
         return updateRequestBuilderCommon(requestBuilder, path, request, method, requestId);
     }
@@ -954,7 +954,7 @@ public abstract class RestApiBase implements RestApi {
     protected Single<WebClientRequestBuilder> updateRequestBuilderBytesPayload(WebClientRequestBuilder requestBuilder,
                                                                                String path,
                                                                                ApiRequest<?> request,
-                                                                               Http.RequestMethod method,
+                                                                               Http.Method method,
                                                                                String requestId) {
         return updateRequestBuilderCommon(requestBuilder, path, request, method, requestId);
     }
@@ -974,7 +974,7 @@ public abstract class RestApiBase implements RestApi {
     protected Single<WebClientRequestBuilder> updateRequestBuilder(WebClientRequestBuilder requestBuilder,
                                                                    String path,
                                                                    ApiRequest<?> request,
-                                                                   Http.RequestMethod method,
+                                                                   Http.Method method,
                                                                    String requestId,
                                                                    JsonObject jsonObject) {
         return updateRequestBuilderCommon(requestBuilder, path, request, method, requestId);
@@ -993,7 +993,7 @@ public abstract class RestApiBase implements RestApi {
     protected Single<WebClientRequestBuilder> updateRequestBuilderCommon(WebClientRequestBuilder requestBuilder,
                                                                          String path,
                                                                          ApiRequest<?> request,
-                                                                         Http.RequestMethod method,
+                                                                         Http.Method method,
                                                                          String requestId) {
         return Single.just(requestBuilder);
     }
