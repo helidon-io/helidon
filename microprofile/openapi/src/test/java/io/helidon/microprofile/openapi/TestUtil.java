@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,8 @@ import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.util.Map;
 
-import io.helidon.common.http.MediaType;
+import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.microprofile.server.Server;
 
@@ -77,7 +78,7 @@ public class TestUtil {
 
     /**
      * Returns a {@code HttpURLConnection} for the requested method and path and
-     * {code @MediaType} from the specified {@link WebServer}.
+     * {code @MediaType} from the specified {@link io.helidon.webserver.WebServer}.
      *
      * @param port port to connect to
      * @param method HTTP method to use in building the connection
@@ -90,12 +91,12 @@ public class TestUtil {
             int port,
             String method,
             String path,
-            MediaType mediaType) throws Exception {
+            HttpMediaType mediaType) throws Exception {
         URL url = new URL("http://localhost:" + port + path);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestMethod(method);
         if (mediaType != null) {
-            conn.setRequestProperty("Accept", mediaType.toString());
+            conn.setRequestProperty("Accept", mediaType.text());
         }
         System.out.println("Connecting: " + method + " " + url);
         return conn;
@@ -108,14 +109,10 @@ public class TestUtil {
      * @param cnx the HttpURLConnection from which to get the content type
      * @return the MediaType corresponding to the content type in the response
      */
-    public static MediaType mediaTypeFromResponse(HttpURLConnection cnx) {
-        MediaType returnedMediaType = MediaType.parse(cnx.getContentType());
-        if (!returnedMediaType.charset().isPresent()) {
-            returnedMediaType = MediaType.builder()
-                    .type(returnedMediaType.type())
-                    .subtype(returnedMediaType.subtype())
-                    .charset(Charset.defaultCharset().name())
-                    .build();
+    public static HttpMediaType mediaTypeFromResponse(HttpURLConnection cnx) {
+        HttpMediaType returnedMediaType = HttpMediaType.create(cnx.getContentType());
+        if (returnedMediaType.charset().isEmpty()) {
+            return returnedMediaType.withCharset(Charset.defaultCharset().name());
         }
         return returnedMediaType;
     }
@@ -128,8 +125,8 @@ public class TestUtil {
      * @throws IOException in case of errors reading the HTTP response payload
      */
     public static String stringYAMLFromResponse(HttpURLConnection cnx) throws IOException {
-        MediaType returnedMediaType = mediaTypeFromResponse(cnx);
-        assertTrue(MediaType.APPLICATION_OPENAPI_YAML.test(returnedMediaType),
+        HttpMediaType returnedMediaType = mediaTypeFromResponse(cnx);
+        assertTrue(HttpMediaType.create(MediaTypes.APPLICATION_OPENAPI_YAML).test(returnedMediaType),
                 "Unexpected returned media type");
         return stringFromResponse(cnx, returnedMediaType);
     }
@@ -145,7 +142,7 @@ public class TestUtil {
      * specified {@code MediaType}
      * @throws IOException in case of errors reading the response payload
      */
-    public static String stringFromResponse(HttpURLConnection cnx, MediaType mediaType) throws IOException {
+    public static String stringFromResponse(HttpURLConnection cnx, HttpMediaType mediaType) throws IOException {
         try (final InputStreamReader isr = new InputStreamReader(
                 cnx.getInputStream(), mediaType.charset().get())) {
             StringBuilder sb = new StringBuilder();
@@ -169,7 +166,7 @@ public class TestUtil {
      */
     @SuppressWarnings(value = "unchecked")
     public static Map<String, Object> yamlFromResponse(HttpURLConnection cnx) throws IOException {
-        MediaType returnedMediaType = mediaTypeFromResponse(cnx);
+        HttpMediaType returnedMediaType = mediaTypeFromResponse(cnx);
         Yaml yaml = new Yaml();
         Charset cs = Charset.defaultCharset();
         if (returnedMediaType.charset().isPresent()) {

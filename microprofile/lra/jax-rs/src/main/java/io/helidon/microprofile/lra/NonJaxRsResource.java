@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 
 import io.helidon.common.Reflected;
 import io.helidon.common.configurable.ThreadPoolSupplier;
-import io.helidon.common.http.HttpRequest;
+import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.lra.coordinator.client.PropagatedHeaders;
@@ -43,10 +43,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.lra.LRAResponse;
 import org.eclipse.microprofile.lra.annotation.LRAStatus;
 import org.eclipse.microprofile.lra.annotation.ParticipantStatus;
-
-import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_CONTEXT_HEADER;
-import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_ENDED_CONTEXT_HEADER;
-import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_PARENT_CONTEXT_HEADER;
+import org.eclipse.microprofile.lra.annotation.ws.rs.LRA;
 
 @Reflected
 class NonJaxRsResource {
@@ -57,6 +54,9 @@ class NonJaxRsResource {
     static final String CONFIG_CONTEXT_PATH_KEY = CONFIG_CONTEXT_KEY + ".context-path";
     static final String CONTEXT_PATH_DEFAULT = "/lra-participant";
     private static final String LRA_PARTICIPANT = "lra-participant";
+    private static final Http.HeaderName LRA_HTTP_CONTEXT_HEADER = Http.Header.create(LRA.LRA_HTTP_CONTEXT_HEADER);
+    private static final Http.HeaderName LRA_HTTP_ENDED_CONTEXT_HEADER = Http.Header.create(LRA.LRA_HTTP_ENDED_CONTEXT_HEADER);
+    private static final Http.HeaderName LRA_HTTP_PARENT_CONTEXT_HEADER = Http.Header.create(LRA.LRA_HTTP_PARENT_CONTEXT_HEADER);
 
     private final ExecutorService exec;
 
@@ -98,7 +98,7 @@ class NonJaxRsResource {
                 .any("/{type}/{fqdn}/{methodName}", (req, res) -> {
                     LOGGER.log(Level.FINE, () -> "Non JAX-RS LRA resource " + req.method().name() + " " + req.absoluteUri());
                     RequestHeaders headers = req.headers();
-                    HttpRequest.Path path = req.path();
+                    ServerRequest.Path path = req.path();
 
                     URI lraId = headers.first(LRA_HTTP_CONTEXT_HEADER)
                             .or(() -> headers.first(LRA_HTTP_ENDED_CONTEXT_HEADER))

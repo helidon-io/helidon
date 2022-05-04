@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import io.helidon.common.http.Http.Header;
+import io.helidon.common.http.Http.HeaderName;
 import io.helidon.microprofile.tests.junit5.AddBean;
 import io.helidon.microprofile.tests.junit5.AddConfig;
 import io.helidon.microprofile.tests.junit5.AddExtension;
@@ -64,10 +66,13 @@ public class ProducedRouteTest {
     static final String UNFILTERED_PATH = "/unfiltered";
 
     static final String COOL_HEADER = "Cool-Header";
+    static final HeaderName COOL_HEADER_NAME = Header.create(COOL_HEADER);
     static final String COOL_VALUE = "cool value";
     static final String COOLER_HEADER = "Cooler-Header";
+    static final HeaderName COOLER_HEADER_NAME = Header.create(COOLER_HEADER);
     static final String COOLER_VALUE = "cooler value";
     static final String COOLEST_HEADER = "Coolest-Header";
+    static final HeaderName COOLEST_HEADER_NAME = Header.create(COOLEST_HEADER);
     static final String COOLEST_VALUE = "coolest value";
 
     @Test
@@ -139,7 +144,7 @@ public class ProducedRouteTest {
         @RoutingName(value = "wrong", required = true)
         @RoutingPath("wrong")
         Service coolestFieldProducedService = rules -> rules.any((req, res) -> {
-            res.headers().put(COOLEST_HEADER, COOLEST_VALUE);
+            res.headers().set(COOLEST_HEADER_NAME, COOLEST_VALUE);
             req.next();
         });
 
@@ -149,7 +154,7 @@ public class ProducedRouteTest {
         @RoutingName(RoutingName.DEFAULT_NAME)
         public Service coolTestService() {
             return rules -> rules.any((req, res) -> {
-                res.headers().put(COOL_HEADER, COOL_VALUE);
+                res.headers().set(COOL_HEADER_NAME, COOL_VALUE);
                 req.next();
             });
         }
@@ -158,7 +163,7 @@ public class ProducedRouteTest {
         @ApplicationScoped
         public Service coolerTestService() {
             return rules -> rules.any((req, res) -> {
-                res.headers().put(COOLER_HEADER, COOLER_VALUE);
+                res.headers().set(COOLER_HEADER_NAME, COOLER_VALUE);
                 req.next();
             });
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ module io.helidon.microprofile.cdi {
     requires io.helidon.common;
     requires io.helidon.config;
     requires io.helidon.config.mp;
+    requires io.helidon.common.features;
 
     requires weld.core.impl;
     requires weld.spi;

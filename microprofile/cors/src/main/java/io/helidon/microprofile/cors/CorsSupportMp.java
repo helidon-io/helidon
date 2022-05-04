@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import io.helidon.common.http.Http;
 import io.helidon.webserver.cors.CorsSupportBase;
 import io.helidon.webserver.cors.CrossOriginConfig;
 
@@ -116,18 +117,18 @@ class CorsSupportMp extends CorsSupportBase<ContainerRequestContext, Response, C
         }
 
         @Override
-        public Optional<String> firstHeader(String s) {
-            return Optional.ofNullable(requestContext.getHeaders().getFirst(s));
+        public Optional<String> firstHeader(Http.HeaderName key) {
+            return Optional.ofNullable(requestContext.getHeaders().getFirst(key.defaultCase()));
         }
 
         @Override
-        public boolean headerContainsKey(String s) {
-            return requestContext.getHeaders().containsKey(s);
+        public boolean headerContainsKey(Http.HeaderName key) {
+            return requestContext.getHeaders().containsKey(key.defaultCase());
         }
 
         @Override
-        public List<String> allHeaders(String s) {
-            return requestContext.getHeaders().get(s);
+        public List<String> allHeaders(Http.HeaderName key) {
+            return requestContext.getHeaders().get(key.defaultCase());
         }
 
         @Override
@@ -167,14 +168,14 @@ class CorsSupportMp extends CorsSupportBase<ContainerRequestContext, Response, C
         }
 
         @Override
-        public ResponseAdapter<Response> header(String key, String value) {
-            headers.add(key, value);
+        public ResponseAdapter<Response> header(Http.HeaderName key, String value) {
+            headers.add(key.defaultCase(), value);
             return this;
         }
 
         @Override
-        public ResponseAdapter<Response> header(String key, Object value) {
-            headers.add(key, value);
+        public ResponseAdapter<Response> header(Http.HeaderName key, Object value) {
+            headers.add(key.defaultCase(), value);
             return this;
         }
 
