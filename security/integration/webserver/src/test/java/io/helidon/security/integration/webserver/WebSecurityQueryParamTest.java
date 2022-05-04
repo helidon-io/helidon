@@ -56,7 +56,9 @@ public class WebSecurityQueryParamTest {
         ServerRequest req = Mockito.mock(ServerRequest.class);
 
         UriQuery params = Mockito.mock(UriQuery.class);
+        when(params.contains("jwt")).thenReturn(true);
         when(params.all("jwt")).thenReturn(List.of("bearer jwt_content"));
+        when(params.contains("name")).thenReturn(true);
         when(params.all("name")).thenReturn(List.of("name_content"));
         when(req.queryParams()).thenReturn(params);
 

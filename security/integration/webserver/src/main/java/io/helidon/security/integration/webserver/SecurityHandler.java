@@ -36,6 +36,7 @@ import java.util.logging.Logger;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.http.Http;
+import io.helidon.common.uri.UriQuery;
 import io.helidon.config.Config;
 import io.helidon.security.AuditEvent;
 import io.helidon.security.AuthenticationResponse;
@@ -1108,13 +1109,16 @@ public final class SecurityHandler implements Handler {
         }
 
         void extract(ServerRequest req, Map<String, List<String>> headers) {
-            List<String> values = req.queryParams().all(queryParamName);
+            UriQuery uriQuery = req.queryParams();
+            if (uriQuery.contains(queryParamName)) {
+                List<String> values = uriQuery.all(queryParamName);
 
-            values.forEach(token -> {
-                               String tokenValue = headerHandler.extractToken(token);
-                               headerHandler.addHeader(headers, tokenValue);
-                           }
-            );
+                values.forEach(token -> {
+                                   String tokenValue = headerHandler.extractToken(token);
+                                   headerHandler.addHeader(headers, tokenValue);
+                               }
+                );
+            }
         }
     }
 }
