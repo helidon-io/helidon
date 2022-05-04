@@ -16,7 +16,10 @@
 
 package io.helidon.microprofile.messaging;
 
+import java.util.concurrent.Flow;
+
 import org.eclipse.microprofile.reactive.messaging.Message;
+import org.reactivestreams.FlowAdapters;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
@@ -27,6 +30,10 @@ class WrappingPublisher implements Publisher<Object> {
 
     WrappingPublisher(Publisher<?> source) {
         this.source = source;
+    }
+
+    WrappingPublisher(Flow.Publisher<?> source) {
+        this.source = FlowAdapters.toPublisher(source);
     }
 
     @Override
