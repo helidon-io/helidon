@@ -395,7 +395,7 @@ public class Jwt {
      * Add validator of audience to the collection of validators.
      *
      * @param validators collection of validators
-     * @param audience   audience expected to be in the token
+     * @param audience   audience expected to be in the token, never null
      * @param mandatory  whether the audience field is mandatory in the token
      */
     public static void addAudienceValidator(Collection<Validator<Jwt>> validators, String audience, boolean mandatory) {
@@ -917,7 +917,7 @@ public class Jwt {
      * @return errors instance to check for validation result
      */
     public Errors validate(String issuer, String audience) {
-        return validate(issuer, Set.of(audience));
+        return validate(issuer, audience == null ? Set.of() : Set.of(audience));
     }
 
     /**
