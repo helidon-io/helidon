@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,12 +35,12 @@ import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.ReadOnlyParameters;
 import io.helidon.common.reactive.Single;
 import io.helidon.media.common.MediaContext;
 import io.helidon.media.common.MediaSupport;
 import io.helidon.webserver.BareRequest;
 import io.helidon.webserver.BareResponse;
+import io.helidon.webserver.RequestHeaders;
 import io.helidon.webserver.Routing;
 
 /**
@@ -140,7 +140,7 @@ public class TestClient {
      * @throws RuntimeException if response is not composed but throws exception
      * @throws TimeoutException if request timeouts
      */
-    TestResponse call(Http.RequestMethod method,
+    TestResponse call(Http.Method method,
                       Http.Version version,
                       URI path,
                       Map<String, List<String>> headers,
@@ -162,14 +162,14 @@ public class TestClient {
 
     private static class TestBareRequest implements BareRequest {
 
-        private final Http.RequestMethod method;
+        private final Http.Method method;
         private final Http.Version version;
         private final URI path;
-        private final Map<String, List<String>> headers;
+        private final RequestHeaders headers;
         private final Flow.Publisher<DataChunk> publisher;
         private final TestWebServer webServer;
 
-        TestBareRequest(Http.RequestMethod method,
+        TestBareRequest(Http.Method method,
                         Http.Version version,
                         URI path,
                         Map<String, List<String>> headers,
@@ -180,7 +180,7 @@ public class TestClient {
             this.method = Objects.requireNonNull(method, "Parameter 'method' is null!");
             this.version = Objects.requireNonNull(version, "Parameter 'version' is null!");
             this.path = Objects.requireNonNull(path, "Parameter 'path' is null!");
-            this.headers = new ReadOnlyParameters(headers).toMap();
+            this.headers = new RequestHeadersMap(headers);
             if (publisher == null) {
                 this.publisher = Single.empty();
             } else {
@@ -194,7 +194,7 @@ public class TestClient {
         }
 
         @Override
-        public Http.RequestMethod method() {
+        public Http.Method method() {
             return method;
         }
 
@@ -234,7 +234,7 @@ public class TestClient {
         }
 
         @Override
-        public Map<String, List<String>> headers() {
+        public RequestHeaders headers() {
             return headers;
         }
 
@@ -279,7 +279,7 @@ public class TestClient {
         }
 
         @Override
-        public void writeStatusAndHeaders(Http.ResponseStatus status, Map<String, List<String>> headers) {
+        public void writeStatusAndHeaders(Http.Status status, Map<String, List<String>> headers) {
             headersCompletionStage.complete(this);
             responseFuture.complete(new TestResponse(status, headers, this));
         }

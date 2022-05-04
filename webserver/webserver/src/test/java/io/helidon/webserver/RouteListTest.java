@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,16 +60,16 @@ public class RouteListTest {
         routes.add(new RouteList(List.of(new HandlerRoute(null,
                                                           VOID_HANDLER,
                                                           Http.Method.GET,
-                                                          Http.RequestMethod.create("FOO")))));
-        routes.add(new HandlerRoute(null, VOID_HANDLER, Http.RequestMethod.create("BAR")));
+                                                          Http.Method.create("FOO")))));
+        routes.add(new HandlerRoute(null, VOID_HANDLER, Http.Method.create("BAR")));
         RouteList r = new RouteList(routes);
         // assertion
         assertThat(r.accepts(Http.Method.POST), is(true));
         assertThat(r.accepts(Http.Method.PUT), is(true));
         assertThat(r.accepts(Http.Method.DELETE), is(true));
         assertThat(r.accepts(Http.Method.GET), is(true));
-        assertThat(r.accepts(Http.RequestMethod.create("FOO")), is(true));
-        assertThat(r.accepts(Http.RequestMethod.create("BAR")), is(true));
+        assertThat(r.accepts(Http.Method.create("FOO")), is(true));
+        assertThat(r.accepts(Http.Method.create("BAR")), is(true));
         assertThat(r.accepts(Http.Method.OPTIONS), is(false));
         assertThat(r.acceptedMethods().size(), is(6));
     }
@@ -82,18 +82,18 @@ public class RouteListTest {
         routes.add(new RouteList(List.of(new HandlerRoute(null,
                                                                            VOID_HANDLER,
                                                                            Http.Method.GET,
-                                                                           Http.RequestMethod.create("FOO")),
+                                                                           Http.Method.create("FOO")),
                                                           new HandlerRoute(null, VOID_HANDLER))));
-        routes.add(new HandlerRoute(null, VOID_HANDLER, Http.RequestMethod.create("BAR")));
+        routes.add(new HandlerRoute(null, VOID_HANDLER, Http.Method.create("BAR")));
         RouteList r = new RouteList(routes);
         // assertion
         assertThat(r.accepts(Http.Method.POST), is(true));
         assertThat(r.accepts(Http.Method.PUT), is(true));
         assertThat(r.accepts(Http.Method.DELETE), is(true));
         assertThat(r.accepts(Http.Method.GET), is(true));
-        assertThat(r.accepts(Http.RequestMethod.create("FOO")), is(true));
-        assertThat(r.accepts(Http.RequestMethod.create("BAR")), is(true));
-        assertThat(r.accepts(Http.RequestMethod.create("BAZ")), is(true));
+        assertThat(r.accepts(Http.Method.create("FOO")), is(true));
+        assertThat(r.accepts(Http.Method.create("BAR")), is(true));
+        assertThat(r.accepts(Http.Method.create("BAZ")), is(true));
         assertThat(r.accepts(Http.Method.OPTIONS), is(true));
         assertThat(r.acceptedMethods().size(), is(0));
     }

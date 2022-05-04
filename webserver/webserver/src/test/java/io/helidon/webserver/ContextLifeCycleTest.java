@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import java.util.concurrent.TimeoutException;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.http.DataChunk;
-import io.helidon.common.http.Http.ResponseStatus;
+import io.helidon.common.http.Http;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientResponse;
 
@@ -62,7 +62,7 @@ class ContextLifeCycleTest {
                                        .start()
                                        .await(10, TimeUnit.SECONDS);
 
-        ResponseStatus responseStatus = WebClient.builder()
+        Http.Status responseStatus = WebClient.builder()
                                                  .baseUri("http://localhost:" + webServer.port())
                                                  .build()
                                                  .post()
@@ -114,7 +114,7 @@ class ContextLifeCycleTest {
                                        .start()
                                        .await(10, TimeUnit.SECONDS);
 
-        ResponseStatus responseStatus = WebClient.builder()
+        Http.Status responseStatus = WebClient.builder()
                                                  .baseUri("http://localhost:" + webServer.port())
                                                  .build()
                                                  .post()

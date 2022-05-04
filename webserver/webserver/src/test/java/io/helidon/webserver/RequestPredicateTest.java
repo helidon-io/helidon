@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,12 +20,17 @@ import java.util.Map;
 import java.util.function.Predicate;
 
 import io.helidon.common.http.Http;
-import io.helidon.common.http.MediaType;
+import io.helidon.common.http.HttpMediaType;
 import io.helidon.webserver.RoutingTest.RoutingChecker;
 
+import io.netty.handler.codec.http.DefaultHttpHeaders;
+import io.netty.handler.codec.http.HttpHeaders;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+import static io.helidon.common.http.Http.Header.ACCEPT;
+import static io.helidon.common.http.Http.Header.CONTENT_TYPE;
+import static io.helidon.common.http.Http.Header.COOKIE;
 import static io.helidon.webserver.RoutingTest.mockResponse;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -35,6 +40,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * Tests {@link RequestPredicate}.
  */
 public class RequestPredicateTest {
+
+    public static final Http.HeaderName MY_HEADER = Http.Header.create("my-header");
 
     @Test
     public void isOfMethod1() {
@@ -93,21 +100,21 @@ public class RequestPredicateTest {
         final RoutingChecker checker = new RoutingChecker();
         Routing routing = Routing.builder()
                 .get("/exists", RequestPredicate.create()
-                        .containsHeader("my-header")
+                        .containsHeader(MY_HEADER)
                         .thenApply((req, resp) -> {
                             checker.handlerInvoked("headerFound");
                         }).otherwise((req, res) -> {
                             checker.handlerInvoked("headerNotFound");
                         }))
                 .get("/valid", RequestPredicate.create()
-                        .containsHeader("my-header", "abc"::equals)
+                        .containsHeader(MY_HEADER, "abc"::equals)
                         .thenApply((req, resp) -> {
                             checker.handlerInvoked("headerIsValid");
                         }).otherwise((req, res) -> {
                             checker.handlerInvoked("headerIsNotValid");
                         }))
                 .get("/equals", RequestPredicate.create()
-                        .containsHeader("my-header", "abc")
+                        .containsHeader(MY_HEADER, "abc")
                         .thenApply((req, resp) -> {
                             checker.handlerInvoked("headerIsEqual");
                         }).otherwise((req, res) -> {
@@ -120,7 +127,7 @@ public class RequestPredicateTest {
                     .containsHeader(null);
         });
 
-        routing.route(mockRequest("/exists", Map.of("my-header", List.of("abc"))),
+        routing.route(mockRequest("/exists", Map.of(MY_HEADER, List.of("abc"))),
                 mockResponse());
         assertThat(checker.handlersInvoked(), is("headerFound"));
 
@@ -134,7 +141,7 @@ public class RequestPredicateTest {
         final RoutingChecker checker = new RoutingChecker();
         Routing routing = Routing.builder()
                 .get("/valid", RequestPredicate.create()
-                        .containsHeader("my-header", "abc"::equals)
+                        .containsHeader(MY_HEADER, "abc"::equals)
                         .thenApply((req, resp) -> {
                             checker.handlerInvoked("headerIsValid");
                         }).otherwise((req, res) -> {
@@ -144,7 +151,7 @@ public class RequestPredicateTest {
 
         assertThrows(NullPointerException.class, () -> {
             RequestPredicate.create()
-                    .containsHeader("my-header", (Predicate<String>) null);
+                    .containsHeader(MY_HEADER, (Predicate<String>) null);
         });
 
         assertThrows(NullPointerException.class, () -> {
@@ -152,12 +159,12 @@ public class RequestPredicateTest {
                     .containsHeader(null, "abc"::equals);
         });
 
-        routing.route(mockRequest("/valid", Map.of("my-header", List.of("abc"))),
+        routing.route(mockRequest("/valid", Map.of(MY_HEADER, List.of("abc"))),
                 mockResponse());
         assertThat(checker.handlersInvoked(), is("headerIsValid"));
 
         checker.reset();
-        routing.route(mockRequest("/valid", Map.of("my-header", List.of("def"))),
+        routing.route(mockRequest("/valid", Map.of(MY_HEADER, List.of("def"))),
                 mockResponse());
         assertThat(checker.handlersInvoked(), is("headerIsNotValid"));
     }
@@ -167,7 +174,7 @@ public class RequestPredicateTest {
         final RoutingChecker checker = new RoutingChecker();
         Routing routing = Routing.builder()
                 .get("/equals", RequestPredicate.create()
-                        .containsHeader("my-header", "abc")
+                        .containsHeader(MY_HEADER, "abc")
                         .thenApply((req, resp) -> {
                             checker.handlerInvoked("headerIsEqual");
                         }).otherwise((req, res) -> {
@@ -177,7 +184,7 @@ public class RequestPredicateTest {
 
         assertThrows(NullPointerException.class, () -> {
             RequestPredicate.create()
-                    .containsHeader("my-header", (String) null);
+                    .containsHeader(MY_HEADER, (String) null);
         });
 
         assertThrows(NullPointerException.class, () -> {
@@ -185,12 +192,12 @@ public class RequestPredicateTest {
                     .containsHeader(null, "abc");
         });
 
-        routing.route(mockRequest("/equals", Map.of("my-header", List.of("abc"))),
+        routing.route(mockRequest("/equals", Map.of(MY_HEADER, List.of("abc"))),
                 mockResponse());
         assertThat(checker.handlersInvoked(), is("headerIsEqual"));
 
         checker.reset();
-        routing.route(mockRequest("/equals", Map.of("my-header", List.of("def"))),
+        routing.route(mockRequest("/equals", Map.of(MY_HEADER, List.of("def"))),
                 mockResponse());
         assertThat(checker.handlersInvoked(), is("headerIsNotEqual"));
     }
@@ -315,12 +322,12 @@ public class RequestPredicateTest {
                     .containsCookie(null);
         });
 
-        routing.route(mockRequest("/exists", Map.of("cookie",
-                List.of("my-cookie=abc"))), mockResponse());
+        routing.route(mockRequest("/exists", Map.of(COOKIE,
+                                                    List.of("my-cookie=abc"))), mockResponse());
         assertThat(checker.handlersInvoked(), is("cookieFound"));
 
         checker.reset();
-        routing.route(mockRequest("/exists", Map.of("cookie",
+        routing.route(mockRequest("/exists", Map.of(COOKIE,
                 List.of("other-cookie=abc"))), mockResponse());
         assertThat(checker.handlersInvoked(), is("cookieNotFound"));
     }
@@ -348,17 +355,17 @@ public class RequestPredicateTest {
                     .containsCookie(null, "abc");
         });
 
-        routing.route(mockRequest("/valid", Map.of("cookie",
+        routing.route(mockRequest("/valid", Map.of(COOKIE,
                 List.of("my-cookie=abc"))), mockResponse());
         assertThat(checker.handlersInvoked(), is("cookieIsValid"));
 
         checker.reset();
-        routing.route(mockRequest("/valid", Map.of("cookie",
+        routing.route(mockRequest("/valid", Map.of(COOKIE,
                 List.of("my-cookie=def"))), mockResponse());
         assertThat(checker.handlersInvoked(), is("cookieIsNotValid"));
 
         checker.reset();
-        routing.route(mockRequest("/valid", Map.of("cookie",
+        routing.route(mockRequest("/valid", Map.of(COOKIE,
                 List.of("my-cookie="))), mockResponse());
         assertThat(checker.handlersInvoked(), is("cookieIsNotValid"));
     }
@@ -386,12 +393,12 @@ public class RequestPredicateTest {
                     .containsCookie(null, "abc");
         });
 
-        routing.route(mockRequest("/equals", Map.of("cookie",
+        routing.route(mockRequest("/equals", Map.of(COOKIE,
                 List.of("my-cookie=abc"))), mockResponse());
         assertThat(checker.handlersInvoked(), is("cookieIsEqual"));
 
         checker.reset();
-        routing.route(mockRequest("/equals", Map.of("cookie",
+        routing.route(mockRequest("/equals", Map.of(COOKIE,
                 List.of("my-cookie=def"))), mockResponse());
         assertThat(checker.handlersInvoked(), is("cookieIsNotEqual"));
     }
@@ -414,22 +421,22 @@ public class RequestPredicateTest {
                     .accepts((String[]) null);
         });
 
-        routing.route(mockRequest("/accepts1", Map.of("Accept",
+        routing.route(mockRequest("/accepts1", Map.of(ACCEPT,
                 List.of("application/json"))), mockResponse());
         assertThat(checker.handlersInvoked(), is("acceptsMediaType"));
 
         checker.reset();
-        routing.route(mockRequest("/accepts1", Map.of("Accept",
+        routing.route(mockRequest("/accepts1", Map.of(ACCEPT,
                 List.of("text/plain"))), mockResponse());
         assertThat(checker.handlersInvoked(), is("acceptsMediaType"));
 
         checker.reset();
-        routing.route(mockRequest("/accepts1", Map.of("Accept",
+        routing.route(mockRequest("/accepts1", Map.of(ACCEPT,
                 List.of("text/plain", "application/xml"))), mockResponse());
         assertThat(checker.handlersInvoked(), is("acceptsMediaType"));
 
         checker.reset();
-        routing.route(mockRequest("/accepts1", Map.of("Accept", List.of())),
+        routing.route(mockRequest("/accepts1", Map.of(ACCEPT, List.of())),
                 mockResponse());
         assertThat(checker.handlersInvoked(), is("acceptsMediaType"));
 
@@ -438,7 +445,7 @@ public class RequestPredicateTest {
         assertThat(checker.handlersInvoked(), is("acceptsMediaType"));
 
         checker.reset();
-        routing.route(mockRequest("/accepts1", Map.of("Accept",
+        routing.route(mockRequest("/accepts1", Map.of(ACCEPT,
                 List.of("application/xml"))), mockResponse());
         assertThat(checker.handlersInvoked(), is("doesNotAcceptMediaType"));
     }
@@ -448,8 +455,8 @@ public class RequestPredicateTest {
         final RoutingChecker checker = new RoutingChecker();
         Routing routing = Routing.builder()
                 .get("/accepts2", RequestPredicate.create()
-                        .accepts(MediaType.TEXT_PLAIN,
-                                MediaType.APPLICATION_JSON)
+                        .accepts(HttpMediaType.PLAINTEXT_UTF_8,
+                                HttpMediaType.JSON_UTF_8)
                         .thenApply((req, resp) -> {
                             checker.handlerInvoked("acceptsMediaType");
                         }).otherwise((req, res) -> {
@@ -459,25 +466,25 @@ public class RequestPredicateTest {
 
         assertThrows(NullPointerException.class, () -> {
             RequestPredicate.create()
-                    .accepts((MediaType[]) null);
+                    .accepts((HttpMediaType[]) null);
         });
 
-        routing.route(mockRequest("/accepts2", Map.of("Accept",
+        routing.route(mockRequest("/accepts2", Map.of(ACCEPT,
                 List.of("application/json"))), mockResponse());
         assertThat(checker.handlersInvoked(), is("acceptsMediaType"));
 
         checker.reset();
-        routing.route(mockRequest("/accepts2", Map.of("Accept",
+        routing.route(mockRequest("/accepts2", Map.of(ACCEPT,
                 List.of("text/plain"))), mockResponse());
         assertThat(checker.handlersInvoked(), is("acceptsMediaType"));
 
         checker.reset();
-        routing.route(mockRequest("/accepts2", Map.of("Accept",
+        routing.route(mockRequest("/accepts2", Map.of(ACCEPT,
                 List.of("text/plain", "application/xml"))), mockResponse());
         assertThat(checker.handlersInvoked(), is("acceptsMediaType"));
 
         checker.reset();
-        routing.route(mockRequest("/accepts2", Map.of("Accept", List.of())),
+        routing.route(mockRequest("/accepts2", Map.of(ACCEPT, List.of())),
                 mockResponse());
         assertThat(checker.handlersInvoked(), is("acceptsMediaType"));
 
@@ -486,7 +493,7 @@ public class RequestPredicateTest {
         assertThat(checker.handlersInvoked(), is("acceptsMediaType"));
 
         checker.reset();
-        routing.route(mockRequest("/accepts2", Map.of("Accept",
+        routing.route(mockRequest("/accepts2", Map.of(ACCEPT,
                 List.of("application/xml"))), mockResponse());
         assertThat(checker.handlersInvoked(), is("doesNotAcceptMediaType"));
     }
@@ -509,27 +516,27 @@ public class RequestPredicateTest {
                     .hasContentType((String[]) null);
         });
 
-        routing.route(mockRequest("/contentType1", Map.of("Content-Type",
+        routing.route(mockRequest("/contentType1", Map.of(CONTENT_TYPE,
                 List.of("text/plain"))), mockResponse());
         assertThat(checker.handlersInvoked(), is("hasContentType"));
 
         checker.reset();
-        routing.route(mockRequest("/contentType1", Map.of("Content-Type",
+        routing.route(mockRequest("/contentType1", Map.of(CONTENT_TYPE,
                 List.of("text/plain"))), mockResponse());
         assertThat(checker.handlersInvoked(), is("hasContentType"));
 
         checker.reset();
-        routing.route(mockRequest("/contentType1", Map.of("Content-Type",
+        routing.route(mockRequest("/contentType1", Map.of(CONTENT_TYPE,
                 List.of("application/json"))), mockResponse());
         assertThat(checker.handlersInvoked(), is("hasContentType"));
 
         checker.reset();
-        routing.route(mockRequest("/contentType1", Map.of("Content-Type",
+        routing.route(mockRequest("/contentType1", Map.of(CONTENT_TYPE,
                 List.of("application/xml"))), mockResponse());
         assertThat(checker.handlersInvoked(), is("doesNotHaveContentType"));
 
         checker.reset();
-        routing.route(mockRequest("/contentType1", Map.of("Content-Type",
+        routing.route(mockRequest("/contentType1", Map.of(CONTENT_TYPE,
                 List.of())), mockResponse());
         assertThat(checker.handlersInvoked(), is("doesNotHaveContentType"));
 
@@ -543,8 +550,8 @@ public class RequestPredicateTest {
         final RoutingChecker checker = new RoutingChecker();
         Routing routing = Routing.builder()
                 .get("/contentType2", RequestPredicate.create()
-                        .hasContentType(MediaType.TEXT_PLAIN,
-                                MediaType.APPLICATION_JSON)
+                        .hasContentType(HttpMediaType.PLAINTEXT_UTF_8,
+                                HttpMediaType.JSON_UTF_8)
                         .thenApply((req, resp) -> {
                             checker.handlerInvoked("hasContentType");
                         }).otherwise((req, res) -> {
@@ -554,30 +561,30 @@ public class RequestPredicateTest {
 
         assertThrows(NullPointerException.class, () -> {
             RequestPredicate.create()
-                    .hasContentType((MediaType[]) null);
+                    .hasContentType(new HttpMediaType[0]);
         });
 
-        routing.route(mockRequest("/contentType2", Map.of("Content-Type",
+        routing.route(mockRequest("/contentType2", Map.of(CONTENT_TYPE,
                 List.of("text/plain"))), mockResponse());
         assertThat(checker.handlersInvoked(), is("hasContentType"));
 
         checker.reset();
-        routing.route(mockRequest("/contentType2", Map.of("Content-Type",
+        routing.route(mockRequest("/contentType2", Map.of(CONTENT_TYPE,
                 List.of("text/plain"))), mockResponse());
         assertThat(checker.handlersInvoked(), is("hasContentType"));
 
         checker.reset();
-        routing.route(mockRequest("/contentType2", Map.of("Content-Type",
+        routing.route(mockRequest("/contentType2", Map.of(CONTENT_TYPE,
                 List.of("application/json"))), mockResponse());
         assertThat(checker.handlersInvoked(), is("hasContentType"));
 
         checker.reset();
-        routing.route(mockRequest("/contentType2", Map.of("Content-Type",
+        routing.route(mockRequest("/contentType2", Map.of(CONTENT_TYPE,
                 List.of("application/xml"))), mockResponse());
         assertThat(checker.handlersInvoked(), is("doesNotHaveContentType"));
 
         checker.reset();
-        routing.route(mockRequest("/contentType2", Map.of("Content-Type",
+        routing.route(mockRequest("/contentType2", Map.of(CONTENT_TYPE,
                 List.of())), mockResponse());
         assertThat(checker.handlersInvoked(), is("doesNotHaveContentType"));
 
@@ -591,8 +598,8 @@ public class RequestPredicateTest {
         final RoutingChecker checker = new RoutingChecker();
         Routing routing = Routing.builder()
                 .any("/multiple", RequestPredicate.create()
-                        .accepts(MediaType.TEXT_PLAIN)
-                        .hasContentType(MediaType.TEXT_PLAIN)
+                        .accepts(HttpMediaType.PLAINTEXT_UTF_8)
+                        .hasContentType(HttpMediaType.PLAINTEXT_UTF_8)
                         .containsQueryParameter("my-param")
                         .containsCookie("my-cookie")
                         .isOfMethod(Http.Method.GET)
@@ -604,15 +611,15 @@ public class RequestPredicateTest {
                 .build();
 
         routing.route(mockRequest("/multiple?my-param=abc",
-                Map.of("Content-Type", List.of("text/plain"),
-                      "Accept", List.of("text/plain"),
-                      "Cookie", List.of("my-cookie=abc"))), mockResponse());
+                Map.of(CONTENT_TYPE, List.of("text/plain"),
+                      ACCEPT, List.of("text/plain"),
+                      COOKIE, List.of("my-cookie=abc"))), mockResponse());
         assertThat(checker.handlersInvoked(), is("hasAllConditions"));
 
         checker.reset();
         routing.route(mockRequest("/multiple?my-param=abc",
-                Map.of("Accept", List.of("text/plain"),
-                      "Cookie", List.of("my-cookie=abc"))), mockResponse());
+                Map.of(ACCEPT, List.of("text/plain"),
+                      COOKIE, List.of("my-cookie=abc"))), mockResponse());
         assertThat(checker.handlersInvoked(), is("doesNotHaveAllConditions"));
     }
 
@@ -621,8 +628,8 @@ public class RequestPredicateTest {
         final RoutingChecker checker = new RoutingChecker();
         Routing routing = Routing.builder()
                 .get("/and", RequestPredicate.create()
-                        .accepts(MediaType.TEXT_PLAIN)
-                        .and((req) -> req.headers().first("my-header").isPresent())
+                        .accepts(HttpMediaType.PLAINTEXT_UTF_8)
+                        .and((req) -> req.headers().contains(MY_HEADER))
                         .thenApply((req, resp) -> {
                             checker.handlerInvoked("hasAllConditions");
                         }).otherwise((req, res) -> {
@@ -631,13 +638,13 @@ public class RequestPredicateTest {
                 .build();
 
         routing.route(mockRequest("/and",
-                Map.of("Accept", List.of("text/plain"),
-                      "my-header", List.of("abc"))), mockResponse());
+                Map.of(ACCEPT, List.of("text/plain"),
+                      MY_HEADER, List.of("abc"))), mockResponse());
         assertThat(checker.handlersInvoked(), is("hasAllConditions"));
 
         checker.reset();
         routing.route(mockRequest("/and",
-                Map.of("Accept", List.of("text/plain"))), mockResponse());
+                Map.of(ACCEPT, List.of("text/plain"))), mockResponse());
         assertThat(checker.handlersInvoked(), is("doesNotHaveAllConditions"));
     }
 
@@ -646,8 +653,8 @@ public class RequestPredicateTest {
         final RoutingChecker checker = new RoutingChecker();
         Routing routing = Routing.builder()
                 .get("/or", RequestPredicate.create()
-                        .hasContentType(MediaType.TEXT_PLAIN)
-                        .or((req) -> req.headers().first("my-header").isPresent())
+                        .hasContentType(HttpMediaType.PLAINTEXT_UTF_8)
+                        .or((req) -> req.headers().contains(MY_HEADER))
                         .thenApply((req, resp) -> {
                             checker.handlerInvoked("hasAnyCondition");
                         }).otherwise((req, res) -> {
@@ -656,12 +663,12 @@ public class RequestPredicateTest {
                 .build();
 
         routing.route(mockRequest("/or",
-                Map.of("Content-Type", List.of("text/plain"))), mockResponse());
+                Map.of(CONTENT_TYPE, List.of("text/plain"))), mockResponse());
         assertThat(checker.handlersInvoked(), is("hasAnyCondition"));
 
         checker.reset();
         routing.route(mockRequest("/or",
-                Map.of("my-header", List.of("abc"))), mockResponse());
+                Map.of(MY_HEADER, List.of("abc"))), mockResponse());
         assertThat(checker.handlersInvoked(), is("hasAnyCondition"));
 
         checker.reset();
@@ -674,7 +681,7 @@ public class RequestPredicateTest {
         final RoutingChecker checker = new RoutingChecker();
         Routing routing = Routing.builder()
                 .get("/negate", RequestPredicate.create()
-                        .hasContentType(MediaType.TEXT_PLAIN)
+                        .hasContentType(HttpMediaType.PLAINTEXT_UTF_8)
                         .containsCookie("my-cookie")
                         .negate()
                         .thenApply((req, resp) -> {
@@ -685,13 +692,13 @@ public class RequestPredicateTest {
                 .build();
 
         routing.route(mockRequest("/negate",
-                Map.of("Content-Type", List.of("application/json"))), mockResponse());
+                Map.of(CONTENT_TYPE, List.of("application/json"))), mockResponse());
         assertThat(checker.handlersInvoked(), is("hasAllConditions"));
 
         checker.reset();
         routing.route(mockRequest("/negate",
-                Map.of("Content-Type", List.of("text/plain"),
-                        "Cookie", List.of("my-cookie=abc"))), mockResponse());
+                Map.of(CONTENT_TYPE, List.of("text/plain"),
+                        COOKIE, List.of("my-cookie=abc"))), mockResponse());
         assertThat(checker.handlersInvoked(), is("doesNotHaveAllConditions"));
     }
 
@@ -699,9 +706,9 @@ public class RequestPredicateTest {
     public void nextAlreadySet(){
         RequestPredicate requestPredicate = RequestPredicate.create()
                 .containsCookie("my-cookie");
-        requestPredicate.containsHeader("my-header");
+        requestPredicate.containsHeader(MY_HEADER);
         assertThrows(IllegalStateException.class, () -> {
-            requestPredicate.containsHeader("my-param");
+            requestPredicate.containsHeader(Http.Header.create("my-param"));
         });
     }
 
@@ -719,11 +726,13 @@ public class RequestPredicateTest {
     }
 
     private static BareRequest mockRequest(final String path,
-            final Map<String, List<String>> headers) {
+            final Map<Http.HeaderName, List<String>> headers) {
 
-        BareRequest bareRequestMock = RoutingTest.mockRequest(path,
-                Http.Method.GET);
-        Mockito.doReturn(headers).when(bareRequestMock).headers();
+        BareRequest bareRequestMock = RoutingTest.mockRequest(path, Http.Method.GET);
+        HttpHeaders nettyHeaders = new DefaultHttpHeaders();
+        headers.forEach((key, value) -> nettyHeaders.set(key.defaultCase(), value));
+        RequestHeaders rh = new NettyRequestHeaders(nettyHeaders);
+        Mockito.doReturn(rh).when(bareRequestMock).headers();
         return bareRequestMock;
     }
 }

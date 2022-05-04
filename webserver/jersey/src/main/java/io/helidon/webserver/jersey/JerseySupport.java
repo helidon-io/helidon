@@ -37,7 +37,6 @@ import io.helidon.common.configurable.ThreadPool;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.HttpRequest;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
 import io.helidon.tracing.SpanContext;
@@ -90,7 +89,7 @@ import static org.glassfish.jersey.server.ServerProperties.WADL_FEATURE_DISABLE;
  */
 public class JerseySupport implements Service {
 
-    private static final String SEC_WEBSOCKET_KEY = "Sec-WebSocket-Key";
+    private static final Http.HeaderName SEC_WEBSOCKET_KEY = Http.Header.create("Sec-WebSocket-Key");
 
     /**
      * The request scoped span context qualifier that can be injected into a Jersey resource.
@@ -201,7 +200,7 @@ public class JerseySupport implements Service {
         }
     }
 
-    static String basePath(HttpRequest.Path path) {
+    static String basePath(ServerRequest.Path path) {
         String reqPath = path.toString();
         String absPath = path.absolute().toString();
         String basePath = absPath.substring(0, absPath.length() - reqPath.length() + 1);

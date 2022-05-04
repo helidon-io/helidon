@@ -61,7 +61,7 @@ public class FilterTest {
                 )
                 .routing(r -> r
                         .any((req, res) -> {
-                            res.headers().add(Http.Header.TRANSFER_ENCODING, "chunked");
+                            res.headers().set(Http.HeaderValues.TRANSFER_ENCODING_CHUNKED);
                             req.next();
                         })
                         .get("/dataChunkPublisher", (req, res) -> {

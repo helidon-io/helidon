@@ -151,14 +151,15 @@ class BareResponseImpl implements BareResponse {
     }
 
     @Override
-    public void writeStatusAndHeaders(Http.ResponseStatus status, Map<String, List<String>> headers) {
+    public void writeStatusAndHeaders(Http.Status status, Map<String, List<String>> headers) {
         Objects.requireNonNull(status, "Parameter 'statusCode' was null!");
         if (!statusHeadersSent.compareAndSet(false, true)) {
             throw new IllegalStateException("Status and headers were already sent");
         }
 
         HttpResponseStatus nettyStatus;
-        if (status instanceof Http.Status || status.reasonPhrase() == null) {
+
+        if (status.reasonPhrase() == null) {
             // default reason phrase
             nettyStatus = valueOf(status.code());
         } else {

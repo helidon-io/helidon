@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import io.helidon.common.http.Http;
-import io.helidon.common.http.MediaType;
+import io.helidon.common.http.HttpMediaType;
 
 /**
  * A handler that is invoked when a response is sent outside of routing.
@@ -47,7 +47,7 @@ public interface DirectHandler {
      */
     default TransportResponse handle(TransportRequest request,
                                      EventType eventType,
-                                     Http.ResponseStatus defaultStatus,
+                                     Http.Status defaultStatus,
                                      Throwable t) {
         return handle(request, eventType, defaultStatus, t.getMessage());
     }
@@ -66,7 +66,7 @@ public interface DirectHandler {
      */
     TransportResponse handle(TransportRequest request,
                              EventType eventType,
-                             Http.ResponseStatus defaultStatus,
+                             Http.Status defaultStatus,
                              String message);
 
     /**
@@ -126,7 +126,7 @@ public interface DirectHandler {
      * Response to correctly reply to the original client.
      */
     class TransportResponse {
-        private final Http.ResponseStatus status;
+        private final Http.Status status;
         private final Map<String, List<String>> headers;
         private final byte[] entity;
 
@@ -155,7 +155,7 @@ public interface DirectHandler {
             return builder().entity(message).build();
         }
 
-        Http.ResponseStatus status() {
+        Http.Status status() {
             return status;
         }
 
@@ -173,7 +173,7 @@ public interface DirectHandler {
         public static class Builder implements io.helidon.common.Builder<Builder, TransportResponse> {
             private final Map<String, List<String>> headers = new HashMap<>();
 
-            private Http.ResponseStatus status = Http.Status.BAD_REQUEST_400;
+            private Http.Status status = Http.Status.BAD_REQUEST_400;
             private byte[] entity;
 
             private Builder() {
@@ -190,7 +190,7 @@ public interface DirectHandler {
              * @param status status to use, default is bad request
              * @return updated builder
              */
-            public Builder status(Http.ResponseStatus status) {
+            public Builder status(Http.Status status) {
                 this.status = status;
                 return this;
             }
@@ -204,7 +204,7 @@ public interface DirectHandler {
              * @throws java.lang.IllegalArgumentException if an attempt is made to modify protected headers (such as Connection)
              */
             public Builder header(String name, String... values) {
-                if (name.equalsIgnoreCase(Http.Header.CONNECTION)) {
+                if (name.equalsIgnoreCase(Http.Header.CONNECTION.lowerCase())) {
                     throw new IllegalArgumentException(
                             "Connection header cannot be overridden, it is always set to Close fro transport errors");
                 }
@@ -222,7 +222,7 @@ public interface DirectHandler {
              * @return updated builder
              */
             public Builder entity(String entity) {
-                this.headers.putIfAbsent(Http.Header.CONTENT_TYPE, List.of(MediaType.TEXT_PLAIN.toString()));
+                this.headers.putIfAbsent(Http.Header.CONTENT_TYPE.defaultCase(), List.of(HttpMediaType.PLAINTEXT_UTF_8.text()));
                 return entity(HtmlEncoder.encode(entity).getBytes(StandardCharsets.UTF_8));
             }
 
@@ -238,9 +238,9 @@ public interface DirectHandler {
             public Builder entity(byte[] entity) {
                 this.entity = Arrays.copyOf(entity, entity.length);
                 if (this.entity.length == 0) {
-                    this.headers.remove(Http.Header.CONTENT_LENGTH);
+                    this.headers.remove(Http.Header.CONTENT_LENGTH.defaultCase());
                 } else {
-                    this.header(Http.Header.CONTENT_LENGTH, String.valueOf(entity.length));
+                    this.header(Http.Header.CONTENT_LENGTH.defaultCase(), String.valueOf(entity.length));
                 }
                 return this;
             }

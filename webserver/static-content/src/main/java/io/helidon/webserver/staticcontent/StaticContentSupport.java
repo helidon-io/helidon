@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,8 @@ import java.util.Objects;
 import java.util.TreeMap;
 import java.util.function.Function;
 
-import io.helidon.common.http.MediaType;
+import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.media.type.MediaType;
 import io.helidon.webserver.Service;
 
 /**
@@ -203,7 +204,7 @@ public interface StaticContentSupport extends Service {
          * @throws NullPointerException if any parameter is {@code null}
          * @throws IllegalArgumentException if {@code filenameExtension} is empty
          */
-        public T contentType(String filenameExtension, MediaType contentType) {
+        public T contentType(String filenameExtension, HttpMediaType contentType) {
             Objects.requireNonNull(filenameExtension, "Parameter 'filenameExtension' is null!");
             Objects.requireNonNull(contentType, "Parameter 'contentType' is null!");
             filenameExtension = filenameExtension.trim();

@@ -16,14 +16,9 @@
 
 package io.helidon.webserver;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.EnumSet;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Predicate;
 
 import io.helidon.common.http.Http;
 
@@ -73,12 +68,12 @@ interface Route extends ServerLifecycle {
     };
 
     /**
-     * Gets all accepted {@link Http.RequestMethod HTTP methods} <b>or</b> empty set if accepts ANY method <b>or</b> {@code null}
+     * Gets all accepted {@link Http.Method HTTP methods} <b>or</b> empty set if accepts ANY method <b>or</b> {@code null}
      * if no method (not a method based route).
      *
      * @return accepted methods.
      */
-    default Set<Http.RequestMethod> acceptedMethods() {
+    default Set<Http.Method> acceptedMethods() {
         return null;
     }
 
@@ -88,64 +83,7 @@ interface Route extends ServerLifecycle {
      * @param method An HTTP method.
      * @return {@code true} if this record accepts provided method.
      */
-    default boolean accepts(Http.RequestMethod method) {
+    default boolean accepts(Http.Method method) {
         return false;
-    }
-
-    /**
-     * Abstract parent for {@link Route routes} using {@link Http.RequestMethod HTTP method}.
-     */
-    class HttpMethodPredicate implements Predicate<Http.RequestMethod> {
-
-        private final boolean allMethods;
-        private final EnumSet<Http.Method> standardMethods;
-        private final Set<Http.RequestMethod> otherMethods;
-
-        HttpMethodPredicate(Collection<Http.RequestMethod> methods) {
-            if (methods == null || methods.isEmpty()) {
-                this.allMethods = true;
-                this.standardMethods = null;
-                this.otherMethods = null;
-            } else {
-                this.allMethods = false;
-                this.otherMethods = new HashSet<>();
-                Collection<Http.Method> sms = new ArrayList<>(methods.size());
-                for (Http.RequestMethod method : methods) {
-                    if (method instanceof Http.Method) {
-                        sms.add((Http.Method) method);
-                    } else {
-                        otherMethods.add(method);
-                    }
-                }
-                if (sms.isEmpty()) {
-                    this.standardMethods = EnumSet.noneOf(Http.Method.class);
-                } else {
-                    this.standardMethods = EnumSet.copyOf(sms);
-                }
-            }
-        }
-
-        @Override
-        public boolean test(Http.RequestMethod method) {
-            if (allMethods) {
-                return true;
-            } else if (method instanceof Http.Method) {
-                return standardMethods.contains(method);
-            } else {
-                return otherMethods.contains(method);
-            }
-        }
-
-        public Set<Http.RequestMethod> acceptedMethods() {
-            if (allMethods) {
-                return Collections.emptySet();
-            } else {
-                HashSet<Http.RequestMethod> result = new HashSet<>(standardMethods.size() + otherMethods.size());
-                result.addAll(standardMethods);
-                result.addAll(otherMethods);
-                return result;
-            }
-        }
-
     }
 }

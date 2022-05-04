@@ -21,7 +21,6 @@ import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
@@ -105,43 +104,6 @@ public interface SocketConfiguration {
      * @return web server tls configuration
      */
     Optional<WebServerTls> tls();
-
-    /**
-     * Returns a {@link SSLContext} to use with the server socket. If not {@code null} then
-     * the server enforces an SSL communication.
-     *
-     * @deprecated use {@code tls().sslContext()} instead. This method will be removed at 3.0.0 version.
-     * @return a SSL context to use
-     */
-    @Deprecated(since = "2.3.1", forRemoval = true)
-    SSLContext ssl();
-
-    /**
-     * Returns the SSL protocols to enable, or {@code null} to enable the default
-     * protocols.
-     * @deprecated use {@code tls().enabledTlsProtocols()} instead. This method will be removed at 3.0.0 version.
-     * @return the SSL protocols to enable
-     */
-    @Deprecated(since = "2.3.1", forRemoval = true)
-    Set<String> enabledSslProtocols();
-
-    /**
-     * Return the allowed cipher suite of the TLS. If empty set is returned, the default cipher suite is used.
-     *
-     * @deprecated use {@code tls().cipherSuite()} instead. This method will be removed at 3.0.0 version.
-     * @return the allowed cipher suite
-     */
-    @Deprecated(since = "2.3.1", forRemoval = true)
-    Set<String> allowedCipherSuite();
-
-    /**
-     * Whether to require client authentication or not.
-     *
-     * @deprecated use {@code tls().clientAuth()} instead. This method will be removed at 3.0.0 version.
-     * @return client authentication
-     */
-    @Deprecated(since = "2.3.1", forRemoval = true)
-    ClientAuthentication clientAuth();
 
     /**
      * Whether this socket is enabled (and will be opened on server startup), or disabled

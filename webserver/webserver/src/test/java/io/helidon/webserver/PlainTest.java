@@ -40,6 +40,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.common.http.Http.HeaderValues.TRANSFER_ENCODING_CHUNKED;
 import static io.helidon.webserver.utils.SocketHttpClient.entityFromResponse;
 import static io.helidon.webserver.utils.SocketHttpClient.headersFromResponse;
 import static org.hamcrest.CoreMatchers.containsString;
@@ -74,7 +75,7 @@ public class PlainTest {
                         .host("localhost")
                 )
                 .routing(r -> r.any((req, res) -> {
-                            res.headers().add(Http.Header.TRANSFER_ENCODING, "chunked");
+                            res.headers().set(TRANSFER_ENCODING_CHUNKED);
                             req.next();
                         })
                                  .any("/exception", (req, res) -> {
@@ -92,7 +93,7 @@ public class PlainTest {
                                      res.send("In trace!");
                                  })
                                  .get("/force-chunked", (req, res) -> {
-                                     res.headers().put(Http.Header.TRANSFER_ENCODING, "chunked");
+                                     res.headers().set(TRANSFER_ENCODING_CHUNKED);
                                      res.send("abcd");
                                  })
                                  .get("/multi", (req, res) -> {
@@ -408,7 +409,7 @@ public class PlainTest {
                                                    webServer);
         Map<String, String> headers = headersFromResponse(s);
         assertThat(headers, not(hasKey(equalToIgnoringCase("connection"))));
-        assertThat(headers, hasEntry(equalToIgnoringCase(Http.Header.TRANSFER_ENCODING), is("chunked")));
+        assertThat(headers, hasEntry(equalToIgnoringCase(Http.Header.TRANSFER_ENCODING.defaultCase()), is("chunked")));
 
         assertThat(entityFromResponse(s, false), is("4\nabcd\n0\n\n"));
     }
@@ -497,7 +498,7 @@ public class PlainTest {
         System.out.println(s);
 
         assertThat(s, startsWith("HTTP/1.1 500 Internal Server Error\n"));
-        assertThat(headersFromResponse(s), hasKey(equalToIgnoringCase(Http.Header.TRAILER)));
+        assertThat(headersFromResponse(s), hasKey(equalToIgnoringCase(Http.Header.TRAILER.defaultCase())));
         Map<String, String> trailerHeaders = cutTrailerHeaders(s);
         assertThat(trailerHeaders, hasEntry(equalToIgnoringCase("stream-status"), is("500")));
         assertThat(trailerHeaders, hasEntry(equalToIgnoringCase("stream-result"), is(TEST_EXCEPTION.toString())));

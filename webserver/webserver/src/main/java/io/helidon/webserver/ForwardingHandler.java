@@ -286,10 +286,10 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
         }
 
         // Certificate management
-        request.headers().remove(Http.Header.X_HELIDON_CN);
+        request.headers().remove(Http.Header.X_HELIDON_CN).defaultCase();
         String cn = ctx.channel().attr(CLIENT_CERTIFICATE_NAME).get();
         if (cn != null) {
-            request.headers().set(Http.Header.X_HELIDON_CN, cn);
+            request.headers().set(Http.Header.X_HELIDON_CN.defaultCase(), cn);
         }
 
         // If the client x509 certificate is present on the channel, add it to the context scope of the ongoing
@@ -547,7 +547,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
 
     private FullHttpResponse toNettyResponse(TransportResponse handlerResponse) {
         Optional<byte[]> entity = handlerResponse.entity();
-        Http.ResponseStatus status = handlerResponse.status();
+        Http.Status status = handlerResponse.status();
         Map<String, List<String>> headers = handlerResponse.headers();
 
         HttpResponseStatus nettyStatus = HttpResponseStatus.valueOf(status.code(), status.reasonPhrase());

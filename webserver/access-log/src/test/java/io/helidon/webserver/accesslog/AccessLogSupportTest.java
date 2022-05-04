@@ -22,7 +22,6 @@ import java.util.Arrays;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.HttpRequest;
 import io.helidon.webserver.PathMatcher;
 import io.helidon.webserver.RequestHeaders;
 import io.helidon.webserver.ServerRequest;
@@ -47,7 +46,7 @@ class AccessLogSupportTest {
     private static final String PATH = "/greet/World";
     private static final String HTTP_VERSION = "HTTP/1.1";
 
-    private static final int STATUS_CODE = Http.Status.I_AM_A_TEAPOT.code();
+    private static final int STATUS_CODE = Http.Status.I_AM_A_TEAPOT_418.code();
     private static final String CONTENT_LENGTH = "-";
     private static final long TIME_TAKEN_MICROS = 1140000;
 
@@ -60,13 +59,13 @@ class AccessLogSupportTest {
         when(request.remoteAddress()).thenReturn(REMOTE_IP);
         when(request.context()).thenReturn(context);
         when(request.method()).thenReturn(Http.Method.PUT);
-        HttpRequest.Path path = mock(HttpRequest.Path.class);
+        ServerRequest.Path path = mock(ServerRequest.Path.class);
         when(path.toRawString()).thenReturn(PATH);
         when(request.path()).thenReturn(path);
         when(request.version()).thenReturn(Http.Version.V1_1);
 
         ServerResponse response = mock(ServerResponse.class);
-        when(response.status()).thenReturn(Http.Status.I_AM_A_TEAPOT);
+        when(response.status()).thenReturn(Http.Status.I_AM_A_TEAPOT_418);
 
         AccessLogContext accessLogContext = mock(AccessLogContext.class);
         when(accessLogContext.requestDateTime()).thenReturn(BEGIN_TIME);
@@ -98,13 +97,13 @@ class AccessLogSupportTest {
         when(request.remoteAddress()).thenReturn(REMOTE_IP);
         when(request.context()).thenReturn(context);
         when(request.method()).thenReturn(Http.Method.PUT);
-        HttpRequest.Path path = mock(HttpRequest.Path.class);
+        ServerRequest.Path path = mock(ServerRequest.Path.class);
         when(path.toRawString()).thenReturn(PATH);
         when(request.path()).thenReturn(path);
         when(request.version()).thenReturn(Http.Version.V1_1);
 
         ServerResponse response = mock(ServerResponse.class);
-        when(response.status()).thenReturn(Http.Status.I_AM_A_TEAPOT);
+        when(response.status()).thenReturn(Http.Status.I_AM_A_TEAPOT_418);
 
         AccessLogContext accessLogContext = mock(AccessLogContext.class);
         when(accessLogContext.requestDateTime()).thenReturn(BEGIN_TIME);
@@ -137,7 +136,7 @@ class AccessLogSupportTest {
         when(request.remoteAddress()).thenReturn(REMOTE_IP);
         when(request.context()).thenReturn(context);
         when(request.method()).thenReturn(Http.Method.PUT);
-        HttpRequest.Path path = mock(HttpRequest.Path.class);
+        ServerRequest.Path path = mock(ServerRequest.Path.class);
         when(path.toRawString()).thenReturn(PATH);
         when(request.path()).thenReturn(path);
         when(request.version()).thenReturn(Http.Version.V1_1);
@@ -146,7 +145,7 @@ class AccessLogSupportTest {
         when(request.headers()).thenReturn(headers);
 
         ServerResponse response = mock(ServerResponse.class);
-        when(response.status()).thenReturn(Http.Status.I_AM_A_TEAPOT);
+        when(response.status()).thenReturn(Http.Status.I_AM_A_TEAPOT_418);
 
         String logRecord = accessLog.createLogRecord(request,
                                                      response,

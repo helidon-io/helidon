@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import io.helidon.common.http.FormParams;
-import io.helidon.common.http.MediaType;
+import io.helidon.common.media.type.MediaTypes;
+import io.helidon.common.parameters.Parameters;
 import io.helidon.webclient.WebClient;
 
 import org.junit.jupiter.api.AfterAll;
@@ -42,8 +42,8 @@ public class FormParamsSupportTest {
     public static void startup() throws InterruptedException, ExecutionException, TimeoutException {
         testServer = WebServer.create(Routing.builder()
                         .put("/params", (req, resp) -> {
-                            req.content().as(FormParams.class).thenAccept(fp ->
-                                    resp.send(fp.toMap().toString()));
+                            req.content().as(Parameters.class).thenAccept(fp ->
+                                    resp.send(fp.toString()));
                         })
                         .build())
                 .start()
@@ -64,7 +64,7 @@ public class FormParamsSupportTest {
     public void urlEncodedTest() throws Exception {
         webClient.put()
                 .path("/params")
-                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .contentType(MediaTypes.APPLICATION_FORM_URLENCODED)
                 .submit("key1=val+1&key2=val2_1&key2=val2_2", String.class)
                 .thenAccept(it -> {
                     assertThat(it, containsString("key1=[val 1]"));
@@ -78,7 +78,7 @@ public class FormParamsSupportTest {
     public void plainTextTest() throws Exception{
         webClient.put()
                 .path("/params")
-                .contentType(MediaType.TEXT_PLAIN)
+                .contentType(MediaTypes.TEXT_PLAIN)
                 .submit("key1=val 1\nkey2=val2_1\nkey2=val2_2", String.class)
                 .thenAccept(it -> {
                     assertThat(it, containsString("key1=[val 1]"));

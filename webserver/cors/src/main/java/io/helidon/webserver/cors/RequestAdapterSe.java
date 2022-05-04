@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.webserver.cors;
 import java.util.List;
 import java.util.Optional;
 
+import io.helidon.common.http.Http;
 import io.helidon.webserver.ServerRequest;
 
 /**
@@ -37,18 +38,18 @@ class RequestAdapterSe implements CorsSupportBase.RequestAdapter<ServerRequest> 
     }
 
     @Override
-    public Optional<String> firstHeader(String key) {
-        return request.headers().first(key);
+    public Optional<String> firstHeader(Http.HeaderName key) {
+        return request.headers().value(key);
     }
 
     @Override
-    public boolean headerContainsKey(String key) {
-        return firstHeader(key).isPresent();
+    public boolean headerContainsKey(Http.HeaderName key) {
+        return request.headers().contains(key);
     }
 
     @Override
-    public List<String> allHeaders(String key) {
-        return request.headers().all(key);
+    public List<String> allHeaders(Http.HeaderName key) {
+        return request.headers().all(key, List::of);
     }
 
     @Override
@@ -68,6 +69,6 @@ class RequestAdapterSe implements CorsSupportBase.RequestAdapter<ServerRequest> 
 
     @Override
     public String toString() {
-        return String.format("RequestAdapterSe{path=%s, method=%s, headers=%s}", path(), method(), request.headers().toMap());
+        return String.format("RequestAdapterSe{path=%s, method=%s, headers=%s}", path(), method(), request.headers());
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,17 +37,17 @@ public class HandlerRouteTest {
         assertThat(rr.accepts(Http.Method.PUT), is(true));
         assertThat(rr.accepts(Http.Method.GET), is(false));
         assertThat(rr.accepts(Http.Method.DELETE), is(false));
-        assertThat(rr.accepts(Http.RequestMethod.create("FOO")), is(false));
+        assertThat(rr.accepts(Http.Method.create("FOO")), is(false));
         assertThat(rr.acceptedMethods().size(), is(2));
     }
 
     @Test
     public void specialMethodRouting() throws Exception {
-        HandlerRoute rr = new HandlerRoute(null, VOID_HANDLER, Http.RequestMethod.create("FOO"));
+        HandlerRoute rr = new HandlerRoute(null, VOID_HANDLER, Http.Method.create("FOO"));
         assertThat(rr.accepts(Http.Method.GET), is(false));
         assertThat(rr.accepts(Http.Method.POST), is(false));
-        assertThat(rr.accepts(Http.RequestMethod.create("FOO")), is(true));
-        assertThat(rr.accepts(Http.RequestMethod.create("BAR")), is(false));
+        assertThat(rr.accepts(Http.Method.create("FOO")), is(true));
+        assertThat(rr.accepts(Http.Method.create("BAR")), is(false));
         assertThat(rr.acceptedMethods().size(), is(1));
     }
 
@@ -56,14 +56,14 @@ public class HandlerRouteTest {
         HandlerRoute rr = new HandlerRoute(null,
                                            VOID_HANDLER,
                                            Http.Method.POST,
-                                           Http.RequestMethod.create("FOO"),
+                                           Http.Method.create("FOO"),
                                            Http.Method.PUT);
         assertThat(rr.accepts(Http.Method.POST), is(true));
         assertThat(rr.accepts(Http.Method.PUT), is(true));
         assertThat(rr.accepts(Http.Method.GET), is(false));
         assertThat(rr.accepts(Http.Method.DELETE), is(false));
-        assertThat(rr.accepts(Http.RequestMethod.create("FOO")), is(true));
-        assertThat(rr.accepts(Http.RequestMethod.create("BAR")), is(false));
+        assertThat(rr.accepts(Http.Method.create("FOO")), is(true));
+        assertThat(rr.accepts(Http.Method.create("BAR")), is(false));
         assertThat(rr.acceptedMethods().size(), is(3));
     }
 
@@ -72,8 +72,8 @@ public class HandlerRouteTest {
         HandlerRoute rr = new HandlerRoute(null, VOID_HANDLER);
         assertThat(rr.accepts(Http.Method.POST), is(true));
         assertThat(rr.accepts(Http.Method.GET), is(true));
-        assertThat(rr.accepts(Http.RequestMethod.create("FOO")), is(true));
-        assertThat(rr.accepts(Http.RequestMethod.create("BAR")), is(true));
+        assertThat(rr.accepts(Http.Method.create("FOO")), is(true));
+        assertThat(rr.accepts(Http.Method.create("BAR")), is(true));
         assertThat(rr.acceptedMethods().size(), is(0));
     }
 

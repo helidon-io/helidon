@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,20 +30,20 @@ class ResponseAdapterSe implements CorsSupportBase.ResponseAdapter<ServerRespons
     }
 
     @Override
-    public CorsSupportBase.ResponseAdapter<ServerResponse> header(String key, String value) {
+    public CorsSupportBase.ResponseAdapter<ServerResponse> header(Http.HeaderName key, String value) {
         serverResponse.headers().add(key, value);
         return this;
     }
 
     @Override
-    public CorsSupportBase.ResponseAdapter<ServerResponse> header(String key, Object value) {
+    public CorsSupportBase.ResponseAdapter<ServerResponse> header(Http.HeaderName key, Object value) {
         serverResponse.headers().add(key, value.toString());
         return this;
     }
 
     @Override
     public ServerResponse forbidden(String message) {
-        serverResponse.status(Http.ResponseStatus.create(Http.Status.FORBIDDEN_403.code(), message));
+        serverResponse.status(Http.Status.create(Http.Status.FORBIDDEN_403.code(), message));
         return serverResponse;
     }
 

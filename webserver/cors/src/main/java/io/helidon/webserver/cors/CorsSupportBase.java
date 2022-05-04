@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 
 /**
@@ -283,7 +284,7 @@ public abstract class CorsSupportBase<Q, R, T extends CorsSupportBase<Q, R, T, B
          * @param key header name to retrieve
          * @return the first header value for the key
          */
-        Optional<String> firstHeader(String key);
+        Optional<String> firstHeader(Http.HeaderName key);
 
         /**
          * Reports whether the specified header exists.
@@ -291,7 +292,7 @@ public abstract class CorsSupportBase<Q, R, T extends CorsSupportBase<Q, R, T, B
          * @param key header name to check for
          * @return whether the header exists among the request's headers
          */
-        boolean headerContainsKey(String key);
+        boolean headerContainsKey(Http.HeaderName key);
 
         /**
          * Retrieves all header values for a given key as Strings.
@@ -299,7 +300,7 @@ public abstract class CorsSupportBase<Q, R, T extends CorsSupportBase<Q, R, T, B
          * @param key header name to retrieve
          * @return header values for the header; empty list if none
          */
-        List<String> allHeaders(String key);
+        List<String> allHeaders(Http.HeaderName key);
 
         /**
          * Reports the method name for the request.
@@ -343,7 +344,7 @@ public abstract class CorsSupportBase<Q, R, T extends CorsSupportBase<Q, R, T, B
          * @param value header value to add
          * @return the adapter
          */
-        ResponseAdapter<T> header(String key, String value);
+        ResponseAdapter<T> header(Http.HeaderName key, String value);
 
         /**
          * Arranges to add the specified header and value to the eventual response.
@@ -352,7 +353,7 @@ public abstract class CorsSupportBase<Q, R, T extends CorsSupportBase<Q, R, T, B
          * @param value header value to add
          * @return the adapter
          */
-        ResponseAdapter<T> header(String key, Object value);
+        ResponseAdapter<T> header(Http.HeaderName key, Object value);
 
         /**
          * Returns a response with the forbidden status and the specified error message, without any headers assigned

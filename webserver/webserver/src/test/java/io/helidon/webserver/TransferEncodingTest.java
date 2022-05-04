@@ -34,6 +34,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalToIgnoringCase;
 import static org.hamcrest.collection.IsMapContaining.hasEntry;
 
 /**
@@ -61,12 +62,12 @@ public class TransferEncodingTest {
                 .routing(r -> r
                         .get("/length", (req, res) -> {
                             String payload = "It works!";
-                            res.headers().add("content-length", String.valueOf(payload.length()));
+                            res.headers().contentLength(payload.length());
                             res.send(payload);
                         })
                         .get("/chunked", (req, res) -> {
                             String payload = "It works!";
-                            res.headers().add("transfer-encoding", "chunked");
+                            res.headers().set(Http.HeaderValues.TRANSFER_ENCODING_CHUNKED);
                             res.send(payload);
                         })
                         .get("/optimized", (req, res) -> {
@@ -77,7 +78,7 @@ public class TransferEncodingTest {
                             res.send();
                         })
                         .get("/emptychunked", (req, res) -> {
-                            res.headers().add("transfer-encoding", "chunked");
+                            res.headers().set(Http.HeaderValues.TRANSFER_ENCODING_CHUNKED);
                             res.send();
                         })
                 )
@@ -123,7 +124,7 @@ public class TransferEncodingTest {
         String s = SocketHttpClient.sendAndReceive("/length", Http.Method.GET, null, webServer);
         assertThat(cutPayloadAndCheckHeadersFormat(s), is("It works!"));
         Map<String, String> headers = cutHeaders(s);
-        assertThat(headers, hasEntry("content-length", "9"));
+        assertThat(headers, hasEntry(equalToIgnoringCase("content-length"), is("9")));
     }
 
     /**

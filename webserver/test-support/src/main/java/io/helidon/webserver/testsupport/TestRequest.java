@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -92,10 +92,10 @@ public class TestRequest {
      * @return Updated instance.
      * @throws NullPointerException If {@code name} or {@code value} parameter is {@code null}.
      */
-    public TestRequest header(String name, String value) {
+    public TestRequest header(Http.HeaderName name, String value) {
         Objects.requireNonNull(name, "Parameter 'name' is null!");
         Objects.requireNonNull(name, "Parameter 'value' is null!");
-        headers.computeIfAbsent(name, k -> new ArrayList<>()).add(value);
+        headers.computeIfAbsent(name.defaultCase(), k -> new ArrayList<>()).add(value);
         return this;
     }
 
@@ -288,7 +288,7 @@ public class TestRequest {
      * @throws InterruptedException if thread is interrupted.
      * @throws TimeoutException if request timeout is reached.
      */
-    public TestResponse call(Http.RequestMethod method, MediaPublisher mediaPublisher)
+    public TestResponse call(Http.Method method, MediaPublisher mediaPublisher)
             throws InterruptedException, TimeoutException {
         if (mediaPublisher != null && !headers.containsKey(Http.Header.CONTENT_TYPE) && mediaPublisher.mediaType() != null) {
             header(Http.Header.CONTENT_TYPE, mediaPublisher.mediaType().toString());
@@ -304,7 +304,7 @@ public class TestRequest {
      * @throws InterruptedException if thread is interrupted.
      * @throws TimeoutException if request timeout is reached.
      */
-    public TestResponse call(Http.RequestMethod method) throws InterruptedException, TimeoutException {
+    public TestResponse call(Http.Method method) throws InterruptedException, TimeoutException {
         return testClient.call(method, version, uri(), headers, null);
     }
 

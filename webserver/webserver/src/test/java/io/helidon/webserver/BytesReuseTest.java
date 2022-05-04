@@ -44,6 +44,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.common.http.Http.HeaderValues.TRANSFER_ENCODING_CHUNKED;
 import static io.helidon.webserver.utils.SocketHttpClient.longData;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -85,12 +86,13 @@ public class BytesReuseTest {
                                  .any((req, res) -> {
                                      req.content().registerFilter(
                                              (Publisher<DataChunk> publisher) -> Multi.create(publisher).map(chunk -> {
-                                                 if (req.queryParams().first("keep_chunks").map(Boolean::valueOf).orElse(true)) {
+                                                 if (req.queryParams().first("keep_chunks").map(Boolean::valueOf)
+                                                         .orElse(true)) {
                                                      chunkReference.add(chunk);
                                                  }
                                                  return chunk;
                                              }));
-                                     res.headers().add("Transfer-Encoding", "chunked");
+                                     res.headers().add(TRANSFER_ENCODING_CHUNKED);
                                      req.next();
                                  })
                                  .post("/subscriber", (req, res) -> {

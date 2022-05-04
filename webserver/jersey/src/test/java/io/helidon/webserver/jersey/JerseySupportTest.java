@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import java.net.URLConnection;
 import java.util.Collections;
 import java.util.List;
 
-import io.helidon.common.http.HttpRequest;
+import io.helidon.webserver.ServerRequest;
 
 import jakarta.ws.rs.ProcessingException;
 import jakarta.ws.rs.client.Entity;
@@ -338,7 +338,7 @@ public class JerseySupportTest {
         assertThat(System.getProperty(IGNORE_EXCEPTION_RESPONSE), is("true"));
     }
 
-    static class PathMockup implements HttpRequest.Path {
+    static class PathMockup implements ServerRequest.Path {
         private final String absolutePath;
         private final String path;
 
@@ -363,7 +363,7 @@ public class JerseySupportTest {
         }
 
         @Override
-        public HttpRequest.Path absolute() {
+        public ServerRequest.Path absolute() {
             return absolutePath == null ? this : new PathMockup(null, absolutePath);
         }
 

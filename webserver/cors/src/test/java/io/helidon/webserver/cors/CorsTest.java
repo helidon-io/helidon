@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package io.helidon.webserver.cors;
 
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
@@ -28,10 +29,10 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_ALLOW_HEADERS;
-import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_ALLOW_METHODS;
-import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN;
-import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_MAX_AGE;
+import static io.helidon.common.http.Http.Header.ACCESS_CONTROL_ALLOW_HEADERS;
+import static io.helidon.common.http.Http.Header.ACCESS_CONTROL_ALLOW_METHODS;
+import static io.helidon.common.http.Http.Header.ACCESS_CONTROL_ALLOW_ORIGIN;
+import static io.helidon.common.http.Http.Header.ACCESS_CONTROL_MAX_AGE;
 import static io.helidon.webserver.cors.CustomMatchers.notPresent;
 import static io.helidon.webserver.cors.CustomMatchers.present;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -89,6 +90,6 @@ public class CorsTest extends AbstractCorsTest {
         assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_METHODS), present(is("PUT")));
         assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_HEADERS), notPresent());
         assertThat(res.headers().first(ACCESS_CONTROL_MAX_AGE), present(is("3600")));
-        assertThat(res.headers().all(ACCESS_CONTROL_ALLOW_ORIGIN).size(), is(1));
+        assertThat(res.headers().all(ACCESS_CONTROL_ALLOW_ORIGIN, List::of).size(), is(1));
     }
 }

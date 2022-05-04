@@ -34,16 +34,16 @@ import io.helidon.webserver.cors.CorsSupportBase.RequestAdapter;
 import io.helidon.webserver.cors.CorsSupportBase.ResponseAdapter;
 import io.helidon.webserver.cors.LogHelper.Headers;
 
+import static io.helidon.common.http.Http.Header.ACCESS_CONTROL_ALLOW_CREDENTIALS;
+import static io.helidon.common.http.Http.Header.ACCESS_CONTROL_ALLOW_HEADERS;
+import static io.helidon.common.http.Http.Header.ACCESS_CONTROL_ALLOW_METHODS;
+import static io.helidon.common.http.Http.Header.ACCESS_CONTROL_ALLOW_ORIGIN;
+import static io.helidon.common.http.Http.Header.ACCESS_CONTROL_EXPOSE_HEADERS;
+import static io.helidon.common.http.Http.Header.ACCESS_CONTROL_MAX_AGE;
+import static io.helidon.common.http.Http.Header.ACCESS_CONTROL_REQUEST_HEADERS;
+import static io.helidon.common.http.Http.Header.ACCESS_CONTROL_REQUEST_METHOD;
 import static io.helidon.common.http.Http.Header.HOST;
 import static io.helidon.common.http.Http.Header.ORIGIN;
-import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_ALLOW_CREDENTIALS;
-import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_ALLOW_HEADERS;
-import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_ALLOW_METHODS;
-import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN;
-import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_EXPOSE_HEADERS;
-import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_MAX_AGE;
-import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_REQUEST_HEADERS;
-import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_REQUEST_METHOD;
 import static io.helidon.webserver.cors.LogHelper.DECISION_LEVEL;
 import static java.lang.Character.isDigit;
 
@@ -396,7 +396,7 @@ class CorsSupportHelper<Q, R> {
     private RequestType inferCORSRequestType(RequestAdapter<Q> requestAdapter, boolean silent) {
 
         String methodName = requestAdapter.method();
-        boolean isMethodOPTION = methodName.equalsIgnoreCase(Http.Method.OPTIONS.name());
+        boolean isMethodOPTION = methodName.equalsIgnoreCase(Http.Method.OPTIONS.text());
         boolean requestContainsAccessControlRequestMethodHeader = requestAdapter.headerContainsKey(ACCESS_CONTROL_REQUEST_METHOD);
 
         RequestType result = isMethodOPTION && requestContainsAccessControlRequestMethodHeader
@@ -500,7 +500,7 @@ class CorsSupportHelper<Q, R> {
         }
 
         // Access-Control-Request-Method had to be present in order for this to be assessed as a preflight request.
-        String requestedMethod = requestAdapter.firstHeader(ACCESS_CONTROL_REQUEST_METHOD).get();
+        String requestedMethod = requestAdapter.firstHeader(Http.Header.ACCESS_CONTROL_REQUEST_METHOD).get();
 
         // Lookup the CrossOriginConfig using the requested method, not the current method (which we know is OPTIONS).
         Optional<CrossOriginConfig> crossOriginOpt = aggregator.lookupCrossOrigin(
@@ -757,12 +757,12 @@ class CorsSupportHelper<Q, R> {
         return true;
     }
 
-    private static Supplier<IllegalArgumentException> noRequiredHeaderExcFactory(String header) {
+    private static Supplier<IllegalArgumentException> noRequiredHeaderExcFactory(Http.HeaderName header) {
         return () -> new IllegalArgumentException(noRequiredHeader(header));
     }
 
-    private static String noRequiredHeader(String header) {
-        return "CORS request does not have required header " + header;
+    private static String noRequiredHeader(Http.HeaderName header) {
+        return "CORS request does not have required header " + header.defaultCase();
     }
 
     private R forbid(RequestAdapter<Q> requestAdapter, ResponseAdapter<R> responseAdapter,

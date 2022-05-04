@@ -32,18 +32,20 @@ import java.util.function.Function;
 import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.MediaType;
+import io.helidon.common.http.Http.Header;
+import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
 import io.helidon.tracing.SpanContext;
 
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.common.testing.http.HttpHeaderMatcher.hasHeader;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.beans.HasPropertyWithValue.hasProperty;
 import static org.hamcrest.core.AllOf.allOf;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
@@ -88,9 +90,9 @@ public class ResponseTest {
         headers.addCookie("cookie1", "cookie-value-1");
         headers.addCookie("cookie2", "cookie-value-2");
 
-        headers.add("Header", "hv1");
-        headers.add("header", "hv2");
-        headers.add("heaDer", "hv3");
+        headers.add(Header.create("Header"), "hv1");
+        headers.add(Header.create("header"), "hv2");
+        headers.add(Header.create("heaDer"), "hv3");
 
         assertHeaders(headers, "Set-Cookie","cookie1=cookie-value-1", "cookie2=cookie-value-2");
         assertHeadersToMap(headers, "Set-Cookie","cookie1=cookie-value-1", "cookie2=cookie-value-2");
@@ -109,15 +111,11 @@ public class ResponseTest {
     }
 
     private static void assertHeaders(ResponseHeaders headers, String headerName, String... expectedValues) {
-        final List<String> actualValues = headers.all(headerName);
-        assertThat("Value count doesn't match for header: " + headerName, actualValues, hasSize(expectedValues.length));
-        assertThat("Content does not match for header: " + headerName, actualValues, containsInAnyOrder(expectedValues));
+        assertThat(headers, hasHeader(Header.create(headerName),  containsInAnyOrder(expectedValues)));
     }
 
     private static void assertHeadersToMap(ResponseHeaders headers, String headerName, String... expectedValues) {
-        final List<String> actualValues = headers.toMap().get(headerName);
-        assertThat("Value count doesn't match for header: " + headerName, actualValues, hasSize(expectedValues.length));
-        assertThat("Content does not match for header: " + headerName, actualValues, containsInAnyOrder(expectedValues));
+        assertThat(headers, hasHeader(Header.create(headerName), containsInAnyOrder(expectedValues)));
     }
 
     @SuppressWarnings("unchecked")
@@ -220,19 +218,19 @@ public class ResponseTest {
             return Single.empty();
         };
         Response response = new ResponseImpl(new NoOpBareResponse(null));
-        response.registerWriter(CharSequence.class, MediaType.TEXT_PLAIN, stringWriter);
-        response.registerWriter(Number.class, MediaType.APPLICATION_JSON, numberWriter);
+        response.registerWriter(CharSequence.class, MediaTypes.TEXT_PLAIN, stringWriter);
+        response.registerWriter(Number.class, MediaTypes.APPLICATION_JSON, numberWriter);
         marshall(response, "foo");
         assertThat(sb.toString(), is("A"));
-        assertThat(response.headers().contentType().orElse(null), is(MediaType.TEXT_PLAIN));
+        assertThat(response.headers().contentType().orElse(null), is(HttpMediaType.TEXT_PLAIN));
 
         sb.setLength(0);
         response = new ResponseImpl(new NoOpBareResponse(null));
-        response.registerWriter(CharSequence.class, MediaType.TEXT_PLAIN, stringWriter);
-        response.registerWriter(Number.class, MediaType.APPLICATION_JSON, numberWriter);
+        response.registerWriter(CharSequence.class, MediaTypes.TEXT_PLAIN, stringWriter);
+        response.registerWriter(Number.class, MediaTypes.APPLICATION_JSON, numberWriter);
         marshall(response, 1);
         assertThat(sb.toString(), is("B"));
-        assertThat(response.headers().contentType().orElse(null), is(MediaType.APPLICATION_JSON));
+        assertThat(response.headers().contentType().orElse(null), is(HttpMediaType.APPLICATION_JSON));
     }
 
     @Test
@@ -277,7 +275,7 @@ public class ResponseTest {
         }
 
         @Override
-        public void writeStatusAndHeaders(Http.ResponseStatus status, Map<String, List<String>> headers) {
+        public void writeStatusAndHeaders(Http.Status status, Map<String, List<String>> headers) {
             sb.append("h").append(status.code());
         }
 

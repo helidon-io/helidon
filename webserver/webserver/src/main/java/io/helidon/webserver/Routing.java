@@ -379,7 +379,7 @@ public interface Routing extends ServerLifecycle {
          * @param requestHandlers handlers to process HTTP request
          * @return an updated routing configuration
          */
-        Rules anyOf(Iterable<Http.RequestMethod> methods, Handler... requestHandlers);
+        Rules anyOf(Iterable<Http.Method> methods, Handler... requestHandlers);
 
         /**
          * Routes requests with any specified method and corresponding path to provided handler(s). Request handler can call
@@ -390,7 +390,7 @@ public interface Routing extends ServerLifecycle {
          * @param requestHandlers handlers to process HTTP request
          * @return an updated routing configuration
          */
-        Rules anyOf(Iterable<Http.RequestMethod> methods, String pathPattern, Handler... requestHandlers);
+        Rules anyOf(Iterable<Http.Method> methods, String pathPattern, Handler... requestHandlers);
 
         /**
          * Routes requests with any specified method and corresponding path to provided handler(s). Request handler can call
@@ -401,7 +401,7 @@ public interface Routing extends ServerLifecycle {
          * @param requestHandlers handlers to process HTTP request
          * @return an updated routing configuration
          */
-        Rules anyOf(Iterable<Http.RequestMethod> methods, PathMatcher pathMatcher, Handler... requestHandlers);
+        Rules anyOf(Iterable<Http.Method> methods, PathMatcher pathMatcher, Handler... requestHandlers);
 
         /**
          * Registers callback on created new {@link WebServer} instance with this routing.
@@ -633,19 +633,19 @@ public interface Routing extends ServerLifecycle {
         }
 
         @Override
-        public Builder anyOf(Iterable<Http.RequestMethod> methods, Handler... requestHandlers) {
+        public Builder anyOf(Iterable<Http.Method> methods, Handler... requestHandlers) {
             delegate.anyOf(methods, requestHandlers);
             return this;
         }
 
         @Override
-        public Builder anyOf(Iterable<Http.RequestMethod> methods, String pathPattern, Handler... requestHandlers) {
+        public Builder anyOf(Iterable<Http.Method> methods, String pathPattern, Handler... requestHandlers) {
             delegate.anyOf(methods, pathPattern, requestHandlers);
             return this;
         }
 
         @Override
-        public Builder anyOf(Iterable<Http.RequestMethod> methods,
+        public Builder anyOf(Iterable<Http.Method> methods,
                              PathMatcher pathMatcher,
                              Handler... requestHandlers) {
             delegate.anyOf(methods, pathMatcher, requestHandlers);

@@ -33,9 +33,8 @@ import java.util.logging.Logger;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.context.Contexts;
-import io.helidon.common.http.AlreadyCompletedException;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.MediaType;
+import io.helidon.common.http.HttpMediaType;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanContext;
 import io.helidon.tracing.Tracer;
@@ -71,7 +70,8 @@ class RequestRouting implements Routing {
 
         try {
             WebServer webServer = bareRequest.webServer();
-            HashRequestHeaders requestHeaders = new HashRequestHeaders(bareRequest.headers());
+            RequestHeaders requestHeaders = bareRequest.headers();
+
             RoutedResponse response = new RoutedResponse(
                     webServer,
                     bareResponse,
@@ -127,7 +127,7 @@ class RequestRouting implements Routing {
         private final Request.Path contextPath;
         private final String path;
         private final String rawPath;
-        private final Http.RequestMethod method;
+        private final Http.Method method;
         private final Http.Version version;
 
         private volatile int index = -1;
@@ -144,7 +144,7 @@ class RequestRouting implements Routing {
          * @param version     HTTP protocol version
          */
         private Crawler(List<Route> routes, Request.Path contextPath, String path, String rawPath,
-                        Http.RequestMethod method, Http.Version version) {
+                        Http.Method method, Http.Version version) {
             this.routes = routes;
             this.path = path;
             this.rawPath = rawPath;
@@ -162,7 +162,7 @@ class RequestRouting implements Routing {
          * @param method an HTTP method to route.
          * @param version HTTP protocol version
          */
-        Crawler(List<Route> routes, String path, String rawPath, Http.RequestMethod method, Http.Version version) {
+        Crawler(List<Route> routes, String path, String rawPath, Http.Method method, Http.Version version) {
             this(routes, null, path, rawPath, method, version);
         }
 
@@ -253,7 +253,7 @@ class RequestRouting implements Routing {
                       WebServer webServer,
                       Crawler crawler,
                       List<ErrorHandlerRecord<?>> errorHandlers,
-                      HashRequestHeaders headers) {
+                      RequestHeaders headers) {
             super(req, webServer, headers);
             this.crawler = crawler;
             this.errorHandlers = new LinkedList<>(errorHandlers);
@@ -460,7 +460,7 @@ class RequestRouting implements Routing {
 
         private final AtomicReference<RoutedRequest> request = new AtomicReference<>();
 
-        RoutedResponse(WebServer webServer, BareResponse bareResponse, List<MediaType> acceptedTypes) {
+        RoutedResponse(WebServer webServer, BareResponse bareResponse, List<HttpMediaType> acceptedTypes) {
             super(webServer, bareResponse, acceptedTypes);
         }
 

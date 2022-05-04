@@ -27,7 +27,8 @@ import java.util.function.Predicate;
 import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.MediaType;
+import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.media.type.MediaType;
 import io.helidon.common.reactive.Single;
 import io.helidon.media.common.MessageBodyContext;
 import io.helidon.media.common.MessageBodyFilter;
@@ -68,7 +69,7 @@ abstract class Response implements ServerResponse {
      * @param webServer a web server.
      * @param bareResponse an implementation of the response SPI.
      */
-    Response(WebServer webServer, BareResponse bareResponse, List<MediaType> acceptedTypes) {
+    Response(WebServer webServer, BareResponse bareResponse, List<HttpMediaType> acceptedTypes) {
         this.webServer = webServer;
         this.bareResponse = bareResponse;
         this.headers = new HashResponseHeaders(bareResponse);
@@ -110,13 +111,13 @@ abstract class Response implements ServerResponse {
     }
 
     @Override
-    public Http.ResponseStatus status() {
-        Http.ResponseStatus status = headers.httpStatus();
+    public Http.Status status() {
+        Http.Status status = headers.httpStatus();
         return (null == status) ? Http.Status.OK_200 : status;
     }
 
     @Override
-    public Response status(Http.ResponseStatus status) {
+    public Response status(Http.Status status) {
         Objects.requireNonNull(status, "Parameter 'status' was null!");
         headers.httpStatus(status);
         return this;
@@ -308,8 +309,7 @@ abstract class Response implements ServerResponse {
             if (headers != null && !sent) {
                 status(500);
                 //We are not using CombinedHttpHeaders
-                headers()
-                        .add(HttpHeaderNames.TRAILER.toString(), STREAM_STATUS + "," + STREAM_RESULT);
+                headers().add(Http.HeaderValue.create(Http.Header.TRAILER, STREAM_STATUS + "," + STREAM_RESULT));
                 sent = true;
                 headers.send();
             }

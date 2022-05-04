@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,7 +85,7 @@ class ClassPathContentHandler extends FileBasedContentHandler {
 
     @SuppressWarnings("checkstyle:RegexpSinglelineJava")
     @Override
-    boolean doHandle(Http.RequestMethod method, String requestedPath, ServerRequest request, ServerResponse response)
+    boolean doHandle(Http.Method method, String requestedPath, ServerRequest request, ServerResponse response)
             throws IOException, URISyntaxException {
 
         String resource = requestedPath.isEmpty() ? root : (rootWithTrailingSlash + requestedPath);
@@ -146,7 +146,7 @@ class ClassPathContentHandler extends FileBasedContentHandler {
         return true;
     }
 
-    boolean sendJar(Http.RequestMethod method,
+    boolean sendJar(Http.Method method,
                     String requestedResource,
                     URL url,
                     ServerRequest request,
@@ -192,7 +192,7 @@ class ClassPathContentHandler extends FileBasedContentHandler {
         return entry;
     }
 
-    private void sendUrlStream(Http.RequestMethod method, URL url, ServerRequest request, ServerResponse response)
+    private void sendUrlStream(Http.Method method, URL url, ServerRequest request, ServerResponse response)
             throws IOException {
 
         LOGGER.finest(() -> "Sending static content using stream from classpath: " + url);

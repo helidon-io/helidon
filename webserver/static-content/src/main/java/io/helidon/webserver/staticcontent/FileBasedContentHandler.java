@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,8 @@ import java.util.Optional;
 import java.util.logging.Logger;
 
 import io.helidon.common.http.Http;
-import io.helidon.common.http.MediaType;
+import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.media.common.DefaultMediaSupport;
 import io.helidon.media.common.MessageBodyWriter;
@@ -96,8 +97,7 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
         // then find if we have a detected type
         // then check the type is accepted by the request
         return findCustomMediaType(fileName)
-                .or(() -> MediaTypes.detectType(fileName)
-                        .map(MediaType::parse))
+                .or(() -> MediaTypes.detectType(fileName))
                 .map(it -> {
                     if (requestHeaders.isAccepted(it)) {
                         return it;
@@ -106,11 +106,11 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
                                             Http.Status.UNSUPPORTED_MEDIA_TYPE_415);
                 })
                 .orElseGet(() -> {
-                    List<MediaType> acceptedTypes = requestHeaders.acceptedTypes();
+                    List<HttpMediaType> acceptedTypes = requestHeaders.acceptedTypes();
                     if (acceptedTypes.isEmpty()) {
-                        return MediaType.APPLICATION_OCTET_STREAM;
+                        return MediaTypes.APPLICATION_OCTET_STREAM;
                     } else {
-                        return acceptedTypes.iterator().next();
+                        return acceptedTypes.iterator().next().mediaType();
                     }
                 });
     }
@@ -127,7 +127,7 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
         return Optional.ofNullable(customMediaTypes.get(fileSuffix));
     }
 
-    void sendFile(Http.RequestMethod method,
+    void sendFile(Http.Method method,
                   Path pathParam,
                   ServerRequest request,
                   ServerResponse response,
