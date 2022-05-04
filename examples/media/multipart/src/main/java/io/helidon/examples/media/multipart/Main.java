@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import io.helidon.webserver.staticcontent.StaticContentSupport;
  * This application provides a simple file upload service with a UI to exercise multipart.
  */
 public final class Main {
+    private static final Http.HeaderValue REDIRECT_LOCATION = Http.HeaderValue.createCached(Http.Header.LOCATION, "/ui");
 
     private Main() {
     }
@@ -40,7 +41,7 @@ public final class Main {
         return Routing.builder()
                 .any("/", (req, res) -> {
                     res.status(Http.Status.MOVED_PERMANENTLY_301);
-                    res.headers().put(Http.Header.LOCATION, "/ui");
+                    res.headers().set(REDIRECT_LOCATION);
                     res.send();
                 })
                 .register("/ui", StaticContentSupport.builder("WEB")

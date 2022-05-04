@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,12 +21,14 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.http.Headers;
-import io.helidon.common.http.MediaType;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientRequestBuilder;
+import io.helidon.webclient.WebClientRequestHeaders;
 import io.helidon.webclient.WebClientResponse;
+import io.helidon.webclient.WebClientResponseHeaders;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.cors.CrossOriginConfig;
 
@@ -39,6 +41,11 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
+import static io.helidon.common.http.Http.Header.ACCESS_CONTROL_ALLOW_METHODS;
+import static io.helidon.common.http.Http.Header.ACCESS_CONTROL_ALLOW_ORIGIN;
+import static io.helidon.common.http.Http.Header.ACCESS_CONTROL_REQUEST_METHOD;
+import static io.helidon.common.http.Http.Header.HOST;
+import static io.helidon.common.http.Http.Header.ORIGIN;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -113,16 +120,16 @@ public class MainTest {
     @Test
     void testAnonymousGreetWithCors() {
         WebClientRequestBuilder builder = webClient.get();
-        Headers headers = builder.headers();
-        headers.add("Origin", "http://foo.com");
-        headers.add("Host", "here.com");
+        WebClientRequestHeaders headers = builder.headers();
+        headers.set(ORIGIN, "http://foo.com");
+        headers.set(HOST, "here.com");
 
         WebClientResponse r = getResponse("/greet", builder);
         assertEquals(200, r.status().code(), "HTTP response");
         String payload = fromPayload(r).getMessage();
         assertTrue(payload.contains("Hola World"), "HTTP response payload was " + payload);
-        headers = r.headers();
-        Optional<String> allowOrigin = headers.value(CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN);
+        Headers responseHeaders = r.headers();
+        Optional<String> allowOrigin = responseHeaders.value(ACCESS_CONTROL_ALLOW_ORIGIN);
         assertTrue(allowOrigin.isPresent(),
                 "Expected CORS header " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN + " is absent");
         assertEquals(allowOrigin.get(), "*");
@@ -135,21 +142,21 @@ public class MainTest {
         // Send the pre-flight request and check the response.
 
         WebClientRequestBuilder builder = webClient.options();
-        Headers headers = builder.headers();
-        headers.add("Origin", "http://foo.com");
-        headers.add("Host", "here.com");
-        headers.add("Access-Control-Request-Method", "PUT");
+        WebClientRequestHeaders headers = builder.headers();
+        headers.set(ORIGIN, "http://foo.com");
+        headers.set(HOST, "here.com");
+        headers.set(ACCESS_CONTROL_REQUEST_METHOD, "PUT");
 
         WebClientResponse r = builder.path("/greet/greeting")
                 .submit()
                 .await();
 
-        Headers preflightResponseHeaders = r.headers();
-        List<String> allowMethods = preflightResponseHeaders.values(CrossOriginConfig.ACCESS_CONTROL_ALLOW_METHODS);
+        Headers responseHeaders = r.headers();
+        List<String> allowMethods = responseHeaders.values(ACCESS_CONTROL_ALLOW_METHODS);
         assertFalse(allowMethods.isEmpty(),
                 "pre-flight response does not include " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_METHODS);
         assertTrue(allowMethods.contains("PUT"));
-        List<String> allowOrigins = preflightResponseHeaders.values(CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN);
+        List<String> allowOrigins = responseHeaders.values(ACCESS_CONTROL_ALLOW_ORIGIN);
         assertFalse(allowOrigins.isEmpty(),
                 "pre-flight response does not include " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN);
         assertTrue(allowOrigins.contains("http://foo.com"), "Header " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN
@@ -159,14 +166,14 @@ public class MainTest {
 
         builder = webClient.put();
         headers = builder.headers();
-        headers.add("Origin", "http://foo.com");
-        headers.add("Host", "here.com");
-        headers.addAll(preflightResponseHeaders);
+        headers.set(ORIGIN, "http://foo.com");
+        headers.set(HOST, "here.com");
+        headers.addAll(responseHeaders);
 
         r = putResponse("/greet/greeting", new GreetingMessage("Cheers"), builder);
         assertEquals(204, r.status().code(), "HTTP response3");
-        headers = r.headers();
-        allowOrigins = headers.values(CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN);
+        responseHeaders = r.headers();
+        allowOrigins = responseHeaders.values(ACCESS_CONTROL_ALLOW_ORIGIN);
         assertFalse(allowOrigins.isEmpty(),
                 "Expected CORS header " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN + " has no value(s)");
         assertTrue(allowOrigins.contains("http://foo.com"), "Header " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN
@@ -177,15 +184,15 @@ public class MainTest {
     @Test
     void testNamedGreetWithCors() {
         WebClientRequestBuilder builder = webClient.get();
-        Headers headers = builder.headers();
-        headers.add("Origin", "http://foo.com");
-        headers.add("Host", "here.com");
+        WebClientRequestHeaders headers = builder.headers();
+        headers.set(ORIGIN, "http://foo.com");
+        headers.set(HOST, "here.com");
 
         WebClientResponse r = getResponse("/greet/Maria", builder);
         assertEquals(200, r.status().code(), "HTTP response");
         assertTrue(fromPayload(r).getMessage().contains("Cheers Maria"));
-        headers = r.headers();
-        Optional<String> allowOrigin = headers.value(CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN);
+        WebClientResponseHeaders responseHeaders = r.headers();
+        Optional<String> allowOrigin = responseHeaders.value(ACCESS_CONTROL_ALLOW_ORIGIN);
         assertTrue(allowOrigin.isPresent(),
                 "Expected CORS header " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN + " is absent");
         assertEquals(allowOrigin.get(), "*");
@@ -195,9 +202,9 @@ public class MainTest {
     @Test
     void testGreetingChangeWithCorsAndOtherOrigin() {
         WebClientRequestBuilder builder = webClient.put();
-        Headers headers = builder.headers();
-        headers.add("Origin", "http://other.com");
-        headers.add("Host", "here.com");
+        WebClientRequestHeaders headers = builder.headers();
+        headers.set(ORIGIN, "http://other.com");
+        headers.set(HOST, "here.com");
 
         WebClientResponse r = putResponse("/greet/greeting", new GreetingMessage("Ahoy"), builder);
         // Result depends on whether we are using overrides or not.
@@ -211,7 +218,7 @@ public class MainTest {
 
     private static WebClientResponse getResponse(String path, WebClientRequestBuilder builder) {
         return builder
-                .accept(MediaType.APPLICATION_JSON)
+                .accept(MediaTypes.APPLICATION_JSON)
                 .path(path)
                 .submit()
                 .await();
@@ -223,7 +230,7 @@ public class MainTest {
 
     private static WebClientResponse putResponse(String path, GreetingMessage payload, WebClientRequestBuilder builder) {
         return builder
-                .accept(MediaType.APPLICATION_JSON)
+                .accept(MediaTypes.APPLICATION_JSON)
                 .path(path)
                 .submit(payload.forRest())
                 .await();

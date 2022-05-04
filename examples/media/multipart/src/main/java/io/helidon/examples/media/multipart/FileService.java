@@ -21,11 +21,11 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
 import io.helidon.common.configurable.ThreadPoolSupplier;
+import io.helidon.common.http.ContentDisposition;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.MediaType;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.reactive.IoMulti;
-import io.helidon.media.multipart.ContentDisposition;
 import io.helidon.media.multipart.ReadableBodyPart;
 import io.helidon.webserver.ResponseHeaders;
 import io.helidon.webserver.Routing;
@@ -70,8 +70,8 @@ public final class FileService implements Service {
     private void download(ServerRequest req, ServerResponse res) {
         Path filePath = storage.lookup(req.path().param("fname"));
         ResponseHeaders headers = res.headers();
-        headers.contentType(MediaType.APPLICATION_OCTET_STREAM);
-        headers.put(Http.Header.CONTENT_DISPOSITION, ContentDisposition.builder()
+        headers.contentType(MediaTypes.APPLICATION_OCTET_STREAM);
+        headers.set(Http.Header.CONTENT_DISPOSITION, ContentDisposition.builder()
                 .filename(filePath.getFileName().toString())
                 .build()
                 .toString());
@@ -95,7 +95,7 @@ public final class FileService implements Service {
            .onError(res::send)
            .onComplete(() -> {
                res.status(Http.Status.MOVED_PERMANENTLY_301);
-               res.headers().put(Http.Header.LOCATION, "/ui");
+               res.headers().set(Http.Header.LOCATION, "/ui");
                res.send();
            }).ignoreElement();
     }

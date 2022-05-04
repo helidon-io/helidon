@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,8 @@ import java.util.Collections;
 
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.MediaType;
-import io.helidon.common.http.Parameters;
+import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.media.common.MediaContext;
 import io.helidon.media.common.MessageBodyReader;
 import io.helidon.media.jsonp.JsonpSupport;
@@ -55,6 +55,8 @@ import jakarta.json.JsonBuilderFactory;
 public class Main {
 
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
+    public static final Http.HeaderName BAR_HEADER = Http.Header.create("bar");
+    public static final Http.HeaderName FOO_HEADER = Http.Header.create("foo");
 
     // ---------------- EXAMPLES
 
@@ -153,7 +155,7 @@ public class Main {
      * <p>
      * {@link java.util.Optional Optional} API is heavily used to represent parameters optionality.
      * <p>
-     * WebServer {@link Parameters Parameters} API is used to represent fact, that <i>headers</i> and
+     * WebServer {@link io.helidon.common.parameters.Parameters Parameters} API is used to represent fact, that <i>headers</i> and
      * <i>query parameters</i> can contain multiple values.
      */
     public void parametersAndHeaders() {
@@ -162,7 +164,7 @@ public class Main {
                     StringBuilder sb = new StringBuilder();
                     // Request headers
                     req.headers()
-                       .first("foo")
+                       .first(FOO_HEADER)
                        .ifPresent(v -> sb.append("foo: ").append(v).append("\n"));
                     // Request parameters
                     req.queryParams()
@@ -171,7 +173,7 @@ public class Main {
                     // Path parameters
                     sb.append("id: ").append(req.path().param("id"));
                     // Response headers
-                    res.headers().contentType(MediaType.TEXT_PLAIN);
+                    res.headers().contentType(MediaTypes.TEXT_PLAIN);
                     // Response entity (payload)
                     res.send(sb.toString());
                 })
@@ -186,8 +188,8 @@ public class Main {
     public void advancedRouting() {
         Routing routing = Routing.builder()
                                  .get("/foo", RequestPredicate.create()
-                                                              .accepts(MediaType.TEXT_PLAIN)
-                                                              .containsHeader("bar")
+                                                              .accepts(HttpMediaType.TEXT_PLAIN)
+                                                              .containsHeader(BAR_HEADER)
                                                               .thenApply((req, res) -> res.send()))
                                  .build();
         startServer(routing);

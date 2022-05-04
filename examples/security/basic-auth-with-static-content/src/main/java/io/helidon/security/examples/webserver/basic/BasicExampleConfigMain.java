@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.LogConfig;
-import io.helidon.common.http.MediaType;
+import io.helidon.common.http.HttpMediaType;
 import io.helidon.config.Config;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.integration.webserver.WebSecurity;
@@ -54,7 +54,7 @@ public final class BasicExampleConfigMain {
                 .register("/static", StaticContentSupport.create("/WEB"))
                 .get("/{*}", (req, res) -> {
                     Optional<SecurityContext> securityContext = req.context().get(SecurityContext.class);
-                    res.headers().contentType(MediaType.TEXT_PLAIN.withCharset("UTF-8"));
+                    res.headers().contentType(HttpMediaType.PLAINTEXT_UTF_8);
                     res.send("Hello, you are: \n" + securityContext
                             .map(ctx -> ctx.user().orElse(SecurityContext.ANONYMOUS).toString())
                             .orElse("Security context is null"));

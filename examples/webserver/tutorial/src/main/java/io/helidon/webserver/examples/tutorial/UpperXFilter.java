@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,18 +20,17 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.Flow.Publisher;
-import java.util.function.Function;
 
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.reactive.Multi;
-
+import io.helidon.media.common.MessageBodyFilter;
 
 /**
  * All 'x' must be upper case.
  * <p>
  * This is a naive implementation.
  */
-public final class UpperXFilter implements Function<Publisher<DataChunk>, Publisher<DataChunk>> {
+public final class UpperXFilter implements MessageBodyFilter {
 
     private static final Charset CHARSET = StandardCharsets.US_ASCII;
     private static final byte LOWER_X = "x".getBytes(CHARSET)[0];

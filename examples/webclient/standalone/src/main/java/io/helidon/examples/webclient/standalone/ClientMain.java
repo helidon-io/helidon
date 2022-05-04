@@ -102,7 +102,7 @@ public class ClientMain {
                 .await();
     }
 
-    static Single<Http.ResponseStatus> performPutMethod(WebClient webClient) {
+    static Single<Http.Status> performPutMethod(WebClient webClient) {
         System.out.println("Put request execution.");
         return webClient.put()
                 .path("/greeting")

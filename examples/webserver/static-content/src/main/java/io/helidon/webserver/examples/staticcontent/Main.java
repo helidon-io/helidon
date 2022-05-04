@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import io.helidon.webserver.staticcontent.StaticContentSupport;
  * on the WEB page.
  */
 public class Main {
+    private static final Http.HeaderValue UI_REDIRECT = Http.HeaderValue.createCached(Http.Header.LOCATION, "/ui");
 
     private Main() {
     }
@@ -41,7 +42,7 @@ public class Main {
                 .any("/", (req, res) -> {
                     // showing the capability to run on any path, and redirecting from root
                     res.status(Http.Status.MOVED_PERMANENTLY_301);
-                    res.headers().put(Http.Header.LOCATION, "/ui");
+                    res.headers().set(UI_REDIRECT);
                     res.send();
                 })
                 .register("/ui", new CounterService())

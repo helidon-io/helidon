@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package io.helidon.security.examples.signatures;
 
 import java.util.Optional;
 
-import io.helidon.common.http.MediaType;
+import io.helidon.common.http.HttpMediaType;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.security.SecurityContext;
@@ -78,7 +78,7 @@ public class SignatureExampleConfigMain {
                 // web server does not (yet) have possibility to configure routes in config files, so explicit...
                 .get("/{*}", (req, res) -> {
                     Optional<SecurityContext> securityContext = req.context().get(SecurityContext.class);
-                    res.headers().contentType(MediaType.TEXT_PLAIN.withCharset("UTF-8"));
+                    res.headers().contentType(HttpMediaType.PLAINTEXT_UTF_8);
                     res.send("Response from service2, you are: \n" + securityContext
                             .flatMap(SecurityContext::user)
                             .map(Subject::toString)

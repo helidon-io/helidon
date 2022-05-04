@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package io.helidon.service.employee;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.http.Http;
-import io.helidon.common.http.MediaType;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.webclient.WebClient;
 import io.helidon.webserver.WebServer;
 
@@ -39,7 +39,7 @@ public class MainTest {
 
         webClient = WebClient.builder()
                 .baseUri("http://localhost:" + webServer.port())
-                .addHeader(Http.Header.ACCEPT, MediaType.APPLICATION_JSON.toString())
+                .addHeader(Http.Header.ACCEPT, MediaTypes.APPLICATION_JSON.text())
                 .build();
     }
 

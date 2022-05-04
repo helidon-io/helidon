@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import io.helidon.common.LogConfig;
-import io.helidon.common.http.MediaType;
+import io.helidon.common.http.HttpMediaType;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.integration.webserver.WebSecurity;
@@ -43,14 +43,14 @@ public final class DigestExampleBuilderMain {
     // used from unit tests
     private static WebServer server;
     // simple approach to user storage - for real world, use data store...
-    private static Map<String, MyUser> users = new HashMap<>();
+    private static final Map<String, MyUser> USERS = new HashMap<>();
 
     private static final char[] HEX_ARRAY = "0123456789abcdef".toCharArray();
 
     static {
-        users.put("jack", new MyUser("jack", "password".toCharArray(), Set.of("user", "admin")));
-        users.put("jill", new MyUser("jill", "password".toCharArray(), Set.of("user")));
-        users.put("john", new MyUser("john", "password".toCharArray(), Set.of()));
+        USERS.put("jack", new MyUser("jack", "password".toCharArray(), Set.of("user", "admin")));
+        USERS.put("jill", new MyUser("jill", "password".toCharArray(), Set.of("user")));
+        USERS.put("john", new MyUser("john", "password".toCharArray(), Set.of()));
     }
 
     private DigestExampleBuilderMain() {
@@ -79,7 +79,7 @@ public final class DigestExampleBuilderMain {
                         .audit())
                 .get("/{*}", (req, res) -> {
                     Optional<SecurityContext> securityContext = req.context().get(SecurityContext.class);
-                    res.headers().contentType(MediaType.TEXT_PLAIN.withCharset("UTF-8"));
+                    res.headers().contentType(HttpMediaType.PLAINTEXT_UTF_8);
                     res.send("Hello, you are: \n" + securityContext
                             .map(ctx -> ctx.user().orElse(SecurityContext.ANONYMOUS).toString())
                             .orElse("Security context is null"));
@@ -103,7 +103,7 @@ public final class DigestExampleBuilderMain {
     }
 
     private static SecureUserStore buildUserStore() {
-        return login -> Optional.ofNullable(users.get(login));
+        return login -> Optional.ofNullable(USERS.get(login));
     }
 
     static WebServer getServer() {
