@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -185,7 +185,7 @@ public class OutboundSecurityIT {
         if (message != null) {
             res.send(message);
         } else {
-            res.status(Http.ResponseStatus.create(401, "missing message query parameter")).send();
+            res.status(Http.Status.create(401, "missing message query parameter")).send();
         }
     }
 
@@ -201,7 +201,7 @@ public class OutboundSecurityIT {
         } catch (StatusRuntimeException e) {
             res.status(GrpcHelper.toHttpResponseStatus(e)).send();
         } catch (Throwable thrown) {
-            res.status(Http.ResponseStatus.create(500, thrown.getMessage())).send();
+            res.status(Http.Status.create(500, thrown.getMessage())).send();
         }
     }
 
@@ -220,7 +220,7 @@ public class OutboundSecurityIT {
         } catch (StatusRuntimeException e) {
             res.status(GrpcHelper.toHttpResponseStatus(e)).send();
         } catch (Throwable thrown) {
-            res.status(Http.ResponseStatus.create(500, thrown.getMessage())).send();
+            res.status(Http.Status.create(500, thrown.getMessage())).send();
         }
     }
 }

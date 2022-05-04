@@ -39,9 +39,9 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import io.helidon.common.Errors;
-import io.helidon.common.http.FormParams;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.MediaType;
+import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.parameters.Parameters;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.config.DeprecatedConfig;
@@ -160,13 +160,13 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
             };
         } else {
             this.jwtValidator = (signedJwt, collector) -> {
-                FormParams.Builder form = FormParams.builder()
+                Parameters.Builder form = Parameters.builder("oidc-form-param")
                         .add("token", signedJwt.tokenContent());
 
                 WebClientRequestBuilder post = oidcConfig.appWebClient()
                         .post()
                         .uri(oidcConfig.introspectUri())
-                        .accept(MediaType.APPLICATION_JSON)
+                        .accept(HttpMediaType.APPLICATION_JSON)
                         .headers(it -> {
                             it.add(Http.Header.CACHE_CONTROL, "no-cache, no-store, must-revalidate");
                             return it;
@@ -420,14 +420,16 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
             return AuthenticationResponse.builder()
                     .status(SecurityResponse.SecurityStatus.FAILURE)
                     .statusCode(Http.Status.UNAUTHORIZED_401.code())
-                    .responseHeader(Http.Header.WWW_AUTHENTICATE, "Bearer realm=\"" + oidcConfig.realm() + "\"")
+                    .responseHeader(Http.Header.WWW_AUTHENTICATE.defaultCase(),
+                                    "Bearer realm=\"" + oidcConfig.realm() + "\"")
                     .description(description)
                     .build();
         } else {
             return AuthenticationResponse.builder()
                     .status(SecurityResponse.SecurityStatus.FAILURE)
                     .statusCode(status.code())
-                    .responseHeader(Http.Header.WWW_AUTHENTICATE, errorHeader(code, description))
+                    .responseHeader(Http.Header.WWW_AUTHENTICATE.defaultCase(),
+                                    errorHeader(code, description))
                     .description(description)
                     .build();
         }

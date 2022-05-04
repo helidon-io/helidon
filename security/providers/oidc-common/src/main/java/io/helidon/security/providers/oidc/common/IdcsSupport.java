@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,9 @@ import java.net.URI;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
-import io.helidon.common.http.FormParams;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.MediaType;
+import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.parameters.Parameters;
 import io.helidon.security.SecurityException;
 import io.helidon.security.jwt.jwk.JwkKeys;
 import io.helidon.webclient.WebClient;
@@ -45,7 +45,7 @@ class IdcsSupport {
                            URI signJwkUri,
                            Duration clientTimeout) {
         //  need to get token to be able to request this endpoint
-        FormParams form = FormParams.builder()
+        Parameters form = Parameters.builder("idcs-form-params")
                 .add("grant_type", "client_credentials")
                 .add("scope", "urn:opc:idm:__myscopes__")
                 .build();
@@ -53,11 +53,11 @@ class IdcsSupport {
         try {
             WebClientResponse response = appWebClient.post()
                     .uri(tokenEndpointUri)
-                    .accept(MediaType.APPLICATION_JSON)
+                    .accept(HttpMediaType.APPLICATION_JSON)
                     .submit(form)
                     .await(clientTimeout.toMillis(), TimeUnit.MILLISECONDS);
 
-            if (response.status().family() == Http.ResponseStatus.Family.SUCCESSFUL) {
+            if (response.status().family() == Http.Status.Family.SUCCESSFUL) {
                 JsonObject json = response.content()
                         .as(JsonObject.class)
                         .await(clientTimeout.toMillis(), TimeUnit.MILLISECONDS);

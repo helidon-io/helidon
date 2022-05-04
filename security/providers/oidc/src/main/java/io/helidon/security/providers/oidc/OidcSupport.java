@@ -26,8 +26,9 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import io.helidon.common.http.FormParams;
 import io.helidon.common.http.Http;
+import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.parameters.Parameters;
 import io.helidon.config.Config;
 import io.helidon.security.Security;
 import io.helidon.security.integration.webserver.WebSecurity;
@@ -35,6 +36,7 @@ import io.helidon.security.providers.oidc.common.OidcConfig;
 import io.helidon.security.providers.oidc.common.OidcCookieHandler;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientRequestBuilder;
+import io.helidon.webserver.RequestHeaders;
 import io.helidon.webserver.ResponseHeaders;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
@@ -44,6 +46,8 @@ import io.helidon.webserver.cors.CorsSupport;
 import io.helidon.webserver.cors.CrossOriginConfig;
 
 import jakarta.json.JsonObject;
+
+import static io.helidon.common.http.Http.Header.HOST;
 
 /**
  * OIDC integration requires web resources to be exposed through a web server.
@@ -276,14 +280,14 @@ public final class OidcSupport implements Service {
     private void processCode(String code, ServerRequest req, ServerResponse res) {
         WebClient webClient = oidcConfig.appWebClient();
 
-        FormParams.Builder form = FormParams.builder()
+        Parameters.Builder form = Parameters.builder("oidc-form-params")
                 .add("grant_type", "authorization_code")
                 .add("code", code)
                 .add("redirect_uri", redirectUri(req));
 
         WebClientRequestBuilder post = webClient.post()
                 .uri(oidcConfig.tokenEndpointUri())
-                .accept(io.helidon.common.http.MediaType.APPLICATION_JSON);
+                .accept(HttpMediaType.APPLICATION_JSON);
 
         oidcConfig.updateRequest(OidcConfig.RequestType.CODE_TO_TOKEN,
                                  post,
@@ -305,10 +309,10 @@ public final class OidcSupport implements Service {
         }
         String path = uri.getPath();
         path = path.startsWith("/") ? path : "/" + path;
-        Optional<String> host = req.headers().first("host");
-        if (host.isPresent()) {
+        RequestHeaders headers = req.headers();
+        if (headers.contains(HOST)) {
             String scheme = oidcConfig.forceHttpsRedirects() || req.isSecure() ? "https" : "http";
-            return scheme + "://" + host.get() + path;
+            return scheme + "://" + headers.get(HOST).value() + path;
         } else {
             LOGGER.warning("Request without Host header received, yet post logout URI does not define a host");
             return oidcConfig.toString();
@@ -316,7 +320,7 @@ public final class OidcSupport implements Service {
     }
 
     private String redirectUri(ServerRequest req) {
-        Optional<String> host = req.headers().first("host");
+        Optional<String> host = req.headers().first(HOST);
 
         if (host.isPresent()) {
             String scheme = req.isSecure() ? "https" : "http";
@@ -375,7 +379,7 @@ public final class OidcSupport implements Service {
                 .send();
     }
 
-    private Optional<String> processError(ServerResponse serverResponse, Http.ResponseStatus status, String entity) {
+    private Optional<String> processError(ServerResponse serverResponse, Http.Status status, String entity) {
         LOGGER.log(Level.FINE,
                    "Invalid token or failed request when connecting to OIDC Token Endpoint. Response: " + entity
                            + ", response status: " + status);

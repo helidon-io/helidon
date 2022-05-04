@@ -27,9 +27,9 @@ import java.util.logging.Logger;
 
 import io.helidon.common.Errors;
 import io.helidon.common.configurable.Resource;
-import io.helidon.common.http.FormParams;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.SetCookie;
+import io.helidon.common.parameters.Parameters;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
@@ -486,7 +486,7 @@ public final class OidcConfig {
      * This is a helper method to handle possible cases (success, failure with readable entity, failure).
      *
      * @param requestBuilder WebClient request builder
-     * @param toSubmit object to submit (such as {@link io.helidon.common.http.FormParams}
+     * @param toSubmit object to submit (such as {@link io.helidon.common.parameters.Parameters}
      * @param jsonProcessor processor of successful JSON response
      * @param errorEntityProcessor processor of an error that has an entity, to fail the single
      * @param errorProcessor processor of an error that does not have an entity
@@ -497,11 +497,11 @@ public final class OidcConfig {
     public static <T> Single<T> postJsonResponse(WebClientRequestBuilder requestBuilder,
                                                  Object toSubmit,
                                                  Function<JsonObject, T> jsonProcessor,
-                                                 BiFunction<Http.ResponseStatus, String, Optional<T>> errorEntityProcessor,
+                                                 BiFunction<Http.Status, String, Optional<T>> errorEntityProcessor,
                                                  BiFunction<Throwable, String, Optional<T>> errorProcessor) {
         return requestBuilder.submit(toSubmit)
                 .flatMapSingle(response -> {
-                    if (response.status().family() == Http.ResponseStatus.Family.SUCCESSFUL) {
+                    if (response.status().family() == Http.Status.Family.SUCCESSFUL) {
                         return response.content()
                                 .as(JsonObject.class)
                                 .map(jsonProcessor)
@@ -948,7 +948,7 @@ public final class OidcConfig {
      * @param request request builder
      * @param form form params builder
      */
-    public void updateRequest(RequestType type, WebClientRequestBuilder request, FormParams.Builder form) {
+    public void updateRequest(RequestType type, WebClientRequestBuilder request, Parameters.Builder form) {
         if (type == RequestType.CODE_TO_TOKEN && tokenEndpointAuthentication == ClientAuthentication.CLIENT_SECRET_POST) {
             form.add("client_id", clientId);
             form.add("client_secret", clientSecret);

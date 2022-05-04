@@ -36,7 +36,6 @@ import java.util.logging.Logger;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.HttpRequest;
 import io.helidon.config.Config;
 import io.helidon.security.AuditEvent;
 import io.helidon.security.AuthenticationResponse;
@@ -386,21 +385,11 @@ public final class SecurityHandler implements Handler {
 
         if (audited.isEmpty()) {
             // use defaults
-            if (req.method() instanceof Http.Method) {
-                switch ((Http.Method) req.method()) {
-                case GET:
-                case HEAD:
-                    // get and head are not audited by default
-                    return;
-                case OPTIONS:
-                case POST:
-                case PUT:
-                case DELETE:
-                case TRACE:
-                default:
-                    //do nothing - we want to audit
-                }
+            if (req.method() == Http.Method.GET || req.method() == Http.Method.HEAD) {
+                // get and head are not audited by default
+                return;
             }
+            //do nothing - we want to audit
         }
 
         //audit
@@ -547,16 +536,25 @@ public final class SecurityHandler implements Handler {
     private void abortRequest(ServerResponse res,
                               SecurityResponse response,
                               int defaultCode,
-                              Map<String, List<String>> defaultHeaders) {
+                              Map<Http.HeaderName, List<String>> defaultHeaders) {
 
         int statusCode = ((null == response) ? defaultCode : response.statusCode().orElse(defaultCode));
-        Map<String, List<String>> responseHeaders = ((null == response) ? defaultHeaders : response.responseHeaders());
+        Map<Http.HeaderName, List<String>> responseHeaders;
+        if (response == null) {
+            responseHeaders = defaultHeaders;
+        } else {
+            Map<Http.HeaderName, List<String>> tmpHeaders = new HashMap<>();
+            response.responseHeaders()
+                    .forEach((key, value) -> tmpHeaders.put(Http.Header.create(key), value));
+            responseHeaders = tmpHeaders;
+        }
+
         responseHeaders = responseHeaders.isEmpty() ? defaultHeaders : responseHeaders;
 
         ResponseHeaders httpHeaders = res.headers();
 
-        for (Map.Entry<String, List<String>> entry : responseHeaders.entrySet()) {
-            httpHeaders.put(entry.getKey(), entry.getValue());
+        for (Map.Entry<Http.HeaderName, List<String>> entry : responseHeaders.entrySet()) {
+            httpHeaders.set(entry.getKey(), entry.getValue());
         }
 
         res.status(statusCode);
@@ -659,7 +657,7 @@ public final class SecurityHandler implements Handler {
     }
 
     private void auditRoleMissing(SecurityContext context,
-                                  HttpRequest.Path path,
+                                  ServerRequest.Path path,
                                   Optional<Subject> user,
                                   Set<String> rolesSet) {
 

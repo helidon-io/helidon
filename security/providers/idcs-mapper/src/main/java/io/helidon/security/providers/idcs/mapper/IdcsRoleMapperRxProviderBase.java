@@ -29,8 +29,9 @@ import java.util.logging.Logger;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
-import io.helidon.common.http.FormParams;
 import io.helidon.common.http.Http;
+import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.parameters.Parameters;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
@@ -423,7 +424,7 @@ public abstract class IdcsRoleMapperRxProviderBase implements SubjectMappingProv
         }
 
         private void fromServer(RoleMapTracing tracing, CompletableFuture<AppTokenData> future) {
-            FormParams params = FormParams.builder()
+            Parameters params = Parameters.builder("idcs-form-params")
                     .add("grant_type", "client_credentials")
                     .add("scope", "urn:opc:idm:__myscopes__")
                     .build();
@@ -441,7 +442,7 @@ public abstract class IdcsRoleMapperRxProviderBase implements SubjectMappingProv
             WebClientRequestBuilder request = webClient.post()
                     .uri(tokenEndpointUri)
                     .context(childContext)
-                    .accept(io.helidon.common.http.MediaType.APPLICATION_JSON);
+                    .accept(HttpMediaType.APPLICATION_JSON);
 
             postJsonResponse(request,
                              params,
