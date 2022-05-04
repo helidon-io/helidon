@@ -69,13 +69,23 @@ abstract class OutgoingEmitter implements Emitter<Object>, OutgoingMember {
     }
 
     @Override
-    public synchronized void complete() {
-        this.completed = true;
+    public void complete() {
+        try {
+            lock().lock();
+            this.completed = true;
+        } finally {
+            lock().unlock();
+        }
     }
 
     @Override
-    public synchronized void error(Exception e) {
-        this.completed = true;
+    public void error(Exception e) {
+        try {
+            lock().lock();
+            this.completed = true;
+        } finally {
+            lock().unlock();
+        }
     }
 
     @Override
@@ -88,7 +98,7 @@ abstract class OutgoingEmitter implements Emitter<Object>, OutgoingMember {
         return "emitter " + getFieldName();
     }
 
-    protected Lock lock(){
+    protected Lock lock() {
         return this.lock;
     }
 
