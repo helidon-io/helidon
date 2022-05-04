@@ -395,11 +395,11 @@ public class Jwt {
      * Add validator of audience to the collection of validators.
      *
      * @param validators collection of validators
-     * @param audience   audience expected to be in the token
+     * @param audience   audience expected to be in the token, never null
      * @param mandatory  whether the audience field is mandatory in the token
      */
     public static void addAudienceValidator(Collection<Validator<Jwt>> validators, String audience, boolean mandatory) {
-        addAudienceValidator(validators, audience == null ? Set.of() : Set.of(audience), mandatory);
+        addAudienceValidator(validators, Set.of(audience), mandatory);
     }
 
     /**
