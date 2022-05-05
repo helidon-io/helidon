@@ -24,6 +24,10 @@
 = :keywords: helidon, microprofile, micro-profile, performance, tuning
 
 
+In this guide you fill find basic advice for performance tuning of your Helidon application. Most of them target Netty tuning, as Helidon is based on it.
+You should also consider configuring/tuning Java heap size as per any Java application.
+
+
 == Use `io.helidon.microprofile.bundles:helidon-microprofile-core`
 
 Use `helidon-microprofile-core` dependency (and not the `helidon-microprofile` dependency) and add only what you use. For example:
@@ -48,9 +52,6 @@ Use `helidon-microprofile-core` dependency (and not the `helidon-microprofile` d
 </dependency>
 ----
 
-In this guide you fill find basic advises for performance tuning of your Helidon application. Most of them target Netty tuning, as Helidon is based on it.
-You should also consider configuring/tuning Java heap size as per any Java application.
-
 
 == Configure Netty worker thread pool size
 
@@ -60,6 +61,7 @@ The Netty worker thread-pool is what handles your incoming requests. It defaults
 ----
 server.worker-count=4
 ----
+
 
 === Configure Helidon server pool size
 
@@ -77,6 +79,7 @@ To verify settings increase the log level for Helidon's executor service by addi
 ----
 io.helidon.common.configurable.ThreadPool.level=FINE
 ----
+
 
 === Configure Netty's maxOrder (Helidon 2.4.1 or earlier)
 

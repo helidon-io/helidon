@@ -23,8 +23,9 @@
 :microprofile-bundle: false
 = :keywords: helidon, se, performance, tuning
 
-In this guide you fill find basic advises for performance tuning of your Helidon application. Most of them target Netty tuning, as Helidon is based on it.
+In this guide you fill find basic advice for performance tuning of your Helidon application. Most of them target Netty tuning, as Helidon is based on it.
 You should also consider configuring/tuning Java heap size as per any Java application.
+
 
 == Configure Netty worker thread pool size
 
@@ -37,6 +38,7 @@ server:
   host: 0.0.0.0
   worker-count: 2
 ----
+
 
 == Configure Netty's maxOrder (Helidon 2.4.1 or earlier)
 
