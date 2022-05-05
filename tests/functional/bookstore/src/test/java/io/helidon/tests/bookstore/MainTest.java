@@ -193,7 +193,7 @@ class MainTest {
 
     private void runExitOnStartedTest(String edition) throws Exception {
         int port = localPlatform.getAvailablePorts().next();
-        Arguments args = toArguments(editionToJarPath(edition), List.of("-Dexit.on.started=!"), null, port);
+        Arguments args = toArguments(editionToJarPath(edition), List.of("-Dexit.on.started=!", "--enable-preview"), null, port);
         CapturingApplicationConsole console = new CapturingApplicationConsole();
         Application application = localPlatform.launch("java", args, Console.of(console));
         Queue<String> stdOut = console.getCapturedOutputLines();
@@ -473,6 +473,7 @@ class MainTest {
     private static Arguments toArguments(String appJarPath, List<String> javaArgs, String moduleName, int port) {
         List<String> startArgs = new ArrayList<>(javaArgs);
         startArgs.add("-Dserver.port=" + port);
+        startArgs.add("--enable-preview");
 
         if (moduleName != null && ! moduleName.isEmpty() ) {
             File jarFile = new File(appJarPath);

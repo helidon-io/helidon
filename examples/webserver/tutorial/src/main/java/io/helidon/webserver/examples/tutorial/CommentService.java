@@ -161,13 +161,12 @@ public class CommentService implements Service {
     }
 
     private static final class CommentWriter implements MessageBodyWriter<List<Comment>> {
-        private static final GenericType<List<Comment>> SUPPORTED_TYPE = new GenericType<List<Comment>>() {};
         private static final Http.HeaderValue CONTENT_TYPE_UTF_8 = Http.HeaderValue.createCached(Http.Header.CONTENT_TYPE,
                                                                                            HttpMediaType.PLAINTEXT_UTF_8.text());
 
         @Override
         public PredicateResult accept(GenericType<?> type, MessageBodyWriterContext context) {
-            if(type.equals(SUPPORTED_TYPE)) {
+            if(List.class.isAssignableFrom(type.rawType())) {
                 if (context.headers().isAccepted(MediaTypes.TEXT_PLAIN)) {
                     return PredicateResult.SUPPORTED;
                 } else {

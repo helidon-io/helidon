@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,14 @@
 
 package io.helidon.microprofile.opentracing.tck;
 
+import io.helidon.common.Weight;
+import io.helidon.common.Weighted;
 import io.helidon.tracing.opentracing.spi.OpenTracingProvider;
-
-import jakarta.annotation.Priority;
 
 /**
  * Provider for opentracing TCK.
  */
-@Priority(100)
+@Weight(Weighted.DEFAULT_WEIGHT)
 public class OpentracingJavaMockTracerProvider implements OpenTracingProvider {
     @Override
     public OpentracingJavaMockTracerBuilder createBuilder() {

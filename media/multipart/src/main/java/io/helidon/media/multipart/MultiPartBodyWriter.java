@@ -49,7 +49,7 @@ public final class MultiPartBodyWriter implements MessageBodyWriter<WriteableMul
     public PredicateResult accept(GenericType<?> type, MessageBodyWriterContext context) {
         return context.contentType()
                 .or(() -> Optional.of(HttpMediaType.create(MULTIPART_FORM_DATA)))
-                .filter(mediaType -> mediaType == MULTIPART_FORM_DATA)
+                .filter(mediaType -> mediaType.test(MULTIPART_FORM_DATA))
                 .map(it -> PredicateResult.supports(WriteableMultiPart.class, type))
                 .orElse(PredicateResult.NOT_SUPPORTED);
     }

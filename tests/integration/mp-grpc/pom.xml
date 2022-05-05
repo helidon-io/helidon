@@ -133,6 +133,7 @@
                     <argLine>
                         -Dgrpc.marshaller.java.enabled=true
                         --add-opens=java.base/java.lang=ALL-UNNAMED
+                        --enable-preview
                     </argLine>
                 </configuration>
             </plugin>

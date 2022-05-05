@@ -295,7 +295,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
     }
 
     private Optional<String> findCookie(Map<String, List<String>> headers) {
-        List<String> cookies = headers.get(Http.Header.COOKIE);
+        List<String> cookies = headers.get(Http.Header.COOKIE.defaultCase());
         if ((null == cookies) || cookies.isEmpty()) {
             return Optional.empty();
         }
@@ -1126,7 +1126,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
          * @return updated builder instance
          */
         public Builder jwtHeader(String header) {
-            if (Http.Header.COOKIE.equals(header)) {
+            if (Http.Header.COOKIE.defaultCase().equalsIgnoreCase(header)) {
                 useCookie = true;
             } else {
                 useCookie = false;

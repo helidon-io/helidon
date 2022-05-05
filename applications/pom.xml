@@ -81,6 +81,7 @@
                         <systemPropertyVariables>
                             <java.util.logging.config.file>${project.build.outputDirectory}/logging.properties</java.util.logging.config.file>
                         </systemPropertyVariables>
+                        <argLine>--enable-preview</argLine>
                     </configuration>
                 </plugin>
                 <plugin>

@@ -18,6 +18,7 @@ package io.helidon.webserver.examples.tutorial;
 
 import java.nio.charset.StandardCharsets;
 
+import io.helidon.common.LogConfig;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpMediaType;
 import io.helidon.webserver.Routing;
@@ -25,6 +26,7 @@ import io.helidon.webserver.testsupport.MediaPublisher;
 import io.helidon.webserver.testsupport.TestClient;
 import io.helidon.webserver.testsupport.TestResponse;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -33,10 +35,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 /**
  * Tests {@link CommentService}.
  */
-public class CommentServiceTest {
+class CommentServiceTest {
+
+    @BeforeAll
+    static void setup() {
+        LogConfig.configureRuntime();
+    }
 
     @Test
-    public void addAndGetComments() throws Exception {
+    void addAndGetComments() throws Exception {
         CommentService service = new CommentService();
         assertEquals(0, service.getComments("one").size());
         assertEquals(0, service.getComments("two").size());
@@ -52,7 +59,7 @@ public class CommentServiceTest {
     }
 
     @Test
-    public void testRouting() throws Exception {
+    void testRouting() throws Exception {
         Routing routing = Routing.builder()
                 .register(new CommentService())
                 .build();

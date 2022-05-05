@@ -128,6 +128,7 @@
                      as the database process is separate from the application
                      -->
                     <argLine>
+                        --enable-preview
                         --add-exports=java.base/sun.nio.ch=ALL-UNNAMED
                         --add-opens=java.base/java.lang=ALL-UNNAMED
                         --add-opens=java.base/java.lang.reflect=ALL-UNNAMED

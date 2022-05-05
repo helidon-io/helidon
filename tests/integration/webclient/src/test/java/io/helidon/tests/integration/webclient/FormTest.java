@@ -72,7 +72,7 @@ public class FormTest extends TestParent {
                 .submit(TEST_FORM).await());
 
         assertThat(ex.getCause().getMessage(),
-                   startsWith("No writer found for type: class io.helidon.common.http.FormParamsImpl"));
+                   startsWith("No writer found for type: class "));
     }
 
     @Test

@@ -15,6 +15,7 @@
  */
 package io.helidon.examples.media.multipart;
 
+import io.helidon.common.LogConfig;
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Single;
 import io.helidon.media.jsonp.JsonpSupport;
@@ -64,6 +65,7 @@ public final class Main {
      * @return the created {@link WebServer} instance
      */
     static Single<WebServer> startServer() {
+        LogConfig.configureRuntime();
         WebServer server = WebServer.builder(createRouting())
                 .port(8080)
                 .addMediaSupport(MultiPartSupport.create())

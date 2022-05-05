@@ -483,7 +483,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
 
     String queryFromParams() {
         if (skipUriEncoding) {
-            return queryParams.toString();
+            return queryParams.value();
         }
         return queryParams.rawValue();
     }

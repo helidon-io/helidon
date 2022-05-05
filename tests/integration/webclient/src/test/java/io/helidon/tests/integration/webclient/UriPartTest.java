@@ -27,15 +27,12 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-/**
- * TODO javadoc
- */
-public class UriPartTest extends TestParent {
+class UriPartTest extends TestParent {
 
     private static final String EXPECTED_QUERY = "some query &#&@Đ value";
 
     @Test
-    public void testQuerySpace() {
+    void testQuerySpace() {
         String response = webClient.get()
                 .path("obtainedQuery")
                 .queryParam("param", "test")
@@ -52,7 +49,7 @@ public class UriPartTest extends TestParent {
     }
 
     @Test
-    public void testQueryKeySpace() {
+    void testQueryKeySpace() {
         String queryNameWithSpace = "query name with space";
         String response = webClient.get()
                 .path("obtainedQuery")
@@ -70,7 +67,7 @@ public class UriPartTest extends TestParent {
     }
 
     @Test
-    public void testPathWithSpace() {
+    void testPathWithSpace() {
         String response = webClient.get()
                 .path("pattern with space")
                 .request(String.class)
@@ -84,7 +81,7 @@ public class UriPartTest extends TestParent {
     }
 
     @Test
-    public void testFragment() {
+    void testFragment() {
         String fragment = "super fragment#&?/";
         String response = webClient.get()
                 .path("obtainedQuery")
@@ -102,7 +99,7 @@ public class UriPartTest extends TestParent {
     }
 
     @Test
-    public void testQueryNotDecoded() {
+    void testQueryNotDecoded() {
         WebClient webClient = createNewClient(request -> {
             assertThat(request.query(), is("first&second%26=val&ue%26"));
             return Single.just(request);
@@ -116,7 +113,7 @@ public class UriPartTest extends TestParent {
     }
 
     @Test
-    public void testQueryNotDoubleEncoded() {
+    void testQueryNotDoubleEncoded() {
         WebClient webClient = createNewClient(request -> {
             assertThat(request.query(), is("first%26second%26=val%26ue%26"));
             return Single.just(request);
@@ -129,7 +126,7 @@ public class UriPartTest extends TestParent {
     }
 
     @Test
-    public void testPathNotDecoded() {
+    void testPathNotDecoded() {
         WebClient webClient = createNewClient(request -> {
             assertThat(request.path().rawPath(), is("/greet/path%26"));
             return Single.just(request);
