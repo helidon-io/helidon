@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,9 +68,9 @@ public interface Fallback<T> extends FtHandlerTyped<T> {
      * @param <T> type of the result
      * @return a new fallback
      */
-    static <T> Fallback<T> createMulti(Function<Throwable, ? extends CompletionStage<T>> fallback) {
+    static <T> Fallback<T> createMulti(Function<Throwable, ? extends Flow.Publisher<T>> fallback) {
         Builder<T> builder = builder();
-        return builder.fallback(fallback).build();
+        return builder.fallbackMulti(fallback).build();
     }
 
     /**
