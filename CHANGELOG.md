@@ -92,6 +92,7 @@ Notable changes:
 - WebServer: Fix wrong connection close (#3830) [3866](https://github.com/oracle/helidon/pull/3866)
 - WebServer: New default for io.netty.allocator.maxOrder (master) [3826](https://github.com/oracle/helidon/pull/3826) [3834](https://github.com/oracle/helidon/pull/3834)
 - WebServer: Swallowed error fix [3791](https://github.com/oracle/helidon/pull/3791)
+- WebServer: Provide access to client x509 certificate when under mTLS [4185](https://github.com/oracle/helidon/pull/4185)
 - Webclient: New flag to force the use of relative URIs in WebClient  [3614](https://github.com/oracle/helidon/pull/3614)
 - Dependencies: Bump up cron utils [3677](https://github.com/oracle/helidon/pull/3677)
 - Dependencies: Upgrade Neo4j to 4.4.3. for Helidon 3.x [3863](https://github.com/oracle/helidon/pull/3863)
