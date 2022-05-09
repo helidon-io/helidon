@@ -49,17 +49,6 @@
 
     <build>
         <plugins>
-            <!-- create the base JAR removing all of the dummy classes -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <configuration>
-                    <excludes>
-                        <exclude>io/grpc/**/*.class</exclude>
-                    </excludes>
-                </configuration>
-            </plugin>
-
             <!-- create the shaded JAR -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -84,6 +73,51 @@
                                     <include>io.opencensus:opencensus-contrib-grpc-metrics</include>
                                 </includes>
                             </artifactSet>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>com.oracle.coherence.moditect</groupId>
+                <artifactId>moditect-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>add-module-info</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>add-module-info</goal>
+                        </goals>
+                        <configuration>
+                            <module>
+                                <moduleInfo>
+                                    <name>io.grpc</name>
+                                    <open>true</open>
+                                    <exports>
+                                        *;
+                                    </exports>
+                                    <uses>
+                                        io.grpc.ManagedChannelProvider;
+                                        io.grpc.NameResolverProvider;
+                                        io.grpc.ServerProvider;
+                                        io.grpc.internal.BinaryLogProvider;
+                                        io.grpc.LoadBalancerProvider;
+                                    </uses>
+                                    <addServiceUses>true</addServiceUses>
+                                </moduleInfo>
+                            </module>
+                            <jdepsExtraArgs>
+                                <extraArg>--multi-release=11</extraArg>
+                                <extraArg>--ignore-missing-deps</extraArg>
+                            </jdepsExtraArgs>
+                            <outputDirectory>${project.build.directory}</outputDirectory>
+                            <overwriteExistingFiles>true</overwriteExistingFiles>
+                            <exclusions>
+                                <exclusion>
+                                    <groupId>io.grpc</groupId>
+                                    <artifactId>*</artifactId>
+                                </exclusion>
+                            </exclusions>
                         </configuration>
                     </execution>
                 </executions>
