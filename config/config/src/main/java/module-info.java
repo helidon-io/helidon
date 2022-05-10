@@ -47,4 +47,6 @@ module io.helidon.config {
 
     provides io.helidon.config.spi.ConfigParser with PropertiesConfigParser;
 
+    // needed when running with modules - to make private methods accessible
+    opens io.helidon.config to weld.core.impl, io.helidon.microprofile.cdi;
 }
