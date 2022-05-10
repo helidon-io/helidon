@@ -11,11 +11,100 @@ For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.co
 
 ## [3.0.0-SNAPSHOT]
 
-This is the second milestone release of Helidon 3.0.
+### CHANGES
+
+## [3.0.0-M2]
+
+This is the second milestone release of Helidon 3.0. It contains significant new
+features, enhancements and fixes. It also contains backward incompatible changes.
+(see [Compatibility](#compatibility) below). This milestone release is provided for customers that
+want early access to Helidon 3.0 for experimentation. It should be considered
+unstable and is not intended for production use. APIs and features might not be
+fully implemented and tested and are subject to change. Documentation is incomplete.
+Those looking for a stable release should use Helidon 2.
+
+Notable changes:
+
+- MicroProfile 5.0 support
+- javax to jakarta Java package namespace change for Jakarta 9 APIs
+- Java 11 no longer supported. Java 17 or newer is required.
 
 ### Compatibility
 
+3.0.0-M2 contains the following incompatibilities with 2.x:
+
+- Java 17 or newer is required
+- Java package namespace for Jakarta APIs has changed from `javax` to `jakarta`
+
 ### CHANGES
+
+- BV: Support of Bean Validation in Helidon MP #721 [3780](https://github.com/oracle/helidon/pull/3780)
+- CDI: Abstract decorator class now gets correct proxy name in Weld [4148](https://github.com/oracle/helidon/pull/4148)
+- CORS support to OidcSupport (#3844) [3871](https://github.com/oracle/helidon/pull/3871)
+- CORS: CORS `@CrossOrigin` checking and request-time performance improvements [3932](https://github.com/oracle/helidon/pull/3932)
+- CORS: Compare origin URLs based on protocol, host and port [3934](https://github.com/oracle/helidon/pull/3934)
+- Common: Improve threadNamePrefix defaulting to be more informative (#4165) [4166](https://github.com/oracle/helidon/pull/4166)
+- Config: Fix retention of @Configured [4115](https://github.com/oracle/helidon/pull/4115)
+- Config: Support for Hocon inclusion of files without an extensions [4168](https://github.com/oracle/helidon/pull/4168)
+- Config: Turn off reference resolution/substitution at parser level [4175](https://github.com/oracle/helidon/pull/4175)
+- Config: Fixed problem supporting config profiles with JSON and HOCON [3958](https://github.com/oracle/helidon/pull/3958)
+- Config: fixed manifest and documentation for Helidon Config Encryption [4013](https://github.com/oracle/helidon/pull/4013)
+- Config: hocon include [3998](https://github.com/oracle/helidon/pull/3998)
+- Fault Tolerance: Fixed a few problems with Fallback and Multi's [4176](https://github.com/oracle/helidon/pull/4176)
+- GraphQL: Enable mp-graphql tck with 2.0-RC3 of Microprofile GraphQL Spec [4147](https://github.com/oracle/helidon/pull/4147)
+- Health: HEAD support to health endpoints [3936](https://github.com/oracle/helidon/pull/3936)
+- JAX-RS Client: Jersey JAX-RS client context propagation #3762 [3865](https://github.com/oracle/helidon/pull/3865)
+- JAX-RS: Follow up to PR 3921 that adds support for base interfaces as well [3982](https://github.com/oracle/helidon/pull/3982)
+- JAX-RS: Search for @Path annotations in base classes [3921](https://github.com/oracle/helidon/pull/3921)
+- LRA Custom headers propagation #3702 (#3768) [3877](https://github.com/oracle/helidon/pull/3877)
+- Media: Fix body part header encoding [3969](https://github.com/oracle/helidon/pull/3969)
+- Media: MimeParser parses closing boundary as normal boundary [3968](https://github.com/oracle/helidon/pull/3968)
+- Media: Remove buffered multipart [4103](https://github.com/oracle/helidon/pull/4103)
+- Media: Update MediaType parser to handle parameter without value [3999](https://github.com/oracle/helidon/pull/3999)
+- Messaging - Fix badly subscribed connector to processor signature [3957](https://github.com/oracle/helidon/pull/3957)
+- Messaging - signature detection fix #3883 3x [3973](https://github.com/oracle/helidon/pull/3973)
+- MicroProfile: Messaging 3.0 [4091](https://github.com/oracle/helidon/pull/4091)
+- Native image: Native image configuration reflection update for Jaeger [4117](https://github.com/oracle/helidon/pull/4117)
+- OpenAPI: Replace dep on SmallRye pom with deps on 2 artifacts (3.0) [4010](https://github.com/oracle/helidon/pull/4010)
+- Security: Correctly resolve OIDC metadata. (#3985) [4006](https://github.com/oracle/helidon/pull/4006)
+- Security: Do not fail when expected audience is null [4160](https://github.com/oracle/helidon/pull/4160)
+- Security: Fix JwtProvider wrong error message [4136](https://github.com/oracle/helidon/pull/4136)
+- Security: Fixed builder from configuration in OutboundTargetDefinition [3919](https://github.com/oracle/helidon/pull/3919)
+- Security: Injection of empty SecurityContext [4161](https://github.com/oracle/helidon/pull/4161)
+- Security: New security response mapper mechanism [4093](https://github.com/oracle/helidon/pull/4093)
+- Tests: Fixed dbclient integration tests build issues. [4100](https://github.com/oracle/helidon/pull/4100)
+- Tests: possible fix for HttpPipelineTest hang  [4143](https://github.com/oracle/helidon/pull/4143)
+- Tracing: Disable paths such as /metrics and /health from tracing [3977](https://github.com/oracle/helidon/pull/3977)
+- Tracing: Enable OpenTracing 2.0 TCKs [3962](https://github.com/oracle/helidon/pull/3962)
+- Tracing: Fix #3966 set collectorUri() with URL with no port number adds port  [3993](https://github.com/oracle/helidon/pull/3993)
+- WebClient: Case insensitive client request headers fix [4108](https://github.com/oracle/helidon/pull/4108)
+- WebClient: MDC propagation [4109](https://github.com/oracle/helidon/pull/4109)
+- WebClient: hang fix [3997](https://github.com/oracle/helidon/pull/3997)
+- WebServer: Allow a list of path patterns to be specified for exclusion in the access log[3959](https://github.com/oracle/helidon/pull/3959)
+- WebServer: Do not log full stack traces in SEVERE when a connection reset is received [3918](https://github.com/oracle/helidon/pull/3918)
+- WebServer: Explicit 404 in Jersey no longer calls next() [3976](https://github.com/oracle/helidon/pull/3976)
+- WebServer: Upgrade WebSocket from Java HttpClient [3994](https://github.com/oracle/helidon/pull/3994)
+- Dependencies: Jersey version bump to 3.0.4 [3884](https://github.com/oracle/helidon/pull/3884)
+- Dependencies: MySQL JDBC driver updated to 8.0.28 and PostgreSQL JDBC driver updated to 42.3.3. [4098](https://github.com/oracle/helidon/pull/4098)
+- Dependencies: Upgrade Jackson Databind to 2.13.2.1 (BOM 2.13.2.20220324) [4028](https://github.com/oracle/helidon/pull/4028)
+- Dependencies: Upgrade Netty to 4.1.76.Final [4121](https://github.com/oracle/helidon/pull/4121)
+- Dependencies: Upgrade grpc-java to 1.45.1 [4150](https://github.com/oracle/helidon/pull/4150)
+- Dependencies: Upgrade snakeyaml and typesafe-config [3941](https://github.com/oracle/helidon/pull/3941)
+- Docs: Add discussion of Helidon-specific config settings to MP OpenAPI doc [3955](https://github.com/oracle/helidon/pull/3955)
+- Docs: Describe more Scheduled properties [4043](https://github.com/oracle/helidon/pull/4043)
+- Docs: Fix guide broken links and typos 4119 [4133](https://github.com/oracle/helidon/pull/4133)
+- Docs: Fix guide. Change JPA Scope. [4170](https://github.com/oracle/helidon/pull/4170)
+- Docs: JBatch guide for issue 2785 [3895](https://github.com/oracle/helidon/pull/3895)
+- Docs: README: Update JDK and mvn versions for build [3946](https://github.com/oracle/helidon/pull/3946)
+- Docs: SecMP JWT Auth and Rest Client spec links updated [4005](https://github.com/oracle/helidon/pull/4005)
+- Docs: fixed links in the cards for extensions [3930](https://github.com/oracle/helidon/pull/3930)
+- Docs: updated link to the new spec for issue 3899 [3909](https://github.com/oracle/helidon/pull/3909)
+- Examples: Fix deps in jpa examples and do other cleanup [4132](https://github.com/oracle/helidon/pull/4132)
+- Examples: JBatch example for [3927](https://github.com/oracle/helidon/pull/3927)
+- Examples: Quickstart cleanup, using @HelidonTest in MP. (#4011) [4014](https://github.com/oracle/helidon/pull/4014)
+- Examples: Removed incorrect call to indexOf [3920](https://github.com/oracle/helidon/pull/3920)
+- Examples: Update quickstart Dockerfiles  [4088](https://github.com/oracle/helidon/pull/4088)
+- Examples: Use OBJECT schema type with requiredProperties in Quickstart MP [4151](https://github.com/oracle/helidon/pull/4151)
 
 ## [3.0.0-M1]
 
@@ -113,5 +202,6 @@ Notable changes:
 - Examples: Update bare-mp archetype to use microprofile-core [3795](https://github.com/oracle/helidon/pull/3795)
 
 
-[3.0.0-SHAPSHOT]: https://github.com/oracle/helidon/compare/3.0.0-M1...HEAD
+[3.0.0-SHAPSHOT]: https://github.com/oracle/helidon/compare/3.0.0-M2...HEAD
+[3.0.0-M2]: https://github.com/oracle/helidon/compare/3.0.0-M1...3.0.0-M2
 [3.0.0-M1]: https://github.com/oracle/helidon/compare/2.4.0...3.0.0-M1
