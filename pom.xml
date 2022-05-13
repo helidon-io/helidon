@@ -106,7 +106,6 @@
         <version.plugin.javadoc>3.3.1</version.plugin.javadoc>
         <version.plugin.jaxb>0.14.0</version.plugin.jaxb>
         <version.plugin.license>1.16</version.plugin.license>
-        <version.plugin.moditect>1.0.0-RC1</version.plugin.moditect>
         <version.plugin.os>1.5.0.Final</version.plugin.os>
         <version.plugin.project-info-reports>3.0.0</version.plugin.project-info-reports>
         <version.plugin.protobuf>0.5.1</version.plugin.protobuf>
@@ -741,11 +740,6 @@
                     <configuration>
                         <mode>fail</mode>
                     </configuration>
-                </plugin>
-                <plugin>
-                    <groupId>com.oracle.coherence.moditect</groupId>
-                    <artifactId>moditect-maven-plugin</artifactId>
-                    <version>${version.plugin.moditect}</version>
                 </plugin>
             </plugins>
         </pluginManagement>
