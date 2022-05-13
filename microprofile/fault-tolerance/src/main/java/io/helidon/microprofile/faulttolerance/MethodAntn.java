@@ -20,17 +20,22 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.eclipse.microprofile.faulttolerance.Retry;
+
 import static io.helidon.microprofile.faulttolerance.FaultToleranceParameter.getParameter;
 
 /**
- * Class MethodAntn.
+ * Base class for all method annotations.
  */
 abstract class MethodAntn {
     private static final Logger LOGGER = Logger.getLogger(MethodAntn.class.getName());
+
+    private static final AnnotationFinder ANNOTATION_FINDER = AnnotationFinder.create(Retry.class.getPackage());
 
     private final Method method;
 
@@ -81,12 +86,8 @@ abstract class MethodAntn {
         return method;
     }
 
-    Class<?> beanClass() {
-        return beanClass;
-    }
-
     /**
-     * Look up an annotation on the method.
+     * Look up an annotation on the method using instance variables.
      *
      * @param annotClass Annotation class.
      * @param <A> Annotation class type param.
@@ -94,44 +95,6 @@ abstract class MethodAntn {
      */
     public final <A extends Annotation> LookupResult<A> lookupAnnotation(Class<A> annotClass) {
         return lookupAnnotation(beanClass, method, annotClass);
-    }
-
-    /**
-     * Returns underlying annotation and info as to how it was found.
-     *
-     * @param beanClass The bean class.
-     * @param method The method.
-     * @param annotClass The annotation class.
-     * @param <A> Annotation type.
-     * @return The lookup result or {@code null}.
-     */
-    static <A extends Annotation> LookupResult<A> lookupAnnotation(Class<?> beanClass, Method method,
-                                                                   Class<A> annotClass) {
-        A annotation = method.getAnnotation(annotClass);
-        if (annotation != null) {
-            if (LOGGER.isLoggable(Level.FINE)) {
-                LOGGER.fine("Found annotation '" + annotClass.getName()
-                        + "' method '" + method.getName() + "'");
-            }
-            return new LookupResult<>(MatchingType.METHOD, annotation);
-        }
-        annotation = beanClass.getAnnotation(annotClass);
-        if (annotation != null) {
-            if (LOGGER.isLoggable(Level.FINE)) {
-                LOGGER.fine("Found annotation '" + annotClass.getName()
-                        + "' class '" + method.getDeclaringClass().getName() + "'");
-            }
-            return new LookupResult<>(MatchingType.CLASS, annotation);
-        }
-        annotation = method.getDeclaringClass().getAnnotation(annotClass);
-        if (annotation != null) {
-            if (LOGGER.isLoggable(Level.FINE)) {
-                LOGGER.fine("Found annotation '" + method.getDeclaringClass().getName()
-                        + "' class '" + method.getDeclaringClass().getName() + "'");
-            }
-            return new LookupResult<>(MatchingType.CLASS, annotation);
-        }
-        return null;
     }
 
     /**
@@ -221,5 +184,62 @@ abstract class MethodAntn {
             }
         }
         return (Class<? extends Throwable>[]) result.toArray(new Class[0]);
+    }
+
+    /**
+     * Returns underlying annotation and info as to how it was found. If more than one
+     * instance of this annotation exist (after computing the transitive closure),
+     * one will be returned in an undefined manner.
+     *
+     * @param beanClass The bean class.
+     * @param method The method.
+     * @param annotClass The annotation class.
+     * @param <A> Annotation type.
+     * @return The lookup result or {@code null}.
+     */
+    @SuppressWarnings("unchecked")
+    static <A extends Annotation> LookupResult<A> lookupAnnotation(Class<?> beanClass, Method method,
+                                                                   Class<A> annotClass) {
+        A annotation = (A) getMethodAnnotation(method, annotClass);
+        if (annotation != null) {
+            if (LOGGER.isLoggable(Level.FINE)) {
+                LOGGER.fine("Found annotation '" + annotClass.getName()
+                        + "' method '" + method.getName() + "'");
+            }
+            return new LookupResult<>(MatchingType.METHOD, annotation);
+        }
+        annotation = (A) getClassAnnotation(beanClass, annotClass);
+        if (annotation != null) {
+            if (LOGGER.isLoggable(Level.FINE)) {
+                LOGGER.fine("Found annotation '" + annotClass.getName()
+                        + "' class '" + method.getDeclaringClass().getName() + "'");
+            }
+            return new LookupResult<>(MatchingType.CLASS, annotation);
+        }
+        annotation = (A) getClassAnnotation(method.getDeclaringClass(), annotClass);
+        if (annotation != null) {
+            if (LOGGER.isLoggable(Level.FINE)) {
+                LOGGER.fine("Found annotation '" + annotClass.getName()
+                        + "' class '" + method.getDeclaringClass().getName() + "'");
+            }
+            return new LookupResult<>(MatchingType.CLASS, annotation);
+        }
+        return null;
+    }
+
+    private static Annotation getMethodAnnotation(Method m, Class<? extends Annotation> annotClass) {
+        Set<? extends Annotation> set = ANNOTATION_FINDER.findAnnotations(m);
+        return set.stream()
+                .filter(a -> a.annotationType().equals(annotClass))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private static Annotation getClassAnnotation(Class<?> c, Class<? extends Annotation> annotClass) {
+        Set<? extends Annotation> set = ANNOTATION_FINDER.findAnnotations(c);
+        return set.stream()
+                .filter(a -> a.annotationType().equals(annotClass))
+                .findFirst()
+                .orElse(null);
     }
 }
