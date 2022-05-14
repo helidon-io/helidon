@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,6 +65,7 @@ import io.helidon.common.serviceloader.Priorities;
 import io.helidon.config.ConfigException;
 import io.helidon.config.ConfigMappers;
 import io.helidon.config.ConfigValue;
+import io.helidon.config.hocon.mp.HoconMpConfigSource;
 import io.helidon.config.mp.spi.MpConfigFilter;
 import io.helidon.config.yaml.mp.YamlMpConfigSource;
 
@@ -252,6 +253,10 @@ public class MpConfigBuilder implements ConfigBuilder {
             case "yaml":
                 delegates = yamlSource(config);
                 break;
+            case "hocon":
+            case "json":
+                delegates = hoconSource(config);
+                break;
             default:
                 throw new ConfigException("Meta configuration source type \"" + type + "\" is not supported. Use on of: "
                                                   + "system-properties, environment-variables, properties, yaml");
@@ -293,6 +298,14 @@ public class MpConfigBuilder implements ConfigBuilder {
                               YamlMpConfigSource::classPath,
                               YamlMpConfigSource::classPath,
                               YamlMpConfigSource::create);
+    }
+
+    private List<ConfigSource> hoconSource(io.helidon.config.Config config) {
+        return sourceFromMeta(config,
+                HoconMpConfigSource::create,
+                HoconMpConfigSource::classPath,
+                HoconMpConfigSource::classPath,
+                HoconMpConfigSource::create);
     }
 
     private List<ConfigSource> sourceFromMeta(io.helidon.config.Config config,

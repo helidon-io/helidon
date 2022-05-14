@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,6 +70,32 @@ class MpMetaConfigTest {
         assertThat(sourceNames, iterableWithSize(2));
         assertThat(sourceNames.get(0), is("CLASSPATH"));
         assertThat(config.getValue("value", String.class), is("classpath"));
+    }
+
+    @Test
+    void testMetaHocon() {
+        System.setProperty(MpMetaConfig.META_CONFIG_SYSTEM_PROPERTY, "custom-mp-meta-config-hocon.yaml");
+        config = ConfigProvider.getConfig();
+
+        assertThat(config.getValue("string", String.class), is("String"));
+        assertThat(config.getValue("number", String.class), is("175"));
+        assertThat(config.getValue("array.0", String.class), is("One"));
+        assertThat(config.getValue("array.1", String.class), is("Two"));
+        assertThat(config.getValue("array.2", String.class), is("Three"));
+        assertThat(config.getValue("boolean", String.class), is("true"));
+    }
+
+    @Test
+    void testMetaJson() {
+        System.setProperty(MpMetaConfig.META_CONFIG_SYSTEM_PROPERTY, "custom-mp-meta-config-json.yaml");
+        config = ConfigProvider.getConfig();
+
+        assertThat(config.getValue("string", String.class), is("String"));
+        assertThat(config.getValue("number", String.class), is("175"));
+        assertThat(config.getValue("array.0", String.class), is("One"));
+        assertThat(config.getValue("array.1", String.class), is("Two"));
+        assertThat(config.getValue("array.2", String.class), is("Three"));
+        assertThat(config.getValue("boolean", String.class), is("true"));
     }
 
     @Test
