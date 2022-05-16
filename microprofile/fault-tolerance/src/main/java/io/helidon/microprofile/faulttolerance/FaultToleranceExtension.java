@@ -71,33 +71,11 @@ public class FaultToleranceExtension implements Extension {
 
     private static boolean isFaultToleranceMetricsEnabled = true;
 
-    private Set<BeanMethod> registeredMethods;
+    private Set<AnnotatedMethod<?>> registeredMethods;
 
     private ThreadPoolSupplier threadPoolSupplier;
 
     private ScheduledThreadPoolSupplier scheduledThreadPoolSupplier;
-
-    /**
-     * A bean method class that pairs a type and a method.
-     */
-    private static class BeanMethod {
-
-        private final AnnotatedType<?> annotatedType;
-        private final AnnotatedMethod<?> annotatedMethod;
-
-        BeanMethod(AnnotatedType<?> annotatedType, AnnotatedMethod<?> annotatedMethod) {
-            this.annotatedType = annotatedType;
-            this.annotatedMethod = annotatedMethod;
-        }
-
-        AnnotatedType<?> annotatedType() {
-            return annotatedType;
-        }
-
-        AnnotatedMethod<?> annotatedMethod() {
-            return annotatedMethod;
-        }
-    }
 
     /**
      * Class to mimic a {@link Priority} annotation for the purpose of changing
@@ -226,7 +204,7 @@ public class FaultToleranceExtension implements Extension {
     private void registerFaultToleranceMethods(AnnotatedType<?> type) {
         for (AnnotatedMethod<?> method : type.getMethods()) {
             if (isFaultToleranceMethod(type, method)) {
-                getRegisteredMethods().add(new BeanMethod(type, method));
+                getRegisteredMethods().add(method);
             }
         }
     }
@@ -241,9 +219,8 @@ public class FaultToleranceExtension implements Extension {
     void registerMetricsAndInitExecutors(@Observes @Priority(LIBRARY_BEFORE + 10 + 5) @Initialized(ApplicationScoped.class)
                                                  Object event) {
         if (FaultToleranceMetrics.enabled()) {
-            getRegisteredMethods().forEach(beanMethod -> {
-                final AnnotatedMethod<?> annotatedMethod = beanMethod.annotatedMethod();
-                final AnnotatedType<?> annotatedType = beanMethod.annotatedType();
+            getRegisteredMethods().forEach(annotatedMethod -> {
+                final AnnotatedType<?> annotatedType = annotatedMethod.getDeclaringType();
 
                 // Counters for all methods
                 FaultToleranceMetrics.registerMetrics(annotatedMethod.getJavaMember());
@@ -296,7 +273,7 @@ public class FaultToleranceExtension implements Extension {
      *
      * @return The set.
      */
-    private Set<BeanMethod> getRegisteredMethods() {
+    private Set<AnnotatedMethod<?>> getRegisteredMethods() {
         if (registeredMethods == null) {
             registeredMethods = new CopyOnWriteArraySet<>();
         }
