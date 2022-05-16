@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020 Oracle and/or its affiliates.
+    Copyright (c) 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -88,6 +88,29 @@ Config config = Config.create();
 WebServerTls.builder()
     .config(config.get("server.tls"))
     .build();
+----
+
+This can alternatively be configured with paths to PKCS#8 PEM files rather than KeyStores:
+
+[source,yaml]
+.WebServer TLS configuration file `application.yaml`
+----
+server:
+  tls:
+    #Truststore setup
+    trust:
+      pem:
+        certificates:
+          resource:
+            resource-path: "ca-bundle.pem"
+    private-key:
+      pem:
+        key:
+          resource:
+            resource-path: "key.pem"
+        cert-chain:
+          resource:
+            resource-path: "chain.pem"
 ----
 
 == Configuration options

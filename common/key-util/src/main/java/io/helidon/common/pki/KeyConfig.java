@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -651,6 +651,7 @@ public final class KeyConfig {
         private final StreamHolder privateKeyStream = new StreamHolder("privateKey");
         private final StreamHolder publicKeyStream = new StreamHolder("publicKey");
         private final StreamHolder certChainStream = new StreamHolder("certChain");
+        private final StreamHolder certificateStream = new StreamHolder("certificate");
         private char[] pemKeyPassphrase;
 
         private PemBuilder() {
@@ -717,6 +718,17 @@ public final class KeyConfig {
         }
 
         /**
+         * Read one or more certificates in PEM format from a resource definition. Used eg: in a trust store.
+         *
+         * @param resource key resource (file, classpath, URL etc.)
+         * @return updated builder instance
+         */
+        public PemBuilder certificates(Resource resource) {
+            certificateStream.stream(resource);
+            return this;
+        }
+
+        /**
          * Build {@link KeyConfig} based on information from PEM files only.
          *
          * @return new instance configured from this builder
@@ -751,6 +763,10 @@ public final class KeyConfig {
                 }
             }
 
+            if (certificateStream.isSet()) {
+                PemReader.readCertificates(certificateStream.stream()).forEach(builder::addCert);
+            }
+
             return builder;
         }
 
@@ -774,6 +790,7 @@ public final class KeyConfig {
             pemConfig.get("key.resource").as(Resource::create).ifPresent(this::key);
             pemConfig.get("key.passphrase").asString().map(String::toCharArray).ifPresent(this::keyPassphrase);
             pemConfig.get("cert-chain.resource").as(Resource::create).ifPresent(this::certChain);
+            pemConfig.get("certificates.resource").as(Resource::create).ifPresent(this::certificates);
 
             // and this is the old approach
             Resource.create(config, "pem-key").ifPresent(this::key);
