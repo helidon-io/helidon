@@ -452,6 +452,9 @@ public final class SecurityHandler implements Handler {
                                  atnTracing.findParent().orElse(null));
 
         clientBuilder.explicitProvider(explicitAuthenticator.orElse(null)).submit().thenAccept(response -> {
+            // copy headers to be returned with the current response
+            response.responseHeaders().forEach(res.headers()::put);
+
             switch (response.status()) {
             case SUCCESS:
                 //everything is fine, we can continue with processing
