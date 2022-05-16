@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,14 +37,14 @@ public class DelayRetryPolicyTest {
 
         long firstCall = System.nanoTime();
 
-        Optional<Long> aLong = policy.nextDelayMillis(firstCall, 0, 0);
-        assertThat(aLong, value(is(100L)));
-        aLong = policy.nextDelayMillis(firstCall, 100, 1);
-        assertThat(aLong, value(is(300L)));
-        aLong = policy.nextDelayMillis(firstCall, 100, 2); // should just apply factor on last delay
-        assertThat(aLong, value(is(300L)));
-        aLong = policy.nextDelayMillis(firstCall, 100, 3); // limit of calls
-        assertThat(aLong, is(empty()));
+        Optional<Long> delay = policy.nextDelayMillis(firstCall, 0, 0);
+        assertThat(delay, value(is(0L)));
+        delay = policy.nextDelayMillis(firstCall, delay.orElseThrow(), 1);
+        assertThat(delay, value(is(100L)));
+        delay = policy.nextDelayMillis(firstCall, delay.orElseThrow(), 2); // should just apply factor on last delay
+        assertThat(delay, value(is(300L)));
+        delay = policy.nextDelayMillis(firstCall, delay.orElseThrow(), 3); // limit of calls
+        assertThat(delay, is(empty()));
     }
 
     @Test
@@ -57,13 +57,13 @@ public class DelayRetryPolicyTest {
 
         long firstCall = System.nanoTime();
 
-        Optional<Long> aLong = policy.nextDelayMillis(firstCall, 0, 0);
-        assertThat(aLong, value(is(0L)));
-        aLong = policy.nextDelayMillis(firstCall, 0, 1);
-        assertThat(aLong, value(is(0L)));
-        aLong = policy.nextDelayMillis(firstCall, 0, 2); // should just apply factor on last delay
-        assertThat(aLong, value(is(0L)));
-        aLong = policy.nextDelayMillis(firstCall, 100, 3); // limit of calls
-        assertThat(aLong, is(empty()));
+        Optional<Long> delay = policy.nextDelayMillis(firstCall, 0, 0);
+        assertThat(delay, value(is(0L)));
+        delay = policy.nextDelayMillis(firstCall, delay.orElseThrow(), 1);
+        assertThat(delay, value(is(0L)));
+        delay = policy.nextDelayMillis(firstCall, delay.orElseThrow(), 2); // should just apply factor on last delay
+        assertThat(delay, value(is(0L)));
+        delay = policy.nextDelayMillis(firstCall, delay.orElseThrow(), 3); // limit of calls
+        assertThat(delay, is(empty()));
     }
 }
