@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -18,19 +18,24 @@
 
 = Bean Validation Introduction
 :h1Prefix: MP
-:pagename: bean-validation-introduction
-:description: Bean Validation Introduction
+:pagename: bean-validation
+:description: Bean Validation
 :keywords: helidon, webserver, bean validation, validation
 :bean-validation-spec-url: https://projects.eclipse.org/projects/ee4j.bean-validation
 :feature-name: Bean Validation
 :common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 
+== Description
 
 Helidon supports Bean Validation via its integration with JAX-RS/Jersey. The
 {bean-validation-spec-url}[Jakarta Bean
 Validation specification] defines an API to validate Java beans.
 Bean Validation is supported in REST resource classes as well as in
 regular application beans.
+
+If bean validation is required outside JAX-RS/Jersey use cases, it is also available in Helidon.
+It follows the standard {bean-validation-spec-url}[Jakarta Bean
+Validation specification] which defines an API to validate Java beans.
 
 include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 
@@ -42,14 +47,32 @@ include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 </dependency>
 ----
 
-== Validation Example in Helidon MP
+For general validation, please add to your `pom.xml`:
 
-The following example shows a simple resource method annotated with `@POST` whose
+[source, xml]
+----
+<dependency>
+  <groupId>io.helidon.microprofile.bean-validation</groupId>
+  <artifactId>helidon-microprofile-bean-validation</artifactId>
+</dependency>
+----
+
+== API
+
+TODO Add API tables with description
+
+== Reference
+
+TODO
+
+== Examples
+
+1. The following example shows a simple resource method annotated with `@POST` whose
 parameter must be _not null_ and _valid_. Validating a parameter in this case implies
 making sure that any constraint annotations in the `Greeting` class are satisfied.
 The resource method shall never be called if the validation fails, with a 400
 (Bad Request) status code returned instead.
-
++
 [source,java]
 ----
 @Path("helloworld")
@@ -63,3 +86,34 @@ public class HelloWorld {
 }
 ----
 
+2. The following example shows a simple application with one field declared as _not null_ using `@NotNull` annotation:
++
+[source,java]
+----
+public class GreetingHolder {
+    @NotNull
+    private String greeting;
+    //...
+}
+----
++
+If the bean contains a method parameter annotated with @Valid, and GreetingHolder with _null_greeting is passed, then a _ValidationException_ will be thrown:
++
+[source,java]
+----
+@ApplicationScoped
+public class GreetingProvider {
+    private GreetingHolder greetingHolder;
+    //..
+    void setGreeting(@Valid GreetingHolder greetingHolder) {
+        this.greetingHolder = greetingHolder;
+    }
+}
+----
++
+NOTE: `beans.xml` is required to identify beans and for bean validation to work properly.
+
+
+== Additional Information
+
+TODO
