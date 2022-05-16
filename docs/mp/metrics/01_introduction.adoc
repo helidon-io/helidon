@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -27,6 +27,12 @@
 :common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 :microprofile-bundle: true
 
+== Description
+
+Metrics provides unified way for Microprofile servers to export Monitoring data ("Telemetry") to management agents and also a unified Java API, that all (application) programmers can use to expose their telemetry data.
+
+Learn more about https://github.com/eclipse/microprofile-metrics/releases/tag/2.0[MicroProfile Metrics specification].
+
 include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 
 [source,xml]
@@ -37,12 +43,861 @@ include::{common-deps-page-prefix-inc}[tag=maven-dependency]
         </dependency>
 ----
 
-== Overview
+== Usage
+
 Helidon provides three types of metrics: base, vendor, and application.  Helidon automatically provides built-in base and vendor metrics.
 Applications can use these metrics without additional configuration or code changes.
 
-== Next Steps
+== API
 
-Learn more about https://github.com/eclipse/microprofile-metrics/releases/tag/2.0[MicroProfile Metrics specification].
+=== Using the Built-In Metrics
 
-Create a sample MicroProfile (MP) project that can be used to run some basic examples using both built-in and custom metrics with Helidon MP. <<mp/guides/05_metrics.adoc, Helidon MP Metrics Guide>>.
+Helidon provides three scopes of metrics: base, vendor, and application. Here are the metric endpoints:
+
+1. `/metrics/base` - Base metrics data as specified by the MicroProfile Metrics specification.
+2. `/metrics/vendor` - Helidon-specific metrics data.
+3. `/metrics/application` - Application-specific metrics data.
+
+NOTE: The `/metrics` endpoint will return data for all scopes.
+
+The built-in metrics fall into three categories:
+
+. JVM behavior (in the base registry),
+. basic key performance indicators for request handling (in the vendor registry), and
+. thread pool utilization (also in the vendor registry).
+
+A later section describes the <<basic-and-extended-kpi,key performance indicator metrics>> in detail.
+
+The following example demonstrates how to use the other built-in metrics.  All examples are executed
+from the root directory of your project (helidon-quickstart-{lower-case-flavor}).
+
+
+== Configuration
+
+TODO
+
+== Reference
+
+TODO
+
+== Examples
+
+==== Method Level Metrics
+
+There are four metrics that you can use by annotating a method:
+
+1. `@Counted` - Register a `Counter` metric
+2. `@Timed` - Register a `Timer` metric
+3. `@Metered` - Register a `Meter` metric
+4. `@SimplyTimed` - Register a `SimpleTimer` metric
+
+The following example will demonstrate how to use the `@Counted` annotation to track the number of times
+the `/cards` endpoint is called.
+
+[source,java]
+.Create a new class `GreetingCards` with the following code:
+----
+package io.helidon.examples.quickstart.mp;
+
+import java.util.Collections;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.json.Json;
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonObject;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
+import org.eclipse.microprofile.metrics.annotation.Counted;
+
+@Path("/cards") //<1>
+@RequestScoped // <2>
+public class GreetingCards {
+
+  private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
+
+  @GET
+  @Produces(MediaType.APPLICATION_JSON)
+  @Counted(name = "any-card")  // <3>
+  public JsonObject anyCard() throws InterruptedException {
+    return createResponse("Here are some random cards ...");
+  }
+
+  private JsonObject createResponse(String msg) {
+    return JSON.createObjectBuilder().add("message", msg).build();
+  }
+}
+----
+<1> This class is annotated with `Path` which sets the path for this resource
+as `/cards`.
+<2> The `@RequestScoped` annotation defines that this bean is
+request scoped.  The request scope is active only for the duration of
+one web service invocation and it is destroyed at the end of that
+invocation.
+<3> The annotation `@Counted` will register a `Counter` metric for this method, creating it if needed.
+The counter is incremented each time the anyCards method is called.  The `name` attribute is optional.
+
+NOTE: For Metrics 1.1, you must set `monotonic` field to `true` to force the count to increment when entering the method.
+The default behavior is to decrement when exiting the method.  Here is an example:
+`@Counted(name = "any-card", monotonic = true)`.
+
+
+[source,bash]
+.Build and run the application, then invoke the application endpoints below:
+----
+curl http://localhost:8080/cards
+curl http://localhost:8080/cards
+curl -H "Accept: application/json"  http://localhost:8080/metrics/application
+----
+
+[source,json]
+.JSON response:
+----
+{
+  "io.helidon.examples.quickstart.mp.GreetingCards.any-card":2 // <1>
+}
+----
+<1> The any-card count is two, since you invoked the endpoint twice.
+
+NOTE: Notice the counter is fully qualified.  You can remove the package prefix by using the `absolute=true` field in the `@Counted` annotation.
+You must use  `absolute=false` for class-level annotations.
+
+==== Additional Method Level Metrics
+
+The `@Timed`, `@Metered`, and `@SimplyTimed` annotations can also be used with a method.  For the following example.
+you can just annotate the same method with `@Metered` and `@Timed`. These metrics collect significant
+information about the measured methods, but at a cost of some overhead and more complicated output.
+Use `@SimplyTimed` in cases where capturing the invocation count and the total elapsed time
+spent in a block of code is sufficient.
+
+Note that when using multiple annotations on a method, you *must* give the metrics different names as shown below.
+
+[source,java]
+.Update the `GreetingCards` class with the following code:
+----
+package io.helidon.examples.quickstart.mp;
+
+import java.util.Collections;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.json.Json;
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonObject;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
+import org.eclipse.microprofile.metrics.MetricUnits;
+import org.eclipse.microprofile.metrics.annotation.Counted;
+import org.eclipse.microprofile.metrics.annotation.Metered;
+import org.eclipse.microprofile.metrics.annotation.Timed;
+
+@Path("/cards")
+@RequestScoped
+public class GreetingCards {
+
+  private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
+
+  @GET
+  @Produces(MediaType.APPLICATION_JSON)
+  @Counted(name = "cardCount", absolute = true) //<1>
+  @Metered(name = "cardMeter", absolute = true, unit = MetricUnits.MILLISECONDS) //<2>
+  @Timed(name = "cardTimer", absolute = true, unit = MetricUnits.MILLISECONDS) //<3>
+  public JsonObject anyCard() {
+    return createResponse("Here are some random cards ...");
+  }
+
+  private JsonObject createResponse(String msg) {
+    return JSON.createObjectBuilder().add("message", msg).build();
+  }
+}
+
+----
+<1> Specify a custom name for the `Counter` metric and set `absolute=true` to remove the path prefix from the name.
+<2> Add the `@Metered` annotation to get a `Meter` metric.
+<3> Add the `@Timed` annotation to get a `Timer` metric.
+
+[source,bash]
+.Build and run the application, then invoke the application endpoints below:
+----
+curl http://localhost:8080/cards
+curl http://localhost:8080/cards
+curl -H "Accept: application/json"  http://localhost:8080/metrics/application
+----
+
+
+[source,json]
+.JSON response:
+----
+{
+  "cardCount": 2,
+  "cardMeter": { // <1>
+    "count": 2,
+    "meanRate": 0.15653506570241812,
+    "oneMinRate": 0,
+    "fiveMinRate": 0,
+    "fifteenMinRate": 0
+  },
+  "cardTimer": { // <2>
+    "count": 2,
+    "elapsedTime": 2,
+    "meanRate": 0.15651866263362785,
+    "oneMinRate": 0,
+    "fiveMinRate": 0,
+    "fifteenMinRate": 0,
+    "min": 0,
+    "max": 2,
+    "mean": 1.0506565,
+    "stddev": 1.0405735,
+    "p50": 2.09123,
+    "p75": 2.09123,
+    "p95": 2.09123,
+    "p98": 2.09123,
+    "p99": 2.09123,
+    "p999": 2.09123
+  }
+}
+----
+<1> The `Meter` metric includes the count field (it is a superset of `Counter`).
+<2> The `Timer` metric includes the `Meter` fields (it is a superset of `Meter`).
+
+
+==== Reusing Metrics
+
+You can share a metric across multiple endpoints simply by specifying the same metric annotation as
+demonstrated below.
+
+[source,java]
+.Update the `GreetingCards` class with the following code:
+----
+package io.helidon.examples.quickstart.mp;
+
+import java.util.Collections;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.json.Json;
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonObject;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
+import org.eclipse.microprofile.metrics.annotation.Counted;
+
+@Path("/cards")
+@RequestScoped
+public class GreetingCards {
+
+  private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
+
+  @GET
+  @Produces(MediaType.APPLICATION_JSON)
+  @Counted(name = "anyCard", absolute = true)
+  public JsonObject anyCard() throws InterruptedException {
+    return createResponse("Here are some cards ...");
+  }
+
+  @GET
+  @Path("/birthday")
+  @Produces(MediaType.APPLICATION_JSON)
+  @Counted(name = "specialEventCard", absolute = true)  // <1>
+  public JsonObject birthdayCard() throws InterruptedException {
+    return createResponse("Here are some birthday cards ...");
+  }
+
+  @GET
+  @Path("/wedding")
+  @Produces(MediaType.APPLICATION_JSON)
+  @Counted(name = "specialEventCard", absolute = true)  // <2>
+  public JsonObject weddingCard() throws InterruptedException {
+    return createResponse("Here are some wedding cards ...");
+  }
+
+  private JsonObject createResponse(String msg) {
+    return JSON.createObjectBuilder().add("message", msg).build();
+  }
+}
+----
+<1>  The `/birthday` endpoint uses a `Counter` metric, named `specialEventCard`.
+<2>  The `/wedding` endpoint uses the same `Counter` metric, named `specialEventCard`.
+
+
+[source,bash]
+.Build and run the application, then invoke the following endpoints:
+----
+curl  http://localhost:8080/cards/wedding
+curl  http://localhost:8080/cards/birthday
+curl  http://localhost:8080/cards
+curl -H "Accept: application/json"  http://localhost:8080/metrics/application
+----
+
+[source,json]
+.JSON response from `/metrics/application`:
+----
+{
+"anyCard": 1,
+"specialEventCard": 2  // <1>
+}
+----
+<1> Notice that `specialEventCard` count is two, since you accessed `/cards/wedding` and `/cards/birthday`.
+
+==== Class Level Metrics
+
+You can collect metrics at the class-level to aggregate data from all methods in that class using the same metric.
+The following example introduces a metric to count all card queries.  In the following example, the method-level metrics are not
+needed to aggregate the counts, but they are left in the example to demonstrate the combined output of all three metrics.
+
+[source,java]
+.Update the `GreetingCards` class with the following code:
+----
+package io.helidon.examples.quickstart.mp;
+
+import java.util.Collections;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.json.Json;
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonObject;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
+import org.eclipse.microprofile.metrics.annotation.Counted;
+
+@Path("/cards")
+@RequestScoped
+@Counted(name = "totalCards") // <1>
+public class GreetingCards {
+
+  private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
+
+  @GET
+  @Produces(MediaType.APPLICATION_JSON)
+  @Counted(absolute = true) // <2>
+  public JsonObject anyCard() throws InterruptedException {
+    return createResponse("Here are some random cards ...");
+  }
+
+  @Path("/birthday")
+  @GET
+  @Produces(MediaType.APPLICATION_JSON)
+  @Counted(absolute = true) // <3>
+  public JsonObject birthdayCard() throws InterruptedException {
+    return createResponse("Here are some birthday cards ...");
+  }
+
+  private JsonObject createResponse(String msg) {
+    return JSON.createObjectBuilder().add("message", msg).build();
+  }
+}
+----
+<1> This class is annotated with `@Counted`, which aggregates count data from all the method that have a `Count` annotation.
+<2> Use `absolute=true` to remove path prefix for method-level annotations.
+<3> Add a method with a `Counter` metric to get birthday cards.
+
+[source,bash]
+.Build and run the application, then invoke the following endpoints:
+----
+curl http://localhost:8080/cards
+curl http://localhost:8080/cards/birthday
+curl -H "Accept: application/json"  http://localhost:8080/metrics/application
+----
+
+[source,json]
+.JSON response from `/metrics/application`:
+----
+{
+  "anyCard": 1,
+  "birthdayCard": 1,
+  "io.helidon.examples.quickstart.mp.totalCards.GreetingCards": 2  // <1>
+}
+----
+<1> The `totalCards` count is a total of all the method-level `Counter` metrics.  Class level metric names are always
+fully qualified.
+
+
+==== Field Level Metrics
+
+Field level metrics can be injected into managed objects, but they need to be updated by the application code.
+This annotation can be used on fields of type `Meter`, `Timer`, `Counter`, and `Histogram`.
+
+The following example shows how to use a field-level `Counter` metric to track cache hits.
+
+[source,java]
+.Update the `GreetingCards` class with the following code:
+----
+package io.helidon.examples.quickstart.mp;
+
+import java.util.Collections;
+import java.util.Random;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
+import jakarta.json.Json;
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonObject;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
+import org.eclipse.microprofile.metrics.Counter;
+import org.eclipse.microprofile.metrics.annotation.Counted;
+import org.eclipse.microprofile.metrics.annotation.Metric;
+
+@Path("/cards")
+@RequestScoped
+@Counted(name = "totalCards")
+public class GreetingCards {
+
+  private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
+
+  @Inject
+  @Metric(name = "cacheHits", absolute = true) // <1>
+  private Counter cacheHits;
+
+  @GET
+  @Produces(MediaType.APPLICATION_JSON)
+  @Counted(absolute = true)
+  public JsonObject anyCard() throws InterruptedException {
+    updateStats(); // <2>
+    return createResponse("Here are some random cards ...");
+  }
+
+  @Path("/birthday")
+  @GET
+  @Produces(MediaType.APPLICATION_JSON)
+  @Counted(absolute = true)
+  public JsonObject birthdayCard() throws InterruptedException {
+    updateStats();  // <3>
+    return createResponse("Here are some birthday cards ...");
+  }
+
+  private JsonObject createResponse(String msg) {
+    return JSON.createObjectBuilder().add("message", msg).build();
+  }
+
+  private void updateStats() {
+    if (new Random().nextInt(3) == 1) {
+      cacheHits.inc(); // <4>
+    }
+  }
+}
+----
+<1> A `Counter` metric field, `cacheHits`, is automatically injected by Helidon.
+<2> Call `updateStats()` to update the cache hits.
+<3> Call `updateStats()` to update the cache hits.
+<4> Randomly increment the `cacheHits` counter.
+
+[source,bash]
+.Build and run the application, then invoke the following endpoints:
+----
+curl http://localhost:8080/cards
+curl http://localhost:8080/cards
+curl http://localhost:8080/cards/birthday
+curl http://localhost:8080/cards/birthday
+curl http://localhost:8080/cards/birthday
+curl -H "Accept: application/json"  http://localhost:8080/metrics/application
+----
+
+[source,json]
+.JSON response from `/metrics/application`:
+----
+{
+  "anyCard": 2,
+  "birthdayCard": 3,
+  "cacheHits": 2, // <1>
+  "io.helidon.examples.quickstart.mp.totalCards.GreetingCards": 5
+}
+----
+<1> The cache was hit two times out of five queries.
+
+==== Gauge Metric
+
+The metrics you have tested so far are updated in response to an application REST request, i.e GET `/cards`.  These
+metrics can be declared in a request scoped class and Helidon will store the metric in the `MetricRegistry`, so the value persists
+across requests. When GET `/metrics/application` is invoked, Helidon will return the current value of the metric stored in the `MetricRegistry`.
+The `Gauge` metric is different from all the other metrics. The application must provide a getter to return the gauge value in an
+application scoped class. When GET `/metrics/application` is invoked, Helidon will call the `Gauge` getter, store that value
+in the `MetricsRegistry`, and return it as part of the metrics response payload.  So, the `Gauge` metric value is updated real-time, in response to the
+get metrics request.
+
+The following example demonstrates how to use a `Gauge` to track application up-time.
+
+[source,java]
+.Create a new `GreetingCardsAppMetrics` class with the following code:
+----
+package io.helidon.examples.quickstart.mp;
+
+import java.time.Duration;
+import java.util.concurrent.atomic.AtomicLong;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.Initialized;
+import jakarta.enterprise.event.Observes;
+import org.eclipse.microprofile.metrics.annotation.Gauge;
+
+@ApplicationScoped // <1>
+public class GreetingCardsAppMetrics {
+
+  private AtomicLong startTime = new AtomicLong(0); // <2>
+
+  public void onStartUp(@Observes @Initialized(ApplicationScoped.class) Object init) {
+    startTime = new AtomicLong(System.currentTimeMillis()); // <3>
+  }
+
+  @Gauge(unit = "TimeSeconds")
+  public long appUpTimeSeconds() {
+    return Duration.ofMillis(System.currentTimeMillis() - startTime.get()).getSeconds();  // <4>
+  }
+}
+----
+<1> This managed object must be application scoped to properly register and use the `Gauge` metric.
+<2> Declare an `AtomicLong` field to hold the start time of the application.
+<3> Initialize the application start time.
+<4> Return the application `appUpTimeSeconds` metric, which will be included in the application metrics.
+
+
+[source,java]
+.Update the `GreetingCards` class with the following code to simplify the metrics output:
+----
+package io.helidon.examples.quickstart.mp;
+
+import java.util.Collections;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.json.Json;
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonObject;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
+import org.eclipse.microprofile.metrics.annotation.Counted;
+
+@Path("/cards")
+@RequestScoped
+public class GreetingCards {
+
+  private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
+
+  @GET
+  @Produces(MediaType.APPLICATION_JSON)
+  @Counted(name = "cardCount", absolute = true)
+  public JsonObject anyCard() throws InterruptedException {
+    return createResponse("Here are some random cards ...");
+  }
+
+  private JsonObject createResponse(String msg) {
+    return JSON.createObjectBuilder().add("message", msg).build();
+  }
+}
+----
+
+[source,bash]
+.Build and run the application, then invoke the application metrics endpoint:
+----
+curl -H "Accept: application/json"  http://localhost:8080/metrics/application
+----
+
+[source,json]
+.JSON response from `/metrics/application`:
+----
+{
+  "cardCount": 0,
+  "io.helidon.examples.quickstart.mp.GreetingCardsAppMetrics.appUpTimeSeconds": 6 // <1>
+}
+----
+<1> The application has been running for 6 seconds.
+
+include::{metrics-common}[tag=k8s-and-prometheus-integration]
+
+
+== Additional Information
+
+=== Metrics capable Components
+
+==== Writing a Helidon MP Application
+
+When your MP application code uses `@Inject` for either a `RegistryFactory` or a `MetricRegistry`, Helidon injects either the full-featured instance or the minimal instance according to whether the runtime path includes the full implementation and, if so, whether metrics is enabled.
+
+By choosing and injecting the appropriate implementation, Helidon allows you to write your code without concern for which implementation is available at runtime.
+
+==== Packaging a Metrics-capable Helidon MP _Application_
+
+The Helidon MP metrics implementation depends on the metrics and metrics service APIs as well as `helidon-metrics` which contains the full implementation of each.
+Therefore, by default, Helidon MP applications have full-featured metrics and endpoint support.
+
+Application code can `@Inject` the `RegistryFactory` and `MetricRegistry` instances.
+Helidon MP itself uses metrics settings in the configuration to make the correct `RegistryFactory` and `MetricRegistry` instances available at injection sites.
+
+Helidon's MicroProfile metrics component `helidon-microprofile-metrics` has its own runtime dependency on the minimal implementation,
+so that implementation, at least, is available at runtime.
+
+By default, Helidon MP applications use the full implementation, because Helidon's MP metrics depends also on the full metrics implementation.
+That said, a developer of a Helidon MP app _can_ explicitly exclude the dependency on the full implementation:
+[source,xml]
+.Explicit exclusion of `helidon-metrics`
+----
+<dependency>
+    <groupId>io.helidon.microprofile.bundles</groupId>
+    <artifactId>helidon-microprofile</artifactId>
+    <exclusions>
+        <exclusion>
+            <groupId>io.helidon.metrics</groupId>
+            <artifactId>helidon-metrics</artifactId>
+        </exclusion>
+    </exclusions>
+</dependency>
+----
+
+In the resulting Helidon MP application, Helidon will use the minimal metrics and metrics support implementations.
+
+include::{shared-doc}[tags=writing-code-ending]
+
+include::{shared-doc}[tags=wrap-up]
+
+
+=== Prometheus Exemplar Support
+
+Think of Helidon metrics in three related but different parts:
+
+* The Helidon metrics API allows your code to register, look-up, remove, and update metrics using
+the `RegistryFactory`, `MetricRegistry`, and individual metrics interfaces.
+* Helidon provides two implementations of the Helidon metrics API and selects which one to use at runtime,
+based on what components are present on the runtime path and whether metrics is configured to be enabled or disabled.
+* The built-in Helidon metrics web service supports the `/metrics` endpoints by which clients can retrieve metadata and
+values of the registered metrics.
+ifeval::["{h1Prefix}" == "MP"]
+Helidon MP apps which use metrics enable the metrics service by default.
+endif::[]
+ifeval::["{h1Prefix}" == "SE"]
+Your Helidon SE app provides this feature (if at all) by explicitly using the `MetricsSupport` interface.
++
+Most Helidon applications are web-based and their developers choose to expose the built-in metrics web service.
+But by separating the parts of metrics this way,
+Helidon allows non-web apps to work with metrics as well, just without the web service support.
+endif::[]
+
+
+As you plan and write Helidon components and applications,
+you make some choices about exactly how your code will use metrics.
+This guide gives some background information,
+describes the choices you face, explains their ramifications, and provides some code examples.
+
+== Categorizing Metrics Usage
+We can place each Helidon component and Helidon application into one of three categories based on how it relies on metrics.
+The type of module dictates the compile-time dependency you declare in the project `pom.xml`.
+
+.Types of Metrics Usage
+[cols="1,1,6"]
+|===
+|Registers, updates, removes metrics? |Refers to metrics values? |Category
+
+|{x}
+|{x}
+|metrics-independent
+
+|{chk}
+|{x}
+|metrics-capable
+
+|{chk}
+|{chk}
+|metrics-dependent
+|===
+
+Whenever possible, if your component or app uses metrics write it as metrics-capable code.
+
+==== Understanding the Two Metrics Implementations
+
+Helidon provides two metrics implementations.
+
+* _Full-featured_ metrics allows registering, removing, and updating metrics and observing metrics' changing values.
+The `helidon-metrics` component contains full-featured metrics.
+* _Minimal_ metrics supports registering, removing, and updating metrics.
+The metrics objects provided by the minimal implementation are no-ops: their values never change.
+The minimal implementation is part of the `helidon-metrics-api` component.
+
+Any code compiled with `helidon-metrics-api` can assume that the runtime path will include the minimal implementation.
+
+Both implementations support all the operations of the `RegistryFactory` and the `MetricRegistry`.
+The full implementation provides fully-functional metrics instances (counters, timers, etc.).
+In the minimal implementations, metrics do not update their values.
+
+For Helidon to use the full implementation, two conditions must hold:
+
+* The `helidon-metrics` component must be on the runtime path.
+* Metrics must be enabled, using either a builder or configuration. (Enabled is the default.)
+
+Otherwise, provided that the runtime path includes `helidon-metrics-api`, Helidon activates the minimal implementation.
+
+==== Understanding the Two Metrics Service Implementations
+Helidon includes two implementations of support for the metrics web service endpoint `/metrics`
+(or whatever context value is configured).
+
+The full-service implementation sends responses which describe the metadata and current values for the metrics registered in
+metric registries. The `helidon-metrics` component contains this implementation.
+
+The `helidon-metrics-service-api` component contains the API for the metrics web service support (the `MetricsSupport` interface) and also
+a minimal implementation. This implementation simply responds with `404` and an explanatory message that metrics are disabled.
+
+Any code compiled with `helidon-metrics-service-api` can assume that the runtime path will contain the minimal implementation.
+
+Helidon activates the full implementation if the runtime path includes the full implementation _and_ metrics is configured as enabled;
+Helidon uses the minimal implementation otherwise.
+
+== Enabling and Disabling Metrics
+Using
+ifeval::["{h1Prefix}" == "SE"]
+either builder-style settings or
+endif::[]
+configuration, your component
+ifeval::["{h1Prefix}" == "SE"]
+or Helidon SE application
+endif::[]
+can let end users control
+at runtime whether Helidon should use full-featured metrics.
+If an end user sets `metrics.enabled` to `false`, then Helidon activates the minimal metrics and metrics service implementations
+provided they are in the runtime path.
+
+Further, users can set `component-name.metrics.enabled` to `false` which disables metrics for just that component
+so long as the component was written to check that setting and act on it accordingly.
+
+=== Designing and Writing Metrics-capable Applications and Components
+Whoever packages and deploys your application or component can control what code will be on the runtime path and whether metrics
+is enabled or not.
+As a result, wherever possible, construct your modules which use metrics so that they do not make decisions based on the values of metrics;
+that is, design them to be metrics-capable, _not_ metrics-dependent.
+Doing so allows your code to operate regardless of whether the full-featured metrics implementation is active at runtime.
+
+==== Declaring Dependencies
+. Include this dependency:
++
+[source,xml]
+.Dependency for Helidon metrics API
+----
+<dependency>
+    <groupId>io.helidon.metrics</groupId>
+    <artifactId>helidon-metrics-api</artifactId>
+</dependency>
+----
+This module defines the metrics API: `RegistryFactory`, `MetricRegistry`, and the various metrics themselves.
+
+ifeval::["{h1Prefix}" == "SE"]
+. To permit the use of the built-in metrics web service support for the `/metrics` endpoint, add this dependency:
++
+[source,xml]
+.Dependency for metrics web service support
+----
+<dependency>
+    <groupId>io.helidon.metrics</groupId>
+    <artifactId>helidon-metrics-service-api</artifactId>
+</dependency>
+----
+This module defines the metrics web service API: `MetricsSupport`.
++
+Use the `MetricsSupport` interface from `helidon-metrics-service-api` in your SE app initialization code to create a service you can register with the web server. (See the example <<writing_SE,below>>.)
+endif::[]
+. Declare an explicit runtime dependency on the full-featured metrics
+implementation:
++
+[source,xml]
+.Dependency for full metrics and metrics service implementations
+----
+<dependency>
+    <groupId>io.helidon.metrics</groupId>
+    <artifactId>helidon-metrics</artifactId>
+    <scope>runtime</scope>
+</dependency>
+----
+
+// end::all-beginning-text[]
+
+// tag::writing-code-beginning[]
+
+==== Writing the Metrics-capable Code
+The way you write a metrics-capable module depends on whether it is a _component_
+(that is, _not_ an application) or an _application_.
+
+==== Writing a _Non-application Component_
+Write your _non-application_ component to accept component-specific configuration that includes an optional `metrics` section
+which can include an optional `enabled` setting. Helidon defaults the value to `true`.
+The following example shows one way to accomplish this:
+
+.Example code to support disabling metrics usage in a component
+[source,java]
+----
+public class UtilComponent {
+
+    private final MetricRegistry metricRegistry; // <1>
+
+    public static class Builder implements io.helidon.common.Builder<UtilComponent> { // <2>
+        private ComponentMetricsSettings.Builder componentMetricsSettingsBuilder = ComponentMetricsSettings.builder();
+
+        public Builder componentMetricsSettings(ComponentMetricsSettings.Builder componentMetricsSettingsBuilder) { // <3>
+            this.componentMetricsSettingsBuilder = componentMetricsSettingsBuilder;
+            return this;
+        }
+
+        public Builder config(Config componentConfig) { // <4>
+            componentConfig
+                .get(ComponentMetricsSettings.Builder.METRICS_CONFIG_KEY)
+                .as(ComponentMetricsSettings::create)
+                .ifPresent(this::componentMetricsSettings);
+            return this;
+        }
+
+        public UtilComponent build() {
+            return new UtilComponent(this);
+        }
+
+        ...
+    }
+
+    private UtilComponent(Builder builder) {
+        ...
+        metricRegistry = RegistryFactory
+                .getInstance(builder.componentMetricsSettingsBuilder.build())
+                .getRegistry(MetricRegistry.Type.VENDOR); // <5>
+    }
+
+    MetricRegistry metricRegistry() { // <6>
+        return metricRegistry;
+    }
+}
+----
+<1> Other code in the component uses this metric registry for registering, looking up, and removing metrics.
+<2> Applications which use instances of `MyComponent` use this `Builder` to set up and create those instances.
+<3> Applications which layer on your component invoke this method to set up the component-level metrics behavior they want your component to use.
+<4> If an application supports configuration, it passes the util config to this method.
+<5> The constructor for your component obtains the `MetricRegistry` which the rest of your component will use.
+<6> Provides easy access to the `MetricRegistry` which the component's metrics code should use.
+
+Helidon returns either a full-featured `RegistryFactory` or a minimal one, depending on:
+
+* whether the full-featured metrics implementation is on the runtime path,
+* whether metrics overall is enabled or disabled, and
+* whether the component metrics settings requests enabled or disabled metrics.
+
+// end::writing-code-beginning[]
+
+
+// tag::writing-code-ending[]
+
+==== An Example: Docker Images
+Here is an example showing how useful metrics-capable code can be.
+
+You (or others) could assemble a Docker image with your metrics-capable app as its top layer or your metrics-capable component in a middle layer, built on a lower  layer containing several Helidon modules including the full metrics implementation.
+When that Docker image runs, your app will run with full-featured metrics support.
+
+Separately, someone could build a similar Docker image which _does not_ include the Helidon metrics implementation.
+In this Docker image, your app or component will run successfully but will not incur the overhead of actually updating the metrics it uses.
+
+Users can create different Docker images, some with full metrics support and some without,
+which all use a single version of your metrics-capable app or component which runs properly in either environment without change.
+// end::writing-code-ending[]
+
+// tag::wrap-up[]
+==== Advantages of Writing Metrics-capable Modules
+By writing a metrics-capable app or component, you give packagers and deployers of your code the flexibility to include or exclude
+the full metrics implementation at runtime as they see fit.
+
+Because your one module works correctly in either environment:
+
+* The consumers of your app benefit by not needing to understand and choose between two different implementations of your module, or having to add both your main module and an  optional add-on which adds metrics support to your module.
+* You benefit by writing and maintaining a single module, not two: one that is metrics-independent and one that is metrics-dependent.
+// end::wrap-up[]
