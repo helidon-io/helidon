@@ -17,7 +17,6 @@
 package io.helidon.microprofile.faulttolerance;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -322,34 +321,17 @@ public class FaultToleranceExtension implements Extension {
      * Determines if a method has any fault tolerance annotationSet. Only {@code @Fallback}
      * is considered if fault tolerance is disabled.
      *
-     * @param beanClass The bean.
-     * @param method The method to check.
+     * @param annotatedType The annotated type.
+     * @param annotatedMethod The method to check.
      * @return Outcome of test.
      */
-    static boolean isFaultToleranceMethod(Class<?> beanClass, Method method) {
-        return MethodAntn.isAnnotationPresent(beanClass, method, Retry.class)
-                || MethodAntn.isAnnotationPresent(beanClass, method, CircuitBreaker.class)
-                || MethodAntn.isAnnotationPresent(beanClass, method, Bulkhead.class)
-                || MethodAntn.isAnnotationPresent(beanClass, method, Timeout.class)
-                || MethodAntn.isAnnotationPresent(beanClass, method, Asynchronous.class)
-                || MethodAntn.isAnnotationPresent(beanClass, method, Fallback.class);
-    }
-
-    /**
-     * Determines if a method has any fault tolerance annotationSet. Only {@code @Fallback}
-     * is considered if fault tolerance is disabled.
-     *
-     * @param type The annotated type.
-     * @param method The method to check.
-     * @return Outcome of test.
-     */
-    static boolean isFaultToleranceMethod(AnnotatedType<?> type, AnnotatedMethod<?> method) {
-        return MethodAntn.isAnnotationPresent(type, method, Retry.class)
-                || MethodAntn.isAnnotationPresent(type, method, CircuitBreaker.class)
-                || MethodAntn.isAnnotationPresent(type, method, Bulkhead.class)
-                || MethodAntn.isAnnotationPresent(type, method, Timeout.class)
-                || MethodAntn.isAnnotationPresent(type, method, Asynchronous.class)
-                || MethodAntn.isAnnotationPresent(type, method, Fallback.class);
+    static boolean isFaultToleranceMethod(AnnotatedType<?> annotatedType, AnnotatedMethod<?> annotatedMethod) {
+        return MethodAntn.isAnnotationPresent(annotatedType, annotatedMethod, Retry.class)
+                || MethodAntn.isAnnotationPresent(annotatedType, annotatedMethod, CircuitBreaker.class)
+                || MethodAntn.isAnnotationPresent(annotatedType, annotatedMethod, Bulkhead.class)
+                || MethodAntn.isAnnotationPresent(annotatedType, annotatedMethod, Timeout.class)
+                || MethodAntn.isAnnotationPresent(annotatedType, annotatedMethod, Asynchronous.class)
+                || MethodAntn.isAnnotationPresent(annotatedType, annotatedMethod, Fallback.class);
     }
 
     /**

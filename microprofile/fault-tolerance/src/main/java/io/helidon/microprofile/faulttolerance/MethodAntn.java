@@ -89,10 +89,6 @@ abstract class MethodAntn {
         return annotatedMethod.getJavaMember();
     }
 
-    AnnotatedMethod<?> annotatedMethod() {
-        return annotatedMethod;
-    }
-
     /**
      * Look up an annotation on the method using instance variables.
      *
@@ -107,26 +103,14 @@ abstract class MethodAntn {
     /**
      * Finds if an annotation is present on a method or its class.
      *
-     * @param beanClass The bean class.
-     * @param method Method to check.
+     * @param annotatedType The annotated type.
+     * @param annotatedMethod Method to check.
      * @param annotClass Annotation class.
      * @return Outcome of test.
      */
-    static boolean isAnnotationPresent(Class<?> beanClass, Method method, Class<? extends Annotation> annotClass) {
-        return lookupAnnotation(beanClass, method, annotClass) != null;
-    }
-
-    /**
-     * Finds if an annotation is present on a method or its class.
-     *
-     * @param type The annotated type.
-     * @param method Method to check.
-     * @param annotClass Annotation class.
-     * @return Outcome of test.
-     */
-    static boolean isAnnotationPresent(AnnotatedType<?> type, AnnotatedMethod<?> method,
+    static boolean isAnnotationPresent(AnnotatedType<?> annotatedType, AnnotatedMethod<?> annotatedMethod,
                                        Class<? extends Annotation> annotClass) {
-        return lookupAnnotation(type, method, annotClass) != null;
+        return lookupAnnotation(annotatedType, annotatedMethod, annotClass) != null;
     }
 
     /**
@@ -211,48 +195,6 @@ abstract class MethodAntn {
      * instance of this annotation exist (after computing the transitive closure),
      * one will be returned in an undefined manner.
      *
-     * @param beanClass The bean class.
-     * @param method The method.
-     * @param annotClass The annotation class.
-     * @param <A> Annotation type.
-     * @return The lookup result or {@code null}.
-     */
-    @SuppressWarnings("unchecked")
-    static <A extends Annotation> LookupResult<A> lookupAnnotation(Class<?> beanClass,
-                                                                   Method method,
-                                                                   Class<A> annotClass) {
-        A annotation = (A) getMethodAnnotation(method, annotClass);
-        if (annotation != null) {
-            if (LOGGER.isLoggable(Level.FINE)) {
-                LOGGER.fine("Found annotation '" + annotClass.getName()
-                        + "' method '" + method.getName() + "'");
-            }
-            return new LookupResult<>(MatchingType.METHOD, annotation);
-        }
-        annotation = (A) getClassAnnotation(beanClass, annotClass);
-        if (annotation != null) {
-            if (LOGGER.isLoggable(Level.FINE)) {
-                LOGGER.fine("Found annotation '" + annotClass.getName()
-                        + "' class '" + method.getDeclaringClass().getName() + "'");
-            }
-            return new LookupResult<>(MatchingType.CLASS, annotation);
-        }
-        annotation = (A) getClassAnnotation(method.getDeclaringClass(), annotClass);
-        if (annotation != null) {
-            if (LOGGER.isLoggable(Level.FINE)) {
-                LOGGER.fine("Found annotation '" + annotClass.getName()
-                        + "' class '" + method.getDeclaringClass().getName() + "'");
-            }
-            return new LookupResult<>(MatchingType.CLASS, annotation);
-        }
-        return null;
-    }
-
-    /**
-     * Returns underlying annotation and info as to how it was found. If more than one
-     * instance of this annotation exist (after computing the transitive closure),
-     * one will be returned in an undefined manner.
-     *
      * @param type The annotated type.
      * @param method The annotated method.
      * @param annotClass The annotation class.
@@ -288,14 +230,6 @@ abstract class MethodAntn {
             return new LookupResult<>(MatchingType.CLASS, annotation);
         }
         return null;
-    }
-
-    private static Annotation getMethodAnnotation(Method m, Class<? extends Annotation> annotClass) {
-        Set<? extends Annotation> set = ANNOTATION_FINDER.findAnnotations(m);
-        return set.stream()
-                .filter(a -> a.annotationType().equals(annotClass))
-                .findFirst()
-                .orElse(null);
     }
 
     private static Annotation getMethodAnnotation(AnnotatedMethod<?> m, Class<? extends Annotation> annotClass) {
