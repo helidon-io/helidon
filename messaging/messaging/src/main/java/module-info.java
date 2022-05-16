@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ module io.helidon.messaging {
 
     requires io.helidon.common.context;
     requires io.helidon.common.configurable;
+    requires io.helidon.common.reactive;
     requires io.helidon.config.mp;
     requires transitive io.helidon.config;
     requires transitive org.reactivestreams;

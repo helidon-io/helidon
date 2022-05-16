@@ -38,5 +38,9 @@
             <groupId>io.helidon.integrations.vault.auths</groupId>
             <artifactId>helidon-integrations-vault-auths-common</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-reactive</artifactId>
+        </dependency>
     </dependencies>
 </project>
