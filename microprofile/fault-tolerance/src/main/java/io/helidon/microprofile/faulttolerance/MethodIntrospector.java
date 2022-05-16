@@ -153,7 +153,8 @@ class MethodIntrospector {
      * @return Outcome of test.
      */
     private boolean isAnnotationEnabled(Class<? extends Annotation> clazz) {
-        LookupResult<? extends Annotation> lookupResult = lookupAnnotation(annotatedType, annotatedMethod, clazz);
+        BeanManager bm = CDI.current().getBeanManager();
+        LookupResult<? extends Annotation> lookupResult = lookupAnnotation(annotatedType, annotatedMethod, clazz, bm);
         if (lookupResult == null) {
             return false;       // not present
         }

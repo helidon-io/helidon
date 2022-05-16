@@ -36,7 +36,7 @@ class AnnotationFinderTest {
         Package pkg = Retry.class.getPackage();
         Method m = TimeoutAnnotBean.class.getMethod("timedRetry");
         AnnotationFinder finder = AnnotationFinder.create(pkg);
-        Set<Class<? extends Annotation>> transitive = finder.findAnnotations(m)
+        Set<Class<? extends Annotation>> transitive = finder.findAnnotations(Set.of(m.getAnnotations()), null)
                 .stream()
                 .map(Annotation::annotationType)
                 .collect(Collectors.toSet());

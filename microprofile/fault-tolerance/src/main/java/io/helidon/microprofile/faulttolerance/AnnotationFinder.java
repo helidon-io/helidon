@@ -17,13 +17,13 @@
 package io.helidon.microprofile.faulttolerance;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Method;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import javax.enterprise.inject.spi.BeanManager;
 import javax.interceptor.InterceptorBinding;
 
 /**
@@ -65,28 +65,8 @@ public class AnnotationFinder {
         return new AnnotationFinder(pkg);
     }
 
-    /**
-     * Searches for transitive annotations starting with a class.
-     *
-     * @param clazz the class
-     * @return set of transitive annotations found
-     */
-    Set<Annotation> findAnnotations(Class<?> clazz) {
-        return findAnnotations(Set.of(clazz.getAnnotations()));
-    }
-
-    /**
-     * Searches for transitive annotations starting with a method.
-     *
-     * @param method the method
-     * @return set of transitive annotations found
-     */
-    Set<Annotation> findAnnotations(Method method) {
-        return findAnnotations(Set.of(method.getAnnotations()));
-    }
-
-    Set<Annotation> findAnnotations(Set<Annotation> set) {
-        return findAnnotations(set, new HashSet<>(), new HashSet<>(), pkg);
+    Set<Annotation> findAnnotations(Set<Annotation> set, BeanManager bm) {
+        return findAnnotations(set, new HashSet<>(), new HashSet<>(), pkg, bm);
     }
 
     /**
@@ -101,22 +81,23 @@ public class AnnotationFinder {
      * @return the result set of annotations
      */
     private Set<Annotation> findAnnotations(Set<Annotation> set, Set<Annotation> result,
-                                            Set<Annotation> seen, Package pkg) {
+                                            Set<Annotation> seen, Package pkg, BeanManager bm) {
         for (Annotation a1 : set) {
             Class<? extends Annotation> a1Type = a1.annotationType();
             if (a1Type.getPackage().equals(pkg)) {
                 result.add(a1);
-            } else if (!seen.contains(a1) && isOfInterest(a1)) {
+            } else if (!seen.contains(a1) && isOfInterest(a1, bm)) {
                 seen.add(a1);
                 Set<Annotation> a1Set = Set.of(a1Type.getAnnotations());
-                findAnnotations(a1Set, result, seen, pkg);
+                findAnnotations(a1Set, result, seen, pkg, bm);
             }
         }
         return result;
     }
 
-    private static boolean isOfInterest(Annotation a) {
-        if (a.annotationType().isAnnotationPresent(InterceptorBinding.class)) {
+    private boolean isOfInterest(Annotation a, BeanManager bm) {
+        if (bm != null && bm.isInterceptorBinding(a.annotationType())
+                || a.annotationType().isAnnotationPresent(InterceptorBinding.class)) {
             Optional<String> matches = Stream.of(SKIP_PACKAGE_PREFIXES)
                     .filter(pp -> a.annotationType().getPackage().getName().startsWith(pp))
                     .findAny();
