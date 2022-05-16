@@ -85,7 +85,7 @@ public class AnnotationFinder {
         return findAnnotations(Set.of(method.getAnnotations()));
     }
 
-    private Set<Annotation> findAnnotations(Set<Annotation> set) {
+    Set<Annotation> findAnnotations(Set<Annotation> set) {
         return findAnnotations(set, new HashSet<>(), new HashSet<>(), pkg);
     }
 
