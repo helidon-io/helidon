@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -25,9 +25,22 @@
 :common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 :feature-name: OCI Autonomous Transaction Processing
 
+== ToC
+
+- Overview
+- Maven Coordinates
+- Usage
+- API
+- Configuration
+- Reference
+- Examples
+- Additional Information
+
+== Overview
+
 The Helidon MP OCI Autonomous Transaction Processing integration provides easy access to ATP database in Oracle cloud.
 
-== Experimental
+=== Experimental
 
 WARNING: Helidon integration with Oracle Cloud Infrastructure is still experimental and not intended for production use. APIs and features have not yet been fully tested and are subject to change.
 
@@ -35,14 +48,15 @@ include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 
 [source,xml]
 ----
-        <dependency>
-            <groupId>io.helidon.integrations.oci</groupId>
-            <artifactId>helidon-integrations-oci-atp</artifactId>
-        </dependency>
+<dependency>
+    <groupId>io.helidon.integrations.oci</groupId>
+    <artifactId>helidon-integrations-oci-atp</artifactId>
+</dependency>
 ----
 
+==Usage
 
-== Setting up the Autonomous Transaction Processing
+=== Setting up the Autonomous Transaction Processing
 
 
 In order to use the OCI Autonomous Transaction Processing integration, the following setup should be made:
@@ -78,6 +92,15 @@ public class AtpResource {
 <1> `OciAutonomousDb` is configured and injected automatically
 <2> ATP ServiceName is read from the properties
 
+
+== API
+TODO:
+
+== Reference
+TODO:
+
+== Configuration
+
 Additionally, in `microprofile-config.properties` OCI properties should be specified:
 
 [source,properties]
@@ -90,7 +113,7 @@ The exact values are available from OCI console.
 
 image::oci/atpocid.png[OCI ATP, align="center"]
 
-== Using the Autonomous Transaction Processing
+== Examples
 
 In the Service we must specify the mapping for operations with the database and their handlers:
 
@@ -146,4 +169,6 @@ To generate wallet file for OCI Autonomous Transaction Processing:
 <3> Setup DataSource using info from 'walletArchive'
 <4> Read the first column from first row of result.
 
-For complete code, about how to setup datasource using wallet info, please see https://github.com/oracle/helidon/tree/master/examples/integrations/oci/atp-cdi[ATP MP Example]
+== Additional Information
+
+For complete code, about how to set up datasource using wallet info, please see https://github.com/oracle/helidon/tree/master/examples/integrations/oci/atp-cdi[ATP MP Example]

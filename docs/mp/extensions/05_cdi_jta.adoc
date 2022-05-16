@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -23,6 +23,20 @@
 :feature-name: JTA Support
 :common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 
+
+== ToC
+
+- Overview
+- Maven Coordinates
+- Usage
+- API
+- Configuration
+- Reference
+- Examples
+- Additional Information
+
+== Overview
+
 This https://docs.jboss.org/cdi/spec/2.0/cdi-spec.html#spi[CDI
 portable extension] provides support for JTA (Java Transaction API)
 transactions in your Helidon MicroProfile applications.
@@ -43,7 +57,9 @@ include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 </dependency>
 ----
 
-== Declaring a method to be transactional
+== Usage
+
+=== Declaring a method to be transactional
 
 The following example shows how to declare a transactional method.
 
@@ -55,6 +71,12 @@ public void doSomethingTransactionally() {
 
 }
 ----
+
+== API
+
+TODO:
+
+== Configuration
 
 The extension ensures that a transaction is started before and
 committed after the method executes.  If the method throws an
@@ -81,4 +103,24 @@ following objects available for injection via the `Inject` annotation:
 * https://static.javadoc.io/javax.transaction/javax.transaction-api/1.2/javax/transaction/UserTransactionManager.html[`TransactionManager`]
 * https://static.javadoc.io/javax.transaction/javax.transaction-api/1.2/javax/transaction/UserTransactionSynchronizationRegistry.html[`TransactionSynchronizationRegistry`]
 
+== Reference
 
+TODO:
+
+== Examples
+
+
+[source,java]
+.Transactional method declaration
+----
+@Transactional(Transactional.TxType.REQUIRED)
+public void doSomethingTransactionally() {
+
+}
+----
+
+
+
+== Additional Information
+
+TODO:

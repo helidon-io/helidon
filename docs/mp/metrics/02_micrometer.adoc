@@ -24,17 +24,20 @@
 :common-page-prefix-inc: ../../shared/metrics/micrometer_shared.adoc
 :isMP: true
 
+== Description
 
 include::{common-page-prefix-inc}[tags=intro]
 
+TODO: Fix to Maven Coordinates
+
 include::{common-page-prefix-inc}[tags=prereq]
 
-== Using Micrometer in Your Application
+== Usage
 Add the Micrometer `@Timed` and `@Counted` annotations to methods in your application.
 
 The examples below enhance the Helidon MP QuickStart application to track (by time and invocation count) all `GET` methods and to count all requests for a personalized greeting.
 
-=== Add Micrometer annotations
+== API
 
 [source,java]
 .Adding Micrometer annotations to JAX-RS resource `GET` methods
@@ -67,7 +70,16 @@ import io.micrometer.core.annotation.Timed;
 <2> Use `@Timed` to time and count both `GET` methods.
 <3> Use `@Counted` to count the accesses to the `GET` method that returns a personalized greeting.
 
-=== Using the Helidon-provided Micrometer `MeterRegistry` from Code
+== Reference
+
+TODO:
+
+== Configuration
+
+TODO: if applicable
+
+
+== Examples
 
 In addition to annotating your methods, you can create, look up, and update metrics explicitly in your code.
 
@@ -85,3 +97,7 @@ include::{common-page-prefix-inc}[tags=overriding-intro;overriding-using-config]
 include::{common-page-prefix-inc}[tags=accessing-endpoint-intro]
 
 Within Helidon, each type of meter registry is paired with code that examines the incoming HTTP request and decides whether the request matches up with the associated meter registry. The first pairing that accepts the request returns the response.
+
+== Additional Information
+
+TODO: if applicable

@@ -24,6 +24,19 @@
 :feature-name: Testing with JUnit
 :common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 
+== ToC
+
+- Overview
+- Maven Coordinates
+- Usage
+- API
+- Configuration
+- Reference
+- Examples
+- Additional Information
+
+== Overview
+
 Helidon provides built-in test support for CDI testing in JUnit5.
 
 include::{common-deps-page-prefix-inc}[tag=maven-dependency]
@@ -36,10 +49,52 @@ include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 </dependency>
 ----
 
-== Usage - default
+== Usage
 A test can be annotated with `io.helidon.microprofile.tests.junit5.HelidonTest` annotation to mark it as a
 CDI test. This annotation will start the CDI container before any test method is invoked, and stop it after
 the last method is invoked. This annotation also enables injection into the test class itself.
+
+-
+
+=== Usage - per method CDI container
+A test can be annotated as follows:
+
+`@HelidonTest(resetPerTest = true)`
+
+This will change the behavior as follows:
+
+- A new CDI container is created for each test method invocation
+- annotations to add config, beans and extension can be added for each method in addition to the class
+- you cannot inject fields or constructor parameters of the test class itself (as a single instance is shared by more containers)
+- you can add `SeContainer` as a method parameter of any test method and you will get the current container
+
+=== Usage - configuration
+In addition to the `@AddConfig` annotation, you can also use
+`@Configuration` to configure additional classpath properties config sources using `configSources`, and to
+mark that a custom configuration is desired.
+If `@Configuration(useExisting=true)`, the existing (or default) MicroProfile configuration would be used. In this case
+it is important to set property `mp.initializer.allow=true` in order CDI container to start, when used with
+`@HelidonTest`.
+You can set up config in `@BeforeAll` method and register it with `ConfigProviderResolver` using MP Config APIs, and declare
+`@Configuration(useExisting=true)`.
+Note that this is not compatible with repeatable tests that use method sources that access CDI, as we must delay the CDI
+startup to the test class instantiation (which is too late, as the method sources are already invoked by this time).
+
+*If you want to use method sources that use CDI with repeatable tests, please do not use `@Configuration(useExisting=true)`*
+
+=== Usage - added parameters and injection types
+The following types are available for injection (when a single CDI container is used per test class):
+
+- `WebTarget` - a JAX-RS client's target configured for the current hostname and port when `helidon-micorprofile-server` is on
+the classpath
+
+The following types are available as method parameters (in any type of Helidon tests):
+
+- `WebTarget` - a JAX-RS client's target configured for the current hostname and port when `helidon-micorprofile-server` is on
+the classpath
+- `SeContainer` - the current container instance
+
+== API
 
 The annotations described in this section are inherited (for the non-repeatable ones), and additive (for repeatable).
 So if you declare `@DisableDiscovery` on abstract class, all implementations will have discovery disabled, unless you
@@ -55,6 +110,16 @@ In addition to this simplification, the following annotations are supported:
 - `io.helidon.microprofile.tests.junit5.AddConfig` - to add one or more configuration properties to MicroProfile config
         without the need of creating a `microprofile-config.properties` file
 - `io.helidon.microprofile.tests.junit5.DisableDiscovery` - to disable automated discovery of beans and extensions
+
+== Reference
+
+TODO:
+
+== Configuration
+
+TODO:
+
+== Examples
 
 [source,java]
 .Code sample
@@ -76,40 +141,6 @@ class TestNoDiscovery {
 }
 ----
 
-== Usage - per method CDI container
-A test can be annotated as follows:
+== Additional Information
 
-`@HelidonTest(resetPerTest = true)`
-
-This will change the behavior as follows:
-
-- A new CDI container is created for each test method invocation
-- annotations to add config, beans and extension can be added for each method in addition to the class
-- you cannot inject fields or constructor parameters of the test class itself (as a single instance is shared by more containers)
-- you can add `SeContainer` as a method parameter of any test method and you will get the current container
-
-== Usage - configuration
-In addition to the `@AddConfig` annotation, you can also use
- `@Configuration` to configure additional classpath properties config sources using `configSources`, and to
-mark that a custom configuration is desired.
-If `@Configuration(useExisting=true)`, the existing (or default) MicroProfile configuration would be used. In this case
-it is important to set property `mp.initializer.allow=true` in order CDI container to start, when used with
-`@HelidonTest`.
-You can set up config in `@BeforeAll` method and register it with `ConfigProviderResolver` using MP Config APIs, and declare
-`@Configuration(useExisting=true)`.
-Note that this is not compatible with repeatable tests that use method sources that access CDI, as we must delay the CDI
-startup to the test class instantiation (which is too late, as the method sources are already invoked by this time).
-
-*If you want to use method sources that use CDI with repeatable tests, please do not use `@Configuration(useExisting=true)`*
-
-== Usage - added parameters and injection types
-The following types are available for injection (when a single CDI container is used per test class):
-
-- `WebTarget` - a JAX-RS client's target configured for the current hostname and port when `helidon-micorprofile-server` is on
-        the classpath
-
-The following types are available as method parameters (in any type of Helidon tests):
-
-- `WebTarget` - a JAX-RS client's target configured for the current hostname and port when `helidon-micorprofile-server` is on
-        the classpath
-- `SeContainer` - the current container instance
+TODO:

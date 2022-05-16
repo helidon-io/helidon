@@ -24,6 +24,8 @@
 :feature-name: Testing with TestNG
 :common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 
+== Description
+
 Helidon provides built-in test support for CDI testing in TestNG.
 
 include::{common-deps-page-prefix-inc}[tag=maven-dependency]
@@ -76,7 +78,9 @@ class TestNoDiscovery {
 }
 ----
 
-== Usage - per method CDI container
+== Usage
+
+=== Usage - per method CDI container
 A test can be annotated as follows:
 
 `@HelidonTest(resetPerTest = true)`
@@ -88,7 +92,7 @@ This will change the behavior as follows:
 - you cannot inject fields or constructor parameters of the test class itself (as a single instance is shared by more containers)
 
 
-== Usage - configuration
+=== Usage - configuration
 In addition to the `@AddConfig` annotation, you can also use
  `@Configuration` to configure additional classpath properties config sources using `configSources`, and to
 mark that a custom configuration is desired.
@@ -102,6 +106,41 @@ startup to the test class instantiation (which is too late, as the method source
 
 *If you want to use method sources that use CDI with repeatable tests, please do not use `@Configuration(useExisting=true)`*
 
-== Usage - added parameters and injection types
+=== Usage - added parameters and injection types
 
 Test method parameters are currently not supported.
+
+
+== Reference
+
+TODO:
+
+== Configuration
+
+TODO:
+
+== Examples
+
+[source,java]
+.Code sample
+----
+@HelidonTest
+@DisableDiscovery
+@AddBean(MyBean.class)
+@AddExtension(ConfigCdiExtension.class)
+@AddConfig(key = "app.greeting", value = "TestHello")
+class TestNoDiscovery {
+    @Inject
+    private MyBean myBean;
+
+    @Test
+    void testGreeting() {
+        assertThat(myBean, notNullValue());
+        assertThat(myBean.greeting(), is("TestHello"));
+    }
+}
+----
+
+== Additional Information
+
+TODO:

@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -25,9 +25,23 @@
 :common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 :feature-name: OCI Vault
 
+
+== ToC
+
+- Overview
+- Maven Coordinates
+- Usage
+- API
+- Configuration
+- Reference
+- Examples
+- Additional Information
+
+== Overview
+
 The Helidon SE OCI Vault integration provides a reactive API Oracle Cloud Vault features.
 
-== Experimental
+=== Experimental
 
 WARNING: Helidon integration with Oracle Cloud Infrastructure is still experimental and not intended for production use. APIs and features have not yet been fully tested and are subject to change.
 
@@ -42,7 +56,7 @@ include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 ----
 
 
-== Setting up the OCI Vault
+== Usage
 
 In order to use the OCI Vault integration, the following setup should be made.
 
@@ -115,7 +129,19 @@ public void update(Routing.Rules rules) {
 }
 ----
 
-== OCI Vault usage
+== API
+
+TODO:
+
+== Configuration
+
+TODO:
+
+== Reference
+
+TODO:
+
+== Examples
 
 === Encryption
 
@@ -248,3 +274,7 @@ private void deleteSecret(ServerRequest req, ServerResponse res) {
 
 }
 ----
+
+== Additional Information
+
+TODO: if applicable

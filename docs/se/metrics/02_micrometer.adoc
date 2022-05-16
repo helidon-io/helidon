@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -24,11 +24,25 @@
 :common-page-prefix-inc: ../../shared/metrics/micrometer_shared.adoc
 :isSE: true
 
+
+== ToC
+
+- Overview
+- Maven Coordinates
+- Usage
+- API
+- Configuration
+- Reference
+- Examples
+- Additional Information
+
+== Overview
+
 include::{common-page-prefix-inc}[tags=intro]
 
 include::{common-page-prefix-inc}[tags=prereq]
 
-== Using Micrometer in Your Application
+== Usage
 You need to make two types of changes to your application to use Helidon SE integration with Micrometer:
 
 . Register an instance of link:{javadoc-base-url-api}/MicrometerSupport.html[`MicrometerSupport`] with the web server.
@@ -119,10 +133,18 @@ MicrometerSupport support = MicrometerSupport.builder()
 <1> Create the meter registry configuration however you need.
 <2> Enroll the `PROMETHEUS` built-in registry type with your custom configuration.
 
+== API
+TODO:
 
-==== Using Configuration
+== Configuration
+TODO: extend
+
 include::{common-page-prefix-inc}[tag=overriding-using-config]
 
+== Reference
+TODO:
+
+== Examples
 
 === Enrolling other Micrometer meter registries
 To create additional types of registries and enroll them with `MicrometerSupport`, you need to:
@@ -175,4 +197,8 @@ and send the response.
 Note that the `Handler` which your function returns typically has a reference to the meter registry it will use
 in preparing the response.
 
+
+== Additional Information
+
+TODO:
 

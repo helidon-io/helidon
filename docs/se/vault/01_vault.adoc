@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -25,6 +25,19 @@
 :common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 :feature-name: Vault
 
+== ToC
+
+- Overview
+- Maven Coordinates
+- Usage
+- API
+- Configuration
+- Reference
+- Examples
+- Additional Information
+
+== Overview
+
 HashiCorp Vault is a commonly used Vault in many microservices. The APIs are REST-based and Helidon implements them using reactive client.
 
 Vault integration supports the following:
@@ -36,6 +49,8 @@ Vault integration supports the following:
 === Experimental
 
 WARNING: Helidon Vault support is still experimental and not intended for production use. APIs and features have not yet been fully tested and are subject to change.
+
+== Usage
 
 === Sys Operations
 
@@ -61,7 +76,7 @@ io.helidon.integrations.vault.spi.VaultAuth
 io.helidon.integrations.vault.spi.InjectionProvider
 ----
 
-=== Modules
+=== Maven Coordinates
 
 The following is a list of maven coordinates of all Vault modules available:
 
@@ -108,6 +123,12 @@ The following is a list of maven coordinates of all Vault modules available:
     <artifactId>helidon-integrations-vault-sys</artifactId>
 </dependency>
 ----
+
+== API
+
+TODO: describe each strategy
+
+== Configuration
 
 Configuration to connect to Vault.
 
@@ -187,7 +208,11 @@ Code to get the Sys operations of Vault:
 SysRx sys = vault.sys(SysRx.API);
 ----
 
-== Usage with WebServer
+== Reference
+
+TODO:
+
+== Examples
 
 Configure the `Vault` object using token base configuration:
 
@@ -579,7 +604,9 @@ class K8sExample {
 <3> Disable Kubernetes authentication if needed.
 <4> Function used to enable Kubernetes authentication.
 
-== Local testing
+== Additional Information
+
+=== Local testing
 
 Vault is available as a docker image, so to test locally, you can simply:
 

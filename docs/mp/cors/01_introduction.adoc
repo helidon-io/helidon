@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -37,18 +37,201 @@
 :mp-cors-builtin-services-ref: {mp-pages-ref-prefix}/04_support-in-builtin-services.adoc
 :helidon-variant: MP
 
+
+== ToC
+
+- Overview
+- Maven Coordinates
+- Usage
+- API
+- Configuration
+- Reference
+- Examples
+- Additional Information
+
+== Overview
+
 link:{cors-spec}[Cross-origin resource sharing] (CORS) support in Helidon MP provides a flexible
 mechanism that allows a Helidon MP application to control how another web application can access its resources,
 even if that web application is served from a different domain.
 
 
-== Overview
-include::{common-page-prefix-inc}[tag=cors-intro]
 
-== Next Steps
-To introduce CORS into your Helidon MP application, do any or all of the following:
+include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 
-* Modify your code using the Helidon MP CORS API. <<{mp-using-cors-ref}, Learn more.>>
-* Use configuration to allow users to override the CORS settings established in your application code. <<{mp-cors-config-ref},Learn more.>>
-* Update your application to include any of the built-in Helidon services that automatically
-support CORS. <<{mp-cors-builtin-services-ref},Learn more.>>
+[source,xml,subs="attributes+"]
+----
+<dependency>
+    <groupId>io.helidon.microprofile</groupId>
+    <artifactId>helidon-microprofile-cors</artifactId>
+</dependency>
+----
+
+== Usage
+
+=== Understanding the `@CrossOrigin` Annotation
+
+You set up CORS in Helidon MP using the link:{javadoc-base-url-api}/CrossOrigin.html[`@CrossOrigin`] annotation.
+
+The following example of the `@CrossOrigin` annotation allows the resource associated with it to be shared with the origins `\http://foo.bar` and `\http://bar.foo`
+using `DELETE` or `PUT`, and permits requests to include the non-standard headers `X-foo` and `X-bar`.
+
+[source,java]
+----
+@CrossOrigin(value = {"http://foo.bar", "http://bar.foo"},
+             allowHeaders = {"X-foo", "X-bar"},
+             allowMethods = {HttpMethod.DELETE, HttpMethod.PUT})
+----
+
+To add CORS support to your Helidon MP application:
+
+1. Determine the type of cross-origin resource sharing you want to allow
+for each endpoint in your application.
+2. Add a dependency on the Helidon {helidon-variant} CORS <<Maven Coordinates, artifact>>  to your Maven `pom.xml` file.
+
+3. Edit each JAX-RS resource class in your application to add the desired CORS behavior as described in the following sections.
+
+
+
+=== Adding CORS Support to Your Helidon MP Application
+Adding CORS behavior to your Helidon MP application involves three simple steps:
+
+For reach resource class in your application:
+
+. Identify the resources and subresources--in other words, the paths--supported in each.
+. For each of those resources and subresources make sure you have a Java method annotated with
+`@OPTIONS` and with the correct `@Path`. Create these methods for each resource (for each path) if you do not already have them.
+. To each of those `@OPTIONS` methods add a `@CrossOrigin` annotation that describes the cross-origin sharing you want
+for that resource.
+
+[NOTE]
+.Using @CrossOrigin Correctly
+====
+Use the `@CrossOrigin` annotation _only_ on methods which also have the `@OPTIONS` annotation. Remember that the `@CrossOrigin` settings apply to a given path and therefore to all Java resource methods which share that path.
+
+Helidon MP aborts the server start-up if a resource method other than an `@OPTIONS` method has the `@CrossOrigin` annotation.
+====
+
+The Helidon MP CORS implementation automatically uses the `@CrossOrigin` annotation you add to each `@OPTIONS` method to
+enforce cross-origin sharing behavior for the resource identified by that method's `@Path` annotation.
+
+For an informal look at the reasons for applying the `@CrossOrigin` annotation to the `@OPTIONS` method, instead of another
+method, see <<mp/cors/hide_why-options.adoc, Why `@OPTIONS`?>>.
+
+== API
+
+TODO Add API if applicable
+
+== Configuration
+
+Your application code establishes the CORS behavior of your endpoints using the `@CrossOrigin` annotation.
+You and your users can override that behavior, as well as the CORS behavior of the built-in services,
+using MicroProfile configuration.
+
+include::{common-page-prefix-inc}[tag=cors-configuration-formats-intro]
+
+include::{common-page-prefix-inc}[tag=basic-cross-origin-config]
+
+=== Understanding the Mapped Cross-Origin Configuration Format
+
+In Helidon MP, you use
+the mapped cross-origin configuration format.
+
+// We want to use
+// include::{cors-mapped-config-src}[tag=mapped-config]
+// and assign an attribute for the callout 1 text. But because the MP value uses backticks for monospaced
+// text, we'd have to be a little clever in the original callout. And that cleverness works when
+// the document is rendered in our editors, and even when using asciidoctor to HTML, but not
+// to our site.
+include::{common-page-prefix-inc}[tag=mapped-config-prefix]
+<1> The unique identifier for this mapped CORS config section must be `cors`.
+include::{common-page-prefix-inc}[tag=mapped-config-suffix]
+
+== Specifying Override Values in Configuration
+In configuration, you can specify the same CORS-related attributes that you specify using the `@CrossOrigin` annotation.
+
+The following example shows how you can express configuration similar to that shown
+previously using the mapped cross-origin configuration format.
+Here, the example uses properties-file syntax
+in your applications's `META-INF/microprofile-config.properties` file. Note that the top-level config key
+must be `cors`.
+
+[source,properties]
+----
+cors.paths.0.path-pattern = /greeting
+cors.paths.0.allow-origins = http://foo.com, http://there.com, http://other.com
+cors.paths.0.allow-methods = PUT, DELETE
+cors.paths.1.path-pattern = /
+cors.paths.1.allow-methods = GET, HEAD, OPTIONS, POST
+----
+
+NOTE: Remember that if you set configuration in a file that you include as part of your application JAR file, then you need to
+rebuild and restart your application for any changes to take effect.
+
+
+== Example
+
+In the link:{quickstart-example}[Helidon MP Quickstart application] you can change the greeting by sending a `PUT`
+request to the `/greet/greeting` resource.
+The example below extends the Helidon MP QuickStart application (the greeting app) to:
+
+* Permit unrestricted sharing of the resource that returns greetings, and
+* Restrict sharing of the resource that
+updates the greeting so that only the origins `\http://foo.com` and `\http://there.com` can change the greeting.
+
+[source,java]
+----
+@OPTIONS
+@CrossOrigin() // <1>
+public void options() {}
+
+@OPTIONS
+@Path("/greeting")
+@CrossOrigin(allowMethods = {"PUT"}, allowOrigins = {"http://foo.com", "http://there.com"}) // <2>
+public void optionsForGreeting() {}
+----
+<1> Uses the default cross-origin sharing, which permits sharing via all HTTP methods to all origins.
+<2> Specifies sharing only via the `PUT` HTTP method and only to the two listed origins.
+
+
+== Additional information
+
+=== Using CORS in Helidon MP Built-in Services
+
+Several built-in Helidon services -- health, metrics, and OpenAPI -- have integrated CORS support.
+You can include these services in your application and control their CORS behavior.
+
+include::{common-page-prefix-inc}[tag=understanding-cors-support-in-services]
+
+include::{common-page-prefix-inc}[tag=builtin-getting-started]
+
+include::{common-page-prefix-inc}[tags=configuring-cors-for-builtin-services;!se-config-example;!se-code-changes-for-builtin-services-config]
+
+The following example restricts sharing of
+
+* the `/health` resource, provided by the health built-in service, to only the origin `\http://there.com`, and
+* the `/metrics` resource, provided by the metrics built-in service, to only the origin `\http://foo.com`.
+
+[source,hocon]
+----
+...
+health:
+  cors:
+    allow-origins: [http://there.com]
+metrics:
+  cors:
+    allow-origins: [http://foo.com]
+...
+----
+
+include::{common-page-prefix-inc}[tag=accessing-shared-resources-intro]
+[source,bash]
+----
+mvn package
+java -jar target/helidon-quickstart-mp.jar
+...
+2020.05.12 05:44:08 INFO io.helidon.microprofile.server.ServerCdiExtension Thread[main,5,main]: Server started on http://localhost:8080 (and all other host addresses) in 5280 milliseconds (since JVM startup).
+...
+----
+
+include::{common-page-prefix-inc}[tag=accessing-shared-resources-main]

@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -22,6 +22,20 @@
 :h1Prefix: SE
 :feature-name: DB Client
 :common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+
+
+== ToC
+
+- Overview
+- Maven Coordinates
+- Usage
+- API
+- Configuration
+- Reference
+- Examples
+- Additional Information
+
+== Overview
 
 The Helidon SE DB Client provides a unified, reactive API for working with databases in non-blocking way.
 
@@ -53,7 +67,7 @@ Or to use with MongoDB client add the following dependency:
      </dependency>
 ----
 
-== Helidon DB Client Features Overview
+== Overview
 
 The DB Client simplifies how you work with databases by abstracting the type of the database.
 The API can be used both for relational and non-relational databases.
@@ -87,8 +101,19 @@ for backpressure (result set is processed as requested by the query subscriber)
 +
 The API offers support for health checks, metrics and tracing.
 
+== API
 
-== Getting Started
+TODO:
+
+== Configuration
+
+TODO:
+
+== Reference
+
+TODO:
+
+== Examples
 
 Before you begin you must add the DB Client dependencies and configure the client.
 
@@ -287,7 +312,7 @@ Execution of a query statement will always return `Multi<DbRow>>`. `Multi` has s
 * `Single<List<DbRow>> collectList()` to collect all rows and return them as a promise of `List<DbRow>`
 * `<U> Multi<U> map(…)` to map returned result using provided mapper
 
-== Next Steps
+== Additional Information
 
 Now that you understand how to build and execute statements, try it for yourself.
 https://github.com/oracle/helidon/tree/master/examples/dbclient[DB Client Examples].

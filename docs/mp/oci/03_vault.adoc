@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -25,9 +25,22 @@
 :common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 :feature-name: OCI Vault
 
+== ToC
+
+- Overview
+- Maven Coordinates
+- Usage
+- API
+- Configuration
+- Reference
+- Examples
+- Additional Information
+
+== Overview
+
 The Helidon MP OCI Vault integration provides easy access to Oracle Cloud Vault features.
 
-== Experimental
+=== Experimental
 
 WARNING: Helidon integration with Oracle Cloud Infrastructure is still experimental and not intended for production use. APIs and features have not yet been fully tested and are subject to change.
 
@@ -45,8 +58,9 @@ include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 </dependency>
 ----
 
+== Usage
 
-== Setting up the OCI Vault
+=== Setting up the OCI Vault
 
 In order to use the OCI Vault integration, the following setup should be made.
 
@@ -56,21 +70,6 @@ In order to use the OCI Vault integration, the following setup should be made.
 * Encryption Key OCID - required when doing encryption/decryption
 * Signature Key OCID - required when doing signatures/verification
 * Cryptographic endpoint - required for all except secrets
-
-First specify OCIDs and URLs of Vault items in `microprofile-config.properties`:
-
-[source,properties]
-----
-oci.vault.vault-ocid: "<...>"
-oci.vault.compartment-ocid: "<...>"
-oci.vault.encryption-key-ocid: "<...>"
-oci.vault.signature-key-ocid: "<...>"
-oci.vault.cryptographic-endpoint: "<...>"
-----
-
-The OCIDs can be set up and found in OCI under Security tab.
-
-image::oci/vaultkey.png[OCI Vault, align="center"]
 
 REST endpoint should be setup as follows:
 
@@ -106,7 +105,31 @@ public class VaultResource {
 <1> `OciVault` support class is configured and injected automatically
 <2> <3> <4> <5> Properties read from the configuration
 
-== OCI Vault Usage
+== API
+TODO:
+
+== Reference
+TODO:
+
+== Configuration
+
+First specify OCIDs and URLs of Vault items in `microprofile-config.properties`:
+
+[source,properties]
+----
+oci.vault.vault-ocid: "<...>"
+oci.vault.compartment-ocid: "<...>"
+oci.vault.encryption-key-ocid: "<...>"
+oci.vault.signature-key-ocid: "<...>"
+oci.vault.cryptographic-endpoint: "<...>"
+----
+
+The OCIDs can be set up and found in OCI under Security tab.
+
+image::oci/vaultkey.png[OCI Vault, align="center"]
+
+
+== Examples
 
 === Encryption
 
@@ -244,7 +267,9 @@ public String deleteSecret(@PathParam("id") String secretOcid) {
 }
 ----
 
-== Vault Health Checks
+== Additional Information
+
+=== Vault Health Checks
 
 If your Helidon application depends on Vault accessibility, you may consider setting up a health
 check to verify connectivity with one ore more vaults. To do so, first add the following dependency

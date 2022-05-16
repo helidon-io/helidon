@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -32,6 +32,21 @@
 :common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 
 
+== ToC
+
+- Overview
+- Maven Coordinates
+- Usage
+- API
+- Configuration
+- Reference
+- Examples
+- Additional Information
+
+== Overview
+
+TODO: add short overview
+
 include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 
 [source,xml]
@@ -42,7 +57,7 @@ include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 </dependency>
 ----
 
-== Introduction
+== Usage
 
 Helidon SE Fault Tolerance support is inspired by link:{mp-microprofile}[MicroProfile Fault Tolerance].
 The API defines the notion of a _fault handler_ that can be combined with other handlers to
@@ -349,3 +364,23 @@ The call to `Multi.just(0, 1, 2)` simply returns a multi that produces
 the integers 0, 1 and 2. If an error was generated during this process,
 the policy will retry the call one more time &mdash;for a total of 2
 calls.
+
+== API
+
+TODO:
+
+== Configuration
+
+TODO:
+
+== Reference
+
+TODO:
+
+== Examples
+
+TODO: Follow the structure of the `Usage` section. One example per each
+
+== Additional Information
+
+More information: https://microprofile.io/project/eclipse/microprofile-fault-tolerance

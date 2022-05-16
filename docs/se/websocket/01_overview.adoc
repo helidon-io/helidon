@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -25,7 +25,30 @@
 :tyrus-project-url: https://projects.eclipse.org/projects/ee4j.tyrus
 :helidon-websocket-example-url: https://github.com/oracle/helidon/tree/master/examples/webserver/websocket
 
+
+
+== ToC
+
+- Overview
+- Maven Coordinates
+- Usage
+- API
+- Configuration
+- Reference
+- Examples
+- Additional Information
+
+== Overview
+
+
 Helidon integrates with {tyrus-project-url}[Tyrus] to provide support for the {websocket-spec-url}[Jakarta WebSocket API].
+
+== Maven Coordinates
+
+TODO:
+
+== Usage
+
 The WebSocket API enables Java applications to participate in WebSocket interactions
 as both servers and clients. The server API supports two flavors: annotated and
 programmatic endpoints.
@@ -41,7 +64,19 @@ Helidon SE support is based on the `TyrusSupport` class which is
 akin to `JerseySupport`, and enables Helidon application to
 defined both annotated and programmatic WebSocket endpoints.
 
-== Helidon SE Example
+== API
+
+TODO:
+
+== Configuration
+
+TODO:
+
+== Reference
+
+TODO:
+
+== Examples
 
 This section describes the implementation of a simple application
 that uses a REST resource to push messages into a shared queue and a
@@ -138,3 +173,8 @@ Endpoint methods in Helidon SE are executed in Netty's worker thread pool. Threa
 pool are intended to be _non-blocking_, thus it is recommended for any blocking or
 long-running operation triggered by an endpoint method to be executed using a separate
 thread pool. See the documentation for `io.helidon.common.configurable.ThreadPoolSupplier`.
+
+
+== Additional Information
+
+TODO: maybe link to Tyrus

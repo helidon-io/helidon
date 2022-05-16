@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -25,6 +25,19 @@
 :common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 :feature-name: Vault
 
+== ToC
+
+- Overview
+- Maven Coordinates
+- Usage
+- API
+- Configuration
+- Reference
+- Examples
+- Additional Information
+
+== Overview
+
 HashiCorp Vault is a commonly used Vault in many microservices. The APIs are REST-based and Helidon implements them using reactive client.
 
 Vault integration supports the following:
@@ -36,6 +49,8 @@ Vault integration supports the following:
 === Experimental
 
 WARNING: Helidon Vault support is still experimental and not intended for production use. APIs and features have not yet been fully tested and are subject to change.
+
+== Usage
 
 === Sys Operations
 
@@ -120,6 +135,14 @@ To use Vault integration in MP, the following module must be added, as it enable
 </dependency>
 ----
 
+== API
+TODO:
+
+== Reference
+
+
+== Configuration
+
 Configuration to connect to Vault.
 
 1. Authenticating using Token:
@@ -158,8 +181,7 @@ The following classes can be injected into any CDI bean (if appropriate module i
 * Sys - System operations (management of Vault - enabling/disabling secret engines and authentication methods)
 * *Rx - reactive counterparts to the classes defined above, usually not recommended in CDI, as it is a blocking environment
 
-
-== Usage
+== Examples
 
 The following example shows usage of Vault to encrypt a secret using the default Vault configuration (in a JAX-RS resource):
 
@@ -525,7 +547,10 @@ public class TransitResource {
 <9> Verify HMAC.
 <10> Verify signature.
 
-== Local testing
+
+== Additional Information
+
+=== Local testing
 
 Vault is available as a docker image, so to test locally, you can simply:
 

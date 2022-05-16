@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -25,7 +25,28 @@
 :tyrus-project-url: https://projects.eclipse.org/projects/ee4j.tyrus
 :helidon-websocket-example-url: https://github.com/oracle/helidon/tree/master/examples/webserver/websocket
 
+== ToC
+
+- Overview
+- Maven Coordinates
+- Usage
+- API
+- Configuration
+- Reference
+- Examples
+- Additional Information
+
+== Overview
+
 Helidon integrates with {tyrus-project-url}[Tyrus] to provide support for the {websocket-spec-url}[Jakarta WebSocket API].
+
+
+== Maven dependency
+
+TODO: add maven coordinates
+
+== Usage
+
 The WebSocket API enables Java applications to participate in WebSocket interactions
 as both servers and clients. The server API supports two flavors: annotated and
 programmatic endpoints.
@@ -42,7 +63,21 @@ CDI. Developers can choose between annotated and programmatic endpoints or use
 any combination of them. Using annotated endpoints is recommended in MP as
 they usually result in more succinct and easier-to-read code.
 
-== Helidon MP Example
+== API
+
+TODO: add annotations and descriptions
+
+
+== Configuration
+
+TODO: add configuration details if applicable
+
+
+== Reference
+
+TODO
+
+== Examples
 
 This section describes the implementation of a simple application
 that uses a REST resource to push messages into a shared queue and a
@@ -157,3 +192,7 @@ for blocking or long-running operations as these will not affect Netty's ability
 to process networking data.
 
 For more information see the {helidon-websocket-example-url}[example].
+
+== Additional information
+
+More information: https://datatracker.ietf.org/doc/html/rfc6455

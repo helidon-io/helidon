@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -20,8 +20,24 @@
 :h1Prefix: SE
 :description: Helidon Tracing Support
 :feature-name: Tracing
+:zipkin-page: ../../shared/tracing/tracer-zipkin.adoc
+:jaeger-page: ../../shared/tracing/tracer-jaeger.adoc
 :common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 :keywords: helidon, tracing
+
+
+== ToC
+
+- Overview
+- Maven Coordinates
+- Usage
+- API
+- Configuration
+- Reference
+- Examples
+- Additional Information
+
+== Overview
 
 include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 
@@ -33,7 +49,8 @@ include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 </dependency>
 ----
 
-== Tracing Support
+== Usage
+
 Helidon includes support for tracing through the `https://opentracing.io/[OpenTracing]` APIs.
 Tracing is integrated with WebServer, gRPC Server, and Security.
 
@@ -41,7 +58,11 @@ Support for specific tracers is abstracted. Your application can depend on
 the abstraction layer and provide a specific tracer implementation as a Java
 `ServiceLoader` service.
 
-== Configuring Tracing with Helidon SE
+== API
+
+TODO:
+
+== Configuration
 
 === Configuring Tracing with WebServer
 
@@ -93,47 +114,6 @@ GrpcServerConfiguration serverConfig = GrpcServerConfiguration.builder().port(0)
 
 include::../../shared/tracing/common-config.adoc[]
 
-== Creating custom spans
-
-To create a custom span that is a child of the WebServer request:
-
-[source,java]
-----
-Span span = request.tracer()
-        .buildSpan("my-operation")
-        .asChildOf(request.spanContext())
-                         .start();
-----
-
-
-== Trace propagation across services
-
-Automated trace propagation is supported currently only with Jersey client.
-
-[source,java]
-.Tracing propagation with Jersey client
-----
-Response response = client.target(serviceEndpoint)
-    .request()
-    .get();
-----
-
-include::../../shared/tracing/common-spans.adoc[]
-
-=== Traced spans configuration
-
-Each component and its spans can be configured using Config.
-The traced configuration has the following layers:
-
-- `TracingConfig` - the overall configuration of traced components of Helidon
-- `ComponentTracingConfig` - a component of Helidon that traces spans (such as `web-server`, `security`, `jax-rs`)
-- `SpanTracingConfig` - a single traced span within a component (such as `security:atn`)
-- `SpanLogTracingConfig` - a single log event on a span (such as `security.user` in span `security:atn`)
-
-The components using tracing configuration use the
-`TracingConfigUtil`. This uses the `io.helidon.common.Context` to retrieve
-current configuration.
-
 
 ==== Configuration using builder
 
@@ -181,8 +161,8 @@ to the configuration described above.
 
 Configuration of path can use any path string supported by the
 Web Server. The configuration itself has the same possibilities
- as traced configuration described above. The path specific configuration
- will be merged with global configuration (path is the "newer" configuration, global is the "older")
+as traced configuration described above. The path specific configuration
+will be merged with global configuration (path is the "newer" configuration, global is the "older")
 
 [source,yaml]
 .Configuration in YAML
@@ -244,3 +224,62 @@ Parameters provided:
 1. Method - HTTP method
 2. Path - path of the request (such as '/greet')
 3. Query - query of the request (may be null)
+
+== Reference
+
+TODO:
+
+== Examples
+
+TODO: if applicable
+
+== Additional Information
+
+=== Creating custom spans
+
+To create a custom span that is a child of the WebServer request:
+
+[source,java]
+----
+Span span = request.tracer()
+        .buildSpan("my-operation")
+        .asChildOf(request.spanContext())
+                         .start();
+----
+
+
+== Trace propagation across services
+
+Automated trace propagation is supported currently only with Jersey client.
+
+[source,java]
+.Tracing propagation with Jersey client
+----
+Response response = client.target(serviceEndpoint)
+    .request()
+    .get();
+----
+
+include::../../shared/tracing/common-spans.adoc[]
+
+=== Traced spans configuration
+
+Each component and its spans can be configured using Config.
+The traced configuration has the following layers:
+
+- `TracingConfig` - the overall configuration of traced components of Helidon
+- `ComponentTracingConfig` - a component of Helidon that traces spans (such as `web-server`, `security`, `jax-rs`)
+- `SpanTracingConfig` - a single traced span within a component (such as `security:atn`)
+- `SpanLogTracingConfig` - a single log event on a span (such as `security.user` in span `security:atn`)
+
+The components using tracing configuration use the
+`TracingConfigUtil`. This uses the `io.helidon.common.Context` to retrieve
+current configuration.
+
+== Additional Information
+
+include::{zipkin-page}[]
+
+include::{jaeger-page}[]
+
+include::../../shared/tracing/jaeger_metrics.adoc[]
