@@ -48,6 +48,10 @@
             <artifactId>helidon-common-key-util</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-reactive</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config</artifactId>
         </dependency>
