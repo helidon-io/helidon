@@ -20,7 +20,7 @@
 module io.helidon.faulttolerance {
     requires io.helidon.config;
     requires io.helidon.common.configurable;
-    requires io.helidon.common.reactive;
+    requires transitive io.helidon.common.reactive;
     requires java.logging;
 
     exports io.helidon.faulttolerance;
