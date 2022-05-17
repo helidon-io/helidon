@@ -51,6 +51,7 @@ dependencies {
     runtimeOnly 'org.jboss:jandex'
     runtimeOnly 'jakarta.activation:jakarta.activation-api'
 
+    testImplementation 'io.helidon.microprofile.tests:helidon-microprofile-tests-junit5'
     testImplementation 'org.junit.jupiter:junit-jupiter-api'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
 }
@@ -98,5 +99,7 @@ task moveBeansXML {
                  todir: "${buildDir}/classes/java/main/META-INF"
     }
 }
+compileTestJava.dependsOn jandex
+jar.dependsOn test
 test.dependsOn moveBeansXML
 run.dependsOn moveBeansXML
