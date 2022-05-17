@@ -70,11 +70,7 @@ public class CoordinatorTest {
                 .addNamedRouting(COORDINATOR_ROUTING_NAME, Routing.builder()
                         .register("/lra-coordinator", coordinatorService)
                         .build())
-                .routing(Routing.builder()
-                        .register(CONTEXT_PATH, rules -> rules.put((req, res) -> {
-                            res.send();
-                        }))
-                        .build())
+                .routing(r -> r.register(CONTEXT_PATH, rules -> rules.put((req, res) -> res.send())))
                 .build();
         server.start().await();
         serverUrl = "http://localhost:" + server.port();

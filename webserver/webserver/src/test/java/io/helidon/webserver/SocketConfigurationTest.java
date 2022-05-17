@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.webserver;
 
+import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
@@ -33,6 +34,8 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 public class SocketConfigurationTest {
+
+    private static final Duration TIMEOUT = Duration.ofSeconds(25);
     private static final String ERROR_PREFIX = "Config multiport/application.yaml ";
     private static Config deprecated;
     private static Config current;
@@ -51,8 +54,8 @@ public class SocketConfigurationTest {
     @Test
     void testNoName() {
         Assertions.assertThrows(ConfigException.class, () -> WebServer.builder()
-                .host("localhost")
                 .config(noname)
+                .defaultSocket(s -> s.host("localhost"))
                 .build());
     }
 
@@ -69,12 +72,11 @@ public class SocketConfigurationTest {
     @Test
     void testRunnableConfig() throws ExecutionException, InterruptedException {
         WebServer server = WebServer.builder()
-                .host("localhost")
                 .config(runnable)
+                .defaultSocket(s -> s.host("localhost"))
                 .build()
                 .start()
-                .toCompletableFuture()
-                .get();
+                .await(TIMEOUT);
 
         try {
             ServerConfiguration configuration = server.configuration();
@@ -97,8 +99,7 @@ public class SocketConfigurationTest {
             validateRunnablePort("static", server, false);
         } finally {
             server.shutdown()
-                    .toCompletableFuture()
-                    .get();
+                    .await(TIMEOUT);
         }
 
     }
@@ -123,8 +124,8 @@ public class SocketConfigurationTest {
 
     private void validateConfiguration(String type, Config config) {
         WebServer server = WebServer.builder()
-                .host("localhost")
                 .config(config)
+                .defaultSocket(s -> s.host("localhost"))
                 .build();
 
         ServerConfiguration configuration = server.configuration();

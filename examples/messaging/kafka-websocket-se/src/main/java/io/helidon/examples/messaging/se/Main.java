@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,9 @@ package io.helidon.examples.messaging.se;
 
 import io.helidon.common.LogConfig;
 import io.helidon.config.Config;
-import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.staticcontent.StaticContentSupport;
-import io.helidon.webserver.tyrus.TyrusSupport;
+import io.helidon.webserver.websocket.WebSocketRouting;
 
 import jakarta.websocket.server.ServerEndpointConfig;
 
@@ -59,7 +58,21 @@ public final class Main {
 
         SendingService sendingService = new SendingService(config);
 
-        WebServer server = WebServer.builder(createRouting(sendingService))
+        WebServer server = WebServer.builder()
+                .routing(r -> r
+                        // register static content support (on "/")
+                        .register(StaticContentSupport.builder("/WEB")
+                                .welcomeFileName("index.html")
+                                .build())
+                        // register rest endpoint for sending to Kafka
+                        .register("/rest/messages", sendingService)
+                )
+                // register WebSocket endpoint to push messages coming from Kafka to client
+                .addRouting(WebSocketRouting.builder()
+                        .endpoint("/ws", ServerEndpointConfig.Builder.create(
+                                        WebSocketEndpoint.class, "/messages")
+                                .build())
+                        .build())
                 .config(config.get("server"))
                 .build();
 
@@ -82,28 +95,5 @@ public final class Main {
 
         // Server threads are not daemon. No need to block. Just react.
         return server;
-    }
-
-    /**
-     * Creates new {@link Routing}.
-     *
-     * @param sendingService service to configure
-     * @return routing configured with JSON support, a health check, and a service
-     */
-    private static Routing createRouting(SendingService sendingService) {
-
-        return Routing.builder()
-                // register static content support (on "/")
-                .register(StaticContentSupport.builder("/WEB").welcomeFileName("index.html"))
-                // register rest endpoint for sending to Kafka
-                .register("/rest/messages", sendingService)
-                // register WebSocket endpoint to push messages coming from Kafka to client
-                .register("/ws",
-                        TyrusSupport.builder().register(
-                                ServerEndpointConfig.Builder.create(
-                                        WebSocketEndpoint.class, "/messages")
-                                        .build())
-                                .build())
-                .build();
     }
 }

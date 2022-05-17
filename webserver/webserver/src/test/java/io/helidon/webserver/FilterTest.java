@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.webserver;
 
+import java.time.Duration;
 import java.util.concurrent.Flow;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -41,6 +42,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class FilterTest {
 
     private static final Logger LOGGER = Logger.getLogger(FilterTest.class.getName());
+    public static final Duration TIMEOUT = Duration.ofSeconds(10);
     private static WebServer webServer;
     private static final AtomicLong filterItemCounter = new AtomicLong(0);
 
@@ -53,12 +55,15 @@ public class FilterTest {
      */
     private static void startServer(int port) {
         webServer = WebServer.builder()
-                .host("localhost")
-                .port(port)
-                .routing(Routing.builder().any((req, res) -> {
-                    res.headers().add(Http.Header.TRANSFER_ENCODING, "chunked");
-                    req.next();
-                })
+                .defaultSocket(s -> s
+                        .host("localhost")
+                        .port(port)
+                )
+                .routing(r -> r
+                        .any((req, res) -> {
+                            res.headers().add(Http.Header.TRANSFER_ENCODING, "chunked");
+                            req.next();
+                        })
                         .get("/dataChunkPublisher", (req, res) -> {
                             res.registerFilter(pub -> Multi.create(pub)
                                     .peek(chunk -> filterItemCounter.incrementAndGet()));
@@ -90,10 +95,10 @@ public class FilterTest {
                                 }, GenericType.create(String.class));
                             });
                         })
-                        .build())
+                )
                 .build()
                 .start()
-                .await(10, TimeUnit.SECONDS);
+                .await(TIMEOUT);
 
         LOGGER.info("Started server at: https://localhost:" + webServer.port());
     }
@@ -108,8 +113,7 @@ public class FilterTest {
     public static void close() throws Exception {
         if (webServer != null) {
             webServer.shutdown()
-                    .toCompletableFuture()
-                    .get(10, TimeUnit.SECONDS);
+                    .await(TIMEOUT);
         }
     }
 

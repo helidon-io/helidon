@@ -24,6 +24,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import jakarta.websocket.ClientEndpointConfig;
@@ -90,7 +91,7 @@ class EchoClient {
                             LOGGER.info("Client OnMessage called '" + message + "'");
 
                             int index = messages.length - (int) messageLatch.getCount();
-                            assertTrue(equals.apply(messages[index], message));
+                            assertTrue(equals.apply(messages[index], message), messages[index] +":"+message);
 
                             messageLatch.countDown();
                             if (messageLatch.getCount() == 0) {
@@ -121,8 +122,7 @@ class EchoClient {
 
             @Override
             public void onError(Session session, Throwable thr) {
-                LOGGER.info("Client OnError called '" + thr + "'");
-
+                LOGGER.log(Level.SEVERE, "Client OnError called '" + thr + "'", thr);
             }
         }, config, uri);
 
@@ -131,5 +131,9 @@ class EchoClient {
         if (!messageLatch.await(TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
             fail("Timeout expired without receiving echo of all messages");
         }
+    }
+
+    void shutdown(){
+        client.shutdown();
     }
 }

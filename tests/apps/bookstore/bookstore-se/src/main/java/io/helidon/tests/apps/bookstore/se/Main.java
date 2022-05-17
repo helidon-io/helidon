@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,8 +26,6 @@ import io.helidon.media.jackson.JacksonSupport;
 import io.helidon.media.jsonb.JsonbSupport;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.metrics.MetricsSupport;
-import io.helidon.webserver.ExperimentalConfiguration;
-import io.helidon.webserver.Http2Configuration;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerTls;
@@ -88,7 +86,6 @@ public final class Main {
                 .config(config.get("server"))
                 .update(it -> configureJsonSupport(it, config))
                 .update(it -> configureSsl(it, ssl))
-                .update(it -> configureHttp2(it, http2))
                 .enableCompression(compression)
                 .build();
 
@@ -122,15 +119,6 @@ public final class Main {
         default:
             throw new RuntimeException("Unknown JSON library " + jsonLibrary);
         }
-    }
-
-    private static void configureHttp2(WebServer.Builder wsBuilder, boolean useHttp2) {
-        if (!useHttp2) {
-            return;
-        }
-        wsBuilder.experimental(
-                ExperimentalConfiguration.builder()
-                        .http2(Http2Configuration.builder().enable(true).build()).build());
     }
 
     private static void configureSsl(WebServer.Builder wsBuilder, boolean useSsl) {

@@ -18,6 +18,7 @@ package io.helidon.microprofile.tyrus;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.microprofile.server.ServerCdiExtension;
@@ -35,6 +36,7 @@ import jakarta.websocket.OnOpen;
 import jakarta.websocket.Session;
 import jakarta.websocket.server.ServerEndpoint;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -61,6 +63,7 @@ public abstract class WebSocketBaseTest {
         URI echoUri = URI.create("ws://localhost:" + port() + context() + "/echoAnnot");
         EchoClient echoClient = new EchoClient(echoUri);
         echoClient.echo("hi", "how are you?");
+        echoClient.shutdown();
     }
 
     @ServerEndpoint("/echoAnnot")
@@ -114,7 +117,7 @@ public abstract class WebSocketBaseTest {
 
         @Override
         public void onError(Session session, Throwable thr) {
-            LOGGER.info("OnError called");
+            LOGGER.log(Level.SEVERE, "OnError called", thr);
             super.onError(session, thr);
         }
 

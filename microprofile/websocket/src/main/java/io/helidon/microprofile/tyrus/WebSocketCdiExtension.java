@@ -18,18 +18,21 @@ package io.helidon.microprofile.tyrus;
 
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
 import java.util.logging.Logger;
 
+import io.helidon.common.configurable.ThreadPoolSupplier;
 import io.helidon.config.Config;
 import io.helidon.microprofile.cdi.RuntimeStart;
 import io.helidon.microprofile.server.RoutingName;
 import io.helidon.microprofile.server.RoutingPath;
 import io.helidon.microprofile.server.ServerCdiExtension;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.tyrus.TyrusSupport;
+import io.helidon.webserver.WebServer;
+import io.helidon.webserver.websocket.WebSocketRouting;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.BeforeDestroyed;
 import jakarta.enterprise.context.Initialized;
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.inject.UnsatisfiedResolutionException;
@@ -58,12 +61,13 @@ public class WebSocketCdiExtension implements Extension {
     private ServerCdiExtension serverCdiExtension;
 
     private final WebSocketApplication.Builder appBuilder = WebSocketApplication.builder();
+    private ExecutorService executorService;
 
-    private void prepareRuntime(@Observes @RuntimeStart Config config) {
+    void prepareRuntime(@Observes @RuntimeStart Config config) {
         this.config = config;
     }
 
-    private void startServer(@Observes @Priority(PLATFORM_AFTER + 99) @Initialized(ApplicationScoped.class) Object event,
+    void startServer(@Observes @Priority(PLATFORM_AFTER + 99) @Initialized(ApplicationScoped.class) Object event,
                              BeanManager beanManager) {
         serverCdiExtension = beanManager.getExtension(ServerCdiExtension.class);
         registerWebSockets();
@@ -74,7 +78,7 @@ public class WebSocketCdiExtension implements Extension {
      *
      * @param applicationClass Application class.
      */
-    private void applicationClass(@Observes ProcessAnnotatedType<? extends ServerApplicationConfig> applicationClass) {
+    void applicationClass(@Observes ProcessAnnotatedType<? extends ServerApplicationConfig> applicationClass) {
         LOGGER.finest(() -> "Application class found " + applicationClass.getAnnotatedType().getJavaClass());
         appBuilder.applicationClass(applicationClass.getAnnotatedType().getJavaClass());
     }
@@ -94,7 +98,7 @@ public class WebSocketCdiExtension implements Extension {
      *
      * @param endpoint The endpoint.
      */
-    private void endpointClasses(@Observes @WithAnnotations(ServerEndpoint.class) ProcessAnnotatedType<?> endpoint) {
+    void endpointClasses(@Observes @WithAnnotations(ServerEndpoint.class) ProcessAnnotatedType<?> endpoint) {
         LOGGER.finest(() -> "Annotated endpoint found " + endpoint.getAnnotatedType().getJavaClass());
         appBuilder.annotatedEndpoint(endpoint.getAnnotatedType().getJavaClass());
     }
@@ -104,7 +108,7 @@ public class WebSocketCdiExtension implements Extension {
      *
      * @param endpoint The endpoint.
      */
-    private void endpointConfig(@Observes ProcessAnnotatedType<? extends Endpoint> endpoint) {
+    void endpointConfig(@Observes ProcessAnnotatedType<? extends Endpoint> endpoint) {
         LOGGER.finest(() -> "Programmatic endpoint found " + endpoint.getAnnotatedType().getJavaClass());
         appBuilder.programmaticEndpoint(endpoint.getAnnotatedType().getJavaClass());
     }
@@ -114,7 +118,7 @@ public class WebSocketCdiExtension implements Extension {
      *
      * @param extension The extension.
      */
-    private void extension(@Observes ProcessAnnotatedType<? extends jakarta.websocket.Extension> extension) {
+    void extension(@Observes ProcessAnnotatedType<? extends jakarta.websocket.Extension> extension) {
         LOGGER.finest(() -> "Extension found " + extension.getAnnotatedType().getJavaClass());
 
         Class<? extends jakarta.websocket.Extension> cls = extension.getAnnotatedType().getJavaClass();
@@ -143,14 +147,23 @@ public class WebSocketCdiExtension implements Extension {
             WebSocketApplication app = toWebSocketApplication();
 
             // If application present call its methods
-            TyrusSupport.Builder builder = TyrusSupport.builder();
+            WebSocketRouting.Builder wsRoutingBuilder = WebSocketRouting.builder();
             Optional<Class<? extends ServerApplicationConfig>> appClass = app.applicationClass();
 
             Optional<String> contextRoot = appClass.flatMap(c -> findContextRoot(config, c));
             Optional<String> namedRouting = appClass.flatMap(c -> findNamedRouting(config, c));
             boolean routingNameRequired = appClass.map(c -> isNamedRoutingRequired(config, c)).orElse(false);
 
-            Routing.Builder routing;
+            String rootPath = contextRoot.orElse(DEFAULT_WEBSOCKET_PATH);
+
+            LOGGER.info("Registering websocket application at " + rootPath);
+
+            executorService = ThreadPoolSupplier.builder()
+                    .threadNamePrefix("helidon-websocket-")
+                    .build().get();
+
+            wsRoutingBuilder.executor(executorService);
+
             if (appClass.isPresent()) {
                 Class<? extends ServerApplicationConfig> c = appClass.get();
 
@@ -176,27 +189,55 @@ public class WebSocketCdiExtension implements Extension {
                 Set<Class<?>> endpointClasses = instance.getAnnotatedEndpointClasses(app.annotatedEndpoints());
 
                 // Register classes and configs
-                endpointClasses.forEach(builder::register);
-                endpointConfigs.forEach(builder::register);
+                endpointClasses.forEach(aClass -> wsRoutingBuilder.endpoint(rootPath, aClass));
+                endpointConfigs.forEach(wsCfg -> wsRoutingBuilder.endpoint(rootPath, wsCfg));
 
-                // Create routing builder
-                routing = serverCdiExtension.routingBuilder(namedRouting, routingNameRequired, c.getName());
+                // Create routing wsRoutingBuilder
+                addWsRouting(wsRoutingBuilder.build(), namedRouting, routingNameRequired, c.getName());
             } else {
                 // Direct registration without calling application class
-                app.annotatedEndpoints().forEach(builder::register);
-                app.programmaticEndpoints().forEach(builder::register);
-                app.extensions().forEach(builder::register);
+                app.annotatedEndpoints().forEach(aClass -> wsRoutingBuilder.endpoint(rootPath, aClass));
+                app.programmaticEndpoints().forEach(wsCfg -> wsRoutingBuilder.endpoint(rootPath, wsCfg));
+                app.extensions().forEach(wsRoutingBuilder::extension);
 
-                // Create routing builder
-                routing = serverCdiExtension.serverRoutingBuilder();
+                // Create routing wsRoutingBuilder
+                serverCdiExtension.serverBuilder().addRouting(wsRoutingBuilder.build());
             }
 
-            // Finally register WebSockets in Helidon routing
-            String rootPath = contextRoot.orElse(DEFAULT_WEBSOCKET_PATH);
-            LOGGER.info("Registering websocket application at " + rootPath);
-            routing.register(rootPath, new TyrusSupportMp(builder.build()));
         } catch (IllegalArgumentException e) {
             throw new RuntimeException("Unable to load WebSocket extension", e);
+        }
+    }
+
+    void terminate(@Observes @BeforeDestroyed(ApplicationScoped.class) Object event) {
+        executorService.shutdown();
+    }
+
+    private void addWsRouting(WebSocketRouting routing,
+                             Optional<String> namedRouting,
+                             boolean routingNameRequired,
+                             String appName) {
+        WebServer.Builder serverBuilder = serverCdiExtension.serverBuilder();
+        if (namedRouting.isPresent()) {
+            String socket = namedRouting.get();
+            if (!serverBuilder.hasSocket(socket)) {
+                if (routingNameRequired) {
+                    throw new IllegalStateException("Application "
+                            + appName
+                            + " requires routing "
+                            + socket
+                            + " to exist, yet such a socket is not configured for web server");
+                } else {
+                    LOGGER.info("Routing " + socket + " does not exist, using default routing for application "
+                            + appName);
+
+                    serverBuilder.addRouting(routing);
+                }
+            } else {
+                serverBuilder.addNamedRouting(socket, routing);
+            }
+        } else {
+            serverBuilder.addRouting(routing);
         }
     }
 

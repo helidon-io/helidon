@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ import io.helidon.tracing.TracerBuilder;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.staticcontent.StaticContentSupport;
-import io.helidon.webserver.tyrus.TyrusSupport;
+import io.helidon.webserver.websocket.WebSocketRouting;
 
 import org.eclipse.microprofile.health.HealthCheckResponse;
 
@@ -72,6 +72,11 @@ public final class Se1Main {
         // Get webserver config from the "server" section of application.yaml
         WebServer server = WebServer.builder()
                 .routing(createRouting(config))
+                .routing(WebSocketRouting.builder()
+                        .endpoint("/ws", ServerEndpointConfig.Builder.create(
+                                        WebSocketEndpoint.class, "/messages")
+                                .build())
+                        .build())
                 .config(config.get("server"))
                 .tracer(TracerBuilder.create(config.get("tracing")).build())
                 .addMediaSupport(JsonpSupport.create())
@@ -140,12 +145,6 @@ public final class Se1Main {
                 .register("/greet", greetService)
                 .register("/wc", webClientService)
                 .register("/zipkin", zipkinService)
-                .register("/ws",
-                        TyrusSupport.builder().register(
-                                ServerEndpointConfig.Builder.create(
-                                        WebSocketEndpoint.class, "/messages")
-                                        .build())
-                                .build())
                 .build();
     }
 

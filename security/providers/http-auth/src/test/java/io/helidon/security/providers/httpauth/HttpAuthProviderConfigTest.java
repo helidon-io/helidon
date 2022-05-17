@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,7 +71,7 @@ public class HttpAuthProviderConfigTest {
     }
 
     private static void startServer(Security security) throws Throwable {
-        server = Routing.builder()
+        server = WebServer.create(Routing.builder()
                 .register(JerseySupport.builder()
                                   .register(TestResource.class)
                                   .register(SecurityFeature.builder(security).authorizeAnnotatedOnly(true).build())
@@ -83,8 +83,7 @@ public class HttpAuthProviderConfigTest {
                                       }
                                   })
                                   .build())
-                .build()
-                .createServer();
+                .build());
         CountDownLatch cdl = new CountDownLatch(1);
         AtomicReference<Throwable> th = new AtomicReference<>();
         server.start().whenComplete((webServer, throwable) -> {
