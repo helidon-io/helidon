@@ -26,6 +26,10 @@ import io.grpc.LoadBalancerProvider;
  * as part of the re-packaging process.
  */
 public class SecretRoundRobinLoadBalancerProvider {
+    /**
+     * A dummy {@link LoadBalancerProvider} implementation to allow
+     * the provides statement to be added to the module-info file.
+     */
     public static class Provider
             extends LoadBalancerProvider {
     }
