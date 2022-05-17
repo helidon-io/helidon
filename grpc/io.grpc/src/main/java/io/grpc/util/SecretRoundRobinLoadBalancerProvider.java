@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package io.grpc.util;
+
+import io.grpc.LoadBalancerProvider;
 
 /**
  * A dummy class to allow the re-packaging of grpc-java
@@ -22,5 +25,12 @@ package io.grpc.util;
  * This file will be replaced by the real implementation from grpc-java
  * as part of the re-packaging process.
  */
-public class DummyClass {
+public class SecretRoundRobinLoadBalancerProvider {
+    /**
+     * A dummy {@link LoadBalancerProvider} implementation to allow
+     * the provides statement to be added to the module-info file.
+     */
+    public static class Provider
+            extends LoadBalancerProvider {
+    }
 }
