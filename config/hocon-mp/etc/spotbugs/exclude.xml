@@ -23,9 +23,10 @@
         xsi:schemaLocation="https://github.com/spotbugs/filter/3.0.0 https://raw.githubusercontent.com/spotbugs/spotbugs/3.1.0/spotbugs/etc/findbugsfilter.xsd">
 
     <Match>
+        <!-- URL.openconnection() will use paths that come from config/code -->
         <Class name="io.helidon.config.hocon.mp.HoconMpConfigIncluder"/>
         <Method name="include"/>
-        <Bug pattern=" URLCONNECTION_SSRF_FD"/>
+        <Bug pattern="URLCONNECTION_SSRF_FD"/>
     </Match>
 
 </FindBugsFilter>

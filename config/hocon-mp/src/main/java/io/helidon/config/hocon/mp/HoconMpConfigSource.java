@@ -88,17 +88,21 @@ import org.eclipse.microprofile.config.spi.ConfigSource;
  */
 @SuppressWarnings("rawtypes")
 public class HoconMpConfigSource implements ConfigSource {
-    private final Map<String, String> properties;
     private final String name;
+    private Map<String, String> properties;
 
     private static final boolean RESOLVING_ENABLED = true;
     private static final ConfigResolveOptions RESOLVE_OPTIONS = ConfigResolveOptions.defaults();
-    private static final HoconMpConfigIncluder INCLUDER = new HoconMpConfigIncluder();
-    private static final ConfigParseOptions PARSE_OPTIONS = ConfigParseOptions.defaults().appendIncluder(INCLUDER);
+    private final HoconMpConfigIncluder includer = new HoconMpConfigIncluder();
+    private final ConfigParseOptions parseOptions = ConfigParseOptions.defaults().appendIncluder(includer);
 
-    private HoconMpConfigSource(String name, Map<String, String> properties) {
-        this.properties = properties;
+    private HoconMpConfigSource(String name) {
         this.name = "hocon: " + name;
+        this.properties = Map.of();
+    }
+
+    private void setProperties(Map<String, String> properties) {
+        this.properties = properties;
     }
 
     /**
@@ -112,7 +116,8 @@ public class HoconMpConfigSource implements ConfigSource {
         String name = path.toAbsolutePath().toString();
 
         try (BufferedReader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
-            Config typesafeConfig = toConfig(reader);
+            HoconMpConfigSource hoconMpConfigSource = new HoconMpConfigSource(name);
+            Config typesafeConfig = hoconMpConfigSource.toConfig(reader);
             // this is a mutable HashMap that we can use
             Map<String, String> props =
                     fromConfig(typesafeConfig.root().isEmpty() ? ConfigFactory.empty().root() : typesafeConfig.root());
@@ -125,18 +130,21 @@ public class HoconMpConfigSource implements ConfigSource {
                 } else {
                     duration = Duration.parse(durationString);
                 }
-                MutabilitySupport.poll(path, duration, changed -> update(path, props), changed -> props.clear());
+                MutabilitySupport.poll(
+                        path, duration, changed -> hoconMpConfigSource.update(path, props), changed -> props.clear());
             } else if ("true".equals(props.get("helidon.config.watcher.enabled"))) {
-                MutabilitySupport.watch(path, changed -> update(path, props), changed -> props.clear());
+                MutabilitySupport.watch(
+                        path, changed -> hoconMpConfigSource.update(path, props), changed -> props.clear());
             }
 
-            return new HoconMpConfigSource(name, props);
+            hoconMpConfigSource.setProperties(props);
+            return hoconMpConfigSource;
         } catch (IOException e) {
             throw new ConfigException("Failed to load HOCON/JSON config source from path: " + path.toAbsolutePath(), e);
         }
     }
 
-    private static void update(Path path, Map<String, String> originalProps) {
+    private void update(Path path, Map<String, String> originalProps) {
 
         try (BufferedReader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
             Config typesafeConfig = toConfig(reader);
@@ -176,20 +184,22 @@ public class HoconMpConfigSource implements ConfigSource {
      * @return config source loaded from the content
      */
     public static ConfigSource create(String name, Reader content) {
-        INCLUDER.parseOptions(PARSE_OPTIONS);
-        INCLUDER.resourcePath(getResourcePath(name));
-        INCLUDER.charset(StandardCharsets.UTF_8);
+        HoconMpConfigSource hoconConfigSource = new HoconMpConfigSource(name);
+        hoconConfigSource.includer.parseOptions(hoconConfigSource.parseOptions);
+        hoconConfigSource.includer.resourcePath(getResourcePath(name));
+        hoconConfigSource.includer.charset(StandardCharsets.UTF_8);
 
-        Config typesafeConfig = toConfig(content);
+        Config typesafeConfig = hoconConfigSource.toConfig(content);
         if (typesafeConfig.root().isEmpty()) { // empty source
-            return new HoconMpConfigSource(name, Map.of());
+            return hoconConfigSource;
         }
 
-        return new HoconMpConfigSource(name, fromConfig(typesafeConfig.root()));
+        hoconConfigSource.setProperties(fromConfig(typesafeConfig.root()));
+        return hoconConfigSource;
     }
 
-    private static Config toConfig(Reader content) {
-        Config typesafeConfig = ConfigFactory.parseReader(content, PARSE_OPTIONS);
+    private Config toConfig(Reader content) {
+        Config typesafeConfig = ConfigFactory.parseReader(content, parseOptions);
         if (RESOLVING_ENABLED) {
             typesafeConfig = typesafeConfig.resolve(RESOLVE_OPTIONS);
         }
