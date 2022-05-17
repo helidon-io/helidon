@@ -22,8 +22,8 @@ module io.helidon.messaging {
 
     requires io.helidon.common.context;
     requires io.helidon.common.configurable;
-    requires io.helidon.common.reactive;
     requires io.helidon.config.mp;
+    requires transitive io.helidon.common.reactive;
     requires transitive io.helidon.config;
     requires transitive org.reactivestreams;
     requires transitive microprofile.config.api;
