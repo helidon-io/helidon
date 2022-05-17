@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -279,6 +279,8 @@ public interface Retry extends FtHandler {
             }
 
             if (call == 0) {
+                return Optional.of(0L);
+            } else if (call == 1) {
                 return Optional.of(delayMillis);
             }
 

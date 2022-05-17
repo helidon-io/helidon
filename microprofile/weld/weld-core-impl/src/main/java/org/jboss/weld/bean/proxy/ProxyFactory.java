@@ -273,13 +273,16 @@ public class ProxyFactory<T> implements PrivilegedAction<T> {
         final String className;
 
         if (typeInfo.getSuperClass() == Object.class) {
-            final StringBuilder name = new StringBuilder();
-
             // for classes that do not have an enclosing class, we want the super interface to be first
             if (proxiedBeanType.getEnclosingClass() == null) {
+                if (typeInfo.getSuperInterface() == null) {
+                    // abstract decorators fall into this category, let's use the type name
+                    return proxiedBeanType.getName() + PROXY_SUFFIX;
+                }
                 return createProxyName(typeInfo) + PROXY_SUFFIX;
             } else {
                 //interface only bean.
+                final StringBuilder name = new StringBuilder();
                 className = createCompoundProxyName(contextId, bean, typeInfo, name) + PROXY_SUFFIX;
             }
         } else {

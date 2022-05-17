@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,14 @@
 package io.helidon.faulttolerance;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.ConfigException;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -43,7 +44,8 @@ class FallbackTest {
 
     @Test
     void testFallback() {
-        String result = Fallback.create(this::fallback).invoke(this::primary)
+        String result = Fallback.create(this::fallback)
+                .invoke(this::primary)
                 .await(1, TimeUnit.SECONDS);
 
         assertThat(result, is("fallback"));
@@ -55,6 +57,29 @@ class FallbackTest {
     void testFallbackFails() {
         Single<String> result = Fallback.create(this::fallbackFail).invoke(this::primary);
         ConfigException exception = FaultToleranceTest.completionException(result, ConfigException.class);
+        Throwable[] suppressed = exception.getSuppressed();
+        assertThat("Should have a suppressed exception: " + Arrays.toString(suppressed), suppressed.length, is(1));
+        assertThat(suppressed[0], instanceOf(CompletionException.class));
+        Throwable suppressedCause = suppressed[0].getCause();
+        assertThat(suppressedCause, instanceOf(IllegalArgumentException.class));
+    }
+
+    @Test
+    void testFallbackMulti() {
+        List<String> result = Fallback.createMulti(this::fallbackMulti)
+                .invokeMulti(this::primaryMulti)
+                .collectList()
+                .await(1, TimeUnit.SECONDS);
+
+        assertThat(result, is(List.of("1", "2", "3")));
+        assertThat(primaryCounter.get(), is(1));
+        assertThat(fallbackCounter.get(), is(1));
+    }
+
+    @Test
+    void testFallbackMultiFails() {
+        Multi<String> result = Fallback.createMulti(this::fallbackMultiFail).invokeMulti(this::primaryMulti);
+        ConfigException exception = FaultToleranceTest.completionException(Single.create(result), ConfigException.class);
         Throwable[] suppressed = exception.getSuppressed();
         assertThat("Should have a suppressed exception: " + Arrays.toString(suppressed), suppressed.length, is(1));
         assertThat(suppressed[0], instanceOf(CompletionException.class));
@@ -75,5 +100,20 @@ class FallbackTest {
     private Single<String> fallbackFail(Throwable throwable) {
         fallbackCounter.incrementAndGet();
         return Single.error(new ConfigException("Intentional failure"));
+    }
+
+    private Multi<String> primaryMulti() {
+        primaryCounter.incrementAndGet();
+        return Multi.error(new IllegalArgumentException("Intentional failure"));
+    }
+
+    private Multi<String> fallbackMulti(Throwable throwable) {
+        fallbackCounter.incrementAndGet();
+        return Multi.create(List.of("1", "2", "3"));
+    }
+
+    private Multi<String> fallbackMultiFail(Throwable throwable) {
+        fallbackCounter.incrementAndGet();
+        return Multi.error(new ConfigException("Intentional failure"));
     }
 }
