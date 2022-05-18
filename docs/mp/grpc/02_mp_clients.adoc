@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -25,6 +25,8 @@
 :common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 :microprofile-bundle: false
 
+== Description
+
 Building Java gRPC clients using the Helidon MP gRPC APIs is very simple and removes a lot of the boiler plate code typically
 associated to more traditional approaches to writing gRPC Java clients. At it simplest a gRPC Java client can be written using
 nothing more than a suitably annotated interface.
@@ -39,8 +41,9 @@ include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 </dependency>
 ----
 
+== Usage
 
-== Building a gRPC Client
+=== Building a gRPC Client
 There are a few steps to building and using a gRPC client in Helidon MP.
 
 As discussed in the section on <<grpc/32_mp_server_side_services.adoc, Server-Side Services>> there are four different types of gRPC method.
@@ -53,7 +56,7 @@ As discussed in the section on <<grpc/32_mp_server_side_services.adoc, Server-Si
 An as with the server-side APIS, the Helidon MP gRPC client APIs support a number of different method signatures for each of the
 different gRPC method types.
 
-=== The Client Service Interface
+==== The Client Service Interface
 The next step is to produce an interface with the service methods that the client requires.
 
 For example, suppose we have a simple server side service that has a unary method to convert a string to uppercase.
@@ -122,6 +125,7 @@ public interface StringService {
 }
 ----
 
+== Configuration
 
 === Configuring Channels
 For a gRPC client to connect to a server it requires a Channel. The Helidon MP gRPC APIs provide a way to inject channels into
@@ -252,3 +256,19 @@ and then any code in methods in the `Client` class can call methods on the `Stri
 
 In the example above there is no need to directly use a `Channel` directly. The correct channel is added to the dynamic client
 proxy internally by the Helidon MP gRPC APIs.
+
+== API
+
+TODO: add API description
+
+== Reference
+
+TODO
+
+== Examples
+
+TODO:
+
+== Additional Information
+
+TODO

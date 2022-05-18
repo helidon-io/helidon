@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -25,6 +25,8 @@
 :common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 :microprofile-bundle: false
 
+== Description
+
 The gRPC Microprofile APIs are an extension to <<microprofile/01_introduction.adoc, Helidon MP>> to allow building
 of gRPC services and clients that integrate with the Microprofile APIs. Using Helidon gRPC MP makes building gRPC services
 and clients an easier process that the traditional approach using Protobuf files and code generation. Services can be built
@@ -44,7 +46,7 @@ include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 </dependency>
 ----
 
-== Defining a Service
+== Usage
 
 The traditional approach to building Java gRPC services is to write Protobuf files describing the service and then
 use these to generate service stubs and finally implementing the service methods by extending the generated stub classes.
@@ -99,7 +101,7 @@ public class StringService {
 <1> in the example above the name of the deployed service will be `Strings`.
 
 
-== Defining Service Methods
+=== Defining Service Methods
 Once a class is properly annotated to make it a gRPC MP service it needs to have service methods that implement the
 application business logic. In gRPC there are four different types of method:
 
@@ -117,12 +119,14 @@ The Helidon gRPC MP API determines a method type by its annotation, which should
 @io.helidon.microprofile.grpc.core.Bidirectional
 ----
 
-=== Request an Response Types
+==== Request an Response Types
 A gRPC service method typically takes a request parameter and returns a response value (streaming methods may take or return
 multiple requests or responses). In traditional gRPC Java the types used for the request and response values must be
 Protobuf serializable classes but this is not the case with Helidon gRPC. Helidon supports <<grpc/09_marshalling.adoc, pluggable Marshallers>>
 and by default will support any Java primitive or Java `Serializable` as well as Protobuf types. Any type that can be marshalled
 by the built-in marshallers or custom supplied marshaller may be used as a request or response type.
+
+== API
 
 === Unary Methods
 A unary gRPC method is the simplest type of service method. Typically a unary method takes a request value and returns a
@@ -296,3 +300,18 @@ The `GrpcMpExtension` instances are discovered and loaded using the service load
 `META-INF/services/io.helidon.microprofile.grpc.server.spi.GrpcMpExtension` would need to be created that contained the names
 of the service implementations.
 
+== Configuration
+
+TODO: if applicable
+
+== Reference
+
+TODO
+
+== Examples
+
+TODO: add example
+
+== Additional Information
+
+TODO: add if applicable
