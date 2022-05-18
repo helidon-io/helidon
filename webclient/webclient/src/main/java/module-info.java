@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ module io.helidon.webclient {
     requires transitive io.helidon.common;
     requires transitive io.helidon.common.context;
     requires transitive io.helidon.common.http;
+    requires transitive io.helidon.common.reactive;
     requires transitive io.helidon.config;
     requires transitive io.helidon.media.common;
     requires io.helidon.common.pki;

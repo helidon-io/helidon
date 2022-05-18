@@ -28,7 +28,6 @@ module io.helidon.config {
     requires transitive jakarta.annotation;
 
     requires transitive io.helidon.common;
-    requires transitive io.helidon.common.reactive;
     requires transitive io.helidon.common.media.type;
 
     requires io.helidon.common.serviceloader;
