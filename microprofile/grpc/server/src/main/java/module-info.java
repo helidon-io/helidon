@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,9 +33,13 @@ module io.helidon.microprofile.grpc.server {
 
     requires java.logging;
 
+    uses io.helidon.microprofile.grpc.server.spi.GrpcMpExtension;
     uses io.helidon.microprofile.grpc.server.GrpcServerCdiExtension;
     uses io.helidon.microprofile.grpc.server.AnnotatedServiceConfigurer;
 
     provides jakarta.enterprise.inject.spi.Extension
             with io.helidon.microprofile.grpc.server.GrpcServerCdiExtension;
+
+    // needed when running with modules - to make private methods accessible
+    opens io.helidon.microprofile.grpc.server to weld.core.impl, io.helidon.microprofile.cdi;
 }

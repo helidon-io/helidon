@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,12 +23,22 @@ module io.grpc {
     exports io.grpc.internal;
     exports io.grpc.util;
 
+    requires com.google.common;
+    requires com.google.gson;
     requires java.logging;
     requires java.naming;
+    requires perfmark.api;
 
     uses io.grpc.ManagedChannelProvider;
     uses io.grpc.NameResolverProvider;
     uses io.grpc.ServerProvider;
     uses io.grpc.internal.BinaryLogProvider;
     uses io.grpc.LoadBalancerProvider;
+
+    provides io.grpc.LoadBalancerProvider
+            with io.grpc.internal.PickFirstLoadBalancerProvider,
+                 io.grpc.util.SecretRoundRobinLoadBalancerProvider.Provider;
+
+    provides io.grpc.NameResolverProvider
+            with io.grpc.internal.DnsNameResolverProvider;
 }
