@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -25,10 +25,12 @@
 :common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 :microprofile-bundle: false
 
+== Description
+
 The Microprofile GraphQL APIs are an extension to <<microprofile/01_introduction.adoc, Helidon MP>>
 to allow building of applications that can expose a GraphQL endpoint.
 
-== Experimental
+=== Experimental
 
 WARNING: The Helidon GraphQL feature is currently experimental and the APIs are
  subject to changes until GraphQL support is stabilized.
@@ -43,7 +45,7 @@ include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 </dependency>
 ----
 
-== About the MicroProfile GraphQL Specification
+=== About the MicroProfile GraphQL Specification
 Helidon MP implements the MicroProfile GraphQL
 link:https://github.com/eclipse/microprofile-graphql[spec] version {micprofile-graphql-version}.
 The spec prescribes how applications can be built to expose an endpoint for GraphQL.
@@ -51,9 +53,8 @@ GraphQL is an open-source data query and manipulation language for APIs,
 and a runtime for fulfilling queries with existing data.
 It provides an alternative to, though not necessarily a replacement for, REST.
 
-For more information on GraphQL see https://graphql.org/.
 
-== Getting Started
+== Usage
 
 === Defining your API
 
@@ -198,7 +199,11 @@ NOTE: If you wish to use the GraphiQL UI (https://github.com/graphql/graphiql) t
 example at the following URL:
 https://github.com/oracle/helidon/tree/master/examples/microprofile/graphql
 
-== Configuration Options
+== API
+
+TODO: add API
+
+== Configuration
 
 === MicroProfile GraphQL
 The specification defines the following configuration options:
@@ -218,3 +223,15 @@ These configuration options are more significant that the configuration options
  that can be used to configure GraphQL invocation (see below).
 
 include::../../shared/graphql/configuration.adoc[]
+
+== Reference
+
+TODO:
+
+== Examples
+
+TODO: add examples
+
+== Additional Information
+
+For more information on GraphQL see https://graphql.org/.
