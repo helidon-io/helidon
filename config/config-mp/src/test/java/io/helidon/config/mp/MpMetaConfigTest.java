@@ -76,13 +76,14 @@ class MpMetaConfigTest {
     }
 
     @Test
-    void testMetaSystemProperties() {
+    void testMetaEnvironmentVariablesSystemProperties() {
         System.setProperty("property1", "value1");
         System.setProperty("property2", "value2");
-        System.setProperty(MpMetaConfig.META_CONFIG_SYSTEM_PROPERTY, "custom-mp-meta-config-system-properties.properties");
+        System.setProperty(MpMetaConfig.META_CONFIG_SYSTEM_PROPERTY, "custom-mp-meta-config-sysprops-envvars.properties");
         config = ConfigProvider.getConfig();
         assertThat(config.getValue("property1", String.class), is("value1"));
         assertThat(config.getValue("property2", String.class), is("value2"));
+        assertThat(config.getValue("foo.bar", String.class), is("mapped-env-value"));
         System.clearProperty("property1");
         System.clearProperty("property2");
     }
