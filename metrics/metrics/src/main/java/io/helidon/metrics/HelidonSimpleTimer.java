@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -127,9 +127,11 @@ final class HelidonSimpleTimer extends MetricImpl implements SimpleTimer {
 
     @Override
     public void jsonData(JsonObjectBuilder builder, MetricID metricID) {
+        double scaledElapsedTime = ((double) getElapsedTime().toNanos()) / conversionFactor();
+
         JsonObjectBuilder myBuilder = JSON.createObjectBuilder()
                 .add(jsonFullKey("count", metricID), getCount())
-                .add(jsonFullKey("elapsedTime", metricID), elapsedTimeInSeconds());
+                .add(jsonFullKey("elapsedTime", metricID), scaledElapsedTime);
         builder.add(metricID.getName(), myBuilder);
     }
 
