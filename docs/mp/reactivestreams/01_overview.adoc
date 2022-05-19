@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Overview
+= Reactive Streams
 :toc:
 :toc-placement: preamble
 :h1Prefix: MP
@@ -24,7 +24,7 @@
 :description: Reactive Streams support in {helidon}
 :keywords: helidon, mp, microprofile, reactivestreams
 
-== Reactive Streams
+== Description
 
 [PILLARS]
 ====
@@ -46,3 +46,8 @@ Microprofile implementation.
 There are two handy apis for working with reactive streams available in {helidon},
 one for working with `java.util.concurrent.Flow`
 and another for `org.reactivestreams` based reactive components.
+
+
+include::../../shared/reactivestreams/02_engine.adoc[lines=21..]
+
+include::../../shared/reactivestreams/03_rsoperators.adoc[lines=21..]

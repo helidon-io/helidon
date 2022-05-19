@@ -28,9 +28,11 @@ include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 </dependency>
 ----
 
-== Reactive Engine
+== Usage
 
-Helidon has its own set of reactive operators that have no dependencies outside of the Helidon ecosystem.
+=== Reactive Engine
+
+Helidon has its own set of reactive operators that have no dependencies outside the Helidon ecosystem.
 These operators can be used with `java.util.concurrent.Flow` based reactive streams.
 Stream processing operator chain can be easily constructed by `io.helidon.common.reactive.Multi`, or
 `io.helidon.common.reactive.Single` for streams with single value.
@@ -61,6 +63,10 @@ Single.just("1")
 
 > Result: 6
 ----
+
+== API
+
+=== Reactive operators
 
 [[terms]]
 .Operators
@@ -151,3 +157,18 @@ In the situations when part of the operator chain needs to be prepared in advanc
 > Item received: BAR
 ----
 
+== Configuration
+
+TODO: add configuration details
+
+== Reference
+
+TODO
+
+== Examples
+
+TODO: add at least one
+
+== Additional information
+
+if applicable
