@@ -154,9 +154,12 @@ public final class FaultTolerance {
      *
      * @param source the source stage
      * @param dependent the dependent future
+     * @param cancelSource cancel source if dependent is cancelled
      * @param <T> type of result
      */
-    static <T> CompletableFuture<T> createDependency(CompletionStage<T> source, CompletableFuture<T> dependent) {
+    static <T> CompletableFuture<T> createDependency(CompletionStage<T> source,
+                                                     CompletableFuture<T> dependent,
+                                                     boolean cancelSource) {
         source.whenComplete((o, t) -> {
             if (t != null) {
                 dependent.completeExceptionally(t);
@@ -164,11 +167,13 @@ public final class FaultTolerance {
                 dependent.complete(o);
             }
         });
-        dependent.whenComplete((o, t) -> {
-            if (dependent.isCancelled()) {
-                source.toCompletableFuture().cancel(true);
-            }
-        });
+        if (cancelSource) {
+            dependent.whenComplete((o, t) -> {
+                if (dependent.isCancelled()) {
+                    source.toCompletableFuture().cancel(true);
+                }
+            });
+        }
         return dependent;
     }
 

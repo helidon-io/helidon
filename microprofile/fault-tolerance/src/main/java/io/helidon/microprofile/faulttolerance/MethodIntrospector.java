@@ -39,8 +39,6 @@ import static io.helidon.microprofile.faulttolerance.MethodAntn.lookupAnnotation
 
 class MethodIntrospector {
 
-    private final AnnotatedType<?> annotatedType;
-
     private final AnnotatedMethod<?> annotatedMethod;
 
     private final Retry retry;
@@ -61,7 +59,7 @@ class MethodIntrospector {
     @SuppressWarnings("unchecked")
     MethodIntrospector(Class<?> beanClass, Method method) {
         BeanManager bm = CDI.current().getBeanManager();
-        this.annotatedType = bm.createAnnotatedType(beanClass);
+        AnnotatedType<?> annotatedType = bm.createAnnotatedType(beanClass);
         Optional<AnnotatedMethod<?>> annotatedMethodOptional =
                 (Optional<AnnotatedMethod<?>>) annotatedType.getMethods()
                         .stream()
@@ -69,12 +67,12 @@ class MethodIntrospector {
                         .findFirst();
         this.annotatedMethod = annotatedMethodOptional.orElseThrow();
 
-        this.retry = isAnnotationEnabled(Retry.class) ? new RetryAntn(annotatedType, annotatedMethod) : null;
+        this.retry = isAnnotationEnabled(Retry.class) ? new RetryAntn(annotatedMethod) : null;
         this.circuitBreaker = isAnnotationEnabled(CircuitBreaker.class)
-                ? new CircuitBreakerAntn(annotatedType, annotatedMethod) : null;
-        this.timeout = isAnnotationEnabled(Timeout.class) ? new TimeoutAntn(annotatedType, annotatedMethod) : null;
-        this.bulkhead = isAnnotationEnabled(Bulkhead.class) ? new BulkheadAntn(annotatedType, annotatedMethod) : null;
-        this.fallback = isAnnotationEnabled(Fallback.class) ? new FallbackAntn(annotatedType, annotatedMethod) : null;
+                ? new CircuitBreakerAntn(annotatedMethod) : null;
+        this.timeout = isAnnotationEnabled(Timeout.class) ? new TimeoutAntn(annotatedMethod) : null;
+        this.bulkhead = isAnnotationEnabled(Bulkhead.class) ? new BulkheadAntn(annotatedMethod) : null;
+        this.fallback = isAnnotationEnabled(Fallback.class) ? new FallbackAntn(annotatedMethod) : null;
     }
 
     /**
@@ -154,7 +152,7 @@ class MethodIntrospector {
      */
     private boolean isAnnotationEnabled(Class<? extends Annotation> clazz) {
         BeanManager bm = CDI.current().getBeanManager();
-        LookupResult<? extends Annotation> lookupResult = lookupAnnotation(annotatedType, annotatedMethod, clazz, bm);
+        LookupResult<? extends Annotation> lookupResult = lookupAnnotation(annotatedMethod, clazz, bm);
         if (lookupResult == null) {
             return false;       // not present
         }

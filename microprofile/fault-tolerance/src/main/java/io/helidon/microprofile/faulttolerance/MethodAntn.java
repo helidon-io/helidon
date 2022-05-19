@@ -78,12 +78,11 @@ abstract class MethodAntn {
     /**
      * Constructor.
      *
-     * @param annotatedType Annotated type.
      * @param annotatedMethod Annotated method.
      */
-    MethodAntn(AnnotatedType<?> annotatedType, AnnotatedMethod<?> annotatedMethod) {
-        this.annotatedType = annotatedType;
+    MethodAntn(AnnotatedMethod<?> annotatedMethod) {
         this.annotatedMethod = annotatedMethod;
+        this.annotatedType = annotatedMethod.getDeclaringType();
     }
 
     Method method() {
@@ -98,23 +97,21 @@ abstract class MethodAntn {
      * @return A lookup result.
      */
     public final <A extends Annotation> LookupResult<A> lookupAnnotation(Class<A> annotClass) {
-        return lookupAnnotation(annotatedType, annotatedMethod, annotClass, null);
+        return lookupAnnotation(annotatedMethod, annotClass, null);
     }
 
     /**
      * Finds if an annotation is present on a method or its class.
      *
-     * @param annotatedType The annotated type.
      * @param annotatedMethod Method to check.
      * @param annotClass Annotation class.
      * @param beanManager CDI's bean manager or {@code null} if not available.
      * @return Outcome of test.
      */
-    static boolean isAnnotationPresent(AnnotatedType<?> annotatedType,
-                                       AnnotatedMethod<?> annotatedMethod,
+    static boolean isAnnotationPresent(AnnotatedMethod<?> annotatedMethod,
                                        Class<? extends Annotation> annotClass,
                                        BeanManager beanManager) {
-        return lookupAnnotation(annotatedType, annotatedMethod, annotClass, beanManager) != null;
+        return lookupAnnotation(annotatedMethod, annotClass, beanManager) != null;
     }
 
     /**
@@ -199,15 +196,13 @@ abstract class MethodAntn {
      * instance of this annotation exist (after computing the transitive closure),
      * one will be returned in an undefined manner.
      *
-     * @param type The annotated type.
      * @param method The annotated method.
      * @param annotClass The annotation class.
      * @param <A> Annotation type.
      * @return The lookup result or {@code null}.
      */
     @SuppressWarnings("unchecked")
-    static <A extends Annotation> LookupResult<A> lookupAnnotation(AnnotatedType<?> type,
-                                                                   AnnotatedMethod<?> method,
+    static <A extends Annotation> LookupResult<A> lookupAnnotation(AnnotatedMethod<?> method,
                                                                    Class<A> annotClass,
                                                                    BeanManager beanManager) {
         A annotation = (A) getMethodAnnotation(method, annotClass, beanManager);
@@ -218,6 +213,7 @@ abstract class MethodAntn {
             }
             return new LookupResult<>(MatchingType.METHOD, annotation);
         }
+        AnnotatedType<?> type = method.getDeclaringType();
         annotation = (A) getClassAnnotation(type, annotClass, beanManager);
         if (annotation != null) {
             if (LOGGER.isLoggable(Level.FINE)) {
