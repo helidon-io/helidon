@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -25,6 +25,8 @@
 :common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 :feature-name: OCI Object Storage
 
+== Description
+
 The Helidon MP OCI Object Storage integration provides easy access files stored in Oracle cloud.
 
 == Experimental
@@ -41,8 +43,9 @@ include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 </dependency>
 ----
 
+== Usage
 
-== Setting up the Object Storage
+=== Setting up the Object Storage
 
 In order to use the OCI Object Storage integration, the following setup should be made:
 
@@ -69,6 +72,16 @@ public class ObjectStorageResource {
 <1> `OciObjectStorage` is configured and injected automatically
 <2> Bucket name is read from the properties
 
+== API
+
+TODO:
+
+== Reference
+
+TODO:
+
+== Configuration
+
 Additionally, in `microprofile-config.properties` OCI properties should be specified:
 
 [source,properties]
@@ -82,7 +95,7 @@ The exact values are available in OCI object storage and bucket properties.
 
 image::oci/ocibucket.png[OCI Bucket, align="center"]
 
-== Using Object Storage
+== Examples
 
 === Upload file
 
@@ -183,7 +196,9 @@ public Response delete(@PathParam("file-name") String fileName) {
 <1> Use `deleteObject` function and configure a `DeleteObject.Request.builder()` to submit the delete request
 <2> Return the result
 
-== Object Storage Health Checks
+== Additional Information
+
+=== Object Storage Health Checks
 
 If your Helidon application depends on Object Storage accessibility, you may consider setting
 up a health check to verify connectivity with one ore more OCI buckets in a namespace.
