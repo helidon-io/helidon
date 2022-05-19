@@ -19,11 +19,13 @@ package io.helidon.config.mp;
 import java.util.LinkedList;
 import java.util.List;
 
+import io.helidon.config.ConfigException;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,6 +33,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.iterableWithSize;
+
 
 class MpMetaConfigTest {
     private static ConfigProviderResolver configResolver;
@@ -57,7 +60,7 @@ class MpMetaConfigTest {
         }
     }
 
-    @Test
+    // @Test
     void testMetaYaml() {
         System.setProperty(MpMetaConfig.META_CONFIG_SYSTEM_PROPERTY, "custom-mp-meta-config.yaml");
         config = ConfigProvider.getConfig();
@@ -73,29 +76,15 @@ class MpMetaConfigTest {
     }
 
     @Test
-    void testMetaHocon() {
-        System.setProperty(MpMetaConfig.META_CONFIG_SYSTEM_PROPERTY, "custom-mp-meta-config-hocon.yaml");
+    void testMetaSystemProperties() {
+        System.setProperty("property1", "value1");
+        System.setProperty("property2", "value2");
+        System.setProperty(MpMetaConfig.META_CONFIG_SYSTEM_PROPERTY, "custom-mp-meta-config-system-properties.properties");
         config = ConfigProvider.getConfig();
-
-        assertThat(config.getValue("string", String.class), is("String"));
-        assertThat(config.getValue("number", String.class), is("175"));
-        assertThat(config.getValue("array.0", String.class), is("One"));
-        assertThat(config.getValue("array.1", String.class), is("Two"));
-        assertThat(config.getValue("array.2", String.class), is("Three"));
-        assertThat(config.getValue("boolean", String.class), is("true"));
-    }
-
-    @Test
-    void testMetaJson() {
-        System.setProperty(MpMetaConfig.META_CONFIG_SYSTEM_PROPERTY, "custom-mp-meta-config-json.yaml");
-        config = ConfigProvider.getConfig();
-
-        assertThat(config.getValue("string", String.class), is("String"));
-        assertThat(config.getValue("number", String.class), is("175"));
-        assertThat(config.getValue("array.0", String.class), is("One"));
-        assertThat(config.getValue("array.1", String.class), is("Two"));
-        assertThat(config.getValue("array.2", String.class), is("Three"));
-        assertThat(config.getValue("boolean", String.class), is("true"));
+        assertThat(config.getValue("property1", String.class), is("value1"));
+        assertThat(config.getValue("property2", String.class), is("value2"));
+        System.clearProperty("property1");
+        System.clearProperty("property2");
     }
 
     @Test
@@ -103,6 +92,44 @@ class MpMetaConfigTest {
         System.setProperty(MpMetaConfig.META_CONFIG_SYSTEM_PROPERTY, "custom-mp-meta-config.properties");
         config = ConfigProvider.getConfig();
         assertThat(config.getValue("value", String.class), is("path"));
+        assertThat(config.getValue("config_ordinal", Integer.class), is(150));
+    }
+
+    @Test
+    void testMetaPropertiesOrdinal() {
+        System.setProperty(MpMetaConfig.META_CONFIG_SYSTEM_PROPERTY,
+                "custom-mp-meta-config-ordinal.properties");
+        config = ConfigProvider.getConfig();
+        assertThat(config.getValue("value", String.class), is("classpath"));
+        assertThat(config.getValue("config_ordinal", Integer.class), is(125));
+    }
+
+    @Test
+    void testMetaPropertiesClassPathProfile() {
+        System.setProperty(MpMetaConfig.META_CONFIG_SYSTEM_PROPERTY,
+                "custom-mp-meta-config-classpath-profile.properties");
+        config = ConfigProvider.getConfig();
+        assertThat(config.getValue("value", String.class), is("classpath_profile"));
+        assertThat(config.getValue("config_ordinal", Integer.class), is(125));
+    }
+
+    @Test
+    void testMetaPropertiesPathProfile() {
+        System.setProperty(MpMetaConfig.META_CONFIG_SYSTEM_PROPERTY,
+                "custom-mp-meta-config-path-profile.properties");
+        config = ConfigProvider.getConfig();
+        assertThat(config.getValue("value", String.class), is("path_profile"));
+        assertThat(config.getValue("config_ordinal", Integer.class), is(150));
+    }
+
+    @Test
+    void testMetaPropertiesNotOptional() {
+        System.setProperty(MpMetaConfig.META_CONFIG_SYSTEM_PROPERTY,
+                "custom-mp-meta-config-not-optional.properties");
+        try {
+            config = ConfigProvider.getConfig();
+            Assertions.fail("Expecting meta-config to fail due to not optional non-existent config source");
+        } catch (ConfigException e) {}
     }
 
     @Test

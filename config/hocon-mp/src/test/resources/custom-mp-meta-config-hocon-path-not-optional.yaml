@@ -14,12 +14,10 @@
 # limitations under the License.
 #
 
+add-discovered-sources: false
+add-discovered-converters: false
+
 sources:
-  - type: "environment-variables"
-  - type: "system-properties"
   - type: "hocon"
-    classpath: "meta-application.conf"
-    optional: false
-  - type: "json"
-    classpath: "meta-application.json"
+    path: "src/test/resources/non-existent.conf"
     optional: false

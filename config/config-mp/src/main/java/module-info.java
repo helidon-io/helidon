@@ -21,11 +21,9 @@ module io.helidon.config.mp {
     requires java.logging;
     requires io.helidon.common;
     requires io.helidon.config;
-    requires io.helidon.config.yaml.mp;
     requires transitive microprofile.config.api;
     requires java.annotation;
     requires io.helidon.common.serviceloader;
-    requires io.helidon.config.hocon.mp;
 
     exports io.helidon.config.mp;
     exports io.helidon.config.mp.spi;

@@ -24,8 +24,14 @@
 
     <Match>
         <!-- URL.openconnection() will use paths that come from config/code -->
+        <Class name="io.helidon.config.hocon.mp.HoconMpConfigSource"/>
+        <Method name="create"/>
+        <Bug pattern="URLCONNECTION_SSRF_FD"/>
+    </Match>
+    <Match>
+        <!-- URL.openconnection() will use paths that come from config/code -->
         <Class name="io.helidon.config.hocon.mp.HoconMpConfigIncluder"/>
-        <Method name="include"/>
+        <Method name="parseHoconFromUrl"/>
         <Bug pattern="URLCONNECTION_SSRF_FD"/>
     </Match>
 

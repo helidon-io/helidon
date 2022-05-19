@@ -40,7 +40,7 @@
     <dependencies>
         <dependency>
             <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config-hocon</artifactId>
+            <artifactId>helidon-config-mp</artifactId>
         </dependency>
         <dependency>
             <groupId>com.typesafe</groupId>
@@ -58,6 +58,12 @@
         <dependency>
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- This dependency is to allow meta-config yaml file to be parsed during test only -->
+        <dependency>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config-yaml-mp</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

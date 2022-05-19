@@ -17,8 +17,8 @@
 package io.helidon.config.hocon.mp;
 
 import java.io.IOException;
-import java.io.StringReader;
 import java.net.URL;
+import java.nio.file.Paths;
 import java.util.Enumeration;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
@@ -28,68 +28,20 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 public class HoconJsonMpConfigSourceTest {
-    private static final String TEST_HOCON_1 =
-            "server {\n" +
-            "  host = \"localhost\"\n" +
-            "  port = 8080\n" +
-            "}";
-    private static final String TEST_HOCON_2 =
-            "providers = [\n" +
-            "  {abac = {enabled = true}}\n" +
-            "]\n" +
-            "names = [\n" +
-            "  first\n" +
-            "  second\n" +
-            "  third\n" +
-            "]";
-    private static final String TEST_JSON_1 =
-            "{\n" +
-            "  \"server\": {\"host\": \"remotehost\", \"port\": 9090}\n" +
-            "}";
-    private static final String TEST_JSON_2 =
-            "{\n" +
-            "  \"providers\": [{\"abac\": {\"enabled\": false}}],\n" +
-            "  \"names\": [\n" +
-            "    \"one\",\n" +
-            "    \"two\",\n" +
-            "    \"three\"]\n" +
-            "}";
-
     @Test
-    void testHoconObjectNode() throws IOException {
-        ConfigSource source = HoconMpConfigSource.create("testObjectNode", new StringReader(TEST_HOCON_1));
-        assertThat(source.getValue("server.host"), is("localhost"));
-        assertThat(source.getValue("server.port"), is("8080"));
-    }
-
-    @Test
-    void testHoconListNode() {
-        ConfigSource source = HoconMpConfigSource.create("testObjectNode", new StringReader(TEST_HOCON_2));
-        assertThat(source.getValue("providers.0.abac.enabled"), is("true"));
-        assertThat(source.getValue("names.0"), is("first"));
-        assertThat(source.getValue("names.1"), is("second"));
-        assertThat(source.getValue("names.2"), is("third"));
-    }
-
-    @Test
-    void testJsonObjectNode() {
-        ConfigSource source = HoconMpConfigSource.create("testObjectNode", new StringReader(TEST_JSON_1));
-        assertThat(source.getValue("server.host"), is("remotehost"));
-        assertThat(source.getValue("server.port"), is("9090"));
-    }
-
-    @Test
-    void testJsonListNode() {
-        ConfigSource source = HoconMpConfigSource.create("testObjectNode", new StringReader(TEST_JSON_2));
-        assertThat(source.getValue("providers.0.abac.enabled"), is("false"));
-        assertThat(source.getValue("names.0"), is("one"));
-        assertThat(source.getValue("names.1"), is("two"));
-        assertThat(source.getValue("names.2"), is("three"));
-    }
-
-    @Test
-    void testHoconConfig() throws IOException {
+    void testHoconViaClasspath() throws IOException {
         ConfigSource source = HoconMpConfigSource.create(getResourceUrlPath("application.conf"));
+        // Test Main Config
+        validateHoconConfig(source);
+    }
+
+    @Test
+    void testHoconViaPath() {
+        ConfigSource source = HoconMpConfigSource.create(Paths.get("src/test/resources/application.conf")) ;
+        validateHoconConfig(source);
+    }
+
+    private void validateHoconConfig(ConfigSource source) {
         // Test Main Config
         assertThat(source.getValue("hocon.string"), is("String"));
         assertThat(source.getValue("hocon.number"), is("10"));
@@ -107,8 +59,18 @@ public class HoconJsonMpConfigSourceTest {
     }
 
     @Test
-    void testJsonConfig() throws IOException {
+    void testJsonConfigViaClassPath() throws IOException {
         ConfigSource source = HoconMpConfigSource.create(getResourceUrlPath("application.json"));
+        validateJsonConfig(source);
+    }
+
+    @Test
+    void testJsonConfigViaPath() throws IOException {
+        ConfigSource source = HoconMpConfigSource.create(Paths.get("src/test/resources/application.json"));
+        validateJsonConfig(source);
+    }
+
+    private void validateJsonConfig(ConfigSource source) {
         assertThat(source.getValue("json.string"), is("String"));
         assertThat(source.getValue("json.number"), is("10"));
         assertThat(source.getValue("json.array.0"), is("Array 1"));

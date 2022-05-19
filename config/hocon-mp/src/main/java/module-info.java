@@ -14,19 +14,19 @@
  * limitations under the License.
  */
 
-import io.helidon.config.hocon.mp.HoconMpConfigSourceProvider;
-
 /**
  * Support for HOCON configuration sources.
  */
 module io.helidon.config.hocon.mp {
     requires microprofile.config.api;
 
+    requires io.helidon.config.mp;
     requires transitive io.helidon.config;
-    requires io.helidon.config.hocon;
+    // requires io.helidon.config.hocon;
     requires typesafe.config;
 
     exports io.helidon.config.hocon.mp;
 
-    provides org.eclipse.microprofile.config.spi.ConfigSourceProvider with HoconMpConfigSourceProvider;
+    provides io.helidon.config.mp.spi.MpMetaConfigProvider with io.helidon.config.hocon.mp.HoconMpMetaConfigProvider;
+
 }

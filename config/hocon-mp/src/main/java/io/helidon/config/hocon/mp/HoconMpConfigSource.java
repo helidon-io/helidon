@@ -24,7 +24,6 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Duration;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -36,7 +35,6 @@ import java.util.Objects;
 import java.util.Set;
 
 import io.helidon.config.ConfigException;
-import io.helidon.config.MutabilitySupport;
 
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
@@ -93,16 +91,10 @@ public class HoconMpConfigSource implements ConfigSource {
 
     private static final boolean RESOLVING_ENABLED = true;
     private static final ConfigResolveOptions RESOLVE_OPTIONS = ConfigResolveOptions.defaults();
-    private final HoconMpConfigIncluder includer = new HoconMpConfigIncluder();
-    private final ConfigParseOptions parseOptions = ConfigParseOptions.defaults().appendIncluder(includer);
 
-    private HoconMpConfigSource(String name) {
-        this.name = "hocon: " + name;
-        this.properties = Map.of();
-    }
-
-    private void setProperties(Map<String, String> properties) {
+    private HoconMpConfigSource(String name, Map<String, String> properties) {
         this.properties = properties;
+        this.name = "hocon: " + name;
     }
 
     /**
@@ -116,47 +108,15 @@ public class HoconMpConfigSource implements ConfigSource {
         String name = path.toAbsolutePath().toString();
 
         try (BufferedReader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
-            HoconMpConfigSource hoconMpConfigSource = new HoconMpConfigSource(name);
-            Config typesafeConfig = hoconMpConfigSource.toConfig(reader);
+            ConfigParseOptions parseOptions = getConfigParseOptions(path);
+
+            Config typesafeConfig = toConfig(reader, parseOptions);
             // this is a mutable HashMap that we can use
             Map<String, String> props =
                     fromConfig(typesafeConfig.root().isEmpty() ? ConfigFactory.empty().root() : typesafeConfig.root());
-
-            if ("true".equals(props.get("helidon.config.polling.enabled"))) {
-                String durationString = props.get("helidon.config.polling.duration");
-                Duration duration;
-                if (durationString == null) {
-                    duration = Duration.ofSeconds(10);
-                } else {
-                    duration = Duration.parse(durationString);
-                }
-                MutabilitySupport.poll(
-                        path, duration, changed -> hoconMpConfigSource.update(path, props), changed -> props.clear());
-            } else if ("true".equals(props.get("helidon.config.watcher.enabled"))) {
-                MutabilitySupport.watch(
-                        path, changed -> hoconMpConfigSource.update(path, props), changed -> props.clear());
-            }
-
-            hoconMpConfigSource.setProperties(props);
-            return hoconMpConfigSource;
+            return new HoconMpConfigSource(name, props);
         } catch (IOException e) {
             throw new ConfigException("Failed to load HOCON/JSON config source from path: " + path.toAbsolutePath(), e);
-        }
-    }
-
-    private void update(Path path, Map<String, String> originalProps) {
-
-        try (BufferedReader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
-            Config typesafeConfig = toConfig(reader);
-            // this is a mutable HashMap that we can use
-            Map<String, String> props =
-                    fromConfig(typesafeConfig.root().isEmpty() ? ConfigFactory.empty().root() : typesafeConfig.root());
-
-            // first delete those that no longer exist
-            originalProps.keySet().removeIf(it -> !props.containsKey(it));
-            originalProps.putAll(props);
-        } catch (IOException e) {
-            throw new ConfigException("Failed to load updated HOCON/JSON config source from path: " + path.toAbsolutePath(), e);
         }
     }
 
@@ -169,37 +129,39 @@ public class HoconMpConfigSource implements ConfigSource {
      */
     public static ConfigSource create(URL url) {
         try (InputStreamReader reader = new InputStreamReader(url.openConnection().getInputStream(), StandardCharsets.UTF_8)) {
-            return create(url.toString(), reader);
+            String name = url.toString();
+            ConfigParseOptions parseOptions = getConfigParseOptions(url);
+            Config typesafeConfig = toConfig(reader, parseOptions);
+            if (typesafeConfig.root().isEmpty()) { // empty source
+                return new HoconMpConfigSource(name, Map.of());
+            }
+            return new HoconMpConfigSource(name, fromConfig(typesafeConfig.root()));
         } catch (Exception e) {
             throw new ConfigException("Failed to configure HOCON/JSON config source", e);
         }
     }
 
-    /**
-     * Create from HOCON/JSON content as a reader.
-     * This method will NOT close the reader.
-     *
-     * @param name name of the config source
-     * @param content reader with the HOCON/JSON content
-     * @return config source loaded from the content
-     */
-    public static ConfigSource create(String name, Reader content) {
-        HoconMpConfigSource hoconConfigSource = new HoconMpConfigSource(name);
-        hoconConfigSource.includer.parseOptions(hoconConfigSource.parseOptions);
-        hoconConfigSource.includer.resourcePath(getResourcePath(name));
-        hoconConfigSource.includer.charset(StandardCharsets.UTF_8);
-
-        Config typesafeConfig = hoconConfigSource.toConfig(content);
-        if (typesafeConfig.root().isEmpty()) { // empty source
-            return hoconConfigSource;
-        }
-
-        hoconConfigSource.setProperties(fromConfig(typesafeConfig.root()));
-        return hoconConfigSource;
+    private static <T> ConfigParseOptions getConfigParseOptions(URL url) {
+        HoconMpConfigIncluder includer = new HoconMpConfigIncluder();
+        ConfigParseOptions parseOptions = ConfigParseOptions.defaults().appendIncluder(includer);
+        includer.parseOptions(parseOptions);
+        includer.relativeUrl(getParentResourcePath(url.toString()));
+        includer.charset(StandardCharsets.UTF_8);
+        return parseOptions;
     }
 
-    private Config toConfig(Reader content) {
-        Config typesafeConfig = ConfigFactory.parseReader(content, parseOptions);
+    private static ConfigParseOptions getConfigParseOptions(Path path) {
+        HoconMpConfigIncluder includer = new HoconMpConfigIncluder();
+        ConfigParseOptions parseOptions = ConfigParseOptions.defaults().appendIncluder(includer);
+        includer.parseOptions(parseOptions);
+        includer.relativePath(path.getParent());
+        includer.charset(StandardCharsets.UTF_8);
+        return parseOptions;
+    }
+
+    private static Config toConfig(Reader content, ConfigParseOptions parseOptions) {
+        Config typesafeConfig = ConfigFactory.parseReader(
+                content, parseOptions);
         if (RESOLVING_ENABLED) {
             typesafeConfig = typesafeConfig.resolve(RESOLVE_OPTIONS);
         }
@@ -254,7 +216,8 @@ public class HoconMpConfigSource implements ConfigSource {
                             for (URL url : profileResourceList) {
                                 String profilePathBase = pathBase(url.toString());
                                 if (pathBase.equals(profilePathBase)) {
-                                    sources.add(create(create(it), create(url)));
+                                    // Main is the profile config file and fallback is the original config file
+                                    sources.add(create(create(url), create(it)));
                                 } else {
                                     sources.add(create(it));
                                 }
@@ -308,7 +271,7 @@ public class HoconMpConfigSource implements ConfigSource {
         };
     }
 
-    private static String getResourcePath(String resource) {
+    private static String getParentResourcePath(String resource) {
         // this works the same on windows and Unix systems (classpath is always forward slashes)
         int lastSlash = resource.lastIndexOf('/');
         String rootOfResource;
