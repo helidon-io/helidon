@@ -17,7 +17,6 @@
 package io.helidon.microprofile.faulttolerance;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -61,7 +60,7 @@ import org.glassfish.jersey.process.internal.RequestScope;
 import static javax.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 
 /**
- * Class FaultToleranceExtension.
+ * CDI extension for Helidon's Fault Tolerance implementation.
  */
 public class FaultToleranceExtension implements Extension {
     static final String MP_FT_NON_FALLBACK_ENABLED = "MP_Fault_Tolerance_NonFallback_Enabled";
@@ -72,33 +71,11 @@ public class FaultToleranceExtension implements Extension {
 
     private static boolean isFaultToleranceMetricsEnabled = true;
 
-    private Set<BeanMethod> registeredMethods;
+    private Set<AnnotatedMethod<?>> registeredMethods;
 
     private ThreadPoolSupplier threadPoolSupplier;
 
     private ScheduledThreadPoolSupplier scheduledThreadPoolSupplier;
-
-    /**
-     * A bean method class that pairs a class and a method.
-     */
-    private static class BeanMethod {
-
-        private final Class<?> beanClass;
-        private final Method method;
-
-        BeanMethod(Class<?> beanClass, Method method) {
-            this.beanClass = beanClass;
-            this.method = method;
-        }
-
-        Class<?> beanClass() {
-            return beanClass;
-        }
-
-        Method method() {
-            return method;
-        }
-    }
 
     /**
      * Class to mimic a {@link Priority} annotation for the purpose of changing
@@ -207,7 +184,7 @@ public class FaultToleranceExtension implements Extension {
      * @param event Event information.
      */
     void registerFaultToleranceMethods(BeanManager bm, @Observes ProcessSyntheticBean<?> event) {
-        registerFaultToleranceMethods(bm.createAnnotatedType(event.getBean().getBeanClass()));
+        registerFaultToleranceMethods(bm, bm.createAnnotatedType(event.getBean().getBeanClass()));
     }
 
     /**
@@ -215,8 +192,8 @@ public class FaultToleranceExtension implements Extension {
      *
      * @param event Event information.
      */
-    void registerFaultToleranceMethods(@Observes ProcessManagedBean<?> event) {
-        registerFaultToleranceMethods(event.getAnnotatedBeanClass());
+    void registerFaultToleranceMethods(BeanManager bm, @Observes ProcessManagedBean<?> event) {
+        registerFaultToleranceMethods(bm, event.getAnnotatedBeanClass());
     }
 
     /**
@@ -224,10 +201,10 @@ public class FaultToleranceExtension implements Extension {
      *
      * @param type Bean type.
      */
-    private void registerFaultToleranceMethods(AnnotatedType<?> type) {
+    private void registerFaultToleranceMethods(BeanManager bm, AnnotatedType<?> type) {
         for (AnnotatedMethod<?> method : type.getMethods()) {
-            if (isFaultToleranceMethod(type.getJavaClass(), method.getJavaMember())) {
-                getRegisteredMethods().add(new BeanMethod(type.getJavaClass(), method.getJavaMember()));
+            if (isFaultToleranceMethod(type, method, bm)) {
+                getRegisteredMethods().add(method);
             }
         }
     }
@@ -239,39 +216,39 @@ public class FaultToleranceExtension implements Extension {
      *
      * @param event Event information.
      */
-    void registerMetricsAndInitExecutors(@Observes @Priority(LIBRARY_BEFORE + 10 + 5) @Initialized(ApplicationScoped.class)
-                                                 Object event) {
+    void registerMetricsAndInitExecutors(BeanManager bm,
+                                         @Observes @Priority(LIBRARY_BEFORE + 10 + 5)
+                                         @Initialized(ApplicationScoped.class) Object event) {
         if (FaultToleranceMetrics.enabled()) {
-            getRegisteredMethods().stream().forEach(beanMethod -> {
-                final Method method = beanMethod.method();
-                final Class<?> beanClass = beanMethod.beanClass();
+            getRegisteredMethods().forEach(annotatedMethod -> {
+                final AnnotatedType<?> annotatedType = annotatedMethod.getDeclaringType();
 
                 // Counters for all methods
-                FaultToleranceMetrics.registerMetrics(method);
+                FaultToleranceMetrics.registerMetrics(annotatedMethod.getJavaMember());
 
                 // Metrics depending on the annotationSet present
-                if (MethodAntn.isAnnotationPresent(beanClass, method, Retry.class)) {
-                    FaultToleranceMetrics.registerRetryMetrics(method);
-                    new RetryAntn(beanClass, method).validate();
+                if (MethodAntn.isAnnotationPresent(annotatedType, annotatedMethod, Retry.class, bm)) {
+                    FaultToleranceMetrics.registerRetryMetrics(annotatedMethod.getJavaMember());
+                    new RetryAntn(annotatedType, annotatedMethod).validate();
                 }
-                if (MethodAntn.isAnnotationPresent(beanClass, method, CircuitBreaker.class)) {
-                    FaultToleranceMetrics.registerCircuitBreakerMetrics(method);
-                    new CircuitBreakerAntn(beanClass, method).validate();
+                if (MethodAntn.isAnnotationPresent(annotatedType, annotatedMethod, CircuitBreaker.class, bm)) {
+                    FaultToleranceMetrics.registerCircuitBreakerMetrics(annotatedMethod.getJavaMember());
+                    new CircuitBreakerAntn(annotatedType, annotatedMethod).validate();
                 }
-                if (MethodAntn.isAnnotationPresent(beanClass, method, Timeout.class)) {
-                    FaultToleranceMetrics.registerTimeoutMetrics(method);
-                    new TimeoutAntn(beanClass, method).validate();
+                if (MethodAntn.isAnnotationPresent(annotatedType, annotatedMethod, Timeout.class, bm)) {
+                    FaultToleranceMetrics.registerTimeoutMetrics(annotatedMethod.getJavaMember());
+                    new TimeoutAntn(annotatedType, annotatedMethod).validate();
                 }
-                if (MethodAntn.isAnnotationPresent(beanClass, method, Bulkhead.class)) {
-                    FaultToleranceMetrics.registerBulkheadMetrics(method);
-                    new BulkheadAntn(beanClass, method).validate();
+                if (MethodAntn.isAnnotationPresent(annotatedType, annotatedMethod, Bulkhead.class, bm)) {
+                    FaultToleranceMetrics.registerBulkheadMetrics(annotatedMethod.getJavaMember());
+                    new BulkheadAntn(annotatedType, annotatedMethod).validate();
                 }
-                if (MethodAntn.isAnnotationPresent(beanClass, method, Fallback.class)) {
-                    FaultToleranceMetrics.registerFallbackMetrics(method);
-                    new FallbackAntn(beanClass, method).validate();
+                if (MethodAntn.isAnnotationPresent(annotatedType, annotatedMethod, Fallback.class, bm)) {
+                    FaultToleranceMetrics.registerFallbackMetrics(annotatedMethod.getJavaMember());
+                    new FallbackAntn(annotatedType, annotatedMethod).validate();
                 }
-                if (MethodAntn.isAnnotationPresent(beanClass, method, Asynchronous.class)) {
-                    new AsynchronousAntn(beanClass, method).validate();
+                if (MethodAntn.isAnnotationPresent(annotatedType, annotatedMethod, Asynchronous.class, bm)) {
+                    new AsynchronousAntn(annotatedType, annotatedMethod).validate();
                 }
             });
         }
@@ -297,7 +274,7 @@ public class FaultToleranceExtension implements Extension {
      *
      * @return The set.
      */
-    private Set<BeanMethod> getRegisteredMethods() {
+    private Set<AnnotatedMethod<?>> getRegisteredMethods() {
         if (registeredMethods == null) {
             registeredMethods = new CopyOnWriteArraySet<>();
         }
@@ -322,17 +299,19 @@ public class FaultToleranceExtension implements Extension {
      * Determines if a method has any fault tolerance annotationSet. Only {@code @Fallback}
      * is considered if fault tolerance is disabled.
      *
-     * @param beanClass The bean.
-     * @param method The method to check.
+     * @param annotatedType The annotated type.
+     * @param annotatedMethod The method to check.
      * @return Outcome of test.
      */
-    static boolean isFaultToleranceMethod(Class<?> beanClass, Method method) {
-        return MethodAntn.isAnnotationPresent(beanClass, method, Retry.class)
-                || MethodAntn.isAnnotationPresent(beanClass, method, CircuitBreaker.class)
-                || MethodAntn.isAnnotationPresent(beanClass, method, Bulkhead.class)
-                || MethodAntn.isAnnotationPresent(beanClass, method, Timeout.class)
-                || MethodAntn.isAnnotationPresent(beanClass, method, Asynchronous.class)
-                || MethodAntn.isAnnotationPresent(beanClass, method, Fallback.class);
+    static boolean isFaultToleranceMethod(AnnotatedType<?> annotatedType,
+                                          AnnotatedMethod<?> annotatedMethod,
+                                          BeanManager bm) {
+        return MethodAntn.isAnnotationPresent(annotatedType, annotatedMethod, Retry.class, bm)
+                || MethodAntn.isAnnotationPresent(annotatedType, annotatedMethod, CircuitBreaker.class, bm)
+                || MethodAntn.isAnnotationPresent(annotatedType, annotatedMethod, Bulkhead.class, bm)
+                || MethodAntn.isAnnotationPresent(annotatedType, annotatedMethod, Timeout.class, bm)
+                || MethodAntn.isAnnotationPresent(annotatedType, annotatedMethod, Asynchronous.class, bm)
+                || MethodAntn.isAnnotationPresent(annotatedType, annotatedMethod, Fallback.class, bm);
     }
 
     /**
@@ -420,7 +399,7 @@ public class FaultToleranceExtension implements Extension {
             Optional<Annotation> optional = annotationSet.stream()
                     .filter(a -> annotationType.isAssignableFrom(a.annotationType()))
                     .findFirst();
-            return optional.isPresent() ? (R) optional.get() : null;
+            return (R) optional.orElse(null);
         }
 
         @Override
