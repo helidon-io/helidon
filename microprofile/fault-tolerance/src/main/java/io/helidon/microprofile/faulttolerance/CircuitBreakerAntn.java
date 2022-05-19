@@ -19,7 +19,6 @@ package io.helidon.microprofile.faulttolerance;
 import java.time.temporal.ChronoUnit;
 
 import javax.enterprise.inject.spi.AnnotatedMethod;
-import javax.enterprise.inject.spi.AnnotatedType;
 
 import org.eclipse.microprofile.faulttolerance.CircuitBreaker;
 import org.eclipse.microprofile.faulttolerance.exceptions.FaultToleranceDefinitionException;
@@ -29,11 +28,10 @@ class CircuitBreakerAntn extends MethodAntn implements CircuitBreaker {
     /**
      * Constructor.
      *
-     * @param annotatedType The annotated type.
      * @param annotatedMethod The annotated method.
      */
-    CircuitBreakerAntn(AnnotatedType<?> annotatedType, AnnotatedMethod<?> annotatedMethod) {
-        super(annotatedType, annotatedMethod);
+    CircuitBreakerAntn(AnnotatedMethod<?> annotatedMethod) {
+        super(annotatedMethod);
     }
 
     @Override

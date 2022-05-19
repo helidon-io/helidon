@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,6 +55,7 @@ class CircuitBreakerImpl implements CircuitBreaker {
     private final AtomicReference<ScheduledFuture<Boolean>> schedule = new AtomicReference<>();
     private final ErrorChecker errorChecker;
     private final String name;
+    private final boolean cancelSource;
 
     CircuitBreakerImpl(CircuitBreaker.Builder builder) {
         this.delayMillis = builder.delay().toMillis();
@@ -63,6 +64,7 @@ class CircuitBreakerImpl implements CircuitBreaker {
         this.executor = builder.executor();
         this.errorChecker = ErrorChecker.create(builder.skipOn(), builder.applyOn());
         this.name = builder.name();
+        this.cancelSource = builder.cancelSource();
     }
 
     @Override
@@ -77,7 +79,7 @@ class CircuitBreakerImpl implements CircuitBreaker {
 
     @Override
     public <T> Single<T> invoke(Supplier<? extends CompletionStage<T>> supplier) {
-        return invokeTask(DelayedTask.createSingle(supplier));
+        return invokeTask(DelayedTask.createSingle(supplier, cancelSource));
     }
 
     private <U> U invokeTask(DelayedTask<U> task) {

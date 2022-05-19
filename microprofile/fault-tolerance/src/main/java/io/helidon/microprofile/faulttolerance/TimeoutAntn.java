@@ -19,7 +19,6 @@ package io.helidon.microprofile.faulttolerance;
 import java.time.temporal.ChronoUnit;
 
 import javax.enterprise.inject.spi.AnnotatedMethod;
-import javax.enterprise.inject.spi.AnnotatedType;
 
 import org.eclipse.microprofile.faulttolerance.Timeout;
 import org.eclipse.microprofile.faulttolerance.exceptions.FaultToleranceDefinitionException;
@@ -29,11 +28,10 @@ class TimeoutAntn extends MethodAntn implements Timeout {
     /**
      * Constructor.
      *
-     * @param annotatedType The annotated type.
      * @param annotatedMethod The annotated method.
      */
-    TimeoutAntn(AnnotatedType<?> annotatedType, AnnotatedMethod<?> annotatedMethod) {
-        super(annotatedType, annotatedMethod);
+    TimeoutAntn(AnnotatedMethod<?> annotatedMethod) {
+        super(annotatedMethod);
     }
 
     @Override
