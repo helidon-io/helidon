@@ -29,6 +29,7 @@ import javax.annotation.Priority;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.Initialized;
 import javax.enterprise.event.Observes;
+import javax.enterprise.inject.spi.AfterDeploymentValidation;
 import javax.enterprise.inject.spi.AnnotatedConstructor;
 import javax.enterprise.inject.spi.AnnotatedField;
 import javax.enterprise.inject.spi.AnnotatedMethod;
@@ -252,7 +253,15 @@ public class FaultToleranceExtension implements Extension {
                 }
             });
         }
+    }
 
+    /**
+     * Creates the executors used by FT using config. Must be created during the
+     * {@code AfterDeploymentValidation} event.
+     *
+     * @param event the AfterDeploymentValidation event
+     */
+    void createFaultToleranceExecutors(@Observes AfterDeploymentValidation event) {
         // Initialize executors for MP FT - default size of 16
         io.helidon.config.Config config = MpConfig.toHelidonConfig(ConfigProvider.getConfig());
         scheduledThreadPoolSupplier = ScheduledThreadPoolSupplier.builder()
