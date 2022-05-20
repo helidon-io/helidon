@@ -7,9 +7,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
-## [2.5.1-SNAPSHOT]
+## [2.5.1-M1]
 
 This is a bugfix release of Helidon. It is recommended for all users of Helidon 2.
+This is a milestone build and should be used for testing and evaluation only.
 
 ### CHANGES
 
@@ -1840,8 +1841,7 @@ If there is no authorization provider configured, ABAC provider will be configur
     - `Application` subclasses MUST be annotated with `@ApplicationScoped`,
       otherwise they are ignored
 
-
-[2.5.1-SNAPSHOT]: https://github.com/oracle/helidon/compare/2.5.0...helidon-2.x
+[2.5.1-M1]: https://github.com/oracle/helidon/compare/2.5.0...2.5.1-M1
 [2.5.0]: https://github.com/oracle/helidon/compare/2.4.2...2.5.0
 [2.4.2]: https://github.com/oracle/helidon/compare/2.4.1...2.4.2
 [2.4.1]: https://github.com/oracle/helidon/compare/2.4.0...2.4.1
