@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -498,6 +498,40 @@ class ThreadPoolTest {
         } catch (IllegalStateException e) {
             assertThat(customPolicy.getRejectionCount(), is(1));
         }
+    }
+
+    @Test
+    void testFailedAndCompletedCounters() throws InterruptedException {
+        pool = newPool( 4, 4, 10, 20);
+
+        CountDownLatch running1 = new CountDownLatch(1);
+        CountDownLatch running2 = new CountDownLatch(1);
+        Task task1 = new Task(running1);
+        Task task2 = new Task(running2);
+        pool.submit(task1);
+        pool.submit(task2);
+        running1.await();
+        running2.await();
+        task1.finish();
+        task2.finish();
+        Task task3 = new Task() {
+            @Override
+            public void run() {
+                throw new RuntimeException("Oops");
+            }
+        };
+        pool.submit(task3);
+        Task task4 = new Task() {
+            @Override
+            public void run() {
+                throw new RuntimeException("Oops");
+            }
+        };
+        pool.submit(task4);
+        pool.shutdown();
+        assertThat(pool.getCompletedTasks(), is(2));
+        assertThat(pool.getFailedTasks(), is(2));
+        assertThat(pool.getTotalTasks(), is(pool.getCompletedTasks() + pool.getFailedTasks()));
     }
 
     private CountDownLatch addTasks(int count) {
