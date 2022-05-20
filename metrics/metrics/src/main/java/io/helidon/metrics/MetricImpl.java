@@ -93,7 +93,7 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
         addTimeConverter(MetricUnits.HOURS, TimeUnit.HOURS);
         addTimeConverter(MetricUnits.DAYS, TimeUnit.DAYS);
 
-        addConverter(new Units(MetricUnits.BITS, "bytes", o -> (double) o / 8));
+        addConverter(new Units(MetricUnits.BITS, "bytes", o -> ((Number) o).doubleValue() / 8));
         addByteConverter(MetricUnits.KILOBITS, KILOBITS);
         addByteConverter(MetricUnits.MEGABITS, MEGABITS);
         addByteConverter(MetricUnits.GIGABITS, GIGABITS);
