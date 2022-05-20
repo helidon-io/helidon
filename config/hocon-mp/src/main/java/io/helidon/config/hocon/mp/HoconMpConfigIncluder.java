@@ -122,11 +122,11 @@ class HoconMpConfigIncluder implements ConfigIncluder {
      * @param what file name
      * @return file name with extension
      */
-    public static String patchName(String what) {
-        java.util.Optional<String> base = java.util.Optional.of(what)
+    private static String patchName(String what) {
+        Optional<String> base = Optional.of(what)
                 .filter(f -> f.contains(File.separator))
                 .map(f -> f.substring(f.lastIndexOf(File.separator) + 1));
-        java.util.Optional<String> ext = Optional.of(base.orElse(what))
+        Optional<String> ext = Optional.of(base.orElse(what))
                 .filter(f -> f.contains("."))
                 .map(f -> f.substring(f.lastIndexOf(".") + 1));
         return ext.isPresent() ? what : what + HOCON_EXTENSION;

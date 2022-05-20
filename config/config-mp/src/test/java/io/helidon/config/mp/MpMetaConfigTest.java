@@ -60,21 +60,6 @@ class MpMetaConfigTest {
         }
     }
 
-    // @Test
-    void testMetaYaml() {
-        System.setProperty(MpMetaConfig.META_CONFIG_SYSTEM_PROPERTY, "custom-mp-meta-config.yaml");
-        config = ConfigProvider.getConfig();
-
-        // validate the config sources
-        Iterable<ConfigSource> configSources = config.getConfigSources();
-        List<String> sourceNames = new LinkedList<>();
-        configSources.forEach(it -> sourceNames.add(it.getName()));
-
-        assertThat(sourceNames, iterableWithSize(2));
-        assertThat(sourceNames.get(0), is("CLASSPATH"));
-        assertThat(config.getValue("value", String.class), is("classpath"));
-    }
-
     @Test
     void testMetaEnvironmentVariablesSystemProperties() {
         System.setProperty("property1", "value1");
