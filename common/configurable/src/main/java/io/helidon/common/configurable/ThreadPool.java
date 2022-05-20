@@ -377,8 +377,8 @@ public class ThreadPool extends ThreadPoolExecutor {
 
     @Override
     protected void afterExecute(Runnable r, Throwable t) {
-        boolean failed = false;
-        if (t == null && r instanceof Future<?>) {      // extract exception
+        boolean failed = (t != null);
+        if (!failed && r instanceof Future<?>) {      // extract exception
             Future<?> f = (Future<?>) r;
             if (f.isDone()) {
                 try {
