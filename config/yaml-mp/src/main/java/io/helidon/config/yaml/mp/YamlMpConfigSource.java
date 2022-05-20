@@ -217,7 +217,8 @@ public class YamlMpConfigSource implements ConfigSource {
                             for (URL url : profileResourceList) {
                                 String profilePathBase = pathBase(url.toString());
                                 if (pathBase.equals(profilePathBase)) {
-                                    sources.add(create(create(it), create(url)));
+                                    // Main is the profile config file and fallback is the original config file
+                                    sources.add(create(create(url), create(it)));
                                 } else {
                                     sources.add(create(it));
                                 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,11 @@
 
 package io.helidon.config.yaml.mp;
 
+import java.io.IOException;
 import java.io.StringReader;
+import java.net.URL;
+import java.nio.file.Paths;
+import java.util.Enumeration;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.junit.jupiter.api.Test;
@@ -47,5 +51,34 @@ public class YamlMpConfigSourceTest {
         assertThat(source.getValue("names.0"), is("first"));
         assertThat(source.getValue("names.1"), is("second"));
         assertThat(source.getValue("names.2"), is("third"));
+    }
+
+    @Test
+    void testConfigViaClassPath() throws IOException {
+        ConfigSource source = YamlMpConfigSource.create(getResourceUrlPath("application.yaml"));
+        validateConfig(source);
+    }
+
+    @Test
+    void testConfigViaPath() throws IOException {
+        ConfigSource source = YamlMpConfigSource.create(Paths.get("src/test/resources/application.yaml"));
+        validateConfig(source);
+    }
+
+    private void validateConfig(ConfigSource source) {
+        assertThat(source.getValue("yaml.string"), is("String"));
+        assertThat(source.getValue("yaml.number"), is("10"));
+        assertThat(source.getValue("yaml.array.0"), is("Array 1"));
+        assertThat(source.getValue("yaml.array.1"), is("Array 2"));
+        assertThat(source.getValue("yaml.array.2"), is("Array 3"));
+        assertThat(source.getValue("yaml.boolean"), is("true"));
+    }
+
+    private static URL getResourceUrlPath(String resource) throws IOException {
+        Enumeration<URL> resources = Thread.currentThread().getContextClassLoader().getResources(resource);
+        while (resources.hasMoreElements()) {
+            return resources.nextElement();
+        }
+        return null;
     }
 }
