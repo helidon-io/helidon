@@ -240,9 +240,9 @@ class HelidonSimpleTimerTest {
                                       # TYPE application_response_time_elapsedTime_seconds gauge
                                       application_response_time_elapsedTime_seconds 1.0127E-4
                                       # TYPE application_response_time_maxTimeDuration_seconds gauge
-                                      application_response_time_maxTimeDuration_seconds 0
+                                      application_response_time_maxTimeDuration_seconds 9.9E-7
                                       # TYPE application_response_time_minTimeDuration_seconds gauge
-                                      application_response_time_minTimeDuration_seconds 0
+                                      application_response_time_minTimeDuration_seconds 0.0
                                       """));
 
         // Because the batch of test data does not give non-zero min and max, do a separate test to check those.
@@ -264,9 +264,9 @@ class HelidonSimpleTimerTest {
                                       # TYPE application_response_time_elapsedTime_seconds gauge
                                       application_response_time_elapsedTime_seconds 7.0
                                       # TYPE application_response_time_maxTimeDuration_seconds gauge
-                                      application_response_time_maxTimeDuration_seconds 4
+                                      application_response_time_maxTimeDuration_seconds 4.0
                                       # TYPE application_response_time_minTimeDuration_seconds gauge
-                                      application_response_time_minTimeDuration_seconds 3
+                                      application_response_time_minTimeDuration_seconds 3.0
                                       """));
     }
 

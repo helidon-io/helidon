@@ -58,11 +58,11 @@ public class OutputUnitConversionTest {
                                                           .withType(MetricType.TIMER)
                                                           .build(),
                                                   clock);
-        clock.addNanos(1, TimeUnit.MICROSECONDS);
+        clock.add(1, TimeUnit.MICROSECONDS);
         result.update(Duration.of(TIMER_UPDATE_INCREMENT_MICRO_SECONDS, ChronoUnit.MICROS));
 
         // Advance the clock so most-recent-whole-minute stats have meaning.
-        clock.addNanos(1, TimeUnit.MINUTES);
+        clock.add(1, TimeUnit.MINUTES);
         return result;
     }
 
@@ -75,11 +75,11 @@ public class OutputUnitConversionTest {
                                                                       .withType(MetricType.SIMPLE_TIMER)
                                                                       .build(),
                                                               clock);
-        clock.addNanos(1, TimeUnit.MICROSECONDS);
+        clock.add(1, TimeUnit.MICROSECONDS);
         result.update(Duration.of(TIMER_UPDATE_INCREMENT_MICRO_SECONDS, ChronoUnit.MICROS));
 
         // Advance the clock.
-        clock.addNanos(1, TimeUnit.MINUTES);
+        clock.add(1, TimeUnit.MINUTES);
         return result;
     }
 
@@ -114,9 +114,11 @@ public class OutputUnitConversionTest {
         // always is in seconds (for times).
         Duration expectedElapsedTime = Duration.of(TIMER_UPDATE_INCREMENT_MICRO_SECONDS, ChronoUnit.MICROS);
         double expectedElapsedTimeInSeconds = expectedElapsedTime.toNanos() / 1000.0 / 1000.0 / 1000.0;
-        String label = "application_" + SIMPLE_TIMER_NAME + "_elapsedTime_seconds";
-        double v = valueAfterLabel(prometheusSB.toString(), label);
-        assertThat("SimpleTimer Prometheths elapsed time", v, is(withinTolerance(expectedElapsedTimeInSeconds)));
+        for (String label : new String[] {"elapsedTime", "maxTimeDuration", "minTimeDuration"}) {
+            String name = "application_" + SIMPLE_TIMER_NAME + "_" + label + "_seconds";
+            double v = valueAfterLabel(prometheusSB.toString(), name);
+            assertThat("SimpleTimer Prometheths elapsed time", v, is(withinTolerance(expectedElapsedTimeInSeconds)));
+        }
     }
 
     @Test
@@ -155,9 +157,11 @@ public class OutputUnitConversionTest {
         Duration expectedElapsedTime = Duration.of(TIMER_UPDATE_INCREMENT_MICRO_SECONDS, ChronoUnit.MICROS);
         double expectedElapsedTimeInMillis = expectedElapsedTime.toNanos() / 1000.0 / 1000.0;
         assertThat("SimpleTimer elapsed time", hSimpleTimer.getElapsedTime(), is(expectedElapsedTime));
-        JsonNumber number = json.getJsonNumber("elapsedTime");
-        assertThat("JsonNumber for elapsedTime", number, notNullValue());
-        assertThat("JSON value for elapsedTime", number.doubleValue(), is(withinTolerance(expectedElapsedTimeInMillis)));
+        for (String label : new String[] {"elapsedTime", "maxTimeDuration", "minTimeDuration"}) {
+            JsonNumber number = json.getJsonNumber(label);
+            assertThat("JsonNumber for " + label, number, notNullValue());
+            assertThat("JSON value for " + label, number.doubleValue(), is(withinTolerance(expectedElapsedTimeInMillis)));
+        }
     }
 
     private double valueAfterLabel(String wholeString, String label) {
