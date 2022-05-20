@@ -782,7 +782,7 @@ public class ThreadPool extends ThreadPoolExecutor {
 
             // Is the queue above the threshold?
 
-            if (queueSize > queueThreshold) {
+            if (queueSize >= queueThreshold) {
 
                 // Yes. Should we grow?
                 // Note that this random number generator is quite fast, and on average is faster than or equivalent to
