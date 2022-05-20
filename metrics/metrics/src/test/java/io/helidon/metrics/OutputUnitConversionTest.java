@@ -19,8 +19,6 @@ package io.helidon.metrics;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import jakarta.json.Json;
 import jakarta.json.JsonNumber;
@@ -32,7 +30,6 @@ import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.junit.jupiter.api.Test;
-import org.junit.platform.commons.JUnitException;
 
 import static io.helidon.metrics.HelidonMetricsMatcher.withinTolerance;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -100,7 +97,7 @@ public class OutputUnitConversionTest {
                 "_seconds{quantile=\"0.999\"}"
         }) {
             String label = "application_" + TIMER_NAME + suffix;
-            double v = valueAfterLabel(prometheusSB.toString(), label);
+            double v = TestUtils.valueAfterLabel(prometheusSB.toString(), label, Double::parseDouble);
             assertThat("Prometheus data for " + label, v, is(expectedValue));
         }
     }
@@ -116,8 +113,10 @@ public class OutputUnitConversionTest {
         double expectedElapsedTimeInSeconds = expectedElapsedTime.toNanos() / 1000.0 / 1000.0 / 1000.0;
         for (String label : new String[] {"elapsedTime", "maxTimeDuration", "minTimeDuration"}) {
             String name = "application_" + SIMPLE_TIMER_NAME + "_" + label + "_seconds";
-            double v = valueAfterLabel(prometheusSB.toString(), name);
-            assertThat("SimpleTimer Prometheths elapsed time", v, is(withinTolerance(expectedElapsedTimeInSeconds)));
+            double v = TestUtils.valueAfterLabel(prometheusSB.toString(), name, Double::parseDouble);
+            assertThat("SimpleTimer Prometheths elapsed time",
+                       v,
+                       is(withinTolerance(expectedElapsedTimeInSeconds, 1.2E-10)));
         }
     }
 
@@ -160,17 +159,9 @@ public class OutputUnitConversionTest {
         for (String label : new String[] {"elapsedTime", "maxTimeDuration", "minTimeDuration"}) {
             JsonNumber number = json.getJsonNumber(label);
             assertThat("JsonNumber for " + label, number, notNullValue());
-            assertThat("JSON value for " + label, number.doubleValue(), is(withinTolerance(expectedElapsedTimeInMillis)));
+            assertThat("JSON value for " + label,
+                       number.doubleValue(),
+                       is(withinTolerance(expectedElapsedTimeInMillis, 1.2E-7)));
         }
-    }
-
-    private double valueAfterLabel(String wholeString, String label) {
-        Pattern pattern = Pattern.compile("^" + Pattern.quote(label) + "\\s*(\\S*)$", Pattern.MULTILINE);
-        Matcher matcher = pattern.matcher(wholeString);
-        if (!matcher.find()) {
-            throw new JUnitException("Unable to find value with label " + label + " in string " + wholeString);
-        }
-        String valueText = matcher.group(1);
-        return Double.parseDouble(valueText);
     }
 }
