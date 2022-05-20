@@ -41,6 +41,6 @@ class MpEnvironmentVariablesMetaConfigProvider implements MpMetaConfigProvider, 
 
     @Override
     public int priority() {
-        return 50;
+        return 300;
     }
 }

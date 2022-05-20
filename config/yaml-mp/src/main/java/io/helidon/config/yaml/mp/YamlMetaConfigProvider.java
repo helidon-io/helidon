@@ -19,6 +19,7 @@ package io.helidon.config.yaml.mp;
 import java.util.List;
 import java.util.Set;
 
+import io.helidon.common.Prioritized;
 import io.helidon.config.Config;
 import io.helidon.config.mp.MpMetaConfigUtils;
 import io.helidon.config.mp.spi.MpMetaConfigProvider;
@@ -28,7 +29,7 @@ import org.eclipse.microprofile.config.spi.ConfigSource;
 /**
  * Helidon MicroProfile meta-config provider for Yaml.
  */
-public class YamlMetaConfigProvider implements MpMetaConfigProvider {
+public class YamlMetaConfigProvider implements MpMetaConfigProvider, Prioritized {
     @Override
     public Set<String> supportedTypes() {
         return Set.of("yaml");
@@ -44,5 +45,10 @@ public class YamlMetaConfigProvider implements MpMetaConfigProvider {
                 YamlMpConfigSource::classPath,
                 YamlMpConfigSource::create
         );
+    }
+
+    @Override
+    public int priority() {
+        return 300;
     }
 }

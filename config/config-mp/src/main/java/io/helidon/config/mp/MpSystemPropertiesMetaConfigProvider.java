@@ -41,6 +41,6 @@ class MpSystemPropertiesMetaConfigProvider implements MpMetaConfigProvider, Prio
 
     @Override
     public int priority() {
-        return 51;
+        return 300;
     }
 }

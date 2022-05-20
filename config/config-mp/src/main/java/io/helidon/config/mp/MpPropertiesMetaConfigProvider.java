@@ -48,6 +48,6 @@ class MpPropertiesMetaConfigProvider implements MpMetaConfigProvider, Prioritize
 
     @Override
     public int priority() {
-        return 52;
+        return 300;
     }
 }
