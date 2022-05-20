@@ -36,6 +36,7 @@ import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.Semaphore;
@@ -376,7 +377,22 @@ public class ThreadPool extends ThreadPoolExecutor {
 
     @Override
     protected void afterExecute(Runnable r, Throwable t) {
-        completedTasks.incrementAndGet();
+        boolean failed = (t != null);
+        if (!failed && r instanceof Future<?>) {      // extract exception
+            Future<?> f = (Future<?>) r;
+            if (f.isDone()) {
+                try {
+                    f.get();
+                } catch (Exception e) {
+                    failed = true;
+                }
+            }
+        }
+        if (failed) {
+            failedTasks.incrementAndGet();
+        } else {
+            completedTasks.incrementAndGet();
+        }
         totalActiveThreads.add(activeThreads.getAndDecrement());
     }
 
