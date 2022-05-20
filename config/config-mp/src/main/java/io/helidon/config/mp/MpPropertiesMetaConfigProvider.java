@@ -19,6 +19,7 @@ package io.helidon.config.mp;
 import java.util.List;
 import java.util.Set;
 
+import io.helidon.common.Prioritized;
 import io.helidon.config.Config;
 import io.helidon.config.mp.spi.MpMetaConfigProvider;
 
@@ -27,7 +28,7 @@ import org.eclipse.microprofile.config.spi.ConfigSource;
 /**
  * Helidon MicroProfile meta-config provider for Properties configuration files.
  */
-public class MpPropertiesMetaConfigProvider implements MpMetaConfigProvider {
+class MpPropertiesMetaConfigProvider implements MpMetaConfigProvider, Prioritized {
     @Override
     public Set<String> supportedTypes() {
         return Set.of("properties");
@@ -43,5 +44,10 @@ public class MpPropertiesMetaConfigProvider implements MpMetaConfigProvider {
                 MpConfigSources::classPath,
                 MpConfigSources::create
         );
+    }
+
+    @Override
+    public int priority() {
+        return 52;
     }
 }

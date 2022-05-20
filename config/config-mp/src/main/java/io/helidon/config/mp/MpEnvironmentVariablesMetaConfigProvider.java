@@ -19,6 +19,7 @@ package io.helidon.config.mp;
 import java.util.List;
 import java.util.Set;
 
+import io.helidon.common.Prioritized;
 import io.helidon.config.Config;
 import io.helidon.config.mp.spi.MpMetaConfigProvider;
 
@@ -27,7 +28,7 @@ import org.eclipse.microprofile.config.spi.ConfigSource;
 /**
  * Helidon MicroProfile meta-config provider for Environment Variables.
  */
-public class MpEnvironmentVariablesMetaConfigProvider implements MpMetaConfigProvider {
+class MpEnvironmentVariablesMetaConfigProvider implements MpMetaConfigProvider, Prioritized {
     @Override
     public Set<String> supportedTypes() {
         return Set.of("environment-variables");
@@ -36,5 +37,10 @@ public class MpEnvironmentVariablesMetaConfigProvider implements MpMetaConfigPro
     @Override
     public List<? extends ConfigSource> create(String type, Config metaConfig, String profile) {
         return List.of(MpConfigSources.environmentVariables());
+    }
+
+    @Override
+    public int priority() {
+        return 50;
     }
 }

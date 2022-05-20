@@ -14,23 +14,28 @@
  * limitations under the License.
  */
 
-package io.helidon.config.hocon.mp;
+package io.helidon.config.yaml.mp;
 
 import io.helidon.config.ConfigException;
-
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
+import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
+import java.net.URL;
+import java.nio.file.Paths;
+import java.util.Enumeration;
+
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-class HoconJsonMpMetaConfigTest {
+class YamlMpMetaConfigTest {
     private static ConfigProviderResolver configResolver;
     private Config config;
     private static final String META_CONFIG_SYSTEM_PROPERTY = "io.helidon.config.mp.meta-config";
@@ -57,14 +62,14 @@ class HoconJsonMpMetaConfigTest {
     }
 
     @Test
-    void testMetaHoconClasspath() {
-        System.setProperty(META_CONFIG_SYSTEM_PROPERTY, "custom-mp-meta-config-hocon-classpath.yaml");
+    void testMetaClasspath() {
+        System.setProperty(META_CONFIG_SYSTEM_PROPERTY, "custom-mp-meta-config-classpath.yaml");
         validateConfig();
     }
 
     @Test
-    void testMetaHoconPath() {
-        System.setProperty(META_CONFIG_SYSTEM_PROPERTY, "custom-mp-meta-config-hocon-path.yaml");
+    void testMetaPath() {
+        System.setProperty(META_CONFIG_SYSTEM_PROPERTY, "custom-mp-meta-config-path.yaml");
         validateConfig();
     }
 
@@ -78,24 +83,17 @@ class HoconJsonMpMetaConfigTest {
         assertThat(config.getValue("array.1", String.class), is("Two"));
         assertThat(config.getValue("array.2", String.class), is("Three"));
         assertThat(config.getValue("boolean", String.class), is("true"));
-        // Include file
-        assertThat(config.getValue("custom_include.string", String.class), is("Include_String"));
-        assertThat(config.getValue("custom_include.number", String.class), is("200"));
-        assertThat(config.getValue("custom_include.array.0", String.class), is("First"));
-        assertThat(config.getValue("custom_include.array.1", String.class), is("Second"));
-        assertThat(config.getValue("custom_include.array.2", String.class), is("Third"));
-        assertThat(config.getValue("custom_include.boolean", String.class), is("false"));
     }
 
     @Test
-    void testMetaHoconClasspathConfigProfile() {
-        System.setProperty(META_CONFIG_SYSTEM_PROPERTY, "custom-mp-meta-config-hocon-classpath-profile.yaml");
+    void testMetaClasspathConfigProfile() {
+        System.setProperty(META_CONFIG_SYSTEM_PROPERTY, "custom-mp-meta-config-classpath-profile.yaml");
         validateConfigProfile();
     }
 
     @Test
-    void testMetaHoconPathConfigProfile() {
-        System.setProperty(META_CONFIG_SYSTEM_PROPERTY, "custom-mp-meta-config-hocon-path-profile.yaml");
+    void testMetaPathConfigProfile() {
+        System.setProperty(META_CONFIG_SYSTEM_PROPERTY, "custom-mp-meta-config-path-profile.yaml");
         validateConfigProfile();
     }
 
@@ -110,33 +108,11 @@ class HoconJsonMpMetaConfigTest {
         assertThat(config.getValue("array.2", String.class), is("Three"));
         assertThat(config.getValue("boolean", String.class), is("true"));
         assertThat(config.getValue("extra", String.class), is("Extra"));
-
-        // Include file
-        assertThat(config.getValue("custom_include.string", String.class), is("Include_String"));
-        assertThat(config.getValue("custom_include.number", String.class), is("200"));
-        assertThat(config.getValue("custom_include.array.0", String.class), is("Begin"));
-        assertThat(config.getValue("custom_include.array.1", String.class), is("Middle"));
-        assertThat(config.getValue("custom_include.array.2", String.class), is("End"));
-        assertThat(config.getValue("custom_include.boolean", String.class), is("true"));
-    }
-
-
-    @Test
-    void testMetaJson() {
-        System.setProperty(META_CONFIG_SYSTEM_PROPERTY, "custom-mp-meta-config-json.yaml");
-        config = ConfigProvider.getConfig();
-
-        assertThat(config.getValue("string", String.class), is("String"));
-        assertThat(config.getValue("number", String.class), is("175"));
-        assertThat(config.getValue("array.0", String.class), is("One"));
-        assertThat(config.getValue("array.1", String.class), is("Two"));
-        assertThat(config.getValue("array.2", String.class), is("Three"));
-        assertThat(config.getValue("boolean", String.class), is("true"));
     }
 
     @Test
     void testMetaOrdinal() {
-        System.setProperty(META_CONFIG_SYSTEM_PROPERTY, "ordinal-mp-meta-config-hocon.yaml");
+        System.setProperty(META_CONFIG_SYSTEM_PROPERTY, "ordinal-mp-meta-config.yaml");
         config = ConfigProvider.getConfig();
 
         assertThat(config.getValue("string", String.class), is("String"));
@@ -148,8 +124,8 @@ class HoconJsonMpMetaConfigTest {
     }
 
     @Test
-    void testMetaHoconNonExistentNotOptional() {
-        System.setProperty(META_CONFIG_SYSTEM_PROPERTY, "custom-mp-meta-config-hocon-path-not-optional.yaml");
+    void testMetaNonExistentNotOptional() {
+        System.setProperty(META_CONFIG_SYSTEM_PROPERTY, "custom-mp-meta-config-path-not-optional.yaml");
         try {
             config = ConfigProvider.getConfig();
             Assertions.fail("Expecting meta-config to fail due to not optional non-existent config source");

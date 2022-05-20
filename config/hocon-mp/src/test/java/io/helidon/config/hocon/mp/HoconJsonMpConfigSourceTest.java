@@ -27,7 +27,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-public class HoconJsonMpConfigSourceTest {
+class HoconJsonMpConfigSourceTest {
     @Test
     void testHoconViaClasspath() throws IOException {
         ConfigSource source = HoconMpConfigSource.create(getResourceUrlPath("application.conf"));
@@ -86,5 +86,4 @@ public class HoconJsonMpConfigSourceTest {
         }
         return null;
     }
-
 }

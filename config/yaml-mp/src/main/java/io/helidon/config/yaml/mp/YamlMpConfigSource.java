@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -217,7 +217,8 @@ public class YamlMpConfigSource implements ConfigSource {
                             for (URL url : profileResourceList) {
                                 String profilePathBase = pathBase(url.toString());
                                 if (pathBase.equals(profilePathBase)) {
-                                    sources.add(create(create(it), create(url)));
+                                    // Main is the profile config file and fallback is the original config file
+                                    sources.add(create(create(url), create(it)));
                                 } else {
                                     sources.add(create(it));
                                 }
