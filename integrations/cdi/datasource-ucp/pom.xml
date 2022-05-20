@@ -104,11 +104,6 @@
             <artifactId>helidon-microprofile-server</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config-yaml-mp</artifactId>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
 
     <build>
