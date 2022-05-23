@@ -49,6 +49,7 @@ import io.helidon.metrics.serviceapi.MinimalMetricsSupport;
 import io.helidon.metrics.serviceapi.PostRequestMetricsSupport;
 import io.helidon.servicecommon.rest.HelidonRestServiceSupport;
 import io.helidon.servicecommon.rest.RestServiceSettings;
+import io.helidon.servicecommon.rest.RestServiceUtils;
 import io.helidon.webserver.Handler;
 import io.helidon.webserver.KeyPerformanceIndicatorSupport;
 import io.helidon.webserver.RequestHeaders;
@@ -208,6 +209,7 @@ public final class MetricsSupport extends HelidonRestServiceSupport
     }
 
     private static void getAll(ServerRequest req, ServerResponse res, Registry registry) {
+        RestServiceUtils.discourageCaching(res);
         if (registry.empty()) {
             res.status(Http.Status.NO_CONTENT_204);
             res.send();
@@ -232,6 +234,7 @@ public final class MetricsSupport extends HelidonRestServiceSupport
             return;
         }
 
+        // Options returns only the metadata, so it's OK to allow caching.
         if (req.headers().isAccepted(MediaType.APPLICATION_JSON)) {
             sendJson(res, toJsonMeta(registry));
         } else {
@@ -515,6 +518,7 @@ public final class MetricsSupport extends HelidonRestServiceSupport
     private void getByName(ServerRequest req, ServerResponse res, Registry registry) {
         String metricName = req.path().param("metric");
 
+        RestServiceUtils.discourageCaching(res);
         registry.getOptionalMetricEntry(metricName)
                 .ifPresentOrElse(entry -> {
                     MediaType mediaType = findBestAccepted(req.headers());
@@ -562,6 +566,7 @@ public final class MetricsSupport extends HelidonRestServiceSupport
 
     private void getMultiple(ServerRequest req, ServerResponse res, Registry... registries) {
         MediaType mediaType = findBestAccepted(req.headers());
+        RestServiceUtils.discourageCaching(res);
         if (mediaType == MediaType.APPLICATION_JSON) {
             sendJson(res, toJsonData(registries));
         } else if (mediaType == MediaType.TEXT_PLAIN) {
@@ -573,6 +578,7 @@ public final class MetricsSupport extends HelidonRestServiceSupport
     }
 
     private void optionsMultiple(ServerRequest req, ServerResponse res, Registry... registries) {
+        // Options returns metadata only, so do not discourage caching.
         if (req.headers().isAccepted(MediaType.APPLICATION_JSON)) {
             sendJson(res, toJsonMeta(registries));
         } else {
@@ -586,6 +592,7 @@ public final class MetricsSupport extends HelidonRestServiceSupport
 
         Optional.ofNullable(registry.metadataWithIDs(metricName))
                 .ifPresentOrElse(entry -> {
+                    // Options returns only metadata, so do not discourage caching.
                     if (req.headers().isAccepted(MediaType.APPLICATION_JSON)) {
                         JsonObjectBuilder builder = JSON.createObjectBuilder();
                         // The returned list of metric IDs is guaranteed to have at least one element at this point.
