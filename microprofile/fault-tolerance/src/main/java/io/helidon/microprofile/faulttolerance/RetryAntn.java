@@ -16,26 +16,25 @@
 
 package io.helidon.microprofile.faulttolerance;
 
-import java.lang.reflect.Method;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
+
+import jakarta.enterprise.inject.spi.AnnotatedMethod;
+import jakarta.enterprise.inject.spi.AnnotatedType;
 
 import org.eclipse.microprofile.faulttolerance.Retry;
 import org.eclipse.microprofile.faulttolerance.exceptions.FaultToleranceDefinitionException;
 
-/**
- * Class RetryAntn.
- */
 class RetryAntn extends MethodAntn implements Retry {
 
     /**
      * Constructor.
      *
-     * @param beanClass Bean class.
-     * @param method The method.
+     * @param annotatedType The annotated type.
+     * @param annotatedMethod The annotated method.
      */
-    RetryAntn(Class<?> beanClass, Method method) {
-        super(beanClass, method);
+    RetryAntn(AnnotatedType<?> annotatedType, AnnotatedMethod<?> annotatedMethod) {
+        super(annotatedType, annotatedMethod);
     }
 
     @Override

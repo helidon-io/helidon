@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,24 +16,22 @@
 
 package io.helidon.microprofile.faulttolerance;
 
-import java.lang.reflect.Method;
+import jakarta.enterprise.inject.spi.AnnotatedMethod;
+import jakarta.enterprise.inject.spi.AnnotatedType;
 
 import org.eclipse.microprofile.faulttolerance.Bulkhead;
 import org.eclipse.microprofile.faulttolerance.exceptions.FaultToleranceDefinitionException;
 
-/**
- * Class BulkheadAntn.
- */
 class BulkheadAntn extends MethodAntn implements Bulkhead {
 
     /**
      * Constructor.
      *
-     * @param beanClass Bean class.
-     * @param method The method.
+     * @param annotatedType The annotated type.
+     * @param annotatedMethod The annotated method.
      */
-    BulkheadAntn(Class<?> beanClass, Method method) {
-        super(beanClass, method);
+    BulkheadAntn(AnnotatedType<?> annotatedType, AnnotatedMethod<?> annotatedMethod) {
+        super(annotatedType, annotatedMethod);
     }
 
     @Override
