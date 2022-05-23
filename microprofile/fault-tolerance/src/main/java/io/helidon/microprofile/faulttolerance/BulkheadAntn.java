@@ -17,8 +17,6 @@
 package io.helidon.microprofile.faulttolerance;
 
 import jakarta.enterprise.inject.spi.AnnotatedMethod;
-import jakarta.enterprise.inject.spi.AnnotatedType;
-
 import org.eclipse.microprofile.faulttolerance.Bulkhead;
 import org.eclipse.microprofile.faulttolerance.exceptions.FaultToleranceDefinitionException;
 

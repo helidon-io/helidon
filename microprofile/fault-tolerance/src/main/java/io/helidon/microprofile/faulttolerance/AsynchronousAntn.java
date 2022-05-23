@@ -20,8 +20,6 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Future;
 
 import jakarta.enterprise.inject.spi.AnnotatedMethod;
-import jakarta.enterprise.inject.spi.AnnotatedType;
-
 import org.eclipse.microprofile.faulttolerance.Asynchronous;
 import org.eclipse.microprofile.faulttolerance.exceptions.FaultToleranceDefinitionException;
 

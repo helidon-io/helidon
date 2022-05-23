@@ -20,8 +20,6 @@ import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 
 import jakarta.enterprise.inject.spi.AnnotatedMethod;
-import jakarta.enterprise.inject.spi.AnnotatedType;
-
 import org.eclipse.microprofile.faulttolerance.Retry;
 import org.eclipse.microprofile.faulttolerance.exceptions.FaultToleranceDefinitionException;
 

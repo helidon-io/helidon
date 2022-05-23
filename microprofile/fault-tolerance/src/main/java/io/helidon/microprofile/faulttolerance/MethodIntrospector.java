@@ -20,13 +20,12 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.Optional;
 
+import io.helidon.microprofile.faulttolerance.MethodAntn.LookupResult;
+
 import jakarta.enterprise.inject.spi.AnnotatedMethod;
 import jakarta.enterprise.inject.spi.AnnotatedType;
 import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.enterprise.inject.spi.CDI;
-
-import io.helidon.microprofile.faulttolerance.MethodAntn.LookupResult;
-
 import org.eclipse.microprofile.faulttolerance.Asynchronous;
 import org.eclipse.microprofile.faulttolerance.Bulkhead;
 import org.eclipse.microprofile.faulttolerance.CircuitBreaker;

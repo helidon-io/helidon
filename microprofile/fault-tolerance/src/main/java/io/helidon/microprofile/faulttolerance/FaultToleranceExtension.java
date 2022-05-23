@@ -47,7 +47,6 @@ import jakarta.enterprise.inject.spi.ProcessManagedBean;
 import jakarta.enterprise.inject.spi.ProcessSyntheticBean;
 import jakarta.enterprise.util.AnnotationLiteral;
 import jakarta.inject.Inject;
-
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.faulttolerance.Asynchronous;

@@ -28,7 +28,6 @@ import java.util.logging.Logger;
 import jakarta.enterprise.inject.spi.AnnotatedMethod;
 import jakarta.enterprise.inject.spi.AnnotatedType;
 import jakarta.enterprise.inject.spi.BeanManager;
-
 import org.eclipse.microprofile.faulttolerance.Retry;
 
 import static io.helidon.microprofile.faulttolerance.FaultToleranceParameter.getParameter;

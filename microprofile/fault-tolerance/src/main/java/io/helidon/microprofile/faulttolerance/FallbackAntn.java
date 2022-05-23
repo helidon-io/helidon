@@ -19,8 +19,6 @@ package io.helidon.microprofile.faulttolerance;
 import java.lang.reflect.Method;
 
 import jakarta.enterprise.inject.spi.AnnotatedMethod;
-import jakarta.enterprise.inject.spi.AnnotatedType;
-
 import org.eclipse.microprofile.faulttolerance.ExecutionContext;
 import org.eclipse.microprofile.faulttolerance.Fallback;
 import org.eclipse.microprofile.faulttolerance.FallbackHandler;
