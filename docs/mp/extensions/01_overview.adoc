@@ -24,6 +24,7 @@
 :mp-pages-ref-prefix: mp/extensions
 :mp-using-cdi-ref: {mp-pages-ref-prefix}/02_cdi_datasource-hikaricp.adoc
 
+
 == CDI Extensions
 
 Helidon provides link:{cdi-extension-api-url}[CDI portable extensions] that you can use to inject the following objects into your Helidon MicroProfile

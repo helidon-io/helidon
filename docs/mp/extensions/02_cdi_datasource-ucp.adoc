@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -24,6 +24,19 @@
 :feature-name: Oracle UCP Support
 :common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 
+== ToC
+
+- Overview
+- Maven
+- Usage
+- API
+- Configuration
+- Reference
+- Examples
+- Other
+
+== Overview
+
 This https://docs.jboss.org/cdi/spec/2.0/cdi-spec.html#spi[CDI portable extension] provides
 support for injecting
 https://docs.oracle.com/en/database/oracle/oracle-database/19/jjucp/index.html[Oracle
@@ -40,7 +53,9 @@ include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 </dependency>
 ----
 
-== Injecting an Oracle Universal Connection Pool data source
+== Usage
+
+=== Injecting an Oracle Universal Connection Pool data source
 
 The following examples show how to create a `DataSource` named `orders` in your
 application.
@@ -53,22 +68,11 @@ application.
  private DataSource ordersDataSource;
 ----
 
-[source,java]
-.Constructor-injection example
-----
- private final DataSource ds;
- @Inject
- public YourConstructor(@Named("orders") DataSource ds) {
-   super();
-   this.ds = ds;
- }
-----
+== API
 
-The extension implements this injection point by creating a
-https://docs.oracle.com/en/database/oracle/oracle-database/19/jjuar/oracle/ucp/jdbc/PoolDataSource.html[`PoolDataSource`]
-object in the
-http://docs.jboss.org/cdi/api/2.0/javax/enterprise/context/ApplicationScoped.html[application
-scope].
+TODO:
+
+== Configuration
 
 You can configure the object using
 <<microprofile/02_server-configuration.adoc, MicroProfile
@@ -90,3 +94,32 @@ https://docs.oracle.com/javase/tutorial/javabeans/writing/properties.html[Java
 Bean property] of the
 https://docs.oracle.com/en/database/oracle/oracle-database/19/jjuar/oracle/ucp/jdbc/PoolDataSource.html[`oracle.ucp.jdbc.PoolDataSource`]
 class.
+
+== Reference
+
+TODO:
+
+== Examples
+
+TODO: extend
+
+[source,java]
+.Constructor-injection example
+----
+ private final DataSource ds;
+ @Inject
+ public YourConstructor(@Named("orders") DataSource ds) {
+   super();
+   this.ds = ds;
+ }
+----
+
+The extension implements this injection point by creating a
+https://docs.oracle.com/en/database/oracle/oracle-database/19/jjuar/oracle/ucp/jdbc/PoolDataSource.html[`PoolDataSource`]
+object in the
+http://docs.jboss.org/cdi/api/2.0/javax/enterprise/context/ApplicationScoped.html[application
+scope].
+
+== Additional Information
+
+TODO:

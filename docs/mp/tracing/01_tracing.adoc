@@ -24,7 +24,18 @@
 :microprofile-bundle: true
 = :keywords: helidon, tracing, microprofile, micro-profile
 
-== Description
+== ToC
+
+- Overview
+- Maven
+- Usage
+- API
+- Configuration
+- Reference
+- Examples
+- Other
+
+== Overview
 
 Distributed tracing is a critical feature of micro-service based applications, since it traces workflow both
 within a service and across multiple services.  This provides insight to sequence and timing data for specific blocks of work,

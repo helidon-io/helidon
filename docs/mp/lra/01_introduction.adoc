@@ -28,7 +28,18 @@
 :spec-link: https://download.eclipse.org/microprofile/microprofile-lra-{spec-version}/microprofile-lra-spec-{spec-version}.html
 :common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 
-== Description
+== ToC
+
+- Overview
+- Maven
+- Usage
+- API
+- Configuration
+- Reference
+- Examples
+- Other
+
+== Overview
 
 Distributed transactions for microservices are known as SAGA design patterns and are defined by the {spec-link}[{spec-name}].
 Unlike well known XA protocol, LRA is asynchronous and therefore much more scalable. Every LRA JAX-RS resource (<<mp/lra/03_participant.adoc, participant>>) defines endpoints to be invoked when transaction needs to be <<mp/lra/03_participant.adoc#complete-participant-method, completed>> or <<mp/lra/03_participant.adoc#compensate-participant-method, compensated>>.

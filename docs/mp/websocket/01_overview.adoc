@@ -25,7 +25,18 @@
 :tyrus-project-url: https://projects.eclipse.org/projects/ee4j.tyrus
 :helidon-websocket-example-url: https://github.com/oracle/helidon/tree/master/examples/webserver/websocket
 
-== Description
+== ToC
+
+- Overview
+- Maven
+- Usage
+- API
+- Configuration
+- Reference
+- Examples
+- Other
+
+== Overview
 
 Helidon integrates with {tyrus-project-url}[Tyrus] to provide support for the {websocket-spec-url}[Jakarta WebSocket API].
 

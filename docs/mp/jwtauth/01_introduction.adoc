@@ -28,8 +28,18 @@
 :microprofile-bundle: true
 
 
+== ToC
 
-== Description
+- Overview
+- Maven
+- Usage
+- API
+- Configuration
+- Reference
+- Examples
+- Other
+
+== Overview
 
 JSON Web Token (JWT) defines a compact and self-contained way for securely transmitting information between parties as a JSON object. With JWT Auth you can integrate security features such as single sign on into your Helidon MP applications.
 
@@ -50,7 +60,7 @@ As this class is discovered using CDI, it must have a bean defining annotation.
 
 == API
 
-TODO
+TODO:
 
 == Configuration
 
@@ -63,6 +73,10 @@ Following the JWT Specification set `issuer`and `public key location` in `microp
 mp.jwt.verify.issuer=https://<...>/oauth2/default
 mp.jwt.verify.publickey.location=${mp.jwt.verify.issuer}/v1/keys
 ----
+
+== Reference
+
+TODO:
 
 == Examples
 

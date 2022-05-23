@@ -23,6 +23,19 @@
 :feature-name: Security
 :common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 
+== ToC
+
+- Overview
+- Maven
+- Usage
+- API
+- Configuration
+- Reference
+- Examples
+- Other
+
+== Overview
+
 To add security, such as protecting
 resource methods with authentication, to a MicroProfile application, add the Helidon
  security integration dependency to your project.
@@ -36,6 +49,8 @@ include::{common-deps-page-prefix-inc}[tag=maven-dependency]
   <artifactId>helidon-microprofile-security</artifactId>
 </dependency>
 ----
+
+== Usage
 
 === Securing a JAX-RS Resource
 
@@ -54,6 +69,37 @@ public String adminResource(@Context io.helidon.security.SecurityContext securit
   return "you are " + securityContext.userName();
 }
 ----
+
+== API
+
+TODO:
+
+== Configuration
+
+TODO:
+
+== Reference
+
+TODO:
+
+== Examples
+
+TODO: extend
+
+[source,java]
+.Protected resource method
+----
+@GET
+@io.helidon.security.annotations.Authenticated
+@io.helidon.security.annotations.Authorized
+// you can also use io.helidon.security.abac.role.RoleValidator.Roles
+@RolesAllowed("admin")
+public String adminResource(@Context io.helidon.security.SecurityContext securityContext) {
+  return "you are " + securityContext.userName();
+}
+----
+
+== Additional information
 
 Security in Helidon MicroProfile is built on top of Jersey's and can be enabled/disabled
 using the property `security.jersey.enabled=[true|false]`.

@@ -25,7 +25,18 @@
 :common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 :microprofile-bundle: false
 
-== Description
+== ToC
+
+- Overview
+- Maven
+- Usage
+- API
+- Configuration
+- Reference
+- Examples
+- Other
+
+== Overview
 
 The gRPC Microprofile APIs are an extension to <<microprofile/01_introduction.adoc, Helidon MP>> to allow building
 of gRPC services and clients that integrate with the Microprofile APIs. Using Helidon gRPC MP makes building gRPC services

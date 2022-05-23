@@ -35,7 +35,18 @@
 :microprofile-bundle: true
 :common-openapi-doc: ../../shared/openapi/openapi-shared.adoc
 
-== Description
+== ToC
+
+- Overview
+- Maven
+- Usage
+- API
+- Configuration
+- Reference
+- Examples
+- Other
+
+== Overview
 
 Easily allow your Helidon MP application to serve an OpenAPI document
 that describes your application's endpoints.

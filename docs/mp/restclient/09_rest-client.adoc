@@ -24,7 +24,18 @@
 :microprofile-bundle: true
 = :keywords: helidon, rest, client, microprofile, micro-profile
 
-== Description
+== ToC
+
+- Overview
+- Maven
+- Usage
+- API
+- Configuration
+- Reference
+- Examples
+- Other
+
+== Overview
 
 MicroProfile Rest Client adds the capability to invoke remote microservices using a JAX-RS like interface to declare the
 operations.

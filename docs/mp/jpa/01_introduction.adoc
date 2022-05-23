@@ -24,7 +24,19 @@
 :keywords: helidon, mp, microprofile, persistence, database
 :h1Prefix: MP
 
-== Description
+== ToC
+
+- Overview
+- Maven
+- Usage
+- API
+- Configuration
+- Reference
+- Examples
+- Other
+
+== Overview
+
 Helidon MP supports JPA in much the same way that Java EE application
 servers do, but with much less weight.  If you come from a Java EE
 background, you'll feel right at home: you work with JPA in Helidon MP

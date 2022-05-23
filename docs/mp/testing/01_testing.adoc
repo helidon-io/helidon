@@ -24,7 +24,18 @@
 :feature-name: Testing with JUnit
 :common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 
-== Description
+== ToC
+
+- Overview
+- Maven
+- Usage
+- API
+- Configuration
+- Reference
+- Examples
+- Other
+
+== Overview
 
 Helidon provides built-in test support for CDI testing in JUnit5.
 

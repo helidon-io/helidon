@@ -37,6 +37,20 @@
 :mp-cors-builtin-services-ref: {mp-pages-ref-prefix}/04_support-in-builtin-services.adoc
 :helidon-variant: MP
 
+
+== ToC
+
+- Overview
+- Maven
+- Usage
+- API
+- Configuration
+- Reference
+- Examples
+- Other
+
+== Overview
+
 link:{cors-spec}[Cross-origin resource sharing] (CORS) support in Helidon MP provides a flexible
 mechanism that allows a Helidon MP application to control how another web application can access its resources,
 even if that web application is served from a different domain.

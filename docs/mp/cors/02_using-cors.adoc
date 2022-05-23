@@ -35,6 +35,19 @@
 :common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 :feature-name: CORS
 
+== ToC
+
+- Overview
+- Maven
+- Usage
+- API
+- Configuration
+- Reference
+- Examples
+- Other
+
+== Overview
+
 To enable CORS behavior for a resource in your Helidon MP application, you simply add the Helidon MP `@CrossOrigin`
 annotation to a particular method in your resource class.
 
@@ -48,7 +61,9 @@ include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 </dependency>
 ----
 
-== Understanding the `@CrossOrigin` Annotation
+== Usage
+
+=== Understanding the `@CrossOrigin` Annotation
 You set up CORS in Helidon MP using the link:{javadoc-base-url-api}/CrossOrigin.html[`@CrossOrigin`] annotation.
 
 The following example of the `@CrossOrigin` annotation allows the resource associated with it to be shared with the origins `\http://foo.bar` and `\http://bar.foo`
@@ -61,7 +76,17 @@ using `DELETE` or `PUT`, and permits requests to include the non-standard header
              allowMethods = {HttpMethod.DELETE, HttpMethod.PUT})
 ----
 
-== Getting Started
+== API
+TODO:
+
+== Reference
+TODO:
+
+== Configuration
+
+include::{03_configuration-with-cors-mp}
+
+== Examples
 To add CORS support to your Helidon MP application:
 
 1. Determine the type of cross-origin resource sharing you want to allow
@@ -72,7 +97,7 @@ To add CORS support to your Helidon MP application:
 
 
 
-== Adding CORS Support to Your Helidon MP Application
+=== Adding CORS Support to Your Helidon MP Application
 Adding CORS behavior to your Helidon MP application involves three simple steps:
 
 For reach resource class in your application:
@@ -97,7 +122,7 @@ enforce cross-origin sharing behavior for the resource identified by that method
 For an informal look at the reasons for applying the `@CrossOrigin` annotation to the `@OPTIONS` method, instead of another
 method, see <<mp/cors/hide_why-options.adoc, Why `@OPTIONS`?>>.
 
-== Sample Application Using the `@CrossOrigin` Annotation
+=== Sample Application Using the `@CrossOrigin` Annotation
 
 In the link:{quickstart-example}[Helidon MP Quickstart application] you can change the greeting by sending a `PUT`
 request to the `/greet/greeting` resource.
@@ -121,9 +146,13 @@ public void optionsForGreeting() {}
 <1> Uses the default cross-origin sharing, which permits sharing via all HTTP methods to all origins.
 <2> Specifies sharing only via the `PUT` HTTP method and only to the two listed origins.
 
-== Next steps
+
+== Additional Information
+
 
 * Use MicroProfile configuration to override the CORS behavior set in
 the application code. <<{mp-cors-config-ref},Learn more.>>
 
 * See the Helidon CORS support in action by building and running the link:{helidon-mp-cors-example}[CORS example].
+
+include::{04_support-in-builtin-services}

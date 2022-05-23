@@ -25,7 +25,18 @@
 :common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 :feature-name: OCI Autonomous Transaction Processing
 
-== Description
+== ToC
+
+- Overview
+- Maven
+- Usage
+- API
+- Configuration
+- Reference
+- Examples
+- Other
+
+== Overview
 
 The Helidon MP OCI Autonomous Transaction Processing integration provides easy access to ATP database in Oracle cloud.
 
