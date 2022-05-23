@@ -30,11 +30,10 @@ class AsynchronousAntn extends MethodAntn implements Asynchronous {
     /**
      * Constructor.
      *
-     * @param annotatedType The annotated type.
      * @param annotatedMethod The annotated method.
      */
-    AsynchronousAntn(AnnotatedType<?> annotatedType, AnnotatedMethod<?> annotatedMethod) {
-        super(annotatedType, annotatedMethod);
+    AsynchronousAntn(AnnotatedMethod<?> annotatedMethod) {
+        super(annotatedMethod);
     }
 
     @Override

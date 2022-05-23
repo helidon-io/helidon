@@ -31,11 +31,10 @@ class FallbackAntn extends MethodAntn implements Fallback {
     /**
      * Constructor.
      *
-     * @param annotatedType The annotated type.
      * @param annotatedMethod The annotated method.
      */
-    FallbackAntn(AnnotatedType<?> annotatedType, AnnotatedMethod<?> annotatedMethod) {
-        super(annotatedType, annotatedMethod);
+    FallbackAntn(AnnotatedMethod<?> annotatedMethod) {
+        super(annotatedMethod);
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -102,6 +102,7 @@ public interface CircuitBreaker extends FtHandler {
         private int volume = 10;
         private LazyValue<? extends ScheduledExecutorService> executor = FaultTolerance.scheduledExecutor();
         private String name = "CircuitBreaker-" + System.identityHashCode(this);
+        private boolean cancelSource = true;
 
         private Builder() {
         }
@@ -242,6 +243,18 @@ public interface CircuitBreaker extends FtHandler {
             return this;
         }
 
+        /**
+         * Policy to cancel any source stage if the value return by {@link CircuitBreaker#invoke}
+         * is cancelled. Default is {@code true}; mostly used by FT MP to change default.
+         *
+         * @param cancelSource cancel source policy
+         * @return updated builder instance
+         */
+        public Builder cancelSource(boolean cancelSource) {
+            this.cancelSource = cancelSource;
+            return this;
+        }
+
         LazyValue<? extends ScheduledExecutorService> executor() {
             return executor;
         }
@@ -272,6 +285,10 @@ public interface CircuitBreaker extends FtHandler {
 
         String name() {
             return name;
+        }
+
+        boolean cancelSource() {
+            return cancelSource;
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ class BulkheadImpl implements Bulkhead {
     private final Queue<DelayedTask<?>> queue;
     private final Semaphore inProgress;
     private final String name;
+    private final boolean cancelSource;
 
     private final AtomicLong concurrentExecutions = new AtomicLong(0L);
     private final AtomicLong callsAccepted = new AtomicLong(0L);
@@ -47,6 +48,7 @@ class BulkheadImpl implements Bulkhead {
         this.executor = builder.executor();
         this.inProgress = new Semaphore(builder.limit(), true);
         this.name = builder.name();
+        this.cancelSource = builder.cancelSource();
 
         if (builder.queueLength() == 0) {
             queue = new NoQueue();
@@ -62,7 +64,7 @@ class BulkheadImpl implements Bulkhead {
 
     @Override
     public <T> Single<T> invoke(Supplier<? extends CompletionStage<T>> supplier) {
-        return invokeTask(DelayedTask.createSingle(supplier));
+        return invokeTask(DelayedTask.createSingle(supplier, cancelSource));
     }
 
     @Override

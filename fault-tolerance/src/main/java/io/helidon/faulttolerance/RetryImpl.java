@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +39,7 @@ class RetryImpl implements Retry {
     private final Retry.RetryPolicy retryPolicy;
     private final AtomicLong retryCounter = new AtomicLong(0L);
     private final String name;
+    private final boolean cancelSource;
 
     RetryImpl(Retry.Builder builder) {
         this.scheduledExecutor = builder.scheduledExecutor();
@@ -46,6 +47,7 @@ class RetryImpl implements Retry {
         this.maxTimeNanos = builder.overallTimeout().toNanos();
         this.retryPolicy = builder.retryPolicy();
         this.name = builder.name();
+        this.cancelSource = builder.cancelSource();
     }
 
     @Override
@@ -87,7 +89,7 @@ class RetryImpl implements Retry {
             retryCounter.getAndIncrement();
         }
 
-        DelayedTask<Single<T>> task = DelayedTask.createSingle(context.supplier);
+        DelayedTask<Single<T>> task = DelayedTask.createSingle(context.supplier, cancelSource);
         if (delay == 0) {
             task.execute();
         } else {

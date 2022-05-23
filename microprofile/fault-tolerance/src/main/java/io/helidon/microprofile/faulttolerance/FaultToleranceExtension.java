@@ -34,6 +34,7 @@ import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Initialized;
 import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.spi.AfterDeploymentValidation;
 import jakarta.enterprise.inject.spi.AnnotatedConstructor;
 import jakarta.enterprise.inject.spi.AnnotatedField;
 import jakarta.enterprise.inject.spi.AnnotatedMethod;
@@ -46,6 +47,7 @@ import jakarta.enterprise.inject.spi.ProcessManagedBean;
 import jakarta.enterprise.inject.spi.ProcessSyntheticBean;
 import jakarta.enterprise.util.AnnotationLiteral;
 import jakarta.inject.Inject;
+
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.faulttolerance.Asynchronous;
@@ -202,7 +204,7 @@ public class FaultToleranceExtension implements Extension {
      */
     private void registerFaultToleranceMethods(BeanManager bm, AnnotatedType<?> type) {
         for (AnnotatedMethod<?> method : type.getMethods()) {
-            if (isFaultToleranceMethod(type, method, bm)) {
+            if (isFaultToleranceMethod(method, bm)) {
                 getRegisteredMethods().add(method);
             }
         }
@@ -221,27 +223,35 @@ public class FaultToleranceExtension implements Extension {
                 final AnnotatedType<?> annotatedType = annotatedMethod.getDeclaringType();
 
                 // Metrics depending on the annotationSet present
-                if (MethodAntn.isAnnotationPresent(annotatedType, annotatedMethod, Retry.class, bm)) {
-                    new RetryAntn(annotatedType, annotatedMethod).validate();
+                if (MethodAntn.isAnnotationPresent(annotatedMethod, Retry.class, bm)) {
+                    new RetryAntn(annotatedMethod).validate();
                 }
-                if (MethodAntn.isAnnotationPresent(annotatedType, annotatedMethod, CircuitBreaker.class, bm)) {
-                    new CircuitBreakerAntn(annotatedType, annotatedMethod).validate();
+                if (MethodAntn.isAnnotationPresent(annotatedMethod, CircuitBreaker.class, bm)) {
+                    new CircuitBreakerAntn(annotatedMethod).validate();
                 }
-                if (MethodAntn.isAnnotationPresent(annotatedType, annotatedMethod, Timeout.class, bm)) {
-                    new TimeoutAntn(annotatedType, annotatedMethod).validate();
+                if (MethodAntn.isAnnotationPresent(annotatedMethod, Timeout.class, bm)) {
+                    new TimeoutAntn(annotatedMethod).validate();
                 }
-                if (MethodAntn.isAnnotationPresent(annotatedType, annotatedMethod, Bulkhead.class, bm)) {
-                    new BulkheadAntn(annotatedType, annotatedMethod).validate();
+                if (MethodAntn.isAnnotationPresent(annotatedMethod, Bulkhead.class, bm)) {
+                    new BulkheadAntn(annotatedMethod).validate();
                 }
-                if (MethodAntn.isAnnotationPresent(annotatedType, annotatedMethod, Fallback.class, bm)) {
-                    new FallbackAntn(annotatedType, annotatedMethod).validate();
+                if (MethodAntn.isAnnotationPresent(annotatedMethod, Fallback.class, bm)) {
+                    new FallbackAntn(annotatedMethod).validate();
                 }
-                if (MethodAntn.isAnnotationPresent(annotatedType, annotatedMethod, Asynchronous.class, bm)) {
-                    new AsynchronousAntn(annotatedType, annotatedMethod).validate();
+                if (MethodAntn.isAnnotationPresent(annotatedMethod, Asynchronous.class, bm)) {
+                    new AsynchronousAntn(annotatedMethod).validate();
                 }
             });
         }
+    }
 
+    /**
+     * Creates the executors used by FT using config. Must be created during the
+     * {@code AfterDeploymentValidation} event.
+     *
+     * @param event the AfterDeploymentValidation event
+     */
+    void createFaultToleranceExecutors(@Observes AfterDeploymentValidation event) {
         // Initialize executors for MP FT - default size of 16
         io.helidon.config.Config config = MpConfig.toHelidonConfig(ConfigProvider.getConfig());
         scheduledThreadPoolSupplier = ScheduledThreadPoolSupplier.builder()
@@ -288,19 +298,17 @@ public class FaultToleranceExtension implements Extension {
      * Determines if a method has any fault tolerance annotationSet. Only {@code @Fallback}
      * is considered if fault tolerance is disabled.
      *
-     * @param annotatedType The annotated type.
      * @param annotatedMethod The method to check.
      * @return Outcome of test.
      */
-    static boolean isFaultToleranceMethod(AnnotatedType<?> annotatedType,
-                                          AnnotatedMethod<?> annotatedMethod,
+    static boolean isFaultToleranceMethod(AnnotatedMethod<?> annotatedMethod,
                                           BeanManager bm) {
-        return MethodAntn.isAnnotationPresent(annotatedType, annotatedMethod, Retry.class, bm)
-                || MethodAntn.isAnnotationPresent(annotatedType, annotatedMethod, CircuitBreaker.class, bm)
-                || MethodAntn.isAnnotationPresent(annotatedType, annotatedMethod, Bulkhead.class, bm)
-                || MethodAntn.isAnnotationPresent(annotatedType, annotatedMethod, Timeout.class, bm)
-                || MethodAntn.isAnnotationPresent(annotatedType, annotatedMethod, Asynchronous.class, bm)
-                || MethodAntn.isAnnotationPresent(annotatedType, annotatedMethod, Fallback.class, bm);
+        return MethodAntn.isAnnotationPresent(annotatedMethod, Retry.class, bm)
+                || MethodAntn.isAnnotationPresent(annotatedMethod, CircuitBreaker.class, bm)
+                || MethodAntn.isAnnotationPresent(annotatedMethod, Bulkhead.class, bm)
+                || MethodAntn.isAnnotationPresent(annotatedMethod, Timeout.class, bm)
+                || MethodAntn.isAnnotationPresent(annotatedMethod, Asynchronous.class, bm)
+                || MethodAntn.isAnnotationPresent(annotatedMethod, Fallback.class, bm);
     }
 
     /**
