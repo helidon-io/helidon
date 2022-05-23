@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -93,7 +93,7 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
         addTimeConverter(MetricUnits.HOURS, TimeUnit.HOURS);
         addTimeConverter(MetricUnits.DAYS, TimeUnit.DAYS);
 
-        addConverter(new Units(MetricUnits.BITS, "bytes", o -> (double) o / 8));
+        addConverter(new Units(MetricUnits.BITS, "bytes", o -> ((Number) o).doubleValue() / 8));
         addByteConverter(MetricUnits.KILOBITS, KILOBITS);
         addByteConverter(MetricUnits.MEGABITS, MEGABITS);
         addByteConverter(MetricUnits.GIGABITS, GIGABITS);
@@ -200,6 +200,47 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
         return jsonFullKey(metricID.getName(), metricID);
     }
 
+    long conversionFactor() {
+        Units units = getUnits();
+        String metricUnit = units.getMetricUnit();
+        if (metricUnit == null) {
+            return 1;
+        }
+        long divisor = 1;
+        switch (metricUnit) {
+        case MetricUnits.NANOSECONDS:
+            divisor = 1;
+            break;
+
+        case MetricUnits.MICROSECONDS:
+            divisor = 1000;
+            break;
+
+        case MetricUnits.MILLISECONDS:
+            divisor = 1000 * 1000;
+            break;
+
+        case MetricUnits.SECONDS:
+            divisor = 1000 * 1000 * 1000;
+            break;
+
+        case MetricUnits.MINUTES:
+            divisor = 1000 * 1000 * 1000 * 60;
+            break;
+
+        case MetricUnits.HOURS:
+            divisor = 1000 * 1000 * 1000 * 60 * 60;
+            break;
+
+        case MetricUnits.DAYS:
+            divisor = 1000 * 1000 * 1000 * 60 * 60 * 24;
+            break;
+
+        default:
+            divisor = 1;
+        }
+        return divisor;
+    }
 
     protected String toStringDetails() {
         return "";
@@ -321,6 +362,16 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
     void appendPrometheusHistogramElements(StringBuilder sb, PrometheusName name,
             boolean withHelpType, long count, DisplayableLabeledSnapshot snap) {
 
+        appendPrometheusHistogramElements(sb, name, getUnits(), withHelpType, count, snap);
+    }
+
+    void appendPrometheusHistogramElements(StringBuilder sb,
+                                           PrometheusName name,
+                                           Units units,
+                                           boolean withHelpType,
+                                           long count,
+                                           DisplayableLabeledSnapshot snap) {
+
         // # TYPE application:file_sizes_mean_bytes gauge
         // application:file_sizes_mean_bytes 4738.231
         appendPrometheusElement(sb, name, "mean",  withHelpType, "gauge", snap.mean());
@@ -352,12 +403,12 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
 
         // application:file_sizes_bytes{quantile="0.5"} 4201
         // for each supported quantile
-        prometheusQuantile(sb, name, getUnits(), "0.5", snap.median());
-        prometheusQuantile(sb, name, getUnits(), "0.75", snap.sample75thPercentile());
-        prometheusQuantile(sb, name, getUnits(), "0.95", snap.sample95thPercentile());
-        prometheusQuantile(sb, name, getUnits(), "0.98", snap.sample98thPercentile());
-        prometheusQuantile(sb, name, getUnits(), "0.99", snap.sample99thPercentile());
-        prometheusQuantile(sb, name, getUnits(), "0.999", snap.sample999thPercentile());
+        prometheusQuantile(sb, name, units, "0.5", snap.median());
+        prometheusQuantile(sb, name, units, "0.75", snap.sample75thPercentile());
+        prometheusQuantile(sb, name, units, "0.95", snap.sample95thPercentile());
+        prometheusQuantile(sb, name, units, "0.98", snap.sample98thPercentile());
+        prometheusQuantile(sb, name, units, "0.99", snap.sample99thPercentile());
+        prometheusQuantile(sb, name, units, "0.999", snap.sample999thPercentile());
 
     }
 
@@ -475,6 +526,8 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
         private TimeUnits(String metricUnit, TimeUnit timeUnit) {
             super(metricUnit, "seconds", timeConverter(timeUnit));
         }
+
+        static final TimeUnits PROMETHEUS_TIMER_CONVERSION_TIME_UNITS = new TimeUnits("seconds", TimeUnit.NANOSECONDS);
 
         static Function<Object, Object> timeConverter(TimeUnit from) {
             switch (from) {
