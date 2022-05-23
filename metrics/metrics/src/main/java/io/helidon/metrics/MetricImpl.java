@@ -96,7 +96,7 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
         addTimeConverter(MetricUnits.HOURS, TimeUnit.HOURS);
         addTimeConverter(MetricUnits.DAYS, TimeUnit.DAYS);
 
-        addConverter(new Units(MetricUnits.BITS, "bytes", o -> (double) o / 8));
+        addConverter(new Units(MetricUnits.BITS, "bytes", o -> ((Number) o).doubleValue() / 8));
         addByteConverter(MetricUnits.KILOBITS, KILOBITS);
         addByteConverter(MetricUnits.MEGABITS, MEGABITS);
         addByteConverter(MetricUnits.GIGABITS, GIGABITS);
@@ -205,6 +205,47 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
         return jsonFullKey(metricID.getName(), metricID);
     }
 
+    long conversionFactor() {
+        Units units = getUnits();
+        String metricUnit = units.getMetricUnit();
+        if (metricUnit == null) {
+            return 1;
+        }
+        long divisor = 1;
+        switch (metricUnit) {
+        case MetricUnits.NANOSECONDS:
+            divisor = 1;
+            break;
+
+        case MetricUnits.MICROSECONDS:
+            divisor = 1000;
+            break;
+
+        case MetricUnits.MILLISECONDS:
+            divisor = 1000 * 1000;
+            break;
+
+        case MetricUnits.SECONDS:
+            divisor = 1000 * 1000 * 1000;
+            break;
+
+        case MetricUnits.MINUTES:
+            divisor = 1000 * 1000 * 1000 * 60;
+            break;
+
+        case MetricUnits.HOURS:
+            divisor = 1000 * 1000 * 1000 * 60 * 60;
+            break;
+
+        case MetricUnits.DAYS:
+            divisor = 1000 * 1000 * 1000 * 60 * 60 * 24;
+            break;
+
+        default:
+            divisor = 1;
+        }
+        return divisor;
+    }
 
     protected String toStringDetails() {
         return "";
@@ -244,18 +285,7 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
         if (duration == null) {
             return JsonObject.NULL;
         }
-        long result = switch (metadata().getUnit()) {
-            case MetricUnits.DAYS -> duration.toDays();
-            case MetricUnits.HOURS -> duration.toHours();
-            case MetricUnits.MINUTES -> duration.toMinutes();
-            case MetricUnits.SECONDS -> duration.toSeconds();
-            case MetricUnits.MILLISECONDS -> duration.toMillis();
-            case MetricUnits.MICROSECONDS -> duration.toNanos() / 1000;
-
-            // includes explicit nanoseconds units and no units set (default)
-            default -> duration.toNanos();
-        };
-
+        double result = ((double) duration.toNanos()) / conversionFactor();
         return Json.createValue(result);
     }
 
@@ -340,7 +370,7 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
     void appendPrometheusHistogramElements(StringBuilder sb, MetricID metricID,
                                            boolean withHelpType, long count, long sum, DisplayableLabeledSnapshot snap) {
         PrometheusName name = PrometheusName.create(this, metricID);
-        appendPrometheusHistogramElements(sb, name, withHelpType, count, sum, snap);
+        appendPrometheusHistogramElements(sb, name, getUnits(), withHelpType, count, sum, snap);
     }
 
     void appendPrometheusHistogramElements(StringBuilder sb,
@@ -349,11 +379,18 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
                                            long count,
                                            Duration elapsedTime,
                                            DisplayableLabeledSnapshot snap) {
-        appendPrometheusHistogramElements(sb, name, withHelpType, count, elapsedTime.toSeconds(), snap);
+        appendPrometheusHistogramElements(sb,
+                                          name,
+                                          TimeUnits.PROMETHEUS_TIMER_CONVERSION_TIME_UNITS,
+                                          withHelpType,
+                                          count,
+                                          elapsedTime.toSeconds(),
+                                          snap);
     }
 
     void appendPrometheusHistogramElements(StringBuilder sb,
                                            PrometheusName name,
+                                           Units units,
                                            boolean withHelpType,
                                            long count,
                                            long sum,
@@ -393,12 +430,12 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
                 .append('\n');
         // application:file_sizes_bytes{quantile="0.5"} 4201
         // for each supported quantile
-        prometheusQuantile(sb, name, getUnits(), "0.5", snap.median());
-        prometheusQuantile(sb, name, getUnits(), "0.75", snap.sample75thPercentile());
-        prometheusQuantile(sb, name, getUnits(), "0.95", snap.sample95thPercentile());
-        prometheusQuantile(sb, name, getUnits(), "0.98", snap.sample98thPercentile());
-        prometheusQuantile(sb, name, getUnits(), "0.99", snap.sample99thPercentile());
-        prometheusQuantile(sb, name, getUnits(), "0.999", snap.sample999thPercentile());
+        prometheusQuantile(sb, name, units, "0.5", snap.median());
+        prometheusQuantile(sb, name, units, "0.75", snap.sample75thPercentile());
+        prometheusQuantile(sb, name, units, "0.95", snap.sample95thPercentile());
+        prometheusQuantile(sb, name, units, "0.98", snap.sample98thPercentile());
+        prometheusQuantile(sb, name, units, "0.99", snap.sample99thPercentile());
+        prometheusQuantile(sb, name, units, "0.999", snap.sample999thPercentile());
 
     }
 
@@ -520,6 +557,8 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
         private TimeUnits(String metricUnit, TimeUnit timeUnit) {
             super(metricUnit, "seconds", timeConverter(timeUnit));
         }
+
+        static final TimeUnits PROMETHEUS_TIMER_CONVERSION_TIME_UNITS = new TimeUnits("seconds", TimeUnit.NANOSECONDS);
 
         static Function<Object, Object> timeConverter(TimeUnit from) {
             switch (from) {
