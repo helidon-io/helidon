@@ -252,17 +252,17 @@ public class FaultToleranceExtension implements Extension {
      * @param event the AfterDeploymentValidation event
      */
     void createFaultToleranceExecutors(@Observes AfterDeploymentValidation event) {
-        // Initialize executors for MP FT - default size of 16
+        // Initialize executors for MP FT - default size of 20
         io.helidon.config.Config config = MpConfig.toHelidonConfig(ConfigProvider.getConfig());
         scheduledThreadPoolSupplier = ScheduledThreadPoolSupplier.builder()
                 .threadNamePrefix("ft-mp-schedule-")
-                .corePoolSize(16)
+                .corePoolSize(20)
                 .config(config.get("scheduled-executor"))
                 .build();
         FaultTolerance.scheduledExecutor(scheduledThreadPoolSupplier);
         threadPoolSupplier = ThreadPoolSupplier.builder()
                 .threadNamePrefix("ft-mp-")
-                .corePoolSize(16)
+                .corePoolSize(20)
                 .config(config.get("executor"))
                 .build();
         FaultTolerance.executor(threadPoolSupplier);
