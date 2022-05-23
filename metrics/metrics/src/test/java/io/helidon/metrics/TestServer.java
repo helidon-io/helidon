@@ -26,8 +26,10 @@ import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.media.jsonp.JsonpSupport;
+import io.helidon.servicecommon.rest.RestServiceUtils;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientRequestBuilder;
 import io.helidon.webclient.WebClientResponse;
@@ -41,10 +43,14 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 
 public class TestServer {
 
@@ -204,4 +210,35 @@ public class TestServer {
 
         assertThat("Completed task count after accessing slow endpoint", secondCompletedTaskCount, is(1));
     }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"", "/base", "/vendor", "/application"})
+    void testCacheSuppression(String pathSuffix) {
+        String requestPath = "/metrics" + pathSuffix;
+
+        WebClientResponse response = webClientBuilder
+                .build()
+                .get()
+                .accept(MediaType.APPLICATION_JSON)
+                .path(requestPath)
+                .submit()
+                .await();
+
+        assertThat("Headers suppressing caching",
+                   response.headers().values(Http.Header.CACHE_CONTROL),
+                   containsInAnyOrder(RestServiceUtils.BUILT_IN_SERVICE_CACHE_CONTROL_SETTINGS.toArray(new String[0])));
+
+        response = webClientBuilder
+                .build()
+                .options()
+                .accept(MediaType.APPLICATION_JSON)
+                .path(requestPath)
+                .submit()
+                .await();
+
+        assertThat ("Headers suppressing caching in OPTIONS request",
+                    response.headers().values(Http.Header.CACHE_CONTROL),
+                    not(containsInAnyOrder(RestServiceUtils.BUILT_IN_SERVICE_CACHE_CONTROL_SETTINGS.toArray(new String[0]))));
+    }
+
 }

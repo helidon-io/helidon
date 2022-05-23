@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,6 +56,7 @@ import io.helidon.metrics.api.RegistryFactory;
 import io.helidon.metrics.serviceapi.MinimalMetricsSupport;
 import io.helidon.servicecommon.rest.HelidonRestServiceSupport;
 import io.helidon.servicecommon.rest.RestServiceSettings;
+import io.helidon.servicecommon.rest.RestServiceUtils;
 import io.helidon.webserver.Handler;
 import io.helidon.webserver.KeyPerformanceIndicatorSupport;
 import io.helidon.webserver.RequestHeaders;
@@ -194,6 +195,7 @@ public final class MetricsSupport extends HelidonRestServiceSupport
     }
 
     private static void getAll(ServerRequest req, ServerResponse res, Registry registry) {
+        RestServiceUtils.discourageCaching(res);
         if (registry.empty()) {
             res.status(Http.Status.NO_CONTENT_204);
             res.send();
@@ -218,6 +220,7 @@ public final class MetricsSupport extends HelidonRestServiceSupport
             return;
         }
 
+        // Options returns only the metadata, so it's OK to allow caching.
         if (req.headers().isAccepted(MediaType.APPLICATION_JSON)) {
             sendJson(res, toJsonMeta(registry));
         } else {
@@ -488,6 +491,7 @@ public final class MetricsSupport extends HelidonRestServiceSupport
     private void getByName(ServerRequest req, ServerResponse res, Registry registry) {
         String metricName = req.path().param("metric");
 
+        RestServiceUtils.discourageCaching(res);
         registry.getOptionalMetricEntry(metricName)
                 .ifPresentOrElse(entry -> {
                     MediaType mediaType = findBestAccepted(req.headers());
@@ -535,6 +539,7 @@ public final class MetricsSupport extends HelidonRestServiceSupport
 
     private void getMultiple(ServerRequest req, ServerResponse res, Registry... registries) {
         MediaType mediaType = findBestAccepted(req.headers());
+        RestServiceUtils.discourageCaching(res);
         if (mediaType == MediaType.APPLICATION_JSON) {
             sendJson(res, toJsonData(registries));
         } else if (mediaType == MediaType.TEXT_PLAIN) {
@@ -546,6 +551,7 @@ public final class MetricsSupport extends HelidonRestServiceSupport
     }
 
     private void optionsMultiple(ServerRequest req, ServerResponse res, Registry... registries) {
+        // Options returns metadata only, so do not discourage caching.
         if (req.headers().isAccepted(MediaType.APPLICATION_JSON)) {
             sendJson(res, toJsonMeta(registries));
         } else {
@@ -559,6 +565,7 @@ public final class MetricsSupport extends HelidonRestServiceSupport
 
         registry.getOptionalMetricWithIDsEntry(metricName)
                 .ifPresentOrElse(entry -> {
+                    // Options returns only metadata, so do not discourage caching.
                     if (req.headers().isAccepted(MediaType.APPLICATION_JSON)) {
                         JsonObjectBuilder builder = JSON.createObjectBuilder();
                         HelidonMetric.class.cast(entry.getKey()).jsonMeta(builder, entry.getValue());
