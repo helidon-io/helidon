@@ -461,6 +461,7 @@ class MethodInvoker implements FtSupplier<Object> {
             methodState.bulkhead = Bulkhead.builder()
                     .limit(introspector.getBulkhead().value())
                     .queueLength(introspector.isAsynchronous() ? introspector.getBulkhead().waitingTaskQueue() : 0)
+                    .cancelSource(false)        // for the FT TCK's
                     .build();
         }
 
@@ -468,6 +469,7 @@ class MethodInvoker implements FtSupplier<Object> {
             methodState.timeout = Timeout.builder()
                     .timeout(Duration.of(introspector.getTimeout().value(), introspector.getTimeout().unit()))
                     .currentThread(!introspector.isAsynchronous())
+                    .cancelSource(false)        // for the FT TCK's
                     .build();
         }
 

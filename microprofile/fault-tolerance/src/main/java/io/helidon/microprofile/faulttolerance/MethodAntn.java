@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,21 +20,29 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import jakarta.enterprise.inject.spi.AnnotatedMethod;
+import jakarta.enterprise.inject.spi.AnnotatedType;
+import jakarta.enterprise.inject.spi.BeanManager;
+import org.eclipse.microprofile.faulttolerance.Retry;
+
 import static io.helidon.microprofile.faulttolerance.FaultToleranceParameter.getParameter;
 
 /**
- * Class MethodAntn.
+ * Base class for all method annotations.
  */
 abstract class MethodAntn {
     private static final Logger LOGGER = Logger.getLogger(MethodAntn.class.getName());
 
-    private final Method method;
+    private static final AnnotationFinder ANNOTATION_FINDER = AnnotationFinder.create(Retry.class.getPackage());
 
-    private final Class<?> beanClass;
+    private final AnnotatedType<?> annotatedType;
+
+    private final AnnotatedMethod<?> annotatedMethod;
 
     enum MatchingType {
         METHOD, CLASS
@@ -69,81 +77,40 @@ abstract class MethodAntn {
     /**
      * Constructor.
      *
-     * @param beanClass Bean class.
-     * @param method The method.
+     * @param annotatedMethod Annotated method.
      */
-    MethodAntn(Class<?> beanClass, Method method) {
-        this.beanClass = beanClass;
-        this.method = method;
+    MethodAntn(AnnotatedMethod<?> annotatedMethod) {
+        this.annotatedMethod = annotatedMethod;
+        this.annotatedType = annotatedMethod.getDeclaringType();
     }
 
     Method method() {
-        return method;
-    }
-
-    Class<?> beanClass() {
-        return beanClass;
+        return annotatedMethod.getJavaMember();
     }
 
     /**
-     * Look up an annotation on the method.
+     * Look up an annotation on the method using instance variables.
      *
      * @param annotClass Annotation class.
      * @param <A> Annotation class type param.
      * @return A lookup result.
      */
     public final <A extends Annotation> LookupResult<A> lookupAnnotation(Class<A> annotClass) {
-        return lookupAnnotation(beanClass, method, annotClass);
-    }
-
-    /**
-     * Returns underlying annotation and info as to how it was found.
-     *
-     * @param beanClass The bean class.
-     * @param method The method.
-     * @param annotClass The annotation class.
-     * @param <A> Annotation type.
-     * @return The lookup result or {@code null}.
-     */
-    static <A extends Annotation> LookupResult<A> lookupAnnotation(Class<?> beanClass, Method method,
-                                                                   Class<A> annotClass) {
-        A annotation = method.getAnnotation(annotClass);
-        if (annotation != null) {
-            if (LOGGER.isLoggable(Level.FINE)) {
-                LOGGER.fine("Found annotation '" + annotClass.getName()
-                        + "' method '" + method.getName() + "'");
-            }
-            return new LookupResult<>(MatchingType.METHOD, annotation);
-        }
-        annotation = beanClass.getAnnotation(annotClass);
-        if (annotation != null) {
-            if (LOGGER.isLoggable(Level.FINE)) {
-                LOGGER.fine("Found annotation '" + annotClass.getName()
-                        + "' class '" + method.getDeclaringClass().getName() + "'");
-            }
-            return new LookupResult<>(MatchingType.CLASS, annotation);
-        }
-        annotation = method.getDeclaringClass().getAnnotation(annotClass);
-        if (annotation != null) {
-            if (LOGGER.isLoggable(Level.FINE)) {
-                LOGGER.fine("Found annotation '" + method.getDeclaringClass().getName()
-                        + "' class '" + method.getDeclaringClass().getName() + "'");
-            }
-            return new LookupResult<>(MatchingType.CLASS, annotation);
-        }
-        return null;
+        return lookupAnnotation(annotatedMethod, annotClass, null);
     }
 
     /**
      * Finds if an annotation is present on a method or its class.
      *
-     * @param beanClass The bean class.
-     * @param method Method to check.
+     * @param annotatedMethod Method to check.
      * @param annotClass Annotation class.
+     * @param beanManager CDI's bean manager or {@code null} if not available.
      * @return Outcome of test.
      */
-    static boolean isAnnotationPresent(Class<?> beanClass, Method method, Class<? extends Annotation> annotClass) {
-        return lookupAnnotation(beanClass, method, annotClass) != null;
+    static boolean isAnnotationPresent(AnnotatedMethod<?> annotatedMethod,
+                                       Class<? extends Annotation> annotClass,
+                                       BeanManager beanManager) {
+        return lookupAnnotation(annotatedMethod, annotClass, beanManager) != null;
     }
 
     /**
@@ -176,13 +143,13 @@ abstract class MethodAntn {
 
         // Check property depending on matching type
         if (type == MatchingType.METHOD) {
-            value = getParameter(method.getDeclaringClass().getName(), method.getName(),
+            value = getParameter(method().getDeclaringClass().getName(), method().getName(),
                     annotationType, parameter);
             if (value != null) {
                 return value;
             }
         } else if (type == MatchingType.CLASS) {
-            value = getParameter(method.getDeclaringClass().getName(), annotationType, parameter);
+            value = getParameter(method().getDeclaringClass().getName(), annotationType, parameter);
             if (value != null) {
                 return value;
             }
@@ -221,5 +188,77 @@ abstract class MethodAntn {
             }
         }
         return (Class<? extends Throwable>[]) result.toArray(new Class[0]);
+    }
+
+    /**
+     * Returns underlying annotation and info as to how it was found. If more than one
+     * instance of this annotation exist (after computing the transitive closure),
+     * one will be returned in an undefined manner.
+     *
+     * @param method The annotated method.
+     * @param annotClass The annotation class.
+     * @param <A> Annotation type.
+     * @return The lookup result or {@code null}.
+     */
+    @SuppressWarnings("unchecked")
+    static <A extends Annotation> LookupResult<A> lookupAnnotation(AnnotatedMethod<?> method,
+                                                                   Class<A> annotClass,
+                                                                   BeanManager beanManager) {
+        A annotation = (A) getMethodAnnotation(method, annotClass, beanManager);
+        if (annotation != null) {
+            if (LOGGER.isLoggable(Level.FINE)) {
+                LOGGER.fine("Found annotation '" + annotClass.getName()
+                        + "' method '" + method.getJavaMember().getName() + "'");
+            }
+            return new LookupResult<>(MatchingType.METHOD, annotation);
+        }
+        AnnotatedType<?> type = method.getDeclaringType();
+        annotation = (A) getClassAnnotation(type, annotClass, beanManager);
+        if (annotation != null) {
+            if (LOGGER.isLoggable(Level.FINE)) {
+                LOGGER.fine("Found annotation '" + annotClass.getName()
+                        + "' class '" + method.getJavaMember().getDeclaringClass().getName() + "'");
+            }
+            return new LookupResult<>(MatchingType.CLASS, annotation);
+        }
+        annotation = (A) getClassAnnotation(method.getJavaMember().getDeclaringClass(), annotClass, beanManager);
+        if (annotation != null) {
+            if (LOGGER.isLoggable(Level.FINE)) {
+                LOGGER.fine("Found annotation '" + annotClass.getName()
+                        + "' class '" + method.getJavaMember().getDeclaringClass().getName() + "'");
+            }
+            return new LookupResult<>(MatchingType.CLASS, annotation);
+        }
+        return null;
+    }
+
+    private static Annotation getMethodAnnotation(AnnotatedMethod<?> m,
+                                                  Class<? extends Annotation> annotClass,
+                                                  BeanManager beanManager) {
+        Set<? extends Annotation> set = ANNOTATION_FINDER.findAnnotations(m.getAnnotations(), beanManager);
+        return set.stream()
+                .filter(a -> a.annotationType().equals(annotClass))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private static Annotation getClassAnnotation(Class<?> c,
+                                                 Class<? extends Annotation> annotClass,
+                                                 BeanManager beanManager) {
+        Set<? extends Annotation> set = ANNOTATION_FINDER.findAnnotations(Set.of(c.getAnnotations()), beanManager);
+        return set.stream()
+                .filter(a -> a.annotationType().equals(annotClass))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private static Annotation getClassAnnotation(AnnotatedType<?> type,
+                                                 Class<? extends Annotation> annotClass,
+                                                 BeanManager beanManager) {
+        Set<? extends Annotation> set = ANNOTATION_FINDER.findAnnotations(type.getAnnotations(), beanManager);
+        return set.stream()
+                .filter(a -> a.annotationType().equals(annotClass))
+                .findFirst()
+                .orElse(null);
     }
 }

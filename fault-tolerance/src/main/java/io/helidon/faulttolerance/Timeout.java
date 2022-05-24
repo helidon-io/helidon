@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,6 +54,7 @@ public interface Timeout extends FtHandler {
         private LazyValue<? extends ScheduledExecutorService> executor = FaultTolerance.scheduledExecutor();
         private boolean currentThread = false;
         private String name = "Timeout-" + System.identityHashCode(this);
+        private boolean cancelSource = true;
 
         private Builder() {
         }
@@ -108,6 +109,17 @@ public interface Timeout extends FtHandler {
             return this;
         }
 
+        /**
+         * Cancel source if destination stage is cancelled.
+         *
+         * @param cancelSource setting for cancel source, defaults (@code true}
+         * @return updated builder instance
+         */
+        public Builder cancelSource(boolean cancelSource) {
+            this.cancelSource = cancelSource;
+            return this;
+        }
+
         Duration timeout() {
             return timeout;
         }
@@ -122,6 +134,10 @@ public interface Timeout extends FtHandler {
 
         String name() {
             return name;
+        }
+
+        boolean cancelSource() {
+            return cancelSource;
         }
     }
 }

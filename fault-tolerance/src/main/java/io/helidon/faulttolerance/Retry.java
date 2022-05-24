@@ -61,6 +61,7 @@ public interface Retry extends FtHandler {
         private Duration overallTimeout = Duration.ofSeconds(1);
         private LazyValue<? extends ScheduledExecutorService> scheduledExecutor = FaultTolerance.scheduledExecutor();
         private String name = "Retry-" + System.identityHashCode(this);
+        private boolean cancelSource = true;
 
         private Builder() {
         }
@@ -178,6 +179,18 @@ public interface Retry extends FtHandler {
             return this;
         }
 
+        /**
+         * Policy to cancel any source stage if the value return by {@link Retry#invoke}
+         * is cancelled. Default is {@code true}; mostly used by FT MP to change default.
+         *
+         * @param cancelSource cancel source policy
+         * @return updated builder instance
+         */
+        public Builder cancelSource(boolean cancelSource) {
+            this.cancelSource = cancelSource;
+            return this;
+        }
+
         Set<Class<? extends Throwable>> applyOn() {
             return applyOn;
         }
@@ -200,6 +213,10 @@ public interface Retry extends FtHandler {
 
         String name() {
             return name;
+        }
+
+        boolean cancelSource() {
+            return cancelSource;
         }
     }
 

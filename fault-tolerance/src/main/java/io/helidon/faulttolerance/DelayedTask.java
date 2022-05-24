@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -105,6 +105,11 @@ interface DelayedTask<T> {
     }
 
     static <T> DelayedTask<Single<T>> createSingle(Supplier<? extends CompletionStage<T>> supplier) {
+        return createSingle(supplier, true);
+    }
+
+    static <T> DelayedTask<Single<T>> createSingle(Supplier<? extends CompletionStage<T>> supplier,
+                                                   boolean cancelSource) {
         return new DelayedTask<>() {
             // future we returned as a result of invoke command
             private final LazyValue<CompletableFuture<T>> resultFuture = LazyValue.create(CompletableFuture::new);
@@ -119,7 +124,7 @@ interface DelayedTask<T> {
                 }
 
                 CompletableFuture<T> future = resultFuture.get();
-                createDependency(result, future);
+                createDependency(result, future, cancelSource);
                 return result.thenRun(() -> {});
             }
 

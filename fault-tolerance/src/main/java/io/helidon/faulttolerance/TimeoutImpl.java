@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,12 +39,14 @@ class TimeoutImpl implements Timeout {
     private final LazyValue<? extends ScheduledExecutorService> executor;
     private final boolean currentThread;
     private final String name;
+    private final boolean cancelSource;
 
     TimeoutImpl(Timeout.Builder builder) {
         this.timeoutMillis = builder.timeout().toMillis();
         this.executor = builder.executor();
         this.currentThread = builder.currentThread();
         this.name = builder.name();
+        this.cancelSource = builder.cancelSource();
     }
 
     @Override
@@ -100,7 +102,7 @@ class TimeoutImpl implements Timeout {
             // Run invocation in current thread
             Single<T> single = Single.create(supplier.get(), true);
             callReturned.set(true);
-            createDependency(single, future);
+            createDependency(single, future, cancelSource);
 
             // Clear interrupted flag here -- required for uninterruptible busy loops
             Thread.interrupted();

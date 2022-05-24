@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,26 +16,22 @@
 
 package io.helidon.microprofile.faulttolerance;
 
-import java.lang.reflect.Method;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Future;
 
+import jakarta.enterprise.inject.spi.AnnotatedMethod;
 import org.eclipse.microprofile.faulttolerance.Asynchronous;
 import org.eclipse.microprofile.faulttolerance.exceptions.FaultToleranceDefinitionException;
 
-/**
- * Class AsynchronousAntn.
- */
 class AsynchronousAntn extends MethodAntn implements Asynchronous {
 
     /**
      * Constructor.
      *
-     * @param beanClass Bean class.
-     * @param method The method.
+     * @param annotatedMethod The annotated method.
      */
-    AsynchronousAntn(Class<?> beanClass, Method method) {
-        super(beanClass, method);
+    AsynchronousAntn(AnnotatedMethod<?> annotatedMethod) {
+        super(annotatedMethod);
     }
 
     @Override
