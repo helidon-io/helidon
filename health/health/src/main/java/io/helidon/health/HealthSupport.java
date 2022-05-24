@@ -42,7 +42,6 @@ import io.helidon.faulttolerance.Timeout;
 import io.helidon.media.common.MessageBodyWriter;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.servicecommon.rest.HelidonRestServiceSupport;
-import io.helidon.servicecommon.rest.RestServiceUtils;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
@@ -191,8 +190,8 @@ public final class HealthSupport extends HelidonRestServiceSupport {
             if (status == Http.Status.OK_200.code() && !sendDetails) {
                 status = Http.Status.NO_CONTENT_204.code();
             }
-            RestServiceUtils.discourageCaching(res)
-                .status(status);
+            res.cachingStrategy(ServerResponse.CachingStrategy.NO_CACHING)
+                    .status(status);
 
             if (sendDetails) {
                 res.send(jsonpWriter.marshall(hres.json));

@@ -31,7 +31,6 @@ import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.media.common.MessageBodyReadableContent;
 import io.helidon.media.jsonp.JsonpSupport;
-import io.helidon.servicecommon.rest.RestServiceUtils;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientRequestBuilder;
 import io.helidon.webclient.WebClientResponse;
@@ -113,6 +112,7 @@ class HealthServerTest {
     void testHeadStarted() {
         checkResponse(webClient::head, "health/started", false);
     }
+
     @ParameterizedTest
     @ValueSource(strings = { "", "/live", "/ready"})
     void testCacheSuppression(String pathSuffix) {
@@ -125,9 +125,9 @@ class HealthServerTest {
                     .accept(MediaType.APPLICATION_JSON)
                     .request()
                     .await();
-            assertThat("Header cache settings " + response.headers().toMap(),
+            assertThat("Header cache settings for /health" + pathSuffix + ": " + response.headers().toMap(),
                        response.headers().values(Http.Header.CACHE_CONTROL),
-                       containsInAnyOrder(RestServiceUtils.BUILT_IN_SERVICE_CACHE_CONTROL_SETTINGS.toArray(new String[0])));
+                       containsInAnyOrder("no-cache", "no-store", "must-revalidate", "no-transform"));
         } finally {
             if (response != null) {
                 response.close();

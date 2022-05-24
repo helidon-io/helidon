@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,6 +49,34 @@ import io.helidon.media.common.MessageBodyWriters;
  */
 public interface ServerResponse extends MessageBodyFilters, MessageBodyWriters {
 
+    /**
+     * Declares common groups of {@code Cache-Control} settings.
+     * <p>
+     *     Inspired by the {@code CacheControl} class in JAX-RS.
+     * </p>
+     */
+    enum CachingStrategy {
+        /**
+         * Normal cache control: permit caching but prohibit transforming the content.
+         */
+        NORMAL("no-transform"),
+
+        /**
+         * Discourage caching.
+         */
+        NO_CACHING("no-cache", "no-store", "must-revalidate", "no-transform");
+
+        private final String[] cacheControlHeaderValues;
+
+        CachingStrategy(String... cacheControlHeaderValues) {
+            this.cacheControlHeaderValues = cacheControlHeaderValues;
+        }
+
+        private ServerResponse apply(ServerResponse serverResponse) {
+            serverResponse.addHeader(Http.Header.CACHE_CONTROL, cacheControlHeaderValues);
+            return serverResponse;
+        }
+    }
     /**
      * Returns actual {@link WebServer} instance.
      *
@@ -137,6 +165,17 @@ public interface ServerResponse extends MessageBodyFilters, MessageBodyWriters {
      */
     default ServerResponse addHeaders(Parameters parameters){
         headers().addAll(parameters);
+        return this;
+    }
+
+    /**
+     * Sets the {@code Cache-Control} header values according to the specified strategy.
+     *
+     * @param cachingStrategy {@link io.helidon.webserver.ServerResponse.CachingStrategy} to apply to this response
+     * @return updated response
+     */
+    default ServerResponse cachingStrategy(CachingStrategy cachingStrategy) {
+        cachingStrategy.apply(this);
         return this;
     }
 
