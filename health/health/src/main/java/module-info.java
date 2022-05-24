@@ -27,7 +27,6 @@ module io.helidon.health {
     requires io.helidon.media.jsonp;
     requires java.json;
     requires io.helidon.faulttolerance;
-    requires io.helidon.servicecommon.rest;
 
     exports io.helidon.health;
     provides org.eclipse.microprofile.health.spi.HealthCheckResponseProvider with io.helidon.health.HealthCheckResponseProviderImpl;

@@ -56,7 +56,6 @@ import io.helidon.metrics.api.RegistryFactory;
 import io.helidon.metrics.serviceapi.MinimalMetricsSupport;
 import io.helidon.servicecommon.rest.HelidonRestServiceSupport;
 import io.helidon.servicecommon.rest.RestServiceSettings;
-import io.helidon.servicecommon.rest.RestServiceUtils;
 import io.helidon.webserver.Handler;
 import io.helidon.webserver.KeyPerformanceIndicatorSupport;
 import io.helidon.webserver.RequestHeaders;
@@ -195,7 +194,7 @@ public final class MetricsSupport extends HelidonRestServiceSupport
     }
 
     private static void getAll(ServerRequest req, ServerResponse res, Registry registry) {
-        RestServiceUtils.discourageCaching(res);
+        res.cachingStrategy(ServerResponse.CachingStrategy.NO_CACHING);
         if (registry.empty()) {
             res.status(Http.Status.NO_CONTENT_204);
             res.send();
@@ -491,7 +490,7 @@ public final class MetricsSupport extends HelidonRestServiceSupport
     private void getByName(ServerRequest req, ServerResponse res, Registry registry) {
         String metricName = req.path().param("metric");
 
-        RestServiceUtils.discourageCaching(res);
+        res.cachingStrategy(ServerResponse.CachingStrategy.NO_CACHING);
         registry.getOptionalMetricEntry(metricName)
                 .ifPresentOrElse(entry -> {
                     MediaType mediaType = findBestAccepted(req.headers());
@@ -539,7 +538,7 @@ public final class MetricsSupport extends HelidonRestServiceSupport
 
     private void getMultiple(ServerRequest req, ServerResponse res, Registry... registries) {
         MediaType mediaType = findBestAccepted(req.headers());
-        RestServiceUtils.discourageCaching(res);
+        res.cachingStrategy(ServerResponse.CachingStrategy.NO_CACHING);
         if (mediaType == MediaType.APPLICATION_JSON) {
             sendJson(res, toJsonData(registries));
         } else if (mediaType == MediaType.TEXT_PLAIN) {

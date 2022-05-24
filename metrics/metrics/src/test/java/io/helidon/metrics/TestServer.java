@@ -17,7 +17,6 @@
 package io.helidon.metrics;
 
 import javax.json.JsonObject;
-import javax.json.JsonValue;
 
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
@@ -29,7 +28,6 @@ import java.util.logging.Logger;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.media.jsonp.JsonpSupport;
-import io.helidon.servicecommon.rest.RestServiceUtils;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientRequestBuilder;
 import io.helidon.webclient.WebClientResponse;
@@ -55,6 +53,8 @@ import static org.hamcrest.Matchers.not;
 public class TestServer {
 
     private static final Logger LOGGER = Logger.getLogger(TestServer.class.getName());
+
+    private static final String[] EXPECTED_NO_CACHE_HEADER_SETTINGS = {"no-cache", "no-store", "must-revalidate"};
 
     private static WebServer webServer;
 
@@ -226,7 +226,7 @@ public class TestServer {
 
         assertThat("Headers suppressing caching",
                    response.headers().values(Http.Header.CACHE_CONTROL),
-                   containsInAnyOrder(RestServiceUtils.BUILT_IN_SERVICE_CACHE_CONTROL_SETTINGS.toArray(new String[0])));
+                   containsInAnyOrder(EXPECTED_NO_CACHE_HEADER_SETTINGS));
 
         response = webClientBuilder
                 .build()
@@ -238,7 +238,7 @@ public class TestServer {
 
         assertThat ("Headers suppressing caching in OPTIONS request",
                     response.headers().values(Http.Header.CACHE_CONTROL),
-                    not(containsInAnyOrder(RestServiceUtils.BUILT_IN_SERVICE_CACHE_CONTROL_SETTINGS.toArray(new String[0]))));
+                    not(containsInAnyOrder(EXPECTED_NO_CACHE_HEADER_SETTINGS)));
     }
 
 }

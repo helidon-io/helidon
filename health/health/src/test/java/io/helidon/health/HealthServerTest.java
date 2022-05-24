@@ -31,11 +31,11 @@ import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.media.common.MessageBodyReadableContent;
 import io.helidon.media.jsonp.JsonpSupport;
-import io.helidon.servicecommon.rest.RestServiceUtils;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientRequestBuilder;
 import io.helidon.webclient.WebClientResponse;
 import io.helidon.webserver.Routing;
+import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 import io.helidon.webserver.WebServer;
 
@@ -118,7 +118,7 @@ class HealthServerTest {
                     .await();
             assertThat("Header cache settings " + response.headers().toMap(),
                        response.headers().values(Http.Header.CACHE_CONTROL),
-                       containsInAnyOrder(RestServiceUtils.BUILT_IN_SERVICE_CACHE_CONTROL_SETTINGS.toArray(new String[0])));
+                       containsInAnyOrder("no-cache", "no-store", "must-revalidate"));
         } finally {
             if (response != null) {
                 response.close();
