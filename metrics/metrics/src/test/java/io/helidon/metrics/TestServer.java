@@ -54,7 +54,7 @@ public class TestServer {
 
     private static final Logger LOGGER = Logger.getLogger(TestServer.class.getName());
 
-    private static final String[] EXPECTED_NO_CACHE_HEADER_SETTINGS = {"no-cache", "no-store", "must-revalidate"};
+    private static final String[] EXPECTED_NO_CACHE_HEADER_SETTINGS = {"no-cache", "no-store", "must-revalidate", "no-transform"};
 
     private static WebServer webServer;
 

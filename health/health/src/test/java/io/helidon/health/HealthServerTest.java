@@ -118,7 +118,7 @@ class HealthServerTest {
                     .await();
             assertThat("Header cache settings " + response.headers().toMap(),
                        response.headers().values(Http.Header.CACHE_CONTROL),
-                       containsInAnyOrder("no-cache", "no-store", "must-revalidate"));
+                       containsInAnyOrder("no-cache", "no-store", "must-revalidate", "no-transform"));
         } finally {
             if (response != null) {
                 response.close();
