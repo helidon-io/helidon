@@ -307,7 +307,7 @@ public final class OidcSupport implements Service {
         path = path.startsWith("/") ? path : "/" + path;
         Optional<String> host = req.headers().first("host");
         if (host.isPresent()) {
-            String scheme = req.isSecure() ? "https" : "http";
+            String scheme = oidcConfig.forceHttpsRedirects() || req.isSecure() ? "https" : "http";
             return scheme + "://" + host.get() + path;
         } else {
             LOGGER.warning("Request without Host header received, yet post logout URI does not define a host");
