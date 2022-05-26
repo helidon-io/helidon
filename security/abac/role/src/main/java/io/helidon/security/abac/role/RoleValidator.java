@@ -116,7 +116,8 @@ public final class RoleValidator implements AbacValidator<RoleValidator.RoleConf
                         }
                         builder.permitAll(false);
                         builder.denyAll(false);
-                    } else if (annotation instanceof RolesContainer container) {
+                    } else if (annotation instanceof RolesContainer) {
+                        RolesContainer container = (RolesContainer) annotation;
                         for (Roles role : container.value()) {
                             if (role.subjectType() == SubjectType.USER) {
                                 roles.addAll(Arrays.asList(role.value()));
