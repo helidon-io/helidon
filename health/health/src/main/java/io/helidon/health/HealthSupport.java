@@ -190,7 +190,9 @@ public final class HealthSupport extends HelidonRestServiceSupport {
             if (status == Http.Status.OK_200.code() && !sendDetails) {
                 status = Http.Status.NO_CONTENT_204.code();
             }
-            res.status(status);
+            res.cachingStrategy(ServerResponse.CachingStrategy.NO_CACHING)
+                    .status(status);
+
             if (sendDetails) {
                 res.send(jsonpWriter.marshall(hres.json));
             } else {

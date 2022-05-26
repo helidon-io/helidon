@@ -208,6 +208,7 @@ public final class MetricsSupport extends HelidonRestServiceSupport
     }
 
     private static void getAll(ServerRequest req, ServerResponse res, Registry registry) {
+        res.cachingStrategy(ServerResponse.CachingStrategy.NO_CACHING);
         if (registry.empty()) {
             res.status(Http.Status.NO_CONTENT_204);
             res.send();
@@ -232,6 +233,7 @@ public final class MetricsSupport extends HelidonRestServiceSupport
             return;
         }
 
+        // Options returns only the metadata, so it's OK to allow caching.
         if (req.headers().isAccepted(MediaType.APPLICATION_JSON)) {
             sendJson(res, toJsonMeta(registry));
         } else {
@@ -515,6 +517,7 @@ public final class MetricsSupport extends HelidonRestServiceSupport
     private void getByName(ServerRequest req, ServerResponse res, Registry registry) {
         String metricName = req.path().param("metric");
 
+        res.cachingStrategy(ServerResponse.CachingStrategy.NO_CACHING);
         registry.getOptionalMetricEntry(metricName)
                 .ifPresentOrElse(entry -> {
                     MediaType mediaType = findBestAccepted(req.headers());
@@ -562,6 +565,7 @@ public final class MetricsSupport extends HelidonRestServiceSupport
 
     private void getMultiple(ServerRequest req, ServerResponse res, Registry... registries) {
         MediaType mediaType = findBestAccepted(req.headers());
+        res.cachingStrategy(ServerResponse.CachingStrategy.NO_CACHING);
         if (mediaType == MediaType.APPLICATION_JSON) {
             sendJson(res, toJsonData(registries));
         } else if (mediaType == MediaType.TEXT_PLAIN) {
@@ -573,6 +577,7 @@ public final class MetricsSupport extends HelidonRestServiceSupport
     }
 
     private void optionsMultiple(ServerRequest req, ServerResponse res, Registry... registries) {
+        // Options returns metadata only, so do not discourage caching.
         if (req.headers().isAccepted(MediaType.APPLICATION_JSON)) {
             sendJson(res, toJsonMeta(registries));
         } else {
@@ -586,6 +591,7 @@ public final class MetricsSupport extends HelidonRestServiceSupport
 
         Optional.ofNullable(registry.metadataWithIDs(metricName))
                 .ifPresentOrElse(entry -> {
+                    // Options returns only metadata, so do not discourage caching.
                     if (req.headers().isAccepted(MediaType.APPLICATION_JSON)) {
                         JsonObjectBuilder builder = JSON.createObjectBuilder();
                         // The returned list of metric IDs is guaranteed to have at least one element at this point.
