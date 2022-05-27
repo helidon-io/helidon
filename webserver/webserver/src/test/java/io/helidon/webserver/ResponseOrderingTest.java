@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -116,7 +116,7 @@ public class ResponseOrderingTest {
     @Test
     public void testOrdering() throws Exception {
         WebClient webClient = WebClient.builder()
-                .baseUri("http://0.0.0.0:" + webServer.port())
+                .baseUri("http://127.0.0.1:" + webServer.port())
                 .build();
         ArrayList<Long> returnedIds = new ArrayList<>();
 
@@ -137,7 +137,7 @@ public class ResponseOrderingTest {
     @Test
     public void testContentOrdering() throws Exception {
         WebClient webClient = WebClient.builder()
-                .baseUri("http://0.0.0.0:" + webServer.port() + "/stream")
+                .baseUri("http://127.0.0.1:" + webServer.port() + "/stream")
                 .build();
 
         StringBuilder sb = new StringBuilder();
