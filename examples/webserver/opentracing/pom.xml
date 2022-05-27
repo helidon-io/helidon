@@ -37,6 +37,7 @@
 
     <properties>
         <mainClass>io.helidon.webserver.examples.opentracing.Main</mainClass>
+        <version.lib.mockito>2.23.4</version.lib.mockito>
     </properties>
 
     <dependencies>
@@ -65,6 +66,7 @@
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
+            <version>${version.lib.mockito}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
