@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 package io.helidon.metrics.api;
 
 import java.util.ServiceLoader;
+import java.util.concurrent.Semaphore;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -83,6 +85,8 @@ class RegistryFactoryManager {
         return provider;
     }
 
+    private static final Semaphore SETTINGS_ACCESS = new Semaphore(1);
+
     private RegistryFactoryManager() {
     }
 
@@ -105,21 +109,36 @@ class RegistryFactoryManager {
         return INSTANCE.get();
     }
 
-    static synchronized RegistryFactory getInstance(MetricsSettings metricsSettings) {
-        RegistryFactoryManager.metricsSettings = metricsSettings;
-        RegistryFactory result = INSTANCE.get();
-        result.update(metricsSettings);
-        return result;
+    static RegistryFactory getInstance(MetricsSettings metricsSettings) {
+
+        return accessMetricsSettings(() -> {
+            RegistryFactoryManager.metricsSettings = metricsSettings;
+            RegistryFactory result = INSTANCE.get();
+            result.update(metricsSettings);
+            return result;
+        });
     }
 
-    static synchronized RegistryFactory getInstance(ComponentMetricsSettings componentMetricsSettings) {
-        return componentMetricsSettings.isEnabled()
+    static RegistryFactory getInstance(ComponentMetricsSettings componentMetricsSettings) {
+
+        return accessMetricsSettings(() -> componentMetricsSettings.isEnabled()
                 ? INSTANCE.get()
-                : NO_OP_INSTANCE;
+                : NO_OP_INSTANCE);
     }
 
     @Deprecated
     static RegistryFactory getInstance(Config config) {
         return getInstance(MetricsSettings.create(config));
+    }
+
+    private static <T> T accessMetricsSettings(Supplier<T> operation) {
+        try {
+            SETTINGS_ACCESS.acquire();
+            T result = operation.get();
+            SETTINGS_ACCESS.release();
+            return result;
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

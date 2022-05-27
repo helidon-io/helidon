@@ -164,7 +164,7 @@ public class RegistryFactory implements io.helidon.metrics.api.RegistryFactory {
         });
     }
 
-    private synchronized void ensureBase() {
+    private void ensureBase() {
         if (null == registries.get(Type.BASE)) {
             accessMetricsSettings(() -> {
                 Registry registry = BaseRegistry.create(metricsSettings);

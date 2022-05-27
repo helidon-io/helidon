@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -140,6 +141,8 @@ public abstract class OpenAPISupport implements Service {
      */
     private static SnakeYAMLParserHelper<ExpandedTypeDescription> helper = null;
 
+    private static final Semaphore HELPER_ACCESS = new Semaphore(1, true);
+
     private final String webContext;
 
     private OpenAPI model = null;
@@ -155,6 +158,8 @@ public abstract class OpenAPISupport implements Service {
     private final OpenApiConfig openApiConfig;
     private final OpenApiStaticFile openApiStaticFile;
     private final Supplier<List<? extends IndexView>> indexViewsSupplier;
+
+    private final Semaphore modelAccess = new Semaphore(1, true);
 
     /**
      * Creates a new instance of {@code OpenAPISupport}.
@@ -196,11 +201,13 @@ public abstract class OpenAPISupport implements Service {
         model();
     }
 
-    private synchronized OpenAPI model() {
-        if (model == null) {
-            model = prepareModel(openApiConfig, openApiStaticFile, indexViewsSupplier.get());
-        }
-        return model;
+    private OpenAPI model() {
+        return access(modelAccess, () -> {
+            if (model == null) {
+                model = prepareModel(openApiConfig, openApiStaticFile, indexViewsSupplier.get());
+            }
+            return model;
+        });
     }
 
     private void registerJsonpSupport(ServerRequest req, ServerResponse res) {
@@ -210,12 +217,14 @@ public abstract class OpenAPISupport implements Service {
         req.next();
     }
 
-    static synchronized SnakeYAMLParserHelper<ExpandedTypeDescription> helper() {
-        if (helper == null) {
-            helper = SnakeYAMLParserHelper.create(ExpandedTypeDescription::create);
-            adjustTypeDescriptions(helper.types());
-        }
-        return helper;
+    static SnakeYAMLParserHelper<ExpandedTypeDescription> helper() {
+        return access(HELPER_ACCESS, () -> {
+            if (helper == null) {
+                helper = SnakeYAMLParserHelper.create(ExpandedTypeDescription::create);
+                adjustTypeDescriptions(helper.types());
+            }
+            return helper;
+        });
     }
 
     static Map<Class<?>, ExpandedTypeDescription> buildImplsToTypes(SnakeYAMLParserHelper<ExpandedTypeDescription> helper) {
@@ -306,28 +315,27 @@ public abstract class OpenAPISupport implements Service {
     private OpenAPI prepareModel(OpenApiConfig config, OpenApiStaticFile staticFile,
             List<? extends IndexView> filteredIndexViews) {
         try {
-            synchronized (OpenApiDocument.INSTANCE) {
-                OpenApiDocument.INSTANCE.reset();
-                OpenApiDocument.INSTANCE.config(config);
-                OpenApiDocument.INSTANCE.modelFromReader(OpenApiProcessor.modelFromReader(config, getContextClassLoader()));
-                if (staticFile != null) {
-                    OpenApiDocument.INSTANCE.modelFromStaticFile(OpenAPIParser.parse(helper().types(), staticFile.getContent(),
-                            OpenAPIMediaType.byFormat(staticFile.getFormat())));
-                }
-                if (isAnnotationProcessingEnabled(config)) {
-                    expandModelUsingAnnotations(config, filteredIndexViews);
-                } else {
-                    LOGGER.log(Level.FINE, "OpenAPI Annotation processing is disabled");
-                }
-                OpenApiDocument.INSTANCE.filter(OpenApiProcessor.getFilter(config, getContextClassLoader()));
-                OpenApiDocument.INSTANCE.initialize();
-                OpenAPIImpl instance = OpenAPIImpl.class.cast(OpenApiDocument.INSTANCE.get());
-
-                // Create a copy, primarily to avoid problems during unit testing.
-                // The SmallRye MergeUtil omits the openapi value, so we need to set it explicitly.
-                return MergeUtil.merge(new OpenAPIImpl(), instance)
-                        .openapi(instance.getOpenapi());
+            // The write lock guarding the model has already been acquired.
+            OpenApiDocument.INSTANCE.reset();
+            OpenApiDocument.INSTANCE.config(config);
+            OpenApiDocument.INSTANCE.modelFromReader(OpenApiProcessor.modelFromReader(config, getContextClassLoader()));
+            if (staticFile != null) {
+                OpenApiDocument.INSTANCE.modelFromStaticFile(OpenAPIParser.parse(helper().types(), staticFile.getContent(),
+                        OpenAPIMediaType.byFormat(staticFile.getFormat())));
             }
+            if (isAnnotationProcessingEnabled(config)) {
+                expandModelUsingAnnotations(config, filteredIndexViews);
+            } else {
+                LOGGER.log(Level.FINE, "OpenAPI Annotation processing is disabled");
+            }
+            OpenApiDocument.INSTANCE.filter(OpenApiProcessor.getFilter(config, getContextClassLoader()));
+            OpenApiDocument.INSTANCE.initialize();
+            OpenAPIImpl instance = OpenAPIImpl.class.cast(OpenApiDocument.INSTANCE.get());
+
+            // Create a copy, primarily to avoid problems during unit testing.
+            // The SmallRye MergeUtil omits the openapi value, so we need to set it explicitly.
+            return MergeUtil.merge(new OpenAPIImpl(), instance)
+                    .openapi(instance.getOpenapi());
         } catch (IOException ex) {
             throw new RuntimeException("Error initializing OpenAPI information", ex);
         }
@@ -913,6 +921,17 @@ public abstract class OpenAPISupport implements Service {
                                         "]")));
             }
             return null;
+        }
+    }
+
+    private static <T> T access(Semaphore guard, Supplier<T> operation) {
+        try {
+            guard.acquire();
+            T result = operation.get();
+            guard.release();
+            return result;
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.microprofile.grpc.core;
 
 import java.util.Objects;
+import java.util.concurrent.Semaphore;
 import java.util.function.Supplier;
 
 import io.grpc.Status;
@@ -115,6 +116,8 @@ public interface Instance {
 
         private T instance;
 
+        private final Semaphore instanceAccess = new Semaphore(1, true);
+
         private SingletonInstance(Class<T> instanceClass) {
             this.instanceClass = instanceClass;
         }
@@ -129,15 +132,28 @@ public interface Instance {
             return ensureInstance();
         }
 
-        private synchronized T ensureInstance() {
-            if (instance == null) {
-                try {
-                    instance = instanceClass.newInstance();
-                } catch (Throwable e) {
-                    throw Status.INTERNAL.withCause(e).asRuntimeException();
+        private T ensureInstance() {
+            return accessInstance(() -> {
+                if (instance == null) {
+                    try {
+                        instance = instanceClass.newInstance();
+                    } catch (Throwable e) {
+                        throw Status.INTERNAL.withCause(e).asRuntimeException();
+                    }
                 }
+                return instance;
+            });
+        }
+
+        private <T> T accessInstance(Supplier<T> operation) {
+            try {
+                instanceAccess.acquire();
+                T result = operation.get();
+                instanceAccess.release();
+                return result;
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
             }
-            return instance;
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,10 +31,6 @@ import java.util.logging.Logger;
  * <p>
  * Some enrollments might arrive before the manager is started. We save those and act on them once the
  * manager starts. This makes sure the executor's thread starts only at native image runtime.
- * </p>
- * <p>
- * In production use, starting and stopping the executor and even enrolling callbacks are not performance-critical operations,
- * so simple synchronization on methods which access shared data is clear and sufficient.
  * </p>
  */
 class PeriodicExecutor {
