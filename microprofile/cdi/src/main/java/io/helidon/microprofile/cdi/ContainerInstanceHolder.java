@@ -17,8 +17,8 @@ package io.helidon.microprofile.cdi;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Supplier;
 
 /**
@@ -34,7 +34,7 @@ final class ContainerInstanceHolder {
     private static final List<Runnable> RESET_LISTENERS = new LinkedList<>();
     private static boolean isReset = false;
 
-    private static final Semaphore accessGuard = new Semaphore(1, true);
+    private static final ReentrantReadWriteLock ACCESS_GUARD = new ReentrantReadWriteLock();
 
     private ContainerInstanceHolder() {
     }
@@ -86,12 +86,10 @@ final class ContainerInstanceHolder {
 
     private static <T> T access(Supplier<T> operation) {
         try {
-            accessGuard.acquire();
-            T result = operation.get();
-            accessGuard.release();
-            return result;
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+            ACCESS_GUARD.writeLock().lock();
+            return operation.get();
+        } finally {
+            ACCESS_GUARD.writeLock().unlock();
         }
     }
 }
