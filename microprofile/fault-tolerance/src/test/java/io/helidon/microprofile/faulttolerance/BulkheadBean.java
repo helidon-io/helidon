@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package io.helidon.microprofile.faulttolerance;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Semaphore;
+import java.util.function.Supplier;
 
 import org.eclipse.microprofile.faulttolerance.Asynchronous;
 import org.eclipse.microprofile.faulttolerance.Bulkhead;
@@ -37,30 +39,52 @@ class BulkheadBean {
         private int concurrentCalls;
         private int totalCalls;
 
-        synchronized void increment() {
-            currentCalls++;
-            if (currentCalls > concurrentCalls) {
-                concurrentCalls = currentCalls;
+        private final Semaphore accessGuard = new Semaphore(1, true);
+
+        void increment() {
+            access(() -> {
+                currentCalls++;
+                if (currentCalls > concurrentCalls) {
+                    concurrentCalls = currentCalls;
+                }
+                totalCalls++;
+                return null;
+            });
+        }
+
+        void decrement() {
+            access(() -> {
+                currentCalls--;
+                return null;
+            });
+        }
+
+        int concurrentCalls() {
+            return access(() -> concurrentCalls);
+        }
+
+        int totalCalls() {
+            return access(() -> totalCalls);
+        }
+
+        void reset() {
+            access(() -> {
+                currentCalls = 0;
+                concurrentCalls = 0;
+                totalCalls = 0;
+                return null;
+            });
+        }
+
+        private <T> T access(Supplier<T> operation) {
+            try {
+                accessGuard.acquire();
+                T result = operation.get();
+                accessGuard.release();
+                return result;
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
             }
-            totalCalls++;
-        }
-
-        synchronized void decrement() {
-            currentCalls--;
-        }
-
-        synchronized int concurrentCalls() {
-            return concurrentCalls;
-        }
-
-        synchronized int totalCalls() {
-            return totalCalls;
-        }
-
-        synchronized void reset() {
-            currentCalls = 0;
-            concurrentCalls = 0;
-            totalCalls = 0;
         }
     }
 

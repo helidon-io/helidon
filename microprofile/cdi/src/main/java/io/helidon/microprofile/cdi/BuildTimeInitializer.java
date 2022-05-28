@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,9 @@
  */
 package io.helidon.microprofile.cdi;
 
+import java.util.concurrent.Semaphore;
+import java.util.function.Supplier;
+
 import io.helidon.common.LogConfig;
 
 /**
@@ -25,6 +28,8 @@ import io.helidon.common.LogConfig;
 final class BuildTimeInitializer {
     private static volatile HelidonContainerImpl container;
 
+    private static final Semaphore CONTAINER_ACCESS = new Semaphore(1, true);
+
     static {
         // need to initialize logging as soon as possible
         LogConfig.initClass();
@@ -34,21 +39,37 @@ final class BuildTimeInitializer {
     private BuildTimeInitializer() {
     }
 
-    static synchronized HelidonContainerImpl get() {
-        if (null == container) {
-            createContainer();
-        }
+    static HelidonContainerImpl get() {
+        return accessContainer(() -> {
+            if (null == container) {
+                createContainer();
+            }
 
-        return container;
+            return container;
+        });
     }
 
-    static synchronized void reset() {
-        container = null;
+    static void reset() {
+        accessContainer(() -> {
+            container = null;
+            return null;
+        });
     }
 
     private static void createContainer() {
         // static initialization to support GraalVM native image
         container = HelidonContainerImpl.create();
         ContainerInstanceHolder.addListener(BuildTimeInitializer::reset);
+    }
+
+    private static <T> T accessContainer(Supplier<T> operation) {
+        try {
+            CONTAINER_ACCESS.acquire();
+            T result = operation.get();
+            CONTAINER_ACCESS.release();
+            return result;
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
