@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -23,6 +23,20 @@
 :feature-name: Metrics
 :common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 
+
+== ToC
+
+- Overview
+- Maven
+- Usage
+- API
+- Configuration
+- Reference
+- Examples
+- Other
+
+== Overview
+
 Helidon SE provides the following to support metrics:
 
 1. The endpoint `/metrics`: A configurable endpoint that exposes metrics information in JSON format (as specified by the
@@ -43,7 +57,8 @@ include::{common-deps-page-prefix-inc}[tag=maven-dependency]
     </dependency>
 ----
 
-== Using Metrics in Your Application
+== Usage
+
 To enable Metrics, register it with the WebServer.
 
 [source,java]
@@ -95,8 +110,7 @@ NOTE: Helidon-provided endpoints for `/metrics` do their work synchronously, usi
 For example, if you implement your own application-specific metric types, you will write logic to format the JSON and OpenMetrics output for those metric types. Helidon invokes this formatting logic whenever a client accesses the /metrics endpoints, so make that formatting code as efficient as possible.
 
 
-
-== Accessing Metrics Endpoint
+=== Accessing Metrics Endpoint
 
 Access metrics data via the `/metrics` endpoint. Two reporting formats
 are supported. The HTTP Accept header sent by the client determines
@@ -116,6 +130,25 @@ base:classloader_total_loaded_class_count 3157
 #...
 ----
 
+In addition to your application metrics the reports contain other
+metrics of interest such as system and VM information.
+
+== API
+
+TODO:
+
+== Configuration
+
+TODO:
+
+== Reference
+
+TODO:
+
+== Examples
+
+TODO: Extend
+
 [source,bash]
 .Example Reporting: JSON format
 ----
@@ -127,11 +160,13 @@ curl -s -H 'Accept: application/json' -X GET http://localhost:8080/metrics/ | js
 #...
 ----
 
-In addition to your application metrics the reports contain other
-metrics of interest such as system and VM information.
+== Additional Information
+
 
 For full details see the
 https://github.com/eclipse/microprofile-metrics/releases[MicroProfile Metrics]
 specification.
 
 The Metrics component in Helidon SE is the core for the Helidon MP implementation of the MicroProfile Metrics specification.
+
+
