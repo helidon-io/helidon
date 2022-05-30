@@ -24,6 +24,21 @@
 :feature-name: GraphQL
 :common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 
+== ToC
+
+- Overview
+- Maven
+- Usage
+- API
+- Configuration
+- Reference
+- Examples
+- Other
+
+== Overview
+
+TODO: extend overview
+
 Helidon GraphQL Server provides a framework for creating link:https://github.com/graphql-java/graphql-java[GraphQL] applications.
 
 == Experimental
@@ -41,7 +56,23 @@ include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 </dependency>
 ----
 
-== Quick Start
+== Usage
+
+TODO:
+
+== API
+
+TODO:
+
+== Configuration
+
+TODO:
+
+== Reference
+
+TODO:
+
+== Examples
 
 Here is the code for a minimalist GraphQL application that exposes 2 queries.
 
@@ -97,7 +128,7 @@ The example above deploys a very simple service exposing the `/graphql` endpoint
 
 You can then probe the endpoints:
 
-1. Hello word endpoint
+1. Hello world endpoint
 +
 [source,bash]
 ----
@@ -114,4 +145,8 @@ curl -X POST http://127.0.0.1:PORT/graphql -d '{"query":"query { helloInDifferen
 
 {"data":{"helloInDifferentLanguages":["Bonjour","Hola","Zdravstvuyte","Nǐn hǎo","Salve","Gudday","Konnichiwa","Guten Tag"]}}
 ----
+
+== Additional Information
+
+TODO:
 
