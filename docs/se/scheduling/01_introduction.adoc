@@ -25,6 +25,23 @@
 :feature-name: Scheduling
 :common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 
+
+== ToC
+
+- Overview
+- Maven
+- Usage
+- API
+- Configuration
+- Reference
+- Examples
+- Other
+
+== Overview
+
+TODO: add overview
+
+
 include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 
 [source,xml]
@@ -35,8 +52,22 @@ include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 </dependency>
 ----
 
-== Scheduling
+== Usage
 For scheduling periodic tasks it is possible to choose fixed rate setup or Cron expression.
+
+== API
+
+TODO:
+
+== Configuration
+
+TODO:
+
+== Reference
+
+TODO:
+
+== Examples
 
 === Fixed rate
 For simple fixed rate invocation use .
@@ -55,8 +86,9 @@ Scheduling.fixedRateBuilder()
 Metadata like human-readable interval description or configured values are available through
 FixedRateInvocation provided as task parameter.
 
+
 [source,java]
-.Example with ivocation metadata
+.Example with invocation metadata
 ----
 Scheduling.fixedRateBuilder()
         .delay(10)
@@ -84,10 +116,14 @@ Metadata like human-readable interval description or configured values are avail
 CronInvocation provided as task parameter.
 
 [source,java]
-.Example with ivocation metadata
+.Example with invocation metadata
 ----
 Scheduling.cronBuilder()
     .expression("0 15 8 ? * *")
     .task(inv -> System.out.println("Method invoked " + inv.description()))
     .build();
 ----
+
+== Additional Information
+
+TODO: add if applicable
