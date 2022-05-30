@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -25,9 +25,23 @@
 :common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 :feature-name: OCI Autonomous Transaction Processing
 
+
+== ToC
+
+- Overview
+- Maven
+- Usage
+- API
+- Configuration
+- Reference
+- Examples
+- Other
+
+== Overview
+
 The Helidon SE OCI Autonomous Transaction Processing integration provides a reactive API to ATP database in Oracle cloud.
 
-== Experimental
+=== Experimental
 
 WARNING: Helidon integration with Oracle Cloud Infrastructure is still experimental and not intended for production use. APIs and features have not yet been fully tested and are subject to change.
 
@@ -41,9 +55,24 @@ include::{common-deps-page-prefix-inc}[tag=maven-dependency]
         </dependency>
 ----
 
+== Usage
 
-== Setting up the Autonomous Transaction Processing
+TODO:
 
+== API
+
+TODO:
+
+== Configuration
+
+TODO:
+
+== Reference
+
+TODO:
+
+
+== Examples
 
 In order to use the OCI Autonomous Transaction Processing integration, the following setup should be made:
 
@@ -121,3 +150,7 @@ To generate wallet file for OCI Autonomous Transaction Processing:
 <4> Read the first column from first row of result.
 
 For complete code, about how to create DBClient using wallet info, please see https://github.com/oracle/helidon/tree/master/examples/integrations/oci/atp-reactive[ATP Reactive Example]
+
+== Additional Information
+
+TODO:
