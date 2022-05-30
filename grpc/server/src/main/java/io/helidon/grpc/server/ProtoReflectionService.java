@@ -90,8 +90,6 @@ import static io.grpc.MethodDescriptor.MethodType.SERVER_STREAMING;
  */
 public final class ProtoReflectionService extends ServerReflectionGrpc.ServerReflectionImplBase {
 
-    private final Object lock = new Object();
-
     private final Semaphore indexAccess = new Semaphore(1, true);
 
     private final Map<Server, ServerReflectionIndex> serverReflectionIndexes = new WeakHashMap<>();
