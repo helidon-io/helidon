@@ -34,6 +34,20 @@
 :common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 :common-openapi-doc: ../../shared/openapi/openapi-shared.adoc
 
+
+== ToC
+
+- Overview
+- Maven
+- Usage
+- API
+- Configuration
+- Reference
+- Examples
+- Other
+
+== Overview
+
 Easily allow your Helidon SE application to serve an OpenAPI document
 that describes your application's endpoints.
 
@@ -47,13 +61,13 @@ include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 </dependency>
 ----
 
-== OpenAPI support in Helidon SE
+== Usage
 
 You can very simply add support for OpenAPI to your Helidon SE application. This 
 document shows what changes you need to make to your application and how to access
 the OpenAPI document for your application at runtime.
 
-== Changing your application
+=== Changing your application
 OpenAPI support in Helidon SE largely follows the 
 link:{mp-openapi-spec}[MicroProfile OpenAPI spec].
 But Helidon SE does not process annotations, which is one way to convey OpenAPI
@@ -137,7 +151,12 @@ If you implement either a model reader or a filter, add this dependency to your
 </dependency>
 ----
 
-=== Update application configuration
+== API
+
+TODO:
+
+== Configuration
+
 Helidon SE support for OpenAPI supports a handful of config properties patterned after 
 those described in the MicroProfile OpenAPI spec, two of which were mentioned above.
 
@@ -163,7 +182,13 @@ Set these config properties in one of the config sources your app uses so the
 Helidon config system will load them. Often developers use `application.yaml` at the 
 top level of the application JAR.
 
-== Accessing the OpenAPI document
+== Reference
+
+TODO:
+
+== Examples
+
+=== Accessing the OpenAPI document
 Now your Helidon SE application will automatically respond to an additional endpoint --
  `/openapi` -- and it will return the OpenAPI document describing the endpoints
 in your application.
@@ -173,5 +198,9 @@ There is not yet an adopted IANA YAML media type, but a proposed one specificall
 for OpenAPI documents that has some support is `application/vnd.oai.openapi`.
 That is what Helidon returns, by default.
 
-In addition a client can specify the HTTP header `Accept:` as either `application/vnd.oai.openapi+json` or `application/json`
+In addition, a client can specify the HTTP header `Accept:` as either `application/vnd.oai.openapi+json` or `application/json`
 to request JSON. Alternatively, the client can pass the query parameter `format` as either `JSON` or `YAML` to receive `application/json` or `application/vnd.oai.openapi` (YAML) output, respectively.
+
+== Additional Information
+
+TODO: add link to docs to MicroProfile OpenAPI?
