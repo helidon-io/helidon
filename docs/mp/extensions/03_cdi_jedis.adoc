@@ -36,7 +36,7 @@
 == ToC
 
 - Overview
-- Maven
+- Maven Coordinates
 - Usage
 - API
 - Configuration
