@@ -15,7 +15,7 @@
  */
 package io.helidon.microprofile.cdi;
 
-import java.util.concurrent.Semaphore;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Supplier;
 
 import io.helidon.common.LogConfig;
@@ -28,7 +28,7 @@ import io.helidon.common.LogConfig;
 final class BuildTimeInitializer {
     private static volatile HelidonContainerImpl container;
 
-    private static final Semaphore CONTAINER_ACCESS = new Semaphore(1, true);
+    private static final ReentrantReadWriteLock CONTAINER_ACCESS = new ReentrantReadWriteLock();
 
     static {
         // need to initialize logging as soon as possible
@@ -58,18 +58,19 @@ final class BuildTimeInitializer {
 
     private static void createContainer() {
         // static initialization to support GraalVM native image
-        container = HelidonContainerImpl.create();
-        ContainerInstanceHolder.addListener(BuildTimeInitializer::reset);
+        accessContainer(() -> {
+            container = HelidonContainerImpl.create();
+            ContainerInstanceHolder.addListener(BuildTimeInitializer::reset);
+            return null;
+        });
     }
 
     private static <T> T accessContainer(Supplier<T> operation) {
+        CONTAINER_ACCESS.writeLock().lock();
         try {
-            CONTAINER_ACCESS.acquire();
-            T result = operation.get();
-            CONTAINER_ACCESS.release();
-            return result;
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+            return operation.get();
+        } finally {
+            CONTAINER_ACCESS.writeLock().unlock();
         }
     }
 }
