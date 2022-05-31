@@ -24,6 +24,22 @@
 :feature-name: WebClient
 :common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 
+
+== ToC
+
+- Overview
+- Maven
+- Usage
+- API
+- Configuration
+- Reference
+- Examples
+- Additional Information
+
+== Overview
+
+TODO: add short description
+
 include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 
 [source,xml]
@@ -34,7 +50,7 @@ include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 </dependency>
 ----
 
-== Overview
+== Usage
 
 WebClient is an HTTP client for Helidon SE 2.0. It handles the responses to the HTTP requests in a reactive way.
 
@@ -52,7 +68,15 @@ Follows the redirect chain and perform requests on the correct endpoint by itsel
 * *Tracing, metrics and security propagation* +
 Automatically propagates the configured tracing, metrics and security settings of the Helidon WebServer to the WebClient and uses them during request and response.
 
-== Configuring the WebClient
+== API
+
+TODO:
+
+== Reference
+
+TODO:
+
+== Configuration
 
 The WebClient default configuration may be suitable in most use cases. However, you can configure it to suit your specific requirements.
 
@@ -135,14 +159,16 @@ client:
 <4> Proxy configuration
 <5> TLS configuration
 
-== Creating the WebClient
+
+== Examples
+
+=== Creating the WebClient
 
 You can create WebClient by executing `WebClient.create()` method. This will create an instance of client with default settings and without a base uri set.
 
 To change the default settings and register
 additional services, you can use simple builder that allows you to customize the client behavior.
 
-=== Example
 .Create a WebClient with simple builder:
 [source,java]
 ----
@@ -151,7 +177,7 @@ WebClient client = WebClient.builder()
         .build();
 ----
 
-== Creating and Executing the WebClient Request
+=== Creating and Executing the WebClient Request
 
 WebClient executes requests to the target endpoints and returns specific response type.
 
@@ -170,7 +196,7 @@ For the final execution, use the following methods with variations and different
 * `Single<T> submit(Object entity, Class<T> responseType)`
 * `Single<T> request(Class<T> responseType)`
 
-=== Example
+
 .Execute a simple GET request to endpoint:
 [source,java]
 ----
@@ -179,7 +205,7 @@ Single<String> response = client.get()
         .request(String.class);
 ----
 
-=== Request Configuration
+==== Request Configuration
 
 The request settings are based on the following optional parameters, and change when a specific request is executed.
 
@@ -201,12 +227,11 @@ The request settings are based on the following optional parameters, and change 
 For more details, see the https://helidon.io/docs/latest/apidocs/io/helidon/webserver/RequestHeaders.html[Request Headers] API.
 
 
-== Adding JSON Processing Media Support to the WebClient
+=== Adding JSON Processing Media Support to the WebClient
 
 JSON Processing (JSON-P) media support is not present in the WebClient by default. So, in this case, you must first register it before making a request.
 This example shows how to register `JsonpSupport` using the following two methods.
 
-=== Example
 
 [source,java]
 .Register JSON-P support to the WebClient.
@@ -236,3 +261,100 @@ requestBuilder.request(JsonObject.class)
 ----
 <1> Adds JSON-P writer only to this request.
 <2> Adds JSON-P reader only to this request.
+
+== Additional Information
+
+
+=== WebClient TLS configuration
+
+Configure TLS either programmatically or by the Helidon configuration framework.
+
+=== Configuring TLS in your code
+
+The one way to configure TLS in WebClient is in your application code.
+
+[source,java]
+----
+KeyConfig keyConfig = KeyConfig.keystoreBuilder()
+                //Whether this keystore is also trust store
+                .trustStore()
+                //Keystore location/name
+                .keystore(Resource.create("client.p12"))
+                //Password to the keystore
+                .keystorePassphrase("password")
+                .build();
+
+WebClient.builder()
+         .tls(WebClientTls.builder()
+               .certificateTrustStore(keyConfig)
+               .clientKeyStore(keyConfig)
+               .build())
+         .build();
+----
+
+=== Configuring TLS in the config file
+
+It is also possible to configure TLS via the config file.
+
+[source,yaml]
+.WebClient TLS configuration file `application.yaml`
+----
+webclient:
+  tls:
+    #Server part defines settings for server certificate validation and truststore
+    server:
+      keystore:
+        passphrase: "password"
+        trust-store: true
+        resource:
+          resource-path: "keystore.p12"
+    #Client part defines access to the keystore with client private key or certificate
+    client:
+      keystore:
+        passphrase: "password"
+        resource:
+          resource-path: "keystore.p12"
+----
+Then, in your application code, load the configuration from that file.
+
+[source,java]
+.WebClient initialization using the `application.yaml` file located on the classpath
+----
+Config config = Config.create();
+WebClient webClient = WebClient.create(config.get("webclient"));
+----
+Or you can only create WebClientTls instance based on the config file.
+
+[source,java]
+.WebClientTls instance based on `application.yaml` file located on the classpath
+----
+Config config = Config.create();
+WebClientTls.builder()
+    .config(config.get("webclient.tls"))
+    .build();
+----
+
+=== Configuration options
+
+See all configuration options
+link:{javadoc-base-url-api}/WebClientTls.html[here].
+
+Available server certificate configuration options:
+
+[cols="^2s,<2,<2,<6"]
+|===
+|Configuration key |Default value ^|Java type  ^|Description
+
+|`disable-hostname-verification` |false |boolean |Whether hostname verification should be performed
+|`trust-all` |false |boolean |Whether all of the server certificates should be trusted
+|`keystore` |{nbsp} |Object |Keystore configuration, please follow the example above
+|===
+
+Available client configuration options:
+
+[cols="^2s,<2,<2,<6"]
+|===
+|Configuration key |Default value ^|Java type  ^|Description
+
+|`keystore` |{nbsp} |Object |Keystore configuration, please follow the example above
+|===
