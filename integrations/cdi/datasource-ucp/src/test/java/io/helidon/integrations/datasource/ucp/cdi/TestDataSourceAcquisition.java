@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import io.helidon.microprofile.server.Server;
 
 import oracle.ucp.jdbc.PoolDataSource;
 import oracle.ucp.jdbc.PoolDataSourceImpl;
+import oracle.ucp.jdbc.PoolXADataSource;
 
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.jboss.weld.proxy.WeldClientProxy;
@@ -103,6 +104,12 @@ class TestDataSourceAcquisition {
         pds.setDescription("A test datasource");
     }
 
+    private void configure(@Observes @Named("testxa") final PoolXADataSource pds) throws SQLException {
+        assertNull(pds.getDescription());
+        assertFalse(pds.getClass().isSynthetic());
+        pds.setDescription("A test datasource");
+    }
+  
     @Test
     void testDataSourceAcquisition() {
 
