@@ -26,7 +26,6 @@ import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.Meter;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricType;
-import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.Snapshot;
 import org.eclipse.microprofile.metrics.Timer;
 
@@ -117,7 +116,9 @@ final class HelidonTimer extends MetricImpl implements Timer {
     @Override
     public void prometheusData(StringBuilder sb, MetricID metricID, boolean withHelpType) {
 
-        PrometheusName name = PrometheusName.create(this, metricID);
+        // In Prometheus, times are always expressed in seconds. So force the TimeUnits value accordingly, ignoring
+        // whatever units were specified in the timer's metadata.
+        PrometheusName name = PrometheusName.create(this, metricID, TimeUnits.PROMETHEUS_TIMER_CONVERSION_TIME_UNITS);
 
         appendPrometheusTimerStatElement(sb, name, "rate_per_second", withHelpType, "gauge", getMeanRate());
         appendPrometheusTimerStatElement(sb, name, "one_min_rate_per_second", withHelpType, "gauge", getOneMinuteRate());
@@ -157,48 +158,6 @@ final class HelidonTimer extends MetricImpl implements Timer {
                 .add(jsonFullKey("p999", metricID), snapshot.get999thPercentile() / divisor);
 
         builder.add(metricID.getName(), myBuilder);
-    }
-
-    private long conversionFactor() {
-        Units units = getUnits();
-        String metricUnit = units.getMetricUnit();
-        if (metricUnit == null) {
-            return 1;
-        }
-        long divisor = 1;
-        switch (metricUnit) {
-            case MetricUnits.NANOSECONDS:
-                divisor = 1;
-                break;
-
-            case MetricUnits.MICROSECONDS:
-                divisor = 1000;
-                break;
-
-            case MetricUnits.MILLISECONDS:
-                divisor = 1000 * 1000;
-                break;
-
-            case MetricUnits.SECONDS:
-                divisor = 1000 * 1000 * 1000;
-                break;
-
-            case MetricUnits.MINUTES:
-                divisor = 1000 * 1000 * 1000 * 60;
-                break;
-
-            case MetricUnits.HOURS:
-                divisor = 1000 * 1000 * 1000 * 60 * 60;
-                break;
-
-            case MetricUnits.DAYS:
-                divisor = 1000 * 1000 * 1000 * 60 * 60 * 24;
-                break;
-
-            default:
-                divisor = 1;
-        }
-        return divisor;
     }
 
     void appendPrometheusTimerStatElement(StringBuilder sb,

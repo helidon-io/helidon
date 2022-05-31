@@ -169,7 +169,7 @@ final class HelidonSimpleTimer extends MetricImpl implements SimpleTimer {
     }
 
     private static String durationPrometheusOutput(Duration duration) {
-        return duration == null ? "NaN" : Long.toString(duration.toSeconds());
+        return duration == null ? "NaN" : Double.toString(((double) duration.toNanos()) / 1000.0 / 1000.0 / 1000.0);
     }
 
     private double elapsedTimeInSeconds() {

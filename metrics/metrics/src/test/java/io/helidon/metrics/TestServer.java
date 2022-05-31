@@ -23,6 +23,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.webclient.WebClient;
@@ -33,23 +34,28 @@ import io.helidon.webserver.Service;
 import io.helidon.webserver.WebServer;
 
 import jakarta.json.JsonObject;
-import jakarta.json.JsonValue;
 import org.eclipse.microprofile.metrics.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.not;
 
 public class TestServer {
 
     private static final Logger LOGGER = Logger.getLogger(TestServer.class.getName());
+
+    private static final String[] EXPECTED_NO_CACHE_HEADER_SETTINGS = {"no-cache", "no-store", "must-revalidate", "no-transform"};
 
     private static WebServer webServer;
 
@@ -215,4 +221,35 @@ public class TestServer {
 
         assertThat("Completed task count after accessing slow endpoint", secondCompletedTaskCount, is(1));
     }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"", "/base", "/vendor", "/application"})
+    void testCacheSuppression(String pathSuffix) {
+        String requestPath = "/metrics" + pathSuffix;
+
+        WebClientResponse response = webClientBuilder
+                .build()
+                .get()
+                .accept(MediaType.APPLICATION_JSON)
+                .path(requestPath)
+                .submit()
+                .await();
+
+        assertThat("Headers suppressing caching",
+                   response.headers().values(Http.Header.CACHE_CONTROL),
+                   containsInAnyOrder(EXPECTED_NO_CACHE_HEADER_SETTINGS));
+
+        response = webClientBuilder
+                .build()
+                .options()
+                .accept(MediaType.APPLICATION_JSON)
+                .path(requestPath)
+                .submit()
+                .await();
+
+        assertThat ("Headers suppressing caching in OPTIONS request",
+                    response.headers().values(Http.Header.CACHE_CONTROL),
+                    not(containsInAnyOrder(EXPECTED_NO_CACHE_HEADER_SETTINGS)));
+    }
+
 }

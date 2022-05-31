@@ -17,7 +17,6 @@
 package io.helidon.microprofile.faulttolerance;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -35,6 +34,7 @@ import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Initialized;
 import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.spi.AfterDeploymentValidation;
 import jakarta.enterprise.inject.spi.AnnotatedConstructor;
 import jakarta.enterprise.inject.spi.AnnotatedField;
 import jakarta.enterprise.inject.spi.AnnotatedMethod;
@@ -60,7 +60,7 @@ import org.glassfish.jersey.process.internal.RequestScope;
 import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 
 /**
- * Class FaultToleranceExtension.
+ * CDI extension for Helidon's Fault Tolerance implementation.
  */
 public class FaultToleranceExtension implements Extension {
     static final String MP_FT_NON_FALLBACK_ENABLED = "MP_Fault_Tolerance_NonFallback_Enabled";
@@ -71,33 +71,11 @@ public class FaultToleranceExtension implements Extension {
 
     private static boolean isFaultToleranceMetricsEnabled = true;
 
-    private Set<BeanMethod> registeredMethods;
+    private Set<AnnotatedMethod<?>> registeredMethods;
 
     private ThreadPoolSupplier threadPoolSupplier;
 
     private ScheduledThreadPoolSupplier scheduledThreadPoolSupplier;
-
-    /**
-     * A bean method class that pairs a class and a method.
-     */
-    private static class BeanMethod {
-
-        private final Class<?> beanClass;
-        private final Method method;
-
-        BeanMethod(Class<?> beanClass, Method method) {
-            this.beanClass = beanClass;
-            this.method = method;
-        }
-
-        Class<?> beanClass() {
-            return beanClass;
-        }
-
-        Method method() {
-            return method;
-        }
-    }
 
     /**
      * Class to mimic a {@link Priority} annotation for the purpose of changing
@@ -206,7 +184,7 @@ public class FaultToleranceExtension implements Extension {
      * @param event Event information.
      */
     void registerFaultToleranceMethods(BeanManager bm, @Observes ProcessSyntheticBean<?> event) {
-        registerFaultToleranceMethods(bm.createAnnotatedType(event.getBean().getBeanClass()));
+        registerFaultToleranceMethods(bm, bm.createAnnotatedType(event.getBean().getBeanClass()));
     }
 
     /**
@@ -214,8 +192,8 @@ public class FaultToleranceExtension implements Extension {
      *
      * @param event Event information.
      */
-    void registerFaultToleranceMethods(@Observes ProcessManagedBean<?> event) {
-        registerFaultToleranceMethods(event.getAnnotatedBeanClass());
+    void registerFaultToleranceMethods(BeanManager bm, @Observes ProcessManagedBean<?> event) {
+        registerFaultToleranceMethods(bm, event.getAnnotatedBeanClass());
     }
 
     /**
@@ -223,10 +201,10 @@ public class FaultToleranceExtension implements Extension {
      *
      * @param type Bean type.
      */
-    private void registerFaultToleranceMethods(AnnotatedType<?> type) {
+    private void registerFaultToleranceMethods(BeanManager bm, AnnotatedType<?> type) {
         for (AnnotatedMethod<?> method : type.getMethods()) {
-            if (isFaultToleranceMethod(type.getJavaClass(), method.getJavaMember())) {
-                getRegisteredMethods().add(new BeanMethod(type.getJavaClass(), method.getJavaMember()));
+            if (isFaultToleranceMethod(method, bm)) {
+                getRegisteredMethods().add(method);
             }
         }
     }
@@ -236,34 +214,43 @@ public class FaultToleranceExtension implements Extension {
      *
      * @param event Event information.
      */
-    void validateAnnotations(@Observes @Priority(LIBRARY_BEFORE + 10 + 5) @Initialized(ApplicationScoped.class)
-                                     Object event) {
+    void validateAnnotations(BeanManager bm,
+                             @Observes @Priority(LIBRARY_BEFORE + 10 + 5)
+                             @Initialized(ApplicationScoped.class) Object event) {
         if (FaultToleranceMetrics.enabled()) {
-            getRegisteredMethods().stream().forEach(beanMethod -> {
-                final Method method = beanMethod.method();
-                final Class<?> beanClass = beanMethod.beanClass();
+            getRegisteredMethods().forEach(annotatedMethod -> {
+                final AnnotatedType<?> annotatedType = annotatedMethod.getDeclaringType();
 
-                if (MethodAntn.isAnnotationPresent(beanClass, method, Retry.class)) {
-                    new RetryAntn(beanClass, method).validate();
+                // Metrics depending on the annotationSet present
+                if (MethodAntn.isAnnotationPresent(annotatedMethod, Retry.class, bm)) {
+                    new RetryAntn(annotatedMethod).validate();
                 }
-                if (MethodAntn.isAnnotationPresent(beanClass, method, CircuitBreaker.class)) {
-                    new CircuitBreakerAntn(beanClass, method).validate();
+                if (MethodAntn.isAnnotationPresent(annotatedMethod, CircuitBreaker.class, bm)) {
+                    new CircuitBreakerAntn(annotatedMethod).validate();
                 }
-                if (MethodAntn.isAnnotationPresent(beanClass, method, Timeout.class)) {
-                    new TimeoutAntn(beanClass, method).validate();
+                if (MethodAntn.isAnnotationPresent(annotatedMethod, Timeout.class, bm)) {
+                    new TimeoutAntn(annotatedMethod).validate();
                 }
-                if (MethodAntn.isAnnotationPresent(beanClass, method, Bulkhead.class)) {
-                    new BulkheadAntn(beanClass, method).validate();
+                if (MethodAntn.isAnnotationPresent(annotatedMethod, Bulkhead.class, bm)) {
+                    new BulkheadAntn(annotatedMethod).validate();
                 }
-                if (MethodAntn.isAnnotationPresent(beanClass, method, Fallback.class)) {
-                    new FallbackAntn(beanClass, method).validate();
+                if (MethodAntn.isAnnotationPresent(annotatedMethod, Fallback.class, bm)) {
+                    new FallbackAntn(annotatedMethod).validate();
                 }
-                if (MethodAntn.isAnnotationPresent(beanClass, method, Asynchronous.class)) {
-                    new AsynchronousAntn(beanClass, method).validate();
+                if (MethodAntn.isAnnotationPresent(annotatedMethod, Asynchronous.class, bm)) {
+                    new AsynchronousAntn(annotatedMethod).validate();
                 }
             });
         }
+    }
 
+    /**
+     * Creates the executors used by FT using config. Must be created during the
+     * {@code AfterDeploymentValidation} event.
+     *
+     * @param event the AfterDeploymentValidation event
+     */
+    void createFaultToleranceExecutors(@Observes AfterDeploymentValidation event) {
         // Initialize executors for MP FT - default size of 20
         io.helidon.config.Config config = MpConfig.toHelidonConfig(ConfigProvider.getConfig());
         scheduledThreadPoolSupplier = ScheduledThreadPoolSupplier.builder()
@@ -285,7 +272,7 @@ public class FaultToleranceExtension implements Extension {
      *
      * @return The set.
      */
-    private Set<BeanMethod> getRegisteredMethods() {
+    private Set<AnnotatedMethod<?>> getRegisteredMethods() {
         if (registeredMethods == null) {
             registeredMethods = new CopyOnWriteArraySet<>();
         }
@@ -310,17 +297,17 @@ public class FaultToleranceExtension implements Extension {
      * Determines if a method has any fault tolerance annotationSet. Only {@code @Fallback}
      * is considered if fault tolerance is disabled.
      *
-     * @param beanClass The bean.
-     * @param method The method to check.
+     * @param annotatedMethod The method to check.
      * @return Outcome of test.
      */
-    static boolean isFaultToleranceMethod(Class<?> beanClass, Method method) {
-        return MethodAntn.isAnnotationPresent(beanClass, method, Retry.class)
-                || MethodAntn.isAnnotationPresent(beanClass, method, CircuitBreaker.class)
-                || MethodAntn.isAnnotationPresent(beanClass, method, Bulkhead.class)
-                || MethodAntn.isAnnotationPresent(beanClass, method, Timeout.class)
-                || MethodAntn.isAnnotationPresent(beanClass, method, Asynchronous.class)
-                || MethodAntn.isAnnotationPresent(beanClass, method, Fallback.class);
+    static boolean isFaultToleranceMethod(AnnotatedMethod<?> annotatedMethod,
+                                          BeanManager bm) {
+        return MethodAntn.isAnnotationPresent(annotatedMethod, Retry.class, bm)
+                || MethodAntn.isAnnotationPresent(annotatedMethod, CircuitBreaker.class, bm)
+                || MethodAntn.isAnnotationPresent(annotatedMethod, Bulkhead.class, bm)
+                || MethodAntn.isAnnotationPresent(annotatedMethod, Timeout.class, bm)
+                || MethodAntn.isAnnotationPresent(annotatedMethod, Asynchronous.class, bm)
+                || MethodAntn.isAnnotationPresent(annotatedMethod, Fallback.class, bm);
     }
 
     /**
@@ -408,7 +395,7 @@ public class FaultToleranceExtension implements Extension {
             Optional<Annotation> optional = annotationSet.stream()
                     .filter(a -> annotationType.isAssignableFrom(a.annotationType()))
                     .findFirst();
-            return optional.isPresent() ? (R) optional.get() : null;
+            return (R) optional.orElse(null);
         }
 
         @Override

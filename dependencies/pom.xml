@@ -67,8 +67,8 @@
         <version.lib.hibernate-validator>7.0.2.Final</version.lib.hibernate-validator>
         <version.lib.hikaricp>5.0.0</version.lib.hikaricp>
         <version.lib.hystrix>1.5.18</version.lib.hystrix>
-        <!-- This is the BOM version for Jackson Databind 2.13.2.1 -->
-        <version.lib.jackson>2.13.2.20220324</version.lib.jackson>
+        <!-- This is the BOM version for Jackson Databind 2.13.2.2 -->
+        <version.lib.jackson>2.13.2.20220328</version.lib.jackson>
         <version.lib.jaegertracing>1.6.0</version.lib.jaegertracing>
         <version.lib.jakarta.activation-api>2.0.1</version.lib.jakarta.activation-api>
         <version.lib.jakarta.annotation-api>2.0.0</version.lib.jakarta.annotation-api>
@@ -121,13 +121,12 @@
         <version.lib.microprofile-tracing>3.0</version.lib.microprofile-tracing>
         <version.lib.microprofile-lra-api>2.0-RC1</version.lib.microprofile-lra-api>
         <version.lib.microstream>05.00.02-MS-GA</version.lib.microstream>
-        <version.lib.mockito>2.23.4</version.lib.mockito>
         <version.lib.mongodb.reactivestreams>1.11.0</version.lib.mongodb.reactivestreams>
         <version.lib.mssql-jdbc>8.4.1.jre8</version.lib.mssql-jdbc>
         <version.lib.mysql-connector-java>8.0.28</version.lib.mysql-connector-java>
         <version.lib.narayana>5.12.0.Final</version.lib.narayana>
         <version.lib.neo4j>4.4.3</version.lib.neo4j>
-        <version.lib.netty>4.1.76.Final</version.lib.netty>
+        <version.lib.netty>4.1.77.Final</version.lib.netty>
         <version.lib.netty-io_uring>0.0.8.Final</version.lib.netty-io_uring>
         <version.lib.oci-java-sdk-objectstorage>2.3.0</version.lib.oci-java-sdk-objectstorage>
         <version.lib.ojdbc8>21.3.0.0</version.lib.ojdbc8>
@@ -137,6 +136,7 @@
         <version.lib.opentracing>0.33.0</version.lib.opentracing>
         <version.lib.opentracing.grpc>0.2.1</version.lib.opentracing.grpc>
         <version.lib.opentracing.tracerresolver>0.1.8</version.lib.opentracing.tracerresolver>
+        <version.lib.perfmark-api>0.23.0</version.lib.perfmark-api>
         <version.lib.postgresql>42.3.3</version.lib.postgresql>
         <version.lib.prometheus>0.9.0</version.lib.prometheus>
         <version.lib.slf4j>1.7.32</version.lib.slf4j>
@@ -146,7 +146,7 @@
         <version.lib.tyrus>2.0.1</version.lib.tyrus>
         <version.lib.weld-api>4.0.SP1</version.lib.weld-api>
         <version.lib.weld>4.0.2.Final</version.lib.weld>
-        <version.lib.yasson>2.0.2</version.lib.yasson>
+        <version.lib.yasson>2.0.4</version.lib.yasson>
         <version.lib.zipkin.sender-urlconnection>2.12.0</version.lib.zipkin.sender-urlconnection>
         <version.lib.zipkin>2.12.5</version.lib.zipkin>
         <version.lib.zookeeper>3.5.7</version.lib.zookeeper>
@@ -493,6 +493,12 @@
                 <groupId>com.google.code.gson</groupId>
                 <artifactId>gson</artifactId>
                 <version>${version.lib.gson}</version>
+            </dependency>
+            <!-- Dependency convergence. Should align with version used by io.grpc -->
+            <dependency>
+              <groupId>io.perfmark</groupId>
+              <artifactId>perfmark-api</artifactId>
+              <version>${version.lib.perfmark-api}</version>
             </dependency>
 
             <dependency>
@@ -1390,11 +1396,6 @@
             <!-- END OF Section 3: transitive dependencies we manage the version of for convergence/upgrade -->
 
             <!-- Section 4: Testing -->
-            <dependency>
-                <groupId>org.mockito</groupId>
-                <artifactId>mockito-core</artifactId>
-                <version>${version.lib.mockito}</version>
-            </dependency>
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-api</artifactId>

@@ -17,7 +17,10 @@ package io.helidon.metrics;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
@@ -32,8 +35,9 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.platform.commons.JUnitException;
 
-import static org.hamcrest.CoreMatchers.startsWith;
+import static io.helidon.metrics.HelidonMetricsMatcher.withinTolerance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
@@ -228,22 +232,31 @@ class HelidonSimpleTimerTest {
 
     @Test
     void testPrometheus() {
+        Pattern responseTimePattern =
+                Pattern.compile("""
+                                        # TYPE application_response_time_total counter
+                                        # HELP application_response_time_total Server response time for /index.html
+                                        application_response_time_total (\\S*)
+                                        # TYPE application_response_time_elapsedTime_seconds gauge
+                                        application_response_time_elapsedTime_seconds (\\S*)
+                                        # TYPE application_response_time_maxTimeDuration_seconds gauge
+                                        application_response_time_maxTimeDuration_seconds (\\S*)
+                                        # TYPE application_response_time_minTimeDuration_seconds gauge
+                                        application_response_time_minTimeDuration_seconds (\\S*)
+                                        """, Pattern.MULTILINE);
         StringBuilder sb = new StringBuilder();
         ensureDataSetTimerClockAdvanced();
         dataSetTimer.prometheusData(sb, dataSetTimerID, true);
         String prometheusData = sb.toString();
-        assertThat(prometheusData,
-                   startsWith("""
-                                      # TYPE application_response_time_total counter
-                                      # HELP application_response_time_total Server response time for /index.html
-                                      application_response_time_total 200
-                                      # TYPE application_response_time_elapsedTime_seconds gauge
-                                      application_response_time_elapsedTime_seconds 1.0127E-4
-                                      # TYPE application_response_time_maxTimeDuration_seconds gauge
-                                      application_response_time_maxTimeDuration_seconds 0
-                                      # TYPE application_response_time_minTimeDuration_seconds gauge
-                                      application_response_time_minTimeDuration_seconds 0
-                                      """));
+        Matcher m = responseTimePattern.matcher(prometheusData);
+        if (!m.find()) {
+            throw new JUnitException("Could not match Prometheus output " + prometheusData
+                                             + " to expected pattern " + responseTimePattern);
+        }
+        assertThat("total", Integer.parseInt(m.group(1)), is(200));
+        assertThat("elapsedTime", Double.parseDouble(m.group(2)), is(withinTolerance(1.0127E-4, 1.2E-6)));
+        assertThat("max", Double.parseDouble(m.group(3)), is(withinTolerance(9.9E-7, 1.2E-9)));
+        assertThat("min", Double.parseDouble(m.group(4)), is(withinTolerance(0.0, 0.012)));
 
         // Because the batch of test data does not give non-zero min and max, do a separate test to check those.
         TestClock clock = TestClock.create();
@@ -256,18 +269,16 @@ class HelidonSimpleTimerTest {
         sb = new StringBuilder();
         simpleTimer.prometheusData(sb, dataSetTimerID, true);
         prometheusData = sb.toString();
-        assertThat(prometheusData,
-                   startsWith("""
-                                      # TYPE application_response_time_total counter
-                                      # HELP application_response_time_total Server response time for /index.html
-                                      application_response_time_total 2
-                                      # TYPE application_response_time_elapsedTime_seconds gauge
-                                      application_response_time_elapsedTime_seconds 7.0
-                                      # TYPE application_response_time_maxTimeDuration_seconds gauge
-                                      application_response_time_maxTimeDuration_seconds 4
-                                      # TYPE application_response_time_minTimeDuration_seconds gauge
-                                      application_response_time_minTimeDuration_seconds 3
-                                      """));
+
+        m = responseTimePattern.matcher(prometheusData);
+        if (!m.find()) {
+            throw new JUnitException("Could not match Prometheus output " + prometheusData
+                                             + " to expected pattern" + responseTimePattern);
+        }
+        assertThat("total", Integer.parseInt(m.group(1)), is(2));
+        assertThat("elapsedTime", Double.parseDouble(m.group(2)), is(withinTolerance(7.0D, 0.012)));
+        assertThat("max", Double.parseDouble(m.group(3)), is(withinTolerance(4.0D, 0.012)));
+        assertThat("min", Double.parseDouble(m.group(4)), is(withinTolerance(3.0D, 0.012)));
     }
 
     @Test

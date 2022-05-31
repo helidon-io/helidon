@@ -35,6 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  */
 @AddBean(TimeoutBean.class)
 @AddBean(TimeoutNoRetryBean.class)
+@AddBean(TimeoutAnnotBean.class)
 class TimeoutTest extends FaultToleranceTest {
 
     @Inject
@@ -43,9 +44,13 @@ class TimeoutTest extends FaultToleranceTest {
     @Inject
     private TimeoutNoRetryBean timeoutNoRetryBean;
 
+    @Inject
+    private TimeoutAnnotBean timeoutAnnotBean;
+
     @Override
     void reset() {
         timeoutBean.reset();
+        timeoutAnnotBean.reset();
     }
 
     @Test
@@ -102,5 +107,11 @@ class TimeoutTest extends FaultToleranceTest {
         } catch (TimeoutException e) {
             assertThat(System.currentTimeMillis() - start, is(greaterThanOrEqualTo(2000L)));
         }
+    }
+
+    @Test
+    void testForceTimeoutAnnot() {
+        assertThrows(TimeoutException.class, timeoutAnnotBean::timedRetry);
+        assertThat(timeoutAnnotBean.getInvocations(), is(3));
     }
 }

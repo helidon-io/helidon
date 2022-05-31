@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,6 +52,7 @@ public interface Bulkhead extends FtHandler {
         private int limit = DEFAULT_LIMIT;
         private int queueLength = DEFAULT_QUEUE_LENGTH;
         private String name = "Bulkhead-" + System.identityHashCode(this);
+        private boolean cancelSource = true;
 
         private Builder() {
         }
@@ -108,6 +109,18 @@ public interface Bulkhead extends FtHandler {
             return this;
         }
 
+        /**
+         * Policy to cancel any source stage if the value return by {@link Bulkhead#invoke}
+         * is cancelled. Default is {@code true}; mostly used by FT MP to change default.
+         *
+         * @param cancelSource cancel source policy
+         * @return updated builder instance
+         */
+        public Builder cancelSource(boolean cancelSource) {
+            this.cancelSource = cancelSource;
+            return this;
+        }
+
         int limit() {
             return limit;
         }
@@ -122,6 +135,10 @@ public interface Bulkhead extends FtHandler {
 
         String name() {
             return name;
+        }
+
+        boolean cancelSource() {
+            return cancelSource;
         }
     }
 

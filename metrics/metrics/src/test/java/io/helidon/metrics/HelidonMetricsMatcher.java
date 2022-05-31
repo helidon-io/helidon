@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,9 @@ import org.hamcrest.TypeSafeMatcher;
  * <p>
  * Includes:
  * <ul>
- * <li>{@link #withinTolerance(java.lang.Number)} for checking within a range (tolerance) either side of an expected value</li>
+ * <li>{@link #withinTolerance(java.lang.Number)} for checking within a <em>configured</em> range (tolerance) either side of an expected
+ * value</li>
+ * <li>{@link #withinTolerance(java.lang.Number, double)} for checking within a <em>specified</em> range</li>
  * </ul>
  */
 class HelidonMetricsMatcher {
@@ -31,18 +33,25 @@ class HelidonMetricsMatcher {
     static final Double VARIANCE = Double.valueOf(System.getProperty("helidon.histogram.tolerance", "0.001"));
 
     static TypeSafeMatcher<Number> withinTolerance(final Number expected) {
-        return new TypeSafeMatcher<Number>() {
+        return withinTolerance(expected, VARIANCE);
+    }
+
+    static TypeSafeMatcher<Number> withinTolerance(final Number expected, double variance) {
+        return new TypeSafeMatcher<>() {
+
+            private final double v = variance;
+
             @Override
             protected boolean matchesSafely(Number item) {
-                return Math.abs(expected.doubleValue() - item.doubleValue()) <= expected.doubleValue() * VARIANCE;
+                return Math.abs(expected.doubleValue() - item.doubleValue()) <= expected.doubleValue() * v;
             }
 
             @Override
             public void describeTo(Description description) {
                 description.appendText("withinTolerance expected value in range [")
-                        .appendValue(expected.doubleValue() * (1.0 - VARIANCE))
+                        .appendValue(expected.doubleValue() * (1.0 - v))
                         .appendText(", ")
-                        .appendValue(expected.doubleValue() * (1.0 + VARIANCE))
+                        .appendValue(expected.doubleValue() * (1.0 + v))
                         .appendText("]");
             }
         };

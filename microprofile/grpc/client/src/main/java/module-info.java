@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,4 +29,7 @@ module io.helidon.microprofile.grpc.client {
 
     provides jakarta.enterprise.inject.spi.Extension
             with io.helidon.microprofile.grpc.client.GrpcClientCdiExtension;
+
+    // needed when running with modules - to make private methods accessible
+    opens io.helidon.microprofile.grpc.client to weld.core.impl, io.helidon.microprofile.cdi;
 }

@@ -45,6 +45,33 @@
             <groupId>io.grpc</groupId>
             <artifactId>grpc-context</artifactId>
         </dependency>
+
+        <dependency>
+          <groupId>com.google.guava</groupId>
+          <artifactId>guava</artifactId>
+          <exclusions>
+            <exclusion>
+              <artifactId>jsr305</artifactId>
+              <groupId>com.google.code.findbugs</groupId>
+            </exclusion>
+            <exclusion>
+              <artifactId>error_prone_annotations</artifactId>
+              <groupId>com.google.errorprone</groupId>
+            </exclusion>
+            <exclusion>
+              <artifactId>j2objc-annotations</artifactId>
+              <groupId>com.google.j2objc</groupId>
+            </exclusion>
+          </exclusions>
+        </dependency>
+        <dependency>
+          <groupId>com.google.code.gson</groupId>
+          <artifactId>gson</artifactId>
+        </dependency>
+        <dependency>
+          <groupId>io.perfmark</groupId>
+          <artifactId>perfmark-api</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

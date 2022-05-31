@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -116,6 +116,18 @@ public final class RoleValidator implements AbacValidator<RoleValidator.RoleConf
                         }
                         builder.permitAll(false);
                         builder.denyAll(false);
+                    } else if (annotation instanceof RolesContainer container) {
+                        for (Roles role : container.value()) {
+                            if (role.subjectType() == SubjectType.USER) {
+                                roles.addAll(Arrays.asList(role.value()));
+                            } else {
+                                serviceRoles.addAll(Arrays.asList(role.value()));
+                            }
+                        }
+                        if (container.value().length != 0) {
+                            builder.permitAll(false);
+                            builder.denyAll(false);
+                        }
                     } else if (annotation instanceof PermitAll) {
                         builder.permitAll(true);
                         builder.denyAll(false);
