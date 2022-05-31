@@ -35,7 +35,7 @@
 - Configuration
 - Reference
 - Examples
-- Other
+- Additional Information
 
 == Overview
 Microservices expose their health status primarily so external tools (for example, an orchestrator such as Kubernetes)

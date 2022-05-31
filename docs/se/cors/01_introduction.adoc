@@ -47,7 +47,7 @@
 - Configuration
 - Reference
 - Examples
-- Other
+- Additional Information
 
 
 link:{cors-spec}[Cross-origin resource sharing] (CORS) support in Helidon SE provides a flexible

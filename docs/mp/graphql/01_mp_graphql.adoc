@@ -34,7 +34,7 @@
 - Configuration
 - Reference
 - Examples
-- Other
+- Additional Information
 
 == Overview
 
