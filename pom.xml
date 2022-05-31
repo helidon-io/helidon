@@ -62,6 +62,7 @@
         <version.lib.jboss-logging-annotations>2.2.1.Final</version.lib.jboss-logging-annotations>
         <version.lib.junit4>4.13.1</version.lib.junit4>
         <version.lib.kafka-junit5>3.2.3</version.lib.kafka-junit5>
+        <version.lib.mockito>2.23.4</version.lib.mockito>
         <version.lib.netty.tcnative>2.0.52.Final</version.lib.netty.tcnative>
         <version.lib.restito>0.9.1</version.lib.restito>
         <version.lib.rxjava2-jdk9-interop>0.1.0</version.lib.rxjava2-jdk9-interop>
@@ -933,6 +934,11 @@
                 <groupId>io.netty</groupId>
                 <artifactId>netty-tcnative-boringssl-static</artifactId>
                 <version>${version.lib.netty.tcnative}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-core</artifactId>
+                <version>${version.lib.mockito}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jgit</groupId>
