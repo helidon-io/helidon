@@ -24,12 +24,22 @@
 :keywords: oci
 :common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 :feature-name: OCI Integration
+:oci-url: https://docs.oracle.com/en-us/iaas/Content/home.htm
 
 Helidon SE OCI Integration provides easy access to Oracle Cloud Infrastructure.
 
+== Deprecated
+
+The custom Helidon SE OCI clients documented here are deprecated.
+It is recommended that you use the OCI Java SDK directly, in particular the Async clients.
+For more information see:
+
+* link:{oci-url}[OCI Documentation ]
+* link:{helidon-tag}/examples/integrations/oci/vault-reactive/[Helidon SE OCI Vault Example]
+
 == Experimental
 
-WARNING: Helidon integration with Oracle Cloud Infrastructure is still experimental and not intended for production use. APIs and features have not yet been fully tested and are subject to change.
+Helidon integration with Oracle Cloud Infrastructure is still experimental and not intended for production use. APIs and features have not yet been fully tested and are subject to change.
 
 == General Configuration
 
