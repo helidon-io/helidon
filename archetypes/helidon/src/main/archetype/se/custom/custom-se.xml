@@ -20,15 +20,15 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
 
-    <exec src="../common/common-se.xml"/>
-    <source src="/common/project-sources.xml"/>
+    <source src="/common/sources.xml"/>
+    <exec src="/se/common/common-se.xml"/>
+    <exec src="/common/media.xml"/>
+    <exec src="/common/observability.xml"/>
+    <exec src="/se/custom/database.xml"/>
+    <exec src="/common/security.xml"/>
+    <exec src="/common/extra.xml"/>
+    <exec src="/common/packaging.xml"/>
     <output>
-        <templates engine="xyz">
-            <directory>/xyz-files</directory>
-            <includes>
-                <include>io/helidon/archetype/template/se/GreetService.java</include>
-            </includes>
-        </templates>
         <model>
             <value order="0" key="readme-description">Minimal Helidon SE project suitable to start from scratch.</value>
             <list key="readme-sections">
@@ -47,10 +47,10 @@
                 <value><![CDATA[                .addMediaSupport(JsonpSupport.create())]]></value>
             </list>
             <list key="Main-createRouting">
-                <value><![CDATA[        GreetService greetService = new GreetService(config);]]></value>
+                <value><![CDATA[        SimpleGreetService simpleGreetService = new SimpleGreetService(config);]]></value>
             </list>
             <list key="Main-routingBuilder">
-                <value><![CDATA[                .register("/greet", greetService)]]></value>
+                <value><![CDATA[                .register("/simple-greet", simpleGreetService)]]></value>
             </list>
             <value key="Main-readyMessage">System.out.println("WEB server is up! http://localhost:" + ws.port() + "/greet");</value>
             <list key="MainTest-java-imports">
@@ -71,9 +71,9 @@
             <list key="MainTest-methods">
                 <value><![CDATA[
     @Test
-    public void testGreet() throws Exception {
+    public void testSimpleGreet() throws Exception {
         JsonObject jsonObject = webClient.get()
-                                         .path("/greet")
+                                         .path("/simple-greet")
                                          .request(JsonObject.class)
                                          .await();
         assertThat(jsonObject.getString("message"), is("Hello World!"));

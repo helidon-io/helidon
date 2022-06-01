@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2021 Oracle and/or its affiliates.
+    Copyright (c) 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -20,48 +20,52 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
 
-    <step label="Docker">
-        <inputs>
-            <boolean name="docker" label="Docker support" prompt="Do you want a Dockerfile ?">
-                <inputs>
-                    <boolean name="native-image" label="Do you want a native-image Dockerfile ?"/>
-                    <boolean name="jlink" label="Do you want a jlink Dockerfile ?"/>
-                </inputs>
-                <output>
-                    <templates>
-                        <directory>files</directory>
-                        <includes>
-                            <include>Dockerfile.mustache</include>
-                            <include>.dockerignore</include>
-                        </includes>
-                    </templates>
-                    <templates if="${native-image}">
-                        <directory>files</directory>
-                        <includes>
-                            <include>Dockerfile.native.mustache</include>
-                        </includes>
-                    </templates>
-                    <templates if="${jlink}">
-                        <directory>files</directory>
-                        <includes>
-                            <include>Dockerfile.jlink.mustache</include>
-                        </includes>
-                    </templates>
-                    <model>
-                        <list key="readme-section">
-                            <value order="50" template="mustache">
-                                <![CDATA[
+    <inputs>
+        <boolean id="docker"
+                 name="Docker support"
+                 description="Add a Dockerfile to your project"
+                 default="false"
+                 optional="true">
+            <inputs>
+                <boolean id="native-image"
+                         name="GraalVM Native Image Support"
+                         description="Add a native-image capable Dockerfile to your project"
+                         default="false"
+                         optional="true"/>
+                <boolean id="jlink-image" name="JLink Support"
+                         description="Add a JLink capable Dockerfile to your project"
+                         default="false"
+                         optional="true"/>
+            </inputs>
+            <output>
+                <files>
+                    <directory>files</directory>
+                    <includes>
+                        <include>.dockerignore</include>
+                    </includes>
+                </files>
+                <templates engine="mustache" transformations="mustache">
+                    <directory>files</directory>
+                    <includes>
+                        <include>Dockerfile.mustache</include>
+                        <include if="${native-image}">Dockerfile.native.mustache</include>
+                        <include if="${jlink-image}">Dockerfile.jlink.mustache</include>
+                    </includes>
+                </templates>
+                <model>
+                    <list key="readme-section">
+                        <value order="50" template="mustache">
+                            <![CDATA[
                                 ## Build the Docker Image
 
                                 ```
                                 docker build -t {{artifactId}} .
                                 ```
                                 ]]>
-                            </value>
-                        </list>
-                    </model>
-                </output>
-            </boolean>
-        </inputs>
-    </step>
+                        </value>
+                    </list>
+                </model>
+            </output>
+        </boolean>
+    </inputs>
 </archetype-script>

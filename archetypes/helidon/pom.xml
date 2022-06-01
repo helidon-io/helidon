@@ -48,9 +48,10 @@
                 <artifactId>helidon-archetype-maven-plugin</artifactId>
                 <configuration>
                     <entrypoint>
-                        <presets>
-                            <text path="helidon-version" resolvable="false">${project.version}</text>
-                        </presets>
+                        <!-- TODO https://github.com/oracle/helidon-build-tools/issues/698 -->
+                        <variables>
+                            <text path="helidon-version" transient="true">${project.version}</text>
+                        </variables>
                         <exec src="flavor.xml"/>
                     </entrypoint>
                 </configuration>

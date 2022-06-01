@@ -31,6 +31,6 @@
 
     <properties>
         <flavor>mp</flavor>
-        <base>database</base>
+        <app-type>database</app-type>
     </properties>
 </project>

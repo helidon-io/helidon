@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2021 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -20,8 +20,12 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
 
-    <exec src="../common/common-mp.xml"/>
-    <source src="/common/project-sources.xml"/>
+    <source src="/common/sources.xml"/>
+    <exec src="/common/presets.xml"/>
+    <presets>
+        <boolean path="db">true</boolean>
+    </presets>
+    <exec src="/mp/custom/custom-mp.xml"/>
     <output>
         <model>
             <value key="title">Helidon MP Database</value>

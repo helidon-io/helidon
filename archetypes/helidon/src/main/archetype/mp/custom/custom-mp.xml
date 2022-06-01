@@ -21,8 +21,14 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
 
-    <exec src="../common/common-mp.xml"/>
-    <source src="/common/project-sources.xml"/>
+    <exec src="/mp/common/common-mp.xml"/>
+    <source src="/common/sources.xml"/>
+    <exec src="/common/media.xml"/>
+    <exec src="/common/observability.xml"/>
+    <exec src="/mp/custom/database.xml"/>
+    <exec src="/common/security.xml"/>
+    <exec src="/common/extra.xml"/>
+    <exec src="/common/packaging.xml"/>
     <output>
         <model>
             <value key="readme-description">Minimal Helidon MP project suitable to start from scratch.</value>
@@ -59,10 +65,6 @@
                 <map>
                     <value key="groupId">io.helidon.microprofile.health</value>
                     <value key="artifactId">helidon-microprofile-health</value>
-                </map>
-                <map>
-                    <value key="groupId">io.helidon.microprofile.bundles</value>
-                    <value key="artifactId">helidon-microprofile-core</value>
                 </map>
                 <map>
                     <value key="groupId">io.helidon.media</value>

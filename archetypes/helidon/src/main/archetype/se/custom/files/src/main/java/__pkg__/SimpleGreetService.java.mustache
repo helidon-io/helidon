@@ -21,14 +21,14 @@ import io.helidon.webserver.Service;
  *
  * The message is returned as a JSON object
  */
-public class GreetService implements Service {
+public class SimpleGreetService implements Service {
 
-    private static final Logger LOGGER = Logger.getLogger(GreetService.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(SimpleGreetService.class.getName());
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
 
     private final String greeting;
 
-    GreetService(Config config) {
+    SimpleGreetService(Config config) {
         greeting = config.get("app.greeting").asString().orElse("Ciao");
     }
 

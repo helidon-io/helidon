@@ -22,7 +22,7 @@
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
 
     <exec src="/common/common.xml"/>
-    <source src="/common/project-sources.xml"/>
+    <source src="/common/sources.xml"/>
     <output>
         <model>
             <list key="readme-sections">

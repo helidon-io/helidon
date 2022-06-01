@@ -20,8 +20,12 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
 
-    <exec src="../common/common-se.xml"/>
-    <source src="/common/project-sources.xml"/>
+    <source src="/common/sources.xml"/>
+    <exec src="/common/presets.xml"/>
+    <presets>
+        <boolean path="db">true</boolean>
+    </presets>
+    <exec src="/se/custom/custom-se.xml"/>
     <output>
         <model>
             <value key="title">Helidon SE Database</value>
@@ -30,10 +34,6 @@
                 <value file="files/README.md"/>
             </list>
             <list key="dependencies">
-                <map>
-                    <value key="groupId">io.helidon.media</value>
-                    <value key="artifactId">helidon-media-jsonp</value>
-                </map>
                 <map>
                     <value key="groupId">io.helidon.media</value>
                     <value key="artifactId">helidon-media-jsonb</value>
