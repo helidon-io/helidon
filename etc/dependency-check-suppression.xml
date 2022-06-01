@@ -161,6 +161,19 @@
    <cve>CVE-2021-34371</cve>
 </suppress>
 
+<!-- Neo4j driver bundles some netty components. This CVE "only impacts applications
+     running on Java version 6". We require Java 11 or newer.
+     Helidon's Netty version has already been upgraded to 4.1.77.Final (or newer) which does
+     not contain this CVE.
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: neo4j-java-driver-4.4.3.jar (shaded: io.netty:netty-transport:4.1.73.Final)
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/io\.netty/netty\-.*@4.1.73.Final$</packageUrl>
+   <cve>CVE-2022-24823</cve>
+</suppress>
+
 <!-- These files are being detected as an old version of Netty and raises false positives for
      a number of old Netty CVEs.
 -->
@@ -171,5 +184,19 @@
    <packageUrl regex="true">^pkg:maven/io\.netty\.incubator/netty\-incubator\-transport\-native\-io_uring@.*$</packageUrl>
    <cpe>cpe:/a:netty:netty</cpe>
 </suppress>
+
+<!-- This package was being detected as an old version of com.google.code.gson:gson. The version 
+     of com.google.cod.gson:gson that is brought in transitively is 2.8.9 which does not 
+     contain this CVE.
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: google-http-client-gson-1.41.8.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/com\.google\.http\-client/google\-http\-client\-gson@.*$</packageUrl>
+   <cve>CVE-2022-25647</cve>
+</suppress>
+
+
 
 </suppressions>
