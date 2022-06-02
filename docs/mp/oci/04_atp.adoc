@@ -27,7 +27,7 @@
 :oci-atp-url: https://docs.oracle.com/en-us/iaas/Content/Database/home.htm
 
 You can use Helidon's <<mp/oci/01_oci.adoc,OCI SDK Extension>>
-to access OCI Services. This document describes how to use it to access
+to access OCI Services. This document describes how to use it to access the
 OCI Database Service.
 
 include::{common-deps-page-prefix-inc}[tag=maven-dependency]

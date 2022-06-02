@@ -60,7 +60,7 @@ dependencies may differ depending on the OCI SDK features you use.
 </dependency>
 ----
 
-== Injecting an Vault client
+== Injecting a Vault client
 
 Once you have Helidon's OCI extension added to your application you can inject
 OCI SDK Clients.

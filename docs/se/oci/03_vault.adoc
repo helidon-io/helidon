@@ -28,7 +28,7 @@
 :oci-vault-url: https://docs.oracle.com/en-us/iaas/Content/KeyManagement/home.htm
 :helidon-tag: https://github.com/oracle/helidon/tree/{helidon-version}
 
-The Helidon SE OCI Vault integration provides a reactive API Oracle Cloud Vault features.
+The Helidon SE OCI Vault integration provides a reactive API for the Oracle Cloud Vault service.
 
 == Deprecated
 
