@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -260,19 +260,6 @@ class MpConfigImpl implements Config {
                 .findFirst()
                 .map(Map.Entry::getValue)
                 .map(it -> (Converter<T>) it)
-                .map(it -> (Converter<T>) value -> {
-                    if (value == null) {
-                        throw new NullPointerException("Null not allowed in MP converters. Converter for type " + forType
-                                .getName());
-                    }
-                    try {
-                        return it.convert(value);
-                    } catch (IllegalArgumentException e) {
-                        throw e;
-                    } catch (Exception e) {
-                        throw new IllegalArgumentException("Cannot convert value", e);
-                    }
-                })
                 .or(() -> findImplicit(forType));
     }
 

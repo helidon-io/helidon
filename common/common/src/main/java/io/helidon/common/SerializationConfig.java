@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -126,7 +126,7 @@ public final class SerializationConfig {
      * This is a one-off call to set up global filter.
      */
     public static void configureRuntime() {
-        builder().build().configure();
+        builder().onNoConfig(Action.CONFIGURE).build().configure();
     }
 
     /**
@@ -366,8 +366,8 @@ public final class SerializationConfig {
      * {@link SerializationConfig#configureRuntime()} directly.
      */
     public static class Builder implements io.helidon.common.Builder<Builder, SerializationConfig> {
-        private Action onWrongConfig = configuredAction(PROP_WRONG_CONFIG_ACTION, Action.WARN);
-        private Action onNoConfig = configuredAction(PROP_NO_CONFIG_ACTION, Action.WARN);
+        private Action onWrongConfig = configuredAction(PROP_WRONG_CONFIG_ACTION, Action.FAIL);
+        private Action onNoConfig = configuredAction(PROP_NO_CONFIG_ACTION, Action.FAIL);
         private String filterPattern = System.getProperty(PROP_PATTERN);
         private TraceOption traceSerialization = configuredTrace(TraceOption.NONE);
         private boolean ignoreFiles = Boolean.getBoolean(PROP_IGNORE_FILES);
@@ -620,6 +620,10 @@ public final class SerializationConfig {
                 return delegate.checkInput(filterInfo);
             }
             Status result = delegate.checkInput(filterInfo);
+
+            if (clazz == null) {
+                return result;
+            }
 
             if (!reportedClasses.add(clazz)) {
                 if (basic) {
