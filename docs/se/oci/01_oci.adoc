@@ -25,6 +25,7 @@
 :common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 :feature-name: OCI Integration
 :oci-url: https://docs.oracle.com/en-us/iaas/Content/home.htm
+:helidon-tag: https://github.com/oracle/helidon/tree/{helidon-version}
 
 Helidon SE OCI Integration provides easy access to Oracle Cloud Infrastructure.
 
