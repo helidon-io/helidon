@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,10 +34,8 @@ class SerializationConfigTest {
 
         SerializationConfig.ConfigOptions options = serializationConfig.options();
         assertThat(options.traceSerialization(), is(SerializationConfig.TraceOption.NONE));
-        // TODO this will change in 3.0.0
-        assertThat(options.onNoConfig(), is(SerializationConfig.Action.WARN));
-        // TODO this will change in 3.0.0
-        assertThat(options.onWrongConfig(), is(SerializationConfig.Action.WARN));
+        assertThat(options.onNoConfig(), is(SerializationConfig.Action.FAIL));
+        assertThat(options.onWrongConfig(), is(SerializationConfig.Action.FAIL));
         assertThat(options.filterPattern(), is("!*"));
     }
 

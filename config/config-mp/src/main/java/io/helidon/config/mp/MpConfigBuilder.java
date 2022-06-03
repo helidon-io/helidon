@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -668,11 +668,46 @@ class MpConfigBuilder implements ConfigBuilder {
         private OrdinalConverter(Converter<?> converter, Class<?> aClass, int ordinal) {
             this.ordinal = ordinal;
             this.type = aClass;
-            this.converter = converter;
+            this.converter = new NullCheckingConverter<>(aClass, converter);
         }
 
         private OrdinalConverter(Converter<?> converter) {
             this(converter, getConverterType(converter.getClass()), Priorities.find(converter, 100));
+        }
+
+        @Override
+        public String toString() {
+            return type.getName() + "->" + converter;
+        }
+    }
+
+    private static final class NullCheckingConverter<T> implements Converter<T> {
+        private final Converter<T> delegate;
+        private final Class<?> type;
+
+        private NullCheckingConverter(Class<?> type, Converter<T> delegate) {
+            this.delegate = delegate;
+            this.type = type;
+        }
+
+        @Override
+        public T convert(String value) throws IllegalArgumentException, NullPointerException {
+            if (value == null) {
+                throw new NullPointerException("Null not allowed in MP converters. Converter for type " + type.getName());
+            }
+
+            try {
+                return delegate.convert(value);
+            } catch (IllegalArgumentException | NullPointerException e) {
+                throw e;
+            } catch (Exception e) {
+                throw new IllegalArgumentException("Cannot convert value", e);
+            }
+        }
+
+        @Override
+        public String toString() {
+            return type.getName() + "->" + delegate;
         }
     }
 }
