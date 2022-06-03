@@ -21,6 +21,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
+import io.helidon.config.Config;
 
 /**
  * Bulkhead protects a resource that cannot serve unlimited parallel
@@ -118,6 +119,50 @@ public interface Bulkhead extends FtHandler {
          */
         public Builder cancelSource(boolean cancelSource) {
             this.cancelSource = cancelSource;
+            return this;
+        }
+
+        /**
+         * <p>
+         * Load all properties for this bulkhead from configuration.
+         * </p>
+         * <table class="config">
+         * <caption>Configuration</caption>
+         * <tr>
+         *     <th>key</th>
+         *     <th>default value</th>
+         *     <th>description</th>
+         * </tr>
+         * <tr>
+         *     <td>name</td>
+         *     <td>Bulkhead-N</td>
+         *     <td>Name used for debugging</td>
+         * </tr>
+         * <tr>
+         *     <td>limit</td>
+         *     <td>{@value DEFAULT_LIMIT}</td>
+         *     <td>Max number of parallel calls</td>
+         * </tr>
+         * <tr>
+         *     <td>queue-length</td>
+         *     <td>{@value DEFAULT_QUEUE_LENGTH}</td>
+         *     <td>Max number of queued calls</td>
+         * </tr>
+         * <tr>
+         *     <td>cancel-source</td>
+         *     <td>true</td>
+         *     <td>Cancel task source if task is cancelled</td>
+         * </tr>
+         * </table>
+         *
+         * @param config the config node to use
+         * @return updated builder instance
+         */
+        public Builder config(Config config) {
+            config.get("limit").asInt().ifPresent(this::limit);
+            config.get("queue-length").asInt().ifPresent(this::queueLength);
+            config.get("name").asString().ifPresent(this::name);
+            config.get("cancel-source").asBoolean().ifPresent(this::cancelSource);
             return this;
         }
 

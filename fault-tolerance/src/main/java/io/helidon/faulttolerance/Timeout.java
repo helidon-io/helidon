@@ -20,6 +20,7 @@ import java.time.Duration;
 import java.util.concurrent.ScheduledExecutorService;
 
 import io.helidon.common.LazyValue;
+import io.helidon.config.Config;
 
 /**
  * Timeout attempts to terminate execution after a duration time passes.
@@ -117,6 +118,50 @@ public interface Timeout extends FtHandler {
          */
         public Builder cancelSource(boolean cancelSource) {
             this.cancelSource = cancelSource;
+            return this;
+        }
+
+        /**
+         * <p>
+         * Load all properties for this circuit breaker from configuration.
+         * </p>
+         * <table class="config">
+         * <caption>Configuration</caption>
+         * <tr>
+         *     <th>key</th>
+         *     <th>default value</th>
+         *     <th>description</th>
+         * </tr>
+         * <tr>
+         *     <td>timeout</td>
+         *     <td>10 seconds</td>
+         *     <td>Length of timeout</td>
+         * </tr>
+         * <tr>
+         *     <td>current-thread</td>
+         *     <td>false</td>
+         *     <td>Control that task is executed in calling thread</td>
+         * </tr>
+         * <tr>
+         *     <td>name</td>
+         *     <td>Timeout-N</td>
+         *     <td>Name used for debugging</td>
+         * </tr>
+         * <tr>
+         *     <td>cancel-source</td>
+         *     <td>true</td>
+         *     <td>Cancel task source if task is cancelled</td>
+         * </tr>
+         * </table>
+         *
+         * @param config the config node to use
+         * @return updated builder instance
+         */
+        public Builder config(Config config) {
+            config.get("timeout").as(Duration.class).ifPresent(this::timeout);
+            config.get("current-thread").asBoolean().ifPresent(this::currentThread);
+            config.get("name").asString().ifPresent(this::name);
+            config.get("cancel-source").asBoolean().ifPresent(this::cancelSource);
             return this;
         }
 
