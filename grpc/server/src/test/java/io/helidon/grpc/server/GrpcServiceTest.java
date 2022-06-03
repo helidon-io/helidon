@@ -24,7 +24,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Semaphore;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -513,7 +514,7 @@ public class GrpcServiceTest {
     private static class SynchronizedObserver<T>
             extends TestStreamObserver<T> {
 
-        private final Semaphore nextAccess = new Semaphore(1, true);
+        private final Lock nextAccess = new ReentrantLock(true);
 
         @Override
         public void onNext(T t) {
@@ -521,12 +522,11 @@ public class GrpcServiceTest {
         }
 
         private void accessNext(Runnable operation) {
+            nextAccess.lock();
             try {
-                nextAccess.acquire();
                 operation.run();
-                nextAccess.release();
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
+            } finally {
+                nextAccess.unlock();
             }
         }
     }

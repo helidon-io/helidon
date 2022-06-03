@@ -47,7 +47,8 @@ import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
 import java.util.WeakHashMap;
-import java.util.concurrent.Semaphore;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 
 import com.google.protobuf.Any;
@@ -90,7 +91,7 @@ import static io.grpc.MethodDescriptor.MethodType.SERVER_STREAMING;
  */
 public final class ProtoReflectionService extends ServerReflectionGrpc.ServerReflectionImplBase {
 
-    private final Semaphore indexAccess = new Semaphore(1, true);
+    private final Lock indexAccess = new ReentrantLock(true);
 
     private final Map<Server, ServerReflectionIndex> serverReflectionIndexes = new WeakHashMap<>();
 
@@ -598,13 +599,11 @@ public final class ProtoReflectionService extends ServerReflectionGrpc.ServerRef
     }
 
     private <T> T accessIndex(Supplier<T> operation) {
+        indexAccess.lock();
         try {
-            indexAccess.acquire();
-            T result = operation.get();
-            indexAccess.release();
-            return result;
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+            return operation.get();
+        } finally {
+            indexAccess.unlock();
         }
     }
 }

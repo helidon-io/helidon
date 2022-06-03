@@ -17,7 +17,8 @@
 package io.helidon.microprofile.grpc.core;
 
 import java.util.Objects;
-import java.util.concurrent.Semaphore;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 
 import io.grpc.Status;
@@ -116,7 +117,7 @@ public interface Instance {
 
         private T instance;
 
-        private final Semaphore instanceAccess = new Semaphore(1, true);
+        private final Lock instanceAccess = new ReentrantLock(true);
 
         private SingletonInstance(Class<T> instanceClass) {
             this.instanceClass = instanceClass;
@@ -146,13 +147,11 @@ public interface Instance {
         }
 
         private <T> T accessInstance(Supplier<T> operation) {
+            instanceAccess.lock();
             try {
-                instanceAccess.acquire();
-                T result = operation.get();
-                instanceAccess.release();
-                return result;
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
+                return operation.get();
+            } finally {
+                instanceAccess.unlock();
             }
         }
     }

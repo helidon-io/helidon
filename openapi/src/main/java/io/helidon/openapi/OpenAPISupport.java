@@ -33,8 +33,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.logging.Level;
@@ -141,7 +142,7 @@ public abstract class OpenAPISupport implements Service {
      */
     private static SnakeYAMLParserHelper<ExpandedTypeDescription> helper = null;
 
-    private static final Semaphore HELPER_ACCESS = new Semaphore(1, true);
+    private static final Lock HELPER_ACCESS = new ReentrantLock(true);
 
     private final String webContext;
 
@@ -159,7 +160,7 @@ public abstract class OpenAPISupport implements Service {
     private final OpenApiStaticFile openApiStaticFile;
     private final Supplier<List<? extends IndexView>> indexViewsSupplier;
 
-    private final Semaphore modelAccess = new Semaphore(1, true);
+    private final Lock modelAccess = new ReentrantLock(true);
 
     /**
      * Creates a new instance of {@code OpenAPISupport}.
@@ -924,14 +925,12 @@ public abstract class OpenAPISupport implements Service {
         }
     }
 
-    private static <T> T access(Semaphore guard, Supplier<T> operation) {
+    private static <T> T access(Lock guard, Supplier<T> operation) {
+        guard.lock();
         try {
-            guard.acquire();
-            T result = operation.get();
-            guard.release();
-            return result;
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+            return operation.get();
+        } finally {
+            guard.unlock();
         }
     }
 }

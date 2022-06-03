@@ -15,7 +15,8 @@
  */
 package io.helidon.microprofile.cdi;
 
-import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 
 import io.helidon.common.LogConfig;
@@ -28,7 +29,7 @@ import io.helidon.common.LogConfig;
 final class BuildTimeInitializer {
     private static volatile HelidonContainerImpl container;
 
-    private static final ReentrantReadWriteLock CONTAINER_ACCESS = new ReentrantReadWriteLock();
+    private static final Lock CONTAINER_ACCESS = new ReentrantLock(true);
 
     static {
         // need to initialize logging as soon as possible
@@ -66,11 +67,11 @@ final class BuildTimeInitializer {
     }
 
     private static <T> T accessContainer(Supplier<T> operation) {
-        CONTAINER_ACCESS.writeLock().lock();
+        CONTAINER_ACCESS.lock();
         try {
             return operation.get();
         } finally {
-            CONTAINER_ACCESS.writeLock().unlock();
+            CONTAINER_ACCESS.unlock();
         }
     }
 }

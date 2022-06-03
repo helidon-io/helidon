@@ -17,7 +17,8 @@
 package io.helidon.microprofile.faulttolerance;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Semaphore;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 
 import org.eclipse.microprofile.faulttolerance.Asynchronous;
@@ -39,7 +40,7 @@ class BulkheadBean {
         private int concurrentCalls;
         private int totalCalls;
 
-        private final Semaphore accessGuard = new Semaphore(1, true);
+        private final Lock accessGuard = new ReentrantLock(true);
 
         void increment() {
             access(() -> {
@@ -77,13 +78,11 @@ class BulkheadBean {
         }
 
         private <T> T access(Supplier<T> operation) {
+            accessGuard.lock();
             try {
-                accessGuard.acquire();
-                T result = operation.get();
-                accessGuard.release();
-                return result;
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
+                return operation.get();
+            } finally {
+                accessGuard.unlock();
             }
         }
     }

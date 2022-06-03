@@ -16,7 +16,8 @@
 package io.helidon.metrics.api;
 
 import java.util.ServiceLoader;
-import java.util.concurrent.Semaphore;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -85,7 +86,7 @@ class RegistryFactoryManager {
         return provider;
     }
 
-    private static final Semaphore SETTINGS_ACCESS = new Semaphore(1);
+    private static final Lock SETTINGS_ACCESS = new ReentrantLock(true);
 
     private RegistryFactoryManager() {
     }
@@ -132,13 +133,11 @@ class RegistryFactoryManager {
     }
 
     private static <T> T accessMetricsSettings(Supplier<T> operation) {
+        SETTINGS_ACCESS.lock();
         try {
-            SETTINGS_ACCESS.acquire();
-            T result = operation.get();
-            SETTINGS_ACCESS.release();
-            return result;
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+            return operation.get();
+        } finally {
+            SETTINGS_ACCESS.unlock();
         }
     }
 }

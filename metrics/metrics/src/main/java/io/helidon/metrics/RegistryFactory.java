@@ -17,7 +17,8 @@
 package io.helidon.metrics;
 
 import java.util.EnumMap;
-import java.util.concurrent.Semaphore;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import io.helidon.config.Config;
 import io.helidon.metrics.api.MetricsSettings;
@@ -45,7 +46,7 @@ import org.eclipse.microprofile.metrics.MetricRegistry.Type;
 public class RegistryFactory implements io.helidon.metrics.api.RegistryFactory {
 
     private final EnumMap<Type, Registry> registries = new EnumMap<>(Type.class);
-    private final Semaphore metricsSettingsAccess = new Semaphore(1);
+    private final Lock metricsSettingsAccess = new ReentrantLock(true);
     private MetricsSettings metricsSettings;
 
     /**
@@ -68,12 +69,11 @@ public class RegistryFactory implements io.helidon.metrics.api.RegistryFactory {
     }
 
     private void accessMetricsSettings(Runnable operation) {
+        metricsSettingsAccess.lock();
         try {
-            metricsSettingsAccess.acquire();
             operation.run();
-            metricsSettingsAccess.release();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+        } finally {
+            metricsSettingsAccess.unlock();
         }
     }
 
