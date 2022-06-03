@@ -61,5 +61,6 @@ done
 
 # Run this one because it has no pre-reqs and self-tests
 # Uses relative path to read configuration
-cd ${WS_DIR}/tests/integration/native-image/mp-1
-${WS_DIR}/tests/integration/native-image/mp-1/target/helidon-tests-native-image-mp-1
+# XXX temporarily exclude until https://github.com/oracle/helidon/issues/4296 is fixed
+#cd ${WS_DIR}/tests/integration/native-image/mp-1
+#${WS_DIR}/tests/integration/native-image/mp-1/target/helidon-tests-native-image-mp-1
