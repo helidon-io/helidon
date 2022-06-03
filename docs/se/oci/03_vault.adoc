@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -24,12 +24,24 @@
 :keywords: oci, vault
 :common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 :feature-name: OCI Vault
+:oci-vault-javadoc: https://docs.oracle.com/en-us/iaas/tools/java/latest/com/oracle/bmc/vault/package-summary.html
+:oci-vault-url: https://docs.oracle.com/en-us/iaas/Content/KeyManagement/home.htm
+:helidon-tag: https://github.com/oracle/helidon/tree/{helidon-version}
 
-The Helidon SE OCI Vault integration provides a reactive API Oracle Cloud Vault features.
+The Helidon SE OCI Vault integration provides a reactive API for the Oracle Cloud Vault service.
+
+== Deprecated
+
+The custom Helidon SE OCI clients documented here are deprecated. It is recommended that you
+use the OCI Java SDK directly, in particular the Async clients. For more information see:
+
+* link:{oci-vault-url}[OCI Vault Storage Documentation ]
+* link:{oci-vault-javadoc}[OCI Vault Storage Javadoc ]
+* link:{helidon-tag}/examples/integrations/oci/vault-reactive/[Helidon SE OCI Vault Example]
 
 == Experimental
 
-WARNING: Helidon integration with Oracle Cloud Infrastructure is still experimental and not intended for production use. APIs and features have not yet been fully tested and are subject to change.
+Helidon integration with Oracle Cloud Infrastructure is still experimental and not intended for production use. APIs and features have not yet been fully tested and are subject to change.
 
 include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 
