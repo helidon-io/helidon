@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+# Copyright (c) 2018, 2022 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -43,6 +43,8 @@ security:
       logout-enabled: true
       # Can define just a path, host will be taken from header
       post-logout-uri: "/loggedout"
+      # We want to redirect to login page (and token can be received either through cookie or header)
+      redirect: true
   - idcs-role-mapper:
       multitenant: false
       oidc-config:
