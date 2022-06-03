@@ -58,8 +58,8 @@ credentials from your environment.
 When you inject an OCI SDK Client object, the Helidon OCI SDK extension
 configures and constructs the object for you. The configuration primarily
 consists of initializing an OCI `AuthenticationDetailsProvider`. By default
-the extension will examine your environment and select the best Authentication
-Details Provider and configure it for you.
+the extension will examine your environment and select the best
+`AuthenticationDetailsProvider` and configure it for you.
 
 This means if your environment is already set up to work with the OCI SDK or
 the OCI command line, then it is very likely you do not need to do any additional
@@ -69,7 +69,7 @@ If for some reason you require full control over the OCI configuration you have
 that as well. For more information concerning the extension and its configuration
 and authentication options see the link:{javadoc-base-url-api}/OciExtension.html[OciExtension]
 javadocs. In particular the `oci.auth-strategies` property lets you control which
-Authentication Details Provider will be used.
+`AuthenticationDetailsProvider` will be used.
 
 == Accessing OCI Services
 
