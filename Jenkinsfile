@@ -87,7 +87,7 @@ pipeline {
               }
               steps {
                 sh 'etc/scripts/test-packaging-native.sh'
-                archiveArtifacts artifacts: "./tests/integration/native-image/mp-1/target/helidon-tests-native-image-mp-1"
+                archiveArtifacts artifacts: "tests/integration/native-image/mp-1/target/helidon-tests-native-image-mp-1"
               }
             }
           }
