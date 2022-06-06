@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,9 @@ import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -31,10 +32,6 @@ import java.util.logging.Logger;
  * <p>
  * Some enrollments might arrive before the manager is started. We save those and act on them once the
  * manager starts. This makes sure the executor's thread starts only at native image runtime.
- * </p>
- * <p>
- * In production use, starting and stopping the executor and even enrolling callbacks are not performance-critical operations,
- * so simple synchronization on methods which access shared data is clear and sufficient.
  * </p>
  */
 class PeriodicExecutor {
@@ -81,7 +78,7 @@ class PeriodicExecutor {
 
     private final Collection<Enrollment> deferredEnrollments = new ArrayList<>();
 
-    private final Semaphore access = new Semaphore(1, true);
+    private final Lock access = new ReentrantLock(true);
 
     private PeriodicExecutor() {
     }
@@ -173,12 +170,11 @@ class PeriodicExecutor {
     }
 
     private void sync(String taskDescription, Runnable task) {
+        access.lock();
         try {
-            access.acquire();
             task.run();
-            access.release();
-        } catch (InterruptedException ex) {
-            LOGGER.log(Level.WARNING, "Attempt to " + taskDescription + " failed", ex);
+        } finally {
+            access.unlock();
         }
     }
 }

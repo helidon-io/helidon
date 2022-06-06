@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -511,9 +513,21 @@ public class GrpcServiceTest {
      */
     private static class SynchronizedObserver<T>
             extends TestStreamObserver<T> {
+
+        private final Lock nextAccess = new ReentrantLock(true);
+
         @Override
-        public synchronized void onNext(T t) {
-            super.onNext(t);
+        public void onNext(T t) {
+            accessNext(() -> super.onNext(t));
+        }
+
+        private void accessNext(Runnable operation) {
+            nextAccess.lock();
+            try {
+                operation.run();
+            } finally {
+                nextAccess.unlock();
+            }
         }
     }
 }
