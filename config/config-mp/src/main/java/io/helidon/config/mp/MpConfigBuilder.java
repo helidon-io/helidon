@@ -76,8 +76,11 @@ import static io.helidon.config.mp.MpMetaConfig.MetaConfigSource;
 
 /**
  * Configuration builder.
+ *
+ * @deprecated This is an internal class that was exposed accidentally. It will be package local in next major release.
  */
-class MpConfigBuilder implements ConfigBuilder {
+@Deprecated (since = "2.3.1")
+public class MpConfigBuilder implements ConfigBuilder {
     private static final Logger LOGGER = Logger.getLogger(MpConfigBuilder.class.getName());
     private static final String DEFAULT_CONFIG_SOURCE = "META-INF/microprofile-config.properties";
 

@@ -224,8 +224,10 @@ public class MpConfigProviderResolver extends ConfigProviderResolver {
     /**
      * A delegate used to allow replacing configuration at runtime for components
      * that hold a reference to configuration obtained at build time.
+     *
+     * @deprecated This is an internal class that was exposed accidentally. It will be package local in next major release.
      */
-    @Deprecated
+    @Deprecated (since = "2.3.1")
     public static final class ConfigDelegate implements io.helidon.config.Config, Config {
         private final AtomicReference<Config> delegate = new AtomicReference<>();
         private final AtomicReference<io.helidon.config.Config> helidonDelegate = new AtomicReference<>();
