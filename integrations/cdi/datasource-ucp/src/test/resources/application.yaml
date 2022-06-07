@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+# Copyright (c) 2019, 2022 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,3 +23,9 @@ oracle:
           password: "${EMPTY}"
           user: sa
           serviceName: fred
+      PoolXADataSource:
+        testxa:
+          URL: jdbc:h2:mem:test
+          connectionFactoryClassName: org.h2.jdbcx.JdbcDataSource
+          password: "${EMPTY}"
+          user: sa
