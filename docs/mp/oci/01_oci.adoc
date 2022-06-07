@@ -16,7 +16,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-:javadoc-base-url-api: {javadoc-base-url}io.helidon.integrations.oci.sdk.cdi/io/helidon/integrations/oci/sdk/cdi/
+:javadoc-base-url-api: {javadoc-base-url}io.helidon.integrations.oci.sdk.cdi/io/helidon/integrations/oci/sdk/cdi
 
 = Oracle Cloud Infrastructure Integration
 :h1Prefix: MP
