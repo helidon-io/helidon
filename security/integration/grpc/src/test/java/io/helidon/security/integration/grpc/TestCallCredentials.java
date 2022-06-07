@@ -21,15 +21,15 @@ import java.util.concurrent.Executor;
 
 import io.helidon.grpc.core.ContextKeys;
 
-import io.grpc.CallCredentials2;
+import io.grpc.CallCredentials;
 import io.grpc.Metadata;
 
 /**
- * A {@link io.grpc.CallCredentials2} that add a basic auth
+ * A {@link io.grpc.CallCredentials} that add a basic auth
  * authorization header to a request.
  */
 public class TestCallCredentials
-        extends CallCredentials2 {
+        extends CallCredentials {
     /**
      * The basic auth encoded user name and password.
      */
