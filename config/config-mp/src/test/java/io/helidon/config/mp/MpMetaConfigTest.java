@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,21 +16,19 @@
 
 package io.helidon.config.mp;
 
-import java.util.LinkedList;
-import java.util.List;
-
+import io.helidon.config.ConfigException;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
-import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.iterableWithSize;
+
 
 class MpMetaConfigTest {
     private static ConfigProviderResolver configResolver;
@@ -58,18 +56,16 @@ class MpMetaConfigTest {
     }
 
     @Test
-    void testMetaYaml() {
-        System.setProperty(MpMetaConfig.META_CONFIG_SYSTEM_PROPERTY, "custom-mp-meta-config.yaml");
+    void testMetaEnvironmentVariablesSystemProperties() {
+        System.setProperty("property1", "value1");
+        System.setProperty("property2", "value2");
+        System.setProperty(MpMetaConfig.META_CONFIG_SYSTEM_PROPERTY, "custom-mp-meta-config-sysprops-envvars.properties");
         config = ConfigProvider.getConfig();
-
-        // validate the config sources
-        Iterable<ConfigSource> configSources = config.getConfigSources();
-        List<String> sourceNames = new LinkedList<>();
-        configSources.forEach(it -> sourceNames.add(it.getName()));
-
-        assertThat(sourceNames, iterableWithSize(2));
-        assertThat(sourceNames.get(0), is("CLASSPATH"));
-        assertThat(config.getValue("value", String.class), is("classpath"));
+        assertThat(config.getValue("property1", String.class), is("value1"));
+        assertThat(config.getValue("property2", String.class), is("value2"));
+        assertThat(config.getValue("foo.bar", String.class), is("mapped-env-value"));
+        System.clearProperty("property1");
+        System.clearProperty("property2");
     }
 
     @Test
@@ -77,6 +73,44 @@ class MpMetaConfigTest {
         System.setProperty(MpMetaConfig.META_CONFIG_SYSTEM_PROPERTY, "custom-mp-meta-config.properties");
         config = ConfigProvider.getConfig();
         assertThat(config.getValue("value", String.class), is("path"));
+        assertThat(config.getValue("config_ordinal", Integer.class), is(150));
+    }
+
+    @Test
+    void testMetaPropertiesOrdinal() {
+        System.setProperty(MpMetaConfig.META_CONFIG_SYSTEM_PROPERTY,
+                "custom-mp-meta-config-ordinal.properties");
+        config = ConfigProvider.getConfig();
+        assertThat(config.getValue("value", String.class), is("classpath"));
+        assertThat(config.getValue("config_ordinal", Integer.class), is(125));
+    }
+
+    @Test
+    void testMetaPropertiesClassPathProfile() {
+        System.setProperty(MpMetaConfig.META_CONFIG_SYSTEM_PROPERTY,
+                "custom-mp-meta-config-classpath-profile.properties");
+        config = ConfigProvider.getConfig();
+        assertThat(config.getValue("value", String.class), is("classpath_profile"));
+        assertThat(config.getValue("config_ordinal", Integer.class), is(125));
+    }
+
+    @Test
+    void testMetaPropertiesPathProfile() {
+        System.setProperty(MpMetaConfig.META_CONFIG_SYSTEM_PROPERTY,
+                "custom-mp-meta-config-path-profile.properties");
+        config = ConfigProvider.getConfig();
+        assertThat(config.getValue("value", String.class), is("path_profile"));
+        assertThat(config.getValue("config_ordinal", Integer.class), is(150));
+    }
+
+    @Test
+    void testMetaPropertiesNotOptional() {
+        System.setProperty(MpMetaConfig.META_CONFIG_SYSTEM_PROPERTY,
+                "custom-mp-meta-config-not-optional.properties");
+        try {
+            config = ConfigProvider.getConfig();
+            Assertions.fail("Expecting meta-config to fail due to not optional non-existent config source");
+        } catch (ConfigException e) {}
     }
 
     @Test
