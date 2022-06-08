@@ -45,7 +45,7 @@ public class AnnotationFinder {
             "java.",
             "javax.",
             "jakarta.",
-            "org.microprofile."
+            "org.eclipse.microprofile."
     };
 
     private final Package pkg;
@@ -84,7 +84,7 @@ public class AnnotationFinder {
                                             Set<Annotation> seen, Package pkg, BeanManager bm) {
         for (Annotation a1 : set) {
             Class<? extends Annotation> a1Type = a1.annotationType();
-            if (a1Type.getPackage().equals(pkg)) {
+            if (a1Type.getName().startsWith(pkg.getName())) {       // Avoid getPackage() - Issue #4296
                 result.add(a1);
             } else if (!seen.contains(a1) && isOfInterest(a1, bm)) {
                 seen.add(a1);
