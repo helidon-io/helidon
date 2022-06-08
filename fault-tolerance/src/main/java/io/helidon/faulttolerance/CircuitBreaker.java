@@ -24,6 +24,8 @@ import java.util.concurrent.ScheduledExecutorService;
 
 import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * CircuitBreaker protects a potentially failing endpoint from overloading and the application
@@ -90,6 +92,7 @@ public interface CircuitBreaker extends FtHandler {
     /**
      * Fluent API builder for {@link io.helidon.faulttolerance.CircuitBreaker}.
      */
+    @Configured
     class Builder implements io.helidon.common.Builder<CircuitBreaker> {
         private final Set<Class<? extends Throwable>> skipOn = new HashSet<>();
         private final Set<Class<? extends Throwable>> applyOn = new HashSet<>();
@@ -119,6 +122,7 @@ public interface CircuitBreaker extends FtHandler {
          * @param delay to wait
          * @return updated builder instance
          */
+        @ConfiguredOption("PT5S")
         public Builder delay(Duration delay) {
             this.delay = delay;
             return this;
@@ -133,6 +137,7 @@ public interface CircuitBreaker extends FtHandler {
          * @return updated builder instance
          * @see #volume(int)
          */
+        @ConfiguredOption("60")
         public Builder errorRatio(int ratio) {
             this.ratio = ratio;
             return this;
@@ -145,6 +150,7 @@ public interface CircuitBreaker extends FtHandler {
          * @param successThreshold number of calls
          * @return updated builder instance
          */
+        @ConfiguredOption("1")
         public Builder successThreshold(int successThreshold) {
             this.successThreshold = successThreshold;
             return this;
@@ -157,6 +163,7 @@ public interface CircuitBreaker extends FtHandler {
          * @return updated builder instance
          * @see #errorRatio(int)
          */
+        @ConfiguredOption("10")
         public Builder volume(int volume) {
             this.volume = volume;
             return this;
@@ -239,6 +246,7 @@ public interface CircuitBreaker extends FtHandler {
          * @param name the name
          * @return updated builder instance
          */
+        @ConfiguredOption("CircuitBreaker-")
         public Builder name(String name) {
             this.name = name;
             return this;
@@ -251,6 +259,7 @@ public interface CircuitBreaker extends FtHandler {
          * @param cancelSource cancel source policy
          * @return updated builder instance
          */
+        @ConfiguredOption("true")
         public Builder cancelSource(boolean cancelSource) {
             this.cancelSource = cancelSource;
             return this;

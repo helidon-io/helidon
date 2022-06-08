@@ -22,6 +22,8 @@ import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * Bulkhead protects a resource that cannot serve unlimited parallel
@@ -45,6 +47,7 @@ public interface Bulkhead extends FtHandler {
     /**
      * Fluent API builder for {@link io.helidon.faulttolerance.Bulkhead}.
      */
+    @Configured
     class Builder implements io.helidon.common.Builder<Bulkhead> {
         private static final int DEFAULT_LIMIT = 10;
         private static final int DEFAULT_QUEUE_LENGTH = 10;
@@ -81,6 +84,7 @@ public interface Bulkhead extends FtHandler {
          * @param limit maximal number of parallel calls, defaults is {@value DEFAULT_LIMIT}
          * @return updated builder instance
          */
+        @ConfiguredOption("10")
         public Builder limit(int limit) {
             this.limit = limit;
             return this;
@@ -94,6 +98,7 @@ public interface Bulkhead extends FtHandler {
          * @param queueLength length of queue
          * @return updated builder instance
          */
+        @ConfiguredOption("10")
         public Builder queueLength(int queueLength) {
             this.queueLength = queueLength;
             return this;
@@ -105,6 +110,7 @@ public interface Bulkhead extends FtHandler {
          * @param name the name
          * @return updated builder instance
          */
+        @ConfiguredOption("Bulkhead-")
         public Builder name(String name) {
             this.name = name;
             return this;
@@ -117,6 +123,7 @@ public interface Bulkhead extends FtHandler {
          * @param cancelSource cancel source policy
          * @return updated builder instance
          */
+        @ConfiguredOption("true")
         public Builder cancelSource(boolean cancelSource) {
             this.cancelSource = cancelSource;
             return this;

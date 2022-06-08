@@ -21,6 +21,8 @@ import java.util.concurrent.ScheduledExecutorService;
 
 import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * Timeout attempts to terminate execution after a duration time passes.
@@ -50,6 +52,7 @@ public interface Timeout extends FtHandler {
     /**
      * Fluent API builder for {@link io.helidon.faulttolerance.Timeout}.
      */
+    @Configured
     class Builder implements io.helidon.common.Builder<Timeout> {
         private Duration timeout = Duration.ofSeconds(10);
         private LazyValue<? extends ScheduledExecutorService> executor = FaultTolerance.scheduledExecutor();
@@ -71,6 +74,7 @@ public interface Timeout extends FtHandler {
          * @param timeout duration of the timeout of operations handled by the new Timeout instance
          * @return updated builder instance
          */
+        @ConfiguredOption("PT10S")
         public Builder timeout(Duration timeout) {
             this.timeout = timeout;
             return this;
@@ -83,6 +87,7 @@ public interface Timeout extends FtHandler {
          * @param currentThread setting for this timeout
          * @return updated builder instance
          */
+        @ConfiguredOption("false")
         public Builder currentThread(boolean currentThread) {
             this.currentThread = currentThread;
             return this;
@@ -105,6 +110,7 @@ public interface Timeout extends FtHandler {
          * @param name the name
          * @return updated builder instance
          */
+        @ConfiguredOption("Timeout-")
         public Builder name(String name) {
             this.name = name;
             return this;
@@ -116,6 +122,7 @@ public interface Timeout extends FtHandler {
          * @param cancelSource setting for cancel source, defaults (@code true}
          * @return updated builder instance
          */
+        @ConfiguredOption("true")
         public Builder cancelSource(boolean cancelSource) {
             this.cancelSource = cancelSource;
             return this;
