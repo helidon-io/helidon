@@ -2,6 +2,15 @@
 <suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
 <!-- For information see https://jeremylong.github.io/DependencyCheck/general/suppression.html -->
 
+<!-- False positive identifying Jedis client as Redis server -->
+<suppress>
+   <notes><![CDATA[
+   file name: jedis-3.1.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/redis\.clients/jedis@.*$</packageUrl>
+   <cve>CVE-2021-32626</cve>
+</suppress>
+
 <!-- Applies to Processing:Processing -->
 <suppress>
    <notes><![CDATA[
