@@ -18,7 +18,7 @@ package io.helidon.config.hocon.mp;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 public class ConfigBean {
     // Main Hocon config file properties
