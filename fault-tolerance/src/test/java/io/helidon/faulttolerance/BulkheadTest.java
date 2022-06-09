@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,9 @@ import java.util.stream.IntStream;
 import io.helidon.common.LogConfig;
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
-
+import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
+import io.helidon.config.spi.ConfigSource;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -41,6 +43,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 class BulkheadTest {
+
     @BeforeAll
     static void setupTest() {
         LogConfig.configureRuntime();
@@ -167,6 +170,19 @@ class BulkheadTest {
         assertThat(allInts, contains(0, 1, 2, 3, 4));
 
         FaultToleranceTest.completionException(result, IllegalStateException.class);
+    }
+
+    @Test
+    void testBulkheadConfig() {
+        ConfigSource configSource = ConfigSources.classpath("application.yaml").build();
+        Config config = Config.create(() -> configSource);
+
+        Bulkhead.Builder bulkhead = Bulkhead.builder()
+                .config(config.get("bulkhead"));
+        assertThat(bulkhead.limit(), is(20));
+        assertThat(bulkhead.queueLength(), is(40));
+        assertThat(bulkhead.name(), is("MyBulkhead"));
+        assertThat(bulkhead.cancelSource(), is(false));
     }
 
     private static class MultiRequest {

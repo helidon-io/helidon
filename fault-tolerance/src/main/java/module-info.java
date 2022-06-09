@@ -22,6 +22,7 @@ module io.helidon.faulttolerance {
     requires io.helidon.common.configurable;
     requires transitive io.helidon.common.reactive;
     requires java.logging;
+    requires static io.helidon.config.metadata;
 
     exports io.helidon.faulttolerance;
 }

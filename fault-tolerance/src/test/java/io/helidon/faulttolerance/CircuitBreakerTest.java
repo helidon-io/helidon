@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,9 @@ import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
-
+import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
+import io.helidon.config.spi.ConfigSource;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -92,6 +94,21 @@ class CircuitBreakerTest {
         breakerOpenMulti(breaker);
 
         assertThat(breaker.state(), is(CircuitBreaker.State.OPEN));
+    }
+
+    @Test
+    void testCircuitBreakerConfig() {
+        ConfigSource configSource = ConfigSources.classpath("application.yaml").build();
+        Config config = Config.create(() -> configSource);
+
+        CircuitBreaker.Builder breaker = CircuitBreaker.builder()
+                .config(config.get("circuitbreaker"));
+        assertThat(breaker.delay(), is(Duration.ofSeconds(2)));
+        assertThat(breaker.name(), is("MyCircuitBreaker"));
+        assertThat(breaker.errorRatio(), is(30));
+        assertThat(breaker.successThreshold(), is(5));
+        assertThat(breaker.volume(), is(20));
+        assertThat(breaker.cancelSource(), is(false));
     }
 
     private void breakerOpen(CircuitBreaker breaker) {
