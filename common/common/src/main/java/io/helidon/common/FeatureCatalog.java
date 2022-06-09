@@ -108,8 +108,7 @@ final class FeatureCatalog {
                     .name("Messaging")
                     .description("Reactive messaging support")
                     .path("Messaging")
-                    .flavor(HelidonFlavor.SE)
-                    .experimental(true));
+                    .flavor(HelidonFlavor.SE));
         addSe("io.helidon.metrics",
               "Metrics",
               "Metrics support",
@@ -171,8 +170,7 @@ final class FeatureCatalog {
                     .description("GraphQL support")
                     .path("GraphQL")
                     .nativeDescription("Experimental support, tested on limited use cases")
-                    .flavor(HelidonFlavor.SE)
-                    .experimental(true));
+                    .flavor(HelidonFlavor.SE));
         add("io.helidon.integrations.micrometer",
             FeatureDescriptor.builder()
                     .name("Micrometer")
@@ -193,15 +191,13 @@ final class FeatureCatalog {
                     .name("HCP Vault")
                     .description("Hashicorp Vault Integration")
                     .path("HCP Vault")
-                    .flavor(HelidonFlavor.SE)
-                    .experimental(true));
+                    .flavor(HelidonFlavor.SE));
         add("io.helidon.integrations.microstream",
             FeatureDescriptor.builder()
                     .name("Microstream")
                     .description("Microstream Integration")
                     .path("Microstream")
                     .flavor(HelidonFlavor.SE)
-                    .experimental(true)
                     .nativeSupported(false));
         /*
          * MP Modules
@@ -259,8 +255,7 @@ final class FeatureCatalog {
                     .description("MicroProfile GraphQL spec implementation")
                     .path("GraphQL")
                     .nativeDescription("Experimental support, tested on limited use cases")
-                    .flavor(HelidonFlavor.MP)
-                    .experimental(true));
+                    .flavor(HelidonFlavor.MP));
         add("io.helidon.microprofile.grpc.server",
             FeatureDescriptor.builder()
                     .name("gRPC Server")
@@ -298,8 +293,7 @@ final class FeatureCatalog {
                     .name("Messaging")
                     .description("MicroProfile Reactive Messaging spec implementation")
                     .path("Messaging")
-                    .flavor(HelidonFlavor.MP)
-                    .experimental(true));
+                    .flavor(HelidonFlavor.MP));
         addMp("io.helidon.microprofile.metrics",
               "Metrics",
               "MicroProfile metrics spec implementation",
@@ -313,8 +307,7 @@ final class FeatureCatalog {
                     .name("Reactive")
                     .description("MicroProfile Reactive Stream operators")
                     .path("Reactive")
-                    .flavor(HelidonFlavor.MP)
-                    .experimental(true));
+                    .flavor(HelidonFlavor.MP));
         addMp("io.helidon.microprofile.security",
               "Security",
               "Security support",
@@ -373,7 +366,6 @@ final class FeatureCatalog {
                     .path("Scheduling")
                     .flavor(HelidonFlavor.MP)
                     .nativeSupported(true)
-                    .experimental(true)
         );
 
         add("io.helidon.integrations.micrometer.cdi",
@@ -390,16 +382,14 @@ final class FeatureCatalog {
                     .name("OCI")
                     .description("OCI Integration")
                     .path("OCI")
-                    .flavor(HelidonFlavor.MP)
-                    .experimental(true));
+                    .flavor(HelidonFlavor.MP));
 
         add("io.helidon.integrations.vault.cdi",
             FeatureDescriptor.builder()
                     .name("HCP Vault")
                     .description("Hashicorp Vault Integration")
                     .path("HCP Vault")
-                    .flavor(HelidonFlavor.MP)
-                    .experimental(true));
+                    .flavor(HelidonFlavor.MP));
 
         add("io.helidon.microprofile.lra",
                 FeatureDescriptor.builder()
@@ -407,8 +397,7 @@ final class FeatureCatalog {
                         .description("MicroProfile Long Running Actions")
                         .path("LRA")
                         .flavor(HelidonFlavor.MP)
-                        .nativeSupported(true)
-                        .experimental(true));
+                        .nativeSupported(true));
 
         add("io.helidon.integrations.microstream.cdi",
             FeatureDescriptor.builder()
@@ -416,7 +405,6 @@ final class FeatureCatalog {
                     .description("Microstream Integration")
                     .path("Microstream")
                     .flavor(HelidonFlavor.MP)
-                    .experimental(true)
                     .nativeSupported(false));
         /*
          * Common modules
@@ -451,8 +439,7 @@ final class FeatureCatalog {
             FeatureDescriptor.builder()
                     .name("Db Client")
                     .description("Reactive database client")
-                    .path("DbClient")
-                    .experimental(true));
+                    .path("DbClient"));
         add("io.helidon.dbclient.health",
             "Health Check",
             "Reactive database client health check support",
@@ -488,21 +475,18 @@ final class FeatureCatalog {
                     .name("Kafka Connector")
                     .description("Reactive messaging connector for Kafka")
                     .path("Messaging", "Kafka")
-                    .experimental(true)
                     .nativeSupported(true));
         add("io.helidon.messaging.connectors.jms",
             FeatureDescriptor.builder()
                     .name("JMS Connector")
                     .description("Reactive messaging connector for JMS")
                     .path("Messaging", "JMS")
-                    .experimental(true)
                     .nativeSupported(false));
         add("io.helidon.messaging.connectors.aq",
             FeatureDescriptor.builder()
                     .name("Oracle AQ Connector")
                     .description("Reactive messaging connector for Oracle AQ")
                     .path("Messaging", "OracleAQ")
-                    .experimental(true)
                     .nativeSupported(false));
         add("io.helidon.security.abac.policy.el",
             FeatureDescriptor.builder()
@@ -603,7 +587,6 @@ final class FeatureCatalog {
                         .name("Neo4j integration")
                         .description("Integration with Neo4j driver")
                         .path("Neo4j")
-                        .experimental(true)
                         .nativeSupported(true));
         add("io.helidon.integrations.neo4j.health",
                 FeatureDescriptor.builder()
@@ -619,8 +602,7 @@ final class FeatureCatalog {
             FeatureDescriptor.builder()
                     .name("Web Client")
                     .description("Reactive web client")
-                    .path("WebClient")
-                    .experimental(true));
+                    .path("WebClient"));
         add("io.helidon.webclient.metrics",
             "Metrics",
             "Reactive web client support for metrics",
