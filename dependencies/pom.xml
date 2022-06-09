@@ -139,6 +139,7 @@
         <version.lib.opentracing.grpc>0.2.1</version.lib.opentracing.grpc>
         <version.lib.opentracing.tracerresolver>0.1.8</version.lib.opentracing.tracerresolver>
         <version.lib.perfmark-api>0.23.0</version.lib.perfmark-api>
+        <version.lib.parsson>1.1.0</version.lib.parsson>
         <version.lib.postgresql>42.3.3</version.lib.postgresql>
         <version.lib.prometheus>0.9.0</version.lib.prometheus>
         <version.lib.slf4j>1.7.32</version.lib.slf4j>
@@ -355,15 +356,9 @@
                 <version>${version.lib.jakarta.jms-api}</version>
             </dependency>
             <dependency>
-                <groupId>org.glassfish</groupId>
-                <artifactId>jakarta.json</artifactId>
-                <version>${version.lib.jsonp-impl}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.glassfish</groupId>
-                <artifactId>jakarta.json</artifactId>
-                <classifier>module</classifier>
-                <version>${version.lib.jsonp-impl}</version>
+                <groupId>org.eclipse.parsson</groupId>
+                <artifactId>parsson</artifactId>
+                <version>${version.lib.parsson}</version>
             </dependency>
             <dependency>
                 <groupId>io.netty</groupId>
@@ -394,13 +389,6 @@
                 <groupId>org.eclipse</groupId>
                 <artifactId>yasson</artifactId>
                 <version>${version.lib.yasson}</version>
-                <exclusions>
-                    <exclusion>
-                        <!-- we must only have implementation on classpath, not API - module conflict -->
-                        <groupId>jakarta.json</groupId>
-                        <artifactId>jakarta.json-api</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
 
             <!-- Config related -->
@@ -1029,10 +1017,6 @@
                         <artifactId>jakarta.inject</artifactId>
                     </exclusion>
                     <exclusion>
-                        <groupId>jakarta.json</groupId>
-                        <artifactId>jakarta.json-api</artifactId>
-                    </exclusion>
-                    <exclusion>
                         <groupId>com.sun.activation</groupId>
                         <artifactId>jakarta.activation</artifactId>
                     </exclusion>
@@ -1079,10 +1063,6 @@
                     <exclusion>
                         <groupId>javax.interceptor</groupId>
                         <artifactId>javax.interceptor-api</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>jakarta.json</groupId>
-                        <artifactId>jakarta.json-api</artifactId>
                     </exclusion>
                     <exclusion>
                         <groupId>org.glassfish.hk2.external</groupId>

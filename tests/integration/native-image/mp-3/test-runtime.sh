@@ -1,6 +1,6 @@
 #!/bin/bash -e
 #
-# Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+# Copyright (c) 2020, 2022 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -43,8 +43,7 @@ java -jar -Dexit.on.started=! target/helidon-tests-native-image-mp-3.jar
 
 # Attempt to run this example as a java with module path
 
-# TODO 3.0.0-JAKARTA Caused by: java.lang.NoClassDefFoundError: org/glassfish/json/jaxrs/JsonValueBodyReader
-#java -Dexit.on.started=! \
-#     --module-path target/helidon-tests-native-image-mp-3.jar:target/libs \
-#     --add-modules helidon.tests.nimage.quickstartmp \
-#     -m io.helidon.microprofile.cdi/io.helidon.microprofile.cdi.Main
+java -Dexit.on.started=! \
+     --module-path target/helidon-tests-native-image-mp-3.jar:target/libs \
+     --add-modules helidon.tests.nimage.quickstartmp \
+     -m io.helidon.microprofile.cdi/io.helidon.microprofile.cdi.Main

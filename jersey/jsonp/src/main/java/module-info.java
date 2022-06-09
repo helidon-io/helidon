@@ -19,4 +19,5 @@
  */
 module io.helidon.jersey.media.jsonp {
     requires transitive jersey.media.json.processing;
+    requires org.glassfish.json.jaxrs;
 }

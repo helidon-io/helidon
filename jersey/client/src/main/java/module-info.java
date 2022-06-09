@@ -26,6 +26,8 @@ module io.helidon.jersey.client {
     requires jakarta.annotation;
     requires io.helidon.common.context;
 
+    exports io.helidon.jersey.client;
+
     provides org.glassfish.jersey.client.spi.ClientBuilderListener
             with io.helidon.jersey.client.ClientBuilderListener;
 }

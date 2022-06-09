@@ -51,13 +51,12 @@ java -Dexit.on.started=! -jar target/helidon-tests-native-image-se-1.jar
 #
 # Run MP-1
 #
-# TODO 3.0.0-JAKARTA - rest client fails during startup
-# cd ${WS_DIR}/tests/integration/native-image/mp-1
+cd ${WS_DIR}/tests/integration/native-image/mp-1
 # Classpath
-# java -jar target/helidon-tests-native-image-mp-1.jar
+java -jar target/helidon-tests-native-image-mp-1.jar
 # Module Path
-#java --module-path target/helidon-tests-native-image-mp-1.jar:target/libs \
-#  --module helidon.tests.nimage.mp/io.helidon.tests.integration.nativeimage.mp1.Mp1Main
+java --module-path target/helidon-tests-native-image-mp-1.jar:target/libs \
+  --module helidon.tests.nimage.mp/io.helidon.tests.integration.nativeimage.mp1.Mp1Main
 
 #
 # Run MP-3 (just start and stop)
@@ -67,7 +66,7 @@ cd ${WS_DIR}/tests/integration/native-image/mp-3
 java -Dexit.on.started=! -jar target/helidon-tests-native-image-mp-3.jar
 
 # Module Path
-# java -Dexit.on.started=! \
-#  --module-path target/helidon-tests-native-image-mp-3.jar:target/libs \
-#  --add-modules helidon.tests.nimage.quickstartmp \
-#  --module io.helidon.microprofile.cdi/io.helidon.microprofile.cdi.Main
+java -Dexit.on.started=! \
+  --module-path target/helidon-tests-native-image-mp-3.jar:target/libs \
+  --add-modules helidon.tests.nimage.quickstartmp \
+  --module io.helidon.microprofile.cdi/io.helidon.microprofile.cdi.Main
