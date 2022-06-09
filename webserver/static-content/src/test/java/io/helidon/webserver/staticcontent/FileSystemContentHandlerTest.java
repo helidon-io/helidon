@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.webserver.testsupport;
+package io.helidon.webserver.staticcontent;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -27,7 +27,10 @@ import java.util.concurrent.TimeoutException;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.StaticContentSupport;
+import io.helidon.webserver.testsupport.TemporaryFolder;
+import io.helidon.webserver.testsupport.TemporaryFolderExtension;
+import io.helidon.webserver.testsupport.TestClient;
+import io.helidon.webserver.testsupport.TestResponse;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -37,7 +40,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
- * Tests {@link io.helidon.webserver.FileSystemContentHandler}.
+ * Tests {@link io.helidon.webserver.staticcontent.FileSystemContentHandler}.
  */
 @ExtendWith(TemporaryFolderExtension.class)
 public class FileSystemContentHandlerTest {
