@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+# Copyright (c) 2018, 2022 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -44,6 +44,8 @@ security:
         scope-audience: "http://localhost:7987/test-application"
         proxy-host: "${security.properties.proxy-host}"
         frontend-uri: "${security.properties.frontend-uri}"
+        # We want to redirect to login page (and token can be received either through cookie or header)
+        redirect: true
     - idcs-role-mapper:
         multitenant: false
         oidc-config:
