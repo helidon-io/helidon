@@ -443,7 +443,7 @@ public final class HealthSupport extends HelidonRestServiceSupport {
          * @param unit timeout time unit
          * @return updated builder instance
          */
-        @ConfiguredOption(key = TIMEOUT_CONFIG_KEY, description = "health endpoint timeout (ms)")
+        @ConfiguredOption(key = TIMEOUT_CONFIG_KEY, description = "health endpoint timeout (ms)", type = Long.class)
         public Builder timeout(long timeout, TimeUnit unit) {
             timeoutMillis(unit.toMillis(timeout));
             return this;
