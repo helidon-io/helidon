@@ -305,7 +305,8 @@ public final class HealthSupport extends HelidonRestServiceSupport {
      * Fluent API builder for {@link io.helidon.health.HealthSupport}.
      */
     @Configured(prefix = Builder.HEALTH_CONFIG_KEY)
-    public static final class Builder extends HelidonRestServiceSupport.Builder<Builder, HealthSupport> {
+    public static final class Builder extends HelidonRestServiceSupport.Builder<Builder, HealthSupport>
+            implements io.helidon.common.Builder<HealthSupport.Builder, HealthSupport> {
 
         /**
          * Config key for the {@code health} section.
@@ -377,7 +378,7 @@ public final class HealthSupport extends HelidonRestServiceSupport {
          * @param names names of health checks to include
          * @return updated builder instance
          */
-        @ConfiguredOption(key = INCLUDE_CONFIG_KEY)
+        @ConfiguredOption(key = INCLUDE_CONFIG_KEY, type = String.class, kind = ConfiguredOption.Kind.LIST)
         public Builder addIncluded(Collection<String> names) {
             if (null == names) {
                 return this;
@@ -407,7 +408,7 @@ public final class HealthSupport extends HelidonRestServiceSupport {
          * @param names names of health checks to exclude
          * @return updated builder instance
          */
-        @ConfiguredOption(key = EXCLUDE_CONFIG_KEY)
+        @ConfiguredOption(key = EXCLUDE_CONFIG_KEY, type = String.class, kind = ConfiguredOption.Kind.LIST)
         public Builder addExcluded(Collection<String> names) {
             if (null == names) {
                 return this;
