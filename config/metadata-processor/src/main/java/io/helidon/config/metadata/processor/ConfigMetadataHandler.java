@@ -236,7 +236,7 @@ class ConfigMetadataHandler {
             if (anInterface instanceof DeclaredType) {
                 DeclaredType type = (DeclaredType) anInterface;
                 if (typeUtils.isSameType(typeUtils.erasure(builderType), typeUtils.erasure(type))) {
-                    TypeMirror builtType = type.getTypeArguments().get(0);
+                    TypeMirror builtType = type.getTypeArguments().get(1);
                     return new BuilderTypeInfo(typeUtils.erasure(builtType).toString());
                 }
             }
