@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,6 @@ class TestHttpParseFineTuning {
         WebServer ws = WebServer.builder()
                 .host("localhost")
                 .routing(Routing.builder()
-                                 .register("/static", StaticContentSupport.create("/static"))
                                  .any((req, res) -> res.send("any"))
                                  .build())
                 .build()
@@ -72,7 +71,6 @@ class TestHttpParseFineTuning {
         WebServer ws = WebServer.builder()
                 .host("localhost")
                 .routing(Routing.builder()
-                                 .register("/static", StaticContentSupport.create("/static"))
                                  .any((req, res) -> res.send("any"))
                                  .build())
                 .config(config)
@@ -109,10 +107,10 @@ class TestHttpParseFineTuning {
 
         if (success) {
             assertThat("Header '" + headerName + "' should have passed", response.status(), is(Http.Status.OK_200));
-            assertThat("This request should return content of static-content.txt", response.content()
+            assertThat("This request should return content 'any'", response.content()
                                .as(String.class)
                                .await(10, TimeUnit.SECONDS),
-                       is("Hi"));
+                       is("any"));
         } else {
             assertThat("Header '" + headerName + "' should have failed", response.status(), is(Http.Status.BAD_REQUEST_400));
         }
@@ -148,10 +146,10 @@ class TestHttpParseFineTuning {
 
         if (success) {
             assertThat("Header of size " + size + " should have passed", response.status(), is(Http.Status.OK_200));
-            assertThat("This request should return content of static-content.txt", response.content()
+            assertThat("This request should return content 'any'", response.content()
                                .as(String.class)
                                .await(10, TimeUnit.SECONDS),
-                       is("Hi"));
+                       is("any"));
         } else {
             assertThat("Header of size " + size + " should have failed", response.status(), is(Http.Status.BAD_REQUEST_400));
         }
