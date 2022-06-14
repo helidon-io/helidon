@@ -27,19 +27,14 @@
         <version>3.0.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>helidon-tests-integration-config-hocon-mp</artifactId>
-    <name>Helidon Tests Integration for HOCON/JSON Config on MP</name>
-    <description>Validation for HOCON/JSON Config on MP</description>
+    <artifactId>helidon-tests-integration-config-gh-4375</artifactId>
+    <name>Helidon Tests Integration GH 4375</name>
+    <description>Validation for Github issue #4375 - Verify that helidon-config-yaml-mp is part of helidon-microprofile-config</description>
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config-hocon-mp</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.microprofile.server</groupId>
-            <artifactId>helidon-microprofile-server</artifactId>
+            <groupId>io.helidon.microprofile.config</groupId>
+            <artifactId>helidon-microprofile-config</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
