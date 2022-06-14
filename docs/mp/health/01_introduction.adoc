@@ -28,14 +28,14 @@
 
 == ToC
 
-- Overview
-- Maven Coordinates
-- Usage
-- API
-- Configuration
-- Reference
-- Examples
-- Additional Information
+- <<_overview>>
+- <<_maven_coordinates>>
+- <<_usage>>
+- <<_api>>
+- <<_configuration>>
+- <<_reference>>
+- <<_examples>>
+- <<_additional_information_>>
 
 == Overview
 Microservices expose their health status primarily so external tools (for example, an orchestrator such as Kubernetes)
@@ -67,7 +67,7 @@ To enable built-in health checks add the following dependency
 
 == Usage
 
-Helidon Health implements MicroProfile Health Checks
+Helidon MP Health implements MicroProfile Health Checks
 link:http://download.eclipse.org/microprofile/microprofile-health-{health-release}/microprofile-health-spec.html[Specification].
 The spec prescribes how external tools probe a service's health checks and how you
 implement health checks as part of your microservice that are specific to your service's needs.
@@ -89,7 +89,7 @@ A service that reports `DOWN` for its readiness cannot _at the moment_ do its jo
 some future point it might become able to do so without requiring a restart.
 
 _Startup_ checks indicate whether the service has started to the point where liveness and readiness checks even make sense.
-A service reporting `DOWN` for a startup check is still initializing itself and normally will report `UP`, assuming it has started successfully.
+A service reporting `DOWN` for a startup check is still initializing itself and normally will report `UP` soon, assuming it is able to start successfully.
 
 The following table describes more about these types of health checks, including how an orchestrator
 such as Kubernetes might react.
@@ -97,9 +97,9 @@ such as Kubernetes might react.
 
 == API
 A MicroProfile-compliant service reports its health via known REST endpoints. Helidon MP
-provides these endpoints automatically as part of every MP microservice.
+provides these endpoints automatically as part of every MP microservice that includes health support..
 
-External management tools (or `curl` or browsers) retrieve health checks using the REST endpoints in the following table which summarizes the types of health checks in MicroProfile Health.
+External management tools (or `curl` or browsers) retrieve health checks using the REST endpoints in the table below which summarizes the types of health checks in MicroProfile Health.
 Responses from the health endpoints report `200` (OK), `204` (no content), or `503` (service unavailable) depending on the outcome of running the health checks.
 HTTP `GET` responses include JSON content showing the detailed results of all the health checks which the server executed after receiving the request.
 HTTP `HEAD` requests return only the status with no payload.
@@ -128,6 +128,7 @@ microservice reports itself as ready.
 
 
 == Configuration
+TODO: This part has to be generated
 
 === Custom Health Root Path and Port
 
@@ -144,6 +145,8 @@ health:
   web-context: "myhealth"  // <1>
 ----
 <1> The web-context specifies a new root path for the health endpoint.
+
+TODO: replaced by generated
 
 [source,bash]
 .Build and run the application, then verify that the health endpoint is using the new `/myhealth` root:
@@ -174,7 +177,7 @@ Generate Helidon MP Quickstart project following these <<Instructions>>
 
 === Using the Built-In Health Checks
 
-Helidon has a set of built-in health checks that are automatically enabled to report various
+Helidon has a set of built-in health checks that are enabled to report various
 health check statuses that are commonly used:
 
 * deadlock detection
@@ -185,7 +188,7 @@ The following example will demonstrate how to use the built-in health checks.  T
 from the root directory of your project (helidon-quickstart-mp).
 
 [source,bash]
-.Build the application, skipping unit tests, then run it:
+.Build the application, then run it:
 ----
 mvn package
 java -jar target/helidon-quickstart-mp.jar
