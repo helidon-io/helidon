@@ -93,7 +93,7 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
      * @return a new thread pool supplier configured from config
      * @deprecated since 2.4.2, please use {@link #create(Config, String)}
      */
-    @Deprecated
+    @Deprecated(since = "2.4.2", forRemoval = true)
     public static ThreadPoolSupplier create(Config config) {
         return builder().config(config)
                 .build();
@@ -118,7 +118,7 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
      * @return a new thread pool supplier with default configuration
      * @deprecated since 2.4.2, please use {@link #create(String)}
      */
-    @Deprecated
+    @Deprecated(since = "2.4.2", forRemoval = true)
     public static ThreadPoolSupplier create() {
         return builder().build();
     }
