@@ -68,7 +68,7 @@ To enable built-in health checks add the following dependency
 == Usage
 
 Helidon MP Health implements MicroProfile Health Checks
-link:http://download.eclipse.org/microprofile/microprofile-health-{health-release}/microprofile-health-spec.html[Specification].
+link:http://download.eclipse.org/microprofile/microprofile-health-{health-release}/microprofile-health-spec.pdf[Specification].
 The spec prescribes how external tools probe a service's health checks and how you
 implement health checks as part of your microservice that are specific to your service's needs.
 
@@ -76,7 +76,7 @@ implement health checks as part of your microservice that are specific to your s
 
 MicroProfile Health supports three types of health checks:
 
-_Liveness_ checks report whether the runtime environment in which the service is running
+* _Liveness_ checks report whether the runtime environment in which the service is running
 is sufficient to support the work the service performs.
 The environment is beyond the control of
 the service itself and typically cannot improve without outside intervention.
@@ -84,15 +84,12 @@ If a microservice instance reports a `DOWN`
 liveness check, it should never report `UP` later.
 It will need to be stopped and a replacement instance created.
 
-_Readiness_ checks report whether the service is _currently_ capable of performing its work.
+* _Readiness_ checks report whether the service is _currently_ capable of performing its work.
 A service that reports `DOWN` for its readiness cannot _at the moment_ do its job, but at
 some future point it might become able to do so without requiring a restart.
 
-_Startup_ checks indicate whether the service has started to the point where liveness and readiness checks even make sense.
+* _Startup_ checks indicate whether the service has started to the point where liveness and readiness checks even make sense.
 A service reporting `DOWN` for a startup check is still initializing itself and normally will report `UP` soon, assuming it is able to start successfully.
-
-The following table describes more about these types of health checks, including how an orchestrator
-such as Kubernetes might react.
 
 
 == API
@@ -171,7 +168,7 @@ java -jar target/helidon-quickstart-mp.jar
 [source,bash]
 .Verify the health endpoint in a new terminal window:
 ----
-> curl http://localhost:8080/health
+curl http://localhost:8080/health
 ----
 
 [source,json]
@@ -303,7 +300,7 @@ public class GreetReadinessCheck implements HealthCheck {
 [source,bash]
 .Build and run the application.  Issue the curl command with -v within five seconds and you will see that the application is not ready:
 ----
-> curl -v  http://localhost:8080/health/ready
+curl -v  http://localhost:8080/health/ready
 ----
 
 [source,json]
@@ -330,7 +327,7 @@ public class GreetReadinessCheck implements HealthCheck {
 [source,bash]
 .After five seconds you will see the application is ready:
 ----
-> curl -v http://localhost:8080/health/ready
+curl -v http://localhost:8080/health/ready
 ----
 
 [source,json]
@@ -396,7 +393,7 @@ public class GreetStartedCheck implements HealthCheck {
 [source,bash]
 .Build and run the application.  Issue the curl command with -v within five seconds and you will see that the application has not yet started:
 ----
-> curl -v  http://localhost:8080/health/started
+curl -v  http://localhost:8080/health/started
 ----
 
 [source,json]
@@ -423,7 +420,7 @@ public class GreetStartedCheck implements HealthCheck {
 [source,bash]
 .After eight seconds you will see the application has started:
 ----
-> curl -v http://localhost:8080/health/started
+curl -v http://localhost:8080/health/started
 ----
 
 [source,json]
@@ -457,7 +454,7 @@ When using the health check URLs, you can get the following health check data:
 [source,bash]
 .Get all the health check data, including custom data:
 ----
-> curl http://localhost:8080/health
+curl http://localhost:8080/health
 ----
 
 [source,json]
@@ -482,4 +479,4 @@ Full example code is available link:https://github.com/oracle/helidon/tree/maste
 
 == Additional information
 
-No additional information provided
+To find more information about MicroProfile follow this link:https://microprofile.io/[link].
