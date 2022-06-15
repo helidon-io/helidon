@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@ package io.helidon.integrations.microstream.metrics;
 import java.util.Objects;
 
 import io.helidon.config.Config;
-import io.helidon.metrics.MetricsSupport;
-import io.helidon.metrics.RegistryFactory;
+import io.helidon.metrics.api.RegistryFactory;
+import io.helidon.metrics.serviceapi.MetricsSupport;
 
 import one.microstream.storage.embedded.types.EmbeddedStorageManager;
 import org.eclipse.microprofile.metrics.Gauge;
