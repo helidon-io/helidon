@@ -1,0 +1,36 @@
+package {{package}};
+
+import jakarta.json.bind.annotation.JsonbProperty;
+
+public class Message {
+
+    @JsonbProperty("message")
+    private String message;
+
+    @JsonbProperty("greeting")
+    private String greeting;
+
+    public Message() {
+    }
+
+    Message(String message, String greeting) {
+        this.message = message;
+        this.greeting = greeting;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
+    }
+
+    public String getMessage() {
+        return this.message;
+    }
+
+    public void setGreeting(String greeting) {
+        this.greeting = greeting;
+    }
+
+    public String getGreeting() {
+        return this.greeting;
+    }
+}

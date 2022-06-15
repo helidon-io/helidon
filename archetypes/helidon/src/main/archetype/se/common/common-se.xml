@@ -72,7 +72,6 @@
                 <value>io.helidon.config.Config</value>
                 <value>io.helidon.health.HealthSupport</value>
                 <value>io.helidon.health.checks.HealthChecks</value>
-                <value>io.helidon.media.jsonp.JsonpSupport</value>
                 <value>io.helidon.metrics.MetricsSupport</value>
                 <value>io.helidon.webserver.Routing</value>
                 <value>io.helidon.webserver.WebServer</value>

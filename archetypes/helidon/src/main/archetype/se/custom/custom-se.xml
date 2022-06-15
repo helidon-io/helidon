@@ -20,31 +20,21 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
 
-    <source src="/common/sources.xml"/>
+    <!--source src="/common/sources.xml"/-->
+    <source src="/common/media.xml"/>
+    <source src="/common/media-templates.xml"/>
     <exec src="/se/common/common-se.xml"/>
-    <exec src="/common/media.xml"/>
     <exec src="/common/observability.xml"/>
     <exec src="/se/custom/database.xml"/>
     <exec src="/common/security.xml"/>
     <exec src="/common/extra.xml"/>
     <exec src="/common/packaging.xml"/>
+    <exec src="/se/custom/custom-tests.xml"/>
     <output>
         <model>
             <value order="0" key="readme-description">Minimal Helidon SE project suitable to start from scratch.</value>
             <list key="readme-sections">
                 <value file="files/README.md"/>
-            </list>
-            <list key="dependencies">
-                <map>
-                    <value key="groupId">io.helidon.media</value>
-                    <value key="artifactId">helidon-media-jsonp</value>
-                </map>
-            </list>
-            <list key="Main-helidon-imports">
-                <value>io.helidon.media.jsonp.JsonpSupport</value>
-            </list>
-            <list key="Main-serverBuilder">
-                <value><![CDATA[                .addMediaSupport(JsonpSupport.create())]]></value>
             </list>
             <list key="Main-createRouting">
                 <value><![CDATA[        SimpleGreetService simpleGreetService = new SimpleGreetService(config);]]></value>
@@ -53,32 +43,11 @@
                 <value><![CDATA[                .register("/simple-greet", simpleGreetService)]]></value>
             </list>
             <value key="Main-readyMessage">System.out.println("WEB server is up! http://localhost:" + ws.port() + "/greet");</value>
-            <list key="MainTest-java-imports">
-                <value>jakarta.json.JsonObject</value>
-            </list>
-            <list key="MainTest-helidon-imports">
-                <value>io.helidon.media.jsonp.JsonpSupport</value>
-            </list>
             <list key="MainTest-other-imports">
                 <value>org.junit.jupiter.api.Order</value>
             </list>
-            <list key="MainTest-clientBuilder">
-                <value><![CDATA[                .addMediaSupport(JsonpSupport.create())]]></value>
-            </list>
             <list key="config-entries">
                 <value file="files/application.yaml"/>
-            </list>
-            <list key="MainTest-methods">
-                <value><![CDATA[
-    @Test
-    public void testSimpleGreet() throws Exception {
-        JsonObject jsonObject = webClient.get()
-                                         .path("/simple-greet")
-                                         .request(JsonObject.class)
-                                         .await();
-        assertThat(jsonObject.getString("message"), is("Hello World!"));
-    }
-                ]]></value>
             </list>
         </model>
     </output>

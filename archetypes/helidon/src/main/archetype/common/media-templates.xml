@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2021 Oracle and/or its affiliates.
+    Copyright (c) 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -22,29 +22,31 @@
 
     <exec src="/common/common.xml"/>
     <output>
-        <templates engine="mustache" transformations="mustache,packaged">
+        <templates engine="mustache" transformations="mustache,packaged" if="${json} == 'jsonp'">
             <directory>files</directory>
             <includes>
                 <include>src/*/java/**/*.java.mustache</include>
             </includes>
         </templates>
-        <templates engine="mustache" transformations="mustache">
+        <templates engine="mustache" transformations="jackson-mustache,packaged" if="${json} == 'jackson'">
             <directory>files</directory>
             <includes>
-                <include>src/*/resources/**/*.mustache</include>
-            </includes>
-        </templates>
-        <files>
-            <directory>files</directory>
-            <includes>
-                <include>src/*/resources/**</include>
+                <include>src/*/java/**/*.jackson.mustache</include>
             </includes>
             <excludes>
-                <exclude>**/*.mustache</exclude>
+                <exclude>src/*/java/**/*.java.jsonb.mustache</exclude>
+                <exclude>src/*/java/**/*.java.mustache</exclude>
             </excludes>
-        </files>
-        <model>
-            <value key="dot-helidon-schema-version">1.1.0</value>
-        </model>
+        </templates>
+        <templates engine="mustache" transformations="jsonb-mustache,packaged" if="${json} == 'jsonb'">
+            <directory>files</directory>
+            <includes>
+                <include>src/*/java/**/*.jsonb.mustache</include>
+            </includes>
+            <excludes>
+                <exclude>src/*/java/**/*.java.jackson.mustache</exclude>
+                <exclude>src/*/java/**/*.java.mustache</exclude>
+            </excludes>
+        </templates>
     </output>
 </archetype-script>
