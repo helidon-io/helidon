@@ -31,7 +31,7 @@ import io.helidon.integrations.neo4j.health.Neo4jHealthCheck;
 import io.helidon.integrations.neo4j.metrics.Neo4jMetricsSupport;
 import io.helidon.media.jsonb.JsonbSupport;
 import io.helidon.media.jsonp.JsonpSupport;
-import io.helidon.metrics.MetricsSupport;
+import io.helidon.metrics.serviceapi.MetricsSupport;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 
