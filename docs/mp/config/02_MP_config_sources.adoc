@@ -209,6 +209,10 @@ sources:
     optional: true <9>
   - type: "yaml"  <10>
     classpath: "META-INF/database.yaml" <11>
+  - type: "hocon"  <12>
+    classpath: "custom-application.conf" <13>
+  - type: "json"  <14>
+    path: "path: conf/custom-application.json" <15>
 
 ----
 
@@ -223,6 +227,91 @@ sources:
 <9> The file is optional (if not optional and no file is found, the bootstrap fails)
 <10> Loads a YAML file
 <11> Location of the file: `META-INF/database.yaml` on the classpath
+<12> Loads a HOCON file
+<13> Location of the file: `custom-application.conf` on the classpath
+<14> Loads a JSON file
+<15> Location of the file: `conf/custom-application.json` relative to the directory of where the app was executed on the file system.
+
+*Important Note:* To enable support for `HOCON` and `JSON` types, add the following dependency to your project’s pom.xml.
+
+[source,xml]
+----
+        <dependency>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config-hocon-mp</artifactId>
+        </dependency>
+----
+
+== Extending meta-config to create a custom config source type
+
+Helidon meta-config by default supports the following types: environment-variables, system-properties, properties, yaml, hocon and json. Users can also extend meta-config to create a custom config source type by loading it using the Java Service Loader pattern. This is achieved  by implementing `io.helidon.config.mp.spi.MpMetaConfigProvider` SPI and registering it as a service (Using `META-INF/services/${class-name}` file when using classpath, or using the `provides` statement in `module-info.java` when using module path).
+
+The interface `io.helidon.config.mp.spi.MpMetaConfigProvider` requires implementation of the following methods:
+
+* `Set<String> supportedTypes()`
+* `List<? extends ConfigSource> create(String type, Config metaConfig, String profile);`
+
+=== Example of a Meta-Config Custom Type
+
+[source,java]
+----
+public class CustomMpMetaConfigProvider implements MpMetaConfigProvider {
+    @Override
+    public Set<String> supportedTypes() {
+        return Set.of("custom"); <1>
+    }
+
+    @Override
+    public List<? extends ConfigSource> create(String type, Config metaConfig, String profile) {
+        ConfigValue<Path> pathConfig = metaConfig.get("path").as(Path.class);
+        if (pathConfig.isPresent()) { <2>
+            Path path = pathConfig.get();
+            List<ConfigSource> sources = sourceFromPath(path, profile); <3>
+            if (sources != null && !sources.isEmpty()) {
+                return result;
+            }
+            location = "path " + path.toAbsolutePath();
+        } else {
+            ConfigValue<String> classpathConfig = metaConfig.get("classpath").as(String.class);
+            if (classpathConfig.isPresent()) { <4>
+                String classpath = classpathConfig.get();
+                List<ConfigSource> sources = sourceFromClasspath(classpath, profile); <5>
+                if (sources != null && !sources.isEmpty()) {
+                    return sources;
+                }
+                location = "classpath " + classpath;
+            } else {
+                ConfigValue<URL> urlConfig = metaConfig.get("url").as(URL.class);
+                if (urlConfig.isPresent()) { <6>
+                    URL url = urlConfig.get();
+                    List<ConfigSource> sources = sourceFromUrlMeta(url, profile); <7>
+                    if (sources != null && !sources.isEmpty()) {
+                        return sources;
+                    }
+                    location = "url " + url;
+                } else {
+                    throw new ConfigException("No config source location for " + config.key());
+                }
+            }
+        }
+    }
+    if (metaConfig.get("optional").asBoolean().orElse(false);) {
+        return List.of(); <8>
+    }
+    throw new ConfigException("Meta configuration could not find non-optional config source on " + location); <9>
+
+}
+----
+
+<1> Returns the names of the types that will be supported in this meta-config.
+<2> Processes config source from file system if `path` is provided.
+<3> Method to parse config source from a specified `path`
+<4> Processes config source from classpath location if `classpath` is provided.
+<5> Method to parse config source from a specified `classpath`
+<6> Processes config source from url location if `location` is provided.
+<7> Method to parse config source from a specified `url`
+<8> Returns an empty result if set to `optional` and config source is not found.
+<9> Throws a ConfigException if not set to `optional` and config source is not found.
 
 == Creating MicroProfile Config Source from Helidon SE Config Source
 
