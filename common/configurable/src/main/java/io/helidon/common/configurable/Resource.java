@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Objects;
-import java.util.Optional;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
@@ -174,50 +173,6 @@ public interface Resource {
                 .orElseThrow(() -> new ConfigException("Config is not a resource configuration on key: " + resourceConfig.key()
                                                                + ". The config must contain one of "
                                                                + "(path,resource-path,url,content-plain,content)"));
-    }
-
-    /**
-     * Support for old API and configuration.
-     *
-     * @param config configuration
-     * @param prefix prefix of the resource
-     * @return resource if configured
-     * @deprecated since 2.0.0 use {@link #create(io.helidon.config.Config)} instead (and change the configuration to use
-     *  {@code .resource.type} instead of prefixes
-     */
-    @Deprecated
-    static Optional<Resource> create(Config config, String prefix) {
-        Optional<Resource> result = ResourceUtil.fromConfigPath(config.get(prefix + "-path"));
-        if (result.isPresent()) {
-            ResourceUtil.logPrefixed(config, prefix, "path");
-            return result;
-        }
-
-        result = ResourceUtil.fromConfigResourcePath(config.get(prefix + "-resource-path"));
-        if (result.isPresent()) {
-            ResourceUtil.logPrefixed(config, prefix, "resource-path");
-            return result;
-        }
-
-        result = ResourceUtil.fromConfigUrl(config.get(prefix + "-url"));
-        if (result.isPresent()) {
-            ResourceUtil.logPrefixed(config, prefix, "url");
-            return result;
-        }
-
-        result = ResourceUtil.fromConfigContent(config.get(prefix + "-content-plain"));
-        if (result.isPresent()) {
-            ResourceUtil.logPrefixed(config, prefix, "content-plain");
-            return result;
-        }
-
-        result = ResourceUtil.fromConfigB64Content(config.get(prefix + "-content"));
-        if (result.isPresent()) {
-            ResourceUtil.logPrefixed(config, prefix, "content");
-            return result;
-        }
-
-        return result;
     }
 
     /**
