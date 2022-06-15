@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -236,7 +236,7 @@ class ConfigMetadataHandler {
             if (anInterface instanceof DeclaredType) {
                 DeclaredType type = (DeclaredType) anInterface;
                 if (typeUtils.isSameType(typeUtils.erasure(builderType), typeUtils.erasure(type))) {
-                    TypeMirror builtType = type.getTypeArguments().get(0);
+                    TypeMirror builtType = type.getTypeArguments().get(1);
                     return new BuilderTypeInfo(typeUtils.erasure(builtType).toString());
                 }
             }
