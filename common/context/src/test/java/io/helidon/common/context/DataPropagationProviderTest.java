@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,11 +40,8 @@ class DataPropagationProviderTest {
         public void propagateData(Object data) {
         }
 
-        /**
-         * Deprecated method should be called.
-         */
         @Override
-        public void clearData() {
+        public void clearData(Object data) {
             called = true;
         }
     }
@@ -52,7 +49,7 @@ class DataPropagationProviderTest {
     @Test
     void testDeprecation() {
         MyDataPropagationTest dpt = new MyDataPropagationTest();
-        dpt.clearData("foo");       // should call deprecated method
+        dpt.clearData("foo");
         assertThat(called, is(true));
     }
 }
