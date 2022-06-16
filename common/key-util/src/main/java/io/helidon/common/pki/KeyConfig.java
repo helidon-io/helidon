@@ -35,7 +35,6 @@ import java.util.logging.Logger;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.configurable.ResourceException;
 import io.helidon.config.Config;
-import io.helidon.config.DeprecatedConfig;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 
@@ -596,38 +595,33 @@ public final class KeyConfig {
 
             // the actual resource (file, classpath) with the bytes of the keystore
             keystoreConfig.get("resource").as(Resource::create).ifPresent(this::keystore);
-            // this is the old, deprecated approach to have backward compatibility with configuration
-            // if configured this way, a warning is logged
-            Resource.create(config, "keystore").ifPresent(this::keystore);
-
-            // all these settings are moved to keystore key
 
             // type of keystore
-            DeprecatedConfig.get(config, "keystore.type", "keystore-type")
+            keystoreConfig.get("type")
                     .asString()
                     .ifPresent(this::keystoreType);
             // password of the keystore
-            DeprecatedConfig.get(config, "keystore.passphrase", "keystore-passphrase")
+            keystoreConfig.get("passphrase")
                     .asString()
                     .map(String::toCharArray)
                     .ifPresent(this::keystorePassphrase);
             // private key alias
-            DeprecatedConfig.get(config, "keystore.key.alias", "key-alias")
+            keystoreConfig.get("key.alias")
                     .asString()
                     .ifPresent(this::keyAlias);
             // private key password
-            DeprecatedConfig.get(config, "keystore.key.passphrase", "key-passphrase")
+            keystoreConfig.get("key.passphrase")
                     .asString()
                     .map(String::toCharArray)
                     .ifPresent(this::keyPassphrase);
-            DeprecatedConfig.get(config, "keystore.cert.alias", "cert-alias")
+            keystoreConfig.get("cert.alias")
                     .asString()
                     .ifPresent(this::certAlias);
-            DeprecatedConfig.get(config, "keystore.cert-chain.alias", "cert-chain")
+            keystoreConfig.get("cert-chain.alias")
                     .asString()
                     .ifPresent(this::certChainAlias);
             // whether this is a keystore (with a private key) or a trust store (just trusted public keys/certificates)
-            DeprecatedConfig.get(config, "keystore.trust-store", "trust-store")
+            keystoreConfig.get("trust-store")
                     .asBoolean()
                     .ifPresent(this::trustStore);
 
@@ -786,17 +780,10 @@ public final class KeyConfig {
          */
         public PemBuilder config(Config config) {
             Config pemConfig = config.get("pem");
-            // this is the new approach
             pemConfig.get("key.resource").as(Resource::create).ifPresent(this::key);
             pemConfig.get("key.passphrase").asString().map(String::toCharArray).ifPresent(this::keyPassphrase);
             pemConfig.get("cert-chain.resource").as(Resource::create).ifPresent(this::certChain);
             pemConfig.get("certificates.resource").as(Resource::create).ifPresent(this::certificates);
-
-            // and this is the old approach
-            Resource.create(config, "pem-key").ifPresent(this::key);
-            config.get("pem-key-passphrase").asString().map(String::toCharArray).ifPresent(this::keyPassphrase);
-            Resource.create(config, "pem-cert-chain").ifPresent(this::certChain);
-
             return this;
         }
     }

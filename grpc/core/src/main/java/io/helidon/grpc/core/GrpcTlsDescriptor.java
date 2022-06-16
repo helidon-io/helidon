@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -126,16 +126,8 @@ public class GrpcTlsDescriptor {
                 return;
             }
 
-            // backward compatible
-            Resource.create(config, "tls-cert").ifPresent(this::tlsCert);
             config.get("tls-cert.resource").as(Resource::create).ifPresent(this::tlsCert);
-
-            // backward compatible
-            Resource.create(config, "tls-key").ifPresent(this::tlsKey);
             config.get("tls-key.resource").as(Resource::create).ifPresent(this::tlsKey);
-
-            // backward compatible
-            Resource.create(config, "tls-ca-cert").ifPresent(this::tlsCaCert);
             config.get("tls-ca-cert.resource").as(Resource::create).ifPresent(this::tlsCaCert);
 
             this.jdkSSL = config.get("jdk-ssl").asBoolean().orElse(false);

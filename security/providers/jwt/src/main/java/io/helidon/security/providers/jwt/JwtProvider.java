@@ -828,20 +828,13 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
 
         private void verifyKeys(Config config) {
             config.get("jwk.resource").as(Resource::create).ifPresent(this::verifyJwk);
-
-            // backward compatibility
-            Resource.create(config, "jwk").ifPresent(this::verifyJwk);
         }
 
         private void outbound(Config config) {
             config.get("jwt-issuer").asString().ifPresent(this::issuer);
 
-
             // jwk is optional, we may be propagating existing token
             config.get("jwk.resource").as(Resource::create).ifPresent(this::signJwk);
-            // backward compatibility
-            Resource.create(config, "jwk").ifPresent(this::signJwk);
-
         }
     }
 }
