@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -134,7 +134,7 @@ public final class Mp1Main {
                 .addScope("admin_scope")
                 .algorithm(JwkRSA.ALG_RS256)
                 .issuer("native-image-mp1")
-                .audience("http://localhost:8087/jwt")
+                .addAudience("http://localhost:8087/jwt")
                 .issueTime(Instant.now())
                 .userPrincipal("jack")
                 .keyId("SIGNING_KEY")
