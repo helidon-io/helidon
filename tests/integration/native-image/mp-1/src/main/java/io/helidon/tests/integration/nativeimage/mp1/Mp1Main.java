@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,17 +32,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
-import jakarta.enterprise.inject.Instance;
-import jakarta.enterprise.inject.spi.CDI;
-import jakarta.json.JsonArray;
-import jakarta.json.JsonObject;
-import jakarta.ws.rs.ServiceUnavailableException;
-import jakarta.ws.rs.client.Client;
-import jakarta.ws.rs.client.ClientBuilder;
-import jakarta.ws.rs.client.WebTarget;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-
 import io.helidon.common.Errors;
 import io.helidon.common.configurable.Resource;
 import io.helidon.microprofile.server.Server;
@@ -53,6 +42,16 @@ import io.helidon.security.jwt.jwk.JwkRSA;
 
 import io.opentracing.Tracer;
 import io.opentracing.util.GlobalTracer;
+import jakarta.enterprise.inject.Instance;
+import jakarta.enterprise.inject.spi.CDI;
+import jakarta.json.JsonArray;
+import jakarta.json.JsonObject;
+import jakarta.ws.rs.ServiceUnavailableException;
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.ClientBuilder;
+import jakarta.ws.rs.client.WebTarget;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.faulttolerance.exceptions.TimeoutException;
 
 import static io.helidon.common.http.Http.Status.FORBIDDEN_403;
@@ -134,7 +133,7 @@ public final class Mp1Main {
                 .addScope("admin_scope")
                 .algorithm(JwkRSA.ALG_RS256)
                 .issuer("native-image-mp1")
-                .audience("http://localhost:8087/jwt")
+                .addAudience("http://localhost:8087/jwt")
                 .issueTime(Instant.now())
                 .userPrincipal("jack")
                 .keyId("SIGNING_KEY")

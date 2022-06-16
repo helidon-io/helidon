@@ -471,7 +471,7 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
                     .expirationTime(exp)
                     .notBefore(notBefore)
                     .keyId(jwtKid)
-                    .audience(jwtAudience);
+                    .addAudience(jwtAudience);
         }
 
         /**

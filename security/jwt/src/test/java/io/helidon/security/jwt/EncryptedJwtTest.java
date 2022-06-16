@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ public class EncryptedJwtTest {
                 .build();
 
         Jwt jwt = Jwt.builder()
-                .audience("test")
+                .addAudience("test")
                 .email("unit@test.example")
                 .algorithm("RS256")
                 .keyId("cc34c0a0-bd5a-4a3c-a50d-a2a7db7643df")
