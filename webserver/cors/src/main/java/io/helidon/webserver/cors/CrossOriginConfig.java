@@ -332,7 +332,7 @@ public class CrossOriginConfig {
         @ConfiguredOption(type = String.class,
                           kind = ConfiguredOption.Kind.LIST,
                           description = "Sets the allow methods.",
-                          value="*")
+                          value = "*")
         public Builder allowMethods(String... allowMethods) {
             this.allowMethods = copyOf(allowMethods);
             return this;
