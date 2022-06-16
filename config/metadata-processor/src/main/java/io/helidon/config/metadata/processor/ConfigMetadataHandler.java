@@ -186,7 +186,8 @@ class ConfigMetadataHandler {
           - an interface/abstract class only used for inheritance
          */
 
-        ConfiguredType type = new ConfiguredType(targetClass,
+        ConfiguredType type = new ConfiguredType(className,
+                                                 targetClass,
                                                  standalone,
                                                  keyPrefix,
                                                  description,
@@ -253,6 +254,15 @@ class ConfigMetadataHandler {
                         return found;
                     }
                 }
+            }
+        }
+        TypeMirror superMirror = classElement.getSuperclass();
+        if (superMirror.getKind() != TypeKind.NONE) {
+            TypeElement superclass = (TypeElement) typeUtils.asElement(typeUtils.erasure(superMirror));
+            found = findBuilder(superclass);
+            if (found.isBuilder) {
+                DeclaredType type = (DeclaredType) superMirror;
+                return new BuilderTypeInfo(typeUtils.erasure(type.getTypeArguments().get(1)).toString());
             }
         }
         return new BuilderTypeInfo();
