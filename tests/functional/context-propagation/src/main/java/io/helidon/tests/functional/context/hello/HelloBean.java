@@ -22,7 +22,7 @@ import java.util.concurrent.CompletionStage;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
-import io.helidon.metrics.RegistryFactory;
+import io.helidon.metrics.api.RegistryFactory;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.faulttolerance.Asynchronous;
