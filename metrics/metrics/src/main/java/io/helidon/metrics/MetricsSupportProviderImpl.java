@@ -26,7 +26,7 @@ public class MetricsSupportProviderImpl implements MetricsSupportProvider<Metric
 
     @Override
     public MetricsSupport.Builder builder() {
-        return new MetricsSupport.Builder();
+        return MetricsSupport.builder();
     }
 
     @Override
