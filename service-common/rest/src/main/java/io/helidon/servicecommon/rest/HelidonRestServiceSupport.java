@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,8 @@ import java.util.Objects;
 import java.util.logging.Logger;
 
 import io.helidon.config.Config;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.Service;
 import io.helidon.webserver.cors.CorsEnabledServiceHelper;
@@ -58,22 +60,17 @@ public abstract class HelidonRestServiceSupport implements RestServiceSupport {
         this(logger, builder.restServiceSettingsBuilder.build(), serviceName);
     }
 
+    /**
+     * Creates a new service support instance with the specified logger, REST settings, and service name.
+     *
+     * @param logger subclass-specific logger to use
+     * @param restServiceSettings REST service settings to use
+     * @param serviceName service name for the REST service
+     */
     protected HelidonRestServiceSupport(Logger logger, RestServiceSettings restServiceSettings, String serviceName) {
         this.logger = logger;
         corsEnabledServiceHelper = CorsEnabledServiceHelper.create(serviceName, restServiceSettings.crossOriginConfig());
         context = (restServiceSettings.webContext().startsWith("/") ? "" : "/") + restServiceSettings.webContext();
-    }
-
-    /**
-     * Avoid using this obsolete method. Use {@link #configureEndpoint(Routing.Rules, Routing.Rules)} instead. (Neither method
-     * should typically invoked directly from user code.)
-     *
-     * @param rules routing rules (also accepts
-     * {@link io.helidon.webserver.Routing.Builder}
-     */
-    @Deprecated
-    public final void configureEndpoint(Routing.Rules rules) {
-        configureEndpoint(rules, rules);
     }
 
     /**
@@ -119,13 +116,24 @@ public abstract class HelidonRestServiceSupport implements RestServiceSupport {
         }
     }
 
+    /**
+     * Logic to run when the service is shut down.
+     */
     protected void onShutdown() {
     }
 
+    /**
+     *
+     * @return web context
+     */
     protected String context() {
         return context;
     }
 
+    /**
+     *
+     * @return logger in use by the service
+     */
     protected Logger logger() {
         return logger;
     }
@@ -141,15 +149,19 @@ public abstract class HelidonRestServiceSupport implements RestServiceSupport {
      * @param <T> type of the concrete service
      * @param <B> type of the concrete builder for the service
      */
+    @Configured
     public abstract static class Builder<B extends Builder<B, T>, T extends HelidonRestServiceSupport>
             implements io.helidon.common.Builder<B, T> {
 
-        private final Class<B> builderClass;
         private Config config = Config.empty();
         private RestServiceSettings.Builder restServiceSettingsBuilder = RestServiceSettings.builder();
 
-        protected Builder(Class<B> builderClass, String defaultContext) {
-            this.builderClass = builderClass;
+        /**
+         * Creates a new builder using the provided class and default web context.
+         *
+         * @param defaultContext default web context for the service
+         */
+        protected Builder(String defaultContext) {
             restServiceSettingsBuilder.webContext(defaultContext);
         }
 
@@ -166,19 +178,13 @@ public abstract class HelidonRestServiceSupport implements RestServiceSupport {
         public B config(Config config) {
             this.config = config;
 
-            webContextConfig(config)
-                    .asString()
-                    .ifPresent(this::webContext);
-
-            config.get(RestServiceSettings.Builder.ROUTING_NAME_CONFIG_KEY)
-                    .asString()
-                    .ifPresent(restServiceSettingsBuilder::routing);
+            restServiceSettingsBuilder.config(config);
 
             config.get(CorsEnabledServiceHelper.CORS_CONFIG_KEY)
                     .as(CrossOriginConfig::create)
                     .ifPresent(this::crossOriginConfig);
 
-            return me();
+            return identity();
         }
 
         /**
@@ -204,7 +210,7 @@ public abstract class HelidonRestServiceSupport implements RestServiceSupport {
                 context = "/" + path;
             }
             restServiceSettingsBuilder.webContext(context);
-            return me();
+            return identity();
         }
 
         /**
@@ -216,29 +222,40 @@ public abstract class HelidonRestServiceSupport implements RestServiceSupport {
         public B crossOriginConfig(CrossOriginConfig crossOriginConfig) {
             Objects.requireNonNull(crossOriginConfig, "CrossOriginConfig must be non-null");
             restServiceSettingsBuilder.crossOriginConfig(crossOriginConfig);
-            return me();
+            return identity();
         }
 
         /**
-         * Sets the builder for the REST service settings.
+         * Set the CORS config from the specified {@code CrossOriginConfig} object.
+         *
+         * @param crossOriginConfigBuilder {@code CrossOriginConfig.Builder} containing CORS set-up
+         * @return updated builder instance
+         */
+        public B crossOriginConfig(CrossOriginConfig.Builder crossOriginConfigBuilder) {
+            Objects.requireNonNull(crossOriginConfigBuilder, "CrossOriginConfig.Builder must be non-null");
+            restServiceSettingsBuilder.crossOriginConfig(crossOriginConfigBuilder);
+            return identity();
+        }
+
+        /**
+         * Sets the builder for the REST service settings. This will replace any values
+         * configured on this instance and will ONLY use values defined in the provided supplier.
          *
          * @param restServiceSettingsBuilder builder for REST service settings
          * @return updated builder
          */
+        @ConfiguredOption(mergeWithParent = true, type = RestServiceSettings.class)
         public B restServiceSettings(RestServiceSettings.Builder restServiceSettingsBuilder) {
             this.restServiceSettingsBuilder = restServiceSettingsBuilder;
-            return me();
+            return identity();
         }
 
         /**
-         * Returns correctly-typed {@code this}.
+         * Returns the web-context {@code Config} node from the provided config.
          *
-         * @return typed "this"
+         * @param config config to query for web-context
+         * @return {@code Config} node for web-context
          */
-        protected B me() {
-            return builderClass.cast(this);
-        }
-
         protected Config webContextConfig(Config config) {
             return config.get("web-context");
         }

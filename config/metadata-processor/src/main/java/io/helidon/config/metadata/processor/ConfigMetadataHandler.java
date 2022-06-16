@@ -186,7 +186,8 @@ class ConfigMetadataHandler {
           - an interface/abstract class only used for inheritance
          */
 
-        ConfiguredType type = new ConfiguredType(targetClass,
+        ConfiguredType type = new ConfiguredType(className,
+                                                 targetClass,
                                                  standalone,
                                                  keyPrefix,
                                                  description,
@@ -252,6 +253,19 @@ class ConfigMetadataHandler {
                     if (found.isBuilder) {
                         return found;
                     }
+                }
+            }
+        }
+        TypeMirror superMirror = classElement.getSuperclass();
+        String buildTarget = findBuildMethodTarget(classElement);
+        if (superMirror.getKind() != TypeKind.NONE) {
+            TypeElement superclass = (TypeElement) typeUtils.asElement(typeUtils.erasure(superMirror));
+            found = findBuilder(superclass);
+            if (found.isBuilder) {
+                if (buildTarget == null) {
+                    return found;
+                } else {
+                    return new BuilderTypeInfo(buildTarget);
                 }
             }
         }
@@ -469,6 +483,23 @@ class ConfigMetadataHandler {
                             type,
                             className));
         }
+    }
+
+    private String findBuildMethodTarget(TypeElement typeElement) {
+        return elementUtils.getAllMembers(typeElement)
+                .stream()
+                .filter(it -> it.getKind() == ElementKind.METHOD)
+                .map(ExecutableElement.class::cast)
+                // public
+                .filter(it -> it.getModifiers().contains(Modifier.PUBLIC))
+                // static
+                .filter(it -> !it.getModifiers().contains(Modifier.STATIC))
+                .filter(it -> it.getSimpleName().contentEquals("build"))
+                .filter(it -> it.getParameters().isEmpty())
+                .filter(it -> it.getReturnType().getKind() != TypeKind.VOID)
+                .findFirst()
+                .map(it -> it.getReturnType().toString())
+                .orElse(null);
     }
 
     private boolean hasCreate(TypeElement typeElement) {

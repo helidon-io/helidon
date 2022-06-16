@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -97,8 +97,7 @@ public interface RestServiceSettings {
          * @param webContext web context
          * @return updated builder
          */
-        @ConfiguredOption(key = WEB_CONTEXT_CONFIG_KEY,
-                          mergeWithParent = true)
+        @ConfiguredOption(key = WEB_CONTEXT_CONFIG_KEY)
         Builder webContext(String webContext);
 
         /**
@@ -107,8 +106,7 @@ public interface RestServiceSettings {
          * @param routing routing name as defined in the server settings
          * @return updated builder
          */
-        @ConfiguredOption(key = ROUTING_NAME_CONFIG_KEY,
-                          mergeWithParent = true)
+        @ConfiguredOption(key = ROUTING_NAME_CONFIG_KEY)
         Builder routing(String routing);
 
         /**
@@ -117,8 +115,7 @@ public interface RestServiceSettings {
          * @param crossOriginConfigBuilder builder for the CORS settings
          * @return updated builder
          */
-        @ConfiguredOption(key = CorsEnabledServiceHelper.CORS_CONFIG_KEY,
-                          kind = ConfiguredOption.Kind.MAP)
+        @ConfiguredOption(key = CorsEnabledServiceHelper.CORS_CONFIG_KEY, type = CrossOriginConfig.class)
         Builder crossOriginConfig(CrossOriginConfig.Builder crossOriginConfigBuilder);
 
         /**
