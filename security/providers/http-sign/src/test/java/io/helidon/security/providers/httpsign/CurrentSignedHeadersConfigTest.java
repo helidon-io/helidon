@@ -32,23 +32,23 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * Unit test for {@link SignedHeadersConfig}.
  */
-public class SignedHeadersConfigTest {
+class CurrentSignedHeadersConfigTest {
     private static Config config;
 
     @BeforeAll
-    public static void initClass() {
-        config = Config.create().get("security.providers");
+    static void initClass() {
+        config = Config.create().get("current");
     }
 
     @Test
-    public void testFromConfig() {
-        SignedHeadersConfig shc = config.get("0.http-signatures.sign-headers").as(SignedHeadersConfig.class).get();
+    void testFromConfig() {
+        SignedHeadersConfig shc = config.get("http-signatures.sign-headers").as(SignedHeadersConfig.class).get();
 
         testThem(shc);
     }
 
     @Test
-    public void testFromBuilder() {
+    void testFromBuilder() {
         SignedHeadersConfig shc = SignedHeadersConfig.builder()
                 .defaultConfig(SignedHeadersConfig.HeadersConfig.create(List.of("date")))
                 .config("get",
