@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,13 +66,14 @@ public abstract class HelidonRestServiceSupport implements RestServiceSupport {
     }
 
     /**
-     * Avoid using this obsolete method. Use {@link #configureEndpoint(Routing.Rules, Routing.Rules)} instead. (Neither method
-     * should typically invoked directly from user code.)
+     * Avoid using this obsolete method.
      *
      * @param rules routing rules (also accepts
      * {@link io.helidon.webserver.Routing.Builder}
+     * @deprecated Use {@link #configureEndpoint(Routing.Rules, Routing.Rules)} instead and only if invoking this method is
+     * absolutely necessary. (Typically, user code should directly invoke neither this method nor the replacement one.)
      */
-    @Deprecated
+    @Deprecated(since = "2.4.0", forRemoval = true)
     public final void configureEndpoint(Routing.Rules rules) {
         configureEndpoint(rules, rules);
     }
