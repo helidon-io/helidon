@@ -188,10 +188,7 @@ public final class OutboundTargetDefinition {
         private byte[] hmacSharedSecret;
         private SignedHeadersConfig signedHeadersConfig = HttpSignProvider.DEFAULT_REQUIRED_HEADERS;
         private TokenHandler tokenHandler;
-        // this is internal deprecation to make sure we switch this flag default to false for 3.0.0
-        // to be removed in 4.0.0 (most likely)
-        @Deprecated
-        private boolean backwardCompatibleEol = true;
+        private boolean backwardCompatibleEol = false;
 
         private Builder() {
         }
@@ -303,11 +300,6 @@ public final class OutboundTargetDefinition {
 
         @Override
         public OutboundTargetDefinition build() {
-            if (backwardCompatibleEol) {
-                LOGGER.warning("HTTP signatures is using legacy HTTP signature processing. This will not work"
-                                       + " with third party tools using the same spec and with Helidon newer than 3.0.0."
-                                       + " Please configure 'backward-compatible-eol' to false to use the correct approach.");
-            }
             return new OutboundTargetDefinition(this);
         }
 
@@ -334,9 +326,13 @@ public final class OutboundTargetDefinition {
         }
 
         /**
-         * Until version 3.0.0 (exclusive) there is a trailing end of line added to the signed
+         * Enable support for Helidon versions before 3.0.0 (exclusive).
+         * <p>
+         * Until version 3.0.0 (exclusive) there was a trailing end of line added to the signed
          * data.
-         * When configured to {@code false}, the correct approach is used.
+         * To be able to communicate cross versions, we must configure this when talking to older versions of Helidon.
+         * Default value is {@code false}. In Helidon 2.x, this switch exists as well and the default is {@code true}, to
+         * allow communication between versions as needed.
          *
          * @param backwardCompatible whether to run in backward compatible mode
          * @return updated builder instance
