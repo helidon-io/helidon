@@ -32,6 +32,7 @@ module io.helidon.microprofile.server {
     requires transitive jakarta.ws.rs;
     requires jakarta.interceptor.api;
     requires jakarta.json;
+    requires io.helidon.jersey.media.jsonp;
 
     requires java.logging;
     requires io.helidon.common.serviceloader;
@@ -48,5 +49,5 @@ module io.helidon.microprofile.server {
             io.helidon.microprofile.server.JaxRsCdiExtension;
 
     // needed when running with modules - to make private methods accessible
-    opens io.helidon.microprofile.server to weld.core.impl, io.helidon.microprofile.cdi;
+    opens io.helidon.microprofile.server to weld.core.impl, org.glassfish.hk2.utilities, io.helidon.microprofile.cdi;
 }

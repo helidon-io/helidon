@@ -41,7 +41,7 @@ module io.helidon.security.integration.jersey {
     exports io.helidon.security.integration.jersey;
 
     // needed for jersey injection
-    opens io.helidon.security.integration.jersey to hk2.locator,hk2.utils,weld.core.impl, io.helidon.microprofile.cdi;
+    opens io.helidon.security.integration.jersey to org.glassfish.hk2.utilities,weld.core.impl, io.helidon.microprofile.cdi;
 
     uses io.helidon.security.providers.common.spi.AnnotationAnalyzer;
     uses io.helidon.security.integration.jersey.SecurityResponseMapper;

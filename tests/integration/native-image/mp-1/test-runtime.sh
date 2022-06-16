@@ -43,5 +43,5 @@ java -jar target/helidon-tests-native-image-mp-1.jar
 
 # Attempt to run this example as a java with module path
 
-java --module-path target/helidon-tests-native-image-mp-1.jar:target/libs \
+java --add-opens=org.eclipse.parsson.media/org.eclipse.parsson.media=weld.core.impl,org.glassfish.hk2.utilities --module-path target/helidon-tests-native-image-mp-1.jar:target/libs \
      -m helidon.tests.nimage.mp/io.helidon.tests.integration.nativeimage.mp1.Mp1Main

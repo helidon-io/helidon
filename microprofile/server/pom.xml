@@ -102,7 +102,6 @@
         <dependency>
             <groupId>io.helidon.jersey</groupId>
             <artifactId>helidon-jersey-media-jsonp</artifactId>
-            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
