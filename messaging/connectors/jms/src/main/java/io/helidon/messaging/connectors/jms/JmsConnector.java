@@ -409,7 +409,7 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
                 .traverse()
                 .forEach(c -> {
                     String key = c.key().name();
-                    String normalizedKey = ConfigHelper.kebabCase2CameCase(key);
+                    String normalizedKey = ConfigHelper.kebabCase2CamelCase(key);
                     Method m = setterMethods.get(normalizedKey);
                     if (m == null) {
                         LOGGER.log(Level.WARNING,
@@ -452,7 +452,7 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
             if (message == null) {
                 return;
             }
-            LOGGER.fine(() -> "Received message: " + message.toString());
+            LOGGER.fine(() -> "Received message: " + message);
             JmsMessage<?> preparedMessage = createMessage(message, executor, sessionEntry);
             lastMessage.set(preparedMessage);
             emitter.emit(preparedMessage);

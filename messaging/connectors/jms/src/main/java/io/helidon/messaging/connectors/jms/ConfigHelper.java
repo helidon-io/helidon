@@ -27,7 +27,7 @@ class ConfigHelper {
     static final Pattern KEBAB_DEL = Pattern.compile("\\-([a-z])");
     static final Pattern SETTER_PREFIX = Pattern.compile("set([A-Za-z])");
 
-    static String kebabCase2CameCase(String val) {
+    static String kebabCase2CamelCase(String val) {
         return KEBAB_DEL.matcher(val).replaceAll(res -> res.group(1).toUpperCase());
     }
 
