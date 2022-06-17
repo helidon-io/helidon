@@ -96,7 +96,7 @@ public class CrossOriginConfig {
     /**
      * Default cache expiration in seconds.
      */
-    public static final long DEFAULT_AGE = Long.parseLong(DEFAULT_AGE_TEXT);
+    public static final long DEFAULT_AGE = 3600;
 
     private final String pathPattern;
     private final boolean enabled;
