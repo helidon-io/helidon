@@ -43,7 +43,22 @@ can monitor each service and take action, such as restarting a service instance 
 or temporarily shunting traffic away from the instance if the service is unable to process
 incoming requests normally.
 
-include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+
+== Maven Coordinates
+
+To enable MicroProfile Health add the <<mp/introduction/02_microprofile.adoc, helidon-microprofile bundle>>  dependency to your project's `pom.xml` (see <<about/04_managing-dependencies.adoc, Managing Dependencies>>).
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.microprofile.bundles</groupId>
+    <artifactId>helidon-microprofile</artifactId>
+</dependency>
+----
+
+MicroProfile Health is already included in the bundle.
+
+If `Helidon MicroProfile Core` is used, the following dependency should be included in your project's `pom.xml`:
 
 [source,xml]
 ----
