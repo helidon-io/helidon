@@ -68,7 +68,7 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.metrics</groupId>
-            <artifactId>helidon-metrics</artifactId>
+            <artifactId>helidon-metrics-service-api</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.tracing</groupId>
@@ -89,6 +89,11 @@
         <dependency>
             <groupId>io.helidon.examples.dbclient</groupId>
             <artifactId>helidon-examples-dbclient-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.metrics</groupId>
+            <artifactId>helidon-metrics</artifactId>
+            <scope>runtime</scope>
         </dependency>
     </dependencies>
 

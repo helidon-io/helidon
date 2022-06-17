@@ -173,7 +173,9 @@ public final class MetricsSupport extends HelidonRestServiceSupport
      * Create a new builder to construct an instance.
      *
      * @return A new builder instance
+     * @deprecated Use {@link io.helidon.metrics.serviceapi.MetricsSupport#builder()} instead.
      */
+    @Deprecated(since = "2.5.2", forRemoval = false)
     public static Builder builder() {
         return new Builder();
     }
@@ -624,7 +626,7 @@ public final class MetricsSupport extends HelidonRestServiceSupport
          * performance metrics configuration
          * @deprecated Use {@link #metricsSettings(MetricsSettings.Builder)} instead
          */
-        @Deprecated
+        @Deprecated(since = "2.4.0", forRemoval = true)
         public Builder config(Config config) {
             super.config(config);
             metricsSettingsBuilder.config(config);
@@ -667,7 +669,7 @@ public final class MetricsSupport extends HelidonRestServiceSupport
          * {@link MetricsSettings.Builder#keyPerformanceIndicatorSettings(KeyPerformanceIndicatorMetricsSettings.Builder)}
          * instead.
          */
-        @Deprecated
+        @Deprecated(since = "2.4.0", forRemoval = true)
         public Builder keyPerformanceIndicatorsMetricsSettings(KeyPerformanceIndicatorMetricsSettings.Builder builder) {
             this.metricsSettingsBuilder.keyPerformanceIndicatorSettings(builder);
             return this;
@@ -682,7 +684,7 @@ public final class MetricsSupport extends HelidonRestServiceSupport
          * {@link MetricsSettings.Builder#keyPerformanceIndicatorSettings(KeyPerformanceIndicatorMetricsSettings.Builder)}
          * instead.
          */
-        @Deprecated
+        @Deprecated(since = "2.4.0", forRemoval = true)
         public Builder keyPerformanceIndicatorsMetricsConfig(Config kpiConfig) {
             return keyPerformanceIndicatorsMetricsSettings(
                     KeyPerformanceIndicatorMetricsSettings.builder().config(kpiConfig));
