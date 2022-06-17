@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -125,7 +125,7 @@ public class MicrometerSupport extends HelidonRestServiceSupport {
         private Supplier<MeterRegistryFactory> meterRegistryFactorySupplier = null;
 
         private Builder() {
-            super(Builder.class, DEFAULT_CONTEXT);
+            super(DEFAULT_CONTEXT);
         }
 
         @Override

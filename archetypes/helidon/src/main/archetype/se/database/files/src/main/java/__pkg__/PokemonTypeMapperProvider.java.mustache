@@ -1,4 +1,3 @@
-
 package {{package}};
 
 import java.util.List;
@@ -15,7 +14,7 @@ import io.helidon.dbclient.spi.DbMapperProvider;
 /**
  * Provider for PokemonType mappers.
  *
- * Pokemon, and Pokemon character names are trademarks of Nintendo.
+ * Pokemon, and Pokemon character names, are trademarks of Nintendo.
  */
 @Priority(1000)
 public class PokemonTypeMapperProvider implements DbMapperProvider {
@@ -34,8 +33,8 @@ public class PokemonTypeMapperProvider implements DbMapperProvider {
 
         @Override
         public PokemonType read(DbRow row) {
-            DbColumn id = row.column("ID");
-            DbColumn name = row.column("NAME");
+            DbColumn id = row.column("id");
+            DbColumn name = row.column("name");
             return new PokemonType(id.as(Integer.class), name.as(String.class));
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,7 +68,7 @@ public class Gh3246Test {
                 .addUserGroup("admin")
                 .algorithm(JwkRSA.ALG_RS256)
                 .issuer("test-gh-3246")
-                .audience("http://example.helidon.io")
+                .addAudience("http://example.helidon.io")
                 .issueTime(Instant.now())
                 .userPrincipal("jack")
                 .keyId("SIGNING_KEY")

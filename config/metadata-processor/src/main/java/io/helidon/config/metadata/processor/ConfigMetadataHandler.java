@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -186,7 +186,8 @@ class ConfigMetadataHandler {
           - an interface/abstract class only used for inheritance
          */
 
-        ConfiguredType type = new ConfiguredType(targetClass,
+        ConfiguredType type = new ConfiguredType(className,
+                                                 targetClass,
                                                  standalone,
                                                  keyPrefix,
                                                  description,
@@ -236,7 +237,7 @@ class ConfigMetadataHandler {
             if (anInterface instanceof DeclaredType) {
                 DeclaredType type = (DeclaredType) anInterface;
                 if (typeUtils.isSameType(typeUtils.erasure(builderType), typeUtils.erasure(type))) {
-                    TypeMirror builtType = type.getTypeArguments().get(0);
+                    TypeMirror builtType = type.getTypeArguments().get(1);
                     return new BuilderTypeInfo(typeUtils.erasure(builtType).toString());
                 }
             }
@@ -252,6 +253,19 @@ class ConfigMetadataHandler {
                     if (found.isBuilder) {
                         return found;
                     }
+                }
+            }
+        }
+        TypeMirror superMirror = classElement.getSuperclass();
+        String buildTarget = findBuildMethodTarget(classElement);
+        if (superMirror.getKind() != TypeKind.NONE) {
+            TypeElement superclass = (TypeElement) typeUtils.asElement(typeUtils.erasure(superMirror));
+            found = findBuilder(superclass);
+            if (found.isBuilder) {
+                if (buildTarget == null) {
+                    return found;
+                } else {
+                    return new BuilderTypeInfo(buildTarget);
                 }
             }
         }
@@ -469,6 +483,23 @@ class ConfigMetadataHandler {
                             type,
                             className));
         }
+    }
+
+    private String findBuildMethodTarget(TypeElement typeElement) {
+        return elementUtils.getAllMembers(typeElement)
+                .stream()
+                .filter(it -> it.getKind() == ElementKind.METHOD)
+                .map(ExecutableElement.class::cast)
+                // public
+                .filter(it -> it.getModifiers().contains(Modifier.PUBLIC))
+                // static
+                .filter(it -> !it.getModifiers().contains(Modifier.STATIC))
+                .filter(it -> it.getSimpleName().contentEquals("build"))
+                .filter(it -> it.getParameters().isEmpty())
+                .filter(it -> it.getReturnType().getKind() != TypeKind.VOID)
+                .findFirst()
+                .map(it -> it.getReturnType().toString())
+                .orElse(null);
     }
 
     private boolean hasCreate(TypeElement typeElement) {

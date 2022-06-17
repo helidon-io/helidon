@@ -34,7 +34,7 @@ import jakarta.enterprise.inject.spi.CDI;
  *
  * This will use SeContainerInitializer rather than @HelidonTest as the latter does not make meta-config work
  */
-public class HoconJsonMpMetaConfigTest {
+class HoconJsonMpMetaConfigTest {
     private static ConfigBean bean;
     private static SeContainer container;
 

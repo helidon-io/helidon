@@ -621,7 +621,7 @@ public final class MetricsSupport extends HelidonRestServiceSupport
          * Creates a new builder instance.
          */
         protected Builder() {
-            super(Builder.class, MetricsSettings.Builder.DEFAULT_CONTEXT);
+            super(MetricsSettings.Builder.DEFAULT_CONTEXT);
         }
 
         @Override
