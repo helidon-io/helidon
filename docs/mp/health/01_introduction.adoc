@@ -141,21 +141,30 @@ microservice reports itself as ready.
 
 == Configuration
 
-include::../../shared/config/io.helidon.health.HealthSupport.Builder.adoc[]
+Health checks may be configured using the following properties.
+
+The responsible for configuration class is:
+
+include::../../shared/config/io.helidon.health.HealthSupport.adoc[]
+
+Current properties may be set in `application.yaml` or in `microprofile-config.properties` with `health` prefix.
+
+For example, you can specify a custom port and root context for the root health endpoint path.
+However, you cannot use different ports, such as http://localhost:8080/myhealth and http://localhost:8081/myhealth/live.
+Likewise, you cannot use different paths, such as http://localhost:8080/health and http://localhost:8080/probe/live.
+The example below will change the root path.
+[source,yaml]
+.Create a file named `application.yaml` in the `resources` directory with the following contents:
+----
+health:
+  web-context: "myhealth"  // <1>
+----
+<1> The web-context specifies a new root path for the health endpoint.
+
 
 == Reference
 
-Configuration properties, values and description
-
-|===
-|Property | Values | Description
-
-|health:web-context
-|`String`
-| The endpoint name on which the health context is propagated
-
-|===
-
+TODO:
 
 == Examples
 
