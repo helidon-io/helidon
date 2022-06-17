@@ -31,11 +31,10 @@
 - <<Overview, Overview>>
 - <<Maven Coordinates, Maven Coordinates>>
 - <<Usage, Usage>>
-- <<API, API>>
+- <<REST Endpoints, REST Endpoints>>
 - <<Configuration, Configuration>>
-- <<Reference, Reference>>
 - <<Examples, Examples>>
-- <<Additional information, Additional Information>>
+- <<Reference, Reference>>
 
 == Overview
 Microservices expose their health status primarily so external tools (for example, an orchestrator such as Kubernetes)
@@ -58,10 +57,14 @@ To enable MicroProfile Health add the <<mp/introduction/02_microprofile.adoc, he
 
 MicroProfile Health is already included in the bundle.
 
-If `Helidon MicroProfile Core` is used, the following dependency should be included in your project's `pom.xml`:
+If full control over the dependencies is required, and you want to minimize the quantity of the dependencies - `Helidon MicroProfile Core budnle` should be used. In this case the following dependencies should be included in your project's `pom.xml`:
 
 [source,xml]
 ----
+<dependency>
+    <groupId>io.helidon.microprofile.bundles</groupId>
+    <artifactId>helidon-microprofile-core</artifactId>
+</dependency>
 <dependency>
     <groupId>io.helidon.microprofile.health</groupId>
     <artifactId>helidon-microprofile-health</artifactId>
@@ -107,7 +110,7 @@ some future point it might become able to do so without requiring a restart.
 A service reporting `DOWN` for a startup check is still initializing itself and normally will report `UP` soon, assuming it is able to start successfully.
 
 
-== API
+== REST Endpoints
 A MicroProfile-compliant service reports its health via known REST endpoints. Helidon MP
 provides these endpoints automatically as part of every MP microservice that includes health support..
 
@@ -143,7 +146,7 @@ microservice reports itself as ready.
 
 Health checks may be configured using the following properties.
 
-The responsible for configuration class is:
+The class responsible for configuration is:
 
 include::../../shared/config/io.helidon.health.HealthSupport.adoc[]
 
@@ -153,22 +156,16 @@ For example, you can specify a custom port and root context for the root health 
 However, you cannot use different ports, such as http://localhost:8080/myhealth and http://localhost:8081/myhealth/live.
 Likewise, you cannot use different paths, such as http://localhost:8080/health and http://localhost:8080/probe/live.
 The example below will change the root path.
-[source,yaml]
-.Create a file named `application.yaml` in the `resources` directory with the following contents:
+[source,properties]
+.Create a file named `microprofile-config.properties` in the `resources\META-INF` directory with the following contents:
 ----
-health:
-  web-context: "myhealth"  // <1>
+health.web-context=myhealth  #<1>
 ----
 <1> The web-context specifies a new root path for the health endpoint.
 
-
-== Reference
-
-TODO:
-
 == Examples
 
-Generate Helidon MP Quickstart project following these <<Instructions, Instruction>>
+Generate Helidon MP Quickstart project following these <<Instructions, Instructions>>
 
 === Using the Built-In Health Checks
 
@@ -501,6 +498,7 @@ curl http://localhost:8080/health
 Full example code is available link:https://github.com/oracle/helidon/tree/master/examples[here].
 
 
-== Additional information
+== Reference
 
-To find more information about MicroProfile follow this link:https://microprofile.io/[link].
+* link:http://download.eclipse.org/microprofile/microprofile-health-{health-release}/microprofile-health-spec.pdf[MicroProfile Health Specification]
+* link:https://github.com/eclipse/microprofile-health[MicroProfile Health on GitHub]
