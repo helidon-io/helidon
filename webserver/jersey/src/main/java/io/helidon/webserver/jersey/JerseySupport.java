@@ -317,10 +317,9 @@ public class JerseySupport implements Service {
                                         KeyPerformanceIndicatorSupport.DeferrableRequestContext::requestProcessingStarted);
 
                                 requestContext.setRequestScopedInitializer(injectionManager -> {
-                                    injectionManager.<Ref<ServerRequest>>getInstance(REQUEST_TYPE).set(req);
-                                    injectionManager.<Ref<ServerResponse>>getInstance(RESPONSE_TYPE).set(res);
-                                    injectionManager.<Ref<SpanContext>>getInstance(SPAN_CONTEXT_TYPE)
-                                            .set(req.spanContext().orElse(null));
+                                    RequestScopedInstances.set(req);
+                                    RequestScopedInstances.set(res);
+                                    RequestScopedInstances.set(req.spanContext().orElse(null));
                                 });
 
                                 appHandler.handle(requestContext);
