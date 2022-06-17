@@ -92,7 +92,6 @@ public class CrossOriginConfig {
      */
     public static final String ACCESS_CONTROL_REQUEST_METHOD = "Access-Control-Request-Method";
 
-    private static final String DEFAULT_AGE_TEXT = "3600";
     /**
      * Default cache expiration in seconds.
      */
@@ -265,27 +264,15 @@ public class CrossOriginConfig {
     @Configured
     public static class Builder implements CorsSetter<Builder>, io.helidon.common.Builder<Builder, CrossOriginConfig> {
 
-        private static final String ALLOW_ALL_TEXT = "*";
-        static final String[] ALLOW_ALL = {ALLOW_ALL_TEXT};
-        private static final String DEFAULT_PATH_PATTERN = PATHLESS_KEY;
-        private static final String[] DEFAULT_ALLOW_ORIGINS = ALLOW_ALL;
-        private static final String DEFAULT_ALLOW_ORIGINS_TEXT = ALLOW_ALL_TEXT;
-        private static final String[] DEFAULT_ALLOW_HEADERS = ALLOW_ALL;
-        private static final String DEFAULT_ALLOW_HEADERS_TEXT = ALLOW_ALL_TEXT;
-        private static final String[] DEFAULT_ALLOW_METHODS = ALLOW_ALL;
-        private static final String DEFAULT_ALLOW_METHODS_TEXT = ALLOW_ALL_TEXT;
-        private static final String DEFAULT_ENABLED_TEXT = "true";
-        private static final boolean DEFAULT_ENABLED = Boolean.parseBoolean(DEFAULT_ENABLED_TEXT);
-        private static final String DEFAULT_ALLOW_CREDENTIALS_TEXT = "false";
-        private static final boolean DEFAULT_ALLOW_CREDENTIALS = Boolean.parseBoolean(DEFAULT_ALLOW_CREDENTIALS_TEXT);
+        static final String[] ALLOW_ALL = {"*"};
 
-        private String pathPattern = DEFAULT_PATH_PATTERN; // not typically used except when inside a MappedCrossOriginConfig
-        private boolean enabled = DEFAULT_ENABLED;
-        private String[] origins = DEFAULT_ALLOW_ORIGINS;
-        private String[] allowHeaders = DEFAULT_ALLOW_HEADERS;
+        private String pathPattern = PATHLESS_KEY; // not typically used except when inside a MappedCrossOriginConfig
+        private boolean enabled = true;
+        private String[] origins = ALLOW_ALL;
+        private String[] allowHeaders = ALLOW_ALL;
         private String[] exposeHeaders;
-        private String[] allowMethods = DEFAULT_ALLOW_METHODS;
-        private boolean allowCredentials = DEFAULT_ALLOW_CREDENTIALS;
+        private String[] allowMethods = ALLOW_ALL;
+        private boolean allowCredentials;
         private long maxAgeSeconds = DEFAULT_AGE;
 
         private Builder() {
@@ -297,7 +284,7 @@ public class CrossOriginConfig {
          * @param pathPattern new path prefix
          * @return updated builder
          */
-        @ConfiguredOption(DEFAULT_PATH_PATTERN)
+        @ConfiguredOption("{+}")
         public Builder pathPattern(String pathPattern) {
             this.pathPattern = pathPattern;
             return this;
@@ -308,7 +295,7 @@ public class CrossOriginConfig {
         }
 
         @Override
-        @ConfiguredOption(description = "Sets whether this config should be enabled or not.", value = DEFAULT_ENABLED_TEXT)
+        @ConfiguredOption(description = "Sets whether this config should be enabled or not.", value = "true")
         public Builder enabled(boolean enabled) {
             this.enabled = enabled;
             return this;
@@ -318,7 +305,7 @@ public class CrossOriginConfig {
         @ConfiguredOption(type = String.class,
                           kind = ConfiguredOption.Kind.LIST,
                           description = "Sets the allowOrigins.",
-                          value = DEFAULT_ALLOW_ORIGINS_TEXT)
+                          value = "*")
         public Builder allowOrigins(String... origins) {
             this.origins = copyOf(origins);
             return this;
@@ -328,7 +315,7 @@ public class CrossOriginConfig {
         @ConfiguredOption(type = String.class,
                           kind = ConfiguredOption.Kind.LIST,
                           description = "Sets the allow headers.",
-                          value = DEFAULT_ALLOW_HEADERS_TEXT)
+                          value = "*")
         public Builder allowHeaders(String... allowHeaders) {
             this.allowHeaders = copyOf(allowHeaders);
             return this;
@@ -345,7 +332,7 @@ public class CrossOriginConfig {
         @ConfiguredOption(type = String.class,
                           kind = ConfiguredOption.Kind.LIST,
                           description = "Sets the allow methods.",
-                          value = DEFAULT_ALLOW_METHODS_TEXT)
+                          value = "*")
         public Builder allowMethods(String... allowMethods) {
             this.allowMethods = copyOf(allowMethods);
             return this;
@@ -359,7 +346,7 @@ public class CrossOriginConfig {
         }
 
         @Override
-        @ConfiguredOption(description = "Sets the maximum age.", value = DEFAULT_AGE_TEXT)
+        @ConfiguredOption(description = "Sets the maximum age.", value = "3600")
         public Builder maxAgeSeconds(long maxAgeSeconds) {
             this.maxAgeSeconds = maxAgeSeconds;
             return this;

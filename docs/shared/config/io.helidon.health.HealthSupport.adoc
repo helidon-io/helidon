@@ -41,7 +41,7 @@ Optional configuration options:
 
 |`exclude-classes` |Class<?>[&#93; |{nbsp} |A class may be excluded from invoking health checks on it.
  This allows configurable approach to disabling broken health-checks.
-|`timeout-millis` |long |`10 seconds` |health endpoint timeout (ms)
+|`timeout-millis` |long |`10000` |health endpoint timeout (ms)
 |`exclude` |string[&#93; |{nbsp} |Add health checks to a black list.
  Health check results that match by name with a blacklisted records will not be
  part of the result.
