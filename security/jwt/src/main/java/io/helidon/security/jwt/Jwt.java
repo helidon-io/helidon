@@ -1566,18 +1566,6 @@ public class Jwt {
         }
 
         /**
-         * Add audience.
-         *
-         * @param audience audience to add
-         * @return updated builder
-         * @deprecated use {@link #addAudience(String)} or {@link #audience(java.util.List)} instead
-         */
-        @Deprecated(forRemoval = true, since = "2.4.0")
-        public Builder audience(String audience) {
-            return addAudience(audience);
-        }
-
-        /**
          * Audience identifies the expected recipients of this JWT (optional).
          * Replaces existing configured audiences.
          * This configures audience in header claims, usually this is defined in payload.

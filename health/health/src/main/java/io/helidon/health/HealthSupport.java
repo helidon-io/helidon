@@ -352,7 +352,7 @@ public final class HealthSupport extends HelidonRestServiceSupport {
         private long timeoutMillis = DEFAULT_TIMEOUT_MILLIS;
 
         private Builder() {
-            super(Builder.class, DEFAULT_WEB_CONTEXT);
+            super(DEFAULT_WEB_CONTEXT);
         }
 
         @Override
@@ -377,7 +377,7 @@ public final class HealthSupport extends HelidonRestServiceSupport {
          * @param names names of health checks to include
          * @return updated builder instance
          */
-        @ConfiguredOption(key = INCLUDE_CONFIG_KEY)
+        @ConfiguredOption(key = INCLUDE_CONFIG_KEY, type = String.class, kind = ConfiguredOption.Kind.LIST)
         public Builder addIncluded(Collection<String> names) {
             if (null == names) {
                 return this;
@@ -407,7 +407,7 @@ public final class HealthSupport extends HelidonRestServiceSupport {
          * @param names names of health checks to exclude
          * @return updated builder instance
          */
-        @ConfiguredOption(key = EXCLUDE_CONFIG_KEY)
+        @ConfiguredOption(key = EXCLUDE_CONFIG_KEY, type = String.class, kind = ConfiguredOption.Kind.LIST)
         public Builder addExcluded(Collection<String> names) {
             if (null == names) {
                 return this;
@@ -443,7 +443,7 @@ public final class HealthSupport extends HelidonRestServiceSupport {
          * @param unit timeout time unit
          * @return updated builder instance
          */
-        @ConfiguredOption(key = TIMEOUT_CONFIG_KEY, description = "health endpoint timeout (ms)")
+        @ConfiguredOption(key = TIMEOUT_CONFIG_KEY, description = "health endpoint timeout (ms)", type = Long.class)
         public Builder timeout(long timeout, TimeUnit unit) {
             timeoutMillis(unit.toMillis(timeout));
             return this;

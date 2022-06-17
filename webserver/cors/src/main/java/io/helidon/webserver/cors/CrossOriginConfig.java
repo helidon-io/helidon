@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,8 @@ package io.helidon.webserver.cors;
 import java.util.Arrays;
 
 import io.helidon.config.Config;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 
 import static io.helidon.webserver.cors.Aggregator.PATHLESS_KEY;
 
@@ -259,6 +261,7 @@ public class CrossOriginConfig {
     /**
      * Builder for {@link CrossOriginConfig}.
      */
+    @Configured
     public static class Builder implements CorsSetter<Builder>, io.helidon.common.Builder<Builder, CrossOriginConfig> {
 
         static final String[] ALLOW_ALL = {"*"};
@@ -281,6 +284,7 @@ public class CrossOriginConfig {
          * @param pathPattern new path prefix
          * @return updated builder
          */
+        @ConfiguredOption("{+}")
         public Builder pathPattern(String pathPattern) {
             this.pathPattern = pathPattern;
             return this;
@@ -291,42 +295,58 @@ public class CrossOriginConfig {
         }
 
         @Override
+        @ConfiguredOption(description = "Sets whether this config should be enabled or not.", value = "true")
         public Builder enabled(boolean enabled) {
             this.enabled = enabled;
             return this;
         }
 
         @Override
+        @ConfiguredOption(type = String.class,
+                          kind = ConfiguredOption.Kind.LIST,
+                          description = "Sets the allowOrigins.",
+                          value = "*")
         public Builder allowOrigins(String... origins) {
             this.origins = copyOf(origins);
             return this;
         }
 
         @Override
+        @ConfiguredOption(type = String.class,
+                          kind = ConfiguredOption.Kind.LIST,
+                          description = "Sets the allow headers.",
+                          value = "*")
         public Builder allowHeaders(String... allowHeaders) {
             this.allowHeaders = copyOf(allowHeaders);
             return this;
         }
 
         @Override
+        @ConfiguredOption(type = String.class, kind = ConfiguredOption.Kind.LIST, description = "Sets the expose headers.")
         public Builder exposeHeaders(String... exposeHeaders) {
             this.exposeHeaders = copyOf(exposeHeaders);
             return this;
         }
 
         @Override
+        @ConfiguredOption(type = String.class,
+                          kind = ConfiguredOption.Kind.LIST,
+                          description = "Sets the allow methods.",
+                          value = "*")
         public Builder allowMethods(String... allowMethods) {
             this.allowMethods = copyOf(allowMethods);
             return this;
         }
 
         @Override
+        @ConfiguredOption(description = "Sets the allow credentials flag.", value = "false")
         public Builder allowCredentials(boolean allowCredentials) {
             this.allowCredentials = allowCredentials;
             return this;
         }
 
         @Override
+        @ConfiguredOption(description = "Sets the maximum age.", value = "3600")
         public Builder maxAgeSeconds(long maxAgeSeconds) {
             this.maxAgeSeconds = maxAgeSeconds;
             return this;
