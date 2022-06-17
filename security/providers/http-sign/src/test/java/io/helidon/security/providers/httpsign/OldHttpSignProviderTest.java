@@ -17,6 +17,7 @@
 package io.helidon.security.providers.httpsign;
 
 import java.net.URI;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +26,7 @@ import java.util.TreeMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 
+import io.helidon.common.reactive.Single;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.OutboundSecurityResponse;
@@ -48,6 +50,8 @@ import static org.mockito.Mockito.when;
  * Unit test for {@link HttpSignProvider}.
  */
 abstract class OldHttpSignProviderTest {
+    private static final Duration TIMEOUT = Duration.ofSeconds(5);
+
     abstract HttpSignProvider getProvider();
 
     @Test
@@ -83,7 +87,7 @@ abstract class OldHttpSignProviderTest {
         when(request.env()).thenReturn(se);
         when(request.endpointConfig()).thenReturn(ep);
 
-        AuthenticationResponse atnResponse = provider.authenticate(request).toCompletableFuture().get();
+        AuthenticationResponse atnResponse = Single.create(provider.authenticate(request)).await(TIMEOUT);
 
         assertThat(atnResponse.description().orElse("Unknown problem"),
                    atnResponse.status(),
@@ -125,7 +129,7 @@ abstract class OldHttpSignProviderTest {
         when(request.env()).thenReturn(se);
         when(request.endpointConfig()).thenReturn(ep);
 
-        AuthenticationResponse atnResponse = provider.authenticate(request).toCompletableFuture().get();
+        AuthenticationResponse atnResponse = Single.create(provider.authenticate(request)).await(TIMEOUT);
 
         assertThat(atnResponse.description().orElse("Unknown problem"),
                    atnResponse.status(),
@@ -163,8 +167,8 @@ abstract class OldHttpSignProviderTest {
         boolean outboundSupported = getProvider().isOutboundSupported(request, outboundEnv, outboundEp);
         assertThat("Outbound should be supported", outboundSupported, is(true));
 
-        OutboundSecurityResponse response = getProvider().outboundSecurity(request, outboundEnv, outboundEp).toCompletableFuture()
-                .get();
+        OutboundSecurityResponse response = Single.create(getProvider().outboundSecurity(request, outboundEnv, outboundEp))
+                .await(TIMEOUT);
 
         assertThat(response.status(), is(SecurityResponse.SecurityStatus.SUCCESS));
 
@@ -211,8 +215,8 @@ abstract class OldHttpSignProviderTest {
         boolean outboundSupported = getProvider().isOutboundSupported(request, outboundEnv, outboundEp);
         assertThat("Outbound should be supported", outboundSupported, is(true));
 
-        OutboundSecurityResponse response = getProvider().outboundSecurity(request, outboundEnv, outboundEp).toCompletableFuture()
-                .get();
+        OutboundSecurityResponse response = Single.create(getProvider().outboundSecurity(request, outboundEnv, outboundEp))
+                                                                  .await(TIMEOUT);
 
         assertThat(response.status(), is(SecurityResponse.SecurityStatus.SUCCESS));
 
