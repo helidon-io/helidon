@@ -39,7 +39,7 @@ mvn clean package -DskipTests
 # Attempt to run this example as a java -jar
 # This is a self-testing application
 
-java -jar target/helidon-tests-native-image-mp-1.jar
+# java -jar target/helidon-tests-native-image-mp-1.jar
 
 # Attempt to run this example as a java with module path
 
