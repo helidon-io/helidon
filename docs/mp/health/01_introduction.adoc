@@ -278,7 +278,7 @@ curl http://localhost:8080/health/live
 }
 ----
 
-Full example code is available link:https://github.com/oracle/helidon/tree/master/examples[here].
+Full example code is available link:https://github.com/oracle/helidon/tree/{helidon-version}/examples/microprofile[here].
 
 
 === Custom Readiness Health Checks
@@ -371,7 +371,7 @@ curl -v http://localhost:8080/health/ready
 ----
 <1> The HTTP status is `200` indicating that the application is ready.
 
-Full example code is available link:++https://github.com/oracle/helidon/tree/master/examples[here].
+Full example code is available link:https://github.com/oracle/helidon/tree/{helidon-version}/examples/microprofile[here].
 
 === Custom Startup Health Checks
 
@@ -494,7 +494,8 @@ curl http://localhost:8080/health
 }
 ----
 
-Full example code is available link:https://github.com/oracle/helidon/tree/release-{helidon-version}/examples/microprofile[here].
+Full example code is available
+link:https://github.com/oracle/helidon/tree/{helidon-version}/examples/microprofile[here].
 
 
 == Reference
