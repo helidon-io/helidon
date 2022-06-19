@@ -157,7 +157,7 @@ However, you cannot use different ports, such as http://localhost:8080/myhealth 
 Likewise, you cannot use different paths, such as http://localhost:8080/health and http://localhost:8080/probe/live.
 The example below will change the root path.
 [source,properties]
-.Create a file named `microprofile-config.properties` in the `resources\META-INF` directory with the following contents:
+.Create a file named `microprofile-config.properties` in the `resources/META-INF` directory with the following contents:
 ----
 health.web-context=myhealth  #<1>
 ----
@@ -241,7 +241,6 @@ using CDI.  The following example shows how to add a custom liveness health chec
 @Liveness // <1>
 @ApplicationScoped // <2>
 public class GreetLivenessCheck implements HealthCheck {
-  private GreetingProvider provider;
 
   @Override
   public HealthCheckResponse call() {
@@ -253,7 +252,7 @@ public class GreetLivenessCheck implements HealthCheck {
 }
 ----
 <1> Annotation indicating this is a liveness health check.
-<2> Annotation indicating there is a single liveness `HealthCheck` object during the lifetime of the application.
+<2> Annotation indicating this is a bean instantiated once per application (in Helidon this means just once per runtime).
 <3> Build the HealthCheckResponse with status `UP` and the current time.
 
 [source,bash]
@@ -382,7 +381,7 @@ In this example, the server will wait eight seconds before it declares itself st
 [source,java]
 .Create a new `GreetStartedCheck` class with the following content:
 ----
-@Started // <1>
+@Startup // <1>
 @ApplicationScoped
 public class GreetStartedCheck implements HealthCheck {
   private final AtomicLong readyTime = new AtomicLong(0);
@@ -495,10 +494,12 @@ curl http://localhost:8080/health
 }
 ----
 
-Full example code is available link:https://github.com/oracle/helidon/tree/master/examples[here].
+Full example code is available link:https://github.com/oracle/helidon/tree/release-{helidon-version}/examples/microprofile[here].
 
 
 == Reference
 
+* link:https://helidon.io/docs/v2/apidocs/io.helidon.microprofile.health/module-summary.html[Helidon MicroProfile Health JavaDoc]
+* link:https://helidon.io/docs/v2/apidocs/io.helidon.health.checks/module-summary.html[Helidon Built-in Checks JavaDoc]
 * link:http://download.eclipse.org/microprofile/microprofile-health-{health-release}/microprofile-health-spec.pdf[MicroProfile Health Specification]
 * link:https://github.com/eclipse/microprofile-health[MicroProfile Health on GitHub]
