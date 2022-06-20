@@ -20,9 +20,8 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
 
-    <!--source src="/common/sources.xml"/-->
     <source src="/common/media.xml"/>
-    <source src="/common/media-templates.xml"/>
+    <source src="/common/media-sources.xml"/>
     <exec src="/se/common/common-se.xml"/>
     <exec src="/common/observability.xml"/>
     <exec src="/se/custom/database.xml"/>
@@ -43,9 +42,6 @@
                 <value><![CDATA[                .register("/simple-greet", simpleGreetService)]]></value>
             </list>
             <value key="Main-readyMessage">System.out.println("WEB server is up! http://localhost:" + ws.port() + "/greet");</value>
-            <list key="MainTest-other-imports">
-                <value>org.junit.jupiter.api.Order</value>
-            </list>
             <list key="config-entries">
                 <value file="files/application.yaml"/>
             </list>

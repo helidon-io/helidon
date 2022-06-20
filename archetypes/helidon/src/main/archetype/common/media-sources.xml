@@ -22,10 +22,10 @@
 
     <exec src="/common/common.xml"/>
     <output>
-        <templates engine="mustache" transformations="mustache,packaged" if="${json} == 'jsonp'">
+        <templates engine="mustache" transformations="jsonp-mustache,packaged" if="${json} == 'jsonp'">
             <directory>files</directory>
             <includes>
-                <include>src/*/java/**/*.java.mustache</include>
+                <include>src/*/java/**/*.java.jsonp.mustache</include>
             </includes>
         </templates>
         <templates engine="mustache" transformations="jackson-mustache,packaged" if="${json} == 'jackson'">
@@ -33,20 +33,12 @@
             <includes>
                 <include>src/*/java/**/*.jackson.mustache</include>
             </includes>
-            <excludes>
-                <exclude>src/*/java/**/*.java.jsonb.mustache</exclude>
-                <exclude>src/*/java/**/*.java.mustache</exclude>
-            </excludes>
         </templates>
         <templates engine="mustache" transformations="jsonb-mustache,packaged" if="${json} == 'jsonb'">
             <directory>files</directory>
             <includes>
                 <include>src/*/java/**/*.jsonb.mustache</include>
             </includes>
-            <excludes>
-                <exclude>src/*/java/**/*.java.jackson.mustache</exclude>
-                <exclude>src/*/java/**/*.java.mustache</exclude>
-            </excludes>
         </templates>
     </output>
 </archetype-script>

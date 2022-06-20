@@ -22,6 +22,9 @@
 
     <output>
         <model>
+            <list key="MainTest-other-imports">
+                <value>org.junit.jupiter.api.Order</value>
+            </list>
             <list key="MainTest-methods" if="${json} == 'jsonp'">
                 <value><![CDATA[
     @Test

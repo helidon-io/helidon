@@ -33,6 +33,9 @@
         <transformation id="jsonb-mustache">
             <replace regex="\.jsonb.mustache$" replacement=""/>
         </transformation>
+        <transformation id="jsonp-mustache">
+            <replace regex="\.jsonp.mustache$" replacement=""/>
+        </transformation>
         <templates engine="mustache" transformations="mustache">
             <directory>files</directory>
             <includes>
