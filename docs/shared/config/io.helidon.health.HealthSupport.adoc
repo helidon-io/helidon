@@ -30,9 +30,6 @@ io.helidon.health.HealthSupport
 
 ==== Configuration options
 
-
-
-
 Optional configuration options:
 [cols="3,3,2,5"]
 
