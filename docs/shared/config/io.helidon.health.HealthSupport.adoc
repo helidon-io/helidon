@@ -38,12 +38,12 @@ Optional configuration options:
 
 |`exclude-classes` |Class<?>[&#93; |{nbsp} |A class may be excluded from invoking health checks on it.
  This allows configurable approach to disabling broken health-checks.
-|`timeout-millis` |long |{nbsp} |health endpoint timeout (ms)
+|`timeout-millis` |long |`10000` |health endpoint timeout (ms)
 |`exclude` |string[&#93; |{nbsp} |Add health checks to a black list.
  Health check results that match by name with a blacklisted records will not be
  part of the result.
 |`include` |string[&#93; |{nbsp} |Add health checks to a white list (in case #includeAll is set to `false`.
-|`enabled` |boolean |{nbsp} |HealthSupport can be disabled by invoking this method.
+|`enabled` |boolean |`true` |HealthSupport can be disabled by invoking this method.
 |`web-context` |string |{nbsp} |Sets the web context to use for the service's endpoint.
 |`routing` |string |{nbsp} |Sets the routing name to use for setting up the service's endpoint.
 |`cors` |link:../../shared/config/io.helidon.webserver.cors.CrossOriginConfig.adoc[CrossOriginConfig] |{nbsp} |Sets the cross-origin config builder for use in establishing CORS support for the service endpoints.
