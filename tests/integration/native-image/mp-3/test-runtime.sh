@@ -43,7 +43,9 @@ java -jar -Dexit.on.started=! target/helidon-tests-native-image-mp-3.jar
 
 # Attempt to run this example as a java with module path
 
+# TODO 3.0.0-JAKARTA - remove "add-opens"
 java -Dexit.on.started=! \
+     --add-opens=org.eclipse.parsson.media/org.eclipse.parsson.media=weld.core.impl,org.glassfish.hk2.utilities \
      --module-path target/helidon-tests-native-image-mp-3.jar:target/libs \
      --add-modules helidon.tests.nimage.quickstartmp \
      -m io.helidon.microprofile.cdi/io.helidon.microprofile.cdi.Main
