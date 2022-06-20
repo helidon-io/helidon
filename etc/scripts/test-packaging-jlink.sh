@@ -77,6 +77,6 @@ ${jri_dir}/bin/start --test
 
 # Module Path
 ${jri_dir}/bin/java -Dexit.on.started=! \
-   --module-path ${jri_dir}/app/helidon-tests-native-image-mp-3.jar:${jri_dir}/app/libs \
-   --add-modules helidon.tests.nimage.quickstartmp \
-   --module io.helidon.microprofile.cdi/io.helidon.microprofile.cdi.Main
+  --module-path ${jri_dir}/app/helidon-tests-native-image-mp-3.jar:${jri_dir}/app/libs \
+  --add-modules helidon.tests.nimage.quickstartmp \
+  --module io.helidon.microprofile.cdi/io.helidon.microprofile.cdi.Main
