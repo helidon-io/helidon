@@ -86,7 +86,7 @@ public class RegistryFactory implements io.helidon.metrics.api.RegistryFactory {
      * @return a new registry factory
      * @deprecated Use {@link io.helidon.metrics.api.RegistryFactory#create()}
      */
-    @Deprecated
+    @Deprecated(since = "2.4.0", forRemoval = true)
     public static RegistryFactory create() {
         return RegistryFactory.class.cast(io.helidon.metrics.api.RegistryFactory.create());
     }
@@ -100,7 +100,7 @@ public class RegistryFactory implements io.helidon.metrics.api.RegistryFactory {
      * @return a new registry factory
      * @deprecated Use {@link io.helidon.metrics.api.RegistryFactory#create(Config)}
      */
-    @Deprecated
+    @Deprecated(since = "2.4.0", forRemoval = true)
     public static RegistryFactory create(Config config) {
         return RegistryFactory.class.cast(io.helidon.metrics.api.RegistryFactory.create(config));
     }
@@ -115,7 +115,7 @@ public class RegistryFactory implements io.helidon.metrics.api.RegistryFactory {
      * @return registry factory singleton
      * @deprecated Use {@link io.helidon.metrics.api.RegistryFactory#getInstance()}
      */
-    @Deprecated
+    @Deprecated(since = "2.4.0", forRemoval = true)
     public static RegistryFactory getInstance() {
         return RegistryFactory.class.cast(io.helidon.metrics.api.RegistryFactory.getInstance());
     }
@@ -128,7 +128,7 @@ public class RegistryFactory implements io.helidon.metrics.api.RegistryFactory {
      * @return registry factory singleton
      * @deprecated Use {@link io.helidon.metrics.api.RegistryFactory#getInstance(MetricsSettings)}
      */
-    @Deprecated
+    @Deprecated(since = "2.4.0", forRemoval = true)
     public static RegistryFactory getInstance(Config config) {
         return RegistryFactory.class.cast(io.helidon.metrics.api.RegistryFactory.getInstance(config));
     }

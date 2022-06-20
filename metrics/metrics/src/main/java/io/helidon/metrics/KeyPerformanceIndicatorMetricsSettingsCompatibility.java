@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,12 @@ import java.lang.reflect.Proxy;
 
 import io.helidon.metrics.KeyPerformanceIndicatorMetricsSettings.Builder;
 
-@Deprecated
+/**
+ * Do not use; for temporary compatability only.
+ *
+ * @deprecated Use {@link io.helidon.metrics.api.KeyPerformanceIndicatorMetricsSettings} instead.
+ */
+@Deprecated(since = "2.4.0", forRemoval = true)
 class KeyPerformanceIndicatorMetricsSettingsCompatibility {
 
     static Builder builder() {

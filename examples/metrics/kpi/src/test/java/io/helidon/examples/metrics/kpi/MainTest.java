@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -131,13 +131,6 @@ public class MainTest {
 
         assertThat("Returned metrics output",
                    openMetricsOutput,
-                   chooseMatcher());
-    }
-
-    private static Matcher<String> chooseMatcher() {
-        Matcher<String> contains = containsString("# TYPE " + KPI_REGISTRY_TYPE.getName() + "_requests_inFlight_current");
-        return Main.USE_CONFIG
-                ? contains
-                : not(contains);
+                   containsString("# TYPE " + KPI_REGISTRY_TYPE.getName() + "_requests_inFlight_current"));
     }
 }
