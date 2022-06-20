@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,11 +30,11 @@ import org.junit.jupiter.api.BeforeAll;
 /**
  * Unit test for {@link HttpSignProvider} configured through a builder.
  */
-public class HttpSignProviderBuilderTest extends HttpSignProviderTest {
+class CurrentHttpSignProviderBuilderTest extends CurrentHttpSignProviderTest {
     private static HttpSignProvider instance;
 
     @BeforeAll
-    public static void initClass() {
+    static void initClass() {
         instance = HttpSignProvider.builder()
                 .addAcceptHeader(HttpSignHeader.AUTHORIZATION)
                 .addAcceptHeader(HttpSignHeader.SIGNATURE)
@@ -70,8 +70,7 @@ public class HttpSignProviderBuilderTest extends HttpSignProviderTest {
                 .addHost("example.org")
                 .addPath("/my/.*")
                 .customObject(OutboundTargetDefinition.class, OutboundTargetDefinition
-                        .builder("rsa-key-12345"
-                        )
+                        .builder("rsa-key-12345")
                         .signedHeaders(inboundRequiredHeaders("host", SignedHeadersConfig
                                 .REQUEST_TARGET))
                         .privateKeyConfig(KeyConfig.keystoreBuilder()

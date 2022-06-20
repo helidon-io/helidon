@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.security.providers.httpsign;
 
 import java.net.URI;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +26,7 @@ import java.util.TreeMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 
+import io.helidon.common.reactive.Single;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.OutboundSecurityResponse;
@@ -47,23 +49,22 @@ import static org.mockito.Mockito.when;
 /**
  * Unit test for {@link HttpSignProvider}.
  */
-public abstract class HttpSignProviderTest {
+abstract class CurrentHttpSignProviderTest {
+    private static final Duration TIMEOUT = Duration.ofSeconds(5);
+
     abstract HttpSignProvider getProvider();
 
     @Test
-    public void testInboundSignatureRsa() throws ExecutionException, InterruptedException {
+    void testInboundSignatureRsa() throws ExecutionException, InterruptedException {
         Map<String, List<String>> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
         headers.put("Signature",
                     List.of("keyId=\"rsa-key-12345\",algorithm=\"rsa-sha256\",headers=\"date "
-                                                     + "host (request-target) authorization\","
-                                                     + "signature=\"Rm5PjuUdJ927esGQ2gm/6QBEM9IM7J5qSZuP8NV8+GXUf"
-                                                     + "boUV6ST2EYLYniFGt5/3BO/2+vqQdqezdTVPr/JCwqBx+9T9ZynG7YqRj"
-                                                     + "KvXzcmvQOu5vQmCK5x/HR0fXU41Pjq+jywsD0k6KdxF6TWr6tvWRbwFet"
-                                                     + "+YSb0088o/65Xeqghw7s0vShf7jPZsaaIHnvM9SjWgix9VvpdEn4NDvqh"
-                                                     + "ebieVD3Swb1VG5+/7ECQ9VAlX30U5/jQ5hPO3yuvRlg5kkMjJiN7tf/68"
-                                                     + "If/5O2Z4H+7VmW0b1U69/JoOQJA0av1gCX7HVfa/YTCxIK4UFiI6h963q"
-                                                     + "2x7LSkqhdWGA==\""));
+                                    + "host (request-target) authorization\","
+                                    + "signature=\"ptxE46kM/gV8L6Q0jcrY5Sxet7vy/rqldwxJfWT5ncbALbwvr4puc3/M0q8pT/srI/bLvtPPZxQN9flaWyHo2ieypRSRZe5/2FrcME"
+                                    + "+XuGNOu9BVJlCrALgLwi2VGJ3i2BIH2EvpLqF4TmM7AHIn/E6trWf30Kr90sTrk1ewx7kJ0bPVfY6Pv1mJpuA4MVr"
+                                    + "++BvvXMuGooMI+nepToPlseGgtnYMJPuTRwZJbTLo02yN1rKnRZauCxCCd0bgi9zhJRlXFuoLzthCgqHElCXVXrW+ZGACUaRDC"
+                                    + "+XawXg6eyMWp6GVegS/NVRnaqEkBsl0hn7X/dmEXDDERyK66qn0WA==\""));
         headers.put("host", List.of("example.org"));
         headers.put("date", List.of("Thu, 08 Jun 2014 18:32:30 GMT"));
         headers.put("authorization", List.of("basic dXNlcm5hbWU6cGFzc3dvcmQ="));
@@ -83,7 +84,7 @@ public abstract class HttpSignProviderTest {
         when(request.env()).thenReturn(se);
         when(request.endpointConfig()).thenReturn(ep);
 
-        AuthenticationResponse atnResponse = provider.authenticate(request).toCompletableFuture().get();
+        AuthenticationResponse atnResponse = Single.create(provider.authenticate(request)).await(TIMEOUT);
 
         assertThat(atnResponse.description().orElse("Unknown problem"),
                    atnResponse.status(),
@@ -99,13 +100,13 @@ public abstract class HttpSignProviderTest {
     }
 
     @Test
-    public void testInboundSignatureHmac() throws InterruptedException, ExecutionException {
+    void testInboundSignatureHmac() throws InterruptedException, ExecutionException {
         Map<String, List<String>> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
         headers.put("Signature",
                     List.of("keyId=\"myServiceKeyId\",algorithm=\"hmac-sha256\",headers=\"date host (request-target) "
-                                            + "authorization\","
-                                            + "signature=\"0BcQq9TckrtGvlpHiMxNqMq0vW6dPVTGVDUVDrGwZyI=\""));
+                                    + "authorization\","
+                                    + "signature=\"yaxxY9oY0+qKhAr9sYCfmYQyKjRVctN6z1c9ANhbZ/c=\""));
         headers.put("host", List.of("example.org"));
         headers.put("date", List.of("Thu, 08 Jun 2014 18:32:30 GMT"));
         headers.put("authorization", List.of("basic dXNlcm5hbWU6cGFzc3dvcmQ="));
@@ -125,7 +126,7 @@ public abstract class HttpSignProviderTest {
         when(request.env()).thenReturn(se);
         when(request.endpointConfig()).thenReturn(ep);
 
-        AuthenticationResponse atnResponse = provider.authenticate(request).toCompletableFuture().get();
+        AuthenticationResponse atnResponse = Single.create(provider.authenticate(request)).await(TIMEOUT);
 
         assertThat(atnResponse.description().orElse("Unknown problem"),
                    atnResponse.status(),
@@ -140,7 +141,7 @@ public abstract class HttpSignProviderTest {
     }
 
     @Test
-    public void testOutboundSignatureRsa() throws ExecutionException, InterruptedException {
+    void testOutboundSignatureRsa() throws ExecutionException, InterruptedException {
         Map<String, List<String>> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
         // the generated host contains port as well, so we must explicitly define it here
@@ -163,8 +164,8 @@ public abstract class HttpSignProviderTest {
         boolean outboundSupported = getProvider().isOutboundSupported(request, outboundEnv, outboundEp);
         assertThat("Outbound should be supported", outboundSupported, is(true));
 
-        OutboundSecurityResponse response = getProvider().outboundSecurity(request, outboundEnv, outboundEp).toCompletableFuture()
-                .get();
+        OutboundSecurityResponse response = Single.create(getProvider().outboundSecurity(request, outboundEnv, outboundEp))
+                .await(TIMEOUT);
 
         assertThat(response.status(), is(SecurityResponse.SecurityStatus.SUCCESS));
 
@@ -178,17 +179,14 @@ public abstract class HttpSignProviderTest {
                 "rsa-key-12345",
                 "rsa-sha256",
                 List.of("date", "host", REQUEST_TARGET, "authorization"),
-                "Rm5PjuUdJ927esGQ2gm/6QBEM9IM7J5qSZuP8NV8+GXUf"
-                        + "boUV6ST2EYLYniFGt5/3BO/2+vqQdqezdTVPr/JCwqBx+9T9ZynG7YqRj"
-                        + "KvXzcmvQOu5vQmCK5x/HR0fXU41Pjq+jywsD0k6KdxF6TWr6tvWRbwFet"
-                        + "+YSb0088o/65Xeqghw7s0vShf7jPZsaaIHnvM9SjWgix9VvpdEn4NDvqh"
-                        + "ebieVD3Swb1VG5+/7ECQ9VAlX30U5/jQ5hPO3yuvRlg5kkMjJiN7tf/68"
-                        + "If/5O2Z4H+7VmW0b1U69/JoOQJA0av1gCX7HVfa/YTCxIK4UFiI6h963q"
-                        + "2x7LSkqhdWGA==");
+                "ptxE46kM/gV8L6Q0jcrY5Sxet7vy/rqldwxJfWT5ncbALbwvr4puc3/M0q8pT/srI/bLvtPPZxQN9flaWyHo2ieypRSRZe5/2FrcME"
+                        + "+XuGNOu9BVJlCrALgLwi2VGJ3i2BIH2EvpLqF4TmM7AHIn/E6trWf30Kr90sTrk1ewx7kJ0bPVfY6Pv1mJpuA4MVr"
+                        + "++BvvXMuGooMI+nepToPlseGgtnYMJPuTRwZJbTLo02yN1rKnRZauCxCCd0bgi9zhJRlXFuoLzthCgqHElCXVXrW+ZGACUaRDC"
+                        + "+XawXg6eyMWp6GVegS/NVRnaqEkBsl0hn7X/dmEXDDERyK66qn0WA==");
     }
 
     @Test
-    public void testOutboundSignatureHmac() throws ExecutionException, InterruptedException {
+    void testOutboundSignatureHmac() throws ExecutionException, InterruptedException {
         Map<String, List<String>> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
         // the generated host contains port as well, so we must explicitly define it here
@@ -211,8 +209,8 @@ public abstract class HttpSignProviderTest {
         boolean outboundSupported = getProvider().isOutboundSupported(request, outboundEnv, outboundEp);
         assertThat("Outbound should be supported", outboundSupported, is(true));
 
-        OutboundSecurityResponse response = getProvider().outboundSecurity(request, outboundEnv, outboundEp).toCompletableFuture()
-                .get();
+        OutboundSecurityResponse response = Single.create(getProvider().outboundSecurity(request, outboundEnv, outboundEp))
+                                                                  .await(TIMEOUT);
 
         assertThat(response.status(), is(SecurityResponse.SecurityStatus.SUCCESS));
 
@@ -225,7 +223,7 @@ public abstract class HttpSignProviderTest {
                                 "myServiceKeyId",
                                 "hmac-sha256",
                                 List.of("date", REQUEST_TARGET, "host"),
-                                "SkeKVi6BoUd2/aUfXyIVIFAKEkKp7sg2KsS1UieB/+E=");
+                                "WGgirKG0IJQPGosDuTDi40uABCbxDm4oduKiH+iVuII=");
     }
 
     private void validateSignatureHeader(

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,9 +40,9 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  * Unit test for {@link HttpSignature}.
  */
-public class HttpSignatureTestOld {
+class OldHttpSignatureTest {
     @Test
-    public void testValid() {
+    void testValid() {
         String validSignature = "keyId=\"rsa-key-1\",algorithm=\"rsa-sha256\","
                 + "headers=\"(request-target) host date digest content-length\","
                 + "signature=\"Base64(RSA-SHA256(signing string))\"";
@@ -51,7 +51,7 @@ public class HttpSignatureTestOld {
     }
 
     @Test
-    public void testValidInvalidComponent() {
+    void testValidInvalidComponent() {
         String validSignature = "keyId=\"rsa-key-1\",algorithm=\"rsa-sha256\","
                 + "headers=\"(request-target) host date digest content-length\","
                 + "signature=\"Base64(RSA-SHA256(signing string))\",hurhur=\"ignored\"";
@@ -60,7 +60,7 @@ public class HttpSignatureTestOld {
     }
 
     @Test
-    public void testValidRepeatedComponent() {
+    void testValidRepeatedComponent() {
         String validSignature = "keyId=\"rsa-key-1\",algorithm=\"hamc-sha256\","
                 + "headers=\"(request-target) host date digest content-length\","
                 + "signature=\"Base64(RSA-SHA256(signing string))\",algorithm=\"rsa-sha256\"";
@@ -69,7 +69,7 @@ public class HttpSignatureTestOld {
     }
 
     @Test
-    public void testValidInvalidLastComponent1() {
+    void testValidInvalidLastComponent1() {
         String validSignature = "keyId=\"rsa-key-1\",algorithm=\"hamc-sha256\","
                 + "headers=\"(request-target) host date digest content-length\","
                 + "signature=\"Base64(RSA-SHA256(signing string))\",algorithm=\"rsa-sha256\",abcd";
@@ -78,7 +78,7 @@ public class HttpSignatureTestOld {
     }
 
     @Test
-    public void testValidInvalidLastComponent2() {
+    void testValidInvalidLastComponent2() {
         String validSignature = "keyId=\"rsa-key-1\",algorithm=\"hamc-sha256\","
                 + "headers=\"(request-target) host date digest content-length\","
                 + "signature=\"Base64(RSA-SHA256(signing string))\",algorithm=\"rsa-sha256\",abcd=";
@@ -87,7 +87,7 @@ public class HttpSignatureTestOld {
     }
 
     @Test
-    public void testValidInvalidLastComponent3() {
+    void testValidInvalidLastComponent3() {
         String validSignature = "keyId=\"rsa-key-1\",algorithm=\"hamc-sha256\","
                 + "headers=\"(request-target) host date digest content-length\","
                 + "signature=\"Base64(RSA-SHA256(signing string))\",algorithm=\"rsa-sha256\",abcd=\"asf";
@@ -96,7 +96,7 @@ public class HttpSignatureTestOld {
     }
 
     @Test
-    public void testInvalid1() {
+    void testInvalid1() {
         String invalidSignature = "keyId=\"rsa-key-1\",algorithm=\"hamc-sha256\","
                 // missing quotes for headers
                 + "headers=(request-target) host date digest content-length\","
@@ -110,7 +110,7 @@ public class HttpSignatureTestOld {
     }
 
     @Test
-    public void testInvalid2() {
+    void testInvalid2() {
         String invalidSignature = "This is a wrong signature";
 
         HttpSignature httpSignature = HttpSignature.fromHeader(invalidSignature, true);
@@ -121,7 +121,7 @@ public class HttpSignatureTestOld {
     }
 
     @Test
-    public void testSignRsa() {
+    void testSignRsa() {
         Map<String, List<String>> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         headers.put("DATE", List.of("Thu, 08 Jun 2014 18:32:30 GMT"));
         headers.put("Authorization", List.of("basic dXNlcm5hbWU6cGFzc3dvcmQ="));
@@ -154,7 +154,7 @@ public class HttpSignatureTestOld {
     }
 
     @Test
-    public void testSignHmac() {
+    void testSignHmac() {
         Map<String, List<String>> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         headers.put("DATE", List.of("Thu, 08 Jun 2014 18:32:30 GMT"));
         headers.put("Authorization", List.of("basic dXNlcm5hbWU6cGFzc3dvcmQ="));
@@ -179,7 +179,7 @@ public class HttpSignatureTestOld {
     }
 
     @Test
-    public void testSignHmacAddHeaders() {
+    void testSignHmacAddHeaders() {
         SecurityEnvironment env = SecurityEnvironment.builder()
                 .targetUri(URI.create("http://localhost/test/path"))
                 .build();
@@ -206,7 +206,7 @@ public class HttpSignatureTestOld {
     }
 
     @Test
-    public void testVerifyRsa() {
+    void testVerifyRsa() {
         HttpSignature signature = HttpSignature.fromHeader("keyId=\"rsa-key-12345\",algorithm=\"rsa-sha256\",headers=\"date "
                                                                    + "host (request-target) authorization\","
                                                                    + "signature=\"Rm5PjuUdJ927esGQ2gm/6QBEM9IM7J5qSZuP8NV8+GXUf"
@@ -239,7 +239,7 @@ public class HttpSignatureTestOld {
     }
 
     @Test
-    public void testVerifyHmac() {
+    void testVerifyHmac() {
         HttpSignature signature = HttpSignature.fromHeader(
                 "keyId=\"myServiceKeyId\",algorithm=\"hmac-sha256\",headers=\"date host (request-target) authorization\","
                         + "signature=\"0BcQq9TckrtGvlpHiMxNqMq0vW6dPVTGVDUVDrGwZyI=\"", true);

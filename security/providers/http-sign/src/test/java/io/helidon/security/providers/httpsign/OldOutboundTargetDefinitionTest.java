@@ -17,18 +17,19 @@
 package io.helidon.security.providers.httpsign;
 
 import io.helidon.config.Config;
+
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-public class OutboundTargetDefinitionTest {
+class OldOutboundTargetDefinitionTest {
 
-    private static final String OUTBOUND_SIGNATURE_KEY = "security.providers.0.http-signatures.outbound.0.signature";
+    private static final String OUTBOUND_SIGNATURE_KEY = "old.http-signatures.outbound.0.signature";
 
     @Test
-    public void testBuilderFromConfig() {
+    void testBuilderFromConfig() {
         Config config = Config.create();
         OutboundTargetDefinition.Builder builder =
                 OutboundTargetDefinition.builder(config.get(OUTBOUND_SIGNATURE_KEY));
@@ -37,5 +38,6 @@ public class OutboundTargetDefinitionTest {
         assertThat(d.header(), is(HttpSignHeader.SIGNATURE));
         assertThat(d.keyConfig().isPresent(), is(true));
         assertThat(d.signedHeadersConfig(), is(notNullValue()));
+        assertThat(d.backwardCompatibleEol(), is(true));
     }
 }

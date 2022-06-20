@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,14 +23,14 @@ import org.junit.jupiter.api.BeforeAll;
 /**
  * Unit test for {@link HttpSignProvider} configured from a configuration file.
  */
-public class HttpSignProviderConfigTest extends HttpSignProviderTest {
+class OldHttpSignProviderConfigTest extends OldHttpSignProviderTest {
     private static HttpSignProvider instance;
 
     @BeforeAll
-    public static void initClass() {
+    static void initClass() {
         Config config = Config.create();
 
-        instance = HttpSignProvider.create(config.get("security.providers.0.http-signatures"));
+        instance = HttpSignProvider.create(config.get("old.http-signatures"));
     }
 
     @Override
