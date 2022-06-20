@@ -43,5 +43,13 @@ mvn clean package -DskipTests
 
 # Attempt to run this example as a java with module path
 
-java --add-opens=org.eclipse.parsson.media/org.eclipse.parsson.media=weld.core.impl,org.glassfish.hk2.utilities --module-path target/helidon-tests-native-image-mp-1.jar:target/libs \
-     -m helidon.tests.nimage.mp/io.helidon.tests.integration.nativeimage.mp1.Mp1Main
+#java --add-opens=org.eclipse.parsson.media/org.eclipse.parsson.media=weld.core.impl,org.glassfish.hk2.utilities --module-path target/helidon-tests-native-image-mp-1.jar:target/libs \
+#      -m helidon.tests.nimage.mp/io.helidon.tests.integration.nativeimage.mp1.Mp1Main
+
+java --add-opens=org.eclipse.parsson.media/org.eclipse.parsson.media=weld.core.impl,org.glassfish.hk2.utilities \
+--module-path target/helidon-tests-native-image-mp-1.jar:target/libs -m helidon.tests.nimage.mp/io.helidon.tests.integration.nativeimage.mp1.Mp1Main
+
+
+     # --add-opens=io.helidon.webserver.jersey/io.helidon.webserver.jersey=org.glassfish.hk2.locator \
+     # --add-opens=io.helidon.security.integration.jersey/io.helidon.security.integration.jersey=org.glassfish.hk2.locator \
+     # --add-opens=helidon.tests.nimage.mp/io.helidon.tests.integration.nativeimage.mp1=org.glassfish.hk2.utilities \

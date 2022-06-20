@@ -63,10 +63,11 @@ jri_dir=${WS_DIR}/tests/integration/native-image/mp-1/target/helidon-tests-nativ
 # Classpath
 ${jri_dir}/bin/start
 
+# TODO 3.0.0-JAKARTA - need updated version of Parsson
 # Module Path
-${jri_dir}/bin/java \
-  --module-path ${jri_dir}/app/helidon-tests-native-image-mp-1.jar:${jri_dir}/app/libs \
-  --module helidon.tests.nimage.mp/io.helidon.tests.integration.nativeimage.mp1.Mp1Main
+# ${jri_dir}/bin/java \
+#  --module-path ${jri_dir}/app/helidon-tests-native-image-mp-1.jar:${jri_dir}/app/libs \
+#  --module helidon.tests.nimage.mp/io.helidon.tests.integration.nativeimage.mp1.Mp1Main
 
 # Run MP-3 (just start and stop)
 cd ${WS_DIR}/tests/integration/native-image/mp-3
@@ -75,8 +76,9 @@ jri_dir=${WS_DIR}/tests/integration/native-image/mp-3/target/helidon-tests-nativ
 # Classpath
 ${jri_dir}/bin/start --test
 
+# TODO 3.0.0-JAKARTA - need updated version of Parsson
 # Module Path
-${jri_dir}/bin/java -Dexit.on.started=! \
-  --module-path ${jri_dir}/app/helidon-tests-native-image-mp-3.jar:${jri_dir}/app/libs \
-  --add-modules helidon.tests.nimage.quickstartmp \
-  --module io.helidon.microprofile.cdi/io.helidon.microprofile.cdi.Main
+# ${jri_dir}/bin/java -Dexit.on.started=! \
+#   --module-path ${jri_dir}/app/helidon-tests-native-image-mp-3.jar:${jri_dir}/app/libs \
+#   --add-modules helidon.tests.nimage.quickstartmp \
+#  --module io.helidon.microprofile.cdi/io.helidon.microprofile.cdi.Main
