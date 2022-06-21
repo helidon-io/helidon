@@ -1,0 +1,66 @@
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Detecting the operating system and CPU architecture
+[INFO] ------------------------------------------------------------------------
+[INFO] os.detected.name: osx
+[INFO] os.detected.arch: x86_64
+[INFO] os.detected.version: 12.3
+[INFO] os.detected.version.major: 12
+[INFO] os.detected.version.minor: 3
+[INFO] os.detected.classifier: osx-x86_64
+[INFO] 
+[INFO] ------------< io.helidon.webserver:helidon-webserver-tyrus >------------
+[INFO] Building Helidon WebServer Tyrus 3.0.0-SNAPSHOT
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- maven-dependency-plugin:3.1.2:tree (default-cli) @ helidon-webserver-tyrus ---
+[INFO] io.helidon.webserver:helidon-webserver-tyrus:jar:3.0.0-SNAPSHOT
+[INFO] +- io.helidon.webserver:helidon-webserver:jar:3.0.0-SNAPSHOT:compile
+[INFO] |  +- io.helidon.common:helidon-common-http:jar:3.0.0-SNAPSHOT:compile
+[INFO] |  |  \- io.helidon.common:helidon-common-context:jar:3.0.0-SNAPSHOT:compile
+[INFO] |  +- io.helidon.media:helidon-media-common:jar:3.0.0-SNAPSHOT:compile
+[INFO] |  +- io.helidon.config:helidon-config:jar:3.0.0-SNAPSHOT:compile
+[INFO] |  |  +- jakarta.annotation:jakarta.annotation-api:jar:2.0.0:compile
+[INFO] |  |  \- io.helidon.common:helidon-common-media-type:jar:3.0.0-SNAPSHOT:compile
+[INFO] |  +- io.helidon.common:helidon-common-key-util:jar:3.0.0-SNAPSHOT:compile
+[INFO] |  |  \- io.helidon.common:helidon-common-configurable:jar:3.0.0-SNAPSHOT:compile
+[INFO] |  +- io.helidon.logging:helidon-logging-common:jar:3.0.0-SNAPSHOT:compile
+[INFO] |  |  \- io.helidon.common:helidon-common-service-loader:jar:3.0.0-SNAPSHOT:compile
+[INFO] |  +- io.opentracing:opentracing-util:jar:0.33.0:compile
+[INFO] |  +- io.opentracing:opentracing-api:jar:0.33.0:compile
+[INFO] |  +- io.opentracing:opentracing-noop:jar:0.33.0:compile
+[INFO] |  +- io.helidon.tracing:helidon-tracing-config:jar:3.0.0-SNAPSHOT:compile
+[INFO] |  +- io.netty:netty-codec-http:jar:4.1.77.Final:compile
+[INFO] |  |  +- io.netty:netty-common:jar:4.1.77.Final:compile
+[INFO] |  |  +- io.netty:netty-buffer:jar:4.1.77.Final:compile
+[INFO] |  |  +- io.netty:netty-transport:jar:4.1.77.Final:compile
+[INFO] |  |  \- io.netty:netty-codec:jar:4.1.77.Final:compile
+[INFO] |  +- io.netty:netty-codec-http2:jar:4.1.77.Final:compile
+[INFO] |  \- io.netty:netty-handler:jar:4.1.77.Final:compile
+[INFO] |     \- io.netty:netty-resolver:jar:4.1.77.Final:compile
+[INFO] +- io.helidon.common:helidon-common:jar:3.0.0-SNAPSHOT:compile
+[INFO] +- io.helidon.common:helidon-common-reactive:jar:3.0.0-SNAPSHOT:compile
+[INFO] |  \- io.helidon.common:helidon-common-mapper:jar:3.0.0-SNAPSHOT:compile
+[INFO] +- jakarta.websocket:jakarta.websocket-api:jar:2.0.0:compile
+[INFO] +- org.glassfish.tyrus:tyrus-core:jar:2.0.2:compile
+[INFO] |  +- org.glassfish.tyrus:tyrus-spi:jar:2.0.2:compile
+[INFO] |  \- jakarta.xml.bind:jakarta.xml.bind-api:jar:3.0.1:compile
+[INFO] |     \- com.sun.activation:jakarta.activation:jar:2.0.1:compile
+[INFO] +- org.glassfish.tyrus:tyrus-server:jar:2.0.2:compile
+[INFO] +- org.glassfish.tyrus:tyrus-client:jar:2.0.2:test
+[INFO] +- org.glassfish.tyrus:tyrus-container-grizzly-client:jar:2.0.2:test
+[INFO] |  +- org.glassfish.grizzly:grizzly-framework:jar:3.0.1:test
+[INFO] |  \- org.glassfish.grizzly:grizzly-http-server:jar:3.0.1:test
+[INFO] |     \- org.glassfish.grizzly:grizzly-http:jar:3.0.1:test
+[INFO] +- io.helidon.webserver:helidon-webserver-test-support:jar:3.0.0-SNAPSHOT:test
+[INFO] +- org.junit.jupiter:junit-jupiter-api:jar:5.7.0:test
+[INFO] |  +- org.apiguardian:apiguardian-api:jar:1.1.0:test
+[INFO] |  +- org.opentest4j:opentest4j:jar:1.2.0:test
+[INFO] |  \- org.junit.platform:junit-platform-commons:jar:1.7.0:test
+[INFO] \- org.hamcrest:hamcrest-all:jar:1.3:test
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  8.218 s
+[INFO] Finished at: 2022-06-21T10:53:12-04:00
+[INFO] ------------------------------------------------------------------------

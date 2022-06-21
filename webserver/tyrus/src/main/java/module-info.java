@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,9 +27,9 @@ module io.helidon.webserver.tyrus {
     requires io.helidon.common.mapper;
     requires io.helidon.common.reactive;
 
-    requires tyrus.core;
-    requires tyrus.server;
-    requires tyrus.spi;
+    requires org.glassfish.tyrus.core;
+    requires org.glassfish.tyrus.server;
+    requires org.glassfish.tyrus.spi;
 
     exports io.helidon.webserver.tyrus;
 }
