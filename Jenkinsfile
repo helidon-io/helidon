@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+/* // Temporally remove because we use snapshot version of build-tools
 pipeline {
   agent {
     label "linux"
@@ -33,8 +33,8 @@ pipeline {
               try {
                 sh './etc/scripts/build.sh'
               } finally {
-                archiveArtifacts artifacts: "**/target/surefire-reports/*.txt, **/target/failsafe-reports/*.txt"
-                junit testResults: '**/target/surefire-reports/*.xml,**/target/failsafe-reports/*.xml'
+                archiveArtifacts artifacts: "** /target/surefire-reports/*.txt, ** /target/failsafe-reports/*.txt"
+                junit testResults: '** /target/surefire-reports/*.xml,** /target/failsafe-reports/*.xml'
               }
             }
           }
@@ -61,8 +61,8 @@ pipeline {
               }
               steps {
                 sh './etc/scripts/test-integ-vault.sh'
-                archiveArtifacts artifacts: "**/target/surefire-reports/*.txt"
-                junit testResults: '**/target/surefire-reports/*.xml'
+                archiveArtifacts artifacts: "** /target/surefire-reports/*.txt"
+                junit testResults: '** /target/surefire-reports/*.xml'
               }
             }
             stage('test-packaging-jar'){
@@ -95,7 +95,7 @@ pipeline {
     }
     stage('release') {
       when {
-        branch '**/release-*'
+        branch '** /release-*'
       }
       environment {
         GITHUB_SSH_KEY = credentials('helidonrobot-github-ssh-private-key')
@@ -110,3 +110,4 @@ pipeline {
     }
   }
 }
+*/
