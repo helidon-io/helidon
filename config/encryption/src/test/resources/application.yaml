@@ -24,7 +24,7 @@ security.config:
   rsa:
     keystore:
       # load from file
-      resource.path: "src/test/resources/.ssh/keystore.p12"
+      resource.resource-path: ".ssh/keystore.p12"
       # If keystore is used, alias to use from the keystore (in my example, it is "1")
       key.alias: "1"
       # Password of keystore

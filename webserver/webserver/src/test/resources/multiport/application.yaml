@@ -21,7 +21,7 @@ webserver:
       ssl:
         private-key:
           keystore:
-            resource.path: "src/test/resources/ssl/certificate.p12"
+            resource.resource-path: "ssl/certificate.p12"
             passphrase: "helidon"
 
 sockets:
