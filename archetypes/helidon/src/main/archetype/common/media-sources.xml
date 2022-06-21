@@ -40,5 +40,11 @@
                 <include>src/*/java/**/*.jsonb.mustache</include>
             </includes>
         </templates>
+        <templates engine="mustache" transformations="multipart-mustache,packaged" if="${multipart}">
+            <directory>files</directory>
+            <includes>
+                <include>src/*/java/**/*.multipart.mustache</include>
+            </includes>
+        </templates>
     </output>
 </archetype-script>

@@ -35,6 +35,7 @@
                             <option value="jsonp" name="JSON-P" description="Jakarta JSON Processing" if="${ROOT.flavor} == 'se'" >
                                 <variables>
                                     <text path="json">jsonp</text>
+                                    <boolean path="multipart">false</boolean>
                                 </variables>
                                 <output>
                                     <model>
@@ -62,6 +63,7 @@
                             <option value="jackson" name="Jackson" description="Popular JSON library">
                                 <variables>
                                     <text path="json">jackson</text>
+                                    <boolean path="multipart">false</boolean>
                                 </variables>
                                 <output>
                                     <model>
@@ -93,6 +95,7 @@
                             <option value="jsonb" name="JSON-B" description="Jakarta JSON Binding">
                                 <variables>
                                     <text path="json">jsonb</text>
+                                    <boolean path="multipart">false</boolean>
                                 </variables>
                                 <output>
                                     <model>
@@ -124,7 +127,22 @@
                         </enum>
                     </inputs>
                 </option>
-                <option value="multipart" name="MultiPart" description="Handle 'multipart/form-data' payloads"/>
+                <option value="multipart" name="MultiPart" description="Handle 'multipart/form-data' payloads">
+                    <variables>
+                        <text path="json">none</text>
+                        <boolean path="multipart">true</boolean>
+                    </variables>
+                    <output>
+                        <model>
+                            <list key="dependencies">
+                                <map>
+                                    <value key="groupId">org.glassfish.jersey.media</value>
+                                    <value key="artifactId">jersey-media-multipart</value>
+                                </map>
+                            </list>
+                        </model>
+                    </output>
+                </option>
             </list>
         </inputs>
         <output>
