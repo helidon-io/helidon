@@ -129,16 +129,45 @@
                 </option>
                 <option value="multipart" name="MultiPart" description="Handle 'multipart/form-data' payloads">
                     <variables>
-                        <text path="json">none</text>
+                        <text path="json">jsonp</text>
                         <boolean path="multipart">true</boolean>
                     </variables>
                     <output>
                         <model>
                             <list key="dependencies">
-                                <map>
+                                <map if="${ROOT.flavor} == 'mp'">
                                     <value key="groupId">org.glassfish.jersey.media</value>
                                     <value key="artifactId">jersey-media-multipart</value>
                                 </map>
+                                <map if="${ROOT.flavor} == 'se'">
+                                    <value key="groupId">io.helidon.media</value>
+                                    <value key="artifactId">helidon-media-multipart</value>
+                                </map>
+                                <map if="${ROOT.flavor} == 'se'">
+                                    <value key="groupId">io.helidon.media</value>
+                                    <value key="artifactId">helidon-media-jsonp</value>
+                                </map>
+                            </list>
+                            <list key="MainTest-helidon-imports">
+                                <value>io.helidon.media.jsonp.JsonpSupport</value>
+                            </list>
+                            <list key="Main-helidon-imports">
+                                <value>io.helidon.media.jsonp.JsonpSupport</value>
+                            </list>
+                            <list key="Main-helidon-imports">
+                                <value>io.helidon.media.multipart.MultiPartSupport</value>
+                            </list>
+                            <list key="Main-serverBuilder">
+                                <value><![CDATA[                .addMediaSupport(JsonpSupport.create())]]></value>
+                            </list>
+                            <list key="MainTest-clientBuilder">
+                                <value><![CDATA[                .addMediaSupport(JsonpSupport.create())]]></value>
+                            </list>
+                            <list key="Main-serverBuilder">
+                                <value><![CDATA[                .addMediaSupport(MultiPartSupport.create())]]></value>
+                            </list>
+                            <list key="Main-routingBuilder">
+                                <value><![CDATA[                .register("/multipart", new FileService())]]></value>
                             </list>
                         </model>
                     </output>
