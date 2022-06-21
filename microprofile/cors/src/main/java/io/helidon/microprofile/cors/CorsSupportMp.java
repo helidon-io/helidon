@@ -111,7 +111,7 @@ class CorsSupportMp extends CorsSupportBase<ContainerRequestContext, Response, C
 
         @Override
         public String path() {
-            String path = requestContext.getUriInfo().getPath();
+            String path = requestContext.getUriInfo().getRequestUri().getPath();
             return path.startsWith("/") ? path : '/' + path;
         }
 
