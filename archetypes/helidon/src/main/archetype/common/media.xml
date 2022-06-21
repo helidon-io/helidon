@@ -32,9 +32,95 @@
                 <option value="json" name="JSON" description="Handle 'application/json' payloads">
                     <inputs>
                         <enum id="json-lib" name="Select a JSON library" default="${default-json-lib}" optional="true">
-                            <option value="jsonp" name="JSON-P" description="Jakarta JSON Processing" if="${ROOT.flavor} == 'se'" />
-                            <option value="jackson" name="Jackson" description="Popular JSON library"/>
-                            <option value="jsonb" name="JSON-B" description="Jakarta JSON Binding"/>
+                            <option value="jsonp" name="JSON-P" description="Jakarta JSON Processing" if="${ROOT.flavor} == 'se'" >
+                                <variables>
+                                    <text path="json">jsonp</text>
+                                </variables>
+                                <output>
+                                    <model>
+                                        <list key="dependencies">
+                                            <map>
+                                                <value key="groupId">io.helidon.media</value>
+                                                <value key="artifactId">helidon-media-jsonp</value>
+                                            </map>
+                                        </list>
+                                        <list key="Main-helidon-imports">
+                                            <value>io.helidon.media.jsonp.JsonpSupport</value>
+                                        </list>
+                                        <list key="MainTest-helidon-imports">
+                                            <value>io.helidon.media.jsonp.JsonpSupport</value>
+                                        </list>
+                                        <list key="Main-serverBuilder">
+                                            <value><![CDATA[                .addMediaSupport(JsonpSupport.create())]]></value>
+                                        </list>
+                                        <list key="MainTest-clientBuilder">
+                                            <value><![CDATA[                .addMediaSupport(JsonpSupport.create())]]></value>
+                                        </list>
+                                    </model>
+                                </output>
+                            </option>
+                            <option value="jackson" name="Jackson" description="Popular JSON library">
+                                <variables>
+                                    <text path="json">jackson</text>
+                                </variables>
+                                <output>
+                                    <model>
+                                        <list key="dependencies">
+                                            <map>
+                                                <value key="groupId">com.fasterxml.jackson.core</value>
+                                                <value key="artifactId">jackson-databind</value>
+                                            </map>
+                                            <map>
+                                                <value key="groupId">io.helidon.media</value>
+                                                <value key="artifactId">helidon-media-jackson</value>
+                                            </map>
+                                        </list>
+                                        <list key="Main-helidon-imports">
+                                            <value>io.helidon.media.jackson.JacksonSupport</value>
+                                        </list>
+                                        <list key="MainTest-helidon-imports">
+                                            <value>io.helidon.media.jackson.JacksonSupport</value>
+                                        </list>
+                                        <list key="Main-serverBuilder">
+                                            <value><![CDATA[                .addMediaSupport(JacksonSupport.create())]]></value>
+                                        </list>
+                                        <list key="MainTest-clientBuilder">
+                                            <value><![CDATA[                .addMediaSupport(JacksonSupport.create())]]></value>
+                                        </list>
+                                    </model>
+                                </output>
+                            </option>
+                            <option value="jsonb" name="JSON-B" description="Jakarta JSON Binding">
+                                <variables>
+                                    <text path="json">jsonb</text>
+                                </variables>
+                                <output>
+                                    <model>
+                                        <list key="dependencies">
+                                            <map>
+                                                <value key="groupId">jakarta.json.bind</value>
+                                                <value key="artifactId">jakarta.json.bind-api</value>
+                                            </map>
+                                            <map>
+                                                <value key="groupId">io.helidon.media</value>
+                                                <value key="artifactId">helidon-media-jsonb</value>
+                                            </map>
+                                        </list>
+                                        <list key="Main-helidon-imports">
+                                            <value>io.helidon.media.jsonb.JsonbSupport</value>
+                                        </list>
+                                        <list key="MainTest-helidon-imports">
+                                            <value>io.helidon.media.jsonb.JsonbSupport</value>
+                                        </list>
+                                        <list key="Main-serverBuilder">
+                                            <value><![CDATA[                .addMediaSupport(JsonbSupport.create())]]></value>
+                                        </list>
+                                        <list key="MainTest-clientBuilder">
+                                            <value><![CDATA[                .addMediaSupport(JsonbSupport.create())]]></value>
+                                        </list>
+                                    </model>
+                                </output>
+                            </option>
                         </enum>
                     </inputs>
                 </option>

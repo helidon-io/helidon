@@ -1,0 +1,56 @@
+package {{package}};
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.helidon.config.Config;
+import io.helidon.webserver.Routing;
+import io.helidon.webserver.ServerRequest;
+import io.helidon.webserver.ServerResponse;
+import io.helidon.webserver.Service;
+
+import java.util.Collections;
+import java.util.logging.Logger;
+
+/**
+ * A simple service to greet you. Examples:
+ *
+ * Get default greeting message:
+ * curl -X GET http://localhost:8080/greet
+ *
+ * The message is returned as a JSON object
+ */
+public class SimpleGreetService implements Service {
+
+    private static final Logger LOGGER = Logger.getLogger(SimpleGreetService.class.getName());
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+
+    private final String greeting;
+
+    SimpleGreetService(Config config) {
+        greeting = config.get("app.greeting").asString().orElse("Ciao");
+    }
+
+    /**
+     * A service registers itself by updating the routing rules.
+     *
+     * @param rules the routing rules.
+     */
+    @Override
+    public void update(Routing.Rules rules) {
+        rules.get("/", this::getDefaultMessageHandler);
+    }
+
+    /**
+     * Return a worldly greeting message.
+     *
+     * @param request the server request
+     * @param response the server response
+     */
+    private void getDefaultMessageHandler(ServerRequest request, ServerResponse response) {
+        String msg = String.format("%s %s!", greeting, "World");
+        LOGGER.info("Greeting message is " + msg);
+        ObjectNode returnObject = MAPPER.createObjectNode()
+                                        .put("message", msg);
+        response.send(returnObject);
+    }
+}

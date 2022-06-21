@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -20,31 +20,25 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
 
+    <exec src="/common/common.xml"/>
     <output>
-        <transformation id="mustache">
-            <replace regex="\.mustache$" replacement=""/>
-        </transformation>
-        <transformation id="packaged">
-            <replace regex="__pkg__" replacement="${ROOT.package/\./\/}"/>
-        </transformation>
-        <transformation id="jackson-mustache">
-            <replace regex="\.jackson.mustache$" replacement=""/>
-        </transformation>
-        <transformation id="jsonb-mustache">
-            <replace regex="\.jsonb.mustache$" replacement=""/>
-        </transformation>
-        <transformation id="jsonp-mustache">
-            <replace regex="\.jsonp.mustache$" replacement=""/>
-        </transformation>
-        <templates engine="mustache" transformations="mustache">
+        <templates engine="mustache" transformations="jsonp-mustache,packaged" if="${json} == 'jsonp'">
             <directory>files</directory>
             <includes>
-                <include>.helidon.mustache</include>
-                <include>README.md.mustache</include>
+                <include>src/*/java/**/*.java.jsonp.mustache</include>
             </includes>
         </templates>
-        <model>
-            <value key="dot-helidon-schema-version">1.1.0</value>
-        </model>
+        <templates engine="mustache" transformations="jackson-mustache,packaged" if="${json} == 'jackson'">
+            <directory>files</directory>
+            <includes>
+                <include>src/*/java/**/*.jackson.mustache</include>
+            </includes>
+        </templates>
+        <templates engine="mustache" transformations="jsonb-mustache,packaged" if="${json} == 'jsonb'">
+            <directory>files</directory>
+            <includes>
+                <include>src/*/java/**/*.jsonb.mustache</include>
+            </includes>
+        </templates>
     </output>
 </archetype-script>
