@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import io.helidon.grpc.core.JavaMarshaller;
 import io.helidon.grpc.core.JsonbMarshaller;
 import io.helidon.grpc.core.MarshallerSupplier;
 
@@ -50,6 +49,5 @@ module io.helidon.grpc.core {
     provides MarshallerSupplier with
             MarshallerSupplier.DefaultMarshallerSupplier,
             MarshallerSupplier.ProtoMarshallerSupplier,
-            JavaMarshaller.Supplier,
             JsonbMarshaller.Supplier;
 }

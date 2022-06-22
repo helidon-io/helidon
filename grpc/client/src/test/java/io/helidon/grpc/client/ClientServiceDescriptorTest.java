@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -97,34 +97,34 @@ public class ClientServiceDescriptorTest {
 
     @Test
     public void testDefaultMethodCount() {
-        ClientServiceDescriptor svcDesc = ClientServiceDescriptor.builder(TreeMapService.class).build();
+        ClientServiceDescriptor svcDesc = newClientServiceDescriptorBuilder(TreeMapService.class).build();
         assertThat(svcDesc.methods().size(), equalTo(0));
     }
 
     @Test
     public void shouldNotAllowNullName() {
-        ClientServiceDescriptor.Builder builder = ClientServiceDescriptor.builder(TreeMapService.class);
+        ClientServiceDescriptor.Builder builder = newClientServiceDescriptorBuilder(TreeMapService.class);
 
         assertThrows(NullPointerException.class, () -> builder.name(null));
     }
 
     @Test
     public void shouldNotAllowEmptyStringName() {
-        ClientServiceDescriptor.Builder builder = ClientServiceDescriptor.builder(TreeMapService.class);
+        ClientServiceDescriptor.Builder builder = newClientServiceDescriptorBuilder(TreeMapService.class);
 
         assertThrows(IllegalArgumentException.class, () -> builder.name(""));
     }
 
     @Test
     public void shouldNotAllowBlankName() {
-        ClientServiceDescriptor.Builder builder = ClientServiceDescriptor.builder(TreeMapService.class);
+        ClientServiceDescriptor.Builder builder = newClientServiceDescriptorBuilder(TreeMapService.class);
 
         assertThrows(IllegalArgumentException.class, () -> builder.name("  \t  "));
     }
 
     @Test
     public void shouldAddBidirectionalMethod() {
-        ClientServiceDescriptor descriptor = ClientServiceDescriptor.builder(TreeMapService.class)
+        ClientServiceDescriptor descriptor = newClientServiceDescriptorBuilder(TreeMapService.class)
                 .bidirectional("foo")
                 .build();
 
@@ -138,7 +138,7 @@ public class ClientServiceDescriptorTest {
     @Test
     public void shouldAddBidirectionalMethodWithConfigurer() {
         ClientInterceptor interceptor = mock(ClientInterceptor.class);
-        ClientServiceDescriptor descriptor = ClientServiceDescriptor.builder(TreeMapService.class)
+        ClientServiceDescriptor descriptor = newClientServiceDescriptorBuilder(TreeMapService.class)
                 .bidirectional("foo", cfg -> cfg.intercept(interceptor))
                 .build();
 
@@ -152,7 +152,7 @@ public class ClientServiceDescriptorTest {
 
     @Test
     public void shouldAddClientStreamingMethod() {
-        ClientServiceDescriptor descriptor = ClientServiceDescriptor.builder(TreeMapService.class)
+        ClientServiceDescriptor descriptor = newClientServiceDescriptorBuilder(TreeMapService.class)
                 .clientStreaming("foo")
                 .build();
 
@@ -166,7 +166,7 @@ public class ClientServiceDescriptorTest {
     @Test
     public void shouldAddClientStreamingMethodWithConfigurer() {
         ClientInterceptor interceptor = mock(ClientInterceptor.class);
-        ClientServiceDescriptor descriptor = ClientServiceDescriptor.builder(TreeMapService.class)
+        ClientServiceDescriptor descriptor = newClientServiceDescriptorBuilder(TreeMapService.class)
                 .clientStreaming("foo", cfg -> cfg.intercept(interceptor))
                 .build();
 
@@ -180,7 +180,7 @@ public class ClientServiceDescriptorTest {
 
     @Test
     public void shouldAddServerStreamingMethod() {
-        ClientServiceDescriptor descriptor = ClientServiceDescriptor.builder(TreeMapService.class)
+        ClientServiceDescriptor descriptor = newClientServiceDescriptorBuilder(TreeMapService.class)
                 .serverStreaming("foo")
                 .build();
 
@@ -194,7 +194,7 @@ public class ClientServiceDescriptorTest {
     @Test
     public void shouldAddServerStreamingMethodWithConfigurer() {
         ClientInterceptor interceptor = mock(ClientInterceptor.class);
-        ClientServiceDescriptor descriptor = ClientServiceDescriptor.builder(TreeMapService.class)
+        ClientServiceDescriptor descriptor = newClientServiceDescriptorBuilder(TreeMapService.class)
                 .serverStreaming("foo", cfg -> cfg.intercept(interceptor))
                 .build();
 
@@ -208,7 +208,7 @@ public class ClientServiceDescriptorTest {
 
     @Test
     public void shouldAddUnaryMethod() {
-        ClientServiceDescriptor descriptor = ClientServiceDescriptor.builder(TreeMapService.class)
+        ClientServiceDescriptor descriptor = newClientServiceDescriptorBuilder(TreeMapService.class)
                 .unary("foo")
                 .build();
 
@@ -222,7 +222,7 @@ public class ClientServiceDescriptorTest {
     @Test
     public void shouldAddUnaryMethodWithConfigurer() {
         ClientInterceptor interceptor = mock(ClientInterceptor.class);
-        ClientServiceDescriptor descriptor = ClientServiceDescriptor.builder(TreeMapService.class)
+        ClientServiceDescriptor descriptor = newClientServiceDescriptorBuilder(TreeMapService.class)
                 .unary("foo", cfg -> cfg.intercept(interceptor))
                 .build();
 
@@ -237,7 +237,7 @@ public class ClientServiceDescriptorTest {
     @Test
     public void shouldAddInterceptor() {
         ClientInterceptor interceptor = mock(ClientInterceptor.class);
-        ClientServiceDescriptor descriptor = ClientServiceDescriptor.builder(TreeMapService.class)
+        ClientServiceDescriptor descriptor = newClientServiceDescriptorBuilder(TreeMapService.class)
                 .intercept(interceptor)
                 .build();
 
@@ -249,7 +249,7 @@ public class ClientServiceDescriptorTest {
         ClientInterceptor interceptorOne = mock(ClientInterceptor.class);
         ClientInterceptor interceptorTwo = mock(ClientInterceptor.class);
         ClientInterceptor interceptorThree = mock(ClientInterceptor.class);
-        ClientServiceDescriptor descriptor = ClientServiceDescriptor.builder(TreeMapService.class)
+        ClientServiceDescriptor descriptor = newClientServiceDescriptorBuilder(TreeMapService.class)
                 .intercept(interceptorOne)
                 .intercept(interceptorTwo, interceptorThree)
                 .build();
@@ -260,7 +260,7 @@ public class ClientServiceDescriptorTest {
     @Test
     public void shouldAddInterceptorToMethod() {
         ClientInterceptor interceptor = mock(ClientInterceptor.class);
-        ClientServiceDescriptor descriptor = ClientServiceDescriptor.builder(TreeMapService.class)
+        ClientServiceDescriptor descriptor = newClientServiceDescriptorBuilder(TreeMapService.class)
                 .unary("foo")
                 .intercept("foo", interceptor)
                 .build();
@@ -272,7 +272,7 @@ public class ClientServiceDescriptorTest {
 
     @Test
     public void shouldSetNameOnMethods() {
-        ClientServiceDescriptor.Builder builder = ClientServiceDescriptor.builder(TreeMapService.class);
+        ClientServiceDescriptor.Builder builder = newClientServiceDescriptorBuilder(TreeMapService.class);
 
         ClientServiceDescriptor descriptor = builder.unary("bar")
                 .name("Foo")
@@ -285,4 +285,9 @@ public class ClientServiceDescriptorTest {
     public static class StringServiceBindableService
                extends StringServiceGrpc.StringServiceImplBase {
        }
+
+    private ClientServiceDescriptor.Builder newClientServiceDescriptorBuilder(Class<?> service) {
+        return ClientServiceDescriptor.builder(service)
+                .marshallerSupplier(new JavaMarshaller.Supplier());
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,10 +31,10 @@ import io.helidon.grpc.core.GrpcTlsDescriptor;
 import io.helidon.grpc.server.GrpcRouting;
 import io.helidon.grpc.server.GrpcServer;
 import io.helidon.grpc.server.GrpcServerConfiguration;
-
 import io.grpc.EquivalentAddressGroup;
 import io.grpc.NameResolver;
 import io.grpc.StatusRuntimeException;
+
 import io.netty.handler.codec.DecoderException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -85,6 +85,7 @@ public class GrpcChannelsProviderIT {
         port2WaySSL = grpcServer_2WaySSL.port();
 
         treeMapSvcDesc = ClientServiceDescriptor.builder("TreeMapService", TreeMapService.class)
+                .marshallerSupplier(new JavaMarshaller.Supplier())
                 .unary("get")
                 .build();
     }
