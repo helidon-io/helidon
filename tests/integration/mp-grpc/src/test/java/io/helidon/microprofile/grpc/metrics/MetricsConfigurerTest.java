@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import io.helidon.microprofile.grpc.core.Unary;
 
 import io.grpc.ServerInterceptor;
 import io.grpc.stub.StreamObserver;
+import io.helidon.microprofile.grpc.server.JavaMarshaller;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
@@ -302,7 +303,8 @@ public class MetricsConfigurerTest {
             implements GrpcService {
         @Override
         public void update(ServiceDescriptor.Rules rules) {
-            rules.unary("counted", this::counted)
+            rules.marshallerSupplier(new JavaMarshaller.Supplier())
+                 .unary("counted", this::counted)
                  .unary("timed", this::timed)
                  .unary("metered", this::metered)
                  .unary("simplyTimed", this::simplyTimed)
@@ -364,11 +366,12 @@ public class MetricsConfigurerTest {
             implements ServiceTwo, GrpcService {
         @Override
         public void update(ServiceDescriptor.Rules rules) {
-            rules.unary("counted", this::counted)
-                 .unary("timed", this::timed)
-                 .unary("metered", this::metered)
-                 .unary("simplyTimed", this::simplyTimed)
-                 .unary("concurrentGauge", this::concurrentGauge);
+            rules.marshallerSupplier(new JavaMarshaller.Supplier())
+                    .unary("counted", this::counted)
+                    .unary("timed", this::timed)
+                    .unary("metered", this::metered)
+                    .unary("simplyTimed", this::simplyTimed)
+                    .unary("concurrentGauge", this::concurrentGauge);
         }
 
         @Override
