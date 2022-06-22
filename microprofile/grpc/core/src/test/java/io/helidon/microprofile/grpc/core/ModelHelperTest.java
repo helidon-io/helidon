@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package io.helidon.microprofile.grpc.core;
 
 import java.util.AbstractMap;
 
-import io.helidon.grpc.core.JavaMarshaller;
 import io.helidon.grpc.core.MarshallerSupplier;
 
 import org.junit.jupiter.api.Test;
@@ -62,10 +61,6 @@ public class ModelHelperTest {
 
     private GrpcMarshaller getAnnotation(String method) throws Exception {
         return ModelHelperTest.class.getMethod(method).getAnnotation(GrpcMarshaller.class);
-    }
-
-    @GrpcMarshaller(JavaMarshaller.NAME)
-    public void javaMarshaller() {
     }
 
     @GrpcMarshaller(MarshallerSupplier.PROTO)
