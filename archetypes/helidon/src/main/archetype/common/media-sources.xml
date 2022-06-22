@@ -28,16 +28,10 @@
                 <include>src/*/java/**/*.java.jsonp.mustache</include>
             </includes>
         </templates>
-        <templates engine="mustache" transformations="jackson-mustache,packaged" if="${json} == 'jackson'">
+        <templates engine="mustache" transformations="json-mustache,packaged" if="${json} == 'jsonb' || ${json} == 'jackson'">
             <directory>files</directory>
             <includes>
-                <include>src/*/java/**/*.jackson.mustache</include>
-            </includes>
-        </templates>
-        <templates engine="mustache" transformations="jsonb-mustache,packaged" if="${json} == 'jsonb'">
-            <directory>files</directory>
-            <includes>
-                <include>src/*/java/**/*.jsonb.mustache</include>
+                <include>src/*/java/**/*.json.mustache</include>
             </includes>
         </templates>
         <templates engine="mustache" transformations="multipart-mustache,packaged" if="${multipart}">
