@@ -23,14 +23,14 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
  *
  * The message is returned as a JSON object.
  */
-@Path("/greet")
-public class GreetResource {
+@Path("/simple-greet")
+public class SimpleGreetResource {
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
 
     private final String message;
 
     @Inject
-    public GreetResource(@ConfigProperty(name = "app.greeting") String message) {
+    public SimpleGreetResource(@ConfigProperty(name = "app.greeting") String message) {
         this.message = message;
     }
 

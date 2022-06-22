@@ -24,6 +24,7 @@
     <exec src="/mp/common/common-mp.xml"/>
     <source src="/common/sources.xml"/>
     <exec src="/common/media.xml"/>
+    <source src="/common/media-sources.xml"/>
     <exec src="/common/observability.xml"/>
     <exec src="/mp/custom/database.xml"/>
     <exec src="/common/security.xml"/>
@@ -46,7 +47,7 @@
     @Test
     public void testGreet() throws Exception {
         JsonObject jsonObject = target
-                .path("greet")
+                .path("simple-greet")
                 .request()
                 .get(JsonObject.class);
         assertThat(jsonObject.getString("message"), is("Hello World!"));
