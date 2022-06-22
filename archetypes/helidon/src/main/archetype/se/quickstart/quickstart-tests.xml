@@ -22,7 +22,6 @@
 
     <output>
         <model>
-<!-- JSONP -->
             <list key="MainTest-java-imports" if="${json} == 'jsonp'">
                 <value>java.util.Collections</value>
                 <value>jakarta.json.Json</value>
@@ -60,46 +59,10 @@
         assertThat(jsonObject.getString("message"), is("Hola Joe!"));
     }]]></value>
             </list>
-<!-- JACKSON -->
-            <list key="MainTest-other-imports" if="${json} == 'jackson'">
-                <value>com.fasterxml.jackson.databind.ObjectMapper</value>
-                <value>com.fasterxml.jackson.databind.node.ObjectNode</value>
-            </list>
-            <list key="MainTest-static-fields" if="${json} == 'jackson'">
-                <value><![CDATA[    private static final ObjectMapper MAPPER = new ObjectMapper();]]></value>
-            </list>
-            <list key="MainTest-methods" if="${json} == 'jackson'">
-                <value><![CDATA[    @Test
-    public void testGreetings() {
-        ObjectNode json;
-        ObjectNode jsonGreeting = MAPPER.createObjectNode().put("greeting", "Hola");
-        WebClientResponse response;
-
-        json = webClient.get()
-                .path("/greet/Joe")
-                .request(ObjectNode.class)
-                .await();
-        assertThat(json.get("message").asText(), is("Hello Joe!"));
-
-        response = webClient.put()
-                .path("/greet/greeting")
-                .submit(jsonGreeting)
-                .await();
-        assertThat(response.status().code(), is(204));
-
-        json = webClient.get()
-                .path("/greet/Joe")
-                .request(ObjectNode.class)
-                .await();
-        assertThat(json.get("message").asText(), is("Hola Joe!"));
-    }]]></value>
-            </list>
-<!-- JSONB -->
-            <list key="MainTest-methods" if="${json} == 'jsonb'">
+            <list key="MainTest-methods" if="${json} != 'jsonp'">
                 <value><![CDATA[    @Test
     public void testGreetings() {
         Message json;
-        Message jsonGreeting = new Message(null, "Hola");
         WebClientResponse response;
 
         json = webClient.get()
@@ -110,7 +73,7 @@
 
         response = webClient.put()
                 .path("/greet/greeting")
-                .submit(jsonGreeting)
+                .submit("{\"greeting\" : \"Hola\"}")
                 .await();
         assertThat(response.status().code(), is(204));
 
