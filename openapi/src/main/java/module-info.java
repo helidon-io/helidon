@@ -39,4 +39,5 @@ module io.helidon.openapi {
     requires static io.helidon.config.metadata;
 
     exports io.helidon.openapi;
+    exports io.helidon.openapi.internal to io.helidon.microprofile.openapi;
 }
