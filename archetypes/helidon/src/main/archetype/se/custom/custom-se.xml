@@ -26,7 +26,7 @@
     <exec src="/common/observability.xml"/>
     <exec src="/se/custom/database.xml"/>
     <exec src="/common/security.xml"/>
-    <exec src="/common/extra.xml"/>
+    <source src="/common/extra.xml"/>
     <exec src="/common/packaging.xml"/>
     <exec src="/se/custom/custom-tests.xml"/>
     <output>
