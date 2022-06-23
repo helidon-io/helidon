@@ -28,10 +28,10 @@ module io.helidon.microprofile.tyrus {
     requires io.helidon.common;
     requires io.helidon.config;
     requires io.helidon.microprofile.cdi;
-    requires org.glassfish.tyrus.core;
+    requires tyrus.core;
     requires io.helidon.microprofile.server;
     requires io.helidon.webserver.tyrus;
-    requires org.glassfish.tyrus.spi;
+    requires tyrus.spi;
 
     exports io.helidon.microprofile.tyrus;
 
