@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,10 @@
  */
 package io.helidon.webserver.cors;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.MissingValueException;
@@ -28,9 +32,11 @@ import static io.helidon.webserver.cors.CrossOriginConfig.DEFAULT_AGE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.arrayContaining;
 import static org.hamcrest.Matchers.emptyArray;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.startsWith;
 
 public class CrossOriginConfigTest {
 
@@ -120,5 +126,50 @@ public class CrossOriginConfigTest {
         assertThat(b.maxAgeSeconds(), is(-1L));
 
         assertThat(m.get("/cors3"), nullValue());
+    }
+
+    @Test
+    void testOrdering() {
+        Config node = testConfig.get("order-check");
+        assertThat(node, is(notNullValue()));
+        assertThat(node.exists(), is(true));
+        MappedCrossOriginConfig m = node.as(MappedCrossOriginConfig::create).get();
+
+        assertThat(m.isEnabled(), is(true));
+
+        //Make sure path elements are in the right order.
+        List<String> pathsInOrder = new ArrayList<>();
+        List<CrossOriginConfig> crossOriginConfigs = new ArrayList<>();
+        m.forEach((path, crossOrginConfig) -> {
+            pathsInOrder.add(path);
+            crossOriginConfigs.add(crossOrginConfig);
+        });
+
+        // Make sure ordering from config is what we expect.
+        assertThat("Paths configured", pathsInOrder.size(), is(3));
+        assertThat("First path", pathsInOrder.get(0), startsWith("/authorize"));
+        assertThat("Second path", pathsInOrder.get(1), startsWith("/callback"));
+        assertThat("Third path", pathsInOrder.get(2), is("{^(?!((authorize)|(callback))).*$}"));
+
+        // Make sure the aggregator retains the correct order.
+        Aggregator agg = Aggregator.builder().mappedConfig(node).build();
+
+        Optional<CrossOriginConfig> crossOriginConfigOpt = agg.lookupCrossOrigin("/authorize", "GET", Optional::empty);
+        assertThat("Match found for /authorize", crossOriginConfigOpt.isPresent(), is(true));
+        assertThat("Match for /authorize", crossOriginConfigOpt.get().pathPattern(), is(crossOriginConfigs.get(0).pathPattern()));
+
+        crossOriginConfigOpt = agg.lookupCrossOrigin("/authorize/else", "GET", Optional::empty);
+        assertThat("Match found for /authorize/else", crossOriginConfigOpt.isPresent(), is(true));
+        assertThat("Match for /authorize/else",
+                   crossOriginConfigOpt.get().pathPattern(),
+                   is(crossOriginConfigs.get(0).pathPattern()));
+
+        crossOriginConfigOpt = agg.lookupCrossOrigin("/callback", "PUT", Optional::empty);
+        assertThat("Match found for /callback", crossOriginConfigOpt.isPresent(), is(true));
+        assertThat("Match for /callback", crossOriginConfigOpt.get().pathPattern(), is(crossOriginConfigs.get(1).pathPattern()));
+
+        crossOriginConfigOpt = agg.lookupCrossOrigin("/callback/other", "PUT", Optional::empty);
+        assertThat("Match found for /callback/other", crossOriginConfigOpt.isPresent(), is(true));
+        assertThat("Match for /callback/other", crossOriginConfigOpt.get().pathPattern(), is(crossOriginConfigs.get(1).pathPattern()));
     }
 }
