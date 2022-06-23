@@ -29,7 +29,6 @@
 
 - <<Overview, Overview>>
 - <<Maven Coordinates, Maven Coordinates>>
-- <<Usage, Usage>>
 - <<API, API>>
 - <<Configuration, Configuration>>
 - <<Examples, Examples>>
@@ -345,6 +344,12 @@ email address are left to Jakarta Bean Validation providers. Accepts `CharSequen
 
 |===
 
+== Configuration
+
+Bean Validation can be configured using `META-INF/validation.xml`.
+
+For more information please follow the official link:https://docs.jboss.org/hibernate/stable/validator/reference/en-US/html_single/?v=7.0#chapter-xml-configuration[Hibernate Validator Documentation]
+
 == Examples
 
 1. The following example shows a simple resource method annotated with `@POST` whose
@@ -393,12 +398,12 @@ public class GreetingProvider {
 +
 NOTE: `beans.xml` is required to identify beans and for bean validation to work properly.
 
+Examples are available in link:https://github.com/oracle/helidon/tree/master/examples/microprofile/bean-validation[our official GitHub repository].
 
 == Additional Information
 
-TODO
-
+Helidon uses link:https://hibernate.org/validator/[Hibernate Bean Validator] for general bean validation.
 
 == Reference
 
-TODO
+* link:https://beanvalidation.org/2.0/spec/[Bean Validation Specification]
