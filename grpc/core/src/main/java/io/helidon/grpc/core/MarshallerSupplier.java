@@ -72,7 +72,7 @@ public interface MarshallerSupplier {
                 return proto.get(clazz);
             }
             String msg = String.format(
-                    "Attempting to use class %s, a Java serialization marshaller is no longer supported by default",
+                    "Class %s must be a valid ProtoBuf message, or a custom marshaller for it must be specified explicitly",
                     clazz.getName());
             throw new IllegalArgumentException(msg);
         }
