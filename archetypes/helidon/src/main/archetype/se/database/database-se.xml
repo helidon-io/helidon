@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2021 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -31,13 +31,9 @@
             <value key="title">Helidon SE Database</value>
             <value key="readme-description">Helidon SE application that uses the dbclient API with an in-memory H2 database.</value>
             <list key="readme-sections">
-                <value file="files/README.md"/>
+                <value file="files/README.md" template="mustache"/>
             </list>
             <list key="dependencies">
-                <map>
-                    <value key="groupId">io.helidon.media</value>
-                    <value key="artifactId">helidon-media-jsonb</value>
-                </map>
                 <map>
                     <value key="groupId">io.helidon.dbclient</value>
                     <value key="artifactId">helidon-dbclient-jsonp</value>
@@ -83,15 +79,14 @@
             <list key="Main-helidon-imports">
                 <value>io.helidon.dbclient.DbClient</value>
                 <value>io.helidon.dbclient.health.DbClientHealthCheck</value>
-                <value>io.helidon.media.jsonb.JsonbSupport</value>
                 <value>io.helidon.media.jsonp.JsonpSupport</value>
             </list>
             <list key="Main-serverBuilder">
                 <value><![CDATA[            .addMediaSupport(JsonpSupport.create())]]></value>
-                <value><![CDATA[            .addMediaSupport(JsonbSupport.create())]]></value>
             </list>
             <list key="Main-createRouting">
-                <value><![CDATA[ Config dbConfig = config.get("db");
+                <value><![CDATA[
+        Config dbConfig = config.get("db");
 
         // Client services are added through a service loader
         DbClient dbClient = DbClient.builder(dbConfig).build();
@@ -100,10 +95,10 @@
         InitializeDb.init(dbClient);]]></value>
             </list>
             <list key="Main-healthBuilder">
-                <value><![CDATA[            .addLiveness(DbClientHealthCheck.create(dbClient, dbConfig.get("health-check")))]]></value>
+                <value><![CDATA[                .addLiveness(DbClientHealthCheck.create(dbClient, dbConfig.get("health-check")))]]></value>
             </list>
             <list key="Main-routingBuilder">
-                <value><![CDATA[            .register("/", new PokemonService(dbClient))]]></value>
+                <value><![CDATA[                .register("/", new PokemonService(dbClient))]]></value>
             </list>
             <value key="Main-readyMessage">System.out.println("Database here : http://localhost:" + ws.port() + "/pokemon");</value>
             <list key="MainTest-java-imports">
@@ -116,14 +111,11 @@
             <list key="MainTest-helidon-imports">
                 <value>io.helidon.media.jsonp.JsonpSupport</value>
             </list>
-            <list key="MainTest-other-imports">
-                <value>org.junit.jupiter.api.Order</value>
-            </list>
             <list key="MainTest-static-fields">
                 <value><![CDATA[    private static final JsonBuilderFactory JSON_BUILDER = Json.createBuilderFactory(Collections.emptyMap());]]></value>
             </list>
             <list key="MainTest-clientBuilder">
-                <value><![CDATA[            .addMediaSupport(JsonpSupport.create())]]></value>
+                <value><![CDATA[                .addMediaSupport(JsonpSupport.create())]]></value>
             </list>
             <list key="config-entries">
                 <value file="files/application.yaml"/>
