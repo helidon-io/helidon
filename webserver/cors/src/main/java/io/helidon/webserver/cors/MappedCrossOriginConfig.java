@@ -169,7 +169,7 @@ public class MappedCrossOriginConfig implements Iterable<Map.Entry<String, Cross
     /**
      * Fluent builder for {@code Mapped} cross-origin config.
      */
-    public static class Builder implements io.helidon.common.Builder<Builder, MappedCrossOriginConfig> {
+    public static class Builder implements io.helidon.common.Builder<MappedCrossOriginConfig> {
 
         private Optional<String> nameOpt = Optional.empty();
         private Optional<Boolean> enabledOpt = Optional.empty();
