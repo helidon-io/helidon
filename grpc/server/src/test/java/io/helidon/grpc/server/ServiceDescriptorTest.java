@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import io.helidon.grpc.core.JavaMarshaller;
+import io.helidon.grpc.core.JsonbMarshaller;
 import io.helidon.grpc.core.MarshallerSupplier;
 import io.helidon.grpc.core.PriorityBag;
 import io.helidon.grpc.server.test.Echo;
@@ -57,7 +57,7 @@ public class ServiceDescriptorTest {
     @Test
     public void shouldHaveCorrectName() {
         GrpcService service = createMockService();
-        ServiceDescriptor descriptor = ServiceDescriptor.builder(service)
+        ServiceDescriptor descriptor = newServiceDescriptorBuilder(service)
                 .build();
 
         assertThat(descriptor.name(), is(service.name()));
@@ -65,7 +65,7 @@ public class ServiceDescriptorTest {
 
     @Test
     public void shouldHaveZeroContextValuesByDefault() {
-        ServiceDescriptor descriptor = ServiceDescriptor.builder(createMockService())
+        ServiceDescriptor descriptor = newServiceDescriptorBuilder(createMockService())
                 .build();
 
         Map<Context.Key<?>, Object> map = descriptor.context();
@@ -78,7 +78,7 @@ public class ServiceDescriptorTest {
         Context.Key<String> key = Context.key("test");
         String value = "test-value";
 
-        ServiceDescriptor descriptor = ServiceDescriptor.builder(createMockService())
+        ServiceDescriptor descriptor = newServiceDescriptorBuilder(createMockService())
                 .addContextValue(key, value)
                 .build();
 
@@ -95,7 +95,7 @@ public class ServiceDescriptorTest {
         Context.Key<String> key2 = Context.key("test-2");
         String value2 = "test-value-2";
 
-        ServiceDescriptor descriptor = ServiceDescriptor.builder(createMockService())
+        ServiceDescriptor descriptor = newServiceDescriptorBuilder(createMockService())
                 .addContextValue(key1, value1)
                 .addContextValue(key2, value2)
                 .build();
@@ -109,7 +109,7 @@ public class ServiceDescriptorTest {
 
     @Test
     public void shouldHaveDefaultHealthCheck() {
-        ServiceDescriptor descriptor = ServiceDescriptor.builder(createMockService())
+        ServiceDescriptor descriptor = newServiceDescriptorBuilder(createMockService())
                 .build();
 
         assertThat(descriptor.healthCheck(), is(notNullValue()));
@@ -124,7 +124,7 @@ public class ServiceDescriptorTest {
     public void shouldHaveSpecifiedHealthCheck() {
         HealthCheck healthCheck = mock(HealthCheck.class);
 
-        ServiceDescriptor descriptor = ServiceDescriptor.builder(createMockService())
+        ServiceDescriptor descriptor = newServiceDescriptorBuilder(createMockService())
                 .healthCheck(healthCheck)
                 .build();
 
@@ -133,7 +133,7 @@ public class ServiceDescriptorTest {
 
     @Test
     public void shouldAddZeroInterceptors() {
-        ServiceDescriptor descriptor = ServiceDescriptor.builder(createMockService())
+        ServiceDescriptor descriptor = newServiceDescriptorBuilder(createMockService())
                 .intercept()
                 .build();
 
@@ -144,7 +144,7 @@ public class ServiceDescriptorTest {
     public void shouldAddOneInterceptor() {
         ServerInterceptor interceptor = mock(ServerInterceptor.class);
 
-        ServiceDescriptor descriptor = ServiceDescriptor.builder(createMockService())
+        ServiceDescriptor descriptor = newServiceDescriptorBuilder(createMockService())
                 .intercept(interceptor)
                 .build();
 
@@ -157,7 +157,7 @@ public class ServiceDescriptorTest {
         ServerInterceptor interceptor2 = mock(ServerInterceptor.class);
         ServerInterceptor interceptor3 = mock(ServerInterceptor.class);
 
-        ServiceDescriptor descriptor = ServiceDescriptor.builder(createMockService())
+        ServiceDescriptor descriptor = newServiceDescriptorBuilder(createMockService())
                 .intercept(interceptor1, interceptor2)
                 .intercept(interceptor3)
                 .build();
@@ -167,14 +167,14 @@ public class ServiceDescriptorTest {
 
     @Test
     public void shouldHaveZeroMethods() {
-        ServiceDescriptor descriptor = ServiceDescriptor.builder(createMockService()).build();
+        ServiceDescriptor descriptor = newServiceDescriptorBuilder(createMockService()).build();
 
         assertThat(descriptor.methods(), is(emptyIterable()));
     }
 
     @Test
     public void shouldAddBidirectionalMethod() {
-        ServiceDescriptor descriptor = ServiceDescriptor.builder(createMockService())
+        ServiceDescriptor descriptor = newServiceDescriptorBuilder(createMockService())
                 .bidirectional("methodOne", this::dummyBiDi)
                 .build();
 
@@ -191,8 +191,8 @@ public class ServiceDescriptorTest {
         assertThat(grpcDescriptor, is(notNullValue()));
         assertThat(grpcDescriptor.getType(), is(io.grpc.MethodDescriptor.MethodType.BIDI_STREAMING));
         assertThat(grpcDescriptor.getFullMethodName(), is("foo/methodOne"));
-        assertThat(grpcDescriptor.getRequestMarshaller(), is(instanceOf(JavaMarshaller.class)));
-        assertThat(grpcDescriptor.getResponseMarshaller(), is(instanceOf(JavaMarshaller.class)));
+        assertThat(grpcDescriptor.getRequestMarshaller(), is(instanceOf(JsonbMarshaller.class)));
+        assertThat(grpcDescriptor.getResponseMarshaller(), is(instanceOf(JsonbMarshaller.class)));
     }
 
     @Test
@@ -200,7 +200,7 @@ public class ServiceDescriptorTest {
     public void shouldAddBidirectionalMethodWithConfigurer() {
         MethodDescriptor.Configurer configurer = mock(MethodDescriptor.Configurer.class);
 
-        ServiceDescriptor descriptor = ServiceDescriptor.builder(createMockService())
+        ServiceDescriptor descriptor = newServiceDescriptorBuilder(createMockService())
                 .bidirectional("methodOne", this::dummyBiDi, configurer)
                 .build();
 
@@ -219,13 +219,13 @@ public class ServiceDescriptorTest {
         assertThat(grpcDescriptor, is(notNullValue()));
         assertThat(grpcDescriptor.getType(), is(io.grpc.MethodDescriptor.MethodType.BIDI_STREAMING));
         assertThat(grpcDescriptor.getFullMethodName(), is("foo/methodOne"));
-        assertThat(grpcDescriptor.getRequestMarshaller(), is(instanceOf(JavaMarshaller.class)));
-        assertThat(grpcDescriptor.getResponseMarshaller(), is(instanceOf(JavaMarshaller.class)));
+        assertThat(grpcDescriptor.getRequestMarshaller(), is(instanceOf(JsonbMarshaller.class)));
+        assertThat(grpcDescriptor.getResponseMarshaller(), is(instanceOf(JsonbMarshaller.class)));
     }
 
     @Test
     public void shouldAddClientStreaminglMethod() {
-        ServiceDescriptor descriptor = ServiceDescriptor.builder(createMockService())
+        ServiceDescriptor descriptor = newServiceDescriptorBuilder(createMockService())
                 .clientStreaming("methodOne", this::dummyClientStreaming)
                 .build();
 
@@ -242,8 +242,8 @@ public class ServiceDescriptorTest {
         assertThat(grpcDescriptor, is(notNullValue()));
         assertThat(grpcDescriptor.getType(), is(io.grpc.MethodDescriptor.MethodType.CLIENT_STREAMING));
         assertThat(grpcDescriptor.getFullMethodName(), is("foo/methodOne"));
-        assertThat(grpcDescriptor.getRequestMarshaller(), is(instanceOf(JavaMarshaller.class)));
-        assertThat(grpcDescriptor.getResponseMarshaller(), is(instanceOf(JavaMarshaller.class)));
+        assertThat(grpcDescriptor.getRequestMarshaller(), is(instanceOf(JsonbMarshaller.class)));
+        assertThat(grpcDescriptor.getResponseMarshaller(), is(instanceOf(JsonbMarshaller.class)));
     }
 
     @Test
@@ -251,7 +251,7 @@ public class ServiceDescriptorTest {
     public void shouldAddClientStreamingMethodWithConfigurer() {
         MethodDescriptor.Configurer configurer = mock(MethodDescriptor.Configurer.class);
 
-        ServiceDescriptor descriptor = ServiceDescriptor.builder(createMockService())
+        ServiceDescriptor descriptor = newServiceDescriptorBuilder(createMockService())
                 .clientStreaming("methodOne", this::dummyClientStreaming, configurer)
                 .build();
 
@@ -270,13 +270,13 @@ public class ServiceDescriptorTest {
         assertThat(grpcDescriptor, is(notNullValue()));
         assertThat(grpcDescriptor.getType(), is(io.grpc.MethodDescriptor.MethodType.CLIENT_STREAMING));
         assertThat(grpcDescriptor.getFullMethodName(), is("foo/methodOne"));
-        assertThat(grpcDescriptor.getRequestMarshaller(), is(instanceOf(JavaMarshaller.class)));
-        assertThat(grpcDescriptor.getResponseMarshaller(), is(instanceOf(JavaMarshaller.class)));
+        assertThat(grpcDescriptor.getRequestMarshaller(), is(instanceOf(JsonbMarshaller.class)));
+        assertThat(grpcDescriptor.getResponseMarshaller(), is(instanceOf(JsonbMarshaller.class)));
     }
 
     @Test
     public void shouldAddServerStreaminglMethod() {
-        ServiceDescriptor descriptor = ServiceDescriptor.builder(createMockService())
+        ServiceDescriptor descriptor = newServiceDescriptorBuilder(createMockService())
                 .serverStreaming("methodOne", this::dummyServerStreaming)
                 .build();
 
@@ -293,8 +293,8 @@ public class ServiceDescriptorTest {
         assertThat(grpcDescriptor, is(notNullValue()));
         assertThat(grpcDescriptor.getType(), is(io.grpc.MethodDescriptor.MethodType.SERVER_STREAMING));
         assertThat(grpcDescriptor.getFullMethodName(), is("foo/methodOne"));
-        assertThat(grpcDescriptor.getRequestMarshaller(), is(instanceOf(JavaMarshaller.class)));
-        assertThat(grpcDescriptor.getResponseMarshaller(), is(instanceOf(JavaMarshaller.class)));
+        assertThat(grpcDescriptor.getRequestMarshaller(), is(instanceOf(JsonbMarshaller.class)));
+        assertThat(grpcDescriptor.getResponseMarshaller(), is(instanceOf(JsonbMarshaller.class)));
     }
 
     @Test
@@ -302,7 +302,7 @@ public class ServiceDescriptorTest {
     public void shouldAddServerStreamingMethodWithConfigurer() {
         MethodDescriptor.Configurer configurer = mock(MethodDescriptor.Configurer.class);
 
-        ServiceDescriptor descriptor = ServiceDescriptor.builder(createMockService())
+        ServiceDescriptor descriptor = newServiceDescriptorBuilder(createMockService())
                 .serverStreaming("methodOne", this::dummyServerStreaming, configurer)
                 .build();
 
@@ -321,13 +321,13 @@ public class ServiceDescriptorTest {
         assertThat(grpcDescriptor, is(notNullValue()));
         assertThat(grpcDescriptor.getType(), is(io.grpc.MethodDescriptor.MethodType.SERVER_STREAMING));
         assertThat(grpcDescriptor.getFullMethodName(), is("foo/methodOne"));
-        assertThat(grpcDescriptor.getRequestMarshaller(), is(instanceOf(JavaMarshaller.class)));
-        assertThat(grpcDescriptor.getResponseMarshaller(), is(instanceOf(JavaMarshaller.class)));
+        assertThat(grpcDescriptor.getRequestMarshaller(), is(instanceOf(JsonbMarshaller.class)));
+        assertThat(grpcDescriptor.getResponseMarshaller(), is(instanceOf(JsonbMarshaller.class)));
     }
 
     @Test
     public void shouldAddUnaryMethod() {
-        ServiceDescriptor descriptor = ServiceDescriptor.builder(createMockService())
+        ServiceDescriptor descriptor = newServiceDescriptorBuilder(createMockService())
                 .unary("methodOne", this::dummyServerStreaming)
                 .build();
 
@@ -344,8 +344,8 @@ public class ServiceDescriptorTest {
         assertThat(grpcDescriptor, is(notNullValue()));
         assertThat(grpcDescriptor.getType(), is(io.grpc.MethodDescriptor.MethodType.UNARY));
         assertThat(grpcDescriptor.getFullMethodName(), is("foo/methodOne"));
-        assertThat(grpcDescriptor.getRequestMarshaller(), is(instanceOf(JavaMarshaller.class)));
-        assertThat(grpcDescriptor.getResponseMarshaller(), is(instanceOf(JavaMarshaller.class)));
+        assertThat(grpcDescriptor.getRequestMarshaller(), is(instanceOf(JsonbMarshaller.class)));
+        assertThat(grpcDescriptor.getResponseMarshaller(), is(instanceOf(JsonbMarshaller.class)));
     }
 
     @Test
@@ -353,7 +353,7 @@ public class ServiceDescriptorTest {
     public void shouldAddUnaryMethodWithConfigurer() {
         MethodDescriptor.Configurer configurer = mock(MethodDescriptor.Configurer.class);
 
-        ServiceDescriptor descriptor = ServiceDescriptor.builder(createMockService())
+        ServiceDescriptor descriptor = newServiceDescriptorBuilder(createMockService())
                 .unary("methodOne", this::dummyServerStreaming, configurer)
                 .build();
 
@@ -372,14 +372,14 @@ public class ServiceDescriptorTest {
         assertThat(grpcDescriptor, is(notNullValue()));
         assertThat(grpcDescriptor.getType(), is(io.grpc.MethodDescriptor.MethodType.UNARY));
         assertThat(grpcDescriptor.getFullMethodName(), is("foo/methodOne"));
-        assertThat(grpcDescriptor.getRequestMarshaller(), is(instanceOf(JavaMarshaller.class)));
-        assertThat(grpcDescriptor.getResponseMarshaller(), is(instanceOf(JavaMarshaller.class)));
+        assertThat(grpcDescriptor.getRequestMarshaller(), is(instanceOf(JsonbMarshaller.class)));
+        assertThat(grpcDescriptor.getResponseMarshaller(), is(instanceOf(JsonbMarshaller.class)));
     }
 
     @Test
     @SuppressWarnings("unchecked")
     public void shouldAddZeroMethodLevelInterceptors() {
-        ServiceDescriptor descriptor = ServiceDescriptor.builder(createMockService())
+        ServiceDescriptor descriptor = newServiceDescriptorBuilder(createMockService())
                 .unary("methodOne", this::dummyServerStreaming)
                 .intercept("methodOne")
                 .build();
@@ -394,7 +394,7 @@ public class ServiceDescriptorTest {
     public void shouldAddOneMethodLevelInterceptor() {
         ServerInterceptor interceptor = mock(ServerInterceptor.class);
 
-        ServiceDescriptor descriptor = ServiceDescriptor.builder(createMockService())
+        ServiceDescriptor descriptor = newServiceDescriptorBuilder(createMockService())
                 .unary("methodOne", this::dummyServerStreaming)
                 .intercept("methodOne", interceptor)
                 .build();
@@ -411,7 +411,7 @@ public class ServiceDescriptorTest {
         ServerInterceptor interceptor2 = mock(ServerInterceptor.class);
         ServerInterceptor interceptor3 = mock(ServerInterceptor.class);
 
-        ServiceDescriptor descriptor = ServiceDescriptor.builder(createMockService())
+        ServiceDescriptor descriptor = newServiceDescriptorBuilder(createMockService())
                 .unary("methodOne", this::dummyServerStreaming)
                 .intercept("methodOne", interceptor1, interceptor2)
                 .intercept("methodOne", interceptor3)
@@ -429,7 +429,7 @@ public class ServiceDescriptorTest {
         ServerInterceptor interceptor2 = mock(ServerInterceptor.class);
         ServerInterceptor interceptor3 = mock(ServerInterceptor.class);
 
-        ServiceDescriptor descriptor = ServiceDescriptor.builder(createMockService())
+        ServiceDescriptor descriptor = newServiceDescriptorBuilder(createMockService())
                 .unary("methodOne", this::dummyServerStreaming)
                 .intercept("methodOne", interceptor1, interceptor2)
                 .unary("methodTwo", this::dummyServerStreaming)
@@ -477,7 +477,7 @@ public class ServiceDescriptorTest {
         ServerServiceDefinition definition = service.bindService();
         io.grpc.ServiceDescriptor grpcDescriptor = definition.getServiceDescriptor();
 
-        ServiceDescriptor descriptor = ServiceDescriptor.builder(service).build();
+        ServiceDescriptor descriptor = newServiceDescriptorBuilder(service).build();
 
         assertThat(descriptor.name(), is(grpcDescriptor.getName()));
 
@@ -506,7 +506,7 @@ public class ServiceDescriptorTest {
     public void shouldOverrideServiceName() {
         BindableService service = new EchoStub();
 
-        ServiceDescriptor descriptor = ServiceDescriptor.builder(service)
+        ServiceDescriptor descriptor = newServiceDescriptorBuilder(service)
                 .name("Foo")
                 .build();
 
@@ -537,7 +537,7 @@ public class ServiceDescriptorTest {
 
         Descriptors.FileDescriptor protoDescriptor = Echo.getDescriptor();
 
-        ServiceDescriptor descriptor = ServiceDescriptor.builder(service)
+        ServiceDescriptor descriptor = newServiceDescriptorBuilder(service)
                 .proto(protoDescriptor)
                 .unary("Echo", this::dummyUnary)
                 .build();
@@ -581,5 +581,15 @@ public class ServiceDescriptorTest {
     private class EchoStub
             extends EchoServiceGrpc.EchoServiceImplBase {
 
+    }
+
+    private ServiceDescriptor.Builder newServiceDescriptorBuilder(GrpcService service) {
+        return ServiceDescriptor.builder(service)
+                .marshallerSupplier(new JsonbMarshaller.Supplier());
+    }
+
+    private ServiceDescriptor.Builder newServiceDescriptorBuilder(BindableService service) {
+        return ServiceDescriptor.builder(service)
+                .marshallerSupplier(new JsonbMarshaller.Supplier());
     }
 }

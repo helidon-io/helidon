@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import io.grpc.Metadata;
 import io.grpc.ServerCall;
 import io.grpc.ServerCallHandler;
 import io.grpc.stub.StreamObserver;
+import io.helidon.grpc.core.JsonbMarshaller;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -39,7 +40,7 @@ public class ContextSettingServerInterceptorTest {
 
     @Test
     public void shouldAddServiceDescriptor() {
-        ServiceDescriptor serviceDescriptor = ServiceDescriptor.builder(createMockService())
+        ServiceDescriptor serviceDescriptor = newServiceDescriptorBuilder(createMockService())
                 .unary("test", this::dummyUnary)
                 .build();
 
@@ -67,7 +68,7 @@ public class ContextSettingServerInterceptorTest {
     @Test
     public void shouldAddServiceContext() {
         Context.Key<String> key = Context.key("test-service-key");
-        ServiceDescriptor serviceDescriptor = ServiceDescriptor.builder(createMockService())
+        ServiceDescriptor serviceDescriptor = newServiceDescriptorBuilder(createMockService())
                 .addContextValue(key, "test-service-value")
                 .unary("test", this::dummyUnary)
                 .build();
@@ -100,7 +101,7 @@ public class ContextSettingServerInterceptorTest {
     public void shouldAddServiceAndMethodContext() {
         Context.Key<String> key1 = Context.key("test-service-key");
         Context.Key<String> key2 = Context.key("test-service-key");
-        ServiceDescriptor serviceDescriptor = ServiceDescriptor.builder(createMockService())
+        ServiceDescriptor serviceDescriptor = newServiceDescriptorBuilder(createMockService())
                 .addContextValue(key1, "test-service-value")
                 .unary("test", this::dummyUnary, cfg -> cfg.addContextValue(key2, "test-method-value"))
                 .build();
@@ -133,7 +134,7 @@ public class ContextSettingServerInterceptorTest {
     @Test
     public void shouldAddOverrideServiceContextKeyWithMethodContextKey() {
         Context.Key<String> key = Context.key("test-service-key");
-        ServiceDescriptor serviceDescriptor = ServiceDescriptor.builder(createMockService())
+        ServiceDescriptor serviceDescriptor = newServiceDescriptorBuilder(createMockService())
                 .addContextValue(key, "test-service-value")
                 .unary("test", this::dummyUnary, cfg -> cfg.addContextValue(key, "test-method-value"))
                 .build();
@@ -187,5 +188,10 @@ public class ContextSettingServerInterceptorTest {
         public Context getContext() {
             return context;
         }
+    }
+
+    private ServiceDescriptor.Builder newServiceDescriptorBuilder(GrpcService service) {
+        return ServiceDescriptor.builder(service)
+                .marshallerSupplier(new JsonbMarshaller.Supplier());
     }
 }
