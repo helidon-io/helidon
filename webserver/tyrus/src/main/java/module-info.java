@@ -27,9 +27,9 @@ module io.helidon.webserver.tyrus {
     requires io.helidon.common.mapper;
     requires io.helidon.common.reactive;
 
-    requires org.glassfish.tyrus.core;
-    requires org.glassfish.tyrus.server;
-    requires org.glassfish.tyrus.spi;
+    requires tyrus.core;
+    requires tyrus.server;
+    requires tyrus.spi;
 
     exports io.helidon.webserver.tyrus;
 }
