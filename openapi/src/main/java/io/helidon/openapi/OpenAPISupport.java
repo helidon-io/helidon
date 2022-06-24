@@ -595,7 +595,7 @@ public abstract class OpenAPISupport implements Service {
 
         private static final OpenAPIMediaType DEFAULT_TYPE = YAML;
 
-        static final String TYPE_LIST = "json,yaml,yml"; // must be a true constant so it can be used in an annotation
+        static final String TYPE_LIST = "json|yaml|yml"; // must be a true constant so it can be used in an annotation
 
         private final Format format;
         private final List<String> fileTypes;
@@ -825,7 +825,7 @@ public abstract class OpenAPISupport implements Service {
          * @param path non-null location of the static OpenAPI document file
          * @return updated builder instance
          */
-        @ConfiguredOption(DEFAULT_STATIC_FILE_PATH_PREFIX + "{" + OpenAPIMediaType.TYPE_LIST + "}")
+        @ConfiguredOption(DEFAULT_STATIC_FILE_PATH_PREFIX + "(" + OpenAPIMediaType.TYPE_LIST + ")")
         public B staticFile(String path) {
             Objects.requireNonNull(path, "path to static file must be non-null");
             staticFilePath = Optional.of(path);

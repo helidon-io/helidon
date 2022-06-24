@@ -46,7 +46,7 @@ Optional configuration options:
 |`scan.packages` |string[&#93; |{nbsp} |Specify the list of packages to scan.
 |`web-context` |string |`/openapi` |Sets the web context path for the OpenAPI endpoint.
 |`cors` |link:../../shared/config/io.helidon.webserver.cors.CrossOriginConfig.adoc[CrossOriginConfig] |{nbsp} |Assigns the CORS settings for the OpenAPI endpoint.
-|`static-file` |string |`META-INF/openapi.{json,yaml,yml}` |Sets the file system path of the static OpenAPI document file.
+|`static-file` |string |`META-INF/openapi.(json|yaml|yml)` |Sets the file system path of the static OpenAPI document file.
 |`custom-schema-registry-class` |string |{nbsp} |Sets the custom schema registry class.
 |`application-path-disable` |boolean |`false` |Sets whether the app path search should be disabled.
 |`model.reader` |string |{nbsp} |Sets the developer-provided OpenAPI model reader class name.

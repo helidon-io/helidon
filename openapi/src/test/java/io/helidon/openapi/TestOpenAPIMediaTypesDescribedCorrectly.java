@@ -36,7 +36,7 @@ class TestOpenAPIMediaTypesDescribedCorrectly {
             .collect(Collectors.toSet());
 
     private static final Set<String> FILE_TYPES_DESCRIBED = Arrays.stream(
-                    OpenAPISupport.OpenAPIMediaType.TYPE_LIST.split(","))
+                    OpenAPISupport.OpenAPIMediaType.TYPE_LIST.split("\\|"))
             .collect(Collectors.toSet());
 
     @Test
