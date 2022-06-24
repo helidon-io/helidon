@@ -22,7 +22,7 @@
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
 
     <exec src="/mp/common/common-mp.xml"/>
-    <source src="/common/sources.xml"/>
+    <!--source src="/common/sources.xml"/-->
     <exec src="/common/media.xml"/>
     <source src="/common/media-sources.xml"/>
     <exec src="/common/observability.xml"/>

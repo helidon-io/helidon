@@ -41,13 +41,21 @@
                             <includes>
                                 <include>src/*/java/**/FtService.java.mustache</include>
                                 <include>src/*/java/**/FtServiceTest.java.mustache</include>
+                                <include>src/*/java/**/FtResource.java.mustache</include>
+                                <include>src/*/java/**/FtResourceTest.java.mustache</include>
                             </includes>
                         </templates>
                         <model>
-                            <list key="dependencies">
+                            <list key="dependencies" if="${ROOT.flavor} == 'se'">
                                 <map>
                                     <value key="groupId">io.helidon.fault-tolerance</value>
                                     <value key="artifactId">helidon-fault-tolerance</value>
+                                </map>
+                            </list>
+                            <list key="dependencies" if="${ROOT.flavor} == 'mp'">
+                                <map>
+                                    <value key="groupId">io.helidon.microprofile</value>
+                                    <value key="artifactId">helidon-microprofile-fault-tolerance</value>
                                 </map>
                             </list>
                             <list key="Main-helidon-imports">
