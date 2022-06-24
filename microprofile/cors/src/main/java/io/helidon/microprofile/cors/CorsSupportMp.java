@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -111,7 +111,7 @@ class CorsSupportMp extends CorsSupportBase<ContainerRequestContext, Response, C
 
         @Override
         public String path() {
-            String path = requestContext.getUriInfo().getPath();
+            String path = requestContext.getUriInfo().getRequestUri().getPath();
             return path.startsWith("/") ? path : '/' + path;
         }
 
