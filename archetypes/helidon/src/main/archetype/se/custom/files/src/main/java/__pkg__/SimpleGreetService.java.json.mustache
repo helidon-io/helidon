@@ -7,8 +7,6 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
-import jakarta.json.bind.Jsonb;
-import jakarta.json.bind.JsonbBuilder;
 
 /**
  * A simple service to greet you. Examples:
@@ -21,7 +19,6 @@ import jakarta.json.bind.JsonbBuilder;
 public class SimpleGreetService implements Service {
 
     private static final Logger LOGGER = Logger.getLogger(SimpleGreetService.class.getName());
-    private static final Jsonb JSON = JsonbBuilder.create();
 
     private final String greeting;
 
@@ -48,8 +45,10 @@ public class SimpleGreetService implements Service {
     private void getDefaultMessageHandler(ServerRequest request, ServerResponse response) {
         String msg = String.format("%s %s!", greeting, "World");
         LOGGER.info("Greeting message is " + msg);
-        Message returnObject = new Message(msg, greeting);
 
-        response.send(returnObject);
+        Message message = new Message();
+        message.setMessage(msg);
+
+        response.send(message);
     }
 }

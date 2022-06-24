@@ -4,14 +4,13 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import io.helidon.webserver.Handler;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
-import jakarta.json.bind.Jsonb;
-import jakarta.json.bind.JsonbBuilder;
 
 /**
  * A simple service to greet you. Examples:
@@ -27,7 +26,6 @@ import jakarta.json.bind.JsonbBuilder;
  *
  * The message is returned as a JSON object
  */
-
 public class GreetService implements Service {
 
     /**
@@ -35,7 +33,6 @@ public class GreetService implements Service {
      */
     private final AtomicReference<String> greeting = new AtomicReference<>();
 
-    private static final Jsonb JSONB = JsonbBuilder.create();
     private static final Logger LOGGER = Logger.getLogger(GreetService.class.getName());
 
     GreetService(Config config) {
@@ -51,7 +48,7 @@ public class GreetService implements Service {
         rules
             .get("/", this::getDefaultMessageHandler)
             .get("/{name}", this::getMessageHandler)
-            .put("/greeting", this::updateGreetingHandler);
+            .put("/greeting", Handler.create(Message.class, this::updateGreeting));
     }
 
     /**
@@ -76,43 +73,40 @@ public class GreetService implements Service {
     private void sendResponse(ServerResponse response, String name) {
         String msg = String.format("%s %s!", greeting.get(), name);
 
-        Message returnObject = new Message(msg, null);
-        response.send(returnObject);
+        Message message = new Message();
+        message.setMessage(msg);
+        response.send(message);
     }
 
     private static <T> T processErrors(Throwable ex, ServerRequest request, ServerResponse response) {
 
         LOGGER.log(Level.FINE, "Internal error", ex);
-        Message jsonErrorObject = new Message("Internal error", null);
-        response.status(Http.Status.INTERNAL_SERVER_ERROR_500).send(jsonErrorObject);
+        Message jsonError = new Message();
+        jsonError.setMessage("Internal error");
+        response.status(Http.Status.INTERNAL_SERVER_ERROR_500).send(jsonError);
 
         return null;
-    }
-
-    private void updateGreetingFromJson(String jo, ServerResponse response) {
-
-        Message message = JSONB.fromJson(jo, Message.class);
-
-        if (message.getGreeting() == null) {
-            Message jsonErrorObject = new Message("No greeting provided", null);
-            response.status(Http.Status.BAD_REQUEST_400)
-                    .send(jsonErrorObject);
-            return;
-        }
-
-        greeting.set(message.getGreeting());
-        response.status(Http.Status.NO_CONTENT_204).send();
     }
 
     /**
      * Set the greeting to use in future messages.
      * @param request the server request
      * @param response the server response
+     * @param message the client message
      */
-    private void updateGreetingHandler(ServerRequest request,
-                                       ServerResponse response) {
-        request.content().as(String.class)
-            .thenAccept(jo -> updateGreetingFromJson(jo, response))
-            .exceptionally(ex -> processErrors(ex, request, response));
+    private void updateGreeting(ServerRequest request,
+                                ServerResponse response,
+                                Message message) {
+
+         if (message.getGreeting() == null) {
+             Message jsonError = new Message();
+             jsonError.setMessage("No greeting provided");
+             response.status(Http.Status.BAD_REQUEST_400)
+                     .send(jsonError);
+             return;
+         }
+
+         greeting.set(message.getGreeting());
+         response.status(Http.Status.NO_CONTENT_204).send();
     }
 }
