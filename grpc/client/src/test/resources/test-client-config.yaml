@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+# Copyright (c) 2019, 2022 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,20 +24,27 @@ grpc:
     default_host_port_ssl_disabled:
       tls:
         enabled: false
-        tls-key-resource-path: "ssl/clientKey.pem"
-        tls-cert-resource-path: "ssl/clientCert.pem"
-        tls-ca-cert-resource-path: "ssl/ca.pem"
+        tls-key.resource:
+          resource-path: "ssl/clientKey.pem"
+        tls-cert.resource:
+          resource-path: "ssl/clientCert.pem"
+        tls-ca-cert.resource:
+          resource-path: "ssl/ca.pem"
     default_host_ssl_one_way:
       port: 4096
       tls:
         enabled: true
-        tls-ca-cert-resource-path: "ssl/ca.pem"
+        tls-ca-cert.resource:
+          resource-path: "ssl/ca.pem"
     default_port_ssl:
       host: "non_default_host.com"
       tls:
-        tls-key-resource-path: "ssl/clientKey.pem"
-        tls-cert-resource-path: "ssl/clientCert.pem"
-        tls-ca-cert-resource-path: "ssl/ca.pem"
+        tls-key.resource:
+          resource-path: "ssl/clientKey.pem"
+        tls-cert.resource:
+          resource-path: "ssl/clientCert.pem"
+        tls-ca-cert.resource:
+          resource-path: "ssl/ca.pem"
     with_target:
       target: "dns://localhost:1408"
       load-balancer-policy: "round-robin"

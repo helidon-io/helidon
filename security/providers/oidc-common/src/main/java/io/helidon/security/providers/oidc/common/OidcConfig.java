@@ -1288,11 +1288,8 @@ public final class OidcConfig {
             // OIDC server configuration
             config.get("base-scopes").asString().ifPresent(this::baseScopes);
             config.get("oidc-metadata.resource").as(Resource::create).ifPresent(this::oidcMetadata);
-            // backward compatibility
-            Resource.create(config, "oidc-metadata").ifPresent(this::oidcMetadata);
             config.get("oidc-metadata-well-known").asBoolean().ifPresent(this::oidcMetadataWellKnown);
             config.get("sign-jwk.resource").as(Resource::create).ifPresent(this::signJwk);
-            Resource.create(config, "sign-jwk").ifPresent(this::signJwk);
             config.get("token-endpoint-uri").as(URI.class).ifPresent(this::tokenEndpointUri);
             config.get("token-endpoint-auth").asString()
                     .map(String::toUpperCase)

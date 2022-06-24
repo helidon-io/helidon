@@ -90,19 +90,6 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
      * Load supplier from configuration.
      *
      * @param config config instance
-     * @return a new thread pool supplier configured from config
-     * @deprecated since 2.4.2, please use {@link #create(Config, String)}
-     */
-    @Deprecated
-    public static ThreadPoolSupplier create(Config config) {
-        return builder().config(config)
-                .build();
-    }
-
-    /**
-     * Load supplier from configuration.
-     *
-     * @param config config instance
      * @param name thread pool name
      * @return a new thread pool supplier configured from config
      */
@@ -110,17 +97,6 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
         return builder().name(name)
                 .config(config)
                 .build();
-    }
-
-    /**
-     * Create a new thread pool supplier with default configuration.
-     *
-     * @return a new thread pool supplier with default configuration
-     * @deprecated since 2.4.2, please use {@link #create(String)}
-     */
-    @Deprecated
-    public static ThreadPoolSupplier create() {
-        return builder().build();
     }
 
     /**
