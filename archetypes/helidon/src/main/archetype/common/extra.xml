@@ -73,7 +73,66 @@
                         </model>
                     </output>
                 </option>
-                <option value="cors" name="CORS" description="Cross-Origin Resource Sharing utilities"/>
+                <option value="cors" name="CORS" description="Cross-Origin Resource Sharing utilities">
+                    <output>
+                        <templates engine="mustache" transformations="mustache,packaged">
+                            <directory>files</directory>
+                            <includes>
+                                <include>src/*/java/**/TestCORS.java.mustache</include>
+                                <include if="${ROOT.flavor} == 'se'">src/*/java/**/CorsService.java.mustache</include>
+                            </includes>
+                        </templates>
+                        <model>
+                            <list key="dependencies" if="${ROOT.flavor} == 'mp'">
+                                <map>
+                                    <value key="groupId">io.helidon.microprofile</value>
+                                    <value key="artifactId">helidon-microprofile-cors</value>
+                                </map>
+                            </list>
+                            <list key="SimpleGreetService-imports" if="${ROOT.flavor} == 'mp'">
+                                <value>io.helidon.microprofile.cors.CrossOrigin</value>
+                                <value>jakarta.ws.rs.OPTIONS</value>
+                                <value>jakarta.ws.rs.PUT</value>
+                                <value>jakarta.ws.rs.core.Response</value>
+                                <value>jakarta.ws.rs.HttpMethod</value>
+                            </list>
+                            <list key="Main-helidon-imports" if="${ROOT.flavor} == 'se'">
+                                <value>io.helidon.webserver.cors.CorsSupport</value>
+                                <value>io.helidon.webserver.cors.CrossOriginConfig</value>
+                            </list>
+                            <list key="Main-createRouting" if="${ROOT.flavor} == 'se'">
+                                <value><![CDATA[
+        CorsSupport corsSupport = CorsSupport.builder()
+                .addCrossOrigin(CrossOriginConfig.builder()
+                        .allowOrigins("http://foo.com", "http://there.com")
+                        .allowMethods("PUT", "DELETE")
+                        .build())
+                .addCrossOrigin(CrossOriginConfig.create())
+                .build();]]></value>
+                            </list>
+                            <list key="Main-routingBuilder" if="${ROOT.flavor} == 'se'">
+                                <value><![CDATA[                .register("/cors", corsSupport, new CorsService())]]></value>
+                            </list>
+                            <list key="SimpleGreetService-methods" if="${ROOT.flavor} == 'mp'">
+                                <value><![CDATA[
+    @PUT
+    public Response getCustomMessage(String greeting) {
+        String msg = String.format("%s %s!", greeting, "World");
+        return Response.ok(msg).build();
+    }
+
+    /**
+     * CORS set-up for getCustomMessage.
+     */
+    @OPTIONS
+    @CrossOrigin(value = {"http://foo.com", "http://there.com"},
+            allowMethods = {HttpMethod.PUT})
+    public void optionsForGetCustomMessage() {
+    }]]></value>
+                            </list>
+                        </model>
+                    </output>
+                </option>
             </list>
         </inputs>
         <output>

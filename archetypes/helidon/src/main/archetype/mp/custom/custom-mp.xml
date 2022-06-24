@@ -28,7 +28,7 @@
     <exec src="/common/observability.xml"/>
     <exec src="/mp/custom/database.xml"/>
     <exec src="/common/security.xml"/>
-    <exec src="/common/extra.xml"/>
+    <source src="/common/extra.xml"/>
     <exec src="/common/packaging.xml"/>
     <output>
         <model>
@@ -78,6 +78,15 @@
                 <map>
                     <value key="groupId">io.helidon.microprofile.health</value>
                     <value key="artifactId">helidon-microprofile-health</value>
+                </map>
+                <map>
+                    <value key="groupId">org.glassfish.jersey.media</value>
+                    <value key="artifactId">jersey-media-json-binding</value>
+                    <value key="scope">runtime</value>
+                </map>
+                <map>
+                    <value key="groupId">io.helidon.webclient</value>
+                    <value key="artifactId">helidon-webclient</value>
                 </map>
             </list>
         </model>
