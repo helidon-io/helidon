@@ -47,7 +47,7 @@ public final class SEOpenAPISupportBuilder extends OpenAPISupport.Builder<SEOpen
      * @exception NullPointerException if the provided {@code Config} is null
      * @return updated builder instance
      */
-    @ConfiguredOption(type = OpenAPIConfigImpl.Builder.class, mergeWithParent = true)
+    @ConfiguredOption(type = OpenApiConfig.class, mergeWithParent = true)
     public SEOpenAPISupportBuilder config(Config config) {
         super.config(config);
         apiConfigBuilder.config(config);

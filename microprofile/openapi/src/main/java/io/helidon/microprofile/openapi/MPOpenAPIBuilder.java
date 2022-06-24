@@ -363,7 +363,7 @@ public final class MPOpenAPIBuilder extends OpenAPISupport.Builder<MPOpenAPIBuil
      * @param mpConfig the OpenAPI {@code Config} object possibly containing settings
      * @return updated builder instance
      */
-    @ConfiguredOption(type = OpenAPIConfigImpl.Builder.class, mergeWithParent = true)
+    @ConfiguredOption(type = OpenApiConfig.class, mergeWithParent = true)
     @ConfiguredOption(key = "scan.disable",
                       type = Boolean.class,
                       value = "false",
