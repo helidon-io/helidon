@@ -25,8 +25,7 @@ module io.helidon.webclient.tracing {
     requires io.helidon.common.context;
     requires io.helidon.tracing.config;
 
-    requires io.opentracing.api;
-    requires io.opentracing.util;
+    requires io.helidon.tracing;
 
     exports io.helidon.webclient.tracing;
 

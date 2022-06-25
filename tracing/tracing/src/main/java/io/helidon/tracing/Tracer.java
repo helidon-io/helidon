@@ -1,6 +1,7 @@
 package io.helidon.tracing;
 
 import java.util.Optional;
+import java.util.function.BiConsumer;
 
 public interface Tracer {
 
@@ -20,4 +21,6 @@ public interface Tracer {
     Span.Builder<?> spanBuilder(String name);
 
     Optional<SpanContext> extract(HeaderProvider headersProvider);
+
+    void inject(SpanContext spanContext, HeaderProvider inboundHeadersProvider, BiConsumer<String, String> outboundHeadersConsumer);
 }

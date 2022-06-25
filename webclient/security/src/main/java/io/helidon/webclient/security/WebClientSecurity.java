@@ -31,14 +31,12 @@ import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.SecurityEnvironment;
 import io.helidon.security.providers.common.OutboundConfig;
+import io.helidon.tracing.Span;
+import io.helidon.tracing.SpanContext;
+import io.helidon.tracing.Tracer;
 import io.helidon.webclient.WebClientRequestHeaders;
 import io.helidon.webclient.WebClientServiceRequest;
 import io.helidon.webclient.spi.WebClientService;
-
-import io.opentracing.Span;
-import io.opentracing.SpanContext;
-import io.opentracing.Tracer;
-import io.opentracing.tag.Tags;
 
 /**
  * Client service for security propagation.
@@ -107,8 +105,8 @@ public class WebClientSecurity implements WebClientService {
         }
 
         Span span = context.tracer()
-                .buildSpan("security:outbound")
-                .asChildOf(context.tracingSpan())
+                .spanBuilder("security:outbound")
+                .parent(context.tracingSpan())
                 .start();
 
         String explicitProvider = request.properties().get(PROVIDER_NAME);
@@ -181,7 +179,7 @@ public class WebClientSecurity implements WebClientService {
                     clientHeaders.put(entry.getKey(), value);
                 }
             }
-            span.finish();
+            span.end();
             return request;
         } catch (Exception e) {
             traceError(span, e, null);
@@ -203,16 +201,14 @@ public class WebClientSecurity implements WebClientService {
 
     static void traceError(Span span, Throwable throwable, String description) {
         // failed
-        if (null != throwable) {
-            Tags.ERROR.set(span, true);
-            span.log(Map.of("event", "error",
-                            "error.object", throwable));
+        span.status(Span.Status.ERROR);
+
+        if (throwable == null) {
+            span.addEvent("error", Map.of("message", description,
+                                          "error.kind", "SecurityException"));
+            span.end();
         } else {
-            Tags.ERROR.set(span, true);
-            span.log(Map.of("event", "error",
-                            "message", description,
-                            "error.kind", "SecurityException"));
+            span.end(throwable);
         }
-        span.finish();
     }
 }

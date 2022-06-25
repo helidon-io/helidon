@@ -15,21 +15,17 @@
  */
 package io.helidon.webclient.tracing;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
 import io.helidon.common.reactive.Single;
+import io.helidon.tracing.HeaderProvider;
+import io.helidon.tracing.Span;
+import io.helidon.tracing.SpanContext;
+import io.helidon.tracing.Tag;
+import io.helidon.tracing.Tracer;
 import io.helidon.webclient.WebClientServiceRequest;
 import io.helidon.webclient.spi.WebClientService;
-
-import io.opentracing.Span;
-import io.opentracing.SpanContext;
-import io.opentracing.Tracer;
-import io.opentracing.propagation.Format;
-import io.opentracing.propagation.TextMapAdapter;
-import io.opentracing.tag.Tags;
-import io.opentracing.util.GlobalTracer;
 
 /**
  * Client service for tracing propagation.
@@ -54,38 +50,42 @@ public final class WebClientTracing implements WebClientService {
     public Single<WebClientServiceRequest> request(WebClientServiceRequest request) {
         String method = request.method().name().toUpperCase();
         Optional<Tracer> optionalTracer = request.context().get(Tracer.class);
-        Tracer tracer = optionalTracer.orElseGet(GlobalTracer::get);
+        Tracer tracer = optionalTracer.orElseGet(Tracer::global);
 
-        Tracer.SpanBuilder spanBuilder = tracer.buildSpan(composeName(method, request));
+        Span.Builder spanBuilder = tracer.spanBuilder(composeName(method, request));
 
-        request.context().get(SpanContext.class).ifPresent(spanBuilder::asChildOf);
+        request.context().get(SpanContext.class).ifPresent(spanBuilder::parent);
 
+        spanBuilder.kind(Span.Kind.CLIENT);
+        spanBuilder.tag(Tag.COMPONENT.create("helidon-webclient"));
+        spanBuilder.tag(Tag.HTTP_METHOD.create(method));
+        spanBuilder.tag(Tag.HTTP_URL.create(request.uri().toString()));
         Span span = spanBuilder.start();
-        Tags.COMPONENT.set(span, "helidon-webclient");
-        Tags.HTTP_METHOD.set(span, method);
-        Tags.HTTP_URL.set(span, request.uri().toString());
 
         request.context().register(span.context());
 
-        Map<String, String> tracerHeaders = new HashMap<>();
-
         tracer.inject(span.context(),
-                      Format.Builtin.HTTP_HEADERS,
-                      new TextMapAdapter(tracerHeaders));
+                      HeaderProvider.empty(),
+                      (key, value) -> request.headers().put(key, value));
 
-        tracerHeaders.forEach((name, value) -> request.headers().put(name, value));
+        request.whenResponseReceived()
+                .thenAccept(response -> {
+                    int status = response.status().code();
+                    span.tag(Tag.HTTP_STATUS.create(status));
 
-        request.whenResponseReceived().thenAccept(response -> {
-            int status = response.status().code();
-            Tags.HTTP_STATUS.set(span, status);
-            if (status >= HTTP_STATUS_ERROR_THRESHOLD) {
-                Tags.ERROR.set(span, true);
-                span.log(Map.of("event", "error",
-                                "message", "Response HTTP status: " + status,
-                                "error.kind", (status < HTTP_STATUS_SERVER_ERROR_THRESHOLD) ? "ClientError" : "ServerError"));
-            }
-            span.finish();
-        });
+                    if (status >= HTTP_STATUS_ERROR_THRESHOLD) {
+                        span.status(Span.Status.ERROR);
+
+                        span.addEvent("error", Map.of("message",
+                                                      "Response HTTP status: " + status,
+                                                      "error.kind",
+                                                      (status < HTTP_STATUS_SERVER_ERROR_THRESHOLD)
+                                                              ? "ClientError"
+                                                              : "ServerError"));
+                    }
+                    span.end();
+                })
+                .exceptionallyAccept(span::end);
 
         return Single.just(request);
     }
