@@ -17,14 +17,17 @@ package io.helidon.tracing;
 
 import java.util.Objects;
 
-import io.opentracing.Span;
-
 /**
  * Tag abstraction that can be used with {@link TracerBuilder#addTracerTag(String, String)}.
  *
  * @param <T> type of the tag
  */
 public abstract class Tag<T> {
+    public static final TagSource<String> COMPONENT = new StringTagSource("component");
+    public static final TagSource<String> HTTP_METHOD = new StringTagSource("http.method");
+    public static final TagSource<String> HTTP_URL = new StringTagSource("http.url");
+    public static final TagSource<String> HTTP_VERSION = new StringTagSource("http.version");
+    public static final TagSource<Integer> HTTP_STATUS = new NumberTagSource<Integer>("http.status");
     private final String key;
     private final T value;
 
@@ -112,6 +115,16 @@ public abstract class Tag<T> {
      * @param span span to apply the tag on
      */
     public abstract void apply(Span span);
+    /**
+     * Configure this tag on the span builder.
+     *
+     * @param spanBuilder span builder to apply the tag on
+     */
+    public abstract void apply(Span.Builder<?> spanBuilder);
+
+    public interface TagSource<T> {
+        Tag<? super T> create(T value);
+    }
 
     private static final class StringTag extends Tag<String> {
         private StringTag(String key, String value) {
@@ -120,7 +133,12 @@ public abstract class Tag<T> {
 
         @Override
         public void apply(Span span) {
-            span.setTag(key(), value());
+            span.tag(key(), value());
+        }
+
+        @Override
+        public void apply(Span.Builder<?> spanBuilder) {
+            spanBuilder.tag(key(), value());
         }
     }
 
@@ -131,7 +149,12 @@ public abstract class Tag<T> {
 
         @Override
         public void apply(Span span) {
-            span.setTag(key(), value());
+            span.tag(key(), value());
+        }
+
+        @Override
+        public void apply(Span.Builder<?> spanBuilder) {
+            spanBuilder.tag(key(), value());
         }
     }
 
@@ -142,7 +165,51 @@ public abstract class Tag<T> {
 
         @Override
         public void apply(Span span) {
-            span.setTag(key(), value());
+            span.tag(key(), value());
+        }
+
+        @Override
+        public void apply(Span.Builder<?> spanBuilder) {
+            spanBuilder.tag(key(), value());
+        }
+    }
+
+    private static class StringTagSource implements TagSource<String> {
+        private final String component;
+
+        protected StringTagSource(String component) {
+            this.component = component;
+        }
+
+        @Override
+        public Tag<String> create(String value) {
+            return new StringTag(component, value);
+        }
+    }
+
+    private static class NumberTagSource<T extends Number> implements TagSource<T> {
+        private final String component;
+
+        protected NumberTagSource(String component) {
+            this.component = component;
+        }
+
+        @Override
+        public Tag<Number> create(T value) {
+            return new NumericTag(component, value);
+        }
+    }
+
+    private static class BooleanTagSource implements TagSource<Boolean> {
+        private final String component;
+
+        protected BooleanTagSource(String component) {
+            this.component = component;
+        }
+
+        @Override
+        public Tag<Boolean> create(Boolean value) {
+            return new BooleanTag(component, value);
         }
     }
 }

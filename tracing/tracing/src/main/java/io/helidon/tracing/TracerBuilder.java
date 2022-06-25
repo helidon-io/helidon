@@ -23,8 +23,6 @@ import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 
-import io.opentracing.Tracer;
-
 /**
  * A builder for tracing {@link Tracer tracer}.
  * <p>
@@ -119,9 +117,9 @@ public interface TracerBuilder<T extends TracerBuilder<T>> extends Builder<T, Tr
      * @param config configuration node to load tracer configuration from
      * @return a new builder instance
      */
-    static TracerBuilder<?> create(Config config) {
-        return TracerProviderHelper.findTracerBuilder()
-                .config(config);
+    static DefaultTracerBuilder create(Config config) {
+        return new DefaultTracerBuilder(TracerProviderHelper.findTracerBuilder()
+                .config(config));
     }
 
     /**
@@ -266,14 +264,4 @@ public interface TracerBuilder<T extends TracerBuilder<T>> extends Builder<T, Tr
      */
     @ConfiguredOption(key = "global", value = "true")
     T registerGlobal(boolean global);
-
-    /**
-     * Build a tracer instance from this builder.
-     *
-     * @return tracer
-     */
-    // this method is declared here due to problems with generics
-    // declaration on io.helidon.common.Builder
-    // this class returned an Object instead of Tracer
-    Tracer build();
 }

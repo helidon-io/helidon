@@ -19,17 +19,15 @@ import java.net.URI;
 
 import io.helidon.config.Config;
 
-import io.opentracing.Tracer;
-import io.opentracing.noop.NoopTracerFactory;
-
 /**
  * No op tracer builder - used when there is no tracer service available.
  */
 final class NoOpBuilder implements TracerBuilder<NoOpBuilder> {
+    private static final Tracer TRACER = new NoOpTracer();
     private NoOpBuilder() {
     }
 
-    static TracerBuilder<?> create() {
+    static NoOpBuilder create() {
         return new NoOpBuilder();
     }
     @Override
@@ -94,6 +92,6 @@ final class NoOpBuilder implements TracerBuilder<NoOpBuilder> {
 
     @Override
     public Tracer build() {
-        return NoopTracerFactory.create();
+        return TRACER;
     }
 }

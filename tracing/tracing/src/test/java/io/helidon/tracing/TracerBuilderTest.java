@@ -22,9 +22,6 @@ import java.util.List;
 
 import io.helidon.config.Config;
 
-import io.opentracing.Tracer;
-import io.opentracing.noop.NoopTracer;
-import io.opentracing.noop.NoopTracerFactory;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -55,7 +52,7 @@ class TracerBuilderTest {
                 .build();
 
         assertThat(tracer, notNullValue());
-        assertThat(tracer, instanceOf(NoopTracer.class));
+        assertThat(tracer, instanceOf(NoOpTracer.class));
     }
 
     @Test
@@ -64,7 +61,7 @@ class TracerBuilderTest {
                 .build();
 
         assertThat(tracer, notNullValue());
-        assertThat(tracer, instanceOf(NoopTracer.class));
+        assertThat(tracer, instanceOf(NoOpTracer.class));
     }
 
     @Test
@@ -72,7 +69,7 @@ class TracerBuilderTest {
         Tracer tracer = TracerBuilder.create(Config.empty())
                 .build();
 
-        assertThat(tracer, instanceOf(NoopTracer.class));
+        assertThat(tracer, instanceOf(NoOpTracer.class));
     }
 
 
@@ -101,7 +98,7 @@ class TracerBuilderTest {
                 .build();
 
         assertThat(tracer, notNullValue());
-        assertThat(tracer, instanceOf(NoopTracer.class));
+        assertThat(tracer, instanceOf(NoOpTracer.class));
 
         // now test the default methods
         assertThat(tracer, sameInstance(myBuilder.tracer));
@@ -200,7 +197,7 @@ class TracerBuilderTest {
 
         @Override
         public Tracer build() {
-            tracer = NoopTracerFactory.create();
+            tracer = new NoOpTracer();
             return tracer;
         }
     }

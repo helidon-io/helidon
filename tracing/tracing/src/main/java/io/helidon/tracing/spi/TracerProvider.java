@@ -15,21 +15,18 @@
  */
 package io.helidon.tracing.spi;
 
-import java.util.List;
-import java.util.Map;
+import java.util.Optional;
+import java.util.function.BiConsumer;
 
+import io.helidon.tracing.HeaderProvider;
+import io.helidon.tracing.SpanContext;
+import io.helidon.tracing.Tracer;
 import io.helidon.tracing.TracerBuilder;
-
-import io.opentracing.Span;
-import io.opentracing.SpanContext;
-import io.opentracing.Tracer;
-import io.opentracing.propagation.Format;
 
 /**
  * Java service to integrate various distributed tracers.
  * The first tracer configured will be used.
  */
-@FunctionalInterface
 public interface TracerProvider {
     /**
      * Create a new builder for this tracer.
@@ -38,6 +35,7 @@ public interface TracerProvider {
      */
     TracerBuilder<?> createBuilder();
 
+    Optional<SpanContext> extract(HeaderProvider headersProvider);
     /**
      * Update headers for outbound requests.
      * The outboundHeaders already contain injected from tracer via {@link Tracer#inject(SpanContext, Format, Object)}.
@@ -51,12 +49,9 @@ public interface TracerProvider {
      *
      * @return new map of outbound headers, defaults to tracing headers
      */
-    default Map<String, List<String>> updateOutboundHeaders(Span currentSpan,
-                               Tracer tracer,
-                               SpanContext parentSpan,
-                               Map<String, List<String>> outboundHeaders,
-                               Map<String, List<String>> inboundHeaders) {
+    void inject(SpanContext spanContext, HeaderProvider inboundHeadersProvider, BiConsumer<String, String> outboundHeadersConsumer);
 
-        return outboundHeaders;
-    }
+    Tracer global();
+
+    void global(Tracer tracer);
 }

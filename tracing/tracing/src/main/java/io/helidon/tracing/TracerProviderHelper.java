@@ -15,7 +15,6 @@
  */
 package io.helidon.tracing;
 
-import java.util.Iterator;
 import java.util.ServiceLoader;
 
 import io.helidon.common.serviceloader.HelidonServiceLoader;
@@ -25,19 +24,25 @@ import io.helidon.tracing.spi.TracerProvider;
  * Tracer provider helper to find implementation to use.
  */
 final class TracerProviderHelper {
-    private static final ServiceLoader<TracerProvider> SYSTEM_LOADER = ServiceLoader.load(TracerProvider.class);
-    private static final HelidonServiceLoader<TracerProvider> SERVICE_LOADER = HelidonServiceLoader.create(SYSTEM_LOADER);
+    private static final TracerProvider TRACER_PROVIDER =
+            HelidonServiceLoader.builder(ServiceLoader.load(TracerProvider.class))
+            .addService(new NoOpTracerProvider())
+                    .build()
+                    .asList()
+                    .get(0);
 
     private TracerProviderHelper() {
     }
 
-    static TracerBuilder<?> findTracerBuilder() {
-        Iterator<TracerProvider> iterator = SERVICE_LOADER.iterator();
+    static Tracer global() {
+        return TRACER_PROVIDER.global();
+    }
 
-        if (iterator.hasNext()) {
-            return iterator.next().createBuilder();
-        } else {
-            return NoOpBuilder.create();
-        }
+    static void global(Tracer tracer) {
+        TRACER_PROVIDER.global(tracer);
+    }
+
+    static TracerBuilder<?> findTracerBuilder() {
+        return TRACER_PROVIDER.createBuilder();
     }
 }
