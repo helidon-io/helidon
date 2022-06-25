@@ -20,11 +20,9 @@ import java.net.URI;
 import java.util.Optional;
 
 import io.helidon.common.reactive.Single;
-
-import io.opentracing.Span;
-import io.opentracing.SpanContext;
-import io.opentracing.Tracer;
-import io.opentracing.util.GlobalTracer;
+import io.helidon.tracing.Span;
+import io.helidon.tracing.SpanContext;
+import io.helidon.tracing.Tracer;
 
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -41,12 +39,12 @@ public class RequestTestStub extends Request {
     }
 
     RequestTestStub(BareRequest req, WebServer webServer) {
-        this(req, webServer, GlobalTracer.get().buildSpan("unit-test-request").start());
+        this(req, webServer, Tracer.global().spanBuilder("unit-test-request").start());
     }
 
     @Override
     public Tracer tracer() {
-        return GlobalTracer.get();
+        return Tracer.global();
     }
 
     RequestTestStub(BareRequest req, WebServer webServer, Span span) {

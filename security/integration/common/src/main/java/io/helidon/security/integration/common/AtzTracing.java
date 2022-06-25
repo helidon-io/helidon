@@ -17,10 +17,9 @@ package io.helidon.security.integration.common;
 
 import java.util.Optional;
 
+import io.helidon.tracing.Span;
+import io.helidon.tracing.SpanContext;
 import io.helidon.tracing.config.SpanTracingConfig;
-
-import io.opentracing.Span;
-import io.opentracing.SpanContext;
 
 /**
  * Authorization tracing support.

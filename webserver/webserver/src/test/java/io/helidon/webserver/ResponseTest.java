@@ -35,8 +35,8 @@ import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
+import io.helidon.tracing.SpanContext;
 
-import io.opentracing.SpanContext;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;

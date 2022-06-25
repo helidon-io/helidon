@@ -21,8 +21,6 @@ import java.net.InetAddress;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 
-import io.opentracing.util.GlobalTracer;
-import org.hamcrest.core.IsInstanceOf;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -60,7 +58,7 @@ public class ServerConfigurationTest {
         assertThat(config.receiveBufferSize(), is(0));
         assertThat(config.timeoutMillis(), is(0));
         assertThat(config.workersCount() > 0, is(true));
-        assertThat(config.tracer(), IsInstanceOf.instanceOf(GlobalTracer.class));
+        assertThat(config.tracer().enabled(), is(false));
         assertThat(config.bindAddress(), nullValue());
     }
 

@@ -23,8 +23,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 import io.helidon.security.spi.SecurityProvider;
-
-import io.opentracing.SpanContext;
+import io.helidon.tracing.SpanContext;
 
 /**
  * Fluent API to build a security request.
@@ -106,8 +105,8 @@ public class SecurityRequestBuilder<T extends SecurityRequestBuilder<T>> {
      * @param spanContext span of current security request (e.g. authentication, authorization or outbound, or any parent if
      *                    these are not traced)
      * @return updated builder instance
-     * @see io.opentracing.util.GlobalTracer#get()
-     * @see io.opentracing.Tracer#buildSpan(String)
+     * @see io.helidon.tracing.Tracer#global() 
+     * @see io.helidon.tracing.Tracer#spanBuilder(String)
      */
     public T tracingSpan(SpanContext spanContext) {
         this.tracingSpanContext = spanContext;

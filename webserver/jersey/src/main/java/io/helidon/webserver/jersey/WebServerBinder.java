@@ -16,11 +16,11 @@
 
 package io.helidon.webserver.jersey;
 
+import io.helidon.tracing.Span;
+import io.helidon.tracing.SpanContext;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 
-import io.opentracing.Span;
-import io.opentracing.SpanContext;
 import jakarta.inject.Inject;
 import jakarta.inject.Provider;
 import jakarta.ws.rs.core.GenericType;

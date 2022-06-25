@@ -23,7 +23,6 @@ module io.helidon.webserver.jersey {
     requires transitive jakarta.annotation;
     requires transitive io.helidon.webserver;
     requires transitive jakarta.ws.rs;
-    requires transitive io.opentracing.api;
     requires transitive io.helidon.jersey.server;
     requires transitive io.helidon.jersey.client;
 

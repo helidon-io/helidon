@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-import io.opentracing.SpanContext;
+import io.helidon.tracing.SpanContext;
 
 /**
  * Common methods for all security requests (authentication, authorization, and identity propagation).

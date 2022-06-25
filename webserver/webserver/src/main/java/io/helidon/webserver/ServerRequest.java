@@ -27,9 +27,8 @@ import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpRequest;
 import io.helidon.common.reactive.Single;
 import io.helidon.media.common.MessageBodyReadableContent;
-
-import io.opentracing.SpanContext;
-import io.opentracing.Tracer;
+import io.helidon.tracing.SpanContext;
+import io.helidon.tracing.Tracer;
 
 /**
  * Represents HTTP Request and provides WebServer related API.
@@ -137,9 +136,9 @@ public interface ServerRequest extends HttpRequest {
     Optional<SpanContext> spanContext();
 
     /**
-     * Returns the {@link io.opentracing.Tracer} associated with {@link io.helidon.webserver.WebServer}.
+     * Returns the {@link io.helidon.tracing.Tracer} associated with {@link io.helidon.webserver.WebServer}.
      *
-     * @return the tracer associated, or {@link io.opentracing.util.GlobalTracer#get()}
+     * @return the tracer associated, or {@link io.helidon.tracing.Tracer#global()}
      */
     Tracer tracer();
 

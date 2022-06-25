@@ -42,8 +42,7 @@ import io.helidon.media.common.MessageBodyStreamWriter;
 import io.helidon.media.common.MessageBodyWriter;
 import io.helidon.media.common.MessageBodyWriterContext;
 import io.helidon.media.common.ParentingMediaContextBuilder;
-
-import io.opentracing.Tracer;
+import io.helidon.tracing.Tracer;
 
 /**
  * Represents a immutably configured WEB server.
@@ -704,8 +703,7 @@ public interface WebServer {
 
 
         /**
-         * Sets an <a href="http://opentracing.io">opentracing.io</a>
-         * tracer. (Default is {@link io.opentracing.util.GlobalTracer}.)
+         * Sets a tracer.
          *
          * @param tracer a tracer to set
          * @return an updated builder
@@ -716,8 +714,7 @@ public interface WebServer {
         }
 
         /**
-         * Sets an <a href="http://opentracing.io">opentracing.io</a>
-         * tracer. (Default is {@link io.opentracing.util.GlobalTracer}.)
+         * Sets a tracer.
          *
          * @param tracerBuilder a tracer builder to set; will be built as a first step of this method execution
          * @return updated builder

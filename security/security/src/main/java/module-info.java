@@ -29,14 +29,10 @@ module io.helidon.security {
     requires transitive io.helidon.config;
     requires static io.helidon.config.metadata;
 
-    requires transitive io.opentracing.api;
-    // noop and api expose the same package :(
-    // requires io.opentracing.noop;
-    requires io.opentracing.util;
+    requires transitive io.helidon.tracing;
 
     requires io.helidon.security.util;
     requires io.helidon.common.context;
-    requires io.opentracing.noop;
     requires io.helidon.common.serviceloader;
 
     exports io.helidon.security;

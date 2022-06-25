@@ -21,10 +21,10 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.stream.Collectors;
 
+import io.helidon.tracing.SpanContext;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 
-import io.opentracing.SpanContext;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.ws.rs.DELETE;
