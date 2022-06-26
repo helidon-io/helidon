@@ -15,11 +15,6 @@
  */
 package io.helidon.tracing.spi;
 
-import java.util.Optional;
-import java.util.function.BiConsumer;
-
-import io.helidon.tracing.HeaderProvider;
-import io.helidon.tracing.SpanContext;
 import io.helidon.tracing.Tracer;
 import io.helidon.tracing.TracerBuilder;
 
@@ -34,22 +29,6 @@ public interface TracerProvider {
      * @return a tracer builder
      */
     TracerBuilder<?> createBuilder();
-
-    Optional<SpanContext> extract(HeaderProvider headersProvider);
-    /**
-     * Update headers for outbound requests.
-     * The outboundHeaders already contain injected from tracer via {@link Tracer#inject(SpanContext, Format, Object)}.
-     * This is to enable fine grained tuning of propagated headers for each implementation.
-     *
-     * @param currentSpan Current span covering the outbound call
-     * @param tracer Tracer used
-     * @param parentSpan Parent span context (may be null)
-     * @param outboundHeaders Tracing headers map as configured by the tracer
-     * @param inboundHeaders Existing inbound headers (may be empty if not within a scope of a request)
-     *
-     * @return new map of outbound headers, defaults to tracing headers
-     */
-    void inject(SpanContext spanContext, HeaderProvider inboundHeadersProvider, BiConsumer<String, String> outboundHeadersConsumer);
 
     Tracer global();
 

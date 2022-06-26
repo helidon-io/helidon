@@ -15,7 +15,7 @@ public interface Span {
     void status(Status status);
     SpanContext context();
 
-    void addEvent(String name, Map<String, String> attributes);
+    void addEvent(String name, Map<String, ?> attributes);
 
     void end();
 

@@ -31,6 +31,8 @@
 
     <modules>
         <module>tracing</module>
+        <module>opentelemetry</module>
+        <module>opentracing</module>
         <module>jersey-client</module>
         <module>jersey</module>
         <module>zipkin</module>
