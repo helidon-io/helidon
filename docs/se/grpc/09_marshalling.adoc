@@ -32,14 +32,6 @@ Protobuf marshaller will be used by default for any request and response classes
 
 That means that you don't need any special handling or configuration in order to support Protobuf serialization of requests and responses.
 
-=== Java Serialization Marshalling
-
-By default, any class that doesn't extend `com.google.protobuf.MessageLite` will be serialized using `JavaMarshaller`, which uses Java serialization.
-
-`JavaMarshaller` is useful for quick prototypes, but it is not recommended for production use. For one, it only supports gRPC-based communication between Java clients and servers, which is quite limiting. It is also not very efficient, and last but not least, it introduces security vulnerabilities.
-
-Because of the issues above, `JavaMarshaller` has been deprecated in Helidon 2.3, and will be permanently removed in Helidon 3.0. In the meantime, it is disabled by default and has to be explicitly enabled by setting `grpc.marshaller.java.enabled` configuration property to `true`. Otherwise, the `UnsupportedOperationException` will be thrown if you attempt to use it.
-
 == Custom Marshalling
 
 Helidon makes the use of custom marshallers trivial, and provides one custom implementation, `JsonbMarshaller`, out of the box.

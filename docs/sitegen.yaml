@@ -46,7 +46,6 @@ pages:
     - includes:
         - "**/*.adoc"
       excludes:
-        - "se/grpc/09_marshalling.adoc"
         - "common/**"
         - "shared/**"
 backend:
