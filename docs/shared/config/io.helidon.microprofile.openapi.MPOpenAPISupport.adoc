@@ -47,12 +47,12 @@ Optional configuration options:
 |`web-context` |string |`/openapi` |Sets the web context path for the OpenAPI endpoint.
 |`cors` |link:../../shared/config/io.helidon.webserver.cors.CrossOriginConfig.adoc[CrossOriginConfig] |{nbsp} |Assigns the CORS settings for the OpenAPI endpoint.
 |`static-file` |string |`META-INF/openapi.(json|yaml|yml)` |Sets the file system path of the static OpenAPI document file.
+|`servers.operation.*` |string[&#93; |{nbsp} |Sets alternative servers to service the indicated operation (represented here by '*'). Repeat for multiple operations.
 |`custom-schema-registry-class` |string |{nbsp} |Sets the custom schema registry class.
+|`schema.*` |string |{nbsp} |Sets the schema for the indicated fully-qualified class name (represented here by '*'); value is the schema in JSON format. Repeat for multiple classes. 
 |`application-path-disable` |boolean |`false` |Sets whether the app path search should be disabled.
 |`model.reader` |string |{nbsp} |Sets the developer-provided OpenAPI model reader class name.
-|`servers.path.{path}` |string[&#93; |{nbsp} |Sets alternative servers to service all operations in the specified path. Repeat for multiple paths.
-|`schema.{fully-qualified-class-name}` |string |{nbsp} |Sets the schema for the specified class; value is the schema in JSON format. Repeat for multiple classes. 
-|`servers.operation.{operationId}` |string[&#93; |{nbsp} |Sets alternative servers to service the specified operation. Repeat for multiple operations.
+|`servers.path.{path}` |string[&#93; |{nbsp} |Sets alternative servers to service all operations at the indicated path (represented here by '*'). Repeat for multiple paths.
 |`servers` |string[&#93; |{nbsp} |Sets servers.
 |`filter` |string |{nbsp} |Sets the developer-provided OpenAPI filter class name.
 
