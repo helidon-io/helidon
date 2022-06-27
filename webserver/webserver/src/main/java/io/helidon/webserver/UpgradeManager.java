@@ -94,7 +94,9 @@ class UpgradeManager {
                 protocol -> {
                     // Select proper decoder by protocol name
                     UpgradeCodecProvider upgradeCodecProvider = UPGRADE_HANDLERS.get(protocol);
-                    if (upgradeCodecProvider == null) return null;
+                    if (upgradeCodecProvider == null) {
+                        return null;
+                    }
                     return upgradeCodecProvider.upgradeCodec(sourceCodec, router, maxContentLength);
                 }, maxContentLength);
 

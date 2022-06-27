@@ -74,8 +74,8 @@ public interface UpgradeCodecProvider {
      * @return prior-knowledge decoder or empty optional
      */
     default Optional<ChannelHandler> priorKnowledgeDecoder(HttpServerCodec sourceCodec,
-                                                                     HttpServerUpgradeHandler wrappedUpgradeHandler,
-                                                                     int maxContentLength) {
+                                                           HttpServerUpgradeHandler wrappedUpgradeHandler,
+                                                           int maxContentLength) {
         return Optional.empty();
     }
 }
