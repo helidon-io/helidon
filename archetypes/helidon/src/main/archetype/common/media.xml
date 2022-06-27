@@ -32,7 +32,7 @@
                 <option value="json" name="JSON" description="Handle 'application/json' payloads">
                     <inputs>
                         <enum id="json-lib" name="Select a JSON library" default="${default-json-lib}" optional="true">
-                            <option value="jsonp" name="JSON-P" description="Jakarta JSON Processing" if="${ROOT.flavor} == 'se'" >
+                            <option value="jsonp" name="JSON-P" description="Jakarta JSON Processing" if="${ROOT.flavor} == 'se'">
                                 <variables>
                                     <text path="json">jsonp</text>
                                     <boolean path="multipart">false</boolean>

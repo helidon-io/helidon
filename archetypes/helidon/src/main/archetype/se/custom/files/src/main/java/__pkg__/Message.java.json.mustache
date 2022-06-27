@@ -1,21 +1,13 @@
-package {{package}};
 
-import jakarta.json.bind.annotation.JsonbProperty;
+package {{package}};
 
 public class Message {
 
-    @JsonbProperty("message")
     private String message;
 
-    @JsonbProperty("greeting")
     private String greeting;
 
     public Message() {
-    }
-
-    Message(String message, String greeting) {
-        this.message = message;
-        this.greeting = greeting;
     }
 
     public void setMessage(String message) {

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2021 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -22,13 +22,13 @@
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
 
     <exec src="/mp/common/common-mp.xml"/>
-    <source src="/common/sources.xml"/>
+    <!--source src="/common/sources.xml"/-->
     <exec src="/common/media.xml"/>
     <source src="/common/media-sources.xml"/>
     <exec src="/common/observability.xml"/>
     <exec src="/mp/custom/database.xml"/>
     <source src="/common/security.xml"/>
-    <exec src="/common/extra.xml"/>
+    <source src="/common/extra.xml"/>
     <exec src="/common/packaging.xml"/>
     <output>
         <files if="${security}">
@@ -45,10 +45,10 @@
             <list key="config-entries">
                 <value file="files/microprofile-config.properties"/>
             </list>
-            <list key="MainTest-java-imports">
+            <list key="MainTest-java-imports" if="${json} == 'jsonp'">
                 <value>jakarta.json.JsonObject</value>
             </list>
-            <list key="MainTest-methods">
+            <list key="MainTest-methods" if="${json} == 'jsonp'">
                 <value><![CDATA[
     @Test
     public void testGreet() throws Exception {
@@ -57,6 +57,18 @@
                 .request()
                 .get(JsonObject.class);
         assertThat(jsonObject.getString("message"), is("Hello World!"));
+    }
+                ]]></value>
+            </list>
+            <list key="MainTest-methods" if="${json} != 'jsonp'">
+                <value><![CDATA[
+    @Test
+    public void testGreet() throws Exception {
+        Message message = target
+                .path("simple-greet")
+                .request()
+                .get(Message.class);
+        assertThat(message.getMessage(), is("Hello World!"));
     }
                 ]]></value>
             </list>
@@ -74,8 +86,13 @@
                     <value key="artifactId">helidon-microprofile-health</value>
                 </map>
                 <map>
-                    <value key="groupId">io.helidon.media</value>
-                    <value key="artifactId">helidon-media-jsonp</value>
+                    <value key="groupId">org.glassfish.jersey.media</value>
+                    <value key="artifactId">jersey-media-json-binding</value>
+                    <value key="scope">runtime</value>
+                </map>
+                <map>
+                    <value key="groupId">io.helidon.webclient</value>
+                    <value key="artifactId">helidon-webclient</value>
                 </map>
             </list>
             <list key="providers-config-entries" if="${security}">

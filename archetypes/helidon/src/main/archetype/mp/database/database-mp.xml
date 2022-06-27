@@ -20,12 +20,12 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
 
-    <source src="/common/sources.xml"/>
     <exec src="/common/presets.xml"/>
     <presets>
         <boolean path="db">true</boolean>
     </presets>
     <exec src="/mp/custom/custom-mp.xml"/>
+    <source src="/common/sources.xml"/>
     <output>
         <model>
             <value key="title">Helidon MP Database</value>
@@ -53,10 +53,6 @@
                 <map>
                     <value key="groupId">jakarta.ws.rs</value>
                     <value key="artifactId">jakarta.ws.rs-api</value>
-                </map>
-                <map>
-                    <value key="groupId">jakarta.json.bind</value>
-                    <value key="artifactId">jakarta.json.bind-api</value>
                 </map>
                 <map>
                     <value key="groupId">jakarta.persistence</value>
@@ -169,14 +165,6 @@
             </list>
             <list key="config-entries">
                 <value file="files/microprofile-config.properties"/>
-            </list>
-            <list key="MainTest-java-imports">
-                <value>jakarta.ws.rs.core.MediaType</value>
-                <value>jakarta.json.JsonArray</value>
-                <value>jakarta.json.JsonObject</value>
-            </list>
-            <list key="MainTest-helidon-imports">
-                <value>io.helidon.media.jsonp.JsonpSupport</value>
             </list>
             <list key="MainTest-methods">
                 <value><![CDATA[
