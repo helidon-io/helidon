@@ -25,11 +25,17 @@
     <exec src="/se/common/common-se.xml"/>
     <exec src="/common/observability.xml"/>
     <exec src="/se/custom/database.xml"/>
-    <exec src="/common/security.xml"/>
+    <source src="/common/security.xml"/>
     <exec src="/common/extra.xml"/>
     <exec src="/common/packaging.xml"/>
     <exec src="/se/custom/custom-tests.xml"/>
     <output>
+        <files if="${security}">
+            <directory>files</directory>
+            <includes>
+                <include if="${security.atn} contains 'http-signature'">src/*/resources/keystore.p12</include>
+            </includes>
+        </files>
         <model>
             <value order="0" key="readme-description">Minimal Helidon SE project suitable to start from scratch.</value>
             <list key="readme-sections">
@@ -44,6 +50,21 @@
             <value key="Main-readyMessage">System.out.println("WEB server is up! http://localhost:" + ws.port() + "/greet");</value>
             <list key="config-entries">
                 <value file="files/application.yaml"/>
+            </list>
+            <list key="providers-config-entries" if="${security}">
+                <value if="${security.atn} contains 'oidc'" file="files/application.oidc.yaml"/>
+                <value if="${security.atn} contains 'jwt'" file="files/application.jwt.yaml"/>
+                <value if="${security.atn} contains 'google'" file="files/application.google.yaml"/>
+                <value if="${security.atn} contains 'http-signature'" file="files/application.http-signature.yaml"/>
+                <value if="${security.atz} contains 'abac'" file="files/application.abac.yaml"/>
+            </list>
+            <list key="paths-config-entries" if="${security}">
+                <value><![CDATA[       - path: "/simple-greet"
+         methods: ["get"]
+         authenticate: true]]></value>
+            </list>
+            <list key="paths-config-entries" if="${security}">
+                <value if="${security.atz} contains 'abac'"><![CDATA[         roles-allowed: ["user"]]]></value>
             </list>
         </model>
     </output>

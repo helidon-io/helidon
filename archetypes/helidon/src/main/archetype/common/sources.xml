@@ -41,6 +41,7 @@
             </includes>
             <excludes>
                 <exclude>**/*.mustache</exclude>
+                <exclude>**/keystore.p12</exclude>
             </excludes>
         </files>
         <model>
