@@ -276,8 +276,12 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
          * operation
          * @return updated builder
          */
-        @ConfiguredOption(key = SERVERS_OPERATION + ".{operationId}",
+        @ConfiguredOption(key = SERVERS_OPERATION + ".*",
                           kind = ConfiguredOption.Kind.LIST,
+                          description = """
+                                  Sets alternative servers to service the indicated operation \
+                                  (represented here by '*'). \
+                                  Repeat for multiple operations.""",
                           type = String.class)
         public Builder operationServers(String operationID, String operationServers) {
             this.operationServers.clear();
@@ -306,6 +310,10 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
          */
         @ConfiguredOption(key = SERVERS_PATH + ".{path}",
                           kind = ConfiguredOption.Kind.LIST,
+                          description = """
+                                  Sets alternative servers to service all operations at the indicated path \
+                                  (represented here by '*'). \
+                                  Repeat for multiple paths.""",
                           type = String.class)
         public Builder pathServers(String path, String pathServers) {
             setEntry(this.pathServers, path, pathServers);
@@ -354,9 +362,10 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
          * @param schemas map of FQ class name to JSON string depicting the schema
          * @return updated builder
          */
-        @ConfiguredOption(key = SCHEMA + ".{fully-qualified-class-name}",
+        @ConfiguredOption(key = SCHEMA + ".*",
                           description = """
-                                   Sets the schema for the specified class; value is the schema in JSON format. \
+                                   Sets the schema for the indicated fully-qualified class name (represented here by '*'); \
+                                   value is the schema in JSON format. \
                                    Repeat for multiple classes. \
                                    """,
                           type = String.class)

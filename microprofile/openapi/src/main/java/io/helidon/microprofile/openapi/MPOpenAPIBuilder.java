@@ -389,7 +389,7 @@ public final class MPOpenAPIBuilder extends OpenAPISupport.Builder<MPOpenAPIBuil
         // use-jaxrs-semantics is intended for Helidon's private use in running the TCKs to work around a problem there.
         // We do not document its use.
         useJaxRsSemantics = mpConfig
-                .getOptionalValue(USE_JAXRS_SEMANTICS_CONFIG_KEY, Boolean.class)
+                .getOptionalValue(USE_JAXRS_SEMANTICS_FULL_CONFIG_KEY, Boolean.class)
                 .orElse(USE_JAXRS_SEMANTICS_DEFAULT);
         return openAPIConfig(new OpenApiConfigImpl(mpConfig));
     }
