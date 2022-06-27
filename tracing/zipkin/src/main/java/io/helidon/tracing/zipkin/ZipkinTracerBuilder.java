@@ -27,6 +27,7 @@ import java.util.logging.Logger;
 import io.helidon.config.Config;
 import io.helidon.tracing.Tag;
 import io.helidon.tracing.TracerBuilder;
+import io.helidon.tracing.opentracing.OpenTracingTracerBuilder;
 
 import brave.Tracing;
 import brave.opentracing.BraveTracer;
@@ -105,7 +106,7 @@ import zipkin2.reporter.urlconnection.URLConnectionSender;
  * @see <a href="http://zipkin.io/pages/instrumenting.html#core-data-structures">Zipkin Attributes</a>
  * @see <a href="https://github.com/openzipkin/zipkin/issues/962">Zipkin Missing Service Name</a>
  */
-public class ZipkinTracerBuilder implements TracerBuilder<ZipkinTracerBuilder> {
+public class ZipkinTracerBuilder implements OpenTracingTracerBuilder<ZipkinTracerBuilder> {
     static final Logger LOGGER = Logger.getLogger(ZipkinTracerBuilder.class.getName());
     static final String DEFAULT_PROTOCOL = "http";
     static final int DEFAULT_ZIPKIN_PORT = 9411;
@@ -154,7 +155,7 @@ public class ZipkinTracerBuilder implements TracerBuilder<ZipkinTracerBuilder> {
         return create().config(config);
     }
 
-    static TracerBuilder<ZipkinTracerBuilder> create() {
+    static ZipkinTracerBuilder create() {
         return new ZipkinTracerBuilder();
     }
 
@@ -166,7 +167,7 @@ public class ZipkinTracerBuilder implements TracerBuilder<ZipkinTracerBuilder> {
 
     @Override
     public ZipkinTracerBuilder collectorUri(URI uri) {
-        TracerBuilder.super.collectorUri(uri);
+        OpenTracingTracerBuilder.super.collectorUri(uri);
 
         if (null != uri.getUserInfo()) {
             this.userInfo = uri.getUserInfo();
@@ -237,6 +238,8 @@ public class ZipkinTracerBuilder implements TracerBuilder<ZipkinTracerBuilder> {
         this.global = global;
         return this;
     }
+
+
 
     @Override
     public ZipkinTracerBuilder config(Config config) {

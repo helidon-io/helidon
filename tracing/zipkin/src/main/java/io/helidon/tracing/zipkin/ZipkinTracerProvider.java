@@ -18,10 +18,13 @@ package io.helidon.tracing.zipkin;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiConsumer;
 import java.util.logging.Logger;
 
 import io.helidon.common.Prioritized;
+import io.helidon.tracing.HeaderProvider;
 import io.helidon.tracing.TracerBuilder;
+import io.helidon.tracing.opentracing.spi.OpenTracingProvider;
 import io.helidon.tracing.spi.TracerProvider;
 
 import io.opentracing.Span;
@@ -33,7 +36,7 @@ import jakarta.annotation.Priority;
  * Zipkin java service.
  */
 @Priority(Prioritized.DEFAULT_PRIORITY)
-public class ZipkinTracerProvider implements TracerProvider {
+public class ZipkinTracerProvider implements OpenTracingProvider {
     // original Zipkin headers (comes from old name of Zipkin - "BigBrotherBird", or "B3")
     static final String X_B3_TRACE_ID = "x-b3-traceid";
     static final String X_B3_SPAN_ID = "x-b3-spanid";
@@ -49,16 +52,16 @@ public class ZipkinTracerProvider implements TracerProvider {
             List.of(X_OT_SPAN_CONTEXT, X_B3_TRACE_ID, X_B3_SPAN_ID, X_B3_PARENT_SPAN_ID, X_B3_SAMPLED, X_B3_FLAGS);
 
     @Override
-    public TracerBuilder<?> createBuilder() {
+    public ZipkinTracerBuilder createBuilder() {
         return ZipkinTracerBuilder.create();
     }
 
     @Override
-    public Map<String, List<String>> updateOutboundHeaders(Span currentSpan,
-                                                           Tracer tracer,
-                                                           SpanContext parentSpan,
-                                                           Map<String, List<String>> outboundHeaders,
-                                                           Map<String, List<String>> inboundHeaders) {
+    public void updateOutboundHeaders(Tracer tracer,
+                                      SpanContext parentSpan,
+                                      HeaderProvider inboundHeaders,
+                                      BiConsumer<String, String> outboundHeaders) {
+
 
         // copy all existing headers to the result
         Map<String, List<String>> result = new HashMap<>(outboundHeaders);

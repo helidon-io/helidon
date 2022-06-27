@@ -20,21 +20,20 @@ public interface OpenTracingProvider {
 
     /**
      * Update headers for outbound requests.
-     * The outboundHeaders already contain injected from tracer via {@link io.opentracing.Tracer#inject(io.opentracing.SpanContext, io.opentracing.propagation.Format, Object)}.
+     * The outboundHeaders already contain injected from tracer via
+     * {@link io.opentracing.Tracer#inject(io.opentracing.SpanContext, io.opentracing.propagation.Format, Object)}.
      * This is to enable fine grained tuning of propagated headers for each implementation.
      *
-     * @param tracer Tracer used
-     * @param parentSpan Parent span context (may be null)
+     * @param tracer          Tracer used
+     * @param parentSpan      Parent span context (may be null)
      * @param outboundHeaders Tracing headers map as configured by the tracer
-     * @param inboundHeaders Existing inbound headers (may be empty if not within a scope of a request)
-     *
+     * @param inboundHeaders  Existing inbound headers (may be empty if not within a scope of a request)
      * @return new map of outbound headers, defaults to tracing headers
      */
-    default Map<String, List<String>> updateOutboundHeaders(Tracer tracer,
-                                                            SpanContext parentSpan,
-                                                            HeaderProvider outboundHeaders,
-                                                            BiConsumer<String, String> inboundHeaders) {
+    default void updateOutboundHeaders(Tracer tracer,
+                                       SpanContext parentSpan,
+                                       HeaderProvider inboundHeaders,
+                                       BiConsumer<String, String> outboundHeaders) {
 
-        return outboundHeaders;
     }
 }

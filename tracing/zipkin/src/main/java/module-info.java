@@ -21,6 +21,7 @@ module io.helidon.tracing.zipkin {
     requires io.helidon.common;
     requires io.helidon.config;
     requires io.helidon.tracing;
+    requires io.helidon.tracing.opentracing;
 
     requires java.logging;
     requires io.opentracing.util;
@@ -30,8 +31,9 @@ module io.helidon.tracing.zipkin {
     requires zipkin2;
     requires brave;
     requires io.opentracing.noop;
+    requires io.opentracing.api;
 
     exports io.helidon.tracing.zipkin;
 
-    provides io.helidon.tracing.spi.TracerProvider with io.helidon.tracing.zipkin.ZipkinTracerProvider;
+    provides io.helidon.tracing.opentracing.spi.OpenTracingProvider with io.helidon.tracing.zipkin.ZipkinTracerProvider;
 }
