@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import io.helidon.webserver.spi.UpgradeCodecProvider;
+
 /**
  * WebSocket support for Helidon webserver.
  */
@@ -34,6 +36,6 @@ module io.helidon.webserver.websocket {
     requires tyrus.server;
     requires tyrus.spi;
 
-    provides io.helidon.webserver.UpgradeCodecSupplier
-            with io.helidon.webserver.websocket.WebsocketUpgradeCodecSupplier;
+    provides UpgradeCodecProvider
+            with io.helidon.webserver.websocket.WebsocketUpgradeCodecProvider;
 }

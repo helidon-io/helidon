@@ -20,8 +20,9 @@ package io.helidon.webserver.http2;
 import java.util.Optional;
 
 import io.helidon.webserver.Router;
-import io.helidon.webserver.UpgradeCodecSupplier;
+import io.helidon.webserver.spi.UpgradeCodecProvider;
 
+import io.netty.channel.ChannelHandler;
 import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.http.HttpServerUpgradeHandler;
 import io.netty.handler.codec.http2.CleartextHttp2ServerUpgradeHandler;
@@ -32,14 +33,14 @@ import io.netty.handler.ssl.ApplicationProtocolNames;
 /**
  * Service providing HTTP/2 upgrade codec for Helidon webserver.
  */
-public class Http2UpgradeCodecSupplier implements UpgradeCodecSupplier {
+public class Http2UpgradeCodecProvider implements UpgradeCodecProvider {
 
     /**
-     * Creates a new {@link Http2UpgradeCodecSupplier}.
+     * Creates a new {@link Http2UpgradeCodecProvider}.
      * @deprecated Only intended for service loader, do not instantiate
      */
     @Deprecated
-    public Http2UpgradeCodecSupplier() {
+    public Http2UpgradeCodecProvider() {
     }
 
     @Override
@@ -53,27 +54,23 @@ public class Http2UpgradeCodecSupplier implements UpgradeCodecSupplier {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public <R, A, B> Optional<R> priorKnowledgeDecoder(A httpServerCodec,
-                                                       B wrappedUpgradeHandler,
-                                                       int maxContentLength) {
+    public Optional<ChannelHandler> priorKnowledgeDecoder(HttpServerCodec httpServerCodec,
+                                                          HttpServerUpgradeHandler wrappedUpgradeHandler,
+                                                          int maxContentLength) {
         // Handler for prior knowledge http2
         HelidonConnectionHandler helidonHandler = new HelidonConnectionHandler.HelidonHttp2ConnectionHandlerBuilder()
                 .maxContentLength(maxContentLength).build();
 
-        return Optional.of((R) new CleartextHttp2ServerUpgradeHandler(
-                (HttpServerCodec) httpServerCodec,
-                (HttpServerUpgradeHandler) wrappedUpgradeHandler, helidonHandler));
+        return Optional.of(new CleartextHttp2ServerUpgradeHandler(httpServerCodec, wrappedUpgradeHandler, helidonHandler));
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public <R, A> R upgradeCodec(A httpServerCodec,
+    public HttpServerUpgradeHandler.UpgradeCodec upgradeCodec(HttpServerCodec httpServerCodec,
                                  Router router,
                                  int maxContentLength) {
         HelidonConnectionHandler helidonHandler = new HelidonConnectionHandler.HelidonHttp2ConnectionHandlerBuilder()
                 .maxContentLength(maxContentLength).build();
 
-        return (R) new Http2ServerUpgradeCodec(helidonHandler);
+        return new Http2ServerUpgradeCodec(helidonHandler);
     }
 }

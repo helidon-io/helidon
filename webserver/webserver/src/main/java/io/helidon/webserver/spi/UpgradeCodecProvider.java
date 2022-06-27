@@ -15,14 +15,23 @@
  *
  */
 
-package io.helidon.webserver;
+package io.helidon.webserver.spi;
 
 import java.util.Optional;
 
+import io.helidon.webserver.Router;
+
+import io.netty.channel.ChannelHandler;
+import io.netty.handler.codec.http.HttpServerCodec;
+import io.netty.handler.codec.http.HttpServerUpgradeHandler;
+
 /**
  * Service providing HTTP upgrade codec for Helidon webserver.
+ *
+ * @deprecated Specific internal spi for Helidon 3.x, going to be changed for version 4
  */
-public interface UpgradeCodecSupplier {
+@Deprecated(since = "3.0.0")
+public interface UpgradeCodecProvider {
 
     /**
      * Name of the protocol expected in {@code Upgrade} header during HTTP upgrade request
@@ -42,19 +51,17 @@ public interface UpgradeCodecSupplier {
 
     /**
      * Codec used by the {@link io.netty.handler.codec.http.HttpServerUpgradeHandler HttpServerUpgradeHandler}
-     * when {@link UpgradeCodecSupplier#clearTextProtocol() clearTextProtocol()} matches.
+     * when {@link UpgradeCodecProvider#clearTextProtocol() clearTextProtocol()} matches.
      *
      * @param sourceCodec      For replacing HttpResponseEncoder and HttpRequestDecoder when using
      *                         {@link io.netty.handler.codec.http.HttpServerUpgradeHandler HttpServerUpgradeHandler}
      * @param router          set of all configured routings
      * @param maxContentLength maximum length of the content of an upgrade request
-     * @param <A> Source codec type
-     * @param <R> Upgrade coded type
      * @return upgrade codec
      */
-    <R, A> R upgradeCodec(A sourceCodec,
-                          Router router,
-                          int maxContentLength);
+    HttpServerUpgradeHandler.UpgradeCodec upgradeCodec(HttpServerCodec sourceCodec,
+                                                       Router router,
+                                                       int maxContentLength);
 
     /**
      * Used as a wrapper for actual upgrade handler, if available.
@@ -64,14 +71,11 @@ public interface UpgradeCodecSupplier {
      *                              {@link io.netty.handler.codec.http.HttpServerUpgradeHandler HttpServerUpgradeHandler}
      * @param wrappedUpgradeHandler Actual upgrade handler used when prior-knowledge doesn't kick in
      * @param maxContentLength      maximum length of the content of an upgrade request
-     * @param <A> Source codec type
-     * @param <B> Upgrade handler type
-     * @param <R> Result prior knowledge handler type
      * @return prior-knowledge decoder or empty optional
      */
-    default <R, A, B> Optional<R> priorKnowledgeDecoder(A sourceCodec,
-                                                        B wrappedUpgradeHandler,
-                                                        int maxContentLength) {
+    default Optional<ChannelHandler> priorKnowledgeDecoder(HttpServerCodec sourceCodec,
+                                                                     HttpServerUpgradeHandler wrappedUpgradeHandler,
+                                                                     int maxContentLength) {
         return Optional.empty();
     }
 }

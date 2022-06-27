@@ -20,19 +20,22 @@ package io.helidon.webserver.websocket;
 import java.util.Optional;
 
 import io.helidon.webserver.Router;
-import io.helidon.webserver.UpgradeCodecSupplier;
+import io.helidon.webserver.spi.UpgradeCodecProvider;
+
+import io.netty.handler.codec.http.HttpServerCodec;
+import io.netty.handler.codec.http.HttpServerUpgradeHandler;
 
 /**
  * Service providing WebSocket upgrade codec for Helidon webserver.
  */
-public class WebsocketUpgradeCodecSupplier implements UpgradeCodecSupplier {
+public class WebsocketUpgradeCodecProvider implements UpgradeCodecProvider {
 
     /**
-     * Creates a new {@link WebsocketUpgradeCodecSupplier}.
+     * Creates a new {@link WebsocketUpgradeCodecProvider}.
      * @deprecated Only intended for service loader, do not instantiate
      */
     @Deprecated
-    public WebsocketUpgradeCodecSupplier() {
+    public WebsocketUpgradeCodecProvider() {
     }
 
     @Override
@@ -46,13 +49,12 @@ public class WebsocketUpgradeCodecSupplier implements UpgradeCodecSupplier {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public <R, A> R upgradeCodec(A httpServerCodec,
-                                 Router router,
-                                 int maxContentLength) {
+    public HttpServerUpgradeHandler.UpgradeCodec upgradeCodec(HttpServerCodec httpServerCodec,
+                                                              Router router,
+                                                              int maxContentLength) {
         WebSocketRouting routing = router.routing(WebSocketRouting.class, null);
         if (routing != null) {
-            return (R) new WebSocketUpgradeCodec(routing);
+            return new WebSocketUpgradeCodec(routing);
         }
         return null;
     }

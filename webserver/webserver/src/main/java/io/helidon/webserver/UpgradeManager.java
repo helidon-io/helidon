@@ -26,6 +26,7 @@ import java.util.ServiceLoader;
 import java.util.function.Function;
 
 import io.helidon.common.serviceloader.HelidonServiceLoader;
+import io.helidon.webserver.spi.UpgradeCodecProvider;
 
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelPipeline;
@@ -35,7 +36,7 @@ import io.netty.handler.ssl.ApplicationProtocolConfig;
 import io.netty.handler.ssl.ApplicationProtocolNames;
 
 class UpgradeManager {
-    private static final Map<CharSequence, UpgradeCodecSupplier> UPGRADE_HANDLERS = new HashMap<>();
+    private static final Map<CharSequence, UpgradeCodecProvider> UPGRADE_HANDLERS = new HashMap<>();
     private static final ApplicationProtocolConfig APPLICATION_PROTOCOL_CONFIG;
 
     private static final boolean NO_UPGRADES;
@@ -43,7 +44,7 @@ class UpgradeManager {
     static {
         List<String> alpnProtocols = new ArrayList<>();
 
-        HelidonServiceLoader.create(ServiceLoader.load(UpgradeCodecSupplier.class))
+        HelidonServiceLoader.create(ServiceLoader.load(UpgradeCodecProvider.class))
                 .forEach(upgradeHandlerSupplier -> {
                     UPGRADE_HANDLERS.put(upgradeHandlerSupplier.clearTextProtocol(), upgradeHandlerSupplier);
                     upgradeHandlerSupplier.tlsProtocol().ifPresent(alpnProtocols::add);
@@ -77,8 +78,7 @@ class UpgradeManager {
                 .map(uhs -> uhs.priorKnowledgeDecoder(httpServerCodec, wrappedUpgradeHandler, maxContentLength))
                 .filter(Optional::isPresent)
                 .findFirst()
-                .flatMap(Function.identity())
-                .map(ChannelHandler.class::cast);
+                .flatMap(Function.identity());
     }
 
     static void addUpgradeHandler(ChannelPipeline p,
@@ -93,9 +93,9 @@ class UpgradeManager {
         HttpServerUpgradeHandler upgradeHandler = new HttpServerUpgradeHandler(sourceCodec,
                 protocol -> {
                     // Select proper decoder by protocol name
-                    UpgradeCodecSupplier upgradeCodecSupplier = UPGRADE_HANDLERS.get(protocol);
-                    if (upgradeCodecSupplier == null) return null;
-                    return upgradeCodecSupplier.upgradeCodec(sourceCodec, router, maxContentLength);
+                    UpgradeCodecProvider upgradeCodecProvider = UPGRADE_HANDLERS.get(protocol);
+                    if (upgradeCodecProvider == null) return null;
+                    return upgradeCodecProvider.upgradeCodec(sourceCodec, router, maxContentLength);
                 }, maxContentLength);
 
         // Prior-knowledge decoder needs to wrap upgrade handler

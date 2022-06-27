@@ -15,22 +15,7 @@
  *
  */
 
-import io.helidon.webserver.spi.UpgradeCodecProvider;
-
-module io.helidon.webserver.http2 {
-
-    exports io.helidon.webserver.http2;
-
-    requires io.helidon.webserver;
-    requires io.netty.transport;
-    requires io.netty.codec.http2;
-    requires io.netty.handler;
-    requires io.netty.codec.http;
-    requires io.netty.buffer;
-    requires java.logging;
-    requires io.netty.common;
-    requires io.netty.codec;
-
-    provides UpgradeCodecProvider
-            with io.helidon.webserver.http2.Http2UpgradeCodecProvider;
-}
+/**
+ * SPI to provide extended capabilities for webserver.
+ */
+package io.helidon.webserver.spi;
