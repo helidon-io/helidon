@@ -43,8 +43,6 @@
 Helidon integrates with {tyrus-project-url}[Tyrus] to provide support for the {websocket-spec-url}[Jakarta WebSocket API].
 
 
-== Maven dependency
-
 include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 [source,xml,subs="attributes+"]
 ----
@@ -78,11 +76,24 @@ they usually result in more succinct and easier-to-read code.
 |===
 |Annotation |Description
 
-|ServerEndpoint
+|@ServerEndpoint
 |This class level annotation declares that the class it decorates is a web socket endpoint that will be deployed and made available in the URI-space of a web socket server. The annotation allows the developer to define the URL (or URI template) which this endpoint will be published, and other important properties of the endpoint to the websocket runtime, such as the encoders it uses to send messages.
 
-|
-|
+|@ClientEndpoint
+|The ClientEndpoint annotation a class level annotation is used to denote that a POJO is a web socket client and can be deployed as such. Similar to ServerEndpoint, POJOs that are annotated with this annotation can have methods that, using the web socket method level annotations, are web socket lifecycle methods.
+
+|@OnOpen
+|This method level annotation can be used to decorate a Java method that wishes to be called when a new web socket session is open.
+
+
+|@OnMessage
+|This method level annotation can be used to make a Java method receive incoming web socket messages. Each websocket endpoint may only have one message handling method for each of the native websocket message formats: text, binary and pong. Methods using this annotation are allowed to have parameters of types described below, otherwise the container will generate an error at deployment time.
+
+|@OnError
+|This method level annotation can be used to decorate a Java method that wishes to be called in order to handle errors. See Endpoint.onError(javax.websocket.Session, java.lang.Throwable) for a description of the different categories of error.
+
+|@OnClose
+|This method level annotation can be used to decorate a Java method that wishes to be called when a web socket session is closing.
 
 |===
 
@@ -91,11 +102,6 @@ they usually result in more succinct and easier-to-read code.
 == Configuration
 
 TODO: add configuration details if applicable
-
-
-== Reference
-
-TODO
 
 == Examples
 
@@ -213,6 +219,9 @@ to process networking data.
 
 For more information see the {helidon-websocket-example-url}[example].
 
-== Additional information
 
-More information: https://datatracker.ietf.org/doc/html/rfc6455
+== Reference
+
+* https://projects.eclipse.org/proposals/eclipse-tyrus[Eclipse Tyrus]
+* https://datatracker.ietf.org/doc/html/rfc6455[WebSocket RFC 6455]
+* https://helidon.io/docs/v2/apidocs/io.helidon.microprofile.tyrus/module-summary.html[Helidon MicroProfile Tyrus JavaDoc]
