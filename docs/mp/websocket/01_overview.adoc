@@ -33,9 +33,7 @@
 - <<Maven Coordinates, Maven Coordinates>>
 - <<Usage, Usage>>
 - <<API, API>>
-- <<Configuration, Configuration>>
 - <<Examples, Examples>>
-- <<Additional Information, Additional Information>>
 - <<Reference, Reference>>
 
 == Overview
@@ -96,12 +94,6 @@ they usually result in more succinct and easier-to-read code.
 |This method level annotation can be used to decorate a Java method that wishes to be called when a web socket session is closing.
 
 |===
-
-
-
-== Configuration
-
-TODO: add configuration details if applicable
 
 == Examples
 
