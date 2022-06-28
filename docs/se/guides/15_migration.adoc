@@ -20,13 +20,16 @@
 :h1Prefix: SE
 :description: Helidon Upgrade Guide
 :keywords: helidon, porting, migration, upgrade, incompatibilities
-:helidon-uc-flavor: SE
-:helidon-lc-flavor: se
+:flavor-uc: SE
+:flavor-lc: se
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/attributes.adoc[]
 
 In Helidon 2 we have made some changes to APIs and runtime behavior. This guide
 will help you migrate a Helidon SE 1.x application to 2.x.
 
-include::../../common/guides/migration.adoc[]
+include::{rootdir}/includes/guides/migration.adoc[]
 
 == Getters
 

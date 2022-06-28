@@ -16,14 +16,15 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-:javadoc-base-url-api: {javadoc-base-url}io.helidon.config/io/helidon/oci
-
 = OCI Vault
 :h1Prefix: SE
 :description: Helidon OCI Vault integration
 :keywords: oci, vault
-:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 :feature-name: OCI Vault
+:rootdir: {docdir}/../..
+:imagesdir: {rootdir}/images
+
+include::{rootdir}/includes/attributes.adoc[]
 
 The Helidon SE OCI Vault integration provides a reactive API Oracle Cloud Vault features.
 
@@ -31,7 +32,7 @@ The Helidon SE OCI Vault integration provides a reactive API Oracle Cloud Vault 
 
 WARNING: Helidon integration with Oracle Cloud Infrastructure is still experimental and not intended for production use. APIs and features have not yet been fully tested and are subject to change.
 
-include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+include::{rootdir}/includes/dependencies.adoc[]
 
 [source,xml]
 ----

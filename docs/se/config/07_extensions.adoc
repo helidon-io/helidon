@@ -16,25 +16,26 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-:javadoc-base-url-api: {javadoc-base-url}io.helidon.config/io/helidon/config
-
 = Extensions
 :h1Prefix: SE
 :description: Helidon config extensions
 :keywords: helidon, config
+:plantumlconfig: {docdir}/_plantuml-config.txt
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/attributes.adoc[]
 
 Developer-provided extensions influence how the config system behaves.
 
-The <<se/config/01_introduction.adoc,config system introduction>> explains the design of the config
+The xref:01_introduction.adoc[config system introduction] explains the design of the config
 system and how its parts work together to read and parse config data, convert it
 to Java types, fine-tune the look-up of config data, and reload and
 reprocess data when it changes. _Config extensions_ provided by the application
-modify and expand the way the config system performs these steps. 
+modify and expand the way the config system performs these steps.
 
 == Introduction
 Each config extension implements one of the interfaces defined in the Configuration SPI:
 
-// TODO 
 //Once our asciidoc processing handles labeled lists, uncomment the following
 //and use it instead of the bulleted list which follows:
 //`ConfigSource`:: Loads raw configuration data from a given type of source and
@@ -141,8 +142,8 @@ The default value is 100. A _lower_ priority value represents _greater_ importan
 
 The config system includes built-in support for several types of sources
 (for example, Java `String`, `Readable`, `Properties`, and `Map`
-objects - see link:{javadoc-base-url-api}/ConfigSources.html[`ConfigSources`]).
-Implement a link:{javadoc-base-url-api}/spi/ConfigSource.html[`ConfigSource`] to
+objects - see link:{config-javadoc-base-url}/ConfigSources.html[`ConfigSources`]).
+Implement a link:{config-javadoc-base-url}/spi/ConfigSource.html[`ConfigSource`] to
 load raw configuration data from a type of source that the config system does
 not already support.
 
@@ -196,7 +197,7 @@ together {
 ConfigSource -[hidden]> ConfigContext
 ----
 
-For config sources that work directly with config nodes, the followin API is available.
+For config sources that work directly with config nodes, the following API is available.
 These interfaces have an implementation provided by Helidon.
 The interfaces `ConfigNode`, `ObjectNode`, `ValueNode` and
 `ListNode` represent the in-memory data structure for loaded and parsed configuration data.
@@ -267,7 +268,7 @@ This can be always
 The parsing step converts config data in some format into the corresponding in-memory representation of config ``ObjectNode``s.
 The config system can already parse several data formats (for example Java `Properties`, YAML, and HOCON).
 Implement the
-link:{javadoc-base-url-api}/spi/ConfigParser.html[`ConfigParser`] SPI to allow the config system to handle additional formats.
+link:{config-javadoc-base-url}/spi/ConfigParser.html[`ConfigParser`] SPI to allow the config system to handle additional formats.
 
 [plantuml,config/spi-ConfigParser,png,title="ConfigParser SPI",align="center"]
 ----
@@ -298,7 +299,7 @@ The `ConfigParser.Content` interface defines operations on the content that is t
 The application can register parsers for a builder by invoking `Config.Builder#addParser(ConfigParser)`.
 The config system also uses the Java service loader mechanism to load automatically, for all builders, any parsers listed in the
 `META-INF/services/io.helidon.config.spi.ConfigParser` resource on the runtime classpath.
-Prevent autoloading of parsers for a given builder by invoking `Config.Builder#disableParserServices()`.
+Prevent auto loading of parsers for a given builder by invoking `Config.Builder#disableParserServices()`.
 
 `ConfigParser` accepts `@Priority`.
 See <<priority-info, About Priority>>.
@@ -324,19 +325,19 @@ When the application retrieves a configuration value the config system first use
 the relevant config sources and filters. It then applies any _overrides_ the
 application has provided. Each override has:
 
-* a `Predicate<Config.Key>` (a boolean-valued function that operates on 
-the config key), and 
+* a `Predicate<Config.Key>` (a boolean-valued function that operates on
+the config key), and
 * a replacement, _overriding_, `String` value the config system should use if the predicate evaluates to true.
 
 To furnish overrides to the config system, implement the
-link:{javadoc-base-url-api}/spi/OverrideSource.html[`OverrideSource`] SPI one or more times and pass instances of those implementations to the config builder's
-link:{javadoc-base-url-api}/Config.Builder.html#overrides-java.util.function.Supplier-[`overrides`]
+link:{config-javadoc-base-url}/spi/OverrideSource.html[`OverrideSource`] SPI one or more times and pass instances of those implementations to the config builder's
+link:{config-javadoc-base-url}/Config.Builder.html#overrides-java.util.function.Supplier-[`overrides`]
 method.
 The config system will apply the overrides returned from each
 `OverrideSource` to each config key requested from a `Config` that is based on that `Config.Builder`.
 
 To support custom override sources in config profiles, also implement the
-link:{javadoc-base-url-api}/spi/OverrideSourceProvider.html[`OverrideSourceProvider`] service loader SPI
+link:{config-javadoc-base-url}/spi/OverrideSourceProvider.html[`OverrideSourceProvider`] service loader SPI
 
 [plantuml,config/spi-OverrideSource,png,title="OverrideSource SPI",align="center"]
 ----
@@ -351,48 +352,48 @@ Note that override sources can also implement `PollableSource`, and `WatchableSo
 
 Before returning a `String` from `Config.value()` the config system applies any _filters_ set up on the `Config.Builder` used to create the config tree that contains the config node of interest.
 The application provides filters as implementations of the
-link:{javadoc-base-url-api}/spi/ConfigFilter.html[`ConfigFilter`] interface.
+link:{config-javadoc-base-url}/spi/ConfigFilter.html[`ConfigFilter`] interface.
 Each filter is a function which accepts a `Config.Key` and an input `String` value and returns a `String` value the config system should use for that key going forward.
-The filter can return the original value or return some other value. 
+The filter can return the original value or return some other value.
 
-The application registers filters and filter providers by passing `ConfigFilter` 
+The application registers filters and filter providers by passing `ConfigFilter`
 implementations to one of the config builder
-link:{javadoc-base-url-api}/Config.Builder.html[`addFilter` methods]. The config 
-system also uses the Java service loader mechanism to load 
-additional filters automatically, for all builders, using 
-the service interface described in the following table. Prevent a given 
+link:{config-javadoc-base-url}/Config.Builder.html[`addFilter` methods]. The config
+system also uses the Java service loader mechanism to load
+additional filters automatically, for all builders, using
+the service interface described in the following table. Prevent a given
 builder from using the auto-loaded filters by invoking the
-link:{javadoc-base-url-api}/Config.Builder.html#disableFilterServices--[`disableFilterServices`]
+link:{config-javadoc-base-url}/Config.Builder.html#disableFilterServices--[`disableFilterServices`]
 method.
 
 .Config SPI Interfaces for Filtering
 |===
 |Interface |Method |Usage
 
-|link:{javadoc-base-url-api}/spi/ConfigFilter.html[`ConfigFilter`]
+|link:{config-javadoc-base-url}/spi/ConfigFilter.html[`ConfigFilter`]
 
 Accepts `@Priority`. See <<priority-info, About Priority>>.
 |`String apply(Config.Key key, String stringValue);`
-|Accepts a key and the corresponding `String` value and 
+|Accepts a key and the corresponding `String` value and
 returns the `String` which the config system should use for that key.
 |===
 
 === Initializing Filters
 The `ConfigFilter` JavaDoc describes multiple methods for adding filters to a
-`Config.Builder`. Some accept a `ConfigFilter` directly and some accept a provider 
+`Config.Builder`. Some accept a `ConfigFilter` directly and some accept a provider
 function which, when passed a `Config` instance, returns a `ConfigFilter`.
 
-*_Neither a `ConfigFilter` nor a provider function which furnishes one should 
+*_Neither a `ConfigFilter` nor a provider function which furnishes one should
 access the `Config` instance passed to the provider function._*
 
 Instead, implement the `ConfigFilter.init(Config)` method on the filter. The config
-system invokes the filters' `init` methods according to the filters' `@Priority` 
-order. 
+system invokes the filters' `init` methods according to the filters' `@Priority`
+order.
 
 Recall that whenever any code invokes `Config.get`, the `Config` instance
 invokes the `apply` method of _all_ registered filters. By the time the application
 retrieves config this way the config system will have run the `init` method on all
-the filters. _But note that when a filter's `init` method invokes `Config.get`, the 
+the filters. _But note that when a filter's `init` method invokes `Config.get`, the
 `init` methods of lower-priority filters will not yet have run._
 
 [plantuml, config/spi-ConfigFilter, png, title="ConfigFilter SPI", align="center"]
@@ -404,12 +405,12 @@ interface ConfigFilter {
 
 == ConfigMapperProvider SPI [[Config-SPI-ConfigMapperProvider]]
 
-The config system provides built-in mappings from `String` values to various Java 
-types. (See link:{javadoc-base-url-api}/ConfigMappers.html[`ConfigMappers`].) 
+The config system provides built-in mappings from `String` values to various Java
+types. (See link:{config-javadoc-base-url}/ConfigMappers.html[`ConfigMappers`].)
 
 To handle mappings to other types the application can register
-custom mappers with the config system by implementing the 
-link:{javadoc-base-url-api}/spi/ConfigMapperProvider.html[`ConfigMapperProvider`]
+custom mappers with the config system by implementing the
+link:{config-javadoc-base-url}/spi/ConfigMapperProvider.html[`ConfigMapperProvider`]
  SPI.
 
 Such providers return a map, with entries in which:
@@ -441,13 +442,13 @@ For `Config.as(Class)`:
 For `Config.as(GenericType)` - the first two steps are skipped.
 
 The config system also uses the Java `ServiceLoader` mechanism to load automatically,
-for all builders, any mappers returned by the providers listed in the 
+for all builders, any mappers returned by the providers listed in the
 `META-INF/services/io.helidon.config.spi.ConfigMapperProvider` resource on the
-runtime classpath. The application can prevent autoloading of mappers for a
+runtime classpath. The application can prevent auto loading of mappers for a
 given builder by invoking `Config.Builder#disableMapperServices()`. Note
 that the built-in mappers described in `ConfigMappers` still operate.
 
-Mapper providers accept `@Priority`. See <<priority-info, About Priority>>. 
+Mapper providers accept `@Priority`. See <<priority-info, About Priority>>.
 
 [plantuml, config/spi-ConfigMapperProvider, png, title="ConfigMapperProvider SPI", align="center"]
 ----
@@ -482,9 +483,9 @@ module my.module {
 
 Once it loads a `Config` tree from ``ConfigSource``s the config system does not itself change the in-memory `Config` tree.
 Even so, the underlying data available via the tree's ``ConfigSource``s can change.
-Implementations of link:{javadoc-base-url-api}/spi/PollingStrategy.html[`PollingStrategy`]
+Implementations of link:{config-javadoc-base-url}/spi/PollingStrategy.html[`PollingStrategy`]
 may trigger regular check whether a source has new data.
-Implementation of link:{javadoc-base-url-api}/spi/ChangeWatcher.html[`ChangeWatcher`]
+Implementation of link:{config-javadoc-base-url}/spi/ChangeWatcher.html[`ChangeWatcher`]
 may watch the underlying source for changes and trigger an update.
 
 === PollingStrategy SPI
@@ -556,17 +557,17 @@ To support change watchers that can be configured in config profile, also implem
 
 == RetryPolicy SPI [[Config-SPI-RetryPolicy]]
 
-The builder for each `ConfigSource` and `OverrideSource` accepts a 
-link:{javadoc-base-url-api}/spi/RetryPolicy.html[`RetryPolicy`] 
-governing if and how the source should deal with failures loading the underlying 
-data. 
+The builder for each `ConfigSource` and `OverrideSource` accepts a
+link:{config-javadoc-base-url}/spi/RetryPolicy.html[`RetryPolicy`]
+governing if and how the source should deal with failures loading the underlying
+data.
 
 A retry policy accepts a function, the invocation of which the policy will
-govern according to its own implementation. 
-Applications can use the predefined policies in 
-link:{javadoc-base-url-api}/RetryPolicies.html[`RetryPolicies`], such as 
+govern according to its own implementation.
+Applications can use the predefined policies in
+link:{config-javadoc-base-url}/RetryPolicies.html[`RetryPolicies`], such as
 `RetryPolicies.justCall` which simply invokes the function without any retry.
-That class also exposes a builder for constructing a time-based retry policy, 
+That class also exposes a builder for constructing a time-based retry policy,
 with several parameters:
 
 .Parameters Controlling Built-in `RetryPolicy`
@@ -576,14 +577,14 @@ with several parameters:
 |`delay` |Initial delay between calls to the function | 200 ms
 |`delayFactor` |Multiplier applied to `delay` on each successive call | 2
 |`callTimeout` |Time limit for each individual call of the function | 500 ms
-|`overallTimeout` |Limit for the total elapsed time attempting to 
+|`overallTimeout` |Limit for the total elapsed time attempting to
 call the function successfully, including delays between calls | 2 s
 |===
 
 The actual delay between function call starts as `delay` and changes by the factor
 `delayFactor` on each successive attempt.
 
-Note that the job of each retry policy is to call the provided function 
+Note that the job of each retry policy is to call the provided function
 successfully. As such, the policy must perform the first attempt as well
 as any retries.
 

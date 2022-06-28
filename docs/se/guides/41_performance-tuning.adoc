@@ -21,7 +21,10 @@
 :description: Helidon SE Performance Tuning
 :feature-name: Performance Tuning
 :microprofile-bundle: false
-= :keywords: helidon, se, performance, tuning
+:keywords: helidon, se, performance, tuning
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/attributes.adoc[]
 
 In this guide you fill find basic advice for performance tuning of your Helidon application. Most of them target Netty tuning, as Helidon is based on it.
 You should also consider configuring/tuning Java heap size as per any Java application.

@@ -23,9 +23,11 @@
 :keywords: helidon, mp, scheduling
 :h1Prefix: MP
 :feature-name: Scheduling
-:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+:rootdir: {docdir}/../..
 
-include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+include::{rootdir}/includes/attributes.adoc[]
+include::{rootdir}/includes/dependencies.adoc[]
+
 [source,xml]
 ----
 <dependency>
@@ -54,9 +56,9 @@ public void methodName() {
 All values defined with the annotation can be overridden from the config.
 
 [source,yaml]
-.Overiding annotated values from config
+.Overriding annotated values from config
 ----
-fully.quallified.ClassName.methodName:
+fully.qualified.ClassName.methodName:
   schedule:
     initial-delay: 5
     delay: 15
@@ -67,7 +69,7 @@ Metadata like human-readable interval description or configured values are avail
 FixedRateInvocation injected as method parameter.
 
 [source,java]
-.Example with ivocation metadata
+.Example with invocation metadata
 ----
 @FixedRate(initialDelay = 5, value = 10, timeUnit = TimeUnit.MINUTES)
 public void methodName(FixedRateInvocation inv) {
@@ -89,7 +91,7 @@ public void methodName() {
 }
 ----
 
-include::../../shared/scheduling/01_cron.adoc[lines=19..]
+include::{rootdir}/includes/scheduling/cron.adoc[lines=19..]
 
 Metadata like human-readable interval description or configured values are available through
 CronInvocation injected as method parameter.
@@ -108,7 +110,7 @@ public void methodName(CronInvocation inv) {
 [source,yaml]
 .Overriding annotated values from config
 ----
-fully.quallified.ClassName.methodName:
+fully.qualified.ClassName.methodName:
   schedule:
     cron: "* * * * * ?"
     concurrent: false

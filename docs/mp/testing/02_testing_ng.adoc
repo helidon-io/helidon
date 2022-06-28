@@ -18,15 +18,17 @@
 
 = Testing with Test NG
 :h1Prefix: MP
-:pagename: testing_ng
 :description: Helidon Testing with TestNG
 :keywords: helidon, mp, test, testing, testng
 :feature-name: Testing with TestNG
-:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/attributes.adoc[]
 
 Helidon provides built-in test support for CDI testing in TestNG.
 
-include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+include::{rootdir}/includes/dependencies.adoc[]
+
 [source,xml]
 ----
 <dependency>

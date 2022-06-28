@@ -20,7 +20,8 @@
 :h1Prefix: SE
 :description: Dependency-less reactive operators
 :keywords: helidon, reactive, streams, multi, single
-:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 :feature-name: Reactive Engine
+:rootdir: {docdir}/../..
 
-include::../../shared/reactivestreams/02_engine.adoc[]
+include::{rootdir}/includes/common-attributes.ado
+include::{rootdir}/includes/reactivestreams/engine.adoc[]

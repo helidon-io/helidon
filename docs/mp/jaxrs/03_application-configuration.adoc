@@ -20,6 +20,9 @@
 :h1Prefix: MP
 :description: Helidon MicroProfile application configuration
 :keywords: helidon, microprofile, micro-profile
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/attributes.adoc[]
 
 Your application can use the MicroProfile Config or
  Helidon Config (or both). MicroProfile Config offers portability to other
@@ -40,7 +43,7 @@ public MyResource(@ConfigProperty(name="app.name") String appName) {
 }
 ----
 
-You can also inject the whole configuration instance, 
+You can also inject the whole configuration instance,
 either `io.helidon.config.Config` or
  `org.eclipse.microprofile.config.Config`.
 [source,java]

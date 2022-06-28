@@ -16,14 +16,16 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
+= WebServer HTTP Compression
 :h1Prefix: SE
 :description: Helidon WebServer HTTP Compression
 :keywords: helidon, http, compression, http compression, webserver, reactive webserver
+:rootdir: {docdir}/../..
 
-= WebServer HTTP Compression
+include::{rootdir}/includes/attributes.adoc[]
 
 HTTP compression can improve bandwidth utilization and transfer speeds in certain scenarios. It
-requires a few extra CPU cycles for compressing and uncompressing, but these can be offset
+requires a few extra CPU cycles for compressing and un-compressing, but these can be offset
 if data is transferred over low-bandwidth network links.
 
 A client advertises the compression encodings it supports at request time, and the

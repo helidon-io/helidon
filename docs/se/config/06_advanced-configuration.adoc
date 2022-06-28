@@ -16,14 +16,15 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-:javadoc-base-url-api: {javadoc-base-url}io.helidon.config/io/helidon/config
-
 = Advanced Configuration Topics
 :h1Prefix: SE
 :description: Helidon config advanced configuration
 :keywords: helidon, config, meta
 :toc: preamble
 :toclevels: 4
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/attributes.adoc[]
 
 This section discusses several advanced topics related to Helidon configuration.
 
@@ -116,13 +117,13 @@ assert secrets.get("password")                   // <4>
 <4> ...and the key `password` to `^ery$ecretP&ssword`.
 
 Remember that your application can process the contents of a given file
-as configuration. See the <<se/config/02_config-sources.adoc,config sources>> section
-and the link:{javadoc-base-url-api}/ConfigSources.html#file-java.lang.String-[`ConfigSources.file`]
+as configuration. See the xref:02_config-sources.adoc[config sources] section
+and the link:{config-javadoc-base-url}/ConfigSources.html#file-java.lang.String-[`ConfigSources.file`]
 JavaDoc.
 
 === In-memory Config Sources
 The config system provides several ways to create a `Config` tree from data
-already in memory. See the link:{javadoc-base-url-api}/ConfigSources.html[`ConfigSources` javadoc]
+already in memory. See the link:{config-javadoc-base-url}/ConfigSources.html[`ConfigSources` javadoc]
 for further details. The numerous variants of the `from` method construct
 `ConfigSource` or `Builder<ConfigSource>` instances.
 
@@ -184,7 +185,7 @@ in different subtrees.
 
 The config system lets you assign a prefix to all keys
 from a given source using the
-link:{javadoc-base-url-api}/ConfigSources.html#prefixed-java.lang.String-java.util.function.Supplier-[`ConfigSources.prefixed`] method.
+link:{config-javadoc-base-url}/ConfigSources.html#prefixed-java.lang.String-java.util.function.Supplier-[`ConfigSources.prefixed`] method.
 The following example shows two YAML files as config sources
 and the code to load each with a different prefix into a single `Config` tree:
 
@@ -260,7 +261,7 @@ The config system provides the
 `FallbackMergingStrategy`
 which implements the default, "first wins" algorithm. You can write your own
 implementation of
-link:{javadoc-base-url-api}/ConfigSources.MergingStrategy.html[`ConfigSources.MergingStrategy`]
+link:{config-javadoc-base-url}/ConfigSources.MergingStrategy.html[`ConfigSources.MergingStrategy`]
 and use it instead to provide a different algorithm.
 
 [source,java]
@@ -467,7 +468,7 @@ containing config tree with the config tree resulting from the additional parse.
 
 === Loading Config using Meta-configuration [[Config-Advanced-metaconfig]]
 
-This section is now available in <<se/config/09_config-profiles.adoc,config profiles>>,
+This section is now available in xref:09_config-profiles.adoc[config profiles],
  which make meta-configuration obsolete - you can achieve the same with less configuration.
 A profile file is a meta-configuration file selected by the rules defined in the link above.
 
@@ -481,7 +482,7 @@ list of possible sources.
 
 ==== Loading Config by Specifying a Meta-configuration File [[Config-Advanced-Sources-MetaSource]]
 Your application loads
-the configuration specified by a meta-config file by invoking the link:{javadoc-base-url-api}/MetaConfig.html#config-io.helidon.config.Config-[`MetaConfig.config(Config)`]
+the configuration specified by a meta-config file by invoking the link:{config-javadoc-base-url}/MetaConfig.html#config-io.helidon.config.Config-[`MetaConfig.config(Config)`]
 method, passing a config object read from the meta-config source as the argument;
 
 If you desire a `Config.Builder` instead of a fully built `Config` instance,
@@ -491,7 +492,7 @@ before using it to construct a `Config` tree. The config system interprets the m
 as directions for how to build a config tree, rather than as the config data itself.
 
 ==== Loading Config from an Implicit Meta-configuration File [[Config-Advanced-Config-MetaConfig]]
-The <<se/config/01_introduction.adoc,introduction>> section shows how to use
+The xref:01_introduction.adoc[introduction] section shows how to use
 `Config.create()` to load config from one of several possible default config files.
 That same method also searches for one of several possible default meta-config files
 from which to load config sources to be used for the default config.
@@ -515,13 +516,13 @@ first on the file system in current directory, then on classpath, checked in thi
 ... `application.properties` - configuration file in Java Properties format
 
 Remember that the config system will check for these default meta-config and config files
-only if the classpath includes the corresponding parsers. The introduction section on <<se/config/01_introduction.adoc#built-in-formats,built-in formats>>
+only if the classpath includes the corresponding parsers. The introduction section on xref:01_introduction.adoc#built-in-formats[built-in formats]
 section describes this further.
 
-See javadoc link:{javadoc-base-url-api}/Config.Builder.html#config-io.helidon.config.Config-[`Config.Builder.config(Config)`].
+See javadoc link:{config-javadoc-base-url}/Config.Builder.html#config-io.helidon.config.Config-[`Config.Builder.config(Config)`].
 
 ==== Meta-configuration File Format
-This section is now available in <<se/config/09_config-profiles.adoc#Config-Profile-Format,config profile format>>
+This section is now available in xref:09_config-profiles.adoc#Config-Profile-Format[config profile format]
 
 ==== Loading Config using Meta-configuration
 Here is how your application can use meta-configuration in a particular resource on the
@@ -538,8 +539,8 @@ Config config = MetaConfig.config(metaConfig); // <2>
 all the actual sources declared in the meta-configuration.
 
 == Configuration Key
-As described in the <<se/config/03_hierarchical-features.adoc#accessByKey,hierarchical features
-section>> each config node (except the root) has a non-null key. Here is the formal
+As described in the xref:03_hierarchical-features.adoc#accessByKey[hierarchical features
+section] each config node (except the root) has a non-null key. Here is the formal
 definition of what keys can be:
 [source,abnf]
 .The ABNF syntax of config key
@@ -614,8 +615,8 @@ before returning the value, according to _filters_, _overrides_, and
 _tokens_. The config system provides some built-in instances of these
 you can use, and you can add your own as described in the
 sections which describe
-<<se/config/07_extensions.adoc#Config-SPI-ConfigFilter,filters>> and
-<<se/config/07_extensions.adoc#Config-SPI-OverrideSource,overrides>>.
+xref:07_extensions.adoc#Config-SPI-ConfigFilter[filters] and
+xref:07_extensions.adoc#Config-SPI-OverrideSource[overrides].
 
 Your application can add filters and overrides explicitly to a config builder
 and the config system by default uses the Java service loader mechanism to
@@ -628,10 +629,10 @@ Each filter accepts a key and the value as defined in the source, and returns
 the value to be used. The filter can leave the value unchanged or
 alter it, as it sees fit.
 
-The built-in link:{javadoc-base-url-api}/ConfigFilters.html#valueResolving--[value-resolving]
+The built-in link:{config-javadoc-base-url}/ConfigFilters.html#valueResolving--[value-resolving]
 filter enables the token substitution described below.
 
-See the link:{javadoc-base-url-api}/spi/ConfigFilter.html[`ConfigFilter`] JavaDoc
+See the link:{config-javadoc-base-url}/spi/ConfigFilter.html[`ConfigFilter`] JavaDoc
 for more information.
 
 === Overrides
@@ -657,7 +658,7 @@ in the overrides sources. Once the config system finds an override entry in whic
 the key expression matches the configuration key, the system returns that entry's
 value for the key being processed.
 
-See the link:{javadoc-base-url-api}/spi/OverrideSource.html[`OverrideSource]` JavaDoc
+See the link:{config-javadoc-base-url}/spi/OverrideSource.html[`OverrideSource]` JavaDoc
 for more detail.
 
 === Tokens
@@ -786,7 +787,7 @@ shared across all `Config` instances.
 Your application can invoke the builder's `changesExecutor` method to use a
 different `ScheduledExecutorService` instance.
 The builder returned by the `from` methods mentioned above is a
-link:{javadoc-base-url-api}/ConfigSources.CompositeBuilder.html[CompositeBuilder]
+link:{config-javadoc-base-url}/ConfigSources.CompositeBuilder.html[CompositeBuilder]
 which extends `Config.Builder`.
 
 Because a composite source might yield more numerous change events -- because of the
@@ -855,7 +856,7 @@ change events.
 === Retry Policy Custom Executor
 You can control which executor a retry policy should use for its work.
 The `RetryPolicies.repeat(int retries)` method returns
-a link:{javadoc-base-url-api}/RetryPolicies.Builder.html[RetryPolicies.Builder].
+a link:{config-javadoc-base-url}/RetryPolicies.Builder.html[RetryPolicies.Builder].
 Your application can invoke the retry policy builder's `executor` method to
 specify which `ScheduledExecutorService` instance it should use to schedule and
 execute delayed retries. By default the config system uses a separate thread

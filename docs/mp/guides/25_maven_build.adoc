@@ -20,9 +20,12 @@
 :h1Prefix: MP
 :description: Helidon Maven Guide
 :keywords: helidon, guide, maven, build
-:helidon-uc-flavor: MP
-:helidon-lc-flavor: mp
+:flavor-uc: MP
+:flavor-lc: mp
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/attributes.adoc[]
 
 This guide describes Helidon's support for Maven projects.
 
-include::../../common/guides/maven_build.adoc[]
+include::{rootdir}/includes/guides/maven-build.adoc[]

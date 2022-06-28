@@ -18,22 +18,21 @@
 
 = Fault Tolerance Introduction
 :h1Prefix: MP
-:pagename: faulttolerance-introduction
 :description: Fault Tolerance Introduction
 :keywords: helidon, webserver, faulttolerance, mp
-:fault-tolerance-spec-url: https://github.com/eclipse/microprofile-fault-tolerance
-:scheduled-executor-config: {javadoc-base-url}io.helidon.common.configurable/io/helidon/common/configurable/ScheduledThreadPoolSupplier.Builder.html#config(io.helidon.config.Config)
-:executor-config: {javadoc-base-url}io.helidon.common.configurable/io/helidon/common/configurable/ThreadPoolSupplier.Builder.html#config(io.helidon.config.Config)
 :feature-name: MicroProfile Fault Tolerance
-:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+:rootdir: {docdir}/../..
 :microprofile-bundle: true
 
-Fault Tolerance is part of the MicroProfile set of {fault-tolerance-spec-url}[specifications]. This API defines mostly
+include::{rootdir}/includes/attributes.adoc[]
+
+Fault Tolerance is part of the MicroProfile set of {microprofile-fault-tolerance-spec-url}[specifications]. This API defines mostly
 annotations that improve application robustness by providing support to conveniently handle
 error conditions (faults) that may occur in real-world applications. Examples include
 service restarts, network delays, temporal infrastructure instabilities, etc.
 
-include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+include::{rootdir}/includes/dependencies.adoc[]
+
 [source,xml]
 ----
      <dependency>
@@ -68,5 +67,5 @@ NOTE: There is currently _no support_ to configure these executor properties via
 `microprofile-config.properties` file.
 
 For a complete set of properties available to configure these executors, see
-link:{executor-config}[ServerThreadPoolSupplier] and
-link:{scheduled-executor-config}[ScheduledThreadPoolSupplier].
+link:{configurable-javadoc-base-url}/ThreadPoolSupplier.Builder.html#config(io.helidon.config.Config)[ServerThreadPoolSupplier] and
+link:{configurable-javadoc-base-url}/ScheduledThreadPoolSupplier.Builder.html#config(io.helidon.config.Config)[ScheduledThreadPoolSupplier].

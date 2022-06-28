@@ -20,16 +20,19 @@
 :h1Prefix: MP
 :description: Helidon MP Upgrade Guide
 :keywords: helidon, porting, migration, upgrade, incompatibilities
-:helidon-uc-flavor: MP
-:helidon-lc-flavor: mp
+:flavor-uc: MP
+:flavor-lc: mp
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/attributes.adoc[]
 
 
 In Helidon 2.x we have made some changes to APIs and runtime behavior. This guide
 will help you migrate a Helidon MP 1.x application to 2.x.
 
- 
 
-include::../../common/guides/migration.adoc[]
+
+include::{rootdir}/includes/guides/migration.adoc[]
 
 == MicroProfile Bundles
 

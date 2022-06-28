@@ -20,11 +20,15 @@
 :h1Prefix: MP
 :description: Helidon MP Tracing Support
 :feature-name: MicroProfile Tracing
-:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+:keywords: helidon, tracing, microprofile, micro-profile
 :microprofile-bundle: true
-= :keywords: helidon, tracing, microprofile, micro-profile
+:flavor-uc: MP
+:flavor-lc: mp
+:rootdir: {docdir}/../..
 
-include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+include::{rootdir}/includes/attributes.adoc[]
+
+include::{rootdir}/includes/dependencies.adoc[]
 
 [source,xml]
 ----
@@ -38,8 +42,8 @@ include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 Tracing support is implemented for both for Helidon MP Server and for Jersey client.
 In addition, you need to add one of the tracer implementations:
 
-- <<mp/tracing/02_zipkin.adoc,Zipkin>>
-- <<mp/tracing/03_jaeger.adoc,Jaeger>>
+- xref:02_zipkin.adoc[Zipkin]
+- xref:03_jaeger.adoc[Jaeger]
 
 You can configure a custom service name using the `tracing.service` configuration property. If this
 property is undefined, name is created from JAX-RS Application name, or `Helidon MP` is used if no application
@@ -53,7 +57,7 @@ All tracer specific configuration is expected in configuration under key `tracin
 tracing.service=event-service
 ----
 
-include::../../shared/tracing/common-config.adoc[]
+include::{rootdir}/includes/tracing/common-config.adoc[]
 
 To disable Helidon tracing for web server and security:
 [source,properties]
@@ -107,9 +111,9 @@ Response response = client.target(serviceEndpoint)
     .get();
 ----
 
-include::../../shared/tracing/common-spans.adoc[]
+include::{rootdir}/includes/tracing/common-spans.adoc[]
 
-==== Configuration using MP Config
+=== Configuration using MP Config
 
 Tracing configuration can be defined in `microprofile-config.properties` file.
 

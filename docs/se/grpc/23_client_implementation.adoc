@@ -16,13 +16,13 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
+= gRPC Client Implementation
 :h1Prefix: SE
-:javadoc-base-url-api: {javadoc-base-url}io.helidon.grpc.client/io/helidon/grpc/client
-:pagename: grpc-server-client-implementation
 :description: Helidon gRPC Client Implementation
 :keywords: helidon, grpc, java
+:rootdir: {docdir}/../..
 
-= gRPC Client Implementation
+include::{rootdir}/includes/attributes.adoc[]
 
 Helidon gRPC client framework allows you to write gRPC clients to access any gRPC
 service implementation. The benefits of using Helidon gRPC Client Framework include:
@@ -31,7 +31,7 @@ service implementation. The benefits of using Helidon gRPC Client Framework incl
   significantly simpler.
 
 * It allows you to configure some of the Helidon value-added features, such
-  as <<08_security.adoc, security>> and <<07_metrics.adoc, metrics collection and interceptors>>
+  as xref:08_security.adoc[security] and xref:07_metrics.adoc[metrics collection and interceptors]
   down to the method level.
 
 * It allows you to easily specify custom marshaller for requests and

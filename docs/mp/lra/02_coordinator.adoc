@@ -23,9 +23,12 @@
 :keywords: helidon, mp, lra
 :h1Prefix: MP
 :feature-name: Long Running Actions
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/attributes.adoc[]
 
 == Coordinator
-Coordinator is a service that tracks all LRA transactions and calls the compensate REST endpoints of 
+Coordinator is a service that tracks all LRA transactions and calls the compensate REST endpoints of
 the participants when the LRA transaction gets cancelled or completes (in case it gets closed).
 In addition, participant also keeps track of timeouts, retries participant calls, and assigns LRA ids.
 
@@ -67,16 +70,16 @@ To use Narayana LRA coordinator with Helidon LRA client you need to add an addit
 </dependency>
 ----
 
-The simplest way to run Narayana LRA coordinator locally: 
+The simplest way to run Narayana LRA coordinator locally:
 
 [source,bash]
 .Downloading and running Narayana LRA coordinator
 ----
-wget https://search.maven.org/remotecontent?filepath=org/jboss/narayana/rts/lra-coordinator-quarkus/5.11.1.Final/lra-coordinator-quarkus-5.11.1.Final-runner.jar \
--O narayana-coordinator.jar \
-&& java -Dquarkus.http.port=8070 -jar narayana-coordinator.jar
+curl -o narayana-coordinator.jar \
+  https://repo1.maven.org/maven2/org/jboss/narayana/rts/lra-coordinator-quarkus/5.11.1.Final/lra-coordinator-quarkus-5.11.1.Final-runner.jar && \
+java -Dquarkus.http.port=8070 -jar narayana-coordinator.jar
 ----
 
-Narayana LRA coordinator is running by default under `lra-coordinator` context, 
-with port `8070` defined in the snippet above you need to configure your Helidon LRA app as follows: 
+Narayana LRA coordinator is running by default under `lra-coordinator` context,
+with port `8070` defined in the snippet above you need to configure your Helidon LRA app as follows:
 `mp.lra.coordinator.url=http://localhost:8070/lra-coordinator`

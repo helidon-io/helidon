@@ -20,6 +20,9 @@
 :h1Prefix: MP
 :description: Helidon MP reactive routing
 :keywords: helidon, rest, reactive, WebServer, route, routing
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/attributes.adoc[]
 
 Since Helidon 1.4
 

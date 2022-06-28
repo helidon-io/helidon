@@ -20,6 +20,9 @@
 :h1Prefix: SE
 :description: Helidon Security containers integration
 :keywords: helidon, security
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/attributes.adoc[]
 
 == Cloud Security Container Integrations
 
@@ -27,7 +30,7 @@ The following containers are integrated with Helidon Security:
 
 === Web server
 
-Integration of <<webserver/01_introduction.adoc,reactive web server>>
+Integration of xref:../webserver/01_introduction.adoc[reactive web server]
 
 [source,xml]
 .Maven Dependency
@@ -86,7 +89,7 @@ security.web-server:
       roles-allowed: ["user"]
 ----
 
-include::../../shared/security/helidon-endpoints.adoc[]
+include::{rootdir}/includes/security/helidon-endpoints.adoc[]
 
 === Jersey
 
@@ -167,7 +170,7 @@ Client client = ClientBuilder.newClient();
 
 try {
     // call the resource, will propagate identity as configured in Security
-    String response = client.target("http://www.google.com")
+    String response = client.target("https://www.google.com")
         .request()
         // configure the security context for this request (as client and targets may be re-used)
         .property(ClientSecurity.PROPERTY_CONTEXT, securityContext)

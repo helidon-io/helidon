@@ -20,9 +20,11 @@
 :toc:
 :toc-placement: preamble
 :h1Prefix: MP
-:pagename: using-cors-in-mp-why-options
 :description: Exploration of why Helidon MP associates the `@CrossOrigin` annotation with `@OPTIONS` methods.
 :keywords: helidon, java, cors, mp, microprofile, jax-rs cross-origin resource sharing
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/attributes.adoc[]
 
 There are some good reasons why it is `@OPTIONS` methods that you decorate with the Helidon MP
 `@CrossOrigin` annotation. Take an informal look at the rationale for this choice.

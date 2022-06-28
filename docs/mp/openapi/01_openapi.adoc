@@ -22,23 +22,17 @@
 :toc-placement: preamble
 :description: Helidon MP OpenAPI Support
 :keywords: helidon, mp, microprofile, openapi
-:helidon-tag: https://github.com/oracle/helidon/tree/{helidon-version}
-:mp-openapi-prefix: https://github.com/eclipse/microprofile-open-api/blob/master
-:mp-openapi-spec: {mp-openapi-prefix}/spec/src/main/asciidoc/microprofile-openapi-spec.adoc
-:openapi-spec: https://github.com/OAI/OpenAPI-Specification
-:helidon-mp-openapi-example: {helidon-tag}/examples/microprofile/openapi-basic
-:jandex-plugin-doc: https://github.com/wildfly/jandex-maven-plugin
-:model-reader-java: {mp-openapi-prefix}/api/src/main/java/org/eclipse/microprofile/openapi/OASModelReader.java
-:filter-java: {mp-openapi-prefix}/api/src/main/java/org/eclipse/microprofile/openapi/OASFilter.java
 :feature-name: MicroProfile OpenAPI
-:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 :microprofile-bundle: true
-:common-openapi-doc: ../../shared/openapi/openapi-shared.adoc
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/attributes.adoc[]
 
 Easily allow your Helidon MP application to serve an OpenAPI document
 that describes your application's endpoints.
 
-include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+include::{rootdir}/includes/dependencies.adoc[]
+
 [source,xml,subs="attributes+"]
 ----
 <dependency> <!--1-->
@@ -58,15 +52,15 @@ include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 
 == OpenAPI support in Helidon MP
 
-You can very simply add support for OpenAPI to your Helidon MP application. This 
+You can very simply add support for OpenAPI to your Helidon MP application. This
 document shows what changes you need to make to your application and how to access
 the OpenAPI document for your application at runtime.
 
 == Changing your application
-Helidon MP conforms to the link:{mp-openapi-spec}[MicroProfile OpenAPI specification],
-which was inspired by the link:{openapi-spec}[OpenAPI spec] itself.
+Helidon MP conforms to the link:{microprofile-open-api-spec-url}[MicroProfile OpenAPI specification],
+which was inspired by the link:https://github.com/OAI/OpenAPI-Specification[OpenAPI spec] itself.
 
-Helidon MP includes a link:{helidon-mp-openapi-example}[complete OpenAPI example]
+Helidon MP includes a link:{helidon-github-tree-url}/examples/microprofile/openapi-basic[complete OpenAPI example]
 based on the MP quick-start sample app.
 
 To use OpenAPI from your Helidon MP app:
@@ -78,10 +72,10 @@ To use OpenAPI from your Helidon MP app:
 === Edit your `pom.xml`
 ==== Building the Jandex index
 A Jandex index stores information about the classes and methods in your app and
-what annotations they have. It allows CDI to process annotations faster during your 
+what annotations they have. It allows CDI to process annotations faster during your
 application's start-up.
 
-Add the link:{jandex-plugin-doc}[Jandex maven plug-in] to the `<build><plugins>` 
+Add the link:https://github.com/wildfly/jandex-maven-plugin[Jandex maven plug-in] to the `<build><plugins>`
 section of your `pom.xml`:
 
 [source,xml,subs="attributes+"]
@@ -100,21 +94,21 @@ section of your `pom.xml`:
     </executions>
 </plugin>
 ----
-When you build your app `maven` should include the index `META-INF/jandex.idx` in 
+When you build your app `maven` should include the index `META-INF/jandex.idx` in
 the JAR.
 
 [NOTE]
 ====
-If you _do not_ modify your build to create 
-the index then the Helidon MP OpenAPI runtime automatically creates one in memory during 
-app start-up. This slows down your app start-up and, depending on how CDI is 
-configured, might inadvertently miss information. 
+If you _do not_ modify your build to create
+the index then the Helidon MP OpenAPI runtime automatically creates one in memory during
+app start-up. This slows down your app start-up and, depending on how CDI is
+configured, might inadvertently miss information.
 
 We _strongly recommend_ using the Jandex plug-in to build the index into your app.
 ====
 
 === Furnish OpenAPI information about your endpoints
-Helidon MP OpenAPI combines information from all of the following sources as it 
+Helidon MP OpenAPI combines information from all of the following sources as it
 builds its in-memory model of your application's API. It constructs the OpenAPI
 document from this internal model. Your application can use one or more of these
 techniques.
@@ -143,30 +137,30 @@ public JsonObject getDefaultMessage() {...}
 You can also define any request parameters the endpoint expects, although this
 endpoint uses none.
 
-This excerpt shows only a few annotations for illustration. The 
-link:{helidon-mp-openapi-example}[Helidon MP OpenAPI example] illustrates more, 
-and the link:{mp-openapi-spec}[MicroProfile OpenAPI spec] describes them all.
+This excerpt shows only a few annotations for illustration. The
+link:{helidon-github-tree-url}/examples/microprofile/openapi-basic[Helidon MP OpenAPI example] illustrates more,
+and the link:{microprofile-open-api-spec-url}[MicroProfile OpenAPI spec] describes them all.
 
 ==== Provide a static OpenAPI file
-Add a static file at `META-INF/openapi.yml`, `META-INF/openapi.yaml`, 
+Add a static file at `META-INF/openapi.yml`, `META-INF/openapi.yaml`,
 or `META-INF/openapi.json`. Tools such as Swagger let you describe your app's API
 and they then generate an OpenAPI document file which you can include in your application
 so OpenAPI can use it.
 
 ==== Write and configure a model reader class
-Write a Java class that implements the OpenAPI 
-link:{model-reader-java}[`org.eclipse.microprofile.openapi.OASModelReader`] interface. Your
+Write a Java class that implements the OpenAPI
+link:{microprofile-open-api-javadoc-url}/OASModelReader.html[`org.eclipse.microprofile.openapi.OASModelReader`] interface. Your
 model reader code programmatically adds elements to the internal model that OpenAPI
-builds. 
+builds.
 
-Change your application's MP configuration to set `mp.openapi.model.reader` as the 
+Change your application's MP configuration to set `mp.openapi.model.reader` as the
 fully-qualified class name of your class.
 
 ==== Write and configure a filter class
-Write a Java class that implements the OpenAPI 
-link:{filter-java}[`org.eclipse.microprofile.openapi.OASFilter`] interface. 
-As OpenAPI composes its internal model, it invokes your filter with each 
-model element _before_ adding the element to the model. Your filter can 
+Write a Java class that implements the OpenAPI
+link:{microprofile-open-api-javadoc-url}/OASFilter.html[`org.eclipse.microprofile.openapi.OASFilter`] interface.
+As OpenAPI composes its internal model, it invokes your filter with each
+model element _before_ adding the element to the model. Your filter can
 accept the element as-is, modify it, or suppress it.
 
 Change your application's configuration to set `mp.openapi.filter` as the full-qualified
@@ -175,10 +169,11 @@ class name of your class.
 === Update your application configuration
 Beyond the two config properties that denote the model reader and filter, Helidon
 MP OpenAPI supports a number of other mandated settings. These are described in the
-link:{mp-openapi-spec}#configuration[configuration section] of the MicroProfile 
+link:{microprofile-open-api-spec-url}#configuration[configuration section] of the MicroProfile
 OpenAPI spec.
 
-include::{common-openapi-doc}[common-config]
+include::{rootdir}/includes/openapi/openapi-common.adoc[common-config]
+
 Assign these settings in `META-INF/microprofile-config.properties`.
 
 
@@ -187,7 +182,7 @@ Now your Helidon MP application will automatically respond to an additional endp
  `/openapi` -- and it will return the OpenAPI document describing the endpoints
 in your application.
 
-By default, per the MicroProfile OpenAPI spec, the default format of the OpenAPI document is YAML. 
+By default, per the MicroProfile OpenAPI spec, the default format of the OpenAPI document is YAML.
 There is not yet an adopted IANA YAML media type, but a proposed one specifically
 for OpenAPI documents that has some support is `application/vnd.oai.openapi`.
 That is what Helidon returns, by default.

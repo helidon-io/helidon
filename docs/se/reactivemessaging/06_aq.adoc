@@ -23,9 +23,11 @@
 :keywords: helidon, se, messaging, jms, aq
 :h1Prefix: SE
 :feature-name: AQ Connector
-:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+:rootdir: {docdir}/../..
 
-include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+include::{rootdir}/includes/attributes.adoc[]
+
+include::{rootdir}/includes/dependencies.adoc[]
 
 [source,xml]
 ----

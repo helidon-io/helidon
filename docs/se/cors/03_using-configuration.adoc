@@ -17,32 +17,27 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Using Configuration for CORS
-:javadoc-base-url-api: {javadoc-base-url}io.helidon.webserver.cors/io/helidon/webserver/cors
-:javadoc-base-url-webserver: {javadoc-base-url}io.helidon.webserver/io/helidon/webserver
 :h1Prefix: SE
-:pagename: cors-configuration
 :description: Helidon CORS Configuration
 :keywords: helidon, java, cors, configuration
-:cors-se-intro: 01_introduction.adoc
 :mapped-config-top-key: my-cors
-:helidon-tag: https://github.com/oracle/helidon/tree/{helidon-version}
-:helidon-se-cors-example: {helidon-tag}/examples/cors
 :mapped-config-id-callout: Assigns a unique identifier for this mapped CORS config section.
-:common-page-prefix-inc: ../../shared/cors/common_shared.adoc
 :cors-config-table-exclude-methods:
 :!cors-config-table-exclude-keys:
 :basic-table-intro: The table below lists the configuration keys that identify the CORS characteristics.
-:helidon-variant: SE
 :cors-config-key-explanation: , identified by a configuration key of your choosing,
+:flavor-uc: SE
+:flavor-lc: se
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/attributes.adoc[]
 
 You can use configuration in combination with the Helidon CORS SE API to add CORS support to your resources by
 replacing some Java code with declarative configuration. This also gives your users a way to override the
-CORS behavior of your services without requiring the code to change.  
+CORS behavior of your services without requiring the code to change.
 
-include::{common-page-prefix-inc}[tag=cors-configuration-formats-intro]
-
-include::{common-page-prefix-inc}[tag=basic-cross-origin-config]
-
+include::{rootdir}/includes/cors/cors-common.adoc[tag=cors-configuration-formats-intro]
+include::{rootdir}/includes/cors/cors-common.adoc[tag=basic-cross-origin-config]
 
 === Mapped Cross-Origin Configuration
 In some cases, you or your users might want to configure CORS behavior based on URL path matching.
@@ -61,14 +56,14 @@ In some cases, you or your users might want to configure CORS behavior based on 
 // for the prefix and suffix and just have the including file include the mapped-config instead of
 // include the prefix, then provide its own callout 1, then include the suffix.
 //
-include::{common-page-prefix-inc}[tag=mapped-config-prefix]
+include::{rootdir}/includes/cors/cors-common.adoc[tag=mapped-config-prefix]
 <1>  {mapped-config-id-callout}
-include::{common-page-prefix-inc}[tag=mapped-config-suffix]
+include::{rootdir}/includes/cors/cors-common.adoc[tag=mapped-config-suffix]
 
 [[using-config-from-app]]
 == Using CORS Configuration in the Application
 You use configuration in combination with the Helidon CORS SE API
-to add CORS support to your resources. The example in <<se/cors/02_using-the-api.adoc#se-api-routing-example,Sample Routing Setup Using the `CrossOriginConfig` API>>
+to add CORS support to your resources. The example in xref:02_using-the-api.adoc#se-api-routing-example[Sample Routing Setup Using the `CrossOriginConfig` API]
 uses the low-level Helidon CORS SE API to create
 a `CrossOriginConfig` instance that is then used as part of a `CorsSupport` instance to create the routing rules.
 As an alternative to using the low-level API, this example uses config to create the
@@ -126,5 +121,5 @@ rebuild and restart your application for any changes to take effect.
 == Next Steps
 
 * Use these same configuration techniques to control the behavior of the CORS-enabled built-in services.
-<<se/cors/04_support-in-builtin-services.adoc, Learn more.>>
-* See the Helidon CORS support in action by building and running the link:{helidon-se-cors-example}[CORS example].
+ xref:04_support-in-builtin-services.adoc[Learn more].
+* See the Helidon CORS support in action by building and running the link:{helidon-github-tree-url}/examples/cors[CORS example].

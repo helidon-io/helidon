@@ -20,6 +20,9 @@
 :h1Prefix: SE
 :description: Helidon SE Guides
 :keywords: helidon, java, microservices, microprofile, guides
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/attributes.adoc[]
 
 == Getting Started
 
@@ -27,7 +30,7 @@
 ====
 [CARD]
 .Quickstart SE
-[link=se/guides/02_quickstart.adoc]
+[link=02_quickstart.adoc]
 --
 Create your first Helidon SE application in under 5 minutes.
 --
@@ -40,28 +43,28 @@ Create your first Helidon SE application in under 5 minutes.
 ====
 [CARD]
 .Config Guide
-[link=se/guides/03_config.adoc]
+[link=03_config.adoc]
 --
 Learn how to configure a Helidon SE application.
 --
 
 [CARD]
 .Health Check Guide
-[link=se/guides/04_health.adoc]
+[link=04_health.adoc]
 --
 Learn how to use Helidon SE built-in and custom health checks.
 --
 
 [CARD]
 .Metrics Guide
-[link=se/guides/05_metrics.adoc]
+[link=05_metrics.adoc]
 --
 Learn how to use Helidon SE built-in and application metrics.
 --
 
 [CARD]
 .Tracing Guide
-[link=se/guides/06_tracing.adoc]
+[link=06_tracing.adoc]
 --
 Learn how to trace a Helidon SE application.
 --
@@ -73,21 +76,21 @@ Learn how to trace a Helidon SE application.
 ====
 [CARD]
 .Maven Guide
-[link=mp/guides/25_maven_build.adoc]
+[link=../../mp/guides/25_maven_build.adoc]
 --
 Using Helidon in your Maven project.
 --
 
 [CARD]
 .Gradle Guide
-[link=mp/guides/26_gradle_build.adoc]
+[link=../../mp/guides/26_gradle_build.adoc]
 --
 Using Helidon in your Gradle project.
 --
 
 [CARD]
 .GraalVM Native Images
-[link=mp/guides/36_graalnative.adoc]
+[link=../../mp/guides/36_graalnative.adoc]
 --
 Learn how to build a GraalVM native image for your Helidon application both
 on your desktop and as part of a Docker image.
@@ -95,7 +98,7 @@ on your desktop and as part of a Docker image.
 
 [CARD]
 .Custom Runtime Images using jlink
-[link=mp/guides/37_jlink_image.adoc]
+[link=../../mp/guides/37_jlink_image.adoc]
 --
 Learn how to build a custom runtime Java image for your Helidon application both
 on your desktop and as part of a Docker image.
@@ -103,14 +106,14 @@ on your desktop and as part of a Docker image.
 
 [CARD]
 .Building Container Images with Jib
-[link=guides/32_jib.adoc]
+[link=../../guides/32_jib.adoc]
 --
 Learn how to use Jib to create a container image without Docker.
 --
 
 [CARD]
 .Deploying to OKE
-[link=guides/34_Oracle_Kubernetes.adoc]
+[link=../../guides/34_Oracle_Kubernetes.adoc]
 --
 Learn how to deploy your application to Oracle Cloud Infrastructure Container
  Engine for Kubernetes (OKE).

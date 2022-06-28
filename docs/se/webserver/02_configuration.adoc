@@ -16,12 +16,13 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
+= WebServer Configuration
 :h1Prefix: SE
-:javadoc-base-url-api: {javadoc-base-url}io.helidon.webserver/io/helidon/webserver
 :description: Helidon Reactive Webserver Configuration
 :keywords: helidon, reactive, reactive streams, reactive java, reactive webserver
+:rootdir: {docdir}/../..
 
-= WebServer Configuration
+include::{rootdir}/includes/attributes.adoc[]
 
 Configure the WebServer either programmatically, or by the Helidon configuration framework.
 
@@ -65,8 +66,8 @@ just use `Config.create()`
 
 == Configuration options
 
-See all configuration options 
- link:{javadoc-base-url-api}/WebServer.html[here].
+See all configuration options
+ link:{webserver-javadoc-base-url}/WebServer.html[here].
 
 Available socket configuration options:
 

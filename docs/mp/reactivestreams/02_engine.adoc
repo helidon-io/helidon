@@ -18,10 +18,13 @@
 
 = Helidon Reactive Engine
 :h1Prefix: MP
-:description: Dependecy-less reactive operators
+:description: Dependency-less reactive operators
 :keywords: helidon, reactive, streams, multi, single
 :feature-name: Reactive Engine
-:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/attributes.adoc[]
 
 ==  Helidon Reactive Engine
-include::../../shared/reactivestreams/02_engine.adoc[lines=21..]
+
+include::{rootdir}/includes/reactivestreams/engine.adoc[lines=21..]

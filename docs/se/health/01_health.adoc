@@ -20,13 +20,14 @@
 :h1Prefix: SE
 :description: Helidon health checks
 :keywords: helidon, health checks, health, check
-:javadoc-base-url-api: {javadoc-base-url}io.helidon.health.checks/io/helidon/health/checks
 :feature-name: Health Checks
-:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/attributes.adoc[]
 
 This document describes the health check API available with Helidon SE.
 
-include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+include::{rootdir}/includes/dependencies.adoc[]
 
 [source,xml]
 ----
@@ -188,13 +189,13 @@ You can use Helidon-provided health checks to report various
 
 |deadlock detection
 |`deadlock`
-| link:{javadoc-base-url-api}/DeadlockHealthCheck.html[`DeadlockHealthCheck`]
+| link:{health-javadoc-base-url}/DeadlockHealthCheck.html[`DeadlockHealthCheck`]
 | n/a
 | n/a
 
 |available disk space
 |`diskSpace`
-| link:{javadoc-base-url-api}/DiskSpaceHealthCheck.html[`DiskSpaceHealthCheck`]
+| link:{health-javadoc-base-url}/DiskSpaceHealthCheck.html[`DiskSpaceHealthCheck`]
 |`helidon.healthCheck.diskSpace.thresholdPercent` +
  +
 `helidon.healthCheck.diskSpace.path`
@@ -203,7 +204,7 @@ You can use Helidon-provided health checks to report various
 `/`
 |available heap memory
 | `heapMemory`
-| link:{javadoc-base-url-api}/HeapMemoryHealthCheck.html[`HeapMemoryHealthCheck`]
+| link:{health-javadoc-base-url}/HeapMemoryHealthCheck.html[`HeapMemoryHealthCheck`]
 |`helidon.healthCheck.heapMemory.thresholdPercent`
 |`98`
 |=======
@@ -213,16 +214,16 @@ The following code adds the default built-in health checks to your application:
 [source,java]
 ----
 HealthSupport health = HealthSupport.builder()
-    .addLiveness(HealthChecks.healthChecks()) // <.>
+    .addLiveness(HealthChecks.healthChecks()) // <1>
     .build();
 
 Routing.builder()
-        .register(health) // <.>
+        .register(health) // <2>
         .build();
 ----
-<.> Add built-in health checks using defaults (requires the `helidon-health-checks`
+<1> Add built-in health checks using defaults (requires the `helidon-health-checks`
  dependency).
-<.> Register the created health support with web server routing (adds the 
+<2> Register the created health support with web server routing (adds the
 `/health` endpoint).
 
 You can control the thresholds for built-in health checks in either of two ways:
@@ -277,7 +278,3 @@ Accessing the Helidon-provided `/health` endpoint reports the health of your app
     ]
 }
 ----
-
-
-
-

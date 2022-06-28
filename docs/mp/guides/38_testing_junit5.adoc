@@ -19,18 +19,21 @@
 = Helidon MP Testing with JUnit 5 Guide
 :h1Prefix: MP
 :description: Helidon testing with JUnit 5
-:keywords: helidon, testing, microprofile, guide, JUnit 
-:common-page-prefix-inc: ../../shared/common_prereqs/common_prereqs.adoc
+:keywords: helidon, testing, microprofile, guide, JUnit
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/attributes.adoc[]
 
 This guide describes how to write and execute tests for your MicroProfile applications in a JUnit 5 environment using optimized customizations.
 
 == What You Need
 
 For this 20 minute tutorial, you will need the following:
-include::{common-page-prefix-inc}[tag=common-prereqs]
+include::{rootdir}/includes/prerequisites.adoc[tag=common-prereqs]
 
 
 == Dependencies
+
 To start using this feature, add the following dependencies to the testing module:
 
 [source,xml]
@@ -49,10 +52,9 @@ To start using this feature, add the following dependencies to the testing modul
 </dependencies>
 ----
 
-
-
 == Create a Sample Helidon MP Project
-In this guide we will use the https://helidon.io/docs/v2/#/mp/guides/02_quickstart[Helidon MP Quick Start] project in our examples. 
+
+In this guide we will use the xref:../guides/02_quickstart.adoc[Helidon MP Quickstart] project in our examples.
 
 This application provides an endpoint `/greet`, and we want to make sure this endpoint is available and returns expected value.
 
@@ -71,7 +73,7 @@ import org.junit.jupiter.api.Test;
 class GreetTest {
     @Test
     void testDefaultGreeting() {
-    } 
+    }
 }
 ----
 
@@ -112,7 +114,7 @@ class GreetTest {
 
         String expected = "Hello World!";
         String actual = jsonObject.getString("message");
-        assertEquals(expected, actual, "Message in JSON"); 
+        assertEquals(expected, actual, "Message in JSON");
     }
 }
 ----
@@ -127,12 +129,12 @@ The testing extension supports a few additional annotations that allow for finer
 .Optional Extension Annotations
 [width="70%",options="header"]
 |====================
-| Annotation | Description 
+| Annotation | Description
 | `@HelidonTest(resetPerTest = true)` | Resets the container for each method.
 
 This is useful when we want to modify configuration or beans between executions. In such a case, injection into fields is not possible, as we would need a different instance for each test.
 | `@AddConfig(key = "app.greeting", value = "Unite")` |  Defines a new configuration (either on class level, or method level) by adding a single configuration key/value.
-| `@Configuration(configSources = "test-config.properties")` | Adds a whole config source from classpath. 
+| `@Configuration(configSources = "test-config.properties")` | Adds a whole config source from classpath.
 |====================
 
 Here's an example showing how these approaches are used to execute the same endpoint with different configuration:
@@ -185,7 +187,7 @@ By default the bean is added to the container with scope set to `ApplicationScop
 
 NOTE: This annotation can also be placed on a method when running in `resetPerTest` mode.
 
-=== Add Test Extension 
+=== Add Test Extension
 
 When a custom bean is not enough, you may want to extend the CDI with a test-only `Extension`. Once again, if we use the standard way of doing this, we would need to create a `META-INF/services` record that would be picked up by every test class.
 
@@ -257,14 +259,14 @@ class GreetTest {
 
 == Summary
 
-This guide demonstrated how to create tests for MicroProfile applications in a JUnit 5 environment. It described some useful customizations that can be added to your testing extension and allow you to configure test outcomes for your Helidon MP applications. 
+This guide demonstrated how to create tests for MicroProfile applications in a JUnit 5 environment. It described some useful customizations that can be added to your testing extension and allow you to configure test outcomes for your Helidon MP applications.
 
 Refer to the following references for additional information:
 
 * https://junit.org/junit5/docs/current/user-guide/[JUnit 5 User Guide]
-* <<mp/testing/01_testing.adoc, Testing with JUnit 5>>
+* xref:../testing/01_testing.adoc[Testing with JUnit 5]
 
 
- 
+
 
 

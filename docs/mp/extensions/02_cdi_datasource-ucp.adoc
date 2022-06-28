@@ -20,17 +20,17 @@
 :h1Prefix: MP
 :description: Helidon CDI extension for Oracle Universal Connection Pool
 :keywords: helidon, java, microservices, microprofile, extensions, cdi, ucp
-:hikaricp-props-url: https://github.com/brettwooldridge/HikariCP/blob/dev/README.md#configuration-knobs-baby
 :feature-name: Oracle UCP Support
-:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+:rootdir: {docdir}/../..
 
-This https://docs.jboss.org/cdi/spec/2.0/cdi-spec.html#spi[CDI portable extension] provides
-support for injecting
+include::{rootdir}/includes/attributes.adoc[]
+
+This link:{jakarta-cdi-spec-url}#spi[CDI portable extension] provides support for injecting
 https://docs.oracle.com/en/database/oracle/oracle-database/19/jjucp/index.html[Oracle
 Universal Connection Pool data sources] in your Helidon MicroProfile
 applications.
 
-include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+include::{rootdir}/includes/dependencies.adoc[]
 
 [source,xml]
 ----
@@ -66,14 +66,10 @@ application.
 
 The extension implements this injection point by creating a
 https://docs.oracle.com/en/database/oracle/oracle-database/19/jjuar/oracle/ucp/jdbc/PoolDataSource.html[`PoolDataSource`]
-object in the
-http://docs.jboss.org/cdi/api/2.0/javax/enterprise/context/ApplicationScoped.html[application
-scope].
+object in the link:{jakarta-cdi-javadoc-url}/javax/enterprise/context/ApplicationScoped.html[application scope].
 
-You can configure the object using
-<<microprofile/02_server-configuration.adoc, MicroProfile
-config>>. For example, the data source created above can be configured
-as follows:
+You can configure the object using xref:../jaxrs/02_server-configuration.adoc[MicroProfile config].
+ For example, the data source created above can be configured as follows:
 
 [source, properties]
 .META-INF/microprofile-config.properties

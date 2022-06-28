@@ -16,14 +16,15 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-:javadoc-base-url-api: {javadoc-base-url}io.helidon.config/io/helidon/config
-
 = Configuration Profiles
 :h1Prefix: SE
 :description: Helidon config profiles
 :keywords: helidon, config, profile
 :toc: preamble
 :toclevels: 4
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/attributes.adoc[]
 
 Configuration profiles provide a capability to prepare structure of configuration for each
 environment in advance, and then simply switch between these structures using a system property
@@ -37,12 +38,12 @@ To choose a configuration profile to use at runtime, you can use:
 
 There are two ways to define a profile configuration:
 
-1. Use a config source with a <<#Profile-Source,profile specific name>>
-2. Use a <<#Profile-File,profile file>> defining all configuration sources
+1. Use a config source with a <<Profile-Config-Source,profile specific name>>
+2. Use a <<Profile-File,profile file>> defining all configuration sources
 
 Configuration profiles can only be used when config is created using the `Config.create()` method without parameters. If you explicitly configure sources, profiles are ignored.
 
-== Profile Config Sources [[Profile-Source]]
+== Profile Config Sources [[Profile-Config-Source]]
 
 If a profile is specified, config will load the profile-specific default configuration source
 before the "main" source.
@@ -72,9 +73,9 @@ config will look for the following profiles (in this order):
 4. `config-profile-dev.properties` on classpath
 
 If any of these files is discovered, it would be used to set up the configuration. In case none is found,
- the config falls back to <<#Profile Config Sources,profile specific config sources>>.
+ the config falls back to <<Profile-Config-Source,profile specific config sources>>.
 
-The structure of the file is described below in <<#Profile File Format,profile file format>>.
+The structure of the file is described below in <<Config-Profile-Format,profile file format>>.
 
 In case you need to customize the location of the profile file, you can use the system property
 `io.helidon.config.meta-config`. For example if it is configured to `config/profile.yaml`,
@@ -139,7 +140,7 @@ Except for the `system-properties` and `environment-variables` types, the profil
 `properties` section for a source can also specify any optional settings for the
 corresponding config source type. The JavaDoc for the related config source
 type builders lists the supported properties for each type. (For example,
-link:{javadoc-base-url-api}/internal/FileConfigSource.FileBuilder.html[`FileConfigSource.FileBuilder`].)
+link:{config-javadoc-base-url}/internal/FileConfigSource.FileBuilder.html[`FileConfigSource.FileBuilder`].)
 
 Here is an example profile in YAML format. Note how the `properties` sections
 are at the same level as the `type` or `class` within a `sources` array entry.
@@ -261,7 +262,7 @@ accompanying `properties`.
 |Strategy Type |Usage |Properties
 
 |`regular`
-| Periodic polling - See link:{javadoc-base-url-api}/PollingStrategies.html#regular-java.time.Duration-[`PollingStrategies.regular`] method
+| Periodic polling - See link:{config-javadoc-base-url}/PollingStrategies.html#regular-java.time.Duration-[`PollingStrategies.regular`] method
 |`interval` (`Duration`) - indicating how often to poll; e.g., `PT15S` represents 15 seconds
 
 |===
@@ -271,7 +272,7 @@ accompanying `properties`.
 |Type |Usage |Properties
 
 |`file`
-| Filesystem monitoring - See link:{javadoc-base-url-api}/PollingStrategies.html#watch-java.nio.file.Path-[`PollingStrategies.watch`] method
+| Filesystem monitoring - See link:{config-javadoc-base-url}/PollingStrategies.html#watch-java.nio.file.Path-[`PollingStrategies.watch`] method
 | `initial-delay-millis` - delay between the start of the watcher and first check for changes
 
 |===
@@ -281,7 +282,7 @@ accompanying `properties`.
 |Policy Type |Usage |Properties
 
 |`repeat`
-|Regularly-scheduled - see link:{javadoc-base-url-api}RetryPolicies.html#repeat-int-[`RetryPolicies.repeat`].
+|Regularly-scheduled - see link:{config-javadoc-base-url}RetryPolicies.html#repeat-int-[`RetryPolicies.repeat`].
 a|`retries` (`int`) - number of retries to perform +
 
 Optional:
@@ -302,7 +303,7 @@ profiles.
 You can then use any custom properties - these are provided as a `Config` instance to
 the `create` method of the Provider implementation.
 
-See link:{javadoc-base-url-api}/spi/RetryPolicy.html[`RetryPolicy`],
-link:{javadoc-base-url-api}/spi/RetryPolicy.html[`ChangeWatcher`], and
-link:{javadoc-base-url-api}/spi/PollingStrategy.html[`PollingStrategy`] JavaDoc
+See link:{config-javadoc-base-url}/spi/RetryPolicy.html[`RetryPolicy`],
+link:{config-javadoc-base-url}/spi/RetryPolicy.html[`ChangeWatcher`], and
+link:{config-javadoc-base-url}/spi/PollingStrategy.html[`PollingStrategy`] JavaDoc
 sections.

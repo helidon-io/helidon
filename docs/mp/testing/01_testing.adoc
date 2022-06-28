@@ -18,15 +18,16 @@
 
 = Testing with JUnit5
 :h1Prefix: MP
-:pagename: testing
 :description: Helidon Testing with JUnit5
 :keywords: helidon, mp, test, testing, junit
 :feature-name: Testing with JUnit
-:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/attributes.adoc[]
 
 Helidon provides built-in test support for CDI testing in JUnit5.
 
-include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+include::{rootdir}/includes/dependencies.adoc[]
 [source,xml]
 ----
 <dependency>

@@ -20,7 +20,9 @@
 :h1Prefix: SE
 :description: Helidon WebClient
 :keywords: helidon, WebClient, web, client
-:common-page-prefix-inc: ../../shared/common_prereqs/common_prereqs.adoc
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/attributes.adoc[]
 
 This guide describes how to create a sample Helidon SE project
 that can be used to run some basic examples using WebClient.
@@ -29,13 +31,13 @@ that can be used to run some basic examples using WebClient.
 
 For this 15 minute tutorial, you will need the following:
 
-include::{common-page-prefix-inc}[tag=common-prereqs]
+include::{rootdir}/includes/prerequisites.adoc[tag=common-prereqs]
 
-* <<WebClient features,WebClient features>>
-* <<WebClient usage,WebClient usage>>
-* <<WebClient Metrics,WebClient Metrics>>
+* <<WebClient-features,WebClient features>>
+* <<WebClient-usage,WebClient usage>>
+* <<WebClient-Metrics,WebClient Metrics>>
 
-=== WebClient Features
+=== WebClient Features [[WebClient-features]]
 
 Helidon's WebClient is used to perform HTTP REST requests to target endpoints and handle their responses. Built on top of
 a reactive approach, you are no longer blocked while waiting for the data.
@@ -60,7 +62,7 @@ have to point your client to the correct/final endpoint.
 When you configure the Helidon WebServer to use tracing, metrics and security, the settings are automatically
 propagated to the WebClient and used during request/response.
 
-=== WebClient Usage
+=== WebClient Usage [[WebClient-usage]]
 
 ==== Create a sample SE project
 
@@ -268,7 +270,7 @@ the PUT request is executed.
 {"message":"Bonjour David!"}
 ----
 
-=== WebClient Metrics
+=== WebClient Metrics [[WebClient-Metrics]]
 
 WebClient, like other Helidon components, supports Metrics. The following example introduces the different metrics that
 can be used to measure WebClient activity. There are two ways to set up metrics: programmatically on the WebClient
@@ -415,4 +417,4 @@ WebClient webClient = WebClient.builder()
 <2> Configure the WebClient with the `client` section from `application.yaml`.
 
 As demonstrated, using the configuration file reduces the amount of code needed in the source code. For more information
-about metrics, see the <<se/guides/05_metrics.adoc,Helidon Metrics Guide>>.
+about metrics, see the xref:05_metrics.adoc[Helidon Metrics Guide].

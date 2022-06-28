@@ -20,6 +20,9 @@
 :h1Prefix: MP
 :description: Helidon MicroProfile JAX-RS applications
 :keywords: helidon, microprofile, micro-profile, jax-rs, applications, jakarta, rest
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/attributes.adoc[]
 
 NOTE: In this section we shall distinguish the notion of a JAX-RS `Application` subclass
 from a Helidon application. As we shall learn shortly, the latter may include zero or more

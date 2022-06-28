@@ -20,8 +20,11 @@
 :h1Prefix: SE
 :description: Helidon Reactive WebServer Routing
 :keywords: helidon, reactive, reactive streams, reactive java, reactive webserver
+:rootdir: {docdir}/../..
 
-Routing lets you use request matching criteria to bind requests to a `handler` that implements 
+include::{rootdir}/includes/attributes.adoc[]
+
+Routing lets you use request matching criteria to bind requests to a `handler` that implements
 your custom business logic. Matching criteria include one or more *HTTP Method(s)* and, optionally,
 a request *path matcher*. Use the `RequestPredicate` class to specify more routing
 criteria.
@@ -96,9 +99,9 @@ TIP: Always start _path_ and _path patterns_ with the `/` character.
 == Request Predicate
 
 Use the `RequestPredicate` utility class to identify more
- criteria. You can construct (build) a predicate based on typical request criteria such as 
+ criteria. You can construct (build) a predicate based on typical request criteria such as
 content type, or the existence of a header
-or cookie. You can also construct a handler that only processes 
+or cookie. You can also construct a handler that only processes
 requests accepted by the predicate. All other requests are _nexted_, meaning that they are routed to the next valid handler.
 
 [source,java]

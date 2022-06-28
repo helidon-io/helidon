@@ -20,9 +20,11 @@
 :h1Prefix: MP
 :description: Helidon Reactive Routing
 :keywords: helidon, guide, routing
-:helidon-uc-flavor: MP
-:helidon-lc-flavor: mp
-:common-page-prefix-inc: ../../shared/common_prereqs/common_prereqs.adoc
+:flavor-uc: MP
+:flavor-lc: mp
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/attributes.adoc[]
 
 This guide shows how reuse Helidon SE Service in your Helidon MP application.
 
@@ -30,9 +32,9 @@ This guide shows how reuse Helidon SE Service in your Helidon MP application.
 
 For this 10 minute tutorial, you will need the following:
 
-include::{common-page-prefix-inc}[tag=common-prereqs]
+include::{rootdir}/includes/prerequisites.adoc[tag=common-prereqs]
 
-Helidon MP supports <<mp/jaxrs/10_reactive-routing.adoc, Reactive routing>> which brings possibility for reusing
+Helidon MP supports xref:../jaxrs/10_reactive-routing.adoc[Reactive routing] which brings possibility for reusing
 `io.helidon.webserver.Service` implementations in Helidon MP. Such feature can be quite useful for common
 solutions for filtering, auditing, logging or augmenting REST endpoints in hybrid Helidon SE/MP environment.
 
@@ -92,4 +94,4 @@ public class MyBean {
 You can leverage annotations:
 
 * @RoutingPath - path of the WebServer service
-* @RoutingName - select routing when <<mp/jaxrs/02_server-configuration.adoc#conf-additional-ports,serving requests on multiple ports>>
+* @RoutingName - select routing when xref:../jaxrs/02_server-configuration.adoc#conf-additional-ports[serving requests on multiple ports]

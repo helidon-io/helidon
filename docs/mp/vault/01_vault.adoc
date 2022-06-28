@@ -16,14 +16,14 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-:javadoc-base-url-api: {javadoc-base-url}io.helidon.config/io/helidon/vault
-
 = Vault
 :h1Prefix: MP
 :description: Helidon Vault integration
 :keywords: vault
-:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 :feature-name: Vault
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/attributes.adoc[]
 
 HashiCorp Vault is a commonly used Vault in many microservices. The APIs are REST-based and Helidon implements them using reactive client.
 
@@ -33,11 +33,11 @@ Vault integration supports the following:
 * *Authentication Methods*: Token, Kubernetes (k8s), AppRole
 * *Other Sys Operations and Configurations*
 
-=== Experimental
+== Experimental
 
 WARNING: Helidon Vault support is still experimental and not intended for production use. APIs and features have not yet been fully tested and are subject to change.
 
-=== Sys Operations
+== Sys Operations
 
 Each of these features is implemented as a separate module, with the Vault class binding them together. In Helidon MP, with injection, this binding is done automatically, and you can simply inject your favorite secret engine.
 
@@ -47,7 +47,7 @@ In addition to these features, Vault itself can be authenticated as follows:
 * AppRole authentication - AppRole ID and secret ID are configured, integration exchanges these for a temporary token that is used to connect to Vault
 * K8s authentication - the k8s JWT token is discovered on current node and used to obtain a temporary token that is used to connect to Vault
 
-=== Extensibility
+== Extensibility
 
 New secret engines and authentication methods can be implemented quite easily, as the integration is based on service providers (using ServiceLoader). This gives us (or you, as the users) the option to add new secret engines and/or authentication methods without adding a plethora of methods to the Vault class.
 
@@ -62,7 +62,7 @@ io.helidon.integrations.vault.spi.VaultAuth
 io.helidon.integrations.vault.spi.InjectionProvider
 ----
 
-=== Modules
+== Modules
 
 The following is a list of maven coordinates of all Vault modules available:
 
@@ -122,32 +122,34 @@ To use Vault integration in MP, the following module must be added, as it enable
 
 Configuration to connect to Vault.
 
-1. Authenticating using Token:
+. Authenticating using Token:
++
 [source,properties]
 ----
 vault.address=http://localhost:8200
 vault.token=my-token
 ----
-
-2. Authenticating using AppRole:
++
+. Authenticating using AppRole:
++
 [source,properties]
 ----
 vault.auth.app-role.role-id=app-role-id
 vault.auth.app-role.secret-id=app-role-secret-id
 ----
-
-3. Authenticating using Kubernetes:
++
+. Authenticating using Kubernetes:
++
 [source,properties]
 ----
 vault.auth.k8s.token-role=my-role <1>
 ----
-
 <1> The token role must be configured in Vault
 
 The following classes can be injected into any CDI bean (if appropriate module is on the classpath):
 
 * Kv2Secrets - Key/Value Version 2 Secrets (versioned secrets, default)
-* Kv1Secrets - Key/Value Version 1 Secrets (unversioned secrets, legacy)
+* Kv1Secrets - Key/Value Version 1 Secrets (un-versioned secrets, legacy)
 * CubbyholeSecrets - Cubbyhole secrets (token bound secrets)
 * DbSecrets - Database secrets (for generating temporary DB credentials)
 * PkiSecrets - PKI secrets (for generating keys and X.509 certificates)

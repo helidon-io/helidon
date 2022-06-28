@@ -19,15 +19,15 @@
 = Micrometer Metrics
 :description: Helidon Micrometer integration
 :keywords: micrometer, helidon, metrics, integration, microprofile
-:javadoc-base-url-api: {javadoc-base-url}io.helidon.integrations.micrometer/io/helidon/integrations/micrometer
 :h1Prefix: MP
-:common-page-prefix-inc: ../../shared/metrics/micrometer_shared.adoc
-:isMP: true
+:flavor-uc: MP
+:flavor-lc: mp
+:rootdir: {docdir}/../..
 
+include::{rootdir}/includes/attributes.adoc[]
 
-include::{common-page-prefix-inc}[tags=intro]
-
-include::{common-page-prefix-inc}[tags=prereq]
+include::{rootdir}/includes/metrics/micrometer-shared.adoc[tags=intro]
+include::{rootdir}/includes/metrics/micrometer-shared.adoc[tags=prereq]
 
 == Using Micrometer in Your Application
 Add the Micrometer `@Timed` and `@Counted` annotations to methods in your application.
@@ -78,10 +78,12 @@ Add the following injection to a bean:
 @Inject
 private MeterRegistry registry;
 ----
-Helidon automatically injects a reference to the `MeterRegistry` it manages into your code. Your code can use the normal Micrometer API with this registry to create, find, update, and even delete meters.
+Helidon automatically injects a reference to the `MeterRegistry` it manages into your code. Your code can use the
+ normal Micrometer API with this registry to create, find, update, and even delete meters.
 
-include::{common-page-prefix-inc}[tags=overriding-intro;overriding-using-config]
+include::{rootdir}/includes/metrics/micrometer-shared.adoc[tags=overriding-intro;overriding-using-config]
+include::{rootdir}/includes/metrics/micrometer-shared.adoc[tags=accessing-endpoint-intro]
 
-include::{common-page-prefix-inc}[tags=accessing-endpoint-intro]
-
-Within Helidon, each type of meter registry is paired with code that examines the incoming HTTP request and decides whether the request matches up with the associated meter registry. The first pairing that accepts the request returns the response.
+Within Helidon, each type of meter registry is paired with code that examines the incoming HTTP request and decides
+ whether the request matches up with the associated meter registry. The first pairing that accepts the request
+ returns the response.

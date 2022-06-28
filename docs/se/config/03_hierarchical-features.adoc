@@ -16,26 +16,28 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-:javadoc-base-url-api: {javadoc-base-url}io.helidon.config/io/helidon/config
-
 = Hierarchical Features
 :h1Prefix: SE
 :description: Helidon hierarchical features
 :keywords: helidon, config
 :toc: preamble
 :toclevels: 2
+:rootdir: {docdir}/../..
+:imagesdir: {rootdir}/images
 
-The config system represents configuration as a tree in memory. Many developers 
+include::{rootdir}/includes/attributes.adoc[]
+
+The config system represents configuration as a tree in memory. Many developers
 will choose to work directly with config values -- values from
-the leaves in the tree -- accessing them by their keys. You can also navigate 
+the leaves in the tree -- accessing them by their keys. You can also navigate
 explicitly among the nodes of the tree without using keys.
 This section describes what the tree looks like and how you can traverse
 it.
 
 == Configuration Node Types
-The config system represents configuration in memory using three types of nodes, 
+The config system represents configuration in memory using three types of nodes,
 each a different interface
-defined within the link:{javadoc-base-url-api}/spi/ConfigNode.html[`ConfigNode`] interface.
+defined within the link:{config-javadoc-base-url}/spi/ConfigNode.html[`ConfigNode`] interface.
 
 .`ConfigNode` Types
 |===
@@ -47,9 +49,9 @@ any type.
 |value |`ConfigNode.ValueNode`| Represents a leaf node.
 |===
 
-A node of any type can have a `String` value. 
+A node of any type can have a `String` value.
 
-Each config tree in memory will have an object node as its root with 
+Each config tree in memory will have an object node as its root with
 child nodes as dictated by the source config data from which the config system
 built the tree.
 
@@ -61,16 +63,16 @@ If your application attempts to access a non-existent node, for example using
 ----
 config.get("key.does.not.exist")
 ----
-the config system returns a `Config` node object with 
+the config system returns a `Config` node object with
 type `MISSING`. The in-memory config tree contains nodes only of types `OBJECT`, `LIST`,
 and `VALUE`.
 ====
 
 == In-memory Representation of Configuration
-The following example is in link:https://github.com/lightbend/config/blob/master/HOCON.md[HOCON] 
+The following example is in link:https://github.com/lightbend/config/blob/master/HOCON.md[HOCON]
 (human-optimized config object notation) format.
-The config system supports HOCON as an 
-<<se/config/08_supported-formats.adoc#Config-ModuleHocon,extension module>>.
+The config system supports HOCON as an
+xref:08_supported-formats.adoc#Config-ModuleHocon[extension module].
 
 [source,hocon]
 .HOCON `application.conf` file
@@ -100,7 +102,7 @@ The diagram below illustrates the in-memory tree for that configuration.
 .Config Nodes structure of `application.conf` file
 image::config/application_conf-nodes.png["Loaded Config Nodes structure",align="center"]
 
-==== 
+====
 Notes
 
 1. Each non-root node has a name which distinguishes it from other nodes with
@@ -119,10 +121,10 @@ value |member name of the node within its parent
 3. The root has an empty key, empty name, and no value.
 ====
 
-The `Config` object exposes methods to return the 
-link:{javadoc-base-url-api}/Config.html#name--[`name`], 
- link:{javadoc-base-url-api}/Config.html#key--[`key`], and 
- link:{javadoc-base-url-api}/Config.html#type--[`type`] of the
+The `Config` object exposes methods to return the
+link:{config-javadoc-base-url}/Config.html#name--[`name`],
+ link:{config-javadoc-base-url}/Config.html#key--[`key`], and
+ link:{config-javadoc-base-url}/Config.html#type--[`type`] of the
  node.
 
 == Access by Key [[accessByKey]]
@@ -131,7 +133,7 @@ If you write the code with a specific configuration structure in mind, your code
 the value from a specific configuration node very easily.
 
 Your application can specify the entire navigation path as the key to a single
-`get` invocation, using dotted 
+`get` invocation, using dotted
 notation to separate the names of the nodes along the path. The code can
 navigate one level at a time using chained `get` invocations, each specifying
 one level of the path to the expected node. Or, you can mix the two styles.
@@ -151,7 +153,7 @@ Config provName5 = config.get("data").get("providers").get("0").get("name"); // 
 <2> mixed style (composite key and single key)
 <3> navigating one level with each `get` invocation
 
-The `Config.get(key)` method always returns a `Config` object without throwing an 
+The `Config.get(key)` method always returns a `Config` object without throwing an
 exception. If the specified key does not exist the method returns a `Config` node
 of type `MISSING`. There are several ways your application can tell whether a given
 config value exists.
@@ -164,7 +166,7 @@ config value exists.
 | `type` | Returns enum value for the `Config.Type`; `Config.Type.MISSING` if the node
 represents a config value that _does not_ exist
 | `as` | Returns the `ConfigValue` with the correct type that has all methods of `Optional`
-    and a few additional ones - see link:{javadoc-base-url-api}/ConfigValue.html[`ConfigValue`] interface.
+    and a few additional ones - see link:{config-javadoc-base-url}/ConfigValue.html[`ConfigValue`] interface.
 |===
 
 The config system throws a `MissingValueException` if the application tries to
@@ -172,10 +174,10 @@ access the value of a missing node by invoking the `ConfigValue.get()` method.
 
 == Access by General Navigation
 Some applications might need to work with configuration without knowing its
-structure or key names ahead of time, and such applications can use various 
+structure or key names ahead of time, and such applications can use various
 methods on the `Config` class to do this.
 
-.General Config Node Methods 
+.General Config Node Methods
 |===
 |Method |Usage
 
@@ -230,7 +232,7 @@ assert providers.get(1).key().toString().equals("data.providers.1"); // <2>
 ----
 
 <1> Get child nodes of the `data.providers` _list_ node as a `List` of `Config` instances.
-<2> Check that the list contains the expected child nodes with keys 
+<2> Check that the list contains the expected child nodes with keys
 `data.providers.0` and `data.providers.1`.
 
 The `traverse()` method returns a stream of the nodes in the subtree that is rooted
@@ -261,7 +263,7 @@ VALUE 	data.providers.1.class
 ....
 ====
 
-The optional `Predicate<Config>` argument to the `traverse` methods allows the 
+The optional `Predicate<Config>` argument to the `traverse` methods allows the
 application to prune the traversal of a subtree at any point.
 
 [source,java]
@@ -290,9 +292,9 @@ VALUE 	app.basic-range.1
 == Detaching a Config Subtree
 Sometimes it can be convenient to write part of your application to deal with
 configuration without it knowing if or where the relevant configuration is plugged into
-a larger config tree. 
+a larger config tree.
 
-For example, the <<se/config/01_introduction.adoc#create-simple-config-props,`application.properties`>>
+For example, the xref:01_introduction.adoc#create-simple-config-props[`application.properties`]
 from the introduction section contains several settings prefixed with `web` such as `web.page-size`.
 Perhaps in another config source the same information might be stored as
 `server.web.page-size`:
@@ -309,9 +311,9 @@ of which structure a config source used.
 
 One easy way to do this is to _detach_ a subtree from a larger config tree. When
 your application invokes the
-link:{javadoc-base-url-api}/Config.html#detach--[`Config.detach`] method it gets back
+link:{config-javadoc-base-url}/Config.html#detach--[`Config.detach`] method it gets back
 a _copy_ of the config node but with no parent. The copy and the original node both
-point to the same objects for their child nodes (if any). The original node is 
+point to the same objects for their child nodes (if any). The original node is
 unchanged.
 [source,java]
 .Detaching a Subtree

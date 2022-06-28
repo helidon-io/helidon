@@ -20,7 +20,9 @@
 :h1Prefix: SE
 :description: Helidon health checks
 :keywords: helidon, health check, health check, health, check
-:common-page-prefix-inc: ../../shared/common_prereqs/common_prereqs.adoc
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/attributes.adoc[]
 
 This guide describes how to create a sample Helidon SE project
 that can be used to run some basic examples using both built-in and custom health checks.
@@ -29,7 +31,7 @@ that can be used to run some basic examples using both built-in and custom healt
 
 For this 15 minute tutorial, you will need the following:
 
-include::{common-page-prefix-inc}[tag=common-prereqs]
+include::{rootdir}/includes/prerequisites.adoc[tag=common-prereqs]
 
 === Create a Sample SE Project
 
@@ -717,5 +719,5 @@ This guide demonstrated how to use health checks in a Helidon SE application as 
 
 Refer to the following reference for additional information:
 
-* Helidon Javadoc at https://helidon.io/docs/latest/apidocs/index.html?overview-summary.html
+* link:{javadoc-base-url}/index.html?overview-summary.html[Helidon Javadoc]
 

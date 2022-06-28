@@ -20,20 +20,19 @@
 :h1Prefix: SE
 :description: Helidon SE metrics-capable components
 :keywords: helidon, metrics, metrics-capable, microprofile, guide
-:common-page-prefix-inc: ../../shared/metrics
-:shared-doc: {common-page-prefix-inc}/metrics-capable-components.adoc
-:javadoc-base-url-api: {javadoc-base-url}io.helidon.metrics.serviceapi/io/helidon/metrics/serviceapi
-:metrics-support-builder-javadoc: {javadoc-base-url-api}/MetricsSupport.Builder.html
-:lower-case-flavor: se
+:flavor-lc: se
 :intro-project-name: {h1Prefix}
 :chk: icon:check[]
 :x: icon:times[]
+:flavor-uc: SE
+:flavor-lc: se
+:rootdir: {docdir}/../..
 
-include::{shared-doc}[tags=preamble]
+include::{rootdir}/includes/attributes.adoc[]
 
-include::{shared-doc}[tags=all-beginning-text]
-
-include::{shared-doc}[tags=writing-code-beginning]
+include::{rootdir}/includes/metrics/metrics-capable-components.adoc[tags=preamble]
+include::{rootdir}/includes/metrics/metrics-capable-components.adoc[tags=all-beginning-text]
+include::{rootdir}/includes/metrics/metrics-capable-components.adoc[tags=writing-code-beginning]
 
 [[writing_SE,SE Application Techniques]]
 ==== Writing and Packaging a Metrics-capable _Helidon SE Application_
@@ -104,6 +103,6 @@ metrics endpoint.
 
 Helidon uses the `enabled` value from `MetricsSettings` in providing the correct implementations of both the `RegistryFactory` and the `MetricsSupport`.
 
-include::{shared-doc}[tags=writing-code-ending]
+include::{rootdir}/includes/metrics/metrics-capable-components.adoc[tags=writing-code-ending]
 
-include::{shared-doc}[tags=wrap-up]
+include::{rootdir}/includes/metrics/metrics-capable-components.adoc[tags=wrap-up]

@@ -20,35 +20,37 @@
 :h1Prefix: SE
 :description: Helidon OIDC Security Provider
 :keywords: helidon, security, guide, oidc, provider
-:common-page-prefix-inc: ../../shared/common_prereqs/common_prereqs.adoc
+:rootdir: {docdir}/../..
 
-This guide describes how to set up Keycloak and Helidon
+include::{rootdir}/includes/attributes.adoc[]
+
+This guide describes how to setup Keycloak and Helidon
 to secure your application with OIDC security provider.
 
 == What You Need
 
 For this 20 minute tutorial, you will need the following:
 
-include::{common-page-prefix-inc}[tag=common-prereqs]
+include::{rootdir}/includes/prerequisites.adoc[tag=common-prereqs]
 
 In addition, you will need to install and configure the following:
 
-* <<Introduction,Introduction>>
-* <<Keycloak Installation,Keycloak Installation>>
-* <<Set up Keycloak,Set up Keycloak>>
-* <<Set up Helidon,Set up Helidon>>
-* <<Test Keycloak process with Postman,Test Keycloak process with Postman>>
-* <<Restrict access to a specific role,Restrict access to a specific role>>
+* <<Introduction, Introduction>>
+* <<Keycloak-Installation, Keycloak Installation>>
+* <<Setup-Keycloak, Setup Keycloak>>
+* <<Setup-Helidon,Setup Helidon>>
+* <<Test-Keycloak-process-with-Postman, Test Keycloak process with Postman>>
+* <<Restrict-access-to-a-specific-role, Restrict access to a specific role>>
 
-=== Introduction
+== Introduction
 
 This guide describes the steps required to protect your whole application or a specific area with Open ID Connect
 (OIDC) security. OIDC is a secure mechanism for an application to contact an identity service.
 Its built on top of OAuth 2.0 and provides full-fledged authentication and authorization protocols.
 
-=== Keycloak Installation
+== Keycloak Installation [[Keycloak-Installation]]
 
-==== On Docker
+=== On Docker
 
 To install Keycloak with Docker, open a terminal and make sure the port 8080 is free.
 
@@ -68,7 +70,7 @@ Log in using the username and password mentioned above: `admin`.
 
 You should be logged in successfully, and it prompts the admin console.
 
-==== On JDK
+=== On JDK
 
 Download the last version of Keycloak from Keycloak website : https://www.keycloak.org/downloads
 In the table Server choose Standalone server distribution. ZIP or Tar format are available, click on either
@@ -84,7 +86,7 @@ Open keycloak folder to make it your current directory.
 cd keycloak-11.0.2
 ----
 
-=== Start Keycloak
+== Start Keycloak
 
 To start keycloak and have it ready for further steps, run the following command.
 
@@ -102,7 +104,7 @@ bin/standalone.bat
 
 Keycloak runs on localhost:8080 by default.
 
-==== Create an Admin User
+=== Create an Admin User
 
 You need to create an admin user because it does not come by default when installing Keycloak.
 To do this, open  http://localhost:8080/auth in your favorite browser.
@@ -118,14 +120,14 @@ to a Login form. Enter the Username and Password created earlier to log in.
 
 After successfully logged in, the admin console is prompted.
 
-=== Set up Keycloak
+== Setup Keycloak [[Setup-Keycloak]]
 
-To set up Keycloak properly, go to the admin console: http://localhost:8080/auth/admin
+To setup Keycloak properly, go to the admin console: http://localhost:8080/auth/admin
 
 If you are using Docker, use Username `admin` and password `admin` as it is the default admin user.
 Otherwise, use the username and password you used to create the admin user.
 
-==== Create a Realm
+=== Create a Realm
 
 A realm is the place where groups of applications, and their environment, can be created. It gathers :
 
@@ -152,7 +154,7 @@ To switch from a realm to another, hover the realm name, and the other realm cre
 Click on any realm name to change the current realm. Make sure all configuration or modification are saved before changing
 the current realm or be subject to lose your configuration.
 
-==== Create a User
+=== Create a User
 
 Initially there are no users in a new realm. An unlimited number of user can be created per realm.
 A realm contains resources such as client which can be accessed by users.
@@ -181,7 +183,7 @@ To verify that the new user is created correctly:
 
 You should now be logged-in to the account console where users can manage their accounts.
 
-==== Create a Client
+=== Create a Client
 
 To create your first client:
 
@@ -205,12 +207,12 @@ A new tab named `Credentials` is created. Click on it to access this new tab.
 - Click on `generate secret` to generate client secret.
 
 Keycloak is now configured and ready. Keep keycloak running on your terminal and open a new tab to
-set up Helidon.
+setup Helidon.
 
-=== Set up Helidon
+== Setup Helidon [[Setup-Helidon]]
 
 Use the Helidon SE Maven archetype to create a simple project. It will be used as an example
-to show how to set up Helidon. Replace `{helidon-version}` by the latest helidon version.
+to show how to setup Helidon. Replace `{helidon-version}` by the latest helidon version.
 It will download the quickstart project into the current directory.
 
 [source,bash,subs="attributes+"]
@@ -231,7 +233,7 @@ mvn -U archetype:generate -DinteractiveMode=false \
 cd helidon-quickstart-se
 ----
 
-==== Update Project Dependencies
+=== Update Project Dependencies
 
 Update the pom.xml file and add the following Helidon dependency to the `<dependencies>` section.
 
@@ -244,7 +246,7 @@ Update the pom.xml file and add the following Helidon dependency to the `<depend
 </dependency>
 ----
 
-==== Add OIDC Security Properties
+=== Add OIDC Security Properties
 
 The OIDC security provider configuration can be joined to helidon configuration file.
 This file is located here: `src/main/resources/application.yaml`. It can be easily used to configure the web server
@@ -304,9 +306,9 @@ server:
 frontend-uri: "http://localhost:{Your-new-port}"
 ----
 
-==== Configure Web Server
+=== Configure Web Server
 
-Once the properties are added, the web server must be set up.
+Once the properties are added, the web server must be setup.
 The `Main.createRouting` method gather all configuration properties.
 
 [source,java]
@@ -332,7 +334,7 @@ First the Security instance is used to bootstrap security, so the WebSecurity in
 can integrate security into Web Server.
 Then, OidcSupport instance registers the endpoint to which OIDC redirects browser after a successful login.
 
-Helidon sample is now set up and ready.
+Helidon sample is now setup and ready.
 
 == Build the Application
 
@@ -358,7 +360,7 @@ now protected, its access is limited, and the tests are not built to take oidc s
 
 From the actual settings, the user needs to log in only once, then Keycloak saves all the connection data.
 
-=== Test Keycloak Process with Postman
+=== Test Keycloak Process with Postman [[Test-Keycloak-process-with-Postman]]
 
 Keycloak supports many authentication and authorization flows, but only two of them will be shown. This section
 describes another way you can get an access token or refresh a token or identity token. The identity token contains
@@ -438,7 +440,7 @@ Copy and paste the access token to `Access Token` field and press `Send`. Helido
 At this stage of the application, tests cannot pass because of OIDC security. The only way to authenticate a user is
 through the front end of that server which can be accessed with the browser for example.
 
-In order to keep security and test the application locally, a new security provider must be set up. By adding specific
+In order to keep security and test the application locally, a new security provider must be setup. By adding specific
 configuration to the tests, it is possible to override the application configuration.
 
 The following explains how to set a basic authentication instead of oidc security provider only for the tests. Which means,
@@ -557,7 +559,7 @@ Now, the project can be build without skipping test.
 mvn clean install
 ----
 
-==== Restrict Access to a Specific Role
+==== Restrict Access to a Specific Role [[Restrict-access-to-a-specific-role]]
 
 To give less access to an endpoint, it is possible to configure user role. So the application will only grant access
 to the user with the required role.

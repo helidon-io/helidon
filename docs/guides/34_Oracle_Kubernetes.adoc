@@ -15,36 +15,35 @@
     limitations under the License.
 
 ///////////////////////////////////////////////////////////////////////////////
-:adoc-dir: {guides-dir}
 
 = Deploying to OKE
 :description: Helidon Oracle Container Engine for Kubernetes (OKE) Guide
 :keywords: helidon, guide, oracle, kubernetes
-:oke-docs-url: http://www.oracle.com/webfolder/technetwork/tutorials/obe/oci/oke-full/index.html
-:ocir-token-docs-url: https://docs.cloud.oracle.com/iaas/Content/Registry/Tasks/registrygettingauthtoken.htm
-:oci-region-code-docs-url: https://docs.cloud.oracle.com/iaas/Content/General/Concepts/regions.htm
+:rootdir: {docdir}/..
+
+include::{rootdir}/includes/attributes.adoc[]
 
 Push a Docker image of your Helidon application to Oracle Cloud Infrastructure
  Registry (OCIR), and deploy the image from the registry to Oracle Cloud
- Infrastructure Container Engine for Kubernetes (OKE). 
+ Infrastructure Container Engine for Kubernetes (OKE).
 
 == What You Need
 
 |===
 |About 10 minutes
-| <<about/03_prerequisites.adoc,Helidon prerequisites>>
-|An OKE cluster. See the link:{oke-docs-url}[OKE documentation].
+| xref:{rootdir}/about/03_prerequisites.adoc[Helidon prerequisites]
+|An OKE cluster. See the link:http://www.oracle.com/webfolder/technetwork/tutorials/obe/oci/oke-full/index.html[OKE documentation].
 |A Helidon project created from the quickstart Maven archetype. See
- <<guides/02_quickstart-se.adoc,quickstart Maven archetype>>.
+ xref:{rootdir}/se/guides/02_quickstart.adoc[quickstart Maven archetype].
 |===
 
 == Push Your Image to OCIR
 
 Your account must be in the `Administrators` group or another group that has
- the `REPOSITORY_CREATE` permission. 
+ the `REPOSITORY_CREATE` permission.
 
 Sign in to the Oracle Cloud Infrastructure (OCI) web console and generate an
- authentication token. See link:{ocir-token-docs-url}[Getting an Auth Token].
+ authentication token. See link:https://docs.cloud.oracle.com/iaas/Content/Registry/Tasks/registrygettingauthtoken.htm[Getting an Auth Token].
 
 NOTE: Remember to copy the generated token. You won't be able to access it
  again.
@@ -61,7 +60,7 @@ docker login \
 <2> The password is the generated token.
 <3> `<region-code>` is the code for the OCI region that you're using. For
  example, the region code for Phoenix is `phx`. See
- link:{oci-region-code-docs-url}[Regions and Availability Domains].
+ link:https://docs.cloud.oracle.com/iaas/Content/General/Concepts/regions.htm[Regions and Availability Domains].
 
 [source,bash]
 .Tag the image that you want to push to the registry:

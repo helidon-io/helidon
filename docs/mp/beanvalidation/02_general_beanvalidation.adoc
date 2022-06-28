@@ -18,18 +18,18 @@
 
 = General Bean Validation
 :h1Prefix: MP
-:pagename: general-bean-validation
 :description: General Bean Validation
 :keywords: helidon, webserver, bean validation, validation
-:bean-validation-spec-url: https://projects.eclipse.org/projects/ee4j.bean-validation
 :feature-name: General Bean Validation
-:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/attributes.adoc[]
 
 If bean validation is required outside JAX-RS/Jersey use cases, it is also available in Helidon.
-It follows the standard {bean-validation-spec-url}[Jakarta Bean
-Validation specification] which defines an API to validate Java beans.
+It follows the standard {jakarta-bean-validation-spec-url}[Jakarta Bean Validation specification] which defines an
+API to validate Java beans.
 
-include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+include::{rootdir}/includes/dependencies.adoc[]
 
 [source, xml]
 ----
@@ -68,4 +68,4 @@ public class GreetingProvider {
 
 NOTE: `beans.xml` is required to identify beans and for bean validation to work properly.
 
-For more information about the supported validations, see {bean-validation-spec-url}[Jakarta Bean Validation specification].
+For more information about the supported validations, see {jakarta-bean-validation-spec-url}[Jakarta Bean Validation specification].

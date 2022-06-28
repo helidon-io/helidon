@@ -20,7 +20,10 @@
 :description: Helidon Tracing Support
 :keywords: helidon, tracing, jaeger
 :h1Prefix: MP
-:jager-page: ../../shared/tracing/tracer-jaeger.adoc
-:jaeger-metrics-page-ref: mp/tracing/04_jaeger_metrics.adoc
+:flavor-uc: MP
+:flavor-lc: mp
+:rootdir: {docdir}/../..
 
-include::{jager-page}[]
+include::{rootdir}/includes/attributes.adoc[]
+
+include::{rootdir}/includes/tracing/tracer-jaeger.adoc[]

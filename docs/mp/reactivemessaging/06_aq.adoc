@@ -23,10 +23,12 @@
 :keywords: helidon, mp, messaging, jms, aq
 :h1Prefix: MP
 :feature-name: AQ Connector
-:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 :microprofile-bundle: false
+:rootdir: {docdir}/../..
 
-include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+include::{rootdir}/includes/attributes.adoc[]
+include::{rootdir}/includes/dependencies.adoc[]
+
 [source,xml]
 ----
 <dependency>
@@ -100,8 +102,8 @@ mp:
       type: queue
 ----
 
-Its also possible and preferable to refer to <<mp/guides/07_datasource.adoc, configured datasource>>,
-in our example <<mp/extensions/02_cdi_datasource-ucp.adoc, Oracle UCP datasource>>:
+Its also possible and preferable to refer to xref:../guides/07_datasource.adoc[configured datasource],
+in our example xref:../extensions/02_cdi_datasource-ucp.adoc[Oracle UCP datasource]:
 
 [source,yaml]
 .Example of connector config with Oracle UCP datasource:

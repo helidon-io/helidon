@@ -17,8 +17,12 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Overview
+:doctype: book
 :description: Helidon documentation
 :keywords: helidon, java, microservices, microprofile, documentation
+:rootdir: {docdir}/..
+
+include::{rootdir}/includes/attributes.adoc[]
 
 == Components
 
@@ -26,14 +30,14 @@
 ====
 [CARD]
 .Helidon SE
-[icon=explore,link=se/introduction/01_introduction.adoc]
+[icon=explore,link=../se/introduction/01_introduction.adoc]
 --
 A set of reactive, non-blocking libraries.
 --
 
 [CARD]
 .Helidon MP
-[icon=explore,link=mp/introduction/01_introduction.adoc]
+[icon=explore,link=../mp/introduction/01_introduction.adoc]
 --
 Microprofile implementation.
 --
@@ -46,7 +50,7 @@ Microprofile implementation.
 ====
 [CARD]
 .Get Started
-[icon=arrow_circle_up,link=about/03_prerequisites.adoc]
+[icon=arrow_circle_up,link=03_prerequisites.adoc]
 --
 Get started with Helidon.
 --
@@ -54,7 +58,8 @@ Get started with Helidon.
 
 [CARD]
 .Javadocs
-[icon=library_books,link=apidocs/index.html?overview-summary.html,link-type=url]
+// suppress inspection "AsciiDocLinkResolve"
+[icon=library_books,link={javadoc-base-url}/index.html?overview-summary.html,link-type=url]
 --
 Browse the Helidon Javadocs.
 --

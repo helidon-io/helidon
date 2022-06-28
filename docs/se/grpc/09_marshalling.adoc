@@ -16,11 +16,12 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-:pagename: grpc-server-metrics
+= Marshalling
 :description: Helidon gRPC Marshalling
 :keywords: helidon, grpc, java
+:rootdir: {docdir}/../..
 
-= Marshalling
+include::{rootdir}/includes/attributes.adoc[]
 
 == Default Marshalling Support
 

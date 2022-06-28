@@ -20,8 +20,10 @@
 :h1Prefix: MP
 :description: Helidon OIDC Security Provider guide
 :keywords: helidon, security, guide, oidc, provider
-:common-page-prefix-inc: ../../shared/common_prereqs/common_prereqs.adoc
+:rootdir: {docdir}/../..
 :toc-placement: preamble
+
+include::{rootdir}/includes/attributes.adoc[]
 
 This guide describes how to set up Keycloak and Helidon
 to secure an application with OIDC security provider.
@@ -30,7 +32,7 @@ to secure an application with OIDC security provider.
 
 For this 20 minute tutorial, you will need the following:
 
-include::{common-page-prefix-inc}[tag=common-prereqs]
+include::{rootdir}/includes/prerequisites.adoc[tag=common-prereqs]
 
 
 == Introduction
@@ -41,7 +43,7 @@ Its built on top of OAuth 2.0 and provides full-fledged authentication and autho
 
 == Install Keycloak
 
-==== On Docker
+=== On Docker
 
 To install Keycloak with Docker, open a terminal and make sure the port 8080 is free.
 
@@ -61,7 +63,7 @@ Log in using the username and password mentioned above: `admin`.
 
 You should be logged in successfully, and it prompts the admin console.
 
-==== On JDK
+=== On JDK
 
 Download the last version of Keycloak from Keycloak website : https://www.keycloak.org/downloads
 In the table Server choose Standalone server distribution. ZIP or Tar format are available, click on either
@@ -77,7 +79,7 @@ Open keycloak folder to make it your current directory.
 cd keycloak-11.0.2
 ----
 
-=== Start Keycloak
+== Start Keycloak
 
 To start keycloak and have it ready for further steps, run the following command.
 

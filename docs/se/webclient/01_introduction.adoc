@@ -18,13 +18,13 @@
 
 = WebClient Introduction
 :h1Prefix: SE
-:pagename: WebClient-Introduction
 :description: Helidon WebClient
 :keywords: helidon, se, rest, httpclient, webclient, reactive
 :feature-name: WebClient
-:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+:rootdir: {docdir}/../..
 
-include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+include::{rootdir}/includes/attributes.adoc[]
+include::{rootdir}/includes/dependencies.adoc[]
 
 [source,xml]
 ----
@@ -86,7 +86,7 @@ client:
       value: ["application/json","text/plain"] <2>
   services: <3>
     config:
-      metrics: 
+      metrics:
         - methods: ["PUT", "POST", "DELETE"]
         - type: METER
           name-format: "client.meter.overall"
@@ -198,8 +198,7 @@ The request settings are based on the following optional parameters, and change 
 * `contentType` (MediaType contentType)
 * `accept` (MediaType... mediaTypes)
 
-For more details, see the https://helidon.io/docs/latest/apidocs/io/helidon/webserver/RequestHeaders.html[Request Headers] API.
-
+For more details, see the link:{webserver-javadoc-base-url}/RequestHeaders.html[Request Headers] API.
 
 == Adding JSON Processing Media Support to the WebClient
 

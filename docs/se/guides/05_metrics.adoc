@@ -20,27 +20,22 @@
 :h1Prefix: SE
 :description: Helidon metrics
 :keywords: helidon, metrics, microprofile, guide
-:common-page-prefix-inc: ../../shared/common_prereqs/common_prereqs.adoc
-:common-guides: ../../common/guides
-:metrics-common: {common-guides}/metrics.adoc
-:javadoc-base-url-api: {javadoc-base-url}io.helidon.metrics.api/io/helidon/metrics/api
-:javadoc-base-url-serviceapi: {javadoc-base-url}io.helidon.metrics.serviceapi/io/helidon/metrics/serviceapi
-:metrics-support-builder-javadoc: {javadoc-base-url-api}/MetricsSupport.Builder.html
-:lower-case-flavor: se
+:flavor-lc: se
 :intro-project-name: {h1Prefix}
-:helidon-tag: https://github.com/oracle/helidon/tree/{helidon-version}
-:thread-pool-example-link: {helidon-tag}/examples/webserver/threadpool
+:rootdir: {docdir}/../..
 
-include::{metrics-common}[tag=intro]
-include::{metrics-common}[tag=create-sample-project]
-include::{metrics-common}[tag=using-built-in-metrics-intro]
+include::{rootdir}/includes/attributes.adoc[]
+
+include::{rootdir}/includes/guides/metrics.adoc[tag=intro]
+include::{rootdir}/includes/guides/metrics.adoc[tag=create-sample-project]
+include::{rootdir}/includes/guides/metrics.adoc[tag=using-built-in-metrics-intro]
 
 The generated source code is already configured for both metrics and health checks, but the following example removes health checks.
 
-
 [source,xml]
 .Notice that the metrics dependency is already in the project's pom.xml file:
-include::{metrics-common}[tag=metrics-dependency]
+include::{rootdir}/includes/guides/metrics.adoc[tag=metrics-dependency]
+
 [source,java]
 .Replace the `Main.createRouting` method with the following code:
 ----
@@ -56,12 +51,12 @@ include::{metrics-common}[tag=metrics-dependency]
 ----
 <1> Register the built-in base and vendor metrics.
 
-include::{metrics-common}[tag=build-and-run-intro]
+include::{rootdir}/includes/guides/metrics.adoc[tag=build-and-run-intro]
 
 [source,text]
 .Text response:
 ----
-include::{metrics-common}[tag=metrics-prometheus-output]
+include::{rootdir}/includes/guides/metrics.adoc[tag=metrics-prometheus-output]
 ----
 
 You can get the same data in JSON format.
@@ -77,15 +72,15 @@ curl -H "Accept: application/json"  http://localhost:8080/metrics
 ----
 {
   "base": {
-include::{metrics-common}[tag=base-metrics-json-output]
+include::{rootdir}/includes/guides/metrics.adoc[tag=base-metrics-json-output]
   },
-include::{metrics-common}[tag=vendor-metrics-json-output]
+include::{rootdir}/includes/guides/metrics.adoc[tag=vendor-metrics-json-output]
 }
 ----
 
-include::{metrics-common}[tag=get-single-metric]
+include::{rootdir}/includes/guides/metrics.adoc[tag=get-single-metric]
 
-include::{metrics-common}[tag=built-in-metrics-discussion]
+include::{rootdir}/includes/guides/metrics.adoc[tag=built-in-metrics-discussion]
 
 ////
 Controlling Metrics section
@@ -93,11 +88,11 @@ Controlling Metrics section
 For the SE guide, we stitch in the shared content about controlling metrics around SE-specific content that is not shared. It makes for a bit choppy-looking source here but it renders just fine and lets us easily share the content that's common between SE and MP.
 
 ////
-include::{metrics-common}[tag=controlling-intro]
+include::{rootdir}/includes/guides/metrics.adoc[tag=controlling-intro]
 
 Your Helidon SE application can also control metrics processing programmatically as described in the following sections.
 
-include::{metrics-common}[tag=disabling-whole-intro]
+include::{rootdir}/includes/guides/metrics.adoc[tag=disabling-whole-intro]
 
 A Helidon SE application can disable metrics processing programmatically.
 [source,java]
@@ -116,17 +111,17 @@ import io.helidon.metrics.api.RegistryFactory;
 
     RegistryFactory registryFactory = RegistryFactory.getInstance(metricsSettings); // <3>
 ----
-<1> Create a link:{javadoc-base-url-api}/MetricsSettings.html[`MetricsSettings]` instance (via its link:{javadoc-base-url-api}/MetricsSettings.Builder.html[`Builder`]) with the metrics subsystem disabled.
-<2> Get a link:{javadoc-base-url-serviceapi}/MetricsSupport.html[`MetricsSupport]` service (usable in setting routing rules) that responds
+<1> Create a link:{metrics-javadoc-base-url}/MetricsSettings.html[`MetricsSettings]` instance (via its link:{metrics-javadoc-base-url}/MetricsSettings.Builder.html[`Builder`]) with the metrics subsystem disabled.
+<2> Get a link:{metrics-serviceapi-javadoc-base-url}/MetricsSupport.html[`MetricsSupport]` service (usable in setting routing rules) that responds
 to the `/metrics` endpoint with `404` and an explanatory message.
-<3> Get a link:{javadoc-base-url-api}/RegistryFactory.html[`RegistryFactory]` instance that provides `MetricRegistry` instances which register
+<3> Get a link:{metrics-javadoc-base-url}/RegistryFactory.html[`RegistryFactory]` instance that provides `MetricRegistry` instances which register
  no-op metric objects (counters, timers, etc.).
 
 These builders and interfaces also have methods which accept `Config` objects representing the `metrics` node from the application configuration.
 
-include::{metrics-common}[tag=disabling-whole-summary]
+include::{rootdir}/includes/guides/metrics.adoc[tag=disabling-whole-summary]
 
-include::{metrics-common}[tag=controlling-by-component-intro]
+include::{rootdir}/includes/guides/metrics.adoc[tag=controlling-by-component-intro]
 
 Your Helidon SE application can disable a metrics-capable component's use of metrics programmatically.
 
@@ -146,20 +141,20 @@ import io.helidon.metrics.api.ComponentMetricsSettings;
             .build(); // <2>
 
 ----
-<1> Create a link:{javadoc-base-url-api}/ComponentMetricsSettings.html[`ComponentMetricsSettings]` instance (via its link:{javadoc-base-url-api}/ComponentMetricsSettings.Builder.html[`Builder`]) indicating that metrics usage should be disabled.
+<1> Create a link:{metrics-javadoc-base-url}/ComponentMetricsSettings.html[`ComponentMetricsSettings]` instance (via its link:{metrics-javadoc-base-url}/ComponentMetricsSettings.Builder.html[`Builder`]) indicating that metrics usage should be disabled.
 <2> Create an instance of the service with its metrics usage disabled.
 
-include::{metrics-common}[tag=controlling-by-component-summary]
+include::{rootdir}/includes/guides/metrics.adoc[tag=controlling-by-component-summary]
 
-include::{metrics-common}[tag=controlling-by-registry-intro]
+include::{rootdir}/includes/guides/metrics.adoc[tag=controlling-by-registry-intro]
 
 Your Helidon SE application can control the collection and reporting of metrics programmatically as well by preparing these settings objects:
 
-* link:{javadoc-base-url-api}/RegistryFilterSettings.html[`RegistryFilterSettings`]
-* link:{javadoc-base-url-api}/RegistrySettings.html[`RegistrySettings`]
-* link:{javadoc-base-url-api}/MetricsSettings.html[`MetricsSettings`]
+* link:{metrics-javadoc-base-url}/RegistryFilterSettings.html[`RegistryFilterSettings`]
+* link:{metrics-javadoc-base-url}/RegistrySettings.html[`RegistrySettings`]
+* link:{metrics-javadoc-base-url}/MetricsSettings.html[`MetricsSettings`]
 
-and using the resulting `MetricsSettings` to retrieve a suitable link:{javadoc-base-url-api}/RegistryFactory.html[`RegistryFactory`].
+and using the resulting `MetricsSettings` to retrieve a suitable link:{metrics-javadoc-base-url}/RegistryFactory.html[`RegistryFactory`].
 [source,java]
 .Control metrics by registry type and name
 ----
@@ -184,7 +179,7 @@ import org.eclipse.microprofile.metrics.MetricRegistry;
 <4> Set the overall metrics settings and retrieve a registry factory suitably initialized.
 <5> Obtain a reference to the `APPLICATION` registry which is set up to create and report on only metrics with names starting with `myapp.updates.`.
 
-include::{metrics-common}[tag=KPI]
+include::{rootdir}/includes/guides/metrics.adoc[tag=KPI]
 
 Your Helidon SE application can also control the KPI settings programmatically.
 [source,java]
@@ -205,12 +200,12 @@ import io.helidon.metrics.api.RegistryFactory;
             .keyPerformanceIndicatorSettings(kpiSettingsBuilder)
             .build(); // <2>
 ----
-<1> Create a link:{javadoc-base-url-api}/KeyPerformanceIndicatorMetricsSettings.html[`KeyPerformanceIndicatorMetricsSettings]` instance (via its link:{javadoc-base-url-api}/KeyPerformanceIndicatorMetricsSettings.Builder.html[`Builder`]) with non-default values.
-<2> Create a link:{javadoc-base-url-api}/MetricsSettings.html[`MetricsSettings]` instance reflecting the KPI settings.
+<1> Create a link:{metrics-javadoc-base-url}/KeyPerformanceIndicatorMetricsSettings.html[`KeyPerformanceIndicatorMetricsSettings]` instance (via its link:{metrics-javadoc-base-url}/KeyPerformanceIndicatorMetricsSettings.Builder.html[`Builder`]) with non-default values.
+<2> Create a link:{metrics-javadoc-base-url}/MetricsSettings.html[`MetricsSettings]` instance reflecting the KPI settings.
 
 // end of Controlling Metrics section
 
-include::{metrics-common}[tag=metrics-metadata]
+include::{rootdir}/includes/guides/metrics.adoc[tag=metrics-metadata]
 
 === Application-Specific Metrics Data
 
@@ -793,7 +788,7 @@ If you retrieve the metrics again shortly after the current minute has completed
 ----
 If you again wait until the _next_ complete minute without accessing the greeting card endpoint again and rerun the metrics query, the simple timer reports null values again because there was no activity in the preceding complete minute.
 
-include::{metrics-common}[tag=k8s-and-prometheus-integration]
+include::{rootdir}/includes/guides/metrics.adoc[tag=k8s-and-prometheus-integration]
 
 === Summary
 
@@ -807,7 +802,7 @@ metrics and scopes.
 
 Refer to the following references for additional information:
 
-* MicroProfile Metrics specification at https://github.com/eclipse/microprofile-metrics/releases/tag/1.1
-* MicroProfile Metrics Javadoc at https://javadoc.io/doc/org.eclipse.microprofile.metrics/microprofile-metrics-api/1.1.1
-* Helidon Javadoc at https://helidon.io/docs/latest/apidocs/index.html?overview-summary.html
+* link:{microprofile-metrics-spec-url}[MicroProfile Metrics specification]
+* link:{microprofile-metrics-javadoc-url}[MicroProfile Metrics Javadoc]
+* link:{javadoc-base-url}/index.html?overview-summary.html[Helidon Javadoc]
 

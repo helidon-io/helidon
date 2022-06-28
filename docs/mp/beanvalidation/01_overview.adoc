@@ -18,21 +18,21 @@
 
 = Bean Validation Introduction
 :h1Prefix: MP
-:pagename: bean-validation-introduction
 :description: Bean Validation Introduction
 :keywords: helidon, webserver, bean validation, validation
-:bean-validation-spec-url: https://projects.eclipse.org/projects/ee4j.bean-validation
 :feature-name: Bean Validation
-:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/attributes.adoc[]
 
 
 Helidon supports Bean Validation via its integration with JAX-RS/Jersey. The
-{bean-validation-spec-url}[Jakarta Bean
+{jakarta-bean-validation-spec-url}[Jakarta Bean
 Validation specification] defines an API to validate Java beans.
 Bean Validation is supported in REST resource classes as well as in
 regular application beans.
 
-include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+include::{rootdir}/includes/dependencies.adoc[]
 
 [source, xml]
 ----

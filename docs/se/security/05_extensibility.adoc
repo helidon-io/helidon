@@ -18,6 +18,9 @@
 
 = Extending Security
 :h1Prefix: SE
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/attributes.adoc[]
 
 This guide describes how you can extend the Security component.
 

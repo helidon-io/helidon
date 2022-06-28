@@ -20,9 +20,12 @@
 :h1Prefix: MP
 :description: Helidon Gradle Guide
 :keywords: helidon, guide, gradle, build
-:helidon-uc-flavor: MP
-:helidon-lc-flavor: mp
+:flavor-uc: MP
+:flavor-lc: mp
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/attributes.adoc[]
 
 This guide describes Helidon's support for Gradle projects.
 
-include::../../common/guides/gradle_build.adoc[]
+include::{rootdir}/includes/guides/gradle-build.adoc[]

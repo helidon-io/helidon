@@ -16,12 +16,14 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
+= Metrics Support for Exemplars
 :h1Prefix: MP
 :description: Helidon metrics
 :keywords: helidon, metrics, exemplar, prometheus, OpenMetrics
-:zipkinPageRef: mp/tracing/02_zipkin.adoc
-:jaegerPageRef: mp/tracing/03_jaeger.adoc
+:flavor-uc: MP
+:flavor-lc: mp
+:rootdir: {docdir}/../..
 
-= Metrics Support for Exemplars
+include::{rootdir}/includes/attributes.adoc[]
 
-include::../../shared/metrics/prometheus-exemplar-support.adoc[]
+include::{rootdir}/includes/metrics/prometheus-exemplar-support.adoc[]

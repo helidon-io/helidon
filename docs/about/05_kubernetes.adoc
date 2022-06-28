@@ -19,6 +19,9 @@
 = Kubernetes on your Desktop
 :description: Running Kubernetes on your desktop.
 :keywords: kubernetes
+:rootdir: {docdir}/..
+
+include::{rootdir}/includes/attributes.adoc[]
 
 For development it's often convenient to run Kubernetes on your desktop.
 Two popular ways to do this are with

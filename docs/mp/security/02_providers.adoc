@@ -16,10 +16,13 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
+:rootdir: {docdir}/../..
 = Security Providers
 :h1Prefix: MP
 :description: Helidon Security providers
 :keywords: helidon, security
+
+include::{rootdir}/includes/attributes.adoc[]
 
 == Implemented Security Providers
 
@@ -47,7 +50,7 @@ The following providers are no longer evolved:
 |<<JWT Provider,JWT Provider>> |Authentication |✅ |JWT tokens passed from frontend
 |===
 
-=== OIDC Provider
+=== OIDC Provider [[OIDC-Provider]]
 Open ID Connect security provider.
 
 ==== Setup
@@ -59,21 +62,21 @@ Open ID Connect security provider.
     <artifactId>helidon-microprofile-oidc</artifactId>
 </dependency>
 ----
-include::../../shared/security/providers/oidc.adoc[]
+include::{rootdir}/includes/security/providers/oidc.adoc[]
 
-include::../../shared/security/providers/http-basic-auth.adoc[]
+include::{rootdir}/includes/security/providers/http-basic-auth.adoc[]
 
-include::../../shared/security/providers/http-digest-auth.adoc[]
+include::{rootdir}/includes/security/providers/http-digest-auth.adoc[]
 
-include::../../shared/security/providers/header-assertion.adoc[]
+include::{rootdir}/includes/security/providers/header-assertion.adoc[]
 
-include::../../shared/security/providers/http-signatures.adoc[]
+include::{rootdir}/includes/security/providers/http-signatures.adoc[]
 
-include::../../shared/security/providers/idcs-role-mapper.adoc[]
+include::{rootdir}/includes/security/providers/idcs-role-mapper.adoc[]
 
-include::../../shared/security/providers/abac.adoc[]
+include::{rootdir}/includes/security/providers/abac.adoc[]
 
-include::../../shared/security/providers/google-login.adoc[]
+include::{rootdir}/includes/security/providers/google-login.adoc[]
 
-include::../../shared/security/providers/jwt.adoc[]
+include::{rootdir}/includes/security/providers/jwt.adoc[]
 

@@ -20,14 +20,16 @@
 :h1Prefix: SE
 :description: Kubernetes probes
 :keywords: helidon, readiness, liveness, probes, kubernetes
-:kubernetes-probes-url: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/attributes.adoc[]
 
 This document describes how to use the Helidon health check API with Kubernetes.
 
 == About Kubernetes probes
 
 Probes is the term used by Kubernetes to describe health checks for containers
- (link:{kubernetes-probes-url}[Kubernetes documentation]).
+ (link:https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes[Kubernetes documentation]).
 
 There are three types of probes:
 

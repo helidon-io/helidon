@@ -20,17 +20,20 @@
 :h1Prefix: SE
 :description: Helidon Reactive WebServer request handling
 :keywords: helidon, reactive, reactive streams, reactive java, reactive webserver
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/attributes.adoc[]
 
 == Request Handling
 
 Implement the logic to handle requests to WebServer in a `Handler`, which is a `FunctionalInterface`.
  Handlers:
 
- * Process the request and <<anchor-sending-response,send>> a response.
+ * Process the request and <<sending-response,send>> a response.
  * Act as a filter and forward requests to downstream handlers using the `request.next()`
  method.
  * Throw an exception or call `request.next(exception)` to begin
- <<webserver/05_error-handling.adoc,error handling>>.
+ xref:05_error-handling.adoc[error handling].
 
 === Process Request and Produce Response
 Each `Handler` has two parameters. `ServerRequest` and `ServerResponse`.
@@ -56,9 +59,8 @@ The handler forwards the request to the downstream handlers by
 <1> handler for any HTTP method using the `/hello` path
 <2> business logic implementation
 <3> forward the current request to the downstream handler
-
-* call `req.next(throwable)` to forward the handling to the
- <<webserver/05_error-handling.adoc,error handlers>>
++
+* call `req.next(throwable)` to forward the handling to the xref:05_error-handling.adoc[error handlers]
 +
 [source,java]
 ----
@@ -72,15 +74,15 @@ The handler forwards the request to the downstream handlers by
 })
 ----
 <1> handler for any HTTP method using the `/hello` path
-<2> custom logic 
+<2> custom logic
 <3> forward the current request to the downstream handler
 <4> forward the request to the error handler
 
-The handling logic can explicitly forward the execution to a different thread. 
+The handling logic can explicitly forward the execution to a different thread.
 This is the reason why returning from the handler can't automatically
  trigger calling the next handler.
 
-[[anchor-sending-response]]
+[[sending-response]]
 === Sending a response
 To complete the request handling, you must send a response by calling the `res.send()` method.
 
@@ -92,5 +94,5 @@ To complete the request handling, you must send a response by calling the `res.s
     res.send("Saved!"); // <2>
 })
 ----
-<1> handler that terminates the request handling for any HTTP method using the `/hello` path 
+<1> handler that terminates the request handling for any HTTP method using the `/hello` path
 <2> send the response

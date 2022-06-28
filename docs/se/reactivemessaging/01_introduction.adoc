@@ -24,9 +24,11 @@
 :keywords: helidon, se, messaging
 :h1Prefix: SE
 :feature-name: Reactive Messaging
-:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+:rootdir: {docdir}/../..
 
-include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+include::{rootdir}/includes/attributes.adoc[]
+
+include::{rootdir}/includes/dependencies.adoc[]
 
 [source,xml]
 ----
@@ -51,7 +53,7 @@ called *Reactive Messaging*. It's basically an API for connecting and configurin
 Connectors and Emitters with your reactive streams thru so called <<Channel,Channels>>.
 
 You may wonder how *Reactive Messaging* relates to
-<<mp/reactivemessaging/01_introduction.adoc,MicroProfile Reactive Messaging>>.
+xref:../../mp/reactivemessaging/01_introduction.adoc[MicroProfile Reactive Messaging].
 As the making of connectors or even configuring them can be repetitive task leading to
 the same results, Helidon SE Reactive Messaging supports very same configuration format
 for connectors as its MicroProfile counterpart does. Also, MP Connectors are reusable in
@@ -61,7 +63,7 @@ All Messaging connectors in Helidon are made to be universally usable by Helidon
 === Channel
 Channel is a named pair of `Publisher` and `Subscriber`. Channels can be connected together by
 <<Processor,processors>>. Registering of `Publisher` or `Subscriber` for a channel can be done
-by Messaging API, or configured implicitly for using registered <<se/reactivemessaging/03_connector.adoc,connector>>
+by Messaging API, or configured implicitly for using registered xref:03_connector.adoc[connector]
 for generating such `Publisher` or `Subscriber`.
 
 [source,java]
@@ -103,14 +105,14 @@ Messaging.builder()
         .build()
         .start();
 
->Consuming message TEST1 
+>Consuming message TEST1
 >Consuming message TEST2
 >Consuming message TEST3
 ----
 
 === Message
 Reactive Messaging in Helidon SE uses the same concept of
-<<mp/reactivemessaging/02_message.adoc,message wrapping>> as MicroProfile messaging.
+xref:../../mp/reactivemessaging/02_message.adoc[message wrapping] as MicroProfile messaging.
 The only notable difference is that SE Messaging does almost no implicit or automatic
 acknowledgement due to _no magic_ philosophy of Helidon SE.
 
@@ -121,13 +123,13 @@ implicit ack before callback is executed is necessary.
 
 === Connector
 Connector concept is a way for connecting <<Channel,channels>> to external sources.
-To make <<se/reactivemessaging/03_connector.adoc,creation and usage of connectors>>
+To make xref:03_connector.adoc[creation and usage of connectors]
 as easy and versatile as possible, Helidon SE Messaging uses same API for connectors
-like <<mp/reactivemessaging/01_introduction.adoc,MicroProfile Reactive Messaging>> does.
+like xref:../../mp/reactivemessaging/01_introduction.adoc[MicroProfile Reactive Messaging] does.
 This allows connectors to be usable in both flavors of Helidon with one limitation which is
 that connector has to be able to work without CDI.
 
 Example of such a versatile connectors in Helidon:
 
- * <<se/reactivemessaging/04_kafka.adoc,Kafka connector>>
- * <<se/reactivemessaging/05_jms.adoc,JMS connector>>
+ * xref:04_kafka.adoc[Kafka connector]
+ * xref:05_jms.adoc[JMS connector]

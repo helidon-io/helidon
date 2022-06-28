@@ -20,35 +20,27 @@
 :toc:
 :toc-placement: preamble
 :h1Prefix: MP
-:pagename: intro-cors-in-mp
 :description: Introduction to CORS in Helidon MP
 :keywords: helidon, java, cors, mp, microprofile, cross-origin resource sharing
-:javadoc-base-url-api: {javadoc-base-url}io.helidon.microprofile.cors/io/helidon/microprofile/cors
-:helidon-tag: https://github.com/oracle/helidon/tree/{helidon-version}
-:quickstart-example: {helidon-tag}/examples/quickstarts/helidon-quickstart-mp
-:cors-spec: https://www.w3.org/TR/cors/
-:helidon-mp-cors-example: {helidon-tag}/examples/microprofile/cors
-:common-page-prefix-inc: ../../shared/cors/common_shared.adoc
-:se-pages-prefix-inc: ../../se/cors
-:se-intro-page-inc: {se-pages-prefix-inc}/01_introduction.adoc
-:mp-pages-ref-prefix: mp/cors
-:mp-using-cors-ref: {mp-pages-ref-prefix}/02_using-cors.adoc
-:mp-cors-config-ref: {mp-pages-ref-prefix}/03_configuration-with-cors-mp.adoc
-:mp-cors-builtin-services-ref: {mp-pages-ref-prefix}/04_support-in-builtin-services.adoc
-:helidon-variant: MP
+:flavor-uc: MP
+:flavor-lc: mp
+:rootdir: {docdir}/../..
 
-link:{cors-spec}[Cross-origin resource sharing] (CORS) support in Helidon MP provides a flexible
+include::{rootdir}/includes/attributes.adoc[]
+
+link:https://www.w3.org/TR/cors[Cross-origin resource sharing] (CORS) support in Helidon MP provides a flexible
 mechanism that allows a Helidon MP application to control how another web application can access its resources,
 even if that web application is served from a different domain.
 
 
 == Overview
-include::{common-page-prefix-inc}[tag=cors-intro]
+
+include::{rootdir}/includes/cors/cors-common.adoc[tag=cors-intro]
 
 == Next Steps
 To introduce CORS into your Helidon MP application, do any or all of the following:
 
-* Modify your code using the Helidon MP CORS API. <<{mp-using-cors-ref}, Learn more.>>
-* Use configuration to allow users to override the CORS settings established in your application code. <<{mp-cors-config-ref},Learn more.>>
+* Modify your code using the Helidon MP CORS API. xref:02_using-cors.adoc[Learn more].
+* Use configuration to allow users to override the CORS settings established in your application code. xref:03_configuration-with-cors-mp.adoc[Learn more].
 * Update your application to include any of the built-in Helidon services that automatically
-support CORS. <<{mp-cors-builtin-services-ref},Learn more.>>
+support CORS. xref:04_support-in-builtin-services.adoc[Learn more].

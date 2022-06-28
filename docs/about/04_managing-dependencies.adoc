@@ -19,6 +19,9 @@
 = Managing Dependencies
 :description: Managing Maven dependencies
 :keywords: bom, dependency management
+:rootdir: {docdir}/..
+
+include::{rootdir}/includes/attributes.adoc[]
 
 Helidon provides a "`Bill Of Materials`" (BOM) to manage dependencies.
 This is a special Maven pom file that provides dependency management.
@@ -28,8 +31,8 @@ Using the Helidon BOM allows you to use Helidon component dependencies with a
 
 == The Helidon Application POMs
 
-If you created your application using the <<about/05_cli.adoc,Helidon CLI>> or
-<<about/03_prerequisites.adoc,archetypes>> then your
+If you created your application using the xref:05_cli.adoc[Helidon CLI] or
+xref:03_prerequisites.adoc[archetypes] then your
 project will have a Helidon Application POM as its parent POM. In this case you
 will get Helidon's dependency management automatically.
 
@@ -72,10 +75,8 @@ Once you have imported the BOM, you can declare dependencies on Helidon
 
 == For More Information
 
--  Maven Build Guide for
-   <<se/guides/25_maven_build.adoc, SE>> and
-   <<mp/guides/25_maven_build.adoc, MP>>
--  Gradle Build Guide for
-   <<se/guides/26_gradle_build.adoc, SE>> and
-   <<mp/guides/26_gradle_build.adoc, MP>>
+-  Maven Build Guide for xref:../se/guides/25_maven_build.adoc[SE] and
+ xref:../mp/guides/25_maven_build.adoc[MP]
+-  Gradle Build Guide for xref:../se/guides/26_gradle_build.adoc[SE] and
+ xref:../mp/guides/26_gradle_build.adoc[MP]
 

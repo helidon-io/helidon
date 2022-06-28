@@ -16,14 +16,16 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-:javadoc-base-url-api: {javadoc-base-url}io.helidon.config/io/helidon/oci
 
 = OCI Vault
 :h1Prefix: MP
 :description: Helidon OCI Vault integration
 :keywords: oci, vault
-:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 :feature-name: OCI Vault
+:rootdir: {docdir}/../..
+:imagesdir: {rootdir}/images
+
+include::{rootdir}/includes/attributes.adoc[]
 
 The Helidon MP OCI Vault integration provides easy access to Oracle Cloud Vault features.
 
@@ -31,7 +33,7 @@ The Helidon MP OCI Vault integration provides easy access to Oracle Cloud Vault 
 
 WARNING: Helidon integration with Oracle Cloud Infrastructure is still experimental and not intended for production use. APIs and features have not yet been fully tested and are subject to change.
 
-include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+include::{rootdir}/includes/dependencies.adoc[]
 
 [source,xml]
 ----
@@ -278,5 +280,4 @@ list (using its display name instead of its OCID if non-empty), as well as an `U
 check itself if and only if all vaults are successfully pinged.
 
 Note that OCI operations such as these may incur some significant latency.
-For more information about health checks see <<mp/health/01_introduction.adoc,
-MicroProfile Health>>.
+For more information about health checks see xref:../health/01_introduction.adoc[MicroProfile Health].

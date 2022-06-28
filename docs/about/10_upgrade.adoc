@@ -19,13 +19,14 @@
 = Upgrading from 1.4
 :description: Helidon Upgrade Guide
 :keywords: helidon upgrade migration
+:rootdir: {docdir}/..
+
+include::{rootdir}/includes/attributes.adoc[]
 
 == Upgrade Guides
 
 Helidon 2.0 is not fully backwards compatible with Helidon 1.4. For information
 concerning upgrading from Helidon 1.4 to 2.0 see the following upgrade guides:
 
-* <<mp/guides/15_migration.adoc, Helidon MP Upgrade Guide >>
-* <<se/guides/15_migration.adoc, Helidon SE Upgrade Guide >>
-
-
+* xref:../mp/guides/15_migration.adoc[Helidon MP Upgrade Guide]
+* xref:../se/guides/15_migration.adoc[Helidon SE Upgrade Guide]

@@ -20,6 +20,9 @@
 :description: getting started with Helidon Microprofile
 :keywords: helidon, microprofile, micro-profile
 :h1Prefix: MP
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/attributes.adoc[]
 
 Complete these tasks to get started with your MicroProfile application.
 
@@ -27,14 +30,12 @@ Complete these tasks to get started with your MicroProfile application.
 
 Helidon provides a MicroProfile server implementation (`io.helidon.microprofile.server`) that
 encapsulates the Helidon WebServer. You can either instantiate the server directly
-as is done in the
-<<guides/03_quickstart-mp.adoc, Helidon MP Quickstart example>>
+as is done in the xref:../guides/02_quickstart.adoc[Helidon MP Quickstart example]
 or use its built-in `main` as shown below.
-
 
 === Maven Coordinates
 
-The <<about/04_managing-dependencies.adoc, Managing Dependencies>> page describes
+The xref:../../about/04_managing-dependencies.adoc[Managing Dependencies] page describes
 how you should declare dependency management for Helidon applications.
 Then declare the following dependency in your project:
 

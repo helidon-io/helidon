@@ -21,7 +21,11 @@
 :description: Helidon metrics
 :keywords: helidon, metrics
 :feature-name: Metrics
-:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+:flavor-uc: SE
+:flavor-lc: se
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/attributes.adoc[]
 
 Helidon SE provides the following to support metrics:
 
@@ -31,9 +35,7 @@ Helidon SE provides the following to support metrics:
 3. A set of Helidon-specific metrics, available at `/metrics/vendor`
 
 
-
-
-include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+include::{rootdir}/includes/dependencies.adoc[]
 
 [source,xml]
 ----
@@ -130,8 +132,5 @@ curl -s -H 'Accept: application/json' -X GET http://localhost:8080/metrics/ | js
 In addition to your application metrics the reports contain other
 metrics of interest such as system and VM information.
 
-For full details see the
-https://github.com/eclipse/microprofile-metrics/releases[MicroProfile Metrics]
-specification.
-
+For full details see the link:{microprofile-metrics-spec-url}[MicroProfile Metrics] specification.
 The Metrics component in Helidon SE is the core for the Helidon MP implementation of the MicroProfile Metrics specification.

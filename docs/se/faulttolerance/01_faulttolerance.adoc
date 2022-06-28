@@ -20,19 +20,15 @@
 :toc:
 :toc-placement: preamble
 :h1Prefix: SE
-:pagename: fault-tolerance
 :description: Fault Tolerance in Helidon SE
 :keywords: helidon, java, fault, tolerance, fault tolerance, se
-:helidon-tag: https://github.com/oracle/helidon/tree/{helidon-version}
-:javadoc-base-url-faulttolerance: {javadoc-base-url}io.helidon.faulttolerance/io/helidon/faulttolerance/package-summary.html
-:javadoc-base-url-reactive: {javadoc-base-url}io.helidon.common.reactive/io/helidon/common/reactive/package-summary.html
-:helidon-variant: SE
-:mp-microprofile: https://download.eclipse.org/microprofile/microprofile-fault-tolerance-2.1.1/microprofile-fault-tolerance-spec.html
+:flavor-uc: SE
 :feature-name: Fault Tolerance
-:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+:rootdir: {docdir}/../..
 
+include::{rootdir}/includes/attributes.adoc[]
 
-include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+include::{rootdir}/includes/dependencies.adoc[]
 
 [source,xml]
 ----
@@ -44,7 +40,7 @@ include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 
 == Introduction
 
-Helidon SE Fault Tolerance support is inspired by link:{mp-microprofile}[MicroProfile Fault Tolerance].
+Helidon SE Fault Tolerance support is inspired by link:{microprofile-fault-tolerance-spec-url}[MicroProfile Fault Tolerance].
 The API defines the notion of a _fault handler_ that can be combined with other handlers to
 improve application robustness. Handlers are created to manage error conditions (faults)
 that may occur in real-world application environments. Examples include service restarts,
@@ -64,17 +60,16 @@ In addition, the API makes it very easy to create and monitor asynchronous tasks
 do not require explicit creation and management of threads/executors.
 
 For more information the reader is referred to the
-link:{javadoc-base-url-faulttolerance}[Fault Toleance SE API Javadocs].
+link:{faulttolerance-javadoc-base-url}[Fault Tolerance SE API Javadocs].
 
 === Updating your POM
 
-In order to use Fault Tolerance you first need to add the <<Maven Coordinates, maven dependency>> to
-your `pom.xml`.
+In order to use Fault Tolerance you first need to add the <<Maven Coordinates, maven dependency>> to your `pom.xml`.
 
 === Single<T> and Multi<T>
 
 In what follows we shall assume the reader is familiar with the two core Helidon types
-`Single<T>` and `Multi<T>` from the link:{javadoc-base-url-reactive}[io.helidon.common.reactive]
+`Single<T>` and `Multi<T>` from the link:{reactive-base-url}[io.helidon.common.reactive]
 package. Most simply,
 a `Single<T>` is a promise to produce zero or one value of type `T` or signal an error;
 while a `Multi<T>` is a promise to produce zero or more values of type `T` or signal an error.

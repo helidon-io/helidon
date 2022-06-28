@@ -18,9 +18,11 @@
 
 = gRPC Server Routing
 :h1Prefix: SE
-:pagename: grpc-server-routing
 :description: Helidon gRPC Server Routing
 :keywords: helidon, grpc, java
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/attributes.adoc[]
 
 == gRPC Server Routing
 
@@ -61,7 +63,7 @@ descriptor by providing configuration consumer as a second argument to the
 
 This is particularly useful when registering standard `BindableService`
 instances, as it allows you to add certain Helidon-specific behaviors, such as
-<<06_health_checks.adoc, health checks>> and <<07_metrics.adoc, metrics>> to them:
+xref:06_health_checks.adoc[health checks] and xref:07_metrics.adoc[metrics] to them:
 
 [source,java]
 ----
@@ -81,7 +83,7 @@ instances, as it allows you to add certain Helidon-specific behaviors, such as
 
 == Specifying Global Interceptors
 
-`GrpcRouting` also allows you to specify <<05_interceptors.adoc, custom interceptors>>
+`GrpcRouting` also allows you to specify xref:05_interceptors.adoc[custom interceptors]
 that will be applied to all registered services.
 
 This is useful to configure features such as tracing, security and metrics collection,

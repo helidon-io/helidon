@@ -18,18 +18,20 @@
 
 = Helidon with JBatch Guide
 :h1Prefix: MP
-:description: Helidon 
-:keywords: helidon, microprofile, guide, Jakarta Batch Project, Jakarta Batch 
-:common-page-prefix-inc: ../../shared/common_prereqs/common_prereqs.adoc
+:description: Helidon
+:keywords: helidon, microprofile, guide, Jakarta Batch Project, Jakarta Batch
+:rootdir: {docdir}/../..
 
-This guide describes how Helidon and Jakarta Batch (JBatch) can be used together to execute batch jobs in environments that do not fully support EE environments. 
+include::{rootdir}/includes/attributes.adoc[]
+
+This guide describes how Helidon and Jakarta Batch (JBatch) can be used together to execute batch jobs in environments that do not fully support EE environments.
 
 == What You Need
 
 For this 20 minute tutorial, you will need the following:
-include::{common-page-prefix-inc}[tag=common-prereqs]
+include::{rootdir}/includes/prerequisites.adoc[tag=common-prereqs]
 
-NOTE: This guide assumes you are familiar with the https://projects.eclipse.org/projects/ee4j.batch[Jakarta Batch project specification] from the Ecplipse Foundation project site. 
+NOTE: This guide assumes you are familiar with the https://projects.eclipse.org/projects/ee4j.batch[Jakarta Batch project specification] from the Eclipse Foundation project site.
 
 == Dependencies
 For this example, add the IBM JBatch implementation and the `derby` embedded DB (since JPA and JPA are not available by default) dependencies to the testing module:
@@ -38,22 +40,28 @@ For this example, add the IBM JBatch implementation and the `derby` embedded DB 
 .Maven dependencies
 ----
 <dependencies>
-  <dependency>            
-     <groupId>com.ibm.jbatch</groupId>                 
-     <artifactId>com.ibm.jbatch.container</artifactId>              
- </dependency>
-  <dependency>            
-     <groupId>org.apache.derby</groupId>                 
-     <artifactId>derby</artifactId>      
-  </dependency>
-<dependencies>
+    <dependency>
+        <groupId>com.imb.jbatch</groupId>
+        <artifactId>com.ibm.jbatch.container</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.apache.derby</groupId>
+        <artifactId>derby</artifactId>
+    </dependency>
+</dependencies>
 ----
 
 == Add Sample Jobs
 
-In this demonstration you will first create sample input and output records and then the following jobs: `MyItemReader`, `MyItemProcessor` and `MyItemWriter`. Finally you will create `MyBatchlet` to demonstrate all possible usages of JBatch.
+In this demonstration you will first create sample input and output records and then the following jobs:
 
-==== 1. Create a unit of input information
+* `MyItemReader`
+* `MyItemProcessor`
+* `MyItemWriter`
+
+Finally you will create `MyBatchlet` to demonstrate all possible usages of JBatch.
+
+=== 1. Create a unit of input information
 
 [source,java]
 .MyInputRecord
@@ -61,7 +69,7 @@ In this demonstration you will first create sample input and output records and 
 public class MyInputRecord {
     private int id;
 
-    
+
     public MyInputRecord(int id) {
         this.id = id;
     }
@@ -175,7 +183,7 @@ public class MyItemWriter extends AbstractItemWriter {
 }
 ----
 
-==== 6. Create `MyBatchlet` to extentd `AbstractBatchlet`
+==== 6. Create `MyBatchlet` to extend `AbstractBatchlet`
 
 `MyBatchlet` simply completes the process:
 
@@ -184,7 +192,7 @@ public class MyItemWriter extends AbstractItemWriter {
 
 ----
 public class MyBatchlet extends AbstractBatchlet {
-    
+
     @Override
     public String process() {
         System.out.println("Running inside a batchlet");
@@ -198,26 +206,26 @@ public class MyBatchlet extends AbstractBatchlet {
 == Update the Descriptor File
 Add this code to your job descriptor.xml file:
 
-[source,java]
+[source,xml]
 .Updated descriptor file
-
 ----
-<job id="myJob" xmlns="http://xmlns.jcp.org/xml/ns/javaee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/jobXML_1_0.xsd" version="1.0">
+<job id="myJob" xmlns="https://jakarta.ee/xml/ns/jakartaee"
+                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/jobXML_2_0.xsd"
+                version="2.0">
     <step id="step1" next="step2">
-        <chunk item-count="3"> <1>
+        <chunk item-count="3"> <!--1-->
             <reader ref="io.helidon.jbatch.example.jobs.MyItemReader"/>
             <processor ref="io.helidon.jbatch.example.jobs.MyItemProcessor"/>
             <writer ref="io.helidon.jbatch.example.jobs.MyItemWriter"/>
-        </chunk>    
+        </chunk>
     </step>
-    <step id="step2" > <2>
+    <step id="step2"> <!--2-->
         <batchlet ref="io.helidon.jbatch.example.jobs.MyBatchlet"/>
     </step>
 </job>
 ----
 <1> The first step of the job includes `MyItemReader`, `MyItemProcessor` and `MyItemWriter`.
-
 <2> The second step of the job includes `MyBatchlet`.
 
 NOTE: You must specify the fully qualified names in the `ref` properties, like “io.helidon.jbatch.example.jobs.MyItemReader”, otherwise it will not work.
@@ -252,7 +260,7 @@ public class BatchResource {
                 .build();
     }
 
-   
+
     @GET
     @Path("/status/{execution-id}")
     public JsonObject status(@PathParam("execution-id") Long executionId){
@@ -272,7 +280,7 @@ public class BatchResource {
 }
 ----
 
-Helidon specifies to JBatch that it should run in Standalone (SE) mode. It will also register the `HelidonExecutorServiceProvider` which is actually relatively small. For our example we need something really small, like a `FixedTheadPool` with 2 threads. This provider is used to tell our JBatch engine exactly which ExecutorSevice to use.
+Helidon specifies to JBatch that it should run in Standalone (SE) mode. It will also register the `HelidonExecutorServiceProvider` which is actually relatively small. For our example we need something really small, like a `FixedTheadPool` with 2 threads. This provider is used to tell our JBatch engine exactly which ExecutorService to use.
 
 [source, java]
 .HelidonExecutorServiceProvider
@@ -286,13 +294,13 @@ public class HelidonExecutorServiceProvider implements ExecutorServiceProvider {
 }
 ----
 
-== Run the Code 
+== Run the Code
 
 [source,bash]
 
 ----
 mvn package
-java -jar target/helidon-jbatch-example.jar 
+java -jar target/helidon-jbatch-example.jar
 ----
 
 
@@ -343,9 +351,9 @@ This indicates that the batch job was called and executed successfully.
 curl -X GET http://localhost:8080/batch/status/1
 ----
 
-NOTE: In this example the job ID is 1, but make sure that you enter your specfic job ID in the string. 
+NOTE: In this example the job ID is 1, but make sure that you enter your specific job ID in the string.
 
-The results should look something like this: 
+The results should look something like this:
 
 [source,bash]
 
@@ -357,5 +365,5 @@ The results should look something like this:
 
 This guide demonstrated how to use Helidon with JBatch even though Helidon is not a full EE container.
 
- 
+
 

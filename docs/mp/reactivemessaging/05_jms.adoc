@@ -23,10 +23,11 @@
 :keywords: helidon, mp, messaging, jms
 :h1Prefix: MP
 :feature-name: JMS Connector
-:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 :microprofile-bundle: false
+:rootdir: {docdir}/../..
 
-include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+include::{rootdir}/includes/attributes.adoc[]
+include::{rootdir}/includes/dependencies.adoc[]
 
 [source,xml]
 ----

@@ -24,10 +24,12 @@
 :keywords: helidon, mp, microprofile, security, jwt
 :h1Prefix: MP
 :feature-name: JWT Authentication
-:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 :microprofile-bundle: true
+:rootdir: {docdir}/../..
 
-include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+include::{rootdir}/includes/attributes.adoc[]
+
+include::{rootdir}/includes/dependencies.adoc[]
 
 [source,xml]
 ----
@@ -38,7 +40,7 @@ include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 ----
 
 == Overview
-JSON Web Token (JWT) defines a compact and self-contained way for securely transmitting information between parties as a JSON object. With JWT Auth you can integrate security features such as single sign on into your Helidon MP applications.  
+JSON Web Token (JWT) defines a compact and self-contained way for securely transmitting information between parties as a JSON object. With JWT Auth you can integrate security features such as single sign on into your Helidon MP applications.
 
 == Next Steps
 
@@ -57,4 +59,4 @@ public class ProtectedApplication extends Application{
 
 Learn more about JWT authentication: +
 
-https://download.eclipse.org/microprofile/microprofile-jwt-auth-2.0/microprofile-jwt-auth-spec-2.0.pdf#_introduction[Eclipse MicroProfile Interoperable JWT RBAC]
+link:{microprofile-jwt-base-url}#_introduction[Eclipse MicroProfile Interoperable JWT RBAC]

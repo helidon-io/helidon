@@ -16,14 +16,15 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-:javadoc-base-url-api: {javadoc-base-url}io.helidon.config/io/helidon/oci
-
 = OCI Autonomous Transaction Processing
 :h1Prefix: MP
 :description: Helidon OCI Autonomous Transaction Processing integration
 :keywords: oci, atp
-:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 :feature-name: OCI Autonomous Transaction Processing
+:rootdir: {docdir}/../..
+:imagesdir: {rootdir}/images
+
+include::{rootdir}/includes/attributes.adoc[]
 
 The Helidon MP OCI Autonomous Transaction Processing integration provides easy access to ATP database in Oracle cloud.
 
@@ -31,7 +32,7 @@ The Helidon MP OCI Autonomous Transaction Processing integration provides easy a
 
 WARNING: Helidon integration with Oracle Cloud Infrastructure is still experimental and not intended for production use. APIs and features have not yet been fully tested and are subject to change.
 
-include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+include::{rootdir}/includes/dependencies.adoc[]
 
 [source,xml]
 ----
@@ -146,4 +147,4 @@ To generate wallet file for OCI Autonomous Transaction Processing:
 <3> Setup DataSource using info from 'walletArchive'
 <4> Read the first column from first row of result.
 
-For complete code, about how to setup datasource using wallet info, please see https://github.com/oracle/helidon/tree/master/examples/integrations/oci/atp-cdi[ATP MP Example]
+For complete code, about how to setup datasource using wallet info, please see link:{helidon-tree-url}/examples/integrations/oci/atp-cdi[ATP MP Example]

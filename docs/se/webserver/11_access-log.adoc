@@ -16,11 +16,13 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
+= WebServer Access Log
 :h1Prefix: SE
 :description: Helidon Reactive Webserver Access Log
 :keywords: helidon, webserver, access log
+:rootdir: {docdir}/../..
 
-= WebServer Access Log
+include::{rootdir}/includes/attributes.adoc[]
 
 Access logging in Helidon is done by a dedicated module that can be
 added to WebServer and configured.

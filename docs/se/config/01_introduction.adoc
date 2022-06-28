@@ -16,20 +16,21 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-:javadoc-base-url-api: {javadoc-base-url}io.helidon.config/io/helidon/config
-
 = The Configuration Component
 :h1Prefix: SE
 :description: Helidon config introduction
 :keywords: helidon, config
-:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 :feature-name: Config
+:rootdir: {docdir}/../..
+:imagesdir: {rootdir}/images
+
+include::{rootdir}/includes/attributes.adoc[]
 
 The config component provides a Java API to load and process
 configuration properties from various sources into a `Config` object which the
 application can use to retrieve config data.
 
-include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+include::{rootdir}/includes/dependencies.adoc[]
 
 [source,xml]
 ----
@@ -183,7 +184,7 @@ In `Config` system, you can do this through change support provided by these com
         requires support in config sources themselves (see `PollableSource`)
 3. `ChangeWatcher` - a component watching the underlying source for changes. This requires support
         in config sources themselves (see `WatchableSource`)
-4. `EventConfigSource` - an event source that is capable of notifying about changes iteslf
+4. `EventConfigSource` - an event source that is capable of notifying about changes itself
 
 
 If you want to receive `onChange` events, you must configure your Config with at least one source that is capable of providing changes (having a `PollingStrategy` or `ChangeWatcher` configured, or implementing `EventConfigSource`)
@@ -224,45 +225,45 @@ You do this by:
 Using a builder, the application can control everything about how the config
 system creates the resulting `Config` instance: config sources, parsers, polling strategy,
 filters, overrides, mappers, whether or not environment variables and Java
-system properties serve as config sources. The JavaDoc explains how to use the 
-link:{javadoc-base-url-api}/Config.Builder.html[`Config.Builder`].
+system properties serve as config sources. The JavaDoc explains how to use the
+link:{config-javadoc-base-url}/Config.Builder.html[`Config.Builder`].
 +
-* using a <<se/config/09_config-profiles.adoc,config profile>> to choose the sources to be used
-* creating a <<se/config/06_advanced-configuration.adoc#Config-Advanced-metaconfig, meta-configuration>>
+* using a xref:09_config-profiles.adoc[config profile] to choose the sources to be used
+* creating a xref:06_advanced-configuration.adoc#Config-Advanced-metaconfig[meta-configuration]
 file on the runtime classpath or file system to control how the config system prepares the
 default configuration.
 
-Once created, the `Config` object provides many methods the application can use to 
-retrieve config data as various Java types. See the link:{javadoc-base-url-api}/Config.html[`Config`]
+Once created, the `Config` object provides many methods the application can use to
+retrieve config data as various Java types. See the link:{config-javadoc-base-url}/Config.html[`Config`]
 JavaDoc for complete details.
 
-The links in the following tables lead you to more information about various 
+The links in the following tables lead you to more information about various
 other config topics.
 
 .Controlling How Config is Loaded
 |===
 | Topic |Documentation
 
-| Where config comes from |<<se/config/02_config-sources.adoc,Config sources>>,<<se/config/09_config-profiles.adoc,Config Profiles>>,
-<<se/config/06_advanced-configuration.adoc#Config-Advanced-metaconfig,meta-configuration>>
-| What format config data is expressed in |<<se/config/02_config-sources.adoc#parsers,Config parsers>>,
-<<se/config/08_supported-formats.adoc,supported formats>>
-| How to filter, override, and dereference values |<<se/config/06_advanced-configuration.adoc#filters-and-overrides,Filters and overrides>>
-| What happens when config data changes |<<se/config/05_mutability-support.adoc#polling,Config polling>>
-| How to deal with loading errors |<<se/config/02_config-sources.adoc#retry,Config retry policies>>
+| Where config comes from |xref:02_config-sources.adoc[Config sources],xref:09_config-profiles.adoc[Config Profiles],
+xref:06_advanced-configuration.adoc#Config-Advanced-metaconfig[meta-configuration]
+| What format config data is expressed in |xref:02_config-sources.adoc#parsers[Config parsers],
+xref:08_supported-formats.adoc[supported formats]
+| How to filter, override, and dereference values |xref:06_advanced-configuration.adoc#filters-and-overrides[Filters and overrides]
+| What happens when config data changes |xref:05_mutability-support.adoc#polling[Config polling]
+| How to deal with loading errors |xref:02_config-sources.adoc#retry[Config retry policies]
 |===
 
 .Accessing Configuration Data
 |===
 | Topic |Documentation
 
-| How config data is translated into Java types |<<se/config/04_property-mapping.adoc,Config mappers>>
-| How to navigate config trees |<<se/config/03_hierarchical-features.adoc,Navigation>>
+| How config data is translated into Java types |xref:04_property-mapping.adoc[Config mappers]
+| How to navigate config trees |xref:03_hierarchical-features.adoc[Navigation]
 |===
 
 .Extending and Fine-tuning the Config System
 |===
-| Topic |Documentation 
+| Topic |Documentation
 
-| Writing extensions |<<se/config/07_extensions.adoc,Extensions>>
+| Writing extensions |xref:07_extensions.adoc[Extensions]
 |===

@@ -23,9 +23,10 @@
 :keywords: helidon, se, scheduling
 :h1Prefix: SE
 :feature-name: Scheduling
-:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+:rootdir: {docdir}/../..
 
-include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+include::{rootdir}/includes/attributes.adoc[]
+include::{rootdir}/includes/dependencies.adoc[]
 
 [source,xml]
 ----
@@ -56,7 +57,7 @@ Metadata like human-readable interval description or configured values are avail
 FixedRateInvocation provided as task parameter.
 
 [source,java]
-.Example with ivocation metadata
+.Example with invocation metadata
 ----
 Scheduling.fixedRateBuilder()
         .delay(10)
@@ -78,13 +79,13 @@ Scheduling.cronBuilder()
     .build();
 ----
 
-include::../../shared/scheduling/01_cron.adoc[lines=19..]
+include::{rootdir}/includes/scheduling/cron.adoc[lines=19..]
 
 Metadata like human-readable interval description or configured values are available through
 CronInvocation provided as task parameter.
 
 [source,java]
-.Example with ivocation metadata
+.Example with invocation metadata
 ----
 Scheduling.cronBuilder()
     .expression("0 15 8 ? * *")

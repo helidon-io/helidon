@@ -19,19 +19,20 @@
 = Micrometer Metrics
 :description: Helidon Micrometer integration
 :keywords: micrometer, helidon, metrics, integration
-:javadoc-base-url-api: {javadoc-base-url}io.helidon.integrations.micrometer/io/helidon/integrations/micrometer
 :h1Prefix: SE
-:common-page-prefix-inc: ../../shared/metrics/micrometer_shared.adoc
-:isSE: true
+:flavor-uc: SE
+:flavor-lc: se
+:rootdir: {docdir}/../..
 
-include::{common-page-prefix-inc}[tags=intro]
+include::{rootdir}/includes/attributes.adoc[]
 
-include::{common-page-prefix-inc}[tags=prereq]
+include::{rootdir}/includes/metrics/micrometer-shared.adoc[tags=intro]
+include::{rootdir}/includes/metrics/micrometer-shared.adoc[tags=prereq]
 
 == Using Micrometer in Your Application
 You need to make two types of changes to your application to use Helidon SE integration with Micrometer:
 
-. Register an instance of link:{javadoc-base-url-api}/MicrometerSupport.html[`MicrometerSupport`] with the web server.
+. Register an instance of link:{micrometer-javadoc-base-url}/MicrometerSupport.html[`MicrometerSupport`] with the web server.
 . Create  meters using the meter registry which `MicrometerSupport` manages and update those meters.
 
 === Register an Instance of `MicrometerSupport` with the Web Server
@@ -89,11 +90,11 @@ The example above enrolls the built-in Prometheus meter registry with the defaul
 You can change the default setup for built-in registries, and you can enroll other meter registries your application
 creates itself.
 
-include::{common-page-prefix-inc}[tag=overriding-intro]
+include::{rootdir}/includes/metrics/micrometer-shared.adoc[tag=overriding-intro]
 
 You can override these defaults in either of two ways:
 
-* Using the link:{javadoc-base-url-api}/MicrometerSupport.Builder.html[`MicrometerSupport.Builder`] class
+* Using the link:{micrometer-javadoc-base-url}/MicrometerSupport.Builder.html[`MicrometerSupport.Builder`] class
 * Using configuration
 
 ==== Using `MicrometerSupport.Builder`
@@ -121,7 +122,8 @@ MicrometerSupport support = MicrometerSupport.builder()
 
 
 ==== Using Configuration
-include::{common-page-prefix-inc}[tag=overriding-using-config]
+
+include::{rootdir}/includes/metrics/micrometer-shared.adoc[tag=overriding-using-config]
 
 
 === Enrolling other Micrometer meter registries
@@ -161,12 +163,12 @@ MicrometerSupport support = MicrometerSupport.builder()
                 .build();
 ----
 <1> Create the meter registry. This example uses a Prometheus registry but it can be any extension of `MeterRegistry`.
-<2> Provide the function that checks if the link:{javadoc-base-url-webserver}/ServerRequest.html[`ServerRequest`]
+<2> Provide the function that checks if the link:{webserver-javadoc-base-url}/ServerRequest.html[`ServerRequest`]
 accepts content that your meter registry can produce (e.g., either `text/plain` or unspecified is normally an indication for Prometheus-style output)
-and returns the appropriate `Optional<link:{:javadoc-base-url-webserver}/Handler.html[``Handler``]>`.
+and returns the appropriate `Optional<link:{webserver-javadoc-base-url}/Handler.html[``Handler``]>`.
 <3> A very simple in-line `Handler` that sets the response entity from the Prometheus registry's `scrape()` method.
 
-include::{common-page-prefix-inc}[tag=accessing-endpoint-intro]
+include::{rootdir}/includes/metrics/micrometer-shared.adoc[tag=accessing-endpoint-intro]
 
 When `MicrometerSupport` receives a request at the endpoint, it looks for the first enrolled meter registry for which
 the corresponding `Function<ServerRequest, Optional<Handler>>` returns a non-empty `Handler`.

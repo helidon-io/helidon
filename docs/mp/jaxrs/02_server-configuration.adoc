@@ -20,6 +20,9 @@
 :h1Prefix: MP
 :description: Helidon MicroProfile server configuration
 :keywords: helidon, microprofile, micro-profile
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/attributes.adoc[]
 
 By default, the server uses the MicroProfile Config, but you may also want to use Helidon configuration.
 

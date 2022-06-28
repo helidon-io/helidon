@@ -18,14 +18,14 @@
 
 = WebSocket Introduction
 :h1Prefix: SE
-:pagename: websocket-introduction
 :description: Helidon WebSocket Introduction
 :keywords: helidon, webserver, websocket, se
-:websocket-spec-url: https://projects.eclipse.org/projects/ee4j.websocket
-:tyrus-project-url: https://projects.eclipse.org/projects/ee4j.tyrus
-:helidon-websocket-example-url: https://github.com/oracle/helidon/tree/master/examples/webserver/websocket
+:rootdir: {docdir}/../..
 
-Helidon integrates with {tyrus-project-url}[Tyrus] to provide support for the {websocket-spec-url}[Jakarta WebSocket API].
+include::{rootdir}/includes/attributes.adoc[]
+
+Helidon integrates with link:https://projects.eclipse.org/projects/ee4j.tyrus[Tyrus] to provide support for the
+ {jakarta-websocket-spec-url}[Jakarta WebSocket API].
 The WebSocket API enables Java applications to participate in WebSocket interactions
 as both servers and clients. The server API supports two flavors: annotated and
 programmatic endpoints.
@@ -50,7 +50,7 @@ one at a time, over a connection.
 The example will show how REST and WebSocket connections can
 be seamlessly combined into a Helidon application.
 
-The complete Helidon SE example is available {helidon-websocket-example-url}[here]. Let us start by
+The complete Helidon SE example is available {helidon-github-tree-url}/examples/webserver/websocket[here]. Let us start by
 looking at `MessageQueueService`:
 
 [source,java]
@@ -131,8 +131,9 @@ the web server. This is accomplished via a `Routing` builder:
 This code snippet uses multiple builders for `Routing`, `TyrusSupport` and `ServerEndpointConfig`.
 In particular, it registers `MessageBoardEndpoint.class` at `"/websocket/board"` and associates
 with it a _message encoder_. For more information on message encoders and decoders the
-reader see the {websocket-spec-url}[websocket specification]; in this {helidon-websocket-example-url}[example],
- `UppercaseEncoder.class` simply uppercases every message sent from the server.
+reader see the {jakarta-websocket-spec-url}[websocket specification]; in this
+ {helidon-github-tree-url}/examples/webserver/websocket[example], `UppercaseEncoder.class` simply uppercases every
+ message sent from the server.
 
 Endpoint methods in Helidon SE are executed in Netty's worker thread pool. Threads in this
 pool are intended to be _non-blocking_, thus it is recommended for any blocking or

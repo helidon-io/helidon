@@ -18,10 +18,11 @@
 
 = gRPC Service Implementation
 :h1Prefix: SE
-:javadoc-base-url-api: {javadoc-base-url}io.helidon.grpc.server/io/helidon/grpc/server
-:pagename: grpc-server-service-implementation
 :description: Helidon gRPC Service Implementation
 :keywords: helidon, grpc, java
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/attributes.adoc[]
 
 == Service Implementation
 
@@ -38,13 +39,13 @@ benefits:
   significantly simpler.
 
 * It allows you to configure some of the Helidon value-added features, such
-  as <<08_security.adoc, security>> and <<07_metrics.adoc, metrics collection>>
+  as xref:08_security.adoc[security] and xref:07_metrics.adoc[metrics collection]
   down to the method level.
 
 * It allows you to easily specify custom marshaller for requests and
   responses if Protobuf does not satisfy your needs.
 
-* It provides built in support for <<06_health_checks.adoc, health checks>>.
+* It provides built in support for xref:06_health_checks.adoc[health checks].
 
 == Service Implementation Basics
 
@@ -79,7 +80,7 @@ class EchoService implements GrpcService {
 
 NOTE: The `complete` method shown in the example above is just one of many helper
       methods available in the `GrpcService` class. See the full list
-      link:{javadoc-base-url-api}/GrpcService.html[here].
+      link:{grpc-server-javadoc-base-url}/GrpcService.html[here].
 
 The example above implements a service with a single unary method, which will be
 exposed at the `EchoService/Echo' endpoint. The service does not explicitly define

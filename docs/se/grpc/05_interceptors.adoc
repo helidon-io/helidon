@@ -18,9 +18,11 @@
 
 = gRPC Interceptors
 :h1Prefix: SE
-:pagename: grpc-server-interceptors
 :description: Helidon gRPC Service Interceptors
 :keywords: helidon, grpc, java
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/attributes.adoc[]
 
 == Interceptors
 

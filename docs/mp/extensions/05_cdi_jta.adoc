@@ -21,13 +21,14 @@
 :description: Helidon CDI extension for JTA
 :keywords: helidon, java, microservices, microprofile, extensions, cdi, jta
 :feature-name: JTA Support
-:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+:rootdir: {docdir}/../..
 
-This https://docs.jboss.org/cdi/spec/2.0/cdi-spec.html#spi[CDI
-portable extension] provides support for JTA (Java Transaction API)
+include::{rootdir}/includes/attributes.adoc[]
+
+This link:{jakarta-cdi-spec-url}#spi[CDI portable extension] provides support for JTA (Java Transaction API)
 transactions in your Helidon MicroProfile applications.
 
-include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+include::{rootdir}/includes/dependencies.adoc[]
 
 [source,xml]
 ----
@@ -63,7 +64,7 @@ exception, the transaction will be rolled back.
 You can further specify the transactional behavior of the extension by
 using different instances of the `Transactional` annotation.  For more
 information, see the
-https://static.javadoc.io/javax.transaction/javax.transaction-api/1.2/javax/transaction/Transactional.html[`Transactional`
+link:{jakarta-transactions-javadoc-url}/jakarta/transaction/Transactional.html[`Transactional`
 annotation documentation].
 
 Transactional method support is implemented by CDI interception
@@ -76,9 +77,7 @@ Interceptors specification] for more details.
 During a transactional method invocation, the extension makes the
 following objects available for injection via the `Inject` annotation:
 
-* https://static.javadoc.io/javax.transaction/javax.transaction-api/1.2/javax/transaction/UserTransaction.html[`UserTransaction`]
-* https://static.javadoc.io/javax.transaction/javax.transaction-api/1.2/javax/transaction/Transaction.html[`Transaction`]
-* https://static.javadoc.io/javax.transaction/javax.transaction-api/1.2/javax/transaction/UserTransactionManager.html[`TransactionManager`]
-* https://static.javadoc.io/javax.transaction/javax.transaction-api/1.2/javax/transaction/UserTransactionSynchronizationRegistry.html[`TransactionSynchronizationRegistry`]
-
-
+* link:{jakarta-transactions-javadoc-url}/jakarta/transaction/UserTransaction.html[`UserTransaction`]
+* link:{jakarta-transactions-javadoc-url}/jakarta/transaction/Transaction.html[`Transaction`]
+* link:{jakarta-transactions-javadoc-url}/jakarta/transaction/UserTransactionManager.html[`TransactionManager`]
+* link:{jakarta-transactions-javadoc-url}/jakarta/transaction/UserTransactionSynchronizationRegistry.html[`TransactionSynchronizationRegistry`]

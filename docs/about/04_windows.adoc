@@ -19,6 +19,9 @@
 = Helidon on Windows
 :description: Helidon on Windows
 :keywords: windows
+:rootdir: {docdir}/..
+
+include::{rootdir}/includes/attributes.adoc[]
 
 == Introduction
 
@@ -29,8 +32,8 @@ some tips for Windows users.
 
 Windows 10 is required.
 
-For general pre-requisites like Java and Maven see <<about/03_prerequisites.adoc,Getting Started>>.
-If you want to use the <<about/05_cli.adoc,Helidon CLI>> you'll also need to install the
+For general pre-requisites like Java and Maven see xref:03_prerequisites.adoc[Getting Started].
+If you want to use the xref:05_cli.adoc[Helidon CLI] you'll also need to install the
 Visual C++ Redistributable Runtime:
 
 * https://aka.ms/vs/16/release/vc_redist.x64.exe[x64]
@@ -58,7 +61,7 @@ mvn "-U" "archetype:generate" "-DinteractiveMode=false" `
     "-Dpackage=io.helidon.examples.quickstart.se"
 ----
 
-You can then follow the instructions in the <<se/guides/02_quickstart.adoc,Helidon SE Quickstart>>. If
+You can then follow the instructions in the xref:../se/guides/02_quickstart.adoc[Helidon SE Quickstart]. If
 you do not have `curl` installed you can use `Invoke-WebRequest`:
 
 [source,bash]
@@ -80,7 +83,7 @@ mvn "-U" "archetype:generate" "-DinteractiveMode=false" `
     "-Dpackage=io.helidon.examples.quickstart.mp"
 ----
 
-You can then follow the instructions in the <<mp/guides/02_quickstart.adoc,Helidon MP Quickstart>>. If
+You can then follow the instructions in the xref:../mp/guides/02_quickstart.adoc[Helidon MP Quickstart]. If
 you do not have `curl` installed you can use `Invoke-WebRequest`:
 
 [source,bash]

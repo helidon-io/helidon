@@ -20,17 +20,17 @@
 :h1Prefix: MP
 :description: Helidon MP Data Source Guide
 :keywords: helidon, guide, datasource, microprofile
-:common-page-prefix-inc: ../../shared/common_prereqs/common_prereqs.adoc
+:rootdir: {docdir}/../..
 
+include::{rootdir}/includes/attributes.adoc[]
 
-This guide shows how to configure and use named
-https://docs.oracle.com/javase/8/docs/api/javax/sql/DataSource.html[`DataSource`]s
+This guide shows how to configure and use named link:{jdk-javadoc-url}/java.sql/javax/sql/DataSource.html[`DataSource`]s
 in your Helidon MP application.
 
 == What You Need
 For this 20 minute tutorial, you will need the following:
 
-include::{common-page-prefix-inc}[tag=common-prereqs-curl]
+include::{rootdir}/includes/prerequisites.adoc[tag=common-prereqs-curl]
 
 == Overview
 
@@ -121,11 +121,11 @@ javax:
 <2> `test` is the name of the `DataSource` being configured here.
 
 <3> `dataSourceClassName` is an
-https://github.com/brettwooldridge/HikariCP/blob/dev/README.md#configuration-knobs-baby[essential
+{hikaricp-base-url}/README.md#configuration-knobs-baby[essential
 Hikari connection pool property].
 
 <4> `dataSource` is a
-https://github.com/brettwooldridge/HikariCP/blob/dev/README.md#initialization[Hikari
+{hikaricp-base-url}/README.md#initialization[Hikari
 connection pool keyword].
 
 <5> These are some of the Java Beans-compliant properties exposed by,
@@ -135,10 +135,9 @@ class].
 
 === Inject a Datasource into Your Application Code
 
-NOTE: For more information about datasources, see https://docs.oracle.com/javase/8/docs/api/javax/sql/DataSource.html
+NOTE: For more information about `DataSource`, see the link:{jdk-javadoc-url}/java.sql/javax/sql/DataSource.html[javadoc].
 
-In the `src/main/java/io/helidon/example/ds/ExampleResource.java` file, add the following
-imports:
+In the `src/main/java/io/helidon/example/ds/ExampleResource.java` file, add the following imports:
 
 [source,java]
 .`src/main/java/io/helidon/example/ds/ExampleResource.java`
@@ -261,11 +260,11 @@ Observe that the result will be a list of database table names.
 
 Helidon features a few examples of projects that use datasources.
 
-* https://github.com/oracle/helidon/tree/{helidon-version}/examples/integrations/cdi/datasource-hikaricp-h2[An
+* link:{helidon-tree-url}/examples/integrations/cdi/datasource-hikaricp-h2[An
   example showing a Hikari connection pool data source connected to an
   H2 database]
 
-* https://github.com/oracle/helidon/tree/{helidon-version}/examples/integrations/cdi/datasource-hikaricp-mysql[An
+* link:{helidon-tree-url}/examples/integrations/cdi/datasource-hikaricp-mysql[An
   example showing a Hikari connection pool data source connected to a
   MySQL database]
 

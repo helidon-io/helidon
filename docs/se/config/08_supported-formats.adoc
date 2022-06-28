@@ -16,14 +16,15 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-:javadoc-base-url-api: {javadoc-base-url}io.helidon.config/io/helidon/config
-
 = Additional Supported Formats and Sources
 :h1Prefix: SE
 :description: Helidon config supported formats and sources
 :keywords: helidon, config
 :toc: preamble
 :toclevels: 2
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/attributes.adoc[]
 
 Helidon Config provides several extension modules that support other configuration
  formats (parsers) and sources. This section describes how to add these modules
@@ -44,11 +45,11 @@ With each of the parsers described here, your application can either
 2. rely on Java service loading and the config system's matching of file types and
 media types to parsers.
 
-If your application creates a `Config.Builder` with parser services _disabled_ 
-(see link:{javadoc-base-url-api}/Config.Builder.html#disableParserServices--[`disableParserServices`] 
+If your application creates a `Config.Builder` with parser services _disabled_
+(see link:{config-javadoc-base-url}/Config.Builder.html#disableParserServices--[`disableParserServices`]
 then that builder will not find the Java services for the various parsers and so
 will be unable to match the file type or media type of sources with the corresponding
-parser automatically. So if you want to use automatic type 
+parser automatically. So if you want to use automatic type
 matching with a given builder, do not invoke `Config.Builder.disableParserServices()`.
 
 === YAML [[Config-ModuleYaml]]
@@ -97,9 +98,9 @@ Config config = Config.create(classpath("my-config")                            
 
 <1> The media type of the source `my-config` is unknown, so the config system
 cannot choose a parser automatically.
-<2> The config system will parse the resource `my-config` on the runtime classpath 
+<2> The config system will parse the resource `my-config` on the runtime classpath
 using the YAML parser instance created by the
-link:{javadoc-base-url-api}/yaml/YamlConfigParserBuilder.html[`YamlConfigParserBuilder`].
+link:{config-javadoc-base-url}/yaml/YamlConfigParserBuilder.html[`YamlConfigParserBuilder`].
 The `buildDefault()` method creates a config parser with default behavior.
 
 [source,java]
@@ -115,7 +116,7 @@ cannot choose a parser automatically.
 use its matching algorithm with the available parsers to choose a parser for that type.
 
 [source,java]
-.YAML parser specified because parser services disabled 
+.YAML parser specified because parser services disabled
 ----
 Config config = Config.builder(classpath("application.yaml"))
         .disableParserServices()                                  // <1>
@@ -127,7 +128,7 @@ Config config = Config.builder(classpath("application.yaml"))
 <2> Explicit registration of the YAML parser is therefore required.
 
 === HOCON/JSON [[Config-ModuleHocon]]
-The Helidon HOCON config module handles sources in the 
+The Helidon HOCON config module handles sources in the
 HOCON and JSON formats.
 
 ==== Maven Coordinates
@@ -164,9 +165,9 @@ Config config = Config.create(classpath("application.conf")); // <1>
 ----
 
 <1> The config system automatically maps the file type `.conf` to the media type `application/hocon
-which the Helidon HOCON parser matches. 
+which the Helidon HOCON parser matches.
 
-The same module and parser supports file type `.json` and the media type 
+The same module and parser supports file type `.json` and the media type
  `application/json`.
 
 [source,java]
@@ -176,10 +177,10 @@ Config config = Config.create(classpath("my-config")                            
                                     .parser(HoconConfigParserBuilder.buildDefault())); // <2>
 ----
 
-<1> the media type of the source `my-config`is unknown, so the config system cannot 
+<1> the media type of the source `my-config`is unknown, so the config system cannot
 choose a parser automatically.
 <2> The config system will parse the resource `my-config` using the HOCON parser created
-by the link:{javadoc-base-url-api}/hocon/HoconConfigParserBuilder.html[HoconConfigParserBuilder].
+by the link:{config-javadoc-base-url}/hocon/HoconConfigParserBuilder.html[HoconConfigParserBuilder].
 The `buildDefault()` method creates a config parser with default behavior.
 
 [source,java]
@@ -191,7 +192,7 @@ Config config = Config.create(classpath("my-config")                    // <1>
 
 <1> The media type of the source `my-config` is unknown, so the config system
 cannot choose a parser automatically.
-<2> Specifying the media type for the config source allows the config system to 
+<2> Specifying the media type for the config source allows the config system to
 use its matching algorithm with the available parsers to choose a parser for that
 type.
 
@@ -255,7 +256,7 @@ module myModule {
 
 ==== Using the Etcd Config Source
 To read configuration from an Etcd source, your application uses the
-link:{javadoc-base-url-api}/etcd/EtcdConfigSourceBuilder.html[`EtcdConfigSourceBuilder`].
+link:{config-javadoc-base-url}/etcd/EtcdConfigSourceBuilder.html[`EtcdConfigSourceBuilder`].
 
 [source,java]
 .Use Etcd config source
@@ -275,8 +276,8 @@ Config config = Config.create(
 The config system will use the <<Config-ModuleYaml,YAML parser>> automatically in this example
 because the file type of the key is `.yaml`.
 
-The `EtcdConfigSourceBuilder` class extends 
-link:{javadoc-base-url-api}/spi/AbstractParsableConfigSource.Builder.html[`AbstractParsableConfigSource.Builder`]
+The `EtcdConfigSourceBuilder` class extends
+link:{config-javadoc-base-url}/spi/AbstractParsableConfigSource.Builder.html[`AbstractParsableConfigSource.Builder`]
 and so supports the usual settings on config sources.
 
 ==== Monitoring for Source Changes
@@ -295,8 +296,8 @@ Config config = Config.create(
 
 
 ==== Loading Meta-configuration via Etcd
-The config system can load information about config sources from 
-<<se/config/06_advanced-configuration.adoc#Config-Advanced-Config-MetaConfig,meta-configuration>>
+The config system can load information about config sources from
+xref:06_advanced-configuration.adoc#Config-Advanced-Config-MetaConfig[meta-configuration]
 rather than requiring your application to construct the builder. To read
 meta-configuration from an Etcd source set the following required properties
 for the source:
@@ -309,7 +310,7 @@ for the source:
 
 Other optional `properties` are inherited from
  `AbstractParsableConfigSource.Builder`. (see
-link:{javadoc-base-url-api}/spi/AbstractParsableConfigSource.Builder.html#init-io.helidon.config.Config-[javadoc])
+link:{config-javadoc-base-url}/spi/AbstractParsableConfigSource.Builder.html#init-io.helidon.config.Config-[javadoc])
 
 [source,java]
 .Load Config from meta-configuration
@@ -360,8 +361,8 @@ module myModule {
 ----
 
 ==== Using the git Config Source
-To read configuration from a git source, your application uses the 
-link:{javadoc-base-url-api}/git/GitConfigSourceBuilder.html[`GitConfigSourceBuilder`].
+To read configuration from a git source, your application uses the
+link:{config-javadoc-base-url}/git/GitConfigSourceBuilder.html[`GitConfigSourceBuilder`].
 
 [source,java]
 .Use git config source
@@ -380,13 +381,13 @@ Config config = Config.create(
 <3> Specify a directory where the git repository is already cloned or it will be cloned.
 <4> Specify the git branch.
 
-Note that the config system will use the <<Config-ModuleHocon,HOCON parser>> in 
-this example because the file type is `.conf`. Recall that for this to work the 
+Note that the config system will use the <<Config-ModuleHocon,HOCON parser>> in
+this example because the file type is `.conf`. Recall that for this to work the
 HOCON config module must be on module-path or classpath.
 
 The `GitConfigSourceBuilder` supports the usual source builder properties because
  it extends
-link:{javadoc-base-url-api}/spi/AbstractParsableConfigSource.Builder.html[`AbstractParsableConfigSource.Builder`].
+link:{config-javadoc-base-url}/spi/AbstractParsableConfigSource.Builder.html[`AbstractParsableConfigSource.Builder`].
 
 ==== Monitoring for Source Changes
 Your application can monitor changes to a configuration loaded from a git source
@@ -403,27 +404,27 @@ Config config = Config.create(
 <1> Use `PollingStrategies.regular(Duration duration)` to monitor for config changes.
 
 You can also implement your own polling strategy by implementing
-link:{javadoc-base-url-api}/spi/PollingStrategy.html[`PollingStrategy`]. See
-the <<se/config/05_mutability-support.adoc,mutability support>> and
-<<se/config/07_extensions.adoc#Config-SPI-PollingStrategy,polling strategy>> discussions.
+link:{config-javadoc-base-url}/spi/PollingStrategy.html[`PollingStrategy`]. See
+the xref:05_mutability-support.adoc[mutability support] and
+xref:07_extensions.adoc#Config-SPI-PollingStrategy[polling strategy] discussions.
 
 ==== Loading Meta-configuration via git
 
-The config system can load information about config sources from meta-configuration 
-rather than requiring your application to construct the builder. To read 
+The config system can load information about config sources from meta-configuration
+rather than requiring your application to construct the builder. To read
 meta-configuration from a git config source set the following properties for the source:
 
-* `type` to `git` or `class` to `io.helidon.config.git.GitConfigSourceBuilder` 
+* `type` to `git` or `class` to `io.helidon.config.git.GitConfigSourceBuilder`
 * `path` (type `String`) - Relative path to the configuration file in repository.
 * `uri` (type `URI`) - URI to the git repository.
-* `directory` (type `Path`) - Directory with a cloned repository, by default 
+* `directory` (type `Path`) - Directory with a cloned repository, by default
  a temporary directory.
 * `branch` (type `String`) - git branch (default is `master`).
 
-The meta-configuration must set the `path` and one of `uri` or `directory`. 
+The meta-configuration must set the `path` and one of `uri` or `directory`.
 Other optional `properties` are inherited from
  `AbstractParsableConfigSource.Builder` (see
- link:{javadoc-base-url-api}/spi/AbstractParsableConfigSource.Builder.html#init-io.helidon.config.Config-[javadoc])
+ link:{config-javadoc-base-url}/spi/AbstractParsableConfigSource.Builder.html#init-io.helidon.config.Config-[javadoc])
 
 [source,java]
 .Load Config from meta-configuration

@@ -22,6 +22,9 @@
 :description: Reactive Messaging Connector in Helidon MP
 :keywords: helidon, mp, messaging, connector
 :h1Prefix: MP
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/attributes.adoc[]
 
 == Messaging Connector Bean
 
@@ -94,7 +97,7 @@ public class ExampleConnector implements IncomingConnectorFactory {
     @Override
     public PublisherBuilder<? extends Message<?>> getPublisherBuilder(final Config config) {
 
-        String firstPropValue = config.getValue("first-test-prop", String.class);<1>
+        String firstPropValue = config.getValue("first-test-prop", String.class); // <1>
         String secondPropValue = config.getValue("second-test-prop", String.class);
 
         return ReactiveStreams.of(firstPropValue, secondPropValue)

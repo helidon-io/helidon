@@ -20,17 +20,16 @@
 :h1Prefix: MP
 :description: Helidon CDI extension for HikariCP
 :keywords: helidon, java, microservices, microprofile, extensions, cdi, oci, object storage
-:cdi-extension-api-url: https://docs.jboss.org/cdi/spec/2.0/cdi-spec.html#spi
-:oci-objstore-url: https://docs.cloud.oracle.com/iaas/Content/Object/Concepts/objectstorageoverview.htm
-:oci-javasdk-url: https://docs.cloud.oracle.com/iaas/Content/API/SDKDocs/javasdk.htm
 :feature-name: OCI Object Storage Support
-:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+:rootdir: {docdir}/../..
 
-This link:{cdi-extension-api-url}[CDI portable extension] provides support for
- injecting an link:{oci-objstore-url}[Oracle Cloud Infrastructure Object Storage client]
+include::{rootdir}/includes/attributes.adoc[]
+
+This link:{jakarta-cdi-spec-url}#spi[CDI portable extension] provides support for
+ injecting an link:https://docs.cloud.oracle.com/iaas/Content/Object/Concepts/objectstorageoverview.htm[Oracle Cloud Infrastructure Object Storage client]
  in your Helidon MicroProfile applications.
 
-include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+include::{rootdir}/includes/dependencies.adoc[]
 
 [source,xml]
 ----
@@ -61,11 +60,10 @@ include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 ----
 
 The extension implements this injection point by creating an Object Storage client
- object in the link:{cdi-applicationscoped-api-url}[application scope].
+ object in the link:{jakarta-cdi-javadoc-url}/javax/enterprise/context/ApplicationScoped.html[application scope].
 
-You can configure the object using
- <<microprofile/02_server-configuration.adoc, MicroProfile config>>. For example,
- the Object Storage client created above can be configured as follows:
+You can configure the object using xref:../jaxrs/02_server-configuration.adoc[MicroProfile config].
+ For example, the Object Storage client created above can be configured as follows:
 
 [source, properties]
 .META-INF/microprofile-config.properties
@@ -80,4 +78,4 @@ oci.objectstorage.namespace=
 ----
 
 These properties are described in the
- link:{oci-javasdk-url}[Oracle Cloud Infrastructure Object Storage Java SDK documentation].
+ link:https://docs.cloud.oracle.com/iaas/Content/API/SDKDocs/javasdk.htm[Oracle Cloud Infrastructure Object Storage Java SDK documentation].

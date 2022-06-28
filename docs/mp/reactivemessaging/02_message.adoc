@@ -22,10 +22,12 @@
 :description: Reactive Messaging Message in Helidon MP
 :keywords: helidon, mp, messaging, message
 :h1Prefix: MP
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/attributes.adoc[]
 
 == Message
-The Reactive Messaging
-https://download.eclipse.org/microprofile/microprofile-reactive-messaging-1.0/microprofile-reactive-messaging-spec.html#_message[Message]
+The Reactive Messaging link:{microprofile-reactive-messaging-spec-url}#_message[Message]
 class can be used to wrap or unwrap data items between methods and connectors.
 The message wrapping and unwrapping can be performed explicitly by using
 `org.eclipse.microprofile.reactive.messaging.Message#of(T)` or implicitly through the messaging core.
@@ -57,7 +59,7 @@ or implicit acknowledgement strategy by messaging core. Explicit strategy config
 with `@Acknowledgment` annotation which has one required attribute `value` that expects the strategy type from enum
 `org.eclipse.microprofile.reactive.messaging.Acknowledgment.Strategy`. More information about supported signatures
 and implicit automatic acknowledgement can be found in specification
-https://download.eclipse.org/microprofile/microprofile-reactive-messaging-1.0/microprofile-reactive-messaging-spec.html#_message_acknowledgement[Message acknowledgement].
+link:{microprofile-reactive-messaging-spec-url}#_message_acknowledgement[Message acknowledgement].
 
 [[terms]]
 .Acknowledgement strategies

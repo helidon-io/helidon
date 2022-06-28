@@ -20,6 +20,9 @@
 :h1Prefix: SE
 :description: Helidon Security providers
 :keywords: helidon, security
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/attributes.adoc[]
 
 == Implemented Security Providers
 
@@ -74,21 +77,21 @@ Routing routing = Routing.builder()
         .build();
 ----
 
-include::../../shared/security/providers/oidc.adoc[]
+include::{rootdir}/includes/security/providers/oidc.adoc[]
 
-include::../../shared/security/providers/http-basic-auth.adoc[]
+include::{rootdir}/includes/security/providers/http-basic-auth.adoc[]
 
-include::../../shared/security/providers/http-digest-auth.adoc[]
+include::{rootdir}/includes/security/providers/http-digest-auth.adoc[]
 
-include::../../shared/security/providers/header-assertion.adoc[]
+include::{rootdir}/includes/security/providers/header-assertion.adoc[]
 
-include::../../shared/security/providers/http-signatures.adoc[]
+include::{rootdir}/includes/security/providers/http-signatures.adoc[]
 
-include::../../shared/security/providers/idcs-role-mapper.adoc[]
+include::{rootdir}/includes/security/providers/idcs-role-mapper.adoc[]
 
-include::../../shared/security/providers/abac.adoc[]
+include::{rootdir}/includes/security/providers/abac.adoc[]
 
-include::../../shared/security/providers/google-login.adoc[]
+include::{rootdir}/includes/security/providers/google-login.adoc[]
 
-include::../../shared/security/providers/jwt.adoc[]
+include::{rootdir}/includes/security/providers/jwt.adoc[]
 

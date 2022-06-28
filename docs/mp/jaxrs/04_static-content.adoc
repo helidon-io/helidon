@@ -20,6 +20,9 @@
 :h1Prefix: MP
 :description: Helidon MicroProfile static content
 :keywords: helidon, microprofile, micro-profile
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/attributes.adoc[]
 
 You can serve static content from a location in a file system
  or from the classpath.

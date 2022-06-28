@@ -18,11 +18,12 @@
 
 = GraphQL Server Introduction
 :h1Prefix: SE
-:pagename: graphql-server-introduction
 :description: Helidon GraphQL Server Introduction
 :keywords: helidon, graphql, java
 :feature-name: GraphQL
-:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/attributes.adoc[]
 
 Helidon GraphQL Server provides a framework for creating link:https://github.com/graphql-java/graphql-java[GraphQL] applications.
 
@@ -31,7 +32,7 @@ Helidon GraphQL Server provides a framework for creating link:https://github.com
 WARNING: The Helidon GraphQL feature is currently experimental and the APIs are
  subject to changes until GraphQL support is stabilized.
 
-include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+include::{rootdir}/includes/dependencies.adoc[]
 
 [source,xml]
 ----

@@ -16,14 +16,14 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-:javadoc-base-url-api: {javadoc-base-url}io.helidon.config/io/helidon/oci
-
 = Oracle Cloud Infrastructure Integration
 :h1Prefix: SE
 :description: Helidon OCI Integration
 :keywords: oci
-:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 :feature-name: OCI Integration
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/attributes.adoc[]
 
 Helidon SE OCI Integration provides easy access to Oracle Cloud Infrastructure.
 

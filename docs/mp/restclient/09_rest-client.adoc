@@ -20,11 +20,12 @@
 :h1Prefix: MP
 :description: Helidon MP Rest Client
 :feature-name: MicroProfile Rest Client
-:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 :microprofile-bundle: true
-= :keywords: helidon, rest, client, microprofile, micro-profile
+:keywords: helidon, rest, client, microprofile, micro-profile
+:rootdir: {docdir}/../..
 
-include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+include::{rootdir}/includes/attributes.adoc[]
+include::{rootdir}/includes/dependencies.adoc[]
 
 [source,xml]
 ----
@@ -89,11 +90,10 @@ Rest client implementation allows you to configure its parameters by builder,
 annotations, and configuration.
 
 You can configure new providers, base URI/URL and other options of the client.
-See specification for full details:
-https://download.eclipse.org/microprofile/microprofile-rest-client-3.0/microprofile-rest-client-spec-3.0.html
+See the link:{microprofile-rest-client-spec-url}[specification] for full details.
 
 == Quickstart Example
-To be able to run and test this example, use the  https://helidon.io/docs/v2/#/mp/guides/02_quickstart[Helidon MP examples/quickstarts]
+To be able to run and test this example, use the xref:../guides/02_quickstart.adoc[Helidon MP quickstart]
 and start the helidon-quickstart-mp. Then create a project with
 the dependency on the Helidon rest client implementation and create the following rest client
 interface:

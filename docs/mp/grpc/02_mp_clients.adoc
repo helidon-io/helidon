@@ -18,18 +18,19 @@
 
 = gRPC MicroProfile Clients
 :h1Prefix: MP
-:pagename: grpc-microprofile-clients
 :description: Building Helidon gRPC MicroProfile Clients
 :keywords: helidon, grpc, microprofile, micro-profile
 :feature-name: gRPC MicroProfile Clients
-:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+:rootdir: {docdir}/../..
 :microprofile-bundle: false
+
+include::{rootdir}/includes/attributes.adoc[]
 
 Building Java gRPC clients using the Helidon MP gRPC APIs is very simple and removes a lot of the boiler plate code typically
 associated to more traditional approaches to writing gRPC Java clients. At it simplest a gRPC Java client can be written using
 nothing more than a suitably annotated interface.
 
-include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+include::{rootdir}/includes/dependencies.adoc[]
 
 [source,xml]
 ----
@@ -43,7 +44,7 @@ include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 == Building a gRPC Client
 There are a few steps to building and using a gRPC client in Helidon MP.
 
-As discussed in the section on <<grpc/32_mp_server_side_services.adoc, Server-Side Services>> there are four different types of gRPC method.
+As discussed in the section on xref:01_mp_server_side_services.adoc[Server-Side Services] there are four different types of gRPC method.
 
 * Unary - a simple method with at most a single request value and returning at most a single response value.
 * Server Streaming - a method that takes at most a single request value but may return zero or more response values.
@@ -128,7 +129,7 @@ For a gRPC client to connect to a server it requires a Channel. The Helidon MP g
 CDI beans that require them.
 
 Channels are configured in the `grpc` section of the Helidon application configuration. The examples below use an `application.yaml`
-file but there are many other ways to use and override <<config/01_introduction.adoc,configuration in Helidon>>
+file but there are many other ways to use and override xref:../config/01_introduction.adoc[configuration in Helidon]
 
 [source,yaml]
 .application.yaml

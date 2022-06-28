@@ -18,8 +18,11 @@
 
 = Metrics Support for Jaeger
 :h1Prefix: SE
-:helidon-variant: SE
 :description: Helidon support for Jaeger metrics
 :keywords: helidon, metrics, tracing, jaeger
-:helidon-jaeger-doc-link: se/tracing/03_jaeger.adoc
-include::../../shared/tracing/jaeger_metrics.adoc[]
+:flavor-uc: SE
+:flavor-lc: se
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/attributes.adoc[]
+include::{rootdir}/includes/tracing/jaeger-metrics.adoc[]

@@ -21,11 +21,13 @@
 :description: Helidon Security gRPC integration
 :keywords: helidon, grpc, security
 :feature-name: gRPC Server Security
-:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+:rootdir: {docdir}/../..
 
-Security integration of the  <<grpc/01_introduction.adoc,gRPC server>>
+include::{rootdir}/includes/attributes.adoc[]
 
-include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+Security integration of the  xref:01_introduction.adoc[gRPC server]
+
+include::{rootdir}/includes/dependencies.adoc[]
 
 [source,xml]
 ----

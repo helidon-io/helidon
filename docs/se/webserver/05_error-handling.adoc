@@ -20,6 +20,9 @@
 :h1Prefix: SE
 :description: Helidon Reactive WebServer error handling
 :keywords: helidon, reactive, reactive streams, reactive java, reactive webserver
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/attributes.adoc[]
 
 == Error Routing
 
@@ -65,8 +68,8 @@ As with the standard handlers, the error handler must either
 ----
 
 Error handling can't be forwarded to the standard
- handlers. In fact, invoking `req.next(ex)` or `req.next()` in an error handler 
- are equivalent. 
+ handlers. In fact, invoking `req.next(ex)` or `req.next()` in an error handler
+ are equivalent.
 
 [source,java]
 ----

@@ -18,10 +18,11 @@
 
 = gRPC Server Configuration
 :h1Prefix: SE
-:javadoc-base-url-api: {javadoc-base-url}io.helidon.grpc.server/io/helidon/grpc/server
-:pagename: grpc-server-configuration
 :description: Helidon gRPC Server Configuration
 :keywords: helidon, grpc, java, configuration
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/attributes.adoc[]
 
 Configure the gRPC Server using the Helidon configuration framework, either programmatically
 or via a configuration file.
@@ -65,5 +66,5 @@ GrpcServer grpcServer = GrpcServer.create(configuration, routing);
 == Configuration options
 
 See all configuration options
- link:{javadoc-base-url-api}/GrpcServerConfiguration.html[here].
+ link:{javadoc-base-url}/io.helidon.grpc/GrpcServerConfiguration.html[here].
 

@@ -20,10 +20,10 @@
 :toc:
 :toc-placement: preamble
 :h1Prefix: SE
-:spec-name: MicroProfile Reactive Streams Operators
-:description: {spec-name} support in Helidon SE
+:description: MicroProfile Reactive Streams Operators support in Helidon SE
 :keywords: helidon, se, microprofile, reactivestreams
 :feature-name: Reactive Streams
-:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+:rootdir: {docdir}/../..
 
-include::../../shared/reactivestreams/03_rsoperators.adoc[]
+include::{rootdir}/includes/attributes.adoc[]
+include::{rootdir}/includes/reactivestreams/rsoperators.adoc[]

@@ -20,18 +20,16 @@
 :h1Prefix: MP
 :description: Helidon metrics
 :keywords: helidon, metrics, microprofile, guide
-:common-page-prefix-inc: ../../shared/common_prereqs/common_prereqs.adoc
-:common-guides: ../../common/guides
-:metrics-common: {common-guides}/metrics.adoc
-:lower-case-flavor: mp
+:rootdir: {docdir}/../..
+:flavor-lc: mp
 :intro-project-name: MicroProfile (MP)
-:helidon-tag: https://github.com/oracle/helidon/tree/{helidon-version}
-:thread-pool-example-link: {helidon-tag}/examples/webserver/threadpool
 
-include::{metrics-common}[tag=intro]
-include::{metrics-common}[tag=create-sample-project]
-include::{metrics-common}[tag=using-built-in-metrics-intro]
-include::{metrics-common}[tag=build-and-run-intro]
+include::{rootdir}/includes/attributes.adoc[]
+
+include::{rootdir}/includes/guides/metrics.adoc[tag=intro]
+include::{rootdir}/includes/guides/metrics.adoc[tag=create-sample-project]
+include::{rootdir}/includes/guides/metrics.adoc[tag=using-built-in-metrics-intro]
+include::{rootdir}/includes/guides/metrics.adoc[tag=build-and-run-intro]
 
 
 [source,text]
@@ -56,10 +54,10 @@ base_REST_request_minTimeDuration_seconds{class="io.helidon.examples.quickstart.
 base_REST_request_unmappedException_total{class="io.helidon.examples.quickstart.mp.GreetResource",method="getDefaultMessage"} 0
 base_REST_request_unmappedException_total{class="io.helidon.examples.quickstart.mp.GreetResource",method="getMessage_java.lang.String"} 0
 ...
-include::{metrics-common}[tag=metrics-prometheus-output]
+include::{rootdir}/includes/guides/metrics.adoc[tag=metrics-prometheus-output]
 ----
 
-include::{metrics-common}[tag=curl-metrics-json]
+include::{rootdir}/includes/guides/metrics.adoc[tag=curl-metrics-json]
 
 [source,json]
 .JSON response:
@@ -78,26 +76,28 @@ include::{metrics-common}[tag=curl-metrics-json]
       "minTimeDuration;class=io.helidon.examples.quickstart.mp.GreetResource;method=getMessage_java.lang.String": null,
       ...
       },
-include::{metrics-common}[tag=base-metrics-json-output]
+include::{rootdir}/includes/guides/metrics.adoc[tag=base-metrics-json-output]
   },
-include::{metrics-common}[tag=vendor-metrics-json-output]
+include::{rootdir}/includes/guides/metrics.adoc[tag=vendor-metrics-json-output]
 }
 ----
-include::{metrics-common}[tag=get-single-metric]
+include::{rootdir}/includes/guides/metrics.adoc[tag=get-single-metric]
 
-include::{metrics-common}[tag=built-in-metrics-discussion]
+include::{rootdir}/includes/guides/metrics.adoc[tag=built-in-metrics-discussion]
 
-include::{metrics-common}[tag=controlling-intro-part-1]
+include::{rootdir}/includes/guides/metrics.adoc[tag=controlling-intro-part-1]
 * <<controlling-rest-request-metrics,Control `REST.request` metrics.>>
-include::{metrics-common}[tag=controlling-intro-part-2]
+include::{rootdir}/includes/guides/metrics.adoc[tag=controlling-intro-part-2]
 [[controlling-rest-request-metrics]]
 
-include::{metrics-common}[tag=disabling-whole]
+include::{rootdir}/includes/guides/metrics.adoc[tag=disabling-whole]
+
+include::{rootdir}/includes/guides/metrics.adoc[tag=KPI]
 
 [[controlling-rest-request-metrics]]
 ==== Controlling `REST.request` Metrics
 Helidon implements the optional family of metrics, all with the name `REST.request`, as described in the
-link:https://download.eclipse.org/microprofile/microprofile-metrics-2.3/microprofile-metrics-spec-2.3.html#_optional_rest[MicroProfile Metrics specification].
+link:{microprofile-metrics-spec-url}#_optional_rest[MicroProfile Metrics specification].
 Each instance is a `SimpleTimer` with tags `class` and `method` identifying exactly which REST endpoint Java
 method that instance measures.
 
@@ -108,9 +108,9 @@ Note that the applications you generate using the full Helidon archetype _do_ en
 generated config file.
 You can see the results in the sample output shown in earlier example runs.
 
-include::{metrics-common}[tags=controlling-by-component;controlling-by-registry]
+include::{rootdir}/includes/guides/metrics.adoc[tags=controlling-by-component;controlling-by-registry]
 
-include::{metrics-common}[tag=metrics-metadata]
+include::{rootdir}/includes/guides/metrics.adoc[tag=metrics-metadata]
 
 === Application-Specific Metrics Data
 
@@ -643,7 +643,7 @@ curl -H "Accept: application/json"  http://localhost:8080/metrics/application
 ----
 <1> The application has been running for 6 seconds.
 
-include::{metrics-common}[tag=k8s-and-prometheus-integration]
+include::{rootdir}/includes/guides/metrics.adoc[tag=k8s-and-prometheus-integration]
 
 === Summary
 
@@ -656,7 +656,7 @@ metrics and scopes.
 
 Refer to the following references for additional information:
 
-* MicroProfile Metrics specification at https://github.com/eclipse/microprofile-metrics/releases/tag/2.0
-* MicroProfile Metrics Javadoc at https://javadoc.io/doc/org.eclipse.microprofile.metrics/microprofile-metrics-api/2.0.0
-* Helidon Javadoc at https://helidon.io/docs/latest/apidocs/index.html?overview-summary.html
+* link:{microprofile-metrics-spec-url}[MicroProfile Metrics specification]
+* link:{microprofile-metrics-javadoc-url}[MicroProfile Metrics Javadoc]
+* Helidon Javadoc at {javadoc-base-url}/index.html?overview-summary.html
 

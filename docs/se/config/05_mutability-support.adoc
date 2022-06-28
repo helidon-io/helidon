@@ -16,15 +16,16 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-:javadoc-base-url-api: {javadoc-base-url}io.helidon.config/io/helidon/config
-
 = Mutability Support
 :h1Prefix: SE
 :description: Helidon mutability support
 :keywords: helidon, config
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/attributes.adoc[]
 
 An in-memory config tree, once loaded, is immutable, even though the data in the underlying
-config sources _can_ change over time. Your application can find out metadata about a 
+config sources _can_ change over time. Your application can find out metadata about a
 loaded in-memory config and can track changes in config sources.
 
 == Overview
@@ -40,15 +41,15 @@ value for a key.
 
 == Using Config Metadata
 === Loading Time
-The config system records when it loads each configuration into memory. 
-Your application can retrieve it by invoking the link:{javadoc-base-url-api}/Config.html#timestamp--[timestamp method]:
+The config system records when it loads each configuration into memory.
+Your application can retrieve it by invoking the link:{config-javadoc-base-url}/Config.html#timestamp--[timestamp method]:
 [source,java]
 java.time.Instance loadTime = myConfig.timestamp();
 
 on any config node.
 
 === Config Context
-The config system maintains a link:{javadoc-base-url-api}/Config.Context.html[`Config.Context`] 
+The config system maintains a link:{config-javadoc-base-url}/Config.Context.html[`Config.Context`]
 for each `Config` node. Your application can retrieve the context by invoking the `Config.context()`
 method and then use it for these operations:
 
@@ -60,11 +61,11 @@ method and then use it for these operations:
 that used the context.
 |`Config last()` |Returns the most recently loaded configuration that used the context.
 |`Config reload()` |Reloads the
-entire config tree from the current contents of the same config sources used to 
+entire config tree from the current contents of the same config sources used to
 load the tree in which the current node resides.
 |===
 
-Note that the config context describes or replaces a currently-loaded config tree. 
+Note that the config context describes or replaces a currently-loaded config tree.
 It by itself does not help your application decide _when_ reloading the config might be
 useful.
 
@@ -74,21 +75,21 @@ useful.
 ====
 This section describes the `Config.changes()` method. It is marked
 as deprecated because it returns an `io.helidon.reactive.Flow.Publisher` object.
-In a future Helidon release that requires Java 11 or later this method will be undeprecated
+In a future Helidon release that requires Java 11 or later this method will be un-deprecated
 and changed -- or a similar method will be added -- so that the return type is
-`java.util.concurrent.Flow.Publisher` instead. 
+`java.util.concurrent.Flow.Publisher` instead.
 
 Any code you write using the existing `Config.changes()` method might need
-to change at that time. 
+to change at that time.
 ====
 
-Although in-memory config trees do not change once loaded, applications can respond to changes 
+Although in-memory config trees do not change once loaded, applications can respond to changes
 in the underlying config sources by:
 
 1. setting up change detection for the config sources used to build a configuration, and
 2. registering a response to be run when a source changes.
 
-Your code's response can react to the changes in whatever way makes sense 
+Your code's response can react to the changes in whatever way makes sense
 for your application.
 
 The following sections describe these steps in detail.
@@ -97,18 +98,18 @@ The following sections describe these steps in detail.
 When the application creates a config source, it can set up change detection for
 that source. This is called _polling_ in the Helidon API but specific change detection
 algorithms might not use actual polling. You choose a specific
-link:{javadoc-base-url-api}/spi/PollingStrategy.html[`PollingStrategy`] for each
-config source you want to monitor. See the section on 
-<<se/config/07_extensions.adoc#Config-SPI-PollingStrategy,polling strategies>> in the
+link:{config-javadoc-base-url}/spi/PollingStrategy.html[`PollingStrategy`] for each
+config source you want to monitor. See the section on
+xref:07_extensions.adoc#Config-SPI-PollingStrategy[polling strategies] in the
 config extensions doc page for more information.
 
 The config system provides some built-in polling strategies, exposed as these methods
-on the link:{javadoc-base-url-api}/PollingStrategies.html[`PollingStrategies`] class:
+on the link:{config-javadoc-base-url}/PollingStrategies.html[`PollingStrategies`] class:
 
 - `regular(Duration interval)` - a general-purpose scheduled polling strategy with a specified,
  constant polling interval.
 - `watch(Path watchedPath)` - a filesystem-specific strategy to watch
- specified path. You can use this strategy with the `file` and `classpath` 
+ specified path. You can use this strategy with the `file` and `classpath`
 built-in config sources.
 - `nop()` - a no-op strategy
 
@@ -134,17 +135,17 @@ Config config = Config.create(
 <2> Optional `file` source `conf/config.properties` will be watched by the Java
  `WatchService` for changes on filesystem.
 <3> The `classpath` resource `application.properties` will not be checked for
- changes. 
+ changes.
 `PollingStrategies.nop()` polling strategy is default.
 
 The polling strategies internally inform the config system when they
 detect changes in the monitored config sources (except that the `nop` strategy does
-nothing). 
+nothing).
 
 === Registering a Config Change Response
-To know when config sources have changed, your application must register its interest 
+To know when config sources have changed, your application must register its interest
 on the `Config` node of interest. The config system will then notify
-your application of any change within the subtree rooted at that node. 
+your application of any change within the subtree rooted at that node.
 In particular, if you register on the root node,
 then the config system notifies your code of changes anywhere in the config tree.
 
@@ -170,8 +171,8 @@ config.get("greeting")                                                         /
 <1> Navigate to the `Config` node on which you want to register.
 <2> Invoke the `onChange` method, passing a function (`Function<Config, Boolean>`).
 The config system invokes that function each time the subtree rooted at the
-`greeting` node changes. The `changedNode` is a new instance of `Config` 
-representing the updated subtree rooted at `greeting`. 
+`greeting` node changes. The `changedNode` is a new instance of `Config`
+representing the updated subtree rooted at `greeting`.
 <3> The function should return `true` to continue being run on subsequent changes, `false`
 to stop.
 
@@ -180,16 +181,16 @@ The config system also supports the flow publisher/subscriber model for applicat
 that need more control over the pace at which the config system delivers
 config change events.
 
-Each `Config` instance exposes the link:{javadoc-base-url-api}/Config.html#changes--[`Config.changes()`]
+Each `Config` instance exposes the link:{config-javadoc-base-url}/Config.html#changes--[`Config.changes()`]
 method which returns a `Flow.Publisher<Config>`.
-Your application can invoke this method, then invoke `subscribe` on the returned 
+Your application can invoke this method, then invoke `subscribe` on the returned
 `Flow.Publisher`, passing your own `Flow.Subscriber` implementation. The config system will
-invoke your subscriber's methods as appropriate, most notably calling `onNext` 
+invoke your subscriber's methods as appropriate, most notably calling `onNext`
 whenever it detects a change in one of the underlying config sources for the config
 node of interest.
 
-Mote that your subscriber will be notified when a change occurs anywhere in the 
-subtree represented by the `Config` node. 
+Mote that your subscriber will be notified when a change occurs anywhere in the
+subtree represented by the `Config` node.
 
 [source,java]
 .Subscribe on `greeting` property changes
@@ -226,13 +227,13 @@ config.get("greeting")                                                          
 at the `Config` node.
 <3> Subscribe to the publisher passing a custom `Flow.Subscriber<Config>` implementation.
 <4> Request the first event delivery in `onSubscribe` method.
-<5> The config system invokes `onNext` each time the subtree rooted at the 
+<5> The config system invokes `onNext` each time the subtree rooted at the
 `greeting` node changes. The `changedNode` is a new instance of `Config` representing
 the updated subtree rooted at `greeting`, regardless of where in the subtree
 the change actually occurred. Remember to request the next event delivery in `onNext`.
 <6> The config system does not currently invoke `onError`.
 <7> The config system invokes `onComplete` if all config sources indicate _there will
- be no other change event_. 
+ be no other change event_.
 
 [NOTE]
 Your application _does not_ need to subscribe to the new `Config` instance passed
@@ -244,9 +245,9 @@ Some applications do not need to respond to changes as they happen. Instead it's
 sufficient that they simply have access to the current value for a particular
 key in the configuration.
 
-Each `asXXX` method on the `Config` class has a companion `asXXXSupplier` method. 
-These supplier methods return `Supplier<XXX>`, and when your application invokes 
-the supplier's `get` method the config system returns the _then-current value_ 
+Each `asXXX` method on the `Config` class has a companion `asXXXSupplier` method.
+These supplier methods return `Supplier<XXX>`, and when your application invokes
+the supplier's `get` method the config system returns the _then-current value_
 as stored in the config source.
 
 [source,java]
@@ -261,11 +262,11 @@ System.out.println("Always actual greeting value: " + greetingSupplier.get()); /
 ----
 <1> Navigate to the `Config` node for which you want access to the always-current
 value.
-<2> Retrieve and store the returned supplier for later use. 
+<2> Retrieve and store the returned supplier for later use.
 <3> Invoke the supplier's `get()` method to retrieve the current value of the node.
 
 [IMPORTANT]
 =========
 Supplier support requires that you create the `Config` object from config sources that
-have proper polling strategies set up. 
+have proper polling strategies set up.
 =========

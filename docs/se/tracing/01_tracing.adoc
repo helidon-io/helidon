@@ -20,10 +20,13 @@
 :h1Prefix: SE
 :description: Helidon Tracing Support
 :feature-name: Tracing
-:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 :keywords: helidon, tracing
+:flavor-uc: SE
+:flavor-lc: se
+:rootdir: {docdir}/../..
 
-include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+include::{rootdir}/includes/attributes.adoc[]
+include::{rootdir}/includes/dependencies.adoc[]
 
 [source,xml]
 ----
@@ -34,7 +37,7 @@ include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 ----
 
 == Tracing Support
-Helidon includes support for tracing through the `https://opentracing.io/[OpenTracing]` APIs.
+Helidon includes support for tracing through the https://opentracing.io/[OpenTracing] APIs.
 Tracing is integrated with WebServer, gRPC Server, and Security.
 
 Support for specific tracers is abstracted. Your application can depend on
@@ -91,7 +94,7 @@ GrpcServerConfiguration serverConfig = GrpcServerConfiguration.builder().port(0)
                 .build();
 ----
 
-include::../../shared/tracing/common-config.adoc[]
+include::{rootdir}/includes/tracing/common-config.adoc[]
 
 == Creating custom spans
 
@@ -118,7 +121,7 @@ Response response = client.target(serviceEndpoint)
     .get();
 ----
 
-include::../../shared/tracing/common-spans.adoc[]
+include::{rootdir}/includes/tracing/common-spans.adoc[]
 
 === Traced spans configuration
 

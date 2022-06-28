@@ -19,30 +19,34 @@
 = Metrics
 :toc:
 :toc-placement: preamble
-:spec-name: MicroProfile Metrics
-:description: {spec-name} support in Helidon MP
+:description: MicroProfile Metrics support in Helidon MP
 :keywords: helidon, mp, microprofile, metrics
 :h1Prefix: MP
 :feature-name: MicroProfile Metrics
-:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 :microprofile-bundle: true
+:flavor-uc: MP
+:flavor-lc: mp
+:rootdir: {docdir}/../..
 
-include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+include::{rootdir}/includes/attributes.adoc[]
+
+include::{rootdir}/includes/dependencies.adoc[]
 
 [source,xml]
 ----
-        <dependency>
-            <groupId>io.helidon.microprofile.metrics</groupId>
-            <artifactId>helidon-microprofile-metrics</artifactId>
-        </dependency>
+<dependency>
+    <groupId>io.helidon.microprofile.metrics</groupId>
+    <artifactId>helidon-microprofile-metrics</artifactId>
+</dependency>
 ----
 
 == Overview
+
 Helidon provides three types of metrics: base, vendor, and application.  Helidon automatically provides built-in base and vendor metrics.
 Applications can use these metrics without additional configuration or code changes.
 
 == Next Steps
 
-Learn more about https://github.com/eclipse/microprofile-metrics/releases/tag/2.0[MicroProfile Metrics specification].
+Learn more about link:{microprofile-metrics-spec-url}[MicroProfile Metrics specification].
 
-Create a sample MicroProfile (MP) project that can be used to run some basic examples using both built-in and custom metrics with Helidon MP. <<mp/guides/05_metrics.adoc, Helidon MP Metrics Guide>>.
+Create a sample MicroProfile (MP) project that can be used to run some basic examples using both built-in and custom metrics with Helidon MP. xref:../guides/05_metrics.adoc[Helidon MP Metrics Guide].

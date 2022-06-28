@@ -16,13 +16,13 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
+= gRPC Client Configuration
 :h1Prefix: SE
-:javadoc-base-url-api: {javadoc-base-url}io.helidon.grpc.client/io/helidon/grpc/client
-:pagename: grpc-client-configuration
 :description: Helidon gRPC Client Configuration
 :keywords: helidon, grpc, java, configuration
+:rootdir: {docdir}/../..
 
-= gRPC Client Configuration
+include::{rootdir}/includes/attributes.adoc[]
 
 Configure the gRPC client using the Helidon configuration framework, either programmatically or via a configuration file.
 

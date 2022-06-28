@@ -18,10 +18,11 @@
 
 = Microprofile Config Sources
 :h1Prefix: MP
-:pagename: MicroProfileSources
 :description: MicroProfile Config Sources
 :keywords: helidon, mp, ordinal, mpconfig, yamlmpconfig
+:rootdir: {docdir}/../..
 
+include::{rootdir}/includes/attributes.adoc[]
 
 A Config Source provides configuration values from different sources such as property files and user classes that are registered by the application.
 
@@ -183,7 +184,7 @@ ConfigProviderResolver.instance().newBuilder()
 == Creating MicroProfile Config Sources from meta-config
 
 Instead of directly specifying the configuration sources in your code, you can use meta-configuration in a file that declares
-the configuration sources, and their attributes as mentioned in <<mp/config/01_introduction.adoc,Microprofile Config>>
+the configuration sources, and their attributes as mentioned in xref:01_introduction.adoc[Microprofile Config].
 
 When used, the Microprofile Config uses configuration sources and flags configured in the meta configuration file.
 

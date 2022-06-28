@@ -23,10 +23,11 @@
 :keywords: helidon, mp, messaging, kafka
 :h1Prefix: MP
 :feature-name: Reactive Kafka Connector
-:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 :microprofile-bundle: false
+:rootdir: {docdir}/../..
 
-include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+include::{rootdir}/includes/attributes.adoc[]
+include::{rootdir}/includes/dependencies.adoc[]
 
 [source,xml]
 ----
@@ -83,6 +84,6 @@ public PublisherBuilder<String> produceToKafka() {
 }
 ----
 
-Don't forget to check out the examples with pre-configured Kafka docker image, for easy testing: 
+Don't forget to check out the examples with pre-configured Kafka docker image, for easy testing:
 
-* https://github.com/oracle/helidon/tree/master/examples/messaging
+* {helidon-tree-url}/examples/messaging

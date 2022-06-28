@@ -23,29 +23,32 @@
 :h1Prefix: MP
 :health-release: {version.lib.microprofile-health}
 :feature-name: MicroProfile Health
-:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 :microprofile-bundle: true
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/attributes.adoc[]
 
 == ToC
 
 - <<Overview, Overview>>
-- <<Maven Coordinates, Maven Coordinates>>
+- <<Maven-Coordinates, Maven Coordinates>>
 - <<Usage, Usage>>
-- <<REST Endpoints, REST Endpoints>>
+- <<Rest-Endpoints, REST Endpoints>>
 - <<Configuration, Configuration>>
 - <<Examples, Examples>>
 - <<Reference, Reference>>
 
 == Overview
+
 Microservices expose their health status primarily so external tools (for example, an orchestrator such as Kubernetes)
 can monitor each service and take action, such as restarting a service instance if it has failed
 or temporarily shunting traffic away from the instance if the service is unable to process
 incoming requests normally.
 
 
-== Maven Coordinates
+== Maven Coordinates [[Maven-Coordinates]]
 
-To enable MicroProfile Health add the <<mp/introduction/02_microprofile.adoc, helidon-microprofile bundle>>  dependency to your project's `pom.xml` (see <<about/04_managing-dependencies.adoc, Managing Dependencies>>).
+To enable MicroProfile Health add the xref:../introduction/02_microprofile.adoc[helidon-microprofile bundle]  dependency to your project's `pom.xml` (see xref:../../about/04_managing-dependencies.adoc[Managing Dependencies]).
 
 [source,xml]
 ----
@@ -65,6 +68,10 @@ If full control over the dependencies is required, and you want to minimize the 
     <groupId>io.helidon.microprofile.bundles</groupId>
     <artifactId>helidon-microprofile-core</artifactId>
 </dependency>
+----
+
+[source,xml]
+----
 <dependency>
     <groupId>io.helidon.microprofile.health</groupId>
     <artifactId>helidon-microprofile-health</artifactId>
@@ -72,7 +79,7 @@ If full control over the dependencies is required, and you want to minimize the 
 ----
 
 To enable built-in health checks add the following dependency
-(or use the <<mp/introduction/02_microprofile.adoc, helidon-microprofile bundle>> )
+(or use the xref:../introduction/02_microprofile.adoc[helidon-microprofile bundle] )
 
 [source,xml]
 ----
@@ -110,7 +117,7 @@ some future point it might become able to do so without requiring a restart.
 A service reporting `DOWN` for a startup check is still initializing itself and normally will report `UP` soon, assuming it is able to start successfully.
 
 
-== REST Endpoints
+== REST Endpoints [[Rest-Endpoints]]
 A MicroProfile-compliant service reports its health via known REST endpoints. Helidon MP
 provides these endpoints automatically as part of every MP microservice that includes health support..
 
@@ -148,7 +155,7 @@ Health checks may be configured using the following properties.
 
 The class responsible for configuration is:
 
-include::../../shared/config/io.helidon.health.HealthSupport.adoc[]
+include::{rootdir}/includes/config/io.helidon.health.HealthSupport.adoc[leveloffset=-1]
 
 Current properties may be set in `application.yaml` or in `microprofile-config.properties` with `health` prefix.
 
@@ -165,7 +172,7 @@ health.web-context=myhealth  #<1>
 
 == Examples
 
-Generate Helidon MP Quickstart project following these <<Instructions, Instructions>>
+Generate Helidon MP Quickstart project following these xref:../guides/02_quickstart.adoc[Instruction]
 
 === Using the Built-In Health Checks
 
@@ -278,7 +285,7 @@ curl http://localhost:8080/health/live
 }
 ----
 
-Full example code is available link:https://github.com/oracle/helidon/tree/{helidon-version}/examples/microprofile[here].
+Full example code is available link:{helidon-tree-url}/examples/microprofile[here].
 
 
 === Custom Readiness Health Checks
@@ -318,17 +325,21 @@ public class GreetReadinessCheck implements HealthCheck {
 <4> Become ready after 5 seconds.
 
 [source,bash]
-.Build and run the application.  Issue the curl command with -v within five seconds and you will see that the application is not ready:
+.Build and run the application. Issue the curl command with -v within five seconds and you will see that the application is not ready:
 ----
 curl -v  http://localhost:8080/health/ready
 ----
 
-[source,json]
-.HTTP response:
+[source]
+.HTTP response status
 ----
-...
 < HTTP/1.1 503 Service Unavailable // <1>
-...
+----
+<1> The HTTP status is `503` since the application is not ready.
+
+[source,json]
+.JSON response body:
+----
 {
   "status": "DOWN",
   "checks": [
@@ -342,7 +353,6 @@ curl -v  http://localhost:8080/health/ready
   ]
 }
 ----
-<1> The HTTP status is `503` since the application is not ready.
 
 [source,bash]
 .After five seconds you will see the application is ready:
@@ -350,12 +360,16 @@ curl -v  http://localhost:8080/health/ready
 curl -v http://localhost:8080/health/ready
 ----
 
-[source,json]
-.JSON response:
+[source]
+.HTTP response status
 ----
-...
 < HTTP/1.1 200 OK // <1>
-...
+----
+<1> The HTTP status is `200` indicating that the application is ready.
+
+[source,json]
+.JSON response body:
+----
 {
   "status": "UP",
   "checks": [
@@ -369,9 +383,8 @@ curl -v http://localhost:8080/health/ready
   ]
 }
 ----
-<1> The HTTP status is `200` indicating that the application is ready.
 
-Full example code is available link:https://github.com/oracle/helidon/tree/{helidon-version}/examples/microprofile[here].
+Full example code is available link:{helidon-tree-url}/examples/microprofile[here].
 
 === Custom Startup Health Checks
 
@@ -416,12 +429,17 @@ public class GreetStartedCheck implements HealthCheck {
 curl -v  http://localhost:8080/health/started
 ----
 
-[source,json]
-.HTTP response:
+[source]
+.HTTP response status:
 ----
-...
 < HTTP/1.1 503 Service Unavailable // <1>
-...
+----
+<1> The HTTP status is `503` since the application has not started.
+
+
+[source,json]
+.JSON response body:
+----
 {
   "status": "DOWN",
   "checks": [
@@ -435,7 +453,6 @@ curl -v  http://localhost:8080/health/started
   ]
 }
 ----
-<1> The HTTP status is `503` since the application has not started.
 
 [source,bash]
 .After eight seconds you will see the application has started:
@@ -443,12 +460,16 @@ curl -v  http://localhost:8080/health/started
 curl -v http://localhost:8080/health/started
 ----
 
-[source,json]
-.JSON response:
+[source]
+.HTTP response status:
 ----
-...
 < HTTP/1.1 200 OK // <1>
-...
+----
+<1> The HTTP status is `200` indicating that the application is started.
+
+[source,json]
+.JSON response body:
+----
 {
   "status": "UP",
   "checks": [
@@ -462,7 +483,6 @@ curl -v http://localhost:8080/health/started
   ]
 }
 ----
-<1> The HTTP status is `200` indicating that the application is started.
 
 When using the health check URLs, you can get the following health check data:
 
@@ -489,18 +509,16 @@ curl http://localhost:8080/health
       "data": {
         "time": 1566403431536
       }
-    },
-    ...
+    }
+  ]
 }
 ----
 
-Full example code is available
-link:https://github.com/oracle/helidon/tree/{helidon-version}/examples/microprofile[here].
-
+Full example code is available link:{helidon-tree-url}/examples/microprofile[here].
 
 == Reference
 
-* link:https://helidon.io/docs/v2/apidocs/io.helidon.microprofile.health/module-summary.html[Helidon MicroProfile Health JavaDoc]
-* link:https://helidon.io/docs/v2/apidocs/io.helidon.health.checks/module-summary.html[Helidon Built-in Checks JavaDoc]
-* link:http://download.eclipse.org/microprofile/microprofile-health-{health-release}/microprofile-health-spec.pdf[MicroProfile Health Specification]
+* link:{javadoc-base-url}/io.helidon.microprofile.health/module-summary.html[Helidon MicroProfile Health JavaDoc]
+* link:{javadoc-base-url}/io.helidon.health.checks/module-summary.html[Helidon Built-in Checks JavaDoc]
+* link:{microprofile-health-spec-url}[MicroProfile Health Specification]
 * link:https://github.com/eclipse/microprofile-health[MicroProfile Health on GitHub]

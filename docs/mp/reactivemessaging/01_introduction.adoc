@@ -24,10 +24,11 @@
 :keywords: helidon, mp, microprofile, messaging
 :h1Prefix: MP
 :feature-name: MicroProfile Reactive Messaging
-:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 :microprofile-bundle: false
+:rootdir: {docdir}/../..
 
-include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+include::{rootdir}/includes/attributes.adoc[]
+include::{rootdir}/includes/dependencies.adoc[]
 
 [source,xml]
 ----
@@ -49,7 +50,7 @@ To include health checks for Messaging add the following dependency:
 
 == Reactive Messaging
 
-https://download.eclipse.org/microprofile/microprofile-reactive-messaging-1.0/microprofile-reactive-messaging-spec.html[MicroProfile Reactive Messaging]
+link:{microprofile-reactive-messaging-spec-url}[MicroProfile Reactive Messaging]
 uses CDI beans to produce, consume or process messages over Reactive Streams.
 Such messaging bean is expected to be either in `ApplicationScoped` or `Dependent` scope.
 Messages are managed by methods annotated by `@Incoming` and `@Outgoing`
@@ -60,14 +61,14 @@ WARNING: Messaging methods are not meant to be invoked directly!
 [[terms]]
 .Terms definition
 |===
-|https://download.eclipse.org/microprofile/microprofile-reactive-messaging-1.0/microprofile-reactive-messaging-spec.html#_supported_method_signatures[messaging method]| bean method invoked by messaging Specification
-|https://download.eclipse.org/microprofile/microprofile-reactive-messaging-1.0/microprofile-reactive-messaging-spec.html#_connector[connector]| Reactive Messaging connector
-|https://download.eclipse.org/microprofile/microprofile-reactive-messaging-1.0/microprofile-reactive-messaging-spec.html#_channel[channel]| named pair of producer and consumer, both sides can be either messaging method or connector
+|link:{microprofile-reactive-messaging-spec-url}#_supported_method_signatures[messaging method]| bean method invoked by messaging Specification
+|link:{microprofile-reactive-messaging-spec-url}#_connector[connector]| Reactive Messaging connector
+|link:{microprofile-reactive-messaging-spec-url}#_channel[channel]| named pair of producer and consumer, both sides can be either messaging method or connector
 |===
 
 The bean can have methods annotated by
-https://download.eclipse.org/microprofile/microprofile-reactive-messaging-1.0/microprofile-reactive-messaging-spec.html#_message_consumption_with_incoming[`@Incoming`],
-https://download.eclipse.org/microprofile/microprofile-reactive-messaging-1.0/microprofile-reactive-messaging-spec.html#_message_production_with_outgoing[`@Outgoing`] or both.
+link:{microprofile-reactive-messaging-spec-url}#_message_consumption_with_incoming[`@Incoming`],
+link:{microprofile-reactive-messaging-spec-url}#_message_production_with_outgoing[`@Outgoing`] or both.
 
 === Consuming methods with `@Incoming` annotation
 
@@ -101,15 +102,12 @@ public Subscriber<String> printMessage() {
 === Producing methods with `@Outgoing` annotation
 
 The annotation has one required attribute `value` that defines the
-https://download.eclipse.org/microprofile/microprofile-reactive-messaging-1.0/microprofile-reactive-messaging-spec.html#_channel[channel]
-name.
+link:{microprofile-reactive-messaging-spec-url}#_channel[channel] name.
 
 Such annotated <<terms,messaging method>> can function in two ways:
 
-* produce exactly one message to the stream connected to the
-https://download.eclipse.org/microprofile/microprofile-reactive-messaging-1.0/microprofile-reactive-messaging-spec.html#_channel[channel]
-* prepare reactive stream's publisher and connect it to the
-https://download.eclipse.org/microprofile/microprofile-reactive-messaging-1.0/microprofile-reactive-messaging-spec.html#_channel[channel]
+* produce exactly one message to the stream connected to the link:{microprofile-reactive-messaging-spec-url}#_channel[channel]
+* prepare reactive stream's publisher and connect it to the link:{microprofile-reactive-messaging-spec-url}#_channel[channel]
 
 [source,java]
 .Example producing exactly one message to channel `example-channel-1`:
@@ -131,8 +129,7 @@ public Publisher<String> printMessage() {
 
 === Processing methods with `@Incoming` and `@Outgoing` annotation
 
-Such
-https://download.eclipse.org/microprofile/microprofile-reactive-messaging-1.0/microprofile-reactive-messaging-spec.html#_method_consuming_and_producing[methods]
+Such link:{microprofile-reactive-messaging-spec-url}#_method_consuming_and_producing[methods]
 acts as processors, consuming messages from one channel and producing to another.
 
 Such annotated <<terms,messaging method>> can function in multiple ways:

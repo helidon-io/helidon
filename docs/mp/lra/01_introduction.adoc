@@ -23,45 +23,49 @@
 :keywords: helidon, mp, lra
 :h1Prefix: MP
 :feature-name: Long Running Actions
-:spec-version: 1.0-RC3
-:spec-name: Micro Profile {feature-name} specification
-:spec-link: https://download.eclipse.org/microprofile/microprofile-lra-{spec-version}/microprofile-lra-spec-{spec-version}.html
-:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+:rootdir: {docdir}/../..
+:imagesdir: {rootdir}/images
 
-include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+include::{rootdir}/includes/attributes.adoc[]
+
+include::{rootdir}/includes/dependencies.adoc[]
+
 [source,xml]
 ----
-<dependency>
-  <groupId>io.helidon.microprofile.lra</groupId>
-  <artifactId>helidon-microprofile-lra</artifactId>
-</dependency>
-<!-- Support for Narayana coordinator -->
-<dependency>
-  <groupId>io.helidon.lra</groupId>
-  <artifactId>helidon-lra-coordinator-narayana-client</artifactId>
-</dependency>
+<dependencies>
+    <dependency>
+      <groupId>io.helidon.microprofile.lra</groupId>
+      <artifactId>helidon-microprofile-lra</artifactId>
+    </dependency>
+    <!-- Support for Narayana coordinator -->
+    <dependency>
+      <groupId>io.helidon.lra</groupId>
+      <artifactId>helidon-lra-coordinator-narayana-client</artifactId>
+    </dependency>
+</dependencies>
 ----
 
 == {feature-name} (LRA)
-Distributed transactions for microservices are known as SAGA design patterns and are defined by the {spec-link}[{spec-name}]. 
-Unlike well known XA protocol, LRA is asynchronous and therefore much more scalable. Every LRA JAX-RS resource (<<mp/lra/03_participant.adoc, participant>>) defines endpoints to be invoked when transaction needs to be <<mp/lra/03_participant.adoc#complete-participant-method, completed>> or <<mp/lra/03_participant.adoc#compensate-participant-method, compensated>>.
+Distributed transactions for microservices are known as SAGA design patterns and are defined by the {microprofile-lra-spec-url}[MicroProfile Long Running Actions specification].
+Unlike well known XA protocol, LRA is asynchronous and therefore much more scalable. Every LRA JAX-RS resource (xref:03_participant.adoc[participant]) defines endpoints to be invoked when transaction needs to be xref:03_participant.adoc#complete-participant-method[completed] or xref:03_participant.adoc#compensate-participant-method[compensated].
 
-LRA transactions need to be coordinated over REST API by the LRA coordinator. <<mp/lra/02_coordinator.adoc, Coordinator>>
-keeps track of all transactions and calls the @Compensate or @Complete endpoints for all participants involved in the particular 
-transaction. LRA transaction is first started, then joined by <<mp/lra/03_participant.adoc, participant>>.
-Participant reports the successful finish of transaction by calling complete. Coordinator then calls the JAX-RS 
-<<mp/lra/03_participant.adoc#complete-participant-method, complete>> endpoint that was registered during the join of each 
-<<mp/lra/03_participant.adoc, participant>>. As the completed or compensated participants don't have to be on same instance, 
+LRA transactions need to be coordinated over REST API by the LRA coordinator.
+xref:02_coordinator.adoc[Coordinator]
+keeps track of all transactions and calls the @Compensate or @Complete endpoints for all participants involved in the particular
+transaction. LRA transaction is first started, then joined by xref:03_participant.adoc[participant].
+Participant reports the successful finish of transaction by calling complete. Coordinator then calls the JAX-RS
+xref:03_participant.adoc#complete-participant-method[complete] endpoint that was registered during the join of each
+xref:03_participant.adoc[participant]. As the completed or compensated participants don't have to be on same instance,
 the whole architecture is highly scalable.
 
 image::lra/lra-complete-lb.svg[Complete]
 
 In case of error during the LRA transaction, participant reports cancel of LRA to coordinator.
-<<mp/lra/02_coordinator.adoc, Coordinator>> calls compensate on all the joined participants.
+xref:02_coordinator.adoc[Coordinator] calls compensate on all the joined participants.
 
 image::lra/lra-compensate-lb-error.svg[Cancel]
 
-When participant joins the LRA with timeout defined `@LRA(value = LRA.Type.REQUIRES_NEW, timeLimit = 5, timeUnit = ChronoUnit.MINUTES)`, coordinator compensate if timeout occurs before close is reported by participants. 
+When participant joins the LRA with timeout defined `@LRA(value = LRA.Type.REQUIRES_NEW, timeLimit = 5, timeUnit = ChronoUnit.MINUTES)`, coordinator compensate if timeout occurs before close is reported by participants.
 
 image::lra/lra-compensate-lb-timeout.svg[Timeout]
 
@@ -69,11 +73,11 @@ image::lra/lra-compensate-lb-timeout.svg[Timeout]
 
 === Example
 The following example shows how a simple LRA participant starts and joins a transaction after calling the '/start-example' resource.
-When startExample method finishes successfully, close is reported to <<mp/lra/02_coordinator.adoc, coordinator>> 
+When startExample method finishes successfully, close is reported to xref:02_coordinator.adoc[coordinator]
 and `/complete-example` endpoint is called by coordinator to confirm successful closure of the LRA.
 
-If an exception occurs during startExample method execution, coordinator receives cancel call and `/compensate-example` 
-is called by coordinator to compensate for cancelled LRA transaction. 
+If an exception occurs during startExample method execution, coordinator receives cancel call and `/compensate-example`
+is called by coordinator to compensate for cancelled LRA transaction.
 
 [source,java]
 .Example of simple LRA participant
@@ -109,7 +113,7 @@ public Response compensateExample(@HeaderParam(LRA_HTTP_CONTEXT_HEADER) URI lraI
 ----
 <1> This JAX-RS PUT method will start new LRA transactions and join it before method body gets executed
 <2> LRA id assigned by coordinator to this LRA transaction
-<3> When method execution finishes exceptionally, cancel signal for this particular LRA is sent to coordinator 
+<3> When method execution finishes exceptionally, cancel signal for this particular LRA is sent to coordinator
 <4> When method execution finishes successfully, complete signal for this particular LRA is sent to coordinator
 <5> Method which will be called by coordinator when LRA is completed
 <6> Method which will be called by coordinator when LRA is canceled
@@ -129,4 +133,4 @@ mp.lra:
 <3> Url of the LRA enabled service overrides standard base uri,
 so coordinator can call load-balancer instead of the service
 
-For more information continue to {spec-link}[{spec-name}].
+For more information continue to {microprofile-lra-spec-url}[MicroProfile Long Running Actions specification].

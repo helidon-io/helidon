@@ -21,9 +21,10 @@
 :description: Helidon Reactive WebServer JSON-B support
 :keywords: helidon, reactive, reactive streams, reactive java, reactive webserver
 :feature-name: JSON-B Support
-:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+:rootdir: {docdir}/../..
 
-include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+include::{rootdir}/includes/attributes.adoc[]
+include::{rootdir}/includes/dependencies.adoc[]
 
 [source,xml]
 ----
@@ -34,6 +35,7 @@ include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 ----
 
 == JSON-B Support
+
 The WebServer supports the http://json-b.net/[JSON-B
 specification]. When this support is enabled, Java objects will be
 serialized to and deserialized from JSON automatically using
@@ -42,9 +44,8 @@ the https://jcp.org/en/jsr/detail?id=367[JSON-B specification].
 
 === Usage
 To enable JSON-B support, first create and register a
-https://helidon.io/docs/latest/apidocs/io/helidon/media/jsonb/JsonbSupport.html[`JsonbSupport`]
-instance with a
-https://helidon.io/docs/latest/apidocs/io/helidon/webserver/WebServer.Builder.html[`WebServer.Builder`].
+link:{media-jsonb-javadoc-base-url}/JsonbSupport.html[`JsonbSupport`] instance with a
+link:{webserver-javadoc-base-url}/WebServer.Builder.html[`WebServer.Builder`].
 
 [source,java]
 .Registration of the `JsonbSupport` via `WebServer`
@@ -63,8 +64,7 @@ to JSON.
 Now that automatic JSON serialization and deserialization facilities
 have been set up, you can register a `Handler` that works with Java
 objects instead of raw JSON.  Deserialization from and serialization
-to JSON will be handled according to the
-https://jcp.org/en/jsr/detail?id=367[JSON-B specification].
+to JSON will be handled according to the link:{jakarta-jsonb-spec-url}[JSON-B specification].
 
 Suppose you have a `Person` class that looks like this:
 
@@ -101,9 +101,9 @@ final Routing routing =
     .build();
 ----
 <1> Set up a route for `POST` requests using the
-https://helidon.io/docs/latest/apidocs/io/helidon/webserver/Routing.Builder.html#post-java.lang.String-io.helidon.webserver.Handler...-[`Routing.Builder#post(String, Handler...)` method]
+link:{webserver-javadoc-base-url}/Routing.Builder.html#post-java.lang.String-io.helidon.webserver.Handler...-[`Routing.Builder#post(String, Handler...)` method]
 <2> Use the
-https://helidon.io/docs/latest/apidocs/io/helidon/webserver/Handler.html#create-java.lang.Class-io.helidon.webserver.Handler.EntityHandler-[`Handler#create(Class, Handler.EntityHandler)` method]
+link:{webserver-javadoc-base-url}/Handler.html#create-java.lang.Class-io.helidon.webserver.Handler.EntityHandler-[`Handler#create(Class, Handler.EntityHandler)` method]
 to install a `Handler.EntityHandler` that works with `Person` instances.
 <3> This `Handler.EntityHandler` consumes a `Person` instance
 (`person`) and simply echoes it back.  Note that there is no working

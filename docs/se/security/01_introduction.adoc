@@ -21,11 +21,13 @@
 :description: Helidon Security introduction
 :keywords: helidon, security
 :feature-name: Security
-:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+:rootdir: {docdir}/../..
 
-Helidon Security provides authentication, authroization and auditing for your Helidon application.
+include::{rootdir}/includes/attributes.adoc[]
 
-include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+Helidon Security provides authentication, authorization and auditing for your Helidon application.
+
+include::{rootdir}/includes/dependencies.adoc[]
 
 [source,xml]
 ----
@@ -79,7 +81,7 @@ In general, Security supports three approaches
 - hybrid - you load a builder from configuration and update it in a program
 
 Once a security instance is built, it can be used to initialize an
- <<_cloud_security_container_integrations,integration with a container>>, or to
+ xref:03_containers-integration.adoc[integration with a container], or to
  use security from a program directly:
 
 [source,java]
@@ -126,7 +128,7 @@ Security security = Security.builder()
 
 === Configuration pattern
 
-See <<_tools,Secure config>> for details about encrypting passwords in
+See xref:04_tools.adoc[Secure config] for details about encrypting passwords in
  configuration files.
 
 [source,java]
@@ -155,6 +157,7 @@ security:
 ----
 
 ==== Overriding configuration
+
 When a configuration needs to be overridden, we may have problems with the list
 type of the `providers` configuration. To simplify overrides using properties,
 you can explicitly setup a type of provider using a `type` key.

@@ -20,20 +20,18 @@
 :h1Prefix: MP
 :description: Helidon MP metrics-capable components
 :keywords: helidon, metrics, metrics-capable, microprofile, guide
-:common-page-prefix-inc: ../../shared/metrics
-:shared-doc: {common-page-prefix-inc}/metrics-capable-components.adoc
-:javadoc-base-url-api: {javadoc-base-url}io.helidon.metrics.serviceapi/io/helidon/metrics/serviceapi
-:metrics-support-builder-javadoc: {javadoc-base-url-api}/MetricsSupport.Builder.html
-:lower-case-flavor: mp
 :intro-project-name: {h1Prefix}
 :chk: icon:check[]
 :x: icon:times[]
+:flavor-uc: MP
+:flavor-lc: mp
+:rootdir: {docdir}/../..
 
-include::{shared-doc}[tags=preamble]
+include::{rootdir}/includes/attributes.adoc[]
 
-include::{shared-doc}[tags=all-beginning-text]
-
-include::{shared-doc}[tags=writing-code-beginning]
+include::{rootdir}/includes/metrics/metrics-capable-components.adoc[tags=preamble]
+include::{rootdir}/includes/metrics/metrics-capable-components.adoc[tags=all-beginning-text]
+include::{rootdir}/includes/metrics/metrics-capable-components.adoc[tags=writing-code-beginning]
 
 ==== Writing a Helidon MP Application
 
@@ -71,6 +69,6 @@ That said, a developer of a Helidon MP app _can_ explicitly exclude the dependen
 
 In the resulting Helidon MP application, Helidon will use the minimal metrics and metrics support implementations.
 
-include::{shared-doc}[tags=writing-code-ending]
+include::{rootdir}/includes/metrics/metrics-capable-components.adoc[tags=writing-code-ending]
 
-include::{shared-doc}[tags=wrap-up]
+include::{rootdir}/includes/metrics/metrics-capable-components.adoc[tags=wrap-up]

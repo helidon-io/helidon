@@ -16,12 +16,13 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
+= WebServer TLS configuration
 :h1Prefix: SE
-:javadoc-base-url-api: {javadoc-base-url}io.helidon.webserver/io/helidon/webserver
 :description: Helidon WebServer TLS configuration
 :keywords: helidon, reactive, reactive streams, reactive java, reactive webserver, tls
+:rootdir: {docdir}/../..
 
-= WebServer TLS configuration
+include::{rootdir}/includes/attributes.adoc[]
 
 Configure TLS either programmatically, or by the Helidon configuration framework.
 
@@ -116,7 +117,7 @@ server:
 == Configuration options
 
 See all configuration options
-link:{javadoc-base-url-api}/WebServerTls.html[here].
+link:{webserver-javadoc-base-url}/WebServerTls.html[here].
 
 Available server certificate configuration options:
 
@@ -124,7 +125,7 @@ Available server certificate configuration options:
 |===
 |Configuration key |Default value ^|Java type  ^|Description
 
-|`client-auth` |NONE |Enum |See link:{javadoc-base-url-api}/ClientAuthentication.html[here] for all possible values.
+|`client-auth` |NONE |Enum |See link:{webserver-javadoc-base-url}/ClientAuthentication.html[here] for all possible values.
 Whether to require client certificate authentication
 |`protocols` |{nbsp} |String |TLS protocols to enable with the server socket
 |`session-cache-size` |{nbsp} |int |The size of the cache used for storing SSL session objects

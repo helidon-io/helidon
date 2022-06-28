@@ -18,11 +18,12 @@
 
 = gRPC Server Introduction
 :h1Prefix: SE
-:pagename: grpc-server-introduction
 :description: Helidon gRPC Server Introduction
 :keywords: helidon, grpc, java
 :feature-name: gRPC
-:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/attributes.adoc[]
 
 Helidon gRPC Server provides a framework for creating link:http://grpc.io/[gRPC] applications.
 
@@ -31,7 +32,7 @@ Helidon gRPC Server provides a framework for creating link:http://grpc.io/[gRPC]
 WARNING: The Helidon gRPC feature is currently experimental and the APIs are
  subject to changes until gRPC support is stabilized.
 
-include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+include::{rootdir}/includes/dependencies.adoc[]
 
 [source,xml]
 ----

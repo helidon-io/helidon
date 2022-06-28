@@ -21,13 +21,15 @@
 :description: Helidon MicroProfile security
 :keywords: helidon, microprofile, micro-profile
 :feature-name: Security
-:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/attributes.adoc[]
 
 To add security, such as protecting
 resource methods with authentication, to a MicroProfile application, add the Helidon
  security integration dependency to your project.
 
-include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+include::{rootdir}/includes/dependencies.adoc[]
 
 [source,xml]
 ----
@@ -40,7 +42,7 @@ include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 === Securing a JAX-RS Resource
 
 For JAX-RS resources, declare security by adding annotations to a resource class or
- method. 
+ method.
 
 [source,java]
 .Protected resource method
@@ -58,4 +60,4 @@ public String adminResource(@Context io.helidon.security.SecurityContext securit
 Security in Helidon MicroProfile is built on top of Jersey's and can be enabled/disabled
 using the property `security.jersey.enabled=[true|false]`.
 
-include::../../shared/security/helidon-endpoints.adoc[]
+include::{rootdir}/includes/security/helidon-endpoints.adoc[]
