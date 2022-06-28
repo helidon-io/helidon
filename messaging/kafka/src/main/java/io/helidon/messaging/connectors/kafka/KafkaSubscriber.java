@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -193,6 +193,16 @@ public class KafkaSubscriber<K, V> implements Subscriber<Message<V>> {
             producerSupplier(() -> new KafkaProducer<>(kafkaConfig.asMap()));
             topics(kafkaConfig.topics());
             config.get(BACKPRESSURE_SIZE_KEY).asLong().ifPresent(this::backpressure);
+            return this;
+        }
+
+        Builder<K, V> config(KafkaConfig kafkaConfig) {
+            producerSupplier(() -> new KafkaProducer<>(kafkaConfig.asMap()));
+            topics(kafkaConfig.topics());
+            kafkaConfig.get(BACKPRESSURE_SIZE_KEY)
+                    .map(String::valueOf)
+                    .map(Long::valueOf)
+                    .ifPresent(this::backpressure);
             return this;
         }
 

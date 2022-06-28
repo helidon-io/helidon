@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.header.Headers;
@@ -34,23 +36,28 @@ import org.apache.kafka.common.header.Headers;
  */
 class KafkaConsumerMessage<K, V> implements KafkaMessage<K, V> {
 
-    private final CompletableFuture<Void> kafkaCommit;
+    private final CompletableFuture<Void> ack;
+    private final NackHandler<K, V> nack;
     private final long millisWaitingTimeout;
-    private final AtomicBoolean ack = new AtomicBoolean();
+    private final AtomicBoolean acked = new AtomicBoolean();
     private final ConsumerRecord<K, V> consumerRecord;
 
     /**
      * Kafka specific MP messaging message.
      *
      * @param consumerRecord       obtained from Kafka topic
-     * @param kafkaCommit          it will complete when Kafka commit is done.
+     * @param ack                  it will complete when Kafka commit is done.
      * @param millisWaitingTimeout this is the time in milliseconds that the ack will be waiting
      *                             the commit in Kafka. Applies only if autoCommit is false.
      */
-    KafkaConsumerMessage(ConsumerRecord<K, V> consumerRecord, CompletableFuture<Void> kafkaCommit, long millisWaitingTimeout) {
+    KafkaConsumerMessage(ConsumerRecord<K, V> consumerRecord,
+                         CompletableFuture<Void> ack,
+                         NackHandler<K, V> nack,
+                         long millisWaitingTimeout) {
         Objects.requireNonNull(consumerRecord);
         this.consumerRecord = consumerRecord;
-        this.kafkaCommit = kafkaCommit;
+        this.ack = ack;
+        this.nack = nack;
         this.millisWaitingTimeout = millisWaitingTimeout;
     }
 
@@ -91,8 +98,23 @@ class KafkaConsumerMessage<K, V> implements KafkaMessage<K, V> {
 
     @Override
     public CompletionStage<Void> ack() {
-        ack.getAndSet(true);
-        return kafkaCommit.orTimeout(millisWaitingTimeout, TimeUnit.MILLISECONDS);
+        return getAck().get();
+    }
+
+    @Override
+    public Function<Throwable, CompletionStage<Void>> getNack() {
+        return nack.getNack(this);
+    }
+
+    @Override
+    public Supplier<CompletionStage<Void>> getAck() {
+        return () -> {
+            acked.getAndSet(true);
+            if (millisWaitingTimeout == Long.MAX_VALUE) {
+                return ack;
+            }
+            return ack.orTimeout(millisWaitingTimeout, TimeUnit.MILLISECONDS);
+        };
     }
 
     @Override
@@ -109,15 +131,15 @@ class KafkaConsumerMessage<K, V> implements KafkaMessage<K, V> {
     }
 
     boolean isAck() {
-        return ack.get();
+        return acked.get();
     }
 
     @Override
     public String toString() {
-        return "KafkaConsumerMessage [consumerRecord=" + consumerRecord + ", ack=" + ack + "]";
+        return "KafkaConsumerMessage [consumerRecord=" + consumerRecord + ", acked=" + acked + "]";
     }
 
     CompletableFuture<Void> kafkaCommit() {
-        return kafkaCommit;
+        return ack;
     }
 }

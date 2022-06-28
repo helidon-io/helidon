@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,12 @@
 
 package io.helidon.messaging.connectors.kafka;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
 import io.helidon.config.Config;
@@ -45,6 +47,14 @@ class KafkaConfig {
         return topics;
     }
 
+    void putIfAbsent(String key, Supplier<Object> supplier){
+        this.kafkaConfig.computeIfAbsent(key, s -> supplier.get());
+    }
+
+    Optional<Object> get(String key){
+        return Optional.ofNullable(this.kafkaConfig.get(key));
+    }
+
     Optional<Pattern> topicPattern(){
         return Optional.ofNullable(topicPattern);
     }
@@ -52,8 +62,12 @@ class KafkaConfig {
     static KafkaConfig create(Config config) {
         Map<String, Object> kafkaConfig = new HashMap<>(config.detach().asMap().orElseGet(Map::of));
         KafkaConfig kc = new KafkaConfig(kafkaConfig);
-        kc.topics = config.get(TOPIC_NAME).asList(String.class).orElseGet(List::of);
+        kc.topics = config.get(TOPIC_NAME).asList(String.class).map(ArrayList::new).orElseGet(ArrayList::new);
         kc.topicPattern = config.get(TOPIC_PATTERN).asString().map(Pattern::compile).orElse(null);
         return kc;
+    }
+
+    void remove(String s) {
+        this.kafkaConfig.remove(s);
     }
 }

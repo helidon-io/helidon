@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -77,6 +77,17 @@ public final class KafkaConfigBuilder extends ConnectorConfigBuilder {
      */
     public KafkaConfigBuilder topic(String... topics) {
         super.property("topic", String.join(",", topics));
+        return this;
+    }
+
+    /**
+     * Names of the "dead letter queue" topics to be used in case message is nacked.
+     *
+     * @param topics "dead letter queue" topics to be used in case message is nacked
+     * @return this builder
+     */
+    public KafkaConfigBuilder dlqTopic(String... topics) {
+        super.property("dlq-topic", String.join(",", topics));
         return this;
     }
 

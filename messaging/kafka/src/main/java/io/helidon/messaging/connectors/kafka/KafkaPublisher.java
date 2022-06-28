@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -87,13 +87,14 @@ public class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>> {
     private final long ackTimeout;
     private final int limitNoAck;
     private final Supplier<Consumer<K, V>> consumerSupplier;
+    private final Config config;
 
     private Consumer<K, V> kafkaConsumer;
-    private boolean stopped;
+    private volatile boolean stopped;
 
     private KafkaPublisher(ScheduledExecutorService scheduler, Supplier<Consumer<K, V>> consumerSupplier,
-            List<String> topics, Pattern topicPattern, long pollTimeout, long periodExecutions, boolean autoCommit,
-            long ackTimeout, int limitNoAck) {
+                           List<String> topics, Pattern topicPattern, long pollTimeout, long periodExecutions, boolean autoCommit,
+                           long ackTimeout, int limitNoAck, Config config) {
         this.scheduler = scheduler;
         this.topics = topics;
         this.topicPattern = topicPattern;
@@ -103,6 +104,7 @@ public class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>> {
         this.ackTimeout = ackTimeout;
         this.limitNoAck = limitNoAck;
         this.consumerSupplier = consumerSupplier;
+        this.config = config;
         this.emitter.onRequest((n, demand) -> requests.updateAndGet(r -> Long.MAX_VALUE - r > n ? n + r : Long.MAX_VALUE));
     }
 
@@ -121,6 +123,9 @@ public class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>> {
             } else {
                 kafkaConsumer.subscribe(topics, partitionsAssignedLatch);
             }
+
+            NackHandler<K, V> nack = NackHandler.create(emitter, config);
+
             // This thread reads from Kafka topics and push in kafkaBufferedEvents
             scheduler.scheduleAtFixedRate(() -> {
                 try {
@@ -148,14 +153,15 @@ public class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>> {
                                 }
                                 for (long i = 0; i < eventsToEmit; i++) {
                                     ConsumerRecord<K, V> cr = backPressureBuffer.poll();
-                                    CompletableFuture<Void> kafkaCommit = new CompletableFuture<>();
+                                    CompletableFuture<Void> ack = new CompletableFuture<>();
+
                                     KafkaConsumerMessage<K, V> kafkaMessage =
-                                            new KafkaConsumerMessage<>(cr, kafkaCommit, ackTimeout);
+                                            new KafkaConsumerMessage<>(cr, ack, nack, ackTimeout);
                                     if (!autoCommit) {
                                         TopicPartition key = new TopicPartition(cr.topic(), cr.partition());
                                         pendingCommits.computeIfAbsent(key, k -> new LinkedList<>()).add(kafkaMessage);
                                     } else {
-                                        kafkaCommit.complete(null);
+                                        ack.complete(null);
                                     }
                                     requests.decrementAndGet();
                                     runInNewContext(() ->  emitter.emit(kafkaMessage));
@@ -281,7 +287,7 @@ public class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>> {
     //Move to messaging incoming connector
     protected void runInNewContext(Runnable runnable) {
         Context.Builder contextBuilder = Context.builder()
-                .id(String.format("kafka-message-%s:", UUID.randomUUID().toString()));
+                .id(String.format("kafka-message-%s:", UUID.randomUUID()));
         Contexts.context().ifPresent(contextBuilder::parent);
         Contexts.runInContext(contextBuilder.build(), runnable);
     }
@@ -350,6 +356,7 @@ public class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>> {
         private Pattern topicPattern;
         private ScheduledExecutorService scheduler;
         private Supplier<Consumer<K, V>> consumerSupplier;
+        private Config config;
 
         private Builder() {
         }
@@ -361,6 +368,7 @@ public class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>> {
          * @return updated builder instance
          */
         public Builder<K, V> config(Config config) {
+            this.config = config;
             KafkaConfig kafkaConfig = KafkaConfig.create(config);
             consumerSupplier(() -> new KafkaConsumer<>(kafkaConfig.asMap()));
             topics(kafkaConfig.topics());
@@ -517,8 +525,18 @@ public class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>> {
             if (Objects.isNull(consumerSupplier)) {
                 throw new IllegalArgumentException("The kafkaConsumerSupplier is a required value");
             }
-            KafkaPublisher<K, V> publisher = new KafkaPublisher<>(scheduler, consumerSupplier, topics, topicPattern,
-                    pollTimeout, periodExecutions, autoCommit, ackTimeout, limitNoAck);
+            KafkaPublisher<K, V> publisher = new KafkaPublisher<>(
+                    scheduler,
+                    consumerSupplier,
+                    topics,
+                    topicPattern,
+                    pollTimeout,
+                    periodExecutions,
+                    autoCommit,
+                    ackTimeout,
+                    limitNoAck,
+                    config
+            );
             return publisher;
         }
     }
