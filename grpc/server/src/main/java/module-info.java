@@ -30,12 +30,9 @@ module io.helidon.grpc.server {
 
     requires transitive grpc.services;
     requires transitive microprofile.health.api;
-    requires transitive io.opentracing.api;
-    requires transitive opentracing.grpc;
 
     requires jakarta.annotation;
     requires java.logging;
 
     requires jakarta.inject;
-    requires io.opentracing.util;
 }

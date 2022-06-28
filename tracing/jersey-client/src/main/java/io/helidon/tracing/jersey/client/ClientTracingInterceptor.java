@@ -15,10 +15,8 @@
  */
 package io.helidon.tracing.jersey.client;
 
-import java.util.Map;
+import io.helidon.tracing.Span;
 
-import io.opentracing.Span;
-import io.opentracing.tag.Tags;
 import jakarta.ws.rs.client.ClientRequestContext;
 import jakarta.ws.rs.client.ClientResponseContext;
 import org.glassfish.jersey.client.spi.PostInvocationInterceptor;
@@ -49,14 +47,12 @@ public class ClientTracingInterceptor implements PostInvocationInterceptor {
     public void onException(ClientRequestContext requestContext, ExceptionContext exceptionContext) {
         Object property = requestContext.getProperty(SPAN_PROPERTY_NAME);
         if (property instanceof Span span) {
-            Tags.ERROR.set(span, true);
-            span.log(Map.of("event",
-                    "error",
-                    "message",
-                    "Exception executing client request: " + exceptionContext.getThrowables().pop(),
-                    "error.kind", "ClientError"));
-            span.finish();
+            span.status(Span.Status.ERROR);
+            span.end(exceptionContext.getThrowables().pop());
             requestContext.removeProperty(SPAN_PROPERTY_NAME);
+        }
+        for (Throwable throwable : exceptionContext.getThrowables()) {
+            throwable.printStackTrace();
         }
     }
 }

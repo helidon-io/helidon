@@ -22,9 +22,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import io.helidon.jersey.common.InvokedResource;
+import io.helidon.tracing.Span;
 import io.helidon.tracing.jersey.AbstractTracingFilter;
 
-import io.opentracing.Tracer;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -102,7 +102,7 @@ public class MpTracingFilter extends AbstractTracingFilter {
     }
 
     @Override
-    protected void configureSpan(Tracer.SpanBuilder spanBuilder) {
+    protected void configureSpan(Span.Builder spanBuilder) {
 
     }
 

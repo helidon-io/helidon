@@ -11,14 +11,16 @@ import io.opentracing.tag.Tags;
 
 class OpenTracingSpanBuilder implements Span.Builder<OpenTracingSpanBuilder> {
     private final Tracer.SpanBuilder delegate;
+    private final Tracer tracer;
 
-    OpenTracingSpanBuilder(Tracer.SpanBuilder delegate) {
+    OpenTracingSpanBuilder(Tracer tracer, Tracer.SpanBuilder delegate) {
+        this.tracer = tracer;
         this.delegate = delegate;
     }
 
     @Override
     public Span build() {
-        return new OpenTracingSpan(delegate.start());
+        return new OpenTracingSpan(tracer, delegate.start());
     }
 
     @Override
@@ -68,6 +70,6 @@ class OpenTracingSpanBuilder implements Span.Builder<OpenTracingSpanBuilder> {
     @Override
     public Span start(Instant instant) {
         long micro = TimeUnit.MILLISECONDS.toMicros(instant.toEpochMilli());
-        return new OpenTracingSpan(delegate.withStartTimestamp(micro).start());
+        return new OpenTracingSpan(tracer, delegate.withStartTimestamp(micro).start());
     }
 }

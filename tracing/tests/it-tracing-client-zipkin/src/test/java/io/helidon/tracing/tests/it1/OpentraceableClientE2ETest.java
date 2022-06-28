@@ -25,7 +25,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import io.helidon.tracing.Span;
 import io.helidon.tracing.jersey.client.ClientTracingFilter;
+import io.helidon.tracing.opentracing.OpenTracing;
 import io.helidon.tracing.zipkin.ZipkinTracer;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
@@ -34,7 +36,6 @@ import brave.Tracing;
 import brave.opentracing.BraveSpanContext;
 import brave.opentracing.BraveTracer;
 import brave.propagation.TraceContext;
-import io.opentracing.Span;
 import io.opentracing.Tracer;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
@@ -63,7 +64,7 @@ public class OpentraceableClientE2ETest {
     private static Client client;
 
     /** Use custom {@link Tracer} that adds events to {@link #EVENTS_MAP} map. */
-    private static Tracer tracer(String serviceName) {
+    private static io.helidon.tracing.Tracer tracer(String serviceName) {
         Tracing braveTracing = Tracing.newBuilder()
                                       .localServiceName(serviceName)
                                       .spanReporter(span -> {
@@ -73,7 +74,7 @@ public class OpentraceableClientE2ETest {
                                       .build();
 
         // use this to create an OpenTracing Tracer
-        return new ZipkinTracer(BraveTracer.create(braveTracing), List.of());
+        return OpenTracing.create(new ZipkinTracer(BraveTracer.create(braveTracing), List.of()));
     }
 
     private static WebServer startWebServer() throws InterruptedException, ExecutionException, TimeoutException {
@@ -90,8 +91,8 @@ public class OpentraceableClientE2ETest {
 
     @Test
     public void e2e() throws Exception {
-        Tracer tracer = tracer("test-client");
-        Span start = tracer.buildSpan("client-call")
+        io.helidon.tracing.Tracer tracer = tracer("test-client");
+        Span start = tracer.spanBuilder("client-call")
                            .start();
         Response response = client.target("http://localhost:" + server.port())
                                   .property(ClientTracingFilter.TRACER_PROPERTY_NAME, tracer)
@@ -101,13 +102,13 @@ public class OpentraceableClientE2ETest {
 
         assertThat(response.getStatus(), is(200));
 
-        start.finish();
+        start.end();
 
         if (!EVENTS_LATCH.await(10, TimeUnit.SECONDS)) {
             fail("Expected " + EXPECTED_TRACE_EVENTS_COUNT + " trace events but received only: " + EVENTS_MAP.size());
         }
 
-        TraceContext traceContext = ((BraveSpanContext) start.context()).unwrap();
+        TraceContext traceContext = ((BraveSpanContext) start.unwrap(io.opentracing.Span.class).context()).unwrap();
 
         assertSpanChain(EVENTS_MAP.remove(traceContext.traceIdString()), EVENTS_MAP);
         assertThat(EVENTS_MAP.entrySet(), hasSize(0));

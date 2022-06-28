@@ -17,8 +17,8 @@
 package io.helidon.tracing.tracerresolver;
 
 import io.helidon.common.Prioritized;
-import io.helidon.tracing.TracerBuilder;
-import io.helidon.tracing.spi.TracerProvider;
+import io.helidon.tracing.opentracing.OpenTracingTracerBuilder;
+import io.helidon.tracing.opentracing.spi.OpenTracingProvider;
 
 import jakarta.annotation.Priority;
 
@@ -27,9 +27,9 @@ import jakarta.annotation.Priority;
  */
 // lower priority, so this get overridden by specific tracers if present
 @Priority(Prioritized.DEFAULT_PRIORITY + 1000)
-public class TracerResolverProvider implements TracerProvider {
+public class TracerResolverProvider implements OpenTracingProvider {
     @Override
-    public TracerBuilder<?> createBuilder() {
+    public OpenTracingTracerBuilder<?> createBuilder() {
         return new TracerResolverBuilder();
     }
 }

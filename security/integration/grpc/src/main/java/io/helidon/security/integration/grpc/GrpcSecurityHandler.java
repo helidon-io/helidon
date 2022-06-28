@@ -48,6 +48,7 @@ import io.helidon.security.integration.common.AtnTracing;
 import io.helidon.security.integration.common.AtzTracing;
 import io.helidon.security.integration.common.SecurityTracing;
 import io.helidon.security.internal.SecurityAuditEvent;
+import io.helidon.tracing.SpanContext;
 
 import io.grpc.Context;
 import io.grpc.Contexts;
@@ -58,7 +59,6 @@ import io.grpc.ServerCall;
 import io.grpc.ServerCallHandler;
 import io.grpc.ServerInterceptor;
 import io.grpc.Status;
-import io.opentracing.SpanContext;
 import jakarta.annotation.Priority;
 
 import static io.helidon.security.AuditEvent.AuditParam.plain;

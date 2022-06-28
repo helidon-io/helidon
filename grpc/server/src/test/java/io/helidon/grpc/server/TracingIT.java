@@ -156,7 +156,7 @@ public class TracingIT {
                                          .intercept(interceptor)
                                          .build();
         // Enable tracing
-        Tracer tracer = TracerBuilder.create("Server")
+        io.helidon.tracing.Tracer tracer = TracerBuilder.create("Server")
                 .collectorUri(URI.create(zipkin.httpUrl() + "/api/v2/spans"))
                 .build();
 
@@ -169,7 +169,11 @@ public class TracingIT {
                 .build();
 
         // Run the server on port 0 so that it picks a free ephemeral port
-        GrpcServerConfiguration serverConfig = GrpcServerConfiguration.builder().port(0).tracer(tracer).tracingConfig(tracingConfig).build();
+        GrpcServerConfiguration serverConfig = GrpcServerConfiguration.builder()
+                .port(0)
+                .tracer(tracer)
+                .tracingConfig(tracingConfig)
+                .build();
 
         grpcServer = GrpcServer.create(serverConfig, routing)
                         .start()

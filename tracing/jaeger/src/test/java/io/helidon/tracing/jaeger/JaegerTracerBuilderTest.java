@@ -63,9 +63,7 @@ class JaegerTracerBuilderTest {
     void testConfigDefaults() {
         TracerBuilder<?> builder = TracerBuilder.create(config.get("jaeger-defaults"));
 
-        assertThat(builder, instanceOf(JaegerTracerBuilder.class));
-
-        JaegerTracerBuilder jBuilder = (JaegerTracerBuilder) builder;
+        JaegerTracerBuilder jBuilder = builder.unwrap(JaegerTracerBuilder.class);
 
         assertThat(jBuilder.serviceName(), is("helidon-service"));
         assertThat("Tags", jBuilder.tags(), is(Map.of()));
@@ -97,13 +95,11 @@ class JaegerTracerBuilderTest {
     void testConfigDisabled() {
         TracerBuilder<?> builder = TracerBuilder.create(config.get("jaeger-disabled"));
 
-        assertThat(builder, instanceOf(JaegerTracerBuilder.class));
-
-        JaegerTracerBuilder jBuilder = (JaegerTracerBuilder) builder;
+        JaegerTracerBuilder jBuilder = builder.unwrap(JaegerTracerBuilder.class);
 
         assertThat(jBuilder.serviceName(), is("helidon-service"));
 
-        Tracer tracer = builder.build();
+        Tracer tracer = builder.build().unwrap(Tracer.class);
         assertThat(tracer, instanceOf(NoopTracer.class));
     }
 
@@ -111,9 +107,7 @@ class JaegerTracerBuilderTest {
     void testConfigUdp() {
         TracerBuilder<?> builder = TracerBuilder.create(config.get("jaeger-udp"));
 
-        assertThat(builder, instanceOf(JaegerTracerBuilder.class));
-
-        JaegerTracerBuilder jBuilder = (JaegerTracerBuilder) builder;
+        JaegerTracerBuilder jBuilder = builder.unwrap(JaegerTracerBuilder.class);
         assertThat(jBuilder.serviceName(), is("udp-service"));
 
         // I should not build the tracer, as that may try connecting to other endpoints
@@ -130,9 +124,7 @@ class JaegerTracerBuilderTest {
     void testFullHttp() {
         TracerBuilder<?> builder = TracerBuilder.create(config.get("jaeger-full-http"));
 
-        assertThat(builder, instanceOf(JaegerTracerBuilder.class));
-
-        JaegerTracerBuilder jBuilder = (JaegerTracerBuilder) builder;
+        JaegerTracerBuilder jBuilder = builder.unwrap(JaegerTracerBuilder.class);
 
         assertThat(jBuilder.serviceName(), is("helidon-full-http"));
 
@@ -195,10 +187,7 @@ class JaegerTracerBuilderTest {
     @Test
     void testJaegerPropagations() {
         TracerBuilder<?> builder = TracerBuilder.create(config.get("jaeger-propagations"));
-
-        assertThat(builder, instanceOf(JaegerTracerBuilder.class));
-
-        JaegerTracerBuilder jBuilder = (JaegerTracerBuilder) builder;
+        JaegerTracerBuilder jBuilder = builder.unwrap(JaegerTracerBuilder.class);
 
         assertThat(jBuilder.serviceName(), is("helidon-propagations"));
         assertThat("Propagations",

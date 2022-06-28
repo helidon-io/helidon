@@ -20,8 +20,8 @@ import java.util.function.Supplier;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.tracing.Tracer;
 
-import io.opentracing.Tracer;
 import io.opentracing.util.GlobalTracer;
 import org.junit.jupiter.api.Test;
 
@@ -29,6 +29,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -102,7 +103,7 @@ public class GrpcServerConfigurationTest {
         GrpcServerConfiguration configuration = GrpcServerConfiguration.builder()
                 .build();
 
-        assertThat(configuration.tracer(), is(sameInstance(GlobalTracer.get())));
+        assertThat(configuration.tracer().unwrap(io.opentracing.Tracer.class), is(sameInstance(GlobalTracer.get())));
     }
 
     @Test
@@ -117,11 +118,8 @@ public class GrpcServerConfigurationTest {
 
     @Test
     public void shouldNotSetNullTracer() {
-        GrpcServerConfiguration configuration = GrpcServerConfiguration.builder()
-                .tracer((Tracer) null)
-                .build();
-
-        assertThat(configuration.tracer(), is(sameInstance(GlobalTracer.get())));
+        assertThrows(NullPointerException.class, () -> GrpcServerConfiguration.builder()
+                .tracer((Tracer) null));
     }
 
     @Test
@@ -136,11 +134,9 @@ public class GrpcServerConfigurationTest {
 
     @Test
     public void shouldNotSetNullTracerSupplier() {
-        GrpcServerConfiguration configuration = GrpcServerConfiguration.builder()
-                .tracer((Supplier<Tracer>) null)
-                .build();
+        assertThrows(NullPointerException.class, () -> GrpcServerConfiguration.builder()
+                .tracer((Supplier<Tracer>) null));
 
-        assertThat(configuration.tracer(), is(sameInstance(GlobalTracer.get())));
     }
 
     @Test
@@ -149,7 +145,7 @@ public class GrpcServerConfigurationTest {
                 .tracer(() -> null)
                 .build();
 
-        assertThat(configuration.tracer(), is(sameInstance(GlobalTracer.get())));
+        assertThat(configuration.tracer().enabled(), is(false));
     }
 
     @Test

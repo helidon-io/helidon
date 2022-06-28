@@ -94,4 +94,12 @@ final class NoOpBuilder implements TracerBuilder<NoOpBuilder> {
     public Tracer build() {
         return TRACER;
     }
+
+    @Override
+    public <B> B unwrap(Class<B> builderClass) {
+        if (NoOpBuilder.class == builderClass) {
+            return builderClass.cast(this);
+        }
+        throw new IllegalArgumentException("This is " + NoOpBuilder.class.getName() + ", not " + builderClass.getName());
+    }
 }

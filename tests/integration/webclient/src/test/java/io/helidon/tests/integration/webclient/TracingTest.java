@@ -16,6 +16,7 @@
 
 package io.helidon.tests.integration.webclient;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -40,6 +41,7 @@ import static org.hamcrest.Matchers.iterableWithSize;
  * Test tracing integration.
  */
 class TracingTest extends TestParent {
+    private static final Duration TIMEOUT = Duration.ofSeconds(30);
 
     @Test
     void testTracingNoServerSuccess() throws ExecutionException, InterruptedException {
@@ -57,13 +59,11 @@ class TracingTest extends TestParent {
 
         WebClientResponse response = client.get()
                 .request()
-                .toCompletableFuture()
-                .get();
+                .await(TIMEOUT);
 
         // we must fully read entity for tracing to finish
         response.content().as(JsonObject.class)
-                .toCompletableFuture()
-                .get();
+                .await(TIMEOUT);
 
         List<MockSpan> mockSpans = mockTracer.finishedSpans();
         assertThat(mockSpans, iterableWithSize(1));

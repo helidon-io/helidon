@@ -2,8 +2,13 @@ package io.helidon.tracing;
 
 import java.time.Instant;
 import java.util.Map;
+import java.util.Optional;
 
 public interface Span {
+    static Optional<Span> current() {
+        return TracerProviderHelper.currentSpan();
+    }
+
     default void tag(Tag<?> tag) {
         tag.apply(this);
     }
@@ -19,6 +24,8 @@ public interface Span {
 
     void end();
 
+    Scope activate();
+
     /**
      * And with error status and an exception.
      * @param t
@@ -27,6 +34,24 @@ public interface Span {
 
     default void addEvent(String logMessage) {
         addEvent(logMessage, Map.of());
+    }
+
+    /**
+     * Access the underlying span by specific type.
+     * This is a dangerous operation that will succeed only if the span is of expected type. This practically
+     * removes abstraction capabilities of this API.
+     *
+     * @param spanClass type to access
+     * @return instance of the span
+     * @param <T> type of the span
+     * @throws java.lang.IllegalArgumentException in case the span cannot provide the expected type
+     */
+    default <T> T unwrap(Class<T> spanClass) {
+        try {
+            return spanClass.cast(this);
+        } catch (ClassCastException e) {
+            throw new IllegalArgumentException("This span is not compatible with " + spanClass.getName());
+        }
     }
 
     interface Builder<B extends Builder<B>> extends io.helidon.common.Builder<B, Span> {

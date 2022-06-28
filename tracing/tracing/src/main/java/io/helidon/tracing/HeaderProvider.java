@@ -1,23 +1,23 @@
 package io.helidon.tracing;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 public interface HeaderProvider {
     static HeaderProvider empty() {
-        return new HeaderProvider() {
-            @Override
-            public Iterable<String> keys() {
-                return Set.of();
-            }
+        return create(Map.of());
+    }
 
-            @Override
-            public Optional<String> get(String key) {
-                return Optional.empty();
-            }
-        };
+    static HeaderProvider create(Map<String, List<String>> inboundHeaders) {
+        return new MapHeaderConsumer(Map.copyOf(inboundHeaders));
     }
 
     Iterable<String> keys();
+
     Optional<String> get(String key);
+
+    Iterable<String> getAll(String key);
+
+    boolean contains(String key);
 }

@@ -21,6 +21,7 @@ module io.helidon.tracing.jaeger {
     requires io.helidon.common;
     requires io.helidon.config;
     requires io.helidon.tracing;
+    requires io.helidon.tracing.opentracing;
     requires io.helidon.common.context;
     requires static io.helidon.config.metadata;
 
@@ -31,10 +32,11 @@ module io.helidon.tracing.jaeger {
     requires io.opentracing.noop;
     // need to explicitly require transitive dependency, as jaeger is not a module
     requires com.google.gson;
+    requires io.opentracing.api;
 
     exports io.helidon.tracing.jaeger;
 
-    provides io.helidon.tracing.spi.TracerProvider with io.helidon.tracing.jaeger.JaegerTracerProvider;
+    provides io.helidon.tracing.opentracing.spi.OpenTracingProvider with io.helidon.tracing.jaeger.JaegerTracerProvider;
     provides io.helidon.common.context.spi.DataPropagationProvider with io.helidon.tracing.jaeger.JaegerDataPropagationProvider;
 
 }

@@ -32,6 +32,7 @@ final class NoOpBuilder implements OpenTracingTracerBuilder<NoOpBuilder> {
     static OpenTracingTracerBuilder<?> create() {
         return new NoOpBuilder();
     }
+
     @Override
     public NoOpBuilder serviceName(String name) {
         return this;
@@ -68,22 +69,22 @@ final class NoOpBuilder implements OpenTracingTracerBuilder<NoOpBuilder> {
     }
 
     @Override
-    public NoOpBuilder config(Config config) {
-        return this;
-    }
-
-    @Override
-    public NoOpBuilder enabled(boolean enabled) {
-        return this;
-    }
-
-    @Override
     public NoOpBuilder addTracerTag(String key, Number value) {
         return this;
     }
 
     @Override
     public NoOpBuilder addTracerTag(String key, boolean value) {
+        return this;
+    }
+
+    @Override
+    public NoOpBuilder config(Config config) {
+        return this;
+    }
+
+    @Override
+    public NoOpBuilder enabled(boolean enabled) {
         return this;
     }
 
@@ -100,5 +101,13 @@ final class NoOpBuilder implements OpenTracingTracerBuilder<NoOpBuilder> {
     @Override
     public boolean enabled() {
         return false;
+    }
+
+    @Override
+    public <B> B unwrap(Class<B> builderClass) {
+        if (NoOpBuilder.class == builderClass) {
+            return builderClass.cast(this);
+        }
+        throw new IllegalArgumentException("This is " + NoOpBuilder.class.getName() + ", not " + builderClass.getName());
     }
 }

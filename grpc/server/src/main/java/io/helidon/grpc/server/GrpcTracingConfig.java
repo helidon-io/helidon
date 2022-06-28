@@ -21,7 +21,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import io.opentracing.contrib.grpc.OperationNameConstructor;
+import io.grpc.MethodDescriptor;
 
 /**
  * The configuration for gRPC tracing.
@@ -30,22 +30,22 @@ public class GrpcTracingConfig {
     /**
      * A flag indicating whether to log streaming.
      */
-    private OperationNameConstructor operationNameConstructor;
+    private final GrpcTracingName operationNameConstructor;
 
     /**
      * A flag indicating verbose logging.
      */
-    private boolean streaming;
+    private final boolean streaming;
 
     /**
      * A flag indicating verbose logging.
      */
-    private boolean verbose;
+    private final boolean verbose;
 
     /**
      * The set of attributes to log in spans.
      */
-    private Set<ServerRequestAttribute> tracedAttributes;
+    private final Set<ServerRequestAttribute> tracedAttributes;
 
     /**
      * Private constructor called by the {@link Builder}.
@@ -55,7 +55,7 @@ public class GrpcTracingConfig {
      * @param verbose                  flag indicating verbose logging
      * @param tracedAttributes         the set of attributes to log in spans
      */
-    GrpcTracingConfig(OperationNameConstructor operationNameConstructor,
+    GrpcTracingConfig(GrpcTracingName operationNameConstructor,
                       Set<ServerRequestAttribute> tracedAttributes,
                       boolean streaming,
                       boolean verbose) {
@@ -89,7 +89,7 @@ public class GrpcTracingConfig {
     /**
      * @return the configured operationNameConstructor.
      */
-    public OperationNameConstructor operationNameConstructor() {
+    public GrpcTracingName operationNameConstructor() {
         return operationNameConstructor;
     }
 
@@ -119,7 +119,7 @@ public class GrpcTracingConfig {
          * Creates a Builder with default configuration.
          */
         Builder() {
-            operationNameConstructor = OperationNameConstructor.DEFAULT;
+            operationNameConstructor = MethodDescriptor::getFullMethodName;
             streaming = false;
             verbose = false;
             tracedAttributes = Collections.emptySet();
@@ -129,7 +129,7 @@ public class GrpcTracingConfig {
          * @param operationNameConstructor for all spans
          * @return this Builder with configured operation name
          */
-        public Builder withOperationName(OperationNameConstructor operationNameConstructor) {
+        public Builder withOperationName(GrpcTracingName operationNameConstructor) {
             this.operationNameConstructor = operationNameConstructor;
             return this;
         }
@@ -174,7 +174,7 @@ public class GrpcTracingConfig {
         /**
          * A flag indicating whether to log streaming.
          */
-        private OperationNameConstructor operationNameConstructor;
+        private GrpcTracingName operationNameConstructor;
 
         /**
          * A flag indicating verbose logging.

@@ -196,6 +196,11 @@ class TracerBuilderTest {
         }
 
         @Override
+        public <B> B unwrap(Class<B> builderClass) {
+            throw new IllegalArgumentException("Not supported for testing");
+        }
+
+        @Override
         public Tracer build() {
             tracer = new NoOpTracer();
             return tracer;

@@ -1,9 +1,6 @@
 package io.helidon.tracing.opentracing.spi;
 
-import java.util.List;
-import java.util.Map;
-import java.util.function.BiConsumer;
-
+import io.helidon.tracing.HeaderConsumer;
 import io.helidon.tracing.HeaderProvider;
 import io.helidon.tracing.opentracing.OpenTracingTracerBuilder;
 
@@ -25,15 +22,15 @@ public interface OpenTracingProvider {
      * This is to enable fine grained tuning of propagated headers for each implementation.
      *
      * @param tracer          Tracer used
-     * @param parentSpan      Parent span context (may be null)
+     * @param currentSpan     Context of current span
      * @param outboundHeaders Tracing headers map as configured by the tracer
      * @param inboundHeaders  Existing inbound headers (may be empty if not within a scope of a request)
      * @return new map of outbound headers, defaults to tracing headers
      */
     default void updateOutboundHeaders(Tracer tracer,
-                                       SpanContext parentSpan,
+                                       SpanContext currentSpan,
                                        HeaderProvider inboundHeaders,
-                                       BiConsumer<String, String> outboundHeaders) {
+                                       HeaderConsumer outboundHeaders) {
 
     }
 }

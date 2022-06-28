@@ -21,6 +21,7 @@ import java.util.concurrent.CompletionStage;
 import io.helidon.config.Config;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.security.integration.webserver.WebSecurity;
+import io.helidon.tracing.opentracing.OpenTracing;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 
@@ -51,7 +52,7 @@ public final class Main {
 
         // Get webserver config from the "server" section of application.yaml
         WebServer.Builder builder = WebServer.builder()
-                .tracer(tracer);
+                .tracer(OpenTracing.create(tracer));
 
         return startIt(config, builder);
     }

@@ -15,15 +15,19 @@
  */
 package io.helidon.webclient.tracing;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import io.helidon.common.LazyValue;
 import io.helidon.common.reactive.Single;
+import io.helidon.tracing.HeaderConsumer;
 import io.helidon.tracing.HeaderProvider;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanContext;
 import io.helidon.tracing.Tag;
 import io.helidon.tracing.Tracer;
+import io.helidon.webclient.WebClientRequestHeaders;
 import io.helidon.webclient.WebClientServiceRequest;
 import io.helidon.webclient.spi.WebClientService;
 
@@ -66,7 +70,7 @@ public final class WebClientTracing implements WebClientService {
 
         tracer.inject(span.context(),
                       HeaderProvider.empty(),
-                      (key, value) -> request.headers().put(key, value));
+                      new ClientHeaderConsumer(request.headers()));
 
         request.whenResponseReceived()
                 .thenAccept(response -> {
@@ -97,5 +101,45 @@ public final class WebClientTracing implements WebClientService {
                 + request.host() + ":"
                 + request.port()
                 + request.path().toString();
+    }
+
+    private static class ClientHeaderConsumer implements HeaderConsumer {
+        private final WebClientRequestHeaders headers;
+        private final LazyValue<Map<String, List<String>>> headerMap;
+
+        private ClientHeaderConsumer(WebClientRequestHeaders headers) {
+            this.headers = headers;
+            this.headerMap = LazyValue.create(headers::toMap);
+        }
+
+        @Override
+        public void setIfAbsent(String key, String... values) {
+            headers.putIfAbsent(key, values);
+        }
+
+        @Override
+        public void set(String key, String... values) {
+            headers.put(key, values);
+        }
+
+        @Override
+        public Iterable<String> keys() {
+            return headerMap.get().keySet();
+        }
+
+        @Override
+        public Optional<String> get(String key) {
+            return headers.first(key);
+        }
+
+        @Override
+        public Iterable<String> getAll(String key) {
+            return headers.all(key);
+        }
+
+        @Override
+        public boolean contains(String key) {
+            return headerMap.get().containsKey(key);
+        }
     }
 }

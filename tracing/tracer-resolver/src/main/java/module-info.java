@@ -21,13 +21,15 @@ module io.helidon.tracing.tracerresolver {
     requires io.helidon.common;
     requires io.helidon.config;
     requires io.helidon.tracing;
+    requires io.helidon.tracing.opentracing;
 
     requires java.logging;
     requires io.opentracing.util;
     requires io.opentracing.noop;
     requires io.opentracing.contrib.tracerresolver;
+    requires io.opentracing.api;
 
     exports io.helidon.tracing.tracerresolver;
 
-    provides io.helidon.tracing.spi.TracerProvider with io.helidon.tracing.tracerresolver.TracerResolverProvider;
+    provides io.helidon.tracing.opentracing.spi.OpenTracingProvider with io.helidon.tracing.tracerresolver.TracerResolverProvider;
 }

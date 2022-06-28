@@ -1,7 +1,6 @@
 package io.helidon.tracing;
 
 import java.util.Optional;
-import java.util.function.BiConsumer;
 
 class NoOpTracerProvider implements io.helidon.tracing.spi.TracerProvider {
     private static final NoOpBuilder BUILDER = NoOpBuilder.create();
@@ -13,18 +12,6 @@ class NoOpTracerProvider implements io.helidon.tracing.spi.TracerProvider {
     }
 
     @Override
-    public Optional<SpanContext> extract(HeaderProvider headersProvider) {
-        return Optional.of(NoOpTracer.SPAN_CONTEXT);
-    }
-
-    @Override
-    public void inject(SpanContext spanContext,
-                       HeaderProvider inboundHeadersProvider,
-                       BiConsumer<String, String> outboundHeadersConsumer) {
-
-    }
-
-    @Override
     public Tracer global() {
         return TRACER;
     }
@@ -32,5 +19,10 @@ class NoOpTracerProvider implements io.helidon.tracing.spi.TracerProvider {
     @Override
     public void global(Tracer tracer) {
         // ignored
+    }
+
+    @Override
+    public Optional<Span> currentSpan() {
+        return Optional.empty();
     }
 }

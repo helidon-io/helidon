@@ -15,6 +15,7 @@
  */
 package io.helidon.tracing;
 
+import java.util.Optional;
 import java.util.ServiceLoader;
 
 import io.helidon.common.serviceloader.HelidonServiceLoader;
@@ -26,12 +27,16 @@ import io.helidon.tracing.spi.TracerProvider;
 final class TracerProviderHelper {
     private static final TracerProvider TRACER_PROVIDER =
             HelidonServiceLoader.builder(ServiceLoader.load(TracerProvider.class))
-            .addService(new NoOpTracerProvider())
+            .addService(new NoOpTracerProvider(), 100000)
                     .build()
                     .asList()
                     .get(0);
 
     private TracerProviderHelper() {
+    }
+
+    public static Optional<Span> currentSpan() {
+        return TRACER_PROVIDER.currentSpan();
     }
 
     static Tracer global() {

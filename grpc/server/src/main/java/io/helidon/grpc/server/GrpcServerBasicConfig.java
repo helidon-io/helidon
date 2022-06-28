@@ -18,8 +18,7 @@ package io.helidon.grpc.server;
 
 import io.helidon.common.context.Context;
 import io.helidon.grpc.core.GrpcTlsDescriptor;
-
-import io.opentracing.Tracer;
+import io.helidon.tracing.Tracer;
 
 /**
  * Configuration class for the {@link GrpcServer} implementations.

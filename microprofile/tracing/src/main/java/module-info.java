@@ -42,7 +42,7 @@ module io.helidon.microprofile.tracing {
 
     requires transitive microprofile.opentracing.api;
     requires microprofile.rest.client.api;
-
+    requires io.opentracing.util;
 
     exports io.helidon.microprofile.tracing;
 

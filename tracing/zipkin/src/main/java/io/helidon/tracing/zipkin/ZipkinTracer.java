@@ -56,7 +56,7 @@ public class ZipkinTracer implements Tracer {
 
     @Override
     public SpanBuilder buildSpan(String operationName) {
-        return new ZipkinSpanBuilder(tracer.buildSpan(operationName), tags);
+        return new ZipkinSpanBuilder(this, tracer.buildSpan(operationName), tags);
     }
 
     @Override

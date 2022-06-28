@@ -79,4 +79,9 @@ public class DefaultTracerBuilder implements TracerBuilder<DefaultTracerBuilder>
         delegate.registerGlobal(global);
         return this;
     }
+
+    @Override
+    public <B> B unwrap(Class<B> builderClass) {
+        return delegate.unwrap(builderClass);
+    }
 }

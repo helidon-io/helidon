@@ -239,7 +239,18 @@ public class ZipkinTracerBuilder implements OpenTracingTracerBuilder<ZipkinTrace
         return this;
     }
 
+    @Override
+    public boolean enabled() {
+        return enabled;
+    }
 
+    @Override
+    public <B> B unwrap(Class<B> builderClass) {
+        if (ZipkinTracerBuilder.class == builderClass) {
+            return builderClass.cast(this);
+        }
+        throw new IllegalArgumentException("This is ZipkinTracerBuilder, not " + builderClass.getName());
+    }
 
     @Override
     public ZipkinTracerBuilder config(Config config) {

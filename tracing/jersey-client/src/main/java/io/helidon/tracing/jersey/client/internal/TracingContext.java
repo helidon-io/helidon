@@ -18,8 +18,8 @@ package io.helidon.tracing.jersey.client.internal;
 import java.util.List;
 import java.util.Map;
 
-import io.opentracing.SpanContext;
-import io.opentracing.Tracer;
+import io.helidon.tracing.SpanContext;
+import io.helidon.tracing.Tracer;
 
 /**
  * Context for outbound tracing.
@@ -41,7 +41,7 @@ public final class TracingContext {
      * @param tracer tracer to use
      * @param inboundHeaders inbound header to be used for context propagation
      * @return a new tracing context (not associated with current thread)
-     * @see #parentSpan(SpanContext)
+     * @see #parentSpan(io.helidon.tracing.SpanContext)
      */
     public static TracingContext create(Tracer tracer,
                                         Map<String, List<String>> inboundHeaders) {

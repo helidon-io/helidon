@@ -15,7 +15,8 @@
  */
 package io.helidon.tracing.jersey;
 
-import io.opentracing.Tracer;
+import io.helidon.tracing.Span;
+
 import jakarta.annotation.Priority;
 import jakarta.ws.rs.container.ContainerRequestContext;
 
@@ -27,7 +28,7 @@ public class TracingFilter extends AbstractTracingFilter {
     private final TracingHelper helper = TracingHelper.create();
 
     @Override
-    protected void configureSpan(Tracer.SpanBuilder spanBuilder) {
+    protected void configureSpan(Span.Builder spanBuilder) {
         // nothing to do with the span, just return
     }
 

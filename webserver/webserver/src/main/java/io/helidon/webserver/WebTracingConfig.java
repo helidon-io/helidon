@@ -360,6 +360,20 @@ public abstract class WebTracingConfig {
                 }
                 return Optional.of(strings.get(0));
             }
+
+            @Override
+            public Iterable<String> getAll(String key) {
+                List<String> strings = headers.get(key);
+                if (strings == null) {
+                    return List.of();
+                }
+                return strings;
+            }
+
+            @Override
+            public boolean contains(String key) {
+                return headers.containsKey(key);
+            }
         }
     }
 }

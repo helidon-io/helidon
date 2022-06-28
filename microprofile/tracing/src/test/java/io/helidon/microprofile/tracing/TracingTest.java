@@ -67,8 +67,12 @@ public class TracingTest {
 
     @AfterAll
     static void destroyClass() {
-        client.close();
-        server.stop();
+        if (client != null) {
+            client.close();
+        }
+        if (server != null) {
+            server.stop();
+        }
     }
 
     @Test

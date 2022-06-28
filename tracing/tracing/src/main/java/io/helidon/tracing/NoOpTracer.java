@@ -5,10 +5,11 @@ import java.util.Map;
 import java.util.Optional;
 
 class NoOpTracer implements Tracer {
+    static final SpanContext SPAN_CONTEXT = new SpanContext();
     private static final Builder BUILDER = new Builder();
     private static final Span SPAN = new Span();
 
-    static final SpanContext SPAN_CONTEXT = new SpanContext();
+    private static final Scope SCOPE = new Scope();
 
     @Override
     public boolean enabled() {
@@ -23,6 +24,13 @@ class NoOpTracer implements Tracer {
     @Override
     public Optional<io.helidon.tracing.SpanContext> extract(HeaderProvider headersProvider) {
         return Optional.empty();
+    }
+
+    @Override
+    public void inject(io.helidon.tracing.SpanContext spanContext,
+                       HeaderProvider inboundHeadersProvider,
+                       HeaderConsumer outboundHeadersConsumer) {
+
     }
 
     private static class Builder implements Span.Builder<Builder> {
@@ -42,11 +50,6 @@ class NoOpTracer implements Tracer {
         }
 
         @Override
-        public Span start(Instant instant) {
-            return SPAN;
-        }
-
-        @Override
         public Builder tag(String key, String value) {
             return this;
         }
@@ -59,6 +62,11 @@ class NoOpTracer implements Tracer {
         @Override
         public Builder tag(String key, Number value) {
             return this;
+        }
+
+        @Override
+        public Span start(Instant instant) {
+            return SPAN;
         }
     }
 
@@ -90,22 +98,30 @@ class NoOpTracer implements Tracer {
         }
 
         @Override
-        public void addEvent(String name, Map<String, String> attributes) {
-
+        public void addEvent(String name, Map<String, ?> attributes) {
         }
 
         @Override
         public void end() {
-
         }
 
         @Override
         public void end(Throwable t) {
+        }
 
+        @Override
+        public io.helidon.tracing.Scope activate() {
+            return SCOPE;
         }
     }
 
     private static class SpanContext implements io.helidon.tracing.SpanContext {
 
+    }
+
+    private static class Scope implements io.helidon.tracing.Scope {
+        @Override
+        public void close() throws Exception {
+        }
     }
 }

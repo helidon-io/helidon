@@ -33,6 +33,7 @@ import jakarta.enterprise.context.Initialized;
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.enterprise.inject.spi.BeforeBeanDiscovery;
+import jakarta.enterprise.inject.spi.DeploymentException;
 import jakarta.enterprise.inject.spi.Extension;
 import org.eclipse.microprofile.config.ConfigProvider;
 
@@ -65,20 +66,28 @@ public class TracingCdiExtension implements Extension {
 
         String serviceName = jaxrs.serviceName();
 
-        Tracer tracer = TracerBuilder.create(serviceName)
+        io.helidon.tracing.Tracer helidonTracer = TracerBuilder.create(serviceName)
                 .config(config)
                 .build();
 
+        Tracer tracer;
+        try {
+            tracer = helidonTracer.unwrap(Tracer.class);
+        } catch (Exception e) {
+            throw new DeploymentException("MicroProfile tracing requires an OpenTracing based tracer", e);
+        }
+
         // tracer is available in global
         Contexts.globalContext().register(tracer);
+        Contexts.globalContext().register(helidonTracer);
 
         server.serverBuilder()
-                .tracer(tracer);
+                .tracer(helidonTracer);
 
         Contexts.context()
                 .ifPresent(ctx -> ctx.register(tracer));
 
-        if (tracer.getClass().getName().startsWith("io.opentracing.noop")) {
+        if (!helidonTracer.enabled()) {
             Logger.getLogger(TracingCdiExtension.class.getName())
                     .warning("helidon-microprofile-tracing is on the classpath, yet there is no tracer implementation "
                                      + "library. Tracing uses a no-op tracer. As a result, no tracing will be configured"

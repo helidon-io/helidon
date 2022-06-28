@@ -15,15 +15,14 @@
  */
 package io.helidon.grpc.server;
 
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 import io.helidon.common.context.Context;
 import io.helidon.config.Config;
 import io.helidon.grpc.core.GrpcTlsDescriptor;
-
-import io.opentracing.Tracer;
-import io.opentracing.util.GlobalTracer;
+import io.helidon.tracing.Tracer;
 
 /**
  * The configuration for a gRPC server.
@@ -76,9 +75,9 @@ public interface GrpcServerConfiguration {
     boolean useNativeTransport();
 
     /**
-     * Returns an <a href="http://opentracing.io">opentracing.io</a> tracer. Default is {@link GlobalTracer}.
+     * Returns a {@link io.helidon.tracing.Tracer}. Default is {@link io.helidon.tracing.Tracer#global()}.
      *
-     * @return a tracer to use - never {@code null} (defaulting to {@link GlobalTracer}
+     * @return a tracer to use - never {@code null}
      */
     Tracer tracer();
 
@@ -226,25 +225,26 @@ public interface GrpcServerConfiguration {
         }
 
         /**
-         * Sets an <a href="http://opentracing.io">opentracing.io</a> tracer.
-         * (Default is {@link GlobalTracer}.)
+         * Sets a tracer.
          *
          * @param tracer a tracer to set
          * @return an updated builder
          */
         public Builder tracer(Tracer tracer) {
+            Objects.requireNonNull(tracer);
             this.tracer = tracer;
             return this;
         }
 
         /**
-         * Sets an <a href="http://opentracing.io">opentracing.io</a> tracer. (Default is {@link GlobalTracer}.)
+         * Sets a Tracer.
          *
          * @param tracerBuilder a tracer builder to set; will be built as a first step of this method execution
          * @return updated builder
          */
         public Builder tracer(Supplier<? extends Tracer> tracerBuilder) {
-            this.tracer = tracerBuilder != null ? tracerBuilder.get() : null;
+            Objects.requireNonNull(tracerBuilder);
+            this.tracer = tracerBuilder.get();
             return this;
         }
 
@@ -339,7 +339,7 @@ public interface GrpcServerConfiguration {
             }
 
             if (tracer == null) {
-                tracer = GlobalTracer.get();
+                tracer = Tracer.global();
             }
 
             if (tracingConfig == null) {

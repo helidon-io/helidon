@@ -4,9 +4,9 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.BiConsumer;
 
 import io.helidon.config.Config;
+import io.helidon.tracing.HeaderConsumer;
 import io.helidon.tracing.HeaderProvider;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanContext;
@@ -42,7 +42,7 @@ class OpenTracingTracer implements Tracer {
 
     @Override
     public Span.Builder<?> spanBuilder(String name) {
-        return new OpenTracingSpanBuilder(delegate.buildSpan(name));
+        return new OpenTracingSpanBuilder(delegate, delegate.buildSpan(name));
     }
 
     @Override
@@ -63,7 +63,7 @@ class OpenTracingTracer implements Tracer {
     @Override
     public void inject(SpanContext spanContext,
                        HeaderProvider inboundHeadersProvider,
-                       BiConsumer<String, String> outboundHeadersConsumer) {
+                       HeaderConsumer outboundHeadersConsumer) {
 
         if (spanContext instanceof OpenTracingContext otc) {
             delegate.inject(otc.openTracing(), Format.Builtin.HTTP_HEADERS, new TextMap() {
@@ -75,7 +75,7 @@ class OpenTracingTracer implements Tracer {
 
                 @Override
                 public void put(String key, String value) {
-                    outboundHeadersConsumer.accept(key, value);
+                    outboundHeadersConsumer.set(key, value);
                 }
             });
             OpenTracingProviderHelper.provider()
@@ -84,6 +84,15 @@ class OpenTracingTracer implements Tracer {
                                            inboundHeadersProvider,
                                            outboundHeadersConsumer);
         }
+    }
+
+    @Override
+    public <T> T unwrap(Class<T> tracerClass) {
+        if (tracerClass.isAssignableFrom(delegate.getClass())) {
+            return tracerClass.cast(delegate);
+        }
+        throw new IllegalArgumentException("Cannot provide an instance of " + tracerClass.getName()
+                                                   + ", open tracing tracer is: " + delegate.getClass().getName());
     }
 
     io.opentracing.Tracer openTracing() {
@@ -165,6 +174,15 @@ class OpenTracingTracer implements Tracer {
         public Builder registerGlobal(boolean global) {
             delegate.registerGlobal(global);
             return this;
+        }
+
+        @Override
+        public <T> T unwrap(Class<T> builderClass) {
+            if (OpenTracingTracer.class == builderClass) {
+                return builderClass.cast(this);
+            }
+
+            return delegate.unwrap(builderClass);
         }
     }
 }

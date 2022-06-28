@@ -264,4 +264,16 @@ public interface TracerBuilder<T extends TracerBuilder<T>> extends Builder<T, Tr
      */
     @ConfiguredOption(key = "global", value = "true")
     T registerGlobal(boolean global);
+
+    /**
+     * Access the underlying builder by specific type.
+     * This is a dangerous operation that will succeed only if the builder contains the expected type. This practically
+     * removes abstraction capabilities of this builder.
+     *
+     * @param builderClass type to access
+     * @return instance of the builder
+     * @param <B> type of the builder
+     * @throws java.lang.IllegalArgumentException in case the builder cannot provide the expected type
+     */
+    <B> B unwrap(Class<B> builderClass);
 }

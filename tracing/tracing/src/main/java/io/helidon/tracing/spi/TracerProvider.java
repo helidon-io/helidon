@@ -15,6 +15,9 @@
  */
 package io.helidon.tracing.spi;
 
+import java.util.Optional;
+
+import io.helidon.tracing.Span;
 import io.helidon.tracing.Tracer;
 import io.helidon.tracing.TracerBuilder;
 
@@ -33,4 +36,6 @@ public interface TracerProvider {
     Tracer global();
 
     void global(Tracer tracer);
+
+    Optional<Span> currentSpan();
 }

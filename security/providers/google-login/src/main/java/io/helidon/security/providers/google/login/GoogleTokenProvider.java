@@ -49,6 +49,9 @@ import io.helidon.security.spi.AuthenticationProvider;
 import io.helidon.security.spi.OutboundSecurityProvider;
 import io.helidon.security.spi.SynchronousProvider;
 import io.helidon.security.util.TokenHandler;
+import io.helidon.tracing.Span;
+import io.helidon.tracing.SpanContext;
+import io.helidon.tracing.Tracer;
 
 import com.google.api.client.googleapis.GoogleUtils;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
@@ -56,9 +59,6 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.gson.GsonFactory;
-import io.opentracing.Span;
-import io.opentracing.SpanContext;
-import io.opentracing.Tracer;
 
 /**
  * Provider supporting login button from front-end.
@@ -228,22 +228,24 @@ public final class GoogleTokenProvider extends SynchronousProvider implements Au
                                                 GoogleIdToken token,
                                                 Tracer tracer,
                                                 SpanContext tracingSpan) throws SecurityException {
-        Span span = tracer.buildSpan("googleTokenVerification")
-                .asChildOf(tracingSpan)
+        Span span = tracer.spanBuilder("googleTokenVerification")
+                .parent(tracingSpan)
                 .start();
 
         try {
+            Optional<CachedRecord> result;
 
             if (verifier.verify(token)) {
-                return Optional.of(new CachedRecord(buildSubject(accessToken, token.getPayload()),
+                result = Optional.of(new CachedRecord(buildSubject(accessToken, token.getPayload()),
                                                     () -> !verifyLocal(token.getPayload())));
             } else {
-                return Optional.empty();
+                result = Optional.empty();
             }
+            span.end();
+            return result;
         } catch (GeneralSecurityException | IOException e) {
+            span.end(e);
             throw new SecurityException("Failed to verify Google token", e);
-        } finally {
-            span.finish();
         }
     }
 
