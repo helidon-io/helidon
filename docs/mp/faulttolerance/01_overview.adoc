@@ -27,7 +27,7 @@
 :executor-config: {javadoc-base-url}io.helidon.common.configurable/io/helidon/common/configurable/ThreadPoolSupplier.Builder.html#config(io.helidon.config.Config)
 :feature-name: MicroProfile Fault Tolerance
 :common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
-:fault-tolerance-se: ../../se/faulttolerance/01_faulttolerance.adoc
+:fault-tolerance-javadoc: https://javadoc.io/doc/org.eclipse.microprofile.fault-tolerance/microprofile-fault-tolerance-api/4.0/index.html
 :microprofile-bundle: true
 
 == ToC
@@ -197,7 +197,8 @@ The `@Asynchronous` annotation is needed to enable queueing of bulkhead tasks.
 
 == Additional Information
 
-* link:{fault-tolerance-se}[Fault Tolerance in Helidon SE]
+For additional information about this API, see the
+link:{fault-tolerance-javadoc}[MicroProfile Fault Tolerance Javadocs].
 
 == Reference
 
