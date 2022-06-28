@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,9 @@ package io.helidon.webserver.examples.websocket;
 import java.util.Collections;
 import java.util.List;
 
-import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.staticcontent.StaticContentSupport;
-import io.helidon.webserver.tyrus.TyrusSupport;
+import io.helidon.webserver.websocket.WebSocketRouting;
 
 import jakarta.websocket.Encoder;
 import jakarta.websocket.server.ServerEndpointConfig;
@@ -37,34 +36,29 @@ public class Main {
     private Main() {
     }
 
-    /**
-     * Creates new {@link Routing}.
-     *
-     * @return the new instance
-     */
-    static Routing createRouting() {
+    static WebServer startWebServer() {
         List<Class<? extends Encoder>> encoders = Collections.singletonList(UppercaseEncoder.class);
 
-        return Routing.builder()
-                .register("/rest", new MessageQueueService())
-                .register("/websocket",
-                        TyrusSupport.builder().register(
-                                ServerEndpointConfig.Builder.create(MessageBoardEndpoint.class, "/board")
-                                        .encoders(encoders).build())
-                                .build())
-                .register("/web", StaticContentSupport.builder("/WEB").build())
-                .build();
-    }
-
-    static WebServer startWebServer() {
         // Wait for webserver to start before returning
-        WebServer server = WebServer.builder(createRouting())
+        WebServer server = WebServer.builder()
                 .port(8080)
+                .routing(r -> r
+                        .register("/web", StaticContentSupport.builder("/WEB")
+                                .welcomeFileName("index.html")
+                                .build())
+                        .register("/rest", new MessageQueueService())
+                )
+                .addRouting(WebSocketRouting.builder()
+                        .endpoint("/websocket", ServerEndpointConfig.Builder.create(MessageBoardEndpoint.class, "/board")
+                                .encoders(encoders)
+                                .build())
+                        .build()
+                )
                 .build()
                 .start()
                 .await();
 
-        System.out.println("WEB server is up! http://localhost:" + server.port());
+        System.out.println("WEB server is up! http://localhost:" + server.port() + "/web");
 
         return server;
     }

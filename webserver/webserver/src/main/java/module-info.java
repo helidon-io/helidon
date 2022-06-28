@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+import io.helidon.webserver.spi.UpgradeCodecProvider;
 
 /**
  * Reactive web server.
@@ -40,7 +42,9 @@ module io.helidon.webserver {
     requires io.netty.transport;
     requires io.netty.common;
     requires io.netty.buffer;
-    requires io.netty.codec.http2;
 
     exports io.helidon.webserver;
+    exports io.helidon.webserver.spi;
+
+    uses UpgradeCodecProvider;
 }

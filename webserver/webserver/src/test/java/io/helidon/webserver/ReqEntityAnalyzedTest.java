@@ -46,8 +46,7 @@ public class ReqEntityAnalyzedTest {
     @BeforeAll
     static void beforeAll() {
         server = WebServer.builder()
-                .routing(Routing.builder()
-                        .register("/test", rules -> rules.put((req, res) -> {
+                .routing(r -> r.register("/test", rules -> rules.put((req, res) -> {
                             req.content()
                                     .observeOn(exec)
                                     .forEach(DataChunk::release);
@@ -58,10 +57,11 @@ public class ReqEntityAnalyzedTest {
                                             .map(String::getBytes)
                                             .map(DataChunk::create)
                             );
-                        }))
-                        .build())
+                        })
+                ))
                 .build();
-        server.start().await(TIME_OUT);
+        server.start()
+                .await(TIME_OUT);
 
         webClient = WebClient.builder()
                 .keepAlive(true)

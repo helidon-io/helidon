@@ -60,8 +60,6 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
-import io.netty.handler.ssl.ApplicationProtocolConfig;
-import io.netty.handler.ssl.ApplicationProtocolNames;
 import io.netty.handler.ssl.IdentityCipherSuiteFilter;
 import io.netty.handler.ssl.JdkSslContext;
 import io.netty.handler.ssl.SslContext;
@@ -96,19 +94,18 @@ class NettyWebServer implements WebServer {
 
     private volatile boolean started;
     private final AtomicBoolean shutdownThreadGroupsInitiated = new AtomicBoolean(false);
+    private final Map<String, Router> routers;
 
     /**
      * Creates a new instance.
      *
      * @param config a server configuration instance
-     * @param routing       a default routing instance
-     * @param namedRoutings the named routings of the configured additional server sockets. If there is no
+     * @param routers the named routings of the configured additional server sockets. If there is no
 *                      named routing for a given named additional server socket configuration, a default
      * @param directHandlers handler to customize response for events bypassing routing
      */
     NettyWebServer(ServerConfiguration config,
-                   Routing routing,
-                   Map<String, Routing> namedRoutings,
+                   Map<String, Router> routers,
                    MessageBodyWriterContext writerContext,
                    MessageBodyReaderContext readerContext,
                    DirectHandlers directHandlers) {
@@ -125,6 +122,9 @@ class NettyWebServer implements WebServer {
         this.workerGroup = workerGroup();
         this.readerContext = MessageBodyReaderContext.create(readerContext);
         this.writerContext = MessageBodyWriterContext.create(writerContext);
+        this.routers = routers;
+
+        whenShutdown().forSingle(this::onShutDown);
 
         for (Map.Entry<String, SocketConfiguration> entry : sockets) {
             String name = entry.getKey();
@@ -149,9 +149,11 @@ class NettyWebServer implements WebServer {
                 bootstrap.option(ChannelOption.SO_RCVBUF, soConfig.receiveBufferSize());
             }
 
+            Router router = routers.getOrDefault(name, routers.get(WebServer.DEFAULT_SOCKET_NAME));
+
             HttpInitializer childHandler = new HttpInitializer(soConfig,
                                                                sslContext,
-                                                               namedRoutings.getOrDefault(name, routing),
+                                                               router,
                                                                this,
                                                                directHandlers);
             initializers.put(name, childHandler);
@@ -181,22 +183,10 @@ class NettyWebServer implements WebServer {
                 protocols = enabledProtocols.toArray(new String[0]);
             }
 
-            // Enable ALPN for application protocol negotiation with HTTP/2
-            // Needs JDK >= 9 or Jetty’s ALPN boot library
-            ApplicationProtocolConfig appProtocolConfig = null;
-            if (configuration.isHttp2Enabled()) {
-                appProtocolConfig = new ApplicationProtocolConfig(
-                        ApplicationProtocolConfig.Protocol.ALPN,
-                        ApplicationProtocolConfig.SelectorFailureBehavior.NO_ADVERTISE,
-                        ApplicationProtocolConfig.SelectedListenerFailureBehavior.ACCEPT,
-                        ApplicationProtocolNames.HTTP_2,
-                        ApplicationProtocolNames.HTTP_1_1);
-            }
-
             Set<String> cipherSuite = webServerTls.cipherSuite();
             return new JdkSslContext(
                     context, false, cipherSuite.isEmpty() ? null : cipherSuite,
-                    IdentityCipherSuiteFilter.INSTANCE, appProtocolConfig,
+                    IdentityCipherSuiteFilter.INSTANCE, UpgradeManager.alpnConfig(),
                     webServerTls.clientAuth().nettyClientAuth(), protocols, false);
         }
         return null;
@@ -521,6 +511,10 @@ class NettyWebServer implements WebServer {
                                           + transport() + ", could not supply "
                                           + "a transport artifact named \""
                                           + name + "\"");
+    }
+
+    private void onShutDown(WebServer ws){
+        routers.values().forEach(Router::afterStop);
     }
 
     private static final class NioTransport implements Transport {

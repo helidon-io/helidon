@@ -16,6 +16,7 @@
 
 package io.helidon.webserver;
 
+import java.time.Duration;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -38,10 +39,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 public class HttpPipelineTest {
     private static final Logger LOGGER = Logger.getLogger(HttpPipelineTest.class.getName());
+    private static final Duration TIMEOUT = Duration.ofSeconds(30);
 
     private static WebServer webServer;
-    private static AtomicInteger counter = new AtomicInteger(0);
-    private static ScheduledExecutorService executor = new ScheduledThreadPoolExecutor(1);
+    private static final AtomicInteger counter = new AtomicInteger(0);
+    private static final ScheduledExecutorService executor = new ScheduledThreadPoolExecutor(1);
 
     @BeforeAll
     public static void startServer() throws Exception {
@@ -52,18 +54,15 @@ public class HttpPipelineTest {
     public static void close() throws Exception {
         if (webServer != null) {
             webServer.shutdown()
-                    .toCompletableFuture()
-                    .get(1, TimeUnit.SECONDS);
+                    .await(TIMEOUT);
         }
     }
 
     private static void startServer(int port) throws Exception {
         webServer = WebServer.builder()
                 .host("localhost")
-                .experimental(ExperimentalConfiguration.builder().http2(
-                        Http2Configuration.builder().enable(true).build()).build())
                 .port(port)
-                .routing(Routing.builder()
+                .routing(r -> r
                         .put("/", (req, res) -> {
                             counter.set(0);
                             log("put server");
@@ -84,11 +83,10 @@ public class HttpPipelineTest {
                                     },
                                     delay, TimeUnit.MILLISECONDS);
                         })
-                        .build())
+                )
                 .build()
                 .start()
-                .toCompletableFuture()
-                .get(10, TimeUnit.SECONDS);
+                .await(TIMEOUT);
 
         LOGGER.info("Started server at: https://localhost:" + webServer.port());
     }

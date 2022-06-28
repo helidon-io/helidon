@@ -16,6 +16,7 @@
 
 package io.helidon.webserver;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -58,6 +59,7 @@ import static org.hamcrest.collection.IsMapContaining.hasKey;
  */
 public class PlainTest {
 
+    private static final Duration TIMEOUT = Duration.ofSeconds(25);
     private static final Logger LOGGER = Logger.getLogger(PlainTest.class.getName());
     private static final RuntimeException TEST_EXCEPTION = new RuntimeException("BOOM!");
     private static WebServer webServer;
@@ -68,8 +70,10 @@ public class PlainTest {
     @BeforeAll
     static void startServer() {
         webServer = WebServer.builder()
-                .host("localhost")
-                .routing(Routing.builder().any((req, res) -> {
+                .defaultSocket(s -> s
+                        .host("localhost")
+                )
+                .routing(r -> r.any((req, res) -> {
                             res.headers().add(Http.Header.TRANSFER_ENCODING, "chunked");
                             req.next();
                         })
@@ -126,11 +130,10 @@ public class PlainTest {
                                  })
                                  .any(Handler.create(String.class, (req, res, entity) -> {
                                      res.send("It works! Payload: " + entity);
-                                 }))
-                                 .build())
+                                 })))
                 .build()
                 .start()
-                .await(10, TimeUnit.SECONDS);
+                .await(TIMEOUT);
 
         LOGGER.info("Started server at: https://localhost:" + webServer.port());
     }
@@ -139,8 +142,7 @@ public class PlainTest {
     public static void close() throws Exception {
         if (webServer != null) {
             webServer.shutdown()
-                    .toCompletableFuture()
-                    .get(10, TimeUnit.SECONDS);
+                    .await(TIMEOUT);
         }
     }
 

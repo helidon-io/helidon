@@ -16,6 +16,7 @@
 
 package io.helidon.webserver;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -33,18 +34,19 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 class TestHttpParseFineTuning {
 
+    private static final Duration TIME_OUT = Duration.ofSeconds(10);
+
     @Test
     void testDefaults() {
         // default is 8Kb for headers
         // and 4096 for initial line
         WebServer ws = WebServer.builder()
                 .host("localhost")
-                .routing(Routing.builder()
-                                 .any((req, res) -> res.send("any"))
-                                 .build())
+                .routing(r -> r.any((req, res) -> res.send("any"))
+                )
                 .build()
                 .start()
-                .await(10, TimeUnit.SECONDS);
+                .await(TIME_OUT);
 
         WebClient client = WebClient.builder()
                 .baseUri("http://localhost:" + ws.port())
@@ -70,15 +72,13 @@ class TestHttpParseFineTuning {
 
         WebServer ws = WebServer.builder()
                 .host("localhost")
-                .routing(Routing.builder()
-                                 .any((req, res) -> res.send("any"))
-                                 .build())
+                .routing(r -> r.any((req, res) -> res.send("any")))
                 .config(config)
                 .maxHeaderSize(9100)
                 .maxInitialLineLength(5100)
                 .build()
                 .start()
-                .await(10, TimeUnit.SECONDS);
+                .await(TIME_OUT);
 
         WebClient client = WebClient.builder()
                 .baseUri("http://localhost:" + ws.port())
@@ -103,7 +103,7 @@ class TestHttpParseFineTuning {
         builder.headers().add(headerName, "some random value");
         WebClientResponse response = builder.path("/static/static-content.txt")
                 .request()
-                .await(10, TimeUnit.SECONDS);
+                .await(TIME_OUT);
 
         if (success) {
             assertThat("Header '" + headerName + "' should have passed", response.status(), is(Http.Status.OK_200));
@@ -121,7 +121,7 @@ class TestHttpParseFineTuning {
         WebClientResponse response = client.get()
                 .path("/long/" + line)
                 .request()
-                .await(10, TimeUnit.SECONDS);
+                .await(TIME_OUT);
 
         if (success) {
             assertThat("Initial line of size " + size + " should have passed", response.status(), is(Http.Status.OK_200));
@@ -142,13 +142,13 @@ class TestHttpParseFineTuning {
         builder.headers().add("X_HEADER", headerValue);
         WebClientResponse response = builder.path("/static/static-content.txt")
                 .request()
-                .await(10, TimeUnit.SECONDS);
+                .await(TIME_OUT);
 
         if (success) {
             assertThat("Header of size " + size + " should have passed", response.status(), is(Http.Status.OK_200));
             assertThat("This request should return content 'any'", response.content()
                                .as(String.class)
-                               .await(10, TimeUnit.SECONDS),
+                               .await(TIME_OUT),
                        is("any"));
         } else {
             assertThat("Header of size " + size + " should have failed", response.status(), is(Http.Status.BAD_REQUEST_400));

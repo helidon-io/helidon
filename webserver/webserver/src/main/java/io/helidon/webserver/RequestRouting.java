@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import io.opentracing.SpanContext;
 import io.opentracing.Tracer;
 
 /**
- * Default (and only provided) implementation of {@link Routing}.
+ * Default implementation of {@link Routing}.
  */
 class RequestRouting implements Routing {
 
@@ -82,7 +82,7 @@ class RequestRouting implements Routing {
             String path = canonicalize(bareRequest.uri().normalize().getPath());
             String rawPath = canonicalize(bareRequest.uri().normalize().getRawPath());
 
-            Crawler crawler = new Crawler(routes, path, rawPath, bareRequest.method());
+            Crawler crawler = new Crawler(routes, path, rawPath, bareRequest.method(), bareRequest.version());
             RoutedRequest nextRequests = new RoutedRequest(bareRequest, response, webServer, crawler, errorHandlers,
                                                            requestHeaders);
             response.request(nextRequests);
@@ -129,6 +129,7 @@ class RequestRouting implements Routing {
         private final String path;
         private final String rawPath;
         private final Http.RequestMethod method;
+        private final Http.Version version;
 
         private volatile int index = -1;
         private volatile Crawler subCrawler;
@@ -141,26 +142,29 @@ class RequestRouting implements Routing {
          * @param path        an URI path to route.
          * @param rawPath     not decoded URI path to route.
          * @param method      an HTTP method to route.
+         * @param version     HTTP protocol version
          */
         private Crawler(List<Route> routes, Request.Path contextPath, String path, String rawPath,
-                        Http.RequestMethod method) {
+                        Http.RequestMethod method, Http.Version version) {
             this.routes = routes;
             this.path = path;
             this.rawPath = rawPath;
             this.contextPath = contextPath;
             this.method = method;
+            this.version = version;
         }
 
         /**
          * Creates new instance of 'the root crawler'.
          *
-         * @param routes routs to crawl throw.
+         * @param routes routes to crawl.
          * @param path   a URI path to route.
          * @param rawPath not decoded URI path to route.
          * @param method an HTTP method to route.
+         * @param version HTTP protocol version
          */
-        Crawler(List<Route> routes, String path, String rawPath, Http.RequestMethod method) {
-            this(routes, null, path, rawPath, method);
+        Crawler(List<Route> routes, String path, String rawPath, Http.RequestMethod method, Http.Version version) {
+            this(routes, null, path, rawPath, method, version);
         }
 
         /**
@@ -181,14 +185,12 @@ class RequestRouting implements Routing {
                 } else {
                     Route route = routes.get(index);
                     if (route.accepts(method)) {
-                        if (route instanceof HandlerRoute) {
-                            HandlerRoute hr = (HandlerRoute) route;
+                        if (route instanceof HandlerRoute hr) {
                             PathMatcher.Result match = hr.match(path);
-                            if (match.matches()) {
+                            if (match.matches() && hr.matchVersion(version)) {
                                 return new Item(hr, Request.Path.create(contextPath, path, rawPath, match.params()));
                             }
-                        } else if (route instanceof RouteList) {
-                            RouteList rl = (RouteList) route;
+                        } else if (route instanceof RouteList rl) {
                             PathMatcher.PrefixResult prefixMatch = rl.prefixMatch(path);
                             PathMatcher.PrefixResult rawPrefixMatch = rl.prefixMatch(rawPath);
                             if (prefixMatch.matches()) {
@@ -196,7 +198,8 @@ class RequestRouting implements Routing {
                                                          Request.Path.create(contextPath, path, rawPath, prefixMatch.params()),
                                                          prefixMatch.remainingPart(),
                                                          rawPrefixMatch.remainingPart(),
-                                                         method);
+                                                         method,
+                                                         version);
                                 // do "continue" in order to not log the failure message bellow
                                 continue;
                             }

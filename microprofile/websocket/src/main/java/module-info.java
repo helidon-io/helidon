@@ -28,9 +28,9 @@ module io.helidon.microprofile.tyrus {
     requires io.helidon.common;
     requires io.helidon.config;
     requires io.helidon.microprofile.cdi;
-    requires tyrus.core;
     requires io.helidon.microprofile.server;
-    requires io.helidon.webserver.tyrus;
+    requires io.helidon.webserver.websocket;
+    requires tyrus.core;
     requires tyrus.spi;
 
     exports io.helidon.microprofile.tyrus;
