@@ -24,8 +24,6 @@
         <boolean path="metrics">false</boolean>
         <enum path="metrics.provider">microprofile</enum>
         <boolean path="metrics.builtin">false</boolean>
-        <boolean path="health">false</boolean>
-        <boolean path="health.builtin">false</boolean>
         <boolean path="tracing">false</boolean>
         <list path="extra"/>
         <boolean path="security">false</boolean>

@@ -81,28 +81,10 @@ public final class Main {
 {{.}}
 {{/Main-createRouting}}
 
-        HealthSupport health = HealthSupport.builder()
-                .addLiveness(HealthChecks.healthChecks()) // Adds a convenient set of checks
-{{#Main-healthBuilder}}
-{{.}}
-{{/Main-healthBuilder}}
-                .build();
-
-{{#Main-security-section}}
-{{.}}
-{{/Main-security-section}}
-
-        Routing.Builder builder = Routing.builder()
-                .register(health) // Health at "/health"
-                .register(MetricsSupport.create()) // Metrics at "/metrics"
+        return Routing.builder()
 {{#Main-routingBuilder}}
 {{.}}
-{{/Main-routingBuilder}};
-
-{{#Main-security-routing-section}}
-{{.}}
-{{/Main-security-routing-section}}
-
-        return builder.build();
+{{/Main-routingBuilder}}
+                .build();
     }
 }

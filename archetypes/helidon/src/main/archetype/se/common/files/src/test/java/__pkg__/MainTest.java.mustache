@@ -48,24 +48,6 @@ public class MainTest {
         }
     }
 
-    @Test
-    public void testHealth() throws Exception {
-        WebClientResponse response = webClient.get()
-                .path("/health")
-                .request()
-                .await();
-        assertThat(response.status().code(), is(200));
-    }
-
-    @Test
-    public void testMetrics() throws Exception {
-        WebClientResponse response = webClient.get()
-                .path("/metrics")
-                .request()
-                .await();
-        assertThat(response.status().code(), is(200));
-    }
-
 {{#MainTest-methods}}
 {{.}}
 {{/MainTest-methods}}
