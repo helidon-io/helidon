@@ -348,7 +348,7 @@ email address are left to Jakarta Bean Validation providers. Accepts `CharSequen
 
 Bean Validation can be configured using `META-INF/validation.xml`.
 
-For more information please follow the official link:https://docs.jboss.org/hibernate/stable/validator/reference/en-US/html_single/?v=7.0#chapter-xml-configuration[Hibernate Validator Documentation]
+For more information about configuring the validator factory in validation.xml, see link:https://docs.jboss.org/hibernate/stable/validator/reference/en-US/html_single/?v=7.0#chapter-xml-configuration[Hibernate Validator Documentation].
 
 == Examples
 
