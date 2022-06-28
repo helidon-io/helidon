@@ -24,11 +24,7 @@
 
 == Default Marshalling Support
 
-Helidon gRPC supports Protobuf and Java serialization-based message marshallers out of the box.
-
-=== Protobuf Marshalling
-
-Protobuf marshaller will be used by default for any request and response classes that extend `com.google.protobuf.MessageLite` class, which is the case for all classes generated from a `proto` file using `protoc` compiler.
+Helidon gRPC supports Protobuf out of the box. Protobuf marshaller will be used by default for any request and response classes that extend `com.google.protobuf.MessageLite` class, which is the case for all classes generated from a `proto` file using `protoc` compiler.
 
 That means that you don't need any special handling or configuration in order to support Protobuf serialization of requests and responses.
 
