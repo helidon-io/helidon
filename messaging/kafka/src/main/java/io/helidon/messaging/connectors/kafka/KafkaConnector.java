@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.messaging.spi.Connector;
+import org.eclipse.microprofile.reactive.messaging.spi.ConnectorAttribute;
 import org.eclipse.microprofile.reactive.messaging.spi.IncomingConnectorFactory;
 import org.eclipse.microprofile.reactive.messaging.spi.OutgoingConnectorFactory;
 import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
@@ -45,6 +46,108 @@ import org.eclipse.microprofile.reactive.streams.operators.SubscriberBuilder;
  */
 @ApplicationScoped
 @Connector(KafkaConnector.CONNECTOR_NAME)
+@ConnectorAttribute(name = "bootstrap.servers",
+        description = "A list of comma separated host:port pairs to use for "
+                + "establishing the initial connection to the Kafka cluster.",
+        mandatory = true,
+        direction = ConnectorAttribute.Direction.INCOMING_AND_OUTGOING,
+        type = "string")
+@ConnectorAttribute(name = "key.deserializer",
+        description = "Fully qualified name of key deserializer class that implements "
+                + "the org.apache.kafka.common.serialization.Deserializer interface.",
+        mandatory = true,
+        direction = ConnectorAttribute.Direction.INCOMING,
+        type = "string")
+@ConnectorAttribute(name = "value.deserializer",
+        description = "Fully qualified name of value deserializer class that implements "
+                + "the org.apache.kafka.common.serialization.Deserializer interface.",
+        mandatory = true,
+        direction = ConnectorAttribute.Direction.INCOMING,
+        type = "string")
+@ConnectorAttribute(name = "key.serializer",
+        description = "Fully qualified name of key serializer class that implements "
+                + "the org.apache.kafka.common.serialization.Serializer interface.",
+        mandatory = true,
+        direction = ConnectorAttribute.Direction.OUTGOING,
+        type = "string")
+@ConnectorAttribute(name = "value.serializer",
+        description = "Fully qualified name of value serializer class that implements "
+                + "the org.apache.kafka.common.serialization.Serializer interface.",
+        mandatory = true,
+        direction = ConnectorAttribute.Direction.OUTGOING,
+        type = "string")
+@ConnectorAttribute(name = "topic",
+        description = "Comma separated names of the topics to consume from.",
+        mandatory = true,
+        direction = ConnectorAttribute.Direction.INCOMING,
+        type = "string")
+@ConnectorAttribute(name = "topic",
+        description = "Comma separated names of the topics to produce to.",
+        mandatory = true,
+        direction = ConnectorAttribute.Direction.OUTGOING,
+        type = "string")
+@ConnectorAttribute(name = "nack-dlq",
+        description = "\"Dead Letter Queue\" topic name to send NACKED messages to, "
+                + "other connection properties are going to be derived from consumer config.",
+        direction = ConnectorAttribute.Direction.INCOMING,
+        type = "string")
+@ConnectorAttribute(name = "nack-dlq.topic",
+        description = "\"Dead Letter Queue\" topic name to send NACKED messages to.",
+        direction = ConnectorAttribute.Direction.INCOMING,
+        type = "string")
+@ConnectorAttribute(name = "nack-dlq.bootstrap.servers",
+        description = "A list of comma separated host:port pairs to use for establishing "
+                + "the initial connection to the Kafka cluster with the \"Dead Letter Queue\".",
+        direction = ConnectorAttribute.Direction.INCOMING,
+        type = "string")
+@ConnectorAttribute(name = "nack-dlq.key.serializer",
+        description = "Fully qualified name of key deserializer class that implements "
+                + "the org.apache.kafka.common.serialization.Serializer interface.",
+        direction = ConnectorAttribute.Direction.INCOMING,
+        type = "string")
+@ConnectorAttribute(name = "nack-dlq.value.serializer",
+        description = "Fully qualified name of value deserializer class that implements "
+                + "the org.apache.kafka.common.serialization.Serializer interface.",
+        direction = ConnectorAttribute.Direction.INCOMING,
+        type = "string")
+@ConnectorAttribute(name = "auto.offset.reset",
+        description = "What to do when there is no initial offset in Kafka or if "
+                + "the current offset does not exist any more on the server. Valid Values: [latest, earliest, none].",
+        direction = ConnectorAttribute.Direction.INCOMING,
+        type = "string")
+@ConnectorAttribute(name = "poll.timeout",
+        description = "The maximum time to block polling loop in milliseconds.",
+        direction = ConnectorAttribute.Direction.INCOMING,
+        defaultValue = "50",
+        type = "long")
+@ConnectorAttribute(name = "period.executions",
+        description = "Period between successive executions of polling loop in milliseconds.",
+        direction = ConnectorAttribute.Direction.INCOMING,
+        defaultValue = "100",
+        type = "long")
+@ConnectorAttribute(name = "batch.size",
+        description = "Producer will attempt to batch records together into fewer requests whenever "
+                + "multiple records are being sent to the same partition.",
+        direction = ConnectorAttribute.Direction.OUTGOING,
+        defaultValue = "16384",
+        type = "int")
+@ConnectorAttribute(name = "acks",
+        description = "The number of acknowledgments the producer requires "
+                + "the leader to have received before considering a request complete. Valid Values: [all, -1, 0, 1].",
+        direction = ConnectorAttribute.Direction.OUTGOING,
+        defaultValue = "1",
+        type = "string")
+@ConnectorAttribute(name = "buffer.memory",
+        description = "The total bytes of memory the producer can use to buffer records waiting to be sent to the server.",
+        direction = ConnectorAttribute.Direction.OUTGOING,
+        defaultValue = "33554432",
+        type = "long")
+@ConnectorAttribute(name = "compression.type",
+        description = "The compression type for all data generated by the producer. "
+                + "The default is none (i.e. no compression). Valid Values: [none, gzip, snappy, lz4, zstd].",
+        direction = ConnectorAttribute.Direction.OUTGOING,
+        defaultValue = "none",
+        type = "string")
 public class KafkaConnector implements IncomingConnectorFactory, OutgoingConnectorFactory, Stoppable {
 
     private static final Logger LOGGER = Logger.getLogger(KafkaConnector.class.getName());

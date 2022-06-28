@@ -101,16 +101,16 @@ interface NackHandler<K, V> {
             KafkaConfig kafkaConfig;
 
             if (dlqConfig.isLeaf()) {
-                // dlq=dlq_topic_name - Uses actual connection config with derived serializers, just set dql topic
+                // nack-dlq=dlq_topic_name - Uses actual connection config with derived serializers, just set dql topic
                 kafkaConfig = KafkaConfig.create(config);
                 this.dlqTopic = dlqConfig.asString().get();
                 kafkaConfig.topics().clear();
                 kafkaConfig.topics().add(dlqTopic);
             } else {
                 // Custom dlq connection config
-                // dlq.topic=dql_topic_name
-                // dlq.bootstrap.servers=...
-                // dlq.key.serializer=...
+                // nack-dlq.topic=dql_topic_name
+                // nack-dlq.bootstrap.servers=...
+                // nack-dlq.key.serializer=...
                 kafkaConfig = KafkaConfig.create(dlqConfig);
                 this.dlqTopic = dlqConfig.get("topic")
                         .asString()
