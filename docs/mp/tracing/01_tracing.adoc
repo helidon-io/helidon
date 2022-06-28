@@ -57,15 +57,6 @@ include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 
 == Usage
 
-
-Distributed tracing is a critical feature of micro-service based applications, since it traces workflow both
-within a service and across multiple services.  This provides insight to sequence and timing data for specific blocks of work,
-which helps you identify performance and operational issues.  Helidon MP includes support for distributed tracing
-through the https://opentracing.io[OpenTracing API].  Tracing is integrated with WebServer, gRPC Server,
-and Security using either the https://zipkin.io[Zipkin] or https://www.jaegertracing.io[Jaeger] tracers.
-
-=== Tracing Concepts
-
 This section explains a few concepts that you need to understand before you get started with tracing.
 
 * In the context of this document, a _service_ is synonymous with an application.
@@ -85,8 +76,7 @@ include::../../shared/tracing/common-spans.adoc[]
 
 == Configuration
 
-Tracing support is implemented for both for Helidon MP Server and for Jersey client.
-In addition, you need to add one of the tracer implementations - Zipkin or Jaeger.
+=== Enabling and Disabling Tracing
 
 You can configure a custom service name using the `tracing.service` configuration property. If this
 property is undefined, name is created from JAX-RS Application name, or `Helidon MP` is used if no application
@@ -115,8 +105,6 @@ To disables MP Tracing as by specification:
 mp.opentracing.server.skip-pattern=.*
 ----
 
-==== Configuration using MP Config
-
 Tracing configuration can be defined in `microprofile-config.properties` file.
 
 [source, properties]
@@ -127,7 +115,7 @@ tracing.components.web-server.spans.0.logs.0.name="content-write"
 tracing.components.web-server.spans.0.logs.0.enabled=false
 ----
 
-==== Path based configuration in Helidon Web Server
+=== Controlling Tracing Output
 
 For Web Server we have a path based support for configuring tracing, in addition
 to the configuration described above.
@@ -169,19 +157,13 @@ Parameters provided:
 3. Query - query of the request (may be null)
 
 
-TODO section
-
 == Examples
-
-
-== Getting Started with Tracing
 
 The examples in this guide demonstrate how to integrate tracing with Helidon, how to view traces, how to trace
 across multiple services, and how to integrate tracing with Kubernetes.  All examples use Zipkin and traces
 will be viewed using both the Zipkin API and UI.
 
-
-=== Set up Zipkin
+==== Set up Zipkin
 
 First, you need to run the Zipkin tracer.  Helidon will communicate with this tracer at runtime.
 
@@ -213,7 +195,7 @@ curl http://localhost:9411/health // <1>
 <1> Invoke the Zipkin REST API to check the Zipkin server health.
 <2> All `status` fields should be `UP`.
 
-=== Enable Tracing in the Helidon Application
+==== Enable Tracing in the Helidon Application
 
 Update the pom.xml file and add the following Zipkin dependency to the `<dependencies>`
 section (*not* `<dependencyManagement>`).  This will enable Helidon to use Zipkin at the
@@ -254,7 +236,7 @@ curl http://localhost:8080/greet
 ----
 
 
-=== View Tracing Using Zipkin REST API
+==== View Tracing Using Zipkin REST API
 
 Because tracing is now enabled, the previous `/greet` endpoint invocation resulted in a new trace being created.
 Let's get the trace data that was generated using the Zipkin API.  First, get the service information.
@@ -333,7 +315,7 @@ results to a specific time window.
 <2> The request will return seven spans, one for each name, along with an unnamed JSON node, which
 has the status.
 
-=== View Tracing Using Zipkin UI
+==== View Tracing Using Zipkin UI
 
 The tracing output data is verbose and can be difficult to interpret using the REST API, especially since it represents a structure of spans.  Zipkin provides a web-based UI at http://localhost:9411/zipkin, where you can see a visual representation of the same data and the relationship between spans within a trace.  If you see a `Lens UI` button at the top center then click on it and it will take you to the specific UI used by this guide.
 
@@ -361,7 +343,7 @@ You can examine span details by clicking on the span row.  Refer to the image be
 image::guides/12_tracing_span_detail.png[Span Details]
 
 
-=== Enable Tracing on CDI Beans
+==== Enable Tracing on CDI Beans
 
 So far in this tutorial you have used tracing with JAX-RS without needing to annotate.  You can enable tracing on other CDI beans, either at the class level or at the method level, as shown by the following examples.
 
