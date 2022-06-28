@@ -36,10 +36,10 @@ include::{rootdir}/includes/dependencies.adoc[]
 
 [source,xml]
 ----
-    <dependency>
-        <groupId>io.helidon.grpc</groupId>
-        <artifactId>helidon-grpc-server</artifactId>
-    </dependency>
+<dependency>
+    <groupId>io.helidon.grpc</groupId>
+    <artifactId>helidon-grpc-server</artifactId>
+</dependency>
 ----
 
 == Quick Start
@@ -48,24 +48,24 @@ Here is the code for a minimalist gRPC application that runs on a default port (
 
 [source,java]
 ----
-    public static void main(String[] args) throws Exception {
-        GrpcServer grpcServer = GrpcServer
-                .create(GrpcRouting.builder()
-                                .register(new HelloService()) // <1>
-                                .build())
-                .start() // <2>
-                .toCompletableFuture()
-                .get(10, TimeUnit.SECONDS); // Implement the simplest possible gRPC service. // <3>
+public static void main(String[] args) throws Exception {
+    GrpcServer grpcServer = GrpcServer
+            .create(GrpcRouting.builder()
+                            .register(new HelloService()) // <1>
+                            .build())
+            .start() // <2>
+            .toCompletableFuture()
+            .get(10, TimeUnit.SECONDS); // Implement the simplest possible gRPC service. // <3>
 
-        System.out.println("gRPC Server started at: http://localhost:" + grpcServer.port()); // <4>
-    }
+    System.out.println("gRPC Server started at: http://localhost:" + grpcServer.port()); // <4>
+}
 
-    static class HelloService implements GrpcService { <5>
-        @Override
-        public void update(ServiceDescriptor.Rules rules) {
-            rules.unary("SayHello", ((request, responseObserver) -> complete(responseObserver, "Hello " + request))); // <6>
-        }
+static class HelloService implements GrpcService { <5>
+    @Override
+    public void update(ServiceDescriptor.Rules rules) {
+        rules.unary("SayHello", ((request, responseObserver) -> complete(responseObserver, "Hello " + request))); // <6>
     }
+}
 ----
 
 <1> Register gRPC service.

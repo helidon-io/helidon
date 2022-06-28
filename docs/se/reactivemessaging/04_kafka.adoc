@@ -171,4 +171,4 @@ messaging = Messaging.builder()
 
 Don't forget to check out the examples with pre-configured Kafka docker image, for easy testing:
 
-* link:{helidon-tree-url}/examples/messaging
+* link:{helidon-github-tree-url}/examples/messaging

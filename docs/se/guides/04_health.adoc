@@ -208,11 +208,10 @@ import java.util.concurrent.atomic.AtomicLong; // <1>
 public final class Main {
 
   private static AtomicLong readyTime = new AtomicLong(0); // <2>
-  ...
 
     static WebServer startServer() throws IOException {
-    ...
-      server.start() ...
+
+      server.start();
 
         // Server threads are not daemon. No need to block. Just react.
       try {

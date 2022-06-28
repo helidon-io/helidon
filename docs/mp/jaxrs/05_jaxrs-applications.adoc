@@ -85,7 +85,6 @@ public class MyResource {
     @GET
     public void get(@Context ServerRequest serverRequest) {
         Application app = serverRequest.context().get(Application.class).get();
-        // ...
     }
 }
 ----

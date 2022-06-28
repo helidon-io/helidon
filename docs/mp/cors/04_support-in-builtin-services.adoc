@@ -43,24 +43,25 @@ The following example restricts sharing of
 
 [source,hocon]
 ----
-...
 health:
   cors:
     allow-origins: [http://there.com]
 metrics:
   cors:
     allow-origins: [http://foo.com]
-...
 ----
 
 include::{rootdir}/includes/cors/cors-common.adoc[tag=accessing-shared-resources-intro]
+
 [source,bash]
 ----
 mvn package
 java -jar target/helidon-quickstart-mp.jar
-...
+----
+
+[source, listing]
+----
 2020.05.12 05:44:08 INFO io.helidon.microprofile.server.ServerCdiExtension Thread[main,5,main]: Server started on http://localhost:8080 (and all other host addresses) in 5280 milliseconds (since JVM startup).
-...
 ----
 
 include::{rootdir}/includes/cors/cors-common.adoc[tag=accessing-shared-resources-main]

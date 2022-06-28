@@ -49,7 +49,7 @@ abac
 
 ==== Example code
 
-See the link:{helidon-tree-url}/examples/security/attribute-based-access-control[example] on GitHub.
+See the link:{helidon-github-tree-url}/examples/security/attribute-based-access-control[example] on GitHub.
 
 [source,yaml]
 .Configuration example

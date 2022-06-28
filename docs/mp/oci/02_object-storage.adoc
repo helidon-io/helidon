@@ -219,4 +219,4 @@ list, as well as an `UP` status for the health check itself if and only if all b
 successfully pinged.
 
 Note that OCI operations such as these may incur some significant latency.
-For more information about health checks see xref:../health/01_introduction.adoc[MicroProfile Health].
+For more information about health checks see xref:../health.adoc[MicroProfile Health].

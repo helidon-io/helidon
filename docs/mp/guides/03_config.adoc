@@ -89,7 +89,7 @@ public final class Main {
 
     private Main() { } // <1>
 
-    public static void main(final String[] args) throws IOException {
+    public static void main(final String[] args) {
         Server server = startServer();
         System.out.println("http://localhost:" + server.port() + "/greet");
     }
@@ -175,7 +175,10 @@ java -jar target/helidon-quickstart-mp.jar
 .Run the curl command in a new terminal window and check the response:
 ----
 curl http://localhost:8080/greet
-...
+----
+
+[source, json]
+----
 {
   "message": "HelloFromMPConfig World!" // <1>
 }
@@ -197,7 +200,10 @@ java -jar target/helidon-quickstart-mp.jar
 .Invoke the endpoint below and check the response:
 ----
 curl http://localhost:8080/greet
-...
+----
+
+[source, json]
+----
 {
   "message": "HelloFromEnvironment World!" // <1>
 }
@@ -218,7 +224,10 @@ java -Dapp.greeting="HelloFromSystemProperty"  -jar target/helidon-quickstart-mp
 .Invoke the endpoint below and check the response:
 ----
 curl http://localhost:8080/greet
-...
+----
+
+[source, json]
+----
 {
   "message": "HelloFromSystemProperty World!" // <1>
 }
@@ -303,7 +312,10 @@ public class GreetingProvider {
 .Build and run the application, then invoke the endpoint and check the response:
 ----
 curl http://localhost:8080/greet
-...
+----
+
+[source, json]
+----
 {
   "message": "HelloFromMPConfig World!"
 }
@@ -320,7 +332,6 @@ You can inject the `Config` object into the class and access it directly as show
 import io.helidon.config.Config;
 import jakarta.enterprise.context.Initialized;
 import jakarta.enterprise.event.Observes;
-...
 
 @ApplicationScoped
 public class GreetingProvider {
@@ -349,7 +360,10 @@ public class GreetingProvider {
 .Build and run the application, then invoke the endpoint and check the response:
 ----
 curl http://localhost:8080/greet
-...
+----
+
+[source, json]
+----
 {
   "message": "HelloFromMPConfig World!"
 }
@@ -419,7 +433,10 @@ public class GreetingProvider {
 .Build and run the application, then invoke the endpoint and check the response:
 ----
 curl http://localhost:8080/greet
-...
+----
+
+[source, json]
+----
 {
   "message": "Joe says Hello-from-config-file.yaml World!"
 }
@@ -434,13 +451,13 @@ configuration file used for the ConfigMap.  This example will create the file at
 [source,java]
 .Update the `Main` class and replace the `buildConfig` method:
 ----
-  private static Config buildConfig() {
-      return Config.builder()
-          .sources(
-              file("/etc/config/config-file.properties").optional(), // <1>
-              classpath("META-INF/microprofile-config.properties")) // <2>
-          .build();
-  }
+private static Config buildConfig() {
+  return Config.builder()
+      .sources(
+          file("/etc/config/config-file.properties").optional(), // <1>
+          classpath("META-INF/microprofile-config.properties")) // <2>
+      .build();
+}
 ----
 <1> The `app.greeting` value will be fetched from `/etc/config/config-file.properties` within the container.
 <2> The server port is specified in `META-INF/microprofile-config.properties` within the `helidon-quickstart-mp.jar`.
@@ -469,7 +486,10 @@ public class GreetingProvider {
 .Build and run the application, then invoke the endpoint and check the response:
 ----
 curl http://localhost:8080/greet
-...
+----
+
+[source, json]
+----
 {
   "message": "HelloFromConfigFile World!"
 }
@@ -491,13 +511,15 @@ kubectl create configmap helidon-configmap --from-file config-file.properties
 .View the contents of the ConfigMap:
 ----
 kubectl get configmap helidon-configmap -o yaml
-...
+----
+
+[source, yaml]
+----
 apiVersion: v1
 data:
   config-file.properties: |   // <1>
     app.greeting=HelloFromConfigFile   // <2>
 kind: ConfigMap
-...
 ----
 <1> The file `config-file.properties` will be created within the Kubernetes container.
 <2> The `config-file.properties` file will have this single property defined.
@@ -578,7 +600,10 @@ helidon-config   NodePort   10.99.159.2   <none>        8080:31143/TCP   8s // <
 .Verify the configuration endpoint using port `31143`, your port will likely be different:
 ----
 curl http://localhost:31143/greet
-...
+----
+
+[source, json]
+----
 {
   "message": "HelloFromConfigFile World!" // <1>
 }

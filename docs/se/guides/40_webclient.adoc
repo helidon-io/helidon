@@ -133,8 +133,6 @@ specific settings and improves the readability and simplicity of the code.
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.webclient.WebClient;
 
-...
-
 WebClient webClient = WebClient.builder()
                 .baseUri("http://localhost:8080")   // <1>
                 .addMediaSupport(JsonpSupport.create())     // <2>
@@ -213,8 +211,6 @@ so that it could be used instead of String.
 ----
 import javax.json.JsonObject;
 
-...
-
 webClient.get()
     .path("/greet/David")
     .request(JsonObject.class)  // <1>
@@ -238,8 +234,6 @@ request to `/greet/greeting` endpoint from the base URI.
 .Modify the application greeting:
 ----
 import javax.json.Json;
-
-...
 
 JsonObject entity = Json.createObjectBuilder() // <1>
     .add("greeting", "Bonjour")
@@ -306,8 +300,6 @@ import org.eclipse.microprofile.metrics|.Counter;
                                        |.Meter;
                                        |.Timer;
                                        |.ConcurrentGauge;
-
-...
 
 public static void main(String[] args) {
 

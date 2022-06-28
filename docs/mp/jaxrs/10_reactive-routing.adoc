@@ -68,7 +68,6 @@ The annotation has two attributes:
 @RoutingName(value="admin", required="true")
 @RoutingPath("/admin")
 public class AdminService implements Service {
-//....
 }
 ----
 

@@ -101,8 +101,6 @@ You can either configure the span context as the active span, or explicitly defi
 import static io.helidon.tracing.jersey.client.ClientTracingFilter.CURRENT_SPAN_CONTEXT_PROPERTY_NAME;
 import static io.helidon.tracing.jersey.client.ClientTracingFilter.TRACER_PROPERTY_NAME;
 
-// ...
-
 Response response = client.target(serviceEndpoint)
     .request()
     // tracer should be provided unless available as GlobalTracer

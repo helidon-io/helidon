@@ -231,12 +231,16 @@ public class GreetReadinessCheck implements HealthCheck {
 curl -v  http://localhost:8080/health/ready
 ----
 
-[source,json]
-.HTTP response:
+[source, listing]
+.HTTP response status
 ----
-...
 < HTTP/1.1 503 Service Unavailable // <1>
-...
+----
+<1> The HTTP status is `503` since the application is not ready.
+
+[source,json]
+.JSON response body:
+----
 {
   "status": "DOWN",
   "checks": [
@@ -250,7 +254,6 @@ curl -v  http://localhost:8080/health/ready
   ]
 }
 ----
-<1> The HTTP status is `503` since the application is not ready.
 
 [source,bash]
 .After five seconds you will see the application is ready:
@@ -258,12 +261,16 @@ curl -v  http://localhost:8080/health/ready
 curl -v http://localhost:8080/health/ready
 ----
 
-[source,json]
-.JSON response:
+[source,listing]
+.HTTP response status
 ----
-...
 < HTTP/1.1 200 OK // <1>
-...
+----
+<1> The HTTP status is `200` indicating that the application is ready.
+
+[source,json]
+.JSON response body:
+----
 {
   "status": "UP",
   "checks": [
@@ -277,7 +284,6 @@ curl -v http://localhost:8080/health/ready
   ]
 }
 ----
-<1> The HTTP status is `200` indicating that the application is ready.
 
 === Custom Startup Health Checks
 
@@ -341,12 +347,16 @@ public class GreetStartedCheck implements HealthCheck {
 curl -v  http://localhost:8080/health/started
 ----
 
-[source,json]
-.HTTP response:
+[source,listing]
+.HTTP response status
 ----
-...
 < HTTP/1.1 503 Service Unavailable // <1>
-...
+----
+<1> The HTTP status is `503` since the application has not started.
+
+[source,json]
+.JSON response body:
+----
 {
   "status": "DOWN",
   "checks": [
@@ -360,7 +370,6 @@ curl -v  http://localhost:8080/health/started
   ]
 }
 ----
-<1> The HTTP status is `503` since the application has not started.
 
 [source,bash]
 .After eight seconds you will see the application has started:
@@ -368,12 +377,16 @@ curl -v  http://localhost:8080/health/started
 curl -v http://localhost:8080/health/started
 ----
 
-[source,json]
-.JSON response:
+[source,listing]
+.HTTP response status
 ----
-...
 < HTTP/1.1 200 OK // <1>
-...
+----
+<1> The HTTP status is `200` indicating that the application is started.
+
+[source,json]
+.JSON response body:
+----
 {
   "status": "UP",
   "checks": [
@@ -387,7 +400,6 @@ curl -v http://localhost:8080/health/started
   ]
 }
 ----
-<1> The HTTP status is `200` indicating that the application is started.
 
 When using the health check URLs, you can get the following health check data:
 

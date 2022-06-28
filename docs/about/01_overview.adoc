@@ -30,7 +30,7 @@ include::{rootdir}/includes/attributes.adoc[]
 ====
 [CARD]
 .Helidon SE
-[icon=explore,link=../se/introduction/01_introduction.adoc]
+[icon=explore,link=../se/introduction.adoc]
 --
 A set of reactive, non-blocking libraries.
 --

@@ -212,9 +212,9 @@ This example shows how to register `JsonpSupport` using the following two method
 ----
 WebClient.builder()
         .baseUri("http://localhost")
-        .addReader(JsonpSupport.reader()) <1>
-        .addWriter(JsonpSupport.writer()) <2>
-        .addMediaService(JsonpSupport.create()) <3>
+        .addReader(JsonpSupport.reader()) // <1>
+        .addWriter(JsonpSupport.writer()) // <2>
+        .addMediaService(JsonpSupport.create()) // <3>
         .build();
 ----
 <1> Adds JSON-P reader to all client requests.
@@ -228,8 +228,8 @@ WebClient.builder()
 WebClient webClient = WebClient.create();
 
 WebClientRequestBuilder requestBuilder = webClient.get();
-requestBuilder.writerContext().registerWriter(JsonSupport.writer()); <1>
-requestBuilder.readerContext().registerReader(JsonSupport.reader()); <2>
+requestBuilder.writerContext().registerWriter(JsonSupport.writer()); // <1>
+requestBuilder.readerContext().registerReader(JsonSupport.reader()); // <2>
 
 requestBuilder.request(JsonObject.class)
 ----

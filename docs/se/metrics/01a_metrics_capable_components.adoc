@@ -60,7 +60,6 @@ public class MyApp {
     }
 
     static Single<WebServer> startServer() {
-        ...
         Config config = Config.create();
 
         metricsSettings = MetricsSettings.builder() // <1>
@@ -75,7 +74,7 @@ public class MyApp {
                 .addMediaSupport(JsonpSupport.create())
                 .build();
 
-        ...
+        return server.start();
     }
 
     private static Routing createRouting(Config config) {

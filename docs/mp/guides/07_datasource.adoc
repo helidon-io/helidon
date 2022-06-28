@@ -260,11 +260,11 @@ Observe that the result will be a list of database table names.
 
 Helidon features a few examples of projects that use datasources.
 
-* link:{helidon-tree-url}/examples/integrations/cdi/datasource-hikaricp-h2[An
+* link:{helidon-github-tree-url}/examples/integrations/cdi/datasource-hikaricp-h2[An
   example showing a Hikari connection pool data source connected to an
   H2 database]
 
-* link:{helidon-tree-url}/examples/integrations/cdi/datasource-hikaricp-mysql[An
+* link:{helidon-github-tree-url}/examples/integrations/cdi/datasource-hikaricp-mysql[An
   example showing a Hikari connection pool data source connected to a
   MySQL database]
 

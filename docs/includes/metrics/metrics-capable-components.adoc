@@ -230,12 +230,9 @@ public class UtilComponent {
         public UtilComponent build() {
             return new UtilComponent(this);
         }
-
-        ...
     }
 
     private UtilComponent(Builder builder) {
-        ...
         metricRegistry = RegistryFactory
                 .getInstance(builder.componentMetricsSettingsBuilder.build())
                 .getRegistry(MetricRegistry.Type.VENDOR); // <5>

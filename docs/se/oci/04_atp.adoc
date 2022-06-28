@@ -121,4 +121,4 @@ To generate wallet file for OCI Autonomous Transaction Processing:
 <3> Create DBClient using info from 'walletArchive'
 <4> Read the first column from first row of result.
 
-For complete code, about how to create DBClient using wallet info, please see link:{helidon-tree-url}/examples/integrations/oci/atp-reactive[ATP Reactive Example]
+For complete code, about how to create DBClient using wallet info, please see link:{helidon-github-tree-url}/examples/integrations/oci/atp-reactive[ATP Reactive Example]

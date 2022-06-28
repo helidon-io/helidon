@@ -91,7 +91,10 @@ include::{rootdir}/includes/cors/cors-common.adoc[tag=accessing-shared-resources
 ----
 mvn package
 java -jar target/helidon-quickstart-se.jar
-...
+----
+
+[source, listing]
+----
 WEB server is up! http://localhost:8080/greet
 ----
 

@@ -51,7 +51,6 @@ To enable Prometheus metrics, register it with the web server.
 [source,java]
 ----
 import io.helidon.metrics.prometheus.PrometheusSupport;
-//...
 
 Routing.builder()
                 .register(PrometheusSupport.create())

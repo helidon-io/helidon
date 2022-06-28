@@ -154,14 +154,13 @@ The annotation has two attributes:
 - `value` that defines the routing name
 - `required` to mark that the routing name MUST be configured in Helidon server
 
-[source,yaml]
+[source,java]
 .`@RoutingName` example
 ----
 @ApplicationScoped
 @ApplicationPath("/admin")
 @RoutingName(value="admin", required="true")
 public class AdminApplication extends Application {
-//....
 }
 ----
 

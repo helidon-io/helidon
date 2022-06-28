@@ -86,4 +86,4 @@ public PublisherBuilder<String> produceToKafka() {
 
 Don't forget to check out the examples with pre-configured Kafka docker image, for easy testing:
 
-* {helidon-tree-url}/examples/messaging
+* {helidon-github-tree-url}/examples/messaging

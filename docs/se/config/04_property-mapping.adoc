@@ -74,7 +74,7 @@ requested key and no default is provided) and
 `ConfigMappingException` (if some error occurred while performing the data mapping).
 
 ^2^ The `Config.asXXX` methods internally use the Java-provided `XXX.parseXXX` methods, so here
-a missing or unparseable string gives `false` because that is how `Boolean.parseBoolean`
+a missing or un-parseable string gives `false` because that is how `Boolean.parseBoolean`
 behaves.
 
 ^3^ User code defaults the value to `true`.
@@ -97,9 +97,8 @@ T as(GenericType<T> genericType);
 
 which maps the current node to a type.
 
-The next example, and later
-ones below showing complex type mapping, use the example
-xref:01_introduction.adoc#app-properties[`application.properties`] configuration
+The next example, and later ones below showing complex type mapping, use the example
+xref:01_introduction.adoc#built-in-formats[`application.properties`] configuration
 from the config introduction. Part of that example includes this line:
 [source]
 ----
@@ -185,7 +184,7 @@ changing only the _registration_ of the mapper, not each use of it.
 [[WebConfig]]
 ==== Continuing the `Web` Example
 The following examples build on the example configuration from the
-xref:01_introduction.adoc#create-simple-config-props[`application.properties`]
+xref:01_introduction.adoc#built-in-formats[`application.properties`]
 example file in the introduction.
 
 
@@ -223,7 +222,7 @@ public class WebConfig {
 public class WebConfigMapper implements Function<Config, WebConfig> {
 
         @Override
-        public WebConfig apply(Config config) throws ConfigMappingException, MissingValueException {
+        public WebConfig apply(Config config) {
             return new WebConfig(
                     config.get("debug").asBoolean().orElse(false),
                     config.get("page-size").asInt().orElse(10),
@@ -236,25 +235,23 @@ public class WebConfigMapper implements Function<Config, WebConfig> {
 [source,java]
 .Explicitly Using the Mapper
 ----
-...
-    Config config = Config.create(classpath("application.properties"));
+Config config = Config.create(classpath("application.properties"));
 
-    WebConfig web = config.get("web")
-        .as(new WebConfigMapper())
-        .get();
+WebConfig web = config.get("web")
+    .as(new WebConfigMapper())
+    .get();
 ----
 
 [source,java]
 .Registering and Implicitly Using the Mapper
 ----
-...
-    Config config = Config.builder(classpath("application.properties"))
-        .addMapper(WebConfig.class, new WebConfigMapper())
-        .build();
+Config config = Config.builder(classpath("application.properties"))
+    .addMapper(WebConfig.class, new WebConfigMapper())
+    .build();
 
-    WebConfig web = config.get("web")
-        .as(WebConfig.class)
-        .get();
+WebConfig web = config.get("web")
+    .as(WebConfig.class)
+    .get();
 ----
 Either of the two approaches just described will _always_ work without requiring you to change
 the POJO class.
@@ -329,13 +326,13 @@ for the config instance.
 You can limit the changes to the POJO class by adding a single
 `builder` method to the POJO which returns a builder class for the POJO:
 [source,java]
+----
 public class WebConfig {
-...
     static WebConfigBuilder builder() {
         return new WebConfigBuilder();
     }
-...
 }
+----
 
 The builder class `WebConfigBuilder` is expected to be a Java Bean with
 
@@ -411,7 +408,7 @@ object from the config data.
 By default, the system matches potential JavaBean property names with
 config keys in the configuration.
 
-Use the link:{config-javadoc-base-url}/Value.html[`Value`] annnotation to control some of the JavaBean processing for a
+Use the link:{config-javadoc-base-url}/Value.html[`Value`] annotation to control some of the JavaBean processing for a
 given property.
 
 .`Value` Annotation
@@ -420,7 +417,7 @@ given property.
 
 |`key` |Indicates which config key should match this JavaBean property
 |`withDefault` |`String` used for the bean property default value if none is set in the config
-|`withDefaultSupplier` |`Supplier` of the default bean property value if nont is set in the config
+|`withDefaultSupplier` |`Supplier` of the default bean property value if not is set in the config
 |===
 
 To exclude a bean property from the config system bean processing annotate it with
@@ -430,7 +427,7 @@ Here is an example using the `app` portion of the example configuration from the
 introduction.
 
 [source,java]
-.Java bean to load `app` propeties into via setters
+.Java bean to load `app` properties into via setters
 ----
 public class AppConfig {
     private Instant timestamp;
@@ -689,7 +686,6 @@ parameters, and remove the now-unneeded `from` factory method.
 .Target Class with Annotated Public Constructor
 ----
 public class AppConfig {
-    ...
     public AppConfig( // <1>
         @Value(key = "greeting") // <2>
                 String greeting,
@@ -703,6 +699,7 @@ public class AppConfig {
         this.pageSize = pageSize;
         this.basicRange = basicRange;
     }
+}
 ----
 <1> Constructor is `public`.
 <2> Each parameter has the `ConfigValue` annotation to at least specify the

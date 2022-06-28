@@ -50,391 +50,352 @@ backend:
         type: "image"
         value: "images/helidon_logo_dark.svg"
       items:
-        - title: "Introduction"
-          pathprefix: "/about"
+        - title: "null"
           items:
-            - title: "About"
-              pathprefix: "/about"
-#              glyph:
-#                type: "icon"
-#                value: "assistant"
-              items:
-                - title: "Overview"
-                  to: "about/01_overview"
-                - title: "About Helidon"
-                  to: "about/02_introduction"
-                - title: "Get Started"
-                  to: "about/03_prerequisites"
-                - title: "Managing Dependencies"
-                  to: "about/04_managing-dependencies"
-                - title: "Helidon on Windows"
-                  to: "about/04_windows"
-                - title: "Helidon CLI"
-                  to: "about/05_cli"
-                - title: "Kubernetes on your Desktop"
-                  to: "about/05_kubernetes"
-                - title: "Upgrading from 1.4"
-                  to: "about/10_upgrade"
-        - title: "Helidon SE"
-          pathprefix: "/se"
-          items:
-            - title: "Introduction"
-              pathprefix: "/se/introduction"
-              glyph:
-                type: "icon"
-                value: "widgets"
-              includes:
-                - "se/introduction/*.adoc"
-            - title: "Guides"
-              pathprefix: "/se/guides"
-              glyph:
-                type: "icon"
-                value: "explore"
-              includes:
-                - "se/guides/*.adoc"
-            - title: "Config"
-              pathprefix: "/se/config"
-              glyph:
-                type: "icon"
-                value: "settings"
-              includes:
-                - "se/config/*.adoc"
-            - title: "CORS"
-              pathprefix: "/se/cors"
-              glyph:
-                type: "icon"
-                value: "share"
-              includes:
-                - "se/cors/*.adoc"
-            - title: "DB Client"
-              pathprefix: "/se/dbclient"
-              glyph:
-                type: "icon"
-                value: "storage"
-              includes:
-                - "se/dbclient/*.adoc"
-            - title: "gRPC server"
-              pathprefix: "/se/grpc"
-              glyph:
-                type: "icon"
-                value: "swap_horiz"
-              includes:
-                - "se/grpc/*.adoc"
-            - title: "GraphQL server"
-              pathprefix: "/se/graphql"
-              glyph:
-                type: "icon"
-                value: "graphic_eq"
-              includes:
-                - "se/graphql/*.adoc"
-            - title: "Health Checks"
-              pathprefix: "/se/health"
-              glyph:
-                type: "icon"
-                value: "favorite_outline"
-              includes:
-                - "se/health/*.adoc"
-            - title: "Metrics"
-              pathprefix: "/se/metrics"
-              glyph:
-                type: "icon"
-                value: "av_timer"
-              includes:
-                - "se/metrics/*.adoc"
-            - title: "OpenAPI"
-              pathprefix: "/se/openapi"
-              glyph:
-                type: "icon"
-                value: "donut_large"
-              includes:
-                - "se/openapi/*.adoc"
-            - title: "OCI"
-              pathprefix: "/se/oci"
-              glyph:
-                type: "icon"
-                value: "filter_drama"
-              includes:
-                - "se/oci/*.adoc"
-            - title: "Reactive Streams"
-              pathprefix: "/se/reactivestreams"
-              glyph:
-                type: "icon"
-                value: "waves"
-              includes:
-                - "se/reactivestreams/*.adoc"
-            - title: "Reactive Messaging"
-              pathprefix: "/se/reactivemessaging"
-              glyph:
-                type: "icon"
-                value: "message"
-              includes:
-                - "se/reactivemessaging/*.adoc"
-            - title: "Reactive Webserver"
-              pathprefix: "/se/webserver"
-              glyph:
-                type: "icon"
-                value: "settings_ethernet"
-              includes:
-                - "se/webserver/*.adoc"
-            - title: "Security"
-              pathprefix: "/se/security"
-              glyph:
-                type: "icon"
-                value: "security"
-              includes:
-                - "se/security/*.adoc"
-            - title: "Scheduling"
-              pathprefix: "/se/scheduling"
-              glyph:
-                type: "icon"
-                value: "access_alarm"
-              includes:
-                - "se/scheduling/*.adoc"
-            - title: "Tracing"
-              pathprefix: "/se/tracing"
-              glyph:
-                type: "icon"
-                value: "timeline"
-              includes:
-                - "se/tracing/*.adoc"
-            - title: "Vault"
-              pathprefix: "/se/vault"
-              glyph:
-                type: "icon"
-                value: "lock"
-              includes:
-                - "se/vault/*.adoc"
-            - title: "Web Client"
-              pathprefix: "/se/webclient"
-              glyph:
-                type: "icon"
-                value: "http"
-              includes:
-                - "se/webclient/*.adoc"
-            - title: "Websocket"
-              pathprefix: "/se/websocket"
-              glyph:
-                type: "icon"
-                value: "timeline"
-              includes:
-                - "se/websocket/*.adoc"
-            - title: "AOT"
-              pathprefix: "/se/aot"
-              glyph:
-                type: "icon"
-                value: "save"
-              includes:
-                - "se/aot/*.adoc"
-            - title: "Fault Tolerance"
-              pathprefix: "/se/faulttolerance"
-              glyph:
-                type: "icon"
-                value: "warning"
-              includes:
-                - "se/faulttolerance/*.adoc"
-        - title: "Helidon MP"
-          pathprefix: "/mp"
-          items:
-            - title: "Introduction"
-              pathprefix: "/mp/introduction"
-              glyph:
-                type: "icon"
-                value: "widgets"
-              includes:
-                - "mp/introduction/*.adoc"
-            - title: "Guides"
-              pathprefix: "/mp/guides"
-              glyph:
-                type: "icon"
-                value: "explore"
-              includes:
-                - "mp/guides/*.adoc"
-            - title: "Bean Validation"
-              pathprefix: "/mp/beanvalidation"
-              glyph:
-                type: "icon"
-                value: "receipt"
-              includes:
-                - "mp/beanvalidation/*.adoc"
-            - title: "Config"
-              pathprefix: "/mp/config"
-              glyph:
-                type: "icon"
-                value: "settings"
-              includes:
-                - "mp/config/*.adoc"
-            - title: "CDI Extensions"
-              pathprefix: "/mp/extensions"
-              glyph:
-                type: "icon"
-                value: "extension"
-              includes:
-                - "mp/extensions/*.adoc"
-            - title: "CORS"
-              pathprefix: "/mp/cors"
-              glyph:
-                type: "icon"
-                value: "share"
-              excludes:
-                - "mp/cors/hide*.adoc"
-              includes:
-                - "mp/cors/*.adoc"
-            - title: "Fault Tolerance"
-              pathprefix: "/mp/faulttolerance"
-              glyph:
-                type: "icon"
-                value: "warning"
-              includes:
-                - "mp/faulttolerance/*.adoc"
-            - title: "gRPC server"
-              pathprefix: "/mp/grpc"
-              glyph:
-                type: "icon"
-                value: "swap_horiz"
-              includes:
-                - "mp/grpc/*.adoc"
-            - title: "GraphQL"
-              pathprefix: "/mp/graphql"
-              glyph:
-                type: "icon"
-                value: "graphic_eq"
-              includes:
-                - "mp/graphql/*.adoc"
-            - title: "Health Checks"
-              pathprefix: "/mp/health"
-              glyph:
-                type: "icon"
-                value: "favorite_outline"
-              includes:
-                - "mp/health/*.adoc"
-            - title: "JAX-RS/Jersey"
-              pathprefix: "/mp/jaxrs"
-              glyph:
-                type: "icon"
-                value: "settings_ethernet"
-              includes:
-                - "mp/jaxrs/*.adoc"
-            - title: "JPA"
-              pathprefix: "/mp/jpa"
-              glyph:
-                type: "icon"
-                value: "dns"
-              includes:
-                - "mp/jpa/*.adoc"
-            - title: "JWT Auth"
-              pathprefix: "/mp/jwtauth"
-              glyph:
-                type: "icon"
-                value: "verified_user"
-              includes:
-                - "mp/jwtauth/*.adoc"
-            - title: "Long Running Actions"
-              pathprefix: "/mp/lra"
-              glyph:
-                type: "icon"
-                value: "pending_actions"
-              includes:
-                - "mp/lra/*.adoc"
-            - title: "Metrics"
-              pathprefix: "/mp/metrics"
-              glyph:
-                type: "icon"
-                value: "av_timer"
-              includes:
-                - "mp/metrics/*.adoc"
-            - title: "OpenAPI"
-              pathprefix: "/mp/openapi"
-              glyph:
-                type: "icon"
-                value: "donut_large"
-              includes:
-                - "mp/openapi/*.adoc"
-            - title: "OCI"
-              pathprefix: "/mp/oci"
-              glyph:
-                type: "icon"
-                value: "filter_drama"
-              includes:
-                - "mp/oci/*.adoc"
-            - title: "Reactive Streams"
-              pathprefix: "/mp/reactivestreams"
-              glyph:
-                type: "icon"
-                value: "waves"
-              includes:
-                - "mp/reactivestreams/*.adoc"
-            - title: "Reactive Messaging"
-              pathprefix: "/mp/reactivemessaging"
-              glyph:
-                type: "icon"
-                value: "message"
-              includes:
-                - "mp/reactivemessaging/*.adoc"
-            - title: "REST Client"
-              pathprefix: "/mp/restclient"
-              glyph:
-                type: "icon"
-                value: "airplay"
-              includes:
-                - "mp/restclient/*.adoc"
-            - title: "Security"
-              pathprefix: "/mp/security"
-              glyph:
-                type: "icon"
-                value: "security"
-              includes:
-                - "mp/security/*.adoc"
-            - title: "Scheduling"
-              pathprefix: "/mp/scheduling"
-              glyph:
-                type: "icon"
-                value: "access_alarm"
-              includes:
-                - "mp/scheduling/*.adoc"
-            - title: "Tracing"
-              pathprefix: "/mp/tracing"
-              glyph:
-                type: "icon"
-                value: "timeline"
-              includes:
-                - "mp/tracing/*.adoc"
-            - title: "Vault"
-              pathprefix: "/mp/vault"
-              glyph:
-                type: "icon"
-                value: "lock"
-              includes:
-                - "mp/vault/*.adoc"
-            - title: "Websocket"
-              pathprefix: "/mp/websocket"
-              glyph:
-                type: "icon"
-                value: "sync_alt"
-              includes:
-                - "mp/websocket/*.adoc"
-            - title: "AOT"
-              pathprefix: "/mp/aot"
-              glyph:
-                type: "icon"
-                value: "save"
-              includes:
-                - "mp/aot/*.adoc"
-            - title: "Testing"
-              pathprefix: "/mp/testing"
-              glyph:
-                type: "icon"
-                value: "thumbs_up_down"
-              includes:
-                - "mp/testing/*.adoc"
+          - title: "Introduction"
+            pathprefix: "/about"
+            items:
+              - title: "About"
+                pathprefix: "/about"
+                glyph:
+                  type: "icon"
+                  value: "assistant"
+                items:
+                  - title: "Overview"
+                    to: "about/01_overview"
+                  - title: "About Helidon"
+                    to: "about/02_introduction"
+                  - title: "Get Started"
+                    to: "about/03_prerequisites"
+                  - title: "Managing Dependencies"
+                    to: "about/04_managing-dependencies"
+                  - title: "Helidon on Windows"
+                    to: "about/04_windows"
+                  - title: "Helidon CLI"
+                    to: "about/05_cli"
+                  - title: "Kubernetes on your Desktop"
+                    to: "about/05_kubernetes"
+                  - title: "Upgrading from 1.4"
+                    to: "about/10_upgrade"
+          - title: "Helidon SE"
+            pathprefix: "/se"
+            items:
+              - title: "Introduction"
+                glyph:
+                  type: "icon"
+                  value: "widgets"
+                to: "se/introduction"
+              - title: "Guides"
+                pathprefix: "/se/guides"
+                glyph:
+                  type: "icon"
+                  value: "explore"
+                includes:
+                  - "se/guides/*.adoc"
+              - title: "Config"
+                pathprefix: "/se/config"
+                glyph:
+                  type: "icon"
+                  value: "settings"
+                includes:
+                  - "se/config/*.adoc"
+              - title: "CORS"
+                pathprefix: "/se/cors"
+                glyph:
+                  type: "icon"
+                  value: "share"
+                includes:
+                  - "se/cors/*.adoc"
+              - title: "DB Client"
+                to: "se/dbclient"
+                glyph:
+                  type: "icon"
+                  value: "storage"
+              - title: "gRPC server"
+                pathprefix: "/se/grpc"
+                glyph:
+                  type: "icon"
+                  value: "swap_horiz"
+                includes:
+                  - "se/grpc/*.adoc"
+              - title: "GraphQL server"
+                to: "se/graphql"
+                glyph:
+                  type: "icon"
+                  value: "graphic_eq"
+              - title: "Health Checks"
+                pathprefix: "/se/health"
+                glyph:
+                  type: "icon"
+                  value: "favorite_outline"
+                includes:
+                  - "se/health/*.adoc"
+              - title: "Metrics"
+                pathprefix: "/se/metrics"
+                glyph:
+                  type: "icon"
+                  value: "av_timer"
+                includes:
+                  - "se/metrics/*.adoc"
+              - title: "OpenAPI"
+                to: "se/openapi"
+                glyph:
+                  type: "icon"
+                  value: "donut_large"
+              - title: "OCI"
+                pathprefix: "/se/oci"
+                glyph:
+                  type: "icon"
+                  value: "filter_drama"
+                includes:
+                  - "se/oci/*.adoc"
+              - title: "Reactive Streams"
+                pathprefix: "/se/reactivestreams"
+                glyph:
+                  type: "icon"
+                  value: "waves"
+                includes:
+                  - "se/reactivestreams/*.adoc"
+              - title: "Reactive Messaging"
+                pathprefix: "/se/reactivemessaging"
+                glyph:
+                  type: "icon"
+                  value: "message"
+                includes:
+                  - "se/reactivemessaging/*.adoc"
+              - title: "Reactive Webserver"
+                pathprefix: "/se/webserver"
+                glyph:
+                  type: "icon"
+                  value: "settings_ethernet"
+                includes:
+                  - "se/webserver/*.adoc"
+              - title: "Security"
+                pathprefix: "/se/security"
+                glyph:
+                  type: "icon"
+                  value: "security"
+                includes:
+                  - "se/security/*.adoc"
+              - title: "Scheduling"
+                to: "se/scheduling"
+                glyph:
+                  type: "icon"
+                  value: "access_alarm"
+              - title: "Tracing"
+                pathprefix: "/se/tracing"
+                glyph:
+                  type: "icon"
+                  value: "timeline"
+                includes:
+                  - "se/tracing/*.adoc"
+              - title: "Vault"
+                to: "se/vault"
+                glyph:
+                  type: "icon"
+                  value: "lock"
+              - title: "Web Client"
+                pathprefix: "/se/webclient"
+                glyph:
+                  type: "icon"
+                  value: "http"
+                includes:
+                  - "se/webclient/*.adoc"
+              - title: "Websocket"
+                to: "se/websocket"
+                glyph:
+                  type: "icon"
+                  value: "timeline"
+              - title: "AOT"
+                to: "se/aot"
+                glyph:
+                  type: "icon"
+                  value: "save"
+              - title: "Fault Tolerance"
+                to: "se/fault-tolerance"
+                glyph:
+                  type: "icon"
+                  value: "warning"
+          - title: "Helidon MP"
+            pathprefix: "/mp"
+            items:
+              - title: "Introduction"
+                pathprefix: "/mp/introduction"
+                glyph:
+                  type: "icon"
+                  value: "widgets"
+                includes:
+                  - "mp/introduction/*.adoc"
+              - title: "Guides"
+                pathprefix: "/mp/guides"
+                glyph:
+                  type: "icon"
+                  value: "explore"
+                includes:
+                  - "mp/guides/*.adoc"
+              - title: "Bean Validation"
+                pathprefix: "/mp/beanvalidation"
+                glyph:
+                  type: "icon"
+                  value: "receipt"
+                includes:
+                  - "mp/beanvalidation/*.adoc"
+              - title: "Config"
+                pathprefix: "/mp/config"
+                glyph:
+                  type: "icon"
+                  value: "settings"
+                includes:
+                  - "mp/config/*.adoc"
+              - title: "CDI Extensions"
+                pathprefix: "/mp/extensions"
+                glyph:
+                  type: "icon"
+                  value: "extension"
+                includes:
+                  - "mp/extensions/*.adoc"
+              - title: "CORS"
+                pathprefix: "/mp/cors"
+                glyph:
+                  type: "icon"
+                  value: "share"
+                excludes:
+                  - "mp/cors/hide*.adoc"
+                includes:
+                  - "mp/cors/*.adoc"
+              - title: "Fault Tolerance"
+                to: "mp/fault-tolerance"
+                glyph:
+                  type: "icon"
+                  value: "warning"
+              - title: "gRPC server"
+                pathprefix: "/mp/grpc"
+                glyph:
+                  type: "icon"
+                  value: "swap_horiz"
+                includes:
+                  - "mp/grpc/*.adoc"
+              - title: "GraphQL"
+                to: "mp/graphql"
+                glyph:
+                  type: "icon"
+                  value: "graphic_eq"
+              - title: "Health Checks"
+                to: "mp/health"
+                glyph:
+                  type: "icon"
+                  value: "favorite_outline"
+              - title: "JAX-RS/Jersey"
+                pathprefix: "/mp/jaxrs"
+                glyph:
+                  type: "icon"
+                  value: "settings_ethernet"
+                includes:
+                  - "mp/jaxrs/*.adoc"
+              - title: "JPA"
+                to: "mp/jpa"
+                glyph:
+                  type: "icon"
+                  value: "dns"
+              - title: "JWT"
+                to: "mp/jwt"
+                glyph:
+                  type: "icon"
+                  value: "verified_user"
+              - title: "Long Running Actions"
+                pathprefix: "/mp/lra"
+                glyph:
+                  type: "icon"
+                  value: "pending_actions"
+                includes:
+                  - "mp/lra/*.adoc"
+              - title: "Metrics"
+                pathprefix: "/mp/metrics"
+                glyph:
+                  type: "icon"
+                  value: "av_timer"
+                includes:
+                  - "mp/metrics/*.adoc"
+              - title: "OpenAPI"
+                to: "mp/openapi"
+                glyph:
+                  type: "icon"
+                  value: "donut_large"
+              - title: "OCI"
+                pathprefix: "/mp/oci"
+                glyph:
+                  type: "icon"
+                  value: "filter_drama"
+                includes:
+                  - "mp/oci/*.adoc"
+              - title: "Reactive Streams"
+                pathprefix: "/mp/reactivestreams"
+                glyph:
+                  type: "icon"
+                  value: "waves"
+                includes:
+                  - "mp/reactivestreams/*.adoc"
+              - title: "Reactive Messaging"
+                pathprefix: "/mp/reactivemessaging"
+                glyph:
+                  type: "icon"
+                  value: "message"
+                includes:
+                  - "mp/reactivemessaging/*.adoc"
+              - title: "REST Client"
+                to: "mp/restclient"
+                glyph:
+                  type: "icon"
+                  value: "airplay"
+              - title: "Security"
+                pathprefix: "/mp/security"
+                glyph:
+                  type: "icon"
+                  value: "security"
+                includes:
+                  - "mp/security/*.adoc"
+              - title: "Scheduling"
+                to: "mp/scheduling"
+                glyph:
+                  type: "icon"
+                  value: "access_alarm"
+              - title: "Tracing"
+                pathprefix: "/mp/tracing"
+                glyph:
+                  type: "icon"
+                  value: "timeline"
+                includes:
+                  - "mp/tracing/*.adoc"
+              - title: "Vault"
+                to: "mp/vault"
+                glyph:
+                  type: "icon"
+                  value: "lock"
+              - title: "Websocket"
+                to: "mp/websocket"
+                glyph:
+                  type: "icon"
+                  value: "sync_alt"
+              - title: "AOT"
+                to: "mp/aot"
+                glyph:
+                  type: "icon"
+                  value: "save"
+              - title: "Testing"
+                pathprefix: "/mp/testing"
+                glyph:
+                  type: "icon"
+                  value: "thumbs_up_down"
+                includes:
+                  - "mp/testing/*.adoc"
         - title: "Additional resources"
-          items:
-            - title: "Javadocs"
-              glyph:
-                type: "icon"
-                value: "library_books"
-              href: "apidocs/index.html?overview-summary.html"
-            - title: "Community"
-              glyph:
-                type: "icon"
-                value: "fa-github"
-              to: "community/01_community"
+        - title: "Javadocs"
+          glyph:
+            type: "icon"
+            value: "library_books"
+          href: "apidocs/index.html?overview-summary.html"
+        - title: "Community"
+          to: "community"
+          glyph:
+            type: "icon"
+            value: "fa-github"

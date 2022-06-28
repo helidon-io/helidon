@@ -147,4 +147,4 @@ To generate wallet file for OCI Autonomous Transaction Processing:
 <3> Setup DataSource using info from 'walletArchive'
 <4> Read the first column from first row of result.
 
-For complete code, about how to setup datasource using wallet info, please see link:{helidon-tree-url}/examples/integrations/oci/atp-cdi[ATP MP Example]
+For complete code, about how to setup datasource using wallet info, please see link:{helidon-github-tree-url}/examples/integrations/oci/atp-cdi[ATP MP Example]

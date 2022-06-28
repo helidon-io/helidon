@@ -101,9 +101,13 @@ docker run -d --name zipkin -p 9411:9411 openzipkin/zipkin  // <1>
 .Check the Zipkin server health:
 ----
 curl http://localhost:9411/health // <1>
-...
+----
+<1> Invoke the Zipkin REST API to check the Zipkin server health.
+
+[source, json]
+----
 {
-  "status": "UP", <2>
+  "status": "UP", // <1>
   "zipkin": {
     "status": "UP",
     "details": {
@@ -114,8 +118,7 @@ curl http://localhost:9411/health // <1>
   }
 }
 ----
-<1> Invoke the Zipkin REST API to check the Zipkin server health.
-<2> All `status` fields should be `UP`.
+<1> All `status` fields should be `UP`.
 
 === Enable Tracing in the Helidon Application
 
@@ -385,7 +388,7 @@ WebServer server = WebServer.builder(createRouting(config))
 .Update the `GreetService` class; 1) Add new import and 2) Replace the `getDefaultMessageHandler` method:
 ----
 import io.opentracing.Span;
-...
+//...
     private void getDefaultMessageHandler(ServerRequest request,
                                    ServerResponse response) {
 

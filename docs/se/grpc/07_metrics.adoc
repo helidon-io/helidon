@@ -38,13 +38,13 @@ However, users can enable more fine grained metrics by simply configuring a buil
 
 [source,java]
 ----
-    private static GrpcRouting createRouting(Config config) {
-        return GrpcRouting.builder()
-                .intercept(GrpcMetrics.timed())       // <1>
-                .register(new GreetService(config))
-                .register(new EchoService())
-                .build();
-    }
+private static GrpcRouting createRouting(Config config) {
+    return GrpcRouting.builder()
+            .intercept(GrpcMetrics.timed())       // <1>
+            .register(new GreetService(config))
+            .register(new EchoService())
+            .build();
+}
 ----
 
 <1> Capture metrics for all methods of all services as a `timer`
@@ -67,27 +67,27 @@ either service or the method level:
 
 [source,java]
 ----
-    private static GrpcRouting createRouting(Config config) {
-        return GrpcRouting.builder()
-                .intercept(GrpcMetrics.counted())   // <1>
-                .register(new MyService())
-                .build();
+private static GrpcRouting createRouting(Config config) {
+    return GrpcRouting.builder()
+            .intercept(GrpcMetrics.counted())   // <1>
+            .register(new MyService())
+            .build();
+}
+
+public static class MyService implements GrpcService {
+
+    @Override
+    public void update(ServiceDescriptor.Rules rules) {
+        rules
+            .intercept(GrpcMetrics.metered())                     // <2>
+            .unary("MyMethod", this::myMethod,
+                       cfg -> cfg.intercept(GrpcMetrics.timer())) // <3>
     }
 
-    public static class MyService implements GrpcService {
-
-        @Override
-        public void update(ServiceDescriptor.Rules rules) {
-            rules
-                .intercept(GrpcMetrics.metered())                     // <2>
-                .unary("MyMethod", this::myMethod,
-                           cfg -> cfg.intercept(GrpcMetrics.timer())) // <3>
-        }
-
-        private <ReqT, ResT> void myMethod(ReqT request, StreamObserver<ResT> observer) {
-            // do something
-        }
+    private <ReqT, ResT> void myMethod(ReqT request, StreamObserver<ResT> observer) {
+        // do something
     }
+}
 ----
 
 <1> Use `counter` for all methods of all services, unless overridden

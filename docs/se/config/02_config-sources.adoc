@@ -41,7 +41,7 @@ When your application prepares a `Config.Builder` it sets what ``ConfigSource``s
 == Config Sources
 If your application uses the default configuration, then the config system
 automatically sets up the config sources for you, as described in the
-xref:01_introduction.adoc#config-sources-default-config[config introduction].
+xref:01_introduction.adoc#introducing-the-config-system[config introduction].
 
 If instead your application uses a link:{config-javadoc-base-url}/Config.Builder.html[`Config.Builder`], then it can invoke one of the `sources` methods on that builder to set which config sources it should use.
 

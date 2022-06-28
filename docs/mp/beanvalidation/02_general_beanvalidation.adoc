@@ -48,7 +48,6 @@ The following example shows a simple application with one field declared as _not
 public class GreetingHolder {
     @NotNull
     private String greeting;
-    //...
 }
 ----
 
@@ -59,7 +58,7 @@ If the bean contains a method parameter annotated with @Valid, and GreetingHolde
 @ApplicationScoped
 public class GreetingProvider {
     private GreetingHolder greetingHolder;
-    //..
+
     void setGreeting(@Valid GreetingHolder greetingHolder) {
         this.greetingHolder = greetingHolder;
     }

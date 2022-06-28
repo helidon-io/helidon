@@ -45,7 +45,7 @@ Helidon has added additional APIs to the core set of Microprofile APIs giving yo
 //aot
 [CARD]
 .Ahead-of-Time Compilation (AOT)
-[icon=save,link=../aot/01_introduction.adoc]
+[icon=save,link=../aot.adoc]
 --
 Use GraalVM native image to compile Helidon applications into a native executable.
 --
@@ -83,7 +83,7 @@ Add support for CORS to your application using a Helidon module.
 //Fault Tolerance
 [CARD]
 .Fault Tolerance
-[icon=warning,link=../faulttolerance/01_overview.adoc]
+[icon=warning,link=../fault-tolerance.adoc]
 --
 Defines annotations that improve applications by providing support to handle error conditions (faults).
 --
@@ -91,7 +91,7 @@ Defines annotations that improve applications by providing support to handle err
 //GraphQL
 [CARD]
 .GraphQL
-[icon=graphic_eq,link=../graphql/01_mp_graphql.adoc]
+[icon=graphic_eq,link=../graphql.adoc]
 --
 Expose GraphQL API using Microprofile GraphQL.
 --
@@ -107,7 +107,7 @@ Build gRPC servers and clients.
 //Health Checks
 [CARD]
 .Health Checks
-[icon=favorite_outline,link=../health/01_introduction.adoc]
+[icon=favorite_outline,link=../health.adoc]
 --
 Expose health statuses of your applications.
 --
@@ -125,7 +125,7 @@ Helidon MP supports building RESTful services using JAX-RS/Jersey.
 //JPA
 [CARD]
 .JPA
-[icon=dns,link=../jpa/01_introduction.adoc]
+[icon=dns,link=../jpa.adoc]
 --
 Work with JPA in Helidon MP in all the ways that you’re familiar with.
 --
@@ -134,7 +134,7 @@ Work with JPA in Helidon MP in all the ways that you’re familiar with.
 //JWAuth
 [CARD]
 .JWT Authentication
-[icon=verified_user,link=../jwtauth/01_introduction.adoc]
+[icon=verified_user,link=../jwt.adoc]
 --
 Defines a compact and self-contained way for securely transmitting information between parties as a JSON object.
 --
@@ -159,7 +159,7 @@ Instrumentation to expose metrics of your applications.
 //Openapi
 [CARD]
 .OpenAPI
-[icon=donut_large,link=../openapi/01_openapi.adoc]
+[icon=donut_large,link=../openapi.adoc]
 --
 Support OpenAPI from your application.
 --
@@ -183,7 +183,7 @@ APIs to work with reactive streams in Helidon.
 //Rest Client
 [CARD]
 .Rest Client
-[icon=airplay,link=../restclient/09_rest-client.adoc]
+[icon=airplay,link=../restclient.adoc]
 --
 Adds the capability to invoke remote microservices using a JAX-RS like interface to declare the operations.
 --
@@ -207,7 +207,7 @@ Profile and monitor your applications across multiple services.
 //WebSocket
 [CARD]
 .WebSocket
-[icon=sync_alt,link=../websocket/01_overview.adoc]
+[icon=sync_alt,link=../websocket.adoc]
 --
 Enables Java applications to participate in WebSocket interactions as both servers and clients.
 --

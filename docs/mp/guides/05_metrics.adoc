@@ -48,12 +48,12 @@ base_REST_request_total{class="io.helidon.examples.quickstart.mp.GreetResource",
 base_REST_request_elapsedTime_seconds{class="io.helidon.examples.quickstart.mp.GreetResource",method="getMessage_java.lang.String"} 0.0
 base_REST_request_maxTimeDuration_seconds{class="io.helidon.examples.quickstart.mp.GreetResource",method="getMessage_java.lang.String"} NaN
 base_REST_request_minTimeDuration_seconds{class="io.helidon.examples.quickstart.mp.GreetResource",method="getMessage_java.lang.String"} NaN
-...
+
 # TYPE base_REST_request_unmappedException_total counter
 # HELP base_REST_request_unmappedException_total The total number of unmapped exceptions that occur from this RESTful resouce method since the start of the server.
 base_REST_request_unmappedException_total{class="io.helidon.examples.quickstart.mp.GreetResource",method="getDefaultMessage"} 0
 base_REST_request_unmappedException_total{class="io.helidon.examples.quickstart.mp.GreetResource",method="getMessage_java.lang.String"} 0
-...
+
 include::{rootdir}/includes/guides/metrics.adoc[tag=metrics-prometheus-output]
 ----
 
@@ -74,7 +74,6 @@ include::{rootdir}/includes/guides/metrics.adoc[tag=curl-metrics-json]
       "elapsedTime;class=io.helidon.examples.quickstart.mp.GreetResource;method=getMessage_java.lang.String": 0,
       "maxTimeDuration;class=io.helidon.examples.quickstart.mp.GreetResource;method=getMessage_java.lang.String": null,
       "minTimeDuration;class=io.helidon.examples.quickstart.mp.GreetResource;method=getMessage_java.lang.String": null,
-      ...
       },
 include::{rootdir}/includes/guides/metrics.adoc[tag=base-metrics-json-output]
   },

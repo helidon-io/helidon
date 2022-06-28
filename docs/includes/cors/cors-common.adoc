@@ -199,15 +199,13 @@ The following example illustrates the mapped cross-origin configuration format.
 
 [source,hocon,subs="attributes+"]
 ----
-...
-{mapped-config-top-key}: <1>
+{mapped-config-top-key}: // <1>
   paths: <2>
-    - path-pattern: /greeting <3>
-      allow-origins: ["http://foo.com", "http://there.com", "http://other.com"] <4>
+    - path-pattern: /greeting // <3>
+      allow-origins: ["http://foo.com", "http://there.com", "http://other.com"] // <4>
       allow-methods: ["PUT", "DELETE"]
-    - path-pattern: / <5>
-      allow-methods: ["GET", "HEAD", "OPTIONS", "POST"] <6>
-...
+    - path-pattern: / // <5>
+      allow-methods: ["GET", "HEAD", "OPTIONS", "POST"] // <6>
 ----
 // We want to use the following to insert the SE or MP callout 1 text; we need to use the blank, plus,
 // and subs because the MP attribute value contains backticks, and this is the only way we've found
@@ -251,7 +249,7 @@ matches an incoming request's path pattern and HTTP method.
 
 Helidon lets you easily include xref:{rootdir}/{flavor-lc}/health/01_health.adoc[health],
  xref:{rootdir}/{flavor-lc}/metrics/01_metrics.adoc[metrics], and
- xref:{rootdir}/{flavor-lc}/openapi/01_openapi.adoc[OpenAPI] services in your Helidon application.
+ xref:{rootdir}/{flavor-lc}/openapi.adoc[OpenAPI] services in your Helidon application.
 These services add endpoints to your application so that clients can retrieve information about it.
 As with the application endpoints you write, these endpoints represent resources that can be shared across origins.
 
@@ -262,9 +260,9 @@ that describes the application's endpoints directly from your application.
 The browser application then displays a user interface that you use to "drive" your application. That is,
 you provide input, have the web application
 send requests to your application endpoints, and then view the responses.
-This scenario is exactly the situation CORS addresses: an application in the browser from one origin -- the user interface downloaded from the
-website -- requests a resource from another origin -- the `/openapi` endpoint which Helidon's OpenAPI built-in
-service automatically adds to your application.
+This scenario is exactly the situation CORS addresses: an application in the browser from one origin -- the user
+ interface downloaded from the website -- requests a resource from another origin -- the `/openapi` endpoint which
+ Helidon's OpenAPI built-in service automatically adds to your application.
 
 Integrating CORS support into these built-in services allows such third-party web sites and their browser applications -- or
 more generally, apps from any other origin -- to work with your Helidon application.
@@ -312,7 +310,7 @@ application's configuration file, the configuration for each service appears und
 | Helidon Service Documentation | Configuration Key
 | xref:{rootdir}/{flavor-lc}/health/01_health.adoc[health] | `health`
 | xref:{rootdir}/{flavor-lc}/metrics/01_metrics.adoc[metrics] | `metrics`
-| xref:{rootdir}/{flavor-lc}/openapi/01_openapi.adoc[OpenAPI] | `openapi`
+| xref:{rootdir}/{flavor-lc}/openapi.adoc[OpenAPI] | `openapi`
 |====
 
 The link:{helidon-github-tree-url}/examples/quickstarts/helidon-quickstart-{flavor-lc}[Helidon {flavor-uc} QuickStart example]
@@ -338,11 +336,9 @@ The following example restricts sharing of the
 `/health` resource, provided by the health built-in service, to only the origin `\http://there.com`.
 [source,hocon]
 ----
-...
 health:
   cors:
     allow-origins: [http://there.com]
-...
 ----
 
 // end::se-config-example[]
@@ -365,9 +361,10 @@ You have full control over the CORS configuration for a built-in Helidon service
 as described in
 ifdef::se-flavor[]
 xref:{rootdir}/se/cors/03_using-configuration.adoc[Using Configuration for CORS].
+endif::[]
 ifndef::se-flavor[]
-xref:{rootdir}/cors/03_configuration-with-cors-mp.adoc}[Using Configuration with CORS in Helidon MP].
-endif[]
+xref:{rootdir}/mp/cors/03_configuration-with-cors-mp.adoc[Using Configuration with CORS in Helidon MP].
+endif::[]
 
 // end::configuring-cors-for-builtin-services[]
 
@@ -388,7 +385,10 @@ The metrics service rejects attempts to access metrics on behalf of a disallowed
 [source,bash]
 ----
 curl -i -H "Origin: http://other.com" http://localhost:8080/metrics
+----
 
+[source, listing]
+----
 HTTP/1.1 403 Forbidden
 Date: Mon, 11 May 2020 11:08:09 -0500
 transfer-encoding: chunked
@@ -399,7 +399,10 @@ But accesses from `foo.com` succeed.
 [source,bash]
 ----
 curl -i -H "Origin: http://foo.com" http://localhost:8080/metrics
+----
 
+[source, listing]
+----
 HTTP/1.1 200 OK
 Access-Control-Allow-Origin: http://foo.com
 Content-Type: text/plain
@@ -411,7 +414,6 @@ content-length: 6065
 # TYPE base_classloader_loadedClasses_count gauge
 # HELP base_classloader_loadedClasses_count Displays the number of classes that are currently loaded in the Java virtual machine.
 base_classloader_loadedClasses_count 3568
-...
 ----
 
 === Retrieve Health
@@ -420,7 +422,10 @@ The health service rejects requests from origins not specifically approved.
 [source,bash]
 ----
 curl -i -H "Origin: http://foo.com" http://localhost:8080/health
+----
 
+[source, listing]
+----
 HTTP/1.1 403 Forbidden
 Date: Mon, 11 May 2020 12:06:55 -0500
 transfer-encoding: chunked
@@ -432,7 +437,10 @@ And responds successfully only to cross-origin requests from `\http://there.com`
 [source,bash]
 ----
 curl -i -H "Origin: http://there.com" http://localhost:8080/health
+----
 
+[source, listing]
+----
 HTTP/1.1 200 OK
 Access-Control-Allow-Origin: http://there.com
 Content-Type: application/json

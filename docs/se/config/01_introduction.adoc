@@ -44,7 +44,7 @@ include::{rootdir}/includes/dependencies.adoc[]
 
 == Getting Started
 
-=== Introducing the Config System
+=== Introducing the Config System [[introducing-the-config-system]]
 A brief overview of the config system helps clarify its different parts
 and how they work together. Most applications will typically deal with more
 than one of these parts.
@@ -167,7 +167,7 @@ first-service.host=${host}/firstservice
 second-service.host=${host}/secondservice
 ----
 
-The filter resolves the `${host}` reference to the `localhost` value.
+The filter resolves the `$\{host}` reference to the `localhost` value.
 
 This makes it easier to override values in testing and production, as you can just
 override the `host` key and leave the URIs same.

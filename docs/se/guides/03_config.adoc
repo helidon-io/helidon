@@ -90,9 +90,7 @@ See the following code from the project you created.
 [source,Java]
 .View `Main.startServer`:
 ----
-    static WebServer startServer() throws IOException {
-...
-        Config config = Config.create(); // <1>
+Config config = Config.create(); // <1>
 ----
 <1> The `Config` object is created with default settings.
 
@@ -110,7 +108,7 @@ If any of the Helidon required properties are not specified in one of these sour
 
 NOTE: Because environment variable names are restricted to alphanumeric characters and underscore,
 Helidon adds aliases to the environment configuration source, allowing entries with dotted and/or
-hyphenated keys to be overriden.  For example, this mapping allows an environment variable named "APP_GREETING" to override
+hyphenated keys to be overridden.  For example, this mapping allows an environment variable named "APP_GREETING" to override
 an entry key named "app.greeting".  In the same way, an environment variable named "APP_dash_GREETING" will map to
 "app-greeting".  See xref:../config/06_advanced-configuration.adoc[Advanced Config] for more information.
 
@@ -139,7 +137,10 @@ java -jar target/helidon-quickstart-se.jar
 .Run the curl command in a new terminal window and check the response:
 ----
 curl http://localhost:8080/greet
-...
+----
+
+[source,json]
+----
 {
   "message": "HelloFrom-application.yaml World!" // <1>
 }
@@ -160,7 +161,10 @@ java -Dapp.greeting="HelloFromSystemProperty"  -jar target/helidon-quickstart-se
 .Invoke the endpoint below and check the response:
 ----
 curl http://localhost:8080/greet
-...
+----
+
+[source,json]
+----
 {
   "message": "HelloFromSystemProperty World!" // <1>
 }
@@ -182,7 +186,10 @@ java -Dapp.greeting="HelloFromSystemProperty"  -jar target/helidon-quickstart-se
 .Invoke the endpoint below and check the response:
 ----
 curl http://localhost:8080/greet
-...
+----
+
+[source,json]
+----
 {
   "message": "HelloFromEnvironment World!" // <1>
 }
@@ -230,10 +237,10 @@ app.greeting=HelloFrom-config.properties
 .Update the `Main` class; 1) Add new imports, 2) Replace the `Config.create()` call with `buildConfig()`, and 3) Add `buildConfig` method:
 ----
 import static io.helidon.config.ConfigSources.classpath; // <1>
-...
+//...
 
     static WebServer startServer() throws IOException {
-...
+//...
         Config config =  buildConfig(); // <2>
 
 
@@ -453,7 +460,7 @@ The profile can be changed by a system property `config.profile`, or using an en
 Profile file can use any supported format, following example is using `YAML`.
 
 [source,yaml]
-.Create a file named `cofnig-profile.yaml` in the `helidon-quickstart-se` directory with the following contents:
+.Create a file named `config-profile.yaml` in the `helidon-quickstart-se` directory with the following contents:
 ----
 sources:
   - type: "classpath" // <1>

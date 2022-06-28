@@ -58,7 +58,6 @@ public class HelloWorld {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public void post(@NotNull @Valid Greeting greeting) {
-        // ...
     }
 }
 ----

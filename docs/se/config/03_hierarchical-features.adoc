@@ -253,14 +253,12 @@ config.get("data.providers")
 
 ====
 [listing]
-....
 OBJECT 	data.providers.0
 VALUE 	data.providers.0.name
 VALUE 	data.providers.0.class
 OBJECT 	data.providers.1
 VALUE 	data.providers.1.name
 VALUE 	data.providers.1.class
-....
 ====
 
 The optional `Predicate<Config>` argument to the `traverse` methods allows the
@@ -279,14 +277,12 @@ others.
 
 ====
 [listing]
-....
 OBJECT 	app
 VALUE 	app.page-size
 VALUE 	app.greeting
 LIST 	app.basic-range
 VALUE 	app.basic-range.0
 VALUE 	app.basic-range.1
-....
 ====
 
 == Detaching a Config Subtree

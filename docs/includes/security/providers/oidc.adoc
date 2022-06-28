@@ -35,7 +35,7 @@ oidc
 ----
 
 == Example code
-See the link:{helidon-tree-url}/examples/security/idcs-login[example] on GitHub.
+See the link:{helidon-github-tree-url}/examples/security/idcs-login[example] on GitHub.
 
 [source,yaml]
 .Configuration example

@@ -112,7 +112,6 @@ base:classloader_current_loaded_class_count 7511
 # TYPE base:classloader_total_loaded_class_count counter
 # HELP base:classloader_total_loaded_class_count Displays the total number of classes that have been loaded since the Java virtual machine has started execution.
 base:classloader_total_loaded_class_count 7512
-...
 // end::metrics-prometheus-output[]
 ///////////////////////////////////////////////////////////////////////////////
 

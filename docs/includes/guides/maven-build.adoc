@@ -113,7 +113,7 @@ You can override many of the plugin attributes by passing a system property to t
 `mvn` command:
 
 ```
-mvn -Djlink.image.addClassDataSharingArchive=false ...
+mvn -Djlink.image.addClassDataSharingArchive=false package
 ```
 
 === Set Property in pom.xml
