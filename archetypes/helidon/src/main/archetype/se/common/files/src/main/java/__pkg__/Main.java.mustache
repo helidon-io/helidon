@@ -81,10 +81,15 @@ public final class Main {
 {{.}}
 {{/Main-createRouting}}
 
-        return Routing.builder()
+        Routing.Builder builder = Routing.builder()
 {{#Main-routingBuilder}}
 {{.}}
-{{/Main-routingBuilder}}
-                .build();
+{{/Main-routingBuilder}};
+
+{{#Main-security-routing-section}}
+{{.}}
+{{/Main-security-routing-section}}
+
+        return builder.build();
     }
 }

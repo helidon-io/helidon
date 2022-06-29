@@ -87,14 +87,6 @@
                     <value key="artifactId">helidon-webclient</value>
                 </map>
             </list>
-            <list key="paths-config-entries" if="${security}">
-                <value><![CDATA[       - path: "/simple-greet"
-         methods: ["get"]
-         authenticate: true]]></value>
-            </list>
-            <list key="paths-config-entries" if="${security}">
-                <value if="${security.atz} contains 'abac'"><![CDATA[         roles-allowed: ["user"]]]></value>
-            </list>
         </model>
     </output>
 </archetype-script>
