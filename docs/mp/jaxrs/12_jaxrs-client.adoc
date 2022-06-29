@@ -60,8 +60,8 @@ include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 Bootstrapping the API is done by obtaining an instance of `Client`. A single instance of this
 class can be used to create multiple service requests that share the same basic
 configuration, e.g., the same set of _providers_. More precisely, from a `Client` we
-can create multiple `WebTarget` 's, and in turn, from each `WebTarget` we can
-create multiple `Invocation` 's.
+can create multiple `WebTarget` s, and in turn, from each `WebTarget` we can
+create multiple `Invocation` s.
 
 [source,java]
 ----
@@ -117,7 +117,7 @@ duration of the call. By default, all invocations are _synchronous_ but can be
 turned into either asynchronous or reactive calls by simply inserting the
 corresponding fluent method call during the creation phase.
 
-Using `Future` 's:
+Using `Future`:
 
 [source,java]
 ----
