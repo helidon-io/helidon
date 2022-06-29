@@ -88,12 +88,21 @@ public final class Main {
 {{/Main-healthBuilder}}
                 .build();
 
-        return Routing.builder()
+{{#Main-security-section}}
+{{.}}
+{{/Main-security-section}}
+
+        Routing.Builder builder = Routing.builder()
                 .register(health) // Health at "/health"
                 .register(MetricsSupport.create()) // Metrics at "/metrics"
 {{#Main-routingBuilder}}
 {{.}}
-{{/Main-routingBuilder}}
-                .build();
+{{/Main-routingBuilder}};
+
+{{#Main-security-routing-section}}
+{{.}}
+{{/Main-security-routing-section}}
+
+        return builder.build();
     }
 }

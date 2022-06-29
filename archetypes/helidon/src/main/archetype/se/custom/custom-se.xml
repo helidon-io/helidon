@@ -43,7 +43,15 @@
             </list>
             <value key="Main-readyMessage">System.out.println("WEB server is up! http://localhost:" + ws.port() + "/greet");</value>
             <list key="config-entries">
-                <value file="files/application.yaml"/>
+                <value file="files/src/main/resources/application.config.yaml"/>
+            </list>
+            <list key="paths-config-entries" if="${security}">
+                <value><![CDATA[       - path: "/simple-greet"
+         methods: ["get"]
+         authenticate: true]]></value>
+            </list>
+            <list key="paths-config-entries" if="${security}">
+                <value if="${security.atz} contains 'abac'"><![CDATA[         roles-allowed: ["user"]]]></value>
             </list>
         </model>
     </output>
