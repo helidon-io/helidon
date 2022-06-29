@@ -61,11 +61,6 @@
             <artifactId>svm</artifactId>
             <scope>provided</scope>
         </dependency>
-        <dependency>
-            <groupId>org.jboss.classfilewriter</groupId>
-            <artifactId>jboss-classfilewriter</artifactId>
-            <scope>provided</scope>
-        </dependency>
     </dependencies>
 
     <profiles>
