@@ -32,6 +32,9 @@
                         <option value="oidc" name="OIDC" description="OpenID Connect">
                             <output>
                                 <model>
+                                    <list key="providers-config-entries">
+                                        <value file="files/application.oidc.yaml"/>
+                                    </list>
                                     <list key="dependencies" if="${ROOT.flavor} == 'se'">
                                         <map>
                                             <value key="groupId">io.helidon.security.providers</value>
@@ -72,6 +75,9 @@
                         <option value="jwt" name="JWT" description="JSON Web Token">
                             <output>
                                 <model>
+                                    <list key="providers-config-entries">
+                                        <value file="files/application.jwt.yaml"/>
+                                    </list>
                                     <list key="dependencies">
                                         <map>
                                             <value key="groupId">io.helidon.security.providers</value>
@@ -90,6 +96,9 @@
                         <option value="google" name="Google Login" description="Google identity">
                             <output>
                                 <model>
+                                    <list key="providers-config-entries">
+                                        <value file="files/application.google.yaml"/>
+                                    </list>
                                     <list key="dependencies">
                                         <map>
                                             <value key="groupId">io.helidon.security.providers</value>
@@ -107,7 +116,16 @@
                         </option>
                         <option value="http-signature" name="HTTP Signature" description="Service to service authentication">
                             <output>
+                                <files>
+                                    <directory>files</directory>
+                                    <includes>
+                                        <include>src/main/resources/keystore.p12</include>
+                                    </includes>
+                                </files>
                                 <model>
+                                    <list key="providers-config-entries">
+                                        <value file="files/application.http-signature.yaml"/>
+                                    </list>
                                     <list key="dependencies">
                                         <map>
                                             <value key="groupId">io.helidon.security.providers</value>
@@ -128,6 +146,9 @@
                         <option value="abac" name="ABAC" description="Attribute Based Access Control">
                             <output>
                                 <model>
+                                    <list key="providers-config-entries">
+                                        <value file="files/application.abac.yaml"/>
+                                    </list>
                                     <list key="dependencies">
                                         <map>
                                             <value key="groupId">io.helidon.security.providers</value>
