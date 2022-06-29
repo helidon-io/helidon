@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,6 +53,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
     name = "chirp",
     className = "org.h2.jdbcx.JdbcDataSource",
     url = "jdbc:h2:mem:TestWithTransactionalInterceptors;"
+        + "MODE=LEGACY;"
         + "INIT=SET TRACE_LEVEL_FILE=4\\;RUNSCRIPT FROM 'classpath:chirp.ddl'",
     serverName = "",
     properties = {
@@ -211,7 +212,7 @@ class TestWithTransactionalInterceptors {
         // The transaction should have committed so is no longer
         // active.
         assertNoTransaction();
-        
+
         // Make sure the operation worked.
         try (final Connection connection = this.dataSource.getConnection();
              final Statement statement = connection.createStatement();

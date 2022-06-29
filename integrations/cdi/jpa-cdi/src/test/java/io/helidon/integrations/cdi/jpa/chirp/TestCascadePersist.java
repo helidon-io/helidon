@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,7 +56,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 @DataSourceDefinition(
     name = "chirp",
     className = "org.h2.jdbcx.JdbcDataSource",
-    url = "jdbc:h2:mem:TestCascadePersist;INIT=SET TRACE_LEVEL_FILE=4\\;SET DB_CLOSE_DELAY=-1",
+    url = "jdbc:h2:mem:TestCascadePersist;MODE=LEGACY;INIT=SET TRACE_LEVEL_FILE=4\\;SET DB_CLOSE_DELAY=-1",
     serverName = "",
     properties = {
         "user=sa"

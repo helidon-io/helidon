@@ -32,11 +32,71 @@
     <properties>
       <doclint>-syntax</doclint>
       <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
-        <!-- 3.0.0-JAKARTA -->
-        <skipTests>true</skipTests>
     </properties>
 
     <dependencies>
+
+        <!-- Compile-scoped dependencies. -->
+        <dependency>
+            <groupId>io.helidon.integrations.cdi</groupId>
+            <artifactId>helidon-integrations-cdi-delegates</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.integrations.cdi</groupId>
+            <artifactId>helidon-integrations-cdi-reference-counted-context</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.integrations.jta</groupId>
+            <artifactId>helidon-integrations-jta-jdbc</artifactId>
+            <scope>compile</scope>
+        </dependency>
+
+        <!-- Provided-scoped dependencies. -->
+        <dependency>
+            <groupId>jakarta.persistence</groupId>
+            <artifactId>jakarta.persistence-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.annotation</groupId>
+            <artifactId>jakarta.annotation-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.enterprise</groupId>
+            <artifactId>jakarta.enterprise.cdi-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.transaction</groupId>
+            <artifactId>jakarta.transaction-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- Runtime-scoped dependencies. -->
+        <dependency>
+            <groupId>org.jboss</groupId>
+            <artifactId>jandex</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.xml.bind</groupId>
+            <artifactId>jakarta.xml.bind-api</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.activation</groupId>
+            <artifactId>jakarta.activation-api</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.sun.xml.bind</groupId>
+            <artifactId>jaxb-impl</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
         <!-- Test-scoped dependencies. -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -84,93 +144,28 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- Runtime-scoped dependencies. -->
-        <dependency>
-            <groupId>org.jboss</groupId>
-            <artifactId>jandex</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>jakarta.xml.bind</groupId>
-            <artifactId>jakarta.xml.bind-api</artifactId>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>jakarta.activation</groupId>
-            <artifactId>jakarta.activation-api</artifactId>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.sun.xml.bind</groupId>
-            <artifactId>jaxb-impl</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-
-        <!-- Provided-scoped dependencies. -->
-        <dependency>
-            <groupId>jakarta.persistence</groupId>
-            <artifactId>jakarta.persistence-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>jakarta.annotation</groupId>
-            <artifactId>jakarta.annotation-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>jakarta.enterprise</groupId>
-            <artifactId>jakarta.enterprise.cdi-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>jakarta.transaction</groupId>
-            <artifactId>jakarta.transaction-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
-
-        <!-- Compile-scoped dependencies. -->
-        <dependency>
-            <groupId>io.helidon.integrations.cdi</groupId>
-            <artifactId>helidon-integrations-cdi-delegates</artifactId>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.integrations.cdi</groupId>
-            <artifactId>helidon-integrations-cdi-reference-counted-context</artifactId>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.integrations.jta</groupId>
-            <artifactId>helidon-integrations-jta-jdbc</artifactId>
-            <scope>compile</scope>
-        </dependency>
     </dependencies>
 
     <build>
         <pluginManagement>
             <plugins>
-                <plugin>
-                    <artifactId>maven-javadoc-plugin</artifactId>
-                    <configuration>
-                        <sourceFileExcludes>
-                            <!--
-                                The eclipselink-maven-plugin's
-                                modelgen goal (see below) irrevocably
-                                adds its generatedSourcesDirectory to
-                                the source roots processed by the
-                                maven-javadoc-plugin.  We need to
-                                exclude these static metamodel sources
-                                because in our case they reference
-                                unit-test-only files.  Note that these
-                                source roots are added to the javadoc
-                                *report*, not just its "generate test
-                                javadocs" goal, and even though the
-                                sources from which they are generated
-                                are only found under src/test/java.
-                            -->
-                            <sourceFileExclude>**/*_.java</sourceFileExclude>
-                        </sourceFileExcludes>
-                    </configuration>
+              <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <executions>
+                        <execution>
+                            <id>default-testCompile</id>
+                            <configuration>
+                                <annotationProcessorPaths>
+                                    <annotationProcessorPath>
+                                        <groupId>org.hibernate.orm</groupId>
+                                        <artifactId>hibernate-jpamodelgen</artifactId>
+                                        <version>${version.lib.hibernate}</version>
+                                    </annotationProcessorPath>
+                                </annotationProcessorPaths>
+                            </configuration>
+                        </execution>
+                    </executions>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -217,7 +212,7 @@
                 <configuration>
                     <classpathDependencyExcludes>
                         <classpathDependencyExclude>io.helidon.integrations.cdi:helidon-integrations-cdi-hibernate</classpathDependencyExclude>
-                        <classpathDependencyExclude>org.hibernate:hibernate-core</classpathDependencyExclude>
+                        <classpathDependencyExclude>org.hibernate.orm:hibernate-core</classpathDependencyExclude>
                     </classpathDependencyExcludes>
                     <reportNameSuffix>eclipselink</reportNameSuffix>
                     <skip>true</skip>
@@ -277,7 +272,7 @@
                         plugins below is significant:
 
                         * maven-resources-plugin
-                        * eclipselink-maven-plugin
+                        * exec-maven-plugin
                         * hibernate-enhance-maven-plugin
                         * maven-surefire-plugin
                     -->
@@ -322,43 +317,31 @@
                           </execution>
                         </executions>
                     </plugin>
-                    <!-- TODO 3.0.0-JAKARTA disabled weaving as plugin does not support jakarta packages (yet) -->
-<!--                    <plugin>-->
-<!--                        <groupId>com.ethlo.persistence.tools</groupId>-->
-<!--                        <artifactId>eclipselink-maven-plugin</artifactId>-->
-<!--                        <dependencies>-->
-<!--                            <dependency>-->
-<!--                                <groupId>org.junit.jupiter</groupId>-->
-<!--                                <artifactId>junit-jupiter-api</artifactId>-->
-<!--                                <version>${version.lib.junit}</version>-->
-<!--                            </dependency>-->
-<!--                        </dependencies>-->
-<!--                        <executions>-->
-<!--                            <execution>-->
-<!--                                <id>Statically weave JPA entities for Eclipselink</id>-->
-<!--                                <phase>process-test-classes</phase>-->
-<!--                                <goals>-->
-<!--                                    <goal>weave</goal>-->
-<!--                                </goals>-->
-<!--                                <configuration>-->
-<!--                                    <source>${project.build.directory}/eclipselink/test-classes</source>-->
-<!--                                    <target>${project.build.directory}/eclipselink/test-classes</target>-->
-<!--                                    <persistenceInfoLocation>${project.build.directory}/eclipselink/test-classes</persistenceInfoLocation>-->
-<!--                                </configuration>-->
-<!--                            </execution>-->
-<!--                            <execution>-->
-<!--                                <id>modelgen</id>-->
-<!--                                <phase>generate-test-sources</phase>-->
-<!--                                <goals>-->
-<!--                                    <goal>modelgen</goal>-->
-<!--                                </goals>-->
-<!--                                <configuration>-->
-<!--                                    <source>${project.build.testSourceDirectory}</source>-->
-<!--                                    <generatedSourcesDirectory>${project.build.directory}/generated-test-sources/apt</generatedSourcesDirectory>-->
-<!--                                </configuration>-->
-<!--                            </execution>-->
-<!--                        </executions>-->
-<!--                    </plugin>-->
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>Statically weave JPA entities for Eclipselink</id>
+                                <phase>process-test-classes</phase>
+                                <goals>
+                                    <goal>java</goal>
+                                </goals>
+                                <configuration combine.self="override">
+                                    <classpathScope>test</classpathScope>
+                                    <mainClass>org.eclipse.persistence.tools.weaving.jpa.StaticWeave</mainClass>
+                                    <arguments>
+                                        <argument>-loglevel</argument>
+                                        <argument>INFO</argument>
+                                        <argument>-persistenceinfo</argument>
+                                        <argument>${project.build.directory}/eclipselink/test-classes</argument>
+                                        <argument>${project.build.directory}/eclipselink/test-classes</argument>
+                                        <argument>${project.build.directory}/eclipselink/test-classes</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
                     <plugin>
                         <groupId>org.hibernate.orm.tooling</groupId>
                         <artifactId>hibernate-enhance-maven-plugin</artifactId>

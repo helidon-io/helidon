@@ -16,19 +16,19 @@
     limitations under the License.
 
 -->
-<persistence version="3.0"
-             xmlns="https://jakarta.ee/xml/ns/persistence"
+<persistence xmlns="https://jakarta.ee/xml/ns/persistence"
              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
              xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence
-                                 https://jakarta.eee/xml/ns/persistence/persistence_3.0.xsd">
-  <persistence-unit name="test" transaction-type="JTA">
-    <jta-data-source>test</jta-data-source>
-    <class>io.helidon.examples.integrations.cdi.pokemon.Pokemon</class>
-    <class>io.helidon.examples.integrations.cdi.pokemon.PokemonType</class>
-    <properties>
-      <property name="jakarta.persistence.schema-generation.database.action" value="drop-and-create"/>
-      <property name="jakarta.persistence.sql-load-script-source" value="META-INF/init_script.sql"/>
-      <property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect"/>
-    </properties>
-  </persistence-unit>
+                                 https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd"
+             version="3.0">
+    <persistence-unit name="test" transaction-type="JTA">
+        <jta-data-source>test</jta-data-source>
+        <class>io.helidon.examples.integrations.cdi.pokemon.Pokemon</class>
+        <class>io.helidon.examples.integrations.cdi.pokemon.PokemonType</class>
+        <properties>
+            <property name="jakarta.persistence.schema-generation.database.action" value="drop-and-create"/>
+            <property name="jakarta.persistence.sql-load-script-source" value="META-INF/init_script.sql"/>
+            <property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect"/>
+        </properties>
+    </persistence-unit>
 </persistence>

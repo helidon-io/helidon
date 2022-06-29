@@ -619,21 +619,6 @@
                     </dependencies>
                 </plugin>
                 <plugin>
-                    <groupId>com.ethlo.persistence.tools</groupId>
-                    <artifactId>eclipselink-maven-plugin</artifactId>
-                    <version>${version.plugin.eclipselink}</version>
-                    <configuration>
-                        <updatePersistenceXml>false</updatePersistenceXml>
-                    </configuration>
-                    <dependencies>
-                        <dependency>
-                            <groupId>org.eclipse.persistence</groupId>
-                            <artifactId>org.eclipse.persistence.jpa</artifactId>
-                            <version>${version.lib.eclipselink}</version>
-                        </dependency>
-                    </dependencies>
-                </plugin>
-                <plugin>
                     <groupId>org.hibernate.orm.tooling</groupId>
                     <artifactId>hibernate-enhance-maven-plugin</artifactId>
                     <version>${version.plugin.hibernate-enhance}</version>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 /**
  * Provides classes and interfaces that integrate the
  * provider-independent parts of <a
- * href="https://javaee.github.io/tutorial/partpersist.html#BNBPY"
+ * href="https://jakarta.ee/specifications/persistence/3.0/"
  * target="_parent">JPA</a> into CDI.
  *
  * @see io.helidon.integrations.cdi.jpa.JpaExtension
