@@ -91,7 +91,7 @@ String res = client
 
 Alternatively, there are also methods in `Response` that can trigger similar conversions.
 
-Configuaation can be specified at the `Client` or `WebTarget` level, as both types implement
+Configuration can be specified at the `Client` or `WebTarget` level, as both types implement
 `Configurable<T>`. This enables common configuration to be inherited by a `WebTarget` created
 from a `Client` instance. In either case, methods such as `register` can be used to
 register providers such as filters and exception mappers.
