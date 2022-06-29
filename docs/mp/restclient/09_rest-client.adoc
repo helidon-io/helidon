@@ -37,8 +37,7 @@
 
 == Overview
 
-
-MicroProfile Rest Client adds the capability to invoke remote services by defining a Java interface with Jakarta REST (JAX-RS) annotations that resembles a server-side resource class. Helidon will automatically create a _proxy_ class for the interface and map local proxy calls to remote REST calls. For more information, please refer to the
+MicroProfile Rest Client adds the capability to invoke remote services by defining a Java interface with Jakarta REST (JAX-RS) annotations that resembles a server-side resource class. Helidon will automatically create a _proxy_ class for the interface and map local proxy calls to remote REST calls. For more information, see
 link:{rest-client-spec}[Rest Client For MicroProfile Specification].
 
 include::{common-deps-page-prefix-inc}[tag=maven-dependency]
@@ -140,9 +139,9 @@ client.getMessage("Helidon");
 ----
 
 == Configuration
-rest client configuration is mainly used for CDI created and managed rest client instances. It will not work for those created programmatic way. Programmatically created instances are configured via methods present on `org.eclipse.microprofile.rest.client.RestClientBuilder`.
+Rest client configuration is mainly used for CDI created and managed rest client instances. It will not work for those created programmatic way. Programmatically created instances are configured via methods present on `org.eclipse.microprofile.rest.client.RestClientBuilder`.
 
-Most of the configuration properties mentioned below have to be prepended with fully qualified classname of the rest client interface, which should be configured, or it is possible to avoid fully qualified classname by using `@RegisterRestClient(configKey="clientAlias")`. Prefix `$restClient` is used in each of the configuration table entry, indicating client alias or class name, to preserve space.
+Most of the configuration properties mentioned below have to be prepended with fully qualified classname of the rest client interface, which should be configured, or it is possible to avoid fully qualified classname by using `@RegisterRestClient(configKey="clientAlias")`. Prefix `$restClient` is used in each of the configuration table entries, indicating client alias or class name, to preserve space.
 
 === Configuration options
 
@@ -210,7 +209,7 @@ interface GreetRestClient {
 
 }
 ----
-Then create runnable method the same way as it is described in `Creating new client - Interface`,but with baseUri `http://localhost:8080/greet` and the above interface.
+Then create a runnable method as described in `Creating new client - Interface`,but with baseUri `http://localhost:8080/greet` and the above interface.
 
 By calling `GreetRestClient.getDefaultMessage()` you reach the endpoint of Helidon quickstart.
 
