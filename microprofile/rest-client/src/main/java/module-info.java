@@ -24,8 +24,7 @@ module io.helidon.microprofile.restclient {
     requires microprofile.rest.client.api;
     requires io.helidon.common.context;
     requires jersey.common;
-    //TODO 3.0.0-JAKARTA
-//    requires jersey.mp.rest.client;
+    requires jersey.mp.rest.client;
     requires jakarta.ws.rs;
 
     exports io.helidon.microprofile.restclient;

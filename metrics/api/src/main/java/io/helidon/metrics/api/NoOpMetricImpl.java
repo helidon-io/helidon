@@ -157,7 +157,6 @@ class NoOpMetricImpl extends AbstractMetric implements NoOpMetric {
 
         @Override
         public long getSum() {
-            // TODO 3.0.0-JAKARTA
             return 0;
         }
     }
@@ -278,7 +277,6 @@ class NoOpMetricImpl extends AbstractMetric implements NoOpMetric {
 
         @Override
         public Duration getElapsedTime() {
-            // TODO 3.0.0-JAKARTA
             return Duration.ZERO;
         }
 
@@ -360,13 +358,11 @@ class NoOpMetricImpl extends AbstractMetric implements NoOpMetric {
 
         @Override
         public Duration getMaxTimeDuration() {
-            // TODO 3.0.0-JAKARTA
             return Duration.ZERO;
         }
 
         @Override
         public Duration getMinTimeDuration() {
-            // TODO 3.0.0-JAKARTA
             return Duration.ZERO;
         }
 

@@ -79,13 +79,11 @@ public class JdbcMetricsTimer implements Timer {
 
     @Override
     public void update(Duration duration) {
-        // TODO 3.0.0-JAKARTA
         meter.update(duration);
     }
 
     @Override
     public Duration getElapsedTime() {
-        // TODO 3.0.0-JAKARTA
         return Duration.ZERO;
     }
 }
