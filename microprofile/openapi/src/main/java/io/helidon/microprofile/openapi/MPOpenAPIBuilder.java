@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,9 +27,12 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.microprofile.server.JaxRsApplication;
 import io.helidon.microprofile.server.JaxRsCdiExtension;
 import io.helidon.openapi.OpenAPISupport;
+import io.helidon.openapi.SEOpenAPISupportBuilder;
 
 import io.smallrye.openapi.api.OpenApiConfig;
 import io.smallrye.openapi.api.OpenApiConfigImpl;
@@ -49,16 +52,23 @@ import org.jboss.jandex.IndexView;
 /**
  * Fluent builder for OpenAPISupport in Helidon MP.
  */
+@Configured(prefix = MPOpenAPIBuilder.MP_OPENAPI_CONFIG_PREFIX)
 public final class MPOpenAPIBuilder extends OpenAPISupport.Builder<MPOpenAPIBuilder> {
 
-    private static final String USE_JAXRS_SEMANTICS_CONFIG_KEY = "mp.openapi.extensions.helidon.use-jaxrs-semantics";
+    // This is the prefix users will use in the config file.
+    static final String MP_OPENAPI_CONFIG_PREFIX = "mp." + SEOpenAPISupportBuilder.CONFIG_KEY;
+
+    private static final String USE_JAXRS_SEMANTICS_CONFIG_KEY = "use-jaxrs-semantics";
+
+    private static final String USE_JAXRS_SEMANTICS_FULL_CONFIG_KEY =
+            "mp.openapi.extensions.helidon." + USE_JAXRS_SEMANTICS_CONFIG_KEY;
     private static final boolean USE_JAXRS_SEMANTICS_DEFAULT = true;
 
     private static final Logger LOGGER = Logger.getLogger(MPOpenAPIBuilder.class.getName());
 
     private OpenApiConfig openAPIConfig;
 
-    private boolean useJaxRsSemantics = true;
+    private boolean useJaxRsSemantics = USE_JAXRS_SEMANTICS_DEFAULT;
 
     /*
      * Provided by the OpenAPI CDI extension for retrieving a single IndexView of all scanned types for the single-app or
@@ -242,7 +252,7 @@ public final class MPOpenAPIBuilder extends OpenAPISupport.Builder<MPOpenAPIBuil
             if (LOGGER.isLoggable(Level.FINE)) {
                 LOGGER.log(Level.FINE, String.format(
                         "No filtering required for %s; although it returns a non-empty set from getSingletons, JAX-RS semantics "
-                                + "has been turned off for OpenAPI processing using " + USE_JAXRS_SEMANTICS_CONFIG_KEY,
+                                + "has been turned off for OpenAPI processing using " + USE_JAXRS_SEMANTICS_FULL_CONFIG_KEY,
                         appClassName));
             }
             return viewFilteredByConfig;
@@ -346,10 +356,40 @@ public final class MPOpenAPIBuilder extends OpenAPISupport.Builder<MPOpenAPIBuil
         return this;
     }
 
-    MPOpenAPIBuilder config(Config mpConfig) {
+    /**
+     * Assigns various OpenAPI settings from the specified MP OpenAPI {@code Config} object.
+     *
+     * @param mpConfig the OpenAPI {@code Config} object possibly containing settings
+     * @return updated builder instance
+     */
+    @ConfiguredOption(type = OpenApiConfig.class, mergeWithParent = true)
+    @ConfiguredOption(key = "scan.disable",
+                      type = Boolean.class,
+                      value = "false",
+                      description = "Disable annotation scanning.")
+    @ConfiguredOption(key = "scan.packages",
+                      type = String.class,
+                      kind = ConfiguredOption.Kind.LIST,
+                      description = "Specify the list of packages to scan.")
+    @ConfiguredOption(key = "scan.classes",
+                      type = String.class,
+                      kind = ConfiguredOption.Kind.LIST,
+                      description = "Specify the list of classes to scan.")
+    @ConfiguredOption(key = "scan.exclude.packages",
+                      type = String.class,
+                      kind = ConfiguredOption.Kind.LIST,
+                      description = "Specify the list of packages to exclude from scans.")
+    @ConfiguredOption(key = "scan.exclude.classes",
+                      type = String.class,
+                      kind = ConfiguredOption.Kind.LIST,
+                      description = "Specify the list of classes to exclude from scans.")
+    public MPOpenAPIBuilder config(Config mpConfig) {
         this.mpConfig = mpConfig;
+
+        // use-jaxrs-semantics is intended for Helidon's private use in running the TCKs to work around a problem there.
+        // We do not document its use.
         useJaxRsSemantics = mpConfig
-                .getOptionalValue(USE_JAXRS_SEMANTICS_CONFIG_KEY, Boolean.class)
+                .getOptionalValue(USE_JAXRS_SEMANTICS_FULL_CONFIG_KEY, Boolean.class)
                 .orElse(USE_JAXRS_SEMANTICS_DEFAULT);
         return openAPIConfig(new OpenApiConfigImpl(mpConfig));
     }

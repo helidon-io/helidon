@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package io.helidon.openapi;
 import java.util.Objects;
 
 import io.helidon.config.Config;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.openapi.internal.OpenAPIConfigImpl;
 
 import io.smallrye.openapi.api.OpenApiConfig;
@@ -30,12 +32,13 @@ import io.smallrye.openapi.api.OpenApiConfig;
  * {@link OpenApiConfig} which is what the smallrye implementation uses to
  * control its behavior.
  */
+@Configured(prefix = SEOpenAPISupportBuilder.CONFIG_KEY)
 public final class SEOpenAPISupportBuilder extends OpenAPISupport.Builder<SEOpenAPISupportBuilder> {
 
     private final OpenAPIConfigImpl.Builder apiConfigBuilder = OpenAPIConfigImpl.builder();
 
     /**
-     * Set various builder attributes from the specified openapi {@code Config} object.
+     * Assigns various OpenAPI settings from the specified openapi {@code Config} object.
      * <p>
      * The {@code Config} object can specify web-context and static-file in addition to settings
      * supported by {@link OpenAPIConfigImpl.Builder}.
@@ -44,6 +47,7 @@ public final class SEOpenAPISupportBuilder extends OpenAPISupport.Builder<SEOpen
      * @exception NullPointerException if the provided {@code Config} is null
      * @return updated builder instance
      */
+    @ConfiguredOption(type = OpenApiConfig.class, mergeWithParent = true)
     public SEOpenAPISupportBuilder config(Config config) {
         super.config(config);
         apiConfigBuilder.config(config);
