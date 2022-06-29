@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@ import javax.ws.rs.core.UriBuilder;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.lra.coordinator.client.CoordinatorClient;
+import io.helidon.lra.coordinator.client.PropagatedHeaders;
 import io.helidon.microprofile.config.ConfigCdiExtension;
 import io.helidon.microprofile.lra.resources.NonJaxRsCompleteOrCompensate;
 import io.helidon.microprofile.lra.resources.CdiNestedCompleteOrCompensate;
@@ -438,7 +439,7 @@ public class LoadBalancedCoordinatorTest {
                 .get(TIMEOUT_SEC, TimeUnit.SECONDS);
         assertThat(response.getStatus(), AnyOf.anyOf(is(200), is(204)));
         URI lraId = await(DontEnd.CS_START_LRA);
-        assertThat(coordinatorClient.status(lraId).await(TIMEOUT_SEC, TimeUnit.SECONDS), is(LRAStatus.Active));
+        assertThat(coordinatorClient.status(lraId, PropagatedHeaders.noop()).await(TIMEOUT_SEC, TimeUnit.SECONDS), is(LRAStatus.Active));
         assertThat(target.path(DontEnd.PATH_BASE)
                 .path(DontEnd.PATH_START_SECOND_LRA)
                 .request()
