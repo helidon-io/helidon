@@ -45,8 +45,12 @@ include::{rootdir}/includes/dependencies.adoc[]
 ----
 
 == {feature-name} (LRA)
-Distributed transactions for microservices are known as SAGA design patterns and are defined by the {microprofile-lra-spec-url}[MicroProfile Long Running Actions specification].
-Unlike well known XA protocol, LRA is asynchronous and therefore much more scalable. Every LRA JAX-RS resource (xref:participant.adoc[participant]) defines endpoints to be invoked when transaction needs to be xref:participant.adoc#complete-participant-method[completed] or xref:participant.adoc#compensate-participant-method[compensated].
+Distributed transactions for microservices are known as SAGA design patterns and are defined by the
+ {microprofile-lra-spec-url}[MicroProfile Long Running Actions specification].
+Unlike well known XA protocol, LRA is asynchronous and therefore much more scalable. Every LRA JAX-RS resource
+ (xref:participant.adoc[participant]) defines endpoints to be invoked when transaction needs to be
+ xref:participant.adoc#complete-participant-method[completed] or
+ xref:participant.adoc#compensate-participant-method[compensated].
 
 LRA transactions need to be coordinated over REST API by the LRA coordinator.
 xref:coordinator.adoc[Coordinator]
@@ -64,11 +68,11 @@ xref:coordinator.adoc[Coordinator] calls compensate on all the joined participan
 
 image::lra/lra-compensate-lb-error.svg[Cancel]
 
-When participant joins the LRA with timeout defined `@LRA(value = LRA.Type.REQUIRES_NEW, timeLimit = 5, timeUnit = ChronoUnit.MINUTES)`, coordinator compensate if timeout occurs before close is reported by participants.
+When participant joins the LRA with timeout defined
+ `@LRA(value = LRA.Type.REQUIRES_NEW, timeLimit = 5, timeUnit = ChronoUnit.MINUTES)`, coordinator compensate if
+ timeout occurs before close is reported by participants.
 
 image::lra/lra-compensate-lb-timeout.svg[Timeout]
-
-
 
 === Example
 The following example shows how a simple LRA participant starts and joins a transaction after calling the '/start-example' resource.
