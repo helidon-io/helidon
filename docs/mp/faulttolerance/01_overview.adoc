@@ -97,9 +97,9 @@ requestVolumeThreshold=20,
 failureRation=.50,
 successThreshold=1)`
 |Defines a policy to avoid repeated execution of logic that is likely to fail. A circuit
-breaker can be _closed_, _open_ or _half open_. In _closed_ state a circuit breaker will
+breaker can be _closed_, _open_ or _half-open_. In _closed_ state a circuit breaker will
 execute logic normally. In _open_ state a circuit breaker will
-prevent execution of logic that has been seen to fail. Finally, in _half open_ state
+prevent execution of logic that has been seen to fail. Finally, in _half-open_ state
 a circuit breaker will allow _trial_ executions in an attempt to switch its internal
 state to _closed_. The other annotation parameters are used to control how these
 state transitions are triggered.
@@ -165,8 +165,8 @@ calls is successful, the `onFailure` method shall be called as a fallback mechan
 ----
 
 2. The method `timedCircuitBreaker` defines a _rolling window_ of size 10 and a policy
-to open the circuit  breaker after 4 or more failures occur in that window, and to transition
-back to half open state after 3 consecutive and successful runs. Additionally, it sets an overall timeout
+to open the circuit breaker after 4 or more failures occur in that window, and to transition
+back to half-open state after 3 consecutive and successful runs. Additionally, it sets an overall timeout
 for the invocation of 1.5 seconds.
 +
 [source,java]
