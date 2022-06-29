@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,21 +18,22 @@ package io.helidon.messaging.connectors.kafka;
 
 import com.oracle.svm.core.annotate.Substitute;
 import com.oracle.svm.core.annotate.TargetClass;
-import org.apache.kafka.common.metrics.Metrics;
-import org.apache.kafka.common.utils.AppInfoParser;
+import org.apache.kafka.common.metrics.KafkaMetric;
 
 /**
  * JMX not supported in native-image.
  */
-@TargetClass(AppInfoParser.class)
-@SuppressWarnings("checkstyle:HideUtilityClassConstructor")
-final class AppInfoParserSubstitution {
+@TargetClass(org.apache.kafka.common.metrics.JmxReporter.class)
+final class JmxReporterSubstitution {
 
     @Substitute
-    public static void registerAppInfo(String p, String i, Metrics m, long n) {
+    private Object addAttribute(KafkaMetric metric) {
+        return null;
     }
 
     @Substitute
-    public static void unregisterAppInfo(String p, String i, Metrics m) {
+    public void metricChange(KafkaMetric metric) {
     }
+
 }
+

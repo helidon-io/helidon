@@ -525,6 +525,9 @@ public class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>> {
             if (Objects.isNull(consumerSupplier)) {
                 throw new IllegalArgumentException("The kafkaConsumerSupplier is a required value");
             }
+            if (Objects.isNull(config)) {
+                config = Config.empty();
+            }
             KafkaPublisher<K, V> publisher = new KafkaPublisher<>(
                     scheduler,
                     consumerSupplier,

@@ -233,6 +233,7 @@ abstract class AbstractSampleBean {
         // Limit is for one scenario that Kafka rebalances and sends again same data in different partition
         private final AtomicInteger limit = new AtomicInteger();
 
+        @SuppressWarnings("unchecked")
         public CompletionStage<Void> onMsg(KafkaMessage<Long,  String> msg) {
             ConsumerRecord<Long, String> record = msg.unwrap(ConsumerRecord.class);
             consumed().add(record.value());
