@@ -554,7 +554,7 @@ public class LoadBalancedCoordinatorTest {
 
     private void assertClosedOrNotFound(URI lraId) {
         try {
-            assertThat(coordinatorClient.status(lraId).await(TIMEOUT_SEC, TimeUnit.SECONDS), is(LRAStatus.Closed));
+            assertThat(coordinatorClient.status(lraId, PropagatedHeaders.noop()).await(TIMEOUT_SEC, TimeUnit.SECONDS), is(LRAStatus.Closed));
         } catch (NotFoundException e) {
             // in case coordinator don't retain closed lra long enough
         }
