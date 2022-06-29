@@ -17,12 +17,12 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 ifndef::rootdir[:rootdir: {docdir}/../..]
+ifndef::flavor-lc[:flavor-lc: se]
+ifndef::flavor-uc[:flavor-lc: SE]
+ifndef::se-flavor[:se-flavor: true]
+ifndef::h1Prefix[:h1Prefix: SE]
 
 = Metrics-Capable Components
-:h1Prefix: SE
-:description: Helidon metrics-capable components
-:keywords: helidon, metrics, metrics-capable, microprofile, guide
-:flavor-lc: se
 :intro-project-name: {h1Prefix}
 :chk: icon:check[]
 :x: icon:times[]

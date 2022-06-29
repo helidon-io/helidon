@@ -20,13 +20,12 @@
 :spec-name: MicroProfile Health
 :description: {spec-name} support in Helidon MP
 :keywords: helidon, mp, microprofile, health
-:h1Prefix: MP
 :health-release: {version.lib.microprofile-health}
 :feature-name: MicroProfile Health
 :microprofile-bundle: true
 :rootdir: {docdir}/..
 
-include::{rootdir}/includes/attributes.adoc[]
+include::{rootdir}/includes/mp.adoc[]
 
 == ToC
 
@@ -48,7 +47,7 @@ incoming requests normally.
 
 == Maven Coordinates [[Maven-Coordinates]]
 
-To enable MicroProfile Health add the xref:introduction/02_microprofile.adoc[helidon-microprofile bundle]  dependency to your project's `pom.xml` (see xref:../about/04_managing-dependencies.adoc[Managing Dependencies]).
+To enable MicroProfile Health add the xref:introduction/microprofile.adoc[helidon-microprofile bundle]  dependency to your project's `pom.xml` (see xref:../about/managing-dependencies.adoc[Managing Dependencies]).
 
 [source,xml]
 ----
@@ -79,7 +78,7 @@ If full control over the dependencies is required, and you want to minimize the 
 ----
 
 To enable built-in health checks add the following dependency
-(or use the xref:introduction/02_microprofile.adoc[helidon-microprofile bundle] )
+(or use the xref:introduction/microprofile.adoc[helidon-microprofile bundle] )
 
 [source,xml]
 ----
@@ -172,7 +171,7 @@ health.web-context=myhealth  #<1>
 
 == Examples
 
-Generate Helidon MP Quickstart project following these xref:guides/02_quickstart.adoc[Instruction]
+Generate Helidon MP Quickstart project following these xref:guides/quickstart.adoc[Instruction]
 
 === Using the Built-In Health Checks
 

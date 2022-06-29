@@ -17,12 +17,11 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = GraalVM native image
-:h1Prefix: MP
 :description: Helidon AOT using GraalVM native-image
 :keywords: helidon, aot, native, native-image, image, executable, mp
 :rootdir: {docdir}/..
 
-include::{rootdir}/includes/attributes.adoc[]
+include::{rootdir}/includes/mp.adoc[]
 
 Helidon applications can be compiled into a native executable using GraalVM
 native image.

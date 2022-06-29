@@ -17,7 +17,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = OpenAPI
-:h1Prefix: MP
 :toc:
 :toc-placement: preamble
 :description: Helidon MP OpenAPI Support
@@ -26,7 +25,7 @@
 :microprofile-bundle: true
 :rootdir: {docdir}/..
 
-include::{rootdir}/includes/attributes.adoc[]
+include::{rootdir}/includes/mp.adoc[]
 
 Easily allow your Helidon MP application to serve an OpenAPI document
 that describes your application's endpoints.

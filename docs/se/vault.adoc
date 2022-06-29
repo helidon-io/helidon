@@ -17,13 +17,12 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Vault
-:h1Prefix: SE
 :description: Helidon Vault integration
 :keywords: vault
 :feature-name: Vault
 :rootdir: {docdir}/..
 
-include::{rootdir}/includes/attributes.adoc[]
+include::{rootdir}/includes/se.adoc[]
 
 HashiCorp Vault is a commonly used Vault in many microservices. The APIs are REST-based and Helidon implements them using reactive client.
 

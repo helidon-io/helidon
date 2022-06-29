@@ -22,11 +22,10 @@
 :spec-name: MicroProfile JWT Auth
 :description: {spec-name} support in Helidon MP
 :keywords: helidon, mp, microprofile, security, jwt
-:h1Prefix: MP
 :feature-name: JWT Authentication
 :microprofile-bundle: true
 :rootdir: {docdir}/..
-include::{rootdir}/includes/attributes.adoc[]
+include::{rootdir}/includes/mp.adoc[]
 
 include::{rootdir}/includes/dependencies.adoc[]
 

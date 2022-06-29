@@ -21,11 +21,10 @@
 :toc-placement: preamble
 :description: Scheduling in Helidon MP
 :keywords: helidon, mp, scheduling
-:h1Prefix: MP
 :feature-name: Scheduling
 :rootdir: {docdir}/..
 
-include::{rootdir}/includes/attributes.adoc[]
+include::{rootdir}/includes/mp.adoc[]
 include::{rootdir}/includes/dependencies.adoc[]
 
 [source,xml]

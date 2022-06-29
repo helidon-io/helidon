@@ -17,9 +17,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 ifndef::rootdir[:rootdir: {docdir}/../..]
-:description: Helidon metrics
-:keywords: helidon, metrics, microprofile, guide
-:h1Prefix: MP
 
 // tag::intro[]
 

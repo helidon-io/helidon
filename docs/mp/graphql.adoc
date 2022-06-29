@@ -17,16 +17,15 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = MicroProfile GraphQL
-:h1Prefix: MP
 :description: Helidon GraphQL MicroProfile
 :keywords: helidon, graphql, microprofile, micro-profile
 :feature-name: MicroProfile GraphQL
 :rootdir: {docdir}/..
 :microprofile-bundle: false
 
-include::{rootdir}/includes/attributes.adoc[]
+include::{rootdir}/includes/mp.adoc[]
 
-The Microprofile GraphQL APIs are an extension to xref:introduction/01_introduction.adoc[Helidon MP]
+The Microprofile GraphQL APIs are an extension to xref:introduction/introduction.adoc[Helidon MP]
 to allow building of applications that can expose a GraphQL endpoint.
 
 == Experimental
@@ -143,7 +142,7 @@ and POJO's and you will be able to access these via the URLs described below.
 
 === Creating your entry-point
 
-As per the instructions xref:introduction/02_microprofile.adoc[here] ensure you have added a
+As per the instructions xref:introduction/microprofile.adoc[here] ensure you have added a
 `src/main/resources/META-INF/beans.xml` file, so the CDI implementation can pick up your classes.
 
 A `Main` class is not needed, you can configure `io.helidon.microprofile.cdi.Main` as the entry point.

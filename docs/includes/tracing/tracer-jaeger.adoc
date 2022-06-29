@@ -101,5 +101,5 @@ tracing:
 
 == Integrating with Jaeger Tracing
 
-Jaeger tracks its own behavior using metrics. See xref:{rootdir}/{flavor-lc}/tracing/04_jaeger_metrics.adoc[Metrics Support for Jaeger] to read
+Jaeger tracks its own behavior using metrics. See xref:{rootdir}/{flavor-lc}/tracing/jaeger-metrics.adoc[Metrics Support for Jaeger] to read
  how to integrate Jaeger metrics with Helidon.

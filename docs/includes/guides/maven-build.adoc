@@ -29,7 +29,7 @@ Helidon supports Maven by providing the following:
 
 == The Helidon Application POM
 
-Helidon examples and projects generated using the xref:{guidesdir}/02_quickstart.adoc[Helidon Quickstart]
+Helidon examples and projects generated using the xref:{guidesdir}/quickstart.adoc[Helidon Quickstart]
 use a Helidon application POM as their parent. This parent POM provides the following:
 
 1. Helidon dependency management.
@@ -95,8 +95,8 @@ You then declare dependencies on Helidon (and other) components without specifyi
 
 Helidon provides a Maven plugin that, among other things, provides the following goals:
 
-1. native-image: Build a xref:{guidesdir}/36_graalnative.adoc[GraalVM native image].
-2. jlink-image:  Build a xref:{guidesdir}/37_jlink_image.adoc[custom runtime Java image].
+1. native-image: Build a xref:{guidesdir}/graalnative.adoc[GraalVM native image].
+2. jlink-image:  Build a xref:{guidesdir}/jlink-image.adoc[custom runtime Java image].
 
 For full documentation of the plugin please see the https://github.com/oracle/helidon-build-tools/tree/master/maven-plugins/helidon-maven-plugin[Helidon Maven Plugin README].
 
@@ -112,20 +112,18 @@ for you. If you need to customize the `helidon-maven-plugin` you can do so in a 
 You can override many of the plugin attributes by passing a system property to the
 `mvn` command:
 
-```
+[source, bash]
 mvn -Djlink.image.addClassDataSharingArchive=false package
-```
 
 === Set Property in pom.xml
 
 Or you can set the properties in your project's pom.xml:
 
-```
+[source, xml]
 <properties>
     <jlink.image.addClassDataSharingArchive>false</jlink.image.addClassDataSharingArchive>
     <native.image.reportExceptionStackTraces>true</native.image.reportExceptionStackTraces>
 </properties>
-```
 
 === Override Plugin Configuration using `pluginManagement`
 

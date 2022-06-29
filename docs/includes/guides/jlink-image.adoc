@@ -103,7 +103,7 @@ The application should respond with `{"message":"Hello World!"}`
 Now stop the running application (by pressing Ctrl+C).
 
 For more information about the Quickstart application and other endpoints it supports see the
-xref:{guidesdir}/02_quickstart.adoc[Helidon {flavor-uc} quickstart Guide].
+xref:{guidesdir}/quickstart.adoc[Helidon {flavor-uc} quickstart Guide].
 
 == Building a Custom Runtime Image
 
@@ -192,4 +192,4 @@ Custom runtime images are ideal for use when you want all of the runtime perform
 the JDK JVM in a reasonably compact form.
 
 For cases where absolute minimal startup time and image size are required, then
-consider using xref:{guidesdir}/36_graalnative.adoc[GraalVM Native Images].
+consider using xref:{guidesdir}/graalnative.adoc[GraalVM Native Images].

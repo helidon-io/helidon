@@ -17,14 +17,13 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Rest Client
-:h1Prefix: MP
 :description: Helidon MP Rest Client
 :feature-name: MicroProfile Rest Client
 :microprofile-bundle: true
 :keywords: helidon, rest, client, microprofile, micro-profile
 :rootdir: {docdir}/..
 
-include::{rootdir}/includes/attributes.adoc[]
+include::{rootdir}/includes/mp.adoc[]
 include::{rootdir}/includes/dependencies.adoc[]
 
 [source,xml]
@@ -93,7 +92,7 @@ You can configure new providers, base URI/URL and other options of the client.
 See the link:{microprofile-rest-client-spec-url}[specification] for full details.
 
 == Quickstart Example
-To be able to run and test this example, use the xref:guides/02_quickstart.adoc[Helidon MP quickstart]
+To be able to run and test this example, use the xref:guides/quickstart.adoc[Helidon MP quickstart]
 and start the helidon-quickstart-mp. Then create a project with
 the dependency on the Helidon rest client implementation and create the following rest client
 interface:

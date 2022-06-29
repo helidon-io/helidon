@@ -17,12 +17,9 @@
 
 ifndef::rootdir[:rootdir: {docdir}/../..]
 ifndef::flavor-lc[:flavor-lc: se]
-ifeval::["{flavor-lc}" == "se"]
-:se-flavor: true
-endif::[]
-ifeval::["{flavor-lc}" == "mp"]
-:mp-flavor: true
-endif::[]
+ifndef::flavor-uc[:flavor-lc: SE]
+ifndef::se-flavor[:se-flavor: true]
+ifndef::h1Prefix[:h1Prefix: SE]
 
 //Contains content that is shared between multiple CORS pages.
 :keywords: helidon, java, cors, se
@@ -60,7 +57,7 @@ services -- you can change your application accordingly.
 // the groupID and artifactID but this approach allows the actual dependencies themselves to be
 // in the source literally rather than parameterized.
 // tag::add-cors-dependency[]
-The xref:{rootdir}/about/04_managing-dependencies.adoc[Managing Dependencies] page describes how you
+The xref:{rootdir}/about/managing-dependencies.adoc[Managing Dependencies] page describes how you
 should declare dependency management for Helidon applications.
 For CORS support in Helidon {flavor-uc}, you must include
 the following dependency in your project:
@@ -247,9 +244,10 @@ matches an incoming request's path pattern and HTTP method.
 // tag::understanding-cors-support-in-services[]
 == Understanding CORS Support in Helidon Services
 
-Helidon lets you easily include xref:{rootdir}/{flavor-lc}/health/01_health.adoc[health],
- xref:{rootdir}/{flavor-lc}/metrics/01_metrics.adoc[metrics], and
- xref:{rootdir}/{flavor-lc}/openapi.adoc[OpenAPI] services in your Helidon application.
+include::{rootdir}/includes/pages.adoc[]
+
+Helidon lets you easily include xref:{health-page}[health], xref:{metrics-page}[metrics], and
+ xref:{openapi-page}[OpenAPI] services in your Helidon application.
 These services add endpoints to your application so that clients can retrieve information about it.
 As with the application endpoints you write, these endpoints represent resources that can be shared across origins.
 
@@ -280,6 +278,9 @@ to your own endpoints.
 
 // tag::builtin-getting-started[]
 == Getting Started
+
+include::{rootdir}/includes/pages.adoc[]
+
 To use built-in services with CORS support and customize the
 CORS behavior:
 
@@ -293,7 +294,7 @@ Add a dependency on the Helidon {flavor-uc} CORS artifact to your Maven `pom.xml
 NOTE: If you want the built-in services to support CORS, then you need to add the CORS dependency even if your own endpoints do not use CORS.
 
 include::{rootdir}/includes/cors/cors-common.adoc[tag=add-cors-dependency]
-include::{rootdir}/{flavor-lc}/cors/02_using-the-api.adoc[tag=actual-cors-dependency]
+include::{rootdir}/se/cors/using-the-api.adoc[tag=actual-cors-dependency]
 --
 . Use
 ifdef::se-flavor[the Helidon API or]
@@ -308,9 +309,9 @@ In your
 application's configuration file, the configuration for each service appears under its own key.
 |====
 | Helidon Service Documentation | Configuration Key
-| xref:{rootdir}/{flavor-lc}/health/01_health.adoc[health] | `health`
-| xref:{rootdir}/{flavor-lc}/metrics/01_metrics.adoc[metrics] | `metrics`
-| xref:{rootdir}/{flavor-lc}/openapi.adoc[OpenAPI] | `openapi`
+| xref:{health-page}[health] | `health`
+| xref:{metrics-page}[metrics] | `metrics`
+| xref:{openapi-page}[OpenAPI] | `openapi`
 |====
 
 The link:{helidon-github-tree-url}/examples/quickstarts/helidon-quickstart-{flavor-lc}[Helidon {flavor-uc} QuickStart example]
@@ -360,10 +361,10 @@ HealthSupport health = HealthSupport.builder()
 You have full control over the CORS configuration for a built-in Helidon service. Use a basic CORS config section
 as described in
 ifdef::se-flavor[]
-xref:{rootdir}/se/cors/03_using-configuration.adoc[Using Configuration for CORS].
+xref:{rootdir}/se/cors/using-configuration.adoc[Using Configuration for CORS].
 endif::[]
 ifndef::se-flavor[]
-xref:{rootdir}/mp/cors/03_configuration-with-cors-mp.adoc[Using Configuration with CORS in Helidon MP].
+xref:{rootdir}/mp/cors/configuration-with-cors-mp.adoc[Using Configuration with CORS in Helidon MP].
 endif::[]
 
 // end::configuring-cors-for-builtin-services[]

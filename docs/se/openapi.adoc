@@ -16,8 +16,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= OpenAPI in SE
-:h1Prefix: SE
+= OpenAPI
 :toc:
 :toc-placement: preamble
 :description: Helidon SE OpenAPI Support
@@ -25,7 +24,7 @@
 :feature-name: OpenAPI
 :rootdir: {docdir}/..
 
-include::{rootdir}/includes/attributes.adoc[]
+include::{rootdir}/includes/se.adoc[]
 
 Easily allow your Helidon SE application to serve an OpenAPI document
 that describes your application's endpoints.

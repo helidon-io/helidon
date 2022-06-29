@@ -17,13 +17,12 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = GraphQL Server Introduction
-:h1Prefix: SE
 :description: Helidon GraphQL Server Introduction
 :keywords: helidon, graphql, java
 :feature-name: GraphQL
 :rootdir: {docdir}/..
 
-include::{rootdir}/includes/attributes.adoc[]
+include::{rootdir}/includes/se.adoc[]
 
 Helidon GraphQL Server provides a framework for creating link:https://github.com/graphql-java/graphql-java[GraphQL] applications.
 

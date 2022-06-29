@@ -24,7 +24,7 @@ ifndef::flavor-lc[:flavor-lc: se]
 Integrate the metrics from Jaeger tracing into your Helidon {flavor-uc} application simply by adding a dependency.
 
 == Overview
-As the xref:{rootdir}/{flavor-lc}/tracing/04_jaeger_metrics.adoc[Helidon Jaeger Tracing] document describes, you can
+As the xref:{rootdir}/{flavor-lc}/tracing/jaeger-metrics.adoc[Helidon Jaeger Tracing] document describes, you can
 use Jaeger tracing in your Helidon {flavor-uc} application.
 
 Jaeger maintains several metrics about its own activity (briefly outlined in the

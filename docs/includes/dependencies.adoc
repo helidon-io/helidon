@@ -22,8 +22,8 @@ ifndef::rootdir[:rootdir: {docdir}/..]
 
 To enable {feature-name}
 ifeval::["{microprofile-bundle}" == "true"]
-either add a dependency on the xref:{rootdir}/mp/introduction/02_microprofile.adoc[helidon-microprofile bundle] or
+either add a dependency on the xref:{rootdir}/mp/introduction/microprofile.adoc[helidon-microprofile bundle] or
 endif::[]
-add the following dependency to your project's `pom.xml`
-(see xref:{rootdir}/about/04_managing-dependencies.adoc[Managing Dependencies]).
+add the following dependency to your project's `pom.xml` (see
+ xref:{rootdir}/about/managing-dependencies.adoc[Managing Dependencies]).
 // end::maven-dependency[]

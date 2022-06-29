@@ -37,8 +37,8 @@ Declare the following dependency in your project:
 </dependency>
 ----
 
-Also, include either xref:{rootdir}/{flavor-lc}/tracing/02_zipkin.adoc[Helidon Zipkin] or
- xref:{rootdir}/{flavor-lc}/tracing/03_jaeger.adoc[Helidon Jaeger] support:
+Also, include either xref:{rootdir}/{flavor-lc}/tracing/zipkin.adoc[Helidon Zipkin] or
+ xref:{rootdir}/{flavor-lc}/tracing/jaeger.adoc[Helidon Jaeger] support:
 
 include::{rootdir}/includes/tracing/tracer-zipkin.adoc[tag=zipkin-dependency]
 or

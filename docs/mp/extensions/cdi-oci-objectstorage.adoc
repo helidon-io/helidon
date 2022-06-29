@@ -1,0 +1,80 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= CDI extension for OCI Object storage
+:description: Helidon CDI extension for HikariCP
+:keywords: helidon, java, microservices, microprofile, extensions, cdi, oci, object storage
+:feature-name: OCI Object Storage Support
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/mp.adoc[]
+
+This link:{jakarta-cdi-spec-url}#spi[CDI portable extension] provides support for
+ injecting an link:https://docs.cloud.oracle.com/iaas/Content/Object/Concepts/objectstorageoverview.htm[Oracle Cloud Infrastructure Object Storage client]
+ in your Helidon MicroProfile applications.
+
+include::{rootdir}/includes/dependencies.adoc[]
+
+[source,xml]
+----
+<dependency>
+     <groupId>io.helidon.integrations.cdi</groupId>
+     <artifactId>helidon-integrations-cdi-oci-objectstorage</artifactId>
+</dependency>
+----
+
+== Injecting an Object Storage client
+
+[source,java]
+.Field-injection example
+----
+ @Inject
+ private ObjectStorage client;
+----
+
+[source,java]
+.Constructor-injection example
+----
+ private final ObjectStorage client;
+ @Inject
+ public YourConstructor(@Named("orders") ObjectStorage client) {
+   super();
+   this.client = client;
+ }
+----
+
+The extension implements this injection point by creating an Object Storage client
+ object in the link:{jakarta-cdi-javadoc-url}/javax/enterprise/context/ApplicationScoped.html[application scope].
+
+You can configure the object using xref:../jaxrs/server-configuration.adoc[MicroProfile config].
+ For example, the Object Storage client created above can be configured as follows:
+
+[source, properties]
+.META-INF/microprofile-config.properties
+----
+oci.auth.fingerprint=
+oci.auth.keyFile=
+oci.auth.passphraseCharacters=
+oci.auth.user=
+oci.auth.tenancy=
+oci.objectstorage.region=
+oci.objectstorage.namespace=
+----
+
+These properties are described in the
+ link:https://docs.cloud.oracle.com/iaas/Content/API/SDKDocs/javasdk.htm[Oracle Cloud Infrastructure Object Storage Java SDK documentation].

@@ -19,14 +19,12 @@
 = Fault Tolerance
 :toc:
 :toc-placement: preamble
-:h1Prefix: SE
 :description: Fault Tolerance
 :keywords: helidon, java, fault, tolerance, fault tolerance, se
-:flavor-uc: SE
 :feature-name: Fault Tolerance
 :rootdir: {docdir}/..
 
-include::{rootdir}/includes/attributes.adoc[]
+include::{rootdir}/includes/se.adoc[]
 include::{rootdir}/includes/dependencies.adoc[]
 
 [source,xml]

@@ -17,12 +17,11 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = WebSocket Introduction
-:h1Prefix: SE
 :description: Helidon WebSocket Introduction
 :keywords: helidon, webserver, websocket, se
 :rootdir: {docdir}/..
 
-include::{rootdir}/includes/attributes.adoc[]
+include::{rootdir}/includes/se.adoc[]
 
 Helidon integrates with link:https://projects.eclipse.org/projects/ee4j.tyrus[Tyrus] to provide support for the
  {jakarta-websocket-spec-url}[Jakarta WebSocket API].

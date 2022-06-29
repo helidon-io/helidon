@@ -17,14 +17,13 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Fault Tolerance Introduction
-:h1Prefix: MP
 :description: Fault Tolerance Introduction
 :keywords: helidon, webserver, faulttolerance, mp
 :feature-name: MicroProfile Fault Tolerance
 :rootdir: {docdir}/..
 :microprofile-bundle: true
 
-include::{rootdir}/includes/attributes.adoc[]
+include::{rootdir}/includes/mp.adoc[]
 
 Fault Tolerance is part of the MicroProfile set of {microprofile-fault-tolerance-spec-url}[specifications]. This API defines mostly
 annotations that improve application robustness by providing support to conveniently handle
