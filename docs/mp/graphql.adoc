@@ -216,4 +216,4 @@ The specification defines the following configuration options:
 These configuration options are more significant that the configuration options
  that can be used to configure GraphQL invocation (see below).
 
-include::{rootdir}/includes/graphql/configuration.adoc[]
+include::{rootdir}/includes/graphql.adoc[]

@@ -78,7 +78,7 @@ Scheduling.cronBuilder()
     .build();
 ----
 
-include::{rootdir}/includes/scheduling/cron.adoc[lines=19..]
+include::{rootdir}/includes/cron.adoc[lines=19..]
 
 Metadata like human-readable interval description or configured values are available through
 CronInvocation provided as task parameter.

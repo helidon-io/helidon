@@ -100,7 +100,7 @@ Each of these classes has an associated builder that you use in constructing ins
 The table below describes the methods on the `CrossOriginConfig.Builder` class
 that map to the headers defined in the CORS protocol.
 
-include::{rootdir}/includes/cors/cors-common.adoc[tag=cors-config-table]
+include::{rootdir}/includes/cors.adoc[tag=cors-config-table]
 
 [[se-api-routing-example]]
 == Sample Routing Setup Using the `CrossOriginConfig` API

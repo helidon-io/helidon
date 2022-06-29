@@ -80,15 +80,13 @@ The `@HelidonTest` annotation will cause the test extension to start a Helidon M
 
 You can see this in the test output:
 
-****
+[source,listing]
+----
 `INFO io.helidon.microprofile.server.ServerCdiExtension: Server started on http://localhost:56293 (and all other host addresses) in 1893 milliseconds (since JVM startup)`.
-****
-
+[source,java]
+----
 
 NOTE: The `@HelidonTest` annotation uses a random port regardless of the port configured in the application.yaml.
-
-
-
 
 === Inject a WebTarget
 
@@ -264,8 +262,6 @@ Refer to the following references for additional information:
 
 * https://junit.org/junit5/docs/current/user-guide/[JUnit 5 User Guide]
 * xref:../testing/testing.adoc[Testing with JUnit 5]
-
-
 
 
 

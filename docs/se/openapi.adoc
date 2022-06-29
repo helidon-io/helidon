@@ -147,7 +147,7 @@ servers for given operations
 |===
 For more information on what these settings do consult the MicroProfile OpenAPI spec.
 
-include::{rootdir}/includes/openapi/openapi-common.adoc[common-config]
+include::{rootdir}/includes/openapi.adoc[common-config]
 
 Set these config properties in one of the config sources your app uses so the
 Helidon config system will load them. Often developers use `application.yaml` at the

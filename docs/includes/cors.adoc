@@ -293,7 +293,7 @@ Add a dependency on the Helidon {flavor-uc} CORS artifact to your Maven `pom.xml
 
 NOTE: If you want the built-in services to support CORS, then you need to add the CORS dependency even if your own endpoints do not use CORS.
 
-include::{rootdir}/includes/cors/cors-common.adoc[tag=add-cors-dependency]
+include::{rootdir}/includes/cors.adoc[tag=add-cors-dependency]
 include::{rootdir}/se/cors/using-the-api.adoc[tag=actual-cors-dependency]
 --
 . Use

@@ -35,9 +35,9 @@ Your application code establishes the CORS behavior of your endpoints using the 
 You and your users can override that behavior, as well as the CORS behavior of the built-in services,
 using MicroProfile configuration.
 
-include::{rootdir}/includes/cors/cors-common.adoc[tag=cors-configuration-formats-intro]
+include::{rootdir}/includes/cors.adoc[tag=cors-configuration-formats-intro]
 
-include::{rootdir}/includes/cors/cors-common.adoc[tag=basic-cross-origin-config]
+include::{rootdir}/includes/cors.adoc[tag=basic-cross-origin-config]
 
 === Understanding the Mapped Cross-Origin Configuration Format
 
@@ -45,14 +45,14 @@ In Helidon MP, you use
 the mapped cross-origin configuration format.
 
 // We want to use
-// include::{rootdir}/includes/cors/cors-common.adoc[tag=mapped-config]
+// include::{rootdir}/includes/cors.adoc[tag=mapped-config]
 // and assign an attribute for the callout 1 text. But because the MP value uses backticks for monospaced
 // text, we'd have to be a little clever in the original callout. And that cleverness works when
 // the document is rendered in our editors, and even when using asciidoctor to HTML, but not
 // to our site.
-include::{rootdir}/includes/cors/cors-common.adoc[tag=mapped-config-prefix]
+include::{rootdir}/includes/cors.adoc[tag=mapped-config-prefix]
 <1> The unique identifier for this mapped CORS config section must be `cors`.
-include::{rootdir}/includes/cors/cors-common.adoc[tag=mapped-config-suffix]
+include::{rootdir}/includes/cors.adoc[tag=mapped-config-suffix]
 
 == Specifying Override Values in Configuration
 In configuration, you can specify the same CORS-related attributes that you specify using the `@CrossOrigin` annotation.

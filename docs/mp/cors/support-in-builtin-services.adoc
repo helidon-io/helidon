@@ -29,9 +29,9 @@ include::{rootdir}/includes/mp.adoc[]
 Several built-in Helidon services -- health, metrics, and OpenAPI -- have integrated CORS support.
 You can include these services in your application and control their CORS behavior.
 
-include::{rootdir}/includes/cors/cors-common.adoc[tag=understanding-cors-support-in-services]
-include::{rootdir}/includes/cors/cors-common.adoc[tag=builtin-getting-started]
-include::{rootdir}/includes/cors/cors-common.adoc[tags=configuring-cors-for-builtin-services;!se-config-example;!se-code-changes-for-builtin-services-config]
+include::{rootdir}/includes/cors.adoc[tag=understanding-cors-support-in-services]
+include::{rootdir}/includes/cors.adoc[tag=builtin-getting-started]
+include::{rootdir}/includes/cors.adoc[tags=configuring-cors-for-builtin-services;!se-config-example;!se-code-changes-for-builtin-services-config]
 
 The following example restricts sharing of
 
@@ -48,7 +48,7 @@ metrics:
     allow-origins: [http://foo.com]
 ----
 
-include::{rootdir}/includes/cors/cors-common.adoc[tag=accessing-shared-resources-intro]
+include::{rootdir}/includes/cors.adoc[tag=accessing-shared-resources-intro]
 
 [source,bash]
 ----
@@ -61,4 +61,4 @@ java -jar target/helidon-quickstart-mp.jar
 2020.05.12 05:44:08 INFO io.helidon.microprofile.server.ServerCdiExtension Thread[main,5,main]: Server started on http://localhost:8080 (and all other host addresses) in 5280 milliseconds (since JVM startup).
 ----
 
-include::{rootdir}/includes/cors/cors-common.adoc[tag=accessing-shared-resources-main]
+include::{rootdir}/includes/cors.adoc[tag=accessing-shared-resources-main]

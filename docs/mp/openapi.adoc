@@ -171,7 +171,7 @@ MP OpenAPI supports a number of other mandated settings. These are described in 
 link:{microprofile-open-api-spec-url}#configuration[configuration section] of the MicroProfile
 OpenAPI spec.
 
-include::{rootdir}/includes/openapi/openapi-common.adoc[common-config]
+include::{rootdir}/includes/openapi.adoc[common-config]
 
 Assign these settings in `META-INF/microprofile-config.properties`.
 

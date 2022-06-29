@@ -14,13 +14,14 @@
 # limitations under the License.
 #
 
+options:
+  strict-xref: true
+  strict-templates: true
+  strict-images: true
+  fail-on: "WARN"
 engine:
   asciidoctor:
     images-dir: "./images"
-    libraries:
-      - "asciidoctor-diagram"
-    attributes:
-      plantumlconfig: "_plantuml-config.txt"
 assets:
   - target: "/"
     includes:
@@ -359,7 +360,7 @@ backend:
                   value: "settings"
                 sources:
                   - "introduction.adoc"
-                  - "MP-config-sources.adoc"
+                  - "config-sources.adoc"
               - type: "MENU"
                 title: "CDI Extensions"
                 dir: "extensions"

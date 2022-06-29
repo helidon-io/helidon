@@ -158,7 +158,8 @@ client_secret=${CLEAR=known_password}
 You can configure the Config using Helidon MP Config meta configuration feature. The meta-config allows configuration of config sources and other
 configuration options, including addition of discovered sources and converters.
 
-This is a Helidon specific feature available since version 2.3.0. See xref:../config/MP-config-sources.adoc[Microprofile Config Sources] for detailed information.
+This is a Helidon specific feature available since version 2.3.0. See
+ xref:../config/config-sources.adoc[Microprofile Config Sources] for detailed information.
 
 NOTE: For backward compatibility, we will support usage of Helidon SE meta-configuration until version 3.0.0. Using this approach causes behavior that is not compatible with {spec-name} specification.
 

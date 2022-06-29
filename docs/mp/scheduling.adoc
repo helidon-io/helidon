@@ -90,7 +90,7 @@ public void methodName() {
 }
 ----
 
-include::{rootdir}/includes/scheduling/cron.adoc[lines=19..]
+include::{rootdir}/includes/cron.adoc[lines=19..]
 
 Metadata like human-readable interval description or configured values are available through
 CronInvocation injected as method parameter.

@@ -32,7 +32,7 @@ even if that web application is served from a different domain.
 
 == Overview
 
-include::{rootdir}/includes/cors/cors-common.adoc[tag=cors-intro]
+include::{rootdir}/includes/cors.adoc[tag=cors-intro]
 
 == Next Steps
 To introduce CORS into your Helidon MP application, do any or all of the following:

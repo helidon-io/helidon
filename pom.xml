@@ -55,7 +55,6 @@
         Changing these version requires approval for a new third party dependency!
         -->
         <version.lib.arquillian>1.7.0.Alpha10</version.lib.arquillian>
-        <version.lib.asciidoctor.diagram>1.5.18</version.lib.asciidoctor.diagram>
         <version.lib.asm>6.0</version.lib.asm>
         <version.lib.checkstyle>9.1</version.lib.checkstyle>
         <version.lib.groovy-all>2.4.14</version.lib.groovy-all>
@@ -869,11 +868,6 @@
                         <groupId>io.helidon.build-tools</groupId>
                         <artifactId>sitegen-maven-plugin</artifactId>
                         <version>${version.plugin.helidon-build-tools}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.asciidoctor</groupId>
-                        <artifactId>asciidoctorj-diagram</artifactId>
-                        <version>${version.lib.asciidoctor.diagram}</version>
                     </dependency>
                 </dependencies>
             </plugin>
