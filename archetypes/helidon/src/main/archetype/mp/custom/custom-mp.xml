@@ -25,7 +25,7 @@
     <!--source src="/common/sources.xml"/-->
     <exec src="/common/media.xml"/>
     <source src="/common/media-sources.xml"/>
-    <exec src="/common/observability.xml"/>
+    <source src="/common/observability.xml"/>
     <exec src="/mp/custom/database.xml"/>
     <exec src="/common/security.xml"/>
     <source src="/common/extra.xml"/>
@@ -78,14 +78,6 @@
                     <value key="artifactId">helidon-microprofile-core</value>
                 </map>
                 <map>
-                    <value key="groupId">io.helidon.microprofile.metrics</value>
-                    <value key="artifactId">helidon-microprofile-metrics</value>
-                </map>
-                <map>
-                    <value key="groupId">io.helidon.microprofile.health</value>
-                    <value key="artifactId">helidon-microprofile-health</value>
-                </map>
-                <map>
                     <value key="groupId">org.glassfish.jersey.media</value>
                     <value key="artifactId">jersey-media-json-binding</value>
                     <value key="scope">runtime</value>
@@ -94,14 +86,6 @@
                     <value key="groupId">io.helidon.webclient</value>
                     <value key="artifactId">helidon-webclient</value>
                 </map>
-            </list>
-            <list key="paths-config-entries" if="${security}">
-                <value><![CDATA[       - path: "/simple-greet"
-         methods: ["get"]
-         authenticate: true]]></value>
-            </list>
-            <list key="paths-config-entries" if="${security}">
-                <value if="${security.atz} contains 'abac'"><![CDATA[         roles-allowed: ["user"]]]></value>
             </list>
         </model>
     </output>

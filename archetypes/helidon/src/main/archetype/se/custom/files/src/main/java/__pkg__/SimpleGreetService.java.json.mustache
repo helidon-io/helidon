@@ -2,6 +2,9 @@ package {{package}};
 
 import java.util.logging.Logger;
 
+{{#SimpleGreetService-imports}}
+import {{.}};
+{{/SimpleGreetService-imports}}
 import io.helidon.config.Config;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
@@ -19,12 +22,19 @@ import io.helidon.webserver.Service;
 public class SimpleGreetService implements Service {
 
     private static final Logger LOGGER = Logger.getLogger(SimpleGreetService.class.getName());
+{{#SimpleGreetResource-static-fields}}
+{{.}}
+{{/SimpleGreetResource-static-fields}}
 
     private final String greeting;
 
     SimpleGreetService(Config config) {
         greeting = config.get("app.greeting").asString().orElse("Ciao");
     }
+
+{{#SimpleGreetResource-constructor}}
+{{.}}
+{{/SimpleGreetResource-constructor}}
 
     /**
      * A service registers itself by updating the routing rules.
@@ -34,6 +44,9 @@ public class SimpleGreetService implements Service {
     @Override
     public void update(Routing.Rules rules) {
         rules.get("/", this::getDefaultMessageHandler);
+{{#SimpleGreetResource-update}}
+{{.}}
+{{/SimpleGreetResource-update}}
     }
 
     /**
@@ -51,4 +64,8 @@ public class SimpleGreetService implements Service {
 
         response.send(message);
     }
+
+{{#SimpleGreetService-methods}}
+{{.}}
+{{/SimpleGreetService-methods}}
 }

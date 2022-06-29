@@ -26,7 +26,9 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
  */
 @Path("/simple-greet")
 public class SimpleGreetResource {
-
+{{#SimpleGreetResource-static-fields}}
+{{.}}
+{{/SimpleGreetResource-static-fields}}
     private final String message;
 
     @Inject
