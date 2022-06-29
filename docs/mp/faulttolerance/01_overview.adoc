@@ -202,4 +202,4 @@ link:{fault-tolerance-javadoc}[MicroProfile Fault Tolerance Javadocs].
 
 == Reference
 
-* link:{fault-tolerance-spec-url}}[MicroProfile Fault Tolerance]
+* link:{fault-tolerance-spec-url}[MicroProfile Fault Tolerance]
