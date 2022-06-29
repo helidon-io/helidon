@@ -27,6 +27,7 @@ import org.eclipse.microprofile.metrics.Timer;
 public class JdbcMetricsTimer implements Timer {
 
     private final com.codahale.metrics.Timer meter;
+    private long elapsedTimeNanos;
 
     JdbcMetricsTimer(final com.codahale.metrics.Timer meter) {
         this.meter = meter;
@@ -34,17 +35,27 @@ public class JdbcMetricsTimer implements Timer {
 
     @Override
     public <T> T time(Callable<T> event) throws Exception {
-        return meter.time(event);
+        long start = System.nanoTime();
+        try {
+            return meter.time(event);
+        } finally {
+            updateElapsedWithStart(start);
+        }
     }
 
     @Override
     public void time(Runnable event) {
-        meter.time(event);
+        long start = System.nanoTime();
+        try {
+            meter.time(event);
+        } finally {
+            updateElapsedWithStart(start);
+        }
     }
 
     @Override
     public Context time() {
-        return new JdbcMetricsTimerContext(meter.time());
+        return new JdbcMetricsTimerContext(meter.time(), this::updateElapsed);
     }
 
     @Override
@@ -79,11 +90,21 @@ public class JdbcMetricsTimer implements Timer {
 
     @Override
     public void update(Duration duration) {
+        updateElapsed(duration.toNanos());
         meter.update(duration);
     }
 
     @Override
     public Duration getElapsedTime() {
-        return Duration.ZERO;
+        return Duration.ofNanos(elapsedTimeNanos);
+    }
+
+    private long updateElapsed(long delta) {
+        elapsedTimeNanos += delta;
+        return delta;
+    }
+
+    private long updateElapsedWithStart(long start) {
+        return updateElapsed(System.nanoTime() - start);
     }
 }
