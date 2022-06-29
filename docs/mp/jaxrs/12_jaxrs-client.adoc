@@ -91,7 +91,7 @@ String res = client
 
 Alternatively, there are also methods in `Response` that can trigger similar conversions.
 
-Configutation can be specified at the `Client` or `WebTarget` level, both types implement
+Configuaation can be specified at the `Client` or `WebTarget` level, as both types implement
 `Configurable<T>`. This enables common configuration to be inherited by a `WebTarget` created
 from a `Client` instance. In either case, methods such as `register` can be used to
 register providers such as filters and exception mappers.
@@ -156,7 +156,7 @@ link:{jaxrs-spec-client}[Jakarta REST Client Specification].
 
 == Additional Information
 
-For additional information, see the link:{jaxrs-javadocs}}[Jakarta REST Javadocs].
+For additional information, see the link:{jaxrs-javadocs}[Jakarta REST Javadocs].
 
 == Reference
 
