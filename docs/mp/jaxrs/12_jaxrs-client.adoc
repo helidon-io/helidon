@@ -114,7 +114,7 @@ logic applies to other types of configuration such as properties and features.
 The Jakarta REST Client API has support for asynchronous invocations. Accessing
 a resource asynchronously prevents the calling thread from blocking for the
 duration of the call. By default, all invocations are _synchronous_ but can be
-turn into either asynchronous or reactive calls by simply inserting the
+turned into either asynchronous or reactive calls by simply inserting the
 corresponding fluent method call during the creation phase.
 
 Using `Future` 's:
