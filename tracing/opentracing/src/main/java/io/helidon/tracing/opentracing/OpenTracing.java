@@ -20,9 +20,12 @@ import io.helidon.tracing.Span;
 import io.opentracing.Tracer;
 
 /**
- * Open Tracing factory methods to create wrappers for Open Tracing types
+ * Open Tracing factory methods to create wrappers for Open Tracing types.
  */
 public final class OpenTracing {
+    private OpenTracing() {
+    }
+
     /**
      * Wrap an open tracing tracer.
      *
@@ -36,6 +39,7 @@ public final class OpenTracing {
     /**
      * Wrap an open tracing span.
      *
+     * @param tracer the tracer that created the span
      * @param span open telemetry span
      * @return Helidon {@link io.helidon.tracing.Span}
      */

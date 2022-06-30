@@ -51,21 +51,23 @@ public interface Span {
     /**
      * Add a string tag.
      *
-     * @param key tag key
+     * @param key   tag key
      * @param value tag value
      */
     void tag(String key, String value);
+
     /**
      * Add a boolean tag.
      *
-     * @param key tag key
+     * @param key   tag key
      * @param value tag value
      */
     void tag(String key, Boolean value);
+
     /**
      * Add a numeric tag.
      *
-     * @param key tag key
+     * @param key   tag key
      * @param value tag value
      */
     void tag(String key, Number value);
@@ -86,22 +88,39 @@ public interface Span {
     SpanContext context();
 
     /**
-     * Add an event to this span
-     * @param name
-     * @param attributes
+     * Add an event to this span.
+     *
+     * @param name name of the event
+     * @param attributes event attributes to be recorded
      */
     void addEvent(String name, Map<String, ?> attributes);
 
+    /**
+     * End this tag (finish processing) using current timestamp.
+     */
     void end();
 
-    Scope activate();
-
     /**
-     * And with error status and an exception.
-     * @param t
+     * End with error status and an exception. Configures status to {@link io.helidon.tracing.Span.Status#ERROR}, and
+     * adds appropriate tags and events to report this exception.
+     *
+     * @param t throwable that caused the error status
      */
     void end(Throwable t);
 
+    /**
+     * Make this span the current active span. This is expected to use thread locals and as such is not suitable for
+     * reactive environment.
+     *
+     * @return current scope
+     */
+    Scope activate();
+
+    /**
+     * Add a new event to this span.
+     *
+     * @param logMessage message to log
+     */
     default void addEvent(String logMessage) {
         addEvent(logMessage, Map.of());
     }
@@ -112,8 +131,8 @@ public interface Span {
      * removes abstraction capabilities of this API.
      *
      * @param spanClass type to access
+     * @param <T>       type of the span
      * @return instance of the span
-     * @param <T> type of the span
      * @throws java.lang.IllegalArgumentException in case the span cannot provide the expected type
      */
     default <T> T unwrap(Class<T> spanClass) {
@@ -124,41 +143,143 @@ public interface Span {
         }
     }
 
+    /**
+     * Span kind.
+     */
+    enum Kind {
+        /**
+         * Internal span, not leaving the scope of the service.
+         */
+        INTERNAL,
+        /**
+         * Server span kind, parent of a server interaction.
+         */
+        SERVER,
+        /**
+         * Client span, should cover outbound request, where the span creator acts as a client.
+         */
+        CLIENT,
+        /**
+         * Producer span, in messaging.
+         */
+        PRODUCER,
+        /**
+         * Consumer span, in messaging.
+         */
+        CONSUMER
+    }
+
+    /**
+     * Span status.
+     */
+    enum Status {
+        /**
+         * The default status, not explicitly set.
+         */
+        UNSET,
+        /**
+         * The span was successful.
+         */
+        OK,
+        /**
+         * The span ended with an error.
+         */
+        ERROR
+    }
+
+    /**
+     * Fluent API builder to create a new {@link io.helidon.tracing.Span}.
+     *
+     * @param <B> type of the builder that implements this interface, to have correct return types of builder methods
+     */
     interface Builder<B extends Builder<B>> extends io.helidon.common.Builder<B, Span> {
+        /**
+         * Parent span of the new span.
+         *
+         * @return updated builder instance
+         */
         B parent(SpanContext spanContext);
 
+        /**
+         * Kind of this span.
+         *
+         * @param kind kind to use
+         * @return updated builder instance
+         */
         B kind(Kind kind);
 
+        /**
+         * Add a tag.
+         *
+         * @param tag tag to add (or set)
+         * @return updated builder instance
+         */
         default B tag(Tag<?> tag) {
             tag.apply(this);
             return identity();
         }
+
+        /**
+         * Add a string tag.
+         *
+         * @param key   tag key
+         * @param value tag value
+         * @return updated builder instance
+         */
         B tag(String key, String value);
+
+        /**
+         * Add a boolean tag.
+         *
+         * @param key   tag key
+         * @param value tag value
+         * @return updated builder instance
+         */
         B tag(String key, Boolean value);
+
+        /**
+         * Add a number tag.
+         *
+         * @param key   tag key
+         * @param value tag value
+         * @return updated builder instance
+         */
         B tag(String key, Number value);
 
+        /**
+         * Build and start the span with current timestamp.
+         *
+         * @return newly created and started span
+         */
         default Span start() {
             return start(Instant.now());
         }
 
+        /**
+         * Start the span with an explicit timestamp.
+         *
+         * @param instant when the span started
+         * @return newly created and started span
+         */
+
         Span start(Instant instant);
 
+        /**
+         * Unwrap this builder instance into a known type. This method limits abstraction and will not allow replacement
+         * of tracer implementation.
+         *
+         * @param type type to unwrap to
+         * @param <T>  type of the builder
+         * @return unwrapped instance
+         * @throws java.lang.IllegalArgumentException when the expected type is not the actual type, or the builder cannot be
+         *                                            coerced into that type
+         */
         default <T> T unwrap(Class<T> type) {
-            return type.cast(this);
+            if (type.isAssignableFrom(getClass())) {
+                return type.cast(this);
+            }
+            throw new IllegalArgumentException("This instance cannot be unwrapped to " + type.getName()
+                                                       + ", this builder: " + getClass().getName());
         }
-    }
-
-    enum Kind {
-        INTERNAL,
-        SERVER,
-        CLIENT,
-        PRODUCER,
-        CONSUMER
-    }
-
-    enum Status {
-        UNSET,
-        OK,
-        ERROR
     }
 }

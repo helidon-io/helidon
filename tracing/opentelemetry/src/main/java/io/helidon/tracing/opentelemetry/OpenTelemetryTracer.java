@@ -32,7 +32,7 @@ import io.opentelemetry.context.propagation.TextMapGetter;
 import io.opentelemetry.context.propagation.TextMapPropagator;
 import io.opentelemetry.context.propagation.TextMapSetter;
 
-public class OpenTelemetryTracer implements Tracer {
+class OpenTelemetryTracer implements Tracer {
     private static final TextMapGetter GETTER = new Getter();
     private static final TextMapSetter SETTER = new Setter();
     private final OpenTelemetry telemetry;
@@ -47,7 +47,7 @@ public class OpenTelemetryTracer implements Tracer {
         this.propagator = telemetry.getPropagators().getTextMapPropagator();
     }
 
-    public static Builder builder() {
+    static Builder builder() {
         return new Builder();
     }
 
@@ -77,7 +77,7 @@ public class OpenTelemetryTracer implements Tracer {
         propagator.inject(Context.current(), outboundHeadersConsumer, SETTER);
     }
 
-    public static class Builder implements TracerBuilder<Builder> {
+    static class Builder implements TracerBuilder<Builder> {
         private OpenTelemetry ot;
         private String serviceName = "helidon-service";
         private boolean registerGlobal;
@@ -95,7 +95,7 @@ public class OpenTelemetryTracer implements Tracer {
             return result;
         }
 
-        public Builder openTelemetry(OpenTelemetry ot) {
+        Builder openTelemetry(OpenTelemetry ot) {
             this.ot = ot;
             return this;
         }

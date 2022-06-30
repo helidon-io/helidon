@@ -117,7 +117,7 @@ public interface TracerBuilder<T extends TracerBuilder<T>> extends Builder<T, Tr
      * @param config configuration node to load tracer configuration from
      * @return a new builder instance
      */
-    static DefaultTracerBuilder create(Config config) {
+    static TracerBuilder<?> create(Config config) {
         return new DefaultTracerBuilder(TracerProviderHelper.findTracerBuilder()
                 .config(config));
     }

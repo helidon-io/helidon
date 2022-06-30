@@ -48,15 +48,13 @@ class OpenTracingSpanBuilder implements Span.Builder<OpenTracingSpanBuilder> {
 
     @Override
     public OpenTracingSpanBuilder kind(Span.Kind kind) {
-        String spanKind;
-
-        switch(kind) {
-        case SERVER -> spanKind = Tags.SPAN_KIND_SERVER;
-        case CLIENT -> spanKind = Tags.SPAN_KIND_CLIENT;
-        case PRODUCER -> spanKind = Tags.SPAN_KIND_PRODUCER;
-        case CONSUMER -> spanKind = Tags.SPAN_KIND_CONSUMER;
-        default -> spanKind = null;
-        }
+        String spanKind = switch (kind) {
+            case SERVER -> Tags.SPAN_KIND_SERVER;
+            case CLIENT -> Tags.SPAN_KIND_CLIENT;
+            case PRODUCER -> Tags.SPAN_KIND_PRODUCER;
+            case CONSUMER -> Tags.SPAN_KIND_CONSUMER;
+            default -> null;
+        };
 
         if (spanKind != null) {
             delegate.withTag(Tags.SPAN_KIND.getKey(), spanKind);

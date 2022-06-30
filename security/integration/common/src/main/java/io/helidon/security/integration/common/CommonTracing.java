@@ -83,7 +83,7 @@ abstract class CommonTracing {
         }
 
         Span theSpan = span.get();
-        theSpan.end(throwable);;
+        theSpan.end(throwable);
     }
 
     /**

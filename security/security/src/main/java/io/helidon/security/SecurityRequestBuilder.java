@@ -105,7 +105,7 @@ public class SecurityRequestBuilder<T extends SecurityRequestBuilder<T>> {
      * @param spanContext span of current security request (e.g. authentication, authorization or outbound, or any parent if
      *                    these are not traced)
      * @return updated builder instance
-     * @see io.helidon.tracing.Tracer#global() 
+     * @see io.helidon.tracing.Tracer#global()
      * @see io.helidon.tracing.Tracer#spanBuilder(String)
      */
     public T tracingSpan(SpanContext spanContext) {

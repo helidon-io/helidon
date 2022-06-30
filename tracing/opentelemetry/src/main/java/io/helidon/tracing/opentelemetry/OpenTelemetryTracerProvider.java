@@ -30,7 +30,7 @@ import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.OpenTelemetry;
 
 /**
- * Service loader provider implementation for {@link io.helidon.tracing.spi.TracerProvider}
+ * Service loader provider implementation for {@link io.helidon.tracing.spi.TracerProvider}.
  */
 public class OpenTelemetryTracerProvider implements TracerProvider {
     private static final System.Logger LOGGER = System.getLogger(OpenTelemetryTracerProvider.class.getName());

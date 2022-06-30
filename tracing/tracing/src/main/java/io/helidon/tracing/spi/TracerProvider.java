@@ -33,9 +33,25 @@ public interface TracerProvider {
      */
     TracerBuilder<?> createBuilder();
 
+    /**
+     * Global tracer that is registered, or a NoOp tracer if none is registered.
+     *
+     * @return current global tracer
+     */
     Tracer global();
 
+    /**
+     * Register a global tracer instance. This method should not fail except for the case that tracer is null
+     * - if the tracer cannot be registered, silently ignore it.
+     * @param tracer tracer to register as global
+     * @throws java.lang.NullPointerException in case the tracer is null
+     */
     void global(Tracer tracer);
 
+    /**
+     * Provide current span.
+     *
+     * @return current span, or empty optional if current span cannot be found
+     */
     Optional<Span> currentSpan();
 }

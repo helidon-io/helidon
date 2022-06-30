@@ -41,9 +41,8 @@ public interface OpenTracingProvider {
      *
      * @param tracer          Tracer used
      * @param currentSpan     Context of current span
-     * @param outboundHeaders Tracing headers map as configured by the tracer
      * @param inboundHeaders  Existing inbound headers (may be empty if not within a scope of a request)
-     * @return new map of outbound headers, defaults to tracing headers
+     * @param outboundHeaders Tracing headers map as configured by the tracer
      */
     default void updateOutboundHeaders(Tracer tracer,
                                        SpanContext currentSpan,

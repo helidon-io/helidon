@@ -17,7 +17,7 @@
 /**
  * Open Tracing tracing support that plugs into the {@link io.helidon.tracing.TracerBuilder} SPI and provides
  * a {@link io.helidon.tracing.Tracer} implementation.
- * 
+ *
  * @see io.helidon.tracing.opentracing.OpenTracing
  */
 package io.helidon.tracing.opentracing;

@@ -53,10 +53,11 @@ class OpenTelemetrySpan implements io.helidon.tracing.Span {
 
     @Override
     public void status(Status status) {
-        switch(status) {
+        switch (status) {
         case OK -> delegate.setStatus(StatusCode.OK);
         case ERROR -> delegate.setStatus(StatusCode.ERROR);
-        default -> {}
+        default -> {
+        }
         }
     }
 
@@ -76,15 +77,15 @@ class OpenTelemetrySpan implements io.helidon.tracing.Span {
     }
 
     @Override
-    public Scope activate() {
-        return new OpenTelemetryScope(delegate.makeCurrent());
-    }
-
-    @Override
     public void end(Throwable t) {
         delegate.recordException(t);
         delegate.setStatus(StatusCode.ERROR);
         delegate.end();
+    }
+
+    @Override
+    public Scope activate() {
+        return new OpenTelemetryScope(delegate.makeCurrent());
     }
 
     private Attributes toAttributes(Map<String, ?> attributes) {

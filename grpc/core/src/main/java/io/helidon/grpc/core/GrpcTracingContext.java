@@ -24,7 +24,7 @@ import io.grpc.Context;
 /**
  * Contextual information related to Tracing.
  */
-public class GrpcTracingContext {
+public final class GrpcTracingContext {
     private static final String SPAN_KEY_NAME = "io.helidon.tracing.active-span";
 
     /**
@@ -39,5 +39,8 @@ public class GrpcTracingContext {
      */
     public static Optional<Span> activeSpan() {
         return Optional.ofNullable(SPAN_KEY.get());
+    }
+
+    private GrpcTracingContext() {
     }
 }

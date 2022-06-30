@@ -23,7 +23,9 @@ import io.opentelemetry.api.trace.Tracer;
 /**
  * Open Telemetry factory methods to create wrappers for Open Telemetry types.
  */
-public class HelidonOpenTelemetry {
+public final class HelidonOpenTelemetry {
+    private HelidonOpenTelemetry() {
+    }
     /**
      * Wrap an open telemetry tracer.
      *

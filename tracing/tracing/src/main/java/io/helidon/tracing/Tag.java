@@ -23,11 +23,26 @@ import java.util.Objects;
  * @param <T> type of the tag
  */
 public abstract class Tag<T> {
+    /**
+     * Tag marking a component that triggers this span.
+     */
     public static final TagSource<String> COMPONENT = new StringTagSource("component");
+    /**
+     * Http method used to invoke this request.
+     */
     public static final TagSource<String> HTTP_METHOD = new StringTagSource("http.method");
+    /**
+     * URL of the HTTP request.
+     */
     public static final TagSource<String> HTTP_URL = new StringTagSource("http.url");
+    /**
+     * HTTP version.
+     */
     public static final TagSource<String> HTTP_VERSION = new StringTagSource("http.version");
-    public static final TagSource<Integer> HTTP_STATUS = new NumberTagSource<Integer>("http.status_code");
+    /**
+     * Status code that was returned.
+     */
+    public static final TagSource<Integer> HTTP_STATUS = new NumberTagSource<>("http.status_code");
     private final String key;
     private final T value;
 
@@ -122,7 +137,18 @@ public abstract class Tag<T> {
      */
     public abstract void apply(Span.Builder<?> spanBuilder);
 
+    /**
+     * Tag source (a type that can create tags). Use by {@link #HTTP_METHOD} and other constants to easily create new tags.
+     *
+     * @param <T> type of the tag
+     */
     public interface TagSource<T> {
+        /**
+         * Create a tag with value.
+         *
+         * @param value value of the tag
+         * @return tag instance
+         */
         Tag<? super T> create(T value);
     }
 
@@ -175,28 +201,28 @@ public abstract class Tag<T> {
     }
 
     private static class StringTagSource implements TagSource<String> {
-        private final String component;
+        private final String name;
 
-        protected StringTagSource(String component) {
-            this.component = component;
+        protected StringTagSource(String name) {
+            this.name = name;
         }
 
         @Override
         public Tag<String> create(String value) {
-            return new StringTag(component, value);
+            return new StringTag(name, value);
         }
     }
 
     private static class NumberTagSource<T extends Number> implements TagSource<T> {
-        private final String component;
+        private final String name;
 
-        protected NumberTagSource(String component) {
-            this.component = component;
+        protected NumberTagSource(String name) {
+            this.name = name;
         }
 
         @Override
         public Tag<Number> create(T value) {
-            return new NumericTag(component, value);
+            return new NumericTag(name, value);
         }
     }
 
