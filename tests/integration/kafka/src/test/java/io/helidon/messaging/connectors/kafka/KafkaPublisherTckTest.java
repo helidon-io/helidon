@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,6 +47,7 @@ class KafkaPublisherTckTest extends PublisherVerification<KafkaMessage<String, L
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public Publisher<KafkaMessage<String, Long>> createPublisher(long elements) {
         Consumer<String, Long> kafkaConsumer = Mockito.mock(Consumer.class);
         // Emulates that it is buffering 50 elements from Kafka in every poll.
@@ -68,6 +69,7 @@ class KafkaPublisherTckTest extends PublisherVerification<KafkaMessage<String, L
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public Publisher<KafkaMessage<String, Long>> createFailedPublisher() {
         Consumer<String, Long> kafkaConsumer = Mockito.mock(Consumer.class);
         Mockito.doThrow(new RuntimeException("test error")).when(kafkaConsumer).poll(ArgumentMatchers.any(Duration.class));
