@@ -56,7 +56,7 @@ include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 |Class |Description
 
 |org.eclipse.microprofile.rest.client.RestClientBuilder
-|Base builder of the rest client instance. Contains client configuration options and `build` method, which creates an actual rest client interface instance.
+|Base builder instance. Contains configuration options and a `build` method that creates the actual client instance.
 
 |===
 
@@ -65,16 +65,16 @@ include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 |Annotation |Description
 
 |@RegisterRestClient
-|A marker annotation to register a rest client at runtime. This marker must be applied to any CDI managed clients.
+|A marker annotation to register a client at runtime. This marker must be applied to any CDI managed clients.
 
 |@RestClient
 |RestClient qualifier which should be used on an CDI injection points.
 
 |===
 
-=== Creating a New Client Using a Builder
+=== Creating a New Client Using a Builder [[creating-a-new-client]]
 MicroProfile Rest Client can be created using a builder obtained from `RestClientBuilder.newBuilder()`.
-The builder provides methods to specify the rest client interface to be proxied as well as to configure
+The builder provides methods to specify the client interface to be proxied as well as to configure
 additional details such as server URI, SSL context, connection timeouts, etc. Any method call on the
 resulting proxy object will be automatically translated into a remote call to the service using
 the provided configuration.
@@ -100,7 +100,7 @@ greetResource.getDefaultMessage();
 ----
 
 === Creating a New Client Using CDI
-A rest client interface can be annotated with `@RegisterRestClient` to automatically register it with CDI.
+A client interface can be annotated with `@RegisterRestClient` to automatically register it with CDI.
 This annotation has a property called `baseUri` that can be used to define the base endpoint to be
 used by the client to access the service.
 Example:
@@ -125,7 +125,7 @@ public interface GreetRestClient {
     // ...
 }
 ----
-Once a rest client interface is annotated, it can be injected into any CDI bean. All properties
+Once a client interface is annotated, it can be injected into any CDI bean. All properties
 in annotation `RegisterRestClient` can be overridden via configuration as described in
 <<Configuration options, Configuration options>>
 Example:
@@ -139,9 +139,10 @@ client.getMessage("Helidon");
 ----
 
 == Configuration
-Rest client configuration is mainly used for CDI created and managed rest client instances. It will not work for those created programmatic way. Programmatically created instances are configured via methods present on `org.eclipse.microprofile.rest.client.RestClientBuilder`.
 
-Most of the configuration properties mentioned below have to be prepended with fully qualified classname of the rest client interface, which should be configured, or it is possible to avoid fully qualified classname by using `@RegisterRestClient(configKey="clientAlias")`. Prefix `$restClient` is used in each of the configuration table entries, indicating client alias or class name, to preserve space.
+Configuration is only available for CDI managed client instances, it is not supported for client created programmatically using `RestClientBuilder`.
+
+Most of the configuration properties mentioned below have to be prepended with the fully qualified classname of the client interface to be configured. It is possible to avoid fully qualified classname by using `@RegisterRestClient(configKey="clientAlias")`. Prefix `$restClient` is used in each of the configuration table entries, indicating client alias or class name, to preserve space.
 
 === Configuration options
 
@@ -209,7 +210,7 @@ interface GreetRestClient {
 
 }
 ----
-Then create a runnable method as described in `Creating new client - Interface`,but with baseUri `http://localhost:8080/greet` and the above interface.
+Then create a runnable method as described in <<creating-a-new-client, Creating new client>>, but with baseUri `http://localhost:8080/greet` and the above interface.
 
 By calling `GreetRestClient.getDefaultMessage()` you reach the endpoint of Helidon quickstart.
 
