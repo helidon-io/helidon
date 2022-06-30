@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,10 +30,10 @@ import java.util.logging.Logger;
 
 import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
+import io.helidon.grpc.core.GrpcTracingContext;
 import io.helidon.grpc.core.InterceptorPriorities;
 import io.helidon.grpc.server.GrpcRouting;
 import io.helidon.grpc.server.GrpcService;
-import io.helidon.grpc.server.GrpcTracing;
 import io.helidon.grpc.server.ServiceDescriptor;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.Security;
@@ -502,7 +502,7 @@ public final class GrpcSecurity
 
             EndpointConfig ec = EndpointConfig.builder().build();
 
-            Span span = GrpcTracing.SPAN_KEY.get();
+            Span span = GrpcTracingContext.SPAN_KEY.get();
             SpanContext spanContext = span == null ? null : span.context();
             SecurityContext context = security.contextBuilder(String.valueOf(SECURITY_COUNTER.incrementAndGet()))
                     .tracingSpan(spanContext)

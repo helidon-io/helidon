@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,23 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.security.integration.common;
+package io.helidon.grpc.core;
 
 import java.util.Optional;
 
 import io.helidon.tracing.Span;
-import io.helidon.tracing.SpanContext;
-import io.helidon.tracing.config.SpanTracingConfig;
+
+import io.grpc.Context;
 
 /**
- * Tracing support for security response.
+ * Contextual information related to Tracing.
  */
-public class ResponseTracing extends CommonTracing {
-    ResponseTracing(Optional<SpanContext> parentSpanContext,
-                    Optional<Span> parentSpan,
-                    Optional<Span> securitySpan,
-                    Optional<Span> span,
-                    SpanTracingConfig spanConfig) {
-        super(parentSpanContext, parentSpan, securitySpan, span, spanConfig);
+public class GrpcTracingContext {
+    private static final String SPAN_KEY_NAME = "io.helidon.tracing.active-span";
+
+    /**
+     * Context key for Span instance.
+     */
+    public static final Context.Key<Span> SPAN_KEY = Context.key(SPAN_KEY_NAME);
+
+    /**
+     * Get the current active span associated with the context.
+     *
+     * @return span if one is in current context
+     */
+    public static Optional<Span> activeSpan() {
+        return Optional.ofNullable(SPAN_KEY.get());
     }
 }

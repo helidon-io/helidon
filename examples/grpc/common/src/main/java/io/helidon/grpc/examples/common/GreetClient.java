@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,11 +26,11 @@ import io.helidon.grpc.examples.common.Greet.GreetRequest;
 import io.helidon.grpc.examples.common.Greet.GreetResponse;
 import io.helidon.grpc.examples.common.Greet.SetGreetingRequest;
 import io.helidon.grpc.examples.common.Greet.SetGreetingResponse;
+import io.helidon.tracing.Tracer;
 import io.helidon.tracing.TracerBuilder;
 
 import io.grpc.Channel;
 import io.grpc.ManagedChannelBuilder;
-import io.opentracing.Tracer;
 
 /**
  * A client for the {@link GreetService} implemented with Helidon gRPC client API.

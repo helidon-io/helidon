@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,8 @@ import java.util.Optional;
 import java.util.Set;
 
 import io.helidon.grpc.core.ContextKeys;
+import io.helidon.grpc.core.GrpcTracingContext;
+import io.helidon.grpc.core.GrpcTracingName;
 import io.helidon.grpc.core.InterceptorPriorities;
 import io.helidon.tracing.HeaderProvider;
 import io.helidon.tracing.Span;
@@ -43,10 +45,6 @@ import jakarta.annotation.Priority;
  */
 @Priority(InterceptorPriorities.TRACING)
 public class GrpcTracing implements ServerInterceptor {
-    public static final String SPAN_KEY_NAME = "io.helidon.tracing.active-span";
-    public static final String SPAN_CONTEXT_KEY_NAME = "io.helidon.tracing.active-span-context";
-    public static final Context.Key<Span> SPAN_KEY = Context.key(SPAN_KEY_NAME);
-    public static final Context.Key<SpanContext> SPAN_CONTEXT_KEY = Context.key(SPAN_CONTEXT_KEY_NAME);
     /**
      * The Open Tracing {@link Tracer}.
      */
@@ -139,7 +137,7 @@ public class GrpcTracing implements ServerInterceptor {
         updateContext(ContextKeys.HELIDON_CONTEXT.get(grpcContext), span);
         io.helidon.common.context.Contexts.context().ifPresent(ctx -> updateContext(ctx, span));
 
-        Context ctxWithSpan = grpcContext.withValue(SPAN_KEY, span);
+        Context ctxWithSpan = grpcContext.withValue(GrpcTracingContext.SPAN_KEY, span);
         ServerCall.Listener<ReqT> listenerWithContext = Contexts.interceptCall(ctxWithSpan, call, headers, next);
 
         return new TracingListener<>(listenerWithContext, span);

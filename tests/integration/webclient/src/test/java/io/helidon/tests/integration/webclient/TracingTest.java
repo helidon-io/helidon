@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.util.concurrent.ExecutionException;
 
 import io.helidon.common.context.Context;
 import io.helidon.media.jsonp.JsonpSupport;
+import io.helidon.tracing.opentracing.OpenTracing;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientResponse;
 
@@ -48,7 +49,7 @@ class TracingTest extends TestParent {
         MockTracer mockTracer = new MockTracer();
         String uri = "http://localhost:" + webServer.port() + "/greet";
         Context context = Context.builder().id("tracing-unit-test").build();
-        context.register(mockTracer);
+        context.register(OpenTracing.create(mockTracer));
 
         WebClient client = WebClient.builder()
                 .baseUri(uri)
@@ -87,7 +88,7 @@ class TracingTest extends TestParent {
         MockTracer mockTracer = new MockTracer();
 
         Context context = Context.builder().id("tracing-unit-test").build();
-        context.register(mockTracer);
+        context.register(OpenTracing.create(mockTracer));
 
         WebClient client = WebClient.builder()
                 .baseUri("http://localhost:" + webServer.port() + "/greet")
@@ -99,13 +100,11 @@ class TracingTest extends TestParent {
         WebClientResponse response = client.get()
                 .path("/error")
                 .request()
-                .toCompletableFuture()
-                .get();
+                .await(TIMEOUT);
 
         // we must fully read entity, as otherwise tracing does not finish
         response.content().as(String.class)
-                .toCompletableFuture()
-                .get();
+                .await(TIMEOUT);
 
         List<MockSpan> mockSpans = mockTracer.finishedSpans();
         assertThat(mockSpans, iterableWithSize(1));

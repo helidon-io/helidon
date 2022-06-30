@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ public abstract class Tag<T> {
     public static final TagSource<String> HTTP_METHOD = new StringTagSource("http.method");
     public static final TagSource<String> HTTP_URL = new StringTagSource("http.url");
     public static final TagSource<String> HTTP_VERSION = new StringTagSource("http.version");
-    public static final TagSource<Integer> HTTP_STATUS = new NumberTagSource<Integer>("http.status");
+    public static final TagSource<Integer> HTTP_STATUS = new NumberTagSource<Integer>("http.status_code");
     private final String key;
     private final T value;
 

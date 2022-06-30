@@ -41,6 +41,10 @@
             <artifactId>helidon-common-configurable</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.tracing</groupId>
+            <artifactId>helidon-tracing</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.grpc</groupId>
             <artifactId>io.grpc</artifactId>
         </dependency>

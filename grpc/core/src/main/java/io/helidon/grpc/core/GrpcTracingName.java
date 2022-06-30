@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,21 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.helidon.grpc.core;
+
+import io.grpc.MethodDescriptor;
 
 /**
- * Opentracing support for helidon, with an abstraction API and SPI for tracing collectors.
- * @see io.helidon.tracing.spi.TracerProvider
- * @see io.helidon.tracing.TracerBuilder
+ * Name generator for span operation name.
  */
-module io.helidon.tracing {
-    requires io.helidon.common;
-    requires io.helidon.common.serviceloader;
-    requires io.helidon.config;
-
-    requires static io.helidon.config.metadata;
-
-    exports io.helidon.tracing;
-    exports io.helidon.tracing.spi;
-
-    uses io.helidon.tracing.spi.TracerProvider;
+@FunctionalInterface
+public interface GrpcTracingName {
+    /**
+     * Constructs a span's operation name from the gRPC method.
+     *
+     * @param method method to extract a name from
+     * @return operation name
+     */
+    String name(MethodDescriptor<?, ?> method);
 }

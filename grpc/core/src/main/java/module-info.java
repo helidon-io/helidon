@@ -23,6 +23,7 @@ import io.helidon.grpc.core.MarshallerSupplier;
 module io.helidon.grpc.core {
     exports io.helidon.grpc.core;
 
+    requires io.helidon.tracing;
     requires transitive io.helidon.config;
     requires transitive io.helidon.config.objectmapping;
     requires transitive io.helidon.common.configurable;

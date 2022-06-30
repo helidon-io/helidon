@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,9 +25,8 @@ import io.helidon.grpc.server.GrpcServer;
 import io.helidon.grpc.server.GrpcServerConfiguration;
 import io.helidon.grpc.server.GrpcTracingConfig;
 import io.helidon.grpc.server.ServerRequestAttribute;
+import io.helidon.tracing.Tracer;
 import io.helidon.tracing.TracerBuilder;
-
-import io.opentracing.Tracer;
 
 /**
  * An example gRPC server with Zipkin tracing enabled.
