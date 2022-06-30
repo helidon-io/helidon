@@ -95,8 +95,8 @@ import io.helidon.config.metadata.ConfiguredOption;
  * </pre>
  *
  * @param <T> type of the builder, used so that inherited builders returned by methods
- *           are of the correct type and contain all methods, even those not inherited from this
- *           interface
+ *            are of the correct type and contain all methods, even those not inherited from this
+ *            interface
  */
 @Configured(description = "OpenTracing tracer configuration.", ignoreBuildMethod = true)
 public interface TracerBuilder<T extends TracerBuilder<T>> extends Builder<T, Tracer> {
@@ -118,8 +118,8 @@ public interface TracerBuilder<T extends TracerBuilder<T>> extends Builder<T, Tr
      * @return a new builder instance
      */
     static TracerBuilder<?> create(Config config) {
-        return new DefaultTracerBuilder(TracerProviderHelper.findTracerBuilder()
-                .config(config));
+        return TracerProviderHelper.findTracerBuilder()
+                .config(config);
     }
 
     /**
@@ -271,8 +271,8 @@ public interface TracerBuilder<T extends TracerBuilder<T>> extends Builder<T, Tr
      * removes abstraction capabilities of this builder.
      *
      * @param builderClass type to access
+     * @param <B>          type of the builder
      * @return instance of the builder
-     * @param <B> type of the builder
      * @throws java.lang.IllegalArgumentException in case the builder cannot provide the expected type
      */
     <B> B unwrap(Class<B> builderClass);

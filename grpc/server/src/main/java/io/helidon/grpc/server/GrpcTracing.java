@@ -247,7 +247,7 @@ public class GrpcTracing implements ServerInterceptor {
         }
     }
 
-    private class MapHeaderProvider implements HeaderProvider {
+    private static class MapHeaderProvider implements HeaderProvider {
         private final Map<String, String> headers;
 
         MapHeaderProvider(Map<String, String> headers) {

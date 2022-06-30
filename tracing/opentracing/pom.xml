@@ -29,6 +29,11 @@
     <description>As OpenTracing is now discontinued, this is a backward compatibility module to support it.
     Please switch to Open Telemetry</description>
 
+
+    <properties>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.common</groupId>

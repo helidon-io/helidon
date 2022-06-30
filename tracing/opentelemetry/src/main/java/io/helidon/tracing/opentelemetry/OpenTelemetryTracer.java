@@ -102,7 +102,7 @@ class OpenTelemetryTracer implements Tracer {
 
         @Override
         public Builder serviceName(String name) {
-            this.serviceName = serviceName;
+            this.serviceName = name;
             return this;
         }
 
