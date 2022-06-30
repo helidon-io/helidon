@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -15,135 +15,70 @@
     limitations under the License.
 
 ///////////////////////////////////////////////////////////////////////////////
+:javadoc-base-url-api: {javadoc-base-url}io.helidon.integrations.oci.sdk.cdi/io/helidon/integrations/oci/sdk/cdi/
 
-:javadoc-base-url-api: {javadoc-base-url}io.helidon.config/io/helidon/oci
-
-= OCI Autonomous Transaction Processing
+= OCI ATP
 :h1Prefix: MP
-:description: Helidon OCI Autonomous Transaction Processing integration
+:description: Helidon OCI ATP integration
 :keywords: oci, atp
 :common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
-:feature-name: OCI Autonomous Transaction Processing
+:feature-name: OCI atp
+:oci-atp-javadoc: https://docs.oracle.com/en-us/iaas/tools/java/latest/com/oracle/bmc/database/package-summary.html
+:oci-atp-url: https://docs.oracle.com/en-us/iaas/Content/Database/home.htm
 
-The Helidon MP OCI Autonomous Transaction Processing integration provides easy access to ATP database in Oracle cloud.
-
-== Experimental
-
-WARNING: Helidon integration with Oracle Cloud Infrastructure is still experimental and not intended for production use. APIs and features have not yet been fully tested and are subject to change.
+You can use Helidon's <<mp/oci/01_oci.adoc,OCI SDK Extension>>
+to access OCI Services. This document describes how to use it to access the
+OCI Database Service.
 
 include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 
 [source,xml]
 ----
-        <dependency>
-            <groupId>io.helidon.integrations.oci</groupId>
-            <artifactId>helidon-integrations-oci-atp</artifactId>
-        </dependency>
+<dependency>
+     <groupId>io.helidon.integrations.oci.sdk</groupId>
+     <artifactId>helidon-integrations-oci-sdk-cdi</artifactId>
+</dependency>
 ----
 
+Then add dependencies on the OCI SDK's Database API. Your specific
+dependencies may differ depending on the OCI SDK features you use.
 
-== Setting up the Autonomous Transaction Processing
+[source,xml]
+----
+<dependency>
+    <groupId>com.oracle.oci.sdk</groupId>
+    <artifactId>oci-java-sdk-database</artifactId>
+</dependency>
+----
 
+== Injecting a Database client
 
-In order to use the OCI Autonomous Transaction Processing integration, the following setup should be made:
+Once you have Helidon's OCI extension added to your application you can inject
+OCI SDK Clients.
 
 [source,java]
+.Field-injection example
 ----
-Config ociConfig = config.get("oci");
-
-OciAutonomousDbRx ociAutonomousDb = OciAutonomousDbRx.create(ociConfig);
-----
-
-Current configuration requires `~/.oci/config` to be available in the home folder. This configuration file can be downloaded from OCI.
-
-REST endpoint to work with OCI Autonomous Transaction Processing:
-
-[source,java]
-----
-@Path("/atp")
-public class AtpResource {
-    private final OciAutonomousDb autonomousDb;
-    private final PoolDataSource atpDataSource;
-    private final String atpServiceName;
-
-    @Inject
-    AtpResource(OciAutonomousDb autonomousDb, <1>
-                @Named("atp") PoolDataSource atpDataSource,
-                @ConfigProperty(name = "oracle.ucp.jdbc.PoolDataSource.atp.serviceName") String atpServiceName) { <2>
-        this.autonomousDb = autonomousDb;
-        this.atpDataSource = Objects.requireNonNull(atpDataSource);
-        this.atpServiceName = atpServiceName;
-    }
-----
-<1> `OciAutonomousDb` is configured and injected automatically
-<2> ATP ServiceName is read from the properties
-
-Additionally, in `microprofile-config.properties` OCI properties should be specified:
-
-[source,properties]
-----
-oci.atp.ocid: "<ocid of your ATP database>"
-oci.atp.walletPassword: "<password to encrypt the keys inside the wallet>"
+ @Inject
+ private Database database;
 ----
 
-The exact values are available from OCI console.
+The extension implements these injection points by creating
+objects in the link:{jsr330-singleton-api-url}[singleton scope].
 
-image::oci/atpocid.png[OCI ATP, align="center"]
+== Configuring the Helidon OCI SDK Extension
 
-== Using the Autonomous Transaction Processing
+By default the extension will select and configure an appropriate
+OCI Authentication Details Provider for you based on your environment.
+For this reason it is recommended that you configure your environment
+first and get it working with the link:{oci-javasdk-url}[OCI CLI] before
+using the Helidon OCI SDK Extension.
 
-In the Service we must specify the mapping for operations with the database and their handlers:
+For more information see <<mp/oci/01_oci.adoc, Helidon OCI Extension>>.
 
-[source,java]
-----
-@Override
-public void update(Routing.Rules rules) {
-    rules.get("/wallet", this::generateWallet);
-}
-----
+== Using the Database client
 
-===  Generate Wallet
+Once you have injected OCI Database objects you can use them as described in:
 
-To generate wallet file for OCI Autonomous Transaction Processing:
-
-[source,java]
-----
-    @GET
-    @Path("/wallet")
-    public Response generateWallet() {
-        ApiOptionalResponse<GenerateAutonomousDatabaseWallet.Response> ociResponse = autonomousDb.generateWallet(GenerateAutonomousDatabaseWallet.Request.builder()); <1>
-        Optional<GenerateAutonomousDatabaseWallet.Response> entity = ociResponse.entity();
-
-        if (entity.isEmpty()) {
-            return Response.status(Response.Status.NOT_FOUND).build();
-        }
-
-        GenerateAutonomousDatabaseWallet.Response response = entity.get();
-        GenerateAutonomousDatabaseWallet.WalletArchive walletArchive = response.walletArchive(); <2>
-        String returnEntity = null;
-        try {
-            this.atpDataSource.setSSLContext(walletArchive.getSSLContext()); <3>
-            this.atpDataSource.setURL(walletArchive.getJdbcUrl(this.atpServiceName)); <3>
-            try(
-                Connection connection = this.atpDataSource.getConnection();
-                PreparedStatement ps = connection.prepareStatement("SELECT 'Hello world!!' FROM DUAL");
-                ResultSet rs = ps.executeQuery()
-            ){
-                rs.next();
-                returnEntity = rs.getString(1); <4>
-            }
-        } catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "Error setting up DataSource", e);
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
-        }
-
-        return Response.status(Response.Status.OK).entity(returnEntity).build();
-    }
-----
-
-<1> Create the `Request` using `GenerateAutonomousDatabaseWallet.Request.builder()`
-<2> Retrieve 'walletArchive' from the response.
-<3> Setup DataSource using info from 'walletArchive'
-<4> Read the first column from first row of result.
-
-For complete code, about how to setup datasource using wallet info, please see https://github.com/oracle/helidon/tree/master/examples/integrations/oci/atp-cdi[ATP MP Example]
+* link:{oci-atp-javadoc}[OCI SDK Database Javadocs]
+* link:{oci-atp-url}[OCI Database Overview]
