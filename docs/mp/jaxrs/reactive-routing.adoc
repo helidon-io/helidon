@@ -46,7 +46,7 @@ The service can be customized using annotations and/or configuration to be
 - registered with a named routing
 
 ==== Assigning a reactive service to named ports
-Helidon has the concept of named routings. These correspond to the named ports
+Helidon has the concept of named routing. These correspond to the named ports
 configured with WebServer.
 
 You can assign a reactive service to a named routing (and as a result to a named port) using

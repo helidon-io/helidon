@@ -60,6 +60,7 @@ endif::[]
 :version-lib-jakarta-jsonb-api: 2.0
 :version-lib-jakarta-transaction-api: 2.0
 :version-lib-jakarta-persistence-api: 3.0.0
+:version-lib-jakarta-jaxrs-api: 3.0.0
 
 // 3rd party
 :version-lib-jaeger: 1.22
@@ -151,6 +152,10 @@ endif::[]
 :jakarta-persistence-base-url: {jakarta-base-url}/persistence/{version-lib-jakarta-persistence-api}
 :jakarta-persistence-spec-url: {jakarta-persistence-base-url}/jakarta-persistence-spec-{version-lib-jakarta-persistence-api}.html
 :jakarta-persistence-javadoc-url: {jakarta-persistence-base-url}/apidocs
+
+:jakarta-jaxrs-base-url: {jakarta-base-url}/restful-ws/{version-lib-jakarta-jaxrs-api}
+:jakarta-jaxrs-spec-url: {jakarta-jaxrs-base-url}/jakarta-restful-ws-spec-{version-lib-jakarta-jaxrs-api}.html
+:jakarta-jaxrs-javadoc-url: {jakarta-jaxrs-base-url}/apidocs
 
 :javadoc-io-base-url: https://www.javadoc.io
 

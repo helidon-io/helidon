@@ -423,6 +423,7 @@ backend:
                   - "application-configuration.adoc"
                   - "static-content.adoc"
                   - "jaxrs-applications.adoc"
+                  - "jaxrs-client.adoc"
                   - "reactive-routing.adoc"
               - type: "PAGE"
                 title: "JPA"

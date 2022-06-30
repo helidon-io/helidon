@@ -17,15 +17,12 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Jakarta REST (JAX-RS) Client
-:h1Prefix: MP
 :feature-name: Jakarta REST Client
 :description: Jakarta REST (JAX-RS) Client
-:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
-:rest-client: ../restclient/09_rest-client.adoc
-:jaxrs-spec: https://jakarta.ee/specifications/restful-ws/3.0/jakarta-restful-ws-spec-3.0.html
-:jaxrs-spec-client: https://jakarta.ee/specifications/restful-ws/3.0/jakarta-restful-ws-spec-3.0.html#client_api
-:jaxrs-javadocs: https://jakarta.ee/specifications/restful-ws/3.0/apidocs/
-= :keywords: helidon, rest, jax-rs, client, microprofile, micro-profile
+:keywords: helidon, rest, jax-rs, client, microprofile, micro-profile
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/mp.adoc[]
 
 == ToC
 
@@ -42,11 +39,12 @@
 The Jakarta REST Client defines a programmatic API to access
 REST resources. This API sits at a higher level than traditional HTTP client APIs and
 provides full integration with server-side API concepts like providers. It differs
-from the link:{rest-client}[Rest Client API] in that it does not support
+from the link:../restclient.adoc[Rest Client API] in that it does not support
 annotations or proxies, but instead uses builders and a fluent API to
 create and execute requests.
 
-include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+include::{rootdir}/includes/dependencies.adoc[]
+
 [source,xml]
 ----
      <dependency>
@@ -152,14 +150,13 @@ Configuration for this API is all done programmatically as shown in the previous
 == Examples
 
 See <<API>> for same simple examples. For additional information, refer to the
-link:{jaxrs-spec-client}[Jakarta REST Client Specification].
+
+link:{jakarta-jaxrs-spec-url}#client_api[Jakarta REST Client Specification].
 
 == Additional Information
 
-For additional information, see the link:{jaxrs-javadocs}[Jakarta REST Javadocs].
+For additional information, see the link:{jakarta-jaxrs-javadoc-url}}[Jakarta REST Javadocs].
 
 == Reference
 
-* link:{jaxrs-spec-client}[Jakarta REST Client Specification]
-
-
+* link:{jakarta-jaxrs-spec-url}#client_api[Jakarta REST Client Specification]
