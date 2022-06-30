@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,9 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
 import jakarta.enterprise.context.ApplicationScoped;
+
+import io.helidon.common.reactive.Single;
+
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
@@ -87,7 +90,7 @@ abstract class AbstractSampleBean {
 
         @Incoming("test-channel-1")
         @Acknowledgment(Acknowledgment.Strategy.MANUAL)
-        public CompletionStage<String> channel1(KafkaMessage<Long, String> msg)
+        public CompletionStage<Void> channel1(KafkaMessage<Long, String> msg)
                 throws InterruptedException, ExecutionException {
             LOGGER.fine(() -> String.format("Received %s", msg.getPayload()));
             consumed().add(msg.getPayload());
@@ -111,7 +114,7 @@ abstract class AbstractSampleBean {
 
         @Incoming("test-channel-7")
         @Acknowledgment(Acknowledgment.Strategy.MANUAL)
-        public CompletionStage<String> channel7(KafkaMessage<Long, String> msg)
+        public CompletionStage<Void> channel7(KafkaMessage<Long, String> msg)
                 throws InterruptedException, ExecutionException {
             LOGGER.fine(() -> String.format("Received %s", msg.getPayload()));
             consumed().add(msg.getPayload());
@@ -124,7 +127,7 @@ abstract class AbstractSampleBean {
     public static class ChannelError extends AbstractSampleBean {
         @Incoming("test-channel-error")
         @Acknowledgment(Acknowledgment.Strategy.MANUAL)
-        public CompletionStage<String> error(KafkaMessage<Long,  String> msg) {
+        public CompletionStage<Void> error(KafkaMessage<Long,  String> msg) {
             try {
                 LOGGER.fine(() -> String.format("Received possible error %s", msg.getPayload()));
                 consumed().add(Integer.toString(Integer.parseInt(msg.getPayload())));
@@ -172,42 +175,41 @@ abstract class AbstractSampleBean {
     @ApplicationScoped
     public static class Channel5 extends AbstractSampleBean {
 
+        private final CompletableFuture<List<String>> latch = new CompletableFuture<>();
+        private final List<String> resultList = new ArrayList<>(10);
+
+        private AtomicLong  boomOffset = new AtomicLong(-1L);
+        private final AtomicInteger iter = new AtomicInteger();
+
         @Incoming("test-channel-5")
-        public SubscriberBuilder<KafkaMessage<Long,  String>, Void> channel5() {
+        public CompletionStage<Void> channel5(KafkaMessage<Long, String> msg) {
             LOGGER.fine(() -> "In channel5");
-            return ReactiveStreams.<KafkaMessage<Long,  String>>builder()
-                    .to(new Subscriber<KafkaMessage<Long,  String>>() {
-                        @Override
-                        public void onSubscribe(Subscription subscription) {
-                            LOGGER.fine(() -> "channel5 onSubscribe()");
-                            subscription.request(3);
-                        }
-                        @Override
-                        public void onNext(KafkaMessage<Long,  String> msg) {
-                            consumed().add(Integer.toString(Integer.parseInt(msg.getPayload())));
-                            LOGGER.fine(() -> "Added " + msg.getPayload());
-                            msg.ack();
-                            countDown("onNext()");
-                        }
-                        @Override
-                        public void onError(Throwable t) {
-                            LOGGER.fine(() -> "Error " + t.getMessage() + ". Adding error in consumed() list");
-                            consumed().add("error");
-                            countDown("onError()");
-                        }
-                        @Override
-                        public void onComplete() {
-                            consumed().add("complete");
-                            countDown("onComplete()");
-                        }
-                    });
+            if (iter.incrementAndGet() == 11) {
+                latch.complete(resultList);
+            }
+            if (3L == msg.getKey().orElse(-1L)) {
+                msg.getOffset().ifPresent(boomOffset::set);
+                msg.nack(new Exception("BOOM!"));
+            } else {
+                resultList.add(msg.getPayload());
+                return msg.ack();
+            }
+            return CompletableFuture.completedFuture(null);
+        }
+
+        public Single<List<String>> getLatch() {
+            return Single.create(latch);
+        }
+
+        public long getBoomOffset() {
+            return boomOffset.get();
         }
     }
 
     public static class Channel6 extends AbstractSampleBean {
         static final String NO_ACK = "noAck";
 
-        public CompletionStage<String> onMsg(KafkaMessage<Long,  String> msg) {
+        public CompletionStage<Void> onMsg(KafkaMessage<Long,  String> msg) {
             LOGGER.fine(() -> String.format("Received %s", msg.getPayload()));
             consumed().add(msg.getPayload());
             // Certain messages are not ACK. We can check later that they will be sent again.
@@ -231,7 +233,8 @@ abstract class AbstractSampleBean {
         // Limit is for one scenario that Kafka rebalances and sends again same data in different partition
         private final AtomicInteger limit = new AtomicInteger();
 
-        public CompletionStage<String> onMsg(KafkaMessage<Long,  String> msg) {
+        @SuppressWarnings("unchecked")
+        public CompletionStage<Void> onMsg(KafkaMessage<Long,  String> msg) {
             ConsumerRecord<Long, String> record = msg.unwrap(ConsumerRecord.class);
             consumed().add(record.value());
             // Certain messages are not ACK. We can check later that they will be sent again.
@@ -281,7 +284,7 @@ abstract class AbstractSampleBean {
 
         @Incoming("test-channel-11")
         @Acknowledgment(Acknowledgment.Strategy.MANUAL)
-        public CompletionStage<String> channel1(KafkaMessage<Long,  String> msg) {
+        public CompletionStage<Void> channel1(KafkaMessage<Long,  String> msg) {
             // Unreachable because the Kafka connection is invalid
             return CompletableFuture.completedFuture(null);
         }

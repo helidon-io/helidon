@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@ import org.reactivestreams.Subscriber;
  *
  * @param <PAYLOAD> message payload type
  */
-public final class Emitter<PAYLOAD> implements Publisher<Message<PAYLOAD>> {
+public final class Emitter<PAYLOAD> implements Publisher<Message<PAYLOAD>>, org.eclipse.microprofile.reactive.messaging.Emitter<PAYLOAD> {
 
     static final String EMITTER_CONTEXT_PREFIX = "emitter-message";
     private SubmissionPublisher<Message<PAYLOAD>> submissionPublisher;
@@ -80,6 +80,12 @@ public final class Emitter<PAYLOAD> implements Publisher<Message<PAYLOAD>> {
         return future;
     }
 
+    @Override
+    @SuppressWarnings("unchecked")
+    public <M extends Message<? extends PAYLOAD>> void send(M msg) {
+        submissionPublisher.submit((Message<PAYLOAD>) msg);
+    }
+
     /**
      * Send {@link Message} to downstream when demand is higher than 0. Publishes the given item
      * to each current subscriber by asynchronously invoking its onNext method,
@@ -93,7 +99,8 @@ public final class Emitter<PAYLOAD> implements Publisher<Message<PAYLOAD>> {
      * @throws NullPointerException                            if message is null
      * @throws java.util.concurrent.RejectedExecutionException if thrown by Executor
      */
-    public int send(Message<PAYLOAD> msg) {
+    @Deprecated(forRemoval = true, since = "3.0.0")
+    public int emit(Message<PAYLOAD> msg) {
         return submissionPublisher.submit(msg);
     }
 
@@ -111,6 +118,16 @@ public final class Emitter<PAYLOAD> implements Publisher<Message<PAYLOAD>> {
      */
     public void error(Exception e) {
         submissionPublisher.closeExceptionally(e);
+    }
+
+    @Override
+    public boolean isCancelled() {
+        return submissionPublisher.isClosed();
+    }
+
+    @Override
+    public boolean hasRequests() {
+        return submissionPublisher.estimateMinimumDemand() > 0;
     }
 
     @Override

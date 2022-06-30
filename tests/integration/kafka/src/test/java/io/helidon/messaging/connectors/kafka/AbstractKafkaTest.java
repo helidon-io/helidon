@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package io.helidon.messaging.connectors.kafka;
 
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -28,9 +27,11 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
-import com.salesforce.kafka.test.junit5.SharedKafkaTestResource;
+import io.helidon.common.LazyValue;
+import io.helidon.common.LogConfig;
+
+import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -41,8 +42,6 @@ import org.apache.kafka.common.serialization.LongDeserializer;
 import org.apache.kafka.common.serialization.LongSerializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -54,25 +53,25 @@ public abstract class AbstractKafkaTest {
 
     static String KAFKA_SERVER;
 
-    @RegisterExtension
-    public static final SharedKafkaTestResource kafkaResource = new SharedKafkaTestResource()
-            .withBrokers(4)
+    static {
+        LogConfig.configureRuntime();
+    }
+
+    protected static final CustomKafkaTestResource kafkaResource = new CustomKafkaTestResource()
+            .withBrokers(1)
             .withBrokerProperty("replication.factor", "2")
             .withBrokerProperty("min.insync.replicas", "1")
             .withBrokerProperty("auto.create.topics.enable", Boolean.toString(false));
 
-    @BeforeAll
-    static void prepareTopics() {
-        KAFKA_SERVER = kafkaResource.getKafkaConnectString();
-    }
+    static LazyValue<AdminClient> ADMIN = LazyValue.create(() -> kafkaResource.getKafkaTestUtils().getAdminClient());
 
     static <T> void produceSync(String topic, Map<String, Object> config, List<T> testData) {
         try (Producer<Object, T> producer = new KafkaProducer<>(config)) {
             LOGGER.fine(() -> "Producing " + testData.size() + " events");
             //Send all test messages(async send means order is not guaranteed) and in parallel
             List<Future<RecordMetadata>> sent = testData.parallelStream()
-                    .map(s -> producer.send(new ProducerRecord<>(topic, s))).collect(Collectors.toList());
-            sent.stream().forEach(future -> {
+                    .map(s -> producer.send(new ProducerRecord<>(topic, s))).toList();
+            sent.forEach(future -> {
                 try {
                     future.get(30, TimeUnit.SECONDS);
                 } catch (InterruptedException | ExecutionException | TimeoutException e) {
@@ -120,7 +119,7 @@ public abstract class AbstractKafkaTest {
         config.put("key.deserializer", LongDeserializer.class.getName());
         config.put("value.deserializer", StringDeserializer.class.getName());
         try (Consumer<Object, String> consumer = new KafkaConsumer<>(config)) {
-            consumer.subscribe(Arrays.asList(topic));
+            consumer.subscribe(Collections.singletonList(topic));
             long current = System.currentTimeMillis();
             while (events.size() < expected && System.currentTimeMillis() - current < timeout) {
                 consumer.poll(Duration.ofSeconds(5)).forEach(c -> events.add(c.value()));
