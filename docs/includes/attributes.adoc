@@ -179,6 +179,7 @@ endif::[]
 :webclient-javadoc-base-url: {javadoc-base-url}/apidocs/io.helidon.webclient/io/helidon/webclient
 :webserver-javadoc-base-url: {javadoc-base-url}/apidocs/io.helidon.webserver/io/helidon/webserver
 :webserver-cors-javadoc-base-url: {javadoc-base-url}/apidocs/io.helidon.webserver.cors/io/helidon/webserver/cors
+:mp-tyrus-javadoc-base-url: {javadoc-base-url}/apidocs/io.helidon.microprofile.tyrus
 
 // 3rd party versioned URLs
 :jaeger-doc-base-url: https://www.jaegertracing.io/docs/{version-lib-jaeger}
