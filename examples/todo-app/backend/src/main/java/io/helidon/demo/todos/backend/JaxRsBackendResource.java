@@ -66,6 +66,7 @@ public class JaxRsBackendResource {
     /**
      * Create new {@code JaxRsBackendResource} instance.
      * @param dbs the database service facade to use
+     * @param tracer tracer to use
      */
     @Inject
     public JaxRsBackendResource(DbService dbs, Tracer tracer) {
