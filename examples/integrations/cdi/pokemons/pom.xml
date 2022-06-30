@@ -186,19 +186,6 @@
                     </dependency>
                 </dependencies>
             </plugin>
-            <plugin>
-                <groupId>com.ethlo.persistence.tools</groupId>
-                <artifactId>eclipselink-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>modelgen</id>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>modelgen</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
         </plugins>
     </build>
 </project>
