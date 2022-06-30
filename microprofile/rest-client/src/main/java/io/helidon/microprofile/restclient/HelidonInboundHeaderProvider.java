@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,15 +20,14 @@ import java.util.Map;
 
 import io.helidon.common.context.Contexts;
 
-//TODO 3.0.0-JAKARTA
-//import org.glassfish.jersey.microprofile.restclient.InboundHeadersProvider;
+import org.glassfish.jersey.microprofile.restclient.InboundHeadersProvider;
 
 /**
  * Provider which propagates inbound request headers via Helidon {@link io.helidon.common.context.Context}.
  */
-class HelidonInboundHeaderProvider /*implements InboundHeadersProvider*/ {
+class HelidonInboundHeaderProvider implements InboundHeadersProvider {
 
-//    @Override
+    @Override
     public Map<String, List<String>> inboundHeaders() {
         return Contexts.context()
                 .flatMap(context -> context.get(InboundHeaders.class))

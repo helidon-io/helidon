@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +24,7 @@ module io.helidon.microprofile.restclient {
     requires microprofile.rest.client.api;
     requires io.helidon.common.context;
     requires jersey.common;
-    //TODO 3.0.0-JAKARTA
-//    requires jersey.mp.rest.client;
+    requires jersey.mp.rest.client;
     requires jakarta.ws.rs;
 
     exports io.helidon.microprofile.restclient;
