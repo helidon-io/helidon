@@ -1,0 +1,82 @@
+package {{package}};
+
+import io.helidon.common.http.Http;
+import io.helidon.common.reactive.Multi;
+import io.helidon.dbclient.DbClient;
+import io.helidon.webserver.Handler;
+import io.helidon.webserver.Routing;
+import io.helidon.webserver.ServerRequest;
+import io.helidon.webserver.ServerResponse;
+import io.helidon.webserver.Service;
+import jakarta.json.JsonObject;
+
+import java.util.concurrent.CompletionException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+public class DatabaseService implements Service {
+
+    private static final Logger LOGGER = Logger.getLogger(DatabaseService.class.getName());
+
+    private final DbClient dbClient;
+
+    DatabaseService(DbClient client) {
+        dbClient = client;
+{{#DatabaseService-constructor}}
+{{.}}
+{{/DatabaseService-constructor}}
+
+    }
+
+    @Override
+    public void update(Routing.Rules rules) {
+        rules.put("/", Handler.create(Document.class, this::insertDocument))
+                .delete("/{name}", this::deleteDocument)
+                .get("/", this::listDocuments);
+    }
+
+    public void insertDocument(ServerRequest request, ServerResponse response, Document document) {
+        dbClient.execute(exec -> exec
+                .createNamedInsert("insert")
+                .namedParam(document)
+                .execute())
+                .thenAccept(count -> response.send(
+                        String.format("Inserted: %s.%s", document.getName(), document.getExtension())))
+                .exceptionally(throwable -> sendError(throwable, response));
+    }
+
+    public void deleteDocument(ServerRequest request, ServerResponse response) {
+        final String name = request.path().param("name");
+
+        dbClient.execute(exec -> exec.namedDelete("delete", name))
+                .thenAccept(count -> response.send("Deleted: " + name))
+                .exceptionally(throwable -> sendError(throwable, response));
+    }
+
+    public void listDocuments(ServerRequest request, ServerResponse response) {
+        Multi<JsonObject> rows = dbClient.execute(exec -> exec.namedQuery("select-all"))
+                .map(it -> it.as(JsonObject.class));
+
+        response.send(rows, JsonObject.class);
+    }
+
+    /**
+     * Send a 500 response code and a few details.
+     *
+     * @param throwable throwable that caused the issue
+     * @param response server response
+     * @param <T> type of expected response, will be always {@code null}
+     * @return {@code Void} so this method can be registered as a lambda
+     *      with {@link java.util.concurrent.CompletionStage#exceptionally(java.util.function.Function)}
+     */
+    private <T> T sendError(Throwable throwable, ServerResponse response) {
+        Throwable realCause = throwable;
+        if (throwable instanceof CompletionException) {
+            realCause = throwable.getCause();
+        }
+        response.status(Http.Status.INTERNAL_SERVER_ERROR_500);
+        response.send("Failed to process request: " + realCause.getClass().getName() + "(" + realCause.getMessage() + ")");
+        LOGGER.log(Level.WARNING, "Failed to process request", throwable);
+        return null;
+    }
+}

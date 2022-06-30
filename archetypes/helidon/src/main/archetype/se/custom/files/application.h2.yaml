@@ -1,0 +1,26 @@
+db:
+  source: jdbc
+  connection:
+    url: jdbc:h2:mem:test;DB_CLOSE_DELAY=-1
+    username: sa
+    password:
+    poolName: h2
+    initializationFailTimeout: -1
+    connectionTimeout: 2000
+    helidon:
+      pool-metrics:
+        enabled: true
+        name-prefix: "hikari."
+  services:
+    metrics:
+      - type: METER
+  health-check:
+    type: "dml"
+    statementName: "ping"
+  statements:
+    # Ping statement
+    ping: "SET @HELIDON_PING=0"
+    create-table: "CREATE TABLE DOCUMENT (name VARCHAR(64) NOT NULL PRIMARY KEY, extension VARCHAR(64) NOT NULL)"
+    select-all: "SELECT name, extension FROM DOCUMENT"
+    insert: "INSERT INTO DOCUMENT(name, extension) VALUES(:name, :extension)"
+    delete: "DELETE FROM DOCUMENT WHERE name = ?"

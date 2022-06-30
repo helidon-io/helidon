@@ -29,12 +29,148 @@
                      optional="true">
                 <inputs>
                     <enum id="server" name="Select a Database Server" default="h2" optional="true">
-                        <option value="h2" name="H2" description="In-memory relational database"/>
-                        <option value="mysql" name="MySQL" description="Relational database"/>
-                        <option value="oracledb" name="Oracle DB" description="Multi-model database"/>
-                        <option value="mongodb" name="MongoDB" description="NoSQL / Document database"/>
+                        <option value="h2" name="H2" description="In-memory relational database">
+                            <output>
+                                <model>
+                                    <list key="config-entries">
+                                        <value file="files/application.h2.yaml"/>
+                                    </list>
+                                    <list key="config-test">
+                                        <value file="files/application.h2.yaml"/>
+                                    </list>
+                                    <list key="dependencies">
+                                        <map>
+                                            <value key="groupId">com.h2database</value>
+                                            <value key="artifactId">h2</value>
+                                        </map>
+                                        <map>
+                                            <value key="groupId">com.zaxxer</value>
+                                            <value key="artifactId">HikariCP</value>
+                                        </map>
+                                        <map>
+                                            <value key="groupId">io.helidon.dbclient</value>
+                                            <value key="artifactId">helidon-dbclient-jdbc</value>
+                                        </map>
+                                    </list>
+                                    <list key="Main-helidon-imports">
+                                        <value>io.helidon.dbclient.DbClient</value>
+                                        <value>io.helidon.media.jsonp.JsonpSupport</value>
+                                        <value>io.helidon.media.jsonb.JsonbSupport</value>
+                                    </list>
+                                    <list key="DatabaseService-constructor">
+                                        <value><![CDATA[
+        dbClient.execute(handle -> handle.namedDml("create-table"))
+                .thenAccept(System.out::println)
+                .exceptionally(throwable -> {
+                    LOGGER.log(Level.WARNING, "Failed to create table, maybe it already exists?", throwable);
+                    return null;
+                });]]></value>
+                                    </list>
+                                    <list key="MainTest-methods">
+                                        <value><![CDATA[
+    @Test
+    public void testDocuments() throws Exception {
+        final String docName = "myname";
+        Document myDoc = new Document(docName, "txt");
+
+        webClient.put()
+                .path("/db")
+                .submit(myDoc)
+                .thenAccept(response -> assertThat(response.status(), is(Http.Status.OK_200)))
+                .toCompletableFuture()
+                .get();
+
+        webClient.get()
+                .path("/db")
+                .request(JsonArray.class)
+                .thenAccept(array -> assertThat(array.size(), is(1)))
+                .toCompletableFuture()
+                .get();
+
+        webClient.delete()
+                .path("/db/" + docName)
+                .request()
+                .thenAccept(response -> assertThat(response.status(), is(Http.Status.OK_200)))
+                .toCompletableFuture()
+                .get();
+    }]]></value>
+                                    </list>
+                                    <list key="MainTest-other-imports">
+                                        <value>jakarta.json.JsonArray</value>
+                                    </list>
+                                    <list key="MainTest-helidon-imports">
+                                        <value>io.helidon.common.http.Http</value>
+                                        <value>io.helidon.media.jsonp.JsonpSupport</value>
+                                        <value>io.helidon.media.jsonb.JsonbSupport</value>
+                                    </list>
+                                    <list key="MainTest-clientBuilder">
+                                        <value><![CDATA[                .addMediaSupport(JsonpSupport.create())
+                .addMediaSupport(JsonbSupport.create())]]></value>
+                                    </list>
+                                </model>
+                            </output>
+                        </option>
+                        <option value="mysql" name="MySQL" description="Relational database">
+                            <output>
+                                <model>
+                                    <list key="config-entries">
+                                        <value file="files/application.mysql.yaml"/>
+                                    </list>
+                                </model>
+                            </output>
+                        </option>
+                        <option value="oracledb" name="Oracle DB" description="Multi-model database">
+
+                        </option>
+                        <option value="mongodb" name="MongoDB" description="NoSQL / Document database">
+                            <output>
+                                <model>
+                                    <list key="config-entries">
+                                        <value file="files/application.mongo.yaml"/>
+                                    </list>
+                                </model>
+                            </output>
+                        </option>
                     </enum>
                 </inputs>
+                <output>
+                    <templates engine="mustache" transformations="mustache,packaged">
+                        <directory>files</directory>
+                        <includes>
+                            <include>src/*/java/**/Document.java.mustache</include>
+                            <include>src/*/java/**/DatabaseService.java.mustache</include>
+                            <include>src/*/java/**/DocumentMapperProvider.java.mustache</include>
+                            <include>src/*/resources/**/io.helidon.dbclient.spi.DbMapperProvider.mustache</include>
+                        </includes>
+                    </templates>
+                    <model>
+                        <list key="dependencies">
+                            <map>
+                                <value key="groupId">io.helidon.dbclient</value>
+                                <value key="artifactId">helidon-dbclient</value>
+                            </map>
+                            <map>
+                                <value key="groupId">io.helidon.dbclient</value>
+                                <value key="artifactId">helidon-dbclient-jsonp</value>
+                            </map>
+                            <map>
+                                <value key="groupId">io.helidon.media</value>
+                                <value key="artifactId">helidon-media-jsonb</value>
+                            </map>
+                        </list>
+                        <list key="Main-serverBuilder">
+                            <value><![CDATA[                .addMediaSupport(JsonbSupport.create())]]></value>
+                            <value><![CDATA[                .addMediaSupport(JsonpSupport.create())]]></value>
+                        </list>
+                        <list key="Main-createRouting">
+                            <value><![CDATA[        DbClient dbClient = DbClient.builder(config.get("db"))
+                .build();]]></value>
+                        </list>
+                        <list key="Main-routingBuilder">
+                            <value><![CDATA[                .register("/db", new DatabaseService(dbClient))]]></value>
+                        </list>
+                    </model>
+                </output>
             </boolean>
         </inputs>
     </step>
