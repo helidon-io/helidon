@@ -165,7 +165,7 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>Statically weave JPA entities for Eclipselink</id>
+                        <id>weave</id>
                         <phase>process-classes</phase>
                         <goals>
                             <goal>java</goal>
