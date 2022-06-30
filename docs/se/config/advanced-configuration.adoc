@@ -117,12 +117,12 @@ assert secrets.get("password")                   // <4>
 
 Remember that your application can process the contents of a given file
 as configuration. See the xref:config-sources.adoc[config sources] section
-and the link:{config-javadoc-base-url}/ConfigSources.html#file-java.lang.String-[`ConfigSources.file`]
+and the link:{config-javadoc-base-url}/io/helidon/config/ConfigSources.html#file-java.lang.String-[`ConfigSources.file`]
 JavaDoc.
 
 === In-memory Config Sources
 The config system provides several ways to create a `Config` tree from data
-already in memory. See the link:{config-javadoc-base-url}/ConfigSources.html[`ConfigSources` javadoc]
+already in memory. See the link:{config-javadoc-base-url}/io/helidon/config/ConfigSources.html[`ConfigSources` javadoc]
 for further details. The numerous variants of the `from` method construct
 `ConfigSource` or `Builder<ConfigSource>` instances.
 
@@ -184,7 +184,7 @@ in different subtrees.
 
 The config system lets you assign a prefix to all keys
 from a given source using the
-link:{config-javadoc-base-url}/ConfigSources.html#prefixed-java.lang.String-java.util.function.Supplier-[`ConfigSources.prefixed`] method.
+link:{config-javadoc-base-url}/io/helidon/config/ConfigSources.html#prefixed-java.lang.String-java.util.function.Supplier-[`ConfigSources.prefixed`] method.
 The following example shows two YAML files as config sources
 and the code to load each with a different prefix into a single `Config` tree:
 
@@ -260,7 +260,7 @@ The config system provides the
 `FallbackMergingStrategy`
 which implements the default, "first wins" algorithm. You can write your own
 implementation of
-link:{config-javadoc-base-url}/ConfigSources.MergingStrategy.html[`ConfigSources.MergingStrategy`]
+link:{config-javadoc-base-url}/io/helidon/config/ConfigSources.MergingStrategy.html[`ConfigSources.MergingStrategy`]
 and use it instead to provide a different algorithm.
 
 [source,java]
@@ -481,7 +481,7 @@ list of possible sources.
 
 ==== Loading Config by Specifying a Meta-configuration File [[Config-Advanced-Sources-MetaSource]]
 Your application loads
-the configuration specified by a meta-config file by invoking the link:{config-javadoc-base-url}/MetaConfig.html#config-io.helidon.config.Config-[`MetaConfig.config(Config)`]
+the configuration specified by a meta-config file by invoking the link:{config-javadoc-base-url}/io/helidon/config/MetaConfig.html#config-io.helidon.config.Config-[`MetaConfig.config(Config)`]
 method, passing a config object read from the meta-config source as the argument;
 
 If you desire a `Config.Builder` instead of a fully built `Config` instance,
@@ -518,7 +518,7 @@ Remember that the config system will check for these default meta-config and con
 only if the classpath includes the corresponding parsers. The introduction section on xref:introduction.adoc#built-in-formats[built-in formats]
 section describes this further.
 
-See javadoc link:{config-javadoc-base-url}/Config.Builder.html#config-io.helidon.config.Config-[`Config.Builder.config(Config)`].
+See javadoc link:{config-javadoc-base-url}/io/helidon/config/Config.Builder.html#config-io.helidon.config.Config-[`Config.Builder.config(Config)`].
 
 ==== Meta-configuration File Format
 This section is now available in xref:config-profiles.adoc#Config-Profile-Format[config profile format]
@@ -628,10 +628,10 @@ Each filter accepts a key and the value as defined in the source, and returns
 the value to be used. The filter can leave the value unchanged or
 alter it, as it sees fit.
 
-The built-in link:{config-javadoc-base-url}/ConfigFilters.html#valueResolving--[value-resolving]
+The built-in link:{config-javadoc-base-url}/io/helidon/config/ConfigFilters.html#valueResolving--[value-resolving]
 filter enables the token substitution described below.
 
-See the link:{config-javadoc-base-url}/spi/ConfigFilter.html[`ConfigFilter`] JavaDoc
+See the link:{config-javadoc-base-url}/io/helidon/config/spi/ConfigFilter.html[`ConfigFilter`] JavaDoc
 for more information.
 
 === Overrides
@@ -657,7 +657,7 @@ in the overrides sources. Once the config system finds an override entry in whic
 the key expression matches the configuration key, the system returns that entry's
 value for the key being processed.
 
-See the link:{config-javadoc-base-url}/spi/OverrideSource.html[`OverrideSource]` JavaDoc
+See the link:{config-javadoc-base-url}/io/helidon/config/spi/OverrideSource.html[`OverrideSource]` JavaDoc
 for more detail.
 
 === Tokens
@@ -786,7 +786,7 @@ shared across all `Config` instances.
 Your application can invoke the builder's `changesExecutor` method to use a
 different `ScheduledExecutorService` instance.
 The builder returned by the `from` methods mentioned above is a
-link:{config-javadoc-base-url}/ConfigSources.CompositeBuilder.html[CompositeBuilder]
+link:{config-javadoc-base-url}/io/helidon/config/ConfigSources.CompositeBuilder.html[CompositeBuilder]
 which extends `Config.Builder`.
 
 Because a composite source might yield more numerous change events -- because of the
@@ -855,7 +855,7 @@ change events.
 === Retry Policy Custom Executor
 You can control which executor a retry policy should use for its work.
 The `RetryPolicies.repeat(int retries)` method returns
-a link:{config-javadoc-base-url}/RetryPolicies.Builder.html[RetryPolicies.Builder].
+a link:{config-javadoc-base-url}/io/helidon/config/RetryPolicies.Builder.html[RetryPolicies.Builder].
 Your application can invoke the retry policy builder's `executor` method to
 specify which `ScheduledExecutorService` instance it should use to schedule and
 execute delayed retries. By default the config system uses a separate thread

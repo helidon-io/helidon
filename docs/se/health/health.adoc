@@ -188,13 +188,13 @@ You can use Helidon-provided health checks to report various
 
 |deadlock detection
 |`deadlock`
-| link:{health-javadoc-base-url}/DeadlockHealthCheck.html[`DeadlockHealthCheck`]
+| link:{health-javadoc-base-url}/io/helidon/health/checks/DeadlockHealthCheck.html[`DeadlockHealthCheck`]
 | n/a
 | n/a
 
 |available disk space
 |`diskSpace`
-| link:{health-javadoc-base-url}/DiskSpaceHealthCheck.html[`DiskSpaceHealthCheck`]
+| link:{health-javadoc-base-url}/io/helidon/health/checks/DiskSpaceHealthCheck.html[`DiskSpaceHealthCheck`]
 |`helidon.healthCheck.diskSpace.thresholdPercent` +
  +
 `helidon.healthCheck.diskSpace.path`
@@ -203,7 +203,7 @@ You can use Helidon-provided health checks to report various
 `/`
 |available heap memory
 | `heapMemory`
-| link:{health-javadoc-base-url}/HeapMemoryHealthCheck.html[`HeapMemoryHealthCheck`]
+| link:{health-javadoc-base-url}/io/helidon/health/checks/HeapMemoryHealthCheck.html[`HeapMemoryHealthCheck`]
 |`helidon.healthCheck.heapMemory.thresholdPercent`
 |`98`
 |=======

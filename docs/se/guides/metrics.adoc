@@ -108,10 +108,10 @@ import io.helidon.metrics.api.RegistryFactory;
 
     RegistryFactory registryFactory = RegistryFactory.getInstance(metricsSettings); // <3>
 ----
-<1> Create a link:{metrics-javadoc-base-url}/MetricsSettings.html[`MetricsSettings]` instance (via its link:{metrics-javadoc-base-url}/MetricsSettings.Builder.html[`Builder`]) with the metrics subsystem disabled.
-<2> Get a link:{metrics-serviceapi-javadoc-base-url}/MetricsSupport.html[`MetricsSupport]` service (usable in setting routing rules) that responds
+<1> Create a link:{metrics-javadoc-base-url}/io/helidon/metrics/api/MetricsSettings.html[`MetricsSettings]` instance (via its link:{metrics-javadoc-base-url}/io/helidon/metrics/api/MetricsSettings.Builder.html[`Builder`]) with the metrics subsystem disabled.
+<2> Get a link:{metrics-serviceapi-javadoc-base-url}/io/helidon/metrics/serviceapi/MetricsSupport.html[`MetricsSupport]` service (usable in setting routing rules) that responds
 to the `/metrics` endpoint with `404` and an explanatory message.
-<3> Get a link:{metrics-javadoc-base-url}/RegistryFactory.html[`RegistryFactory]` instance that provides `MetricRegistry` instances which register
+<3> Get a link:{metrics-javadoc-base-url}/io/helidon/metrics/api/RegistryFactory.html[`RegistryFactory]` instance that provides `MetricRegistry` instances which register
  no-op metric objects (counters, timers, etc.).
 
 These builders and interfaces also have methods which accept `Config` objects representing the `metrics` node from the application configuration.
@@ -135,7 +135,7 @@ import io.helidon.metrics.api.ComponentMetricsSettings;
             .build(); // <2>
 
 ----
-<1> Create a link:{metrics-javadoc-base-url}/ComponentMetricsSettings.html[`ComponentMetricsSettings]` instance (via its link:{metrics-javadoc-base-url}/ComponentMetricsSettings.Builder.html[`Builder`]) indicating that metrics usage should be disabled.
+<1> Create a link:{metrics-javadoc-base-url}/io/helidon/metrics/api/ComponentMetricsSettings.html[`ComponentMetricsSettings]` instance (via its link:{metrics-javadoc-base-url}/io/helidon/metrics/api/ComponentMetricsSettings.Builder.html[`Builder`]) indicating that metrics usage should be disabled.
 <2> Create an instance of the service with its metrics usage disabled.
 
 include::{rootdir}/includes/guides/metrics.adoc[tag=controlling-by-component-summary]
@@ -144,11 +144,11 @@ include::{rootdir}/includes/guides/metrics.adoc[tag=controlling-by-registry-intr
 
 Your Helidon SE application can control the collection and reporting of metrics programmatically as well by preparing these settings objects:
 
-* link:{metrics-javadoc-base-url}/RegistryFilterSettings.html[`RegistryFilterSettings`]
-* link:{metrics-javadoc-base-url}/RegistrySettings.html[`RegistrySettings`]
-* link:{metrics-javadoc-base-url}/MetricsSettings.html[`MetricsSettings`]
+* link:{metrics-javadoc-base-url}/io/helidon/metrics/api/RegistryFilterSettings.html[`RegistryFilterSettings`]
+* link:{metrics-javadoc-base-url}/io/helidon/metrics/api/RegistrySettings.html[`RegistrySettings`]
+* link:{metrics-javadoc-base-url}/io/helidon/metrics/api/MetricsSettings.html[`MetricsSettings`]
 
-and using the resulting `MetricsSettings` to retrieve a suitable link:{metrics-javadoc-base-url}/RegistryFactory.html[`RegistryFactory`].
+and using the resulting `MetricsSettings` to retrieve a suitable link:{metrics-javadoc-base-url}/io/helidon/metrics/api/RegistryFactory.html[`RegistryFactory`].
 [source,java]
 .Control metrics by registry type and name
 ----
@@ -194,8 +194,8 @@ import io.helidon.metrics.api.RegistryFactory;
             .keyPerformanceIndicatorSettings(kpiSettingsBuilder)
             .build(); // <2>
 ----
-<1> Create a link:{metrics-javadoc-base-url}/KeyPerformanceIndicatorMetricsSettings.html[`KeyPerformanceIndicatorMetricsSettings]` instance (via its link:{metrics-javadoc-base-url}/KeyPerformanceIndicatorMetricsSettings.Builder.html[`Builder`]) with non-default values.
-<2> Create a link:{metrics-javadoc-base-url}/MetricsSettings.html[`MetricsSettings]` instance reflecting the KPI settings.
+<1> Create a link:{metrics-javadoc-base-url}/io/helidon/metrics/api/KeyPerformanceIndicatorMetricsSettings.html[`KeyPerformanceIndicatorMetricsSettings]` instance (via its link:{metrics-javadoc-base-url}/io/helidon/metrics/api/KeyPerformanceIndicatorMetricsSettings.Builder.html[`Builder`]) with non-default values.
+<2> Create a link:{metrics-javadoc-base-url}/io/helidon/metrics/api/MetricsSettings.html[`MetricsSettings]` instance reflecting the KPI settings.
 
 // end of Controlling Metrics section
 

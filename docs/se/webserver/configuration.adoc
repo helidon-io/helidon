@@ -66,7 +66,7 @@ just use `Config.create()`
 == Configuration options
 
 See all configuration options
- link:{webserver-javadoc-base-url}/WebServer.html[here].
+ link:{webserver-javadoc-base-url}/io/helidon/webserver/WebServer.html[here].
 
 Available socket configuration options:
 

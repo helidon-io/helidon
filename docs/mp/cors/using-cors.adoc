@@ -40,7 +40,7 @@ include::{rootdir}/includes/dependencies.adoc[]
 ----
 
 == Understanding the `@CrossOrigin` Annotation
-You set up CORS in Helidon MP using the link:{mp-cors-javadoc-base-url}/CrossOrigin.html[`@CrossOrigin`] annotation.
+You set up CORS in Helidon MP using the link:{mp-cors-javadoc-base-url}/io/helidon/microprofile/cors/CrossOrigin.html[`@CrossOrigin`] annotation.
 
 The following example of the `@CrossOrigin` annotation allows the resource associated with it to be shared with the origins `\http://foo.bar` and `\http://bar.foo`
 using `DELETE` or `PUT`, and permits requests to include the non-standard headers `X-foo` and `X-bar`.

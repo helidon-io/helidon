@@ -116,7 +116,7 @@ server:
 == Configuration options
 
 See all configuration options
-link:{webserver-javadoc-base-url}/WebServerTls.html[here].
+link:{webserver-javadoc-base-url}/io/helidon/webserver/WebServerTls.html[here].
 
 Available server certificate configuration options:
 
@@ -124,7 +124,7 @@ Available server certificate configuration options:
 |===
 |Configuration key |Default value ^|Java type  ^|Description
 
-|`client-auth` |NONE |Enum |See link:{webserver-javadoc-base-url}/ClientAuthentication.html[here] for all possible values.
+|`client-auth` |NONE |Enum |See link:{webserver-javadoc-base-url}/io/helidon/webserver/ClientAuthentication.html[here] for all possible values.
 Whether to require client certificate authentication
 |`protocols` |{nbsp} |String |TLS protocols to enable with the server socket
 |`session-cache-size` |{nbsp} |int |The size of the cache used for storing SSL session objects

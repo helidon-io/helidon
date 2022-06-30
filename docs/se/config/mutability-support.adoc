@@ -41,14 +41,14 @@ value for a key.
 == Using Config Metadata
 === Loading Time
 The config system records when it loads each configuration into memory.
-Your application can retrieve it by invoking the link:{config-javadoc-base-url}/Config.html#timestamp--[timestamp method]:
+Your application can retrieve it by invoking the link:{config-javadoc-base-url}/io/helidon/config/Config.html#timestamp--[timestamp method]:
 [source,java]
 java.time.Instance loadTime = myConfig.timestamp();
 
 on any config node.
 
 === Config Context
-The config system maintains a link:{config-javadoc-base-url}/Config.Context.html[`Config.Context`]
+The config system maintains a link:{config-javadoc-base-url}/io/helidon/config/Config.Context.html[`Config.Context`]
 for each `Config` node. Your application can retrieve the context by invoking the `Config.context()`
 method and then use it for these operations:
 
@@ -97,13 +97,13 @@ The following sections describe these steps in detail.
 When the application creates a config source, it can set up change detection for
 that source. This is called _polling_ in the Helidon API but specific change detection
 algorithms might not use actual polling. You choose a specific
-link:{config-javadoc-base-url}/spi/PollingStrategy.html[`PollingStrategy`] for each
+link:{config-javadoc-base-url}/io/helidon/config/spi/PollingStrategy.html[`PollingStrategy`] for each
 config source you want to monitor. See the section on
 xref:extensions.adoc#Config-SPI-PollingStrategy[polling strategies] in the
 config extensions doc page for more information.
 
 The config system provides some built-in polling strategies, exposed as these methods
-on the link:{config-javadoc-base-url}/PollingStrategies.html[`PollingStrategies`] class:
+on the link:{config-javadoc-base-url}/io/helidon/config/PollingStrategies.html[`PollingStrategies`] class:
 
 - `regular(Duration interval)` - a general-purpose scheduled polling strategy with a specified,
  constant polling interval.
@@ -180,7 +180,7 @@ The config system also supports the flow publisher/subscriber model for applicat
 that need more control over the pace at which the config system delivers
 config change events.
 
-Each `Config` instance exposes the link:{config-javadoc-base-url}/Config.html#changes--[`Config.changes()`]
+Each `Config` instance exposes the link:{config-javadoc-base-url}/io/helidon/config/Config.html#changes--[`Config.changes()`]
 method which returns a `Flow.Publisher<Config>`.
 Your application can invoke this method, then invoke `subscribe` on the returned
 `Flow.Publisher`, passing your own `Flow.Subscriber` implementation. The config system will

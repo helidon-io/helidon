@@ -164,21 +164,21 @@ endif::[]
 :javadoc-base-url: {base-url}/apidocs
 
 // Helidon component javadoc base URLs
-:config-javadoc-base-url: {javadoc-base-url}/io.helidon.config/io/helidon/config
-:configurable-javadoc-base-url: {javadoc-base-url}/apidocs/io.helidon.common.configurable/io/helidon/common/configurable
-:faulttolerance-javadoc-base-url: {javadoc-base-url}/io.helidon.faulttolerance/io/helidon/faulttolerance/package-summary.html
-:grpc-server-javadoc-base-url: {javadoc-base-url}/io.helidon.grpc.server/io/helidon/grpc/server
-:health-javadoc-base-url: {javadoc-base-url}/io.helidon.health.checks/io/helidon/health/checks
-:media-jsonb-javadoc-base-url: {javadoc-base-url}/io.helidon.media.jsonb/io/helidon/media/jsonb
-:media-jackson-javadoc-base-url: {javadoc-base-url}/io.helidon.media.jackson/io/helidon/media/jackson
-:metrics-javadoc-base-url: {javadoc-base-url}/io.helidon.metrics.api/io/helidon/metrics/api
-:metrics-serviceapi-javadoc-base-url: {javadoc-base-url}/io.helidon.metrics.serviceapi/io/helidon/metrics/serviceapi
-:micrometer-javadoc-base-url: {javadoc-base-url}/apidocs/io.helidon.integrations.micrometer/io/helidon/integrations/micrometer
-:mp-cors-javadoc-base-url: {javadoc-base-url}/apidocs/io.helidon.microprofile.cors/io/helidon/microprofile/cors
-:reactive-base-url: {javadoc-base-url}/io.helidon.common.reactive/io/helidon/common/reactive/package-summary.html
-:webclient-javadoc-base-url: {javadoc-base-url}/apidocs/io.helidon.webclient/io/helidon/webclient
-:webserver-javadoc-base-url: {javadoc-base-url}/apidocs/io.helidon.webserver/io/helidon/webserver
-:webserver-cors-javadoc-base-url: {javadoc-base-url}/apidocs/io.helidon.webserver.cors/io/helidon/webserver/cors
+:config-javadoc-base-url: {javadoc-base-url}/io.helidon.config
+:configurable-javadoc-base-url: {javadoc-base-url}/apidocs/io.helidon.common.configurable
+:faulttolerance-javadoc-base-url: {javadoc-base-url}/io.helidon.faulttolerance
+:grpc-server-javadoc-base-url: {javadoc-base-url}/io.helidon.grpc.server
+:health-javadoc-base-url: {javadoc-base-url}/io.helidon.health.checks
+:media-jsonb-javadoc-base-url: {javadoc-base-url}/io.helidon.media.jsonb
+:media-jackson-javadoc-base-url: {javadoc-base-url}/io.helidon.media.jackson
+:metrics-javadoc-base-url: {javadoc-base-url}/io.helidon.metrics.api
+:metrics-serviceapi-javadoc-base-url: {javadoc-base-url}/io.helidon.metrics.serviceapi
+:micrometer-javadoc-base-url: {javadoc-base-url}/apidocs/io.helidon.integrations.micrometer
+:mp-cors-javadoc-base-url: {javadoc-base-url}/apidocs/io.helidon.microprofile.cors
+:reactive-base-url: {javadoc-base-url}/io.helidon.common.reactive
+:webclient-javadoc-base-url: {javadoc-base-url}/apidocs/io.helidon.webclient
+:webserver-javadoc-base-url: {javadoc-base-url}/apidocs/io.helidon.webserver
+:webserver-cors-javadoc-base-url: {javadoc-base-url}/apidocs/io.helidon.webserver.cors
 :mp-tyrus-javadoc-base-url: {javadoc-base-url}/apidocs/io.helidon.microprofile.tyrus
 
 // 3rd party versioned URLs

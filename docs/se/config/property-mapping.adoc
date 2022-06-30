@@ -32,7 +32,7 @@ use the built-in mappings and your own custom ones to convert to simple and
 complex types.
 
 == Converting Configuration to Simple Types
-The link:{config-javadoc-base-url}/Config.html[`Config`] class itself provides many
+The link:{config-javadoc-base-url}/io/helidon/config/Config.html[`Config`] class itself provides many
 conversions to Java types. See the JavaDoc for the complete list.
 
 The methods which support Java primitive types and their related classes follow a
@@ -84,7 +84,7 @@ the value using `Boolean.parseBoolean`.
 
 The numerous conversions defined on the `Config` class for other types (integers,
 doubles, etc.) will satisfy
-many of your application's needs. The link:{config-javadoc-base-url}/ConfigMappers.html[`ConfigMappers`] class
+many of your application's needs. The link:{config-javadoc-base-url}/io/helidon/config/ConfigMappers.html[`ConfigMappers`] class
 includes other related mappings from `String` (rather than from `Config`) to
 Java types (described in the JavaDoc).
 
@@ -116,7 +116,7 @@ of a config tree to complex Java types.
 
 === Built-in Conversions to `List` and `Map`
 The `Config` class exposes several methods for mapping a structured config node
-to a Java `List` or `Map`. The link:{config-javadoc-base-url}/Config.html[JavaDoc]
+to a Java `List` or `Map`. The link:{config-javadoc-base-url}/io/helidon/config/Config.html[JavaDoc]
 contains complete details, but briefly your application can convert a structured `Config` node into:
 
 * a `List<T>` of a given type
@@ -129,7 +129,7 @@ custom, application-specific Java objects, rather than as a group of `String` ke
 values. You will need customized conversions to do so.
 
 The config system provides many ways to accomplish this, described in
-the link:{config-javadoc-base-url}/package-summary.html#conversions[`io.helidon.config`
+the link:{config-javadoc-base-url}/io/helidon/config/package-summary.html#conversions[`io.helidon.config`
 package JavaDoc].
 
 Some of those approaches require that the target class -- the class to which
@@ -164,7 +164,7 @@ In this approach, your application:
 that needs to know about the custom mapper by either:
    a. registering an instance of your mapper by invoking `Config.Builder.addMapper`, or
    b. implementing
-link:{config-javadoc-base-url}/spi/ConfigMapperProvider.html[`ConfigMapperProvider`]
+link:{config-javadoc-base-url}/io/helidon/config/spi/ConfigMapperProvider.html[`ConfigMapperProvider`]
 so it returns an instance of your mapper (see the JavaDoc for complete information)
 and creating or editing the file `io.helidon.config.spi.ConfigMapperProvider`
 so it contains
@@ -407,7 +407,7 @@ object from the config data.
 By default, the system matches potential JavaBean property names with
 config keys in the configuration.
 
-Use the link:{config-javadoc-base-url}/Value.html[`Value`] annotation to control some of the JavaBean processing for a
+Use the link:{config-javadoc-base-url}/io/helidon/config/Value.html[`Value`] annotation to control some of the JavaBean processing for a
 given property.
 
 .`Value` Annotation
@@ -420,7 +420,7 @@ given property.
 |===
 
 To exclude a bean property from the config system bean processing annotate it with
-link:{config-javadoc-base-url}/Config.Transient.html[`Config.Transient`].
+link:{config-javadoc-base-url}/io/helidon/config/Config.Transient.html[`Config.Transient`].
 
 Here is an example using the `app` portion of the example configuration from the
 introduction.

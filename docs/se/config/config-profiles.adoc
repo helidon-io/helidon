@@ -139,7 +139,7 @@ Except for the `system-properties` and `environment-variables` types, the profil
 `properties` section for a source can also specify any optional settings for the
 corresponding config source type. The JavaDoc for the related config source
 type builders lists the supported properties for each type. (For example,
-link:{config-javadoc-base-url}/internal/FileConfigSource.FileBuilder.html[`FileConfigSource.FileBuilder`].)
+link:{config-javadoc-base-url}/io/helidon/config/internal/FileConfigSource.FileBuilder.html[`FileConfigSource.FileBuilder`].)
 
 Here is an example profile in YAML format. Note how the `properties` sections
 are at the same level as the `type` or `class` within a `sources` array entry.
@@ -261,7 +261,7 @@ accompanying `properties`.
 |Strategy Type |Usage |Properties
 
 |`regular`
-| Periodic polling - See link:{config-javadoc-base-url}/PollingStrategies.html#regular-java.time.Duration-[`PollingStrategies.regular`] method
+| Periodic polling - See link:{config-javadoc-base-url}/io/helidon/config/PollingStrategies.html#regular-java.time.Duration-[`PollingStrategies.regular`] method
 |`interval` (`Duration`) - indicating how often to poll; e.g., `PT15S` represents 15 seconds
 
 |===
@@ -271,7 +271,7 @@ accompanying `properties`.
 |Type |Usage |Properties
 
 |`file`
-| Filesystem monitoring - See link:{config-javadoc-base-url}/PollingStrategies.html#watch-java.nio.file.Path-[`PollingStrategies.watch`] method
+| Filesystem monitoring - See link:{config-javadoc-base-url}/io/helidon/config/PollingStrategies.html#watch-java.nio.file.Path-[`PollingStrategies.watch`] method
 | `initial-delay-millis` - delay between the start of the watcher and first check for changes
 
 |===
@@ -281,7 +281,7 @@ accompanying `properties`.
 |Policy Type |Usage |Properties
 
 |`repeat`
-|Regularly-scheduled - see link:{config-javadoc-base-url}RetryPolicies.html#repeat-int-[`RetryPolicies.repeat`].
+|Regularly-scheduled - see link:{config-javadoc-base-url}/io/helidon/configRetryPolicies.html#repeat-int-[`RetryPolicies.repeat`].
 a|`retries` (`int`) - number of retries to perform +
 
 Optional:
@@ -302,7 +302,7 @@ profiles.
 You can then use any custom properties - these are provided as a `Config` instance to
 the `create` method of the Provider implementation.
 
-See link:{config-javadoc-base-url}/spi/RetryPolicy.html[`RetryPolicy`],
-link:{config-javadoc-base-url}/spi/RetryPolicy.html[`ChangeWatcher`], and
-link:{config-javadoc-base-url}/spi/PollingStrategy.html[`PollingStrategy`] JavaDoc
+See link:{config-javadoc-base-url}/io/helidon/config/spi/RetryPolicy.html[`RetryPolicy`],
+link:{config-javadoc-base-url}/io/helidon/config/spi/RetryPolicy.html[`ChangeWatcher`], and
+link:{config-javadoc-base-url}/io/helidon/config/spi/PollingStrategy.html[`PollingStrategy`] JavaDoc
 sections.

@@ -93,7 +93,7 @@ WebClientTls.builder()
 == Configuration options
 
 See all configuration options
-link:{webclient-javadoc-base-url}/WebClientTls.html[here].
+link:{webclient-javadoc-base-url}/io/helidon/webclient/WebClientTls.html[here].
 
 Available server certificate configuration options:
 

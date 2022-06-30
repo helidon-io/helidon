@@ -225,7 +225,7 @@ Using a builder, the application can control everything about how the config
 system creates the resulting `Config` instance: config sources, parsers, polling strategy,
 filters, overrides, mappers, whether or not environment variables and Java
 system properties serve as config sources. The JavaDoc explains how to use the
-link:{config-javadoc-base-url}/Config.Builder.html[`Config.Builder`].
+link:{config-javadoc-base-url}/io/helidon/config/Config.Builder.html[`Config.Builder`].
 +
 * using a xref:config-profiles.adoc[config profile] to choose the sources to be used
 * creating a xref:advanced-configuration.adoc#Config-Advanced-metaconfig[meta-configuration]
@@ -233,7 +233,7 @@ file on the runtime classpath or file system to control how the config system pr
 default configuration.
 
 Once created, the `Config` object provides many methods the application can use to
-retrieve config data as various Java types. See the link:{config-javadoc-base-url}/Config.html[`Config`]
+retrieve config data as various Java types. See the link:{config-javadoc-base-url}/io/helidon/config/Config.html[`Config`]
 JavaDoc for complete details.
 
 The links in the following tables lead you to more information about various

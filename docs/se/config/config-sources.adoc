@@ -42,7 +42,7 @@ If your application uses the default configuration, then the config system
 automatically sets up the config sources for you, as described in the
 xref:introduction.adoc#introducing-the-config-system[config introduction].
 
-If instead your application uses a link:{config-javadoc-base-url}/Config.Builder.html[`Config.Builder`], then it can invoke one of the `sources` methods on that builder to set which config sources it should use.
+If instead your application uses a link:{config-javadoc-base-url}/io/helidon/config/Config.Builder.html[`Config.Builder`], then it can invoke one of the `sources` methods on that builder to set which config sources it should use.
 
 The config system includes support for several types of config sources, for example:
 
@@ -53,12 +53,12 @@ The config system includes support for several types of config sources, for exam
 * a URL,
 * a variety of in-memory data structures (`String`, `Map`, `Properties`)
 
-See the JavaDoc for the link:{config-javadoc-base-url}/ConfigSources.html[`ConfigSources`]
+See the JavaDoc for the link:{config-javadoc-base-url}/io/helidon/config/ConfigSources.html[`ConfigSources`]
 class for a complete list of the built-in config source types and how to use them.
 
 You can also extend the config system
 to handle other types of sources by implementing the
-link:{config-javadoc-base-url}/spi/ConfigSource.html[`ConfigSource`] interface. See
+link:{config-javadoc-base-url}/io/helidon/config/spi/ConfigSource.html[`ConfigSource`] interface. See
 the xref:extensions.adoc[extensions] documentation for complete information.
 
 See the xref:advanced-configuration.adoc[advanced topics] page for further
@@ -70,17 +70,17 @@ to translate that text into the in-memory data structures representing that conf
 The config system includes several built-in parsers, such as for the Java properties, YAML, JSON, and HOCON formats. See xref:introduction.adoc#built-in-formats[this section in the introduction] for
 how to change your `pom.xml` to make parsers for those formats available to your
 application. Then your application can invoke the
-link:{config-javadoc-base-url}/Config.Builder.html#addParser-io.helidon.config.spi.ConfigParser-[config builder's `addParser`] method
+link:{config-javadoc-base-url}/io/helidon/config/Config.Builder.html#addParser-io.helidon.config.spi.ConfigParser-[config builder's `addParser`] method
 so that builder will use the parsers you choose.
 
-You can extend the system with custom parsers of your own. Implement the link:{config-javadoc-base-url}/spi/ConfigParser.html[`ConfigParser`] interface, then construct a `Config.Builder` using the `addParser` method, passing an instance of your customer parser. Invoke one of the `sources` methods to include a source that uses the custom format and then build the `Config` object.
+You can extend the system with custom parsers of your own. Implement the link:{config-javadoc-base-url}/io/helidon/config/spi/ConfigParser.html[`ConfigParser`] interface, then construct a `Config.Builder` using the `addParser` method, passing an instance of your customer parser. Invoke one of the `sources` methods to include a source that uses the custom format and then build the `Config` object.
 
 == Detecting and Responding to Changes in Config Data
 Each `Config` object which the config system returns to your application is
 immutable; even if the information in one of the underlying config sources changes, an in-memory data structure built from the earlier
 content remains unchanged.
 
-Even so, the config system allows your application to learn when such underlying changes in the data occur and respond accordingly. The xref:mutability-support.adoc[mutability] section explains this in detail, and the link:{config-javadoc-base-url}/PollingStrategies.html[`PollingStrategies`] JavaDoc describes the built-in implementations. You can, of course, write your own by implementing the link:{config-javadoc-base-url}/spi/PollingStrategy.html[`PollingStrategy`] interface. On a config source builder invoke `pollingStrategy` with an instance of your custom strategy and then invoke `build` to create the `ConfigSource`.
+Even so, the config system allows your application to learn when such underlying changes in the data occur and respond accordingly. The xref:mutability-support.adoc[mutability] section explains this in detail, and the link:{config-javadoc-base-url}/io/helidon/config/PollingStrategies.html[`PollingStrategies`] JavaDoc describes the built-in implementations. You can, of course, write your own by implementing the link:{config-javadoc-base-url}/io/helidon/config/spi/PollingStrategy.html[`PollingStrategy`] interface. On a config source builder invoke `pollingStrategy` with an instance of your custom strategy and then invoke `build` to create the `ConfigSource`.
 
 == Dealing with Loading Errors: Retry Policies [[retry]]
 Config sources, especially those that depend on fallible mechanisms such as the network or a shared file system, might fail to load during momentary outages. The config system allows you to build resiliency into your application's use of configuration that relies on such technologies.
@@ -97,7 +97,7 @@ The config system includes two predefined retry policies:
 |"repeat" |performs a settable number of time-based retries, reporting failure only after all available retries have failed
 |===
 
-See the link:{config-javadoc-base-url}/RetryPolicies.html[`RetryPolicies`] JavaDoc for complete details on these built-in retry policies.
+See the link:{config-javadoc-base-url}/io/helidon/config/RetryPolicies.html[`RetryPolicies`] JavaDoc for complete details on these built-in retry policies.
 
-You can devise your own policy. Implement the link:{config-javadoc-base-url}/spi/RetryPolicy.html[`RetryPolicy`] interface. Then pass an instance of your policy implementation to the config source builder's `retryPolicy` method.
+You can devise your own policy. Implement the link:{config-javadoc-base-url}/io/helidon/config/spi/RetryPolicy.html[`RetryPolicy`] interface. Then pass an instance of your policy implementation to the config source builder's `retryPolicy` method.
 

@@ -140,8 +140,8 @@ The default value is 100. A _lower_ priority value represents _greater_ importan
 
 The config system includes built-in support for several types of sources
 (for example, Java `String`, `Readable`, `Properties`, and `Map`
-objects - see link:{config-javadoc-base-url}/ConfigSources.html[`ConfigSources`]).
-Implement a link:{config-javadoc-base-url}/spi/ConfigSource.html[`ConfigSource`] to
+objects - see link:{config-javadoc-base-url}/io/helidon/config/ConfigSources.html[`ConfigSources`]).
+Implement a link:{config-javadoc-base-url}/io/helidon/config/spi/ConfigSource.html[`ConfigSource`] to
 load raw configuration data from a type of source that the config system does
 not already support.
 
@@ -176,7 +176,7 @@ This can be always
 The parsing step converts config data in some format into the corresponding in-memory representation of config ``ObjectNode``s.
 The config system can already parse several data formats (for example Java `Properties`, YAML, and HOCON).
 Implement the
-link:{config-javadoc-base-url}/spi/ConfigParser.html[`ConfigParser`] SPI to allow the config system to handle additional formats.
+link:{config-javadoc-base-url}/io/helidon/config/spi/ConfigParser.html[`ConfigParser`] SPI to allow the config system to handle additional formats.
 
 image::config/spi-ConfigParser.png[title="ConfigParser SPI",align="center"]
 
@@ -221,14 +221,14 @@ the config key), and
 * a replacement, _overriding_, `String` value the config system should use if the predicate evaluates to true.
 
 To furnish overrides to the config system, implement the
-link:{config-javadoc-base-url}/spi/OverrideSource.html[`OverrideSource`] SPI one or more times and pass instances of
+link:{config-javadoc-base-url}/io/helidon/config/spi/OverrideSource.html[`OverrideSource`] SPI one or more times and pass instances of
  those implementations to the config builder's
-link:{config-javadoc-base-url}/Config.Builder.html#overrides-java.util.function.Supplier-[`overrides`] method.
+link:{config-javadoc-base-url}/io/helidon/config/Config.Builder.html#overrides-java.util.function.Supplier-[`overrides`] method.
 The config system will apply the overrides returned from each
 `OverrideSource` to each config key requested from a `Config` that is based on that `Config.Builder`.
 
 To support custom override sources in config profiles, also implement the
-link:{config-javadoc-base-url}/spi/OverrideSourceProvider.html[`OverrideSourceProvider`] service loader SPI
+link:{config-javadoc-base-url}/io/helidon/config/spi/OverrideSourceProvider.html[`OverrideSourceProvider`] service loader SPI
 
 image::config/spi-OverrideSource.png[title="OverrideSource SPI",align="center"]
 
@@ -239,26 +239,26 @@ Note that override sources can also implement `PollableSource`, and `WatchableSo
 Before returning a `String` from `Config.value()` the config system applies any _filters_ set up on the
  `Config.Builder` used to create the config tree that contains the config node of interest.
 The application provides filters as implementations of the
-link:{config-javadoc-base-url}/spi/ConfigFilter.html[`ConfigFilter`] interface.
+link:{config-javadoc-base-url}/io/helidon/config/spi/ConfigFilter.html[`ConfigFilter`] interface.
 Each filter is a function which accepts a `Config.Key` and an input `String` value and returns a `String` value
  the config system should use for that key going forward.
 The filter can return the original value or return some other value.
 
 The application registers filters and filter providers by passing `ConfigFilter`
 implementations to one of the config builder
-link:{config-javadoc-base-url}/Config.Builder.html[`addFilter` methods]. The config
+link:{config-javadoc-base-url}/io/helidon/config/Config.Builder.html[`addFilter` methods]. The config
 system also uses the Java service loader mechanism to load
 additional filters automatically, for all builders, using
 the service interface described in the following table. Prevent a given
 builder from using the auto-loaded filters by invoking the
-link:{config-javadoc-base-url}/Config.Builder.html#disableFilterServices--[`disableFilterServices`]
+link:{config-javadoc-base-url}/io/helidon/config/Config.Builder.html#disableFilterServices--[`disableFilterServices`]
 method.
 
 .Config SPI Interfaces for Filtering
 |===
 |Interface |Method |Usage
 
-|link:{config-javadoc-base-url}/spi/ConfigFilter.html[`ConfigFilter`]
+|link:{config-javadoc-base-url}/io/helidon/config/spi/ConfigFilter.html[`ConfigFilter`]
 
 Accepts `@Priority`. See <<priority-info, About Priority>>.
 |`String apply(Config.Key key, String stringValue);`
@@ -289,11 +289,11 @@ image::config/spi-ConfigFilter.png[title="ConfigFilter SPI",align="center"]
 == ConfigMapperProvider SPI [[Config-SPI-ConfigMapperProvider]]
 
 The config system provides built-in mappings from `String` values to various Java
-types. (See link:{config-javadoc-base-url}/ConfigMappers.html[`ConfigMappers`].)
+types. (See link:{config-javadoc-base-url}/io/helidon/config/ConfigMappers.html[`ConfigMappers`].)
 
 To handle mappings to other types the application can register
 custom mappers with the config system by implementing the
-link:{config-javadoc-base-url}/spi/ConfigMapperProvider.html[`ConfigMapperProvider`]
+link:{config-javadoc-base-url}/io/helidon/config/spi/ConfigMapperProvider.html[`ConfigMapperProvider`]
  SPI.
 
 Such providers return a map, with entries in which:
@@ -357,9 +357,9 @@ module my.module {
 
 Once it loads a `Config` tree from ``ConfigSource``s the config system does not itself change the in-memory `Config`
  tree. Even so, the underlying data available via the tree's ``ConfigSource``s can change.
-Implementations of link:{config-javadoc-base-url}/spi/PollingStrategy.html[`PollingStrategy`]
+Implementations of link:{config-javadoc-base-url}/io/helidon/config/spi/PollingStrategy.html[`PollingStrategy`]
 may trigger regular check whether a source has new data.
-Implementation of link:{config-javadoc-base-url}/spi/ChangeWatcher.html[`ChangeWatcher`]
+Implementation of link:{config-javadoc-base-url}/io/helidon/config/spi/ChangeWatcher.html[`ChangeWatcher`]
 may watch the underlying source for changes and trigger an update.
 
 === PollingStrategy SPI
@@ -406,14 +406,14 @@ To support change watchers that can be configured in config profile, also implem
 == RetryPolicy SPI [[Config-SPI-RetryPolicy]]
 
 The builder for each `ConfigSource` and `OverrideSource` accepts a
-link:{config-javadoc-base-url}/spi/RetryPolicy.html[`RetryPolicy`]
+link:{config-javadoc-base-url}/io/helidon/config/spi/RetryPolicy.html[`RetryPolicy`]
 governing if and how the source should deal with failures loading the underlying
 data.
 
 A retry policy accepts a function, the invocation of which the policy will
 govern according to its own implementation.
 Applications can use the predefined policies in
-link:{config-javadoc-base-url}/RetryPolicies.html[`RetryPolicies`], such as
+link:{config-javadoc-base-url}/io/helidon/config/RetryPolicies.html[`RetryPolicies`], such as
 `RetryPolicies.justCall` which simply invokes the function without any retry.
 That class also exposes a builder for constructing a time-based retry policy,
 with several parameters:

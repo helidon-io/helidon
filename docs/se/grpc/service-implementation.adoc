@@ -79,7 +79,7 @@ class EchoService implements GrpcService {
 
 NOTE: The `complete` method shown in the example above is just one of many helper
       methods available in the `GrpcService` class. See the full list
-      link:{grpc-server-javadoc-base-url}/GrpcService.html[here].
+      link:{grpc-server-javadoc-base-url}/io/helidon/grpc/server/GrpcService.html[here].
 
 The example above implements a service with a single unary method, which will be
 exposed at the `EchoService/Echo' endpoint. The service does not explicitly define

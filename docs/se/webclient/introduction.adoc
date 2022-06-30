@@ -197,7 +197,7 @@ The request settings are based on the following optional parameters, and change 
 * `contentType` (MediaType contentType)
 * `accept` (MediaType... mediaTypes)
 
-For more details, see the link:{webserver-javadoc-base-url}/RequestHeaders.html[Request Headers] API.
+For more details, see the link:{webserver-javadoc-base-url}/io/helidon/webserver/RequestHeaders.html[Request Headers] API.
 
 == Adding JSON Processing Media Support to the WebClient
 
