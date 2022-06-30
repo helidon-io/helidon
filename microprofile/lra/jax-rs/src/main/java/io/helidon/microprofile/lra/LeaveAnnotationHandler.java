@@ -45,7 +45,7 @@ class LeaveAnnotationHandler implements AnnotationHandler {
                 .ifPresent(lraId -> {
                     URI baseUri = reqCtx.getUriInfo().getBaseUri();
                     Participant p = participantService.participant(baseUri, resourceInfo.getResourceClass());
-                    coordinatorClient.leave(lraId, p);
+                    coordinatorClient.leave(lraId, PropagatedHeaders.noop(), p);
                     reqCtx.getHeaders().add(LRA_HTTP_CONTEXT_HEADER, lraId.toASCIIString());
                     reqCtx.setProperty(LRA_HTTP_CONTEXT_HEADER, lraId);
                 });
