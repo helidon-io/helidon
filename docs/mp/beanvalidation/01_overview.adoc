@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -18,19 +18,34 @@
 
 = Bean Validation Introduction
 :h1Prefix: MP
-:pagename: bean-validation-introduction
-:description: Bean Validation Introduction
+:pagename: bean-validation
+:description: Bean Validation
 :keywords: helidon, webserver, bean validation, validation
 :bean-validation-spec-url: https://projects.eclipse.org/projects/ee4j.bean-validation
 :feature-name: Bean Validation
 :common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 
+== ToC
+
+- <<Overview, Overview>>
+- <<Maven Coordinates, Maven Coordinates>>
+- <<API, API>>
+- <<Configuration, Configuration>>
+- <<Examples, Examples>>
+- <<Additional Information, Additional Information>>
+- <<Reference, Reference>>
+
+== Overview
 
 Helidon supports Bean Validation via its integration with JAX-RS/Jersey. The
 {bean-validation-spec-url}[Jakarta Bean
 Validation specification] defines an API to validate Java beans.
 Bean Validation is supported in REST resource classes as well as in
 regular application beans.
+
+If bean validation is required outside JAX-RS/Jersey use cases, it is also available in Helidon.
+It follows the standard {bean-validation-spec-url}[Jakarta Bean
+Validation specification] which defines an API to validate Java beans.
 
 include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 
@@ -42,14 +57,307 @@ include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 </dependency>
 ----
 
-== Validation Example in Helidon MP
+For general validation, please add to your `pom.xml`:
 
-The following example shows a simple resource method annotated with `@POST` whose
+[source, xml]
+----
+<dependency>
+  <groupId>io.helidon.microprofile.bean-validation</groupId>
+  <artifactId>helidon-microprofile-bean-validation</artifactId>
+</dependency>
+----
+
+== API
+
+The specification defines a small set of built-in constraints. Their usage is encouraged both in regular constraint declarations and as composing constraints. Using this set of constraints will enhance portability of your constraints across constraint-consuming frameworks relying on the metadata API (such as client side validation frameworks or database schema generation frameworks).
+
+Built-in annotations are annotated with an empty `@Constraint` annotation to avoid any dependency between the specification API and a specific implementation. Each Jakarta Bean Validation provider must recognize built-in constraint annotations as valid constraint definitions and provide compliant constraint implementations for each. The built-in constraint validation implementation is having a lower priority than an XML mapping definition. In other words ConstraintValidator implementations for built-in constraints can be overridden by using the XML mapping (see Overriding constraint definitions in XML).
+
+All built-in constraints are in the `jakarta.validation.constraints` package. Here is the list of constraints and their declaration.
+
+
+|===
+|Annotation |Description
+
+|`@Null`
+|The annotated element must be `null`. Accepts any type.
+
+|`@NotNull`
+|The annotated element must not be `null`. Accepts any type.
+
+|`@AssertTrue`
+|The annotated element must be true. Supported types are `boolean` and `Boolean`. `Null` elements are considered valid.
+
+|`@AssertFalse`
+|The annotated element must be false. Supported types are `boolean` and `Boolean`. `Null` elements are considered valid.
+
+|`@Min`
+a|The annotated element must be a number whose value must be higher or equal to the specified minimum.
+
+Supported types are:
+
+* `BigDecimal`
+* `BigInteger`
+* `byte`, `short`, `int`, `long`, and their respective wrappers
+
+Note that `double` and `float` are not supported due to rounding errors (some providers might provide some approximative support).
+
+`Null` elements are considered valid.
+
+
+|`@Max`
+a|The annotated element must be a number whose value must be higher or equal to the specified minimum.
+
+Supported types are:
+
+* `BigDecimal`
+* `BigInteger`
+* `byte`, `short`, `int`, `long`, and their respective wrappers
+
+Note that `double` and `float` are not supported due to rounding errors (some providers might provide some approximative support).
+
+`Null` elements are considered valid.
+
+|`@DecimalMin`
+a|The annotated element must be a number whose value must be lower or equal to the specified maximum.
+
+Supported types are:
+
+* `BigDecimal`
+* `BigInteger`
+* `byte`, `short`, `int`, `long`, and their respective wrappers
+
+Note that `double` and `float` are not supported due to rounding errors (some providers might provide some approximative support).
+
+`Null` elements are considered valid.
+
+
+|`@DecimalMax`
+a|The annotated element must be a number whose value must be lower or equal to the specified maximum.
+
+Supported types are:
+
+* `BigDecimal`
+* `BigInteger`
+* `byte`, `short`, `int`, `long`, and their respective wrappers
+
+Note that `double` and `float` are not supported due to rounding errors (some providers might provide some approximative support).
+
+`Null` elements are considered valid.
+
+|`@Negative`
+a|The annotated element must be a strictly negative number (i.e. 0 is considered as an invalid value).
+
+Supported types are:
+
+* `BigDecimal`
+* `BigInteger`
+* `byte`, `short`, `int`, `long`, and their respective wrappers
+
+`Null` elements are considered valid.
+
+|`@NegativeOrZero`
+a|The annotated element must be a negative number or 0.
+
+Supported types are:
+
+* `BigDecimal`
+* `BigInteger`
+* `byte`, `short`, `int`, `long`, `float`, or `double` and their respective wrappers
+
+`Null` elements are considered valid.
+
+|`@Positive`
+a|The annotated element must be a strictly positive number (i.e. 0 is considered as an invalid value).
+
+Supported types are:
+
+* `BigDecimal`
+* `BigInteger`
+* `byte`, `short`, `int`, `long`, `float`, or `double` and their respective wrappers
+
+`Null` elements are considered valid.
+
+
+|`@PositiveOrZero`
+a|The annotated element must be a positive number or 0.
+
+Supported types are:
+
+* `BigDecimal`
+* `BigInteger`
+* `byte`, `short`, `int`, `long`, `float`, or `double` and their respective wrappers
+
+`Null` elements are considered valid.
+
+|`@Size`
+a|The annotated element size must be between the specified boundaries (included).
+Supported types are:
+ * `CharSequence` - length of character sequence is evaluated
+ * `Collection` - collection size is evaluated
+ * `Map` - map size is evaluated
+ * `Array` (array length is evaluated)
+
+`Null` elements are considered valid.
+
+|`@Digits`
+a|The annotated element must be a number within accepted range.
+
+Supported types are:
+
+*     `BigDecimal`
+*     `BigInteger`
+*     `CharSequence`
+*     `byte`, `short`, `int`, `long`, and their respective wrapper types
+
+`Null` elements are considered valid.
+
+
+|`@Past`
+a|The annotated element must be an instant, date or time in the past or in the present.
+`Now` is defined by the `ClockProvider` attached to the `Validator` or `ValidatorFactory`. The default `clockProvider` defines the current time
+according to the virtual machine, applying the current default time zone if needed.
+
+Supported types are:
+
+*     `java.util.Date`
+*     `java.util.Calendar`
+*     `java.time.Instant`
+*     `java.time.LocalDate`
+*     `java.time.LocalDateTime`
+*     `java.time.LocalTime`
+*     `java.time.MonthDay`
+*     `java.time.OffsetDateTime`
+*     `java.time.OffsetTime`
+*     `java.time.Year`
+*     `java.time.YearMonth`
+*     `java.time.ZonedDateTime`
+*     `java.time.chrono.HijrahDate`
+*     `java.time.chrono.JapaneseDate`
+*     `java.time.chrono.MinguoDate`
+*     `java.time.chrono.ThaiBuddhistDate`
+
+`Null` elements are considered valid.
+
+|`@PastOrPresent`
+a|The annotated element must be an instant, date or time in the past or in the present.
+`Now` is defined by the `ClockProvider` attached to the `Validator` or `ValidatorFactory`. The default `clockProvider` defines the current time
+according to the virtual machine, applying the current default time zone if needed.
+
+Supported types are:
+
+*     `java.util.Date`
+*     `java.util.Calendar`
+*     `java.time.Instant`
+*     `java.time.LocalDate`
+*     `java.time.LocalDateTime`
+*     `java.time.LocalTime`
+*     `java.time.MonthDay`
+*     `java.time.OffsetDateTime`
+*     `java.time.OffsetTime`
+*     `java.time.Year`
+*     `java.time.YearMonth`
+*     `java.time.ZonedDateTime`
+*     `java.time.chrono.HijrahDate`
+*     `java.time.chrono.JapaneseDate`
+*     `java.time.chrono.MinguoDate`
+*     `java.time.chrono.ThaiBuddhistDate`
+
+`Null` elements are considered valid.
+
+|`@PastOrPresent`
+a|The annotated element must be an instant, date or time in the future.
+`Now` is defined by the `ClockProvider` attached to the `Validator` or `ValidatorFactory`. The default `clockProvider` defines the current time
+according to the virtual machine, applying the current default time zone if needed.
+
+Supported types are:
+
+*     `java.util.Date`
+*     `java.util.Calendar`
+*     `java.time.Instant`
+*     `java.time.LocalDate`
+*     `java.time.LocalDateTime`
+*     `java.time.LocalTime`
+*     `java.time.MonthDay`
+*     `java.time.OffsetDateTime`
+*     `java.time.OffsetTime`
+*     `java.time.Year`
+*     `java.time.YearMonth`
+*     `java.time.ZonedDateTime`
+*     `java.time.chrono.HijrahDate`
+*     `java.time.chrono.JapaneseDate`
+*     `java.time.chrono.MinguoDate`
+*     `java.time.chrono.ThaiBuddhistDate`
+
+`Null` elements are considered valid.
+
+|`@FutureOrPresent`
+a|The annotated element must be an instant, date or time in the present or in the future.
+`Now` is defined by the `ClockProvider` attached to the `Validator` or `ValidatorFactory`. The default `clockProvider` defines the current time
+according to the virtual machine, applying the current default time zone if needed.
+
+Supported types are:
+
+*     `java.util.Date`
+*     `java.util.Calendar`
+*     `java.time.Instant`
+*     `java.time.LocalDate`
+*     `java.time.LocalDateTime`
+*     `java.time.LocalTime`
+*     `java.time.MonthDay`
+*     `java.time.OffsetDateTime`
+*     `java.time.OffsetTime`
+*     `java.time.Year`
+*     `java.time.YearMonth`
+*     `java.time.ZonedDateTime`
+*     `java.time.chrono.HijrahDate`
+*     `java.time.chrono.JapaneseDate`
+*     `java.time.chrono.MinguoDate`
+*     `java.time.chrono.ThaiBuddhistDate`
+
+`Null` elements are considered valid.
+
+|`@FutureOrPresent`
+a|The annotated `CharSequence` must match the specified regular expression.
+The regular expression follows the Java regular expression conventions see `java.util.regex.Pattern`.
+Accepts `CharSequence`.
+
+`Null` elements are considered valid.
+
+|`@NotEmpty`
+a|The annotated element must not be `null` nor empty.
+Supported types are:
+* `CharSequence` - length of character sequence is evaluated
+* `Collection` - collection size is evaluated
+* `Map` - map size is evaluated
+* `Array` (array length is evaluated)
+
+|`@NotBlank`
+a|The annotated element must not be `null` and must contain at least one
+non-whitespace character. Accepts `CharSequence`.
+
+|`@Email`
+a| The string has to be a well-formed email address. Exact semantics of what makes up a valid
+email address are left to Jakarta Bean Validation providers. Accepts `CharSequence`.
+
+`Null` elements are considered valid.
+
+|===
+
+== Configuration
+
+Bean Validation can be configured using `META-INF/validation.xml`.
+
+For more information about configuring the validator factory in validation.xml, see link:https://docs.jboss.org/hibernate/stable/validator/reference/en-US/html_single/?v=7.0#chapter-xml-configuration[Hibernate Validator Documentation].
+
+== Examples
+
+1. The following example shows a simple resource method annotated with `@POST` whose
 parameter must be _not null_ and _valid_. Validating a parameter in this case implies
 making sure that any constraint annotations in the `Greeting` class are satisfied.
 The resource method shall never be called if the validation fails, with a 400
 (Bad Request) status code returned instead.
-
++
 [source,java]
 ----
 @Path("helloworld")
@@ -63,3 +371,39 @@ public class HelloWorld {
 }
 ----
 
+2. The following example shows a simple application with one field declared as _not null_ using `@NotNull` annotation:
++
+[source,java]
+----
+public class GreetingHolder {
+    @NotNull
+    private String greeting;
+    //...
+}
+----
++
+If the bean contains a method parameter annotated with @Valid, and GreetingHolder with _null_greeting is passed, then a _ValidationException_ will be thrown:
++
+[source,java]
+----
+@ApplicationScoped
+public class GreetingProvider {
+    private GreetingHolder greetingHolder;
+    //..
+    void setGreeting(@Valid GreetingHolder greetingHolder) {
+        this.greetingHolder = greetingHolder;
+    }
+}
+----
++
+NOTE: `beans.xml` is required to identify beans and for bean validation to work properly.
+
+Examples are available in link:https://github.com/oracle/helidon/tree/master/examples/microprofile/bean-validation[our official GitHub repository].
+
+== Additional Information
+
+Helidon uses link:https://hibernate.org/validator/[Hibernate Bean Validator] for general bean validation.
+
+== Reference
+
+* link:https://beanvalidation.org/2.0/spec/[Bean Validation Specification]
