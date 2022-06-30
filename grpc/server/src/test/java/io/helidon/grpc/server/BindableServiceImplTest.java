@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.grpc.server;
 import java.util.List;
 
 import io.helidon.grpc.core.InterceptorPriorities;
+import io.helidon.grpc.core.JsonbMarshaller;
 import io.helidon.grpc.core.PriorityBag;
 
 import io.grpc.Metadata;
@@ -59,6 +60,7 @@ public class BindableServiceImplTest {
         global.addAll(List.of(interceptorOne, interceptorTwo, interceptorThree));
 
         ServiceDescriptor descriptor = ServiceDescriptor.builder(new Service())
+                .marshallerSupplier(new JsonbMarshaller.Supplier())
                 .intercept(interceptorTwo)
                 .intercept(interceptorFour)
                 .intercept(interceptorFive)

@@ -85,7 +85,6 @@ class BareResponseImpl implements BareResponse {
 
     // Accessed by writeStatusHeaders(status, headers) method
     private volatile boolean lengthOptimization;
-    private volatile boolean isWebSocketUpgrade = false;
     private volatile DefaultHttpResponse response;
 
     /**
@@ -176,23 +175,16 @@ class BareResponseImpl implements BareResponse {
                 .filter(header -> header.startsWith(HTTP_2_HEADER_PREFIX))
                 .forEach(header -> response.headers().add(header, requestHeaders.get(header)));
 
-        // Check if WebSocket upgrade
-        boolean isUpgrade = isWebSocketUpgrade(status, headers);
-        if (isUpgrade) {
-            isWebSocketUpgrade = true;
-        } else {
-            // Set chunked if length not set, may switch to length later
-            boolean lengthSet = HttpUtil.isContentLengthSet(response);
-            if (!lengthSet) {
-                lengthOptimization = status.code() == Http.Status.OK_200.code()
-                        && !HttpUtil.isTransferEncodingChunked(response) && !isSseEventStream(headers);
-                HttpUtil.setTransferEncodingChunked(response, true);
-            }
+        // Set chunked if length not set, may switch to length later
+        boolean lengthSet = HttpUtil.isContentLengthSet(response);
+        if (!lengthSet) {
+            lengthOptimization = status.code() == Http.Status.OK_200.code()
+                    && !HttpUtil.isTransferEncodingChunked(response) && !isSseEventStream(headers);
+            HttpUtil.setTransferEncodingChunked(response, true);
         }
 
         // Add keep alive header as per:
         // http://www.w3.org/Protocols/HTTP/1.1/draft-ietf-http-v11-spec-01.html#Connection
-        // If already set (e.g. WebSocket upgrade), do not override
         // if response Connection header is set explicitly to close, we can ignore the following
         if (!keepAlive || HttpHeaderValues.CLOSE.contentEqualsIgnoreCase(response.headers().get(HttpHeaderNames.CONNECTION))) {
             response.headers().remove(HttpHeaderNames.CONNECTION);
@@ -201,37 +193,36 @@ class BareResponseImpl implements BareResponse {
             if (!requestContext.requestCompleted()) {
                 LOGGER.finer(() -> log("Request content not fully read with keep-alive: true", channel));
 
-                if (!isWebSocketUpgrade) {
-                    if (requestContext.isDataRequested()) {
-                        // there are pending requests, we have emitted some data and request was not explicitly canceled
-                        // this is a bug in code, where entity is requested and not fully processed
-                        // throwing an exception here is a breaking change (also this may be an intermittent problem
-                        // as it may depend on thread race)
-                        HttpRequest request = requestContext.request();
-                        LOGGER.warning("Entity was requested and not fully consumed before a response is sent. "
-                                               + "This is not supported. Connection will be closed. Please fix your route for "
-                                               + request.method() + " " + request.uri());
+                if (requestContext.isDataRequested()) {
+                    // there are pending requests, we have emitted some data and request was not explicitly canceled
+                    // this is a bug in code, where entity is requested and not fully processed
+                    // throwing an exception here is a breaking change (also this may be an intermittent problem
+                    // as it may depend on thread race)
+                    HttpRequest request = requestContext.request();
+                    LOGGER.warning("Entity was requested and not fully consumed before a response is sent. "
+                            + "This is not supported. Connection will be closed. Please fix your route for "
+                            + request.method() + " " + request.uri());
 
-                        // let's close this connection, as it is in an unexpected state
-                        response.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.CLOSE);
-                        originalEntityAnalyzed.complete(ChannelFutureListener.CLOSE);
-                    } else {
-                        // we want to consume the entity and keep alive
-                        // entity must be consumed here, so we do not close connection in forwarding handler
-                        // because of unconsumed payload (the following code will only succeed if there is no subscriber)
-                        requestContext.publisher()
-                                .forEach(DataChunk::release)
-                                .onComplete(() -> {
-                                    response.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE);
-                                    originalEntityAnalyzed.complete(ChannelFutureListener.CLOSE_ON_FAILURE);
-                                })
-                                .onError(t -> {
-                                    response.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.CLOSE);
-                                    originalEntityAnalyzed.complete(ChannelFutureListener.CLOSE);
-                                })
-                                .ignoreElement();
-                    }
+                    // let's close this connection, as it is in an unexpected state
+                    response.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.CLOSE);
+                    originalEntityAnalyzed.complete(ChannelFutureListener.CLOSE);
+                } else {
+                    // we want to consume the entity and keep alive
+                    // entity must be consumed here, so we do not close connection in forwarding handler
+                    // because of unconsumed payload (the following code will only succeed if there is no subscriber)
+                    requestContext.publisher()
+                            .forEach(DataChunk::release)
+                            .onComplete(() -> {
+                                response.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE);
+                                originalEntityAnalyzed.complete(ChannelFutureListener.CLOSE_ON_FAILURE);
+                            })
+                            .onError(t -> {
+                                response.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.CLOSE);
+                                originalEntityAnalyzed.complete(ChannelFutureListener.CLOSE);
+                            })
+                            .ignoreElement();
                 }
+
             } else if (!headers.containsKey(HttpHeaderNames.CONNECTION.toString())) {
                 response.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE);
             }
@@ -247,23 +238,8 @@ class BareResponseImpl implements BareResponse {
         }
     }
 
-    private boolean isWebSocketUpgrade(Http.ResponseStatus status, Map<String, List<String>> headers) {
-        return status.code() == 101 && headers.containsKey("Upgrade")
-                && headers.get("Upgrade").contains("websocket");
-    }
-
     private boolean isSseEventStream(Map<String, List<String>> headers) {
         return headers.containsKey("Content-Type") && headers.get("Content-Type").contains("text/event-stream");
-    }
-
-    /**
-     * Determines if response is a WebSockets upgrade.
-     *
-     * @return Outcome of test.
-     * @throws IllegalStateException If headers not written yet.
-     */
-    boolean isWebSocketUpgrade() {
-        return isWebSocketUpgrade;
     }
 
     /**

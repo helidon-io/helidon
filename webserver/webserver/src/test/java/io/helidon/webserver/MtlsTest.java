@@ -28,8 +28,10 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.security.cert.X509Certificate;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Optional;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
@@ -48,6 +50,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class MtlsTest {
 
     private static final Logger LOGGER = Logger.getLogger(MtlsTest.class.getName());
+    private static final Duration TIMEOUT = Duration.ofSeconds(25);
 
     private static WebServer webServer;
     private static WebClient clientWithoutCertificate;
@@ -67,36 +70,38 @@ public class MtlsTest {
         rawConfig.put("private-key.pem.key.resource.resource-path", "ssl/key.pkcs8.pem");
         rawConfig.put("private-key.pem.cert-chain.resource.resource-path", "ssl/certificate.pem");
 
-        webServer = WebServer.builder(
-                Routing.builder()
+        webServer = WebServer.builder()
+                .defaultSocket(s -> s
+                        .port(port)
+                        .tls(WebServerTls.builder()
+                                .config(Config.create(MapConfigSource.create(rawConfig)))
+                                .build())
+                )
+                .routing(r -> r
                         .any((req, res) -> {
                             // This is annoyingly complex to pull just the CN out of an x509 cert, but it's generally easier if the caller
                             // has access to other libraries like bouncy castle.
                             Optional<X509Certificate> cert = req.context().get(WebServerTls.CLIENT_X509_CERTIFICATE, X509Certificate.class);
                             res.send(cert.map(X509Certificate::getSubjectX500Principal).map(X500Principal::getName)
-                                .map(name -> Pattern.compile("(?:^|,\s?)(?:CN=(?<val>\"(?:[^\"]|\"\")+\"|[^,]+))").matcher(name))
-                                .map(matcher -> matcher.find() ? matcher.group(1) : "no match")
-                                .orElse("unknown"));
-                        }))
-                .port(port)
-                .tls(WebServerTls.builder()
-                    .config(Config.create(MapConfigSource.create(rawConfig)))
-                    .build())
+                                    .map(name -> Pattern.compile("(?:^|,\s?)(?:CN=(?<val>\"(?:[^\"]|\"\")+\"|[^,]+))").matcher(name))
+                                    .map(matcher -> matcher.find() ? matcher.group(1) : "no match")
+                                    .orElse("unknown"));
+                        })
+                )
                 .build()
                 .start()
-                .toCompletableFuture()
-                .get(10, TimeUnit.SECONDS);
+                .await(TIMEOUT);
 
         LOGGER.info("Started secured server at: https://localhost:" + webServer.port());
     }
 
     @Test
     public void testNoClientCert() {
-        ExecutionException exc = assertThrows(ExecutionException.class, () -> clientWithoutCertificate.get()
-            .uri("https://localhost:" + webServer.port())
-            .request(String.class)
-            .toCompletableFuture()
-            .get());
+        Throwable exc = assertThrows(CompletionException.class, () -> clientWithoutCertificate.get()
+                .uri("https://localhost:" + webServer.port())
+                .request(String.class)
+                .await(TIMEOUT)
+        );
         assertThat(exc.getCause(), instanceOf(DecoderException.class));
         assertThat(exc.getCause().getCause(), instanceOf(SSLHandshakeException.class));
         assertThat(exc.getCause().getCause().getMessage(), is("Received fatal alert: bad_certificate"));
@@ -108,8 +113,7 @@ public class MtlsTest {
             .uri("https://localhost:" + webServer.port())
             .request(String.class)
             .thenAccept(it -> assertThat(it, is("helidon-webserver-netty-test")))
-            .toCompletableFuture()
-            .get();
+            .await(TIMEOUT);
     }
 
     @BeforeAll
@@ -144,8 +148,7 @@ public class MtlsTest {
     public static void teardown() throws Exception {
         if (webServer != null) {
             webServer.shutdown()
-                    .toCompletableFuture()
-                    .get(10, TimeUnit.SECONDS);
+                    .await(TIMEOUT);
         }
     }
 }

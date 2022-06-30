@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+# Copyright (c) 2017, 2022 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,12 +22,13 @@ security.config:
   aes.insecure-passphrase: "myMasterPasswordForEncryption"
   # See documentation of pki-util
   rsa:
-    # load from classpath
-    keystore-resource-path: ".ssh/keystore.p12"
-    # If keystore is used, alias to use from the keystore (in my example, it is "1")
-    key-alias: "1"
-    # Password of keystore
-    keystore-passphrase: "j4c"
+    keystore:
+      # load from file
+      resource.resource-path: ".ssh/keystore.p12"
+      # If keystore is used, alias to use from the keystore (in my example, it is "1")
+      key.alias: "1"
+      # Password of keystore
+      passphrase: "j4c"
 
 rsa-legacy:
   # Public key encrypted secret (can only be decrypted by private key)

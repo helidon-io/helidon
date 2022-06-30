@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,37 +21,27 @@ import java.lang.ref.ReferenceQueue;
 import java.security.Principal;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLPeerUnverifiedException;
 
-import io.helidon.webserver.HelidonConnectionHandler.HelidonHttp2ConnectionHandlerBuilder;
 import io.helidon.webserver.ReferenceHoldingQueue.IndirectReference;
 
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.http.HttpContentCompressor;
-import io.netty.handler.codec.http.HttpRequestDecoder;
-import io.netty.handler.codec.http.HttpResponseEncoder;
 import io.netty.handler.codec.http.HttpServerCodec;
-import io.netty.handler.codec.http.HttpServerUpgradeHandler;
-import io.netty.handler.codec.http2.CleartextHttp2ServerUpgradeHandler;
-import io.netty.handler.codec.http2.Http2CodecUtil;
-import io.netty.handler.codec.http2.Http2ServerUpgradeCodec;
+import io.netty.handler.logging.LogLevel;
+import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
-import io.netty.util.AsciiString;
 import io.netty.util.AttributeKey;
 import io.netty.util.concurrent.Future;
 
@@ -67,7 +57,7 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
     private final NettyWebServer webServer;
     private final DirectHandlers directHandlers;
     private final SocketConfiguration soConfig;
-    private final Routing routing;
+    private final Router router;
     private final AtomicBoolean clearLock = new AtomicBoolean();
     private volatile SslContext sslContext;
 
@@ -87,11 +77,11 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
 
     HttpInitializer(SocketConfiguration soConfig,
                     SslContext sslContext,
-                    Routing routing,
+                    Router router,
                     NettyWebServer webServer,
                     DirectHandlers directHandlers) {
         this.soConfig = soConfig;
-        this.routing = routing;
+        this.router = router;
         this.sslContext = sslContext;
         this.webServer = webServer;
         this.directHandlers = directHandlers;
@@ -111,7 +101,7 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
         try {
             for (Reference<?> r = queues.poll(); r != null; r = queues.poll()) {
                 if (!(r instanceof IndirectReference<?, ?>)) {
-                    LOGGER.finer(() -> log("Unexpected reference in queues", null));
+                    log("Unexpected reference in queues", null);
                     continue;
                 }
                 ReferenceHoldingQueue<?> q = ((IndirectReference<?, ReferenceHoldingQueue<?>>) r).acquire();
@@ -157,7 +147,7 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
      */
     @Override
     public void initChannel(SocketChannel ch) {
-        LOGGER.finer(() -> log("Initializing channel", ch));
+        log("Initializing channel", ch);
 
         final ChannelPipeline p = ch.pipeline();
 
@@ -170,53 +160,38 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
             sslHandler.handshakeFuture().addListener(future -> obtainClientCN(future, ch, sslHandler));
         }
 
-        // Set up HTTP/2 pipeline if feature is enabled
-        ServerConfiguration serverConfig = webServer.configuration();
-        HttpRequestDecoder requestDecoder = new HttpRequestDecoder(soConfig.maxInitialLineLength(),
-                                                                   soConfig.maxHeaderSize(),
-                                                                   soConfig.maxChunkSize(),
-                                                                   soConfig.validateHeaders(),
-                                                                   soConfig.initialBufferSize());
-        if (serverConfig.isHttp2Enabled()) {
-            LOGGER.finer(() -> log("Setting up HTTP/2 pipeline", ch));
-
-            ExperimentalConfiguration experimental = serverConfig.experimental();
-            Http2Configuration http2Config = experimental.http2();
-            HttpServerCodec sourceCodec = new HttpServerCodec();
-            HelidonConnectionHandler helidonHandler = new HelidonHttp2ConnectionHandlerBuilder()
-                    .maxContentLength(http2Config.maxContentLength()).build();
-            HttpServerUpgradeHandler upgradeHandler = new HttpServerUpgradeHandler(sourceCodec,
-                    protocol -> AsciiString.contentEquals(Http2CodecUtil.HTTP_UPGRADE_PROTOCOL_NAME, protocol)
-                            ? new Http2ServerUpgradeCodec(helidonHandler) : null,
-                    http2Config.maxContentLength());
-
-            CleartextHttp2ServerUpgradeHandler cleartextHttp2ServerUpgradeHandler =
-                    new CleartextHttp2ServerUpgradeHandler(sourceCodec, upgradeHandler, helidonHandler);
-
-            p.addLast(cleartextHttp2ServerUpgradeHandler);
-            p.addLast(new HelidonEventLogger());
-        } else {
-            p.addLast(requestDecoder);
-            // Uncomment the following line if you don't want to handle HttpChunks.
-            //        p.addLast(new HttpObjectAggregator(1048576));
-            p.addLast(new HttpResponseEncoder());
+        if (LOGGER.isLoggable(Level.FINE)) {
+            p.addLast(new LoggingHandler(LogLevel.DEBUG));
         }
+
+        ServerConfiguration serverConfig = webServer.configuration();
+        HttpServerCodec sourceCodec = new HttpServerCodec(
+                soConfig.maxInitialLineLength(),
+                soConfig.maxHeaderSize(),
+                soConfig.maxChunkSize(),
+                soConfig.validateHeaders(),
+                soConfig.initialBufferSize()
+        );
+
+        UpgradeManager.addUpgradeHandler(p, router, sourceCodec, soConfig.maxUpgradeContentLength());
 
         // Enable compression via "Accept-Encoding" header if configured
         if (serverConfig.enableCompression()) {
-            LOGGER.finer(() -> log("Compression negotiation enabled (gzip, deflate)", ch));
+            log("Compression negotiation enabled (gzip, deflate)", ch);
             p.addLast(new HttpContentCompressor());
         }
 
-        // Helidon's forwarding handler
-        p.addLast(new ForwardingHandler(routing,
-                                        webServer,
-                                        sslEngine,
-                                        queues,
-                                        this::clearQueues,
-                                        requestDecoder,
-                                        soConfig.maxPayloadSize(),
-                                        directHandlers));
+        RequestRouting requestRouting = router.routing(RequestRouting.class, null);
+        if (requestRouting != null) {
+            // Helidon's forwarding handler
+            p.addLast(new ForwardingHandler(requestRouting,
+                    webServer,
+                    sslEngine,
+                    queues,
+                    this::clearQueues,
+                    soConfig.maxPayloadSize(),
+                    directHandlers));
+        }
 
         // Cleanup queues as part of event loop
         ch.eventLoop().execute(this::clearQueues);
@@ -236,7 +211,7 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
                 if (peerCertificates.length >= 1) {
                     Certificate certificate = peerCertificates[0];
                     X509Certificate cert = (X509Certificate) certificate;
-                    Principal principal = cert.getSubjectDN();
+                    Principal principal = cert.getSubjectX500Principal();
 
                     int start = principal.getName().indexOf("CN=");
                     String tmpName = "Unknown CN";
@@ -258,30 +233,10 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
         }
     }
 
-    /**
-     * Event logger for HTTP/2 events.
-     */
-    private final class HelidonEventLogger extends ChannelInboundHandlerAdapter {
-        @Override
-        public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
-            LOGGER.finest(() -> log("Event: %s", ctx.channel(), evt));
-            ctx.fireUserEventTriggered(evt);
+    private void log(String msg, Channel channel) {
+        if (LOGGER.isLoggable(Level.FINER)) {
+            String channelId = channel != null ? channel.id().toString() : "N/A";
+            LOGGER.finer("[Initializer: " + System.identityHashCode(this) + ", Channel: 0x" + channelId + "] " + msg);
         }
-    }
-
-    /**
-     * Log message formatter for this class.
-     *
-     * @param template template suffix.
-     * @param channel channel.
-     * @param params template suffix paframs.
-     * @return string to log.
-     */
-    private String log(String template, Channel channel, Object... params) {
-        List<Object> list = new ArrayList<>(params.length + 2);
-        list.add(System.identityHashCode(this));
-        list.add(channel != null ? channel.id() : "N/A");
-        list.addAll(Arrays.asList(params));
-        return String.format("[Initializer: %s, Channel: 0x%s] " + template, list.toArray());
     }
 }

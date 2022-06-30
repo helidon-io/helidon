@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package io.helidon.webserver;
 
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 import java.util.logging.Logger;
 
 import io.helidon.webclient.WebClient;
@@ -25,6 +25,7 @@ import org.junit.jupiter.api.AfterAll;
 
 class BaseServerTest {
     private static final Logger LOGGER = Logger.getLogger(BaseServerTest.class.getName());
+    public static final Duration TIMEOUT = Duration.ofSeconds(10);
 
     private static WebServer webServer;
     private static WebClient webClient;
@@ -33,8 +34,7 @@ class BaseServerTest {
     static void close() throws Exception {
         if (webServer != null) {
             webServer.shutdown()
-                    .toCompletableFuture()
-                    .get(10, TimeUnit.SECONDS);
+                    .await(TIMEOUT);
         }
     }
 
@@ -48,13 +48,14 @@ class BaseServerTest {
 
     protected static void startServer(int port, Routing routing) throws Exception {
         webServer = WebServer.builder()
-                .host("localhost")
-                .port(port)
-                .routing(routing)
+                .defaultSocket(s -> s
+                        .host("localhost")
+                        .port(port)
+                )
+                .addRouting(routing)
                 .build()
                 .start()
-                .toCompletableFuture()
-                .get(10, TimeUnit.SECONDS);
+                .await(TIMEOUT);
 
         webClient = WebClient.builder()
                 .baseUri("http://localhost:" + webServer.port())

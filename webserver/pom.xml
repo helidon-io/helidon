@@ -37,8 +37,9 @@
         <module>jersey</module>
         <module>test-support</module>
         <module>access-log</module>
-        <module>tyrus</module>
         <module>cors</module>
         <module>static-content</module>
+        <module>http2</module>
+        <module>websocket</module>
     </modules>
 </project>

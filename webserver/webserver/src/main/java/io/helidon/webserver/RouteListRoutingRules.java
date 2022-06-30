@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -124,6 +124,14 @@ class RouteListRoutingRules implements Routing.Rules {
     }
 
     @Override
+    public Routing.Rules route(HttpRoute route) {
+        if (route != null) {
+            this.records.add(new Record(route));
+        }
+        return this;
+    }
+
+    @Override
     public RouteListRoutingRules onNewWebServer(Consumer<WebServer> webServerConsumer) {
         if (webServerConsumer != null) {
             newWebServerCallbacks.add(webServerConsumer);
@@ -135,6 +143,13 @@ class RouteListRoutingRules implements Routing.Rules {
     public RouteListRoutingRules register(Service... services) {
         if (services != null && services.length > 0) {
             records.add(new Record(null, services));
+        }
+        return this;
+    }
+
+    public RouteListRoutingRules register(HttpRoute httpRoute) {
+        if (httpRoute != null) {
+            this.records.add(new Record(httpRoute));
         }
         return this;
     }

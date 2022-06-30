@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,14 +23,13 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import io.grpc.Channel;
+import io.grpc.ManagedChannelBuilder;
+import io.grpc.stub.StreamObserver;
 import io.helidon.common.LogConfig;
 import io.helidon.grpc.server.GrpcRouting;
 import io.helidon.grpc.server.GrpcServer;
 import io.helidon.grpc.server.GrpcServerConfiguration;
-
-import io.grpc.Channel;
-import io.grpc.ManagedChannelBuilder;
-import io.grpc.stub.StreamObserver;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -76,7 +75,8 @@ public class PojoServiceClientIT {
 
     @Test
     public void testCreateAndInvokeAsyncUnary() throws Exception {
-        ClientServiceDescriptor descriptor = ClientServiceDescriptor.builder("TreeMapService", TreeMapService.class)
+        ClientServiceDescriptor descriptor = newClientServiceDescriptorBuilder("TreeMapService", TreeMapService.class)
+                .marshallerSupplier(new JavaMarshaller.Supplier())
                 .unary("get")
                 .build();
 
@@ -87,7 +87,8 @@ public class PojoServiceClientIT {
 
     @Test
     public void testCreateAndInvokeUnary() {
-        ClientServiceDescriptor descriptor = ClientServiceDescriptor.builder(TreeMapService.class)
+        ClientServiceDescriptor descriptor = newClientServiceDescriptorBuilder("TreeMapService", TreeMapService.class)
+                .marshallerSupplier(new JavaMarshaller.Supplier())
                 .unary("get")
                 .build();
 
@@ -104,7 +105,8 @@ public class PojoServiceClientIT {
 
     @Test
     public void testCreateAndInvokeServerStreamingMethod() {
-        ClientServiceDescriptor descriptor = ClientServiceDescriptor.builder("TreeMapService", TreeMapService.class)
+        ClientServiceDescriptor descriptor = newClientServiceDescriptorBuilder("TreeMapService", TreeMapService.class)
+                .marshallerSupplier(new JavaMarshaller.Supplier())
                 .serverStreaming("greaterOrEqualTo")
                 .build();
 
@@ -129,7 +131,8 @@ public class PojoServiceClientIT {
 
     @Test
     public void testCreateAndInvokeClientStreamingMethod() throws ExecutionException, InterruptedException {
-        ClientServiceDescriptor descriptor = ClientServiceDescriptor.builder("TreeMapService", TreeMapService.class)
+        ClientServiceDescriptor descriptor = newClientServiceDescriptorBuilder("TreeMapService", TreeMapService.class)
+                .marshallerSupplier(new JavaMarshaller.Supplier())
                 .clientStreaming("sumOfAges")
                 .build();
 
@@ -143,7 +146,8 @@ public class PojoServiceClientIT {
 
     @Test
     public void testCreateAndInvokeObservableClientStreamingMethod() {
-        ClientServiceDescriptor descriptor = ClientServiceDescriptor.builder("TreeMapService", TreeMapService.class)
+        ClientServiceDescriptor descriptor = newClientServiceDescriptorBuilder("TreeMapService", TreeMapService.class)
+                .marshallerSupplier(new JavaMarshaller.Supplier())
                 .clientStreaming("sumOfAges")
                 .build();
 
@@ -167,7 +171,8 @@ public class PojoServiceClientIT {
 
     @Test
     public void testCreateAndInvokeBidiStreamingMethod() {
-        ClientServiceDescriptor descriptor = ClientServiceDescriptor.builder("TreeMapService", TreeMapService.class)
+        ClientServiceDescriptor descriptor = newClientServiceDescriptorBuilder("TreeMapService", TreeMapService.class)
+                .marshallerSupplier(new JavaMarshaller.Supplier())
                 .bidirectional("persons")
                 .build();
 
@@ -189,4 +194,9 @@ public class PojoServiceClientIT {
         assertThat(observer.values(), contains(TreeMapService.ARAGON, TreeMapService.GALARDRIEL, TreeMapService.GANDALF));
     }
 
+    private ClientServiceDescriptor.Builder newClientServiceDescriptorBuilder(String name, Class<?> service) {
+        return ClientServiceDescriptor.builder(service)
+                .name(name)
+                .marshallerSupplier(new JavaMarshaller.Supplier());
+    }
 }

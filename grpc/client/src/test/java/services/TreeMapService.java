@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.TreeMap;
 
+import io.helidon.grpc.client.JavaMarshaller;
 import io.helidon.grpc.server.GrpcService;
 import io.helidon.grpc.server.ServiceDescriptor;
 
@@ -71,6 +72,7 @@ public class TreeMapService
 
     @Override
     public void update(ServiceDescriptor.Rules config) {
+        config.marshallerSupplier(new JavaMarshaller.Supplier());
         config.unary("get", this::get);
         config.serverStreaming("greaterOrEqualTo", this::greaterOrEqualTo);
         config.clientStreaming("sumOfAges", this::sumOfAges);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,12 +38,10 @@ class ResourceTest {
     private static final String COPYRIGHT_TEXT = "Copyright (c) 2017,2018 Oracle and/or its affiliates.";
     // intentionally UTF-8 string
     private static final String STRING_CONTENT = "abcdefgčřžúů";
-    private static Config prefixedConfig;
     private static Config config;
 
     @BeforeAll
     static void initClass() {
-        prefixedConfig = Config.create().get("resources-prefix");
         config = Config.create().get("resources");
     }
 
@@ -99,46 +97,31 @@ class ResourceTest {
 
     @Test
     void testConfigPath() {
-        Resource resource = Resource.create(prefixedConfig.get("test-1"), "resource").get();
-        assertThat(resource.string().trim(), is(COPYRIGHT_TEXT));
-
-        resource = config.get("test-1.resource").as(Resource::create).get();
+        Resource resource = config.get("test-1.resource").as(Resource::create).get();
         assertThat(resource.string().trim(), is(COPYRIGHT_TEXT));
     }
 
     @Test
     void testConfigClasPath() {
-        Resource resource = Resource.create(prefixedConfig.get("test-2"), "resource").get();
-        assertThat(resource.string().trim(), is(COPYRIGHT_TEXT));
-
-        resource = config.get("test-2.resource").as(Resource::create).get();
+        Resource resource = config.get("test-2.resource").as(Resource::create).get();
         assertThat(resource.string().trim(), is(COPYRIGHT_TEXT));
     }
 
     @Test
     void testConfigUrl() {
-        Resource resource = Resource.create(prefixedConfig.get("test-3"), "resource").get();
-        assertThat(resource.string().trim(), is(COPYRIGHT_TEXT));
-
-        resource = config.get("test-3.resource").as(Resource::create).get();
+        Resource resource = config.get("test-3.resource").as(Resource::create).get();
         assertThat(resource.string().trim(), is(COPYRIGHT_TEXT));
     }
 
     @Test
     void testConfigPlainContent() {
-        Resource resource = Resource.create(prefixedConfig.get("test-4"), "resource").get();
-        assertThat(resource.string(), is("content"));
-
-        resource = config.get("test-4.resource").as(Resource::create).get();
+        Resource resource = config.get("test-4.resource").as(Resource::create).get();
         assertThat(resource.string(), is("content"));
     }
 
     @Test
     void testConfigContent() {
-        Resource resource = Resource.create(prefixedConfig.get("test-5"), "resource").get();
-        assertThat(resource.string(), is(STRING_CONTENT));
-
-        resource = config.get("test-5.resource").as(Resource::create).get();
+        Resource resource = config.get("test-5.resource").as(Resource::create).get();
         assertThat(resource.string(), is(STRING_CONTENT));
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -140,9 +140,7 @@ public class BackpressureTest {
         try {
             webServer = WebServer.builder()
                     .host("localhost")
-                    .routing(Routing.builder()
-                            .get("/", (req, res) -> res.send(dataChunkMulti))
-                            .build())
+                    .routing(r -> r.get("/", (req, res) -> res.send(dataChunkMulti)))
                     .build()
                     .start()
                     .await(TIMEOUT_SEC, TimeUnit.SECONDS);

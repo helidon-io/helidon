@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.webserver;
 
+import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -42,6 +43,7 @@ import static org.hamcrest.collection.IsMapContaining.hasEntry;
 public class EncodingTest {
 
     private static final Logger LOGGER = Logger.getLogger(EncodingTest.class.getName());
+    public static final Duration TIMEOUT = Duration.ofSeconds(10);
 
     private static WebServer webServer;
 
@@ -54,17 +56,18 @@ public class EncodingTest {
      */
     private static void startServer(int port) throws Exception {
         webServer = WebServer.builder()
-                .host("localhost")
-                .port(port)
-                .routing(Routing.builder()
-                                 .get("/foo", (req, res) -> res.send("It works!"))
-                                 .get("/foo/{bar}", (req, res) -> res.send(req.path().param("bar")))
-                                 .any(Handler.create(String.class, (req, res, entity) -> res.send("Oops " + entity)))
-                                 .build())
+                .defaultSocket(s -> s
+                        .host("localhost")
+                        .port(port)
+                )
+                .routing(r -> r
+                        .get("/foo", (req, res) -> res.send("It works!"))
+                        .get("/foo/{bar}", (req, res) -> res.send(req.path().param("bar")))
+                        .any(Handler.create(String.class, (req, res, entity) -> res.send("Oops " + entity)))
+                )
                 .build()
                 .start()
-                .toCompletableFuture()
-                .get(10, TimeUnit.SECONDS);
+                .await(TIMEOUT);
 
         LOGGER.info("Started server at: https://localhost:" + webServer.port());
     }
@@ -147,8 +150,7 @@ public class EncodingTest {
     public static void close() throws Exception {
         if (webServer != null) {
             webServer.shutdown()
-                    .toCompletableFuture()
-                    .get(10, TimeUnit.SECONDS);
+                    .await(TIMEOUT);
         }
     }
 }

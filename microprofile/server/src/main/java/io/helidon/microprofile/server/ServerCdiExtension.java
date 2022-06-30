@@ -194,7 +194,7 @@ public class ServerCdiExtension implements Extension {
         registerJaxRsApplications(beanManager);
 
         // start the webserver
-        serverBuilder.routing(routingBuilder.build());
+        serverBuilder.addRouting(routingBuilder.build());
 
         namedRoutings.forEach(serverBuilder::addNamedRouting);
         webserver = serverBuilder.build();

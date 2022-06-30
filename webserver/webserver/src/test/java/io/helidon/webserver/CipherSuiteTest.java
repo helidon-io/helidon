@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.webserver;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.TimeUnit;
@@ -43,6 +44,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class CipherSuiteTest {
 
     private static final Logger LOGGER = Logger.getLogger(CipherSuiteTest.class.getName());
+    public static final Duration TIMEOUT = Duration.ofSeconds(10);
     private static final Config CONFIG = Config.just(() -> ConfigSources.classpath("cipherSuiteConfig.yaml").build());
 
     private static WebServer webServer;
@@ -51,13 +53,13 @@ public class CipherSuiteTest {
 
     @BeforeAll
     public static void startServer() throws Exception {
-        webServer = WebServer.builder(Routing.builder().get("/", (req, res) -> res.send("It works!")))
+        webServer = WebServer.builder()
                 .config(CONFIG.get("server"))
+                .routing(r -> r.get("/", (req, res) -> res.send("It works!")))
                 .addNamedRouting("second", Routing.builder().get("/", (req, res) -> res.send("It works! Second!")))
                 .build()
                 .start()
-                .toCompletableFuture()
-                .get(10, TimeUnit.SECONDS);
+                .await(TIMEOUT);
 
         clientOne = WebClient.builder()
                 .baseUri("https://localhost:" + webServer.port())
@@ -79,8 +81,7 @@ public class CipherSuiteTest {
     public static void close() throws Exception {
         if (webServer != null) {
             webServer.shutdown()
-                    .toCompletableFuture()
-                    .get(10, TimeUnit.SECONDS);
+                    .await(TIMEOUT);
         }
     }
 
@@ -88,13 +89,13 @@ public class CipherSuiteTest {
     public void testSupportedAlgorithm() {
         String response = clientOne.get()
                 .request(String.class)
-                .await();
+                .await(TIMEOUT);
         assertThat(response, is("It works!"));
 
         response = clientTwo.get()
                 .uri("https://localhost:" + webServer.port("second"))
                 .request(String.class)
-                .await();
+                .await(TIMEOUT);
         assertThat(response, is("It works! Second!"));
     }
 
@@ -104,11 +105,11 @@ public class CipherSuiteTest {
                                                                () -> clientOne.get()
                                                                        .uri("https://localhost:" + webServer.port("second"))
                                                                        .request()
-                                                                       .await());
+                                                                       .await(TIMEOUT));
         assertThat(completionException.getCause(), instanceOf(SSLHandshakeException.class));
         assertThat(completionException.getCause().getMessage(), is("Received fatal alert: handshake_failure"));
 
-        completionException = assertThrows(CompletionException.class, () -> clientTwo.get().request().await());
+        completionException = assertThrows(CompletionException.class, () -> clientTwo.get().request().await(TIMEOUT));
         assertThat(completionException.getCause(), instanceOf(SSLHandshakeException.class));
         assertThat(completionException.getCause().getMessage(), is("Received fatal alert: handshake_failure"));
     }

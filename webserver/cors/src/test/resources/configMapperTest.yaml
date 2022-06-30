@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2020 Oracle and/or its affiliates.
+# Copyright (c) 2020, 2022 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -41,3 +41,18 @@ wide:
 
 just-disabled:
   enabled: false
+
+order-check:
+  paths:
+    - path-pattern: "/authorize[/{+}]"
+      allow-origins: [ "*" ]
+      allow-methods: [ "GET" ]
+      allow-credentials: true
+    - path-pattern: "/callback[/{+}]"
+      allow-origins: [ "*" ]
+      allow-methods: [ "PUT", "POST" ]
+      allow-credentials: true
+    - path-pattern: "{^(?!((authorize)|(callback))).*$}"
+      allow-origins: [ "http://backend-base-uri}", "http://frontend-base-uri}", "http://test-origin}", "null" ]
+      allow-methods: [ "DELETE", "PATCH", "HEAD" ]
+      allow-credentials: true

@@ -16,6 +16,7 @@
 
 package io.helidon.webserver;
 
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.AfterAll;
@@ -31,6 +32,7 @@ import static org.hamcrest.CoreMatchers.is;
 public class NettyMaxOrderTest {
 
     private static WebServer webServer;
+    private static final Duration TIMEOUT = Duration.ofSeconds(25);
 
     @BeforeAll
     public static void startServer() throws Exception {
@@ -41,8 +43,7 @@ public class NettyMaxOrderTest {
     public static void close() throws Exception {
         if (webServer != null) {
             webServer.shutdown()
-                    .toCompletableFuture()
-                    .get(10, TimeUnit.SECONDS);
+                    .await(TIMEOUT);
         }
     }
 
@@ -55,14 +56,14 @@ public class NettyMaxOrderTest {
      */
     private static void startServer(int port) throws Exception {
         webServer = WebServer.builder()
-                .host("localhost")
-                .port(port)
-                .routing(Routing.builder().build())
-                .enableCompression(true)        // compression
+                .defaultSocket(s -> s
+                        .host("localhost")
+                        .port(port)
+                        .enableCompression(true)        // compression
+                )
                 .build()
                 .start()
-                .toCompletableFuture()
-                .get(10, TimeUnit.SECONDS);
+                .await(TIMEOUT);
     }
 
     /**

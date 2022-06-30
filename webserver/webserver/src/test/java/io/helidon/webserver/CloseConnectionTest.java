@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,6 @@
 
 package io.helidon.webserver;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.concurrent.CompletableFuture;
@@ -47,14 +45,14 @@ public class CloseConnectionTest {
     private final ScheduledExecutorService exec = Executors.newSingleThreadScheduledExecutor();
 
     @BeforeEach
-    void setUp() throws UnknownHostException {
+    void setUp() {
         closedConnectionFuture = new CompletableFuture<>();
-        InetAddress localHost = InetAddress.getLocalHost();
-        webServer = WebServer
-                .builder()
-                .port(0)
-                .host("localhost")
-                .routing(Routing.builder()
+        webServer = WebServer.builder()
+                .defaultSocket(s -> s
+                        .port(0)
+                        .host("localhost")
+                )
+                .routing(r -> r
                         .get((req, res) -> {
                             res.send(Multi
                                     .interval(100, 100, TimeUnit.MILLISECONDS, exec)
@@ -72,7 +70,7 @@ public class CloseConnectionTest {
                                     .flatMap(bb -> Multi.just(bb, DataChunk.create(true)))
                             );
                         })
-                        .build())
+                )
                 .build()
                 .start()
                 .await(TIME_OUT);

@@ -45,6 +45,8 @@ import java.util.stream.Collectors;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.config.Config;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.media.common.MessageBodyReaderContext;
 import io.helidon.media.common.MessageBodyWriterContext;
 import io.helidon.media.jsonp.JsonpSupport;
@@ -593,6 +595,8 @@ public abstract class OpenAPISupport implements Service {
 
         private static final OpenAPIMediaType DEFAULT_TYPE = YAML;
 
+        static final String TYPE_LIST = "json|yaml|yml"; // must be a true constant so it can be used in an annotation
+
         private final Format format;
         private final List<String> fileTypes;
         private final List<MediaType> mediaTypes;
@@ -607,7 +611,7 @@ public abstract class OpenAPISupport implements Service {
             return format;
         }
 
-        private List<String> matchingTypes() {
+        List<String> matchingTypes() {
             return fileTypes;
         }
 
@@ -716,6 +720,7 @@ public abstract class OpenAPISupport implements Service {
      *
      * @param <B> concrete subclass of OpenAPISupport.Builder
      */
+    @Configured(description = "OpenAPI support configuration")
     public abstract static class Builder<B extends Builder<B>> implements io.helidon.common.Builder<B, OpenAPISupport> {
 
         /**
@@ -799,12 +804,13 @@ public abstract class OpenAPISupport implements Service {
         }
 
         /**
-         * Path under which to register OpenAPI endpoint on the web server.
+         * Sets the web context path for the OpenAPI endpoint.
          *
          * @param path webContext to use, defaults to
          * {@value DEFAULT_WEB_CONTEXT}
          * @return updated builder instance
          */
+        @ConfiguredOption(DEFAULT_WEB_CONTEXT)
         public B webContext(String path) {
             if (!path.startsWith("/")) {
                 path = "/" + path;
@@ -814,11 +820,12 @@ public abstract class OpenAPISupport implements Service {
         }
 
         /**
-         * Sets the location of the static OpenAPI document file.
+         * Sets the file system path of the static OpenAPI document file.
          *
          * @param path non-null location of the static OpenAPI document file
          * @return updated builder instance
          */
+        @ConfiguredOption(DEFAULT_STATIC_FILE_PATH_PREFIX + "(" + OpenAPIMediaType.TYPE_LIST + ")")
         public B staticFile(String path) {
             Objects.requireNonNull(path, "path to static file must be non-null");
             staticFilePath = Optional.of(path);
@@ -826,11 +833,12 @@ public abstract class OpenAPISupport implements Service {
         }
 
         /**
-         * Set the CORS config from the specified {@code CrossOriginConfig} object.
+         * Assigns the CORS settings for the OpenAPI endpoint.
          *
          * @param crossOriginConfig {@code CrossOriginConfig} containing CORS set-up
          * @return updated builder instance
          */
+        @ConfiguredOption(key = CORS_CONFIG_KEY)
         public B crossOriginConfig(CrossOriginConfig crossOriginConfig) {
             Objects.requireNonNull(crossOriginConfig, "CrossOriginConfig must be non-null");
             this.crossOriginConfig = crossOriginConfig;

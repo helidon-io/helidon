@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 package io.helidon.dbclient.metrics.jdbc;
 
+import java.util.function.Function;
+
 import org.eclipse.microprofile.metrics.Timer;
 
 /**
@@ -23,14 +25,17 @@ import org.eclipse.microprofile.metrics.Timer;
 public class JdbcMetricsTimerContext implements Timer.Context {
 
     private final com.codahale.metrics.Timer.Context context;
+    private final Function<Long, Long> elapsedTimeUpdater;
 
-    JdbcMetricsTimerContext(final com.codahale.metrics.Timer.Context context) {
+    JdbcMetricsTimerContext(final com.codahale.metrics.Timer.Context context,
+                            Function<Long, Long> elapsedTimeUpdater) {
         this.context = context;
+        this.elapsedTimeUpdater = elapsedTimeUpdater;
     }
 
     @Override
     public long stop() {
-        return context.stop();
+        return elapsedTimeUpdater.apply(context.stop());
     }
 
     @Override

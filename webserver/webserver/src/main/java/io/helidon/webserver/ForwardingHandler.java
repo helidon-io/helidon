@@ -18,10 +18,10 @@ package io.helidon.webserver;
 
 import java.io.IOException;
 import java.lang.ref.ReferenceQueue;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -43,7 +43,6 @@ import io.helidon.webserver.ReferenceHoldingQueue.IndirectReference;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFutureListener;
-import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.DecoderResult;
@@ -55,13 +54,9 @@ import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpRequest;
-import io.netty.handler.codec.http.HttpRequestDecoder;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http.LastHttpContent;
-import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
-import io.netty.handler.codec.http2.Http2Error;
-import io.netty.handler.codec.http2.Http2Exception;
 
 import static io.helidon.webserver.HttpInitializer.CLIENT_CERTIFICATE;
 import static io.helidon.webserver.HttpInitializer.CLIENT_CERTIFICATE_NAME;
@@ -83,7 +78,6 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
     private final NettyWebServer webServer;
     private final SSLEngine sslEngine;
     private final ReferenceQueue<Object> queues;
-    private final HttpRequestDecoder httpRequestDecoder;
     private final long maxPayloadSize;
     private final Runnable clearQueues;
     private final DirectHandlers directHandlers;
@@ -92,7 +86,6 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
     // concurrency aware
     private RequestContext requestContext;
 
-    private boolean isWebSocketUpgrade;
     private long actualPayloadSize;
     private boolean ignorePayload;
 
@@ -105,14 +98,12 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                       SSLEngine sslEngine,
                       ReferenceQueue<Object> queues,
                       Runnable clearQueues,
-                      HttpRequestDecoder httpRequestDecoder,
                       long maxPayloadSize,
                       DirectHandlers directHandlers) {
         this.routing = routing;
         this.webServer = webServer;
         this.sslEngine = sslEngine;
         this.queues = queues;
-        this.httpRequestDecoder = httpRequestDecoder;
         this.maxPayloadSize = maxPayloadSize;
         this.clearQueues = clearQueues;
         this.directHandlers = directHandlers;
@@ -120,7 +111,6 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
 
     private void reset() {
         lastContent = false;
-        isWebSocketUpgrade = false;
         actualPayloadSize = 0L;
         ignorePayload = false;
     }
@@ -184,19 +174,9 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
             requestContext.runInScope(() -> channelReadHttpContent(ctx, msg));
         }
 
-        // We receive a raw bytebuf if connection was upgraded to WebSockets
         if (msg instanceof ByteBuf) {
-            if (!isWebSocketUpgrade) {
                 HelidonMdc.remove(MDC_SCOPE_ID);
                 throw new IllegalStateException("Received ByteBuf without upgrading to WebSockets");
-            }
-            requestContext.runInScope(() -> {
-                // Simply forward raw bytebuf to Tyrus for processing
-                if (LOGGER.isLoggable(Level.FINEST)) {
-                    LOGGER.finest(log("Received ByteBuf of WebSockets connection: %s", ctx, msg));
-                }
-                requestContext.emit((ByteBuf) msg);
-            });
         }
         HelidonMdc.remove(MDC_SCOPE_ID);
     }
@@ -252,11 +232,9 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                 LOGGER.fine(log("Received LastHttpContent: %s", ctx, System.identityHashCode(msg)));
             }
 
-            if (!isWebSocketUpgrade) {
-                lastContent = true;
-                requestContext.complete();
-                requestContext = null; // just to be sure that current http req/res session doesn't interfere with other ones
-            }
+            lastContent = true;
+            requestContext.complete();
+            requestContext = null; // just to be sure that current http req/res session doesn't interfere with other ones
             requestEntityAnalyzed.complete(ChannelFutureListener.CLOSE_ON_FAILURE);
         } else if (!content.isReadable()) {
             // this is here to handle the case when the content is not readable but we didn't
@@ -309,12 +287,17 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
 
         // Certificate management
         request.headers().remove(Http.Header.X_HELIDON_CN);
-        Optional.ofNullable(ctx.channel().attr(CLIENT_CERTIFICATE_NAME).get())
-                .ifPresent(name -> request.headers().set(Http.Header.X_HELIDON_CN, name));
+        String cn = ctx.channel().attr(CLIENT_CERTIFICATE_NAME).get();
+        if (cn != null) {
+            request.headers().set(Http.Header.X_HELIDON_CN, cn);
+        }
+
         // If the client x509 certificate is present on the channel, add it to the context scope of the ongoing
         // request so that helidon handlers can inspect and react to this.
-        Optional.ofNullable(ctx.channel().attr(CLIENT_CERTIFICATE).get())
-                .ifPresent(cert -> requestScope.register(WebServerTls.CLIENT_X509_CERTIFICATE, cert));
+        X509Certificate cert = ctx.channel().attr(CLIENT_CERTIFICATE).get();
+        if (cert != null) {
+            requestScope.register(WebServerTls.CLIENT_X509_CERTIFICATE, cert);
+        }
 
         // Context, publisher and DataChunk queue for this request/response
         DataChunkHoldingQueue queue = new DataChunkHoldingQueue();
@@ -462,18 +445,6 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
             return true;
         }
 
-        // If WebSockets upgrade, re-arrange pipeline and drop HTTP decoder
-        if (bareResponse.isWebSocketUpgrade()) {
-            if (LOGGER.isLoggable(Level.FINE)) {
-                LOGGER.fine(log("Replacing HttpRequestDecoder by WebSocketServerProtocolHandler", ctx));
-            }
-            ctx.pipeline().replace(httpRequestDecoder, "webSocketsHandler",
-                                   new WebSocketServerProtocolHandler(bareRequest.uri().getPath(), null, true));
-            removeHandshakeHandler(ctx);        // already done by Tyrus
-            isWebSocketUpgrade = true;
-            return true;
-        }
-
         return false;
     }
 
@@ -487,12 +458,6 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         // Log just cause as string
         LOGGER.fine(() -> log("Exception caught: %s", ctx, cause.toString()));
-
-        // We ignore stream resets (RST_STREAM) from HTTP/2
-        if (cause instanceof Http2Exception.StreamException
-                && ((Http2Exception.StreamException) cause).error() == Http2Error.CANCEL) {
-            return;     // no action
-        }
 
         // Log full exception in FINEST
         if (LOGGER.isLoggable(Level.FINEST)) {
@@ -516,29 +481,6 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                     request.method().asciiName(), request.uri(), decoderResult.cause().getMessage()));
             throw new BadRequestException(String.format("Request was rejected: %s", decoderResult.cause().getMessage()),
                     decoderResult.cause());
-        }
-    }
-
-    /**
-     * Find and remove the WebSockets handshake handler. Note that the handler's implementation
-     * class is package private, so we look for it by name. Handshake is done in Helidon using
-     * Tyrus' code instead of here.
-     *
-     * @param ctx Channel handler context.
-     */
-    private void removeHandshakeHandler(ChannelHandlerContext ctx) {
-        ChannelHandler handshakeHandler = null;
-        for (Iterator<Map.Entry<String, ChannelHandler>> it = ctx.pipeline().iterator(); it.hasNext();) {
-            ChannelHandler handler = it.next().getValue();
-            if (handler.getClass().getName().endsWith("WebSocketServerProtocolHandshakeHandler")) {
-                handshakeHandler = handler;
-                break;
-            }
-        }
-        if (handshakeHandler != null) {
-            ctx.pipeline().remove(handshakeHandler);
-        } else {
-            LOGGER.warning(() -> log("Unable to remove WebSockets handshake handler from pipeline", ctx));
         }
     }
 

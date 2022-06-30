@@ -42,5 +42,6 @@ module io.helidon.webclient {
     exports io.helidon.webclient.spi;
 
     uses io.helidon.webclient.spi.WebClientServiceProvider;
+    uses io.helidon.common.context.spi.DataPropagationProvider;
 
 }

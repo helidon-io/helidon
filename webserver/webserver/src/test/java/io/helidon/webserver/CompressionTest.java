@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,11 @@
 
 package io.helidon.webserver;
 
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 import io.helidon.common.http.Http;
@@ -42,6 +43,7 @@ import static org.hamcrest.collection.IsMapContaining.hasEntry;
  */
 public class CompressionTest {
     private static final Logger LOGGER = Logger.getLogger(CompressionTest.class.getName());
+    private static final Duration TIME_OUT = Duration.of(30, ChronoUnit.SECONDS);
 
     private static WebServer webServer;
 
@@ -56,8 +58,7 @@ public class CompressionTest {
     public static void close() throws Exception {
         if (webServer != null) {
             webServer.shutdown()
-                    .toCompletableFuture()
-                    .get(10, TimeUnit.SECONDS);
+                    .await(TIME_OUT);
         }
     }
 
@@ -70,19 +71,15 @@ public class CompressionTest {
      */
     private static void startServer(int port) throws Exception {
         webServer = WebServer.builder()
-                .host("localhost")
-                .port(port)
-                .routing(Routing.builder()
-                        .get("/compressed", (req, res) -> {
-                            String payload = "It works!";
-                            res.send(payload);
-                        })
-                        .build())
-                .enableCompression(true)        // compression
+                .defaultSocket(s -> s
+                        .host("localhost")
+                        .port(port)
+                        .enableCompression(true)        // compression
+                )
+                .routing(r -> r.get("/compressed", (req, res) -> res.send("It works!")))
                 .build()
                 .start()
-                .toCompletableFuture()
-                .get(10, TimeUnit.SECONDS);
+                .await(TIME_OUT);
 
         webClient = WebClient.builder()
                 .baseUri("http://localhost:" + webServer.port())
@@ -136,7 +133,7 @@ public class CompressionTest {
         builder.headers().add("Accept-Encoding", "gzip");
         WebClientResponse response = builder.path("/compressed")
                 .request()
-                .await(10, TimeUnit.SECONDS);
+                .await(TIME_OUT);
         assertThat(response.content().as(String.class).get(), equalTo("It works!"));
     }
 
@@ -151,7 +148,7 @@ public class CompressionTest {
         builder.headers().add("Accept-Encoding", "deflate");
         WebClientResponse response = builder.path("/compressed")
                 .request()
-                .await(10, TimeUnit.SECONDS);
+                .await(TIME_OUT);
         assertThat(response.content().as(String.class).get(), equalTo("It works!"));
     }
 }

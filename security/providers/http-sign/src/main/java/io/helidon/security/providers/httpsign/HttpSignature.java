@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.security.providers.httpsign;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.Signature;
 import java.security.SignatureException;
@@ -281,14 +282,14 @@ class HttpSignature {
     private Optional<String> validateRsaSha256(SecurityEnvironment env,
                                                InboundClientDefinition clientDefinition) {
         try {
-            Signature signature = Signature.getInstance("SHA256withRSA");
-            signature.initVerify(clientDefinition.keyConfig()
-                                         .orElseThrow(() -> new HttpSignatureException("RSA public key configuration is "
-                                                                                               + "required"))
-                                         .publicKey()
-                                         .orElseThrow(() -> new HttpSignatureException(
-                                                 "Public key is required, yet not configured")));
-            signature.update(getBytesToSign(env, null));
+                Signature signature = Signature.getInstance("SHA256withRSA");
+                signature.initVerify(clientDefinition.keyConfig()
+                                             .orElseThrow(() -> new HttpSignatureException("RSA public key configuration is "
+                                                                                                   + "required"))
+                                             .publicKey()
+                                             .orElseThrow(() -> new HttpSignatureException(
+                                                     "Public key is required, yet not configured")));
+                signature.update(getBytesToSign(env, null));
 
             if (!signature.verify(this.signatureBytes)) {
                 return Optional.of("Signature is not valid");
@@ -325,7 +326,7 @@ class HttpSignature {
                                                 InboundClientDefinition clientDefinition) {
         try {
             byte[] signature = signHmacSha256(env, clientDefinition.hmacSharedSecret().orElse(EMPTY_BYTES), null);
-            if (!Arrays.equals(signature, this.signatureBytes)) {
+            if (!MessageDigest.isEqual(signature, this.signatureBytes)) {
                 return Optional.of("Signature is not valid");
             }
             return Optional.empty();

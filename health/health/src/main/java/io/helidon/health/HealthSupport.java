@@ -340,6 +340,7 @@ public final class HealthSupport extends HelidonRestServiceSupport {
 
         // 10 seconds
         private static final long DEFAULT_TIMEOUT_MILLIS = 10 * 1000;
+        private static final boolean DEFAULT_ENABLED = true;
         private final List<HealthCheck> allChecks = new LinkedList<>();
         private final List<HealthCheck> livenessChecks = new LinkedList<>();
         private final List<HealthCheck> readinessChecks = new LinkedList<>();
@@ -348,7 +349,7 @@ public final class HealthSupport extends HelidonRestServiceSupport {
         private final Set<Class<?>> excludedClasses = new HashSet<>();
         private final Set<String> includedHealthChecks = new HashSet<>();
         private final Set<String> excludedHealthChecks = new HashSet<>();
-        private boolean enabled = true;
+        private boolean enabled = DEFAULT_ENABLED;
         private long timeoutMillis = DEFAULT_TIMEOUT_MILLIS;
 
         private Builder() {
@@ -443,7 +444,10 @@ public final class HealthSupport extends HelidonRestServiceSupport {
          * @param unit timeout time unit
          * @return updated builder instance
          */
-        @ConfiguredOption(key = TIMEOUT_CONFIG_KEY, description = "health endpoint timeout (ms)", type = Long.class)
+        @ConfiguredOption(key = TIMEOUT_CONFIG_KEY,
+                          description = "health endpoint timeout (ms)",
+                          type = Long.class,
+                          value = "10000")
         public Builder timeout(long timeout, TimeUnit unit) {
             timeoutMillis(unit.toMillis(timeout));
             return this;
@@ -536,7 +540,7 @@ public final class HealthSupport extends HelidonRestServiceSupport {
          * @param enabled whether to enable the health support (defaults to {@code true})
          * @return updated builder instance
          */
-        @ConfiguredOption(key = ENABLED_CONFIG_KEY)
+        @ConfiguredOption(key = ENABLED_CONFIG_KEY, value = "true")
         public Builder enabled(boolean enabled) {
             this.enabled = enabled;
             return this;
