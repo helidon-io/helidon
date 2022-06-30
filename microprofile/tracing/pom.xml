@@ -38,7 +38,7 @@
         <dependency>
             <groupId>jakarta.enterprise</groupId>
             <artifactId>jakarta.enterprise.cdi-api</artifactId>
-            <scope>prmnqovided</scope>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>io.helidon.tracing</groupId>
