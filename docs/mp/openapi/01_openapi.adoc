@@ -23,8 +23,8 @@
 :description: Helidon MP OpenAPI Support
 :keywords: helidon, mp, microprofile, openapi
 :helidon-tag: https://github.com/oracle/helidon/tree/{helidon-version}
-:mp-openapi-prefix: https://github.com/eclipse/microprofile-open-api/blob/master
-:mp-openapi-spec: {mp-openapi-prefix}/spec/src/main/asciidoc/microprofile-openapi-spec.adoc
+:mp-openapi-prefix: https://github.com/eclipse/microprofile-open-api/blob/3.0
+:mp-openapi-spec: {mp-openapi-prefix}/spec/src/main/asciidoc/microprofile-openapi-spec.asciidoc
 :openapi-spec: https://github.com/OAI/OpenAPI-Specification
 :openapi-version: 1.0
 :helidon-mp-openapi-example: {helidon-tag}/examples/microprofile/openapi-basic
@@ -173,7 +173,7 @@ to request JSON. Alternatively, the client can pass the query parameter `format`
 
 == Configuration
 
-Helidon OpenAPI configuration is supported by the following class:
+Helidon OpenAPI configuration supports the following settings:
 
 include::../../shared/config/io.helidon.microprofile.openapi.MPOpenAPISupport.adoc[]
 
