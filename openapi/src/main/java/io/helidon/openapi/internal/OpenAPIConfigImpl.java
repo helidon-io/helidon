@@ -308,7 +308,7 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
          * @param pathServers comma-list of servers for the given path
          * @return updated builder
          */
-        @ConfiguredOption(key = SERVERS_PATH + ".{path}",
+        @ConfiguredOption(key = SERVERS_PATH + ".*",
                           kind = ConfiguredOption.Kind.LIST,
                           description = """
                                   Sets alternative servers to service all operations at the indicated path \
