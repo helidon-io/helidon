@@ -22,8 +22,8 @@
 :h1Prefix: MP
 :description: Helidon OCI Integration
 :keywords: oci, cdi
-:cdi-extension-api-url: https://jakarta.ee/specifications/cdi/2.0/cdi-spec-2.0.html#spi
-:jsr330-singleton-api-url: https://jakarta.ee/specifications/dependency-injection/1.0/apidocs/javax/inject/singleton
+:cdi-extension-api-url: https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0.html#spi
+:jsr330-singleton-api-url: https://jakarta.ee/specifications/dependency-injection/2.0/apidocs/jakarta/inject/singleton
 :oci-objstore-url: https://docs.cloud.oracle.com/iaas/Content/Object/Concepts/objectstorageoverview.htm
 :oci-javasdk-url: https://docs.cloud.oracle.com/iaas/Content/API/SDKDocs/javasdk.htm
 :oci-cli-url: https://docs.oracle.com/en-us/iaas/tools/oci-cli/latest/
