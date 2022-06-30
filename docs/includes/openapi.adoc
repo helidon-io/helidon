@@ -16,10 +16,10 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-ifndef::rootdir[:rootdir: {docdir}/../..]
+ifndef::rootdir[:rootdir: {docdir}/..]
 
 // tag::common-config[]
-Helidon {h1Prefix} also supports additional properties specific to Helidon.
+Helidon {h1-prefix} also supports additional properties specific to Helidon.
 
 .Helidon-specific OpenAPI Config Properties
 |===

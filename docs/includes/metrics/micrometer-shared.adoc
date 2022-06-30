@@ -30,7 +30,7 @@ endif::[]
 = Micrometer Shared content
 
 // tag::intro[]
-Helidon {h1Prefix} simplifies how you can use Micrometer for application-specific metrics:
+Helidon {h1-prefix} simplifies how you can use Micrometer for application-specific metrics:
 
 * The endpoint `/micrometer`: A configurable endpoint that exposes metrics according to which Micrometer meter registry
 responds to the HTTP request.
@@ -46,7 +46,7 @@ ifdef::mp-flavor[]
 endif::mp-flavor[]
 * Configuration to tailor the Prometheus and other Micrometer meter registries.
 
-In Helidon {helidon-version}, Micrometer support is separate from the Helidon {h1Prefix} metrics API and the built-in Helidon metrics.
+In Helidon {helidon-version}, Micrometer support is separate from the Helidon {h1-prefix} metrics API and the built-in Helidon metrics.
 
 // end::intro[]
 

@@ -16,9 +16,9 @@
 
 options:
   strict-xref: true
+  fail-on: "WARN"
   strict-templates: true
   strict-images: true
-  fail-on: "WARN"
 engine:
   asciidoctor:
     images-dir: "./images"

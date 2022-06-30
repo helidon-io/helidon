@@ -718,6 +718,15 @@
                 </plugin>
                 <plugin>
                     <groupId>io.helidon.build-tools</groupId>
+                    <artifactId>sitegen-maven-plugin</artifactId>
+                    <version>${version.plugin.helidon-build-tools}</version>
+                    <configuration>
+                        <siteSourceDirectory>docs</siteSourceDirectory>
+                        <siteConfigFile>docs/sitegen.yaml</siteConfigFile>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>io.helidon.build-tools</groupId>
                     <artifactId>snakeyaml-codegen-maven-plugin</artifactId>
                     <version>${version.plugin.helidon-build-tools}</version>
                 </plugin>
@@ -870,6 +879,10 @@
                         <version>${version.plugin.helidon-build-tools}</version>
                     </dependency>
                 </dependencies>
+            </plugin>
+            <plugin>
+                <groupId>io.helidon.build-tools</groupId>
+                <artifactId>sitegen-maven-plugin</artifactId>
             </plugin>
             <plugin>
                 <groupId>io.helidon.build-tools</groupId>

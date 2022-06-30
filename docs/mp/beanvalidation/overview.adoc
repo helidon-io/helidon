@@ -24,7 +24,6 @@
 
 include::{rootdir}/includes/mp.adoc[]
 
-
 Helidon supports Bean Validation via its integration with JAX-RS/Jersey. The
 {jakarta-bean-validation-spec-url}[Jakarta Bean
 Validation specification] defines an API to validate Java beans.

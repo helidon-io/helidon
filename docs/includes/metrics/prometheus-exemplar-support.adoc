@@ -22,7 +22,7 @@ ifndef::flavor-lc[:flavor-lc: se]
 :description: Helidon metrics
 :keywords: helidon, metrics, exemplar, prometheus, OpenMetrics
 
-Add Helidon {h1Prefix} support for  link:https://github.com/OpenObservability/OpenMetrics/blob/main/specification/OpenMetrics.md#exemplars[OpenMetrics (Prometheus) exemplars] for histograms, counters, and simple timers to your application simply by adding dependencies to your project's `pom.xml`.
+Add Helidon {h1-prefix} support for  link:https://github.com/OpenObservability/OpenMetrics/blob/main/specification/OpenMetrics.md#exemplars[OpenMetrics (Prometheus) exemplars] for histograms, counters, and simple timers to your application simply by adding dependencies to your project's `pom.xml`.
 
 == Prerequisites
 

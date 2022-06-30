@@ -16,7 +16,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-ifndef::rootdir[:rootdir: {docdir}/../..]
+ifndef::rootdir[:rootdir: {docdir}/..]
 
 === Cron expression
 [source]

@@ -15,11 +15,11 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-ifndef::rootdir[:rootdir: {docdir}/../..]
+ifndef::rootdir[:rootdir: {docdir}/..]
 ifndef::flavor-lc[:flavor-lc: se]
 ifndef::flavor-uc[:flavor-lc: SE]
 ifndef::se-flavor[:se-flavor: true]
-ifndef::h1Prefix[:h1Prefix: SE]
+ifndef::h1-prefix[:h1-prefix: SE]
 
 //Contains content that is shared between multiple CORS pages.
 :keywords: helidon, java, cors, se

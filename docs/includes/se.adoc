@@ -23,7 +23,7 @@ ifndef::flavor-included[]
 ifndef::rootdir[:rootdir: {docdir}/..]
 include::{rootdir}/includes/attributes.adoc[]
 
-:h1Prefix: SE
+:h1-prefix: SE
 :flavor-uc: SE
 :flavor-lc: se
 :se-flavor: true

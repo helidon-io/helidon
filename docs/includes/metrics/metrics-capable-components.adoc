@@ -20,15 +20,15 @@ ifndef::rootdir[:rootdir: {docdir}/../..]
 ifndef::flavor-lc[:flavor-lc: se]
 ifndef::flavor-uc[:flavor-lc: SE]
 ifndef::se-flavor[:se-flavor: true]
-ifndef::h1Prefix[:h1Prefix: SE]
+ifndef::h1-prefix[:h1-prefix: SE]
 
 = Metrics-Capable Components
-:intro-project-name: {h1Prefix}
+:intro-project-name: {h1-prefix}
 :chk: icon:check[]
 :x: icon:times[]
 
 // tag::preamble[]
-This document explains Helidon {h1Prefix} metrics-capable components and applications and describes how to create and control them.
+This document explains Helidon {h1-prefix} metrics-capable components and applications and describes how to create and control them.
 // end::preamble[]
 
 // tag::all-beginning-text[]
@@ -41,10 +41,10 @@ the `RegistryFactory`, `MetricRegistry`, and individual metrics interfaces.
 based on what components are present on the runtime path and whether metrics is configured to be enabled or disabled.
 * The built-in Helidon metrics web service supports the `/metrics` endpoints by which clients can retrieve metadata and
 values of the registered metrics.
-ifeval::["{h1Prefix}" == "MP"]
+ifeval::["{h1-prefix}" == "MP"]
 Helidon MP apps which use metrics enable the metrics service by default.
 endif::[]
-ifeval::["{h1Prefix}" == "SE"]
+ifeval::["{h1-prefix}" == "SE"]
 Your Helidon SE app provides this feature (if at all) by explicitly using the `MetricsSupport` interface.
 +
 Most Helidon applications are web-based and their developers choose to expose the built-in metrics web service.
@@ -121,11 +121,11 @@ Helidon uses the minimal implementation otherwise.
 
 == Enabling and Disabling Metrics
 Using
-ifeval::["{h1Prefix}" == "SE"]
+ifeval::["{h1-prefix}" == "SE"]
 either builder-style settings or
 endif::[]
 configuration, your component
-ifeval::["{h1Prefix}" == "SE"]
+ifeval::["{h1-prefix}" == "SE"]
 or Helidon SE application
 endif::[]
 can let end users control
@@ -156,7 +156,7 @@ Doing so allows your code to operate regardless of whether the full-featured met
 ----
 This module defines the metrics API: `RegistryFactory`, `MetricRegistry`, and the various metrics themselves.
 
-ifeval::["{h1Prefix}" == "SE"]
+ifeval::["{h1-prefix}" == "SE"]
 . To permit the use of the built-in metrics web service support for the `/metrics` endpoint, add this dependency:
 +
 [source,xml]

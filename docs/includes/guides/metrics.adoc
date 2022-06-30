@@ -33,9 +33,9 @@ include::{rootdir}/includes/prerequisites.adoc[tag=common-prereqs-helm]
 
 // tag::create-sample-project[]
 
-=== Create a Sample Helidon {h1Prefix} Project
+=== Create a Sample Helidon {h1-prefix} Project
 
-Use the Helidon {h1Prefix} Maven archetype to create a simple project that can be used for the examples in this guide.
+Use the Helidon {h1-prefix} Maven archetype to create a simple project that can be used for the examples in this guide.
 
 [source,bash,subs="attributes+"]
 .Run the Maven archetype
@@ -362,7 +362,7 @@ Any time you include the Helidon metrics module in your application, Helidon tra
 * a `Counter` of all requests received (`requests.count`), and
 * a `Meter` of all requests received (`requests.meter`).
 
-Helidon {h1Prefix} also includes additional, extended KPI metrics which are disabled by default:
+Helidon {h1-prefix} also includes additional, extended KPI metrics which are disabled by default:
 
 * current number of requests in-flight - a `ConcurrentGauge` (`requests.inFlight`) of requests currently being processed
 * long-running requests - a `Meter` (`requests.longRunning`) measuring the rate at which Helidon processes requests which take at least a given amount of time to complete; configurable, defaults to 10000 milliseconds (10 seconds)
@@ -428,7 +428,7 @@ You can get the metadata for any scope, such as `/metrics/base`, as shown below:
 
 === Integration with Kubernetes and Prometheus
 ==== Kubernetes Integration
-The following example shows how to integrate the Helidon {h1Prefix} application with Kubernetes.
+The following example shows how to integrate the Helidon {h1-prefix} application with Kubernetes.
 
 [source,bash,subs="attributes+"]
 .Stop the application and build the docker image:

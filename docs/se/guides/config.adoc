@@ -21,7 +21,6 @@
 :keywords: helidon, configuration, microprofile, guide, SE
 :toc:
 :rootdir: {docdir}/../..
-
 include::{rootdir}/includes/se.adoc[]
 
 This guide describes how to create a sample Helidon SE project that can be used to run some
