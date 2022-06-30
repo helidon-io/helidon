@@ -18,6 +18,7 @@ package io.helidon.tracing;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 class MapHeaderConsumer implements HeaderConsumer {
     private final Map<String, List<String>> headers;
@@ -34,12 +35,8 @@ class MapHeaderConsumer implements HeaderConsumer {
     @Override
     public Optional<String> get(String key) {
         return Optional.ofNullable(headers.get(key))
-                .flatMap(it -> {
-                    if (it.isEmpty()) {
-                        return Optional.empty();
-                    }
-                    return Optional.of(it.get(0));
-                });
+                .map(List::stream)
+                .flatMap(Stream::findFirst);
     }
 
     @Override

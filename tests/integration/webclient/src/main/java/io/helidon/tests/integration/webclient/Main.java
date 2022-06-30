@@ -16,8 +16,6 @@
 
 package io.helidon.tests.integration.webclient;
 
-import java.util.concurrent.CompletionStage;
-
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.media.jsonp.JsonpSupport;
@@ -44,7 +42,7 @@ public final class Main {
     }
 
     public static void main(String[] args) {
-        startServer();
+        startServer().ignoreElement();
     }
 
     static Single<WebServer> startServer(Tracer tracer) {
@@ -63,7 +61,7 @@ public final class Main {
      *
      * @return the created {@link WebServer} instance
      */
-    static CompletionStage<WebServer> startServer() {
+    static Single<WebServer> startServer() {
         // By default this will pick up application.yaml from the classpath
         Config config = Config.create();
 
@@ -82,8 +80,6 @@ public final class Main {
 
         // Try to start the server. If successful, print some info and arrange to
         // print a message at shutdown. If unsuccessful, print the exception.
-        CompletionStage<WebServer> start = webServer.start();
-
         return webServer.start()
                 .peek(ws -> {
                     serverPort = ws.port();

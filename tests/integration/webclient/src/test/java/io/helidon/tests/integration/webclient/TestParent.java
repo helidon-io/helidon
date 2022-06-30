@@ -16,6 +16,7 @@
 
 package io.helidon.tests.integration.webclient;
 
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
@@ -37,6 +38,7 @@ import org.junit.jupiter.api.BeforeAll;
  * Parent class for integration tests.
  */
 class TestParent {
+    private static final Duration TIMEOUT = Duration.ofSeconds(10);
 
     protected static final Config CONFIG = Config.create();
 
@@ -45,7 +47,7 @@ class TestParent {
 
     @BeforeAll
     public static void startTheServer() throws Exception {
-        webServer = Main.startServer().toCompletableFuture().get();
+        webServer = Main.startServer().await(TIMEOUT);
 
         long timeout = 2000; // 2 seconds should be enough to start the server
         long now = System.currentTimeMillis();
