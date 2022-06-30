@@ -27,12 +27,76 @@
                      name="Kubernetes Support"
                      description="Add Kubernetes manifests to your project"
                      default="false"
-                     optional="true"/>
+                     optional="true">
+                <output>
+                    <model>
+                        <list key="yaml-section">
+                            <value template="mustache"><![CDATA[
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: {{artifactId}}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{artifactId}}
+  template:
+    metadata:
+      labels:
+        app: {{artifactId}}
+        version: v1
+    spec:
+      imagePullSecrets:
+      - name: ocirsecret
+      containers:
+      - name: {{artifactId}}
+        image: {{artifactId}}
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+]]></value>
+                        </list>
+                    </model>
+                </output>
+            </boolean>
             <boolean id="v8o"
                      name="Verrazzano Support"
                      description="Add Verrazzano manifests to your project"
                      default="false"
-                     optional="true"/>
+                     optional="true">
+                <output>
+                    <model>
+                        <list key="yaml-section">
+                            <value template="mustache"><![CDATA[
+kind: Component
+apiVersion: core.oam.dev/v1alpha2
+metadata:
+  name: {{artifactId}}
+spec:
+  workload:
+    apiVersion: oam.verrazzano.io/v1alpha1
+    kind: VerrazzanoHelidonWorkload
+    metadata:
+      name: hello-helidon-workload
+      labels:
+        app: hello-helidon
+  spec:
+      deploymentTemplate:
+        metadata:
+          name: hello-helidon-deployment
+        podSpec:
+          containers:
+            - name: hello-helidon-container
+              image : {{artifactId}}
+              ports:
+                - containerPort: 8080
+                  name: http
+]]></value>
+                        </list>
+                    </model>
+                </output>
+            </boolean>
         </inputs>
     </step>
 </archetype-script>
