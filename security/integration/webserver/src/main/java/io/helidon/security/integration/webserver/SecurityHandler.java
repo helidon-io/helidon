@@ -55,12 +55,11 @@ import io.helidon.security.integration.common.AtzTracing;
 import io.helidon.security.integration.common.SecurityTracing;
 import io.helidon.security.internal.SecurityAuditEvent;
 import io.helidon.security.util.TokenHandler;
+import io.helidon.tracing.SpanContext;
 import io.helidon.webserver.Handler;
 import io.helidon.webserver.ResponseHeaders;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
-
-import io.opentracing.SpanContext;
 
 import static io.helidon.security.AuditEvent.AuditParam.plain;
 

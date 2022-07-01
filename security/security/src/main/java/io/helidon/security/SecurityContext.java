@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,8 @@ import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
 
-import io.opentracing.Span;
-import io.opentracing.SpanContext;
-import io.opentracing.Tracer;
-import io.opentracing.util.GlobalTracer;
+import io.helidon.tracing.SpanContext;
+import io.helidon.tracing.Tracer;
 
 /**
  * Security context to retrieve security information about current user, either injected or obtained from {@link
@@ -231,9 +229,10 @@ public interface SecurityContext {
     /**
      * Provides the tracer to create new spans. If you use this, we can control whether tracing is enabled or disabled
      * as part of security.
-     * If you use {@link io.opentracing.util.GlobalTracer#get()} you will get around this.
+     * If you use {@link io.helidon.tracing.Tracer#global()} you will get around this.
      *
-     * @return {@link Tracer} to build custom {@link Span Spans}. Use in combination with {@link #tracingSpan()} to
+     * @return {@link Tracer} to build custom {@link io.helidon.tracing.Span Spans}.
+     * Use in combination with {@link #tracingSpan()} to
      * create a nice tree of spans
      */
     Tracer tracer();
@@ -345,7 +344,7 @@ public interface SecurityContext {
                 ec = EndpointConfig.builder().build();
             }
             if (null == tracingTracer) {
-                tracingTracer = GlobalTracer.get();
+                tracingTracer = Tracer.global();
             }
             return new SecurityContextImpl(this);
         }

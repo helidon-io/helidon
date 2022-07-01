@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,15 +17,21 @@
 package io.helidon.grpc.client;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.grpc.core.ContextKeys;
+import io.helidon.grpc.core.GrpcTracingContext;
+import io.helidon.grpc.core.GrpcTracingName;
 import io.helidon.grpc.core.InterceptorPriorities;
+import io.helidon.tracing.HeaderConsumer;
+import io.helidon.tracing.HeaderProvider;
+import io.helidon.tracing.Span;
+import io.helidon.tracing.Tracer;
 
 import io.grpc.CallOptions;
 import io.grpc.Channel;
@@ -37,17 +43,11 @@ import io.grpc.ForwardingClientCallListener;
 import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
 import io.grpc.Status;
-import io.opentracing.Span;
-import io.opentracing.Tracer;
-import io.opentracing.contrib.grpc.ActiveSpanSource;
-import io.opentracing.contrib.grpc.OperationNameConstructor;
-import io.opentracing.propagation.Format;
-import io.opentracing.propagation.TextMap;
 import jakarta.annotation.Priority;
 
 /**
  * A {@link ClientInterceptor} that captures tracing information into
- * Open Tracing {@link Span}s for client calls.
+ * Tracing {@link io.helidon.tracing.Span}s for client calls.
  */
 @Priority(InterceptorPriorities.TRACING)
 public class ClientTracingInterceptor
@@ -55,15 +55,13 @@ public class ClientTracingInterceptor
 
     private final Tracer tracer;
 
-    private final OperationNameConstructor operationNameConstructor;
+    private final GrpcTracingName operationNameConstructor;
 
     private final boolean streaming;
 
     private final boolean verbose;
 
     private final Set<ClientRequestAttribute> tracedAttributes;
-
-    private final ActiveSpanSource activeSpanSource;
 
     /**
      * Private constructor called by {@link Builder}.
@@ -73,20 +71,27 @@ public class ClientTracingInterceptor
      * @param streaming                flag indicating whether to trace streaming calls
      * @param verbose                  flag to indicate verbose logging to spans
      * @param tracedAttributes         the set of request attributes to add to the span
-     * @param activeSpanSource         the source of the active span
      */
     private ClientTracingInterceptor(Tracer tracer,
-                                     OperationNameConstructor operationNameConstructor,
+                                     GrpcTracingName operationNameConstructor,
                                      boolean streaming,
                                      boolean verbose,
-                                     Set<ClientRequestAttribute> tracedAttributes,
-                                     ActiveSpanSource activeSpanSource) {
+                                     Set<ClientRequestAttribute> tracedAttributes) {
         this.tracer = tracer;
         this.operationNameConstructor = operationNameConstructor;
         this.streaming = streaming;
         this.verbose = verbose;
         this.tracedAttributes = tracedAttributes;
-        this.activeSpanSource = activeSpanSource;
+    }
+
+    /**
+     * Obtain a builder to build a {@link ClientTracingInterceptor}.
+     *
+     * @param tracer the {@link Tracer} to use
+     * @return a builder to build a {@link ClientTracingInterceptor}
+     */
+    public static Builder builder(Tracer tracer) {
+        return new Builder(tracer);
     }
 
     /**
@@ -104,43 +109,43 @@ public class ClientTracingInterceptor
                                                                CallOptions callOptions,
                                                                Channel next) {
 
-        String operationName = operationNameConstructor.constructOperationName(method);
-        Span span = createSpanFromParent(activeSpanSource.getActiveSpan(), operationName);
+        String operationName = operationNameConstructor.name(method);
+        Span span = createSpanFromParent(operationName);
 
         for (ClientRequestAttribute attr : tracedAttributes) {
             switch (attr) {
             case ALL_CALL_OPTIONS:
-                span.setTag("grpc.call_options", callOptions.toString());
+                span.tag("grpc.call_options", callOptions.toString());
                 break;
             case AUTHORITY:
                 if (callOptions.getAuthority() == null) {
-                    span.setTag("grpc.authority", "null");
+                    span.tag("grpc.authority", "null");
                 } else {
-                    span.setTag("grpc.authority", callOptions.getAuthority());
+                    span.tag("grpc.authority", callOptions.getAuthority());
                 }
                 break;
             case COMPRESSOR:
                 if (callOptions.getCompressor() == null) {
-                    span.setTag("grpc.compressor", "null");
+                    span.tag("grpc.compressor", "null");
                 } else {
-                    span.setTag("grpc.compressor", callOptions.getCompressor());
+                    span.tag("grpc.compressor", callOptions.getCompressor());
                 }
                 break;
             case DEADLINE:
                 if (callOptions.getDeadline() == null) {
-                    span.setTag("grpc.deadline_millis", "null");
+                    span.tag("grpc.deadline_millis", "null");
                 } else {
-                    span.setTag("grpc.deadline_millis", callOptions.getDeadline().timeRemaining(TimeUnit.MILLISECONDS));
+                    span.tag("grpc.deadline_millis", callOptions.getDeadline().timeRemaining(TimeUnit.MILLISECONDS));
                 }
                 break;
             case METHOD_NAME:
-                span.setTag("grpc.method_name", method.getFullMethodName());
+                span.tag("grpc.method_name", method.getFullMethodName());
                 break;
             case METHOD_TYPE:
                 if (method.getType() == null) {
-                    span.setTag("grpc.method_type", "null");
+                    span.tag("grpc.method_type", "null");
                 } else {
-                    span.setTag("grpc.method_type", method.getType().toString());
+                    span.tag("grpc.method_type", method.getType().toString());
                 }
                 break;
             case HEADERS:
@@ -153,23 +158,10 @@ public class ClientTracingInterceptor
         return new ClientTracingListener<>(next.newCall(method, callOptions), span);
     }
 
-    private Span createSpanFromParent(Span parentSpan, String operationName) {
-        if (parentSpan == null) {
-            return tracer.buildSpan(operationName).start();
-        } else {
-            return tracer.buildSpan(operationName).asChildOf(parentSpan).start();
-        }
-    }
-
-    /**
-     * Obtain a builder to build a {@link ClientTracingInterceptor}.
-     *
-     * @param tracer  the {@link Tracer} to use
-     *
-     * @return  a builder to build a {@link ClientTracingInterceptor}
-     */
-    public static Builder builder(Tracer tracer) {
-        return new Builder(tracer);
+    private Span createSpanFromParent(String operationName) {
+        return tracer.spanBuilder(operationName)
+                .update(it -> GrpcTracingContext.activeSpan().map(Span::context).ifPresent(it::parent))
+                .start();
     }
 
     /**
@@ -179,7 +171,7 @@ public class ClientTracingInterceptor
 
         private final Tracer tracer;
 
-        private OperationNameConstructor operationNameConstructor;
+        private GrpcTracingName operationNameConstructor;
 
         private boolean streaming;
 
@@ -187,26 +179,23 @@ public class ClientTracingInterceptor
 
         private Set<ClientRequestAttribute> tracedAttributes;
 
-        private ActiveSpanSource activeSpanSource;
-
         /**
          * @param tracer to use for this intercepter
          *               Creates a Builder with default configuration
          */
         public Builder(Tracer tracer) {
             this.tracer = tracer;
-            operationNameConstructor = OperationNameConstructor.DEFAULT;
+            operationNameConstructor = MethodDescriptor::getFullMethodName;
             streaming = false;
             verbose = false;
             tracedAttributes = new HashSet<>();
-            activeSpanSource = ActiveSpanSource.GRPC_CONTEXT;
         }
 
         /**
          * @param operationNameConstructor to name all spans created by this intercepter
          * @return this Builder with configured operation name
          */
-        public ClientTracingInterceptor.Builder withOperationName(OperationNameConstructor operationNameConstructor) {
+        public ClientTracingInterceptor.Builder withOperationName(GrpcTracingName operationNameConstructor) {
             this.operationNameConstructor = operationNameConstructor;
             return this;
         }
@@ -242,17 +231,6 @@ public class ClientTracingInterceptor
         }
 
         /**
-         * @param activeSpanSource that provides a method of getting the
-         *                         active span before the client call
-         * @return this Builder configured to start client span as children
-         *         of the span returned by activeSpanSource.getActiveSpan()
-         */
-        public ClientTracingInterceptor.Builder withActiveSpanSource(ActiveSpanSource activeSpanSource) {
-            this.activeSpanSource = activeSpanSource;
-            return this;
-        }
-
-        /**
          * @return a ClientTracingInterceptor with this Builder's configuration
          */
         public ClientTracingInterceptor build() {
@@ -260,8 +238,7 @@ public class ClientTracingInterceptor
                                                 operationNameConstructor,
                                                 streaming,
                                                 verbose,
-                                                tracedAttributes,
-                                                activeSpanSource);
+                                                tracedAttributes);
         }
     }
 
@@ -269,8 +246,8 @@ public class ClientTracingInterceptor
      * A {@link ForwardingClientCall.SimpleForwardingClientCall} that adds information
      * to a tracing {@link Span} at different places in the gROC call lifecycle.
      *
-     * @param <ReqT>   the gRPC request type
-     * @param <RespT>  the gRPC response type
+     * @param <ReqT>  the gRPC request type
+     * @param <RespT> the gRPC response type
      */
     private class ClientTracingListener<ReqT, RespT>
             extends ForwardingClientCall.SimpleForwardingClientCall<ReqT, RespT> {
@@ -285,7 +262,7 @@ public class ClientTracingInterceptor
         @Override
         public void start(Listener<RespT> responseListener, final Metadata headers) {
             if (verbose) {
-                span.log("Started call");
+                span.addEvent("Started call");
             }
 
             if (tracedAttributes.contains(ClientRequestAttribute.HEADERS)) {
@@ -294,59 +271,57 @@ public class ClientTracingInterceptor
                 Metadata metadata = new Metadata();
                 metadata.merge(headers);
                 metadata.removeAll(ContextKeys.AUTHORIZATION);
-                span.setTag("grpc.headers", metadata.toString());
+                span.tag("grpc.headers", metadata.toString());
             }
 
-            tracer.inject(span.context(), Format.Builtin.HTTP_HEADERS, new TextMap() {
-                @Override
-                public void put(String key, String value) {
-                    Metadata.Key<String> headerKey = Metadata.Key.of(key, Metadata.ASCII_STRING_MARSHALLER);
-                    headers.put(headerKey, value);
-                }
-
-                @Override
-                public Iterator<Map.Entry<String, String>> iterator() {
-                    throw new UnsupportedOperationException(
-                            "TextMapInjectAdapter should only be used with Tracer.inject()");
-                }
-            });
+            tracer.inject(span.context(), HeaderProvider.empty(), new MetadataHeaderConsumer(headers));
 
             Listener<RespT> tracingResponseListener
                     = new ForwardingClientCallListener.SimpleForwardingClientCallListener<RespT>(responseListener) {
                 @Override
                 public void onHeaders(Metadata headers) {
                     if (verbose) {
-                        span.log(Collections.singletonMap("Response headers received", headers.toString()));
+                        span.addEvent("headers",
+                                      Map.of("Response headers received", headers.toString()));
                     }
                     delegate().onHeaders(headers);
-                }
-
-                @Override
-                public void onMessage(RespT message) {
-                    if (streaming || verbose) {
-                        span.log("Response received");
-                    }
-                    delegate().onMessage(message);
                 }
 
                 @Override
                 public void onClose(Status status, Metadata trailers) {
                     if (verbose) {
                         if (status.getCode().value() == 0) {
-                            span.log("Call closed");
+                            span.addEvent("Call closed");
                         } else {
                             String desc = String.valueOf(status.getDescription());
 
-                            span.log(Collections.singletonMap("Call failed", desc));
+                            span.addEvent("onClose", Map.of("Call failed", desc));
                         }
                     }
-                    span.finish();
+                    span.end();
 
                     delegate().onClose(status, trailers);
+                }
+
+                @Override
+                public void onMessage(RespT message) {
+                    if (streaming || verbose) {
+                        span.addEvent("Response received");
+                    }
+                    delegate().onMessage(message);
                 }
             };
 
             delegate().start(tracingResponseListener, headers);
+        }
+
+        @Override
+        public void sendMessage(ReqT message) {
+            if (streaming || verbose) {
+                span.addEvent("Message sent");
+            }
+
+            delegate().sendMessage(message);
         }
 
         @Override
@@ -356,9 +331,9 @@ public class ClientTracingInterceptor
             errorMessage = message == null ? "Error" : message;
 
             if (cause == null) {
-                span.log(errorMessage);
+                span.addEvent(errorMessage);
             } else {
-                span.log(Collections.singletonMap(errorMessage, cause.getMessage()));
+                span.addEvent("error", Map.of(errorMessage, cause.getMessage()));
             }
 
             delegate().cancel(message, cause);
@@ -367,19 +342,61 @@ public class ClientTracingInterceptor
         @Override
         public void halfClose() {
             if (streaming) {
-                span.log("Finished sending messages");
+                span.addEvent("Finished sending messages");
             }
 
             delegate().halfClose();
         }
 
-        @Override
-        public void sendMessage(ReqT message) {
-            if (streaming || verbose) {
-                span.log("Message sent");
+        private class MetadataHeaderConsumer implements HeaderConsumer {
+            private final Metadata headers;
+
+            private MetadataHeaderConsumer(Metadata headers) {
+                this.headers = headers;
             }
 
-            delegate().sendMessage(message);
+            @Override
+            public void setIfAbsent(String key, String... values) {
+                Metadata.Key<String> headerKey = key(key);
+                if (!headers.containsKey(headerKey)) {
+                    headers.put(headerKey, values[0]);
+                }
+            }
+
+            @Override
+            public void set(String key, String... values) {
+                Metadata.Key<String> headerKey = key(key);
+                headers.put(headerKey, values[0]);
+            }
+
+            @Override
+            public Iterable<String> keys() {
+                return headers.keys();
+            }
+
+            @Override
+            public Optional<String> get(String key) {
+                return Optional.ofNullable(headers.get(key(key)));
+            }
+
+            @Override
+            public Iterable<String> getAll(String key) {
+                // map single value to list or get an empty list
+                return get(key).map(List::of).orElseGet(List::of);
+            }
+
+            @Override
+            public boolean contains(String key) {
+                return headers.containsKey(key(key));
+            }
+
+            private Metadata.Key<String> key(String name) {
+                return Metadata.Key.of(name, Metadata.ASCII_STRING_MARSHALLER);
+            }
+
+            private void put(Metadata.Key<String> key, String value){
+                headers.put(key, value);
+            }
         }
     }
 }

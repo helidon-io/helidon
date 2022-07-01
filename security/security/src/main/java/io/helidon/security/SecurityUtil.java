@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,10 +31,7 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigMappingException;
 import io.helidon.security.spi.AuditProvider;
 import io.helidon.security.spi.SecurityProvider;
-
-import io.opentracing.Tracer;
-import io.opentracing.noop.NoopTracerFactory;
-import io.opentracing.util.GlobalTracer;
+import io.helidon.tracing.Tracer;
 
 /**
  * Utility class for internal needs.
@@ -55,9 +52,9 @@ final class SecurityUtil {
 
     static Tracer getTracer(boolean tracingEnabled, Tracer builderTracer) {
         if (tracingEnabled) {
-            return (builderTracer == null) ? GlobalTracer.get() : builderTracer;
+            return (builderTracer == null) ? Tracer.global() : builderTracer;
         } else {
-            return NoopTracerFactory.create();
+            return Tracer.noOp();
         }
     }
 

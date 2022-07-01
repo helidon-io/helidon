@@ -27,8 +27,7 @@ import java.util.Set;
 import javax.net.ssl.SSLContext;
 
 import io.helidon.common.context.Context;
-
-import io.opentracing.Tracer;
+import io.helidon.tracing.Tracer;
 
 /**
  * Basic implementation of the {@link ServerConfiguration}.

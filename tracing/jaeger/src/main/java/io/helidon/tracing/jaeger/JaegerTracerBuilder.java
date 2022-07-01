@@ -26,7 +26,7 @@ import java.util.logging.Logger;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.tracing.TracerBuilder;
+import io.helidon.tracing.opentracing.OpenTracingTracerBuilder;
 
 import io.jaegertracing.Configuration;
 import io.jaegertracing.internal.JaegerTracer;
@@ -151,7 +151,7 @@ import io.opentracing.util.GlobalTracer;
  * @see <a href="https://github.com/jaegertracing/jaeger-client-java/blob/master/jaeger-core/README.md">Jaeger configuration</a>
  */
 @Configured(prefix = "tracing", root = true, description = "Jaeger tracer configuration.")
-public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
+public class JaegerTracerBuilder implements OpenTracingTracerBuilder<JaegerTracerBuilder> {
     static final Logger LOGGER = Logger.getLogger(JaegerTracerBuilder.class.getName());
 
     static final boolean DEFAULT_ENABLED = true;
@@ -208,7 +208,7 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
         return create().config(config);
     }
 
-    static TracerBuilder<JaegerTracerBuilder> create() {
+    static JaegerTracerBuilder create() {
         return new JaegerTracerBuilder();
     }
 
@@ -468,6 +468,20 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
         }
 
         return result;
+    }
+
+    @Override
+    public boolean enabled() {
+        return enabled;
+    }
+
+    @Override
+    public <B> B unwrap(Class<B> builderClass) {
+        if (builderClass.isAssignableFrom(getClass())) {
+            return builderClass.cast(this);
+        }
+        throw new IllegalArgumentException("This builder is a Jaeger tracer builder, cannot be unwrapped to "
+                                                   + builderClass.getName());
     }
 
     Configuration jaegerConfig() {

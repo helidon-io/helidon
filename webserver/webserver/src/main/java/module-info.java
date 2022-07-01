@@ -29,13 +29,11 @@ module io.helidon.webserver {
     requires transitive io.helidon.common.context;
     requires transitive io.helidon.config;
     requires transitive io.helidon.tracing.config;
-    requires transitive io.opentracing.util;
+    requires transitive io.helidon.tracing;
     requires io.helidon.logging.common;
     requires static io.helidon.config.metadata;
 
     requires java.logging;
-    requires io.opentracing.api;
-    requires io.opentracing.noop;
     requires io.netty.handler;
     requires io.netty.codec.http;
     requires io.netty.codec;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,18 +22,17 @@ import java.util.logging.Logger;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
+import io.helidon.tracing.Scope;
+import io.helidon.tracing.Span;
+import io.helidon.tracing.SpanContext;
+import io.helidon.tracing.Tag;
+import io.helidon.tracing.Tracer;
 import io.helidon.tracing.config.SpanTracingConfig;
 import io.helidon.tracing.config.TracingConfigUtil;
 import io.helidon.tracing.jersey.client.ClientTracingFilter;
 import io.helidon.tracing.jersey.client.internal.TracingContext;
 import io.helidon.webserver.ServerRequest;
 
-import io.opentracing.Scope;
-import io.opentracing.Span;
-import io.opentracing.SpanContext;
-import io.opentracing.Tracer;
-import io.opentracing.tag.Tags;
-import io.opentracing.util.GlobalTracer;
 import jakarta.ws.rs.ConstrainedTo;
 import jakarta.ws.rs.RuntimeType;
 import jakarta.ws.rs.container.ContainerRequestContext;
@@ -69,24 +68,24 @@ public abstract class AbstractTracingFilter implements ContainerRequestFilter, C
 
         if (spanConfig.enabled()) {
             spanName = spanConfig.newName().orElse(spanName);
-            Tracer tracer = context.get(Tracer.class).orElseGet(GlobalTracer::get);
+            Tracer tracer = context.get(Tracer.class).orElseGet(Tracer::global);
             SpanContext parentSpan = context.get(ServerRequest.class, SpanContext.class)
                     .orElseGet(() -> context.get(SpanContext.class).orElse(null));
 
-            Tracer.SpanBuilder spanBuilder = tracer.buildSpan(spanName)
-                    .withTag(Tags.SPAN_KIND.getKey(), Tags.SPAN_KIND_SERVER)
-                    .withTag(Tags.HTTP_METHOD.getKey(), requestContext.getMethod())
-                    .withTag(Tags.HTTP_URL.getKey(), url(requestContext))
-                    .withTag(Tags.COMPONENT.getKey(), "jaxrs");
+            Span.Builder spanBuilder = tracer.spanBuilder(spanName)
+                    .kind(Span.Kind.SERVER)
+                    .tag(Tag.HTTP_METHOD.create(requestContext.getMethod()))
+                    .tag(Tag.HTTP_URL.create(url(requestContext)))
+                    .tag(Tag.COMPONENT.create("jaxrs"));
 
             if (null != parentSpan) {
-                spanBuilder.asChildOf(parentSpan);
+                spanBuilder.parent(parentSpan);
             }
 
             configureSpan(spanBuilder);
 
             Span span = spanBuilder.start();
-            Scope spanScope = tracer.scopeManager().activate(span);
+            Scope spanScope = span.activate();
 
             context.register(span);
             context.register(spanScope);
@@ -104,28 +103,6 @@ public abstract class AbstractTracingFilter implements ContainerRequestFilter, C
                 context.register(span.context());
             }
         }
-    }
-
-    /**
-     * Resolves host name based on the "host" header. If this header is not set, then
-     * {@link URI#toString()} is called.
-     *
-     * @param requestContext request context
-     * @return resolved url
-     */
-    protected String url(ContainerRequestContext requestContext) {
-        String hostHeader = requestContext.getHeaderString("host");
-        URI requestUri = requestContext.getUriInfo().getRequestUri();
-
-        if (null != hostHeader) {
-            // let us use host header instead of local interface
-            return requestUri.getScheme()
-                    + "://"
-                    + hostHeader
-                    + requestUri.getPath();
-        }
-
-        return requestUri.toString();
     }
 
     @Override
@@ -154,24 +131,50 @@ public abstract class AbstractTracingFilter implements ContainerRequestFilter, C
             break;
         case CLIENT_ERROR:
         case SERVER_ERROR:
-            Tags.ERROR.set(span, true);
-            span.log(Map.of("event", "error"));
+            span.status(Span.Status.ERROR);
+            span.addEvent("error", Map.of());
             break;
         default:
             break;
         }
 
-        Tags.HTTP_STATUS.set(span, responseContext.getStatus());
+        Tag.HTTP_STATUS.create(responseContext.getStatus()).apply(span);
 
         requestContext.setProperty(SPAN_FINISHED_PROPERTY, true);
-        span.finish();
+        span.end();
 
         // using the helidon context is not supported here, as we may be executing in a completion stage returned
         // from a third party component
         Scope scope = (Scope) requestContext.getProperty(SPAN_SCOPE_PROPERTY);
         if (scope != null) {
-            scope.close();
+            try {
+                scope.close();
+            } catch (Exception ignored) {
+                // ignored
+            }
         }
+    }
+
+    /**
+     * Resolves host name based on the "host" header. If this header is not set, then
+     * {@link URI#toString()} is called.
+     *
+     * @param requestContext request context
+     * @return resolved url
+     */
+    protected String url(ContainerRequestContext requestContext) {
+        String hostHeader = requestContext.getHeaderString("host");
+        URI requestUri = requestContext.getUriInfo().getRequestUri();
+
+        if (null != hostHeader) {
+            // let us use host header instead of local interface
+            return requestUri.getScheme()
+                    + "://"
+                    + hostHeader
+                    + requestUri.getPath();
+        }
+
+        return requestUri.toString();
     }
 
     /**
@@ -195,5 +198,5 @@ public abstract class AbstractTracingFilter implements ContainerRequestFilter, C
      *
      * @param spanBuilder builder of the new span
      */
-    protected abstract void configureSpan(Tracer.SpanBuilder spanBuilder);
+    protected abstract void configureSpan(Span.Builder spanBuilder);
 }

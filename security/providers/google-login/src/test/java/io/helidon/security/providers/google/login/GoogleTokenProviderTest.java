@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,12 +39,12 @@ import io.helidon.security.Subject;
 import io.helidon.security.providers.common.OutboundConfig;
 import io.helidon.security.providers.common.OutboundTarget;
 import io.helidon.security.providers.common.TokenCredential;
+import io.helidon.tracing.Span;
+import io.helidon.tracing.Tracer;
 
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.json.JsonFactory;
-import io.opentracing.Span;
-import io.opentracing.util.GlobalTracer;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -171,11 +171,11 @@ public class GoogleTokenProviderTest {
                 .header(headerName, headerValue)
                 .build();
 
-        Span secSpan = GlobalTracer.get().buildSpan("security").start();
+        Span secSpan = Tracer.global().spanBuilder("security").start();
 
         SecurityContext context = mock(SecurityContext.class);
         when(context.executorService()).thenReturn(ForkJoinPool.commonPool());
-        when(context.tracer()).thenReturn(GlobalTracer.get());
+        when(context.tracer()).thenReturn(Tracer.global());
         when(context.tracingSpan()).thenReturn(secSpan.context());
 
         ProviderRequest mock = mock(ProviderRequest.class);

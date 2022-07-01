@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,9 @@
  */
 /**
  * Distributed tracing support for Helidon.
+ * This module provides a full API for tracing, that abstract various tracing APIs, such as OpenTracing and OpenTelemetry
+ * tracing.
+ *
  * @see io.helidon.tracing.TracerBuilder#create(java.lang.String)
  * @see io.helidon.tracing.TracerBuilder#create(io.helidon.config.Config)
  */

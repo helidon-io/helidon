@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,16 +15,16 @@
  */
 package io.helidon.tracing.zipkin;
 
-import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 import java.util.logging.Logger;
 
 import io.helidon.common.Prioritized;
-import io.helidon.tracing.TracerBuilder;
-import io.helidon.tracing.spi.TracerProvider;
+import io.helidon.tracing.HeaderConsumer;
+import io.helidon.tracing.HeaderProvider;
+import io.helidon.tracing.opentracing.spi.OpenTracingProvider;
 
-import io.opentracing.Span;
 import io.opentracing.SpanContext;
 import io.opentracing.Tracer;
 import jakarta.annotation.Priority;
@@ -33,7 +33,7 @@ import jakarta.annotation.Priority;
  * Zipkin java service.
  */
 @Priority(Prioritized.DEFAULT_PRIORITY)
-public class ZipkinTracerProvider implements TracerProvider {
+public class ZipkinTracerProvider implements OpenTracingProvider {
     // original Zipkin headers (comes from old name of Zipkin - "BigBrotherBird", or "B3")
     static final String X_B3_TRACE_ID = "x-b3-traceid";
     static final String X_B3_SPAN_ID = "x-b3-spanid";
@@ -49,30 +49,26 @@ public class ZipkinTracerProvider implements TracerProvider {
             List.of(X_OT_SPAN_CONTEXT, X_B3_TRACE_ID, X_B3_SPAN_ID, X_B3_PARENT_SPAN_ID, X_B3_SAMPLED, X_B3_FLAGS);
 
     @Override
-    public TracerBuilder<?> createBuilder() {
+    public ZipkinTracerBuilder createBuilder() {
         return ZipkinTracerBuilder.create();
     }
 
     @Override
-    public Map<String, List<String>> updateOutboundHeaders(Span currentSpan,
-                                                           Tracer tracer,
-                                                           SpanContext parentSpan,
-                                                           Map<String, List<String>> outboundHeaders,
-                                                           Map<String, List<String>> inboundHeaders) {
+    public void updateOutboundHeaders(Tracer tracer,
+                                      SpanContext currentSpan,
+                                      HeaderProvider inboundHeaders,
+                                      HeaderConsumer outboundHeaders) {
 
-        // copy all existing headers to the result
-        Map<String, List<String>> result = new HashMap<>(outboundHeaders);
+        Iterator<String> inboundIterator = inboundHeaders.keys().iterator();
 
-        if (inboundHeaders.isEmpty()) {
-            // nothing to do, default to interface implementation
-            return result;
+        if (!inboundIterator.hasNext()) {
+            return;
         }
 
-        TRACING_CONTEXT_PROPAGATION_HEADERS.forEach(header -> result.computeIfAbsent(header, inboundHeaders::get));
+        TRACING_CONTEXT_PROPAGATION_HEADERS.forEach(header -> inboundHeaders.get(header)
+                .ifPresent(it -> outboundHeaders.setIfAbsent(header, it)));
 
-        fixXOtSpanContext(result);
-
-        return result;
+        fixXOtSpanContext(outboundHeaders);
     }
 
     /**
@@ -85,38 +81,34 @@ public class ZipkinTracerProvider implements TracerProvider {
      * The first three items need to be updated with the current tracing context which might
      * have changed between the incoming server call and the current outgoing client call.
      *
-     * @param map the map with the tracing context where the {@link #X_OT_SPAN_CONTEXT} record
+     * @param headers outbound headers with the tracing context where the {@link #X_OT_SPAN_CONTEXT} record
      *            gets updated based on the {@link #X_B3_TRACE_ID}, {@link #X_B3_SPAN_ID} and
      *            {@link #X_B3_PARENT_SPAN_ID}
      */
-    private void fixXOtSpanContext(Map<String, List<String>> map) {
-        if (!map.containsKey(X_OT_SPAN_CONTEXT)) {
+    private void fixXOtSpanContext(HeaderConsumer headers) {
+        Optional<String> ctx = headers.get(X_OT_SPAN_CONTEXT);
+
+        if (ctx.isEmpty()) {
             return;
         }
 
-        List<String> values = map.get(X_OT_SPAN_CONTEXT);
-
-        if (values.isEmpty()) {
-            return;
-        }
-
-        String value = values.get(0);
+        String value = ctx.get();
         String[] split = value.split(";");
 
-        substitute(map, split, X_B3_TRACE_ID, 0);
-        substitute(map, split, X_B3_SPAN_ID, 1);
-        substitute(map, split, X_B3_PARENT_SPAN_ID, 2);
+        substitute(headers, split, X_B3_TRACE_ID, 0);
+        substitute(headers, split, X_B3_SPAN_ID, 1);
+        substitute(headers, split, X_B3_PARENT_SPAN_ID, 2);
 
         String result = String.join(";", split);
         LOGGER.fine(() -> X_OT_SPAN_CONTEXT + " header fixed: " + value + " -> " + result);
-        map.put(X_OT_SPAN_CONTEXT, List.of(result));
+        headers.set(X_OT_SPAN_CONTEXT, result);
     }
 
-    private static void substitute(Map<String, List<String>> map, String[] split, String key, int i) {
-        if ((split.length > i) && map.containsKey(key)) {
-            List<String> strings = map.get(key);
-            if (!strings.isEmpty()) {
-                split[i] = strings.get(0);
+    private static void substitute(HeaderConsumer headers, String[] split, String key, int i) {
+        if ((split.length > i) && headers.contains(key)) {
+            Iterator<String> strings = headers.getAll(key).iterator();
+            if (strings.hasNext()) {
+                split[i] = strings.next();
             }
         }
     }

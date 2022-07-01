@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,12 +30,9 @@ module io.helidon.grpc.server {
 
     requires transitive grpc.services;
     requires transitive microprofile.health.api;
-    requires transitive io.opentracing.api;
-    requires transitive opentracing.grpc;
 
     requires jakarta.annotation;
     requires java.logging;
 
     requires jakarta.inject;
-    requires io.opentracing.util;
 }

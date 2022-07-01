@@ -1,10 +1,12 @@
 Distributed Tracing
 ---
 
-Both Helidon SE and Helidon MP use Opentracing API for tracing
-events.
+Module `helidon-tracing` defines tracing API and SPI that is used throughout Helidon.
+As we need to support both OpenTracing and OpenTelemetry tracing, this abstraction is required to keep tracing an integral part 
+of Helidon.
 
-_Eclipse Microprofile Opentracing specification is not yet implemented_
+Module `helidon-tracing-opentracing` adds support for opentracing based tracers (such as Zipkin).
+Module `helidon-tracing-opentelemetry` adds support for opentelemetry based tracers (such as Jaeger).
 
 # Usage
 ## Usage In Helidon MP

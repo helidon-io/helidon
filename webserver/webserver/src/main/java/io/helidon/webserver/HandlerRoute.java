@@ -71,7 +71,6 @@ class HandlerRoute implements HttpRoute {
         this.handler = handler;
         // Construct diagnostic event
         Map<String, String> eventData = new HashMap<>(5);
-        eventData.put("event", "handler");
         if (this.handler != null) {
             eventData.put("handler.class", this.handler.getClass().getName());
         }

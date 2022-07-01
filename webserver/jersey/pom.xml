@@ -47,10 +47,6 @@
             <artifactId>helidon-common-reactive</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.opentracing</groupId>
-            <artifactId>opentracing-api</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.jersey</groupId>
             <artifactId>helidon-jersey-server</artifactId>
         </dependency>

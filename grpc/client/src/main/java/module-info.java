@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,4 @@ module io.helidon.grpc.client {
     requires transitive io.helidon.grpc.core;
 
     requires io.helidon.tracing;
-    requires io.opentracing.api;
-    requires opentracing.grpc;
 }

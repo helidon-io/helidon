@@ -15,7 +15,6 @@
  */
 package io.helidon.webserver;
 
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -27,19 +26,14 @@ import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
+import io.helidon.tracing.HeaderProvider;
+import io.helidon.tracing.Span;
+import io.helidon.tracing.SpanContext;
+import io.helidon.tracing.Tag;
+import io.helidon.tracing.Tracer;
 import io.helidon.tracing.config.SpanTracingConfig;
 import io.helidon.tracing.config.TracingConfig;
 import io.helidon.tracing.config.TracingConfigUtil;
-
-import io.opentracing.Span;
-import io.opentracing.SpanContext;
-import io.opentracing.Tracer;
-import io.opentracing.noop.NoopScopeManager;
-import io.opentracing.noop.NoopSpanBuilder;
-import io.opentracing.propagation.Format;
-import io.opentracing.propagation.TextMapAdapter;
-import io.opentracing.tag.Tags;
-import io.opentracing.util.GlobalTracer;
 
 /**
  * Tracing configuration for webserver.
@@ -111,7 +105,7 @@ public abstract class WebTracingConfig {
                 }
             }
         }
-        return Contexts.context().flatMap(ctx -> ctx.get(Tracer.class)).orElseGet(GlobalTracer::get);
+        return Contexts.context().flatMap(ctx -> ctx.get(Tracer.class)).orElseGet(Tracer::global);
     }
 
     Service service() {
@@ -268,9 +262,7 @@ public abstract class WebTracingConfig {
         @Override
         public void accept(ServerRequest req, ServerResponse res) {
             if (shouldTrace && checkedIfShouldTrace.compareAndSet(false, true)) {
-                if (req.tracer().scopeManager() instanceof NoopScopeManager) {
-                    shouldTrace = false;
-                }
+                shouldTrace = req.tracer().enabled();
             }
 
             if (shouldTrace) {
@@ -289,25 +281,11 @@ public abstract class WebTracingConfig {
             SpanTracingConfig spanConfig = TracingConfigUtil
                     .spanConfig(NettyWebServer.TRACING_COMPONENT, TRACING_SPAN_HTTP_REQUEST, context);
 
-            // convert to a simple map
-            Map<String, List<String>> multiMap = req.headers().toMap();
-            Map<String, String> headersMap = new HashMap<>();
+            SpanContext inboundSpanContext = tracer.extract(new TracingHeaderProvider(req.headers().toMap()))
+                    .orElse(null);
 
-            for (Map.Entry<String, List<String>> entry : multiMap.entrySet()) {
-                List<String> value = entry.getValue();
-                if (!value.isEmpty()) {
-                    headersMap.put(entry.getKey(), value.get(0));
-                }
-            }
 
-            SpanContext inboundSpanContext = tracer.extract(Format.Builtin.HTTP_HEADERS, new TextMapAdapter(headersMap));
-
-            if (inboundSpanContext instanceof NoopSpanBuilder) {
-                // no tracing
-                return;
-            }
-
-            if (null != inboundSpanContext) {
+            if (inboundSpanContext != null) {
                 // register as parent span
                 context.register(inboundSpanContext);
                 context.register(ServerRequest.class, inboundSpanContext);
@@ -322,13 +300,15 @@ public abstract class WebTracingConfig {
                 spanName = String.format(spanName, req.method().name(), req.path(), req.query());
             }
             // tracing is enabled, so we replace the parent span with web server parent span
-            Tracer.SpanBuilder spanBuilder = tracer.buildSpan(spanName)
-                    .withTag(Tags.COMPONENT.getKey(), "helidon-webserver")
-                    .withTag(Tags.HTTP_METHOD.getKey(), req.method().name())
-                    .withTag(Tags.HTTP_URL.getKey(), req.uri().toString());
+            Span.Builder<?> spanBuilder = tracer.spanBuilder(spanName)
+                    .kind(Span.Kind.SERVER)
+                    .tag(Tag.COMPONENT.create("helidon-webserver"))
+                    .tag(Tag.HTTP_METHOD.create(req.method().name()))
+                    .tag(Tag.HTTP_URL.create(req.uri().toString()))
+                    .tag(Tag.HTTP_VERSION.create(req.version().value()));
 
             if (inboundSpanContext != null) {
-                spanBuilder.asChildOf(inboundSpanContext);
+                spanBuilder.parent(inboundSpanContext);
             }
 
             // cannot use startActive, as it conflicts with the thread model we use
@@ -342,23 +322,58 @@ public abstract class WebTracingConfig {
                         Http.ResponseStatus httpStatus = res.status();
                         if (httpStatus != null) {
                             int statusCode = httpStatus.code();
-                            Tags.HTTP_STATUS.set(span, statusCode);
+                            span.tag(Tag.HTTP_STATUS.create(statusCode));
+
                             if (statusCode >= 400) {
-                                Tags.ERROR.set(span, true);
-                                span.log(Map.of("event", "error",
-                                                                 "message", "Response HTTP status: " + statusCode,
+                                span.status(Span.Status.ERROR);
+
+                                span.addEvent("error", Map.of("message", "Response HTTP status: " + statusCode,
                                                                  "error.kind", statusCode < 500 ? "ClientError" : "ServerError"));
                             }
                         }
-                        span.finish();
+                        span.end();
                     })
                     .exceptionally(t -> {
-                        Tags.ERROR.set(span, true);
-                        span.log(Map.of("event", "error",
-                                                         "error.object", t));
-                        span.finish();
+                        span.end(t);
                         return null;
                     });
+        }
+
+        private static class TracingHeaderProvider implements HeaderProvider {
+
+            private final Map<String, List<String>> headers;
+
+            TracingHeaderProvider(Map<String, List<String>> headers) {
+                this.headers = headers;
+            }
+
+            @Override
+            public Iterable<String> keys() {
+                return headers.keySet();
+            }
+
+            @Override
+            public Optional<String> get(String key) {
+                List<String> strings = headers.get(key);
+                if (strings == null) {
+                    return Optional.empty();
+                }
+                return Optional.of(strings.get(0));
+            }
+
+            @Override
+            public Iterable<String> getAll(String key) {
+                List<String> strings = headers.get(key);
+                if (strings == null) {
+                    return List.of();
+                }
+                return strings;
+            }
+
+            @Override
+            public boolean contains(String key) {
+                return headers.containsKey(key);
+            }
         }
     }
 }

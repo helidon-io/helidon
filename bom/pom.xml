@@ -698,6 +698,18 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
+                <!-- to add tracer builder -->
+                <groupId>io.helidon.tracing</groupId>
+                <artifactId>helidon-tracing-opentracing</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <!-- to add tracer builder -->
+                <groupId>io.helidon.tracing</groupId>
+                <artifactId>helidon-tracing-opentelemetry</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
                 <!-- basic tracing configuration -->
                 <groupId>io.helidon.tracing</groupId>
                 <artifactId>helidon-tracing-config</artifactId>

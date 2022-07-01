@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +19,10 @@ import java.util.Map;
 import java.util.Optional;
 
 import io.helidon.security.SecurityResponse;
+import io.helidon.tracing.Span;
+import io.helidon.tracing.SpanContext;
 import io.helidon.tracing.config.SpanTracingConfig;
 
-import io.opentracing.Span;
-import io.opentracing.SpanContext;
-import io.opentracing.tag.Tags;
 
 abstract class CommonTracing {
     static final String LOG_STATUS = "status";
@@ -51,7 +50,7 @@ abstract class CommonTracing {
      * Finish the span.
      */
     public void finish() {
-        span.ifPresent(Span::finish);
+        span.ifPresent(Span::end);
     }
 
     /**
@@ -66,13 +65,11 @@ abstract class CommonTracing {
 
         Span theSpan = span.get();
 
-        Tags.ERROR.set(theSpan, true);
-
-        theSpan.log(Map.of("event", "error",
-                           "message", message,
+        theSpan.status(Span.Status.ERROR);
+        theSpan.addEvent("error", Map.of("message", message,
                            "error.kind", "SecurityException"));
 
-        theSpan.finish();
+        theSpan.end();
     }
 
     /**
@@ -81,17 +78,12 @@ abstract class CommonTracing {
      * @param throwable throwable causing security to fail
      */
     public void error(Throwable throwable) {
-        if (!span.isPresent()) {
+        if (span.isEmpty()) {
             return;
         }
 
         Span theSpan = span.get();
-
-        Tags.ERROR.set(theSpan, true);
-
-        theSpan.log(Map.of("event", "error",
-                                            "error.object", throwable));
-        theSpan.finish();
+        theSpan.end(throwable);
     }
 
     /**
@@ -137,7 +129,7 @@ abstract class CommonTracing {
     void log(String logName, String logMessage, boolean enabledByDefault) {
         span().ifPresent(span -> {
             if (spanConfig().logEnabled(logName, enabledByDefault)) {
-                span.log(logMessage);
+                span.addEvent(logMessage);
             }
         });
     }

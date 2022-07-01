@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,12 @@
 
 package io.helidon.tracing.zipkin;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import io.helidon.tracing.HeaderConsumer;
+import io.helidon.tracing.HeaderProvider;
 import io.helidon.tracing.TracerBuilder;
 
 import io.opentracing.mock.MockSpan;
@@ -36,7 +39,9 @@ class ZipkinTracerProviderTest {
     @Test
     void testService() {
         TracerBuilder<?> builder = TracerBuilder.create("myService");
-        assertThat(builder, instanceOf(ZipkinTracerBuilder.class));
+        // try to unwrap
+        ZipkinTracerBuilder unwrap = builder.unwrap(ZipkinTracerBuilder.class);
+        assertThat(unwrap, instanceOf(ZipkinTracerBuilder.class));
     }
 
     @Test
@@ -58,12 +63,11 @@ class ZipkinTracerProviderTest {
                 ZipkinTracerProvider.X_B3_SPAN_ID, List.of(spanId),
                 ZipkinTracerProvider.X_B3_TRACE_ID, List.of(traceId)
         );
-        Map<String, List<String>> outboundHeaders = Map.of();
-        outboundHeaders = provider.updateOutboundHeaders(span,
-                                                         mt,
-                                                         parent.context(),
-                                                         outboundHeaders,
-                                                         inboundHeaders);
+        Map<String, List<String>> outboundHeaders = new HashMap<>();
+        provider.updateOutboundHeaders(mt,
+                                       span.context(),
+                                       HeaderProvider.create(inboundHeaders),
+                                       HeaderConsumer.create(outboundHeaders));
 
         // all should be propagated, X_OT should be fixed
         List<String> values = outboundHeaders.get(ZipkinTracerProvider.X_OT_SPAN_CONTEXT);
@@ -92,23 +96,24 @@ class ZipkinTracerProviderTest {
         String traceId = "0000816c055dc421";
 
         ZipkinTracerProvider provider = new ZipkinTracerProvider();
-        Map<String, List<String>> outboundHeaders = Map.of(
-                ZipkinTracerProvider.X_OT_SPAN_CONTEXT, List.of("0000816c055dc421;0000816c055dc421;0000000000000000;sr"),
-                ZipkinTracerProvider.X_B3_PARENT_SPAN_ID, List.of(parentSpanId),
-                ZipkinTracerProvider.X_B3_SPAN_ID, List.of(spanId),
-                ZipkinTracerProvider.X_B3_TRACE_ID, List.of(traceId)
-        );
+        Map<String, List<String>> outboundHeaders = new HashMap<>();
+        outboundHeaders.put(
+                ZipkinTracerProvider.X_OT_SPAN_CONTEXT, List.of("0000816c055dc421;0000816c055dc421;0000000000000000;sr"));
+        outboundHeaders.put(ZipkinTracerProvider.X_B3_PARENT_SPAN_ID, List.of(parentSpanId));
+        outboundHeaders.put(ZipkinTracerProvider.X_B3_SPAN_ID, List.of(spanId));
+        outboundHeaders.put(ZipkinTracerProvider.X_B3_TRACE_ID, List.of(traceId));
+
         Map<String, List<String>> inboundHeaders = Map.of(
                 ZipkinTracerProvider.X_OT_SPAN_CONTEXT, List.of("14"),
                 ZipkinTracerProvider.X_B3_PARENT_SPAN_ID, List.of("15"),
                 ZipkinTracerProvider.X_B3_SPAN_ID, List.of("16"),
                 ZipkinTracerProvider.X_B3_TRACE_ID, List.of("17")
         );
-        outboundHeaders = provider.updateOutboundHeaders(span,
-                                                         mt,
-                                                         parent.context(),
-                                                         outboundHeaders,
-                                                         inboundHeaders);
+
+        provider.updateOutboundHeaders(mt,
+                                       span.context(),
+                                       HeaderProvider.create(inboundHeaders),
+                                       HeaderConsumer.create(outboundHeaders));
 
         // all should be propagated, X_OT should be fixed
         List<String> values = outboundHeaders.get(ZipkinTracerProvider.X_OT_SPAN_CONTEXT);
