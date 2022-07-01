@@ -169,6 +169,7 @@ endif::[]
 :faulttolerance-javadoc-base-url: {javadoc-base-url}/io.helidon.faulttolerance
 :grpc-server-javadoc-base-url: {javadoc-base-url}/io.helidon.grpc.server
 :health-javadoc-base-url: {javadoc-base-url}/io.helidon.health.checks
+:media-jsonp-javadoc-base-url: {javadoc-base-url}/io.helidon.media.jsonp
 :media-jsonb-javadoc-base-url: {javadoc-base-url}/io.helidon.media.jsonb
 :media-jackson-javadoc-base-url: {javadoc-base-url}/io.helidon.media.jackson
 :metrics-javadoc-base-url: {javadoc-base-url}/io.helidon.metrics.api
@@ -178,6 +179,8 @@ endif::[]
 :reactive-base-url: {javadoc-base-url}/io.helidon.common.reactive
 :webclient-javadoc-base-url: {javadoc-base-url}/apidocs/io.helidon.webclient
 :webserver-javadoc-base-url: {javadoc-base-url}/apidocs/io.helidon.webserver
+:webserver-jersey-javadoc-base-url: {javadoc-base-url}/apidocs/io.helidon.webserver.jersey
+:webserver-staticcontent-javadoc-base-url: {webserver-javadoc-base-url}.staticcontent
 :webserver-cors-javadoc-base-url: {javadoc-base-url}/apidocs/io.helidon.webserver.cors
 :mp-tyrus-javadoc-base-url: {javadoc-base-url}/apidocs/io.helidon.microprofile.tyrus
 

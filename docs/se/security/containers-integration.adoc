@@ -29,7 +29,7 @@ The following containers are integrated with Helidon Security:
 
 === Web server
 
-Integration of xref:../webserver/introduction.adoc[reactive web server]
+Integration of xref:../webserver.adoc[reactive web server]
 
 [source,xml]
 .Maven Dependency

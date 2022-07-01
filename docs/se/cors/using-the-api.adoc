@@ -109,7 +109,7 @@ The link:{helidon-github-tree-url}/examples/quickstarts/helidon-quickstart-se[He
  you change the greeting by sending a `PUT` request to the `/greet/greeting` resource.
 
 This example, based on the QuickStart greeting app, uses the low-level `CrossOriginConfig` API and
-the `CorsSupport` API to influence the xref:../webserver/routing.adoc[routing],
+the `CorsSupport` API to influence the xref:../webserver.adoc#routing[routing],
 thereby determining how that resource is shared. (If desired, you can use configuration instead of the low-level API.
 xref:using-configuration.adoc[Learn more]).
 

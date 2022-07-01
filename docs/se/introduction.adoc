@@ -142,7 +142,7 @@ HTTP client that handles responses to the HTTP requests in a reactive way.
 //WebServer
 [CARD]
 .WebServer
-[icon=settings_ethernet,link=webserver/introduction.adoc]
+[icon=settings_ethernet,link=webserver.adoc]
 --
 A programmatic HTTP API with reactive features, powered by Netty.
 --
