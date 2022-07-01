@@ -1,6 +1,7 @@
 db:
   source: "mongoDb"
   connection:
+    # docker run --rm --name mongo -p 27017:27017 mongo
     url: "mongodb://127.0.0.1:27017/pokemon"
   health-check:
     type: "query"

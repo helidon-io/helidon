@@ -111,6 +111,26 @@
                                     <list key="config-entries">
                                         <value file="files/application.mysql.yaml"/>
                                     </list>
+                                    <list key="dependencies">
+                                        <map>
+                                            <value key="groupId">io.helidon.dbclient</value>
+                                            <value key="artifactId">helidon-dbclient-jdbc</value>
+                                        </map>
+                                        <map>
+                                            <value key="groupId">mysql</value>
+                                            <value key="artifactId">mysql-connector-java</value>
+                                            <value key="scope">runtime</value>
+                                        </map>
+                                    </list>
+                                    <list key="DatabaseService-constructor">
+                                        <value><![CDATA[
+        dbClient.execute(handle -> handle.namedDml("create-table"))
+                .thenAccept(System.out::println)
+                .exceptionally(throwable -> {
+                    LOGGER.log(Level.WARNING, "Failed to create table, maybe it already exists?", throwable);
+                    return null;
+                });]]></value>
+                                    </list>
                                 </model>
                             </output>
                         </option>
@@ -175,6 +195,15 @@
                         <list key="Main-routingBuilder">
                             <value><![CDATA[                .register("/db", new DatabaseService(dbClient))]]></value>
                         </list>
+                        <!--list key="DatabaseService-constructor" if="${db.server} != 'mongodb'">
+                            <value><![CDATA[
+        dbClient.execute(handle -> handle.namedDml("create-table"))
+                .thenAccept(System.out::println)
+                .exceptionally(throwable -> {
+                    LOGGER.log(Level.WARNING, "Failed to create table, maybe it already exists?", throwable);
+                    return null;
+                });]]></value>
+                        </list-->
                     </model>
                 </output>
             </boolean>
