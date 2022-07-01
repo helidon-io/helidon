@@ -52,11 +52,6 @@
                                             <value key="artifactId">helidon-dbclient-jdbc</value>
                                         </map>
                                     </list>
-                                    <list key="Main-helidon-imports">
-                                        <value>io.helidon.dbclient.DbClient</value>
-                                        <value>io.helidon.media.jsonp.JsonpSupport</value>
-                                        <value>io.helidon.media.jsonb.JsonbSupport</value>
-                                    </list>
                                     <list key="DatabaseService-constructor">
                                         <value><![CDATA[
         dbClient.execute(handle -> handle.namedDml("create-table"))
@@ -128,6 +123,12 @@
                                     <list key="config-entries">
                                         <value file="files/application.mongo.yaml"/>
                                     </list>
+                                    <list key="dependencies">
+                                        <map>
+                                            <value key="groupId">io.helidon.dbclient</value>
+                                            <value key="artifactId">helidon-dbclient-mongodb</value>
+                                        </map>
+                                    </list>
                                 </model>
                             </output>
                         </option>
@@ -157,6 +158,11 @@
                                 <value key="groupId">io.helidon.media</value>
                                 <value key="artifactId">helidon-media-jsonb</value>
                             </map>
+                        </list>
+                        <list key="Main-helidon-imports">
+                            <value>io.helidon.dbclient.DbClient</value>
+                            <value>io.helidon.media.jsonp.JsonpSupport</value>
+                            <value>io.helidon.media.jsonb.JsonbSupport</value>
                         </list>
                         <list key="Main-serverBuilder">
                             <value><![CDATA[                .addMediaSupport(JsonbSupport.create())]]></value>
