@@ -26,11 +26,12 @@ may have additional configuration options - please see the documentation of each
 Each implementation may provide defaults for these options.
 
 All common configuration options:
+
+[cols="2,6", role="flex, sm10"]
 |===
 |key |description
 
-|service |Name of the service sending the tracing information. This is usually visible in the trace data to
-distinguish actors in a conversation (e.g. when multiple microservices are connected together)
+|service |Name of the service sending the tracing information. This is usually visible in the trace data to distinguish actors in a conversation (e.g. when multiple microservices are connected together)
 |protocol |Protocol of the tracing collector (e.g. `http`, `https`)
 |host |Host of the tracing collector (e.g. `localhost`)
 |port |Port of the tracing collector (e.g. `9411`)

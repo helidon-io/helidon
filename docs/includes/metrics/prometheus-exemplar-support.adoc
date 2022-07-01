@@ -37,8 +37,14 @@ Declare the following dependency in your project:
 </dependency>
 ----
 
-Also, include either xref:{rootdir}/{flavor-lc}/tracing/zipkin.adoc[Helidon Zipkin] or
- xref:{rootdir}/{flavor-lc}/tracing/jaeger.adoc[Helidon Jaeger] support:
+ifdef::se-flavor[]
+Also, include either xref:{rootdir}/se/tracing/zipkin.adoc[Helidon Zipkin] or
+xref:{rootdir}/se/tracing/jaeger.adoc[Helidon Jaeger] support:
+endif::[]
+ifdef::mp-flavor[]
+Also, include either xref:{rootdir}/mp/tracing.adoc#zipkin-tracing[Helidon Zipkin] or
+xref:{rootdir}/mp/tracing.adoc#jaeger-tracing[Helidon Jaeger] support:
+endif::[]
 
 include::{rootdir}/includes/tracing/tracer-zipkin.adoc[tag=zipkin-dependency]
 or
@@ -48,10 +54,6 @@ Be sure Zipkin or Jaeger, whichever you chose, is running and accessible to your
 
 == Interpreting Exemplars
 
-//[quote,Mirriam-Webster Dictionary,'link:https://www.merriam-webster.com/dictionary/exemplar[exemplar]'']
-//____
-//exemplar - one that serves as a model or example
-//____
 [NOTE]
 --
 link:https://www.merriam-webster.com/dictionary/exemplar[_exemplar_] - one that serves as a model or example

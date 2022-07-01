@@ -520,17 +520,12 @@ backend:
                 glyph:
                   type: "icon"
                   value: "access_alarm"
-              - type: "MENU"
+              - type: "PAGE"
                 title: "Tracing"
-                dir: "tracing"
+                source: "tracing.adoc"
                 glyph:
                   type: "icon"
                   value: "timeline"
-                sources:
-                  - "tracing.adoc"
-                  - "zipkin.adoc"
-                  - "jaeger.adoc"
-                  - "jaeger-metrics.adoc"
               - type: "PAGE"
                 title: "Vault"
                 source: "vault.adoc"

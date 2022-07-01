@@ -37,10 +37,13 @@ include::{rootdir}/includes/dependencies.adoc[]
 ----
 // end::zipkin-dependency[]
 
+// tag::zipkin-configuration[]
+
 == Configuring Zipkin
 
 The Zipkin tracer supports the following configuration options:
 
+[cols="2,2,2,4", role="flex, sm10"]
 |===
 |Key            |Default value      |Builder method     |Description
 
@@ -85,3 +88,5 @@ tracing:
 Example of Zipkin trace:
 
 image::webserver/zipkin.png[Zipkin example, align="center"]
+
+// end::zipkin-configuration[]

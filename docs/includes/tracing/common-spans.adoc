@@ -22,6 +22,7 @@ ifndef::rootdir[:rootdir: {docdir}/../..]
 
 The following table lists all spans traced by Helidon components:
 
+[cols="2,2,4", role="flex, sm10"]
 |===
 |component      |span name              |description
 
@@ -41,6 +42,7 @@ is used.
 
 Some of these spans `log` to the span. These log events can be (in most cases) configured:
 
+[cols="2,2,2,4", role="flex, sm10"]
 |===
 |span name          |log name               |configurable   |enabled by default |description
 
@@ -55,6 +57,7 @@ Some of these spans `log` to the span. These log events can be (in most cases) c
 
 There are also tags that are set by Helidon components. These are not configurable.
 
+[cols="2,2,4", role="flex, sm10"]
 |===
 |span name          |tag name           |description
 
