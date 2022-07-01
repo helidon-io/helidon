@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,6 +61,7 @@ import static org.junit.jupiter.api.Assertions.fail;
     name = "chirp",
     className = "org.h2.jdbcx.JdbcDataSource",
     url = "jdbc:h2:mem:TestJpaTransactionScopedSynchronizedEntityManager;"
+        + "MODE=LEGACY;"
         + "INIT=SET TRACE_LEVEL_FILE=4\\;RUNSCRIPT FROM 'classpath:chirp.ddl'",
     serverName = "",
     properties = {
@@ -275,7 +276,7 @@ class TestJpaTransactionScopedSynchronizedEntityManager {
             assertEquals("Abraham Lincoln", resultSet.getString(2));
             assertFalse(resultSet.next());
         }
-        
+
         // The Author, however, is detached, because the transaction
         // is over, and because our PersistenceContextType is
         // TRANSACTION, not EXTENDED, the underlying persistence

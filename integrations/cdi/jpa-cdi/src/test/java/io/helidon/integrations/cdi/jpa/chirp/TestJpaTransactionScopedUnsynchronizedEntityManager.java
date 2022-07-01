@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,6 +48,7 @@ import static org.junit.jupiter.api.Assertions.fail;
     name = "chirp",
     className = "org.h2.jdbcx.JdbcDataSource",
     url = "jdbc:h2:mem:TestJpaTransactionScopedUnsynchronizedEntityManager;"
+        + "MODE=LEGACY;"
         + "INIT=SET TRACE_LEVEL_FILE=4\\;RUNSCRIPT FROM 'classpath:chirp.ddl'",
     serverName = "",
     properties = {
@@ -64,7 +65,7 @@ class TestJpaTransactionScopedUnsynchronizedEntityManager {
 
     @Inject
     private TransactionManager transactionManager;
-    
+
     @PersistenceContext(
         type = PersistenceContextType.TRANSACTION,
         synchronization = SynchronizationType.UNSYNCHRONIZED,
@@ -140,7 +141,7 @@ class TestJpaTransactionScopedUnsynchronizedEntityManager {
             tm.rollback();
         }
     }
-  
+
 
     /*
      * Test methods.
@@ -183,7 +184,7 @@ class TestJpaTransactionScopedUnsynchronizedEntityManager {
             em.persist(author);
             fail("A TransactionRequiredException should have been thrown");
         } catch (final TransactionRequiredException expected) {
-            
+
         }
 
         // Get the TransactionManager that normally is behind the

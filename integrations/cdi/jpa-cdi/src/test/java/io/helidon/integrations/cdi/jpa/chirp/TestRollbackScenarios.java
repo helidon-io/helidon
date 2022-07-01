@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 @DataSourceDefinition(
     name = "chirp",
     className = "org.h2.jdbcx.JdbcDataSource",
-    url = "jdbc:h2:mem:TestRollbackScenarios;INIT=SET TRACE_LEVEL_FILE=4\\;RUNSCRIPT FROM 'classpath:chirp.ddl'",
+    url = "jdbc:h2:mem:TestRollbackScenarios;MODE=LEGACY;INIT=SET TRACE_LEVEL_FILE=4\\;RUNSCRIPT FROM 'classpath:chirp.ddl'",
     serverName = "",
     properties = {
         "user=sa"
@@ -293,7 +293,7 @@ class TestRollbackScenarios {
           em.persist(author);
           fail("Transaction rolled back but persist still happened");
         } catch (final TransactionRequiredException expected) {
-          
+
         }
         tm.rollback();
         assertEquals(Status.STATUS_NO_TRANSACTION, tm.getStatus());
