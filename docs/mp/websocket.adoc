@@ -19,7 +19,7 @@
 = WebSocket Introduction
 :description: Helidon WebSocket Introduction
 :keywords: helidon, webserver, websocket, mp
-:feature-name: Websocket
+:feature-name: Jakarta Websocket
 :rootdir: {docdir}/..
 
 include::{rootdir}/includes/mp.adoc[]
@@ -69,7 +69,7 @@ they usually result in more succinct and easier-to-read code.
 
 == API
 
-
+[cols="2,6", role="flex, sm10"]
 |===
 |Annotation |Description
 
