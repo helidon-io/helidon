@@ -32,7 +32,7 @@ In this guide you will learn how to build a native image locally on your machine
 
 For this 10 minute tutorial, you will need the following:
 
-include::{rootdir}/includes/prerequisites.adoc[tag=common-prereqs-graal]
+include::{rootdir}/includes/prerequisites.adoc[tag=prerequisites-graal]
 
 == Install GraalVM and the Native Image Command
 

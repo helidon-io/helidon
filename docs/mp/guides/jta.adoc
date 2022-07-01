@@ -31,7 +31,7 @@ https://jakarta.ee/specifications/transactions/1.3/[Java Transaction API
 
 For this 10 minute tutorial, you will need the following:
 
-include::{rootdir}/includes/prerequisites.adoc[tag=common-prereqs]
+include::{rootdir}/includes/prerequisites.adoc[tag=prerequisites]
 
 == Add the Helidon JTA Integration to Your Application's Runtime Classpath
 

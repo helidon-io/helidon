@@ -30,7 +30,7 @@ that can be used to run some basic examples using both built-in and custom healt
 
 For this 15 minute tutorial, you will need the following:
 
-include::{rootdir}/includes/prerequisites.adoc[tag=common-prereqs]
+include::{rootdir}/includes/prerequisites.adoc[tag=prerequisites]
 
 === Create a Sample MP Project
 
@@ -238,7 +238,7 @@ curl -v  http://localhost:8080/health/ready
 <1> The HTTP status is `503` since the application is not ready.
 
 [source,json]
-.JSON response body:
+.Response body
 ----
 {
   "status": "DOWN",
@@ -268,7 +268,7 @@ curl -v http://localhost:8080/health/ready
 <1> The HTTP status is `200` indicating that the application is ready.
 
 [source,json]
-.JSON response body:
+.Response body
 ----
 {
   "status": "UP",
@@ -354,7 +354,7 @@ curl -v  http://localhost:8080/health/started
 <1> The HTTP status is `503` since the application has not started.
 
 [source,json]
-.JSON response body:
+.Response body
 ----
 {
   "status": "DOWN",
@@ -384,7 +384,7 @@ curl -v http://localhost:8080/health/started
 <1> The HTTP status is `200` indicating that the application is started.
 
 [source,json]
-.JSON response body:
+.Response body
 ----
 {
   "status": "UP",

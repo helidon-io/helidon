@@ -29,7 +29,7 @@ in your Helidon MP application.
 == What You Need
 For this 20 minute tutorial, you will need the following:
 
-include::{rootdir}/includes/prerequisites.adoc[tag=common-prereqs-curl]
+include::{rootdir}/includes/prerequisites.adoc[tag=prerequisites-curl]
 
 == Overview
 

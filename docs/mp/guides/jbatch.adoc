@@ -28,7 +28,7 @@ This guide describes how Helidon and Jakarta Batch (JBatch) can be used together
 == What You Need
 
 For this 20 minute tutorial, you will need the following:
-include::{rootdir}/includes/prerequisites.adoc[tag=common-prereqs]
+include::{rootdir}/includes/prerequisites.adoc[tag=prerequisites]
 
 NOTE: This guide assumes you are familiar with the https://projects.eclipse.org/projects/ee4j.batch[Jakarta Batch project specification] from the Eclipse Foundation project site.
 

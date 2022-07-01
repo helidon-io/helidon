@@ -16,21 +16,23 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-ifndef::rootdir[]
-:rootdir: {docdir}/..
-endif::[]
+ifndef::rootdir[:rootdir: {docdir}/..]
+ifndef::flavor-lc[:flavor-lc: se]
+ifndef::flavor-uc[:flavor-lc: SE]
+ifndef::se-flavor[:se-flavor: true]
+ifndef::h1-prefix[:h1-prefix: SE]
 
 === Prerequisites
 
-// tag::common-prereqs[]
+// tag::prerequisites[]
 
 
 [role="flex, sm7"]
 |=======
 
-// tag::common-prereqs-table-contents[]
+// tag::prerequisites-table-contents[]
 
-|A Helidon MP Application | You can use your own application or use the
+|A Helidon {flavor-uc} Application | You can use your own application or use the
  xref:{rootdir}/{flavor-lc}/guides/quickstart.adoc[Helidon {flavor-uc} Quickstart] to create a sample application.
 |https://www.oracle.com/technetwork/java/javase/downloads[Java{nbsp}SE{nbsp}17] (http://jdk.java.net[Open{nbsp}JDK{nbsp}17]) |Helidon requires Java 17+.
 |https://maven.apache.org/download.cgi[Maven 3.6.1+]|Helidon requires Maven 3.6.1+.
@@ -40,7 +42,7 @@ want to build and deploy Docker containers.
 deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster (you can
 xref:{rootdir}/about/kubernetes.adoc[install one on your desktop].
 
-// end::common-prereqs-table-contents[]
+// end::prerequisites-table-contents[]
 
 |=======
 
@@ -66,14 +68,14 @@ export JAVA_HOME=`/usr/libexec/java_home -v 17`
 # Use the appropriate path to your JDK
 export JAVA_HOME=/usr/lib/jvm/jdk-17
 ----
-// end::common-prereqs[]
+// end::prerequisites[]
 
 
-// tag::common-prereqs-helm[]
+// tag::prerequisites-helm[]
 
 [role="flex, sm7"]
 |=======
-include::prerequisites.adoc[tag=common-prereqs-table-contents]
+include::prerequisites.adoc[tag=prerequisites-table-contents]
 
 |https://github.com/helm/helm[Helm] | To manage Kubernetes applications.
 |=======
@@ -101,13 +103,13 @@ export JAVA_HOME=`/usr/libexec/java_home -v 17`
 export JAVA_HOME=/usr/lib/jvm/jdk-17
 ----
 
-// end::common-prereqs-helm[]
+// end::prerequisites-helm[]
 
-// tag::common-prereqs-curl[]
+// tag::prerequisites-curl[]
 
 [role="flex, sm7"]
 |=======
-include::prerequisites.adoc[tag=common-prereqs-table-contents]
+include::prerequisites.adoc[tag=prerequisites-table-contents]
 |https://curl.se/download.html[curl]
 |(Optional) for testing
 |=======
@@ -132,15 +134,15 @@ export JAVA_HOME=`/usr/libexec/java_home -v 17`
 # Use the appropriate path to your JDK
 export JAVA_HOME=/usr/lib/jvm/jdk-17
 ----
-// end::common-prereqs-curl[]
+// end::prerequisites-curl[]
 
 
-// tag::common-prereqs-graal[]
+// tag::prerequisites-graal[]
 
 
 [role="flex, sm7"]
 |=======
-include::prerequisites.adoc[tag=common-prereqs-table-contents]
+include::prerequisites.adoc[tag=prerequisites-table-contents]
 | https://github.com/graalvm/graalvm-ce-builds/releases/tag/vm-21.0.0[GraalVM CE 21.0.0]|
 |=======
 
@@ -166,4 +168,4 @@ export JAVA_HOME=`/usr/libexec/java_home -v 17`
 # Use the appropriate path to your JDK
 export JAVA_HOME=/usr/lib/jvm/jdk-17
 ----
-// end::common-prereqs-graal[]
+// end::prerequisites-graal[]

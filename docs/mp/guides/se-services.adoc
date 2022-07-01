@@ -29,7 +29,7 @@ This guide shows how reuse Helidon SE Service in your Helidon MP application.
 
 For this 10 minute tutorial, you will need the following:
 
-include::{rootdir}/includes/prerequisites.adoc[tag=common-prereqs]
+include::{rootdir}/includes/prerequisites.adoc[tag=prerequisites]
 
 Helidon MP supports xref:../jaxrs/reactive-routing.adoc[Reactive routing] which brings possibility for reusing
 `io.helidon.webserver.Service` implementations in Helidon MP. Such feature can be quite useful for common

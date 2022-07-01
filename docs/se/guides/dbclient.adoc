@@ -17,10 +17,11 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Helidon SE DB Client Guide
-:h1Prefix: SE
 :description: Helidon db-client
 :keywords: helidon, db, client
-:common-page-prefix-inc: ../../shared/common_prereqs/common_prereqs.adoc
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/se.adoc[]
 
 This guide describes Helidon DB Client features and how to create a sample Helidon SE project
 that can be used to run some basic example using helidon db client.
@@ -28,7 +29,8 @@ that can be used to run some basic example using helidon db client.
 == What You Need
 
 For this 15 minute tutorial, you will need the following:
-include::{common-page-prefix-inc}[tag=common-prereqs]
+
+include::{rootdir}/includes/prerequisites.adoc[tag=prerequisites]
 
 == Introduction
 
@@ -122,13 +124,13 @@ If H2 is not installed on your machine, here are few steps to quickly download a
     * Download the latest H2 version from the official website: https://www.h2database.com/html/main.html
     ** On windows, let guides yourself by the H2 installer.
     ** On another platform, unzip the downloaded file into your wished directory.
-    ** Only the h2-{latest-version}.jar, located into h2/bin folder, will be needed.
-    * Run the following command to start H2, do not forget to replace `{latest-version}` by your current version.
+    ** Only the h2-\{latest-version}.jar, located into h2/bin folder, will be needed.
+    * Run the following command to start H2, do not forget to replace `\{latest-version}` by your current version.
 
 [source,bash]
 .Open a terminal and enter the following:
 ----
-java -jar h2-{latest-version}.jar -webAllowOthers -tcpAllowOthers
+java -jar h2-\{latest-version}.jar -webAllowOthers -tcpAllowOthers
 ----
 
 ==== Run H2
@@ -188,30 +190,32 @@ First thing to do is to open the pom.xml file and add helidon dependencies to us
 [source,xml]
 .Copy those dependencies:
 ----
-<dependency>
-    <groupId>io.helidon.dbclient</groupId>       <1>
-    <artifactId>helidon-dbclient</artifactId>
-</dependency>
-<dependency>
-    <groupId>io.helidon.dbclient</groupId>      <2>
-    <artifactId>helidon-dbclient-jdbc</artifactId>
-</dependency>
-<dependency>
-    <groupId>io.helidon.integrations.db</groupId>   <3>
-    <artifactId>h2</artifactId>
-</dependency>
-<dependency>
-    <groupId>io.helidon.dbclient</groupId>      <4>
-    <artifactId>helidon-dbclient-health</artifactId>
-</dependency>
-<dependency>
-    <groupId>io.helidon.dbclient</groupId>      <5>
-    <artifactId>helidon-dbclient-metrics</artifactId>
-</dependency>
-<dependency>
-    <groupId>io.helidon.dbclient</groupId>      <6>
-    <artifactId>helidon-dbclient-jsonp</artifactId>
-</dependency>
+<dependencies>
+    <dependency>
+        <groupId>io.helidon.dbclient</groupId>       <!--1-->
+        <artifactId>helidon-dbclient</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>io.helidon.dbclient</groupId>      <!--2-->
+        <artifactId>helidon-dbclient-jdbc</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>io.helidon.integrations.db</groupId>   <!--3-->
+        <artifactId>h2</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>io.helidon.dbclient</groupId>      <!--4-->
+        <artifactId>helidon-dbclient-health</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>io.helidon.dbclient</groupId>      <!--5-->
+        <artifactId>helidon-dbclient-metrics</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>io.helidon.dbclient</groupId>      <!--6-->
+        <artifactId>helidon-dbclient-jsonp</artifactId>
+    </dependency>
+</dependencies>
 ----
 <1> DB Client API dependency.
 <2> Using JDBC driver for this example.
@@ -255,8 +259,6 @@ application.yaml.
 import io.helidon.dbclient.metrics.DbClientMetrics; // <1>
 import io.helidon.dbclient.DbClient;
 
-...
-
 Config config = Config.create(); // Landmark to add DB client
 
 DbClient dbClient = DbClient.builder()
@@ -287,9 +289,9 @@ createTable(dbClient);
 .Use the DbClient to build a table:
 ----
 private static void createTable(DbClient dbClient) {
-        dbClient.execute(exec -> exec.namedDml("create-table"))     // <1>
-                .await();
-    }
+    dbClient.execute(exec -> exec.namedDml("create-table"))     // <1>
+            .await();
+}
 ----
 <1> Use the "create-table" script to build a table with book name and information.
 
@@ -303,27 +305,23 @@ registered in the `createRouting` method.
 ----
 import io.helidon.dbclient.health.DbClientHealthCheck;
 
-...
-
 WebServer server = WebServer.builder(createRouting(config, dbClient))   // <1>
                 .config(config.get("server"))
                 .addMediaSupport(JsonpSupport.create())
                 .build();
 
-...
-
 private static Routing createRouting(Config config, DbClient dbClient) {
-        HealthSupport health = HealthSupport.builder()
-                .addLiveness(DbClientHealthCheck.create(dbClient))  // <2>
-                .build();
+    HealthSupport health = HealthSupport.builder()
+            .addLiveness(DbClientHealthCheck.create(dbClient))  // <2>
+            .build();
 
-        return Routing.builder()
-                .register(health)                   // Health at "/health"
-                .register(MetricsSupport.create())                  // Metrics at "/metrics"
-                .register("/greet", new GreetService(config))
-                .register("/library", new LibraryService(dbClient))  // <3>
-                .build();
-    }
+    return Routing.builder()
+            .register(health)                   // Health at "/health"
+            .register(MetricsSupport.create())                  // Metrics at "/metrics"
+            .register("/greet", new GreetService(config))
+            .register("/library", new LibraryService(dbClient))  // <3>
+            .build();
+}
 ----
 <1> Add dbClient as a parameter of createRouting method.
 <2> Add Health check to control the application behavior.
@@ -384,25 +382,25 @@ public void update(Routing.Rules rules) {
 <4> Return the book information in Json format.
 
 To summarise, there is one endpoint which can manipulate books. The number of endpoints and application
-features can be changed from these rules by creating or modifying methods. `{name}` is a path parameter for the book
+features can be changed from these rules by creating or modifying methods. `\{name}` is a path parameter for the book
 name. The architecture of the application is defined, so next step is to create these features.
 
 [source,java]
 .Add getBook to the LibraryService:
 ----
 private void getBook(ServerRequest serverRequest, ServerResponse serverResponse) {
-        String bookName = serverRequest.path().param("name");   // <1>
+    String bookName = serverRequest.path().param("name");   // <1>
 
-        dbClient.execute(exec -> exec.namedGet("select-book", bookName))    // <2>
-                .thenAccept(row -> {
-                    if (row.isPresent()) {
-                        serverResponse.send(row.get().column("INFO").as(String.class)); // <3>
-                    } else {
-                        serverResponse.status(Http.Status.NOT_FOUND_404)    // <4>
-                                .send();
-                    }
-                })
-                .exceptionally(serverResponse::send);   // <5>
+    dbClient.execute(exec -> exec.namedGet("select-book", bookName))    // <2>
+            .thenAccept(row -> {
+                if (row.isPresent()) {
+                    serverResponse.send(row.get().column("INFO").as(String.class)); // <3>
+                } else {
+                    serverResponse.status(Http.Status.NOT_FOUND_404)    // <4>
+                            .send();
+                }
+            })
+            .exceptionally(serverResponse::send);   // <5>
 }
 ----
 <1> Get the book name from the path in the url.
@@ -414,30 +412,33 @@ private void getBook(ServerRequest serverRequest, ServerResponse serverResponse)
 The `getBook` method reach the book from the database and send the information to the client. The name of the book is
 located into the url path. If the book is not present in the database, a HTTP 404 is sent back.
 The `execute(Function<DbExecute, T> executor)` method is called on the dbClient instance to execute one statement.
-Nevertheless, it is possible to execute a set of tasks into a single execution unit by using `inTransaction
-(Function<DbTransaction, T> executor)` method. DbExecute class provides many builders to create statements such as,
-DML, insert, update, delete, query and get statements. For each statement there are two builders which can be regrouped
-in 2 categories. Builders with methods containing `Named` keyword, they use a statement defined in the configuration
-file. And builders without `Named` keyword, they use a statement passed as an argument. More information on the
-Helidon DB Client <<se/dbclient/01_introduction.adoc,here>>.
+Nevertheless, it is possible to execute a set of tasks into a single execution unit by using
+ `inTransaction (Function<DbTransaction, T> executor)` method.
+
+DbExecute class provides many builders to create statements such as, DML, insert, update, delete, query and get
+statements. For each statement there are two builders which can be regrouped in 2 categories. Builders with methods
+containing `Named` keyword, they use a statement defined in the configuration file.
+
+And builders without `Named` keyword, they use a statement passed as an argument. More information on the Helidon DB
+Client xref:../dbclient.adoc[here].
 
 [source,java]
 .Add getJsonBook to the LibraryService:
 ----
 private void getJsonBook(ServerRequest serverRequest, ServerResponse serverResponse) {
-        String bookName = serverRequest.path().param("name");
+    String bookName = serverRequest.path().param("name");
 
-        dbClient.execute(exec -> exec.namedGet("select-book", bookName))
-                .thenAccept(row -> {
-                    if (row.isPresent()) {
-                        serverResponse.send(row.get().as(JsonObject.class));
-                    } else {
-                        serverResponse.status(Http.Status.NOT_FOUND_404)
-                                .send();
-                    }
-                })
-                .exceptionally(serverResponse::send);
-    }
+    dbClient.execute(exec -> exec.namedGet("select-book", bookName))
+            .thenAccept(row -> {
+                if (row.isPresent()) {
+                    serverResponse.send(row.get().as(JsonObject.class));
+                } else {
+                    serverResponse.status(Http.Status.NOT_FOUND_404)
+                            .send();
+                }
+            })
+            .exceptionally(serverResponse::send);
+}
 ----
 
 Instead of sending the `INFO` content of the targeted book, the `getJsonBook` method send the whole row of the
@@ -447,18 +448,18 @@ database as a `JsonObject`.
 .Add addBook to the LibraryService:
 ----
 private void addBook(ServerRequest serverRequest, ServerResponse serverResponse) {
-        String bookName = serverRequest.path().param("name");
+    String bookName = serverRequest.path().param("name");
 
-        serverRequest.content()
-                .as(String.class)
-                .thenAccept(newValue -> {
-                    dbClient.execute(exec -> exec.createNamedInsert("insert-book")
-                            .addParam("name", bookName)     // <1>
-                            .addParam("info", newValue)
-                            .execute())
-                            .thenAccept(count -> serverResponse.status(Http.Status.CREATED_201).send())     // <2>
-                            .exceptionally(serverResponse::send);
-                });
+    serverRequest.content()
+            .as(String.class)
+            .thenAccept(newValue -> {
+                dbClient.execute(exec -> exec.createNamedInsert("insert-book")
+                        .addParam("name", bookName)     // <1>
+                        .addParam("info", newValue)
+                        .execute())
+                        .thenAccept(count -> serverResponse.status(Http.Status.CREATED_201).send())     // <2>
+                        .exceptionally(serverResponse::send);
+            });
 }
 ----
 <1> The SQL statement requires the book name and its information. They are provided with `addParam` method.
@@ -516,7 +517,11 @@ Use `curl` to send request to the application:
 .Get a book from the library
 ----
 curl -i http://localhost:8080/library/SomeBook
+----
 
+[source, listing]
+.HTTP response
+----
 HTTP/1.1 404 Not Found
 Date: Tue, 12 Jan 2021 14:00:48 +0100
 transfer-encoding: chunked
@@ -530,7 +535,11 @@ library table. Try to add a new book.
 .Add a book from the library
 ----
 curl -i -X PUT -d "Fantasy" http://localhost:8080/library/HarryPotter
+----
 
+[source, listing]
+.HTTP response
+----
 HTTP/1.1 201 Created
 Date: Tue, 12 Jan 2021 14:01:08 +0100
 transfer-encoding: chunked
@@ -538,14 +547,18 @@ connection: keep-alive
 ----
 
 This command creates an HTTP PUT request with the genre `Fantasy` content at the address
-http://localhost:8080/library/{book-name}. The 201 code means that Harry Potter book was successfully added to
+http://localhost:8080/library/\{book-name}. The 201 code means that Harry Potter book was successfully added to
 the library. You can now try to get it !
 
 [source,bash]
 .Get Harry Potter from the library
 ----
 curl -i http://localhost:8080/library/HarryPotter
+----
 
+[source, listing]
+.HTTP response
+----
 HTTP/1.1 200 OK
 Content-Type: text/plain
 Date: Tue, 12 Jan 2021 14:01:14 +0100
@@ -561,7 +574,11 @@ The application accepted the request and returned an HTTP 200 OK with the book g
 .Get Harry Potter from the library in Json
 ----
 curl -i http://localhost:8080/library/json/HarryPotter
+----
 
+[source, listing]
+.HTTP response
+----
 HTTP/1.1 200 OK
 Content-Type: text/plain
 Date: Tue, 12 Jan 2021 14:01:14 +0100
@@ -578,6 +595,11 @@ Harry Potter can be removed from the library with the following:
 .Remove Harry Potter from the library
 ----
 curl -i -X DELETE http://localhost:8080/library/HarryPotter
+----
+
+[source, listing]
+.HTTP response
+----
 HTTP/1.1 204 No Content
 Date: Tue, 12 Jan 2021 14:01:22 +0100
 connection: keep-alive
@@ -590,7 +612,11 @@ deleted, try to get it again.
 .Get Harry Potter from the library
 ----
 curl -i http://localhost:8080/library/HarryPotter
+----
 
+[source, listing]
+.HTTP response
+----
 HTTP/1.1 404 Not Found
 Date: Tue, 12 Jan 2021 14:00:48 +0100
 transfer-encoding: chunked
@@ -602,11 +628,15 @@ The book is not found. We quickly checked, thanks to this suite of command, the 
 [source,bash]
 .Check the health of your application:
 ----
-curl http://localhost:8080/health | json_pp
+curl http://localhost:8080/health
+----
 
+[source,json]
+.Response body
+----
 {
-  "state" : "UP"
-  "status" : "UP"
+  "state" : "UP",
+  "status" : "UP",
   "name" : "jdbc:h2"
 }
 ----
@@ -616,8 +646,12 @@ It confirms that the database is UP.
 [source,bash]
 .Check the metrics of your application:
 ----
-curl -H "Accept: application/json" http://localhost:8080/metrics/application | json_pp
+curl -H "Accept: application/json" http://localhost:8080/metrics/application
+----
 
+[source,json]
+.Response body
+----
 {
   "db.counter.select-book" : 4
 }

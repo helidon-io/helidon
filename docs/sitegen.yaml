@@ -102,6 +102,7 @@ backend:
                   - "graalnative.adoc"
                   - "jlink-image.adoc"
                   - "webclient.adoc"
+                  - "dbclient.adoc"
                   - "performance-tuning.adoc"
               - type: "MENU"
                 title: "Config"
