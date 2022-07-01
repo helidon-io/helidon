@@ -20,10 +20,10 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
 
-    <step label="Customize Project">
+    <step name="Customize Project" optional="true">
         <inputs>
-            <enum name="build-system" label="Select a build system" default="maven">
-                <option value="maven" label="Apache Maven">
+            <enum id="build-system" name="Select a Build System" default="maven" optional="true">
+                <option value="maven" name="Apache Maven">
                     <output>
                         <templates engine="mustache" transformations="mustache">
                             <directory>files</directory>
@@ -34,10 +34,10 @@
                     </output>
                 </option>
             </enum>
-            <text name="groupId" label="Project groupId" optional="true" default="com.examples"/>
-            <text name="artifactId" label="Project artifactId" optional="true" default="myproject"/>
-            <text name="version" label="Project version" optional="true" default="1.0-SNAPSHOT"/>
-            <text name="package" label="Java package name" optional="true" default="com.example.myproject"/>
+            <text id="groupId" name="Project groupId" optional="true" default="com.examples"/>
+            <text id="artifactId" name="Project artifactId" optional="true" default="myproject"/>
+            <text id="version" name="Project version" optional="true" default="1.0-SNAPSHOT"/>
+            <text id="package" name="Java package name" optional="true" default="com.example.myproject"/>
         </inputs>
         <output>
             <model>
