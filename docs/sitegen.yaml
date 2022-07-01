@@ -343,15 +343,12 @@ backend:
                   - "testing-junit5.adoc"
                   - "jbatch.adoc"
                   - "performance-tuning.adoc"
-              - type: "MENU"
+              - type: "PAGE"
                 title: "Bean Validation"
-                dir: "beanvalidation"
+                source: "beanvalidation.adoc"
                 glyph:
                   type: "icon"
                   value: "receipt"
-                sources:
-                  - "overview.adoc"
-                  - "general-beanvalidation.adoc"
               - type: "MENU"
                 title: "Config"
                 dir: "config"
