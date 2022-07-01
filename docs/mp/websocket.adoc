@@ -19,6 +19,7 @@
 = WebSocket Introduction
 :description: Helidon WebSocket Introduction
 :keywords: helidon, webserver, websocket, mp
+:feature-name: Websocket
 :rootdir: {docdir}/..
 
 include::{rootdir}/includes/mp.adoc[]
