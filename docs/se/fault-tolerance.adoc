@@ -19,17 +19,12 @@
 = Fault Tolerance in Helidon SE
 :toc:
 :toc-placement: preamble
-:h1Prefix: SE
-:pagename: fault-tolerance
 :description: Fault Tolerance in Helidon SE
 :keywords: helidon, java, fault, tolerance, fault tolerance, se
-:helidon-tag: https://github.com/oracle/helidon/tree/{helidon-version}
-:javadoc-base-url-faulttolerance: {javadoc-base-url}io.helidon.faulttolerance/io/helidon/faulttolerance/package-summary.html
-:javadoc-base-url-reactive: {javadoc-base-url}io.helidon.common.reactive/io/helidon/common/reactive/package-summary.html
-:helidon-variant: SE
-:mp-microprofile: https://download.eclipse.org/microprofile/microprofile-fault-tolerance-2.1.1/microprofile-fault-tolerance-spec.html
 :feature-name: Fault Tolerance
-:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+:rootdir: {docdir}/..
+
+include::{rootdir}/includes/se.adoc[]
 
 
 == ToC
@@ -43,7 +38,7 @@
 
 == Overview
 
-Helidon SE Fault Tolerance support is inspired by link:{mp-microprofile}[MicroProfile Fault Tolerance].
+Helidon SE Fault Tolerance support is inspired by link:{microprofile-fault-tolerance-spec-url}[MicroProfile Fault Tolerance].
 The API defines the notion of a _fault handler_ that can be combined with other handlers to
 improve application robustness. Handlers are created to manage error conditions (faults)
 that may occur in real-world application environments. Examples include service restarts,
@@ -63,10 +58,9 @@ In addition, the API makes it very easy to create and monitor asynchronous tasks
 do not require explicit creation and management of threads or executors.
 
 For more information the reader is referred to the
-link:{javadoc-base-url-faulttolerance}[Fault Toleance SE API Javadocs].
+link:{faulttolerance-javadoc-base-url}/io/helidon/faulttolerance/package-summary.html[Fault Tolerance SE API Javadocs].
 
-
-include::{common-deps-page-prefix-inc}[tag=maven-dependency]
+include::{rootdir}/includes/dependencies.adoc[]
 
 [source,xml]
 ----
@@ -158,7 +152,7 @@ s.handle((t, e) -> {
     if (e instanceof TimeoutException) {
         // Invocation has timed out!
     }
-    ...
+    //...
 });
 ----
 
@@ -178,7 +172,9 @@ and produces a `CompletionStage<T>` as shown next:
 ----
 Single<T> single = Fallback.create(
     throwable -> Single.just(lastKnownValue).invoke(this::mayFail);
-single.thenAccept(t -> ...);
+single.thenAccept(t -> {
+    //...
+});
 ----
 
 In this example, we register a function that can produce a `Single<T>` (which implements
@@ -385,6 +381,8 @@ The following tables list all the config elements for each type of
 handler supported by this API.
 
 === Timeout
+
+[cols="2,2,6", role="flex, sm7"]
 |===
 | Property | Type | Description
 | name | String | A name given to the task for debugging purposes. Default is `Timeout-N`.
@@ -396,6 +394,9 @@ Default is `true`.
 |===
 
 === Circuit Breaker
+
+
+[cols="2,2,6", role="flex, sm7"]
 |===
 | Property | Type | Description
 | name | String | A name given to the task for debugging purposes. Default is `CircuitBreaker-N`.
@@ -408,6 +409,8 @@ Default is `true`.
 |===
 
 === Bulkhead
+
+[cols="2,2,6", role="flex, sm7"]
 |===
 | Property | Type | Description
 | limit | int | Max number of parallel calls. Default is 10.
@@ -418,6 +421,8 @@ Default is `true`.
 |===
 
 === Retry
+
+[cols="2,2,6", role="flex, sm7"]
 |===
 | Property | Type | Description
 | name | String | A name given to the task for debugging purposes. Default is `Retry-N`.
@@ -429,6 +434,8 @@ Default is `true`.
 |===
 
 ==== Delaying Retry Policy
+
+[cols="2,2,6", role="flex, sm7"]
 |===
 | Property | Type | Description
 | calls | int | Number of retry attempts. Default is 3.
@@ -437,6 +444,8 @@ Default is `true`.
 |===
 
 ==== Jitter Retry Policy
+
+[cols="2,2,6", role="flex, sm7"]
 |===
 | Property | Type |Description
 | calls | int | Number of retry attempts. Default is 3.
@@ -451,5 +460,5 @@ See <<API>> section for examples.
 == Additional Information
 
 For additional information, see the
-link:{javadoc-base-url-faulttolerance}[Fault Tolerance SE API Javadocs].
+link:{faulttolerance-javadoc-base-url}/io/helidon/faulttolerance/package-summary.html[Fault Tolerance SE API Javadocs].
 
