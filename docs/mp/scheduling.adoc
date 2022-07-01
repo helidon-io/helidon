@@ -16,9 +16,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Overview
-:toc:
-:toc-placement: preamble
+= Scheduling
 :description: Scheduling in Helidon MP
 :keywords: helidon, mp, scheduling
 :feature-name: Scheduling
@@ -37,7 +35,8 @@ include::{rootdir}/includes/mp.adoc[]
 
 == Overview
 
-Scheduling is an essential feature for the Enterprise. Helidon has its own implementation of Scheduling functionality based on https://github.com/jmrozanec/cron-utils[Cron-utils].
+Scheduling is an essential feature for the Enterprise. Helidon has its own implementation of Scheduling functionality
+based on https://github.com/jmrozanec/cron-utils[Cron-utils].
 
 include::{rootdir}/includes/dependencies.adoc[]
 
@@ -50,12 +49,13 @@ include::{rootdir}/includes/dependencies.adoc[]
 ----
 
 == Usage
-For scheduling tasks in Helidon you can choose from `@Scheduled` or `@FixedRate` annotations by required complexity of invocation interval. All you need is define method with one of the annotations in application scoped bean.
 
+For scheduling tasks in Helidon you can choose from `@Scheduled` or `@FixedRate` annotations by required complexity
+of invocation interval. All you need is define method with one of the annotations in application scoped bean.
 
 === Fixed rate
-For simple fixed rate invocation interval is `@FixedRate` the easiest way for scheduling
-task invocation.
+
+For simple fixed rate invocation interval is `@FixedRate` the easiest way for scheduling task invocation.
 
 [source,java]
 ----
@@ -84,8 +84,7 @@ _FixedRateInvocation_ injected as method parameter.
 
 === Cron expression
 
-For more complicated interval definition, cron expression can be leveraged with
-`@Schedule` annotation.
+For more complicated interval definition, cron expression can be leveraged with `@Schedule` annotation.
 
 [source,java]
 ----
@@ -95,8 +94,8 @@ public void methodName() { ... }
 
 include::{rootdir}/includes/cron.adoc[lines=19..]
 
-Metadata like human-readable interval description or configured values are available through
-_CronInvocation_ injected as method parameter.
+Metadata like human-readable interval description or configured values are available through _CronInvocation_ injected
+ as method parameter.
 
 [source,java]
 ----
@@ -174,4 +173,4 @@ public void methodName(CronInvocation inv) {
 == Reference
 
 * https://github.com/jmrozanec/cron-utils[Cron-utils GitHub page]
-* https://helidon.io/docs/v2/apidocs/io.helidon.microprofile.scheduling/io/helidon/microprofile/scheduling/package-summary.html[Helidon Scheduling JavaDoc]
+* link:{scheduling-javadoc-base-url}/io/helidon/microprofile/scheduling/package-summary.html[Helidon Scheduling JavaDoc]

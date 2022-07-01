@@ -39,7 +39,7 @@ include::{rootdir}/includes/mp.adoc[]
 The Jakarta REST Client defines a programmatic API to access
 REST resources. This API sits at a higher level than traditional HTTP client APIs and
 provides full integration with server-side API concepts like providers. It differs
-from the link:../restclient.adoc[Rest Client API] in that it does not support
+from the xref:../restclient.adoc[Rest Client API] in that it does not support
 annotations or proxies, but instead uses builders and a fluent API to
 create and execute requests.
 
@@ -47,10 +47,10 @@ include::{rootdir}/includes/dependencies.adoc[]
 
 [source,xml]
 ----
-     <dependency>
-         <groupId>io.helidon.jersey</groupId>
-         <artifactId>helidon-jersey-client</artifactId>
-     </dependency>
+ <dependency>
+     <groupId>io.helidon.jersey</groupId>
+     <artifactId>helidon-jersey-client</artifactId>
+ </dependency>
 ----
 
 == API
@@ -155,7 +155,7 @@ link:{jakarta-jaxrs-spec-url}#client_api[Jakarta REST Client Specification].
 
 == Additional Information
 
-For additional information, see the link:{jakarta-jaxrs-javadoc-url}}[Jakarta REST Javadocs].
+For additional information, see the link:{jakarta-jaxrs-javadoc-url}[Jakarta REST Javadocs].
 
 == Reference
 

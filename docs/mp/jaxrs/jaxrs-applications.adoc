@@ -23,6 +23,8 @@
 
 include::{rootdir}/includes/mp.adoc[]
 
+== JAX-RS Applications
+
 NOTE: In this section we shall distinguish the notion of a JAX-RS `Application` subclass
 from a Helidon application. As we shall learn shortly, the latter may include zero or more
 of the former.

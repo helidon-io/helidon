@@ -55,13 +55,13 @@ endif::[]
 
 // jakarta specifications
 :version-lib-jakarta-cdi: 3.0
-:version-lib-jakarta-websockets-api: 2.0.0
+:version-lib-jakarta-websockets-api: 2.0
 :version-lib-jakarta-bean-validation: 2.0
 :version-lib-jakarta-jsonb-api: 2.0
 :version-lib-jakarta-transaction-api: 2.0
-:version-lib-jakarta-persistence-api: 3.0.0
-:version-lib-jakarta-jaxrs-api: 3.0.0
-:version-lib-jakarta-inject: 2.0.0
+:version-lib-jakarta-persistence-api: 3.0
+:version-lib-jakarta-jaxrs-api: 3.0
+:version-lib-jakarta-inject: 2.0
 
 // 3rd party
 :version-lib-jaeger: 1.22
@@ -174,6 +174,7 @@ endif::[]
 :faulttolerance-javadoc-base-url: {javadoc-base-url}/io.helidon.faulttolerance
 :grpc-server-javadoc-base-url: {javadoc-base-url}/io.helidon.grpc.server
 :health-javadoc-base-url: {javadoc-base-url}/io.helidon.health.checks
+:integration-oci-sdk-cdi-javadoc-base-url: {javadoc-base-url}/io.helidon.integrations.oci.sdk.cdi
 :media-jsonp-javadoc-base-url: {javadoc-base-url}/io.helidon.media.jsonp
 :media-jsonb-javadoc-base-url: {javadoc-base-url}/io.helidon.media.jsonb
 :media-jackson-javadoc-base-url: {javadoc-base-url}/io.helidon.media.jackson
@@ -181,14 +182,15 @@ endif::[]
 :metrics-serviceapi-javadoc-base-url: {javadoc-base-url}/io.helidon.metrics.serviceapi
 :micrometer-javadoc-base-url: {javadoc-base-url}/io.helidon.integrations.micrometer
 :mp-cors-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.cors
+:mp-tyrus-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.tyrus
+:mp-restclient-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.restclient
 :reactive-base-url: {javadoc-base-url}/io.helidon.common.reactive
+:scheduling-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.scheduling
 :webclient-javadoc-base-url: {javadoc-base-url}/io.helidon.webclient
 :webserver-javadoc-base-url: {javadoc-base-url}/io.helidon.webserver
 :webserver-jersey-javadoc-base-url: {javadoc-base-url}/io.helidon.webserver.jersey
 :webserver-staticcontent-javadoc-base-url: {webserver-javadoc-base-url}.staticcontent
 :webserver-cors-javadoc-base-url: {javadoc-base-url}/io.helidon.webserver.cors
-:mp-tyrus-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.tyrus
-:integration-oci-sdk-cdi-javadoc-base-url: {javadoc-base-url}/io.helidon.integrations.oci.sdk.cdi
 
 // 3rd party versioned URLs
 :jaeger-doc-base-url: https://www.jaegertracing.io/docs/{version-lib-jaeger}
