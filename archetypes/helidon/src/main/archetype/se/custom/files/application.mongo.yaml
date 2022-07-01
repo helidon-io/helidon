@@ -1,0 +1,30 @@
+db:
+  source: "mongoDb"
+  connection:
+    # docker run --rm --name mongo -p 27017:27017 mongo
+    url: "mongodb://127.0.0.1:27017/pokemon"
+  health-check:
+    type: "query"
+    statementName: "health-check"
+  statements:
+    health-check: '{
+            "operation": "command",
+            "query": { ping: 1 }
+        }'
+    insert: '{
+            "collection": "document",
+            "value": {
+                "_id": $name,
+                "extension": $extension
+            }
+        }'
+    select-all: '{
+            "collection": "document",
+            "query": {}
+        }'
+    delete: '{
+            "collection": "document",
+            "query": {
+                "_id": ?
+            }
+        }'
