@@ -47,19 +47,6 @@
                                             <value key="groupId">com.zaxxer</value>
                                             <value key="artifactId">HikariCP</value>
                                         </map>
-                                        <map>
-                                            <value key="groupId">io.helidon.dbclient</value>
-                                            <value key="artifactId">helidon-dbclient-jdbc</value>
-                                        </map>
-                                    </list>
-                                    <list key="DatabaseService-constructor">
-                                        <value><![CDATA[
-        dbClient.execute(handle -> handle.namedDml("create-table"))
-                .thenAccept(System.out::println)
-                .exceptionally(throwable -> {
-                    LOGGER.log(Level.WARNING, "Failed to create table, maybe it already exists?", throwable);
-                    return null;
-                });]]></value>
                                     </list>
                                     <list key="MainTest-methods">
                                         <value><![CDATA[
@@ -111,36 +98,44 @@
                                     <list key="config-entries">
                                         <value file="files/application.mysql.yaml"/>
                                     </list>
+                                    <list key="config-test">
+                                        <value file="files/application.mysql.yaml"/>
+                                    </list>
                                     <list key="dependencies">
-                                        <map>
-                                            <value key="groupId">io.helidon.dbclient</value>
-                                            <value key="artifactId">helidon-dbclient-jdbc</value>
-                                        </map>
                                         <map>
                                             <value key="groupId">mysql</value>
                                             <value key="artifactId">mysql-connector-java</value>
                                             <value key="scope">runtime</value>
                                         </map>
                                     </list>
-                                    <list key="DatabaseService-constructor">
-                                        <value><![CDATA[
-        dbClient.execute(handle -> handle.namedDml("create-table"))
-                .thenAccept(System.out::println)
-                .exceptionally(throwable -> {
-                    LOGGER.log(Level.WARNING, "Failed to create table, maybe it already exists?", throwable);
-                    return null;
-                });]]></value>
-                                    </list>
                                 </model>
                             </output>
                         </option>
                         <option value="oracledb" name="Oracle DB" description="Multi-model database">
-
+                            <output>
+                                <model>
+                                    <list key="config-entries">
+                                        <value file="files/application.oracledb.yaml"/>
+                                    </list>
+                                    <list key="config-test">
+                                        <value file="files/application.oracledb.yaml"/>
+                                    </list>
+                                    <list key="dependencies">
+                                        <map>
+                                            <value key="groupId">io.helidon.integrations.db</value>
+                                            <value key="artifactId">ojdbc</value>
+                                        </map>
+                                    </list>
+                                </model>
+                            </output>
                         </option>
                         <option value="mongodb" name="MongoDB" description="NoSQL / Document database">
                             <output>
                                 <model>
                                     <list key="config-entries">
+                                        <value file="files/application.mongo.yaml"/>
+                                    </list>
+                                    <list key="config-test">
                                         <value file="files/application.mongo.yaml"/>
                                     </list>
                                     <list key="dependencies">
@@ -178,6 +173,10 @@
                                 <value key="groupId">io.helidon.media</value>
                                 <value key="artifactId">helidon-media-jsonb</value>
                             </map>
+                            <map if="${ROOT.db.server} != 'mongodb'">
+                                <value key="groupId">io.helidon.dbclient</value>
+                                <value key="artifactId">helidon-dbclient-jdbc</value>
+                            </map>
                         </list>
                         <list key="Main-helidon-imports">
                             <value>io.helidon.dbclient.DbClient</value>
@@ -195,7 +194,7 @@
                         <list key="Main-routingBuilder">
                             <value><![CDATA[                .register("/db", new DatabaseService(dbClient))]]></value>
                         </list>
-                        <!--list key="DatabaseService-constructor" if="${db.server} != 'mongodb'">
+                        <list key="DatabaseService-constructor" if="${ROOT.db.server} != 'mongodb'">
                             <value><![CDATA[
         dbClient.execute(handle -> handle.namedDml("create-table"))
                 .thenAccept(System.out::println)
@@ -203,7 +202,7 @@
                     LOGGER.log(Level.WARNING, "Failed to create table, maybe it already exists?", throwable);
                     return null;
                 });]]></value>
-                        </list-->
+                        </list>
                     </model>
                 </output>
             </boolean>
