@@ -73,9 +73,9 @@ public class MessagingCdiExtension implements Extension {
      * Get names of all channels accompanied by boolean if cancel or onError signal has been intercepted in it.
      *
      * @return map of channels
-     * @deprecated Use {@link MessagingChannelProcessor} instead.
+     * @deprecated Implement {@link MessagingChannelProcessor} as a bean instead, which can peak to any messaging channel.
      */
-    @Deprecated
+    @Deprecated(since = "3.0.0", forRemoval = true)
     public Map<String, Boolean> channelsLiveness() {
         return formerHealthProbe.getLiveChannels();
     }
@@ -84,9 +84,9 @@ public class MessagingCdiExtension implements Extension {
      * Get names of all channels accompanied by boolean if onSubscribe signal has been intercepted in it.
      *
      * @return map of channels
-     * @deprecated Use {@link MessagingChannelProcessor} instead.
+     * @deprecated Implement {@link MessagingChannelProcessor} as a bean instead, which can peak to any messaging channel.
      */
-    @Deprecated
+    @Deprecated(since = "3.0.0", forRemoval = true)
     public Map<String, Boolean> channelsReadiness() {
         return formerHealthProbe.getReadyChannels();
     }

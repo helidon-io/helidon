@@ -29,7 +29,7 @@ import org.reactivestreams.Subscription;
  *
  * @deprecated Use {@link MessagingChannelProcessor} instead.
  */
-@Deprecated
+@Deprecated(since = "3.0.0", forRemoval = true)
 class FormerHealthProbe implements MessagingChannelProcessor {
 
     private final Map<String, Boolean> liveChannels = new HashMap<>();
