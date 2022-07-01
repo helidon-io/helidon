@@ -251,5 +251,16 @@
    <vulnerabilityName>CVE-2021-0341</vulnerabilityName>
 </suppress>
 
+<!-- False Positive. This CVE is for an AWS patch mechanism for log4j, not log4j itself
+     See  https://github.com/jeremylong/DependencyCheck/issues/4637
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: log4j-api-2.17.1.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.apache\.logging\.log4j/log4j\-api@.*$</packageUrl>
+   <cve>CVE-2022-33915</cve>
+</suppress>
+
 
 </suppressions>
