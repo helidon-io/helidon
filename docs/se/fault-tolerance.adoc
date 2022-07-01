@@ -16,28 +16,34 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Fault Tolerance
+= Fault Tolerance in Helidon SE
 :toc:
 :toc-placement: preamble
-:description: Fault Tolerance
+:h1Prefix: SE
+:pagename: fault-tolerance
+:description: Fault Tolerance in Helidon SE
 :keywords: helidon, java, fault, tolerance, fault tolerance, se
+:helidon-tag: https://github.com/oracle/helidon/tree/{helidon-version}
+:javadoc-base-url-faulttolerance: {javadoc-base-url}io.helidon.faulttolerance/io/helidon/faulttolerance/package-summary.html
+:javadoc-base-url-reactive: {javadoc-base-url}io.helidon.common.reactive/io/helidon/common/reactive/package-summary.html
+:helidon-variant: SE
+:mp-microprofile: https://download.eclipse.org/microprofile/microprofile-fault-tolerance-2.1.1/microprofile-fault-tolerance-spec.html
 :feature-name: Fault Tolerance
-:rootdir: {docdir}/..
+:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 
-include::{rootdir}/includes/se.adoc[]
-include::{rootdir}/includes/dependencies.adoc[]
 
-[source,xml]
-----
-<dependency>
-    <groupId>io.helidon.fault-tolerance</groupId>
-    <artifactId>helidon-fault-tolerance</artifactId>
-</dependency>
-----
+== ToC
 
-== Introduction
+- <<Overview, Overview>>
+- <<Maven Coordinates, Maven Coordinates>>
+- <<API, API>>
+- <<Configuration, Configuration>>
+- <<Examples, Examples>>
+- <<Additional Information, Additional Information>>
 
-Helidon SE Fault Tolerance support is inspired by link:{microprofile-fault-tolerance-spec-url}[MicroProfile Fault Tolerance].
+== Overview
+
+Helidon SE Fault Tolerance support is inspired by link:{mp-microprofile}[MicroProfile Fault Tolerance].
 The API defines the notion of a _fault handler_ that can be combined with other handlers to
 improve application robustness. Handlers are created to manage error conditions (faults)
 that may occur in real-world application environments. Examples include service restarts,
@@ -51,33 +57,37 @@ of these sources is unreachable or offline. Similarly, if a non-essential source
 flagged as unreachable, an application should avoid continuous access to that source
 as that would result in much higher response times.
 
-In order to combat the most common types of application faults, the Helidon SE Fault Tolerance API
+In order to tackle the most common types of application faults, the Helidon SE Fault Tolerance API
 provides support for circuit breakers, retries, timeouts, bulkheads and fallbacks.
 In addition, the API makes it very easy to create and monitor asynchronous tasks that
-do not require explicit creation and management of threads/executors.
+do not require explicit creation and management of threads or executors.
 
 For more information the reader is referred to the
-link:{faulttolerance-javadoc-base-url}/io/helidon/faulttolerance/package-summary.html[Fault Tolerance SE API Javadocs].
+link:{javadoc-base-url-faulttolerance}[Fault Toleance SE API Javadocs].
 
-=== Updating your POM
 
-In order to use Fault Tolerance you first need to add the <<Maven Coordinates, maven dependency>> to your `pom.xml`.
+include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 
-=== Single<T> and Multi<T>
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.fault-tolerance</groupId>
+    <artifactId>helidon-fault-tolerance</artifactId>
+</dependency>
+----
 
-In what follows we shall assume the reader is familiar with the two core Helidon types
-`Single<T>` and `Multi<T>` from the link:{reactive-base-url}/io/helidon/common/reactive/package-summary.html[io.helidon.common.reactive]
-package. Most simply,
-a `Single<T>` is a promise to produce zero or one value of type `T` or signal an error;
+== API
+
+The SE Fault Tolerance API is _reactive_ in order to fit the overall processing model in
+Helidon SE. A task returns either a `Single<T>` or a `Multi<T>`.
+A `Single<T>` is a promise to produce zero or one value of type `T` or signal an error;
 while a `Multi<T>` is a promise to produce zero or more values of type `T` or signal an error.
-More generally, these two types can be regarded as _producers_ of zero or more values of type
-`T`.
 
-NOTE: Note also that `Single<T>`, like `CompletableFuture<T>`, extends `CompletionStage<T>`
- so conversion among these types is straightforward.
+NOTE: A `Single<T>`, like `CompletableFuture<T>`, extends `CompletionStage<T>`
+so conversion among these types is straightforward.
 
-We shall use all these types in connection with Fault Tolerance handlers in the next few
-sections.
+In the sections that follow, we shall briefly explore each of the constructs provided
+by this API.
 
 === Asynchronous
 
@@ -148,6 +158,7 @@ s.handle((t, e) -> {
     if (e instanceof TimeoutException) {
         // Invocation has timed out!
     }
+    ...
 });
 ----
 
@@ -340,3 +351,105 @@ The call to `Multi.just(0, 1, 2)` simply returns a multi that produces
 the integers 0, 1 and 2. If an error was generated during this process,
 the policy will retry the call one more time &mdash;for a total of 2
 calls.
+
+== Configuration
+
+Each Fault Tolerance handler can be individually configured at build
+time. This is supported by calling the `config` method on the corresponding
+builder and specifying a config element. For example, a `Timeout` handler
+can be externally configured as follows:
+
+[source,java]
+----
+   Timeout timeout = Timeout.builder()
+           .config(config.get("timeout"))
+           .build();
+----
+
+and using the following config entry:
+
+[source,yaml]
+----
+timeout:
+  timeout: "PT20S"
+  current-thread: true
+  name: "MyTimeout"
+  cancel-source: false
+----
+
+Note that the actual timeout value is of type `Duration`, hence the use
+of `PT20S` that represents a timeout of 20 seconds. See the Javadoc for the `Duration`
+class for more information.
+
+The following tables list all the config elements for each type of
+handler supported by this API.
+
+=== Timeout
+|===
+| Property | Type | Description
+| name | String | A name given to the task for debugging purposes. Default is `Timeout-N`.
+| timeout | Duration | The timeout length as a Duration string. Default is `PT10S` or 10 seconds.
+| current-thread| boolean | A flag indicating whether the task should execute in the current thread or not.
+Default is `false`.
+| cancel-source| boolean | A flag indicating if this task's source should be cancelled if the task is cancelled.
+Default is `true`.
+|===
+
+=== Circuit Breaker
+|===
+| Property | Type | Description
+| name | String | A name given to the task for debugging purposes. Default is `CircuitBreaker-N`.
+| delay | Duration | Delay to transition from _half-open_ state. Default is `PT5S` or 5 seconds.
+| error-ratio | int | Failure percentage to transition to _open_ state. Default is 60.
+| volume | int | Size of rolling window to calculate ratios. Size is 10.
+| success-threshold | int | Number of successful calls to transition to _closed_ state. Default is 1.
+| cancel-source| boolean | A flag indicating if this task's source should be cancelled if the task is cancelled.
+Default is `true`.
+|===
+
+=== Bulkhead
+|===
+| Property | Type | Description
+| limit | int | Max number of parallel calls. Default is 10.
+| name | String | A name given to the task for debugging purposes. Default is `Bulkhead-N`.
+| queue-length| int | Length of queue for tasks waiting to enter. Default is 10.
+| cancel-source| boolean | A flag indicating if this task's source should be cancelled if the task is cancelled.
+Default is `true`.
+|===
+
+=== Retry
+|===
+| Property | Type | Description
+| name | String | A name given to the task for debugging purposes. Default is `Retry-N`.
+| overall-timeout | Duration | Timeout for overall retry execution. Default is `PT1S` or 1 second.
+| delaying-retry-policy | Config | Config section describing delaying retry policy (see below).
+| jitter-retry-policy | Config |Config section describing jitter retry policy (see below)
+| cancel-source| boolean | A flag indicating if this task's source should be cancelled if the task is cancelled.
+Default is `true`.
+|===
+
+==== Delaying Retry Policy
+|===
+| Property | Type | Description
+| calls | int | Number of retry attempts. Default is 3.
+| delay | Duration | Delay between retries. Default is `PT0.2S` or 200 milliseconds.
+| delay-factor | double | A delay multiplication factor applied after each retry.
+|===
+
+==== Jitter Retry Policy
+|===
+| Property | Type |Description
+| calls | int | Number of retry attempts. Default is 3.
+| delay | Duration | Delay between retries. Default is `PT0.2S` or 200 milliseconds.
+| jitter | Duration | A random delay additive factor in the range `[-jitter, +jitter]`
+applied after each retry.
+|===
+== Examples
+
+See <<API>> section for examples.
+
+== Additional Information
+
+For additional information, see the
+link:{javadoc-base-url-faulttolerance}[Fault Tolerance SE API Javadocs].
+
