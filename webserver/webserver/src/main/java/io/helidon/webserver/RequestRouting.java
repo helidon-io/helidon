@@ -36,12 +36,11 @@ import io.helidon.common.context.Contexts;
 import io.helidon.common.http.AlreadyCompletedException;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
+import io.helidon.tracing.Span;
+import io.helidon.tracing.SpanContext;
+import io.helidon.tracing.Tracer;
 import io.helidon.tracing.config.SpanTracingConfig;
 import io.helidon.tracing.config.TracingConfigUtil;
-
-import io.opentracing.Span;
-import io.opentracing.SpanContext;
-import io.opentracing.Tracer;
 
 /**
  * Default implementation of {@link Routing}.
@@ -318,7 +317,7 @@ class RequestRouting implements Routing {
                                                                                     "HTTP Request",
                                                                                     context());
                         if (spanConfig.spanLog("handler.class").enabled()) {
-                            span.log(nextItem.handlerRoute.diagnosticEvent());
+                            span.addEvent("handler", nextItem.handlerRoute.diagnosticEvent());
                         }
                     }
 
@@ -356,8 +355,7 @@ class RequestRouting implements Routing {
                     ErrorRoutedRequest nextErrorRequest = new ErrorRoutedRequest(errorHandlers, t);
                     Span span = span();
                     if (null != span) {
-                        span.log(Map.of("event", "error-handler",
-                                        "handler.class", record.errorHandler.getClass().getName(),
+                        span.addEvent("error-handler", Map.of("handler.class", record.errorHandler.getClass().getName(),
                                         "handled.error.message", t.toString()));
                     }
                     try {
@@ -384,8 +382,7 @@ class RequestRouting implements Routing {
         private void defaultHandler(Throwable t) {
             Span span = span();
             if (null != span) {
-                span.log(Map.of("event", "error-handler",
-                                "handler.class", "DEFAULT-ERROR-HANDLER",
+                span.addEvent("error-handler", Map.of("handler.class", "DEFAULT-ERROR-HANDLER",
                                 "handled.error.message", t.toString()));
             }
             String message = null;

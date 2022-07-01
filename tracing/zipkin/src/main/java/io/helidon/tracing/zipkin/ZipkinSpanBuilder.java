@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.tracing.zipkin;
 import java.util.List;
 
 import io.helidon.tracing.Tag;
+import io.helidon.tracing.opentracing.OpenTracing;
 
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
@@ -32,10 +33,12 @@ import io.opentracing.Tracer;
  * @see <a href="https://github.com/openzipkin/zipkin/issues/962">Zipkin Missing Service Name</a>
  */
 class ZipkinSpanBuilder implements Tracer.SpanBuilder {
+    private final Tracer tracer;
     private final Tracer.SpanBuilder spanBuilder;
     private final List<Tag<?>> tags;
 
-    ZipkinSpanBuilder(Tracer.SpanBuilder spanBuilder, List<Tag<?>> tags) {
+    ZipkinSpanBuilder(Tracer tracer, Tracer.SpanBuilder spanBuilder, List<Tag<?>> tags) {
+        this.tracer = tracer;
         this.spanBuilder = spanBuilder;
         this.tags = tags;
     }
@@ -87,7 +90,8 @@ class ZipkinSpanBuilder implements Tracer.SpanBuilder {
         Span span = spanBuilder.start();
         span.log("sr");
 
-        tags.forEach(tag -> tag.apply(span));
+        io.helidon.tracing.Span helidonSpan = OpenTracing.create(tracer, span);
+        tags.forEach(tag -> tag.apply(helidonSpan));
 
         return new ZipkinSpan(span);
     }

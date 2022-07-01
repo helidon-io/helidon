@@ -61,8 +61,7 @@ import io.helidon.security.spi.SecretsProvider;
 import io.helidon.security.spi.SecurityProvider;
 import io.helidon.security.spi.SecurityProviderService;
 import io.helidon.security.spi.SubjectMappingProvider;
-
-import io.opentracing.Tracer;
+import io.helidon.tracing.Tracer;
 
 /**
  * This class is used to "bootstrap" security and integrate it with other frameworks; runtime
@@ -315,7 +314,7 @@ public class Security {
     /**
      * Returns a tracer that can be used to construct new spans.
      *
-     * @return {@link Tracer}, may be a no-op tracer if tracing is disabled
+     * @return {@link io.helidon.tracing.Tracer}, may be a no-op tracer if tracing is disabled
      */
     public Tracer tracer() {
         return securityTracer;

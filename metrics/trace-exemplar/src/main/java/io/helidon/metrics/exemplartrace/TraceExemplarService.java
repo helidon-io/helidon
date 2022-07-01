@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,7 @@ package io.helidon.metrics.exemplartrace;
 
 import io.helidon.common.context.Contexts;
 import io.helidon.metrics.ExemplarService;
-
-import io.opentracing.SpanContext;
+import io.helidon.tracing.SpanContext;
 
 /**
  * Service provider for {@link io.helidon.metrics.ExemplarService}.
@@ -28,7 +27,7 @@ public class TraceExemplarService implements ExemplarService {
     public String label() {
         return Contexts.context()
                 .flatMap(c -> c.get(SpanContext.class))
-                .map(sc -> "trace_id=\"" + sc.toTraceId() + "\"")
+                .map(sc -> "trace_id=\"" + sc.traceId() + "\"")
                 .orElse("");
     }
 }

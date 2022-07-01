@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 package io.helidon.tracing.jaeger;
 
 import io.helidon.common.Prioritized;
-import io.helidon.tracing.TracerBuilder;
-import io.helidon.tracing.spi.TracerProvider;
+import io.helidon.tracing.opentracing.spi.OpenTracingProvider;
 
 import jakarta.annotation.Priority;
 
@@ -25,9 +24,9 @@ import jakarta.annotation.Priority;
  * Jaeger java service.
  */
 @Priority(Prioritized.DEFAULT_PRIORITY)
-public class JaegerTracerProvider implements TracerProvider {
+public class JaegerTracerProvider implements OpenTracingProvider {
     @Override
-    public TracerBuilder<?> createBuilder() {
+    public JaegerTracerBuilder createBuilder() {
         return JaegerTracerBuilder.create();
     }
 }

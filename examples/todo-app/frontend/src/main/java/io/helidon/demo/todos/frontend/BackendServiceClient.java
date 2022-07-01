@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package io.helidon.demo.todos.frontend;
 
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import java.util.logging.Level;
@@ -26,13 +25,11 @@ import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.integration.jersey.client.ClientSecurity;
+import io.helidon.tracing.Span;
+import io.helidon.tracing.SpanContext;
+import io.helidon.tracing.Tracer;
 import io.helidon.webserver.ServerResponse;
 
-import io.opentracing.Span;
-import io.opentracing.SpanContext;
-import io.opentracing.Tracer;
-import io.opentracing.tag.Tags;
-import io.opentracing.util.GlobalTracer;
 import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;
 import jakarta.ws.rs.client.Client;
@@ -71,14 +68,15 @@ public final class BackendServiceClient {
 
     /**
      * Create a new {@code BackendServiceClient} instance.
+     *
      * @param restClient the JAXRS {@code Client} to use
-     * @param config the Helidon {@code Config} to use
+     * @param config     the Helidon {@code Config} to use
      */
     public BackendServiceClient(final Client restClient, final Config config) {
         this.client = restClient;
         this.serviceEndpoint =
                 config.get("services.backend.endpoint").asString().get();
-        this.tracer = GlobalTracer.get();
+        this.tracer = Tracer.global();
     }
 
     /**
@@ -88,8 +86,8 @@ public final class BackendServiceClient {
      * @return future with all records
      */
     public CompletionStage<JsonArray> getAll(final SpanContext spanContext) {
-        Span span = tracer.buildSpan("todos.get-all")
-                .asChildOf(spanContext)
+        Span span = tracer.spanBuilder("todos.get-all")
+                .parent(spanContext)
                 .start();
 
         CompletionStage<JsonArray> result = client.target(serviceEndpoint + "/api/backend")
@@ -99,17 +97,15 @@ public final class BackendServiceClient {
                 .get(JsonArray.class);
 
         // I want to finish my span once the result is received, and report error if failed
-        result.thenAccept(ignored -> span.finish())
+        result.thenAccept(ignored -> span.end())
                 .exceptionally(t -> {
-                    Tags.ERROR.set(span, true);
-                    span.log(Map.of("event", "error",
-                                    "error.object", t));
+                    span.end(t);
                     LOGGER.log(Level.WARNING,
                                "Failed to invoke getAll() on "
                                        + serviceEndpoint + "/api/backend", t);
-                    span.finish();
                     return null;
                 });
+
         return result;
     }
 
@@ -148,7 +144,7 @@ public final class BackendServiceClient {
      * Create a new TODO entry.
      *
      * @param json the new entry value to create as {@code JsonObject}
-     * @param sc {@code SecurityContext} to use
+     * @param sc   {@code SecurityContext} to use
      * @return created entry as {@code JsonObject}
      */
     public CompletionStage<Optional<JsonObject>> create(final JsonObject json, final SecurityContext sc) {
@@ -164,10 +160,11 @@ public final class BackendServiceClient {
 
     /**
      * Update a TODO entry identifying by the given ID.
-     * @param sc {@code SecurityContext} to use
-     * @param id the ID identifying the entry to update
+     *
+     * @param sc   {@code SecurityContext} to use
+     * @param id   the ID identifying the entry to update
      * @param json the update entry value as {@code JsonObject}
-     * @param res updated entry as {@code JsonObject}
+     * @param res  updated entry as {@code JsonObject}
      */
     public void update(final SecurityContext sc,
                        final String id,
@@ -201,9 +198,10 @@ public final class BackendServiceClient {
 
     /**
      * Wrap the response entity in an {@code Optional}.
+     *
      * @param response {@code Reponse} to process
      * @return empty optional if response status is {@code 404}, optional of
-     * the response entity otherwise
+     *         the response entity otherwise
      */
     private Optional<JsonObject> processSingleEntityResponse(final Response response) {
         try (response) {

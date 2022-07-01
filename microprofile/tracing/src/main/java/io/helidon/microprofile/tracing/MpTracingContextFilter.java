@@ -18,11 +18,11 @@ package io.helidon.microprofile.tracing;
 import java.util.Optional;
 
 import io.helidon.common.context.Contexts;
+import io.helidon.tracing.SpanContext;
+import io.helidon.tracing.Tracer;
 import io.helidon.tracing.jersey.client.internal.TracingContext;
 import io.helidon.webserver.ServerRequest;
 
-import io.opentracing.SpanContext;
-import io.opentracing.Tracer;
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Provider;

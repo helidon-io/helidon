@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,14 +17,32 @@ package io.helidon.tracing;
 
 import java.util.Objects;
 
-import io.opentracing.Span;
-
 /**
  * Tag abstraction that can be used with {@link TracerBuilder#addTracerTag(String, String)}.
  *
  * @param <T> type of the tag
  */
 public abstract class Tag<T> {
+    /**
+     * Tag marking a component that triggers this span.
+     */
+    public static final TagSource<String> COMPONENT = new StringTagSource("component");
+    /**
+     * Http method used to invoke this request.
+     */
+    public static final TagSource<String> HTTP_METHOD = new StringTagSource("http.method");
+    /**
+     * URL of the HTTP request.
+     */
+    public static final TagSource<String> HTTP_URL = new StringTagSource("http.url");
+    /**
+     * HTTP version.
+     */
+    public static final TagSource<String> HTTP_VERSION = new StringTagSource("http.version");
+    /**
+     * Status code that was returned.
+     */
+    public static final TagSource<Integer> HTTP_STATUS = new NumberTagSource<>("http.status_code");
     private final String key;
     private final T value;
 
@@ -112,6 +130,27 @@ public abstract class Tag<T> {
      * @param span span to apply the tag on
      */
     public abstract void apply(Span span);
+    /**
+     * Configure this tag on the span builder.
+     *
+     * @param spanBuilder span builder to apply the tag on
+     */
+    public abstract void apply(Span.Builder<?> spanBuilder);
+
+    /**
+     * Tag source (a type that can create tags). Use by {@link #HTTP_METHOD} and other constants to easily create new tags.
+     *
+     * @param <T> type of the tag
+     */
+    public interface TagSource<T> {
+        /**
+         * Create a tag with value.
+         *
+         * @param value value of the tag
+         * @return tag instance
+         */
+        Tag<? super T> create(T value);
+    }
 
     private static final class StringTag extends Tag<String> {
         private StringTag(String key, String value) {
@@ -120,7 +159,12 @@ public abstract class Tag<T> {
 
         @Override
         public void apply(Span span) {
-            span.setTag(key(), value());
+            span.tag(key(), value());
+        }
+
+        @Override
+        public void apply(Span.Builder<?> spanBuilder) {
+            spanBuilder.tag(key(), value());
         }
     }
 
@@ -131,7 +175,12 @@ public abstract class Tag<T> {
 
         @Override
         public void apply(Span span) {
-            span.setTag(key(), value());
+            span.tag(key(), value());
+        }
+
+        @Override
+        public void apply(Span.Builder<?> spanBuilder) {
+            spanBuilder.tag(key(), value());
         }
     }
 
@@ -142,7 +191,51 @@ public abstract class Tag<T> {
 
         @Override
         public void apply(Span span) {
-            span.setTag(key(), value());
+            span.tag(key(), value());
+        }
+
+        @Override
+        public void apply(Span.Builder<?> spanBuilder) {
+            spanBuilder.tag(key(), value());
+        }
+    }
+
+    private static class StringTagSource implements TagSource<String> {
+        private final String name;
+
+        protected StringTagSource(String name) {
+            this.name = name;
+        }
+
+        @Override
+        public Tag<String> create(String value) {
+            return new StringTag(name, value);
+        }
+    }
+
+    private static class NumberTagSource<T extends Number> implements TagSource<T> {
+        private final String name;
+
+        protected NumberTagSource(String name) {
+            this.name = name;
+        }
+
+        @Override
+        public Tag<Number> create(T value) {
+            return new NumericTag(name, value);
+        }
+    }
+
+    private static class BooleanTagSource implements TagSource<Boolean> {
+        private final String component;
+
+        protected BooleanTagSource(String component) {
+            this.component = component;
+        }
+
+        @Override
+        public Tag<Boolean> create(Boolean value) {
+            return new BooleanTag(component, value);
         }
     }
 }

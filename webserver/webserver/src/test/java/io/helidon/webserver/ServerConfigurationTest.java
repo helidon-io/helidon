@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,6 @@ import java.net.InetAddress;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 
-import io.opentracing.util.GlobalTracer;
-import org.hamcrest.core.IsInstanceOf;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -60,7 +58,7 @@ public class ServerConfigurationTest {
         assertThat(config.receiveBufferSize(), is(0));
         assertThat(config.timeoutMillis(), is(0));
         assertThat(config.workersCount() > 0, is(true));
-        assertThat(config.tracer(), IsInstanceOf.instanceOf(GlobalTracer.class));
+        assertThat(config.tracer().enabled(), is(false));
         assertThat(config.bindAddress(), nullValue());
     }
 

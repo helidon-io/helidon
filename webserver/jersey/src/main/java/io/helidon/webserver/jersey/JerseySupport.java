@@ -40,6 +40,7 @@ import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpRequest;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
+import io.helidon.tracing.SpanContext;
 import io.helidon.webserver.Handler;
 import io.helidon.webserver.HttpException;
 import io.helidon.webserver.KeyPerformanceIndicatorSupport;
@@ -50,7 +51,6 @@ import io.helidon.webserver.Service;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.jersey.HelidonHK2InjectionManagerFactory.InjectionManagerWrapper;
 
-import io.opentracing.SpanContext;
 import jakarta.ws.rs.core.Application;
 import jakarta.ws.rs.core.Configurable;
 import jakarta.ws.rs.core.Configuration;

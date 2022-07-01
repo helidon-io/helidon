@@ -36,9 +36,7 @@ import io.helidon.common.context.Context;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 import io.helidon.config.DeprecatedConfig;
-
-import io.opentracing.Tracer;
-import io.opentracing.util.GlobalTracer;
+import io.helidon.tracing.Tracer;
 
 /**
  * {@link WebServer} configuration.
@@ -191,9 +189,9 @@ public interface ServerConfiguration extends SocketConfiguration {
     }
 
     /**
-     * Returns an <a href="http://opentracing.io">opentracing.io</a> tracer. Default is {@link GlobalTracer}.
+     * Returns a Tracer.
      *
-     * @return a tracer to use - never {@code null} (defaulting to {@link GlobalTracer}
+     * @return a tracer to use - never {@code null}
      */
     Tracer tracer();
 
@@ -470,7 +468,7 @@ public interface ServerConfiguration extends SocketConfiguration {
         }
 
         /**
-         * Sets an <a href="http://opentracing.io">opentracing.io</a> tracer. (Default is {@link GlobalTracer}.)
+         * Sets a tracer.
          *
          * @param tracer a tracer to set
          * @return an updated builder
@@ -481,7 +479,7 @@ public interface ServerConfiguration extends SocketConfiguration {
         }
 
         /**
-         * Sets an <a href="http://opentracing.io">opentracing.io</a> tracer. (Default is {@link GlobalTracer}.)
+         * Sets a tracer.
          *
          * @param tracerBuilder a tracer builder to set; will be built as a first step of this method execution
          * @return updated builder
@@ -690,7 +688,7 @@ public interface ServerConfiguration extends SocketConfiguration {
             Optional<Tracer> maybeTracer = context.get(Tracer.class);
 
             if (null == this.tracer) {
-                this.tracer = maybeTracer.orElseGet(GlobalTracer::get);
+                this.tracer = maybeTracer.orElseGet(Tracer::global);
             }
 
             if (maybeTracer.isEmpty()) {

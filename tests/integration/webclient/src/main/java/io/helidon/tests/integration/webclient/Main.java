@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,11 @@
 
 package io.helidon.tests.integration.webclient;
 
-import java.util.concurrent.CompletionStage;
-
+import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.security.integration.webserver.WebSecurity;
+import io.helidon.tracing.opentracing.OpenTracing;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 
@@ -42,16 +42,16 @@ public final class Main {
     }
 
     public static void main(String[] args) {
-        startServer();
+        startServer().ignoreElement();
     }
 
-    static CompletionStage<WebServer> startServer(Tracer tracer) {
+    static Single<WebServer> startServer(Tracer tracer) {
         // By default this will pick up application.yaml from the classpath
         Config config = Config.create();
 
         // Get webserver config from the "server" section of application.yaml
         WebServer.Builder builder = WebServer.builder()
-                .tracer(tracer);
+                .tracer(OpenTracing.create(tracer));
 
         return startIt(config, builder);
     }
@@ -61,7 +61,7 @@ public final class Main {
      *
      * @return the created {@link WebServer} instance
      */
-    static CompletionStage<WebServer> startServer() {
+    static Single<WebServer> startServer() {
         // By default this will pick up application.yaml from the classpath
         Config config = Config.create();
 
@@ -72,7 +72,7 @@ public final class Main {
         return startIt(config, builder);
     }
 
-    private static CompletionStage<WebServer> startIt(Config config, WebServer.Builder serverBuilder) {
+    private static Single<WebServer> startIt(Config config, WebServer.Builder serverBuilder) {
         serverBuilder.config(config.get("server"));
         webServer = serverBuilder.routing(createRouting(config))
                 .addMediaSupport(JsonpSupport.create())
@@ -80,22 +80,17 @@ public final class Main {
 
         // Try to start the server. If successful, print some info and arrange to
         // print a message at shutdown. If unsuccessful, print the exception.
-        CompletionStage<WebServer> start = webServer.start();
-
-        start.thenAccept(ws -> {
+        return webServer.start()
+                .peek(ws -> {
                     serverPort = ws.port();
                     System.out.println(
                             "WEB server is up! http://localhost:" + ws.port() + "/greet");
                     ws.whenShutdown().thenRun(() -> System.out.println("WEB server is DOWN. Good bye!"));
                 })
-                .exceptionally(t -> {
+                .onError(t -> {
                     System.err.println("Startup failed: " + t.getMessage());
                     t.printStackTrace(System.err);
-                    return null;
                 });
-
-        // Server threads are not daemon. No need to block. Just react.
-        return start;
     }
 
     /**
