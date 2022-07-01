@@ -30,7 +30,7 @@ ifeval::["{helidon-version-is-release}" != "true"]
 :helidon-github-tree-url: https://github.com/oracle/helidon/tree/master
 endif::[]
 
-ifeval::["{helidon-version-is-release}" != "true"]
+ifeval::["{helidon-version-is-release}" == "true"]
 :helidon-github-tree-url: https://github.com/oracle/helidon/tree/{helidon-version}
 endif::[]
 
@@ -61,6 +61,7 @@ endif::[]
 :version-lib-jakarta-transaction-api: 2.0
 :version-lib-jakarta-persistence-api: 3.0.0
 :version-lib-jakarta-jaxrs-api: 3.0.0
+:version-lib-jakarta-inject: 2.0.0
 
 // 3rd party
 :version-lib-jaeger: 1.22
@@ -157,6 +158,10 @@ endif::[]
 :jakarta-jaxrs-spec-url: {jakarta-jaxrs-base-url}/jakarta-restful-ws-spec-{version-lib-jakarta-jaxrs-api}.html
 :jakarta-jaxrs-javadoc-url: {jakarta-jaxrs-base-url}/apidocs
 
+:jakarta-inject-base-url: {jakarta-base-url}/dependency-injection/{version-lib-jakarta-inject}
+:jakarta-inject-spec-url: {jakarta-inject-base-url}/jakarta-injection-spec-{version-lib-jakarta-inject}.html
+:jakarta-inject-javadoc-url: {jakarta-inject-base-url}/apidocs
+
 :javadoc-io-base-url: https://www.javadoc.io
 
 // base url prefix (could also be https://helidon.io/docs/latest)
@@ -174,15 +179,16 @@ endif::[]
 :media-jackson-javadoc-base-url: {javadoc-base-url}/io.helidon.media.jackson
 :metrics-javadoc-base-url: {javadoc-base-url}/io.helidon.metrics.api
 :metrics-serviceapi-javadoc-base-url: {javadoc-base-url}/io.helidon.metrics.serviceapi
-:micrometer-javadoc-base-url: {javadoc-base-url}/apidocs/io.helidon.integrations.micrometer
-:mp-cors-javadoc-base-url: {javadoc-base-url}/apidocs/io.helidon.microprofile.cors
+:micrometer-javadoc-base-url: {javadoc-base-url}/io.helidon.integrations.micrometer
+:mp-cors-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.cors
 :reactive-base-url: {javadoc-base-url}/io.helidon.common.reactive
-:webclient-javadoc-base-url: {javadoc-base-url}/apidocs/io.helidon.webclient
-:webserver-javadoc-base-url: {javadoc-base-url}/apidocs/io.helidon.webserver
-:webserver-jersey-javadoc-base-url: {javadoc-base-url}/apidocs/io.helidon.webserver.jersey
+:webclient-javadoc-base-url: {javadoc-base-url}/io.helidon.webclient
+:webserver-javadoc-base-url: {javadoc-base-url}/io.helidon.webserver
+:webserver-jersey-javadoc-base-url: {javadoc-base-url}/io.helidon.webserver.jersey
 :webserver-staticcontent-javadoc-base-url: {webserver-javadoc-base-url}.staticcontent
-:webserver-cors-javadoc-base-url: {javadoc-base-url}/apidocs/io.helidon.webserver.cors
-:mp-tyrus-javadoc-base-url: {javadoc-base-url}/apidocs/io.helidon.microprofile.tyrus
+:webserver-cors-javadoc-base-url: {javadoc-base-url}/io.helidon.webserver.cors
+:mp-tyrus-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.tyrus
+:integration-oci-sdk-cdi-javadoc-base-url: {javadoc-base-url}/io.helidon.integrations.oci.sdk.cdi
 
 // 3rd party versioned URLs
 :jaeger-doc-base-url: https://www.jaegertracing.io/docs/{version-lib-jaeger}
@@ -191,5 +197,18 @@ endif::[]
 :eclipselink-doc-base-url: https://www.eclipse.org/eclipselink/documentation/{version-lib-exclipselink}
 :jib-base-url: https://github.com/GoogleContainerTools/jib/blob/v{version-plugin-jib}-maven/jib-maven-plugin
 :jedis-base-url: {javadoc-io-base-url}/redis.clients/jedis/{version-lib-jedis}/redis/clients
+
+:oci-sdk-config-url: https://docs.oracle.com/en-us/iaas/Content/API/Concepts/sdkconfig.htm#SDK_and_CLI_Configuration_File
+:oci-database-url: https://docs.oracle.com/en-us/iaas/Content/Database/home.htm
+:oci-cli-url: https://docs.oracle.com/en-us/iaas/tools/oci-cli/latest
+:oci-javasdk-url: https://docs.cloud.oracle.com/iaas/Content/API/SDKDocs/javasdk.htm
+:oci-objstore-url: https://docs.cloud.oracle.com/iaas/Content/Object/Concepts/objectstorageoverview.htm
+:oci-vault-url: https://docs.oracle.com/en-us/iaas/Content/KeyManagement/home.htm
+
+:oci-javasdk-javadoc-base-url: https://docs.oracle.com/en-us/iaas/tools/java/latest
+:oci-javasdk-database-javadoc-base-url: {oci-javasdk-javadoc-base-url}/com/oracle/bmc/database
+:oci-javasdk-objstore-javadoc-base-url: {oci-javasdk-javadoc-base-url}/com/oracle/bmc/objectstorage
+:oci-javasdk-vault-javadoc-base-url: {oci-javasdk-javadoc-base-url}/com/oracle/bmc/vault
+
 
 endif::attributes-included[]

@@ -21,201 +21,72 @@
 :keywords: oci, objectstorage
 :feature-name: OCI Object Storage
 :rootdir: {docdir}/../..
-:imagesdir: {rootdir}/images
 
 include::{rootdir}/includes/mp.adoc[]
 
-The Helidon MP OCI Object Storage integration provides easy access files stored in Oracle cloud.
-
-== Experimental
-
-WARNING: Helidon integration with Oracle Cloud Infrastructure is still experimental and not intended for production use. APIs and features have not yet been fully tested and are subject to change.
+You can use Helidon's xref:oci.adoc[OCI SDK Extension] to access OCI Services.
+This document describes how to use it to access OCI Object Storage.
 
 include::{rootdir}/includes/dependencies.adoc[]
 
 [source,xml]
 ----
 <dependency>
-    <groupId>io.helidon.integrations.oci</groupId>
-    <artifactId>helidon-integrations-oci-objectstorage</artifactId>
+     <groupId>io.helidon.integrations.oci.sdk</groupId>
+     <artifactId>helidon-integrations-oci-sdk-cdi</artifactId>
 </dependency>
 ----
 
-
-== Setting up the Object Storage
-
-In order to use the OCI Object Storage integration, the following setup should be made:
-
-Current configuration requires `~/.oci/config` to be available in the home folder. This configuration file can be downloaded from OCI.
-
-REST endpoint to work with OCI Object Storage:
-
-[source,java]
-----
-@Path("/files")
-public class ObjectStorageResource {
-    private final OciObjectStorage objectStorage;
-    private final String bucketName;
-
-    @Inject
-    ObjectStorageResource(OciObjectStorage objectStorage, <1>
-                          @ConfigProperty(name = "oci.objectstorage.bucket")
-                                  String bucketName) { <2>
-        this.objectStorage = objectStorage;
-        this.bucketName = bucketName;
-    }
-}
-----
-<1> `OciObjectStorage` is configured and injected automatically
-<2> Bucket name is read from the properties
-
-Additionally, in `microprofile-config.properties` OCI properties should be specified:
-
-[source,properties]
-----
-oci.properties.compartment-ocid: "ocid1.tenancy.oc1..<..>"
-oci.properties.objectstorage-namespace: "<..>"
-oci.properties.objectstorage-bucket: "demobucket"
-----
-
-The exact values are available in OCI object storage and bucket properties.
-
-image::oci/ocibucket.png[OCI Bucket, align="center"]
-
-== Using Object Storage
-
-=== Upload file
-
-To upload a file to OCI Object Storage using the `PUT` method:
-
-[source,java]
-----
-@POST
-@Path("/file/{fileName}")
-public Response upload(@PathParam("fileName") String fileName,
-                     @HeaderParam("Content-Length") long contentLength,
-                     @HeaderParam("Content-Type") @DefaultValue("application/octet-stream") String type,
-                     InputStream entity) {
-    PutObject.Response response = objectStorage.putObject(PutObject.Request.builder() <1>
-                                                                  .contentLength(contentLength)
-                                                                  .bucket(bucketName)
-                                                                  .requestMediaType(io.helidon.common.http.MediaType
-                                                                                            .parse(type))
-                                                                  .objectName(fileName),
-                                                          Channels.newChannel(entity));
-
-    return Response.status(response.status().code()) <2>
-            .header("opc-request-id", response.headers().first("opc-request-id").orElse(""))
-            .header("request-id", response.requestId())
-            .build();
-}
-----
-
-<1> Use `objectStorage.putObject` method with`PutObject.Request.builder()` to submit data
-<2> Put the result in the `Response`
-
-
-=== Download file
-
-To download a file from OCI Object Storage using the `GET` method:
-
-[source,java]
-----
-@GET
-@Path("/file/{file-name}")
-public Response download(@PathParam("file-name") String fileName) {
-    ApiOptionalResponse<GetObject.Response> ociResponse = objectStorage.getObject(GetObject.Request.builder() <1>
-                                                                                                  .bucket(bucketName)
-                                                                                                  .objectName(fileName));
-    Optional<GetObject.Response> entity = ociResponse.entity(); <2>
-
-    if (entity.isEmpty()) {
-        return Response.status(Response.Status.NOT_FOUND).build(); <3>
-    }
-
-    GetObject.Response response = entity.get();
-
-    StreamingOutput stream = output -> response.writeTo(Channels.newChannel(output));
-
-    Response.ResponseBuilder ok = Response.ok(stream, MediaType.APPLICATION_OCTET_STREAM_TYPE) <4>
-            .header(Http.Header.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
-            .header("opc-request-id", ociResponse.headers().first("opc-request-id").orElse(""))
-            .header("request-id", ociResponse.requestId());
-
-    ociResponse.headers()
-            .first(Http.Header.CONTENT_TYPE)
-            .ifPresent(ok::type);
-
-    ociResponse.headers()
-            .first(Http.Header.CONTENT_LENGTH)
-            .ifPresent(it -> ok.header(Http.Header.CONTENT_LENGTH, it));
-
-    return ok.build();
-}
-----
-
-<1> Use `getObject` function to make asynchronous request to OCI Object Storage
-<2> The result is of type `Optional`
-<3> Whenever the result is empty, return status `404`
-<4> Get the response, set headers and return the result
-
-
-=== Delete file
-
-Finally, to delete a file, `DELETE` request should be used:
-
-[source,java]
-----
-@DELETE
-@Path("/file/{file-name}")
-public Response delete(@PathParam("file-name") String fileName) {
-    DeleteObject.Response response = objectStorage.deleteObject(DeleteObject.Request.builder() <1>
-                                                                        .bucket(bucketName)
-                                                                        .objectName(fileName));
-
-    return Response.status(response.status().code()) <2>
-            .header("opc-request-id", response.headers().first("opc-request-id").orElse(""))
-            .header("request-id", response.requestId())
-            .build();
-}
-----
-
-<1> Use `deleteObject` function and configure a `DeleteObject.Request.builder()` to submit the delete request
-<2> Return the result
-
-== Object Storage Health Checks
-
-If your Helidon application depends on Object Storage accessibility, you may consider setting
-up a health check to verify connectivity with one ore more OCI buckets in a namespace.
-To do so, first add the following dependency to your pom file:
+Then add a dependency on the OCI SDK's Object Storage API:
 
 [source,xml]
 ----
 <dependency>
-    <groupId>io.helidon.integrations.oci</groupId>
-    <artifactId>helidon-integrations-oci-objectstorage-health</artifactId>
+    <groupId>com.oracle.oci.sdk</groupId>
+    <artifactId>oci-java-sdk-objectstorage</artifactId>
 </dependency>
 ----
 
-By adding this dependency to your application, you get a (built-in) health check automatically
-registered for you. This health check is controlled by the Config properties `oci.objectstorage.namespace`
-and `oci.objectstorage.healthchecks`, in addition to the user-specific configuration under `~/.oci/config`.
+== Injecting an Object Storage client
 
-The value of `oci.objectstorage.healthchecks` must denote a list of bucket names to check. For example:
+Once you have Helidon's OCI extension added to your application you can inject OCI SDK Clients.
 
-[source,yaml]
+[source,java]
+.Field-injection example
 ----
-oci:
-  objectstorage:
-    namespace: "mynamespace"
-    healthchecks: [ "myfirstbucket", "mysecondbucket" ]
+@Inject
+private ObjectStorage client;
 ----
 
-When executed, this health check will _ping_ the buckets `myfirstbucket` and `mysecondbucket` in
-`mynamespace` to make sure they are accessible in your environment. The `data` object in a
-health check JSON response shall include a status code (e.g., 200) for each bucket in your
-list, as well as an `UP` status for the health check itself if and only if all buckets are
-successfully pinged.
+[source,java]
+.Constructor-injection example
+----
+public class MyClass {
 
-Note that OCI operations such as these may incur some significant latency.
-For more information about health checks see xref:../health.adoc[MicroProfile Health].
+    private final ObjectStorage client;
+
+    @Inject
+    public YourConstructor(@Named("orders") ObjectStorage client) {
+        this.client = client;
+    }
+}
+----
+
+The extension implements this injection point by creating an Object Storage client
+object in the link:{jakarta-inject-javadoc-url}/jakarta/inject/Singleton.html[singleton scope].
+
+== Configuring the Helidon OCI SDK Extension
+
+By default the extension will select and configure an appropriate
+OCI Authentication Details Provider for you based on your environment.
+For this reason it is recommended that you configure your environment first and get it working with the
+link:{oci-javasdk-url}[OCI CLI] before using the Helidon OCI SDK Extension.
+
+For more information see xref:oci.adoc[Helidon OCI Extension].
+
+== Using the Object Storage client
+
+Once you have injected an ObjectStorage client you can use it as described in:
+
+* link:{oci-javasdk-objstore-javadoc-base-url}/package-summary.html[OCI SDK Object Storage Javadocs]
+* link:{oci-objstore-url}[OCI Object Storage Overview]

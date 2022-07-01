@@ -26,9 +26,19 @@ include::{rootdir}/includes/se.adoc[]
 
 Helidon SE OCI Integration provides easy access to Oracle Cloud Infrastructure.
 
+== Deprecated
+
+The custom Helidon SE OCI clients documented here are deprecated.
+It is recommended that you use the OCI Java SDK directly, in particular the Async clients.
+For more information see:
+
+* link:https://docs.oracle.com/en-us/iaas/Content/home.htm[OCI Documentation ]
+* link:{helidon-github-tree-url}/examples/integrations/oci/vault-reactive/[Helidon SE OCI Vault Example]
+
 == Experimental
 
-WARNING: Helidon integration with Oracle Cloud Infrastructure is still experimental and not intended for production use. APIs and features have not yet been fully tested and are subject to change.
+Helidon integration with Oracle Cloud Infrastructure is still experimental and not intended for production use.
+ APIs and features have not yet been fully tested and are subject to change.
 
 == General Configuration
 
@@ -58,7 +68,7 @@ oci:
 The second option is via OCI configuration file.
 For authentication in OCI a special configuration file should be set up. The file is usually located at `~/.oci/config`
 
-[source,properties]
+[source,listing]
 ----
 [DEFAULT]
 user=ocid1.user....
@@ -68,4 +78,4 @@ region=us-...
 key_file=<path to key file>
 ----
 
-More information how to set up on your environment: https://docs.oracle.com/en-us/iaas/Content/API/Concepts/sdkconfig.htm#SDK_and_CLI_Configuration_File[Official website]
+More information how to set up on your environment: link:{oci-sdk-config-url}[Official website]

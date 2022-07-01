@@ -21,15 +21,24 @@
 :keywords: oci, vault
 :feature-name: OCI Vault
 :rootdir: {docdir}/../..
-:imagesdir: {rootdir}/images
 
 include::{rootdir}/includes/se.adoc[]
 
-The Helidon SE OCI Vault integration provides a reactive API Oracle Cloud Vault features.
+The Helidon SE OCI Vault integration provides a reactive API for the Oracle Cloud Vault service.
+
+== Deprecated
+
+The custom Helidon SE OCI clients documented here are deprecated. It is recommended that you
+use the OCI Java SDK directly, in particular the Async clients. For more information see:
+
+* link:{oci-vault-url}[OCI Vault Storage Documentation ]
+* link:{oci-javasdk-vault-javadoc-base-url}/package-summary.html[OCI Vault Storage Javadoc ]
+* link:{helidon-github-tree-url}/examples/integrations/oci/vault-reactive/[Helidon SE OCI Vault Example]
 
 == Experimental
 
-WARNING: Helidon integration with Oracle Cloud Infrastructure is still experimental and not intended for production use. APIs and features have not yet been fully tested and are subject to change.
+Helidon integration with Oracle Cloud Infrastructure is still experimental and not intended for production use.
+APIs and features have not yet been fully tested and are subject to change.
 
 include::{rootdir}/includes/dependencies.adoc[]
 
@@ -65,7 +74,8 @@ oci:
     signature-key-ocid: "<...>"
     cryptographic-endpoint: "<...>"
 ----
-Current configuration requires `~/.oci/config` to be available in the home folder. This configuration file can be downloaded from OCI.
+Current configuration requires `~/.oci/config` to be available in the home folder.
+This configuration file can be downloaded from OCI.
 
 The OCIDs can be set up and found in OCI under Security tab.
 
