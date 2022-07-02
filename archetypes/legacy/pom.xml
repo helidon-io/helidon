@@ -69,7 +69,7 @@
                             <!--suppress UnresolvedMavenProperty -->
                             <enum path="flavor">${flavor}</enum>
                             <!--suppress UnresolvedMavenProperty -->
-                            <enum path="base">${base}</enum>
+                            <enum path="app-type">${app-type}</enum>
                         </presets>
                         <exec url="mvn://io.helidon.archetypes:helidon:${project.version}!/main.xml"/>
                     </entrypoint>
