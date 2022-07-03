@@ -683,7 +683,7 @@ public final class SecurityHandler implements Handler {
      * Use a named authenticator (as supported by security - if not defined, default authenticator is used).
      * Will enable authentication.
      *
-     * @param explicitAuthenticator name of authenticator as configured in {@link Security}
+     * @param explicitAuthenticator name of authenticator as configured in {@link io.helidon.security.Security}
      * @return new handler instance with configuration of this instance updated with this method
      */
     public SecurityHandler authenticator(String explicitAuthenticator) {
@@ -695,7 +695,7 @@ public final class SecurityHandler implements Handler {
      * permitted).
      * Will enable authorization.
      *
-     * @param explicitAuthorizer name of authorizer as configured in {@link Security}
+     * @param explicitAuthorizer name of authorizer as configured in {@link io.helidon.security.Security}
      * @return new handler instance with configuration of this instance updated with this method
      */
     public SecurityHandler authorizer(String explicitAuthorizer) {
@@ -937,7 +937,7 @@ public final class SecurityHandler implements Handler {
         /**
          * Use a named authenticator (as supported by security - if not defined, default authenticator is used).
          *
-         * @param explicitAuthenticator name of authenticator as configured in {@link Security}
+         * @param explicitAuthenticator name of authenticator as configured in {@link io.helidon.security.Security}
          * @return updated builder instance
          */
         Builder authenticator(String explicitAuthenticator) {
@@ -949,7 +949,7 @@ public final class SecurityHandler implements Handler {
          * Use a named authorizer (as supported by security - if not defined, default authorizer is used, if none defined, all is
          * permitted).
          *
-         * @param explicitAuthorizer name of authorizer as configured in {@link Security}
+         * @param explicitAuthorizer name of authorizer as configured in {@link io.helidon.security.Security}
          * @return updated builder instance
          */
         Builder authorizer(String explicitAuthorizer) {

@@ -613,7 +613,7 @@ public class GrpcSecurityHandler
      * Use a named authenticator (as supported by security - if not defined, default authenticator is used).
      * Will enable authentication.
      *
-     * @param explicitAuthenticator name of authenticator as configured in {@link Security}
+     * @param explicitAuthenticator name of authenticator as configured in {@link io.helidon.security.Security}
      * @return new handler instance with configuration of this instance updated with this method
      */
     public GrpcSecurityHandler authenticator(String explicitAuthenticator) {
@@ -625,7 +625,7 @@ public class GrpcSecurityHandler
      * permitted).
      * Will enable authorization.
      *
-     * @param explicitAuthorizer name of authorizer as configured in {@link Security}
+     * @param explicitAuthorizer name of authorizer as configured in {@link io.helidon.security.Security}
      * @return new handler instance with configuration of this instance updated with this method
      */
     public GrpcSecurityHandler authorizer(String explicitAuthorizer) {
@@ -931,7 +931,7 @@ public class GrpcSecurityHandler
         /**
          * Use a named authenticator (as supported by security - if not defined, default authenticator is used).
          *
-         * @param explicitAuthenticator name of authenticator as configured in {@link Security}
+         * @param explicitAuthenticator name of authenticator as configured in {@link io.helidon.security.Security}
          * @return updated builder instance
          */
         Builder authenticator(String explicitAuthenticator) {
@@ -943,7 +943,7 @@ public class GrpcSecurityHandler
          * Use a named authorizer (as supported by security - if not defined, default authorizer is used, if none defined, all is
          * permitted).
          *
-         * @param explicitAuthorizer name of authorizer as configured in {@link Security}
+         * @param explicitAuthorizer name of authorizer as configured in {@link io.helidon.security.Security}
          * @return updated builder instance
          */
         Builder authorizer(String explicitAuthorizer) {

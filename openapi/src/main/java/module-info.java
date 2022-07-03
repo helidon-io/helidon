@@ -34,7 +34,7 @@ module io.helidon.openapi {
     requires java.desktop; // for java.beans package
     requires org.yaml.snakeyaml;
 
-    requires microprofile.openapi.api;
+    requires transitive microprofile.openapi.api;
 
     requires static io.helidon.config.metadata;
 

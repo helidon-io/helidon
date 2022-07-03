@@ -271,7 +271,7 @@ public final class GrpcSecurity
      * <li>Audit: not modified</li>
      * </ul>
      *
-     * @param explicitAuthenticator name of authenticator as configured in {@link Security}
+     * @param explicitAuthenticator name of authenticator as configured in {@link io.helidon.security.Security}
      * @return {@link GrpcSecurityHandler} instance
      */
     public static GrpcSecurityHandler authenticator(String explicitAuthenticator) {
@@ -289,7 +289,7 @@ public final class GrpcSecurity
      * <li>Audit: not modified</li>
      * </ul>
      *
-     * @param explicitAuthorizer name of authorizer as configured in {@link Security}
+     * @param explicitAuthorizer name of authorizer as configured in {@link io.helidon.security.Security}
      * @return {@link GrpcSecurityHandler} instance
      */
     public static GrpcSecurityHandler authorizer(String explicitAuthorizer) {
@@ -521,9 +521,9 @@ public final class GrpcSecurity
     }
 
     /**
-     * Obtain the {@link Security} instance being used.
+     * Obtain the {@link io.helidon.security.Security} instance being used.
      *
-     * @return  the {@link Security} instance being used
+     * @return  the {@link io.helidon.security.Security} instance being used
      */
     Security getSecurity() {
         return security;

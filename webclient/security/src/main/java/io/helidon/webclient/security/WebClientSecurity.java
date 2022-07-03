@@ -70,7 +70,7 @@ public class WebClientSecurity implements WebClientService {
     }
 
     /**
-     * Creates new instance of client security service base on {@link Security}.
+     * Creates new instance of client security service base on {@link io.helidon.security.Security}.
      *
      * @param security security instance
      * @return client security service
