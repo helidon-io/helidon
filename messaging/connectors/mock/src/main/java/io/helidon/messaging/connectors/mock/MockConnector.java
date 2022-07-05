@@ -38,7 +38,6 @@ import org.reactivestreams.FlowAdapters;
 
 /**
  * Helidon messaging mock connector for testing purposes.
- *
  * Mock connector for testing Helidon messaging
  * without the need of connection to actual messaging broker.
  */

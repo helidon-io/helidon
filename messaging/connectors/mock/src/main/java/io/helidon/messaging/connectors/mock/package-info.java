@@ -52,6 +52,7 @@
  *                 .awaitMessage(TIMEOUT, longMessage -> longMessage.getPayload() == 12L)
  *                 .assertPayloads(9L, 10L, 11L, 12L);
  *     }
+ * }
  * }</pre>
  */
 package io.helidon.messaging.connectors.mock;
