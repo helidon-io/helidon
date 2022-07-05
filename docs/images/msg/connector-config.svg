@@ -1,0 +1,371 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="252.48mm"
+   height="76.684204mm"
+   viewBox="0 0 252.48 76.684204"
+   version="1.1"
+   id="svg5"
+   inkscape:version="1.1.2 (0a00cf5339, 2022-02-04)"
+   sodipodi:docname="connector-config.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#505050"
+     bordercolor="#eeeeee"
+     borderopacity="1"
+     inkscape:pageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="0"
+     inkscape:document-units="mm"
+     showgrid="false"
+     lock-margins="true"
+     fit-margin-top="1"
+     fit-margin-left="1"
+     fit-margin-right="1"
+     fit-margin-bottom="1"
+     inkscape:zoom="2.3019641"
+     inkscape:cx="351.43902"
+     inkscape:cy="47.350869"
+     inkscape:window-width="1878"
+     inkscape:window-height="1016"
+     inkscape:window-x="42"
+     inkscape:window-y="27"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs2">
+    <inkscape:path-effect
+       effect="bspline"
+       id="path-effect181806"
+       is_visible="true"
+       lpeversion="1"
+       weight="33.333333"
+       steps="2"
+       helper_size="0"
+       apply_no_weight="true"
+       apply_with_weight="true"
+       only_selected="false" />
+    <inkscape:path-effect
+       effect="bspline"
+       id="path-effect175558"
+       is_visible="true"
+       lpeversion="1"
+       weight="33.333333"
+       steps="2"
+       helper_size="0"
+       apply_no_weight="true"
+       apply_with_weight="true"
+       only_selected="false" />
+    <marker
+       style="overflow:visible"
+       id="Arrow1Lend"
+       refX="0"
+       refY="0"
+       orient="auto"
+       inkscape:stockid="Arrow1Lend"
+       inkscape:isstock="true">
+      <path
+         transform="matrix(-0.8,0,0,-0.8,-10,0)"
+         style="fill:context-stroke;fill-rule:evenodd;stroke:context-stroke;stroke-width:1pt"
+         d="M 0,0 5,-5 -12.5,0 5,5 Z"
+         id="path140168" />
+    </marker>
+    <inkscape:path-effect
+       effect="bspline"
+       id="path-effect139916"
+       is_visible="true"
+       lpeversion="1"
+       weight="33.333333"
+       steps="2"
+       helper_size="0"
+       apply_no_weight="true"
+       apply_with_weight="true"
+       only_selected="false" />
+    <marker
+       style="overflow:visible"
+       id="Arrow1Lend-4"
+       refX="0"
+       refY="0"
+       orient="auto"
+       inkscape:stockid="Arrow1Lend"
+       inkscape:isstock="true">
+      <path
+         transform="matrix(-0.8,0,0,-0.8,-10,0)"
+         style="fill:context-stroke;fill-rule:evenodd;stroke:context-stroke;stroke-width:1pt"
+         d="M 0,0 5,-5 -12.5,0 5,5 Z"
+         id="path140168-7" />
+    </marker>
+    <inkscape:path-effect
+       effect="bspline"
+       id="path-effect139916-2"
+       is_visible="true"
+       lpeversion="1"
+       weight="33.333333"
+       steps="2"
+       helper_size="0"
+       apply_no_weight="true"
+       apply_with_weight="true"
+       only_selected="false" />
+    <inkscape:path-effect
+       effect="bspline"
+       id="path-effect181806-6"
+       is_visible="true"
+       lpeversion="1"
+       weight="33.333333"
+       steps="2"
+       helper_size="0"
+       apply_no_weight="true"
+       apply_with_weight="true"
+       only_selected="false" />
+  </defs>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-8.493774,-32.522991)">
+    <text
+       xml:space="preserve"
+       style="font-size:3.52777px;line-height:1.25;font-family:sans-serif;stroke-width:0.264583"
+       x="29.822319"
+       y="36.048241"
+       id="text4478"><tspan
+         sodipodi:role="line"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:Arial;-inkscape-font-specification:Arial;stroke-width:0.264583"
+         x="29.822319"
+         y="36.048241"
+         id="tspan14438">mp.messaging:</tspan><tspan
+         sodipodi:role="line"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:Arial;-inkscape-font-specification:Arial;stroke-width:0.264583"
+         x="29.822319"
+         y="40.514359"
+         id="tspan20019">    incoming.<tspan
+   style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:Arial;-inkscape-font-specification:Arial;fill:#0000ff"
+   id="tspan63383">from-connector-channel</tspan>:</tspan><tspan
+         sodipodi:role="line"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:Arial;-inkscape-font-specification:Arial;stroke-width:0.264583"
+         x="29.822319"
+         y="44.980476"
+         id="tspan20021">        connector: <tspan
+   style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:Arial;-inkscape-font-specification:Arial;fill:#808000"
+   id="tspan85005">example-connector</tspan></tspan><tspan
+         sodipodi:role="line"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:Arial;-inkscape-font-specification:Arial;stroke-width:0.264583"
+         x="29.822319"
+         y="49.446594"
+         id="tspan20023">        channel-specific-prop: foo</tspan><tspan
+         sodipodi:role="line"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:Arial;-inkscape-font-specification:Arial;fill:#008080;stroke-width:0.264583"
+         x="29.822319"
+         y="53.912708"
+         id="tspan161732">        connector-specific-prop: bar</tspan><tspan
+         sodipodi:role="line"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:Arial;-inkscape-font-specification:Arial;fill:#008080;stroke-width:0.264583"
+         x="29.822319"
+         y="58.378826"
+         id="tspan150934">        channel-name: from-connector-channel</tspan><tspan
+         sodipodi:role="line"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:Arial;-inkscape-font-specification:Arial;stroke-width:0.264583"
+         x="29.822319"
+         y="62.844944"
+         id="tspan20031" /><tspan
+         sodipodi:role="line"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:Arial;-inkscape-font-specification:Arial;stroke-width:0.264583"
+         x="29.822319"
+         y="67.311066"
+         id="tspan20025">    outgoing.<tspan
+   style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:Arial;-inkscape-font-specification:Arial;fill:#0000ff"
+   id="tspan70387">to-connector-channel</tspan>:</tspan><tspan
+         sodipodi:role="line"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:Arial;-inkscape-font-specification:Arial;stroke-width:0.264583"
+         x="29.822319"
+         y="71.777176"
+         id="tspan20027">        connector: <tspan
+   style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:Arial;-inkscape-font-specification:Arial;fill:#808000"
+   id="tspan90185">example-connector</tspan></tspan><tspan
+         sodipodi:role="line"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:Arial;-inkscape-font-specification:Arial;stroke-width:0.264583"
+         x="29.822319"
+         y="76.243294"
+         id="tspan20029">        channel-specific-prop: foo</tspan><tspan
+         sodipodi:role="line"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:Arial;-inkscape-font-specification:Arial;fill:#008080;stroke-width:0.264583"
+         x="29.822319"
+         y="80.709412"
+         id="tspan134041">        connector-specific-prop: bar</tspan><tspan
+         sodipodi:role="line"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:Arial;-inkscape-font-specification:Arial;fill:#008080;stroke-width:0.264583"
+         x="29.822319"
+         y="85.175529"
+         id="tspan171390">        channel-name: to-connector-channel</tspan><tspan
+         sodipodi:role="line"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:Arial;-inkscape-font-specification:Arial;fill:#008080;stroke-width:0.264583"
+         x="29.822319"
+         y="89.641647"
+         id="tspan154008" /><tspan
+         sodipodi:role="line"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:Arial;-inkscape-font-specification:Arial;stroke-width:0.264583"
+         x="29.822319"
+         y="94.107765"
+         id="tspan14968" /><tspan
+         sodipodi:role="line"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:Arial;-inkscape-font-specification:Arial;stroke-width:0.264583"
+         x="29.822319"
+         y="98.573883"
+         id="tspan14970" /><tspan
+         sodipodi:role="line"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:Arial;-inkscape-font-specification:Arial;stroke-width:0.264583"
+         x="29.822319"
+         y="103.04"
+         id="tspan14972">    connector.<tspan
+   style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:Arial;-inkscape-font-specification:Arial;fill:#808000"
+   id="tspan107019">example-connector</tspan>:</tspan><tspan
+         sodipodi:role="line"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:Arial;-inkscape-font-specification:Arial;stroke-width:0.264583"
+         x="29.822319"
+         y="107.50612"
+         id="tspan14974">        connector-specific-prop: bar</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:3.52777px;line-height:1.25;font-family:sans-serif;stroke-width:0.264583"
+       x="115.33176"
+       y="56.794163"
+       id="text28643"><tspan
+         sodipodi:role="line"
+         id="tspan28641"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:Arial;-inkscape-font-specification:Arial;stroke-width:0.264583"
+         x="115.33176"
+         y="56.794163">@ApplicationScoped</tspan><tspan
+         sodipodi:role="line"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:Arial;-inkscape-font-specification:Arial;stroke-width:0.264583"
+         x="115.33176"
+         y="61.260281"
+         id="tspan28645">@Connector(&quot;<tspan
+   style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:Arial;-inkscape-font-specification:Arial;fill:#808000"
+   id="tspan99769">example-connector</tspan>&quot;)</tspan><tspan
+         sodipodi:role="line"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:Arial;-inkscape-font-specification:Arial;stroke-width:0.264583"
+         x="115.33176"
+         y="65.726395"
+         id="tspan28647">public class ExampleConnector implements IncomingConnectorFactory {</tspan><tspan
+         sodipodi:role="line"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:Arial;-inkscape-font-specification:Arial;stroke-width:0.264583"
+         x="115.33176"
+         y="70.192513"
+         id="tspan28649" /><tspan
+         sodipodi:role="line"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:Arial;-inkscape-font-specification:Arial;stroke-width:0.264583"
+         x="115.33176"
+         y="74.65863"
+         id="tspan28651">    @Override</tspan><tspan
+         sodipodi:role="line"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:Arial;-inkscape-font-specification:Arial;stroke-width:0.264583"
+         x="115.33176"
+         y="79.124748"
+         id="tspan28653">    public PublisherBuilder&lt;? extends Message&lt;?&gt;&gt; getPublisherBuilder(final Config config) {</tspan></text>
+    <path
+       style="fill:none;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#Arrow1Lend)"
+       d="M 36.585565,107.05115 C 27.354412,106.87585 18.12362,106.70056 13.58856,100.35638 9.0535008,94.012211 9.2148494,81.499188 10.192133,73.100668 11.169417,64.702149 12.962668,60.4186 17.268087,57.897797 21.573506,55.376995 28.390705,54.619072 35.208078,53.86113"
+       id="path139914"
+       inkscape:path-effect="#path-effect139916"
+       inkscape:original-d="M 36.585565,107.05115 C 27.354407,106.87611 18.123615,106.70082 8.8921521,106.52525 9.0537691,94.012214 9.2151171,81.499191 9.3762051,68.985604 11.169736,64.702282 12.962987,60.418733 14.755959,56.134956 21.573538,55.377285 35.208078,53.86113 35.208078,53.86113"
+       sodipodi:nodetypes="ccccc" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#Arrow1Lend-4)"
+       d="m 36.324688,105.81098 c -7.602066,-1.22249 -15.203911,-2.44494 -19.032226,-5.874883 -3.828316,-3.429939 -3.88247,-9.067399 -2.238249,-13.020383 1.644221,-3.952983 4.986731,-6.221027 8.72935,-7.108589 3.74262,-0.887563 7.88492,-0.394762 12.027477,0.09807"
+       id="path139914-4"
+       inkscape:path-effect="#path-effect139916-2"
+       inkscape:original-d="m 36.324688,105.81098 c -7.602101,-1.22227 -15.203945,-2.44473 -22.80639,-3.6675 -0.05389,-5.637325 -0.108043,-11.274785 -0.162463,-16.912645 3.342805,-2.2678 6.685315,-4.535844 10.027534,-6.804135 4.142787,0.493092 12.427671,1.478495 12.427671,1.478495"
+       sodipodi:nodetypes="ccccc" />
+    <text
+       xml:space="preserve"
+       style="font-size:3.52777px;line-height:1.25;font-family:sans-serif;stroke-width:0.264583"
+       x="49.965427"
+       y="58.770382"
+       id="text144858"><tspan
+         sodipodi:role="line"
+         id="tspan144856"
+         style="stroke-width:0.264583"
+         x="49.965427"
+         y="58.770382"></tspan><tspan
+         sodipodi:role="line"
+         style="stroke-width:0.264583"
+         id="tspan144860"
+         x="49.965427"
+         y="63.180096" /></text>
+    <path
+       style="fill:none;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#Arrow1Lend-4)"
+       d="m 104.41061,52.45248 c 48.50389,-4.839633 97.00797,-9.679285 121.58956,-5.778747 24.58159,3.900537 25.24047,16.540661 25.89936,29.180867"
+       id="path175556"
+       inkscape:path-effect="#path-effect175558"
+       inkscape:original-d="m 104.41061,52.45248 c 48.50392,-4.839345 97.008,-9.678997 145.51224,-14.518955 0.65916,12.640732 1.31804,25.280856 1.97668,37.921075"
+       sodipodi:nodetypes="ccc" />
+    <g
+       id="g182625"
+       transform="matrix(0.40009511,0,0,0.30226054,54.618537,44.214878)"
+       style="stroke-width:0.485602;stroke-miterlimit:4;stroke-dasharray:none">
+      <path
+         style="fill:none;stroke:#000000;stroke-width:0.485602;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+         d="m 114.12229,3.831351 c 3.01789,0.4544386 6.03601,0.9089114 6.432,4.4347459 0.39599,3.5258341 -1.82933,10.1232491 -1.61663,13.7999811 0.21271,3.676732 2.86248,4.431887 5.51294,5.187238"
+         id="path181804"
+         inkscape:path-effect="#path-effect181806"
+         inkscape:original-d="m 114.12229,3.831351 c 3.01786,0.4546588 6.03598,0.9091308 9.05329,1.3632573 -2.22498,6.5974297 -4.45031,13.1948437 -6.67614,19.7927167 2.65088,0.755659 5.30065,1.510814 7.95116,2.265991"
+         sodipodi:nodetypes="cccc" />
+      <path
+         style="fill:none;stroke:#000000;stroke-width:0.485602;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+         d="m 114.12229,50.675281 c 3.01789,-0.454439 6.03601,-0.908911 6.432,-4.434746 0.39599,-3.525834 -1.82933,-10.123249 -1.61663,-13.799981 0.21271,-3.676732 2.86248,-4.431887 5.51294,-5.187238"
+         id="path181804-2"
+         inkscape:path-effect="#path-effect181806-6"
+         inkscape:original-d="m 114.12229,50.675281 c 3.01786,-0.454659 6.03598,-0.909131 9.05329,-1.363257 -2.22498,-6.59743 -4.45031,-13.194844 -6.67614,-19.792717 2.65088,-0.755659 5.30065,-1.510814 7.95116,-2.265991"
+         sodipodi:nodetypes="cccc" />
+    </g>
+    <g
+       id="g2397"
+       transform="translate(42.403969,-10.442133)">
+      <ellipse
+         style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.0604999;stroke-dasharray:0.241999, 0.0604999;stroke-opacity:0;paint-order:markers fill stroke;stop-color:#000000"
+         id="path1598-6-84"
+         cx="44.361706"
+         cy="63.248356"
+         rx="2.7816334"
+         ry="2.7962043" />
+      <text
+         xml:space="preserve"
+         style="font-size:3.52777px;line-height:1.25;font-family:sans-serif;fill:#ffffff;fill-opacity:1;stroke-width:0.264583"
+         x="43.296589"
+         y="64.480774"
+         id="text7050-2-7"><tspan
+           sodipodi:role="line"
+           id="tspan7048-5-24"
+           style="fill:#ffffff;fill-opacity:1;stroke-width:0.264583"
+           x="43.296589"
+           y="64.480774">2</tspan></text>
+    </g>
+    <g
+       id="g2387"
+       transform="translate(73.486014,-49.623341)">
+      <ellipse
+         style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.0604999;stroke-dasharray:0.241999, 0.0604999;stroke-opacity:0;paint-order:markers fill stroke;stop-color:#000000"
+         id="path1598"
+         cx="8.6289263"
+         cy="97.922226"
+         rx="2.7816334"
+         ry="2.7962043" />
+      <text
+         xml:space="preserve"
+         style="font-size:3.52777px;line-height:1.25;font-family:sans-serif;fill:#ffffff;fill-opacity:1;stroke-width:0.264583"
+         x="7.4373941"
+         y="99.136513"
+         id="text7050"><tspan
+           sodipodi:role="line"
+           id="tspan7048"
+           style="fill:#ffffff;fill-opacity:1;stroke-width:0.264583"
+           x="7.4373941"
+           y="99.136513">1</tspan></text>
+    </g>
+  </g>
+</svg>

@@ -472,11 +472,10 @@ backend:
                   value: "message"
                 sources:
                   - "introduction.adoc"
-                  - "message.adoc"
-                  - "connector.adoc"
                   - "kafka.adoc"
                   - "jms.adoc"
                   - "aq.adoc"
+                  - "mock.adoc"
               - type: "PAGE"
                 title: "REST Client"
                 source: "restclient.adoc"
