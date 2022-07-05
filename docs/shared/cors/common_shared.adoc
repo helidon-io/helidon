@@ -37,12 +37,14 @@
 The CORS protocol helps developers control if and how REST resources served by their applications can be shared across origins.
 Helidon {helidon-variant} includes an implementation of CORS that you can use to add CORS behavior
 to the services you develop. You can define your application's CORS behavior programmatically using the Helidon CORS API alone, or
-together with configuration. Helidon also provides three built-in services that add their
-own endpoints to your application - health, metrics, and OpenAPI - that have integrated CORS support.
+together with configuration.
+
+Helidon also provides three built-in services that add their
+own endpoints to your application -- health, metrics, and OpenAPI -- that have integrated CORS support.
 By adding very little code to your application, you control how all the resources in
 your application -- the ones you write and the ones provided by the Helidon built-in services -- can be shared across origins.
 
-== Before You Begin
+=== Before You Begin
 Before you revise your application to add CORS support, you need to decide what type of cross-origin sharing you want
 to allow for each resource your application exposes.
 For example, suppose for a given resource you want to allow unrestricted sharing for GET, HEAD, and POST requests
@@ -68,7 +70,7 @@ the following dependency in your project:
 // end::add-cors-dependency[]
 
 //tag::cors-configuration-formats-intro[]
-== Understanding the CORS Configuration Formats [[cors-configuration-formats]]
+=== Understanding the CORS Configuration Formats [[cors-configuration-formats]]
 Support in Helidon for CORS configuration uses two closely-related cross-origin configuration formats: basic and mapped.
 Each format corresponds to a class
 in the Helidon CORS library.
@@ -247,7 +249,7 @@ matches an incoming request's path pattern and HTTP method.
 // end::mapped-config[]
 
 // tag::understanding-cors-support-in-services[]
-== Understanding CORS Support in Helidon Services
+=== Understanding CORS Support in Helidon Services
 Helidon lets you easily include <<{health-page},health>>, <<{metrics-page},metrics>>, and
 <<{openapi-page},OpenAPI>> services in your Helidon application.
 These services add endpoints to your application so that clients can retrieve information about it.
@@ -279,7 +281,7 @@ to your own endpoints.
 // end::understanding-cors-support-in-services[]
 
 // tag::builtin-getting-started[]
-== Getting Started
+==== Built-in Services with CORS
 To use built-in services with CORS support and customize the
 CORS behavior:
 
@@ -292,8 +294,6 @@ Add a dependency on the Helidon {helidon-variant} CORS artifact to your Maven `p
 
 NOTE: If you want the built-in services to support CORS, then you need to add the CORS dependency even if your own endpoints do not use CORS.
 
-include::{common-page-prefix-inc}[tag=add-cors-dependency]
-include::{actual-cors-dependency-src}[tag=actual-cors-dependency]
 --
 . Use
 ifdef::cors-services-is-se[the Helidon API or]
@@ -321,7 +321,7 @@ behavior in the built-in services.
 // end::builtin-getting-started[]
 
 // tag::configuring-cors-for-builtin-services[]
-== Configuring CORS for Built-in Services
+==== Configuring CORS for Built-in Services
 You can
 ifdef::cors-services-is-se[also ]
 use configuration to control whether and how each of the built-in services works with CORS.
@@ -369,18 +369,15 @@ ifndef::cors-services-is-se[<<{mp-cors-config-ref},Using Configuration with CORS
 // end::configuring-cors-for-builtin-services[]
 
 // tag::accessing-shared-resources-intro[]
-== Accessing the Shared Resources
+==== Accessing the Shared Resources
 If you have edited the Helidon {helidon-variant} QuickStart application as described in the previous topics and saved your changes,
 you can build and run the application. Once you do so you can execute `curl` commands to demonstrate the behavior changes
 in the metric and health services with the addition of the CORS functionality. Note the addition of the
 `Origin` header value in the `curl` commands, and the `Access-Control-Allow-Origin` in the successful responses.
-
-=== Build and Run the Application
-Build and run the QuickStart application as usual.
 // end::accessing-shared-resources-intro[]
 
 // tag::accessing-shared-resources-main[]
-=== Retrieve Metrics
+==== Retrieve Metrics
 The metrics service rejects attempts to access metrics on behalf of a disallowed origin.
 [source,bash]
 ----
@@ -411,7 +408,7 @@ base_classloader_loadedClasses_count 3568
 ...
 ----
 
-=== Retrieve Health
+==== Retrieve Health
 The health service rejects requests from origins not specifically approved.
 
 [source,bash]
