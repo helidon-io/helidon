@@ -190,4 +190,28 @@
       <cve>CVE-2020-13949</cve>
    </suppress>
 
+<!-- This package was being detected as an old version of com.google.code.gson:gson.
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: google-http-client-gson-1.41.8.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/com\.google\.http\-client/google\-http\-client\-gson@.*$</packageUrl>
+   <cve>CVE-2022-25647</cve>
+</suppress>
+
+<!-- okhttp is a transitive fourth party dependency of Jaeger client. This CVE is considered
+     by the okhttp team as not exploitable unless the class in question is used
+     directly by an application (highly unlikely). See https://github.com/square/okhttp/issues/6724
+     They have only fixed this in 4.9.3 and newer. We can't force upgrade due to a tangle of
+     dependencies, compatibility, and issues with dependency convergence.
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: okhttp-3.14.9.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/com\.squareup\.okhttp3/okhttp@.*$</packageUrl>
+   <vulnerabilityName>CVE-2021-0341</vulnerabilityName>
+</suppress>
+
 </suppressions>
