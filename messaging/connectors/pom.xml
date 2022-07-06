@@ -35,5 +35,6 @@
         <module>jms</module>
         <module>aq</module>
         <module>jms-shim</module>
+        <module>mock</module>
     </modules>
 </project>

@@ -27,8 +27,11 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Flow;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import io.helidon.common.reactive.Multi;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -129,6 +132,42 @@ class MethodSignatureResolverTest {
     @Outgoing("out-channel-name")
     @ExpectedSignatureType(MethodSignatureType.OUTGOING_PUBLISHER_MSG_2_VOID)
     Publisher<ExtendedMessage<String>> outgoing_publisher_msg_2_void1() {
+        return null;
+    }
+
+    @Outgoing("out-channel-name")
+    @ExpectedSignatureType(MethodSignatureType.OUTGOING_FLOW_PUBLISHER_MSG_2_VOID)
+    Multi<Message<String>> outgoing_multi_msg_1_void1() {
+        return null;
+    }
+
+    @Outgoing("out-channel-name")
+    @ExpectedSignatureType(MethodSignatureType.OUTGOING_FLOW_PUBLISHER_PAYL_2_VOID)
+    Multi<String> outgoing_multi_payload_1_void1() {
+        return null;
+    }
+
+    @Outgoing("out-channel-name")
+    @ExpectedSignatureType(MethodSignatureType.OUTGOING_FLOW_PUBLISHER_PAYL_2_VOID)
+    Flow.Publisher<String> outgoing_multi_payload_2_void1() {
+        return null;
+    }
+
+    @Outgoing("out-channel-name")
+    @ExpectedSignatureType(MethodSignatureType.OUTGOING_FLOW_PUBLISHER_MSG_2_VOID)
+    Multi<ExtendedMessage<String>> outgoing_multi_msg_2_void1() {
+        return null;
+    }
+
+    @Outgoing("out-channel-name")
+    @ExpectedSignatureType(MethodSignatureType.OUTGOING_FLOW_PUBLISHER_MSG_2_VOID)
+    Flow.Publisher<Message<String>> outgoing_flow_msg_1_void1() {
+        return null;
+    }
+
+    @Outgoing("out-channel-name")
+    @ExpectedSignatureType(MethodSignatureType.OUTGOING_FLOW_PUBLISHER_MSG_2_VOID)
+    Flow.Publisher<ExtendedMessage<String>> outgoing_flow_msg_2_void1() {
         return null;
     }
 

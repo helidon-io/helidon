@@ -385,9 +385,24 @@ enum MethodSignatureType {
      * Publisher method signature type.
      * <br>
      * Invoke at: assembly time
+     * <pre>Publisher&lt;Message&lt;U&gt;&gt; method()</pre>
+     */
+    OUTGOING_FLOW_PUBLISHER_MSG_2_VOID(true, null),
+
+    /**
+     * Publisher method signature type.
+     * <br>
+     * Invoke at: assembly time
      * <pre>Publisher&lt;U&gt; method()</pre>
      */
     OUTGOING_PUBLISHER_PAYL_2_VOID(true, null),
+    /**
+     * Publisher method signature type.
+     * <br>
+     * Invoke at: assembly time
+     * <pre>Publisher&lt;U&gt; method()</pre>
+     */
+    OUTGOING_FLOW_PUBLISHER_PAYL_2_VOID(true, null),
 
     /**
      * Publisher method signature type.
