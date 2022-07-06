@@ -31,6 +31,6 @@
 
     <properties>
         <flavor>se</flavor>
-        <base>quickstart</base>
+        <app-type>quickstart</app-type>
     </properties>
 </project>

@@ -1,0 +1,38 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Marshalling
+:description: Helidon gRPC Marshalling
+:keywords: helidon, grpc, java
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/se.adoc[]
+
+== Default Marshalling Support
+
+Helidon gRPC supports Protobuf out of the box. Protobuf marshaller will be used by default for any request and response classes that extend `com.google.protobuf.MessageLite` class, which is the case for all classes generated from a `proto` file using `protoc` compiler.
+
+That means that you don't need any special handling or configuration in order to support Protobuf serialization of requests and responses.
+
+== Custom Marshalling
+
+Helidon makes the use of custom marshallers trivial, and provides one custom implementation, `JsonbMarshaller`, out of the box.
+
+You can also easily implement your own marshallers to support serialization formats that are not supported natively by Helidon, by implementing `Marshaller` and `MarshallerSupplier` interfaces.
+
+For example, https://coherence.community/[Oracle Coherence CE] provides a marshaller for a highly optimized, binary, platform independent Portable Object Format (POF). You can find more information about POF in https://coherence.community/20.12/docs/#/docs/core/04_portable_types[Coherence documentation]

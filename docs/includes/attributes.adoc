@@ -1,0 +1,216 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2022 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+ifndef::attributes-included[]
+
+:attributes-included: true
+
+// functional attributes
+:imagesdir: {rootdir}/images
+
+:helidon-version: 3.0.0-SNAPSHOT
+:helidon-version-is-release: false
+
+ifeval::["{helidon-version-is-release}" != "true"]
+:helidon-github-tree-url: https://github.com/oracle/helidon/tree/master
+endif::[]
+
+ifeval::["{helidon-version-is-release}" == "true"]
+:helidon-github-tree-url: https://github.com/oracle/helidon/tree/{helidon-version}
+endif::[]
+
+// versions
+:version-plugin-helidon: 3.0.0-M3
+
+:version-lib-microprofile-api: 3.3
+
+// microprofile specifications
+:version-lib-microprofile-lra-api: 2.0-RC1
+:version-lib-microprofile-config: 3.0.1
+:version-lib-microprofile-fault-tolerance-api: 4.0
+:version-lib-microprofile-graphql: 2.0
+:version-lib-microprofile-health: 4.0
+:version-lib-microprofile-jwt: 2.0
+:version-lib-microprofile-metrics-api: 4.0
+:version-lib-microprofile-openapi-api: 3.0
+:version-lib-microprofile-reactive-messaging-api: 3.0-RC2
+:version-lib-microprofile-rs-operators-api: 3.0-RC1
+:version-lib-microprofile-rest-client: 3.0
+:version-lib-microprofile-tracing: 3.0
+
+// jakarta specifications
+:version-lib-jakarta-cdi: 3.0
+:version-lib-jakarta-websockets-api: 2.0
+:version-lib-jakarta-bean-validation: 2.0
+:version-lib-jakarta-jsonb-api: 2.0
+:version-lib-jakarta-transaction-api: 2.0
+:version-lib-jakarta-persistence-api: 3.0
+:version-lib-jakarta-jaxrs-api: 3.0
+:version-lib-jakarta-inject: 2.0
+
+// 3rd party
+:version-lib-jaeger: 1.22
+:version-lib-jedis: 2.9.0
+:version-lib-hikaricp: 2.7.8
+:version-lib-exclipselink: 3.0
+:version-plugin-jib: 0.10.1
+:version-plugin-jandex: 1.0.6
+
+:jdk-version: 17
+
+:jdk-doc-url: https://docs.oracle.com/en/java/javase/17
+:jdk-javadoc-url: {jdk-doc-url}/docs/api
+
+:helidon-maven-plugin-doc-url: https://github.com/oracle/helidon-build-tools/blob/{version-plugin-helidon}/maven-plugins/helidon-maven-plugin/README.md
+
+// MicroProfile versioned URLs
+
+:microprofile-base-url: https://download.eclipse.org/microprofile
+
+:microprofile-open-api-base-url: {microprofile-base-url}/microprofile-open-api-{version-lib-microprofile-metrics-api}
+:microprofile-open-api-spec-url: {microprofile-open-api-base-url}/microprofile-openapi-spec-{version-lib-microprofile-metrics-api}.html
+:microprofile-open-api-javadoc-url: {microprofile-open-api-base-url}/apidocs/org/eclipse/microprofile/openapi/
+
+:microprofile-lra-base-url: {microprofile-base-url}/microprofile-lra-{version-lib-microprofile-lra-api}
+:microprofile-lra-spec-url: {microprofile-lra-base-url}/microprofile-lra-spec-{version-lib-microprofile-lra-api}.html
+:microprofile-lra-javadoc-url: {microprofile-lra-base-url}/apidocs/org/eclipse/microprofile/lra/annotation/
+
+:microprofile-fault-tolerance-base-url: {microprofile-base-url}/microprofile-fault-tolerance-{version-lib-microprofile-fault-tolerance-api}
+:microprofile-fault-tolerance-spec-url: {microprofile-fault-tolerance-base-url}/microprofile-fault-tolerance-spec-{version-lib-microprofile-fault-tolerance-api}.html
+:microprofile-fault-tolerance-javadoc-url: {microprofile-fault-tolerance-base-url}/apidocs
+
+:microprofile-metrics-base-url: {microprofile-base-url}/microprofile-metrics-{version-lib-microprofile-metrics-api}
+:microprofile-metrics-spec-url: {microprofile-metrics-base-url}/microprofile-metrics-spec-{version-lib-microprofile-metrics-api}.html
+:microprofile-metrics-javadoc-url: {microprofile-metrics-base-url}/apidocs
+
+:microprofile-tracing-base-url: {microprofile-base-url}/microprofile-tracing-{version-lib-microprofile-tracing}
+:microprofile-tracing-spec-url: {microprofile-tracing-base-url}/microprofile-tracing-spec-{version-lib-microprofile-tracing}.html
+:microprofile-tracing-javadoc-url: {microprofile-tracing-base-url}/apidocs
+
+:microprofile-health-base-url: {microprofile-base-url}/microprofile-health-{version-lib-microprofile-health}
+:microprofile-health-spec-url: {microprofile-health-base-url}/microprofile-health-spec-{version-lib-microprofile-health}.html
+:microprofile-health-javadoc-url: {microprofile-health-base-url}/apidocs
+
+:microprofile-config-base-url: {microprofile-base-url}/microprofile-config-{version-lib-microprofile-config}
+:microprofile-config-spec-url: {microprofile-config-base-url}/microprofile-config-spec-{version-lib-microprofile-config}.html
+:microprofile-config-javadoc-url: {microprofile-config-base-url}/apidocs
+
+:microprofile-reactive-messaging-base-url: {microprofile-base-url}/microprofile-reactive-messaging-{version-lib-microprofile-reactive-messaging-api}
+:microprofile-reactive-messaging-spec-url: {microprofile-reactive-messaging-base-url}/microprofile-reactive-messaging-spec-{version-lib-microprofile-reactive-messaging-api}.html
+:microprofile-reactive-messaging-javadoc-url: {microprofile-reactive-messaging-base-url}/apidocs
+
+:microprofile-rs-operators-base-url: {microprofile-base-url}/microprofile-reactive-streams-operators-{version-lib-microprofile-rs-operators-api}
+:microprofile-rs-operators-spec-url: {microprofile-rs-operators-base-url}/microprofile-reactive-streams-operators-spec-{version-lib-microprofile-rs-operators-api}.html
+:microprofile-rs-operators-javadoc-url: {microprofile-rs-operators-base-url}/apidocs
+
+:microprofile-jwt-base-url: {microprofile-base-url}/microprofile-jwt-auth-{version-lib-microprofile-jwt}
+:microprofile-jwt-spec-url: {microprofile-jwt-base-url}/microprofile-jwt-auth-spec-{version-lib-microprofile-jwt}.html
+:microprofile-jwt-javadoc-url: {microprofile-jwt-base-url}/apidocs
+
+:microprofile-rest-client-base-url: {microprofile-base-url}/microprofile-rest-client-{version-lib-microprofile-rest-client}
+:microprofile-rest-client-spec-url: {microprofile-rest-client-base-url}/microprofile-rest-client-spec-{version-lib-microprofile-rest-client}.html
+:microprofile-rest-client-javadoc-url: {microprofile-rest-client-base-url}/apidocs
+
+// Jakarta versioned URLs
+
+:jakarta-base-url: https://jakarta.ee/specifications
+
+:jakarta-cdi-base-url: {jakarta-base-url}/cdi/{version-lib-jakarta-cdi}
+:jakarta-cdi-spec-url: {jakarta-cdi-base-url}/jakarta-cdi-spec-{version-lib-jakarta-cdi}.html
+:jakarta-cdi-javadoc-url: {jakarta-cdi-base-url}/apidocs/
+
+:jakarta-websocket-base-url: {jakarta-base-url}/websocket/{version-lib-jakarta-websockets-api}
+:jakarta-websocket-spec-url: {jakarta-websocket-base-url}/websocket-spec-{version-lib-jakarta-websockets-api}.html
+:jakarta-websocket-javadoc-url: {jakarta-websocket-base-url}/apidocs/
+
+:jakarta-bean-validation-base-url: {jakarta-base-url}/bean-validation/{version-lib-jakarta-bean-validation}
+:jakarta-bean-validation-spec-url: {jakarta-bean-validation-base-url}/bean-validation_{version-lib-jakarta-bean-validation}.html
+:jakarta-bean-validation-javadoc-url: {jakarta-bean-validation-base-url}/apidocs
+
+:jakarta-jsonb-base-url: {jakarta-base-url}/jsonb/{version-lib-jakarta-jsonb-api}
+:jakarta-jsonb-spec-url: {jakarta-jsonb-base-url}/jakarta-jsonb-spec-{version-lib-jakarta-jsonb-api}.html
+:jakarta-jsonb-javadoc-url: {jakarta-jsonb-base-url}/apidocs
+
+:jakarta-transactions-base-url: {jakarta-base-url}/transactions/{version-lib-jakarta-transaction-api}
+:jakarta-transactions-spec-url: {jakarta-transactions-base-url}/jakarta-transactions-spec-{version-lib-jakarta-transaction-api}.html
+:jakarta-transactions-javadoc-url: {jakarta-transactions-base-url}/apidocs
+
+:jakarta-persistence-base-url: {jakarta-base-url}/persistence/{version-lib-jakarta-persistence-api}
+:jakarta-persistence-spec-url: {jakarta-persistence-base-url}/jakarta-persistence-spec-{version-lib-jakarta-persistence-api}.html
+:jakarta-persistence-javadoc-url: {jakarta-persistence-base-url}/apidocs
+
+:jakarta-jaxrs-base-url: {jakarta-base-url}/restful-ws/{version-lib-jakarta-jaxrs-api}
+:jakarta-jaxrs-spec-url: {jakarta-jaxrs-base-url}/jakarta-restful-ws-spec-{version-lib-jakarta-jaxrs-api}.html
+:jakarta-jaxrs-javadoc-url: {jakarta-jaxrs-base-url}/apidocs
+
+:jakarta-inject-base-url: {jakarta-base-url}/dependency-injection/{version-lib-jakarta-inject}
+:jakarta-inject-spec-url: {jakarta-inject-base-url}/jakarta-injection-spec-{version-lib-jakarta-inject}.html
+:jakarta-inject-javadoc-url: {jakarta-inject-base-url}/apidocs
+
+:javadoc-io-base-url: https://www.javadoc.io
+
+// base url prefix (could also be https://helidon.io/docs/latest)
+:base-url: .
+:javadoc-base-url: {base-url}/apidocs
+
+// Helidon component javadoc base URLs
+:config-javadoc-base-url: {javadoc-base-url}/io.helidon.config
+:configurable-javadoc-base-url: {javadoc-base-url}/apidocs/io.helidon.common.configurable
+:faulttolerance-javadoc-base-url: {javadoc-base-url}/io.helidon.faulttolerance
+:grpc-server-javadoc-base-url: {javadoc-base-url}/io.helidon.grpc.server
+:health-javadoc-base-url: {javadoc-base-url}/io.helidon.health.checks
+:integration-oci-sdk-cdi-javadoc-base-url: {javadoc-base-url}/io.helidon.integrations.oci.sdk.cdi
+:media-jsonp-javadoc-base-url: {javadoc-base-url}/io.helidon.media.jsonp
+:media-jsonb-javadoc-base-url: {javadoc-base-url}/io.helidon.media.jsonb
+:media-jackson-javadoc-base-url: {javadoc-base-url}/io.helidon.media.jackson
+:metrics-javadoc-base-url: {javadoc-base-url}/io.helidon.metrics.api
+:metrics-serviceapi-javadoc-base-url: {javadoc-base-url}/io.helidon.metrics.serviceapi
+:micrometer-javadoc-base-url: {javadoc-base-url}/io.helidon.integrations.micrometer
+:mp-cors-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.cors
+:mp-tyrus-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.tyrus
+:mp-restclient-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.restclient
+:reactive-base-url: {javadoc-base-url}/io.helidon.common.reactive
+:scheduling-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.scheduling
+:webclient-javadoc-base-url: {javadoc-base-url}/io.helidon.webclient
+:webserver-javadoc-base-url: {javadoc-base-url}/io.helidon.webserver
+:webserver-jersey-javadoc-base-url: {javadoc-base-url}/io.helidon.webserver.jersey
+:webserver-staticcontent-javadoc-base-url: {webserver-javadoc-base-url}.staticcontent
+:webserver-cors-javadoc-base-url: {javadoc-base-url}/io.helidon.webserver.cors
+
+// 3rd party versioned URLs
+:jaeger-doc-base-url: https://www.jaegertracing.io/docs/{version-lib-jaeger}
+:hikaricp-base-url: https://github.com/brettwooldridge/HikariCP/blob/HikariCP-{version-lib-hikaricp}
+:hikaricp-javadoc-url: {javadoc-io-base-url}/com.zaxxer/HikariCP/{version-lib-hikaricp}
+:eclipselink-doc-base-url: https://www.eclipse.org/eclipselink/documentation/{version-lib-exclipselink}
+:jib-base-url: https://github.com/GoogleContainerTools/jib/blob/v{version-plugin-jib}-maven/jib-maven-plugin
+:jedis-base-url: {javadoc-io-base-url}/redis.clients/jedis/{version-lib-jedis}/redis/clients
+
+:oci-sdk-config-url: https://docs.oracle.com/en-us/iaas/Content/API/Concepts/sdkconfig.htm#SDK_and_CLI_Configuration_File
+:oci-database-url: https://docs.oracle.com/en-us/iaas/Content/Database/home.htm
+:oci-cli-url: https://docs.oracle.com/en-us/iaas/tools/oci-cli/latest
+:oci-javasdk-url: https://docs.cloud.oracle.com/iaas/Content/API/SDKDocs/javasdk.htm
+:oci-objstore-url: https://docs.cloud.oracle.com/iaas/Content/Object/Concepts/objectstorageoverview.htm
+:oci-vault-url: https://docs.oracle.com/en-us/iaas/Content/KeyManagement/home.htm
+
+:oci-javasdk-javadoc-base-url: https://docs.oracle.com/en-us/iaas/tools/java/latest
+:oci-javasdk-database-javadoc-base-url: {oci-javasdk-javadoc-base-url}/com/oracle/bmc/database
+:oci-javasdk-objstore-javadoc-base-url: {oci-javasdk-javadoc-base-url}/com/oracle/bmc/objectstorage
+:oci-javasdk-vault-javadoc-base-url: {oci-javasdk-javadoc-base-url}/com/oracle/bmc/vault
+
+
+endif::attributes-included[]
