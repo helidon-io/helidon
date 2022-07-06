@@ -103,7 +103,7 @@ xref:prerequisites.adoc[Learn more about the prerequisites for Helidon 2.0].
 * *CORS support for MP and SE* +
 Although it is possible for any Helidon application to implement its own support for CORS, there are common tasks
  (such as processing preflight requests) that can be provided in a Helidon module.
- xref:../se/cors/introduction.adoc[Learn more about CORS support].
+ xref:../se/cors.adoc[Learn more about CORS support].
 
 * *Backward Incompatible Changes* +
 View the following links for information about potential breaking changes, including package name changes:

@@ -35,9 +35,8 @@ Your application code establishes the CORS behavior of your endpoints using the 
 You and your users can override that behavior, as well as the CORS behavior of the built-in services,
 using MicroProfile configuration.
 
-include::{rootdir}/includes/cors.adoc[tag=cors-configuration-formats-intro]
-
-include::{rootdir}/includes/cors.adoc[tag=basic-cross-origin-config]
+include::{rootdir}/includes/cors.adoc[tag=cors-configuration-formats-intro, leveloffset=-1]
+include::{rootdir}/includes/cors.adoc[tag=basic-cross-origin-config, leveloffset=-1]
 
 === Understanding the Mapped Cross-Origin Configuration Format
 

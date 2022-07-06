@@ -55,7 +55,7 @@ A flexible configuration framework with support for multiple sources and
 //CORS
 [CARD]
 .CORS
-[icon=share,link=cors/introduction.adoc]
+[icon=share,link=cors.adoc]
 --
 Add support for CORS to your application using a Helidon module.
 --
