@@ -179,7 +179,7 @@ public interface Parameters {
     Parameters putAll(Parameters parameters);
 
     /**
-     * Adds specified values tu association with the specified key (optional operation).
+     * Adds specified values to association with the specified key (optional operation).
      * If parameters doesn't contains mapping, new mapping is created.
      *
      * @param key    key with which the specified value is to be associated
@@ -191,7 +191,7 @@ public interface Parameters {
     Parameters add(String key, String... values);
 
     /**
-     * Adds specified values tu association with the specified key (optional operation).
+     * Adds specified values to association with the specified key (optional operation).
      * If parameters doesn't contains mapping, new mapping is created.
      *
      * @param key    key with which the specified value is to be associated
