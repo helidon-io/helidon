@@ -18,6 +18,7 @@
 package io.helidon.microprofile.messaging;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.concurrent.Flow;
 
 import io.helidon.common.reactive.Multi;
@@ -29,12 +30,16 @@ import io.helidon.microprofile.tests.junit5.AddExtension;
 import io.helidon.microprofile.tests.junit5.DisableDiscovery;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 
+import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.messaging.connectors.mock.MockConnector.CONNECTOR_NAME;
+import static org.eclipse.microprofile.reactive.messaging.spi.ConnectorFactory.INCOMING_PREFIX;
 import static org.eclipse.microprofile.reactive.messaging.spi.ConnectorFactory.OUTGOING_PREFIX;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 
 import jakarta.inject.Inject;
 
@@ -46,6 +51,9 @@ import jakarta.inject.Inject;
 @AddConfig(key = OUTGOING_PREFIX + "test-channel-2.connector", value = CONNECTOR_NAME)
 @AddConfig(key = OUTGOING_PREFIX + "test-channel-3.connector", value = CONNECTOR_NAME)
 @AddConfig(key = OUTGOING_PREFIX + "test-channel-4.connector", value = CONNECTOR_NAME)
+@AddConfig(key = INCOMING_PREFIX + "test-channel-5.connector", value = CONNECTOR_NAME)
+@AddConfig(key = INCOMING_PREFIX + "test-channel-5.mock-data-type", value = "java.lang.Integer")
+@AddConfig(key = INCOMING_PREFIX + "test-channel-5.mock-data", value = "6,7,8")
 public class MultiSupportTest {
 
     private static final Duration TIMEOUT = Duration.ofSeconds(15);
@@ -53,6 +61,10 @@ public class MultiSupportTest {
     @Inject
     @TestConnector
     private MockConnector mockConnector;
+
+    @Inject
+    @Channel("test-channel-5")
+    private Multi<Integer> multiChannel5;
 
     @Outgoing("test-channel-1")
     Multi<String> multiWithPayload() {
@@ -96,5 +108,14 @@ public class MultiSupportTest {
     void multiWithMsgTest() {
         mockConnector.outgoing("test-channel-4", Integer.class)
                 .awaitData(TIMEOUT, Message::getPayload, 3, 4, 5);
+    }
+
+    @Test
+    void injectedMulti() {
+        List<Integer> actual = multiChannel5
+                .limit(3)
+                .collectList()
+                .await(TIMEOUT);
+        assertThat(actual, contains(6, 7, 8));
     }
 }
