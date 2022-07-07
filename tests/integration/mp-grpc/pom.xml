@@ -45,9 +45,18 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>io.helidon.metrics</groupId>
+            <artifactId>helidon-metrics-api</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.microprofile.metrics</groupId>
             <artifactId>helidon-microprofile-metrics</artifactId>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.tests</groupId>
+            <artifactId>helidon-microprofile-tests-junit5</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -91,8 +100,8 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.jboss.weld</groupId>
-            <artifactId>weld-junit5</artifactId>
+            <groupId>io.helidon.microprofile.weld</groupId>
+            <artifactId>weld-se-core</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

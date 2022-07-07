@@ -16,20 +16,31 @@
 
 package io.helidon.microprofile.metrics;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.time.Duration;
 
 import jakarta.annotation.Priority;
+import jakarta.enterprise.util.AnnotationLiteral;
 import jakarta.interceptor.Interceptor;
+import jakarta.interceptor.InterceptorBinding;
 import org.eclipse.microprofile.metrics.Timer;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 
 /**
  * Interceptor for {@link Timed} annotation.
  */
-@Timed
+@InterceptorTimed.Binding
 @Interceptor
 @Priority(Interceptor.Priority.PLATFORM_BEFORE + 10)
 final class InterceptorTimed extends InterceptorTimedBase<Timer> {
+
+    static Binding.Literal binding() {
+        return Binding.Literal.getInstance();
+    }
 
     InterceptorTimed() {
         super(Timed.class, Timer.class);
@@ -38,5 +49,25 @@ final class InterceptorTimed extends InterceptorTimedBase<Timer> {
     @Override
     void postComplete(Timer metric) {
         metric.update(Duration.ofNanos(durationNanoseconds()));
+    }
+    @Inherited
+    @InterceptorBinding
+    @Target({ElementType.TYPE})
+    @Retention(RetentionPolicy.RUNTIME)
+    @Timed
+    @interface Binding {
+        class Literal extends AnnotationLiteral<Binding> implements Binding {
+
+            private static final long serialVersionUID = 1L;
+
+            private static final Literal INSTANCE = new Literal();
+
+            static Literal getInstance() {
+                return INSTANCE;
+            }
+
+            private Literal() {
+            }
+        }
     }
 }

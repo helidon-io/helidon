@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,26 +17,25 @@
 package io.helidon.microprofile.grpc.metrics;
 
 import java.lang.annotation.Annotation;
-import java.util.EnumMap;
+import java.lang.reflect.Method;
+import java.util.List;
 import java.util.Map;
+import java.util.ServiceLoader;
+import java.util.stream.Collectors;
 
+import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.microprofile.grpc.core.AnnotatedMethod;
-import io.helidon.microprofile.grpc.core.Grpc;
 import io.helidon.microprofile.grpc.core.GrpcMethod;
+import io.helidon.microprofile.metrics.MetricAnnotationDiscoveryObserver;
+import io.helidon.microprofile.metrics.MetricAnnotationDiscoveryObserver.MetricAnnotationDiscovery;
+import io.helidon.microprofile.metrics.MetricRegistrationObserver;
 
-import jakarta.annotation.Priority;
 import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.spi.BeforeBeanDiscovery;
 import jakarta.enterprise.inject.spi.Extension;
-import jakarta.enterprise.inject.spi.ProcessAnnotatedType;
-import jakarta.enterprise.inject.spi.WithAnnotations;
 import jakarta.enterprise.inject.spi.configurator.AnnotatedMethodConfigurator;
 import jakarta.interceptor.Interceptor;
-import org.eclipse.microprofile.metrics.MetricType;
-import org.eclipse.microprofile.metrics.annotation.ConcurrentGauge;
-import org.eclipse.microprofile.metrics.annotation.Counted;
-import org.eclipse.microprofile.metrics.annotation.Metered;
-import org.eclipse.microprofile.metrics.annotation.SimplyTimed;
-import org.eclipse.microprofile.metrics.annotation.Timed;
+import org.eclipse.microprofile.metrics.Metadata;
 
 /**
  * A CDI extension for gRPC metrics.
@@ -49,60 +48,24 @@ import org.eclipse.microprofile.metrics.annotation.Timed;
  * method type annotation they metrics annotation will be effectively removed from the CDI
  * bean so that normal Helidon metrics interceptors do not also intercept that method.
  */
-public class GrpcMetricsCdiExtension
-        implements Extension {
+public class GrpcMetricsCdiExtension implements Extension {
 
-    static final int OBSERVER_PRIORITY = Interceptor.Priority.APPLICATION;
-
-    static final EnumMap<MetricType, Class<? extends Annotation>> METRICS_ANNOTATIONS;
-
-    static {
-        Map<MetricType, Class<? extends Annotation>> map = Map.of(
-                MetricType.CONCURRENT_GAUGE, ConcurrentGauge.class,
-                MetricType.COUNTER, Counted.class,
-                MetricType.METERED, Metered.class,
-                MetricType.SIMPLE_TIMER, SimplyTimed.class,
-                MetricType.TIMER, Timed.class
-        );
-        METRICS_ANNOTATIONS = new EnumMap<>(map);
-    }
-
-
-    /**
-     * Observer {@link ProcessAnnotatedType} events and process any method
-     * annotated with a gRPC method annotation and a metric annotation.
-     *
-     * @param pat  the {@link ProcessAnnotatedType} to observer
-     */
-    private void registerMetrics(@Observes
-                                 @WithAnnotations({Counted.class, Timed.class, Metered.class, ConcurrentGauge.class,
-                                         SimplyTimed.class, Grpc.class})
-                                 @Priority(OBSERVER_PRIORITY)
-                                 ProcessAnnotatedType<?> pat) {
-        METRICS_ANNOTATIONS.values().forEach(type ->
-               pat.configureAnnotatedType()
-                  .methods()
-                  .stream()
-                  .filter(method -> isRpcMethod(method, type))
-                  .forEach(method -> method.remove(ann -> type.isAssignableFrom(ann.getClass()))));
-    }
-
-    /**
-     * Determine whether a method is annotated with both a metrics annotation
-     * and an annotation of type {@link io.helidon.microprofile.grpc.core.GrpcMethod}.
-     *
-     * @param configurator  the {@link AnnotatedMethodConfigurator} representing
-     *                      the annotated method
-     *
-     * @return {@code true} if the method is a timed gRPC method
-     */
-    private boolean isRpcMethod(AnnotatedMethodConfigurator<?> configurator, Class<? extends Annotation> type) {
-        AnnotatedMethod method = AnnotatedMethod.create(configurator.getAnnotated().getJavaMember());
-        GrpcMethod rpcMethod = method.firstAnnotationOrMetaAnnotation(GrpcMethod.class);
-        if (rpcMethod != null) {
-            Annotation annotation = method.firstAnnotationOrMetaAnnotation(type);
-            return annotation != null;
-        }
-        return false;
-    }
+//    /**
+//     * Determine whether a method is annotated with both a metrics annotation
+//     * and an annotation of type {@link io.helidon.microprofile.grpc.core.GrpcMethod}.
+//     *
+//     * @param configurator  the {@link AnnotatedMethodConfigurator} representing
+//     *                      the annotated method
+//     *
+//     * @return {@code true} if the method is a timed gRPC method
+//     */
+//    static boolean isRpcMethod(AnnotatedMethodConfigurator<?> configurator, Class<? extends Annotation> type) {
+//        AnnotatedMethod method = AnnotatedMethod.create(configurator.getAnnotated().getJavaMember());
+//        GrpcMethod rpcMethod = method.firstAnnotationOrMetaAnnotation(GrpcMethod.class);
+//        if (rpcMethod != null) {
+//            Annotation annotation = method.firstAnnotationOrMetaAnnotation(type);
+//            return annotation != null;
+//        }
+//        return false;
+//    }
 }

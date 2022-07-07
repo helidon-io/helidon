@@ -23,13 +23,20 @@ import io.helidon.grpc.metrics.GrpcMetrics;
 import io.helidon.grpc.server.GrpcService;
 import io.helidon.grpc.server.MethodDescriptor;
 import io.helidon.grpc.server.ServiceDescriptor;
-import io.helidon.metrics.RegistryFactory;
+import io.helidon.metrics.api.RegistryFactory;
 import io.helidon.microprofile.grpc.core.Grpc;
 import io.helidon.microprofile.grpc.core.Unary;
 
 import io.grpc.ServerInterceptor;
 import io.grpc.stub.StreamObserver;
+
 import io.helidon.microprofile.grpc.server.JavaMarshaller;
+import io.helidon.microprofile.tests.junit5.AddBean;
+import io.helidon.microprofile.tests.junit5.DisableDiscovery;
+import io.helidon.microprofile.tests.junit5.HelidonTest;
+
+import jakarta.enterprise.inject.spi.CDI;
+import jakarta.inject.Inject;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
@@ -39,6 +46,7 @@ import org.eclipse.microprofile.metrics.annotation.Metered;
 import org.eclipse.microprofile.metrics.annotation.SimplyTimed;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -48,9 +56,17 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsEmptyIterable.emptyIterable;
 
 
+@HelidonTest
 public class MetricsConfigurerTest {
 
     private static MetricRegistry registry;
+
+    private CDI weld;
+
+    @BeforeEach
+    void setupPerTest() {
+        weld = CDI.current();
+    }
 
     @BeforeAll
     public static void setup() {
@@ -410,18 +426,7 @@ public class MetricsConfigurerTest {
     }
 
     private static MetricRegistry updReg() {
-        MyMetricsCdiExtension.registerGrpcMetrics();
+//        MyMetricsCdiExtension.registerGrpcMetrics();
         return registry;
-    }
-
-    /**
-     * Used only for very limited testing purposes.
-     */
-    @Deprecated
-    private static class MyMetricsCdiExtension extends io.helidon.microprofile.metrics.MetricsCdiExtension {
-
-        static void registerGrpcMetrics() {
-            MyMetricsCdiExtension.registerMetricsForAnnotatedSitesFromGrpcTest();
-        }
     }
 }

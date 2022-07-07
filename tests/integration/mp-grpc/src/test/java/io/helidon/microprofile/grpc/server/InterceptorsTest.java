@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019,2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import io.helidon.microprofile.grpc.core.GrpcInterceptor;
 import io.helidon.microprofile.grpc.core.GrpcInterceptorBinding;
 import io.helidon.microprofile.grpc.core.GrpcInterceptors;
 import io.helidon.microprofile.grpc.core.Unary;
+import io.helidon.microprofile.tests.junit5.HelidonTest;
 
 import io.grpc.Metadata;
 import io.grpc.ServerCall;
@@ -34,11 +35,9 @@ import io.grpc.ServerCallHandler;
 import io.grpc.ServerInterceptor;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.spi.BeanManager;
-import org.jboss.weld.junit5.WeldInitiator;
-import org.jboss.weld.junit5.WeldJunit5Extension;
-import org.jboss.weld.junit5.WeldSetup;
+import jakarta.enterprise.inject.spi.CDI;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.ElementType.TYPE;
@@ -49,22 +48,16 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * Functional test for server side interceptors using annotations.
  */
-@ExtendWith(WeldJunit5Extension.class)
+@HelidonTest
 @SuppressWarnings("unchecked")
 public class InterceptorsTest {
 
-    @WeldSetup
-    public WeldInitiator weld = WeldInitiator.of(ServerInterceptorOne.class,
-                                                 ServerInterceptorTwo.class,
-                                                 ServerInterceptorThree.class,
-                                                 ServerInterceptorFour.class,
-                                                 InterceptedServiceOne.class,
-                                                 InterceptedServiceTwo.class,
-                                                 InterceptedServiceThree.class,
-                                                 InterceptedServiceFour.class,
-                                                 InterceptedServiceFive.class,
-                                                 InterceptedServiceSix.class);
+    private CDI weld;
 
+    @BeforeEach
+    void setup() {
+        weld = CDI.current();
+    }
     @Test
     public void shouldDiscoverServiceInterceptor() {
         BeanManager beanManager = weld.getBeanManager();

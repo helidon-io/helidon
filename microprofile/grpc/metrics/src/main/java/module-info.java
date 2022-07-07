@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ module io.helidon.microprofile.grpc.metrics {
     requires transitive io.helidon.microprofile.grpc.server;
     requires transitive io.helidon.microprofile.metrics;
     requires transitive io.helidon.microprofile.server;
+    requires io.helidon.common.serviceloader;
 
     requires io.helidon.servicecommon.restcdi;
 
@@ -35,4 +36,10 @@ module io.helidon.microprofile.grpc.metrics {
 
     provides jakarta.enterprise.inject.spi.Extension
             with io.helidon.microprofile.grpc.metrics.GrpcMetricsCdiExtension;
+
+    provides io.helidon.microprofile.metrics.api.MetricAnnotationDiscoveryObserverProvider
+            with io.helidon.microprofile.grpc.metrics.MetricAnnotationDiscoveryObserverImplFactory;
+
+    provides io.helidon.microprofile.metrics.api.MetricRegistrationObserverProvider
+            with io.helidon.microprofile.grpc.metrics.MetricRegistrationObserverImplFactory;
 }
