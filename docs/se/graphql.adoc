@@ -24,12 +24,25 @@
 
 include::{rootdir}/includes/se.adoc[]
 
-Helidon GraphQL Server provides a framework for creating link:https://github.com/graphql-java/graphql-java[GraphQL] applications.
 
-== Experimental
+== ToC
+
+- <<Overview, Overview>>
+- <<Maven Coordinates, Maven Coordinates>>
+- <<API, API>>
+- <<Configuration, Configuration>>
+- <<Examples, Examples>>
+- <<Additional Information, Additional Information>>
+
+== Overview
+
+The Helidon GraphQL Server provides a framework for creating link:https://github.com/graphql-java/graphql-java[GraphQL]
+applications that integrate with the Helidon WebServer. GraphQL is a query language to access server data.
+The Helidon GraphQL integration enables HTTP clients to issue queries over the network and retrieve data;
+it is an alternative to other protocols such as REST or GRPC.
 
 WARNING: The Helidon GraphQL feature is currently experimental and the APIs are
- subject to changes until GraphQL support is stabilized.
+subject to change until GraphQL support is stabilized.
 
 include::{rootdir}/includes/dependencies.adoc[]
 
@@ -41,30 +54,32 @@ include::{rootdir}/includes/dependencies.adoc[]
 </dependency>
 ----
 
-== Quick Start
+== API
 
-Here is the code for a minimalist GraphQL application that exposes 2 queries.
+An instance of `GraphQlSupport` must be registered in the Helidon WebServer routes to enable
+GraphQL support in your application. In addition, a GraphQL schema needs to be specified
+to verify and execute queries.
+
+The following code fragment creates an instance of `GraphQlSupport` and registers it in the
+Helidon WebServer.
 
 [source,java]
 ----
-public static void main(String[] args) {
     WebServer server = WebServer.builder()
             .routing(Routing.builder()
-                             .register(GraphQlSupport.create(buildSchema()))  <1>
-                             .build())
+                            .register(GraphQlSupport.create(buildSchema()))
+                            .build())
             .build();
+----
 
-    server.start()  <2>
-           .thenApply(webServer -> {
-               String endpoint = "http://localhost:" + webServer.port();
-               System.out.println("GraphQL started on " + endpoint + "/graphql");
-               System.out.println("GraphQL schema availanle on " + endpoint + "/graphql/schema.graphql");
-               return null;
-           });
-}
+By default, `GraphQlSupport` will reserve  `/graphql` as the URI path to process queries.
+The `buildSchema` method creates the schema and defines 2 types of queries for this
+application:
 
+[source,java]
+----
 private static GraphQLSchema buildSchema() {
-    String schema = "type Query{\n"    <3>
+    String schema = "type Query{\n"    <1>
             + "hello: String \n"
             + "helloInDifferentLanguages: [String] \n"
             + "\n}";
@@ -72,32 +87,52 @@ private static GraphQLSchema buildSchema() {
     SchemaParser schemaParser = new SchemaParser();
     TypeDefinitionRegistry typeDefinitionRegistry = schemaParser.parse(schema);
 
-    // DataFetcher to return various hello's in difference languages  <4>
+    // DataFetcher to return various hellos in difference languages  <2>
     DataFetcher<List<String>> hellosDataFetcher = (DataFetcher<List<String>>) environment ->
-            List.of("Bonjour", "Hola", "Zdravstvuyte", "Nǐn hǎo", "Salve", "Gudday", "Konnichiwa", "Guten Tag");
+            List.of("Bonjour", "Hola", "Zdravstvuyte", "Nǐn hǎo", "Salve", "Gudday",
+                    "Konnichiwa", "Guten Tag");
 
-    RuntimeWiring runtimeWiring = RuntimeWiring.newRuntimeWiring()  <5>
+    RuntimeWiring runtimeWiring = RuntimeWiring.newRuntimeWiring()  <3>
             .type("Query", builder -> builder.dataFetcher("hello", new StaticDataFetcher("world")))
             .type("Query", builder -> builder.dataFetcher("helloInDifferentLanguages", hellosDataFetcher))
             .build();
 
     SchemaGenerator schemaGenerator = new SchemaGenerator();
-    return schemaGenerator.makeExecutableSchema(typeDefinitionRegistry, runtimeWiring);  <6>
+    return schemaGenerator.makeExecutableSchema(typeDefinitionRegistry, runtimeWiring);  <4>
 }
 ----
 
-<1> Register GraphQL support.
-<2> Start the server.
-<3> Define the GraphQL schema.
-<4> Create a DataFetcher to return a List of Hellos in different languages.
-<5> Wire up the DataFetchers.
-<6> Generate the GraphQL schema.
+The following is a description of each of these steps:
 
-The example above deploys a very simple service exposing the `/graphql` endpoint.
+<1> Define the GraphQL schema.
+<2> Create a `DataFetcher` to return a list of hellos in different languages.
+<3> Wire up the `DataFetcher` s.
+<4> Generate the GraphQL schema.
 
-You can then probe the endpoints:
+== Configuration
 
-1. Hello word endpoint
+An instance of `GraphQlSupport` can be (mostly) created from configuration properties.
+The config element to use (and its location) is of your choosing, as long as it contains
+the properties listed in the table below.
+
+[cols="2,2,6", role="flex, sm7"]
+|===
+| Property | Type | Description
+| web-context | String | Context that serves the GraphQL endpoint. Default is `/graphql`.
+| schema-uri | String | URI that serves the schema under web context. Default is `/schema.graphql`.
+| cors | CrossOriginConfig | Configuration section for CORS.
+| executor-service | Config | Configuration section for an executor service.
+|===
+
+NOTE: The schema and its associated `InvocationHandler` can only be specified
+programmatically at this time. For more information, see the
+link:{graphql-javadoc-base-url}/package-summary.html[GraphQL Javadocs]
+
+== Examples
+
+Using the schema defined in Section <<API>>, you can probe the following endpoints:
+
+1. Hello world endpoint
 +
 [source,bash]
 ----
@@ -115,3 +150,6 @@ curl -X POST http://127.0.0.1:PORT/graphql -d '{"query":"query { helloInDifferen
 {"data":{"helloInDifferentLanguages":["Bonjour","Hola","Zdravstvuyte","Nǐn hǎo","Salve","Gudday","Konnichiwa","Guten Tag"]}}
 ----
 
+== Additional Information
+
+ * link:{graphql-javadoc-base-url}/package-summary.html[GraphQL Javadocs]
