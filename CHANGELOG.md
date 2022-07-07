@@ -7,9 +7,17 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [1.4.12]
 
-This is a bug fix release of Helidon 1. It is reccomended for all users of Helidon 1.x.
+This is a bug fix release of Helidon 1 that contains dependency upgrades.
 
 ### Fixes
+
+- Upgrade Netty to 4.1.77.Final [4348](https://github.com/oracle/helidon/pull/4348)
+- Upgrade Jackson Databind to 2.13.2.2 [4348](https://github.com/oracle/helidon/pull/4348)
+- Upgrade lib.grpc to 1.45.1 [4348](https://github.com/oracle/helidon/pull/4348)
+- Upgrade google-api-client to 1.35.2 [4472](https://github.com/oracle/helidon/pull/4472)
+- Upgrade jaeger-client to 1.6.0 [4472](https://github.com/oracle/helidon/pull/4472)
+- Upgrade mysql-connector to 8.0.29 [4472](https://github.com/oracle/helidon/pull/4472)
+
 
 ## [1.4.11]
 
