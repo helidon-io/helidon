@@ -19,7 +19,6 @@ package io.helidon.microprofile.messaging;
 
 import java.time.Duration;
 import java.util.List;
-import java.util.concurrent.Flow;
 
 import io.helidon.common.reactive.Multi;
 import io.helidon.messaging.connectors.mock.MockConnector;
@@ -31,6 +30,7 @@ import io.helidon.microprofile.tests.junit5.DisableDiscovery;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 
 import org.eclipse.microprofile.reactive.messaging.Channel;
+import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;
 import org.junit.jupiter.api.Test;
@@ -48,12 +48,16 @@ import jakarta.inject.Inject;
 @AddBean(MockConnector.class)
 @AddExtension(MessagingCdiExtension.class)
 @AddConfig(key = OUTGOING_PREFIX + "test-channel-1.connector", value = CONNECTOR_NAME)
-@AddConfig(key = OUTGOING_PREFIX + "test-channel-2.connector", value = CONNECTOR_NAME)
-@AddConfig(key = OUTGOING_PREFIX + "test-channel-3.connector", value = CONNECTOR_NAME)
 @AddConfig(key = OUTGOING_PREFIX + "test-channel-4.connector", value = CONNECTOR_NAME)
 @AddConfig(key = INCOMING_PREFIX + "test-channel-5.connector", value = CONNECTOR_NAME)
 @AddConfig(key = INCOMING_PREFIX + "test-channel-5.mock-data-type", value = "java.lang.Integer")
 @AddConfig(key = INCOMING_PREFIX + "test-channel-5.mock-data", value = "6,7,8")
+@AddConfig(key = INCOMING_PREFIX + "test-channel-6-in.connector", value = CONNECTOR_NAME)
+@AddConfig(key = INCOMING_PREFIX + "test-channel-6-in.mock-data", value = "a,b,c")
+@AddConfig(key = OUTGOING_PREFIX + "test-channel-6-out.connector", value = CONNECTOR_NAME)
+@AddConfig(key = INCOMING_PREFIX + "test-channel-7-in.connector", value = CONNECTOR_NAME)
+@AddConfig(key = INCOMING_PREFIX + "test-channel-7-in.mock-data", value = "a,b,c")
+@AddConfig(key = OUTGOING_PREFIX + "test-channel-7-out.connector", value = CONNECTOR_NAME)
 public class MultiSupportTest {
 
     private static final Duration TIMEOUT = Duration.ofSeconds(15);
@@ -71,37 +75,28 @@ public class MultiSupportTest {
         return Multi.just("a", "b", "c");
     }
 
-    @Outgoing("test-channel-2")
-    Flow.Publisher<String> flowPubWithPayload() {
-        return Multi.just("e", "f", "g");
-    }
-
-    @Outgoing("test-channel-3")
-    Flow.Publisher<Message<Integer>> flowPubWithMsg() {
-        return Multi.range(0, 3).map(Message::of);
-    }
-
     @Outgoing("test-channel-4")
     Multi<Message<Integer>> multiWithMsg() {
         return Multi.range(3, 3).map(Message::of);
+    }
+
+    @Incoming("test-channel-6-in")
+    @Outgoing("test-channel-6-out")
+    Multi<Message<String>> multiPubProcFlatMapMsg(Message<String> msg) {
+        String payload = msg.getPayload();
+        return Multi.just(payload, payload.toUpperCase()).map(Message::of);
+    }
+
+    @Incoming("test-channel-7-in")
+    @Outgoing("test-channel-7-out")
+    Multi<String> multiPubProcFlatMapPay(String payload) {
+        return Multi.just(payload, payload.toUpperCase());
     }
 
     @Test
     void multiWithPayloadTest() {
         mockConnector.outgoing("test-channel-1", String.class)
                 .awaitData(TIMEOUT, Message::getPayload, "a", "b", "c");
-    }
-
-    @Test
-    void flowPubWithPayloadTest() {
-        mockConnector.outgoing("test-channel-2", String.class)
-                .awaitData(TIMEOUT, Message::getPayload, "e", "f", "g");
-    }
-
-    @Test
-    void flowPubWithMsgTest() {
-        mockConnector.outgoing("test-channel-3", Integer.class)
-                .awaitData(TIMEOUT, Message::getPayload, 0, 1, 2);
     }
 
     @Test
@@ -117,5 +112,17 @@ public class MultiSupportTest {
                 .collectList()
                 .await(TIMEOUT);
         assertThat(actual, contains(6, 7, 8));
+    }
+
+    @Test
+    void multiPubProcFlatMapMsgTest() {
+        mockConnector.outgoing("test-channel-6-out", String.class)
+                .awaitData(TIMEOUT, Message::getPayload, "a", "A", "b", "B", "c", "C");
+    }
+
+    @Test
+    void multiPubProcFlatMapPayTest() {
+        mockConnector.outgoing("test-channel-7-out", String.class)
+                .awaitData(TIMEOUT, Message::getPayload, "a", "A", "b", "B", "c", "C");
     }
 }

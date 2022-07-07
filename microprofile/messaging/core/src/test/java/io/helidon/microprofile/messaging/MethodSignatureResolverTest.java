@@ -397,6 +397,20 @@ class MethodSignatureResolverTest {
 
     @Incoming("in-channel-name")
     @Outgoing("out-channel-name")
+    @ExpectedSignatureType(MethodSignatureType.PROCESSOR_FLOW_PUBLISHER_MSG_2_MSG)
+    Flow.Publisher<Message<String>> processor_flow_publisher_msg_2_msgxxx(Message<String> msg) {
+        return null;
+    }
+
+    @Incoming("in-channel-name")
+    @Outgoing("out-channel-name")
+    @ExpectedSignatureType(MethodSignatureType.PROCESSOR_FLOW_PUBLISHER_MSG_2_MSG)
+    Multi<Message<String>> processor_multi_publisher_msg_2_msgxxx(Message<String> msg) {
+        return null;
+    }
+
+    @Incoming("in-channel-name")
+    @Outgoing("out-channel-name")
     @ExpectedSignatureType(MethodSignatureType.PROCESSOR_PUBLISHER_MSG_2_MSG)
     Publisher<ExtendedMessage<String>> processor_publisher_msg_2_msg(ExtendedMessage<String> msg) {
         return null;
@@ -420,6 +434,22 @@ class MethodSignatureResolverTest {
     @Outgoing("out-channel-name")
     @ExpectedSignatureType(MethodSignatureType.PROCESSOR_PUBLISHER_PAYL_2_PAYL)
     Publisher<String> processor_publisher_payl_2_payl(String payload) {
+        return null;
+    }
+
+
+    @Incoming("in-channel-name")
+    @Outgoing("out-channel-name")
+    @ExpectedSignatureType(MethodSignatureType.PROCESSOR_FLOW_PUBLISHER_PAYL_2_PAYL)
+    Flow.Publisher<String> processor_flow_publisher_payl_2_payl(String payload) {
+        return null;
+    }
+
+
+    @Incoming("in-channel-name")
+    @Outgoing("out-channel-name")
+    @ExpectedSignatureType(MethodSignatureType.PROCESSOR_FLOW_PUBLISHER_PAYL_2_PAYL)
+    Multi<String> processor_multi_publisher_payl_2_payl(String payload) {
         return null;
     }
 
