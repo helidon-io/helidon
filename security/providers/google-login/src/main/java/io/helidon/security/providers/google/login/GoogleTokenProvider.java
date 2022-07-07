@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,7 +54,7 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
-import com.google.api.client.json.jackson2.JacksonFactory;
+import com.google.api.client.json.gson.GsonFactory;
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
 import io.opentracing.Tracer;
@@ -93,7 +93,7 @@ public final class GoogleTokenProvider extends SynchronousProvider implements Au
         this.optional = builder.optional;
         this.realm = builder.realm;
         this.tokenHandler = builder.tokenHandler;
-        this.jsonFactory = JacksonFactory.getDefaultInstance();
+        this.jsonFactory = GsonFactory.getDefaultInstance();
 
         if (null == builder.verifier) {
             // not covered by unit tests, as this creates a component connecting to internet
