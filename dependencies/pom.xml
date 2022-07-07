@@ -63,7 +63,7 @@
         <version.lib.guava>30.0-jre</version.lib.guava>
         <version.lib.h2>2.1.212</version.lib.h2>
         <version.lib.hamcrest>1.3</version.lib.hamcrest>
-        <version.lib.hibernate>6.0.0.Beta1</version.lib.hibernate>
+        <version.lib.hibernate>6.1.1.Final</version.lib.hibernate>
         <version.lib.hibernate-validator>7.0.2.Final</version.lib.hibernate-validator>
         <version.lib.hikaricp>5.0.0</version.lib.hikaricp>
         <version.lib.hystrix>1.5.18</version.lib.hystrix>
