@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.Flow;
 import java.util.function.Consumer;
 
 import io.helidon.common.reactive.Multi;
@@ -179,7 +180,7 @@ public class MessagingCdiExtension implements Extension {
         });
     }
 
-    <T extends Multi<?>> void multiInjectionPoints(@Observes ProcessInjectionPoint<?, T> pip) {
+    <T extends Flow.Publisher<?>> void multiInjectionPoints(@Observes ProcessInjectionPoint<?, T> pip) {
         String channelName = configureInternalChannel(pip);
         String fieldName = pip.getInjectionPoint().getMember().getName();
         // No @Channel annotation
@@ -192,6 +193,7 @@ public class MessagingCdiExtension implements Extension {
                     new IncomingPublisher(channelName, fieldName, MessageUtils.hasGenericMessageType(type));
             channelRouter.registerPublisher(injectedPublisher);
             abd.addBean()
+                    .addType(Literals.flowPublisherType())
                     .addType(Literals.multiType())
                     .beanClass(Multi.class)
                     .addQualifiers(Literals.channel(channelName), Literals.internalChannel(channelName))

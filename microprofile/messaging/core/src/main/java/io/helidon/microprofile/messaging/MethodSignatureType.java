@@ -163,6 +163,21 @@ enum MethodSignatureType {
      * Processor method signature type.
      * <br>
      * Invoke at: every incoming
+     * <pre>Flow.Publisher&lt;Message&lt;O&gt;&gt; method(Message&lt;I&gt; msg);</pre>
+     * <ul>
+     *  <li>Default acknowledgment strategy: MANUAL</li>
+     *  <li>Supported acknowledgment strategies: NONE, MANUAL, PRE_PROCESSING</li>
+     * </ul>
+     */
+    PROCESSOR_FLOW_PUBLISHER_MSG_2_MSG(false, Acknowledgment.Strategy.MANUAL,
+            Acknowledgment.Strategy.NONE,
+            Acknowledgment.Strategy.MANUAL,
+            Acknowledgment.Strategy.PRE_PROCESSING
+    ),
+    /**
+     * Processor method signature type.
+     * <br>
+     * Invoke at: every incoming
      * <pre>Publisher&lt;O&gt; method(I payload);</pre>
      * <ul>
      *  <li>Default acknowledgment strategy: PRE_PROCESSING</li>
@@ -170,6 +185,20 @@ enum MethodSignatureType {
      * </ul>
      */
     PROCESSOR_PUBLISHER_PAYL_2_PAYL(false, Acknowledgment.Strategy.PRE_PROCESSING,
+            Acknowledgment.Strategy.NONE,
+            Acknowledgment.Strategy.PRE_PROCESSING
+    ),
+    /**
+     * Processor method signature type.
+     * <br>
+     * Invoke at: every incoming
+     * <pre>Flow.Publisher&lt;O&gt; method(I payload);</pre>
+     * <ul>
+     *  <li>Default acknowledgment strategy: PRE_PROCESSING</li>
+     *  <li>Supported acknowledgment strategies: NONE, PRE_PROCESSING</li>
+     * </ul>
+     */
+    PROCESSOR_FLOW_PUBLISHER_PAYL_2_PAYL(false, Acknowledgment.Strategy.PRE_PROCESSING,
             Acknowledgment.Strategy.NONE,
             Acknowledgment.Strategy.PRE_PROCESSING
     ),

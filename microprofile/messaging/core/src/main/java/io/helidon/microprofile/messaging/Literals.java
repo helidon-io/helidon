@@ -18,6 +18,7 @@
 package io.helidon.microprofile.messaging;
 
 import java.io.Serial;
+import java.util.concurrent.Flow;
 
 import io.helidon.common.reactive.Multi;
 
@@ -36,10 +37,13 @@ class Literals {
     private Literals(){
     }
 
+    static <T> TypeLiteral<Flow.Publisher<T>> flowPublisherType() {
+        return new TypeLiteral<>() {
+        };
+    }
+
     static <T> TypeLiteral<Multi<T>> multiType() {
         return new TypeLiteral<>() {
-            @Serial
-            private static final long serialVersionUID = -3906621393273806089L;
         };
     }
 

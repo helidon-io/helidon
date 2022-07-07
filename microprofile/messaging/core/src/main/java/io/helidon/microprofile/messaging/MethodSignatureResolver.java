@@ -144,9 +144,17 @@ final class MethodSignatureResolver {
         addRule(MethodSignatureType.PROCESSOR_PUBLISHER_MSG_2_MSG,
                 () -> returnsClassWithGenericParams(Publisher.class, MsgType.MESSAGE)
                         && hasFirstParam(MsgType.MESSAGE));
+        // Flow.Publisher<Message<O>> method(Message<I>msg);
+        addRule(MethodSignatureType.PROCESSOR_FLOW_PUBLISHER_MSG_2_MSG,
+                () -> returnsClassWithGenericParams(Flow.Publisher.class, MsgType.MESSAGE)
+                        && hasFirstParam(MsgType.MESSAGE));
         // Publisher<O> method(I payload);
         addRule(MethodSignatureType.PROCESSOR_PUBLISHER_PAYL_2_PAYL,
                 () -> returnsClassWithGenericParams(Publisher.class, MsgType.PAYLOAD)
+                        && hasFirstParam(MsgType.PAYLOAD));
+        // Flow.Publisher<O> method(I payload);
+        addRule(MethodSignatureType.PROCESSOR_FLOW_PUBLISHER_PAYL_2_PAYL,
+                () -> returnsClassWithGenericParams(Flow.Publisher.class, MsgType.PAYLOAD)
                         && hasFirstParam(MsgType.PAYLOAD));
         // Message<O> method(Message<I> msg)
         addRule(MethodSignatureType.PROCESSOR_MSG_2_MSG,
