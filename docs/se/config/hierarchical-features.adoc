@@ -67,6 +67,27 @@ type `MISSING`. The in-memory config tree contains nodes only of types `OBJECT`,
 and `VALUE`.
 ====
 
+== Configuration Key
+Each config node (except the root) has a non-null key. Here is the formal
+definition of what keys can be:
+[source,abnf]
+.The ABNF syntax of config key
+----
+config-key = *1( key-token *( "." key-token ) )
+ key-token = *( unescaped / escaped )
+ unescaped = %x00-2D / %x2F-7D / %x7F-10FFFF
+           ; %x2E ('.') and %x7E ('~') are excluded from 'unescaped'
+   escaped = "~" ( "0" / "1" )
+           ; representing '~' and '.', respectively
+----
+
+[IMPORTANT]
+=========
+To emphasize, the dot character ("`.`") has special meaning as a name separator
+in keys. To include a dot as a character in a key escape it as
+"`~1`". To include a tilda escape it as "`~0`".
+=========
+
 == In-memory Representation of Configuration
 The following example is in link:https://github.com/lightbend/config/blob/master/HOCON.md[HOCON]
 (human-optimized config object notation) format.

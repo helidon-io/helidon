@@ -27,7 +27,7 @@ include::{rootdir}/includes/se.adoc[]
 
 This section discusses several advanced topics related to Helidon configuration.
 
-== Advanced Config Sources and Config Parsers
+== Advanced Config Sources
 === Environment Variables Config Source
 
 The config system supports using environment variables as a config source, and is
@@ -282,15 +282,12 @@ Config config = Config.create(                                               // 
 <4> Specifies the merging strategy. This example uses the default fallback
  merging strategy.
 
-
-=== How Config Chooses Parsers [[Config-Advanced-Sources-SuitableParser]]
-As the link:config-sources.adoc[config sources and parsers] section describes,
-these two work together to read and translate configuration data from some
+== Advanced Config Parsers
+Config sources and parsers work together to read and translate configuration data from some
 external form into the corresponding in-memory config tree.
 
-Although most applications are
-explicit about the config sources they use in building a `Config`, the config system often
-has to figure out what parser to use. It does so by:
+=== How Config Chooses Parsers [[Config-Advanced-Sources-SuitableParser]]
+Although most applications are explicit about the config sources they use in building a `Config`, the config system often has to figure out what parser to use. It does so by:
 
 1. determining, the best that it can, the media type of the source, and
 2. locating a parser that can translate that media type.
@@ -465,24 +462,24 @@ value of the `app` key. (HCON is a superset of JSON.)
 As before, the config system replaces the value node in the
 containing config tree with the config tree resulting from the additional parse.
 
-=== Loading Config using Meta-configuration [[Config-Advanced-metaconfig]]
-
-This section is now available in xref:config-profiles.adoc[config profiles],
- which make meta-configuration obsolete - you can achieve the same with less configuration.
-A profile file is a meta-configuration file selected by the rules defined in the link above.
-
+== Loading Config using Meta-configuration [[Config-Advanced-metaconfig]]
+[IMPORTANT]
+=========
+You can achieve this with less configuration using xref:config-profiles.adoc[config profiles],
+ which make meta-configuration obsolete. A profile file is a meta-configuration file selected by the rules defined in the link above.
+=========
 Instead of including code in your application to construct config trees from
 builders, sources, etc., you can instead prepare _meta-configuration_ in a file
-that declares the sources to load and their attributes.
+that declares the sources to load and their attributes. _meta-configuration_ file format is defined at xref:config-profiles.adoc#Config-Profile-Format[config profile format]
 
 You can either specify the meta-config file in your application or
 allow the config system to search for and load meta-config from a preset
 list of possible sources.
 
-==== Loading Config by Specifying a Meta-configuration File [[Config-Advanced-Sources-MetaSource]]
+=== Loading Config by Specifying a Meta-configuration File [[Config-Advanced-Sources-MetaSource]]
 Your application loads
 the configuration specified by a meta-config file by invoking the link:{config-javadoc-base-url}/io/helidon/config/MetaConfig.html#config-io.helidon.config.Config-[`MetaConfig.config(Config)`]
-method, passing a config object read from the meta-config source as the argument;
+method, passing a config object read from the meta-config source as the argument.
 
 If you desire a `Config.Builder` instead of a fully built `Config` instance,
 you can use the `Config.Builder.config(Config)` method to update the builder with
@@ -490,7 +487,7 @@ meta configuration. Your application can further fine-tune this builder
 before using it to construct a `Config` tree. The config system interprets the meta-config
 as directions for how to build a config tree, rather than as the config data itself.
 
-==== Loading Config from an Implicit Meta-configuration File [[Config-Advanced-Config-MetaConfig]]
+=== Loading Config from an Implicit Meta-configuration File [[Config-Advanced-Config-MetaConfig]]
 The xref:introduction.adoc[introduction] section shows how to use
 `Config.create()` to load config from one of several possible default config files.
 That same method also searches for one of several possible default meta-config files
@@ -520,10 +517,7 @@ section describes this further.
 
 See javadoc link:{config-javadoc-base-url}/io/helidon/config/Config.Builder.html#config-io.helidon.config.Config-[`Config.Builder.config(Config)`].
 
-==== Meta-configuration File Format
-This section is now available in xref:config-profiles.adoc#Config-Profile-Format[config profile format]
-
-==== Loading Config using Meta-configuration
+=== Loading Config using Meta-configuration
 Here is how your application can use meta-configuration in a particular resource on the
 classpath to load a `Config` tree:
 
@@ -537,26 +531,62 @@ Config config = MetaConfig.config(metaConfig); // <2>
 <2> This method populates the config sources from
 all the actual sources declared in the meta-configuration.
 
-== Configuration Key
+=== Loading Meta-configuration via git
+
+The config system can load information about config sources from meta-configuration
+rather than requiring your application to construct the builder. To read
+meta-configuration from a git config source set the following properties for the source:
+
+* `type` to `git` or `class` to `io.helidon.config.git.GitConfigSourceBuilder`
+* `path` (type `String`) - Relative path to the configuration file in repository.
+* `uri` (type `URI`) - URI to the git repository.
+* `directory` (type `Path`) - Directory with a cloned repository, by default
+a temporary directory.
+* `branch` (type `String`) - git branch (default is `master`).
+
+The meta-configuration must set the `path` and one of `uri` or `directory`.
+Other optional `properties` are inherited from
+`AbstractParsableConfigSource.Builder` (see
+link:{config-javadoc-base-url}/io/helidon/config/spi/AbstractParsableConfigSource.Builder.html#init-io.helidon.config.Config-[javadoc])
+
+[source,java]
+.Load Config from meta-configuration
+----
+Config config = Config.loadSourcesFrom(classpath("config-meta-git.yaml"));
+----
+
+[source,YAML]
+.Meta-config `config-meta-git.yaml` for the git source
+----
+sources:
+    - type: "git"                                            # <1>
+      properties:
+          path: "application.conf"                           # <2>
+          uri: "https://github.com/okosatka/test-config.git" # <2>
+          directory: "/config"                               # <2>
+          branch: "dev"                                      # <2>
+          polling-strategy:
+              type: "regular"                                # <3>
+              properties:
+                  interval: "PT5M"                           # <3>
+
+----
+
+<1> `git` config source type
+<2> git source-specific properties: `path`, `uri`, `directory` and `branch`.
+<3> Polling strategy `regular` with an interval, in
+`Duration` format, of 5 minutes in this example.
+
+== Config Keys with . in name
+
 As described in the xref:hierarchical-features.adoc#accessByKey[hierarchical features
-section] each config node (except the root) has a non-null key. Here is the formal
-definition of what keys can be:
-[source,abnf]
-.The ABNF syntax of config key
-----
-config-key = *1( key-token *( "." key-token ) )
- key-token = *( unescaped / escaped )
- unescaped = %x00-2D / %x2F-7D / %x7F-10FFFF
-           ; %x2E ('.') and %x7E ('~') are excluded from 'unescaped'
-   escaped = "~" ( "0" / "1" )
-           ; representing '~' and '.', respectively
-----
+section] each config node (except the root) has a non-null key.
 
 [IMPORTANT]
 =========
 To emphasize, the dot character ("`.`") has special meaning as a name separator
 in keys. To include a dot as a character in a key escape it as
- "`~1`". To include a tilda escape it as "`~0`".
+"`~1`".
 =========
 
 For example, the following configuration file contains two object nodes with
@@ -597,7 +627,7 @@ assert config.get(Key.escapeName("oracle.com")).name().equals("oracle.com"); // 
 
 <1> Work with the first `oracle` object as usual.
 As always you can use the fully-qualified key `oracle.com` or chain `get(key)`
- calls to access the `com` property value.
+calls to access the `com` property value.
 <2> Config node `"oracle"` / `"com"` is a leaf node (has type `VALUE`)...
 <3> ... and has the name `com` (the last token in its key).
 <4> The second object has name `oracle.com`. The code must escape the
@@ -606,7 +636,6 @@ dot in the node's name using `oracle~1com`.
 that might be in the node's name, in this example in `oracle.com`.
 <6> The config node `"oracle.com"` has type `OBJECT`...
 <7> ...and name `"oracle.com"`.
-
 
 == Filter, Overrides, and Token Substitution [[filters-and-overrides]]
 When your application retrieves a config value, the config system can transform it
@@ -881,3 +910,4 @@ failing the initial load or preventing the source from being polled if so config
 <3> Uses the built-in _repeating_ implementation of `RetryPolicy` that can be used with any
  config source, but typically for ones that might suffer brief, intermittent outages.
 <4> Specifies the executor to use for loading and retries.
+

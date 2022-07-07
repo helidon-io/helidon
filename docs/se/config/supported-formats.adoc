@@ -20,20 +20,14 @@
 :description: Helidon config supported formats and sources
 :keywords: helidon, config
 :toc: preamble
-:toclevels: 2
+:toclevels: 4
 :rootdir: {docdir}/../..
 
 include::{rootdir}/includes/se.adoc[]
 
-Helidon Config provides several extension modules that support other configuration
- formats (parsers) and sources. This section describes how to add these modules
-to your build and how to use them from your application.
-
 == Introduction
-This document describes the additional config formats and sources the Helidon
-config system supports and how to include them and use them in your project. In each
-case you need to add module dependencies to your project and, in some cases,
-write your application accordingly.
+Helidon Config provides several extension modules that support other configuration
+formats (parsers) and sources. This document describes how to include them and use them in your project. In each case you need to add module dependencies to your project and, in some cases, write your application accordingly.
 
 == Additional Config Formats and Parsers
 
@@ -406,49 +400,3 @@ You can also implement your own polling strategy by implementing
 link:{config-javadoc-base-url}/io/helidon/config/spi/PollingStrategy.html[`PollingStrategy`]. See
 the xref:mutability-support.adoc[mutability support] and
 xref:extensions.adoc#Config-SPI-PollingStrategy[polling strategy] discussions.
-
-==== Loading Meta-configuration via git
-
-The config system can load information about config sources from meta-configuration
-rather than requiring your application to construct the builder. To read
-meta-configuration from a git config source set the following properties for the source:
-
-* `type` to `git` or `class` to `io.helidon.config.git.GitConfigSourceBuilder`
-* `path` (type `String`) - Relative path to the configuration file in repository.
-* `uri` (type `URI`) - URI to the git repository.
-* `directory` (type `Path`) - Directory with a cloned repository, by default
- a temporary directory.
-* `branch` (type `String`) - git branch (default is `master`).
-
-The meta-configuration must set the `path` and one of `uri` or `directory`.
-Other optional `properties` are inherited from
- `AbstractParsableConfigSource.Builder` (see
- link:{config-javadoc-base-url}/io/helidon/config/spi/AbstractParsableConfigSource.Builder.html#init-io.helidon.config.Config-[javadoc])
-
-[source,java]
-.Load Config from meta-configuration
-----
-Config config = Config.loadSourcesFrom(classpath("config-meta-git.yaml"));
-----
-
-[source,YAML]
-.Meta-config `config-meta-git.yaml` for the git source
-----
-sources:
-    - type: "git"                                            # <1>
-      properties:
-          path: "application.conf"                           # <2>
-          uri: "https://github.com/okosatka/test-config.git" # <2>
-          directory: "/config"                               # <2>
-          branch: "dev"                                      # <2>
-          polling-strategy:
-              type: "regular"                                # <3>
-              properties:
-                  interval: "PT5M"                           # <3>
-
-----
-
-<1> `git` config source type
-<2> git source-specific properties: `path`, `uri`, `directory` and `branch`.
-<3> Polling strategy `regular` with an interval, in
- `Duration` format, of 5 minutes in this example.

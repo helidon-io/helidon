@@ -18,16 +18,26 @@
 
 = The Configuration Component
 :description: Helidon config introduction
-:keywords: helidon, config
+:keywords: helidon, se, config
 :feature-name: Config
 :rootdir: {docdir}/../..
 :imagesdir: {rootdir}/images
 
 include::{rootdir}/includes/se.adoc[]
 
-The config component provides a Java API to load and process
-configuration properties from various sources into a `Config` object which the
-application can use to retrieve config data.
+== ToC
+
+- <<Overview, Overview>>
+- <<Maven-Coordinates, Maven Coordinates>>
+- <<Getting Started, Getting Started>>
+- <<Usage, Usage>>
+- <<Configuration, Configuration>>
+- <<Next Steps, Next Steps>>
+
+== Overview
+
+Helidon provides a very flexible and comprehensive configuration system, offering you many application configuration choices. The Config component provides a Java API to load and process
+configuration data from various sources into a `Config` object which the application can then use.
 
 include::{rootdir}/includes/dependencies.adoc[]
 
@@ -42,11 +52,7 @@ include::{rootdir}/includes/dependencies.adoc[]
 ----
 
 == Getting Started
-
-=== Introducing the Config System [[introducing-the-config-system]]
-A brief overview of the config system helps clarify its different parts
-and how they work together. Most applications will typically deal with more
-than one of these parts.
+A brief overview of the config system helps clarify its different parts and how they work together. Most applications will typically deal with more than one of these parts.
 
 image::config/overview.png["Configuration Overview",align="center"]
 
@@ -56,7 +62,64 @@ These are the main parts of the configuration system:
 - A config source - a location containing configuration data (File, Map, Properties etc.)
 - A config parser - a component capable of transforming bytes into configuration data (such as JSON content, YAML etc.)
 
-The `Config` system handles configuration data in an in-memory tree that represents the configuration structure and values.
+=== Config Sources [[sources]]
+
+Configuration can be loaded from different types of locations and expressed in different formats. The config system includes support for several types of config sources, for example:
+
+1. Environment variables - the property is a name/value pair.
+2. Java system properties - the property is a name/value pair.
+3. Resources in the classpath - the contents of the resource is parsed according to its inferred format.
+4. File - the contents of the file is parsed according to its inferred format.
+5. Directory - each non-directory file in the directory becomes a config entry: the file name is the key.
+and the contents of that file are used as the corresponding config String value.
+6. A URL resource - contents is parsed according to its inferred format.
+7. A variety of in-memory data structures (`String`, `Map`, `Properties`)
+
+See the JavaDoc for the link:{config-javadoc-base-url}/io/helidon/config/ConfigSources.html[`ConfigSources`]
+class for a complete list of the built-in config source types and how to use them.
+
+See the xref:advanced-configuration.adoc#_advanced_config_sources[advanced topics'] page for further information on some more involved aspects of config sources.
+
+=== Config Parsers [[parsers]]
+When it reads configuration text from sources, the config system uses config parsers
+to translate that text into the in-memory data structures representing that
+configuration.
+
+The config system includes several built-in parsers, such as for the Java properties, YAML, JSON, and HOCON formats. See xref:#built-in-formats[this section] for
+how to change your `pom.xml` to make parsers for those formats available to your
+application. Then your application can invoke the
+link:{config-javadoc-base-url}/io/helidon/config/Config.Builder.html#addParser-io.helidon.config.spi.ConfigParser-[config builder's `addParser`] method
+so that builder will use the parsers you choose.
+
+You can extend the system with custom parsers of your own. Implement the link:{config-javadoc-base-url}/io/helidon/config/spi/ConfigParser.html[`ConfigParser`] interface, then construct a `Config.Builder` using the `addParser` method, passing an instance of your customer parser. Invoke one of the `sources` methods to include a source that uses the custom format and then build the `Config` object.
+
+See the xref:advanced-configuration.adoc#_advanced_config_parsers[advanced topics'] page for further information on some more involved aspects of config parsers.
+
+== Usage
+
+=== Default Configuration
+
+Helidon has an internal configuration, so you are not required to provide any configuration data for your application, though in practice you most likely would.
+
+In your application code, when you create a default `Config` object, Helidon uses the default configuration .
+
+[source,Java]
+----
+Config config = Config.create(); // <1>
+----
+<1> The `Config` object is created with default settings.
+
+=== Custom Configuration
+
+Although the default configuration is very simple to use, your application can take full control of all configuration sources and precedence. You can do so by creating and invoking methods on a `Config.Builder` object to construct a `Config` instance.
+
+When your application prepares a `Config.Builder` it sets what ``ConfigSource``s and
+``ConfigParser``s the builder should use in constructing the resulting `Config` object. The JavaDoc explains how to use the
+link:{config-javadoc-base-url}/io/helidon/config/Config.Builder.html[`Config.Builder`].
+
+=== Accessing Config Values
+
+You have used Helidon to customize configuration behavior from your code using the `Config` and `Config.Builder` classes. As discussed previously, `Config` system reads configuration from a config source, which uses a config parser to translate the source into an in-memory tree which represents the configuration’s structure and values.
 
 This approach allows us to take any source data, be it a flat properties file or an object structure such as JSON, and
 transform it into a single tree that allows for overriding of values using heterogeneous config sources.
@@ -78,8 +141,10 @@ web:
   page-size: 25
 ----
 
-The configuration has the same internal representation in `Config` and can be accessed using
-the `Config` API as follows:
+The configuration has the same internal representation in `Config`. Once created, the `Config` object provides many methods the application can use to
+retrieve config data as various Java types. See the link:{config-javadoc-base-url}/io/helidon/config/Config.html[`Config`]
+JavaDoc for complete details.
+
 [source,java]
 ----
 int pageSize = config.get("web.page-size")
@@ -101,23 +166,21 @@ For this first example we can see the basic features of `Config`:
 
 - Configuration is a tree of `Config` nodes
 - You can use `.` as a tree separator when requesting node values
-- Each config value can be retrieved as a typed object, with shortcut methods for the most
-    commonly used types, such as `int`, `String`, `long` and other
-- You can immediately provide a default value for the cases the configuration option is not defined
-    in any source
+- Each config value can be retrieved as a typed object, with shortcut methods for the most commonly used types, such as `int`, `String`, `long` and other
+- You can immediately provide a default value for the cases the configuration option is not defined in any source
 
 === Overriding Values
 
 The `Config` system treats config sources as a hierarchy, where the first source that
 has a specific configuration key "wins" and its value is used, other sources are not even queried for it.
 
-For example the default configuration when you use `Config.create()` uses the following config sources:
+In order to properly configure your application using configuration sources, you need to understand the precedence rules that Helidon uses to merge your configuration data. If any of the Helidon required properties are not specified in one of these source, then Helidon will use a default value.
+
+For example the default configuration when you use `Config.create()` uses the following config sources in precedence order:
 
 1. System properties config source
 2. Environment variables config source
-3. A classpath config source called `application.?` where the `?` depends on supported media types
-    currently on the classpath. By default it is `properties`, if you have YAML support on classpath,
-    it would be `application.yaml` (a `ConfigParser` may add additional supported suffixes for default file)
+3. A classpath config source called `application.?` where the `?` depends on supported media types currently on the classpath.By default, it is `properties`, but if you have YAML support on classpath, it would be `application.yaml` (a `ConfigParser` may add additional supported suffixes for default file)
 
 Let's consider the following keys:
 
@@ -130,24 +193,6 @@ When you request `config.get(`answer`).asInt().orElse(25)`, you would get `42`
 This allows you to configure environment specific configuration values through
 system properties, environment variables, or through files available on each environment (be it
 a physical machine, a Kubernetes pod, or a docker image) without changing your source code.
-
-=== Built-in Support for Config Formats [[built-in-formats]]
-If you add additional Helidon config maven artifacts to your dependencies, then the
-config system can read formats other than Java properties format and the default
-configuration will search for other `application` file types
-in the following order. Note that the default configuration _stops_ once it finds
-one of the files below; it _does not_ merge all such files it can find.
-
-.Default Config Files (most to least important)
-|===
-|Source |Helidon maven artifact ID (group ID: `io.helidon.config`) |Notes
-
-|`application.yaml` |`helidon-config-yaml` |YAML format http://yaml.org
-|`application.conf` |`helidon-config-hocon` |HOCON format https://github.com/lightbend/config#using-hocon-the-json-superset
-|`application.json` |`helidon-config-hocon` |JSON format https://json.org/
-|`application.properties` |`helidon-config` |Java properties format
-|===
-
 
 === Config Filters
 
@@ -171,23 +216,6 @@ The filter resolves the `$\{host}` reference to the `localhost` value.
 This makes it easier to override values in testing and production, as you can just
 override the `host` key and leave the URIs same.
 
-=== Change Support
-
-Config is an immutable in-memory tree. Nevertheless we know that configuration sometimes changes,
- and we may want to react to such changes.
-
-In `Config` system, you can do this through change support provided by these components:
-
-1. `Config.onChange()` API - you can use to add your listener, to be notified of configuration changes
-2. `PollingStrategy` - a component providing regular events to check if a source has changed. This
-        requires support in config sources themselves (see `PollableSource`)
-3. `ChangeWatcher` - a component watching the underlying source for changes. This requires support
-        in config sources themselves (see `WatchableSource`)
-4. `EventConfigSource` - an event source that is capable of notifying about changes itself
-
-
-If you want to receive `onChange` events, you must configure your Config with at least one source that is capable of providing changes (having a `PollingStrategy` or `ChangeWatcher` configured, or implementing `EventConfigSource`)
-
 === Typed config values
 
 The `Config` object lets your application retrieve config data as a typed ConfigValue.
@@ -209,33 +237,53 @@ ConfigValue<T> can be used to obtain:
 The config system automatically knows how to return `List` and `Map` complex types, and you can provide _config mappers_ to convert a config subtree to whatever
 Java types your application needs.
 
+=== Dealing with Loading Errors: Retry Policies [[retry]]
+Config sources, especially those that depend on fallible mechanisms such as the network or a shared file system, might fail to load during momentary outages. The config system allows you to build resiliency into your application's use of configuration that relies on such technologies.
+
+When your application builds a `ConfigSource` it can specify a _retry policy_. When the config system needs to load data from that source it delegates the load operation to that retry policy. That policy is responsible not only for loading the data but also for detecting errors during loading and implementing the algorithm for deciding when and how many times to retry a failed load before reporting a failure back to your application.
+
+The config system includes two predefined retry policies:
+
+.Predefined Retry Policies
+|===
+|Policy | Summary
+
+|"just call" (default) |asks the config source to load the data with no retry
+|"repeat" |performs a settable number of time-based retries, reporting failure only after all available retries have failed
+|===
+
+See the link:{config-javadoc-base-url}/io/helidon/config/RetryPolicies.html[`RetryPolicies`] JavaDoc for complete details on these built-in retry policies.
+
+You can devise your own policy. Implement the link:{config-javadoc-base-url}/io/helidon/config/spi/RetryPolicy.html[`RetryPolicy`] interface. Then pass an instance of your policy implementation to the config source builder's `retryPolicy` method.
+
+=== Built-in Support for Config Formats [[built-in-formats]]
+
+If you add additional Helidon config maven artifacts to your dependencies, then the
+config system can read formats other than Java properties format and the default
+configuration will search for other `application` file types
+in the following order. Note that the default configuration _stops_ once it finds
+one of the files below; it _does not_ merge all such files it can find.
+
+.Default Config Files (most to the least important)
+|===
+|Source |Helidon maven artifact ID (group ID: `io.helidon.config`) |Notes
+
+|`application.yaml` |`helidon-config-yaml` |YAML format http://yaml.org
+|`application.conf` |`helidon-config-hocon` |HOCON format https://github.com/lightbend/config#using-hocon-the-json-superset
+|`application.json` |`helidon-config-hocon` |JSON format https://json.org/
+|`application.properties` |`helidon-config` |Java properties format
+|===
+
+You can also extend the config system
+to handle other types of sources by implementing the
+link:{config-javadoc-base-url}/io/helidon/config/spi/ConfigSource.html[`ConfigSource`] interface. See
+the xref:extensions.adoc[extensions'] documentation for complete information.
+
+== Configuration
+
+<TODO>
+
 == Next Steps
-Although the default configuration is very simple to use, your
-application can take as much control as it needs over
-
-* loading configuration data,
-* accessing the data once loaded, and
-* extending and modifying the behavior of the config system.
-
-You do this by:
-
-* creating and invoking methods on a `Config.Builder` object to construct a `Config` instance
-+
-Using a builder, the application can control everything about how the config
-system creates the resulting `Config` instance: config sources, parsers, polling strategy,
-filters, overrides, mappers, whether or not environment variables and Java
-system properties serve as config sources. The JavaDoc explains how to use the
-link:{config-javadoc-base-url}/io/helidon/config/Config.Builder.html[`Config.Builder`].
-+
-* using a xref:config-profiles.adoc[config profile] to choose the sources to be used
-* creating a xref:advanced-configuration.adoc#Config-Advanced-metaconfig[meta-configuration]
-file on the runtime classpath or file system to control how the config system prepares the
-default configuration.
-
-Once created, the `Config` object provides many methods the application can use to
-retrieve config data as various Java types. See the link:{config-javadoc-base-url}/io/helidon/config/Config.html[`Config`]
-JavaDoc for complete details.
-
 The links in the following tables lead you to more information about various
 other config topics.
 
@@ -243,13 +291,13 @@ other config topics.
 |===
 | Topic |Documentation
 
-| Where config comes from |xref:config-sources.adoc[Config sources],xref:config-profiles.adoc[Config Profiles],
+| Where config comes from |xref:#sources[Config sources],xref:config-profiles.adoc[Config Profiles],
 xref:advanced-configuration.adoc#Config-Advanced-metaconfig[meta-configuration]
-| What format config data is expressed in |xref:config-sources.adoc#parsers[Config parsers],
+| What format config data is expressed in |xref:#parsers[Config parsers],
 xref:supported-formats.adoc[supported formats]
 | How to filter, override, and dereference values |xref:advanced-configuration.adoc#filters-and-overrides[Filters and overrides]
 | What happens when config data changes |xref:mutability-support.adoc#polling[Config polling]
-| How to deal with loading errors |xref:config-sources.adoc#retry[Config retry policies]
+| How to deal with loading errors |xref:#retry[Config retry policies]
 |===
 
 .Accessing Configuration Data
