@@ -126,7 +126,7 @@ the properties listed in the table below.
 
 NOTE: The schema and its associated `InvocationHandler` can only be specified
 programmatically at this time. For more information, see the
-link:{graphql-javadoc-base-url}/package-summary.html[GraphQL Javadocs]
+link:{graphql-javadoc-base-url}/module-summary.html[GraphQL Javadocs]
 
 == Examples
 
@@ -152,4 +152,4 @@ curl -X POST http://127.0.0.1:PORT/graphql -d '{"query":"query { helloInDifferen
 
 == Additional Information
 
- * link:{graphql-javadoc-base-url}/package-summary.html[GraphQL Javadocs]
+ * link:{graphql-javadoc-base-url}/module-summary.html[GraphQL Javadocs]
