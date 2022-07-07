@@ -58,7 +58,7 @@ In addition, the API makes it very easy to create and monitor asynchronous tasks
 do not require explicit creation and management of threads or executors.
 
 For more information the reader is referred to the
-link:{faulttolerance-javadoc-base-url}/io/helidon/faulttolerance/package-summary.html[Fault Tolerance SE API Javadocs].
+link:{faulttolerance-javadoc-base-url}/module-summary.html[Fault Tolerance SE API Javadocs].
 
 include::{rootdir}/includes/dependencies.adoc[]
 
@@ -460,5 +460,5 @@ See <<API>> section for examples.
 == Additional Information
 
 For additional information, see the
-link:{faulttolerance-javadoc-base-url}/io/helidon/faulttolerance/package-summary.html[Fault Tolerance SE API Javadocs].
+link:{faulttolerance-javadoc-base-url}/module-summary.html[Fault Tolerance SE API Javadocs].
 
