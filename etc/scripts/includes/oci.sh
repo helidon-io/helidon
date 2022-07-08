@@ -119,42 +119,62 @@ if [ -z "${__OCI_INCLUDED__}" ]; then
                     readonly OCI_ZIP_URI="https://github.com/oracle/oci-java-sdk/releases/download/v${OCI_VERSION}/${OCI_ZIP}"
                 fi
 
-                # The temporary directory into which ${OCI_ZIP_URI}'s
-                # referent will be downloaded.
+                # Run flock(1) to acquire an exclusive lock on the
+                # lowest-numbered unused file descriptor greater than
+                # or equal to 10, waiting ten minutes (600 seconds) if
+                # necessary before giving up, and perform the
+                # download.  See
+                # https://www.gnu.org/software/bash/manual/bash.html#Redirections:~:text=Each%20redirection%20that%20may%20be%20preceded%20by%20a%20file%20descriptor%20number%20may%20instead%20be%20preceded%20by%20a%20word%20of%20the%20form%20%7Bvarname%7D. and
+                # https://stackoverflow.com/questions/8297415/in-bash-how-to-find-the-lowest-numbered-unused-file-descriptor#comment39126452_17030546.
                 #
-                # For storage planning purposes, note that this file
-                # is about 721 MB.  It is (remotely) conceivable that
-                # n jobs could be running that reference different n
-                # different OCI versions, so there could be the need
-                # for n * 721 MB of space for these downloads.
-                local OCI_ZIP_TEMPDIR
-                readonly OCI_ZIP_TEMPDIR="$(mktemp -d)"
+                # Recall that the file being downloaded is nearly a
+                # gigabyte in size so this can take a great deal of
+                # time.
+                #
+                # Note below that the file descriptor is redirected to
+                # /var/lock/${OCI_ZIP}, following FHS standards.  See
+                # https://refspecs.linuxfoundation.org/FHS_3.0/fhs/ch05s09.html.
+                local LOCKFILE_FD
+                ( flock --exclusive --timeout 600 ${LOCKFILE_FD} || exit 1
 
-                # Download the all-in-one zip file, and, if that
-                # works, unzip the
-                # oci-java-sdk-full-shaded-${OCI_VERSION}.jar file
-                # contained inside it quietly (-q) to stdout (-p)
-                # discarding path information (-j), and making sure
-                # not to ever query or overwrite (-n) redirect its
-                # contents into ${CACHED_OCI_SHADED_FULL_JAR}, and, if
-                # that works, remove the .zip file we downloaded and
-                # any temporary directories created along the way.
-                # The end result will be
-                # ${CACHED_OCI_SHADED_FULL_JAR}.
-                #
-                # For storage planning purposes, the shaded full jar
-                # is approximately 106 MB in size.
-                #
-                # Note that for some reason the shaded full jar is
-                # present in the all-in-one zip file as
-                # shaded/lib/oci-java-sdk-full-shaded..., not, as you
-                # might expect,
-                # shaded/lib/oci-java-sdk-shaded-full....  That is not
-                # a mistake or a typo.
-                curl --location --output "${OCI_ZIP_TEMPDIR}/${OCI_ZIP}" --show-error --silent "${OCI_ZIP_URI}" && \
-                    unzip -j -n -p -q "${OCI_ZIP_TEMPDIR}/${OCI_ZIP}" "shaded/lib/oci-java-sdk-full-shaded-${OCI_VERSION}.jar" > "${CACHED_OCI_SHADED_FULL_JAR}" && \
-                    rm "${OCI_ZIP_TEMPDIR}/${OCI_ZIP}" && \
-                    rmdir "${OCI_ZIP_TEMPDIR}"
+                  # The temporary directory into which ${OCI_ZIP_URI}'s
+                  # referent will be downloaded.
+                  #
+                  # For storage planning purposes, note that this file
+                  # is about 721 MB.  It is (remotely) conceivable that
+                  # n jobs could be running that reference different n
+                  # different OCI versions, so there could be the need
+                  # for n * 721 MB of space for these downloads.
+                  local OCI_ZIP_TEMPDIR
+                  readonly OCI_ZIP_TEMPDIR="$(mktemp -d)"
+
+                  # Download the all-in-one zip file, and, if that
+                  # works, unzip the
+                  # oci-java-sdk-full-shaded-${OCI_VERSION}.jar file
+                  # contained inside it quietly (-q) to stdout (-p)
+                  # discarding path information (-j), and making sure
+                  # not to ever query or overwrite (-n) redirect its
+                  # contents into ${CACHED_OCI_SHADED_FULL_JAR}, and, if
+                  # that works, remove the .zip file we downloaded and
+                  # any temporary directories created along the way.
+                  # The end result will be
+                  # ${CACHED_OCI_SHADED_FULL_JAR}.
+                  #
+                  # For storage planning purposes, the shaded full jar
+                  # is approximately 106 MB in size.
+                  #
+                  # Note that for some reason the shaded full jar is
+                  # present in the all-in-one zip file as
+                  # shaded/lib/oci-java-sdk-full-shaded..., not, as you
+                  # might expect,
+                  # shaded/lib/oci-java-sdk-shaded-full....  That is not
+                  # a mistake or a typo.
+                  curl --location --output "${OCI_ZIP_TEMPDIR}/${OCI_ZIP}" --show-error --silent "${OCI_ZIP_URI}" && \
+                      unzip -j -n -p -q "${OCI_ZIP_TEMPDIR}/${OCI_ZIP}" "shaded/lib/oci-java-sdk-full-shaded-${OCI_VERSION}.jar" > "${CACHED_OCI_SHADED_FULL_JAR}" && \
+                      rm "${OCI_ZIP_TEMPDIR}/${OCI_ZIP}" && \
+                      rmdir "${OCI_ZIP_TEMPDIR}"
+
+                ) {LOCKFILE_FD}>"/var/lock/${OCI_ZIP}" # the braces without $ around FD are on purpose
 
             fi
 
