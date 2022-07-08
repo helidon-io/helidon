@@ -23,10 +23,6 @@ import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.security.CodeSource;
-import java.security.ProtectionDomain;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -45,6 +41,10 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.oracle.bmc.Service;
+import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider;
+import com.oracle.bmc.common.ClientBuilderBase;
+import com.oracle.bmc.http.ClientConfigurator;
 import jakarta.enterprise.event.Event;
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.inject.AmbiguousResolutionException;
@@ -59,17 +59,6 @@ import jakarta.enterprise.inject.spi.InjectionPoint;
 import jakarta.enterprise.inject.spi.ProcessInjectionPoint;
 import jakarta.enterprise.util.TypeLiteral;
 import jakarta.inject.Singleton;
-// import jakarta.ws.rs.Priorities;
-// import jakarta.ws.rs.client.Client;
-// import jakarta.ws.rs.client.ClientBuilder;
-// import jakarta.ws.rs.client.ClientRequestContext;
-// import jakarta.ws.rs.client.ClientRequestFilter;
-// import jakarta.ws.rs.core.UriBuilder;
-
-import com.oracle.bmc.Service;
-import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider;
-import com.oracle.bmc.common.ClientBuilderBase;
-import com.oracle.bmc.http.ClientConfigurator;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 import shaded.com.oracle.oci.javasdk.javax.ws.rs.Priorities;
@@ -729,13 +718,6 @@ public final class OciExtension implements Extension {
         // not further process the class in question.  The class
         // remains eligible for further processing; i.e. this is not a
         // CDI veto.
-        /*
-        if (equals(Service.class.getProtectionDomain(), c.getProtectionDomain())
-            || this.additionalVetoes.contains(c.getName())) {
-            LOGGER.fine(() -> "Vetoed " + c + "\n  " + Service.class.getName() + " protection domain: " + Service.class.getProtectionDomain());
-            return true;
-        }
-        */
         if (this.additionalVetoes.contains(c.getName())) {
             LOGGER.fine(() -> "Vetoed " + c);
             return true;
@@ -1033,39 +1015,6 @@ public final class OciExtension implements Extension {
             return bm.resolve(bm.getBeans(type, qualifiers)) == null;
         } catch (AmbiguousResolutionException ambiguousResolutionException) {
             return false;
-        }
-    }
-
-    private static boolean equals(ProtectionDomain pd0, ProtectionDomain pd1) {
-        if (pd0 == null) {
-            return pd1 == null;
-        } else if (pd1 == null) {
-            return false;
-        }
-        return equals(pd0.getCodeSource(), pd1.getCodeSource());
-    }
-
-    private static boolean equals(CodeSource cs0, CodeSource cs1) {
-        if (cs0 == null) {
-            return cs1 == null;
-        } else if (cs1 == null) {
-            return false;
-        }
-        return equals(cs0.getLocation(), cs1.getLocation());
-    }
-
-    private static boolean equals(URL url0, URL url1) {
-        if (url0 == null) {
-            return url1 == null;
-        } else if (url1 == null) {
-            return false;
-        }
-        try {
-            return Objects.equals(url0.toURI(), url1.toURI());
-        } catch (URISyntaxException uriSyntaxException) {
-            // Use URL#equals(Object) only as a last resort, since it
-            // involves DNS lookups (!).
-            return url0.equals(url1);
         }
     }
 
