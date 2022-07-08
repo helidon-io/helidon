@@ -240,7 +240,7 @@ public class ProxyFactory<T> implements PrivilegedAction<T> {
                     // abstract decorators fall into this category, let's use the type name
                     return proxiedBeanType.getName() + PROXY_SUFFIX;
                 }
-                return createProxyName(typeInfo);
+                return createProxyName(bean, typeInfo);
             } else {
                 //interface only bean.
                 final StringBuilder name = new StringBuilder();
@@ -494,7 +494,7 @@ public class ProxyFactory<T> implements PrivilegedAction<T> {
      * This is used when there is no enclosing type and we may have multiple interfaces
      * This method ensures the superinterface is the base of the name
      */
-    private static String createProxyName(TypeInfo typeInfo) {
+    private static String createProxyName(Bean<?> bean, TypeInfo typeInfo) {
         Class<?> superInterface = typeInfo.getSuperInterface();
         StringBuilder name = new StringBuilder();
         List<String> interfaces = new ArrayList<String>();
@@ -510,7 +510,12 @@ public class ProxyFactory<T> implements PrivilegedAction<T> {
             name.append('$');
         }
 
-        return superInterface.getName() + '$' + name;
+        // use package of declaring bean, as that has correct dependencies
+        // (we may expose a type from module that does not require Weld internal APIs that the proxy implements)
+        String packageName = bean.getBeanClass().getPackageName();
+        String className = superInterface.getSimpleName();
+
+        return packageName + "." + className + '$' + name;
     }
 
     /*

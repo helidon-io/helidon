@@ -23,6 +23,8 @@ module io.helidon.microprofile.cdi {
     // needed for Unsafe used from Weld
     requires jdk.unsupported;
     requires java.logging;
+    // weld requires java.sql.Date and we fail if not on classpath
+    requires java.sql;
     requires jakarta.cdi;
 
     requires io.helidon.common;

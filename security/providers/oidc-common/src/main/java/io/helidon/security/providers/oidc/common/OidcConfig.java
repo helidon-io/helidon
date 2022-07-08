@@ -1322,8 +1322,8 @@ public final class OidcConfig {
         }
 
         /**
-         * Name of the encryption configuration available through {@link Security#encrypt(String, byte[])} and
-         * {@link Security#decrypt(String, String)}.
+         * Name of the encryption configuration available through {@link io.helidon.security.Security#encrypt(String, byte[])} and
+         * {@link io.helidon.security.Security#decrypt(String, String)}.
          * If configured and encryption is enabled for any cookie,
          * Security MUST be configured in global or current {@code io.helidon.common.context.Context} (this
          * is done automatically in Helidon MP).

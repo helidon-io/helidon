@@ -532,7 +532,7 @@ public final class Mp1Main {
         if (null == healthCheck) {
             collector.fatal("\"" + name + "\" health check is not available");
         } else {
-            String status = healthCheck.getString("state");
+            String status = healthCheck.getString("status");
             if (!"UP".equals(status)) {
                 collector.fatal("Health check \"" + name + "\" should be up, but is " + status);
             }

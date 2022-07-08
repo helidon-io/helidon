@@ -42,8 +42,8 @@
             <artifactId>helidon-graal-native-image-extension</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.glassfish</groupId>
-            <artifactId>jakarta.json</artifactId>
+            <groupId>org.eclipse.parsson</groupId>
+            <artifactId>parsson</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>

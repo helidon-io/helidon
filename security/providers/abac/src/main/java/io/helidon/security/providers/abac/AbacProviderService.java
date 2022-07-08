@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,11 @@
 package io.helidon.security.providers.abac;
 
 import io.helidon.config.Config;
-import io.helidon.security.Security;
 import io.helidon.security.spi.SecurityProvider;
 import io.helidon.security.spi.SecurityProviderService;
 
 /**
- * A java service to register this provider with {@link Security}.
+ * A java service to register this provider with {@link io.helidon.security.Security}.
  */
 public class AbacProviderService implements SecurityProviderService {
     @Override

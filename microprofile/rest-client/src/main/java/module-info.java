@@ -29,7 +29,7 @@ module io.helidon.microprofile.restclient {
 
     exports io.helidon.microprofile.restclient;
     // needed for jersey injection
-    opens io.helidon.microprofile.restclient to hk2.locator,hk2.utils,weld.core.impl, io.helidon.microprofile.cdi;
+    opens io.helidon.microprofile.restclient to org.glassfish.hk2.utilities,weld.core.impl, io.helidon.microprofile.cdi;
 
     provides org.eclipse.microprofile.rest.client.spi.RestClientListener
             with io.helidon.microprofile.restclient.MpRestClientListener;
