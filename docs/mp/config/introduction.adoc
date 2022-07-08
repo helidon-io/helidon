@@ -33,6 +33,7 @@ include::{rootdir}/includes/mp.adoc[]
 - <<Overview>>
 - <<Maven Coordinates>>
 - <<Usage>>
+- <<Configuration>>
 - <<Guides>>
 - <<Reference>>
 
@@ -216,6 +217,18 @@ This is a Helidon specific feature available since version 2.3.0. See
  xref:advanced-configuration.adoc#_creating_microprofile_config_sources_from_meta_config[Microprofile Config Sources] for detailed information.
 
 NOTE: For backward compatibility, we will support usage of Helidon SE meta-configuration until version 3.0.0. Using this approach causes behavior that is not compatible with {spec-name} specification.
+
+== Configuration
+
+Config sources can be configured using the following properties.
+
+The class responsible for configuration is:
+
+include::{rootdir}/includes/config/io.helidon.config.mp.MpConfigBuilder.adoc[leveloffset=-1]
+
+Current properties may be set in `application.yaml` or in `microprofile-config.properties` with `mp.config` prefix.
+
+See xref:#_spec_name_profiles[Config Profiles] for more information.
 
 == Guides
 
