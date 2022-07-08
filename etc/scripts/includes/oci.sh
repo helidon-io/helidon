@@ -151,7 +151,7 @@ if [ -z "${__OCI_INCLUDED__}" ]; then
                 # might expect,
                 # shaded/lib/oci-java-sdk-shaded-full....  That is not
                 # a mistake or a typo.
-                curl --location --no-progress-meter --output "${OCI_ZIP_TEMPDIR}/${OCI_ZIP}" "${OCI_ZIP_URI}" && \
+                curl --location --output "${OCI_ZIP_TEMPDIR}/${OCI_ZIP}" --show-error --silent "${OCI_ZIP_URI}" && \
                     unzip -j -n -p -q "${OCI_ZIP_TEMPDIR}/${OCI_ZIP}" "shaded/lib/oci-java-sdk-full-shaded-${OCI_VERSION}.jar" > "${CACHED_OCI_SHADED_FULL_JAR}" && \
                     rm "${OCI_ZIP_TEMPDIR}/${OCI_ZIP}" && \
                     rmdir "${OCI_ZIP_TEMPDIR}"
