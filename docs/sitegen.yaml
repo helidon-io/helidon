@@ -328,7 +328,7 @@ backend:
                   value: "settings"
                 sources:
                   - "introduction.adoc"
-                  - "config-sources.adoc"
+                  - "advanced-configuration.adoc"
               - type: "MENU"
                 title: "CDI Extensions"
                 dir: "extensions"

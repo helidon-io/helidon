@@ -158,7 +158,7 @@ The following configuration sources can be used to retrieve the configuration:
 
 |===
 
-See xref:config-sources.adoc#_creating_microprofile_config_sources_for_manual_setup_of_config[manual setup of config] section for more information.
+See xref:advanced-configuration.adoc#_creating_microprofile_config_sources_for_manual_setup_of_config[manual setup of config] section for more information.
 
 ==== References
 You can use `${reference}` to reference another configuration key in a key value. This
@@ -214,7 +214,7 @@ You can configure the Config using Helidon MP Config meta configuration feature.
 configuration options, including addition of discovered sources and converters.
 
 This is a Helidon specific feature available since version 2.3.0. See
- xref:config-sources.adoc#_creating_microprofile_config_sources_from_meta_config[Microprofile Config Sources] for detailed information.
+ xref:advanced-configuration.adoc#_creating_microprofile_config_sources_from_meta_config[Microprofile Config Sources] for detailed information.
 
 NOTE: For backward compatibility, we will support usage of Helidon SE meta-configuration until version 3.0.0. Using this approach causes behavior that is not compatible with {spec-name} specification.
 
