@@ -42,7 +42,7 @@
       <dependencies>
         <dependency>
           <groupId>com.oracle.oci.sdk</groupId>
-          <artifactId>oci-java-sdk-full-shaded</artifactId>
+          <artifactId>oci-java-sdk-shaded-full</artifactId>
           <version>${version.lib.oci}</version>
         </dependency>
         <dependency>
@@ -66,7 +66,7 @@
         -->
         <dependency>
             <groupId>com.oracle.oci.sdk</groupId>
-            <artifactId>oci-java-sdk-full-shaded</artifactId>
+            <artifactId>oci-java-sdk-shaded-full</artifactId>
             <scope>compile</scope>
         </dependency>
         <dependency>

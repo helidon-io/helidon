@@ -35,7 +35,7 @@ module io.helidon.integrations.oci.sdk.cdi {
     requires jakarta.interceptor.api;
     requires microprofile.config.api;
     // requires oci.java.sdk.common;
-    requires oci.java.sdk.full.shaded;
+    requires oci.java.sdk.shaded.full;
     
     exports io.helidon.integrations.oci.sdk.cdi;
 
