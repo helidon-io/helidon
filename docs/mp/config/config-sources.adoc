@@ -19,108 +19,19 @@
 = Microprofile Config Sources
 :description: MicroProfile Config Sources
 :keywords: helidon, mp, ordinal, mpconfig, yamlmpconfig
+:feature-name: Config
 :rootdir: {docdir}/../..
 
 include::{rootdir}/includes/mp.adoc[]
 
-A Config Source provides configuration values from different sources such as property files and user classes that are registered by the application.
+== ToC
 
-Helidon configuration sources can use different formats for the configuration data. You can specify the format on a per-source bases, mixing and matching formats as required.
-
-The following configuration sources can be used to retrieve the configuration:
-
-[cols="3,5"]
-|===
-|Source |Description
-
-|System properties   |A mutable source that uses `System.getProperties()` to obtain configuration values.
-
-|Environment variables   |An immutable source that uses `System.env()` to obtain configuration values and resolves aliases as defined by the MicroProfile Config specification.
-
-|`META-INF/microprofile-config.properties`   |The properties config source as defined by MicroProfile Config specification.
-
-|File    |Creates the source from a properties file on the file system with `MpConfigSources.create(Path)`.
-
-|URL    |Creates the source from properties from an URL with `MpConfigSources.create(URL)`.
-
-|`Map<String, String>`   |Creates the source from a Map with `MpConfigSources.create(Map)`.
-
-|`Properties`    |Creates the source directly from Properties with `MpConfigSources.create(Properties)`.
-
-|File on classpath    |Creates the source from a properties file on classpath with `MpConfigSources.classpath(String)`.
-
-|YAML    |Creates the source from YAML using `YamlMpConfigSource.create(Path)` or `YamlMpConfigSource.create(URL)`.
-
-|===
-
-== Understanding the Ordering of Default Config Sources
-
-The default MicroProfile Config Sources are:
-
-* System properties (ordinal=400)
-* Environment variables (ordinal=300)
-* /META-INF/microprofile-config.properties (ordinal=100)
-
-Each Config Source has an ordinal that determines the priority of the Config Source.
-A Config Source with higher ordinal has higher priority as compared to the Config Source with
-lower ordinal. The values taken from the high-priority Config Source overrides the values
-from low-priority Config Source.
-
-This helps to customize the configuration of Config Sources using external Config Source
-if an external Config Source has higher ordinal values than the built-in Config Sources of the application.
-
-== Creating Custom Config Sources
-
-Custom Config Sources are loaded using the Java Service Loader pattern, by implementing
-either `org.eclipse.microprofile.config.spi.ConfigSource`,
-or `org.eclipse.microprofile.config.spi.ConfigSourceProvider` SPI and registering
-it as a service (Using `META-INF/services/${class-name}` file when using classpath, or
-using the `provides` statement in `module-info.java` when using module path).
-
-The interface `org.eclipse.microprofile.config.spi.ConfigSource` requires implementation of the following methods:
-
-* `String getName()`
-* `Map<String, String> getProperties()`
-* `String getValue(String key)`
-* `getOrdinal()`
-
-=== Example of a Custom Config Source
-
-[source,java]
-----
-public class CustomConfigSource implements ConfigSource {
-    private static final String NAME = "MyConfigSource";
-    private static final int ORDINAL = 200; // Default for MP is 100
-    private static final Map<String, String> PROPERTIES = mapOf("app.greeting", "Hi");
-
-
-    @Override
-    public String getName() {
-        return NAME; <1>
-    }
-
-    @Override
-    public Map<String, String> getProperties() {
-        return PROPERTIES; <2>
-    }
-
-    @Override
-    public String getValue(String key) {
-        return PROPERTIES.get(key); <3>
-    }
-
-    @Override
-    public int getOrdinal() {
-        return ORDINAL; <4>
-    }
-}
-----
-
-<1> Returns the name of the Config Source to use for logging or analysis of configured values.
-<2> Returns the properties in this Config Source as a map.
-<3> Returns the value of the requested key, or `null` if the key is not available
-<4> Returns the ordinal of this Config Source.
-
+- <<Creating MicroProfile Config Sources for Manual Setup of Config>>
+- <<Creating Custom Config Sources>>
+- <<Creating MicroProfile Config Sources from meta-config>>
+- <<Extending meta-config to create a custom config source type>>
+- <<Creating MicroProfile Config Source from Helidon SE Config Source>>
+- <<Creating MicroProfile Config Source from Helidon SE Config Instance>>
 
 == Creating MicroProfile Config Sources for Manual Setup of Config
 
@@ -179,6 +90,58 @@ ConfigProviderResolver.instance().newBuilder()
         .withSources(YamlMpConfigSource.create(path))
         .build();
 ----
+
+== Creating Custom Config Sources
+
+Custom Config Sources are loaded using the Java Service Loader pattern, by implementing
+either `org.eclipse.microprofile.config.spi.ConfigSource`,
+or `org.eclipse.microprofile.config.spi.ConfigSourceProvider` SPI and registering
+it as a service (Using `META-INF/services/${class-name}` file when using classpath, or
+using the `provides` statement in `module-info.java` when using module path).
+
+The interface `org.eclipse.microprofile.config.spi.ConfigSource` requires implementation of the following methods:
+
+* `String getName()`
+* `Map<String, String> getProperties()`
+* `String getValue(String key)`
+* `getOrdinal()`
+
+=== Example of a Custom Config Source
+
+[source,java]
+----
+public class CustomConfigSource implements ConfigSource {
+    private static final String NAME = "MyConfigSource";
+    private static final int ORDINAL = 200; // Default for MP is 100
+    private static final Map<String, String> PROPERTIES = mapOf("app.greeting", "Hi");
+
+
+    @Override
+    public String getName() {
+        return NAME; <1>
+    }
+
+    @Override
+    public Map<String, String> getProperties() {
+        return PROPERTIES; <2>
+    }
+
+    @Override
+    public String getValue(String key) {
+        return PROPERTIES.get(key); <3>
+    }
+
+    @Override
+    public int getOrdinal() {
+        return ORDINAL; <4>
+    }
+}
+----
+
+<1> Returns the name of the Config Source to use for logging or analysis of configured values.
+<2> Returns the properties in this Config Source as a map.
+<3> Returns the value of the requested key, or `null` if the key is not available
+<4> Returns the ordinal of this Config Source.
 
 == Creating MicroProfile Config Sources from meta-config
 

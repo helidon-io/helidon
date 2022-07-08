@@ -19,12 +19,23 @@
 = Hierarchical Features
 :description: Helidon hierarchical features
 :keywords: helidon, config
-:toc: preamble
-:toclevels: 2
+:feature-name: Config
 :rootdir: {docdir}/../..
 :imagesdir: {rootdir}/images
 
 include::{rootdir}/includes/se.adoc[]
+
+== ToC
+
+- <<Overview>>
+- <<Configuration Node Types>>
+- <<Configuration Key>>
+- <<In-memory Representation of Configuration>>
+- <<Access by Key>>
+- <<Access by General Navigation>>
+- <<Detaching a Config Subtree>>
+
+== Overview
 
 The config system represents configuration as a tree in memory. Many developers
 will choose to work directly with config values -- values from
@@ -158,7 +169,7 @@ notation to separate the names of the nodes along the path. The code can
 navigate one level at a time using chained `get` invocations, each specifying
 one level of the path to the expected node. Or, you can mix the two styles.
 
-All of the following lines retrieve the same `Config` node.
+All the following lines retrieve the same `Config` node.
 [source,java]
 .Equivalent Config Retrievals
 ----

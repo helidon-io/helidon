@@ -17,13 +17,24 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Advanced Configuration Topics
-:description: Helidon config advanced configuration
+:description: Helidon advanced configuration
 :keywords: helidon, config, meta
-:toc: preamble
-:toclevels: 4
+:feature-name: Config
 :rootdir: {docdir}/../..
 
 include::{rootdir}/includes/se.adoc[]
+
+== ToC
+
+- <<Overview, Overview>>
+- <<Advanced Config Sources, Advanced Config Sources>>
+- <<Advanced Config Parsers, Advanced Config Parsers>>
+- <<Loading Config using Meta-configuration, Loading Config using Meta-configuration>>
+- <<Config Keys with . in name, Config Keys with . in name>>
+- <<filters-and-overrides, Filter Overrides and Token Substitution,>>
+- <<Executors for Asynchronous Config Activity, Executors for Asynchronous Config Activity>>
+
+== Overview
 
 This section discusses several advanced topics related to Helidon configuration.
 
@@ -116,7 +127,7 @@ assert secrets.get("password")                   // <4>
 <4> ...and the key `password` to `^ery$ecretP&ssword`.
 
 Remember that your application can process the contents of a given file
-as configuration. See the xref:config-sources.adoc[config sources] section
+as configuration. See the xref:introduction.adoc#config_sources[config sources] section
 and the link:{config-javadoc-base-url}/io/helidon/config/ConfigSources.html#file-java.lang.String-[`ConfigSources.file`]
 JavaDoc.
 
@@ -298,15 +309,15 @@ Although most applications are explicit about the config sources they use in bui
 Most applications let the config system try to infer the media type of the
 config source.
 
-By default config source implementations use the
+By default, config source implementations use the
 `io.helidon.common.media.type.MediaTypes` API to infer the source media type from
 the source, typically (but not always) based on the file type portion of the file path.
 Helidon media type module has a predefined set of mappings as configured in
 `common/media-type/src/main/resources/io/helidon/common/media/type/default-media-types.properties`, including
 the Config supported formats: `.properties`, `.yaml`, `.json` and `.conf`. To handle
 other formats you can implement and register your own `io.helidon.common.media.type.spi.MediaTypeDetector` Java Service
-implementations. (Typically you would also write and register a config parser
-to translate that format; see <<locating-parser,Locating a Parser>> below.).
+implementations. (Typically, you would also write and register a config parser
+to translate that format; see <<locating-parser,Locating a Parser>> below.)
 
 ===== By Application Directive
 Your application can specify what media type to use in interpreting a config
@@ -381,7 +392,7 @@ from parsing that `String`.
 In this example, a YAML document contains a JSON document as a leaf.
 
 [source,yaml]
-.YAML file with included JSON formated property
+.YAML file with included JSON formatted property
 ----
 secrets:
     username: "jose"
@@ -431,7 +442,7 @@ which returns the appropriate media types (if any) for config keys.
 <2> The function says to treat the `app` property value as a JSON document and
 leave other nodes unchanged.
 <3> Other properties are loaded as expected.
-<4> Property `app` is now an structured object node.
+<4> Property `app` is now a structured object node.
 
 Because the function passed to `mediaTypeMapping` identifies the `app` node as a JSON
 document, the config system selects the config parser that is registered with the builder
@@ -457,7 +468,7 @@ Config config = Config.create(
 
 <1> Uses the `parserMapping` method to map keys to parser instances.
 <2> Tells the config system to use the HOCON parser for translating the `String`
-value of the `app` key. (HCON is a superset of JSON.)
+value of the `app` key. (HOCON is a superset of JSON.)
 
 As before, the config system replaces the value node in the
 containing config tree with the config tree resulting from the additional parse.
@@ -530,52 +541,6 @@ Config config = MetaConfig.config(metaConfig); // <2>
 <1> We create a meta configuration from our meta configuration source
 <2> This method populates the config sources from
 all the actual sources declared in the meta-configuration.
-
-=== Loading Meta-configuration via git
-
-The config system can load information about config sources from meta-configuration
-rather than requiring your application to construct the builder. To read
-meta-configuration from a git config source set the following properties for the source:
-
-* `type` to `git` or `class` to `io.helidon.config.git.GitConfigSourceBuilder`
-* `path` (type `String`) - Relative path to the configuration file in repository.
-* `uri` (type `URI`) - URI to the git repository.
-* `directory` (type `Path`) - Directory with a cloned repository, by default
-a temporary directory.
-* `branch` (type `String`) - git branch (default is `master`).
-
-The meta-configuration must set the `path` and one of `uri` or `directory`.
-Other optional `properties` are inherited from
-`AbstractParsableConfigSource.Builder` (see
-link:{config-javadoc-base-url}/io/helidon/config/spi/AbstractParsableConfigSource.Builder.html#init-io.helidon.config.Config-[javadoc])
-
-[source,java]
-.Load Config from meta-configuration
-----
-Config config = Config.loadSourcesFrom(classpath("config-meta-git.yaml"));
-----
-
-[source,YAML]
-.Meta-config `config-meta-git.yaml` for the git source
-----
-sources:
-    - type: "git"                                            # <1>
-      properties:
-          path: "application.conf"                           # <2>
-          uri: "https://github.com/okosatka/test-config.git" # <2>
-          directory: "/config"                               # <2>
-          branch: "dev"                                      # <2>
-          polling-strategy:
-              type: "regular"                                # <3>
-              properties:
-                  interval: "PT5M"                           # <3>
-
-----
-
-<1> `git` config source type
-<2> git source-specific properties: `path`, `uri`, `directory` and `branch`.
-<3> Polling strategy `regular` with an interval, in
-`Duration` format, of 5 minutes in this example.
 
 == Config Keys with . in name
 
@@ -717,7 +682,7 @@ Config config = Config.builder()
 using the environment-specific override.
 
 == Executors for Asynchronous Config Activity
-Various parts of the config system work asychronously:
+Various parts of the config system work asynchronously:
 
 * polling strategies to detect changes to config sources,
 * publishers to notify your application when such changes occur,
@@ -732,8 +697,8 @@ executors, but your application can specify different ones if necessary.
 The two methods `PollingStrategies.regular(Duration)` and
 `PollingStrategies.watch(Path)` return builders for their respective strategies.
 Both builders expose the `executor` method which your application can invoke, passing a
-`java.util.concurrent.ScheduledExecutorService` instance it wants used for the
-polling work. By default each polling strategy instance uses a separate thread
+`java.util.concurrent.ScheduledExecutorService` instance it requires for the
+polling work. By default, each polling strategy instance uses a separate thread
 pool executor.
 
 The following example shares the same executor for two different polling
@@ -764,7 +729,7 @@ Config config = Config.create(
 
 === Publishers for Source Change Events
 Recall that when a polling strategy detects a change in a source, it informs
-interested parties of the changes. By default each `Config.Builder` arranges
+interested parties of the changes. By default, each `Config.Builder` arranges
 for the resulting `Config` tree to use a shared executor that reuses available threads
 from a pool, creating new threads as needed. The same executor is used for actually
 reloading the source.
@@ -807,7 +772,7 @@ When your application supplies multiple sources to a config builder, as with
 `Config.create(Supplier<ConfigSource>...)` and `Config.create(List<Supplier<ConfigSource>>)`,
 the config system
 automatically uses a _composite config source_ which aggregates the separate
-sources but also listens for changes to any of the individual sources so it can
+sources but also listens for changes to any of the individual sources, so it can
 delegate the change notification. For this change detection and notification the
 config system, by default, uses an executor with a dedicated thread pool that is
 shared across all `Config` instances.
@@ -819,7 +784,7 @@ link:{config-javadoc-base-url}/io/helidon/config/ConfigSources.CompositeBuilder.
 which extends `Config.Builder`.
 
 Because a composite source might yield more numerous change events -- because of the
-multiple underlying sources -- your application can specify a _debounce timeout_
+multiple underlying sources -- your application can specify _debounce timeout_
 for the composite source by invoking the `CompositeBuilder.changesDebounce(Duration)`
 method. The composite source aggregates multiple change events within this period
 into a single event and broadcasts that one instead and reloads the sources at
@@ -861,7 +826,7 @@ Your application
 can specify a non-default `Executor` for a tree to use for accepting and propagating
 those events by invoking the `changesExecutor` method on the `Config.Builder`.
 Each source subscriber has a dedicated buffer for holding changes events. This
-defaults to 256 but you can tailor this value as needed.
+defaults to 256, but you can tailor this value as needed.
 
 [source,java]
 .Customize config executor
@@ -887,7 +852,7 @@ The `RetryPolicies.repeat(int retries)` method returns
 a link:{config-javadoc-base-url}/io/helidon/config/RetryPolicies.Builder.html[RetryPolicies.Builder].
 Your application can invoke the retry policy builder's `executor` method to
 specify which `ScheduledExecutorService` instance it should use to schedule and
-execute delayed retries. By default the config system uses a separate thread
+execute delayed retries. By default, the config system uses a separate thread
 pool executor for each retry policy instance.
 
 [source,java]

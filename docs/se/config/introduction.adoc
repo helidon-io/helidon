@@ -27,12 +27,13 @@ include::{rootdir}/includes/se.adoc[]
 
 == ToC
 
-- <<Overview, Overview>>
-- <<Maven-Coordinates, Maven Coordinates>>
-- <<Getting Started, Getting Started>>
-- <<Usage, Usage>>
-- <<Configuration, Configuration>>
-- <<Next Steps, Next Steps>>
+- <<Overview>>
+- <<Maven Coordinates>>
+- <<Getting Started>>
+- <<Usage>>
+- <<Configuration>>
+- <<Guides>>
+- <<Additional Information>>
 
 == Overview
 
@@ -62,7 +63,7 @@ These are the main parts of the configuration system:
 - A config source - a location containing configuration data (File, Map, Properties etc.)
 - A config parser - a component capable of transforming bytes into configuration data (such as JSON content, YAML etc.)
 
-=== Config Sources [[sources]]
+=== Config Sources [[config_sources]]
 
 Configuration can be loaded from different types of locations and expressed in different formats. The config system includes support for several types of config sources, for example:
 
@@ -109,7 +110,7 @@ Config config = Config.create(); // <1>
 ----
 <1> The `Config` object is created with default settings.
 
-=== Custom Configuration
+=== Custom Config Sources
 
 Although the default configuration is very simple to use, your application can take full control of all configuration sources and precedence. You can do so by creating and invoking methods on a `Config.Builder` object to construct a `Config` instance.
 
@@ -117,12 +118,13 @@ When your application prepares a `Config.Builder` it sets what ``ConfigSource``s
 ``ConfigParser``s the builder should use in constructing the resulting `Config` object. The JavaDoc explains how to use the
 link:{config-javadoc-base-url}/io/helidon/config/Config.Builder.html[`Config.Builder`].
 
+See the xref:{rootdir}/se/guides/config.adoc#_custom_configuration_sources[Custom Configuration Sources] and xref:advanced-configuration.adoc#_advanced_config_sources[advanced config sources] sections for detailed examples and further information.
+
 === Accessing Config Values
 
 You have used Helidon to customize configuration behavior from your code using the `Config` and `Config.Builder` classes. As discussed previously, `Config` system reads configuration from a config source, which uses a config parser to translate the source into an in-memory tree which represents the configuration’s structure and values.
 
-This approach allows us to take any source data, be it a flat properties file or an object structure such as JSON, and
-transform it into a single tree that allows for overriding of values using heterogeneous config sources.
+This approach allows us to take any source data, be it a flat properties file or an object structure such as JSON, and transform it into a single tree that allows for overriding of values using heterogeneous config sources.
 
 We are using the `.` as a separator of tree structure.
 
@@ -191,8 +193,7 @@ Let's consider the following keys:
 When you request `config.get(`answer`).asInt().orElse(25)`, you would get `42`
 
 This allows you to configure environment specific configuration values through
-system properties, environment variables, or through files available on each environment (be it
-a physical machine, a Kubernetes pod, or a docker image) without changing your source code.
+system properties, environment variables, or through files available on each environment (be it a physical machine, a Kubernetes pod, or a docker image) without changing your source code.
 
 === Config Filters
 
@@ -216,6 +217,8 @@ The filter resolves the `$\{host}` reference to the `localhost` value.
 This makes it easier to override values in testing and production, as you can just
 override the `host` key and leave the URIs same.
 
+See xref:advanced-configuration.adoc#filters-and-overrides[Filter, Overrides, and Token Substitution] section for further information on some more involved aspects.
+
 === Typed config values
 
 The `Config` object lets your application retrieve config data as a typed ConfigValue.
@@ -237,6 +240,8 @@ ConfigValue<T> can be used to obtain:
 The config system automatically knows how to return `List` and `Map` complex types, and you can provide _config mappers_ to convert a config subtree to whatever
 Java types your application needs.
 
+See xref:property-mapping.adoc[Property Mapping] page for details on how to use the built-in mappings and your own custom ones to convert to simple and complex types.
+
 === Dealing with Loading Errors: Retry Policies [[retry]]
 Config sources, especially those that depend on fallible mechanisms such as the network or a shared file system, might fail to load during momentary outages. The config system allows you to build resiliency into your application's use of configuration that relies on such technologies.
 
@@ -255,6 +260,28 @@ The config system includes two predefined retry policies:
 See the link:{config-javadoc-base-url}/io/helidon/config/RetryPolicies.html[`RetryPolicies`] JavaDoc for complete details on these built-in retry policies.
 
 You can devise your own policy. Implement the link:{config-javadoc-base-url}/io/helidon/config/spi/RetryPolicy.html[`RetryPolicy`] interface. Then pass an instance of your policy implementation to the config source builder's `retryPolicy` method.
+
+=== Change Support
+
+Each `Config` object which the config system returns to your application is
+immutable; even if the information in one of the underlying config sources changes, an in-memory data structure built from the earlier content remains unchanged.
+
+Nevertheless, we know that configuration sometimes changes, and we may want to react to such changes. So the config system allows your application to learn when such underlying changes in the data occur and respond accordingly.
+
+In `Config` system, you can do this through change support provided by these components:
+
+1. `Config.onChange()` API - you can use to add your listener, to be notified of configuration changes
+2. `PollingStrategy` - a component providing regular events to check if a source has changed. This
+requires support in config sources themselves (see `PollableSource`)
+3. `ChangeWatcher` - a component watching the underlying source for changes. This requires support
+in config sources themselves (see `WatchableSource`)
+4. `EventConfigSource` - an event source that is capable of notifying about changes itself
+
+If you want to receive `onChange` events, you must configure your Config with at least one source that is capable of providing changes (having a `PollingStrategy` or `ChangeWatcher` configured, or implementing `EventConfigSource`)
+
+The xref:mutability-support.adoc[mutability] documentation explains this in detail, and the link:{config-javadoc-base-url}/io/helidon/config/PollingStrategies.html[`PollingStrategies`] JavaDoc describes the built-in implementations.
+
+You can, of course, write your own by implementing the link:{config-javadoc-base-url}/io/helidon/config/spi/PollingStrategy.html[`PollingStrategy`] interface. On a config source builder invoke `pollingStrategy` with an instance of your custom strategy and then invoke `build` to create the `ConfigSource`.
 
 === Built-in Support for Config Formats [[built-in-formats]]
 
@@ -283,7 +310,19 @@ the xref:extensions.adoc[extensions'] documentation for complete information.
 
 <TODO>
 
-== Next Steps
+== Guides
+
+[PILLARS]
+====
+[CARD]
+.SE Config Guide
+[link={rootdir}/guides/config.adoc]
+--
+Step-by-step guide about using Config in your Helidon SE application.
+--
+====
+
+== Additional Information
 The links in the following tables lead you to more information about various
 other config topics.
 
@@ -291,12 +330,12 @@ other config topics.
 |===
 | Topic |Documentation
 
-| Where config comes from |xref:#sources[Config sources],xref:config-profiles.adoc[Config Profiles],
+| Where config comes from |xref:#config_sources[Config sources],xref:config-profiles.adoc[Config Profiles],
 xref:advanced-configuration.adoc#Config-Advanced-metaconfig[meta-configuration]
 | What format config data is expressed in |xref:#parsers[Config parsers],
 xref:supported-formats.adoc[supported formats]
 | How to filter, override, and dereference values |xref:advanced-configuration.adoc#filters-and-overrides[Filters and overrides]
-| What happens when config data changes |xref:mutability-support.adoc#polling[Config polling]
+| What happens when config data changes |xref:mutability-support.adoc[Mutability Support]
 | How to deal with loading errors |xref:#retry[Config retry policies]
 |===
 
