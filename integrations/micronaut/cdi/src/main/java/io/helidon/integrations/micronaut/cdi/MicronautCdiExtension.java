@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -308,10 +307,7 @@ public class MicronautCdiExtension implements Extension {
         SoftServiceLoader.load(BeanDefinitionReference.class)
                 .forEach(list::add);
 
-        Map<Class<?>, List<MicronautBean>> beanMap = new HashMap<>();
-
-        // TODO 3.0.0-JAKARTA
-        list.stream()
+        List<MicronautBean> beans = list.parallelStream()
                 .filter(ServiceDefinition::isPresent)
                 .flatMap(this::loadMicronautService)
                 .filter(BeanDefinitionReference::isPresent)
@@ -326,16 +322,7 @@ public class MicronautCdiExtension implements Extension {
 
                     return new MicronautBean(beanType, ref);
                 })
-                .forEach(it -> beanMap.computeIfAbsent(it.beanType(), theType -> new LinkedList<>()).add(it));
-
-        List<MicronautBean> beans = new LinkedList<>();
-        beanMap.forEach((type, micronautBeans) -> {
-            if (micronautBeans.size() == 1) {
-                beans.add(micronautBeans.get(0));
-            } else {
-                beans.add(findMostSpecificBean(micronautBeans));
-            }
-        });
+                .collect(Collectors.toList());
 
         // using my own collection, so the field is final
         beanDefinitions.addAll(beans);
@@ -346,13 +333,6 @@ public class MicronautCdiExtension implements Extension {
         }
 
         unprocessedBeans.putAll(mBeanToDefRef);
-    }
-
-    private MicronautBean findMostSpecificBean(List<MicronautBean> micronautBeans) {
-        // TODO 3.0.0-JAKARTA
-        // beans are duplicated, I get definition for each type (definition, intercepted definition) - how to chose?
-        micronautBeans.sort(Comparator.comparing(o -> o.definitionRef().getBeanDefinitionName()));
-        return micronautBeans.get(micronautBeans.size() - 1);
     }
 
     @SuppressWarnings("rawtypes")
