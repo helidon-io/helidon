@@ -31,12 +31,16 @@ import io.grpc.ServerInterceptor;
 import io.grpc.stub.StreamObserver;
 
 import io.helidon.microprofile.grpc.server.JavaMarshaller;
+import io.helidon.microprofile.grpc.server.test.Services;
 import io.helidon.microprofile.tests.junit5.AddBean;
-import io.helidon.microprofile.tests.junit5.DisableDiscovery;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 
+import jakarta.annotation.Priority;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Alternative;
+import jakarta.enterprise.inject.Produces;
 import jakarta.enterprise.inject.spi.CDI;
-import jakarta.inject.Inject;
+import jakarta.interceptor.Interceptor;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
@@ -57,6 +61,9 @@ import static org.hamcrest.collection.IsEmptyIterable.emptyIterable;
 
 
 @HelidonTest
+@AddBean(MetricsConfigurerTest.ServiceOne.class)
+@AddBean(MetricsConfigurerTest.ServiceTwo.class)
+@AddBean(MetricsConfigurerTest.ServiceThree.class)
 public class MetricsConfigurerTest {
 
     private static MetricRegistry registry;
@@ -313,8 +320,9 @@ public class MetricsConfigurerTest {
         assertThat(methodInterceptors, is(emptyIterable()));
     }
 
-
     @Grpc
+    @Priority(Interceptor.Priority.APPLICATION + 1) // resolves CDI ambiguity with ServiceThree (which extends ServiceOne)
+    @Alternative
     public static class ServiceOne
             implements GrpcService {
         @Override
@@ -329,27 +337,27 @@ public class MetricsConfigurerTest {
 
         @Unary
         @Counted
-        public void counted(String request, StreamObserver<String> response) {
+        public void counted(Services.TestRequest request, StreamObserver<Services.TestResponse> response) {
         }
 
         @Unary
         @Timed
-        public void timed(String request, StreamObserver<String> response) {
+        public void timed(Services.TestRequest request, StreamObserver<Services.TestResponse> response) {
         }
 
         @Unary
         @Metered
-        public void metered(String request, StreamObserver<String> response) {
+        public void metered(Services.TestRequest request, StreamObserver<Services.TestResponse> response) {
         }
 
         @Unary
         @SimplyTimed
-        public void simplyTimed(String request, StreamObserver<String> response) {
+        public void simplyTimed(Services.TestRequest request, StreamObserver<Services.TestResponse> response) {
         }
 
         @Unary
         @ConcurrentGauge
-        public void concurrentGauge(String request, StreamObserver<String> response) {
+        public void concurrentGauge(Services.TestRequest request, StreamObserver<Services.TestResponse> response) {
         }
     }
 
@@ -359,23 +367,23 @@ public class MetricsConfigurerTest {
 
         @Unary
         @Counted
-        void counted(String request, StreamObserver<String> response);
+        void counted(Services.TestRequest request, StreamObserver<Services.TestResponse> response);
 
         @Unary
         @Timed
-        void timed(String request, StreamObserver<String> response);
+        void timed(Services.TestRequest request, StreamObserver<Services.TestResponse> response);
 
         @Unary
         @Metered
-        void metered(String request, StreamObserver<String> response);
+        void metered(Services.TestRequest request, StreamObserver<Services.TestResponse> response);
 
         @Unary
         @SimplyTimed
-        void simplyTimed(String request, StreamObserver<String> response);
+        void simplyTimed(Services.TestRequest request, StreamObserver<Services.TestResponse> response);
 
         @Unary
         @ConcurrentGauge
-        void concurrentGauge(String request, StreamObserver<String> response);
+        void concurrentGauge(Services.TestRequest request, StreamObserver<Services.TestResponse> response);
     }
 
     public static class ServiceTwoImpl
@@ -391,36 +399,37 @@ public class MetricsConfigurerTest {
         }
 
         @Override
-        public void counted(String request, StreamObserver<String> response) {
+        public void counted(Services.TestRequest request, StreamObserver<Services.TestResponse> response) {
         }
 
         @Override
-        public void timed(String request, StreamObserver<String> response) {
+        public void timed(Services.TestRequest request, StreamObserver<Services.TestResponse> response) {
         }
 
         @Override
-        public void metered(String request, StreamObserver<String> response) {
+        public void metered(Services.TestRequest request, StreamObserver<Services.TestResponse> response) {
         }
 
         @Override
-        public void simplyTimed(String request, StreamObserver<String> response) {
+        public void simplyTimed(Services.TestRequest request, StreamObserver<Services.TestResponse> response) {
         }
 
         @Override
-        public void concurrentGauge(String request, StreamObserver<String> response) {
+        public void concurrentGauge(Services.TestRequest request, StreamObserver<Services.TestResponse> response) {
         }
     }
 
+    @Alternative
     public static class ServiceThree
             extends ServiceOne {
         @Override
         @Counted(name = "foo")
-        public void counted(String request, StreamObserver<String> response) {
+        public void counted(Services.TestRequest request, StreamObserver<Services.TestResponse> response) {
             super.counted(request, response);
         }
 
         @Override
-        public void timed(String request, StreamObserver<String> response) {
+        public void timed(Services.TestRequest request, StreamObserver<Services.TestResponse> response) {
             super.timed(request, response);
         }
     }

@@ -58,6 +58,7 @@ abstract class MetricAnnotationDiscoveryImpl implements MetricAnnotationDiscover
     private final AnnotatedTypeConfigurator<?> annotatedTypeConfigurator;
     private final Annotation annotation;
 
+    private boolean keepDiscovery = true;
     private boolean disableDefaultInterceptor = false;
 
     private MetricAnnotationDiscoveryImpl(AnnotatedTypeConfigurator<?> annotatedTypeConfigurator,
@@ -77,8 +78,17 @@ abstract class MetricAnnotationDiscoveryImpl implements MetricAnnotationDiscover
     }
 
     @Override
+    public void discard() {
+        keepDiscovery = false;
+    }
+
+    @Override
     public void disableDefaultInterceptor() {
         disableDefaultInterceptor = true;
+    }
+
+    boolean isValid() {
+        return keepDiscovery;
     }
 
     boolean isDisableDefaultInterceptor() {

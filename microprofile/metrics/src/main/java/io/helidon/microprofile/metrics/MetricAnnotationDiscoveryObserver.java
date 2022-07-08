@@ -71,6 +71,11 @@ public interface MetricAnnotationDiscoveryObserver {
         Annotation annotation();
 
         /**
+         * Requests that the discovery be discarded, triggering no metric registration.
+         */
+        void discard();
+
+        /**
          * Requests that the default metrics interceptor not be used for the metric corresponding to the indicated annotation
          * which appears on this method.
          */

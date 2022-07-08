@@ -36,28 +36,36 @@ class MetricAnnotationDiscoveryObserverImpl implements MetricAnnotationDiscovery
         return MetricAnnotationDiscoveryObserverImplFactory.instance();
     }
 
-    public MetricAnnotationDiscoveryObserverImpl() {
-        int i = 3;
-    }
     private final Map<Method,
                       Map<Class<? extends Annotation>,
                           MetricAnnotationDiscovery.OfMethod>> discoveriesByMethod =
             new HashMap<>();
 
     @Override
-    public void onDiscovery(MetricAnnotationDiscovery metricAnnotationDiscovery) {
-        if (metricAnnotationDiscovery instanceof MetricAnnotationDiscovery.OfMethod discovery) {
-            if (isRpcMethod(discovery.configurator(), discovery.annotation().annotationType())) {
+    public void onDiscovery(MetricAnnotationDiscovery discovery) {
+        if (discovery instanceof MetricAnnotationDiscovery.OfMethod methodDiscovery
+                    && !isServiceAnnotated(discovery.annotatedTypeConfigurator()
+                                                  .getAnnotated()
+                                                  .getJavaClass(),
+                                          methodDiscovery.configurator()
+                                                  .getAnnotated(),
+                                          discovery.annotation().annotationType())) {
+            discovery.discard();
+            return;
+        }
+
+        if (discovery instanceof MetricAnnotationDiscovery.OfMethod methodDiscovery) {
+            if (isRpcMethod(methodDiscovery.configurator(), discovery.annotation().annotationType())) {
                 discovery.disableDefaultInterceptor();
-                discoveriesByMethod.computeIfAbsent(discovery.configurator().getAnnotated().getJavaMember(),
+                discoveriesByMethod.computeIfAbsent(methodDiscovery.configurator().getAnnotated().getJavaMember(),
                                                     key -> new HashMap<>())
                         .putIfAbsent(discovery.annotation().annotationType(),
-                                     discovery);
+                                     methodDiscovery);
             }
         }
     }
 
-    Map<Class<? extends Annotation>, MetricAnnotationDiscovery.OfMethod> discovery(Method method) {
+    Map<Class<? extends Annotation>, MetricAnnotationDiscovery.OfMethod> discoveries(Method method) {
         return discoveriesByMethod.get(method);
     }
 
@@ -82,5 +90,10 @@ class MetricAnnotationDiscoveryObserverImpl implements MetricAnnotationDiscovery
             return annotation != null;
         }
         return false;
+    }
+
+    private boolean isServiceAnnotated(Class<?> cls, jakarta.enterprise.inject.spi.AnnotatedMethod<?> annotatedMethod, Class<? extends Annotation> annotation) {
+        Method method = annotatedMethod.getJavaMember();
+        return method.getDeclaringClass().equals(cls) && method.isAnnotationPresent(annotation);
     }
 }

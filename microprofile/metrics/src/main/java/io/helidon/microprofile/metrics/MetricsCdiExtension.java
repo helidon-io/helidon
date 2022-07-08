@@ -196,7 +196,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
     private final List<MetricAnnotationDiscoveryObserver> metricAnnotationDiscoveryObservers = new ArrayList<>();
     private final List<MetricRegistrationObserver> metricRegistrationObservers = new ArrayList<>();
 
-    private final Map<Executable, MetricAnnotationDiscoveryImpl> metricAnnotationDiscoveriesByExecutable = new HashMap<>();
+    private final Map<Executable, List<MetricAnnotationDiscoveryImpl>> metricAnnotationDiscoveriesByExecutable = new HashMap<>();
 
     @SuppressWarnings("unchecked")
 
@@ -230,22 +230,23 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
 
     private void registerMetricsForAnnotatedSites() {
         MetricRegistry registry = getMetricRegistry();
-            for (RegistrationPrep registrationPrep : annotatedSites) {
-                org.eclipse.microprofile.metrics.Metric metric = registrationPrep.register(registry);
-                MetricID metricID = new MetricID(registrationPrep.metricName(), registrationPrep.tags());
-                MetricAnnotationDiscoveryObserver.MetricAnnotationDiscovery discovery =
-                        metricAnnotationDiscoveriesByExecutable.get(registrationPrep.executable());
-                metricRegistrationObservers.forEach(o -> o.onRegistration(discovery,
-                                                                          registrationPrep.metadata(),
-                                                                          metricID,
-                                                                          metric));
-                workItemsManager.put(registrationPrep.executable(), registrationPrep.annotationType(),
-                                     BasicMetricWorkItem
-                                             .create(new MetricID(registrationPrep.metricName(),
-                                                                  registrationPrep.tags()),
-                                                     metric));
-            }
-            annotatedSites.clear();
+        for (RegistrationPrep registrationPrep : annotatedSites) {
+            metricAnnotationDiscoveriesByExecutable.get(registrationPrep.executable())
+                    .forEach(discovery -> {
+                        if (discovery.isValid()) { // All annotation observers agreed to preserve the discovery.
+                            org.eclipse.microprofile.metrics.Metric metric = registrationPrep.register(registry);
+                            MetricID metricID = new MetricID(registrationPrep.metricName(), registrationPrep.tags());
+                            metricRegistrationObservers.forEach(
+                                    o -> o.onRegistration(discovery, registrationPrep.metadata(), metricID, metric));
+                            workItemsManager.put(registrationPrep.executable(), registrationPrep.annotationType(),
+                                                 BasicMetricWorkItem
+                                                         .create(new MetricID(registrationPrep.metricName(),
+                                                                              registrationPrep.tags()),
+                                                                 metric));
+                        }
+                    });
+        }
+        annotatedSites.clear();
     }
 
     @Override
@@ -440,7 +441,8 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
                                 executableConfigurator,
                                 lookupResult.getAnnotation());
                         if (exec != null) {
-                            metricAnnotationDiscoveriesByExecutable.put(exec, discoveryEvent);
+                            metricAnnotationDiscoveriesByExecutable.computeIfAbsent(exec, o -> new ArrayList<>())
+                                    .add(discoveryEvent);
                             metricAnnotationDiscoveryObservers.forEach(observer -> observer.onDiscovery(discoveryEvent));
                         }
                         if (!discoveryEvent.isDisableDefaultInterceptor()) {

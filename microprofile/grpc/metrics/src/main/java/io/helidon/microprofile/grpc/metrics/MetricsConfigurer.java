@@ -92,8 +92,8 @@ public class MetricsConfigurer
                 .forEach(annotatedMethod ->
                                  discoveries(annotatedMethod.method())
                                          .forEach((annotationClass, discovery) ->
-                                                          metadata(annotatedMethod.method())
-                                                                  .forEach(metadata ->
+//                                                          metadata(annotatedMethod.method())
+//                                                                  .forEach(metadata ->
                                                                                    processMetricAnnotationSite(
                                                                                            builder,
                                                                                            annotatedMethod,
@@ -102,15 +102,10 @@ public class MetricsConfigurer
                                                                                                    .grpcMetricsSupplier
                                                                                                    .get(),
                                                                                            discovery.annotation(),
-                                                                                           metadata)
+                                                                                           metadata(discovery)
                                                                   )
                                          )
                 );
-    }
-
-    private boolean isServiceAnnotated(Class<?> cls, AnnotatedMethod annotatedMethod, Class<? extends Annotation> annotation) {
-        Method method = annotatedMethod.declaredMethod();
-        return method.getDeclaringClass().equals(cls) && method.isAnnotationPresent(annotation);
     }
 
     private void processMetricAnnotationSite(ServiceDescriptor.Builder builder,
@@ -167,23 +162,11 @@ public class MetricsConfigurer
         return MetricAnnotationDiscoveryObserverImpl.instance().isDiscovered(method);
     }
 
-    private Map<Class<? extends Annotation>, MetricAnnotationDiscoveryObserver.MetricAnnotationDiscovery.OfMethod> discovery(Method method) {
-        return MetricAnnotationDiscoveryObserverImpl.instance().discovery(method);
-    }
-
     private Metadata metadata(MetricAnnotationDiscoveryObserver.MetricAnnotationDiscovery discovery) {
         return MetricRegistrationObserverImpl.instance().metadata(discovery);
     }
 
-    Iterable<Metadata> metadata(Method method){
-        return discovery(method)
-                .values()
-                .stream()
-                .map(this::metadata)
-                .collect(Collectors.toList());
-    }
-
-    Map<Class<? extends Annotation>, MetricAnnotationDiscoveryObserver.MetricAnnotationDiscovery.OfMethod> discoveries(Method method) {
-        return discovery(method);
+    private Map<Class<? extends Annotation>, MetricAnnotationDiscoveryObserver.MetricAnnotationDiscovery.OfMethod> discoveries(Method method) {
+        return MetricAnnotationDiscoveryObserverImpl.instance().discoveries(method);
     }
 }

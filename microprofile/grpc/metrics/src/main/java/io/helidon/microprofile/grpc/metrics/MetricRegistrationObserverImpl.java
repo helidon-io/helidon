@@ -15,12 +15,15 @@
  */
 package io.helidon.microprofile.grpc.metrics;
 
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
 import io.helidon.microprofile.metrics.MetricAnnotationDiscoveryObserver.MetricAnnotationDiscovery;
 import io.helidon.microprofile.metrics.MetricRegistrationObserver;
 
+import jakarta.enterprise.inject.spi.AnnotatedMethod;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricID;
@@ -33,15 +36,16 @@ class MetricRegistrationObserverImpl implements MetricRegistrationObserver {
 
     private final Map<MetricAnnotationDiscovery, Metadata> metadataByDiscovery = new HashMap<>();
 
-    public MetricRegistrationObserverImpl() {
-        int i = 4;
-    }
-
     @Override
     public void onRegistration(MetricAnnotationDiscovery discovery,
                                Metadata metadata,
                                MetricID metricId,
                                Metric metric) {
+        for (MetricAnnotationDiscovery d : metadataByDiscovery.keySet()) {
+            if (d.equals(discovery)) {
+                int x = 2;
+            }
+        }
         metadataByDiscovery.put(discovery, metadata);
     }
 
