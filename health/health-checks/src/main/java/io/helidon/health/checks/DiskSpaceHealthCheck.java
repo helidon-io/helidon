@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,7 +62,7 @@ import org.eclipse.microprofile.health.Liveness;
 @Liveness
 @ApplicationScoped // this will be ignored if not within CDI
 @BuiltInHealthCheck
-public final class DiskSpaceHealthCheck implements HealthCheck {
+public class DiskSpaceHealthCheck implements HealthCheck {
     /**
      * Default path on the file system the health check will be executed for.
      * If you need to check a different path (e.g. application runtime disks are not mounted the same
