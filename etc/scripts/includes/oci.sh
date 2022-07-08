@@ -119,6 +119,13 @@ if [ -z "${__OCI_INCLUDED__}" ]; then
                     readonly OCI_ZIP_URI="https://github.com/oracle/oci-java-sdk/releases/download/v${OCI_VERSION}/${OCI_ZIP}"
                 fi
 
+                # A directory where a lock file to be used by flock(1)
+                # will be placed.  The directory is presumed to exist.
+                if [ -z "${LOCKFILE_DIR}" ]; then
+                    local LOCKFILE_DIR;
+                    readonly LOCKFILE_DIR=$(dirname -- "${CACHED_OCI_SHADED_FULL_JAR}")
+                fi
+
                 # Run flock(1) to acquire an exclusive lock on the
                 # lowest-numbered unused file descriptor greater than
                 # or equal to 10, waiting ten minutes (600 seconds) if
@@ -132,8 +139,10 @@ if [ -z "${__OCI_INCLUDED__}" ]; then
                 # time.
                 #
                 # Note below that the file descriptor is redirected to
-                # /var/lock/${OCI_ZIP}, following FHS standards.  See
-                # https://refspecs.linuxfoundation.org/FHS_3.0/fhs/ch05s09.html.
+                # ${LOCKFILE_DIR}/${OCI_ZIP}.download.lock. flock(1)
+                # on recent kernels will apparently work even in the
+                # presence of NFS, which is most likely where
+                # ${LOCKFILE_DIR} is mounted.
                 local LOCKFILE_FD
                 ( flock --exclusive --timeout 600 ${LOCKFILE_FD} || exit 1
 
@@ -174,7 +183,7 @@ if [ -z "${__OCI_INCLUDED__}" ]; then
                       rm "${OCI_ZIP_TEMPDIR}/${OCI_ZIP}" && \
                       rmdir "${OCI_ZIP_TEMPDIR}"
 
-                ) {LOCKFILE_FD}>"/var/lock/${OCI_ZIP}" # the braces without $ around FD are on purpose
+                ) {LOCKFILE_FD}>"${LOCKFILE_DIR}/${OCI_ZIP}.download.lock" # the braces without $ around FD are on purpose
 
             fi
 

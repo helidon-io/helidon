@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+# Copyright (c) 2019, 2022 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -37,6 +37,10 @@ smoketest_on_error(){
 
 # Setup error handling using local error handler (defined in includes/error_handlers.sh)
 error_trap_setup 'smoketest_on_error'
+
+# Load OCI-related functions. WS_DIR is already defined, so there is
+# no need to pass arguments.
+. $(dirname -- "${SCRIPT_PATH}")/includes/oci.sh
 
 usage(){
     cat <<EOF
@@ -148,6 +152,10 @@ if [ -z "${GIT_URL}" ] ; then
     echo "ERROR: can't determine URL of git repository. Pleas use --giturl option"
     exit 1
 fi
+
+# Install OCI shaded full jar, if necessary. This is an idempotent
+# call.
+install_oci_shaded_full_jar
 
 set -u
 

@@ -28,9 +28,6 @@ error_trap_setup
 # no need to pass arguments.
 . $(dirname -- "${SCRIPT_PATH}")/includes/oci.sh
 
-# TEMPORARY; will be removed
-flock --version
-
 mvn ${MAVEN_ARGS} --version
 
 # Install OCI shaded full jar, if necessary. This is an idempotent
