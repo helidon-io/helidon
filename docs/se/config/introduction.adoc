@@ -31,7 +31,6 @@ include::{rootdir}/includes/se.adoc[]
 - <<Maven Coordinates>>
 - <<Getting Started>>
 - <<Usage>>
-- <<Configuration>>
 - <<Guides>>
 - <<Additional Information>>
 
@@ -305,10 +304,6 @@ You can also extend the config system
 to handle other types of sources by implementing the
 link:{config-javadoc-base-url}/io/helidon/config/spi/ConfigSource.html[`ConfigSource`] interface. See
 the xref:extensions.adoc[extensions'] documentation for complete information.
-
-== Configuration
-
-<TODO>
 
 == Guides
 
