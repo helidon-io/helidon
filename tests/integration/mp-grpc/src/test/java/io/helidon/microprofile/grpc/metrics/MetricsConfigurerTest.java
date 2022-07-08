@@ -32,15 +32,16 @@ import io.grpc.stub.StreamObserver;
 
 import io.helidon.microprofile.grpc.server.JavaMarshaller;
 import io.helidon.microprofile.grpc.server.test.Services;
+import io.helidon.microprofile.metrics.MetricsCdiExtension;
+import io.helidon.microprofile.server.JaxRsCdiExtension;
+import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.microprofile.tests.junit5.AddBean;
+import io.helidon.microprofile.tests.junit5.AddExtension;
+import io.helidon.microprofile.tests.junit5.DisableDiscovery;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 
-import jakarta.annotation.Priority;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.inject.Alternative;
-import jakarta.enterprise.inject.Produces;
-import jakarta.enterprise.inject.spi.CDI;
-import jakarta.interceptor.Interceptor;
+import jakarta.enterprise.inject.Typed;
+import jakarta.ws.rs.Produces;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
@@ -50,7 +51,6 @@ import org.eclipse.microprofile.metrics.annotation.Metered;
 import org.eclipse.microprofile.metrics.annotation.SimplyTimed;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -59,21 +59,25 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsEmptyIterable.emptyIterable;
 
-
+/**
+ * Exercises the metrics configurer.
+ *
+ * Because the metrics CDI extension is (as of 3.x) responsible for registering metrics, even gRPC-inspired ones, we need to
+ * start the container. We cannot currently allow the gRPC CDI extension to start because it tries to register both ServiceOne and
+ * ServiceThree under the same name, ServiceOne, because ServiceThree extends ServiceOne. The attempt to register two services
+ * with the same name fails. So we turn off discovery and explicitly add in the beans and extensions we need.
+ */
 @HelidonTest
+@DisableDiscovery
 @AddBean(MetricsConfigurerTest.ServiceOne.class)
-@AddBean(MetricsConfigurerTest.ServiceTwo.class)
 @AddBean(MetricsConfigurerTest.ServiceThree.class)
+@AddBean(MetricsConfigurerTest.ServiceTwoProducer.class)
+@AddExtension(MetricsCdiExtension.class)
+@AddExtension(ServerCdiExtension.class) // needed for MetricsCdiExtension
+@AddExtension(JaxRsCdiExtension.class)
 public class MetricsConfigurerTest {
 
     private static MetricRegistry registry;
-
-    private CDI weld;
-
-    @BeforeEach
-    void setupPerTest() {
-        weld = CDI.current();
-    }
 
     @BeforeAll
     public static void setup() {
@@ -97,7 +101,7 @@ public class MetricsConfigurerTest {
         assertThat(methodInterceptors.size(), is(1));
         assertThat(methodInterceptors.get(0), is(instanceOf(GrpcMetrics.class)));
         assertThat(((GrpcMetrics) methodInterceptors.get(0)).metricType(), is(MetricType.COUNTER));
-        assertThat(updReg().getCounters().get(new MetricID(ServiceOne.class.getName() + ".counted")), is(notNullValue()));
+        assertThat(registry.getCounters().get(new MetricID(ServiceOne.class.getName() + ".counted")), is(notNullValue()));
     }
 
     @Test
@@ -117,7 +121,7 @@ public class MetricsConfigurerTest {
         assertThat(methodInterceptors.size(), is(1));
         assertThat(methodInterceptors.get(0), is(instanceOf(GrpcMetrics.class)));
         assertThat(((GrpcMetrics) methodInterceptors.get(0)).metricType(), is(MetricType.METERED));
-        assertThat(updReg().getMeters().get(new MetricID(ServiceOne.class.getName() + ".metered")), is(notNullValue()));
+        assertThat(registry.getMeters().get(new MetricID(ServiceOne.class.getName() + ".metered")), is(notNullValue()));
     }
 
     @Test
@@ -137,7 +141,7 @@ public class MetricsConfigurerTest {
         assertThat(methodInterceptors.size(), is(1));
         assertThat(methodInterceptors.get(0), is(instanceOf(GrpcMetrics.class)));
         assertThat(((GrpcMetrics) methodInterceptors.get(0)).metricType(), is(MetricType.TIMER));
-        assertThat(updReg().getTimers().get(new MetricID(ServiceOne.class.getName() + ".timed")), is(notNullValue()));
+        assertThat(registry.getTimers().get(new MetricID(ServiceOne.class.getName() + ".timed")), is(notNullValue()));
     }
 
     @Test
@@ -157,7 +161,7 @@ public class MetricsConfigurerTest {
         assertThat(methodInterceptors.size(), is(1));
         assertThat(methodInterceptors.get(0), is(instanceOf(GrpcMetrics.class)));
         assertThat(((GrpcMetrics) methodInterceptors.get(0)).metricType(), is(MetricType.SIMPLE_TIMER));
-        assertThat(updReg().getSimpleTimers().get(new MetricID(ServiceOne.class.getName() + ".simplyTimed")), is(notNullValue()));
+        assertThat(registry.getSimpleTimers().get(new MetricID(ServiceOne.class.getName() + ".simplyTimed")), is(notNullValue()));
     }
 
     @Test
@@ -177,7 +181,7 @@ public class MetricsConfigurerTest {
         assertThat(methodInterceptors.size(), is(1));
         assertThat(methodInterceptors.get(0), is(instanceOf(GrpcMetrics.class)));
         assertThat(((GrpcMetrics) methodInterceptors.get(0)).metricType(), is(MetricType.CONCURRENT_GAUGE));
-        assertThat(updReg().getConcurrentGauges().get(new MetricID(ServiceOne.class.getName() + ".concurrentGauge")),
+        assertThat(registry.getConcurrentGauges().get(new MetricID(ServiceOne.class.getName() + ".concurrentGauge")),
                 is(notNullValue()));
     }
 
@@ -198,7 +202,7 @@ public class MetricsConfigurerTest {
         assertThat(methodInterceptors.size(), is(1));
         assertThat(methodInterceptors.get(0), is(instanceOf(GrpcMetrics.class)));
         assertThat(((GrpcMetrics) methodInterceptors.get(0)).metricType(), is(MetricType.COUNTER));
-        assertThat(updReg().getCounters().get(new MetricID(ServiceThree.class.getName() + ".foo")), is(notNullValue()));
+        assertThat(registry.getCounters().get(new MetricID(ServiceThree.class.getName() + ".foo")), is(notNullValue()));
     }
 
     @Test
@@ -321,8 +325,6 @@ public class MetricsConfigurerTest {
     }
 
     @Grpc
-    @Priority(Interceptor.Priority.APPLICATION + 1) // resolves CDI ambiguity with ServiceThree (which extends ServiceOne)
-    @Alternative
     public static class ServiceOne
             implements GrpcService {
         @Override
@@ -363,7 +365,7 @@ public class MetricsConfigurerTest {
 
     @Grpc
     @SuppressWarnings("CdiManagedBeanInconsistencyInspection")
-    public interface ServiceTwo {
+    public interface ServiceTwo extends GrpcService {
 
         @Unary
         @Counted
@@ -387,7 +389,7 @@ public class MetricsConfigurerTest {
     }
 
     public static class ServiceTwoImpl
-            implements ServiceTwo, GrpcService {
+            implements ServiceTwo {
         @Override
         public void update(ServiceDescriptor.Rules rules) {
             rules.marshallerSupplier(new JavaMarshaller.Supplier())
@@ -419,7 +421,7 @@ public class MetricsConfigurerTest {
         }
     }
 
-    @Alternative
+    @Typed(ServiceThree.class) // disambiguate from ServiceOne for CDI
     public static class ServiceThree
             extends ServiceOne {
         @Override
@@ -434,8 +436,11 @@ public class MetricsConfigurerTest {
         }
     }
 
-    private static MetricRegistry updReg() {
-//        MyMetricsCdiExtension.registerGrpcMetrics();
-        return registry;
+    static class ServiceTwoProducer {
+
+        @Produces
+        public ServiceTwo create() {
+            return new ServiceTwoImpl();
+        }
     }
 }

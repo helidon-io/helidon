@@ -112,7 +112,7 @@ public class TestMetricsCoverage {
                                                         .toList()
                                                         .forEach(incorrectlySkippedMetricTypes::remove);
         assertThat("At least one MicroProfile metric with an annotation exists that is not present in "
-                        + "GrpcMetricsCdiExtension.METRICS_ANNOTATIONS",
+                        + "MetricsConfigurer.METRIC_ANNOTATION_INFO",
                 incorrectlySkippedMetricTypes, is(empty()));
     }
 }

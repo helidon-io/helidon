@@ -233,7 +233,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
         for (RegistrationPrep registrationPrep : annotatedSites) {
             metricAnnotationDiscoveriesByExecutable.get(registrationPrep.executable())
                     .forEach(discovery -> {
-                        if (discovery.isValid()) { // All annotation observers agreed to preserve the discovery.
+                        if (discovery.isActive()) { // All annotation discovery observers agreed to preserve the discovery.
                             org.eclipse.microprofile.metrics.Metric metric = registrationPrep.register(registry);
                             MetricID metricID = new MetricID(registrationPrep.metricName(), registrationPrep.tags());
                             metricRegistrationObservers.forEach(
@@ -445,7 +445,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
                                     .add(discoveryEvent);
                             metricAnnotationDiscoveryObservers.forEach(observer -> observer.onDiscovery(discoveryEvent));
                         }
-                        if (!discoveryEvent.isDisableDefaultInterceptor()) {
+                        if (discoveryEvent.shouldUseDefaultInterceptor()) {
                             Class<? extends Annotation> metricAnnotationClass = lookupResult.getAnnotation().annotationType();
                             annotationAdder.apply(executableConfigurator,
                                                   INTERCEPTED_METRIC_ANNOTATIONS.get(metricAnnotationClass));

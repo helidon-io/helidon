@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+import io.helidon.microprofile.grpc.metrics.GrpcMetricAnnotationDiscoveryObserverImplFactory;
+import io.helidon.microprofile.grpc.metrics.GrpcMetricRegistrationObserverImplFactory;
+
 /**
  * gRPC microprofile metrics module
  */
@@ -34,12 +37,9 @@ module io.helidon.microprofile.grpc.metrics {
     provides io.helidon.microprofile.grpc.server.AnnotatedServiceConfigurer
             with io.helidon.microprofile.grpc.metrics.MetricsConfigurer;
 
-    provides jakarta.enterprise.inject.spi.Extension
-            with io.helidon.microprofile.grpc.metrics.GrpcMetricsCdiExtension;
-
     provides io.helidon.microprofile.metrics.api.MetricAnnotationDiscoveryObserverProvider
-            with io.helidon.microprofile.grpc.metrics.MetricAnnotationDiscoveryObserverImplFactory;
+            with GrpcMetricAnnotationDiscoveryObserverImplFactory;
 
     provides io.helidon.microprofile.metrics.api.MetricRegistrationObserverProvider
-            with io.helidon.microprofile.grpc.metrics.MetricRegistrationObserverImplFactory;
+            with GrpcMetricRegistrationObserverImplFactory;
 }

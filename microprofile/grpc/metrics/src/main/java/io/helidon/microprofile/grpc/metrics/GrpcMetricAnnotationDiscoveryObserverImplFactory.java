@@ -16,19 +16,23 @@
 package io.helidon.microprofile.grpc.metrics;
 
 import io.helidon.common.LazyValue;
-import io.helidon.microprofile.metrics.api.MetricRegistrationObserverProvider;
+import io.helidon.microprofile.metrics.api.MetricAnnotationDiscoveryObserverProvider;
 
-public class MetricRegistrationObserverImplFactory implements MetricRegistrationObserverProvider<MetricRegistrationObserverImpl> {
+/**
+ * Factory for the gRPC metrics observer of metric annotation discoveries.
+ */
+public class GrpcMetricAnnotationDiscoveryObserverImplFactory
+        implements MetricAnnotationDiscoveryObserverProvider<GrpcMetricAnnotationDiscoveryObserverImpl> {
 
-    private static final LazyValue<MetricRegistrationObserverImpl> instance =
-            LazyValue.create(MetricRegistrationObserverImpl::new);
+    private static final LazyValue<GrpcMetricAnnotationDiscoveryObserverImpl> INSTANCE =
+            LazyValue.create(GrpcMetricAnnotationDiscoveryObserverImpl::new);
 
-    static MetricRegistrationObserverImpl instance() {
-        return instance.get();
+    static GrpcMetricAnnotationDiscoveryObserverImpl instance() {
+        return INSTANCE.get();
     }
 
     @Override
-    public MetricRegistrationObserverImpl get() {
+    public GrpcMetricAnnotationDiscoveryObserverImpl get() {
         return instance();
     }
 }

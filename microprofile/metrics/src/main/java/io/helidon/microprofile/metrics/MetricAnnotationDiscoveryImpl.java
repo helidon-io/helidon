@@ -17,6 +17,8 @@
 package io.helidon.microprofile.metrics;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Member;
+import java.util.StringJoiner;
 
 import jakarta.enterprise.inject.spi.configurator.AnnotatedConstructorConfigurator;
 import jakarta.enterprise.inject.spi.configurator.AnnotatedMethodConfigurator;
@@ -54,12 +56,11 @@ abstract class MetricAnnotationDiscoveryImpl implements MetricAnnotationDiscover
         }
     }
 
-
     private final AnnotatedTypeConfigurator<?> annotatedTypeConfigurator;
     private final Annotation annotation;
 
-    private boolean keepDiscovery = true;
-    private boolean disableDefaultInterceptor = false;
+    private boolean isActive = true;
+    private boolean useDefaultInterceptor = true;
 
     private MetricAnnotationDiscoveryImpl(AnnotatedTypeConfigurator<?> annotatedTypeConfigurator,
                                           Annotation annotation) {
@@ -78,22 +79,35 @@ abstract class MetricAnnotationDiscoveryImpl implements MetricAnnotationDiscover
     }
 
     @Override
-    public void discard() {
-        keepDiscovery = false;
+    public void deactivate() {
+        isActive = false;
     }
 
     @Override
     public void disableDefaultInterceptor() {
-        disableDefaultInterceptor = true;
+        useDefaultInterceptor = false;
     }
 
-    boolean isValid() {
-        return keepDiscovery;
+    @Override
+    public String toString() {
+        return new StringJoiner(", ", getClass().getSimpleName() + "[", "]")
+                .add("annotatedConfigurator=" + annotatedMember())
+                .add("annotatedTypeConfigurator=" + annotatedTypeConfigurator.getAnnotated().getJavaClass().getName())
+                .add("annotation=" + annotation)
+                .add("isActive=" + isActive)
+                .add("useDefaultInterceptor=" + useDefaultInterceptor)
+                .toString();
     }
 
-    boolean isDisableDefaultInterceptor() {
-        return disableDefaultInterceptor;
+    boolean isActive() {
+        return isActive;
     }
+
+    boolean shouldUseDefaultInterceptor() {
+        return useDefaultInterceptor;
+    }
+
+    protected abstract Member annotatedMember();
 
     private static class OfConstructor extends MetricAnnotationDiscoveryImpl
             implements MetricAnnotationDiscoveryObserver.MetricAnnotationDiscovery.OfConstructor {
@@ -111,6 +125,11 @@ abstract class MetricAnnotationDiscoveryImpl implements MetricAnnotationDiscover
         @Override
         public AnnotatedConstructorConfigurator<?> configurator() {
             return configurator;
+        }
+
+        @Override
+        protected Member annotatedMember() {
+            return configurator.getAnnotated().getJavaMember();
         }
     }
 
@@ -130,6 +149,11 @@ abstract class MetricAnnotationDiscoveryImpl implements MetricAnnotationDiscover
         @Override
         public AnnotatedMethodConfigurator<?> configurator() {
             return configurator;
+        }
+
+        @Override
+        protected Member annotatedMember() {
+            return configurator.getAnnotated().getJavaMember();
         }
     }
 }

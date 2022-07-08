@@ -28,7 +28,7 @@ import jakarta.enterprise.inject.spi.configurator.AnnotatedTypeConfigurator;
  *     Implementations make themselves known via the Java service loader mechanism.
  * </p>
  * <p>
- *     Once registered, the observer is notified later, during {@code ProcessAnnotatedType}, for each metric annotation that is
+ *     Observers are notified during {@code ProcessAnnotatedType}, for each metric annotation that is
  *     discovered to apply to an executable, via a
  *     {@link io.helidon.microprofile.metrics.MetricAnnotationDiscoveryObserver.MetricAnnotationDiscovery} event.
  * </p>
@@ -71,9 +71,9 @@ public interface MetricAnnotationDiscoveryObserver {
         Annotation annotation();
 
         /**
-         * Requests that the discovery be discarded, triggering no metric registration.
+         * Requests that the discovery be deactivated, thereby preventing it from triggering a metric registration.
          */
-        void discard();
+        void deactivate();
 
         /**
          * Requests that the default metrics interceptor not be used for the metric corresponding to the indicated annotation

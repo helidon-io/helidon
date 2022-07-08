@@ -22,7 +22,6 @@ import java.util.Map;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 import io.helidon.grpc.metrics.GrpcMetrics;
 import io.helidon.grpc.server.ServiceDescriptor;
@@ -69,15 +68,6 @@ public class MetricsConfigurer
             SimplyTimed.class, MetricInfo.create(GrpcMetrics::simplyTimed, SimpleTimer.class)
     );
 
-    // Package-private for testing.
-    record MetricInfo(Supplier<GrpcMetrics> grpcMetricsSupplier,
-                              Class<? extends Metric> metricClass) {
-        private static MetricInfo create(Supplier<GrpcMetrics> grpcMetricsSupplier, Class<? extends Metric> metricClass) {
-            return new MetricInfo(grpcMetricsSupplier, metricClass);
-        }
-    }
-
-
     @Override
     public void accept(Class<?> serviceClass, Class<?> annotatedClass, ServiceDescriptor.Builder builder) {
 
@@ -91,22 +81,41 @@ public class MetricsConfigurer
                 .filter(am -> isDiscovered(am.method()))
                 .forEach(annotatedMethod ->
                                  discoveries(annotatedMethod.method())
-                                         .forEach((annotationClass, discovery) ->
-//                                                          metadata(annotatedMethod.method())
-//                                                                  .forEach(metadata ->
-                                                                                   processMetricAnnotationSite(
-                                                                                           builder,
-                                                                                           annotatedMethod,
-                                                                                           METRIC_ANNOTATION_INFO
-                                                                                                   .get(annotationClass)
-                                                                                                   .grpcMetricsSupplier
-                                                                                                   .get(),
-                                                                                           discovery.annotation(),
-                                                                                           metadata(discovery)
-                                                                  )
-                                         )
+                                         .forEach((annotationClass, discovery) -> {
+                                             if (isServiceAnnotated(serviceClass,
+                                                                    annotatedMethod.declaredMethod(),
+                                                                    annotationClass)) {
+                                                 processMetricAnnotationSite(
+                                                         builder,
+                                                         annotatedMethod,
+                                                         METRIC_ANNOTATION_INFO
+                                                                 .get(annotationClass)
+                                                                 .grpcMetricsSupplier
+                                                                 .get(),
+                                                         discovery.annotation(),
+                                                         metadata(discovery)
+                                                 );
+                                             }
+                                         })
                 );
     }
+
+    static boolean isServiceAnnotated(Class<?> cls,
+                                              Method method,
+                                              Class<? extends Annotation> annotation) {
+        return method.getDeclaringClass().equals(cls) && method.isAnnotationPresent(annotation);
+    }
+
+    record MetricInfo(Supplier<GrpcMetrics> grpcMetricsSupplier,
+                      Class<? extends Metric> metricClass) {
+        private static MetricInfo create(Supplier<GrpcMetrics> grpcMetricsSupplier, Class<? extends Metric> metricClass) {
+            return new MetricInfo(grpcMetricsSupplier, metricClass);
+        }
+    }
+
+
+
+    // Package-private for testing.
 
     private void processMetricAnnotationSite(ServiceDescriptor.Builder builder,
                                              AnnotatedMethod annotatedMethod,
@@ -159,14 +168,15 @@ public class MetricsConfigurer
     }
 
     private boolean isDiscovered(Method method) {
-        return MetricAnnotationDiscoveryObserverImpl.instance().isDiscovered(method);
+        return GrpcMetricAnnotationDiscoveryObserverImpl.instance().isDiscovered(method);
     }
 
     private Metadata metadata(MetricAnnotationDiscoveryObserver.MetricAnnotationDiscovery discovery) {
-        return MetricRegistrationObserverImpl.instance().metadata(discovery);
+        return GrpcMetricRegistrationObserverImpl.instance().metadata(discovery);
     }
 
-    private Map<Class<? extends Annotation>, MetricAnnotationDiscoveryObserver.MetricAnnotationDiscovery.OfMethod> discoveries(Method method) {
-        return MetricAnnotationDiscoveryObserverImpl.instance().discoveries(method);
+    private Map<Class<? extends Annotation>,
+            MetricAnnotationDiscoveryObserver.MetricAnnotationDiscovery.OfMethod> discoveries(Method method) {
+        return GrpcMetricAnnotationDiscoveryObserverImpl.instance().discoveries(method);
     }
 }

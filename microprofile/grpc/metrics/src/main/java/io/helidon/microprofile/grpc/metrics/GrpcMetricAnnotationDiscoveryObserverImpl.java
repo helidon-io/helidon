@@ -27,40 +27,38 @@ import io.helidon.microprofile.metrics.MetricAnnotationDiscoveryObserver;
 import jakarta.enterprise.inject.spi.configurator.AnnotatedMethodConfigurator;
 
 /**
- * The gRPC implementation of {@link io.helidon.microprofile.metrics.MetricAnnotationDiscoveryObserver} with a static factory
- * method.
+ * The gRPC implementation of {@link io.helidon.microprofile.metrics.MetricAnnotationDiscoveryObserver}.
+ *
+ * <p>
+ *     This implementation
+ * </p>
  */
-class MetricAnnotationDiscoveryObserverImpl implements MetricAnnotationDiscoveryObserver {
+class GrpcMetricAnnotationDiscoveryObserverImpl implements MetricAnnotationDiscoveryObserver {
 
-    static MetricAnnotationDiscoveryObserverImpl instance() {
-        return MetricAnnotationDiscoveryObserverImplFactory.instance();
+    static GrpcMetricAnnotationDiscoveryObserverImpl instance() {
+        return GrpcMetricAnnotationDiscoveryObserverImplFactory.instance();
     }
 
     private final Map<Method,
-                      Map<Class<? extends Annotation>,
-                          MetricAnnotationDiscovery.OfMethod>> discoveriesByMethod =
+            Map<Class<? extends Annotation>, MetricAnnotationDiscovery.OfMethod>> discoveriesByMethod =
             new HashMap<>();
 
     @Override
     public void onDiscovery(MetricAnnotationDiscovery discovery) {
         if (discovery instanceof MetricAnnotationDiscovery.OfMethod methodDiscovery
-                    && !isServiceAnnotated(discovery.annotatedTypeConfigurator()
-                                                  .getAnnotated()
-                                                  .getJavaClass(),
-                                          methodDiscovery.configurator()
-                                                  .getAnnotated(),
-                                          discovery.annotation().annotationType())) {
-            discovery.discard();
-            return;
-        }
+            && isRpcMethod(methodDiscovery.configurator(), discovery.annotation().annotationType())) {
 
-        if (discovery instanceof MetricAnnotationDiscovery.OfMethod methodDiscovery) {
-            if (isRpcMethod(methodDiscovery.configurator(), discovery.annotation().annotationType())) {
+            if (!MetricsConfigurer.isServiceAnnotated(methodDiscovery.annotatedTypeConfigurator().getAnnotated().getJavaClass(),
+                                                      methodDiscovery.configurator().getAnnotated().getJavaMember(),
+                                                      discovery.annotation().annotationType())) {
+                // This endpoint should not give rise to a gRPC-inspired metric.
+                discovery.deactivate();
+            } else {
+                // This endpoint SHOULD give rise to a gRPC-inspired metric.
                 discovery.disableDefaultInterceptor();
                 discoveriesByMethod.computeIfAbsent(methodDiscovery.configurator().getAnnotated().getJavaMember(),
                                                     key -> new HashMap<>())
-                        .putIfAbsent(discovery.annotation().annotationType(),
-                                     methodDiscovery);
+                        .putIfAbsent(discovery.annotation().annotationType(), methodDiscovery);
             }
         }
     }
@@ -92,8 +90,4 @@ class MetricAnnotationDiscoveryObserverImpl implements MetricAnnotationDiscovery
         return false;
     }
 
-    private boolean isServiceAnnotated(Class<?> cls, jakarta.enterprise.inject.spi.AnnotatedMethod<?> annotatedMethod, Class<? extends Annotation> annotation) {
-        Method method = annotatedMethod.getJavaMember();
-        return method.getDeclaringClass().equals(cls) && method.isAnnotationPresent(annotation);
-    }
 }
