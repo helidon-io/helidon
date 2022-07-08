@@ -16,7 +16,7 @@
 package io.helidon.microprofile.grpc.metrics;
 
 import io.helidon.common.LazyValue;
-import io.helidon.microprofile.metrics.api.MetricRegistrationObserverProvider;
+import io.helidon.microprofile.metrics.spi.MetricRegistrationObserverProvider;
 
 /**
  * Factory for the gRPC metric registration observer.

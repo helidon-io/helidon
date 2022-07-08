@@ -31,11 +31,11 @@ import jakarta.enterprise.inject.spi.configurator.AnnotatedTypeConfigurator;
  *     {@link jakarta.enterprise.inject.spi.configurator.AnnotatedMethodConfigurator} interfaces share no common ancestor, so
  *     we have two subtypes of discovery, one for each:
  *     {@link io.helidon.microprofile.metrics.MetricAnnotationDiscoveryImpl.OfConstructor OfConstructor} and
- *     {@link io.helidon.microprofile.metrics.MetricAnnotationDiscoveryObserver.MetricAnnotationDiscovery.OfMethod ofMethod}.
+ *     {@link MetricAnnotationDiscovery.OfMethod ofMethod}.
  * </p>
  *
  */
-abstract class MetricAnnotationDiscoveryImpl implements MetricAnnotationDiscoveryObserver.MetricAnnotationDiscovery {
+abstract class MetricAnnotationDiscoveryImpl implements MetricAnnotationDiscovery {
 
     static <C> MetricAnnotationDiscoveryImpl create(
             AnnotatedTypeConfigurator<?> annotatedTypeConfigurator,
@@ -81,6 +81,7 @@ abstract class MetricAnnotationDiscoveryImpl implements MetricAnnotationDiscover
     @Override
     public void deactivate() {
         isActive = false;
+        disableDefaultInterceptor();
     }
 
     @Override
@@ -110,7 +111,7 @@ abstract class MetricAnnotationDiscoveryImpl implements MetricAnnotationDiscover
     protected abstract Member annotatedMember();
 
     private static class OfConstructor extends MetricAnnotationDiscoveryImpl
-            implements MetricAnnotationDiscoveryObserver.MetricAnnotationDiscovery.OfConstructor {
+            implements MetricAnnotationDiscovery.OfConstructor {
 
         private final AnnotatedConstructorConfigurator<?> configurator;
 
@@ -134,7 +135,7 @@ abstract class MetricAnnotationDiscoveryImpl implements MetricAnnotationDiscover
     }
 
     private static class OfMethod extends MetricAnnotationDiscoveryImpl
-            implements MetricAnnotationDiscoveryObserver.MetricAnnotationDiscovery.OfMethod {
+            implements MetricAnnotationDiscovery.OfMethod {
 
         private final AnnotatedMethodConfigurator<?> configurator;
 

@@ -37,9 +37,9 @@ module io.helidon.microprofile.grpc.metrics {
     provides io.helidon.microprofile.grpc.server.AnnotatedServiceConfigurer
             with io.helidon.microprofile.grpc.metrics.MetricsConfigurer;
 
-    provides io.helidon.microprofile.metrics.api.MetricAnnotationDiscoveryObserverProvider
+    provides io.helidon.microprofile.metrics.spi.MetricAnnotationDiscoveryObserverProvider
             with GrpcMetricAnnotationDiscoveryObserverImplFactory;
 
-    provides io.helidon.microprofile.metrics.api.MetricRegistrationObserverProvider
+    provides io.helidon.microprofile.metrics.spi.MetricRegistrationObserverProvider
             with GrpcMetricRegistrationObserverImplFactory;
 }

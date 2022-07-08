@@ -22,12 +22,13 @@ import java.util.Map;
 
 import io.helidon.microprofile.grpc.core.AnnotatedMethod;
 import io.helidon.microprofile.grpc.core.GrpcMethod;
-import io.helidon.microprofile.metrics.MetricAnnotationDiscoveryObserver;
+import io.helidon.microprofile.metrics.MetricAnnotationDiscovery;
+import io.helidon.microprofile.metrics.spi.MetricAnnotationDiscoveryObserver;
 
 import jakarta.enterprise.inject.spi.configurator.AnnotatedMethodConfigurator;
 
 /**
- * The gRPC implementation of {@link io.helidon.microprofile.metrics.MetricAnnotationDiscoveryObserver}.
+ * The gRPC implementation of {@link io.helidon.microprofile.metrics.spi.MetricAnnotationDiscoveryObserver}.
  *
  * <p>
  *     This implementation

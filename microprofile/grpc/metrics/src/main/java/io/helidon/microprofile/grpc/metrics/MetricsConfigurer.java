@@ -30,7 +30,7 @@ import io.helidon.microprofile.grpc.core.AnnotatedMethodList;
 import io.helidon.microprofile.grpc.core.GrpcMethod;
 import io.helidon.microprofile.grpc.server.AnnotatedServiceConfigurer;
 import io.helidon.microprofile.grpc.server.GrpcServiceBuilder;
-import io.helidon.microprofile.metrics.MetricAnnotationDiscoveryObserver;
+import io.helidon.microprofile.metrics.MetricAnnotationDiscovery;
 
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Metadata;
@@ -171,12 +171,12 @@ public class MetricsConfigurer
         return GrpcMetricAnnotationDiscoveryObserverImpl.instance().isDiscovered(method);
     }
 
-    private Metadata metadata(MetricAnnotationDiscoveryObserver.MetricAnnotationDiscovery discovery) {
+    private Metadata metadata(MetricAnnotationDiscovery discovery) {
         return GrpcMetricRegistrationObserverImpl.instance().metadata(discovery);
     }
 
     private Map<Class<? extends Annotation>,
-            MetricAnnotationDiscoveryObserver.MetricAnnotationDiscovery.OfMethod> discoveries(Method method) {
+            MetricAnnotationDiscovery.OfMethod> discoveries(Method method) {
         return GrpcMetricAnnotationDiscoveryObserverImpl.instance().discoveries(method);
     }
 }

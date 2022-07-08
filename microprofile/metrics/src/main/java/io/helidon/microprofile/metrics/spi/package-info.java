@@ -13,22 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.microprofile.metrics.api;
-
-import java.util.function.Supplier;
-
-import io.helidon.microprofile.metrics.MetricAnnotationDiscoveryObserver;
 
 /**
- * Specifies behavior of a provider for a metric annotation discovery observer.
- *
- * @param <T> specific type of {@link io.helidon.microprofile.metrics.MetricAnnotationDiscoveryObserver}
+ * Interfaces optionally implemented by other components interested in key metrics processing events.
  */
-public interface MetricAnnotationDiscoveryObserverProvider<T extends MetricAnnotationDiscoveryObserver> extends Supplier<T> {
-
-    /**
-     *
-     * @return the new or pre-existing instance of the observer
-     */
-    T get();
-}
+package io.helidon.microprofile.metrics.spi;

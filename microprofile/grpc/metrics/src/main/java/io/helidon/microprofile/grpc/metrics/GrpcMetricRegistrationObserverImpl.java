@@ -18,15 +18,15 @@ package io.helidon.microprofile.grpc.metrics;
 import java.util.HashMap;
 import java.util.Map;
 
-import io.helidon.microprofile.metrics.MetricAnnotationDiscoveryObserver.MetricAnnotationDiscovery;
-import io.helidon.microprofile.metrics.MetricRegistrationObserver;
+import io.helidon.microprofile.metrics.MetricAnnotationDiscovery;
+import io.helidon.microprofile.metrics.spi.MetricRegistrationObserver;
 
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricID;
 
 /**
- * The gRPC implementation of {@link io.helidon.microprofile.metrics.MetricRegistrationObserver} with a static factory method.
+ * The gRPC implementation of {@link io.helidon.microprofile.metrics.spi.MetricRegistrationObserver} with a static factory method.
  */
 class GrpcMetricRegistrationObserverImpl implements MetricRegistrationObserver {
 
