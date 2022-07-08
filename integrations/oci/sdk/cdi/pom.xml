@@ -34,6 +34,7 @@
     </description>
 
     <properties>
+        <!-- See, e.g., https://github.com/oracle/oci-java-sdk/blob/v2.35.0/pom.xml#L51 -->
         <bouncycastle.version>1.70</bouncycastle.version>
         <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
     </properties>
@@ -52,18 +53,11 @@
         </dependency>
       </dependencies>
     </dependencyManagement>
-    
+
     <dependencies>
 
         <!-- Compile-scoped dependencies. -->
 
-        <!--
-        <dependency>
-            <groupId>com.oracle.oci.sdk</groupId>
-            <artifactId>oci-java-sdk-common</artifactId>
-            <scope>compile</scope>
-        </dependency>
-        -->
         <dependency>
             <groupId>com.oracle.oci.sdk</groupId>
             <artifactId>oci-java-sdk-shaded-full</artifactId>
@@ -74,7 +68,7 @@
             <artifactId>microprofile-config-api</artifactId>
             <scope>compile</scope>
         </dependency>
-        
+
         <!-- Provided-scoped dependencies. -->
 
         <dependency>
@@ -106,22 +100,6 @@
 
         <!-- Test-scoped dependencies. -->
 
-        <!-- Arbitrarily-selected OCI library used for testing universal applicability. -->
-        <!--
-        <dependency>
-            <groupId>com.oracle.oci.sdk</groupId>
-            <artifactId>oci-java-sdk-ailanguage</artifactId>
-            <scope>test</scope>
-        </dependency>
-        -->
-        <!-- Streaming OCI library because it is the only OCI service that doesn't quite match the other OCI services' design patterns. -->
-        <!--
-        <dependency>
-            <groupId>com.oracle.oci.sdk</groupId>
-            <artifactId>oci-java-sdk-streaming</artifactId>
-            <scope>test</scope>
-        </dependency>
-        -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
@@ -165,5 +143,5 @@
             </plugin>
         </plugins>
     </build>
-    
+
 </project>
