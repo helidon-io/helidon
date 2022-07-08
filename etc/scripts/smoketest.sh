@@ -38,10 +38,6 @@ smoketest_on_error(){
 # Setup error handling using local error handler (defined in includes/error_handlers.sh)
 error_trap_setup 'smoketest_on_error'
 
-# Load OCI-related functions. WS_DIR is already defined, so there is
-# no need to pass arguments.
-. $(dirname -- "${SCRIPT_PATH}")/includes/oci.sh
-
 usage(){
     cat <<EOF
 
@@ -77,7 +73,7 @@ $(basename ${0}) [ --staged ] [ --giturl=URL ] [ --clean ] [--help ] --version=V
     full
         Runs full smoke test against released version:
         1. archetypes
-        2. functional tests in workspace 
+        2. functional tests in workspace
         3. builds examples
 
     quick
@@ -152,10 +148,6 @@ if [ -z "${GIT_URL}" ] ; then
     echo "ERROR: can't determine URL of git repository. Pleas use --giturl option"
     exit 1
 fi
-
-# Install OCI shaded full jar, if necessary. This is an idempotent
-# call.
-install_oci_shaded_full_jar
 
 set -u
 
@@ -287,7 +279,7 @@ testApp(){
 }
 
 quick(){
-    readonly archetypes=" 
+    readonly archetypes="
       quickstart-se \
       quickstart-mp \
       bare-se \
