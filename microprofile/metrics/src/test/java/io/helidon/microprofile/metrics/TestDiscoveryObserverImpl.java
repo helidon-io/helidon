@@ -18,26 +18,25 @@ package io.helidon.microprofile.metrics;
 import java.util.ArrayList;
 import java.util.List;
 
-import io.helidon.common.LazyValue;
 import io.helidon.microprofile.metrics.spi.MetricAnnotationDiscoveryObserver;
-import io.helidon.microprofile.metrics.spi.MetricAnnotationDiscoveryObserverProvider;
 
 public class TestDiscoveryObserverImpl implements MetricAnnotationDiscoveryObserver {
 
-    public static class Provider implements MetricAnnotationDiscoveryObserverProvider<TestDiscoveryObserverImpl> {
+    private static TestDiscoveryObserverImpl instance;
 
-        private static final LazyValue<TestDiscoveryObserverImpl> instance = LazyValue.create(TestDiscoveryObserverImpl::new);
-
-        @Override
-        public TestDiscoveryObserverImpl get() {
-            return instance();
-        }
-
-        static TestDiscoveryObserverImpl instance() {
-            return instance.get();
-        }
+    static TestDiscoveryObserverImpl instance() {
+        return instance;
     }
+
+    private static void instance(TestDiscoveryObserverImpl value) {
+        instance = value;
+    }
+
     private List<MetricAnnotationDiscovery> discoveries = new ArrayList<>();
+
+    public TestDiscoveryObserverImpl() {
+        instance(this);
+    }
 
     @Override
     public void onDiscovery(MetricAnnotationDiscovery metricAnnotationDiscovery) {

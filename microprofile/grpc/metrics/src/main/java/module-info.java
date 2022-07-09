@@ -14,9 +14,6 @@
  * limitations under the License.
  */
 
-import io.helidon.microprofile.grpc.metrics.GrpcMetricAnnotationDiscoveryObserverImplFactory;
-import io.helidon.microprofile.grpc.metrics.GrpcMetricRegistrationObserverImplFactory;
-
 /**
  * gRPC microprofile metrics module
  */
@@ -37,9 +34,9 @@ module io.helidon.microprofile.grpc.metrics {
     provides io.helidon.microprofile.grpc.server.AnnotatedServiceConfigurer
             with io.helidon.microprofile.grpc.metrics.MetricsConfigurer;
 
-    provides io.helidon.microprofile.metrics.spi.MetricAnnotationDiscoveryObserverProvider
-            with GrpcMetricAnnotationDiscoveryObserverImplFactory;
+    provides io.helidon.microprofile.metrics.spi.MetricAnnotationDiscoveryObserver
+            with io.helidon.microprofile.grpc.metrics.GrpcMetricAnnotationDiscoveryObserverImpl;
 
-    provides io.helidon.microprofile.metrics.spi.MetricRegistrationObserverProvider
-            with GrpcMetricRegistrationObserverImplFactory;
+    provides io.helidon.microprofile.metrics.spi.MetricRegistrationObserver
+            with io.helidon.microprofile.grpc.metrics.GrpcMetricRegistrationObserverImpl;
 }

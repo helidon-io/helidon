@@ -28,13 +28,13 @@ public class TestObservers {
 
     @Test
     void testDiscoveryObserver() {
-        TestDiscoveryObserverImpl observer = TestDiscoveryObserverImpl.Provider.instance();
+        TestDiscoveryObserverImpl observer = TestDiscoveryObserverImpl.instance();
         assertThat("Observer's discoveries", observer.discoveries().size(),  is(not(0)));
     }
 
     @Test
     void testRegistrationObserver() {
-        TestRegistrationObserverImpl observer = TestRegistrationObserverImpl.Provider.instance();
+        TestRegistrationObserverImpl observer = TestRegistrationObserverImpl.instance();
         assertThat("Observer's registrations", observer.registrations(), is(not(0)));
     }
 }

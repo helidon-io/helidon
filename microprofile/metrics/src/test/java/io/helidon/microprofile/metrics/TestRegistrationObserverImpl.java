@@ -15,9 +15,7 @@
  */
 package io.helidon.microprofile.metrics;
 
-import io.helidon.common.LazyValue;
 import io.helidon.microprofile.metrics.spi.MetricRegistrationObserver;
-import io.helidon.microprofile.metrics.spi.MetricRegistrationObserverProvider;
 
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.Metric;
@@ -25,22 +23,21 @@ import org.eclipse.microprofile.metrics.MetricID;
 
 public class TestRegistrationObserverImpl implements MetricRegistrationObserver {
 
-    public static class Provider implements MetricRegistrationObserverProvider<TestRegistrationObserverImpl> {
+    private static TestRegistrationObserverImpl instance;
 
-        private static final LazyValue<TestRegistrationObserverImpl> instance =
-                LazyValue.create(TestRegistrationObserverImpl::new);
-
-        @Override
-        public TestRegistrationObserverImpl get() {
-            return instance();
-        }
-
-        static TestRegistrationObserverImpl instance() {
-            return instance.get();
-        }
+    private static void instance(TestRegistrationObserverImpl value) {
+        instance = value;
     }
+
+    static TestRegistrationObserverImpl instance() {
+        return instance;
+    }
+
     private int registrations;
 
+    public TestRegistrationObserverImpl() {
+        instance(this);
+    }
     @Override
     public void onRegistration(MetricAnnotationDiscovery discovery,
                                Metadata metadata,

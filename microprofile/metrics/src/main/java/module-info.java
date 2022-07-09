@@ -48,6 +48,6 @@ module io.helidon.microprofile.metrics {
 
     provides jakarta.enterprise.inject.spi.Extension with io.helidon.microprofile.metrics.MetricsCdiExtension;
 
-    uses io.helidon.microprofile.metrics.spi.MetricAnnotationDiscoveryObserverProvider;
-    uses io.helidon.microprofile.metrics.spi.MetricRegistrationObserverProvider;
+    uses io.helidon.microprofile.metrics.spi.MetricAnnotationDiscoveryObserver;
+    uses io.helidon.microprofile.metrics.spi.MetricRegistrationObserver;
 }

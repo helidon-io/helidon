@@ -52,9 +52,7 @@ import io.helidon.metrics.serviceapi.MetricsSupport;
 import io.helidon.microprofile.metrics.MetricAnnotationInfo.RegistrationPrep;
 import io.helidon.microprofile.metrics.MetricUtil.LookupResult;
 import io.helidon.microprofile.metrics.spi.MetricAnnotationDiscoveryObserver;
-import io.helidon.microprofile.metrics.spi.MetricAnnotationDiscoveryObserverProvider;
 import io.helidon.microprofile.metrics.spi.MetricRegistrationObserver;
-import io.helidon.microprofile.metrics.spi.MetricRegistrationObserverProvider;
 import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.servicecommon.restcdi.HelidonRestCdiExtension;
 import io.helidon.webserver.Routing;
@@ -357,10 +355,10 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
 
         restEndpointsMetricsEnabled = restEndpointsMetricsEnabled();
 
-        HelidonServiceLoader.create(ServiceLoader.load(MetricAnnotationDiscoveryObserverProvider.class))
-                .forEach(p -> metricAnnotationDiscoveryObservers.add(p.get()));
-        HelidonServiceLoader.create(ServiceLoader.load(MetricRegistrationObserverProvider.class))
-                .forEach(p -> metricRegistrationObservers.add(p.get()));
+        HelidonServiceLoader.create(ServiceLoader.load(MetricAnnotationDiscoveryObserver.class))
+                .forEach(metricAnnotationDiscoveryObservers::add);
+        HelidonServiceLoader.create(ServiceLoader.load(MetricRegistrationObserver.class))
+                .forEach(metricRegistrationObservers::add);
     }
 
     @Override

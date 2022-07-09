@@ -34,15 +34,28 @@ import jakarta.enterprise.inject.spi.configurator.AnnotatedMethodConfigurator;
  *     This implementation
  * </p>
  */
-class GrpcMetricAnnotationDiscoveryObserverImpl implements MetricAnnotationDiscoveryObserver {
+public class GrpcMetricAnnotationDiscoveryObserverImpl implements MetricAnnotationDiscoveryObserver {
+
+    private static GrpcMetricAnnotationDiscoveryObserverImpl instance;
 
     static GrpcMetricAnnotationDiscoveryObserverImpl instance() {
-        return GrpcMetricAnnotationDiscoveryObserverImplFactory.instance();
+        return instance;
+    }
+
+    private static void instance(GrpcMetricAnnotationDiscoveryObserverImpl value) {
+        instance = value;
     }
 
     private final Map<Method,
             Map<Class<? extends Annotation>, MetricAnnotationDiscovery.OfMethod>> discoveriesByMethod =
             new HashMap<>();
+
+    /**
+     * Creates a new instance.
+     */
+    public GrpcMetricAnnotationDiscoveryObserverImpl() {
+        instance(this);
+    }
 
     @Override
     public void onDiscovery(MetricAnnotationDiscovery discovery) {

@@ -28,10 +28,26 @@ import org.eclipse.microprofile.metrics.MetricID;
 /**
  * The gRPC implementation of {@link io.helidon.microprofile.metrics.spi.MetricRegistrationObserver} with a static factory method.
  */
-class GrpcMetricRegistrationObserverImpl implements MetricRegistrationObserver {
+public class GrpcMetricRegistrationObserverImpl implements MetricRegistrationObserver {
 
+    private static GrpcMetricRegistrationObserverImpl instance;
+
+    static GrpcMetricRegistrationObserverImpl instance() {
+        return instance;
+    }
+
+    private static void instance(GrpcMetricRegistrationObserverImpl value) {
+        instance = value;
+    }
 
     private final Map<MetricAnnotationDiscovery, Metadata> metadataByDiscovery = new HashMap<>();
+
+    /**
+     * Creates a new instance of the observer.
+     */
+    public GrpcMetricRegistrationObserverImpl() {
+        instance(this);
+    }
 
     @Override
     public void onRegistration(MetricAnnotationDiscovery discovery,
@@ -43,9 +59,5 @@ class GrpcMetricRegistrationObserverImpl implements MetricRegistrationObserver {
 
     Metadata metadata(MetricAnnotationDiscovery discovery) {
         return metadataByDiscovery.get(discovery);
-    }
-
-    static GrpcMetricRegistrationObserverImpl instance() {
-        return GrpcMetricRegistrationObserverImplFactory.instance();
     }
 }
