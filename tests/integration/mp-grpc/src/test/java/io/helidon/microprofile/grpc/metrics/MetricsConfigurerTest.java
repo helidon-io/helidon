@@ -42,9 +42,11 @@ import io.helidon.microprofile.tests.junit5.HelidonTest;
 
 import jakarta.enterprise.inject.Typed;
 import jakarta.ws.rs.Produces;
+import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
+import org.eclipse.microprofile.metrics.SimpleTimer;
 import org.eclipse.microprofile.metrics.annotation.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Metered;
@@ -72,9 +74,12 @@ import static org.hamcrest.collection.IsEmptyIterable.emptyIterable;
 @AddBean(MetricsConfigurerTest.ServiceOne.class)
 @AddBean(MetricsConfigurerTest.ServiceThree.class)
 @AddBean(MetricsConfigurerTest.ServiceTwoProducer.class)
+@AddBean(HelloWorldApp.class)
+@AddBean(HelloWorldResource.class)
 @AddExtension(MetricsCdiExtension.class)
 @AddExtension(ServerCdiExtension.class) // needed for MetricsCdiExtension
 @AddExtension(JaxRsCdiExtension.class)
+@AddExtension(org.glassfish.jersey.ext.cdi1x.internal.CdiComponentProvider.class)
 public class MetricsConfigurerTest {
 
     private static MetricRegistry registry;
@@ -82,6 +87,7 @@ public class MetricsConfigurerTest {
     @BeforeAll
     public static void setup() {
         registry = RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.APPLICATION);
+
     }
 
     @Test
@@ -322,6 +328,24 @@ public class MetricsConfigurerTest {
         List<ServerInterceptor> methodInterceptors = methodDescriptor.interceptors().stream().collect(Collectors.toList());
         assertThat(serviceInterceptors, is(emptyIterable()));
         assertThat(methodInterceptors, is(emptyIterable()));
+    }
+
+    @Test
+    void checkNonGrpcResourceForMetrics() {
+
+        Counter helloWorldClassLevelMessage = registry.getCounter(
+                new MetricID(HelloWorldResource.class.getName() + ".message"));
+        assertThat("message counter declared at class level", helloWorldClassLevelMessage, is(notNullValue()));
+
+        SimpleTimer messageWithArgSimpleTimer = registry.getSimpleTimer(
+                new MetricID(HelloWorldResource.MESSAGE_SIMPLE_TIMER));
+        assertThat("messageWithArg simple timer at method level", messageWithArgSimpleTimer, is(notNullValue()));
+
+        Counter helloWorldClassLevelMessageWithArg = registry.getCounter(
+                new MetricID(HelloWorldResource.class.getName() + ".messageWithArg"));
+        assertThat("messageWithArg counter declared at class level",
+                   helloWorldClassLevelMessageWithArg,
+                   is(notNullValue()));
     }
 
     @Grpc
