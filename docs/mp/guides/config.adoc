@@ -39,7 +39,7 @@ Helidon provides a very flexible and comprehensive configuration system, offerin
 You can include configuration data from a variety of sources using different formats, like JSON and YAML.
 Furthermore, you can customize the precedence of sources and make them optional or mandatory.
 This guide introduces Helidon MP configuration and demonstrates the fundamental concepts using several examples.
-Refer to xref:{rootdir}/config/introduction.adoc[Helidon Config] for the full configuration concepts documentation.
+Refer to xref:{rootdir}/mp/config/introduction.adoc[Helidon Config] for the full configuration concepts documentation.
 
 === Create a Sample Helidon MP Project
 
@@ -618,7 +618,7 @@ kubectl delete configmap  helidon-configmap
 == Summary
 
 This guide has demonstrated how to use basic Helidon configuration features. For more information about using the advanced Helidon configuration features, including mutability support and extensions, see
- xref:{rootdir}/config/introduction.adoc[Helidon Configuration].
+ xref:{rootdir}/mp/config/introduction.adoc[Helidon Configuration].
 
 == References
 

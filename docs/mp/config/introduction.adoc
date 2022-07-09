@@ -125,7 +125,7 @@ server.port=8080
 server.host=0.0.0.0
 ----
 
-==== {spec-name} Profiles
+==== {spec-name} Profiles [[Config-Profiles]]
 
 {spec-name} supports a concept of configuration profiles. You can define a profile using the configuration property `mp.config.profile`
 (when using default configuration, this can be defined as a system property, environment variable or as a property in `microprofile-config.properties`).
@@ -195,7 +195,7 @@ See link:{jdk-javadoc-url}/java.base/java/nio/file/WatchService.html
 ==== Encryption
 You can encrypt secrets using a master password and store them in a configuration file.
 The config encryption filter in MicroProfile Config is enabled by default.
-For more information, see xref:{rootdir}/security/configuration-secrets.adoc[Configuration Secrets].
+For more information, see xref:{rootdir}/mp/security/configuration-secrets.adoc[Configuration Secrets].
 
 [source,properties]
 .Example of encrypted secrets
@@ -228,7 +228,7 @@ include::{rootdir}/includes/config/io.helidon.config.mp.MpConfigBuilder.adoc[lev
 
 Current properties may be set in `application.yaml` or in `microprofile-config.properties` with `mp.config` prefix.
 
-See xref:#_spec_name_profiles[Config Profiles] for more information.
+See xref:#Config-Profiles[Config Profiles] for more information.
 
 == Guides
 
@@ -236,7 +236,7 @@ See xref:#_spec_name_profiles[Config Profiles] for more information.
 ====
 [CARD]
 .MP Config Guide
-[link={rootdir}/guides/config.adoc]
+[link={rootdir}/mp/guides/config.adoc]
 --
 Step-by-step guide about using {spec-name} in your Helidon MP application.
 --

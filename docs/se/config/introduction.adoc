@@ -311,7 +311,7 @@ the xref:extensions.adoc[extensions'] documentation for complete information.
 ====
 [CARD]
 .SE Config Guide
-[link={rootdir}/guides/config.adoc]
+[link={rootdir}/se/guides/config.adoc]
 --
 Step-by-step guide about using Config in your Helidon SE application.
 --
