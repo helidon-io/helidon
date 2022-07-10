@@ -39,7 +39,7 @@ mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml \
     install -e \
     -Dmaven.test.skip=true \
     -DskipTests \
-    -Ppipeline
+    -Ppipeline,oci-sdk-cdi
 
 # Run native image tests
 cd ${WS_DIR}/tests/integration/native-image

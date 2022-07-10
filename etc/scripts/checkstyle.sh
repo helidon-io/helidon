@@ -42,7 +42,7 @@ mvn ${MAVEN_ARGS} checkstyle:checkstyle-aggregate \
     -f ${WS_DIR}/pom.xml \
     -Dcheckstyle.output.format="plain" \
     -Dcheckstyle.output.file="${RESULT_FILE}" \
-    -Pexamples,ossrh-releases > ${LOG_FILE} 2>&1 || (cat ${LOG_FILE} ; exit 1)
+    -Pexamples,oci-sdk-cdi,ossrh-releases > ${LOG_FILE} 2>&1 || (cat ${LOG_FILE} ; exit 1)
 
 grep "^\[ERROR\]" ${RESULT_FILE} \
     && die "CHECKSTYLE ERROR" || echo "CHECKSTYLE OK"

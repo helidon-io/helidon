@@ -37,7 +37,7 @@ install_oci_shaded_full_jar
 mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml \
     clean install -e \
     -Dmaven.test.failure.ignore=true \
-    -Pexamples,archetypes,spotbugs,javadoc,sources,tck,tests,pipeline
+    -Pexamples,archetypes,spotbugs,javadoc,sources,tck,tests,oci-sdk-cdi,pipeline
 
 #
 # test running from jar file, and then from module path
@@ -49,4 +49,4 @@ tests/integration/native-image/mp-1/test-runtime.sh
 tests/integration/native-image/mp-3/test-runtime.sh
 
 # Build site and agregated javadocs
-mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml site
+mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml -Poci-sdk-cdi site

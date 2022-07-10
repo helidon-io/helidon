@@ -43,7 +43,7 @@ mvn ${MAVEN_ARGS} \
         -Dhelidon.enforcer.output.file="${RESULT_FILE}" \
         -Dhelidon.enforcer.rules=copyright \
         -Dhelidon.enforcer.failOnError=false \
-        -Pcopyright \
+        -Pcopyright,oci-sdk-cdi \
         -N \
         validate > ${LOG_FILE} 2>&1 || (cat ${LOG_FILE} ; exit 1)
 

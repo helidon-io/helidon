@@ -39,7 +39,7 @@ mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml \
     install -e \
     -DskipTests \
     -Dmaven.test.skip=true \
-    -Ppipeline
+    -Ppipeline,oci-sdk-cdi
 
 # Run integrations tests for Vault
 cd tests/integration/vault
