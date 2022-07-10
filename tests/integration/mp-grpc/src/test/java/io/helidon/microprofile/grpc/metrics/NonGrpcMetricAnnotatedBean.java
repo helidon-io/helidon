@@ -15,18 +15,23 @@
  */
 package io.helidon.microprofile.grpc.metrics;
 
-import java.util.Set;
-
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.ws.rs.ApplicationPath;
-import jakarta.ws.rs.core.Application;
+import org.eclipse.microprofile.metrics.annotation.Counted;
+import org.eclipse.microprofile.metrics.annotation.SimplyTimed;
 
 @ApplicationScoped
-@ApplicationPath("/")
-public class HelloWorldApp extends Application {
+@Counted
+public class NonGrpcMetricAnnotatedBean {
 
-    @Override
-    public Set<Class<?>> getClasses() {
-        return Set.of(HelloWorldResource.class);
+    static final String MESSAGE_SIMPLE_TIMER = "messageSimpleTimer";
+
+    // Do not add other metrics annotations to this method!
+    public String message() {
+        return "Hello World";
+    }
+
+    @SimplyTimed(name = MESSAGE_SIMPLE_TIMER, absolute = true)
+    public String messageWithArg(String input){
+        return "Hello World, " + input;
     }
 }

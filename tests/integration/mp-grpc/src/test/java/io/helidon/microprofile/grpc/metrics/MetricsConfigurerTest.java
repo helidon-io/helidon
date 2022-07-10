@@ -28,7 +28,6 @@ import io.helidon.microprofile.grpc.core.Grpc;
 import io.helidon.microprofile.grpc.core.Unary;
 
 import io.grpc.ServerInterceptor;
-import io.grpc.stub.StreamObserver;
 
 import io.helidon.microprofile.grpc.server.JavaMarshaller;
 import io.helidon.microprofile.grpc.server.test.Services;
@@ -40,7 +39,9 @@ import io.helidon.microprofile.tests.junit5.AddExtension;
 import io.helidon.microprofile.tests.junit5.DisableDiscovery;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 
+import io.grpc.stub.StreamObserver;
 import jakarta.enterprise.inject.Typed;
+import jakarta.inject.Inject;
 import jakarta.ws.rs.Produces;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.MetricID;
@@ -74,8 +75,7 @@ import static org.hamcrest.collection.IsEmptyIterable.emptyIterable;
 @AddBean(MetricsConfigurerTest.ServiceOne.class)
 @AddBean(MetricsConfigurerTest.ServiceThree.class)
 @AddBean(MetricsConfigurerTest.ServiceTwoProducer.class)
-@AddBean(HelloWorldApp.class)
-@AddBean(HelloWorldResource.class)
+@AddBean(NonGrpcMetricAnnotatedBean.class)
 @AddExtension(MetricsCdiExtension.class)
 @AddExtension(ServerCdiExtension.class) // needed for MetricsCdiExtension
 @AddExtension(JaxRsCdiExtension.class)
@@ -83,6 +83,9 @@ import static org.hamcrest.collection.IsEmptyIterable.emptyIterable;
 public class MetricsConfigurerTest {
 
     private static MetricRegistry registry;
+
+    @Inject
+    private NonGrpcMetricAnnotatedBean nonGrpcMetricAnnotatedBean;
 
     @BeforeAll
     public static void setup() {
@@ -333,19 +336,34 @@ public class MetricsConfigurerTest {
     @Test
     void checkNonGrpcResourceForMetrics() {
 
+        // Make sure the gRPC metrics observer did not accidentally discard discoveries of legitimate,
+        // non-gRPC metric annotations.
         Counter helloWorldClassLevelMessage = registry.getCounter(
-                new MetricID(HelloWorldResource.class.getName() + ".message"));
+                new MetricID(NonGrpcMetricAnnotatedBean.class.getName() + ".message"));
         assertThat("message counter declared at class level", helloWorldClassLevelMessage, is(notNullValue()));
 
         SimpleTimer messageWithArgSimpleTimer = registry.getSimpleTimer(
-                new MetricID(HelloWorldResource.MESSAGE_SIMPLE_TIMER));
+                new MetricID(NonGrpcMetricAnnotatedBean.MESSAGE_SIMPLE_TIMER));
         assertThat("messageWithArg simple timer at method level", messageWithArgSimpleTimer, is(notNullValue()));
 
         Counter helloWorldClassLevelMessageWithArg = registry.getCounter(
-                new MetricID(HelloWorldResource.class.getName() + ".messageWithArg"));
+                new MetricID(NonGrpcMetricAnnotatedBean.class.getName() + ".messageWithArg"));
         assertThat("messageWithArg counter declared at class level",
                    helloWorldClassLevelMessageWithArg,
                    is(notNullValue()));
+
+        // Now make sure the gRPC observer left the default interceptors in place.
+        long before = helloWorldClassLevelMessage.getCount();
+        nonGrpcMetricAnnotatedBean.message();
+        assertThat("Change in counter on method with inherited metric annotation",
+                   helloWorldClassLevelMessage.getCount() - before,
+                   is(1L));
+
+        before = helloWorldClassLevelMessageWithArg.getCount();
+        nonGrpcMetricAnnotatedBean.messageWithArg("Joe");
+        assertThat("Change in simple timer on method with explicit metric annotation",
+                   helloWorldClassLevelMessageWithArg.getCount() - before,
+                   is(1L));
     }
 
     @Grpc
