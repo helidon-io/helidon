@@ -14,38 +14,35 @@
  * limitations under the License.
  */
 
-package io.helidon.examples.integrations.oci.vault.reactive;
-
-import java.util.function.Consumer;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
+package io.helidon.examples.integrations.oci.atp.reactive;
+import java.util.concurrent.CountDownLatch;
 import com.oracle.bmc.responses.AsyncHandler;
 
-final class OciHandler {
-    private static final Logger LOGGER = Logger.getLogger(OciHandler.class.getName());
+final class OciResponseHandler<IN, OUT> implements AsyncHandler<IN, OUT> {
+    private OUT item;
+    private Throwable failed = null;
+    private CountDownLatch latch = new CountDownLatch(1);
 
-    private OciHandler() {
+    protected OUT waitForCompletion() throws Exception {
+        latch.await();
+        if (failed != null) {
+            if (failed instanceof Exception) {
+                throw (Exception) failed;
+            }
+            throw (Error) failed;
+        }
+        return item;
     }
 
-    static <REQ, RES> AsyncHandler<REQ, RES> ociHandler(Consumer<RES> handler) {
-        return new AsyncHandler<>() {
-            @Override
-            public void onSuccess(REQ req, RES res) {
-                handler.accept(res);
-            }
+    @Override
+    public void onSuccess(IN request, OUT response) {
+        item = response;
+        latch.countDown();
+    }
 
-            @Override
-            public void onError(REQ req, Throwable error) {
-                LOGGER.log(Level.WARNING, "OCI Exception", error);
-                if (error instanceof Error) {
-                    throw (Error) error;
-                }
-                if (error instanceof RuntimeException) {
-                    throw (RuntimeException) error;
-                }
-                throw new RuntimeException(error);
-            }
-        };
+    @Override
+    public void onError(IN request, Throwable error) {
+        failed = error;
+        latch.countDown();
     }
 }
