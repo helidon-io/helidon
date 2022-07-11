@@ -28,8 +28,7 @@
 
 - <<Overview, Overview>>
 - <<Maven Coordinates, Maven Coordinates>>
-- <<Usage, Usage>>
-- <<API, API>>
+- <<Usage, Usage>
 - <<Examples, Examples>>
 - <<Additional Information, Additional Information>>
 - <<Reference, Reference>>
@@ -118,6 +117,8 @@ In addition to this simplification, the following annotations are supported:
 
 == Examples
 
+In current example Helidon container will be launched prior test. The _Bean Discovery_ will be disabled. _MyBean_ will be added to the test, so that it can be injected. _ConfigCdiExtension_ will be enabled for this test. And finally, a configuration property will be added using `@AddConfig` annotation.
+
 [source,java]
 .Code sample
 ----
@@ -138,7 +139,6 @@ class TestExample {
 }
 ----
 
-In current example Helidon container will be launched prior test. The _Bean Discovery_ will be disabled. _MyBean_ will be added to the test, so that it can be injected. _ConfigCdiExtension_ will be enabled for this test. And finally, a configuration property will be added using `@AddConfig` annotation.
 
 == Additional Information
 

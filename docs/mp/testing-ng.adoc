@@ -22,7 +22,7 @@
 :feature-name: Testing with TestNG
 :rootdir: {docdir}/..
 
-== Contents
+== ToC
 
 - <<Overview, Overview>>
 - <<Maven Coordinates, Maven Coordinates>>
@@ -98,16 +98,16 @@ In addition to this simplification, the following annotations are supported:
 |Annotation | Usage
 
 |`@io.helidon.microprofile.tests.testng.AddBean`
-|Used to add one or more beans to the container (if not part of a bean archive, or when discovery is disabled)
+|to add one or more beans to the container (if not part of a bean archive, or when discovery is disabled)
 
 |`@io.helidon.microprofile.tests.testng.AddExtension`
-|Used to add one or more CDI extensions to the container (if not added through service loader, or when discovery is disabled)
+|to add one or more CDI extensions to the container (if not added through service loader, or when discovery is disabled)
 
 |`@io.helidon.microprofile.tests.testng.AddConfig`
-|Used to add one or more configuration properties to MicroProfile config without the need of creating a `microprofile-config.properties` file
+|to add one or more configuration properties to MicroProfile config without the need of creating a `microprofile-config.properties` file
 
 |`@io.helidon.microprofile.tests.testng.DisableDiscovery`
-|Used to disable automated discovery of beans and extensions
+|to disable automated discovery of beans and extensions
 |===
 
 == Examples
