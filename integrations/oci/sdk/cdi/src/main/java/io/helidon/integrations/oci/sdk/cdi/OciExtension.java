@@ -72,7 +72,7 @@ import static java.lang.invoke.MethodType.methodType;
 
 /**
  * A <a
- * href="https://jakarta.ee/specifications/cdi/3.0/cdi-spec-3.0.html#spi"
+ * href="https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0.html#spi"
  * target="_top">CDI 3.0 portable extension</a> that enables the
  * {@linkplain jakarta.inject.Inject injection} of any <em>service
  * interface</em>, <em>service client</em>, <em>service client
@@ -251,7 +251,7 @@ import static java.lang.invoke.MethodType.methodType;
  *
  * <li>She may supply her own bean with the service client builder
  * type (or asynchronous client builder type) as one of its <a
- * href="https://jakarta.ee/specifications/cdi/3.0/cdi-spec-3.0.html#bean_types"
+ * href="https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0.html#bean_types"
  * target="_top">bean types</a>.  In this case, this {@linkplain
  * Extension extension} does not supply the service client builder (or
  * asynchronous service client builder) and the user is in full
@@ -261,7 +261,7 @@ import static java.lang.invoke.MethodType.methodType;
  * <li>She may customize the service client builder (or asynchronous
  * service client builder) supplied by this {@linkplain Extension
  * extension}.  To do this, she <a
- * href="https://jakarta.ee/specifications/cdi/3.0/cdi-spec-3.0.html#observes"
+ * href="https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0.html#observes"
  * target="_top">declares an observer method</a> that observes the
  * service client builder object (or asynchronous service client
  * builder object) that is returned from the {@code static} service
