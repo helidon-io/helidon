@@ -115,7 +115,7 @@ status of the application.
 HTTP `GET` responses include JSON content showing the detailed results of all the health checks which the server executed after receiving the request.
 HTTP `HEAD` requests return only the status with no payload.
 
-The following code fragments show how to register health checks while building an
+The following code snippets show how to register health checks while building an
 instance of `HealthSupport`:
 
 [source,java]
@@ -361,7 +361,7 @@ health checks by setting the configuration item
 
 == Examples
 
-=== JSON Response Example
+=== JSON response example
 
 Accessing the Helidon-provided `/health` endpoint reports the health of your application
 as shown below:
@@ -404,7 +404,7 @@ as shown below:
 }
 ----
 
-=== Kubernetes Example
+=== Kubernetes example
 
 This example shows the usage of the Helidon health API in an application that
 implements health endpoints for the liveness and readiness probes. Note that
