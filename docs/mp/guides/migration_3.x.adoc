@@ -1,0 +1,59 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2022 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Helidon MP 3.x Upgrade Guide
+:description: Helidon MP 3.x Upgrade Guide
+:keywords: helidon, porting, migration, upgrade, incompatibilities, 3.x
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/mp.adoc[]
+
+
+In Helidon 3.x we have made some changes to APIs and runtime behavior. This guide
+will help you migrate a Helidon MP 2.x application to 3.x.
+
+
+include::{rootdir}/includes/guides/migration.adoc[]
+
+
+== MicroProfile 5 support
+
+MicroProfile 5 enables MicroProfile APIs to be used together with Jakarta EE 9.1 (Jakarta EE namespace). This release was mainly focused on updating dependencies from `javax` to `jakarta`, as well as overall stability and usability improvements.
+
+MicroProfile 5 lays the foundation for the rapid innovation of MicroProfile APIs  for its 2022 releases.
+
+Microprofile 5 is an umbrella for the following specifications and their corresponding versions:
+
+* MicroProfile Config 3.0
+* MicroProfile Fault Tolerance 4.0
+* MicroProfile Health 4.0
+* MicroProfile JWT Authentication 2.0
+* MicroProfile Metrics 4.0
+* MicroProfile OpenAPI 3.0
+* MicroProfile OpenTracing 3.0
+* MicroProfile Rest Client 3.0
+
+Helidon 3.x is Passing the 5 Jakarta Specification TCKs:
+
+* CDI (Jakarta Contexts and Dependency Injection) 3.0.0
+* JAX-RS (Jakarta RESTful Web Services) 3.0.0
+* JSON-B (Jakarta JSON Binding) 2.0.0
+* JSON-P (Jakarta JSON Processing) 2.0.1
+* Jakarta Annotations 2.0.0
+
+Corresponding changes to Helidon code were made to support the corresponding specifications' versions.
