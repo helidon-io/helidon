@@ -41,7 +41,7 @@ install_oci_shaded_full_jar
 mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml \
     clean install -e \
     -DskipTests \
-    -Ppipeline
+    -Ppipeline,oci-sdk-cdi
 
 # Run tests in Java VM application
 (cd tests/integration/jpa && \

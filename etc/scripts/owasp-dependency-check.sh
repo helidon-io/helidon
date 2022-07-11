@@ -38,11 +38,12 @@ install_oci_shaded_full_jar
 
 if [ "${PIPELINE}" = "true" ] ; then
     # If in pipeline do a priming build before scan
-    mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml clean install -DskipTests
+    mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml -Poci-sdk-cdi clean install -DskipTests
 fi
 
 mvn ${MAVEN_ARGS} -Dorg.slf4j.simpleLogger.defaultLogLevel=WARN org.owasp:dependency-check-maven:aggregate \
         -f ${WS_DIR}/pom.xml \
+        -Poci-sdk-cdi \
         -Dtop.parent.basedir="${WS_DIR}" \
         > ${RESULT_FILE} || die "Error running the Maven command"
 

@@ -121,6 +121,7 @@ printf "\n%s: FULL_VERSION=%s\n\n" "$(basename ${0})" "${FULL_VERSION}"
 update_version(){
     # Update version
     mvn ${MAVEN_ARGS} -f ${WS_DIR}/parent/pom.xml versions:set versions:set-property \
+        -Poci-sdk-cdi \
         -DgenerateBackupPoms=false \
         -DnewVersion="${FULL_VERSION}" \
         -Dproperty=helidon.version \
@@ -160,7 +161,7 @@ release_site(){
     fi
 
     # Generate site
-    mvn ${MAVEN_ARGS} site
+    mvn ${MAVEN_ARGS} -Poci-sdk-cdi site
 
     # Sign site jar
     gpg -ab ${WS_DIR}/target/helidon-project-${FULL_VERSION}-site.jar
@@ -218,7 +219,7 @@ release_build(){
 
     # Perform deployment
     mvn ${MAVEN_ARGS} clean deploy \
-       -Prelease,archetypes \
+       -Prelease,archetypes,oci-sdk-cdi \
       -DskipTests \
       -DstagingRepositoryId="${STAGING_REPO_ID}" \
       -DretryFailedDeploymentCount="10"

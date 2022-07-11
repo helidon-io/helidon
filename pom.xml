@@ -1195,7 +1195,7 @@
                         <configuration>
                             <skip>false</skip>
                             <skippedModules>
-helidon-parent,helidon-dependencies,helidon-bom,helidon-se,helidon-mp,io.grpc,helidon-mp-graal-native-image-extension,helidon-graal-native-image-extension,helidon-config-test-infrastructure,helidon-webserver-test-support
+helidon-parent,helidon-dependencies,helidon-bom,helidon-se,helidon-mp,io.grpc,helidon-mp-graal-native-image-extension,helidon-graal-native-image-extension,helidon-config-test-infrastructure,helidon-webserver-test-support,helidon-integrations-cdi-oci-objectstorage
                             </skippedModules>
                             <excludePackageNames>io.grpc</excludePackageNames>
                             <sourceFileExcludes>

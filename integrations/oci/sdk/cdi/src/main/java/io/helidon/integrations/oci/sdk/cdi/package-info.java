@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,12 @@
  */
 
 /**
- * Provides classes and interfaces that integrate the OCI object
- * storage service into CDI 3.0-based applications.
+ * Provides classes and interfaces that integrate any service client
+ * from the <a
+ * href="https://docs.oracle.com/en-us/iaas/tools/java/latest/index.html"
+ * target="_top">Oracle Cloud Infrastructure Java SDK</a> into CDI
+ * 3.0-based applications.
  *
- * @deprecated Please use classes from the {@code
- * io.helidon.integrations.sdk.cdi} package instead.
+ * @see io.helidon.integrations.oci.sdk.cdi.OciExtension
  */
-package io.helidon.integrations.cdi.oci.objectstorage;
+package io.helidon.integrations.oci.sdk.cdi;

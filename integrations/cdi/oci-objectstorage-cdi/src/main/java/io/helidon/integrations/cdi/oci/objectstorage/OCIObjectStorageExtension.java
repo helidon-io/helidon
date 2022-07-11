@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,11 @@ import org.eclipse.microprofile.config.ConfigProvider;
  * interface into CDI-based applications.
  *
  * @see com.oracle.bmc.objectstorage.ObjectStorage
+ *
+ * @deprecated Please see the {@code
+ * io.helidon.integrations.oci.sdk.cdi.OciExtension} class instead.
  */
+@Deprecated(forRemoval = true, since = "2.43")
 public class OCIObjectStorageExtension implements Extension {
 
   private final Map<Set<Annotation>, Object> objectStorageBeans;

@@ -8,7 +8,7 @@ Setup your OCI SDK [configuration](https://docs.cloud.oracle.com/iaas/Content/AP
 ./oci-setup.sh && source oci-env
 ```
 
-This example requires an Object Storage, you can create one using the
+This example requires an Object Storage. You can create one using the
  [OCI console](https://console.us-phoenix-1.oraclecloud.com). Once created,
  upload a file in order to exercise the example.
 
