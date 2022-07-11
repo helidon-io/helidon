@@ -129,7 +129,7 @@ public class GreetResource {
      */
     @OPTIONS
     @Path("/greeting")
-    @CrossOrigin({"http://foo.com", "http://there.com"},
+    @CrossOrigin(value = {"http://foo.com", "http://there.com"},
             allowMethods = {HttpMethod.PUT})
     @APIResponses({
             @APIResponse(name = "normal", responseCode = "200", description = "Preflight request granted"),
