@@ -24,11 +24,12 @@
 :feature-name: Testing with JUnit
 :rootdir: {docdir}/..
 
-== Contents
+== ToC
 
 - <<Overview, Overview>>
 - <<Maven Coordinates, Maven Coordinates>>
 - <<Usage, Usage>>
+- <<API, API>>
 - <<Examples, Examples>>
 - <<Additional Information, Additional Information>>
 - <<Reference, Reference>>
@@ -103,21 +104,19 @@ In addition to this simplification, the following annotations are supported:
 |Annotation | Usage
 
 |`@io.helidon.microprofile.tests.junit5.AddBean`
-|Used to add one or more beans to the container (if not part of a bean archive, or when discovery is disabled)
+|to add one or more beans to the container (if not part of a bean archive, or when discovery is disabled)
 
 |`@io.helidon.microprofile.tests.junit5.AddExtension`
-|Used to add one or more CDI extensions to the container (if not added through service loader, or when discovery is disabled)
+|to add one or more CDI extensions to the container (if not added through service loader, or when discovery is disabled)
 
 |`@io.helidon.microprofile.tests.junit5.AddConfig`
-|Used to add one or more configuration properties to MicroProfile config without the need of creating a `microprofile-config.properties` file
+|to add one or more configuration properties to MicroProfile config without the need of creating a `microprofile-config.properties` file
 
-|Used `@io.helidon.microprofile.tests.junit5.DisableDiscovery`
+|`@io.helidon.microprofile.tests.junit5.DisableDiscovery`
 |to disable automated discovery of beans and extensions
 |===
 
 == Examples
-
-In current example Helidon container will be launched prior test. The _Bean Discovery_ will be disabled. _MyBean_ will be added to the test, so that it can be injected. _ConfigCdiExtension_ will be enabled for this test. And finally, a configuration property will be added using `@AddConfig` annotation.
 
 [source,java]
 .Code sample
@@ -139,6 +138,7 @@ class TestExample {
 }
 ----
 
+In current example Helidon container will be launched prior test. The _Bean Discovery_ will be disabled. _MyBean_ will be added to the test, so that it can be injected. _ConfigCdiExtension_ will be enabled for this test. And finally, a configuration property will be added using `@AddConfig` annotation.
 
 == Additional Information
 
