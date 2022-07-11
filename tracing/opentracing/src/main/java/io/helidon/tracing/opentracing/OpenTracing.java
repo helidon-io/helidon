@@ -37,6 +37,16 @@ public final class OpenTracing {
     }
 
     /**
+     * Create an open tracing tracer from Helidon tracer.
+     * Either unwraps an opentracing tracer, or creates a shim layer.
+     * @param helidonTracer
+     * @return
+     */
+    public static Tracer create(io.helidon.tracing.Tracer helidonTracer) {
+        return HelidonTracer.create(helidonTracer);
+    }
+
+    /**
      * Wrap an open tracing span.
      *
      * @param tracer the tracer that created the span
@@ -46,4 +56,5 @@ public final class OpenTracing {
     public static Span create(Tracer tracer, io.opentracing.Span span) {
         return new OpenTracingSpan(tracer, span);
     }
+
 }

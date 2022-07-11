@@ -15,8 +15,14 @@
  */
 package io.helidon.tracing.jaeger;
 
+import java.util.Optional;
+
 import io.helidon.common.Prioritized;
-import io.helidon.tracing.opentracing.spi.OpenTracingProvider;
+import io.helidon.tracing.Span;
+import io.helidon.tracing.Tracer;
+import io.helidon.tracing.opentelemetry.HelidonOpenTelemetry;
+import io.helidon.tracing.opentelemetry.OpenTelemetryTracerProvider;
+import io.helidon.tracing.spi.TracerProvider;
 
 import jakarta.annotation.Priority;
 
@@ -24,7 +30,22 @@ import jakarta.annotation.Priority;
  * Jaeger java service.
  */
 @Priority(Prioritized.DEFAULT_PRIORITY)
-public class JaegerTracerProvider implements OpenTracingProvider {
+public class JaegerTracerProvider implements TracerProvider {
+    @Override
+    public Tracer global() {
+        return OpenTelemetryTracerProvider.globalTracer();
+    }
+
+    @Override
+    public void global(Tracer tracer) {
+        OpenTelemetryTracerProvider.globalTracer(tracer);
+    }
+
+    @Override
+    public Optional<Span> currentSpan() {
+        return Optional.ofNullable(io.opentelemetry.api.trace.Span.current()).map(HelidonOpenTelemetry::create);
+    }
+
     @Override
     public JaegerTracerBuilder createBuilder() {
         return JaegerTracerBuilder.create();

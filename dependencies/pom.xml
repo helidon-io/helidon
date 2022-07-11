@@ -136,6 +136,7 @@
         <version.lib.okio>1.17.5</version.lib.okio>
         <version.lib.opentelemetry>1.15.0</version.lib.opentelemetry>
         <version.lib.opentelemetry.semconv>1.15.0-alpha</version.lib.opentelemetry.semconv>
+        <version.lib.opentelemetry.opentracing.shim>1.15.0-alpha</version.lib.opentelemetry.opentracing.shim>
         <version.lib.opentracing>0.33.0</version.lib.opentracing>
         <version.lib.opentracing.grpc>0.2.1</version.lib.opentracing.grpc>
         <version.lib.opentracing.tracerresolver>0.1.8</version.lib.opentracing.tracerresolver>
@@ -252,6 +253,11 @@
                 <groupId>io.opentelemetry</groupId>
                 <artifactId>opentelemetry-semconv</artifactId>
                 <version>${version.lib.opentelemetry.semconv}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.opentelemetry</groupId>
+                <artifactId>opentelemetry-opentracing-shim</artifactId>
+                <version>${version.lib.opentelemetry.opentracing.shim}</version>
             </dependency>
             <dependency>
                 <groupId>io.opentracing</groupId>

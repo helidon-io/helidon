@@ -19,6 +19,7 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.LazyValue;
+import io.helidon.common.Prioritized;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.tracing.Span;
@@ -28,14 +29,16 @@ import io.helidon.tracing.spi.TracerProvider;
 
 import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.OpenTelemetry;
+import jakarta.annotation.Priority;
 
 /**
  * Service loader provider implementation for {@link io.helidon.tracing.spi.TracerProvider}.
  */
+@Priority(Prioritized.DEFAULT_PRIORITY + 1000)
 public class OpenTelemetryTracerProvider implements TracerProvider {
     private static final System.Logger LOGGER = System.getLogger(OpenTelemetryTracerProvider.class.getName());
 
-    private static final AtomicReference<OpenTelemetryTracer> CONFIGURED_TRACER = new AtomicReference<>();
+    private static final AtomicReference<Tracer> CONFIGURED_TRACER = new AtomicReference<>();
     private static final LazyValue<Tracer> GLOBAL_TRACER;
 
     static {
@@ -59,6 +62,24 @@ public class OpenTelemetryTracerProvider implements TracerProvider {
         });
     }
 
+    /**
+     * Register global tracer.
+     *
+     * @param tracer global tracer
+     */
+    public static void globalTracer(Tracer tracer) {
+        CONFIGURED_TRACER.set(tracer);
+    }
+
+    /**
+     * Registered global tracer, or tracer from global open telemetry.
+     *
+     * @return tracer
+     */
+    public static Tracer globalTracer() {
+        return GLOBAL_TRACER.get();
+    }
+
     @Override
     public TracerBuilder<?> createBuilder() {
         return OpenTelemetryTracer.builder();
@@ -66,13 +87,13 @@ public class OpenTelemetryTracerProvider implements TracerProvider {
 
     @Override
     public Tracer global() {
-        return GLOBAL_TRACER.get();
+        return globalTracer();
     }
 
     @Override
     public void global(Tracer tracer) {
         if (tracer instanceof OpenTelemetryTracer ott) {
-            CONFIGURED_TRACER.set(ott);
+            globalTracer(ott);
         }
         throw new IllegalArgumentException("Tracer must be an instance of Helidon OpenTelemetry tracer. "
                                                    + "Please use HelidonOpenTelemetry to create such instance");
