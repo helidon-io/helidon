@@ -21,10 +21,19 @@
 :keywords: helidon, webserver, websocket, se
 :rootdir: {docdir}/..
 
+
 include::{rootdir}/includes/se.adoc[]
 
+== ToC
+
+- <<Overview, Overview>>
+- <<maven-coordinates, Maven Coordinates>>
+- <<Example, Example>>
+- <<Reference, Reference>>
+
+== Overview
 Helidon integrates with link:https://projects.eclipse.org/projects/ee4j.tyrus[Tyrus] to provide support for the
- {jakarta-websocket-spec-url}[Jakarta WebSocket API].
+{jakarta-websocket-spec-url}[Jakarta WebSocket API].
 The WebSocket API enables Java applications to participate in WebSocket interactions
 as both servers and clients. The server API supports two flavors: annotated and
 programmatic endpoints.
@@ -36,11 +45,21 @@ more flexible since they allow different method signatures depending on the
 application needs, whereas programmatic endpoints must implement an interface
 and are, therefore, bounded to its definition.
 
-Helidon SE support is based on the `TyrusSupport` class which is
-akin to `JerseySupport`, and enables Helidon application to
-defined both annotated and programmatic WebSocket endpoints.
+Helidon SE support is based on the `WebSocketRouting` class which enables Helidon application to
+configure routing for both annotated and programmatic WebSocket endpoints.
 
-== Helidon SE Example
+
+include::{rootdir}/includes/dependencies.adoc[]
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.webserver</groupId>
+    <artifactId>helidon-webserver-websocket</artifactId>
+</dependency>
+----
+
+== Example
 
 This section describes the implementation of a simple application
 that uses a REST resource to push messages into a shared queue and a
@@ -64,8 +83,12 @@ public class MessageQueueService implements Service {
     }
 
     private void handlePost(ServerRequest request, ServerResponse response) {
-        request.content().as(String.class).thenAccept(messageQueue::push);
-        response.status(204).send();
+        request.content()
+                .as(String.class)
+                .thenAccept(it -> {
+                    messageQueue.push(it);
+                    response.status(204).send();
+                });
     }
 }
 ----
@@ -89,6 +112,7 @@ public class MessageBoardEndpoint extends Endpoint {
             @Override
             public void onMessage(String message) {
                 try {
+                    // Send all messages in the queue
                     if (message.equals("SEND")) {
                         while (!messageQueue.isEmpty()) {
                             session.getBasicRemote().sendObject(messageQueue.pop());
@@ -114,20 +138,27 @@ the web server. This is accomplished via a `Routing` builder:
 
 [source,java]
 ----
-    List<Class<? extends Encoder>> encoders =
-           Collections.singletonList(UppercaseEncoder.class);
+List<Class<? extends Encoder>> encoders =
+    Collections.singletonList(UppercaseEncoder.class);
 
-    Routing.builder()
-           .register("/rest", new MessageQueueService())
-           .register("/websocket",
-                TyrusSupport.builder().register(
-                        ServerEndpointConfig.Builder.create(
-                                MessageBoardEndpoint.class, "/board").encoders(
-                                        encoders).build()).build())
-                .build();
+WebServer server = WebServer.builder()
+        .port(8080)
+        .routing(r -> r
+                .register("/web", StaticContentSupport.builder("/WEB")
+                        .welcomeFileName("index.html")
+                        .build())
+                .register("/rest", new MessageQueueService())
+        )
+        .addRouting(WebSocketRouting.builder()
+                .endpoint("/websocket", ServerEndpointConfig.Builder.create(MessageBoardEndpoint.class, "/board")
+                        .encoders(encoders)
+                        .build())
+                .build()
+        )
+        .build()
 ----
 
-This code snippet uses multiple builders for `Routing`, `TyrusSupport` and `ServerEndpointConfig`.
+This code snippet uses multiple builders for `Routing`, `WebSocketRouting` and `ServerEndpointConfig`.
 In particular, it registers `MessageBoardEndpoint.class` at `"/websocket/board"` and associates
 with it a _message encoder_. For more information on message encoders and decoders the
 reader see the {jakarta-websocket-spec-url}[websocket specification]; in this
@@ -138,3 +169,8 @@ Endpoint methods in Helidon SE are executed in Netty's worker thread pool. Threa
 pool are intended to be _non-blocking_, thus it is recommended for any blocking or
 long-running operation triggered by an endpoint method to be executed using a separate
 thread pool. See the documentation for `io.helidon.common.configurable.ThreadPoolSupplier`.
+
+== Reference
+
+* link:{javadoc-base-url}/io.helidon.webserver.websocket/module-summary.html[Helidon WebSocket JavaDoc]
+* link:{jakarta-websocket-spec-url}[Jakarta WebSocket Specification]
