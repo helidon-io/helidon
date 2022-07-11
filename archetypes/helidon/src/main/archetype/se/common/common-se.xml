@@ -25,9 +25,6 @@
     <output>
         <model>
             <value key="mainClass">${package}.Main</value>
-            <list key="readme-sections">
-                <value file="files/README.md"/>
-            </list>
             <value key="parent-artifactId">helidon-se</value>
             <list key="dependencies">
                 <map order="999">
