@@ -111,22 +111,7 @@ The following is a description of each of these steps:
 
 == Configuration
 
-An instance of `GraphQlSupport` can be (mostly) created from configuration properties.
-The config element to use (and its location) is of your choosing, as long as it contains
-the properties listed in the table below.
-
-[cols="2,2,6", role="flex, sm7"]
-|===
-| Property | Type | Description
-| web-context | String | Context that serves the GraphQL endpoint. Default is `/graphql`.
-| schema-uri | String | URI that serves the schema under web context. Default is `/schema.graphql`.
-| cors | CrossOriginConfig | Configuration section for CORS.
-| executor-service | Config | Configuration section for an executor service.
-|===
-
-NOTE: The schema and its associated `InvocationHandler` can only be specified
-programmatically at this time. For more information, see the
-link:{graphql-javadoc-base-url}/module-summary.html[GraphQL Javadocs]
+include::{rootdir}/includes/graphql.adoc[]
 
 == Examples
 
