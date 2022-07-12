@@ -46,9 +46,7 @@ import com.oracle.bmc.database.responses.GenerateAutonomousDatabaseWalletRespons
 import com.oracle.bmc.http.internal.ResponseHelper;
 
 import oracle.security.pki.OraclePKIProvider;
-
 import oracle.ucp.jdbc.PoolDataSource;
-
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 /**
  * JAX-RS resource - REST API for the atp example.

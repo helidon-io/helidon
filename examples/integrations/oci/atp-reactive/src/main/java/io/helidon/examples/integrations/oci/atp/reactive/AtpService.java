@@ -47,7 +47,6 @@ import com.oracle.bmc.database.responses.GenerateAutonomousDatabaseWalletRespons
 
 import oracle.jdbc.pool.OracleDataSource;
 import oracle.security.pki.OraclePKIProvider;
-
 import oracle.ucp.jdbc.PoolDataSource;
 import oracle.ucp.jdbc.PoolDataSourceFactory;
 
