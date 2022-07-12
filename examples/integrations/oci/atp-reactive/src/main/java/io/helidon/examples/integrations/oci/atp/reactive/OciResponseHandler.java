@@ -15,7 +15,9 @@
  */
 
 package io.helidon.examples.integrations.oci.atp.reactive;
+
 import java.util.concurrent.CountDownLatch;
+
 import com.oracle.bmc.responses.AsyncHandler;
 
 final class OciResponseHandler<IN, OUT> implements AsyncHandler<IN, OUT> {

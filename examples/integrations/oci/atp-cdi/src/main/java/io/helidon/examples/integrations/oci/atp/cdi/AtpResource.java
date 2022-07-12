@@ -24,10 +24,9 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -42,12 +41,13 @@ import javax.ws.rs.core.Response;
 
 import com.oracle.bmc.database.DatabaseClient;
 import com.oracle.bmc.database.model.GenerateAutonomousDatabaseWalletDetails;
-import com.oracle.bmc.database.responses.GenerateAutonomousDatabaseWalletResponse;
 import com.oracle.bmc.database.requests.GenerateAutonomousDatabaseWalletRequest;
+import com.oracle.bmc.database.responses.GenerateAutonomousDatabaseWalletResponse;
 import com.oracle.bmc.http.internal.ResponseHelper;
 
-import oracle.ucp.jdbc.PoolDataSource;
 import oracle.security.pki.OraclePKIProvider;
+
+import oracle.ucp.jdbc.PoolDataSource;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 /**
@@ -110,8 +110,8 @@ public class AtpResource {
         String returnEntity = null;
         try {
             this.atpDataSource.setSSLContext(getSSLContext(walletContent));
-            this.atpDataSource.setURL(getJdbcUrl(walletContent,this.atpTnsNetServiceName));
-            try(
+            this.atpDataSource.setURL(getJdbcUrl(walletContent, this.atpTnsNetServiceName));
+            try (
                 Connection connection = this.atpDataSource.getConnection();
                 PreparedStatement ps = connection.prepareStatement("SELECT 'Hello world!!' FROM DUAL");
                 ResultSet rs = ps.executeQuery()
@@ -130,6 +130,7 @@ public class AtpResource {
     /**
      * Returns SSLContext based on cwallet.sso in wallet.
      *
+     * @param walletContent
      * @return SSLContext
      */
     public SSLContext getSSLContext(byte[] walletContent) throws IllegalStateException {

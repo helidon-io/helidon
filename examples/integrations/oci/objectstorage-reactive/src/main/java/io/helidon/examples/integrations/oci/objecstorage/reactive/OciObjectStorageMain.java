@@ -24,8 +24,8 @@ import io.helidon.webserver.WebServer;
 import com.oracle.bmc.ConfigFileReader;
 import com.oracle.bmc.auth.AuthenticationDetailsProvider;
 import com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider;
-import com.oracle.bmc.objectstorage.ObjectStorageAsyncClient;
 import com.oracle.bmc.model.BmcException;
+import com.oracle.bmc.objectstorage.ObjectStorageAsyncClient;
 
 import static io.helidon.config.ConfigSources.classpath;
 import static io.helidon.config.ConfigSources.file;

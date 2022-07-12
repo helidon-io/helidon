@@ -17,15 +17,13 @@
 package io.helidon.examples.integrations.oci.objectstorage.cdi;
 
 import java.io.ByteArrayInputStream;
-import java.io.InputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.Optional;
 
 import javax.inject.Inject;
 import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
@@ -90,7 +88,7 @@ public class ObjectStorageResource {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
 
-        try (final InputStream fileStream = getObjectResponse.getInputStream()) {
+        try (InputStream fileStream = getObjectResponse.getInputStream()) {
             byte[] objectContent = fileStream.readAllBytes();
             Response.ResponseBuilder ok = Response.ok(objectContent)
                     .header(Http.Header.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
@@ -110,7 +108,6 @@ public class ObjectStorageResource {
      *
      * @param fileName name of the object
      * @param contentLength content length (required)
-     * @param type content type
      * @param entity the entity used for upload
      * @return response
      */

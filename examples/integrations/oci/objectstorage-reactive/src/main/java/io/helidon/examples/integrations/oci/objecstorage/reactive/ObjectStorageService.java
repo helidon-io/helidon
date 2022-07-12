@@ -19,17 +19,18 @@ package io.helidon.examples.integrations.oci.objecstorage.reactive;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.InputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.concurrent.CountDownLatch;
-import java.util.logging.Logger;
 import java.util.logging.Level;
-import java.util.Optional;
-import java.util.OptionalLong;
+import java.util.logging.Logger;
 
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
-import io.helidon.common.reactive.Single;
+import io.helidon.webserver.Routing;
+import io.helidon.webserver.ServerRequest;
+import io.helidon.webserver.ServerResponse;
+import io.helidon.webserver.Service;
 
 import com.oracle.bmc.objectstorage.ObjectStorageAsyncClient;
 import com.oracle.bmc.objectstorage.model.RenameObjectDetails;
@@ -44,11 +45,6 @@ import com.oracle.bmc.objectstorage.responses.GetObjectResponse;
 import com.oracle.bmc.objectstorage.responses.PutObjectResponse;
 import com.oracle.bmc.objectstorage.responses.RenameObjectResponse;
 import com.oracle.bmc.responses.AsyncHandler;
-
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerRequest;
-import io.helidon.webserver.ServerResponse;
-import io.helidon.webserver.Service;
 
 class ObjectStorageService implements Service {
     private static final Logger LOGGER = Logger.getLogger(ObjectStorageService.class.getName());
@@ -186,7 +182,7 @@ class ObjectStorageService implements Service {
             return;
         }
 
-        try (final InputStream fileStream = getObjectResponse.getInputStream()) {
+        try (InputStream fileStream = getObjectResponse.getInputStream()) {
             byte[] objectContent = fileStream.readAllBytes();
             res.addHeader(Http.Header.CONTENT_DISPOSITION, "attachment; filename=\"" + objectName + "\"")
                     .status(Http.Status.OK_200).send(objectContent);

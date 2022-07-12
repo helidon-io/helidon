@@ -29,9 +29,6 @@ import com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider;
 import com.oracle.bmc.database.DatabaseAsyncClient;
 import com.oracle.bmc.model.BmcException;
 
-import static io.helidon.config.ConfigSources.classpath;
-import static io.helidon.config.ConfigSources.file;
-
 /**
  * Main class of the example.
  * This example sets up a web server to serve REST API to retrieve ATP wallet.
