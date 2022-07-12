@@ -25,6 +25,7 @@ ifndef::rootdir[:rootdir: {docdir}/../..]
 - <<Overview, Overview>>
 - <<maven-coordinates, Maven Coordinates>>
 - <<Usage, Usage>>
+- <<Reference, Reference>>
 
 == Overview
 
@@ -134,3 +135,8 @@ publisherStage
 > Item received: BAR
 ----
 
+== Reference
+
+* link:{microprofile-rs-operators-spec-url}[MicroProfile Reactive Streams Operators Specification]
+* link:{microprofile-rs-operators-javadoc-url}[MicroProfile Reactive Streams Operators JavaDoc]
+* link:https://github.com/eclipse/microprofile-reactive-streams-operators[MicroProfile Reactive Streams Operators on GitHub]
