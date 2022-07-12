@@ -351,7 +351,6 @@ backend:
                   - "cdi-datasource-hikaricp.adoc"
                   - "cdi-datasource-ucp.adoc"
                   - "cdi-jedis.adoc"
-                  - "cdi-oci-objectstorage.adoc"
                   - "cdi-jta.adoc"
               - type: "MENU"
                 title: "CORS"
