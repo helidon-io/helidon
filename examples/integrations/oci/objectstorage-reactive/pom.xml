@@ -43,16 +43,18 @@
             <artifactId>helidon-webserver</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.integrations.oci</groupId>
-            <artifactId>helidon-integrations-oci-objectstorage</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.integrations.oci</groupId>
-            <artifactId>helidon-integrations-oci-objectstorage-health</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config-yaml</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.oracle.oci.sdk</groupId>
+            <artifactId>oci-java-sdk-objectstorage</artifactId>
+        </dependency>
+        <dependency>
+            <!-- required by SDK -->
+            <groupId>jakarta.inject</groupId>
+            <artifactId>jakarta.inject-api</artifactId>
+            <scope>runtime</scope>
         </dependency>
     </dependencies>
 

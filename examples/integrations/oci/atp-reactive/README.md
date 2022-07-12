@@ -8,7 +8,7 @@ Before running the test, make sure to update required properties in `application
 
 - oci.atp.ocid: This is OCID of your running ATP instance.
 - oci.atp.walletPassword: password to encrypt the keys inside the wallet. The password must be at least 8 characters long and must include at least 1 letter and either 1 numeric character or 1 special character.
-- db.serviceName: serviceName of your database running inside OCI ATP.
+- db.tnsNetServiceName: netServiceName of your database running inside OCI ATP as can be found in `tnsnames.ora` file.
 - db.userName: User to access your database running inside OCI ATP.
 - db.password: Password of user to access your database running inside OCI ATP.
 

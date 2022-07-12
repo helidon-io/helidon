@@ -43,16 +43,12 @@
             <artifactId>helidon-microprofile</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.integrations.oci</groupId>
-            <artifactId>helidon-integrations-oci-cdi</artifactId>
+            <groupId>io.helidon.integrations.oci.sdk</groupId>
+            <artifactId>helidon-integrations-oci-sdk-cdi</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.integrations.oci</groupId>
-            <artifactId>helidon-integrations-oci-objectstorage</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.integrations.oci</groupId>
-            <artifactId>helidon-integrations-oci-objectstorage-health</artifactId>
+            <groupId>com.oracle.oci.sdk</groupId>
+            <artifactId>oci-java-sdk-objectstorage</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>
