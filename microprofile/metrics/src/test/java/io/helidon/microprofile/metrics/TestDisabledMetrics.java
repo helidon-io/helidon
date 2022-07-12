@@ -33,7 +33,7 @@ class TestDisabledMetrics {
 
     @Test
     void ensureRegistryFactoryIsMinimal() {
-        // Invoking getInstance() should retrieve the factory previously initialized as disabled.
+        // Invoking instance() should retrieve the factory previously initialized as disabled.
         RegistryFactory rf = RegistryFactory.getInstance();
         assertThat("RegistryFactory type", rf, not(instanceOf(io.helidon.metrics.RegistryFactory.class)));
     }
