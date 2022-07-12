@@ -70,7 +70,7 @@ In addition to MicroProfile support, Helidon MP provides additional CDI extensio
 //CORS
 [CARD]
 .CORS
-[icon=share,link=../cors/introduction.adoc]
+[icon=share,link=../cors/cors.adoc]
 --
 Add support for CORS to your application using a Helidon module.
 --
