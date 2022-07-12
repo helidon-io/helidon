@@ -36,24 +36,24 @@ header:
   stylesheets:
     - path: "css/styles.css"
 pages:
-    - includes:
-        - "**/*.adoc"
-      excludes:
-        - "includes/**"
+  - includes:
+      - "**/*.adoc"
+    excludes:
+      - "includes/**"
 backend:
-    name: "vuetify"
-    homePage: "about/overview.adoc"
-    releases:
-        - "${project.version}"
-    navigation:
-      type: "ROOT"
-      title: "Helidon"
-      glyph:
-        type: "image"
-        value: "images/helidon_logo_dark.svg"
-      items:
-        - type: "GROUPS"
-          items:
+  name: "vuetify"
+  homePage: "about/overview.adoc"
+  releases:
+    - "${project.version}"
+  navigation:
+    type: "ROOT"
+    title: "Helidon"
+    glyph:
+      type: "image"
+      value: "images/helidon_logo_dark.svg"
+    items:
+      - type: "GROUPS"
+        items:
           - type: "GROUP"
             title: "Introduction"
             dir: "about"
@@ -65,7 +65,7 @@ backend:
                   value: "assistant"
                 sources:
                   - "overview.adoc"
-                  - "lra.adoc"
+                  - "introduction.adoc"
                   - "prerequisites.adoc"
                   - "managing-dependencies.adoc"
                   - "windows.adoc"
@@ -78,7 +78,7 @@ backend:
             items:
               - type: "PAGE"
                 title: "Introduction"
-                source: "lra.adoc"
+                source: "introduction.adoc"
                 glyph:
                   type: "icon"
                   value: "widgets"
@@ -111,7 +111,7 @@ backend:
                   type: "icon"
                   value: "settings"
                 sources:
-                  - "lra.adoc"
+                  - "introduction.adoc"
                   - "config-sources.adoc"
                   - "hierarchical-features.adoc"
                   - "property-mapping.adoc"
@@ -139,7 +139,7 @@ backend:
                   type: "icon"
                   value: "swap_horiz"
                 sources:
-                  - "lra.adoc"
+                  - "introduction.adoc"
                   - "configuration.adoc"
                   - "routing.adoc"
                   - "service-implementation.adoc"
@@ -148,7 +148,7 @@ backend:
                   - "metrics.adoc"
                   - "security.adoc"
                   - "marshalling.adoc"
-                  - "client-lra.adoc"
+                  - "client-introduction.adoc"
                   - "client-configuration.adoc"
                   - "client-implementation.adoc"
               - type: "PAGE"
@@ -212,7 +212,7 @@ backend:
                   type: "icon"
                   value: "message"
                 sources:
-                  - "lra.adoc"
+                  - "introduction.adoc"
                   - "connector.adoc"
                   - "kafka.adoc"
                   - "jms.adoc"
@@ -230,7 +230,7 @@ backend:
                   type: "icon"
                   value: "security"
                 sources:
-                  - "lra.adoc"
+                  - "introduction.adoc"
                   - "providers.adoc"
                   - "containers-integration.adoc"
                   - "tools.adoc"
@@ -265,7 +265,7 @@ backend:
                   type: "icon"
                   value: "http"
                 sources:
-                  - "lra.adoc"
+                  - "introduction.adoc"
                   - "tls-configuration.adoc"
               - type: "PAGE"
                 title: "Websocket"
@@ -296,7 +296,7 @@ backend:
                   type: "icon"
                   value: "widgets"
                 sources:
-                  - "lra.adoc"
+                  - "introduction.adoc"
                   - "microprofile.adoc"
               - type: "MENU"
                 title: "Guides"
@@ -338,7 +338,7 @@ backend:
                   type: "icon"
                   value: "settings"
                 sources:
-                  - "lra.adoc"
+                  - "introduction.adoc"
                   - "config-sources.adoc"
               - type: "MENU"
                 title: "CDI Extensions"
@@ -360,7 +360,7 @@ backend:
                   type: "icon"
                   value: "share"
                 sources:
-                  - "lra.adoc"
+                  - "introduction.adoc"
                   - "using-cors.adoc"
                   - "configuration-with-cors-mp.adoc"
                   - "support-in-builtin-services.adoc"
@@ -424,8 +424,6 @@ backend:
                   value: "pending_actions"
                 sources:
                   - "lra.adoc"
-                  - "coordinator.adoc"
-                  - "participant.adoc"
               - type: "MENU"
                 title: "Metrics"
                 dir: "metrics"
@@ -433,7 +431,7 @@ backend:
                   type: "icon"
                   value: "av_timer"
                 sources:
-                  - "lra.adoc"
+                  - "introduction.adoc"
                   - "metrics-capable-components.adoc"
                   - "micrometer.adoc"
                   - "prometheus-exemplar-support.adoc"
@@ -471,7 +469,7 @@ backend:
                   type: "icon"
                   value: "message"
                 sources:
-                  - "lra.adoc"
+                  - "introduction.adoc"
                   - "message.adoc"
                   - "connector.adoc"
                   - "kafka.adoc"
@@ -532,17 +530,17 @@ backend:
                 sources:
                   - "testing.adoc"
                   - "testing-ng.adoc"
-        - type: "HEADER"
-          title: "Additional resources"
-        - type: "LINK"
-          title: "Javadocs"
-          href: "apidocs/index.html?overview-summary.html"
-          glyph:
-            type: "icon"
-            value: "library_books"
-        - type: "PAGE"
-          title: "Community"
-          source: "community.adoc"
-          glyph:
-            type: "icon"
-            value: "fa-github"
+      - type: "HEADER"
+        title: "Additional resources"
+      - type: "LINK"
+        title: "Javadocs"
+        href: "apidocs/index.html?overview-summary.html"
+        glyph:
+          type: "icon"
+          value: "library_books"
+      - type: "PAGE"
+        title: "Community"
+        source: "community.adoc"
+        glyph:
+          type: "icon"
+          value: "fa-github"
