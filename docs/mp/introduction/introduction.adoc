@@ -242,4 +242,3 @@ Follow step-by-step guides to build your applications using Helidon MP.
 Browse the Helidon Javadocs.
 --
 ====
-
