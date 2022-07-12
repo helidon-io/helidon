@@ -43,10 +43,6 @@
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>io.helidon.microprofile.grpc</groupId>
-            <artifactId>helidon-microprofile-grpc-metrics</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
             <scope>test</scope>

@@ -37,12 +37,12 @@ import org.eclipse.microprofile.metrics.annotation.Counted;
 @Priority(Interceptor.Priority.PLATFORM_BEFORE + 8)
 final class InterceptorCounted extends MetricsInterceptorBase<Counter> {
 
-    static Binding.Literal binding() {
-        return Binding.Literal.getInstance();
-    }
-
     InterceptorCounted() {
         super(Counted.class, Counter.class);
+    }
+
+    static Binding.Literal binding() {
+        return Binding.Literal.instance();
     }
 
     @Override
@@ -61,7 +61,7 @@ final class InterceptorCounted extends MetricsInterceptorBase<Counter> {
 
             private static final Literal INSTANCE = new Literal();
 
-            static Literal getInstance() {
+            static Literal instance() {
                 return INSTANCE;
             }
 

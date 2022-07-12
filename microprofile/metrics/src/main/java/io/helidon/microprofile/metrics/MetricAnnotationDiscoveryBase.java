@@ -30,14 +30,26 @@ import jakarta.enterprise.inject.spi.configurator.AnnotatedTypeConfigurator;
  *     The {@link jakarta.enterprise.inject.spi.configurator.AnnotatedConstructorConfigurator} and
  *     {@link jakarta.enterprise.inject.spi.configurator.AnnotatedMethodConfigurator} interfaces share no common ancestor, so
  *     we have two subtypes of discovery, one for each:
- *     {@link io.helidon.microprofile.metrics.MetricAnnotationDiscoveryImpl.OfConstructor OfConstructor} and
+ *     {@link MetricAnnotationDiscoveryBase.OfConstructor OfConstructor} and
  *     {@link MetricAnnotationDiscovery.OfMethod ofMethod}.
  * </p>
  *
  */
-abstract class MetricAnnotationDiscoveryImpl implements MetricAnnotationDiscovery {
+abstract class MetricAnnotationDiscoveryBase implements MetricAnnotationDiscovery {
 
-    static <C> MetricAnnotationDiscoveryImpl create(
+    private final AnnotatedTypeConfigurator<?> annotatedTypeConfigurator;
+    private final Annotation annotation;
+
+    private boolean isActive = true;
+    private boolean useDefaultInterceptor = true;
+
+    private MetricAnnotationDiscoveryBase(AnnotatedTypeConfigurator<?> annotatedTypeConfigurator,
+                                          Annotation annotation) {
+        this.annotatedTypeConfigurator = annotatedTypeConfigurator;
+        this.annotation = annotation;
+    }
+
+    static <C> MetricAnnotationDiscoveryBase create(
             AnnotatedTypeConfigurator<?> annotatedTypeConfigurator,
             C annotatedCallableConfigurator,
             Annotation annotation) {
@@ -54,18 +66,6 @@ abstract class MetricAnnotationDiscoveryImpl implements MetricAnnotationDiscover
                                                              AnnotatedConstructorConfigurator.class.getName(),
                                                              AnnotatedMethodConfigurator.class.getName()));
         }
-    }
-
-    private final AnnotatedTypeConfigurator<?> annotatedTypeConfigurator;
-    private final Annotation annotation;
-
-    private boolean isActive = true;
-    private boolean useDefaultInterceptor = true;
-
-    private MetricAnnotationDiscoveryImpl(AnnotatedTypeConfigurator<?> annotatedTypeConfigurator,
-                                          Annotation annotation) {
-        this.annotatedTypeConfigurator = annotatedTypeConfigurator;
-        this.annotation = annotation;
     }
 
     @Override
@@ -100,7 +100,8 @@ abstract class MetricAnnotationDiscoveryImpl implements MetricAnnotationDiscover
                 .toString();
     }
 
-    boolean isActive() {
+    @Override
+    public boolean isActive() {
         return isActive;
     }
 
@@ -110,7 +111,7 @@ abstract class MetricAnnotationDiscoveryImpl implements MetricAnnotationDiscover
 
     protected abstract Member annotatedMember();
 
-    private static class OfConstructor extends MetricAnnotationDiscoveryImpl
+    private static class OfConstructor extends MetricAnnotationDiscoveryBase
             implements MetricAnnotationDiscovery.OfConstructor {
 
         private final AnnotatedConstructorConfigurator<?> configurator;
@@ -134,7 +135,7 @@ abstract class MetricAnnotationDiscoveryImpl implements MetricAnnotationDiscover
         }
     }
 
-    private static class OfMethod extends MetricAnnotationDiscoveryImpl
+    private static class OfMethod extends MetricAnnotationDiscoveryBase
             implements MetricAnnotationDiscovery.OfMethod {
 
         private final AnnotatedMethodConfigurator<?> configurator;

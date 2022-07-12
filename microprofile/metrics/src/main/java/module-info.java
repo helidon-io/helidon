@@ -47,7 +47,4 @@ module io.helidon.microprofile.metrics {
     opens io.helidon.microprofile.metrics.spi to io.helidon.microprofile.cdi, weld.core.impl;
 
     provides jakarta.enterprise.inject.spi.Extension with io.helidon.microprofile.metrics.MetricsCdiExtension;
-
-    uses io.helidon.microprofile.metrics.spi.MetricAnnotationDiscoveryObserver;
-    uses io.helidon.microprofile.metrics.spi.MetricRegistrationObserver;
 }

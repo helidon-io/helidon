@@ -18,6 +18,7 @@ package io.helidon.microprofile.grpc.metrics;
 import java.util.HashMap;
 import java.util.Map;
 
+import io.helidon.common.LazyValue;
 import io.helidon.microprofile.metrics.MetricAnnotationDiscovery;
 import io.helidon.microprofile.metrics.spi.MetricRegistrationObserver;
 
@@ -28,25 +29,18 @@ import org.eclipse.microprofile.metrics.MetricID;
 /**
  * The gRPC implementation of {@link io.helidon.microprofile.metrics.spi.MetricRegistrationObserver} with a static factory method.
  */
-public class GrpcMetricRegistrationObserverImpl implements MetricRegistrationObserver {
+public class GrpcMetricRegistrationObserver implements MetricRegistrationObserver {
 
-    private static GrpcMetricRegistrationObserverImpl instance;
-
-    static GrpcMetricRegistrationObserverImpl instance() {
-        return instance;
-    }
-
-    private static void instance(GrpcMetricRegistrationObserverImpl value) {
-        instance = value;
-    }
+    private static final LazyValue<GrpcMetricRegistrationObserver> INSTANCE
+            = LazyValue.create(GrpcMetricRegistrationObserver::new);
 
     private final Map<MetricAnnotationDiscovery, Metadata> metadataByDiscovery = new HashMap<>();
 
-    /**
-     * Creates a new instance of the observer.
-     */
-    public GrpcMetricRegistrationObserverImpl() {
-        instance(this);
+    private GrpcMetricRegistrationObserver() {
+    }
+
+    static GrpcMetricRegistrationObserver instance() {
+        return INSTANCE.get();
     }
 
     @Override
@@ -57,7 +51,7 @@ public class GrpcMetricRegistrationObserverImpl implements MetricRegistrationObs
         metadataByDiscovery.put(discovery, metadata);
     }
 
-    Metadata metadata(MetricAnnotationDiscovery discovery) {
-        return metadataByDiscovery.get(discovery);
+    static Metadata metadata(MetricAnnotationDiscovery discovery) {
+        return INSTANCE.get().metadataByDiscovery.get(discovery);
     }
 }

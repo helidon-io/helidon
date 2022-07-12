@@ -61,6 +61,12 @@ public interface MetricAnnotationDiscovery {
     void disableDefaultInterceptor();
 
     /**
+     *
+     * @return if the discovery is active (i.e., has not been deactivated)
+     */
+    boolean isActive();
+
+    /**
      * Discovery of an annotation of interest on a constructor.
      */
     interface OfConstructor extends MetricAnnotationDiscovery {

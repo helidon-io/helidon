@@ -35,14 +35,12 @@ import org.eclipse.microprofile.metrics.ConcurrentGauge;
 @Interceptor
 @Priority(Interceptor.Priority.PLATFORM_BEFORE + 11)
 final class InterceptorConcurrentGauge extends MetricsInterceptorBase.WithPostCompletion<ConcurrentGauge> {
-
-    static Binding.Literal binding() {
-        return Binding.Literal.getInstance();
-    }
-
-
     InterceptorConcurrentGauge() {
         super(org.eclipse.microprofile.metrics.annotation.ConcurrentGauge.class, ConcurrentGauge.class);
+    }
+
+    static Binding.Literal binding() {
+        return Binding.Literal.instance();
     }
 
     @Override
@@ -66,7 +64,7 @@ final class InterceptorConcurrentGauge extends MetricsInterceptorBase.WithPostCo
 
             private static final Literal INSTANCE = new Literal();
 
-            static Literal getInstance() {
+            static Literal instance() {
                 return INSTANCE;
             }
 

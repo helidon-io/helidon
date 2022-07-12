@@ -15,8 +15,13 @@
  */
 package io.helidon.microprofile.metrics;
 
+import io.helidon.microprofile.tests.junit5.AddExtension;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 
+import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.spi.BeanManager;
+import jakarta.enterprise.inject.spi.BeforeBeanDiscovery;
+import jakarta.enterprise.inject.spi.Extension;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -24,17 +29,25 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 
 @HelidonTest
+@AddExtension(TestObservers.TestExtension.class)
 public class TestObservers {
 
     @Test
     void testDiscoveryObserver() {
-        TestDiscoveryObserverImpl observer = TestDiscoveryObserverImpl.instance();
-        assertThat("Observer's discoveries", observer.discoveries().size(),  is(not(0)));
+        assertThat("Observer's discoveries", TestDiscoveryObserverImpl.discoveries().size(),  is(not(0)));
     }
 
     @Test
     void testRegistrationObserver() {
-        TestRegistrationObserverImpl observer = TestRegistrationObserverImpl.instance();
-        assertThat("Observer's registrations", observer.registrations(), is(not(0)));
+        assertThat("Observer's registrations", TestRegistrationObserverImpl.registrations(), is(not(0)));
+    }
+
+    public static class TestExtension implements Extension {
+
+        void enroll(@Observes BeforeBeanDiscovery bbd, BeanManager beanManager) {
+            MetricsCdiExtension metricsCdiExtension = beanManager.getExtension(MetricsCdiExtension.class);
+            metricsCdiExtension.enroll(TestDiscoveryObserverImpl.instance());
+            metricsCdiExtension.enroll(TestRegistrationObserverImpl.instance());
+        }
     }
 }

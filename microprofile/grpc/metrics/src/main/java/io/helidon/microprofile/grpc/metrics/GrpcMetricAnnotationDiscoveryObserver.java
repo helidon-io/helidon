@@ -20,6 +20,7 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
+import io.helidon.common.LazyValue;
 import io.helidon.microprofile.grpc.core.AnnotatedMethod;
 import io.helidon.microprofile.grpc.core.GrpcMethod;
 import io.helidon.microprofile.metrics.MetricAnnotationDiscovery;
@@ -29,32 +30,23 @@ import jakarta.enterprise.inject.spi.configurator.AnnotatedMethodConfigurator;
 
 /**
  * The gRPC implementation of {@link io.helidon.microprofile.metrics.spi.MetricAnnotationDiscoveryObserver}.
- *
- * <p>
- *     This implementation
- * </p>
  */
-public class GrpcMetricAnnotationDiscoveryObserverImpl implements MetricAnnotationDiscoveryObserver {
+class GrpcMetricAnnotationDiscoveryObserver implements MetricAnnotationDiscoveryObserver {
 
-    private static GrpcMetricAnnotationDiscoveryObserverImpl instance;
-
-    static GrpcMetricAnnotationDiscoveryObserverImpl instance() {
-        return instance;
-    }
-
-    private static void instance(GrpcMetricAnnotationDiscoveryObserverImpl value) {
-        instance = value;
-    }
+    private static final LazyValue<GrpcMetricAnnotationDiscoveryObserver> INSTANCE =
+            LazyValue.create(GrpcMetricAnnotationDiscoveryObserver::new);
 
     private final Map<Method,
             Map<Class<? extends Annotation>, MetricAnnotationDiscovery.OfMethod>> discoveriesByMethod =
             new HashMap<>();
 
-    /**
-     * Creates a new instance.
-     */
-    public GrpcMetricAnnotationDiscoveryObserverImpl() {
-        instance(this);
+
+    private GrpcMetricAnnotationDiscoveryObserver() {
+    }
+
+
+    static GrpcMetricAnnotationDiscoveryObserver instance() {
+        return INSTANCE.get();
     }
 
     @Override
@@ -77,12 +69,12 @@ public class GrpcMetricAnnotationDiscoveryObserverImpl implements MetricAnnotati
         }
     }
 
-    Map<Class<? extends Annotation>, MetricAnnotationDiscovery.OfMethod> discoveries(Method method) {
-        return discoveriesByMethod.get(method);
+    static Map<Class<? extends Annotation>, MetricAnnotationDiscovery.OfMethod> discoveries(Method method) {
+        return INSTANCE.get().discoveriesByMethod.get(method);
     }
 
-    boolean isDiscovered(Method method) {
-        return discoveriesByMethod.containsKey(method);
+    static boolean isDiscovered(Method method) {
+        return INSTANCE.get().discoveriesByMethod.containsKey(method);
     }
 
     /**

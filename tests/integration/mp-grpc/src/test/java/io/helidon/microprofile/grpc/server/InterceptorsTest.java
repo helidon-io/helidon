@@ -52,15 +52,15 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @SuppressWarnings("unchecked")
 public class InterceptorsTest {
 
-    private CDI weld;
+    private CDI cdi;
 
     @BeforeEach
     void setup() {
-        weld = CDI.current();
+        cdi = CDI.current();
     }
     @Test
     public void shouldDiscoverServiceInterceptor() {
-        BeanManager beanManager = weld.getBeanManager();
+        BeanManager beanManager = cdi.getBeanManager();
         GrpcServiceBuilder builder = GrpcServiceBuilder.create(InterceptedServiceOne.class, beanManager);
         ServiceDescriptor descriptor = builder.build();
 
@@ -74,7 +74,7 @@ public class InterceptorsTest {
 
     @Test
     public void shouldDiscoverMethodInterceptor() {
-        BeanManager beanManager = weld.getBeanManager();
+        BeanManager beanManager = cdi.getBeanManager();
         GrpcServiceBuilder builder = GrpcServiceBuilder.create(InterceptedServiceTwo.class, beanManager);
         ServiceDescriptor descriptor = builder.build();
 
@@ -92,7 +92,7 @@ public class InterceptorsTest {
 
     @Test
     public void shouldDiscoverServiceAndMethodInterceptor() {
-        BeanManager beanManager = weld.getBeanManager();
+        BeanManager beanManager = cdi.getBeanManager();
         GrpcServiceBuilder builder = GrpcServiceBuilder.create(InterceptedServiceThree.class, beanManager);
         ServiceDescriptor descriptor = builder.build();
 
@@ -115,7 +115,7 @@ public class InterceptorsTest {
 
     @Test
     public void shouldDiscoverServiceInterceptorBasedOnAnnotationMemberValue() {
-        BeanManager beanManager = weld.getBeanManager();
+        BeanManager beanManager = cdi.getBeanManager();
         GrpcServiceBuilder builder = GrpcServiceBuilder.create(InterceptedServiceFour.class, beanManager);
         ServiceDescriptor descriptor = builder.build();
 
@@ -129,7 +129,7 @@ public class InterceptorsTest {
 
     @Test
     public void shouldUseSpecificServiceInterceptorBean() {
-        BeanManager beanManager = weld.getBeanManager();
+        BeanManager beanManager = cdi.getBeanManager();
         GrpcServiceBuilder builder = GrpcServiceBuilder.create(InterceptedServiceFive.class, beanManager);
         ServiceDescriptor descriptor = builder.build();
 
@@ -149,7 +149,7 @@ public class InterceptorsTest {
 
     @Test
     public void shouldUseSpecificMethodInterceptorBean() {
-        BeanManager beanManager = weld.getBeanManager();
+        BeanManager beanManager = cdi.getBeanManager();
         GrpcServiceBuilder builder = GrpcServiceBuilder.create(InterceptedServiceSix.class, beanManager);
         ServiceDescriptor descriptor = builder.build();
 
@@ -170,7 +170,7 @@ public class InterceptorsTest {
 
     @Test
     public void shouldUseSpecificNonCdiServiceInterceptor() {
-        BeanManager beanManager = weld.getBeanManager();
+        BeanManager beanManager = cdi.getBeanManager();
         GrpcServiceBuilder builder = GrpcServiceBuilder.create(InterceptedServiceSeven.class, beanManager);
         ServiceDescriptor descriptor = builder.build();
 
@@ -185,7 +185,7 @@ public class InterceptorsTest {
 
     @Test
     public void shouldUseSpecificNonCdiMethodInterceptor() {
-        BeanManager beanManager = weld.getBeanManager();
+        BeanManager beanManager = cdi.getBeanManager();
         GrpcServiceBuilder builder = GrpcServiceBuilder.create(InterceptedServiceEight.class, beanManager);
         ServiceDescriptor descriptor = builder.build();
 

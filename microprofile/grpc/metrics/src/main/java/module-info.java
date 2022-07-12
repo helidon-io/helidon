@@ -24,7 +24,6 @@ module io.helidon.microprofile.grpc.metrics {
     requires transitive io.helidon.microprofile.grpc.server;
     requires transitive io.helidon.microprofile.metrics;
     requires transitive io.helidon.microprofile.server;
-    requires io.helidon.common.serviceloader;
 
     requires io.helidon.servicecommon.restcdi;
 
@@ -34,9 +33,6 @@ module io.helidon.microprofile.grpc.metrics {
     provides io.helidon.microprofile.grpc.server.AnnotatedServiceConfigurer
             with io.helidon.microprofile.grpc.metrics.MetricsConfigurer;
 
-    provides io.helidon.microprofile.metrics.spi.MetricAnnotationDiscoveryObserver
-            with io.helidon.microprofile.grpc.metrics.GrpcMetricAnnotationDiscoveryObserverImpl;
-
-    provides io.helidon.microprofile.metrics.spi.MetricRegistrationObserver
-            with io.helidon.microprofile.grpc.metrics.GrpcMetricRegistrationObserverImpl;
+    provides jakarta.enterprise.inject.spi.Extension
+            with io.helidon.microprofile.grpc.metrics.GrpcMetricsCdiExtension;
 }

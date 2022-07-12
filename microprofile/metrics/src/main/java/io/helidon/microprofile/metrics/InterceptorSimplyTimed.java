@@ -43,12 +43,12 @@ import org.eclipse.microprofile.metrics.annotation.SimplyTimed;
 @Priority(Interceptor.Priority.PLATFORM_BEFORE + 10)
 final class InterceptorSimplyTimed extends InterceptorTimedBase<SimpleTimer> {
 
-    static Binding.Literal binding() {
-        return Binding.Literal.getInstance();
-    }
-
     InterceptorSimplyTimed() {
         super(SimplyTimed.class, SimpleTimer.class);
+    }
+
+    static Binding.Literal binding() {
+        return Binding.Literal.instance();
     }
 
     @Override
@@ -68,7 +68,7 @@ final class InterceptorSimplyTimed extends InterceptorTimedBase<SimpleTimer> {
 
             private static final Literal INSTANCE = new Literal();
 
-            static Literal getInstance() {
+            static Literal instance() {
                 return INSTANCE;
             }
 

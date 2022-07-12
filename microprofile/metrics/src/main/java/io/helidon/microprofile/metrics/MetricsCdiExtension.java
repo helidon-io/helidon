@@ -30,7 +30,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -41,7 +40,6 @@ import java.util.stream.Stream;
 
 import io.helidon.common.Errors;
 import io.helidon.common.context.Contexts;
-import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.ConfigValue;
@@ -196,7 +194,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
     private final List<MetricAnnotationDiscoveryObserver> metricAnnotationDiscoveryObservers = new ArrayList<>();
     private final List<MetricRegistrationObserver> metricRegistrationObservers = new ArrayList<>();
 
-    private final Map<Executable, List<MetricAnnotationDiscoveryImpl>> metricAnnotationDiscoveriesByExecutable = new HashMap<>();
+    private final Map<Executable, List<MetricAnnotationDiscovery>> metricAnnotationDiscoveriesByExecutable = new HashMap<>();
 
     @SuppressWarnings("unchecked")
 
@@ -213,6 +211,24 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
      */
     public MetricsCdiExtension() {
         super(LOGGER, MetricsSupport::create, "metrics");
+    }
+
+    /**
+     * Records an observer of metric annotation discoveries.
+     *
+     * @param metricAnnotationDiscoveryObserver the observer to enroll
+     */
+    public void enroll(MetricAnnotationDiscoveryObserver metricAnnotationDiscoveryObserver) {
+        metricAnnotationDiscoveryObservers.add(metricAnnotationDiscoveryObserver);
+    }
+
+    /**
+     * Records an observer of metric registrations.
+     *
+     * @param metricRegistrationObserver the observer to enroll
+     */
+    public void enroll(MetricRegistrationObserver metricRegistrationObserver) {
+        metricRegistrationObservers.add(metricRegistrationObserver);
     }
 
     private static <E extends Member & AnnotatedElement> void recordAnnotatedSite(
@@ -354,11 +370,6 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
         discovery.addAnnotatedType(SyntheticRestRequest.class, SyntheticRestRequest.class.getName());
 
         restEndpointsMetricsEnabled = restEndpointsMetricsEnabled();
-
-        HelidonServiceLoader.create(ServiceLoader.load(MetricAnnotationDiscoveryObserver.class))
-                .forEach(metricAnnotationDiscoveryObservers::add);
-        HelidonServiceLoader.create(ServiceLoader.load(MetricRegistrationObserver.class))
-                .forEach(metricRegistrationObservers::add);
     }
 
     @Override
@@ -436,7 +447,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
             metricsLookupResults(annotatedTypeConfigurator.getAnnotated(),
                                  annotatedCallable)
                     .forEach(lookupResult -> {
-                        MetricAnnotationDiscoveryImpl discoveryEvent = MetricAnnotationDiscoveryImpl.create(
+                        MetricAnnotationDiscoveryBase discoveryEvent = MetricAnnotationDiscoveryBase.create(
                                 annotatedTypeConfigurator,
                                 executableConfigurator,
                                 lookupResult.getAnnotation());

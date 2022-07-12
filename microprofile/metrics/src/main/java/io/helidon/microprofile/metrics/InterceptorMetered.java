@@ -37,13 +37,13 @@ import org.eclipse.microprofile.metrics.annotation.Metered;
 @Priority(Interceptor.Priority.PLATFORM_BEFORE + 9)
 final class InterceptorMetered extends MetricsInterceptorBase<Meter> {
 
-    static Binding.Literal binding() {
-        return Binding.Literal.getInstance();
-    }
     InterceptorMetered() {
         super(Metered.class, Meter.class);
     }
 
+    static Binding.Literal binding() {
+        return Binding.Literal.instance();
+    }
     @Override
     void preInvoke(Meter metric) {
         metric.mark();
@@ -60,7 +60,7 @@ final class InterceptorMetered extends MetricsInterceptorBase<Meter> {
 
             private static final Literal INSTANCE = new Literal();
 
-            static Literal getInstance() {
+            static Literal instance() {
                 return INSTANCE;
             }
 

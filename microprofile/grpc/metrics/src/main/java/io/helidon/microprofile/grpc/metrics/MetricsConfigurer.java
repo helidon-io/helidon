@@ -30,7 +30,6 @@ import io.helidon.microprofile.grpc.core.AnnotatedMethodList;
 import io.helidon.microprofile.grpc.core.GrpcMethod;
 import io.helidon.microprofile.grpc.server.AnnotatedServiceConfigurer;
 import io.helidon.microprofile.grpc.server.GrpcServiceBuilder;
-import io.helidon.microprofile.metrics.MetricAnnotationDiscovery;
 
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Metadata;
@@ -78,9 +77,9 @@ public class MetricsConfigurer
         //          Get the metric registration for it (which has the metric metadata).
         //          Add the interceptor for the annotation associated with the annotation site that was discovered.
         methodList.stream()
-                .filter(am -> isDiscovered(am.method()))
+                .filter(am -> GrpcMetricAnnotationDiscoveryObserver.isDiscovered(am.method()))
                 .forEach(annotatedMethod ->
-                                 discoveries(annotatedMethod.method())
+                                 GrpcMetricAnnotationDiscoveryObserver.discoveries(annotatedMethod.method())
                                          .forEach((annotationClass, discovery) -> {
                                              if (isServiceAnnotated(serviceClass,
                                                                     annotatedMethod.declaredMethod(),
@@ -93,7 +92,7 @@ public class MetricsConfigurer
                                                                  .grpcMetricsSupplier
                                                                  .get(),
                                                          discovery.annotation(),
-                                                         metadata(discovery)
+                                                         GrpcMetricRegistrationObserver.metadata(discovery)
                                                  );
                                              }
                                          })
@@ -165,18 +164,5 @@ public class MetricsConfigurer
         public String createName(ServiceDescriptor service, String methodName, MetricType metricType) {
             return name;
         }
-    }
-
-    private boolean isDiscovered(Method method) {
-        return GrpcMetricAnnotationDiscoveryObserverImpl.instance().isDiscovered(method);
-    }
-
-    private Metadata metadata(MetricAnnotationDiscovery discovery) {
-        return GrpcMetricRegistrationObserverImpl.instance().metadata(discovery);
-    }
-
-    private Map<Class<? extends Annotation>,
-            MetricAnnotationDiscovery.OfMethod> discoveries(Method method) {
-        return GrpcMetricAnnotationDiscoveryObserverImpl.instance().discoveries(method);
     }
 }

@@ -79,6 +79,7 @@ import static org.hamcrest.collection.IsEmptyIterable.emptyIterable;
 @AddExtension(MetricsCdiExtension.class)
 @AddExtension(ServerCdiExtension.class) // needed for MetricsCdiExtension
 @AddExtension(JaxRsCdiExtension.class)
+@AddExtension(GrpcMetricsCdiExtension.class)
 public class MetricsConfigurerTest {
 
     private static MetricRegistry registry;
