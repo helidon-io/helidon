@@ -124,9 +124,8 @@ The system uses the index `_i_`, not the position in the config file, to identif
 
 Path patterns can be any expression accepted by the link:{webserver-javadoc-base-url}/io/helidon/webserver/PathMatcher.html[`PathMatcher`] class.
 
-NOTE: Be sure to assign index values to the entries in the order that you want Helidon to check them.
-Helidon CORS support searches the cross-origin entries in index order them until it finds an entry that
-matches an incoming request's path pattern and HTTP method.
+NOTE: Helidon scans the cross-origin entries in index order (0, 1, 2, etc.) until it finds an entry that
+matches an incoming request's path and HTTP method, so be sure to assign index values to the entries so Helidon will check them in the order you want. In particular, use lower index values for entries with more specific path patterns.
 
 The table below describes the attributes on the `@CrossOrigin` annotation and the configuration keys
 that map to the headers defined in the CORS protocol.
