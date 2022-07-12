@@ -1,0 +1,60 @@
+package {{package}};
+
+import io.helidon.microprofile.server.Server;
+import io.helidon.webclient.WebClient;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
+import java.util.concurrent.TimeUnit;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+
+public class FtResourceTest {
+
+    private static Server server;
+    private static WebClient client;
+
+    @BeforeAll
+    static void initClass() {
+        server = Server.create().start();
+
+        client = WebClient.builder()
+                .baseUri("http://localhost:" + server.port() + "/ft")
+                .build();
+    }
+
+    @AfterAll
+    static void destroyClass() {
+        server.stop();
+    }
+
+    @Test
+    void testFallback() {
+        String response = client.get()
+                .path("/fallback/true")
+                .request(String.class)
+                .await(1, TimeUnit.SECONDS);
+
+        assertThat(response, is("blocked for 100 millis"));
+
+        response = client.get()
+                .path("/fallback/false")
+                .request(String.class)
+                .await(1, TimeUnit.SECONDS);
+
+        assertThat(response, is("Fallback endpoint reached"));
+    }
+
+    @Test
+    void testRetry() {
+        String response = client.get()
+                .path("/retry")
+                .request(String.class)
+                .await(1, TimeUnit.SECONDS);
+
+        assertThat(response, is("failures: 2"));
+    }
+
+}

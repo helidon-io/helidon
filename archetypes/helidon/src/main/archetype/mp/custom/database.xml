@@ -29,22 +29,403 @@
                      optional="true">
                 <inputs>
                     <enum id="jpa-impl" name="Select a JPA Implementation" default="hibernate" optional="true">
-                        <option value="hibernate" name="Hibernate" description="Hibernate Object Relational Mapping"/>
-                        <option value="eclipselink" name="EclipseLink" description="Eclipse Persistence Services"/>
+                        <option value="hibernate" name="Hibernate" description="Hibernate Object Relational Mapping">
+                            <output>
+                                <templates engine="mustache" transformations="mustache">
+                                    <directory>../database/files</directory>
+                                    <includes>
+                                        <include>src/main/resources/**/hibernate.properties.mustache</include>
+                                    </includes>
+                                </templates>
+                                <model>
+                                    <list key="test-persistence-properties">
+                                        <map>
+                                            <value key="name">hibernate.dialect</value>
+                                            <value key="value">org.hibernate.dialect.H2Dialect</value>
+                                        </map>
+                                    </list>
+                                    <list key="dependencies">
+                                        <map>
+                                            <value key="groupId">io.helidon.integrations.cdi</value>
+                                            <value key="artifactId">helidon-integrations-cdi-hibernate</value>
+                                            <value key="scope">runtime</value>
+                                        </map>
+                                    </list>
+                                    <list key="maven-plugins">
+                                        <value><![CDATA[            <plugin>
+                <groupId>org.hibernate.orm.tooling</groupId>
+                <artifactId>hibernate-enhance-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <configuration>
+                            <failOnError>true</failOnError>
+                            <enableLazyInitialization>true</enableLazyInitialization>
+                            <enableDirtyTracking>true</enableDirtyTracking>
+                        </configuration>
+                        <goals>
+                            <goal>enhance</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>]]></value>
+                                    </list>
+                                </model>
+                            </output>
+                        </option>
+                        <option value="eclipselink" name="EclipseLink" description="Eclipse Persistence Services">
+                            <output>
+                                <model>
+                                    <list key="main-persistence-properties">
+                                        <map>
+                                            <value key="name">eclipselink.deploy-on-startup</value>
+                                            <value key="value">true</value>
+                                        </map>
+                                        <map>
+                                            <value key="name">eclipselink.jdbc.native-sql</value>
+                                            <value key="value">true</value>
+                                        </map>
+                                        <map>
+                                            <value key="name">eclipselink.logging.logger</value>
+                                            <value key="value">JavaLogger</value>
+                                        </map>
+                                        <map>
+                                            <value key="name">eclipselink.logging.parameters</value>
+                                            <value key="value">true</value>
+                                        </map>
+                                        <map>
+                                            <value key="name">eclipselink.weaving</value>
+                                            <value key="value">false</value>
+                                        </map>
+                                    </list>
+                                    <list key="test-persistence-properties">
+                                        <map>
+                                            <value key="name">eclipselink.target-database</value>
+                                            <value key="value">org.eclipse.persistence.platform.database.H2Platform</value>
+                                        </map>
+                                    </list>
+                                    <list key="dependencies">
+                                        <map>
+                                            <value key="groupId">io.helidon.integrations.cdi</value>
+                                            <value key="artifactId">helidon-integrations-cdi-eclipselink</value>
+                                            <value key="scope">runtime</value>
+                                        </map>
+                                    </list>
+                                    <list key="maven-plugins">
+                                        <value><![CDATA[            <plugin>
+                <groupId>com.ethlo.persistence.tools</groupId>
+                <artifactId>eclipselink-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>weave</id>
+                        <phase>process-classes</phase>
+                        <goals>
+                            <goal>weave</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>modelgen</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>modelgen</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>]]></value>
+                                    </list>
+                                </model>
+                            </output>
+                        </option>
                     </enum>
                     <enum id="cp" name="Select a Connection Pool" default="hikaricp" optional="true">
-                        <option value="hikaricp" name="HikariCP" description="&quot;zero overhead&quot; JDBC connection pool"/>
-                        <option value="ucp" name="UCP" description="Universal Connection Pool"/>
+                        <option value="hikaricp" name="HikariCP" description="&quot;zero overhead&quot; JDBC connection pool">
+                            <output>
+                                <model>
+                                    <list key="dependencies">
+                                        <map>
+                                            <value key="groupId">io.helidon.integrations.cdi</value>
+                                            <value key="artifactId">helidon-integrations-cdi-datasource-hikaricp</value>
+                                            <value key="scope">runtime</value>
+                                        </map>
+                                    </list>
+                                </model>
+                            </output>
+                        </option>
+                        <option value="ucp" name="UCP" description="Universal Connection Pool">
+                            <output>
+                                <model>
+                                    <list key="dependencies">
+                                        <map>
+                                            <value key="groupId">io.helidon.integrations.cdi</value>
+                                            <value key="artifactId">helidon-integrations-cdi-datasource-ucp</value>
+                                            <value key="scope">runtime</value>
+                                        </map>
+                                    </list>
+                                </model>
+                            </output>
+                        </option>
                     </enum>
                     <enum id="server" name="Select a Database Server" default="h2" optional="true">
-                        <option value="h2" name="H2" description="In-memory relational database"/>
-                        <option value="mysql" name="MySQL" description="Relational database"/>
-                        <option value="oracledb" name="Oracle DB" description="Multi-model database"/>
+                        <option value="h2" name="H2" description="In-memory relational database">
+                            <output>
+                                <model>
+                                    <list key="main-persistence-properties">
+                                        <map if="${~db.jpa-impl} == 'hibernate'">
+                                            <value key="name">hibernate.dialect</value>
+                                            <value key="value">org.hibernate.dialect.H2Dialect</value>
+                                        </map>
+                                        <map if="${~db.jpa-impl} == 'eclipselink'">
+                                            <value key="name">eclipselink.target-database</value>
+                                            <value key="value">org.eclipse.persistence.platform.database.H2Platform</value>
+                                        </map>
+                                    </list>
+                                    <value key="jdbcDataSource">org.h2.jdbcx.JdbcDataSource</value>
+                                </model>
+                            </output>
+                        </option>
+                        <option value="mysql" name="MySQL" description="Relational database">
+                            <output>
+                                <model>
+                                    <list key="main-persistence-properties">
+                                        <map if="${~db.jpa-impl} == 'hibernate'">
+                                            <value key="name">hibernate.dialect</value>
+                                            <value key="value">org.hibernate.dialect.MySQLDialect</value>
+                                        </map>
+                                        <map if="${~db.jpa-impl} == 'eclipselink'">
+                                            <value key="name">eclipselink.target-database</value>
+                                            <value key="value">org.eclipse.persistence.platform.database.MySQLPlatform</value>
+                                        </map>
+                                    </list>
+                                    <list key="dependencies">
+                                        <map>
+                                            <value key="groupId">mysql</value>
+                                            <value key="artifactId">mysql-connector-java</value>
+                                            <value key="scope">runtime</value>
+                                        </map>
+                                    </list>
+                                    <value key="jdbcDataSource">com.mysql.cj.jdbc.MysqlDataSource</value>
+                                </model>
+                            </output>
+                        </option>
+                        <option value="oracledb" name="Oracle DB" description="Multi-model database">
+                            <output>
+                                <model>
+                                    <list key="main-persistence-properties">
+                                        <map if="${~db.jpa-impl} == 'hibernate'">
+                                            <value key="name">hibernate.dialect</value>
+                                            <value key="value">org.hibernate.dialect.OracleDialect</value>
+                                        </map>
+                                        <map if="${~db.jpa-impl} == 'eclipselink'">
+                                            <value key="name">eclipselink.target-database</value>
+                                            <value key="value">org.eclipse.persistence.platform.database.OraclePlatform</value>
+                                        </map>
+                                    </list>
+                                    <list key="dependencies">
+                                        <map>
+                                            <value key="groupId">com.oracle.database.jdbc</value>
+                                            <value key="artifactId">ojdbc8-production</value>
+                                            <value key="scope">runtime</value>
+                                            <value key="type">pom</value>
+                                        </map>
+                                    </list>
+                                    <value key="jdbcDataSource">oracle.jdbc.pool.OracleDataSource</value>
+                                </model>
+                            </output>
+                        </option>
                     </enum>
-                    <boolean id="auto-ddl" name="Auto DDL" description="Automatic schema initialization" optional="true"/>
+                    <boolean id="auto-ddl" name="Auto DDL" description="Automatic schema initialization" optional="true">
+                        <output>
+                            <model>
+                                <list key="main-persistence-properties">
+                                    <map if="${~db.jpa-impl} == 'hibernate'">
+                                        <value key="name">hibernate.hbm2ddl.auto</value>
+                                        <value key="value">create-drop</value>
+                                    </map>
+                                    <map if="${~db.jpa-impl} == 'eclipselink'">
+                                        <value key="name">eclipselink.ddl-generation</value>
+                                        <value key="value">drop-and-create-tables</value>
+                                    </map>
+                                </list>
+                            </model>
+                        </output>
+                    </boolean>
                     <text id="pu-name" name="Persistence Unit Name" default="pu1" optional="true"/>
                     <text id="ds-name" name="Datasource Name" default="ds1" optional="true"/>
                 </inputs>
+                <output>
+                    <files>
+                        <directory>../database/files</directory>
+                        <includes>
+                            <include>src/*/resources/*/init_script.sql</include>
+                            <include>src/test/resources/*/microprofile-config.properties</include>
+                        </includes>
+                    </files>
+                    <templates engine="mustache" transformations="mustache,packaged">
+                        <directory>../database/files</directory>
+                        <includes>
+                            <include>src/main/java/**</include>
+                            <include>src/*/resources/*/persistence.xml.mustache</include>
+                        </includes>
+                    </templates>
+                    <model>
+                        <value key="database">true</value>
+                        <value key="pu-name">${pu-name}</value>
+                        <value key="ds-name">${ds-name}</value>
+                        <list key="MainTest-java-imports">
+                            <value>jakarta.json.JsonArray</value>
+                            <value>jakarta.ws.rs.core.MediaType</value>
+                            <value>jakarta.ws.rs.client.Entity</value>
+                        </list>
+                        <list key="dependencies">
+                            <map>
+                                <value key="groupId">jakarta.annotation</value>
+                                <value key="artifactId">jakarta.annotation-api</value>
+                            </map>
+                            <map>
+                                <value key="groupId">jakarta.enterprise</value>
+                                <value key="artifactId">jakarta.enterprise.cdi-api</value>
+                            </map>
+                            <map>
+                                <value key="groupId">jakarta.inject</value>
+                                <value key="artifactId">jakarta.inject-api</value>
+                            </map>
+                            <map>
+                                <value key="groupId">jakarta.ws.rs</value>
+                                <value key="artifactId">jakarta.ws.rs-api</value>
+                            </map>
+                            <map>
+                                <value key="groupId">jakarta.persistence</value>
+                                <value key="artifactId">jakarta.persistence-api</value>
+                            </map>
+                            <map>
+                                <value key="groupId">jakarta.transaction</value>
+                                <value key="artifactId">jakarta.transaction-api</value>
+                            </map>
+                            <map>
+                                <value key="groupId">io.helidon.common</value>
+                                <value key="artifactId">helidon-common</value>
+                            </map>
+                            <map>
+                                <value key="groupId">jakarta.xml.bind</value>
+                                <value key="artifactId">jakarta.xml.bind-api</value>
+                            </map>
+                            <map>
+                                <value key="groupId">com.h2database</value>
+                                <value key="artifactId">h2</value>
+                            </map>
+                            <map>
+                                <value key="groupId">io.helidon.integrations.cdi</value>
+                                <value key="artifactId">helidon-integrations-cdi-jta-weld</value>
+                                <value key="scope">runtime</value>
+                            </map>
+                            <map>
+                                <value key="groupId">io.helidon.integrations.cdi</value>
+                                <value key="artifactId">helidon-integrations-cdi-jpa</value>
+                                <value key="scope">runtime</value>
+                            </map>
+                            <map>
+                                <value key="groupId">org.hibernate.validator</value>
+                                <value key="artifactId">hibernate-validator</value>
+                                <value key="version">7.0.2.Final</value>
+                                <value key="scope">runtime</value>
+                            </map>
+                            <map>
+                                <value key="groupId">org.glassfish</value>
+                                <value key="artifactId">jakarta.el</value>
+                                <value key="scope">runtime</value>
+                            </map>
+                        </list>
+                        <list key="maven-plugins">
+                            <value><![CDATA[            <plugin>
+                <groupId>com.evolvedbinary.maven.jvnet</groupId>
+                <artifactId>jaxb30-maven-plugin</artifactId>
+                <version>0.15.0</version>
+                <executions>
+                    <execution>
+                        <id>Generate persistence.xml Java objects</id>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <generatePackage>io.helidon.archetypes.tests.jaxb</generatePackage>
+                            <markGenerated>true</markGenerated>
+                            <schemas>
+                                <schema>
+                                    <dependencyResource>
+                                        <groupId>jakarta.persistence</groupId>
+                                        <artifactId>jakarta.persistence-api</artifactId>
+                                        <resource>jakarta/persistence/persistence_3_0.xsd</resource>
+                                    </dependencyResource>
+                                </schema>
+                            </schemas>
+                            <strict>false</strict>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>]]></value>
+                        </list>
+                        <list key="MainTest-methods">
+                            <value><![CDATA[
+    @Test
+    void testPokemonTypes() {
+        JsonArray types = target
+                .path("type")
+                .request()
+                .get(JsonArray.class);
+        assertThat(types.size(), is(18));
+    }
+
+    @Test
+    void testPokemon() {
+        assertThat(getPokemonCount(), is(6));
+
+        Pokemon pokemon = target
+                .path("pokemon/1")
+                .request()
+                .get(Pokemon.class);
+        assertThat(pokemon.getName(), is("Bulbasaur"));
+
+        pokemon = target
+                .path("pokemon/name/Charmander")
+                .request()
+                .get(Pokemon.class);
+        assertThat(pokemon.getType(), is(10));
+
+        Response response = target
+                .path("pokemon/1")
+                .request()
+                .get();
+        assertThat(response.getStatus(), is(200));
+
+        Pokemon test = new Pokemon();
+        test.setType(1);
+        test.setId(100);
+        test.setName("Test");
+        response = target
+                .path("pokemon")
+                .request()
+                .post(Entity.entity(test, MediaType.APPLICATION_JSON));
+        assertThat(response.getStatus(), is(204));
+        assertThat(getPokemonCount(), is(7));
+
+        response = target
+                .path("pokemon/100")
+                .request()
+                .delete();
+        assertThat(response.getStatus(), is(204));
+        assertThat(getPokemonCount(), is(6));
+    }
+
+    private int getPokemonCount() {
+        JsonArray pokemons = target
+                .path("pokemon")
+                .request()
+                .get(JsonArray.class);
+        return pokemons.size();
+    }
+]]></value>
+                        </list>
+                    </model>
+                </output>
             </boolean>
         </inputs>
     </step>

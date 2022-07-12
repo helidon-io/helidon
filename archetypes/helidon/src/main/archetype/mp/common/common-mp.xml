@@ -25,9 +25,6 @@
     <source src="/common/sources.xml"/>
     <output>
         <model>
-            <list key="readme-sections">
-                <value file="files/README.md"/>
-            </list>
             <value key="parent-artifactId">helidon-mp</value>
             <list key="dependencies">
                 <map>
