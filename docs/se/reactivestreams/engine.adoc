@@ -22,5 +22,6 @@
 :feature-name: Reactive Engine
 :rootdir: {docdir}/../..
 
-include::{rootdir}/includes/common-attributes.ado
-include::{rootdir}/includes/reactivestreams/engine.adoc[]
+include::{rootdir}/includes/se.adoc[]
+
+include::{rootdir}/includes/reactivestreams/engine.adoc[lines=21..]
