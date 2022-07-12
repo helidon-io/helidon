@@ -43,7 +43,7 @@ endif::[]
 :version-lib-microprofile-lra-api: 2.0-RC1
 :version-lib-microprofile-config: 3.0.1
 :version-lib-microprofile-fault-tolerance-api: 4.0
-:version-lib-microprofile-graphql: 2.0
+:version-lib-microprofile-graphql: 1.1.0
 :version-lib-microprofile-health: 4.0
 :version-lib-microprofile-jwt: 2.0
 :version-lib-microprofile-metrics-api: 4.0
@@ -125,6 +125,10 @@ endif::[]
 :microprofile-rest-client-base-url: {microprofile-base-url}/microprofile-rest-client-{version-lib-microprofile-rest-client}
 :microprofile-rest-client-spec-url: {microprofile-rest-client-base-url}/microprofile-rest-client-spec-{version-lib-microprofile-rest-client}.html
 :microprofile-rest-client-javadoc-url: {microprofile-rest-client-base-url}/apidocs
+
+:microprofile-graphql-base-url: {microprofile-base-url}/microprofile-graphql-{version-lib-microprofile-graphql}
+:microprofile-graphql-spec-url: {microprofile-rest-graphql-url}/microprofile-rest-client-spec-{version-lib-microprofile-graphql}.html
+:microprofile-graphql-javadoc-url: {microprofile-rest-graphql-url}/apidocs
 
 // Jakarta versioned URLs
 
