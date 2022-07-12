@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,10 @@
 
 package io.helidon.tracing.jaeger;
 
-import java.util.Optional;
-
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
-import io.helidon.tracing.HeaderConsumer;
-import io.helidon.tracing.HeaderProvider;
 import io.helidon.tracing.Scope;
 import io.helidon.tracing.Span;
-import io.helidon.tracing.SpanContext;
 import io.helidon.tracing.Tracer;
 
 import org.junit.jupiter.api.Test;
@@ -35,7 +30,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 class JaegerDataPropagationProviderTest {
 
     private final JaegerDataPropagationProvider provider = new JaegerDataPropagationProvider();
-    
+
     @Test
     void dataPropagationTest() {
         Context context = Context.create();
@@ -47,17 +42,12 @@ class JaegerDataPropagationProviderTest {
         context.register(scope);
 
         Contexts.runInContext(context, () -> {
-            assertThat(closed(scope), is(false));
+            assertThat(scope.isClosed(), is(false));
             JaegerDataPropagationProvider.JaegerContext data = provider.data();
             provider.propagateData(data);
-            assertThat(closed(data.scope()), is(false));
+            assertThat(data.scope().isClosed(), is(false));
             provider.clearData(data);
-            assertThat(closed(data.scope()), is(true));
+            assertThat(data.scope().isClosed(), is(true));
         });
-    }
-
-    private boolean closed(Scope scope) {
-        System.out.println();
-        return true;
     }
 }

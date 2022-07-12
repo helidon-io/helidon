@@ -24,6 +24,7 @@ import io.helidon.tracing.opentelemetry.HelidonOpenTelemetry;
 import io.helidon.tracing.opentelemetry.OpenTelemetryTracerProvider;
 import io.helidon.tracing.spi.TracerProvider;
 
+import io.opentelemetry.context.Context;
 import jakarta.annotation.Priority;
 
 /**
@@ -43,11 +44,17 @@ public class JaegerTracerProvider implements TracerProvider {
 
     @Override
     public Optional<Span> currentSpan() {
-        return Optional.ofNullable(io.opentelemetry.api.trace.Span.current()).map(HelidonOpenTelemetry::create);
+        return Optional.ofNullable(io.opentelemetry.api.trace.Span.fromContextOrNull(Context.current()))
+                .map(HelidonOpenTelemetry::create);
     }
 
     @Override
     public JaegerTracerBuilder createBuilder() {
         return JaegerTracerBuilder.create();
+    }
+
+    @Override
+    public boolean available() {
+        return true;
     }
 }

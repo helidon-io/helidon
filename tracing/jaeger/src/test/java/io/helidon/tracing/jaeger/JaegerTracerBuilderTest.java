@@ -60,20 +60,13 @@ class JaegerTracerBuilderTest {
 
         assertThat(jBuilder.serviceName(), is("helidon-service"));
         assertThat("Tags", jBuilder.tags(), is(Map.of()));
-        assertThat("Protocol", jBuilder.protocol(), nullValue());
-        assertThat("Host", jBuilder.host(), nullValue());
-        assertThat("Port", jBuilder.port(), nullValue());
+        assertThat("Protocol", jBuilder.protocol(), is("http"));
+        assertThat("Host", jBuilder.host(), is("localhost"));
+        assertThat("Port", jBuilder.port(), is(14250));
         assertThat("Path", jBuilder.path(), nullValue());
         assertThat("Enabled", jBuilder.isEnabled(), is(true));
-        assertThat("Username", jBuilder.username(), nullValue());
-        assertThat("Password", jBuilder.password(), nullValue());
-        assertThat("Token", jBuilder.token(), nullValue());
-        assertThat("Reporter log spans", jBuilder.reporterLogSpans(), nullValue());
-        assertThat("Reporter max queue size", jBuilder.reporterMaxQueueSize(), nullValue());
-        assertThat("Reporter flush intervals", jBuilder.reporterFlushIntervalMillis(), nullValue());
-        assertThat("Sampler type", jBuilder.samplerType(), nullValue());
-        assertThat("Sampler param", jBuilder.samplerParam(), nullValue());
-        assertThat("Sampler manager", jBuilder.samplerManager(), nullValue());
+        assertThat("Sampler type", jBuilder.samplerType(), is(JaegerTracerBuilder.SamplerType.CONSTANT));
+        assertThat("Sampler param", jBuilder.samplerParam(), is(Integer.valueOf(1)));
     }
 
     @Test
@@ -101,15 +94,8 @@ class JaegerTracerBuilderTest {
         assertThat("Host", jBuilder.host(), is("192.168.1.3"));
         assertThat("Port", jBuilder.port(), is(14240));
         assertThat("Path", jBuilder.path(), is("/api/traces/mine"));
-        assertThat("Token", jBuilder.token(), is("token"));
-        assertThat("Username", jBuilder.username(), is("user"));
-        assertThat("Password", jBuilder.password(), is("pass"));
-        assertThat("Reporter log spans", jBuilder.reporterLogSpans(), is(false));
-        assertThat("Reporter max queue size", jBuilder.reporterMaxQueueSize(), is(42));
-        assertThat("Reporter flush intervals", jBuilder.reporterFlushIntervalMillis(), is(10001L));
-        assertThat("Sampler type", jBuilder.samplerType(), is(JaegerTracerBuilder.SamplerType.REMOTE));
+        assertThat("Sampler type", jBuilder.samplerType(), is(JaegerTracerBuilder.SamplerType.RATIO));
         assertThat("Sampler param", jBuilder.samplerParam(), is(0.5));
-        assertThat("Sampler manager", jBuilder.samplerManager(), is("localhost:47877"));
         assertThat("Tags", jBuilder.tags(), is(Map.of(
                 "tag1", "tag1-value",
                 "tag2", "tag2-value",

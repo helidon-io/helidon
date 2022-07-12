@@ -18,26 +18,21 @@
  * Jaeger tracing support.
  */
 module io.helidon.tracing.jaeger {
-    requires io.helidon.common;
-    requires io.helidon.config;
+    requires transitive io.helidon.common;
+    requires transitive io.helidon.config;
     requires io.helidon.tracing;
     requires io.helidon.tracing.opentelemetry;
-    requires io.helidon.tracing.opentracing;
     requires io.helidon.common.context;
+    requires io.helidon.common.configurable;
 
     requires static io.helidon.config.metadata;
 
     requires java.logging;
 
-    requires io.opentelemetry.api;
     requires io.opentelemetry.sdk;
     requires io.opentelemetry.exporter.jaeger;
     requires io.opentelemetry.sdk.trace;
     requires io.opentelemetry.sdk.common;
-    requires io.opentelemetry.semconv;
-    requires io.opentelemetry.opentracingshim;
-    requires io.opentracing.api;
-    requires io.opentracing.util;
 
     exports io.helidon.tracing.jaeger;
 

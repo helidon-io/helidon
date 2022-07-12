@@ -23,7 +23,6 @@ import io.helidon.config.Config;
  * No op tracer builder - used when there is no tracer service available.
  */
 final class NoOpBuilder implements TracerBuilder<NoOpBuilder> {
-    private static final Tracer TRACER = new NoOpTracer();
     private NoOpBuilder() {
     }
 
@@ -92,7 +91,7 @@ final class NoOpBuilder implements TracerBuilder<NoOpBuilder> {
 
     @Override
     public Tracer build() {
-        return TRACER;
+        return NoOpTracer.instance();
     }
 
     @Override

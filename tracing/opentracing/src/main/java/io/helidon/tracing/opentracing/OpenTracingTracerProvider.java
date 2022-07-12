@@ -18,7 +18,6 @@ package io.helidon.tracing.opentracing;
 import java.util.Optional;
 
 import io.helidon.common.Prioritized;
-import io.helidon.common.serviceloader.Priorities;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.Tracer;
 import io.helidon.tracing.TracerBuilder;
@@ -57,5 +56,10 @@ public class OpenTracingTracerProvider implements TracerProvider {
         return Optional.ofNullable(tracer.activeSpan())
                 .flatMap(it -> it instanceof NoopSpan ? Optional.empty() : Optional.of(it))
                 .map(it -> new OpenTracingSpan(tracer, it));
+    }
+
+    @Override
+    public boolean available() {
+        return OpenTracingProviderHelper.available();
     }
 }

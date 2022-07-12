@@ -239,8 +239,10 @@ public final class SecurityTracing extends CommonTracing {
     public OutboundTracing outboundTracing() {
 
         // outbound tracing should be based on current outbound span
-        Optional<SpanContext> parentOptional = Contexts.context()
-                .flatMap(ctx -> ctx.get(TracingConfigUtil.OUTBOUND_SPAN_QUALIFIER, SpanContext.class));
+        Optional<SpanContext> parentOptional = Span.current()
+                .map(Span::context)
+                .or(() -> Contexts.context()
+                        .flatMap(ctx -> ctx.get(TracingConfigUtil.OUTBOUND_SPAN_QUALIFIER, SpanContext.class)));
         if (!parentOptional.isPresent()) {
             parentOptional = parentSpanContext();
         }

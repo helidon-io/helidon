@@ -54,4 +54,12 @@ public interface TracerProvider {
      * @return current span, or empty optional if current span cannot be found
      */
     Optional<Span> currentSpan();
+
+    /**
+     * Whether there is a tracer available by this provider.
+     * This allows co-existence of multiple tracing providers within the same VM.
+     *
+     * @return whether this tracer provider has a tracer available
+     */
+    boolean available();
 }

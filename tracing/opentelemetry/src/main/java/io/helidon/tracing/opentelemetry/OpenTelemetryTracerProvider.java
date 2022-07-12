@@ -15,7 +15,9 @@
  */
 package io.helidon.tracing.opentelemetry;
 
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.LazyValue;
@@ -39,6 +41,7 @@ public class OpenTelemetryTracerProvider implements TracerProvider {
     private static final System.Logger LOGGER = System.getLogger(OpenTelemetryTracerProvider.class.getName());
 
     private static final AtomicReference<Tracer> CONFIGURED_TRACER = new AtomicReference<>();
+    private static final AtomicBoolean GLOBAL_SET = new AtomicBoolean();
     private static final LazyValue<Tracer> GLOBAL_TRACER;
 
     static {
@@ -57,7 +60,7 @@ public class OpenTelemetryTracerProvider implements TracerProvider {
                                     + "Tracer.global(HelidonOpenTelemetry.create(ot, tracer). Using global open telemetry");
                         }
                         OpenTelemetry ot = GlobalOpenTelemetry.get();
-                        return new OpenTelemetryTracer(ot, ot.getTracer("helidon-service"));
+                        return new OpenTelemetryTracer(ot, ot.getTracer("helidon-service"), Map.of());
                     });
         });
     }
@@ -68,6 +71,7 @@ public class OpenTelemetryTracerProvider implements TracerProvider {
      * @param tracer global tracer
      */
     public static void globalTracer(Tracer tracer) {
+        GLOBAL_SET.set(true);
         CONFIGURED_TRACER.set(tracer);
     }
 
@@ -102,5 +106,10 @@ public class OpenTelemetryTracerProvider implements TracerProvider {
     @Override
     public Optional<Span> currentSpan() {
         return Optional.ofNullable(io.opentelemetry.api.trace.Span.current()).map(HelidonOpenTelemetry::create);
+    }
+
+    @Override
+    public boolean available() {
+        return GLOBAL_SET.get();
     }
 }
