@@ -34,9 +34,9 @@ public class PokemonTypeMapperProvider implements DbMapperProvider {
 
         @Override
         public PokemonType read(DbRow row) {
-            DbColumn id = row.column("ID");
-            DbColumn name = row.column("NAME");
-            return new PokemonType(id.as(Integer.class), name.as(String.class));
+            DbColumn id = row.column("{{id}}");
+            DbColumn name = row.column("{{name}}");
+            return new PokemonType({{PokemonType-constructor-arg}});
         }
 
         @Override
