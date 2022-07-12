@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,7 @@ package io.helidon.microprofile.grpc.metrics;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
-import java.util.Collections;
 import java.util.Map;
-import java.util.Set;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -33,17 +30,19 @@ import io.helidon.microprofile.grpc.core.AnnotatedMethodList;
 import io.helidon.microprofile.grpc.core.GrpcMethod;
 import io.helidon.microprofile.grpc.server.AnnotatedServiceConfigurer;
 import io.helidon.microprofile.grpc.server.GrpcServiceBuilder;
-import io.helidon.microprofile.metrics.MetricUtil;
-import io.helidon.microprofile.metrics.MetricsCdiExtension;
 
+import org.eclipse.microprofile.metrics.Counter;
+import org.eclipse.microprofile.metrics.Metadata;
+import org.eclipse.microprofile.metrics.Meter;
+import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricType;
+import org.eclipse.microprofile.metrics.SimpleTimer;
+import org.eclipse.microprofile.metrics.Timer;
 import org.eclipse.microprofile.metrics.annotation.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Metered;
 import org.eclipse.microprofile.metrics.annotation.SimplyTimed;
 import org.eclipse.microprofile.metrics.annotation.Timed;
-
-import static io.helidon.microprofile.metrics.MetricUtil.getMetricName;
 
 /**
  * A {@link AnnotatedServiceConfigurer} that adds a
@@ -59,187 +58,95 @@ public class MetricsConfigurer
 
     private static final Logger LOGGER = Logger.getLogger(MetricsConfigurer.class.getName());
 
-    /**
-     * Captures information and logic for dealing with the various metrics annotations. This allows the metrics handling to be
-     * largely data-driven rather than requiring separate code for each type of metric.
-     *
-     * @param <A> the type of the specific metrics annotation
-     */
-    private static class MetricAnnotationInfo<A extends Annotation> {
-        private final Class<A> annotationClass;
-        private final Supplier<GrpcMetrics> gRpcMetricsSupplier;
-        private final Function<A, String> annotationNameFunction;
-        private final Function<A, Boolean> annotationAbsoluteFunction;
-        private final Function<A, String> annotationDescriptorFunction;
-        private final Function<A, String> annotationDisplayNameFunction;
-        private final Function<A, String> annotationUnitsFunction;
-
-
-        MetricAnnotationInfo(
-                Class<A> annotationClass,
-                Supplier<GrpcMetrics> gRpcMetricsSupplier,
-                Function<A, String> annotationNameFunction,
-                Function<A, Boolean> annotationAbsoluteFunction,
-                Function<A, String> annotationDescriptorFunction,
-                Function<A, String> annotationDisplayNameFunction,
-                Function<A, String> annotationUnitsFunction) {
-            this.annotationClass = annotationClass;
-            this.gRpcMetricsSupplier = gRpcMetricsSupplier;
-            this.annotationNameFunction = annotationNameFunction;
-            this.annotationAbsoluteFunction = annotationAbsoluteFunction;
-            this.annotationDescriptorFunction = annotationDescriptorFunction;
-            this.annotationDisplayNameFunction = annotationDisplayNameFunction;
-            this.annotationUnitsFunction = annotationUnitsFunction;
-        }
-
-        A annotationOnMethod(AnnotatedMethod am) {
-            return am.getAnnotation(annotationClass);
-        }
-
-        String name(AnnotatedMethod am) {
-            return annotationNameFunction.apply(am.getAnnotation(annotationClass));
-        }
-
-        boolean absolute(AnnotatedMethod am) {
-            return annotationAbsoluteFunction.apply(am.getAnnotation(annotationClass));
-        }
-
-        String displayName(AnnotatedMethod am) {
-            return annotationDisplayNameFunction.apply(am.getAnnotation(annotationClass));
-        }
-
-        String description(AnnotatedMethod am) {
-            return annotationDescriptorFunction.apply(am.getAnnotation(annotationClass));
-        }
-
-        String units(AnnotatedMethod am) {
-            return annotationUnitsFunction.apply(am.getAnnotation(annotationClass));
-        }
-    }
-
-    private static final Map<Class<? extends Annotation>, MetricAnnotationInfo<?>> METRIC_ANNOTATION_INFO = Map.of(
-            Counted.class, new MetricAnnotationInfo<Counted>(
-                    Counted.class,
-                    GrpcMetrics::counted,
-                    Counted::name,
-                    Counted::absolute,
-                    Counted::description,
-                    Counted::displayName,
-                    Counted::unit),
-            Metered.class, new MetricAnnotationInfo<Metered>(
-                    Metered.class,
-                    GrpcMetrics::metered,
-                    Metered::name,
-                    Metered::absolute,
-                    Metered::description,
-                    Metered::displayName,
-                    Metered::unit),
-            Timed.class, new MetricAnnotationInfo<Timed>(
-                    Timed.class,
-                    GrpcMetrics::timed,
-                    Timed::name,
-                    Timed::absolute,
-                    Timed::description,
-                    Timed::displayName,
-                    Timed::unit),
-            ConcurrentGauge.class, new MetricAnnotationInfo<ConcurrentGauge>(
-                    ConcurrentGauge.class,
-                    GrpcMetrics::concurrentGauge,
-                    ConcurrentGauge::name,
-                    ConcurrentGauge::absolute,
-                    ConcurrentGauge::description,
-                    ConcurrentGauge::displayName,
-                    ConcurrentGauge::unit),
-            SimplyTimed.class, new MetricAnnotationInfo<SimplyTimed>(
-                    SimplyTimed.class,
-                    GrpcMetrics::simplyTimed,
-                    SimplyTimed::name,
-                    SimplyTimed::absolute,
-                    SimplyTimed::description,
-                    SimplyTimed::displayName,
-                    SimplyTimed::unit)
+    static final Map<Class<? extends Annotation>, MetricInfo> METRIC_ANNOTATION_INFO = Map.of(
+            Counted.class, MetricInfo.create(GrpcMetrics::counted, Counter.class),
+            Metered.class, MetricInfo.create(GrpcMetrics::metered, Meter.class),
+            Timed.class, MetricInfo.create(GrpcMetrics::timed, Timer.class),
+            ConcurrentGauge.class, MetricInfo.create(GrpcMetrics::concurrentGauge,
+                                                     org.eclipse.microprofile.metrics.ConcurrentGauge.class),
+            SimplyTimed.class, MetricInfo.create(GrpcMetrics::simplyTimed, SimpleTimer.class)
     );
-
-    // for testing
-    static Set<Class<? extends Annotation>> metricsAnnotationsSupported() {
-        return Collections.unmodifiableSet(METRIC_ANNOTATION_INFO.keySet());
-    }
 
     @Override
     public void accept(Class<?> serviceClass, Class<?> annotatedClass, ServiceDescriptor.Builder builder) {
 
         AnnotatedMethodList methodList = AnnotatedMethodList.create(serviceClass);
 
-        METRIC_ANNOTATION_INFO.forEach((annotationClass, info) -> methodList.withAnnotation(annotationClass)
-                .stream()
-                .filter(am -> isServiceAnnotated(serviceClass, am, annotationClass))
-                .forEach(annotatedMethod -> {
-                    Annotation anno = info.annotationOnMethod(annotatedMethod);
-                    addMetric(builder,
-                            annotatedMethod,
-                            info.gRpcMetricsSupplier.get(),
-                            anno,
-                            info.name(annotatedMethod),
-                            info.absolute(annotatedMethod));
-                }));
+        // For each annotated method:
+        //     Retrieve all discoveries of metric annotations on that method, and for each:
+        //          Get the metric registration for it (which has the metric metadata).
+        //          Add the interceptor for the annotation associated with the annotation site that was discovered.
+        methodList.stream()
+                .filter(am -> GrpcMetricAnnotationDiscoveryObserver.isDiscovered(am.method()))
+                .forEach(annotatedMethod ->
+                                 GrpcMetricAnnotationDiscoveryObserver.discoveries(annotatedMethod.method())
+                                         .forEach((annotationClass, discovery) -> {
+                                             if (isServiceAnnotated(serviceClass,
+                                                                    annotatedMethod.declaredMethod(),
+                                                                    annotationClass)) {
+                                                 processMetricAnnotationSite(
+                                                         builder,
+                                                         annotatedMethod,
+                                                         METRIC_ANNOTATION_INFO
+                                                                 .get(annotationClass)
+                                                                 .grpcMetricsSupplier
+                                                                 .get(),
+                                                         discovery.annotation(),
+                                                         GrpcMetricRegistrationObserver.metadata(discovery)
+                                                 );
+                                             }
+                                         })
+                );
     }
 
-    private boolean isServiceAnnotated(Class<?> cls, AnnotatedMethod annotatedMethod, Class<? extends Annotation> annotation) {
-        Method method = annotatedMethod.declaredMethod();
+    static boolean isServiceAnnotated(Class<?> cls,
+                                              Method method,
+                                              Class<? extends Annotation> annotation) {
         return method.getDeclaringClass().equals(cls) && method.isAnnotationPresent(annotation);
     }
 
-    private void addMetric(ServiceDescriptor.Builder builder,
-                             AnnotatedMethod annotatedMethod,
-                             GrpcMetrics interceptor,
-                             Annotation annotation,
-                             String name,
-                             boolean absolute) {
+    record MetricInfo(Supplier<GrpcMetrics> grpcMetricsSupplier,
+                      Class<? extends Metric> metricClass) {
+        private static MetricInfo create(Supplier<GrpcMetrics> grpcMetricsSupplier, Class<? extends Metric> metricClass) {
+            return new MetricInfo(grpcMetricsSupplier, metricClass);
+        }
+    }
+
+
+
+    // Package-private for testing.
+
+    private void processMetricAnnotationSite(ServiceDescriptor.Builder builder,
+                                             AnnotatedMethod annotatedMethod,
+                                             GrpcMetrics interceptor,
+                                             Annotation annotation,
+                                             Metadata metadata) {
 
         GrpcMethod rpcMethod = annotatedMethod.firstAnnotationOrMetaAnnotation(GrpcMethod.class);
         if (rpcMethod != null) {
-            Method method = findAnnotatedMethod(annotatedMethod, annotation.annotationType());
-            Class<?> annotatedClass = method.getDeclaringClass();
             String grpcMethodName = GrpcServiceBuilder.determineMethodName(annotatedMethod, rpcMethod);
-            String metricName = getMetricName(method,
-                                              annotatedClass,
-                                              MetricUtil.MatchingType.METHOD,
-                                              name,
-                                              absolute);
 
             LOGGER.log(Level.FINE, () -> String.format("Adding gRPC '%s' metric interceptor to service '%s' method '%s'",
                                                        annotation.annotationType().getSimpleName(),
                                                        builder.name(),
                                                        grpcMethodName));
 
-            MetricUtil.LookupResult<? extends Annotation> lookupResult
-                    = MetricUtil.lookupAnnotation(method, annotation.annotationType(), annotatedClass);
-
-            MetricAnnotationInfo<?> mInfo = METRIC_ANNOTATION_INFO.get(annotation.annotationType());
-            if (mInfo != null && mInfo.annotationClass.isInstance(annotation)) {
-                String candidateDescription = mInfo.description(annotatedMethod);
+            if (METRIC_ANNOTATION_INFO.containsKey(annotation.annotationType())
+                    && annotation.annotationType().isInstance(annotation)) {
+                String candidateDescription = metadata.getDescription();
                 if (candidateDescription != null && !candidateDescription.trim().isEmpty()) {
                     interceptor = interceptor.description(candidateDescription.trim());
                 }
-                String candidateDisplayName = mInfo.displayName(annotatedMethod);
+                String candidateDisplayName = metadata.getDisplayName();
                 if (candidateDisplayName != null && !candidateDisplayName.trim().isEmpty()) {
                     interceptor = interceptor.displayName(candidateDisplayName.trim());
                 }
                 interceptor = interceptor
-                        .units(mInfo.units(annotatedMethod));
+                        .units(metadata.getUnit());
             }
 
-            MetricsCdiExtension.registerMetric(method, annotatedClass, lookupResult);
-            builder.intercept(grpcMethodName, interceptor.nameFunction(new ConstantNamingFunction(metricName)));
+            builder.intercept(grpcMethodName, interceptor.nameFunction(new ConstantNamingFunction(metadata.getName())));
         }
-    }
-
-    private Method findAnnotatedMethod(AnnotatedMethod annotatedMethod, Class<? extends Annotation> type) {
-        Method method = annotatedMethod.declaredMethod();
-        if (!method.isAnnotationPresent(type)) {
-            method = annotatedMethod.method();
-        }
-        return method;
     }
 
     /**
