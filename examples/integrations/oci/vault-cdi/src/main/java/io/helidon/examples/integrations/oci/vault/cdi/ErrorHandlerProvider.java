@@ -16,11 +16,10 @@
 
 package io.helidon.examples.integrations.oci.vault.cdi;
 
+import com.oracle.bmc.model.BmcException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
-
-import com.oracle.bmc.model.BmcException;
 
 /**
  * Maps SDK errors to HTTP errors, as otherwise any exception is manifested as an internal server error.

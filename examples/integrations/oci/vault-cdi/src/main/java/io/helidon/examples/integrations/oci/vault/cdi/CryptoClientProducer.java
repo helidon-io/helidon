@@ -16,13 +16,12 @@
 
 package io.helidon.examples.integrations.oci.vault.cdi;
 
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.inject.Produces;
-import jakarta.inject.Inject;
-
 import com.oracle.bmc.keymanagement.KmsCryptoClient;
 import com.oracle.bmc.keymanagement.KmsCryptoClientBuilder;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Produces;
+import jakarta.inject.Inject;
 
 /**
  * KMS crypto client (used for encryption, decryption and signatures) requires additional configuration, that cannot
