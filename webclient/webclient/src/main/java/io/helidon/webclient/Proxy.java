@@ -33,6 +33,9 @@ import java.util.regex.Pattern;
 
 import io.helidon.common.configurable.LruCache;
 import io.helidon.config.Config;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
+import io.helidon.config.metadata.ConfiguredValue;
 
 import io.netty.channel.ChannelHandler;
 import io.netty.handler.proxy.HttpProxyHandler;
@@ -408,6 +411,7 @@ public class Proxy {
     /**
      * Fluent API builder for {@link Proxy}.
      */
+    @Configured
     public static class Builder implements io.helidon.common.Builder<Builder, Proxy> {
         private final Set<String> noProxyHosts = new HashSet<>();
 
@@ -498,6 +502,14 @@ public class Proxy {
          * @param type proxy type
          * @return updated builder instance
          */
+        @ConfiguredOption(type = String.class,
+                          allowedValues = {
+                                  @ConfiguredValue(value = "HTTP", description = "HTTP proxy"),
+                                  @ConfiguredValue(value = "SOCKS_4", description = "SOCKS V4 proxy"),
+                                  @ConfiguredValue(value = "SOCKS_5", description = "SOCKS V5 proxy"),
+                                  @ConfiguredValue(value = "SYSTEM", description = "Proxy obtained from the system")
+                          },
+                          value = "HTTP")
         public Builder type(ProxyType type) {
             this.type = type;
             return this;
@@ -509,6 +521,7 @@ public class Proxy {
          * @param host host
          * @return updated builder instance
          */
+        @ConfiguredOption
         public Builder host(String host) {
             this.host = host;
             return this;
@@ -520,6 +533,7 @@ public class Proxy {
          * @param port port
          * @return updated builder instance
          */
+        @ConfiguredOption
         public Builder port(int port) {
             this.port = port;
             return this;
@@ -531,6 +545,7 @@ public class Proxy {
          * @param username proxy username
          * @return updated builder instance
          */
+        @ConfiguredOption
         public Builder username(String username) {
             this.username = username;
             return this;
@@ -542,6 +557,7 @@ public class Proxy {
          * @param password proxy password
          * @return updated builder instance
          */
+        @ConfiguredOption(type = String.class)
         public Builder password(char[] password) {
             this.password = Arrays.copyOf(password, password.length);
             return this;
@@ -563,6 +579,7 @@ public class Proxy {
          * @param noProxyHost to exclude from proxying
          * @return updated builder instance
          */
+        @ConfiguredOption(key = "no-proxy", kind = ConfiguredOption.Kind.LIST)
         public Builder addNoProxy(String noProxyHost) {
             noProxyHosts.add(noProxyHost);
             return this;
@@ -574,6 +591,7 @@ public class Proxy {
          * @param useIt use system selector
          * @return updated builder instance
          */
+        @ConfiguredOption(key = "use-system-selector", value = "false")
         public Builder useSystemSelector(boolean useIt) {
             if (useIt) {
                 this.type = ProxyType.SYSTEM;

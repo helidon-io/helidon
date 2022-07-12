@@ -29,6 +29,8 @@ module io.helidon.media.common {
     requires io.helidon.common.http;
     requires io.helidon.config;
 
+    requires static io.helidon.config.metadata;
+
     exports io.helidon.media.common;
     exports io.helidon.media.common.spi;
 

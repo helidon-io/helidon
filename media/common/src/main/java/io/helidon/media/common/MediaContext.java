@@ -27,6 +27,8 @@ import java.util.stream.Collectors;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.media.common.spi.MediaSupportProvider;
 
 /**
@@ -100,6 +102,7 @@ public final class MediaContext {
     /**
      * MediaSupport builder.
      */
+    @Configured
     public static class Builder implements io.helidon.common.Builder<Builder, MediaContext>,
                                            MediaContextBuilder<Builder> {
 
@@ -160,6 +163,11 @@ public final class MediaContext {
          * @param config a {@link Config}
          * @return this {@link Builder}
          */
+        @ConfiguredOption(key = "services",
+                          type = Object.class,
+                          kind = ConfiguredOption.Kind.LIST,
+                          description = "Configuration section for each service. Each entry has to have \"name\" parameter. "
+                                  + "It is also used for filtering of loaded services")
         public Builder config(Config config) {
             config.get("register-defaults").asBoolean().ifPresent(this::registerDefaults);
             config.get("discover-services").asBoolean().ifPresent(this::discoverServices);
@@ -229,6 +237,7 @@ public final class MediaContext {
          * @param registerDefaults register defaults
          * @return this builder instance
          */
+        @ConfiguredOption(key = "register-defaults", description = "Whether default readers and writers should be registered")
         public Builder registerDefaults(boolean registerDefaults) {
             this.registerDefaults = registerDefaults;
             return this;
@@ -240,6 +249,7 @@ public final class MediaContext {
          * @param discoverServices use Java Service Loader
          * @return this builder instance
          */
+        @ConfiguredOption(key = "discover-services")
         public Builder discoverServices(boolean discoverServices) {
             this.discoverServices = discoverServices;
             return this;
@@ -252,6 +262,7 @@ public final class MediaContext {
          * @param filterServices filter services
          * @return this builder instance
          */
+        @ConfiguredOption(key = "filter-services")
         public Builder filterServices(boolean filterServices) {
             this.filterServices = filterServices;
             return this;
@@ -290,7 +301,7 @@ public final class MediaContext {
                     .asList()
                     .stream()
                     .map(it -> it.create(Config.just(ConfigSources.create(servicesConfig.getOrDefault(it.configKey(),
-                                                                                                        new HashMap<>())))))
+                                                                                                      new HashMap<>())))))
                     .collect(Collectors.toCollection(LinkedList::new))
                     .descendingIterator()
                     .forEachRemaining(mediaService -> mediaService.register(readerContext, writerContext));
