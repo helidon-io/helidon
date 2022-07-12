@@ -397,7 +397,8 @@ error code `500`.
 
 == Http/2 Support
 
-Helidon supports Http/2 upgrade from Http/1 and Http/2 without prior knowledge.
+Helidon supports Http/2 upgrade from Http/1, Http/2 without prior knowledge
+and Http/2 with ALPN over TLS.
 Http/2 support is enabled in webserver by default when it's artefact is available on classpath.
 
 === Maven Coordinates
