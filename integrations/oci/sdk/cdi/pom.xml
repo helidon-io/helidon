@@ -85,17 +85,31 @@
             <scope>runtime</scope>
             <optional>true</optional>
         </dependency>
+        <!--
+            This is a transitive dependency of the manually-installed
+            oci-java-sdk-shaded-full artifact and so must be
+            explicitly mentioned here.
+        -->
         <dependency>
-          <groupId>org.bouncycastle</groupId>
-          <artifactId>bcpkix-jdk15on</artifactId>
-          <scope>runtime</scope>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcpkix-jdk15on</artifactId>
+            <scope>runtime</scope>
         </dependency>
-
         <dependency>
             <groupId>org.jboss</groupId>
             <artifactId>jandex</artifactId>
             <scope>runtime</scope>
             <optional>true</optional>
+        </dependency>
+        <!--
+            This is a transitive dependency of the manually-installed
+            oci-java-sdk-shaded-full artifact and so must be
+            explicitly mentioned here.
+        -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <scope>runtime</scope>
         </dependency>
 
         <!-- Test-scoped dependencies. -->
