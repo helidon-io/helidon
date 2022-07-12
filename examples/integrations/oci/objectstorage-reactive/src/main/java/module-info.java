@@ -23,8 +23,7 @@ module io.helidon.examples.integrations.oci.objectstorage.reactive {
     requires io.helidon.common.http;
     requires io.helidon.webserver;
 
-    requires oci.java.sdk.common;
-    requires oci.java.sdk.objectstorage.generated;
+    requires oci.java.sdk.shaded.full;
 
     exports io.helidon.examples.integrations.oci.objecstorage.reactive;
 }

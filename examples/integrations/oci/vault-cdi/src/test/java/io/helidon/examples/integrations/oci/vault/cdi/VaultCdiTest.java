@@ -16,9 +16,9 @@
 
 package io.helidon.examples.integrations.oci.vault.cdi;
 
-import javax.inject.Inject;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.Response;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.client.WebTarget;
+import jakarta.ws.rs.core.Response;
 
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 

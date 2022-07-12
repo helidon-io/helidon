@@ -22,8 +22,7 @@ module io.helidon.examples.integrations.oci.metrics.reactive {
 
     requires io.helidon.config;
 
-    requires oci.java.sdk.common;
-    requires oci.java.sdk.monitoring;
+    requires oci.java.sdk.shaded.full;
 
     exports io.helidon.examples.integrations.oci.telemetry.reactive;
 }

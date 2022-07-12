@@ -17,19 +17,21 @@
 package io.helidon.examples.integrations.oci.objectstorage.cdi;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.inject.Inject;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.HeaderParam;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.core.Response;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.HeaderParam;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.core.Response;
 
 import io.helidon.common.http.Http;
 
@@ -42,7 +44,6 @@ import com.oracle.bmc.objectstorage.responses.DeleteObjectResponse;
 import com.oracle.bmc.objectstorage.responses.GetNamespaceResponse;
 import com.oracle.bmc.objectstorage.responses.GetObjectResponse;
 import com.oracle.bmc.objectstorage.responses.PutObjectResponse;
-
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 /**
@@ -107,26 +108,23 @@ public class ObjectStorageResource {
      * Upload a file to object storage.
      *
      * @param fileName name of the object
-     * @param contentLength content length (required)
-     * @param entity the entity used for upload
      * @return response
      */
     @POST
     @Path("/file/{fileName}")
-    public Response upload(@PathParam("fileName") String fileName,
-                           @HeaderParam("Content-Length") long contentLength,
-                           InputStream entity) {
+    public Response upload(@PathParam("fileName") String fileName) {
 
         PutObjectRequest putObjectRequest = null;
         try {
+            InputStream stream = new FileInputStream(System.getProperty("user.dir") + File.separator + fileName);
+            byte[] contents = stream.readAllBytes();
             putObjectRequest =
                     PutObjectRequest.builder()
                             .namespaceName(namespaceName)
                             .bucketName(bucketName)
                             .objectName(fileName)
-                            .contentLength(contentLength)
-                            .putObjectBody(
-                                    new ByteArrayInputStream(entity.readAllBytes()))
+                            .putObjectBody(new ByteArrayInputStream(contents))
+                            .contentLength(Long.valueOf(contents.length))
                             .build();
         } catch (IOException e) {
             LOGGER.log(Level.SEVERE, "Error creating PutObjectRequest", e);

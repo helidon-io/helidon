@@ -25,7 +25,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;

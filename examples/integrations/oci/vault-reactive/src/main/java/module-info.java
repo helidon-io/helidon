@@ -20,10 +20,7 @@
 module io.helidon.examples.integrations.oci.vault.reactive {
     requires io.helidon.webserver;
 
-    requires oci.java.sdk.keymanagement;
-    requires oci.java.sdk.secrets;
-    requires oci.java.sdk.vault;
-    requires oci.java.sdk.common;
+    requires oci.java.sdk.shaded.full;
 
     requires java.logging;
 

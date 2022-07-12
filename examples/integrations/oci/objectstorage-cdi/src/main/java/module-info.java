@@ -19,11 +19,10 @@
  */
 module io.helidon.examples.integrations.oci.objectstorage.cdi {
     requires java.logging;
-    requires java.ws.rs;
-    requires java.json.bind;
+    requires jakarta.json.bind;
 
-    requires jakarta.inject.api;
-    requires jakarta.enterprise.cdi.api;
+    requires jakarta.ws.rs;
+    requires jakarta.inject;
 
     requires microprofile.config.api;
 
@@ -31,8 +30,7 @@ module io.helidon.examples.integrations.oci.objectstorage.cdi {
     requires io.helidon.common.http;
     requires io.helidon.microprofile.cdi;
 
-    requires oci.java.sdk.common;
-    requires oci.java.sdk.objectstorage.generated;
+    requires oci.java.sdk.shaded.full;
 
     exports io.helidon.examples.integrations.oci.objectstorage.cdi;
 
