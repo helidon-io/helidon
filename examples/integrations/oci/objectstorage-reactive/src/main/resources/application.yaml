@@ -23,5 +23,4 @@ server:
 
 oci:
   objectstorage:
-    bucketName: "arjdesai-oci-pipeline-test"
-    # "${oci.properties.objectstorage-bucketName}"
+    bucketName: "${oci.properties.objectstorage-bucketName}"
