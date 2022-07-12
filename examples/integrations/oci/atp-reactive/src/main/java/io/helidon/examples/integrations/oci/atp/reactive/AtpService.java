@@ -44,7 +44,6 @@ import com.oracle.bmc.database.DatabaseAsyncClient;
 import com.oracle.bmc.database.model.GenerateAutonomousDatabaseWalletDetails;
 import com.oracle.bmc.database.requests.GenerateAutonomousDatabaseWalletRequest;
 import com.oracle.bmc.database.responses.GenerateAutonomousDatabaseWalletResponse;
-
 import oracle.jdbc.pool.OracleDataSource;
 import oracle.security.pki.OraclePKIProvider;
 import oracle.ucp.jdbc.PoolDataSource;

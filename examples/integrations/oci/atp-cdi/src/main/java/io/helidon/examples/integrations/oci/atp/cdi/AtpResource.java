@@ -44,7 +44,6 @@ import com.oracle.bmc.database.model.GenerateAutonomousDatabaseWalletDetails;
 import com.oracle.bmc.database.requests.GenerateAutonomousDatabaseWalletRequest;
 import com.oracle.bmc.database.responses.GenerateAutonomousDatabaseWalletResponse;
 import com.oracle.bmc.http.internal.ResponseHelper;
-
 import oracle.security.pki.OraclePKIProvider;
 import oracle.ucp.jdbc.PoolDataSource;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
