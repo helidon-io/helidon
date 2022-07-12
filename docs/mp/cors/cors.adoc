@@ -118,7 +118,7 @@ cors.paths._i_.enabled= # <4>
 <2> Add a block for each resource you want to configure.
 The index `_i_` is an integer (0, 1, 2, etc.).
 <3> Specify the settings as needed to define the CORS behavior you want for that resource.
-<4> The `enabled` setting lets you control whether the system uses that set of CORS configuration.
+<4> The `enabled` setting lets you control whether the system uses that set of CORS configuration. Defaults to `true`.
 
 The system uses the index `_i_`, not the position in the config file, to identify the settings for a particular resource.
 
