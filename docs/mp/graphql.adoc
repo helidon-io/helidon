@@ -193,7 +193,7 @@ include::{rootdir}/includes/graphql.adoc[]
 
 == Examples
 
-For a complete example, the reader is referred to the
+For a complete example, see
 link:{helidon-github-tree-url}/master/examples/microprofile/graphql[GraphQL MP Example].
 
 == Additional Information
