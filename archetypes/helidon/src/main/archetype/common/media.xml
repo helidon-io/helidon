@@ -23,8 +23,8 @@
     <step name="Media Support" optional="true">
         <!-- TODO https://github.com/oracle/helidon-build-tools/issues/698 -->
         <variables>
-            <text path="media.default-json-lib" if="${ROOT.flavor} != 'se'">jackson</text>
-            <text path="media.default-json-lib" if="${ROOT.flavor} == 'se'">jsonp</text>
+            <text path="media.default-json-lib" if="${~flavor} != 'se'">jackson</text>
+            <text path="media.default-json-lib" if="${~flavor} == 'se'">jsonp</text>
         </variables>
         <inputs>
             <!-- TODO https://github.com/oracle/helidon-build-tools/issues/699 -->
@@ -32,7 +32,7 @@
                 <option value="json" name="JSON" description="Handle 'application/json' payloads">
                     <inputs>
                         <enum id="json-lib" name="Select a JSON library" default="${default-json-lib}" optional="true">
-                            <option value="jsonp" name="JSON-P" description="Jakarta JSON Processing" if="${ROOT.flavor} == 'se'" />
+                            <option value="jsonp" name="JSON-P" description="Jakarta JSON Processing" if="${~flavor} == 'se'" />
                             <option value="jackson" name="Jackson" description="Popular JSON library"/>
                             <option value="jsonb" name="JSON-B" description="Jakarta JSON Binding"/>
                         </enum>

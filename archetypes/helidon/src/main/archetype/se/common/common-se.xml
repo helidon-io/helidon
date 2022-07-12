@@ -24,7 +24,7 @@
     <source src="/common/sources.xml"/>
     <output>
         <model>
-            <value key="mainClass">${package}.Main</value>
+            <value key="mainClass">${~package}.Main</value>
             <list key="readme-sections">
                 <value file="files/README.md"/>
             </list>

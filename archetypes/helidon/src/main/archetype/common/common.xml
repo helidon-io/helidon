@@ -25,7 +25,7 @@
             <replace regex="\.mustache$" replacement=""/>
         </transformation>
         <transformation id="packaged">
-            <replace regex="__pkg__" replacement="${ROOT.package/\./\/}"/>
+            <replace regex="__pkg__" replacement="${~package/\./\/}"/>
         </transformation>
         <templates engine="mustache" transformations="mustache">
             <directory>files</directory>
