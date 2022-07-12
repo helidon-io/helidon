@@ -65,7 +65,7 @@ backend:
                   value: "assistant"
                 sources:
                   - "overview.adoc"
-                  - "introduction.adoc"
+                  - "lra.adoc"
                   - "prerequisites.adoc"
                   - "managing-dependencies.adoc"
                   - "windows.adoc"
@@ -78,7 +78,7 @@ backend:
             items:
               - type: "PAGE"
                 title: "Introduction"
-                source: "introduction.adoc"
+                source: "lra.adoc"
                 glyph:
                   type: "icon"
                   value: "widgets"
@@ -111,7 +111,7 @@ backend:
                   type: "icon"
                   value: "settings"
                 sources:
-                  - "introduction.adoc"
+                  - "lra.adoc"
                   - "config-sources.adoc"
                   - "hierarchical-features.adoc"
                   - "property-mapping.adoc"
@@ -139,7 +139,7 @@ backend:
                   type: "icon"
                   value: "swap_horiz"
                 sources:
-                  - "introduction.adoc"
+                  - "lra.adoc"
                   - "configuration.adoc"
                   - "routing.adoc"
                   - "service-implementation.adoc"
@@ -148,7 +148,7 @@ backend:
                   - "metrics.adoc"
                   - "security.adoc"
                   - "marshalling.adoc"
-                  - "client-introduction.adoc"
+                  - "client-lra.adoc"
                   - "client-configuration.adoc"
                   - "client-implementation.adoc"
               - type: "PAGE"
@@ -157,12 +157,15 @@ backend:
                 glyph:
                   type: "icon"
                   value: "graphic_eq"
-              - type: "PAGE"
+              - type: "MENU"
                 title: "Health Checks"
-                source: "health.adoc"
+                dir: "health"
                 glyph:
                   type: "icon"
                   value: "favorite_outline"
+                sources:
+                  - "health.adoc"
+                  - "health-in-k8s.adoc"
               - type: "MENU"
                 title: "Metrics"
                 dir: "metrics"
@@ -209,7 +212,7 @@ backend:
                   type: "icon"
                   value: "message"
                 sources:
-                  - "introduction.adoc"
+                  - "lra.adoc"
                   - "connector.adoc"
                   - "kafka.adoc"
                   - "jms.adoc"
@@ -227,7 +230,7 @@ backend:
                   type: "icon"
                   value: "security"
                 sources:
-                  - "introduction.adoc"
+                  - "lra.adoc"
                   - "providers.adoc"
                   - "containers-integration.adoc"
                   - "tools.adoc"
@@ -262,7 +265,7 @@ backend:
                   type: "icon"
                   value: "http"
                 sources:
-                  - "introduction.adoc"
+                  - "lra.adoc"
                   - "tls-configuration.adoc"
               - type: "PAGE"
                 title: "Websocket"
@@ -293,7 +296,7 @@ backend:
                   type: "icon"
                   value: "widgets"
                 sources:
-                  - "introduction.adoc"
+                  - "lra.adoc"
                   - "microprofile.adoc"
               - type: "MENU"
                 title: "Guides"
@@ -335,7 +338,7 @@ backend:
                   type: "icon"
                   value: "settings"
                 sources:
-                  - "introduction.adoc"
+                  - "lra.adoc"
                   - "config-sources.adoc"
               - type: "MENU"
                 title: "CDI Extensions"
@@ -348,13 +351,19 @@ backend:
                   - "cdi-datasource-hikaricp.adoc"
                   - "cdi-datasource-ucp.adoc"
                   - "cdi-jedis.adoc"
+                  - "cdi-oci-objectstorage.adoc"
                   - "cdi-jta.adoc"
-              - type: "PAGE"
+              - type: "MENU"
                 title: "CORS"
-                source: "cors/cors.adoc"
+                dir: "cors"
                 glyph:
                   type: "icon"
                   value: "share"
+                sources:
+                  - "lra.adoc"
+                  - "using-cors.adoc"
+                  - "configuration-with-cors-mp.adoc"
+                  - "support-in-builtin-services.adoc"
               - type: "PAGE"
                 title: "Fault Tolerance"
                 source: "fault-tolerance.adoc"
@@ -414,7 +423,7 @@ backend:
                   type: "icon"
                   value: "pending_actions"
                 sources:
-                  - "introduction.adoc"
+                  - "lra.adoc"
                   - "coordinator.adoc"
                   - "participant.adoc"
               - type: "MENU"
@@ -424,10 +433,10 @@ backend:
                   type: "icon"
                   value: "av_timer"
                 sources:
-                  - "metrics.adoc"
+                  - "lra.adoc"
+                  - "metrics-capable-components.adoc"
                   - "micrometer.adoc"
                   - "prometheus-exemplar-support.adoc"
-                  - "metrics-capable-components.adoc"
               - type: "PAGE"
                 title: "OpenAPI"
                 source: "openapi.adoc"
@@ -462,11 +471,12 @@ backend:
                   type: "icon"
                   value: "message"
                 sources:
-                  - "introduction.adoc"
+                  - "lra.adoc"
+                  - "message.adoc"
+                  - "connector.adoc"
                   - "kafka.adoc"
                   - "jms.adoc"
                   - "aq.adoc"
-                  - "mock.adoc"
               - type: "PAGE"
                 title: "REST Client"
                 source: "restclient.adoc"
@@ -527,12 +537,6 @@ backend:
         - type: "LINK"
           title: "Javadocs"
           href: "apidocs/index.html?overview-summary.html"
-          glyph:
-            type: "icon"
-            value: "library_books"
-        - type: "PAGE"
-          title: "Config Reference"
-          source: "config/config_reference.adoc"
           glyph:
             type: "icon"
             value: "library_books"
