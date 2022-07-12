@@ -86,13 +86,13 @@ class AtpService implements Service {
             walletResponse = walletHandler.waitForCompletion();
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Error waiting for GenerateAutonomousDatabaseWalletResponse", e);
-            res.status(Http.Status.INTERNAL_SERVER_ERROR_500);
+            res.status(Http.Status.INTERNAL_SERVER_ERROR_500).send();
             return;
         }
-        System.out.println("walletResponse.getContentLength() is: " + walletResponse.getContentLength());
+
         if (walletResponse.getContentLength() == 0) {
             LOGGER.log(Level.SEVERE, "GenerateAutonomousDatabaseWalletResponse is empty");
-            res.status(Http.Status.NOT_FOUND_404);
+            res.status(Http.Status.NOT_FOUND_404).send();
             return;
         }
 
@@ -101,7 +101,7 @@ class AtpService implements Service {
             walletContent = walletResponse.getInputStream().readAllBytes();
         } catch (IOException e) {
             LOGGER.log(Level.SEVERE, "Error processing GenerateAutonomousDatabaseWalletResponse", e);
-            res.status(Http.Status.INTERNAL_SERVER_ERROR_500);
+            res.status(Http.Status.INTERNAL_SERVER_ERROR_500).send();
             return;
         }
 

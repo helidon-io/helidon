@@ -31,7 +31,6 @@ import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import io.helidon.common.http.Http;
@@ -119,7 +118,6 @@ public class ObjectStorageResource {
     @Path("/file/{fileName}")
     public Response upload(@PathParam("fileName") String fileName,
                            @HeaderParam("Content-Length") long contentLength,
-                           @HeaderParam("Content-Type") @DefaultValue("application/octet-stream") String type,
                            InputStream entity) {
 
         PutObjectRequest putObjectRequest = null;
