@@ -36,6 +36,9 @@ It is recommended that you use the OCI Java SDK directly, in particular the Asyn
 For more information see:
 
 * link:{oci-url}[OCI Documentation ]
+* link:{helidon-tag}/examples/integrations/oci/atp-reactive/[Helidon SE OCI ATP Example]
+* link:{helidon-tag}/examples/integrations/oci/objectstorage-reactive/[Helidon SE OCI Object Storage Example]
+* link:{helidon-tag}/examples/integrations/oci/metrics-reactive/[Helidon SE OCI Metrics Example]
 * link:{helidon-tag}/examples/integrations/oci/vault-reactive/[Helidon SE OCI Vault Example]
 
 == Experimental
