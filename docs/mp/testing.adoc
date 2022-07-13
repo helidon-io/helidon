@@ -24,11 +24,11 @@
 :feature-name: Testing with JUnit
 :rootdir: {docdir}/..
 
-== ToC
+== Contents
 
 - <<Overview, Overview>>
 - <<Maven Coordinates, Maven Coordinates>>
-- <<Usage, Usage>
+- <<Usage, Usage>>
 - <<Examples, Examples>>
 - <<Additional Information, Additional Information>>
 - <<Reference, Reference>>
@@ -103,15 +103,15 @@ In addition to this simplification, the following annotations are supported:
 |Annotation | Usage
 
 |`@io.helidon.microprofile.tests.junit5.AddBean`
-|to add one or more beans to the container (if not part of a bean archive, or when discovery is disabled)
+|Used to add one or more beans to the container (if not part of a bean archive, or when discovery is disabled)
 
 |`@io.helidon.microprofile.tests.junit5.AddExtension`
-|to add one or more CDI extensions to the container (if not added through service loader, or when discovery is disabled)
+|Used to add one or more CDI extensions to the container (if not added through service loader, or when discovery is disabled)
 
 |`@io.helidon.microprofile.tests.junit5.AddConfig`
-|to add one or more configuration properties to MicroProfile config without the need of creating a `microprofile-config.properties` file
+|Used to add one or more configuration properties to MicroProfile config without the need of creating a `microprofile-config.properties` file
 
-|`@io.helidon.microprofile.tests.junit5.DisableDiscovery`
+|Used `@io.helidon.microprofile.tests.junit5.DisableDiscovery`
 |to disable automated discovery of beans and extensions
 |===
 

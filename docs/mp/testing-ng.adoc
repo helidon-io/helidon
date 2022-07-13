@@ -98,16 +98,16 @@ In addition to this simplification, the following annotations are supported:
 |Annotation | Usage
 
 |`@io.helidon.microprofile.tests.testng.AddBean`
-|to add one or more beans to the container (if not part of a bean archive, or when discovery is disabled)
+|Used to add one or more beans to the container (if not part of a bean archive, or when discovery is disabled)
 
 |`@io.helidon.microprofile.tests.testng.AddExtension`
-|to add one or more CDI extensions to the container (if not added through service loader, or when discovery is disabled)
+|Used to add one or more CDI extensions to the container (if not added through service loader, or when discovery is disabled)
 
 |`@io.helidon.microprofile.tests.testng.AddConfig`
-|to add one or more configuration properties to MicroProfile config without the need of creating a `microprofile-config.properties` file
+|Used to add one or more configuration properties to MicroProfile config without the need of creating a `microprofile-config.properties` file
 
 |`@io.helidon.microprofile.tests.testng.DisableDiscovery`
-|to disable automated discovery of beans and extensions
+|Used to disable automated discovery of beans and extensions
 |===
 
 == Examples
