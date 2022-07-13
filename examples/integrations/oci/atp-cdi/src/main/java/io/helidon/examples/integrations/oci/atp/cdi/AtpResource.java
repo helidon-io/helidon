@@ -170,7 +170,7 @@ public class AtpResource {
             while ((entry = zis.getNextEntry()) != null) {
                 if (entry.getName().equals("tnsnames.ora")) {
                     jdbcUrl = new String(zis.readAllBytes(), StandardCharsets.UTF_8)
-                            .replaceFirst(tnsNetServiceName + "\\s+=\\s+", "jdbc:oracle:thin:@")
+                            .replaceFirst(tnsNetServiceName + "\\s*=\\s*", "jdbc:oracle:thin:@")
                             .replaceAll("\\n[^\\n]+", "");
                 }
                 zis.closeEntry();
