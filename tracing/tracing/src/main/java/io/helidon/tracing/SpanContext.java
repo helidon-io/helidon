@@ -32,4 +32,11 @@ public interface SpanContext {
      * @return span id
      */
     String spanId();
+
+    /**
+     * Configure this context as a parent of the provided builder.
+     *
+     * @param spanBuilder span builder to update, it will be a child of this span context
+     */
+    void asParent(Span.Builder<?> spanBuilder);
 }

@@ -15,6 +15,8 @@
  */
 package io.helidon.tracing.opentracing;
 
+import io.helidon.tracing.Span;
+
 import io.opentracing.SpanContext;
 
 class OpenTracingContext implements io.helidon.tracing.SpanContext {
@@ -32,6 +34,12 @@ class OpenTracingContext implements io.helidon.tracing.SpanContext {
     @Override
     public String spanId() {
         return delegate.toSpanId();
+    }
+
+    @Override
+    public void asParent(Span.Builder<?> spanBuilder) {
+        spanBuilder.unwrap(OpenTracingSpanBuilder.class)
+                .parent(this);
     }
 
     SpanContext openTracing() {

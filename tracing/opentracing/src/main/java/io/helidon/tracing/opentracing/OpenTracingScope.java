@@ -15,17 +15,27 @@
  */
 package io.helidon.tracing.opentracing;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import io.helidon.tracing.Scope;
 
 class OpenTracingScope implements Scope {
-    private final io.opentracing.Scope scope;
+    private final io.opentracing.Scope delegate;
+    private final AtomicBoolean closed = new AtomicBoolean();
 
     OpenTracingScope(io.opentracing.Scope scope) {
-        this.scope = scope;
+        this.delegate = scope;
     }
 
     @Override
-    public void close() throws Exception {
-        scope.close();
+    public void close() {
+        if (closed.compareAndSet(false, true) && delegate != null) {
+            delegate.close();
+        }
+    }
+
+    @Override
+    public boolean isClosed() {
+        return closed.get();
     }
 }

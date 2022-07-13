@@ -40,4 +40,9 @@ class NoOpTracerProvider implements io.helidon.tracing.spi.TracerProvider {
     public Optional<Span> currentSpan() {
         return Optional.empty();
     }
+
+    @Override
+    public boolean available() {
+        return false;
+    }
 }

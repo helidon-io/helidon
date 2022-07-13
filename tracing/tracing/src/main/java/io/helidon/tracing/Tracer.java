@@ -28,7 +28,7 @@ public interface Tracer {
      * @return no-op tracer
      */
     static Tracer noOp() {
-        return new NoOpTracer();
+        return NoOpTracer.instance();
     }
 
     /**

@@ -25,6 +25,7 @@ import io.opentelemetry.api.trace.SpanKind;
 
 class OpenTelemetrySpanBuilder implements Span.Builder<OpenTelemetrySpanBuilder> {
     private final SpanBuilder spanBuilder;
+    private boolean parentSet;
 
     OpenTelemetrySpanBuilder(SpanBuilder spanBuilder) {
         this.spanBuilder = spanBuilder;
@@ -37,7 +38,8 @@ class OpenTelemetrySpanBuilder implements Span.Builder<OpenTelemetrySpanBuilder>
 
     @Override
     public OpenTelemetrySpanBuilder parent(SpanContext spanContext) {
-        spanBuilder.addLink(((OpenTelemetrySpanContext) spanContext).openTelemetry());
+        this.parentSet = true;
+        spanContext.asParent(this);
         return this;
     }
 
@@ -79,8 +81,15 @@ class OpenTelemetrySpanBuilder implements Span.Builder<OpenTelemetrySpanBuilder>
 
     @Override
     public Span start(Instant instant) {
+        if (!parentSet) {
+            spanBuilder.setNoParent();
+        }
         spanBuilder.setStartTimestamp(instant);
         io.opentelemetry.api.trace.Span span = spanBuilder.startSpan();
         return new OpenTelemetrySpan(span);
+    }
+
+    SpanBuilder openTelemetry() {
+        return spanBuilder;
     }
 }
