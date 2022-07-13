@@ -250,6 +250,9 @@
         </profile>
         <profile>
             <id>staging</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
             <repositories>
                 <repository>
                     <id>ossrh-staging</id>
