@@ -83,7 +83,7 @@ Build gRPC servers and clients.
 //Health Checks
 [CARD]
 .Health Checks
-[icon=favorite_outline,link=health/health.adoc]
+[icon=favorite_outline,link=health.adoc]
 --
 Expose health statuses of your applications.
 --
