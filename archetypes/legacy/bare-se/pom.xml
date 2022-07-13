@@ -31,6 +31,6 @@
 
     <properties>
         <flavor>se</flavor>
-        <app-type>bare</app-type>
+        <app-type>custom</app-type>
     </properties>
 </project>
