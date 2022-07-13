@@ -31,4 +31,4 @@ app:
     compartment-ocid: "${oci.properties.compartment-ocid}"
     encryption-key-ocid: "${oci.properties.vault-key-ocid}"
     signature-key-ocid: "${oci.properties.vault-rsa-key-ocid}"
-
+    cryptographic-endpoint: "${oci.properties.cryptographic-endpoint}"
