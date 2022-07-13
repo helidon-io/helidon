@@ -255,4 +255,4 @@ Routing routing = Routing.builder()
 ----
 
 When executed, this health check will _ping_ the bucket to make sure it is accessible in your
-environment. For more information about health checks see xref:../health/health.adoc[Health Checks].
+environment. For more information about health checks see xref:../health.adoc[Health Checks].

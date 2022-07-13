@@ -142,15 +142,12 @@ backend:
                 glyph:
                   type: "icon"
                   value: "graphic_eq"
-              - type: "MENU"
+              - type: "PAGE"
                 title: "Health Checks"
-                dir: "health"
+                source: "health.adoc"
                 glyph:
                   type: "icon"
                   value: "favorite_outline"
-                sources:
-                  - "health.adoc"
-                  - "health-in-k8s.adoc"
               - type: "MENU"
                 title: "Metrics"
                 dir: "metrics"
