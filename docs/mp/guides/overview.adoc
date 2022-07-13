@@ -132,7 +132,6 @@ Helidon has great integration with JUnit5, learn how to use it for testing your 
 --
 Learn how to use JBatch with Helidon MP.
 --
-====
 
 [CARD]
 .Performance tuning in Helidon MP
