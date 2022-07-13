@@ -370,6 +370,13 @@ final class FeatureCatalog {
                     .nativeSupported(true)
                     .flavor(HelidonFlavor.MP));
 
+        add("io.helidon.integrations.oci.sdk.cdi",
+            FeatureDescriptor.builder()
+                    .name("OCI SDK")
+                    .description("OCI SDK Integration")
+                    .path("OCI SDK")
+                    .flavor(HelidonFlavor.MP));
+
         add("io.helidon.integrations.vault.cdi",
             FeatureDescriptor.builder()
                     .name("HCP Vault")
