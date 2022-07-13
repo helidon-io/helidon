@@ -14,7 +14,7 @@
     limitations under the License.
 
 ///////////////////////////////////////////////////////////////////////////////
-
+// tag::intro[]
 ifndef::rootdir[:rootdir: {docdir}/../..]
 ifndef::flavor-lc[:flavor-lc: se]
 ifeval::["{flavor-lc}" == "se"]
@@ -23,13 +23,12 @@ endif::[]
 ifeval::["{flavor-lc}" == "mp"]
 :mp-flavor:
 endif::[]
+:feature-name: Micrometer support
 
 //Contains content that is shared between multiple Micrometer pages.
 :keywords: helidon, java, micrometer, integration, se, mp
 
-= Micrometer Shared content
-
-// tag::intro[]
+== Overview
 Helidon {h1-prefix} simplifies how you can use Micrometer for application-specific metrics:
 
 * The endpoint `/micrometer`: A configurable endpoint that exposes metrics according to which Micrometer meter registry
@@ -51,9 +50,7 @@ In Helidon {helidon-version}, Micrometer support is separate from the Helidon {h
 // end::intro[]
 
 // tag::prereq[]
-== Prerequisites
-
-Declare the following dependency in your project:
+include::{rootdir}/includes/dependencies.adoc[]
 
 [source,xml,subs="verbatim,attributes"]
 ----
@@ -79,7 +76,7 @@ configuration to set them up as you wish.
 // end::prereq[]
 
 // tag::overriding-intro[]
-=== Overriding Defaults for Built-in Meter Registry Types
+==== Overriding Defaults for Built-in Meter Registry Types
 Unless you specify otherwise, Helidon uses defaults for any built-in Micrometer meter registry.
 For example, Helidon configures the built-in Prometheus registry using `PrometheusConfig.DEFAULT`.
 
@@ -90,22 +87,39 @@ For example, Helidon configures the built-in Prometheus registry using `Promethe
 To use configuration to control the selection and behavior of Helidon's built-in Micrometer meter registries,
 include in your configuration (such as `application.yaml`) a `micrometer.builtin-registries` section.
 
-[source,yaml]
 .Enroll Prometheus built-in meter registry using default configuration
+ifdef::se-flavor[]
+[source,yaml]
 ----
 micrometer:
   builtin-registries:
     - type: prometheus
 ----
+endif::[]
+ifdef::mp-flavor[]
+[source,properties]
+----
+micrometer.builtin-registries.0.type=prometheus
+----
+endif::[]
 
-[source,yaml]
 .Enroll Prometheus built-in meter registry with non-default configuration
+ifdef::se-flavor[]
+[source,yaml]
 ----
 micrometer:
   builtin-registries:
     - type: prometheus
       prefix: myPrefix
 ----
+endif::[]
+ifdef::mp-flavor[]
+[source,properties]
+----
+micrometer.builtin-registries.0.type=prometheus
+micrometer.builtin-registries.0.prefix=myPrefix
+----
+endif::[]
 Note that the first config example is equivalent to the default Helidon Micrometer behavior; Helidon by default supports the Prometheus meter registry.
 
 The configuration keys that are valid for the `builtin-registries` child entries depend on the type of Micrometer meter
@@ -120,17 +134,54 @@ meter registries.
 // end::overriding-using-config[]
 
 // tag::accessing-endpoint-intro[]
-== Accessing the Helidon Micrometer Endpoint
-By default, Helidon Micrometer integration exposes the `/micrometer` endpoint. You can override this
-using
+=== Accessing the Helidon Micrometer Endpoint
+Helidon automatically creates a REST endpoint which clients can access to retrieve Micrometer metrics, by default at the `/micrometer` endpoint.
+
 ifdef::se-flavor[]
-the `Builder` or
+Within Helidon, each type of meter registry is paired with code that examines the incoming HTTP request and decides
+whether the request matches up with the associated meter registry. The first pairing that accepts the request
+returns the response.
+endif::[]
+// end::accessing-endpoint-intro[]
+
+// tag::configuring-endpoint[]
+== Configuration
+You can configure the Helidon Micrometer REST service as you can other built-in Helidon services by adding configuration settings under the `micrometer` top-level key.
+
+include::{rootdir}/includes/config/io.helidon.integrations.micrometer.MicrometerSupport.adoc[leveloffset=-1]
+
+By default, Helidon Micrometer integration exposes the `/micrometer` endpoint.
+You can override the path using
+ifdef::se-flavor[]
+the link:{micrometer-javadoc-base-url}/MicrometerSupport.Builder.html[`Builder`] or
 endif::se-flavor[]
 the `micrometer.web-context` configuration key.
 
-// end::accessing-endpoint-intro[]
+.Overriding the default Micrometer path
+ifdef::se-flavor[]
+[source,yaml]
+----
+micrometer:
+  web-context: my-micrometer
+----
+endif::[]
+ifdef::mp-flavor[]
+[source,properties]
+----
+micrometer.web-context=my-micrometer
+----
+endif::[]
+
+// end::configuring-endpoint[]
 
 // tag::accessing-endpoint-end[]
 
 // end::accessing-endpoint-end[]
+
+// Following tag assumes the referring document is mid-sentence, with something like "Your code"
+// tag::use-micrometer-api[]
+can create, look up, and update metrics programmatically using the Micrometer `MeterRegistry` API. The link:{micrometer-api-url}[Micrometer concepts document] provides a good starting point for learning how to use Micrometer's interfaces and classes.
+// end::use-micrometer-api[]
+
+// end::all-micrometer[]
 

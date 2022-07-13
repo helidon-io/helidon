@@ -97,6 +97,7 @@ endif::[]
 :microprofile-metrics-base-url: {microprofile-base-url}/microprofile-metrics-{version-lib-microprofile-metrics-api}
 :microprofile-metrics-spec-url: {microprofile-metrics-base-url}/microprofile-metrics-spec-{version-lib-microprofile-metrics-api}.html
 :microprofile-metrics-javadoc-url: {microprofile-metrics-base-url}/apidocs
+:microprofile-metrics-javadoc-annotation-url: {microprofile-metrics-javadoc-url}/org/eclipse/microprofile/metrics/annotation
 
 :microprofile-tracing-base-url: {microprofile-base-url}/microprofile-tracing-{version-lib-microprofile-tracing}
 :microprofile-tracing-spec-url: {microprofile-tracing-base-url}/microprofile-tracing-spec-{version-lib-microprofile-tracing}.html
@@ -218,5 +219,9 @@ endif::[]
 :oci-javasdk-objstore-javadoc-base-url: {oci-javasdk-javadoc-base-url}/com/oracle/bmc/objectstorage
 :oci-javasdk-vault-javadoc-base-url: {oci-javasdk-javadoc-base-url}/com/oracle/bmc/vault
 
+:openmetrics-exemplar-spec-url: https://github.com/OpenObservability/OpenMetrics/blob/main/specification/OpenMetrics.md#exemplars
+
+:micrometer-url: https://micrometer.io
+:micrometer-api-url: https://micrometer.io/docs/concepts
 
 endif::attributes-included[]

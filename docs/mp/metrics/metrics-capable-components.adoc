@@ -17,7 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Metrics-Capable Modules
-:description: Helidon MP metrics-capable components
+:description: Helidon MP metrics-capable modules
 :keywords: helidon, metrics, metrics-capable, microprofile, guide
 :intro-project-name: {h1-prefix}
 :chk: icon:check[]
@@ -26,9 +26,10 @@
 
 include::{rootdir}/includes/mp.adoc[]
 
-include::{rootdir}/includes/metrics/metrics-capable-components.adoc[tags=preamble]
-include::{rootdir}/includes/metrics/metrics-capable-components.adoc[tags=all-beginning-text]
-include::{rootdir}/includes/metrics/metrics-capable-components.adoc[tags=writing-code-beginning]
+// Overview and usage
+include::{rootdir}/includes/metrics/metrics-capable-components.adoc[tags=preamble;all-beginning-text]
+
+include::{rootdir}/includes/metrics/metrics-capable-components.adoc[tags=writing-code-intro]
 
 ==== Writing a Helidon MP Application
 
@@ -65,6 +66,8 @@ That said, a developer of a Helidon MP app _can_ explicitly exclude the dependen
 ----
 
 In the resulting Helidon MP application, Helidon will use the minimal metrics and metrics support implementations.
+
+include::{rootdir}/includes/metrics/metrics-capable-components.adoc[tag=writing-component]
 
 include::{rootdir}/includes/metrics/metrics-capable-components.adoc[tags=writing-code-ending]
 

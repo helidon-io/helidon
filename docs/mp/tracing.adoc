@@ -47,6 +47,7 @@ and Security using either the https://zipkin.io[Zipkin] or https://www.jaegertra
 
 include::{rootdir}/includes/dependencies.adoc[]
 
+// tag::tracing-dependency[]
 [source,xml]
 ----
 <dependency>
@@ -54,6 +55,7 @@ include::{rootdir}/includes/dependencies.adoc[]
     <artifactId>helidon-microprofile-tracing</artifactId>
 </dependency>
 ----
+// end::tracing-dependency[]
 
 == Usage
 

@@ -22,6 +22,6 @@ ifdef::se-flavor[]
 endif::[]
 ifdef::mp-flavor[]
 :health-page: {rootdir}/mp/health.adoc
-:metrics-page: {rootdir}/mp/metrics/introduction.adoc
+:metrics-page: {rootdir}/mp/metrics/metrics.adoc
 :openapi-page: {rootdir}/mp/openapi.adoc
 endif::[]
