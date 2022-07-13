@@ -1,6 +1,6 @@
 #!/bin/bash -e
 #
-# Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+# Copyright (c) 2018, 2022 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,18 +24,26 @@
 # Setup error handling using default settings (defined in includes/error_handlers.sh)
 error_trap_setup
 
+# Load OCI-related functions. WS_DIR is already defined, so there is
+# no need to pass arguments.
+. $(dirname -- "${SCRIPT_PATH}")/includes/oci.sh
+
 readonly LOG_FILE=$(mktemp -t XXXcopyright-log)
 
 readonly RESULT_FILE=$(mktemp -t XXXcopyright-result)
 
 die() { echo "${1}" ; exit 1 ;}
 
+# Install OCI shaded full jar, if necessary. This is an idempotent
+# call.
+install_oci_shaded_full_jar
+
 mvn ${MAVEN_ARGS} \
         -f ${WS_DIR}/pom.xml \
         -Dhelidon.enforcer.output.file="${RESULT_FILE}" \
         -Dhelidon.enforcer.rules=copyright \
         -Dhelidon.enforcer.failOnError=false \
-        -Pcopyright \
+        -Pcopyright,oci-sdk-cdi \
         -N \
         validate > ${LOG_FILE} 2>&1 || (cat ${LOG_FILE} ; exit 1)
 

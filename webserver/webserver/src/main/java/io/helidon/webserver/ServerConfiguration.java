@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
@@ -35,25 +36,12 @@ import io.helidon.common.context.Context;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 import io.helidon.config.DeprecatedConfig;
-
-import io.opentracing.Tracer;
-import io.opentracing.util.GlobalTracer;
+import io.helidon.tracing.Tracer;
 
 /**
  * {@link WebServer} configuration.
  */
 public interface ServerConfiguration extends SocketConfiguration {
-
-    /**
-     * The default server socket configuration name. All the default server socket
-     * configuration (e.g., {@link #port()} or {@link #backlog()}) is accessible through
-     * {@link #socket(String)} or {@link #sockets()} with this
-     * {@link io.helidon.webserver.WebServer#DEFAULT_SOCKET_NAME default socket name}.
-     *
-     * @deprecated since 2.0.0, please use {@link WebServer#DEFAULT_SOCKET_NAME}
-     */
-    @Deprecated
-    String DEFAULT_SOCKET_NAME = WebServer.DEFAULT_SOCKET_NAME;
 
     /**
      * Returns the count of threads in the pool used to process HTTP requests.
@@ -128,20 +116,6 @@ public interface ServerConfiguration extends SocketConfiguration {
     int receiveBufferSize();
 
     /**
-     * Returns a {@link SSLContext} to use with the default server socket. If not {@code null} then
-     * the server enforces an SSL communication.
-     * <p>
-     * Additional named server socket configuration is accessible through
-     * the {@link #socket(String)} and {@link #sockets()} methods.
-     *
-     * @deprecated use {@code tls().sslContext()} instead. This method will be removed at 3.0.0 version.
-     * @return a SSL context to use
-     */
-    @Deprecated(since = "2.3.1", forRemoval = true)
-    @Override
-    SSLContext ssl();
-
-    /**
      * A socket configuration of an additional named server socket.
      * <p>
      * An additional named server socket may have a dedicated {@link Routing} configured
@@ -173,7 +147,7 @@ public interface ServerConfiguration extends SocketConfiguration {
 
     /**
      * A map of all the configured server sockets; that is the default server socket
-     * which is identified by the key {@link #DEFAULT_SOCKET_NAME} and also all the additional
+     * which is identified by the key {@link WebServer#DEFAULT_SOCKET_NAME} and also all the additional
      * named server socket configurations.
      * <p>
      * An additional named server socket may have a dedicated {@link Routing} configured
@@ -215,9 +189,9 @@ public interface ServerConfiguration extends SocketConfiguration {
     }
 
     /**
-     * Returns an <a href="http://opentracing.io">opentracing.io</a> tracer. Default is {@link GlobalTracer}.
+     * Returns a Tracer.
      *
-     * @return a tracer to use - never {@code null} (defaulting to {@link GlobalTracer}
+     * @return a tracer to use - never {@code null}
      */
     Tracer tracer();
 
@@ -226,13 +200,6 @@ public interface ServerConfiguration extends SocketConfiguration {
      * @return a context instance with registered application scoped instances
      */
     Context context();
-
-    /**
-     * Returns an {@link ExperimentalConfiguration}.
-     *
-     * @return Experimental configuration.
-     */
-    ExperimentalConfiguration experimental();
 
     /**
      * Returns an optional {@link Transport}.
@@ -249,16 +216,6 @@ public interface ServerConfiguration extends SocketConfiguration {
      * @return whether to print details
      */
     boolean printFeatureDetails();
-
-    /**
-     * Checks if HTTP/2 is enabled in config.
-     *
-     * @return Outcome of test.
-     */
-    default boolean isHttp2Enabled() {
-        ExperimentalConfiguration experimental = experimental();
-        return experimental != null && experimental.http2() != null && experimental.http2().enable();
-    }
 
     /**
      * Creates new instance with defaults from external configuration source.
@@ -306,13 +263,12 @@ public interface ServerConfiguration extends SocketConfiguration {
                                    io.helidon.common.Builder<Builder, ServerConfiguration> {
 
         private static final AtomicInteger WEBSERVER_COUNTER = new AtomicInteger(1);
-        private final SocketConfiguration.Builder defaultSocketBuilder = SocketConfiguration.builder();
-        private final Map<String, SocketConfiguration> sockets = new HashMap<>();
+        private final Map<String, SocketConfiguration.Builder> socketBuilders = new HashMap<>();
+        private final Map<String, SocketConfiguration> socketsConfigs = new HashMap<>();
         private int workers;
         private Tracer tracer;
         private Duration maxShutdownTimeout;
         private Duration shutdownQuietPeriod;
-        private ExperimentalConfiguration experimental;
         private Optional<Transport> transport;
         private Context context;
         private boolean printFeatureDetails;
@@ -330,7 +286,7 @@ public interface ServerConfiguration extends SocketConfiguration {
          * @return an updated builder
          */
         public Builder ssl(SSLContext sslContext) {
-            defaultSocketBuilder.ssl(sslContext);
+            defaultSocketBuilder().ssl(sslContext);
             return this;
         }
 
@@ -341,7 +297,7 @@ public interface ServerConfiguration extends SocketConfiguration {
          * @return an updated builder
          */
         public Builder ssl(Supplier<? extends SSLContext> sslContextBuilder) {
-            defaultSocketBuilder.ssl(sslContextBuilder);
+            defaultSocketBuilder().ssl(sslContextBuilder);
             return this;
         }
 
@@ -354,7 +310,7 @@ public interface ServerConfiguration extends SocketConfiguration {
          * @return an updated builder
          */
         public Builder port(int port) {
-            defaultSocketBuilder.port(port);
+            defaultSocketBuilder().port(port);
             return this;
         }
 
@@ -367,7 +323,7 @@ public interface ServerConfiguration extends SocketConfiguration {
          * @return an updated builder
          */
         public Builder bindAddress(InetAddress bindAddress) {
-            this.defaultSocketBuilder.bindAddress(bindAddress);
+            defaultSocketBuilder().bindAddress(bindAddress);
             return this;
         }
 
@@ -380,7 +336,7 @@ public interface ServerConfiguration extends SocketConfiguration {
          * @return an updated builder
          */
         public Builder backlog(int size) {
-            this.defaultSocketBuilder.backlog(size);
+            defaultSocketBuilder().backlog(size);
             return this;
         }
 
@@ -393,7 +349,7 @@ public interface ServerConfiguration extends SocketConfiguration {
          * @return an updated builder
          */
         public Builder timeout(int milliseconds) {
-            this.defaultSocketBuilder.timeoutMillis(milliseconds);
+            defaultSocketBuilder().timeoutMillis(milliseconds);
             return this;
         }
 
@@ -407,19 +363,19 @@ public interface ServerConfiguration extends SocketConfiguration {
          * @return an updated builder
          */
         public Builder receiveBufferSize(int bytes) {
-            this.defaultSocketBuilder.receiveBufferSize(bytes);
+            defaultSocketBuilder().receiveBufferSize(bytes);
             return this;
         }
 
         @Override
         public Builder maxHeaderSize(int size) {
-            defaultSocketBuilder.maxHeaderSize(size);
+            defaultSocketBuilder().maxHeaderSize(size);
             return this;
         }
 
         @Override
         public Builder maxInitialLineLength(int length) {
-            defaultSocketBuilder.maxInitialLineLength(length);
+            defaultSocketBuilder().maxInitialLineLength(length);
             return this;
         }
 
@@ -458,7 +414,24 @@ public interface ServerConfiguration extends SocketConfiguration {
          */
         public Builder addSocket(String name, SocketConfiguration socketConfiguration) {
             Objects.requireNonNull(name, "Parameter 'name' must not be null!");
-            this.sockets.put(name, socketConfiguration);
+            this.socketsConfigs.put(name, socketConfiguration);
+            return this;
+        }
+
+        /**
+         * Adds an additional named server socket configuration. As a result, the server will listen
+         * on multiple ports.
+         * <p>
+         * An additional named server socket may have a dedicated {@link Routing} configured
+         * through {@link io.helidon.webserver.WebServer.Builder#addNamedRouting(String, Routing)}.
+         *
+         * @param name                the name of the additional server socket configuration
+         * @param socketConfiguration the additional named server socket configuration builder
+         * @return an updated builder
+         */
+        public Builder addSocket(String name, SocketConfiguration.Builder socketConfiguration) {
+            Objects.requireNonNull(name, "Parameter 'name' must not be null!");
+            this.socketBuilders.put(name, socketConfiguration);
             return this;
         }
 
@@ -495,7 +468,7 @@ public interface ServerConfiguration extends SocketConfiguration {
         }
 
         /**
-         * Sets an <a href="http://opentracing.io">opentracing.io</a> tracer. (Default is {@link GlobalTracer}.)
+         * Sets a tracer.
          *
          * @param tracer a tracer to set
          * @return an updated builder
@@ -506,7 +479,7 @@ public interface ServerConfiguration extends SocketConfiguration {
         }
 
         /**
-         * Sets an <a href="http://opentracing.io">opentracing.io</a> tracer. (Default is {@link GlobalTracer}.)
+         * Sets a tracer.
          *
          * @param tracerBuilder a tracer builder to set; will be built as a first step of this method execution
          * @return updated builder
@@ -522,7 +495,7 @@ public interface ServerConfiguration extends SocketConfiguration {
          * @return an updated builder
          */
         public Builder enabledSSlProtocols(String... protocols) {
-            this.defaultSocketBuilder.enabledSSlProtocols(protocols);
+            defaultSocketBuilder().enabledSSlProtocols(protocols);
             return this;
         }
 
@@ -533,7 +506,7 @@ public interface ServerConfiguration extends SocketConfiguration {
          * @return an updated builder
          */
         public Builder enabledSSlProtocols(List<String> protocols) {
-            this.defaultSocketBuilder.enabledSSlProtocols(protocols);
+            defaultSocketBuilder().enabledSSlProtocols(protocols);
             return this;
         }
 
@@ -544,7 +517,21 @@ public interface ServerConfiguration extends SocketConfiguration {
          */
         @Override
         public Builder maxPayloadSize(long size) {
-            this.defaultSocketBuilder.maxPayloadSize(size);
+            defaultSocketBuilder().maxPayloadSize(size);
+            return this;
+        }
+
+        /**
+         * Set a maximum length of the content of an upgrade request.
+         * <p>
+         * Default is {@code 64*1024}
+         *
+         * @param size Maximum length of the content of an upgrade request
+         * @return this builder
+         */
+        @Override
+        public Builder maxUpgradeContentLength(int size) {
+            defaultSocketBuilder().maxUpgradeContentLength(size);
             return this;
         }
 
@@ -570,16 +557,6 @@ public interface ServerConfiguration extends SocketConfiguration {
         public Builder shutdownQuietPeriod(Duration shutdownQuietPeriod) {
             this.shutdownQuietPeriod =
                 Objects.requireNonNull(shutdownQuietPeriod, "Parameter 'shutdownQuietPeriod' must not be null!");
-            return this;
-        }
-
-        /**
-         * Configure experimental features.
-         * @param experimental experimental configuration
-         * @return an updated builder
-         */
-        public Builder experimental(ExperimentalConfiguration experimental) {
-            this.experimental = experimental;
             return this;
         }
 
@@ -640,9 +617,9 @@ public interface ServerConfiguration extends SocketConfiguration {
                 return this;
             }
 
-            defaultSocketBuilder.config(config);
+            defaultSocketBuilder().config(config);
 
-            config.get("host").asString().ifPresent(defaultSocketBuilder::host);
+            config.get("host").asString().ifPresent(defaultSocketBuilder()::host);
 
             DeprecatedConfig.get(config, "worker-count", "workers")
                     .asInt()
@@ -681,27 +658,12 @@ public interface ServerConfiguration extends SocketConfiguration {
                                                  + "with \"name\" key to define the socket name.");
                     }
 
-                    SocketConfiguration socket = SocketConfiguration.builder()
+                    SocketConfiguration.Builder socket = SocketConfiguration.builder()
                             .name(socketName)
-                            .config(socketConfig)
-                            .build();
+                            .config(socketConfig);
 
-                    sockets.put(socket.name(), socket);
+                    socketBuilders.put(socket.name(), socket);
                 }
-            }
-
-            // experimental
-            Config experimentalConfig = config.get("experimental");
-            if (experimentalConfig.exists()) {
-                ExperimentalConfiguration.Builder experimentalBuilder = ExperimentalConfiguration.builder();
-                Config http2Config = experimentalConfig.get("http2");
-                if (http2Config.exists()) {
-                    Http2Configuration.Builder http2Builder = new Http2Configuration.Builder();
-                    http2Config.get("enable").asBoolean().ifPresent(http2Builder::enable);
-                    http2Config.get("max-content-length").asInt().ifPresent(http2Builder::maxContentLength);
-                    experimentalBuilder.http2(http2Builder.build());
-                }
-                experimental = experimentalBuilder.build();
             }
 
             return this;
@@ -726,10 +688,10 @@ public interface ServerConfiguration extends SocketConfiguration {
             Optional<Tracer> maybeTracer = context.get(Tracer.class);
 
             if (null == this.tracer) {
-                this.tracer = maybeTracer.orElseGet(GlobalTracer::get);
+                this.tracer = maybeTracer.orElseGet(Tracer::global);
             }
 
-            if (!maybeTracer.isPresent()) {
+            if (maybeTracer.isEmpty()) {
                 context.register(this.tracer);
             }
 
@@ -737,19 +699,32 @@ public interface ServerConfiguration extends SocketConfiguration {
                 workers = Runtime.getRuntime().availableProcessors();
             }
 
-            if (null == experimental) {
-                experimental = ExperimentalConfiguration.builder().build();
-            }
-
             return new ServerBasicConfig(this);
         }
 
         SocketConfiguration.Builder defaultSocketBuilder() {
-            return defaultSocketBuilder;
+            return socketBuilder(WebServer.DEFAULT_SOCKET_NAME);
+        }
+
+        SocketConfiguration.Builder socketBuilder(String socketName) {
+            return socketBuilders.computeIfAbsent(socketName, k -> SocketConfiguration.builder().name(socketName));
         }
 
         Map<String, SocketConfiguration> sockets() {
-            return sockets;
+            Set<String> builtSocketConfigsKeys = socketsConfigs.keySet();
+            Map<String, SocketConfiguration> result =
+                    new HashMap<>(this.socketBuilders.size() + this.socketsConfigs.size());
+            for (Map.Entry<String, SocketConfiguration.Builder> e : this.socketBuilders.entrySet()) {
+                String key = e.getKey();
+                if (builtSocketConfigsKeys.contains(key)) {
+                    throw new IllegalStateException("Both mutable and immutable socket configuration provided for named socket "
+                            + key);
+                }
+                result.put(key, e.getValue().build());
+            }
+
+            result.putAll(this.socketsConfigs);
+            return result;
         }
 
         int workers() {
@@ -768,10 +743,6 @@ public interface ServerConfiguration extends SocketConfiguration {
             return shutdownQuietPeriod;
         }
 
-        ExperimentalConfiguration experimental() {
-            return experimental;
-        }
-
         Optional<Transport> transport() {
             return transport;
         }
@@ -786,19 +757,19 @@ public interface ServerConfiguration extends SocketConfiguration {
 
         @Override
         public Builder timeout(long amount, TimeUnit unit) {
-            this.defaultSocketBuilder.timeout(amount, unit);
+            defaultSocketBuilder().timeout(amount, unit);
             return this;
         }
 
         @Override
         public Builder tls(WebServerTls webServerTls) {
-            this.defaultSocketBuilder.tls(webServerTls);
+            defaultSocketBuilder().tls(webServerTls);
             return this;
         }
 
         @Override
         public Builder enableCompression(boolean value) {
-            this.defaultSocketBuilder.enableCompression(value);
+            defaultSocketBuilder().enableCompression(value);
             return this;
         }
     }

@@ -2,7 +2,7 @@
 <suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
 <!-- For information see https://jeremylong.github.io/DependencyCheck/general/suppression.html -->
 
-<!-- This CVE is against the etcd server. We ship a Java client
+<!-- This CVE is against the etcd server. We use the Java client
 -->
 <suppress>
    <notes><![CDATA[
@@ -161,6 +161,19 @@
    <cve>CVE-2021-34371</cve>
 </suppress>
 
+<!-- Neo4j driver bundles some netty components. This CVE "only impacts applications
+     running on Java version 6". We require Java 11 or newer.
+     Helidon's Netty version has already been upgraded to 4.1.77.Final (or newer) which does
+     not contain this CVE.
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: neo4j-java-driver-4.4.3.jar (shaded: io.netty:netty-transport:4.1.73.Final)
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/io\.netty/netty\-.*@4.1.73.Final$</packageUrl>
+   <cve>CVE-2022-24823</cve>
+</suppress>
+
 <!-- These files are being detected as an old version of Netty and raises false positives for
      a number of old Netty CVEs.
 -->
@@ -171,5 +184,83 @@
    <packageUrl regex="true">^pkg:maven/io\.netty\.incubator/netty\-incubator\-transport\-native\-io_uring@.*$</packageUrl>
    <cpe>cpe:/a:netty:netty</cpe>
 </suppress>
+
+<!-- This package was being detected as an old version of com.google.code.gson:gson. The version 
+     of com.google.cod.gson:gson that is brought in transitively is 2.8.9 which does not 
+     contain this CVE.
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: google-http-client-gson-1.41.8.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/com\.google\.http\-client/google\-http\-client\-gson@.*$</packageUrl>
+   <cve>CVE-2022-25647</cve>
+</suppress>
+
+<!-- False positive. This CVE is against Go-Yaml, a project we do not use.
+     Scanner mistakenly identifies Helidon's Yaml support as Go-Yaml v3.
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: io.helidon.config:helidon-config-yaml-mp:3.0.0-SNAPSHOT
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/io\.helidon\.config/helidon\-config\-yaml\-mp@.*$</packageUrl>
+   <cve>CVE-2022-28948</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: io.helidon.config:helidon-config-yaml:3.0.0-SNAPSHOT
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/io\.helidon\.config/helidon\-config\-yaml@.*$</packageUrl>
+   <cve>CVE-2022-28948</cve>
+</suppress>
+
+<!-- False positive. This CVE was against an older version of H2. See
+     https://github.com/jeremylong/DependencyCheck/issues/4555
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: h2-2.0.206.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/com\.h2database/h2@.*$</packageUrl>
+   <vulnerabilityName>CVE-2018-14335</vulnerabilityName>
+</suppress>
+
+<!-- This CVE is against micronaut's Content Type header parsing. We never use micronaut classes
+     to parse the Content Type header. So this is N/A in our use of micronaut (for micronaut data).
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: micronaut-core-3.1.3.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/io\.micronaut/micronaut\-core@.*$</packageUrl>
+   <vulnerabilityName>CVE-2022-21700</vulnerabilityName>
+</suppress>
+
+<!-- okhttp is a transitive fourth party dependency of Jaeger client. This CVE is considered
+     by the okhttp team as not exploitable unless the class in question is used
+     directly by an application (highly unlikely). See https://github.com/square/okhttp/issues/6724
+     They have only fixed this in 4.9.3 and newer. We can't force upgrade due to a tangle of
+     dependencies, compatibility, and issues with dependency convergence.
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: okhttp-3.14.9.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/com\.squareup\.okhttp3/okhttp@.*$</packageUrl>
+   <vulnerabilityName>CVE-2021-0341</vulnerabilityName>
+</suppress>
+
+<!-- False Positive. This CVE is for an AWS patch mechanism for log4j, not log4j itself
+     See  https://github.com/jeremylong/DependencyCheck/issues/4637
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: log4j-api-2.17.1.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.apache\.logging\.log4j/log4j\-api@.*$</packageUrl>
+   <cve>CVE-2022-33915</cve>
+</suppress>
+
 
 </suppressions>

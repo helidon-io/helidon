@@ -89,7 +89,7 @@ import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
  * </tr>
  * <tr>
  *     <td>frontend-uri</td>
- *     <td>Fully URI of the frontend for redirects back from OIDC server (e.g. http://myserver/myApp)</td>
+ *     <td>Full URI of the frontend for redirects back from OIDC server (e.g. http://myserver/myApp)</td>
  * </tr>
  * </table>
  *
@@ -184,7 +184,7 @@ import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
  * </tr>
  * <tr>
  *     <td>header-use</td>
- *     <td>false</td>
+ *     <td>true</td>
  *     <td>Whether to expect JWT in a header field.</td>
  * </tr>
  * <tr>
@@ -241,7 +241,7 @@ import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
  * </tr>
  * <tr>
  *     <td>redirect</td>
- *     <td>true</td>
+ *     <td>false</td>
  *     <td>Whether to redirect to identity server when authentication failed.</td>
  * </tr>
  * <tr>
@@ -329,11 +329,11 @@ public final class OidcConfig {
     static final boolean DEFAULT_COOKIE_USE = true;
     static final String DEFAULT_PARAM_NAME = "accessToken";
     static final boolean DEFAULT_PARAM_USE = false;
-    static final boolean DEFAULT_HEADER_USE = false;
+    static final boolean DEFAULT_HEADER_USE = true;
     static final String DEFAULT_PROXY_PROTOCOL = "http";
     static final String DEFAULT_BASE_SCOPES = "openid";
     static final boolean DEFAULT_JWT_VALIDATE_JWK = true;
-    static final boolean DEFAULT_REDIRECT = true;
+    static final boolean DEFAULT_REDIRECT = false;
     static final String DEFAULT_REALM = "helidon";
     static final String DEFAULT_ATTEMPT_PARAM = "h_ra";
     static final int DEFAULT_MAX_REDIRECTS = 5;
@@ -1288,11 +1288,8 @@ public final class OidcConfig {
             // OIDC server configuration
             config.get("base-scopes").asString().ifPresent(this::baseScopes);
             config.get("oidc-metadata.resource").as(Resource::create).ifPresent(this::oidcMetadata);
-            // backward compatibility
-            Resource.create(config, "oidc-metadata").ifPresent(this::oidcMetadata);
             config.get("oidc-metadata-well-known").asBoolean().ifPresent(this::oidcMetadataWellKnown);
             config.get("sign-jwk.resource").as(Resource::create).ifPresent(this::signJwk);
-            Resource.create(config, "sign-jwk").ifPresent(this::signJwk);
             config.get("token-endpoint-uri").as(URI.class).ifPresent(this::tokenEndpointUri);
             config.get("token-endpoint-auth").asString()
                     .map(String::toUpperCase)
@@ -1325,8 +1322,8 @@ public final class OidcConfig {
         }
 
         /**
-         * Name of the encryption configuration available through {@link Security#encrypt(String, byte[])} and
-         * {@link Security#decrypt(String, String)}.
+         * Name of the encryption configuration available through {@link io.helidon.security.Security#encrypt(String, byte[])} and
+         * {@link io.helidon.security.Security#decrypt(String, String)}.
          * If configured and encryption is enabled for any cookie,
          * Security MUST be configured in global or current {@code io.helidon.common.context.Context} (this
          * is done automatically in Helidon MP).
@@ -1415,7 +1412,7 @@ public final class OidcConfig {
          *                 authenticate the user, defaults to true
          * @return updated builder instance
          */
-        @ConfiguredOption("true")
+        @ConfiguredOption("false")
         public Builder redirect(boolean redirect) {
             this.redirect = redirect;
             return this;
@@ -1583,7 +1580,7 @@ public final class OidcConfig {
          * @param useHeader set to true to use a header extracted with {@link #headerTokenHandler(TokenHandler)}
          * @return updated builder instance
          */
-        @ConfiguredOption(key = "header-use", value = "false")
+        @ConfiguredOption(key = "header-use", value = "true")
         public Builder useHeader(Boolean useHeader) {
             this.useHeader = useHeader;
             return this;

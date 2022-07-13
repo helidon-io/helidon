@@ -1,0 +1,10 @@
+{
+  "string": "String",
+  "number": 175,
+  "array": [
+    "One",
+    "Two",
+    "Three"
+  ],
+  "boolean": true
+}

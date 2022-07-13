@@ -30,30 +30,10 @@
     <name>Helidon Integration Tests GraalVM Native image SE1</name>
 
     <description>
-        This test makes sure the following helidon modules can be compiled into native image:
-        WebServer
-            JSON-P
-            Classpath static content
-            File static content
-            Tyrus(web sockets)
-        Config (with change support)
-            File watch
-            Classpath
-            YAML
-        Tracing
-            Zipkin
-        Health check
-            Health checks
-            Custom
-        Metrics
-            Vendor
-            Base
-            Custom
-        Security
-            Webserver integration
-            ABAC (verified through roles)
-            HTTP Basic authentication
-            HTTP Signatures
+        This test makes sure the following helidon modules can be compiled into native image: WebServer JSON-P Classpath static
+        content File static content Tyrus(web sockets) Config (with change support) File watch Classpath YAML Tracing Zipkin
+        Health check Health checks Custom Metrics Vendor Base Custom Security Webserver integration ABAC (verified through roles)
+        HTTP Basic authentication HTTP Signatures
     </description>
 
     <properties>
@@ -71,7 +51,7 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.webserver</groupId>
-            <artifactId>helidon-webserver-tyrus</artifactId>
+            <artifactId>helidon-webserver-websocket</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.media</groupId>

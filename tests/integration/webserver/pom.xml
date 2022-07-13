@@ -36,5 +36,6 @@
 
     <modules>
         <module>gh2631</module>
+        <module>upgrade</module>
     </modules>
 </project>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -212,7 +212,8 @@ public class GrpcServerCdiExtensionTest {
 
         @Override
         public void update(ServiceDescriptor.Rules rules) {
-            rules.unary("unary", this::unary);
+            rules.marshallerSupplier(new JavaMarshaller.Supplier())
+                    .unary("unary", this::unary);
         }
 
         void unary(String request, StreamObserver<String> observer) {

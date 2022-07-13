@@ -21,8 +21,8 @@ import java.util.Map;
 
 import io.helidon.config.Config;
 import io.helidon.tracing.Tag;
-import io.helidon.tracing.TracerBuilder;
-import io.helidon.tracing.spi.TracerProvider;
+import io.helidon.tracing.opentracing.OpenTracingTracerBuilder;
+import io.helidon.tracing.opentracing.spi.OpenTracingProvider;
 
 import io.opentracing.Scope;
 import io.opentracing.ScopeManager;
@@ -30,19 +30,21 @@ import io.opentracing.Span;
 import io.opentracing.SpanContext;
 import io.opentracing.Tracer;
 import io.opentracing.propagation.Format;
-import io.opentracing.propagation.TextMapAdapter;
+import io.opentracing.propagation.TextMap;
 import io.opentracing.util.GlobalTracer;
 
 /**
  * Testing tracer provider.
  */
-public class TestTracerProvider implements TracerProvider {
+public class TestTracerProvider implements OpenTracingProvider {
     @Override
-    public TracerBuilder<?> createBuilder() {
+    public TestTracerBuilder createBuilder() {
         return new TestTracerBuilder();
     }
 
-    static class TestTracerBuilder implements TracerBuilder<TestTracerBuilder> {
+
+
+    static class TestTracerBuilder implements OpenTracingTracerBuilder<TestTracerBuilder> {
         @Override
         public TestTracerBuilder serviceName(String name) {
             return this;
@@ -101,8 +103,21 @@ public class TestTracerProvider implements TracerProvider {
         @Override
         public Tracer build() {
             Tracer tracer = new TestTracer();
-            GlobalTracer.register(tracer);
+            GlobalTracer.registerIfAbsent(tracer);
             return tracer;
+        }
+
+        @Override
+        public boolean enabled() {
+            return true;
+        }
+
+        @Override
+        public <B> B unwrap(Class<B> builderClass) {
+            if (builderClass.isAssignableFrom(getClass())) {
+                return builderClass.cast(this);
+            }
+            throw new IllegalArgumentException("Not possible");
         }
     }
 
@@ -159,8 +174,8 @@ public class TestTracerProvider implements TracerProvider {
         public <C> void inject(SpanContext spanContext, Format<C> format, C carrier) {
             TestSpan span = ((TestSpanContext) spanContext).testSpan;
 
-            TextMapAdapter adapter = (TextMapAdapter) carrier;
-            adapter.put(OPERATION_NAME_HEADER, span.operationName);
+            TextMap textMap = (TextMap) carrier;
+            textMap.put(OPERATION_NAME_HEADER, span.operationName);
         }
 
         @Override

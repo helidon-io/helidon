@@ -1,0 +1,206 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= MicroProfile GraphQL
+:description: Helidon GraphQL MicroProfile
+:keywords: helidon, graphql, microprofile, micro-profile
+:feature-name: MicroProfile GraphQL
+:rootdir: {docdir}/..
+:microprofile-bundle: false
+
+include::{rootdir}/includes/mp.adoc[]
+
+== ToC
+
+- <<Overview, Overview>>
+- <<Maven Coordinates, Maven Coordinates>>
+- <<API, API>>
+- <<Configuration, Configuration>>
+- <<Examples, Examples>>
+- <<Additional Information, Additional Information>>
+- <<Reference, Reference>>
+
+== Overview
+
+Helidon MP implements the
+link:{microprofile-graphql-spec-url}[MicroProfile GraphQL specification].
+This specifcation describes how applications can be built to expose an endpoint for GraphQL.
+GraphQL is an open-source data query and manipulation language for APIs,
+and a runtime for fulfilling data queries.
+It provides an alternative to, though not necessarily a replacement for, REST.
+
+
+include::{rootdir}/includes/dependencies.adoc[]
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.microprofile.graphql</groupId>
+    <artifactId>helidon-microprofile-graphql-server</artifactId>
+</dependency>
+----
+
+== API
+
+The MicroProfile GraphQL specification defines a number of key annotations to be used when writing a GraphQL endpoint:
+
+* `@GraphQLApi` - identifies a CDI Bean as a GraphQL endpoint
+* `@Query` - identifies a method as returning one or more entities
+* `@Mutation` - identifies a method which creates, deletes or updates entities
+
+For example, the following defines a GraphQL endpoint with a number of queries and mutations that work
+against a fictional `CustomerService` service and `Customer` class.
+
+[source,java]
+.Simple ContactGraphQLApi
+----
+@ApplicationScoped
+@GraphQLApi
+public class ContactGraphQLApi {
+
+    @Inject
+    private CustomerService customerService;
+
+    @Query
+    public Collection<Customer> findAllCustomers() {  <1>
+        return customerService.getAllCustomers();
+    }
+
+    @Query
+    public Customer findCustomer(@Name("customerId") int id) {  <2>
+        return customerService.getCustomer(id);
+    }
+
+    @Query
+    public Collection<Customer> findCustomersByName(@Name("name") String name) {  <3>
+        return customerService.getAllCustomers(name);
+    }
+
+    @Mutation
+    public Contact createCustomer(@Name("customerId") int id,  <4>
+                                  @Name("name") String name,
+                                  @Name("balance") float balance) {
+        return customerService.createCustomer(id, name, balance);
+    }
+}
+
+public class customer {
+    private int id;
+    @NonNull
+    private String name;
+    private float balance;
+
+    // getters and setters omitted for brevity
+}
+----
+
+<1> a query with no-arguments that will return all `Customer` s
+<2> a query that takes an argument to return a specific `Customer`
+<3> a query that optionally takes a name and returns a collection of `Customer` s
+<4> a mutation that creates a Customer and returns the newly created `Customer`
+
+The example above would generate a GraphQL schema as shown below:
+[source,graphql]
+.Sample GraphQL schema
+----
+type Query {
+   findAllCustomers: [Customer]
+   findCustomer(customerId: Int!): Customer
+   findCustomersByName(name: String): [Customers]
+}
+
+type Mutation {
+   createCustomer(customerId: Int!, name: String!, balance: Float!): Customer
+}
+
+type Customer {
+   id: Int!
+   name: String!
+   balance: Float
+}
+----
+
+After application startup, a GraphQL schema will be generated from your annotated API classes
+and POJO's and you will be able to access these via the URLs described below.
+
+=== Building your application
+
+As part of building your application, you must create a Jandex index
+using the `jandex-maven-plugin` for all API and POJO classes.
+
+[source,xml]
+.Generate Jandex index
+----
+<plugin>
+    <groupId>org.jboss.jandex</groupId>
+    <artifactId>jandex-maven-plugin</artifactId>
+    <executions>
+        <execution>
+            <id>make-index</id>
+        </execution>
+    </executions>
+</plugin>
+----
+
+NOTE: As per the instructions xref:introduction/microprofile.adoc[here] ensure you have added a
+`src/main/resources/META-INF/beans.xml` file, so the CDI implementation can pick up your classes.
+
+=== Accessing the GraphQL endpoints
+
+After starting your application you should see a log message indicating that GraphQL
+is in the list of features. You can access the GraphQL endpoint at `http://host:port/graphql`, and
+the corresponding schema at `http://host:port/graphql/schema.graphql`. See <<Configuration>> for
+additional information on how to change the location of these resources.
+
+If you wish to use the
+link:https://github.com/graphql/graphiql[GraphQL UI] then please see the
+link:{helidon-github-tree-url}/master/examples/microprofile/graphql[GraphQL MP Example].
+
+== Configuration
+
+The specification defines the following configuration options:
+
+[cols="2,2,5"]
+
+|===
+|key |default value |description
+
+|`mp.graphql.defaultErrorMessage` |`Server Error` |Error message to send to caller in case of error
+|`mp.graphql.exceptionsBlackList` |{nbsp} |Array of checked exception classes that should return default error message
+|`mp.graphql.exceptionsWhiteList` |{nbsp} |Array of unchecked exception classes that should return message to caller (instead of default error message)
+
+|===
+
+These configuration options are more significant that the configuration options
+that can be used to configure GraphQL invocation (see below).
+
+include::{rootdir}/includes/graphql.adoc[]
+
+== Examples
+
+For a complete example, see
+link:{helidon-github-tree-url}/master/examples/microprofile/graphql[GraphQL MP Example].
+
+== Additional Information
+
+ * link:http://graphql.org[GraphQL].
+
+== Reference
+
+ * link:{microprofile-graphql-javadoc-url}[MicroProfile GraphQL Javadocs].
+

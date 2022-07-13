@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,8 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import io.helidon.config.Config;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 
 import io.smallrye.openapi.api.OpenApiConfig;
 
@@ -178,6 +180,7 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
      * <tr><td>{@value SERVERS_OPERATION}</td></tr>
      * </table>
      */
+    @Configured()
     public static final class Builder implements io.helidon.common.Builder<Builder, OpenApiConfig> {
 
         /**
@@ -242,35 +245,44 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
         }
 
         /**
-         * Sets the developer-provided OpenAPI model reader.
+         * Sets the developer-provided OpenAPI model reader class name.
          *
-         * @param modelReader model reader
+         * @param modelReader model reader class name
          * @return updated builder
          */
+        @ConfiguredOption(key = MODEL_READER)
         public Builder modelReader(String modelReader) {
             this.modelReader = modelReader;
             return this;
         }
 
         /**
-         * Sets the developer-provided OpenAPI filter.
+         * Sets the developer-provided OpenAPI filter class name.
          *
-         * @param filter filter object
+         * @param filter filter class name
          * @return updated builder
          */
+        @ConfiguredOption
         public Builder filter(String filter) {
             this.filter = filter;
             return this;
         }
 
         /**
-         * Sets operation servers.
+         * Sets alternative servers to service the specified operation. Repeat for multiple operations.
          *
          * @param operationID operation ID
          * @param operationServers comma-separated list of servers for the given
          * operation
          * @return updated builder
          */
+        @ConfiguredOption(key = SERVERS_OPERATION + ".*",
+                          kind = ConfiguredOption.Kind.LIST,
+                          description = """
+                                  Sets alternative servers to service the indicated operation \
+                                  (represented here by '*'). \
+                                  Repeat for multiple operations.""",
+                          type = String.class)
         public Builder operationServers(String operationID, String operationServers) {
             this.operationServers.clear();
             setEntry(this.operationServers, operationID, operationServers);
@@ -278,7 +290,7 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
         }
 
         /**
-         * Adds an operation server.
+         * Adds an alternative server to service the specified operation.
          *
          * @param operationID operation ID for the server being added
          * @param operationServer the server being added
@@ -290,19 +302,26 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
         }
 
         /**
-         * Sets path servers.
+         * Sets alternative servers to service all operations in the specified path. Repeat for multiple paths.
          *
          * @param path path for the servers being set
          * @param pathServers comma-list of servers for the given path
          * @return updated builder
          */
+        @ConfiguredOption(key = SERVERS_PATH + ".*",
+                          kind = ConfiguredOption.Kind.LIST,
+                          description = """
+                                  Sets alternative servers to service all operations at the indicated path \
+                                  (represented here by '*'). \
+                                  Repeat for multiple paths.""",
+                          type = String.class)
         public Builder pathServers(String path, String pathServers) {
             setEntry(this.pathServers, path, pathServers);
             return this;
         }
 
         /**
-         * Adds a path server.
+         * Adds an alternative server for all operations in the specified path.
          *
          * @param path path for the server being added
          * @param pathServer the server being added
@@ -319,6 +338,7 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
          * @param servers comma-list of servers
          * @return updated builder
          */
+        @ConfiguredOption(kind = ConfiguredOption.Kind.LIST)
         public Builder servers(String servers) {
             this.servers.clear();
             this.servers.addAll(commaListToSet(servers));
@@ -337,11 +357,18 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
         }
 
         /**
-         * Sets schemas.
+         * Sets schemas for one or more classes referenced in the OpenAPI model.
          *
          * @param schemas map of FQ class name to JSON string depicting the schema
          * @return updated builder
          */
+        @ConfiguredOption(key = SCHEMA + ".*",
+                          description = """
+                                   Sets the schema for the indicated fully-qualified class name (represented here by '*'); \
+                                   value is the schema in JSON format. \
+                                   Repeat for multiple classes. \
+                                   """,
+                          type = String.class)
         public Builder schemas(Map<String, String> schemas) {
             this.schemas = new HashMap<>(schemas);
             return this;
@@ -376,6 +403,7 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
          * @param className class to be assigned
          * @return updated builder
          */
+        @ConfiguredOption
         public Builder customSchemaRegistryClass(String className) {
             customSchemaRegistryClass = className;
             return this;
@@ -387,6 +415,7 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
          * @param value true/false
          * @return updated builder
          */
+        @ConfiguredOption("false")
         public Builder applicationPathDisable(Boolean value) {
             applicationPathDisable = value;
             return this;

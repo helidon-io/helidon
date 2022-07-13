@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,77 +32,19 @@ import java.util.stream.Stream;
 
 import jakarta.enterprise.inject.spi.Annotated;
 import jakarta.enterprise.inject.spi.AnnotatedMember;
-import jakarta.enterprise.inject.spi.AnnotatedMethod;
 import jakarta.enterprise.inject.spi.AnnotatedType;
-import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.Tag;
-import org.eclipse.microprofile.metrics.annotation.ConcurrentGauge;
-import org.eclipse.microprofile.metrics.annotation.Counted;
-import org.eclipse.microprofile.metrics.annotation.Metered;
-import org.eclipse.microprofile.metrics.annotation.SimplyTimed;
-import org.eclipse.microprofile.metrics.annotation.Timed;
 
 /**
  * Class MetricUtil.
  */
-public final class MetricUtil {
+final class MetricUtil {
     private static final Logger LOGGER = Logger.getLogger(MetricUtil.class.getName());
 
     private MetricUtil() {
     }
 
-    /**
-     * DO NOT USE THIS METHOD please, it will be removed.
-     * <p>
-     *     Instead, see {@link MatchingType}.
-     * </p>
-     *
-     * @param element element
-     * @param annotClass annotation class
-     * @param clazz class
-     * @param <E> element type
-     * @param <A> annotation type
-     * @return lookup result
-     * @deprecated This method is made public to migrate from metrics1 to metrics2 for gRPC, this should be refactored.
-     *      This method will be removed outside of major version of Helidon.
-     */
-    @SuppressWarnings("unchecked")
-    @Deprecated
-    public static <E extends Member & AnnotatedElement, A extends Annotation>
-    LookupResult<A> lookupAnnotation(E element, Class<? extends Annotation> annotClass, Class<?> clazz) {
-        // First check annotation on element
-        A annotation = (A) element.getAnnotation(annotClass);
-        if (annotation != null) {
-            return new LookupResult<>(MatchingType.METHOD, annotation);
-        }
-        // Finally check annotations on class
-        annotation = (A) element.getDeclaringClass().getAnnotation(annotClass);
-        if (annotation == null) {
-            annotation = (A) clazz.getAnnotation(annotClass);
-        }
-        return annotation == null ? null : new LookupResult<>(MatchingType.CLASS, annotation);
-    }
-
-    @Deprecated
-    static <A extends Annotation> LookupResult<A> lookupAnnotation(
-            AnnotatedType<?> annotatedType,
-            AnnotatedMethod<?> annotatedMethod,
-            Class<A> annotClass) {
-        A annotation = annotatedMethod.getAnnotation(annotClass);
-        if (annotation != null) {
-            return new LookupResult<>(matchingType(annotatedMethod), annotation);
-        }
-
-        annotation = annotatedType.getAnnotation(annotClass);
-        if (annotation == null) {
-            annotation = annotatedType.getJavaClass().getAnnotation(annotClass);
-        }
-        return annotation == null ? null : new LookupResult<>(MatchingType.CLASS, annotation);
-    }
-
-    @Deprecated
     static <A extends Annotation> List<LookupResult<A>> lookupAnnotations(
             AnnotatedType<?> annotatedType,
             AnnotatedMember<?> annotatedMember,
@@ -165,8 +107,7 @@ public final class MetricUtil {
      *
      * @return name of the metric
      */
-    @Deprecated
-    public static <E extends Member & AnnotatedElement>
+    static <E extends Member & AnnotatedElement>
     String getMetricName(Member element, Class<?> clazz, MatchingType matchingType, String explicitName, boolean absolute) {
         String result;
         if (matchingType == MatchingType.METHOD) {
@@ -204,182 +145,6 @@ public final class MetricUtil {
         return result;
     }
 
-    /**
-     * Register a metric.
-     *
-     * @param registry the metric registry in which to register the metric
-     * @param element the annotated element
-     * @param clazz the annotated class
-     * @param annotation the annotation to register
-     * @param type the {@link MatchingType} indicating the type of annotated element
-     * @param <E> the annotated element type
-     */
-    @Deprecated
-    public static <E extends Member & AnnotatedElement>
-    void registerMetric(MetricRegistry registry, E element, Class<?> clazz, Annotation annotation, MatchingType type) {
-
-        if (annotation instanceof Counted) {
-            Counted counted = (Counted) annotation;
-            String metricName = getMetricName(element, clazz, type, counted.name().trim(), counted.absolute());
-            String displayName = counted.displayName().trim();
-            Metadata meta = Metadata.builder()
-                    .withName(metricName)
-                    .withDisplayName(displayName.isEmpty() ? metricName : displayName)
-                    .withDescription(counted.description().trim())
-                    .withType(MetricType.COUNTER)
-                    .withUnit(counted.unit().trim())
-                    .build();
-            registry.counter(meta, tags(counted.tags()));
-            LOGGER.fine(() -> "### Registered counter " + metricName);
-        } else if (annotation instanceof Metered) {
-            Metered metered = (Metered) annotation;
-            String metricName = getMetricName(element, clazz, type, metered.name().trim(), metered.absolute());
-            String displayName = metered.displayName().trim();
-            Metadata meta = Metadata.builder()
-                    .withName(metricName)
-                    .withDisplayName(displayName.isEmpty() ? metricName : displayName)
-                    .withDescription(metered.description().trim())
-                    .withType(MetricType.METERED)
-                    .withUnit(metered.unit().trim())
-                    .build();
-            registry.meter(meta, tags(metered.tags()));
-            LOGGER.fine(() -> "### Registered meter " + metricName);
-        } else if (annotation instanceof ConcurrentGauge) {
-            ConcurrentGauge concurrentGauge = (ConcurrentGauge) annotation;
-            String metricName = getMetricName(element, clazz, type, concurrentGauge.name().trim(),
-                    concurrentGauge.absolute());
-            String displayName = concurrentGauge.displayName().trim();
-            Metadata meta = Metadata.builder()
-                    .withName(metricName)
-                    .withDisplayName(displayName.isEmpty() ? metricName : displayName)
-                    .withDescription(concurrentGauge.description().trim())
-                    .withType(MetricType.METERED)
-                    .withUnit(concurrentGauge.unit().trim()).build();
-            registry.concurrentGauge(meta, tags(concurrentGauge.tags()));
-            LOGGER.fine(() -> "### Registered ConcurrentGauge " + metricName);
-        } else if (annotation instanceof Timed) {
-            Timed timed = (Timed) annotation;
-            String metricName = getMetricName(element, clazz, type, timed.name().trim(), timed.absolute());
-            String displayName = timed.displayName().trim();
-            Metadata meta = Metadata.builder()
-                    .withName(metricName)
-                    .withDisplayName(displayName.isEmpty() ? metricName : displayName)
-                    .withDescription(timed.description().trim())
-                    .withType(MetricType.TIMER)
-                    .withUnit(timed.unit().trim())
-                    .build();
-            registry.timer(meta, tags(timed.tags()));
-            LOGGER.fine(() -> "### Registered timer " + metricName);
-        } else if (annotation instanceof SimplyTimed) {
-            SimplyTimed simplyTimed = (SimplyTimed) annotation;
-            String metricName = getMetricName(element, clazz, type, simplyTimed.name().trim(), simplyTimed.absolute());
-            String displayName = simplyTimed.displayName().trim();
-            Metadata meta = Metadata.builder()
-                    .withName(metricName)
-                    .withDisplayName(displayName.isEmpty() ? metricName : displayName)
-                    .withDescription(simplyTimed.description().trim())
-                    .withType(MetricType.SIMPLE_TIMER)
-                    .withUnit(simplyTimed.unit().trim())
-                    .build();
-            registry.simpleTimer(meta, tags(simplyTimed.tags()));
-            LOGGER.fine(() -> "### Registered simple timer " + metricName);
-        }
-    }
-
-    /**
-     * Register a metric.
-     *
-     * @param element the annotated element
-     * @param clazz the annotated class
-     * @param lookupResult the annotation lookup result
-     * @param <E> the annotated element type
-     */
-    public static <E extends Member & AnnotatedElement>
-    void registerMetric(E element, Class<?> clazz, LookupResult<? extends Annotation> lookupResult) {
-        registerMetric(element, clazz, lookupResult.getAnnotation(), lookupResult.getType());
-    }
-
-    /**
-     * Register a metric.
-     *
-     * @param element the annotated element
-     * @param clazz the annotated class
-     * @param annotation the annotation to register
-     * @param type the {@link MatchingType} indicating the type of annotated element
-     * @param <E> the annotated element type
-     */
-    public static <E extends Member & AnnotatedElement>
-    void registerMetric(E element, Class<?> clazz, Annotation annotation, MatchingType type) {
-        MetricRegistry registry = getMetricRegistry();
-
-        if (annotation instanceof Counted) {
-            Counted counted = (Counted) annotation;
-            String metricName = getMetricName(element, clazz, type, counted.name().trim(), counted.absolute());
-            String displayName = counted.displayName().trim();
-            Metadata meta = Metadata.builder()
-                    .withName(metricName)
-                    .withDisplayName(displayName.isEmpty() ? metricName : displayName)
-                    .withDescription(counted.description().trim())
-                    .withType(MetricType.COUNTER)
-                    .withUnit(counted.unit().trim())
-                    .build();
-            registry.counter(meta);
-            LOGGER.fine(() -> "### Registered counter " + metricName);
-        } else if (annotation instanceof Metered) {
-            Metered metered = (Metered) annotation;
-            String metricName = getMetricName(element, clazz, type, metered.name().trim(), metered.absolute());
-            String displayName = metered.displayName().trim();
-            Metadata meta = Metadata.builder()
-                    .withName(metricName)
-                    .withDisplayName(displayName.isEmpty() ? metricName : displayName)
-                    .withDescription(metered.description().trim())
-                    .withType(MetricType.METERED)
-                    .withUnit(metered.unit().trim())
-                    .build();
-            registry.meter(meta);
-            LOGGER.fine(() -> "### Registered meter " + metricName);
-        } else if (annotation instanceof ConcurrentGauge) {
-            ConcurrentGauge concurrentGauge = (ConcurrentGauge) annotation;
-            String metricName = getMetricName(element, clazz, type, concurrentGauge.name().trim(),
-                    concurrentGauge.absolute());
-            String displayName = concurrentGauge.displayName().trim();
-            Metadata meta = Metadata.builder()
-                    .withName(metricName)
-                    .withDisplayName(displayName.isEmpty() ? metricName : displayName)
-                    .withDescription(concurrentGauge.description().trim())
-                    .withType(MetricType.METERED)
-                    .withUnit(concurrentGauge.unit().trim()).build();
-            registry.concurrentGauge(meta);
-            LOGGER.fine(() -> "### Registered ConcurrentGauge " + metricName);
-        } else if (annotation instanceof Timed) {
-            Timed timed = (Timed) annotation;
-            String metricName = getMetricName(element, clazz, type, timed.name().trim(), timed.absolute());
-            String displayName = timed.displayName().trim();
-            Metadata meta = Metadata.builder()
-                    .withName(metricName)
-                    .withDisplayName(displayName.isEmpty() ? metricName : displayName)
-                    .withDescription(timed.description().trim())
-                    .withType(MetricType.TIMER)
-                    .withUnit(timed.unit().trim())
-                    .build();
-            registry.timer(meta);
-            LOGGER.fine(() -> "### Registered timer " + metricName);
-        } else if (annotation instanceof SimplyTimed) {
-            SimplyTimed simplyTimed = (SimplyTimed) annotation;
-            String metricName = getMetricName(element, clazz, type, simplyTimed.name().trim(), simplyTimed.absolute());
-            String displayName = simplyTimed.displayName().trim();
-            Metadata meta = Metadata.builder()
-                    .withName(metricName)
-                    .withDisplayName(displayName.isEmpty() ? metricName : displayName)
-                    .withDescription(simplyTimed.description().trim())
-                    .withType(MetricType.SIMPLE_TIMER)
-                    .withUnit(simplyTimed.unit().trim())
-                    .build();
-            registry.timer(meta);
-            LOGGER.fine(() -> "### Registered simple timer " + metricName);
-        }
-    }
-
     private static MetricRegistry getMetricRegistry() {
         return RegistryProducer.getDefaultRegistry();
     }
@@ -401,14 +166,7 @@ public final class MetricUtil {
         return result.toArray(new Tag[result.size()]);
     }
 
-    /**
-     * DO NOT USE THIS CLASS please.
-     *
-     * Types of possible matching.
-     * @deprecated This class is made public to migrate from metrics1 to metrics2 for gRPC, this should be refactored
-     */
-    @Deprecated
-    public enum MatchingType {
+    enum MatchingType {
         /**
          * Method.
          */
@@ -426,13 +184,7 @@ public final class MetricUtil {
                 : MatchingType.CLASS;
     }
 
-    /**
-     * DO NOT USE THIS CLASS please.
-     * @param <A> type of annotation
-     * @deprecated This class is made public to migrate from metrics1 to metrics2 for gRPC, this should be refactored
-     */
-    @Deprecated
-    public static class LookupResult<A extends Annotation> {
+    static class LookupResult<A extends Annotation> {
 
         private final MatchingType type;
 
@@ -454,7 +206,7 @@ public final class MetricUtil {
          *
          * @return matching type
          */
-        public MatchingType getType() {
+        MatchingType getType() {
             return type;
         }
 
@@ -463,7 +215,7 @@ public final class MetricUtil {
          *
          * @return the annotation
          */
-        public A getAnnotation() {
+        A getAnnotation() {
             return annotation;
         }
     }

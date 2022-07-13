@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,6 +48,7 @@ import io.helidon.security.integration.common.AtnTracing;
 import io.helidon.security.integration.common.AtzTracing;
 import io.helidon.security.integration.common.SecurityTracing;
 import io.helidon.security.internal.SecurityAuditEvent;
+import io.helidon.tracing.SpanContext;
 
 import io.grpc.Context;
 import io.grpc.Contexts;
@@ -58,7 +59,6 @@ import io.grpc.ServerCall;
 import io.grpc.ServerCallHandler;
 import io.grpc.ServerInterceptor;
 import io.grpc.Status;
-import io.opentracing.SpanContext;
 import jakarta.annotation.Priority;
 
 import static io.helidon.security.AuditEvent.AuditParam.plain;
@@ -613,7 +613,7 @@ public class GrpcSecurityHandler
      * Use a named authenticator (as supported by security - if not defined, default authenticator is used).
      * Will enable authentication.
      *
-     * @param explicitAuthenticator name of authenticator as configured in {@link Security}
+     * @param explicitAuthenticator name of authenticator as configured in {@link io.helidon.security.Security}
      * @return new handler instance with configuration of this instance updated with this method
      */
     public GrpcSecurityHandler authenticator(String explicitAuthenticator) {
@@ -625,7 +625,7 @@ public class GrpcSecurityHandler
      * permitted).
      * Will enable authorization.
      *
-     * @param explicitAuthorizer name of authorizer as configured in {@link Security}
+     * @param explicitAuthorizer name of authorizer as configured in {@link io.helidon.security.Security}
      * @return new handler instance with configuration of this instance updated with this method
      */
     public GrpcSecurityHandler authorizer(String explicitAuthorizer) {
@@ -931,7 +931,7 @@ public class GrpcSecurityHandler
         /**
          * Use a named authenticator (as supported by security - if not defined, default authenticator is used).
          *
-         * @param explicitAuthenticator name of authenticator as configured in {@link Security}
+         * @param explicitAuthenticator name of authenticator as configured in {@link io.helidon.security.Security}
          * @return updated builder instance
          */
         Builder authenticator(String explicitAuthenticator) {
@@ -943,7 +943,7 @@ public class GrpcSecurityHandler
          * Use a named authorizer (as supported by security - if not defined, default authorizer is used, if none defined, all is
          * permitted).
          *
-         * @param explicitAuthorizer name of authorizer as configured in {@link Security}
+         * @param explicitAuthorizer name of authorizer as configured in {@link io.helidon.security.Security}
          * @return updated builder instance
          */
         Builder authorizer(String explicitAuthorizer) {

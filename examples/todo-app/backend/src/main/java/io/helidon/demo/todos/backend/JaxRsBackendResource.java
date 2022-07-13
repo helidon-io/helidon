@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import io.helidon.security.Subject;
 import io.helidon.security.annotations.Authenticated;
 import io.helidon.security.annotations.Authorized;
 
-import io.opentracing.Span;
+import io.opentracing.Tracer;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.json.Json;
@@ -44,6 +44,7 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.eclipse.microprofile.opentracing.Traced;
 
 /**
  * The TODO backend REST service.
@@ -60,14 +61,17 @@ public class JaxRsBackendResource {
      * The database service facade.
      */
     private final DbService backendService;
+    private final Tracer tracer;
 
     /**
      * Create new {@code JaxRsBackendResource} instance.
      * @param dbs the database service facade to use
+     * @param tracer tracer to use
      */
     @Inject
-    public JaxRsBackendResource(final DbService dbs) {
+    public JaxRsBackendResource(DbService dbs, Tracer tracer) {
         this.backendService = dbs;
+        this.tracer = tracer;
     }
 
     /**
@@ -79,20 +83,16 @@ public class JaxRsBackendResource {
      */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
+    @Traced(operationName = "jaxrs:list")
     public Response list(@Context final SecurityContext context,
                          @Context final HttpHeaders headers) {
 
-        Span span = context.tracer().buildSpan("jaxrs:list")
-                .asChildOf(context.tracingSpan())
-                .start();
-
         JsonArrayBuilder builder = JSON.createArrayBuilder();
-        backendService.list(context.tracingSpan(), getUserId(context))
+        backendService.list(tracer.activeSpan().context(), getUserId(context))
                       .forEach(data -> builder.add(data.forRest()));
 
         Response response = Response.ok(builder.build()).build();
 
-        span.finish();
         return response;
     }
 
@@ -109,7 +109,7 @@ public class JaxRsBackendResource {
                         @Context final SecurityContext context) {
 
         return backendService
-                .get(context.tracingSpan(), id, getUserId(context))
+                .get(tracer.activeSpan().context(), id, getUserId(context))
                 .map(Todo::forRest)
                 .map(Response::ok)
                 .orElse(Response.status(Response.Status.NOT_FOUND))
@@ -129,7 +129,7 @@ public class JaxRsBackendResource {
                            @Context final SecurityContext context) {
 
         return backendService
-                .delete(context.tracingSpan(), id, getUserId(context))
+                .delete(tracer.activeSpan().context(), id, getUserId(context))
                 .map(Todo::forRest)
                 .map(Response::ok)
                 .orElse(Response.status(Response.Status.NOT_FOUND))
@@ -152,7 +152,7 @@ public class JaxRsBackendResource {
         String userId = getUserId(context);
         Todo newBackend = Todo.newTodoFromRest(jsonObject, userId, newId);
 
-        backendService.insert(context.tracingSpan(), newBackend);
+        backendService.insert(tracer.activeSpan().context(), newBackend);
 
         return Response.ok(newBackend.forRest()).build();
     }
@@ -173,7 +173,7 @@ public class JaxRsBackendResource {
                            final @Context SecurityContext context) {
 
         return backendService
-                .update(context.tracingSpan(),
+                .update(tracer.activeSpan().context(),
                         Todo.fromRest(jsonObject, getUserId(context), id))
                 .map(Todo::forRest)
                 .map(Response::ok)

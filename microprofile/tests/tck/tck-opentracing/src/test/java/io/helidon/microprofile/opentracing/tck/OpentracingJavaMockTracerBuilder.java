@@ -19,17 +19,17 @@ package io.helidon.microprofile.opentracing.tck;
 import java.net.URI;
 
 import io.helidon.config.Config;
-import io.helidon.tracing.TracerBuilder;
+import io.helidon.tracing.opentracing.OpenTracingTracerBuilder;
 
 import io.opentracing.Tracer;
 import io.opentracing.mock.MockTracer;
 
-public final class OpentracingJavaMockTracerBuilder implements TracerBuilder<OpentracingJavaMockTracerBuilder> {
+public final class OpentracingJavaMockTracerBuilder implements OpenTracingTracerBuilder<OpentracingJavaMockTracerBuilder> {
 
     private OpentracingJavaMockTracerBuilder() {
     }
 
-    public static TracerBuilder<OpentracingJavaMockTracerBuilder> create() {
+    public static OpentracingJavaMockTracerBuilder create() {
         return new OpentracingJavaMockTracerBuilder();
     }
 
@@ -101,5 +101,18 @@ public final class OpentracingJavaMockTracerBuilder implements TracerBuilder<Ope
     @Override
     public Tracer build() {
         return new MockTracer();
+    }
+
+    @Override
+    public boolean enabled() {
+        return true;
+    }
+
+    @Override
+    public <B> B unwrap(Class<B> builderClass) {
+        if (builderClass.isAssignableFrom(getClass())) {
+            return builderClass.cast(this);
+        }
+        throw new IllegalArgumentException("Not correct type: " + builderClass.getName());
     }
 }

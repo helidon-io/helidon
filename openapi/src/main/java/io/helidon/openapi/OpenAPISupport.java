@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.logging.Level;
@@ -43,6 +45,8 @@ import java.util.stream.Collectors;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.config.Config;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.media.common.MessageBodyReaderContext;
 import io.helidon.media.common.MessageBodyWriterContext;
 import io.helidon.media.jsonp.JsonpSupport;
@@ -140,6 +144,8 @@ public abstract class OpenAPISupport implements Service {
      */
     private static SnakeYAMLParserHelper<ExpandedTypeDescription> helper = null;
 
+    private static final Lock HELPER_ACCESS = new ReentrantLock(true);
+
     private final String webContext;
 
     private OpenAPI model = null;
@@ -155,6 +161,8 @@ public abstract class OpenAPISupport implements Service {
     private final OpenApiConfig openApiConfig;
     private final OpenApiStaticFile openApiStaticFile;
     private final Supplier<List<? extends IndexView>> indexViewsSupplier;
+
+    private final Lock modelAccess = new ReentrantLock(true);
 
     /**
      * Creates a new instance of {@code OpenAPISupport}.
@@ -196,11 +204,13 @@ public abstract class OpenAPISupport implements Service {
         model();
     }
 
-    private synchronized OpenAPI model() {
-        if (model == null) {
-            model = prepareModel(openApiConfig, openApiStaticFile, indexViewsSupplier.get());
-        }
-        return model;
+    private OpenAPI model() {
+        return access(modelAccess, () -> {
+            if (model == null) {
+                model = prepareModel(openApiConfig, openApiStaticFile, indexViewsSupplier.get());
+            }
+            return model;
+        });
     }
 
     private void registerJsonpSupport(ServerRequest req, ServerResponse res) {
@@ -210,12 +220,14 @@ public abstract class OpenAPISupport implements Service {
         req.next();
     }
 
-    static synchronized SnakeYAMLParserHelper<ExpandedTypeDescription> helper() {
-        if (helper == null) {
-            helper = SnakeYAMLParserHelper.create(ExpandedTypeDescription::create);
-            adjustTypeDescriptions(helper.types());
-        }
-        return helper;
+    static SnakeYAMLParserHelper<ExpandedTypeDescription> helper() {
+        return access(HELPER_ACCESS, () -> {
+            if (helper == null) {
+                helper = SnakeYAMLParserHelper.create(ExpandedTypeDescription::create);
+                adjustTypeDescriptions(helper.types());
+            }
+            return helper;
+        });
     }
 
     static Map<Class<?>, ExpandedTypeDescription> buildImplsToTypes(SnakeYAMLParserHelper<ExpandedTypeDescription> helper) {
@@ -306,28 +318,27 @@ public abstract class OpenAPISupport implements Service {
     private OpenAPI prepareModel(OpenApiConfig config, OpenApiStaticFile staticFile,
             List<? extends IndexView> filteredIndexViews) {
         try {
-            synchronized (OpenApiDocument.INSTANCE) {
-                OpenApiDocument.INSTANCE.reset();
-                OpenApiDocument.INSTANCE.config(config);
-                OpenApiDocument.INSTANCE.modelFromReader(OpenApiProcessor.modelFromReader(config, getContextClassLoader()));
-                if (staticFile != null) {
-                    OpenApiDocument.INSTANCE.modelFromStaticFile(OpenAPIParser.parse(helper().types(), staticFile.getContent(),
-                            OpenAPIMediaType.byFormat(staticFile.getFormat())));
-                }
-                if (isAnnotationProcessingEnabled(config)) {
-                    expandModelUsingAnnotations(config, filteredIndexViews);
-                } else {
-                    LOGGER.log(Level.FINE, "OpenAPI Annotation processing is disabled");
-                }
-                OpenApiDocument.INSTANCE.filter(OpenApiProcessor.getFilter(config, getContextClassLoader()));
-                OpenApiDocument.INSTANCE.initialize();
-                OpenAPIImpl instance = OpenAPIImpl.class.cast(OpenApiDocument.INSTANCE.get());
-
-                // Create a copy, primarily to avoid problems during unit testing.
-                // The SmallRye MergeUtil omits the openapi value, so we need to set it explicitly.
-                return MergeUtil.merge(new OpenAPIImpl(), instance)
-                        .openapi(instance.getOpenapi());
+            // The write lock guarding the model has already been acquired.
+            OpenApiDocument.INSTANCE.reset();
+            OpenApiDocument.INSTANCE.config(config);
+            OpenApiDocument.INSTANCE.modelFromReader(OpenApiProcessor.modelFromReader(config, getContextClassLoader()));
+            if (staticFile != null) {
+                OpenApiDocument.INSTANCE.modelFromStaticFile(OpenAPIParser.parse(helper().types(), staticFile.getContent(),
+                        OpenAPIMediaType.byFormat(staticFile.getFormat())));
             }
+            if (isAnnotationProcessingEnabled(config)) {
+                expandModelUsingAnnotations(config, filteredIndexViews);
+            } else {
+                LOGGER.log(Level.FINE, "OpenAPI Annotation processing is disabled");
+            }
+            OpenApiDocument.INSTANCE.filter(OpenApiProcessor.getFilter(config, getContextClassLoader()));
+            OpenApiDocument.INSTANCE.initialize();
+            OpenAPIImpl instance = OpenAPIImpl.class.cast(OpenApiDocument.INSTANCE.get());
+
+            // Create a copy, primarily to avoid problems during unit testing.
+            // The SmallRye MergeUtil omits the openapi value, so we need to set it explicitly.
+            return MergeUtil.merge(new OpenAPIImpl(), instance)
+                    .openapi(instance.getOpenapi());
         } catch (IOException ex) {
             throw new RuntimeException("Error initializing OpenAPI information", ex);
         }
@@ -584,6 +595,8 @@ public abstract class OpenAPISupport implements Service {
 
         private static final OpenAPIMediaType DEFAULT_TYPE = YAML;
 
+        static final String TYPE_LIST = "json|yaml|yml"; // must be a true constant so it can be used in an annotation
+
         private final Format format;
         private final List<String> fileTypes;
         private final List<MediaType> mediaTypes;
@@ -598,7 +611,7 @@ public abstract class OpenAPISupport implements Service {
             return format;
         }
 
-        private List<String> matchingTypes() {
+        List<String> matchingTypes() {
             return fileTypes;
         }
 
@@ -707,6 +720,7 @@ public abstract class OpenAPISupport implements Service {
      *
      * @param <B> concrete subclass of OpenAPISupport.Builder
      */
+    @Configured(description = "OpenAPI support configuration")
     public abstract static class Builder<B extends Builder<B>> implements io.helidon.common.Builder<B, OpenAPISupport> {
 
         /**
@@ -790,12 +804,13 @@ public abstract class OpenAPISupport implements Service {
         }
 
         /**
-         * Path under which to register OpenAPI endpoint on the web server.
+         * Sets the web context path for the OpenAPI endpoint.
          *
          * @param path webContext to use, defaults to
          * {@value DEFAULT_WEB_CONTEXT}
          * @return updated builder instance
          */
+        @ConfiguredOption(DEFAULT_WEB_CONTEXT)
         public B webContext(String path) {
             if (!path.startsWith("/")) {
                 path = "/" + path;
@@ -805,11 +820,12 @@ public abstract class OpenAPISupport implements Service {
         }
 
         /**
-         * Sets the location of the static OpenAPI document file.
+         * Sets the file system path of the static OpenAPI document file.
          *
          * @param path non-null location of the static OpenAPI document file
          * @return updated builder instance
          */
+        @ConfiguredOption(DEFAULT_STATIC_FILE_PATH_PREFIX + "(" + OpenAPIMediaType.TYPE_LIST + ")")
         public B staticFile(String path) {
             Objects.requireNonNull(path, "path to static file must be non-null");
             staticFilePath = Optional.of(path);
@@ -817,11 +833,12 @@ public abstract class OpenAPISupport implements Service {
         }
 
         /**
-         * Set the CORS config from the specified {@code CrossOriginConfig} object.
+         * Assigns the CORS settings for the OpenAPI endpoint.
          *
          * @param crossOriginConfig {@code CrossOriginConfig} containing CORS set-up
          * @return updated builder instance
          */
+        @ConfiguredOption(key = CORS_CONFIG_KEY)
         public B crossOriginConfig(CrossOriginConfig crossOriginConfig) {
             Objects.requireNonNull(crossOriginConfig, "CrossOriginConfig must be non-null");
             this.crossOriginConfig = crossOriginConfig;
@@ -913,6 +930,15 @@ public abstract class OpenAPISupport implements Service {
                                         "]")));
             }
             return null;
+        }
+    }
+
+    private static <T> T access(Lock guard, Supplier<T> operation) {
+        guard.lock();
+        try {
+            return operation.get();
+        } finally {
+            guard.unlock();
         }
     }
 }

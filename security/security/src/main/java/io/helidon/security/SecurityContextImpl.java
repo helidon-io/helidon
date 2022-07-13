@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,9 +29,8 @@ import java.util.function.Supplier;
 import io.helidon.common.context.Contexts;
 import io.helidon.security.internal.SecurityAuditEvent;
 import io.helidon.security.spi.AuthorizationProvider;
-
-import io.opentracing.SpanContext;
-import io.opentracing.Tracer;
+import io.helidon.tracing.SpanContext;
+import io.helidon.tracing.Tracer;
 
 /**
  * Security context is task scoped (e.g. each HTTP request will have a single instance).

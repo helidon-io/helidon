@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,23 @@
 
 package io.helidon.microprofile.metrics;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
 import jakarta.annotation.Priority;
+import jakarta.enterprise.util.AnnotationLiteral;
 import jakarta.interceptor.Interceptor;
+import jakarta.interceptor.InterceptorBinding;
 import org.eclipse.microprofile.metrics.Meter;
 import org.eclipse.microprofile.metrics.annotation.Metered;
 
 /**
  * Interceptor for {@link Metered} annotation.
  */
-@Metered
+@InterceptorMetered.Binding
 @Interceptor
 @Priority(Interceptor.Priority.PLATFORM_BEFORE + 9)
 final class InterceptorMetered extends MetricsInterceptorBase<Meter> {
@@ -33,9 +41,32 @@ final class InterceptorMetered extends MetricsInterceptorBase<Meter> {
         super(Metered.class, Meter.class);
     }
 
+    static Binding.Literal binding() {
+        return Binding.Literal.instance();
+    }
     @Override
     void preInvoke(Meter metric) {
         metric.mark();
+    }
+    @Inherited
+    @InterceptorBinding
+    @Target({ElementType.TYPE})
+    @Retention(RetentionPolicy.RUNTIME)
+    @Metered
+    @interface Binding {
+        class Literal extends AnnotationLiteral<Binding> implements Binding {
+
+            private static final long serialVersionUID = 1L;
+
+            private static final Literal INSTANCE = new Literal();
+
+            static Literal instance() {
+                return INSTANCE;
+            }
+
+            private Literal() {
+            }
+        }
     }
 }
 

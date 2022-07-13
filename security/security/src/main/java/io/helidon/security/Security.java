@@ -30,15 +30,12 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import io.helidon.common.configurable.ThreadPoolSupplier;
@@ -48,7 +45,6 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.security.internal.SecurityAuditEvent;
 import io.helidon.security.spi.AuditProvider;
 import io.helidon.security.spi.AuthenticationProvider;
 import io.helidon.security.spi.AuthorizationProvider;
@@ -61,8 +57,7 @@ import io.helidon.security.spi.SecretsProvider;
 import io.helidon.security.spi.SecurityProvider;
 import io.helidon.security.spi.SecurityProviderService;
 import io.helidon.security.spi.SubjectMappingProvider;
-
-import io.opentracing.Tracer;
+import io.helidon.tracing.Tracer;
 
 /**
  * This class is used to "bootstrap" security and integrate it with other frameworks; runtime
@@ -78,129 +73,12 @@ import io.opentracing.Tracer;
  * @see #builder()
  * @see #create(Config)
  */
-// class cannot be final, so CDI can create a proxy for it
-public class Security {
+public interface Security {
     /**
      * Integration should add a special header to each request. The value will contain the original
      * URI as was issued - for HTTP this is the relative URI including query parameters.
      */
-    public static final String HEADER_ORIG_URI = "X_ORIG_URI_HEADER";
-
-    private static final Set<String> RESERVED_PROVIDER_KEYS = Set.of(
-            "name",
-            "type",
-            "class",
-            "is-authentication-provider",
-            "is-authorization-provider",
-            "is-client-security-provider",
-            "is-audit-provider");
-
-    private static final Set<String> CONFIG_INTERNAL_PREFIXES = Set.of(
-            "provider-policy",
-            "providers",
-            "environment"
-    );
-
-    private static final Logger LOGGER = Logger.getLogger(Security.class.getName());
-
-    private final Collection<Class<? extends Annotation>> annotations = new LinkedList<>();
-    private final List<Consumer<AuditProvider.TracedAuditEvent>> auditors = new LinkedList<>();
-    private final Optional<SubjectMappingProvider> subjectMappingProvider;
-    private final String instanceUuid;
-    private final ProviderSelectionPolicy providerSelectionPolicy;
-    private final Tracer securityTracer;
-    private final SecurityTime serverTime;
-    private final Supplier<ExecutorService> executorService;
-    private final Config securityConfig;
-    private final boolean enabled;
-
-    private final Map<String, Supplier<Single<Optional<String>>>> secrets;
-    private final Map<String, EncryptionProvider.EncryptionSupport> encryptions;
-    private final Map<String, DigestProvider.DigestSupport> digests;
-
-    @SuppressWarnings("unchecked")
-    private Security(Builder builder) {
-        this.enabled = builder.enabled;
-        this.instanceUuid = UUID.randomUUID().toString();
-        this.serverTime = builder.serverTime;
-        this.executorService = builder.executorService;
-        this.annotations.addAll(SecurityUtil.getAnnotations(builder.allProviders));
-        this.securityTracer = SecurityUtil.getTracer(builder.tracingEnabled, builder.tracer);
-        this.subjectMappingProvider = Optional.ofNullable(builder.subjectMappingProvider);
-        this.securityConfig = builder.config;
-
-        if (!enabled) {
-            //security is disabled
-            audit(instanceUuid, SecurityAuditEvent.info(
-                    AuditEvent.SECURITY_TYPE_PREFIX + ".configure",
-                    "Security is disabled."));
-        }
-
-        //providers
-        List<NamedProvider<AuthorizationProvider>> atzProviders = new LinkedList<>();
-        List<NamedProvider<AuthenticationProvider>> atnProviders = new LinkedList<>();
-        List<NamedProvider<OutboundSecurityProvider>> outboundProviders = new LinkedList<>();
-
-        atzProviders.addAll(builder.atzProviders);
-        atnProviders.addAll(builder.atnProviders);
-        outboundProviders.addAll(builder.outboundProviders);
-
-        builder.auditProviders.forEach(auditProvider -> auditors.add(auditProvider.auditConsumer()));
-
-        audit(instanceUuid, SecurityAuditEvent.info(
-                AuditEvent.SECURITY_TYPE_PREFIX + ".configure",
-                "Security initialized. Providers: audit: \"%s\"; authn: \"%s\"; authz: \"%s\"; identity propagation: \"%s\";")
-                .addParam(AuditEvent.AuditParam.plain("auditProviders", SecurityUtil.forAudit(builder.auditProviders)))
-                .addParam(AuditEvent.AuditParam.plain("authenticationProvider", SecurityUtil.forAuditNamed(atnProviders)))
-                .addParam(AuditEvent.AuditParam.plain("authorizationProvider", SecurityUtil.forAuditNamed(atzProviders)))
-                .addParam(AuditEvent.AuditParam
-                                  .plain("identityPropagationProvider", SecurityUtil.forAuditNamed(outboundProviders)))
-        );
-
-        // the "default" providers
-        NamedProvider<AuthenticationProvider> authnProvider = builder.authnProvider;
-        NamedProvider<AuthorizationProvider> authzProvider = builder.authzProvider;
-
-        // now I have all providers configured, I can resolve provider selection policy
-        providerSelectionPolicy = builder.providerSelectionPolicy.apply(new ProviderSelectionPolicy.Providers() {
-            @SuppressWarnings("unchecked")
-            @Override
-            public <T extends SecurityProvider> List<NamedProvider<T>> getProviders(Class<T> providerType) {
-                if (providerType.equals(AuthenticationProvider.class)) {
-                    List<NamedProvider<T>> result = new LinkedList<>();
-
-                    result.add((NamedProvider<T>) authnProvider);
-                    atnProviders.stream()
-                            // remove the default provider, it was added as first
-                            .filter(pr -> pr != authnProvider)
-                            .forEach(atn -> result.add((NamedProvider<T>) atn));
-                    return result;
-                } else if (providerType.equals(AuthorizationProvider.class)) {
-                    List<NamedProvider<T>> result = new LinkedList<>();
-
-                    result.add((NamedProvider<T>) authzProvider);
-                    atzProviders.stream()
-                            // remove the default provider, it was added as first
-                            .filter(pr -> pr != authzProvider)
-                            .forEach(atn -> result.add((NamedProvider<T>) atn));
-                    return result;
-                } else if (providerType.equals(OutboundSecurityProvider.class)) {
-                    List<NamedProvider<T>> result = new LinkedList<>();
-                    outboundProviders.forEach(atn -> result.add((NamedProvider<T>) atn));
-                    return result;
-                } else {
-                    throw new SecurityException(
-                            "Security only supports AuthenticationProvider, AuthorizationProvider and OutboundSecurityProvider in"
-                                    + " provider selection policy, not " + providerType.getName());
-                }
-            }
-        });
-
-        // secrets and transit security
-        this.secrets = Map.copyOf(builder.secrets);
-        this.encryptions = Map.copyOf(builder.encryptions);
-        this.digests = Map.copyOf(builder.digests);
-    }
+    String HEADER_ORIG_URI = "X_ORIG_URI_HEADER";
 
     /**
      * Creates new instance based on configuration values.
@@ -208,7 +86,7 @@ public class Security {
      * @param config Config instance located on security configuration ("providers" is an expected child)
      * @return new instance.
      */
-    public static Security create(Config config) {
+    static Security create(Config config) {
         Objects.requireNonNull(config, "Configuration must not be null");
         return builder()
                 .config(config)
@@ -221,86 +99,61 @@ public class Security {
      * @param config Config instance located on security configuration ("providers" is an expected child)
      * @return new instance.
      */
-    public static Builder builder(Config config) {
+    static Builder builder(Config config) {
         Objects.requireNonNull(config, "Configuration must not be null");
         return builder()
                 .config(config);
     }
 
     /**
-     * Creates {@link Builder} class.
+     * Creates {@link io.helidon.security.Security.Builder} class.
      *
      * @return builder
      */
-    public static Builder builder() {
+    static Builder builder() {
         return new Builder();
     }
 
     /**
-     * Get a set of roles the subject has, based on {@link Role Role}.
+     * Get a set of roles the subject has, based on {@link io.helidon.security.Role Role}.
      * This is the set of roles as assumed by authentication provider. Authorization providers may use a different set of
-     * roles (and context used authorization provider to check {@link SecurityContext#isUserInRole(String)}).
+     * roles (and context used authorization provider to check {@link io.helidon.security.SecurityContext#isUserInRole(String)}).
      *
      * @param subject Subject of a user/service
      * @return set of roles the user/service is in
      */
-    public static Set<String> getRoles(Subject subject) {
+    static Set<String> getRoles(Subject subject) {
         return subject.grants(Role.class)
                 .stream()
                 .map(Role::getName)
                 .collect(Collectors.toSet());
     }
 
-    void audit(String tracingId, AuditEvent event) {
-        // must build within scope of the audit method, as we want to send our caller...
-
-        AuditProvider.AuditSource auditSource = AuditProvider.AuditSource.create();
-        for (Consumer<AuditProvider.TracedAuditEvent> auditor : auditors) {
-            auditor.accept(SecurityUtil.wrapEvent(tracingId, auditSource, event));
-        }
-    }
-
     /**
      * Time that is decisive for the server. This usually returns
      * accessor to current time in a specified time zone.
      * <p>
-     * {@link SecurityTime} may be configured to a fixed point in time, intended for
+     * {@link io.helidon.security.SecurityTime} may be configured to a fixed point in time, intended for
      * testing purposes.
      *
      * @return time to access current time for security decisions
      */
-    public SecurityTime serverTime() {
-        return serverTime;
-    }
-
-    Supplier<ExecutorService> executorService() {
-        return executorService;
-    }
-
-    ProviderSelectionPolicy providerSelectionPolicy() {
-        return providerSelectionPolicy;
-    }
+    SecurityTime serverTime();
 
     /**
      * Create a new security context builder to build and instance.
      * This is expected to be invoked for each request/response exchange
      * that may be authenticated, authorized etc. Context holds the security subject...
-     * Once your processing is done and you no longer want to keep security context, call {@link SecurityContext#logout()} to
+     * Once your processing is done and you no longer want to keep security context, call
+     * {@link io.helidon.security.SecurityContext#logout()} to
      * clear subject and principals.
      *
      * @param id to use when logging, auditing etc. (e.g. some kind of tracing id). If none or empty, security instance
      *           UUID will be used (at least to map all audit records for a single instance of security component). If
      *           defined, security will prefix this id with security instance UUID
-     * @return new fluent API builder to create a {@link SecurityContext}
+     * @return new fluent API builder to create a {@link io.helidon.security.SecurityContext}
      */
-    public SecurityContext.Builder contextBuilder(String id) {
-        String newId = ((null == id) || id.isEmpty()) ? (instanceUuid + ":?") : (instanceUuid + ":" + id);
-        return new SecurityContext.Builder(this)
-                .id(newId)
-                .executorService(executorService)
-                .tracingTracer(securityTracer)
-                .serverTime(serverTime);
-    }
+    SecurityContext.Builder contextBuilder(String id);
 
     /**
      * Create a new security context with the defined id and all defaults.
@@ -308,18 +161,14 @@ public class Security {
      * @param id id of this context
      * @return new security context
      */
-    public SecurityContext createContext(String id) {
-        return contextBuilder(id).build();
-    }
+    SecurityContext createContext(String id);
 
     /**
      * Returns a tracer that can be used to construct new spans.
      *
-     * @return {@link Tracer}, may be a no-op tracer if tracing is disabled
+     * @return {@link io.helidon.tracing.Tracer}, may be a no-op tracer if tracing is disabled
      */
-    public Tracer tracer() {
-        return securityTracer;
-    }
+    Tracer tracer();
 
     /**
      * Get the complete set of annotations expected by (all) security providers configured.
@@ -327,9 +176,7 @@ public class Security {
      *
      * @return Collection of annotations expected by configured providers.
      */
-    public Collection<Class<? extends Annotation>> customAnnotations() {
-        return annotations;
-    }
+    Collection<Class<? extends Annotation>> customAnnotations();
 
     /**
      * The configuration of security.
@@ -345,19 +192,7 @@ public class Security {
      * @return a child node of security configuration
      * @throws IllegalArgumentException in case you request child in one of the forbidden trees
      */
-    public Config configFor(String child) {
-        String test = child.trim();
-        if (test.isEmpty()) {
-            throw new IllegalArgumentException("Root of security configuration is not available");
-        }
-        for (String prefix : CONFIG_INTERNAL_PREFIXES) {
-            if (child.equals(prefix) || child.startsWith(prefix + ".")) {
-                throw new IllegalArgumentException("Security configuration for " + prefix + " is not available");
-            }
-        }
-
-        return securityConfig.get(child);
-    }
+    Config configFor(String child);
 
     /**
      * Encrypt bytes.
@@ -365,17 +200,10 @@ public class Security {
      * for processing of large amounts of data.
      *
      * @param configurationName name of the configuration of this encryption
-     * @param bytesToEncrypt bytes to encrypt
+     * @param bytesToEncrypt    bytes to encrypt
      * @return future with cipher text
      */
-    public Single<String> encrypt(String configurationName, byte[] bytesToEncrypt) {
-        EncryptionProvider.EncryptionSupport encryption = encryptions.get(configurationName);
-        if (encryption == null) {
-            return Single.error(new SecurityException("There is no configured encryption named " + configurationName));
-        }
-
-        return encryption.encrypt(bytesToEncrypt);
-    }
+    Single<String> encrypt(String configurationName, byte[] bytesToEncrypt);
 
     /**
      * Decrypt cipher text.
@@ -383,73 +211,50 @@ public class Security {
      * for processing of large amounts of data.
      *
      * @param configurationName name of the configuration of this encryption
-     * @param cipherText cipher text to decrypt
+     * @param cipherText        cipher text to decrypt
      * @return future with decrypted bytes
      */
-    public Single<byte[]> decrypt(String configurationName, String cipherText) {
-        EncryptionProvider.EncryptionSupport encryption = encryptions.get(configurationName);
-        if (encryption == null) {
-            return Single.error(new SecurityException("There is no configured encryption named " + configurationName));
-        }
-
-        return encryption.decrypt(cipherText);
-    }
+    Single<byte[]> decrypt(String configurationName, String cipherText);
 
     /**
      * Create a digest for the provided bytes.
      *
      * @param configurationName name of the digest configuration
-     * @param bytesToDigest data to digest
-     * @param preHashed whether the data is already a hash
+     * @param bytesToDigest     data to digest
+     * @param preHashed         whether the data is already a hash
      * @return future with digest (such as signature or HMAC)
      */
-    public Single<String> digest(String configurationName, byte[] bytesToDigest, boolean preHashed) {
-        DigestProvider.DigestSupport digest = digests.get(configurationName);
-        if (digest == null) {
-            return Single.error(new SecurityException("There is no configured digest named " + configurationName));
-        }
-        return digest.digest(bytesToDigest, preHashed);
-    }
+    Single<String> digest(String configurationName, byte[] bytesToDigest, boolean preHashed);
 
     /**
      * Create a digest for the provided raw bytes.
      *
      * @param configurationName name of the digest configuration
-     * @param bytesToDigest data to digest
+     * @param bytesToDigest     data to digest
      * @return future with digest (such as signature or HMAC)
      */
-    public Single<String> digest(String configurationName, byte[] bytesToDigest) {
-        return digest(configurationName, bytesToDigest, false);
-    }
+    Single<String> digest(String configurationName, byte[] bytesToDigest);
 
     /**
      * Verify a digest.
      *
      * @param configurationName name of the digest configuration
-     * @param bytesToDigest data to verify a digest for
-     * @param digest digest as provided by a third party (or another component)
-     * @param preHashed whether the data is already a hash
+     * @param bytesToDigest     data to verify a digest for
+     * @param digest            digest as provided by a third party (or another component)
+     * @param preHashed         whether the data is already a hash
      * @return future with result of verification ({@code true} means the digest is valid)
      */
-    public Single<Boolean> verifyDigest(String configurationName, byte[] bytesToDigest, String digest, boolean preHashed) {
-        DigestProvider.DigestSupport digestSupport = digests.get(configurationName);
-        if (digest == null) {
-            return Single.error(new SecurityException("There is no configured digest named " + configurationName));
-        }
-        return digestSupport.verify(bytesToDigest, preHashed, digest);
-    }
+    Single<Boolean> verifyDigest(String configurationName, byte[] bytesToDigest, String digest, boolean preHashed);
 
     /**
      * Verify a digest.
      *
      * @param configurationName name of the digest configuration
-     * @param bytesToDigest raw data to verify a digest for
-     * @param digest digest as provided by a third party (or another component)
+     * @param bytesToDigest     raw data to verify a digest for
+     * @param digest            digest as provided by a third party (or another component)
      * @return future with result of verification ({@code true} means the digest is valid)
      */
-    public Single<Boolean> verifyDigest(String configurationName, byte[] bytesToDigest, String digest) {
-        return verifyDigest(configurationName, bytesToDigest, digest, false);
-    }
+    Single<Boolean> verifyDigest(String configurationName, byte[] bytesToDigest, String digest);
 
     /**
      * Get a secret.
@@ -457,101 +262,96 @@ public class Security {
      * @param configurationName name of the secret configuration
      * @return future with the secret value, or error if the secret is not configured
      */
-    public Single<Optional<String>> secret(String configurationName) {
-        Supplier<Single<Optional<String>>> singleSupplier = secrets.get(configurationName);
-        if (singleSupplier == null) {
-            return Single.error(new SecurityException("Secret \"" + configurationName + "\" is not configured."));
-        }
-
-        return singleSupplier.get();
-    }
+    Single<Optional<String>> secret(String configurationName);
 
     /**
      * Get a secret.
      *
      * @param configurationName name of the secret configuration
-     * @param defaultValue default value to use if secret not configured
+     * @param defaultValue      default value to use if secret not configured
      * @return future with the secret value
      */
-    public Single<String> secret(String configurationName, String defaultValue) {
-        Supplier<Single<Optional<String>>> singleSupplier = secrets.get(configurationName);
-        if (singleSupplier == null) {
-            LOGGER.finest(() -> "There is no configured secret named " + configurationName + ", using default value");
-            return Single.just(defaultValue);
-        }
-
-        return singleSupplier.get()
-                .map(it -> it.orElse(defaultValue));
-    }
-
-    Optional<? extends AuthenticationProvider> resolveAtnProvider(String providerName) {
-        return resolveProvider(AuthenticationProvider.class, providerName);
-    }
-
-    Optional<AuthorizationProvider> resolveAtzProvider(String providerName) {
-        return resolveProvider(AuthorizationProvider.class, providerName);
-    }
-
-    List<? extends OutboundSecurityProvider> resolveOutboundProvider(String providerName) {
-        if (null != providerName) {
-            return resolveProvider(OutboundSecurityProvider.class, providerName).map(List::of)
-                    .orElse(List.of());
-        }
-        return providerSelectionPolicy.selectOutboundProviders();
-    }
-
-    private <T extends SecurityProvider> Optional<T> resolveProvider(Class<T> providerClass, String providerName) {
-        if (null == providerName) {
-            return providerSelectionPolicy.selectProvider(providerClass);
-        }
-
-        Optional<T> instance = providerSelectionPolicy.selectProvider(providerClass, providerName);
-
-        if (instance.isPresent()) {
-            return instance;
-        }
-
-        throw new SecurityException("Named " + providerClass
-                .getSimpleName() + " expected for name \"" + providerName + "\" yet none is configured for such a name");
-    }
+    Single<String> secret(String configurationName, String defaultValue);
 
     /**
      * Security environment builder, to be used to create
      * environment for evaluating security in integration components.
      *
-     * @return builder to build {@link SecurityEnvironment}
+     * @return builder to build {@link io.helidon.security.SecurityEnvironment}
      */
-    public SecurityEnvironment.Builder environmentBuilder() {
-        return SecurityEnvironment.builder(serverTime);
-    }
+    SecurityEnvironment.Builder environmentBuilder();
 
     /**
      * Subject mapping provider used to map subject(s) authenticated by {@link io.helidon.security.spi.AuthenticationProvider}
-     *  to a new {@link io.helidon.security.Subject}, e.g. to add roles.
+     * to a new {@link Subject}, e.g. to add roles.
      *
      * @return subject mapping provider to use or empty if none defined
      */
-    public Optional<SubjectMappingProvider> subjectMapper() {
-        return subjectMappingProvider;
-    }
+    Optional<SubjectMappingProvider> subjectMapper();
 
     /**
      * Whether security is enabled or disabled.
      * Disabled security does not check authorization and authenticates all users as
-     * {@link io.helidon.security.SecurityContext#ANONYMOUS}.
+     * {@link SecurityContext#ANONYMOUS}.
      *
      * @return {@code true} if security is enabled
      */
-    public boolean enabled() {
-        return enabled;
-    }
+    boolean enabled();
 
     /**
-     * Builder pattern class for helping create {@link Security} in a convenient way.
+     * Audit an event.
+     *
+     * @param tracingId id to map this audit event to a request
+     * @param event event to audit
+     */
+    void audit(String tracingId, AuditEvent event);
+
+    /**
+     * Configured provider selection policy.
+     *
+     * @return provider selection policy
+     */
+    ProviderSelectionPolicy providerSelectionPolicy();
+
+    /**
+     * Executor service to handle possible blocking tasks in security.
+     *
+     * @return executor service supplier (may be backed by a lazy implementation)
+     */
+    Supplier<ExecutorService> executorService();
+
+    /**
+     * Find an authentication provider by name, or use the default if the name is not available.
+     *
+     * @param providerName name of the provider
+     * @return authentication provider if the named one is configured, or a default one is configured, otherwise empty
+     */
+    Optional<? extends AuthenticationProvider> resolveAtnProvider(String providerName);
+
+    /**
+     * Find an authorization provider by name, or use the default if the name is not available.
+     *
+     * @param providerName name of the provider
+     * @return authorization provider if the named one is configured, or a default one is configured, otherwise empty
+     */
+    Optional<AuthorizationProvider> resolveAtzProvider(String providerName);
+
+    /**
+     * Find outbound provider(s) by name, or use the default if the name is not available.
+     *
+     * @param providerName name of the provider
+     * @return outbound providers to use
+     */
+    List<? extends OutboundSecurityProvider> resolveOutboundProvider(String providerName);
+
+    /**
+     * Builder pattern class for helping create {@link io.helidon.security.Security} in a convenient way.
      */
     @Configured(root = true, prefix = "security", description = "Configuration of security providers, integration and other"
             + " security options")
-    public static final class Builder implements io.helidon.common.Builder<Builder, Security> {
+     final class Builder implements io.helidon.common.Builder<Builder, Security> {
+        private static final System.Logger LOGGER = System.getLogger(Builder.class.getName());
+
         private final Set<AuditProvider> auditProviders = new LinkedHashSet<>();
         private final List<NamedProvider<AuthenticationProvider>> atnProviders = new LinkedList<>();
         private final List<NamedProvider<AuthorizationProvider>> atzProviders = new LinkedList<>();
@@ -582,13 +382,14 @@ public class Security {
 
         /**
          * Set the provider selection policy.
-         * The function is used to provider an immutable instance of the {@link ProviderSelectionPolicy}.
+         * The function is used to provider an immutable instance of the {@link io.helidon.security.spi.ProviderSelectionPolicy}.
          * <p>
-         * Default is {@link FirstProviderSelectionPolicy}.
+         * Default is {@link io.helidon.security.FirstProviderSelectionPolicy}.
          * <p>
-         * Alternative built-in policy is: {@link CompositeProviderSelectionPolicy} - you can use its {@link
-         * CompositeProviderSelectionPolicy#builder()}
-         * to configure it and then configure this method with {@link CompositeProviderSelectionPolicy.Builder#build()}.
+         * Alternative built-in policy is: {@link io.helidon.security.CompositeProviderSelectionPolicy} - you can use its {@link
+         * io.helidon.security.CompositeProviderSelectionPolicy#builder()}
+         * to configure it and then configure this method with
+         * {@link io.helidon.security.CompositeProviderSelectionPolicy.Builder#build()}.
          * <p>
          * You can also use custom policy.
          *
@@ -642,7 +443,8 @@ public class Security {
         }
 
         /**
-         * Disable open tracing support in this security instance. This will cause method {@link SecurityContext#tracer()} to
+         * Disable open tracing support in this security instance. This will cause method
+         * {@link io.helidon.security.SecurityContext#tracer()} to
          * return a no-op tracer.
          *
          * @return updated builder instance
@@ -652,7 +454,8 @@ public class Security {
         }
 
         /**
-         * Add a provider, works as {@link #addProvider(SecurityProvider, String)}, where the name is set to {@link
+         * Add a provider, works as {@link #addProvider(io.helidon.security.spi.SecurityProvider, String)}, where the name is set
+         * to {@link
          * Class#getSimpleName()}.
          *
          * @param provider Provider implementing multiple security provider interfaces
@@ -664,7 +467,8 @@ public class Security {
         }
 
         /**
-         * Add a provider, works as {@link #addProvider(SecurityProvider, String)}, where the name is set to {@link
+         * Add a provider, works as {@link #addProvider(io.helidon.security.spi.SecurityProvider, String)}, where the name is set
+         * to {@link
          * Class#getSimpleName()}.
          *
          * @param providerBuilder Builder of a provider, method build will be immediately called
@@ -771,7 +575,7 @@ public class Security {
 
         /**
          * Add an authentication provider. If default isn't set yet, sets it as default.
-         * Works as {@link #addAuthenticationProvider(AuthenticationProvider, String)} where the name
+         * Works as {@link #addAuthenticationProvider(io.helidon.security.spi.AuthenticationProvider, String)} where the name
          * is simple class name.
          *
          * @param provider provider instance to add
@@ -783,7 +587,7 @@ public class Security {
 
         /**
          * Add an authentication provider. If default isn't set yet, sets it as default.
-         * Works as {@link #addAuthenticationProvider(AuthenticationProvider, String)} where the name
+         * Works as {@link #addAuthenticationProvider(io.helidon.security.spi.AuthenticationProvider, String)} where the name
          * is simple class name.
          *
          * @param builder builder of provider to add
@@ -887,7 +691,8 @@ public class Security {
         /**
          * All configured identity propagation providers are used.
          * The first provider to return true to
-         * {@link OutboundSecurityProvider#isOutboundSupported(ProviderRequest, SecurityEnvironment, EndpointConfig)}
+         * {@link io.helidon.security.spi.OutboundSecurityProvider#isOutboundSupported(io.helidon.security.ProviderRequest,
+         * io.helidon.security.SecurityEnvironment, io.helidon.security.EndpointConfig)}
          * will be called to process current request. Others will be ignored.
          *
          * @param provider Provider instance
@@ -900,7 +705,8 @@ public class Security {
         /**
          * All configured identity propagation providers are used.
          * The first provider to return true to
-         * {@link OutboundSecurityProvider#isOutboundSupported(ProviderRequest, SecurityEnvironment, EndpointConfig)}
+         * {@link io.helidon.security.spi.OutboundSecurityProvider#isOutboundSupported(io.helidon.security.ProviderRequest,
+         * io.helidon.security.SecurityEnvironment, io.helidon.security.EndpointConfig)}
          * will be called to process current request. Others will be ignored.
          *
          * @param builder Builder of provider instance
@@ -945,7 +751,7 @@ public class Security {
          * Add a named secret provider.
          *
          * @param provider provider to use
-         * @param name name of the provider for reference from configuration
+         * @param name     name of the provider for reference from configuration
          * @return updated builder instance
          */
         public Builder addSecretProvider(SecretsProvider<?> provider, String name) {
@@ -963,7 +769,7 @@ public class Security {
          * Add a named encryption provider.
          *
          * @param provider provider to use
-         * @param name name of the provider for reference from configuration
+         * @param name     name of the provider for reference from configuration
          * @return updated builder instance
          */
         public Builder addEncryptionProvider(EncryptionProvider<?> provider, String name) {
@@ -981,7 +787,7 @@ public class Security {
          * Add a named digest provider (providing signatures and possibly HMAC).
          *
          * @param provider provider to use
-         * @param name name of the provider for reference from configuration
+         * @param name     name of the provider for reference from configuration
          * @return updated builder instance
          */
         public Builder addDigestProvider(DigestProvider<?> provider, String name) {
@@ -1010,7 +816,8 @@ public class Security {
 
         /**
          * Configure a subject mapping provider that would be used once authentication is processed.
-         * Allows you to add {@link Grant Grants} to {@link Subject} or modify it in other ways.
+         * Allows you to add {@link io.helidon.security.Grant Grants} to {@link io.helidon.security.Subject} or modify it in other
+         * ways.
          *
          * @param provider provider to use for subject mapping
          * @return updated builder instance
@@ -1068,7 +875,8 @@ public class Security {
         @Override
         public Security build() {
             if (allProviders.isEmpty() && enabled) {
-                LOGGER.warning("Security component is NOT configured with any security providers.");
+                LOGGER.log(System.Logger.Level.WARNING,
+                           "Security component is NOT configured with any security providers.");
             }
 
             if (auditProviders.isEmpty()) {
@@ -1089,18 +897,17 @@ public class Security {
                 providerSelectionPolicy(FirstProviderSelectionPolicy::new);
             }
 
-            return new Security(this);
+            return new SecurityImpl(this);
         }
 
         /**
          * Add a secret to security configuration.
          *
-         * @param name name of the secret configuration
+         * @param name           name of the secret configuration
          * @param secretProvider security provider handling this secret
          * @param providerConfig security provider configuration for this secret
-         * @param <T> type of the provider specific configuration object
+         * @param <T>            type of the provider specific configuration object
          * @return updated builder instance
-         *
          * @see #secret(String)
          * @see #secret(String, String)
          */
@@ -1125,12 +932,11 @@ public class Security {
         /**
          * Add an encryption to security configuration.
          *
-         * @param name name of the encryption configuration
+         * @param name               name of the encryption configuration
          * @param encryptionProvider security provider handling this encryption
-         * @param providerConfig security provider configuration for this encryption
-         * @param <T> type of the provider specific configuration object
+         * @param providerConfig     security provider configuration for this encryption
+         * @param <T>                type of the provider specific configuration object
          * @return updated builder instance
-         *
          * @see #encrypt(String, byte[])
          * @see #decrypt(String, String)
          */
@@ -1145,12 +951,11 @@ public class Security {
         /**
          * Add a signature/HMAC to security configuration.
          *
-         * @param name name of the digest configuration
+         * @param name           name of the digest configuration
          * @param digestProvider security provider handling this digest
          * @param providerConfig security provider configuration for this digest
-         * @param <T> type of the provider specific configuration object
+         * @param <T>            type of the provider specific configuration object
          * @return updated builder instance
-         *
          * @see #digest(String, byte[])
          * @see #digest(String, byte[], boolean)
          * @see #verifyDigest(String, byte[], String)
@@ -1168,7 +973,7 @@ public class Security {
             config.get("enabled").asBoolean().ifPresent(this::enabled);
 
             if (!enabled) {
-                LOGGER.info("Security is disabled, ignoring provider configuration");
+                LOGGER.log(System.Logger.Level.INFO, "Security is disabled, ignoring provider configuration");
                 return;
             }
 
@@ -1464,7 +1269,7 @@ public class Security {
         }
 
         private boolean notReservedProviderKey(Config config) {
-            return !RESERVED_PROVIDER_KEYS.contains(config.name());
+            return !SecurityImpl.RESERVED_PROVIDER_KEYS.contains(config.name());
         }
 
         private Function<ProviderSelectionPolicy.Providers, ProviderSelectionPolicy> findProviderSelectionPolicy(Config config) {
@@ -1528,6 +1333,7 @@ public class Security {
 
         /**
          * Check whether any provider is configured.
+         *
          * @param providerClass type of provider of interest (can be {@link io.helidon.security.spi.AuthenticationProvider} and
          *                      other interfaces implementing {@link io.helidon.security.spi.SecurityProvider})
          * @return {@code true} if no provider is configured, {@code false} if there is at least one provider configured
@@ -1554,6 +1360,7 @@ public class Security {
 
         /**
          * Check whether a provider with the name is configured.
+         *
          * @param name name of a provider
          * @return true if such a provider is configured
          */
@@ -1561,6 +1368,94 @@ public class Security {
             return providerNames
                     .stream()
                     .anyMatch(name::equals);
+        }
+
+        Set<AuditProvider> auditProviders() {
+            return auditProviders;
+        }
+
+        List<NamedProvider<AuthenticationProvider>> atnProviders() {
+            return atnProviders;
+        }
+
+        List<NamedProvider<AuthorizationProvider>> atzProviders() {
+            return atzProviders;
+        }
+
+        List<NamedProvider<OutboundSecurityProvider>> outboundProviders() {
+            return outboundProviders;
+        }
+
+        Map<String, SecretsProvider<?>> secretsProviders() {
+            return secretsProviders;
+        }
+
+        Map<String, EncryptionProvider<?>> encryptionProviders() {
+            return encryptionProviders;
+        }
+
+        Map<String, DigestProvider<?>> digestProviders() {
+            return digestProviders;
+        }
+
+        Map<SecurityProvider, Boolean> allProviders() {
+            return allProviders;
+        }
+
+        Map<String, Supplier<Single<Optional<String>>>> secrets() {
+            return secrets;
+        }
+
+        Map<String, EncryptionProvider.EncryptionSupport> encryptions() {
+            return encryptions;
+        }
+
+        Map<String, DigestProvider.DigestSupport> digests() {
+            return digests;
+        }
+
+        Set<String> providerNames() {
+            return providerNames;
+        }
+
+        NamedProvider<AuthenticationProvider> authnProvider() {
+            return authnProvider;
+        }
+
+        NamedProvider<AuthorizationProvider> authzProvider() {
+            return authzProvider;
+        }
+
+        SubjectMappingProvider subjectMappingProvider() {
+            return subjectMappingProvider;
+        }
+
+        Config config() {
+            return config;
+        }
+
+        Function<ProviderSelectionPolicy.Providers, ProviderSelectionPolicy> providerSelectionPolicy() {
+            return providerSelectionPolicy;
+        }
+
+        Tracer tracer() {
+            return tracer;
+        }
+
+        boolean tracingEnabled() {
+            return tracingEnabled;
+        }
+
+        SecurityTime serverTime() {
+            return serverTime;
+        }
+
+        Supplier<ExecutorService> executorService() {
+            return executorService;
+        }
+
+        boolean enabled() {
+            return enabled;
         }
 
         private static class DefaultAtzProvider implements AuthorizationProvider {

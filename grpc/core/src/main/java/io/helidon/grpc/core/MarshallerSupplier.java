@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,7 +71,10 @@ public interface MarshallerSupplier {
             if (MessageLite.class.isAssignableFrom(clazz)) {
                 return proto.get(clazz);
             }
-            return JavaMarshaller.instance();
+            String msg = String.format(
+                    "Class %s must be a valid ProtoBuf message, or a custom marshaller for it must be specified explicitly",
+                    clazz.getName());
+            throw new IllegalArgumentException(msg);
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
@@ -41,8 +42,7 @@ import io.helidon.media.common.MessageBodyStreamWriter;
 import io.helidon.media.common.MessageBodyWriter;
 import io.helidon.media.common.MessageBodyWriterContext;
 import io.helidon.media.common.ParentingMediaContextBuilder;
-
-import io.opentracing.Tracer;
+import io.helidon.tracing.Tracer;
 
 /**
  * Represents a immutably configured WEB server.
@@ -167,7 +167,7 @@ public interface WebServer {
      *
      * @param tls new TLS configuration
      * @throws IllegalStateException if {@link WebServerTls#enabled()} returns {@code false} or
-     * if {@link SocketConfiguration#ssl()} returns {@code null}
+     * if {@code SocketConfiguration.tls().sslContext()} returns {@code null}
      */
     void updateTls(WebServerTls tls);
 
@@ -177,69 +177,9 @@ public interface WebServer {
      * @param tls new TLS configuration
      * @param socketName specific named socket name
      * @throws IllegalStateException if {@link WebServerTls#enabled()} returns {@code false} or
-     * if {@link SocketConfiguration#ssl()} returns {@code null}
+     * if {@code SocketConfiguration.tls().sslContext()} returns {@code null}
      */
     void updateTls(WebServerTls tls, String socketName);
-
-    /**
-     * Creates a new instance from a provided configuration and a routing.
-     *
-     * @param configurationBuilder a server configuration builder that will be built as a first step
-     *                             of this method execution; may be {@code null}
-     * @param routing a routing instance
-     * @return a new web server instance
-     * @throws IllegalStateException if none SPI implementation found
-     * @throws NullPointerException if 'routing' parameter is {@code null}
-     *
-     * @deprecated since 2.0.0 - please use {@link #create(io.helidon.webserver.Routing, io.helidon.config.Config)} instead
-     *  for instances based on {@link io.helidon.config.Config}, or {@link #builder(io.helidon.webserver.Routing)} to configure
-     *  server configuration by hand (as you would on {@link SocketConfiguration.Builder} now.
-     */
-    @Deprecated
-    static WebServer create(Supplier<? extends ServerConfiguration> configurationBuilder, Routing routing) {
-        return create(configurationBuilder != null ? configurationBuilder.get() : null, routing);
-    }
-
-    /**
-     * Creates new instance from provided configuration and routing.
-     *
-     * @param configurationBuilder a server configuration builder that will be built as a first step
-     *                             of this method execution; may be {@code null}
-     * @param routingBuilder       a routing builder that will be built as a second step of this method execution
-     * @return a new web server instance
-     * @throws IllegalStateException if none SPI implementation found
-     * @throws NullPointerException  if 'routingBuilder' parameter is {@code null}
-     *
-     * @deprecated since 2.0.0 - please use {@link #create(java.util.function.Supplier, io.helidon.config.Config)} instead
-     *  for instances based on {@link io.helidon.config.Config}, or {@link #builder(java.util.function.Supplier)} to configure
-     *  server configuration by hand (as you would on {@link SocketConfiguration.Builder} now.
-     */
-    @Deprecated
-    static WebServer create(Supplier<? extends ServerConfiguration> configurationBuilder,
-                            Supplier<? extends Routing> routingBuilder) {
-        Objects.requireNonNull(routingBuilder, "Parameter 'routingBuilder' must not be null!");
-        return create(configurationBuilder != null ? configurationBuilder.get() : null, routingBuilder.get());
-    }
-
-    /**
-     * Creates new instance from provided configuration and routing.
-     *
-     * @param configuration  a server configuration instance
-     * @param routingBuilder a routing builder that will be built as a second step of this method execution
-     * @return a new web server instance
-     * @throws IllegalStateException if none SPI implementation found
-     * @throws NullPointerException  if 'routingBuilder' parameter is {@code null}
-     *
-     * @deprecated since 2.0.0 - please use {@link #create(java.util.function.Supplier, io.helidon.config.Config)} instead
-     *  for instances based on {@link io.helidon.config.Config}, or {@link #builder(java.util.function.Supplier)} to configure
-     *  server configuration by hand (as you would on {@link SocketConfiguration.Builder} now.
-     */
-    @Deprecated
-    static WebServer create(ServerConfiguration configuration,
-                            Supplier<? extends Routing> routingBuilder) {
-        Objects.requireNonNull(routingBuilder, "Parameter 'routingBuilder' must not be null!");
-        return create(configuration, routingBuilder.get());
-    }
 
     /**
      * Creates new instance from provided routing and default configuration.
@@ -251,26 +191,6 @@ public interface WebServer {
      */
     static WebServer create(Routing routing) {
         return builder(routing).build();
-    }
-
-    /**
-     * Creates new instance from provided configuration and routing.
-     *
-     * @param configuration a server configuration instance
-     * @param routing       a routing instance
-     * @return a new web server instance
-     * @throws NullPointerException  if 'routing' parameter is {@code null}
-     *
-     * @deprecated since 2.0.0 - please use {@link #create(Routing, io.helidon.config.Config)} instead
-     *  for instances based on {@link io.helidon.config.Config}, or {@link #builder(Routing)} to configure
-     *  server configuration by hand (as you would on {@link SocketConfiguration.Builder} now.
-     */
-    @Deprecated
-    static WebServer create(ServerConfiguration configuration, Routing routing) {
-        Objects.requireNonNull(routing, "Parameter 'routing' is null!");
-
-        return builder(routing).config(configuration)
-                .build();
     }
 
     /**
@@ -349,7 +269,7 @@ public interface WebServer {
      * @see #builder()
      */
     static Builder builder(Routing routing) {
-        return builder().routing(routing);
+        return builder().addRouting(routing);
     }
 
     /**
@@ -364,19 +284,16 @@ public interface WebServer {
 
         private static final Logger LOGGER = Logger.getLogger(Builder.class.getName());
         private static final MediaContext DEFAULT_MEDIA_SUPPORT = MediaContext.create();
-
-        private final Map<String, Routing> routings = new HashMap<>();
-        private Routing defaultRouting;
+        private final Map<String, RouterImpl.Builder> routingBuilders = new HashMap<>();
+        private final DirectHandlers.Builder directHandlers = DirectHandlers.builder();
         // internal use - we may keep this even after we remove the public access to ServerConfiguration
         @SuppressWarnings("deprecation")
         private final ServerConfiguration.Builder configurationBuilder = ServerConfiguration.builder();
         // for backward compatibility
         @SuppressWarnings("deprecation")
         private ServerConfiguration explicitConfig;
-        private Transport transport;
         private MessageBodyReaderContext readerContext;
         private MessageBodyWriterContext writerContext;
-        private DirectHandlers.Builder directHandlers = DirectHandlers.builder();
 
         private Builder() {
             readerContext = MessageBodyReaderContext.create(DEFAULT_MEDIA_SUPPORT.readerContext());
@@ -392,34 +309,52 @@ public interface WebServer {
          */
         @Override
         public WebServer build() {
-            if (defaultRouting == null) {
+            if (routingBuilders.get(WebServer.DEFAULT_SOCKET_NAME) == null) {
                 LOGGER.warning("Creating a web server with no default routing configured.");
-                defaultRouting = Routing.builder().build();
+                routingBuilders.put(WebServer.DEFAULT_SOCKET_NAME, RouterImpl.builder());
             }
             if (explicitConfig == null) {
                 explicitConfig = configurationBuilder.build();
             }
 
+            Map<String, Router> routers = routingBuilders.entrySet().stream()
+                    .collect(Collectors.toMap(Map.Entry::getKey, v -> v.getValue().build()));
+
             String unpairedRoutings =
-                    routings.keySet()
+                    routingBuilders.keySet()
                             .stream()
                             .filter(routingName -> explicitConfig.namedSocket(routingName).isEmpty())
                             .collect(Collectors.joining(", "));
+
             if (!unpairedRoutings.isEmpty()) {
                 throw new IllegalStateException("No server socket configuration found for named routings: " + unpairedRoutings);
             }
 
+            routers.values().forEach(Router::beforeStart);
+
             WebServer result = new NettyWebServer(explicitConfig,
-                                                  defaultRouting,
-                                                  routings,
+                                                  routers,
                                                   writerContext,
                                                   readerContext,
                                                   directHandlers.build());
 
-            if (defaultRouting instanceof RequestRouting) {
-                ((RequestRouting) defaultRouting).fireNewWebServer(result);
+            RequestRouting defaultRouting = routers.get(WebServer.DEFAULT_SOCKET_NAME).routing(RequestRouting.class, null);
+
+            if (defaultRouting != null) {
+                defaultRouting.fireNewWebServer(result);
             }
             return result;
+        }
+
+        /**
+         * Configure listener for the default socket.
+         *
+         * @param socket socket configuration builder consumer
+         * @return updated builder
+         */
+        public Builder defaultSocket(Consumer<SocketConfiguration.Builder> socket){
+            socket.accept(this.configurationBuilder.defaultSocketBuilder());
+            return this;
         }
 
         /**
@@ -439,9 +374,39 @@ public interface WebServer {
          *
          * @param defaultRouting new default routing; if already configured, this instance would replace the existing instance
          * @return updated builder instance
+         * @deprecated Use {@link WebServer.Builder#addRouting(Routing)}
+         * or {@link WebServer.Builder#addRouting(Routing)} instead.
          */
+        @Deprecated(since = "3.0.0", forRemoval = true)
         public Builder routing(Routing defaultRouting) {
-            this.defaultRouting = Objects.requireNonNull(defaultRouting);
+            addRouting(defaultRouting);
+            return this;
+        }
+
+        /**
+         * Configure the default routing of this WebServer. Default routing is the one
+         * available on the default listen {@link #bindAddress(String) host} and {@link #port() port} of the WebServer
+         *
+         * @param routing new default routing; if already configured, this instance would replace the existing instance
+         * @return updated builder instance
+         */
+        public Builder addRouting(Routing routing) {
+            Objects.requireNonNull(routing);
+            routingBuilders.computeIfAbsent(WebServer.DEFAULT_SOCKET_NAME, s -> RouterImpl.builder())
+                    .addRouting(routing);
+            return this;
+        }
+
+        /**
+         * Configure the default routing of this WebServer. Default routing is the one
+         * available on the default listen {@link #bindAddress(String) host} and {@link #port() port} of the WebServer
+         *
+         * @param routingSupplier new default routing; if already configured, this instance would replace the existing instance
+         * @return updated builder instance
+         */
+        public Builder addRouting(Supplier<Routing> routingSupplier) {
+            Objects.requireNonNull(routingSupplier);
+            addRouting(routingSupplier.get());
             return this;
         }
 
@@ -453,35 +418,23 @@ public interface WebServer {
          * @return updated builder instance
          */
         public Builder routing(Supplier<Routing> defaultRouting) {
-            this.defaultRouting = Objects.requireNonNull(defaultRouting).get();
+            addRouting(Objects.requireNonNull(defaultRouting).get());
             return this;
         }
 
         /**
-         * Set a configuration of the {@link WebServer}.
-         * Once this method is called, all other methods on this interface related to
-         * server configuration are ignored.
+         * Configure the default routing of this WebServer. Default routing is the one
+         * available on the default listen {@link #bindAddress(String) host} and {@link #port() port} of the WebServer
          *
-         * @param configuration the configuration
-         * @return an updated builder
-         * @deprecated since 2.0.0 - please use methods on this builder, or {@link #config(io.helidon.config.Config)} instead
+         * @param routing new default routing; if already configured, this instance would replace the existing instance
+         * @return updated builder instance
          */
-        @Deprecated
-        public Builder config(ServerConfiguration configuration) {
-            this.explicitConfig = configuration;
+        public Builder routing(Consumer<Routing.Builder> routing) {
+            Routing.Builder builder = Routing.builder();
+            Objects.requireNonNull(routing).accept(builder);
+            routingBuilders.computeIfAbsent(WebServer.DEFAULT_SOCKET_NAME, s -> RouterImpl.builder())
+                    .addRoutingBuilder(RequestRouting.class, builder);
             return this;
-        }
-
-        /**
-         * Set a configuration of the {@link WebServer}.
-         *
-         * @param configurationBuilder the configuration builder
-         * @return an updated builder
-         * @deprecated since 2.0.0 - see {@link #config(ServerConfiguration)}
-         */
-        @Deprecated
-        public Builder config(Supplier<ServerConfiguration> configurationBuilder) {
-            return config(configurationBuilder.get());
         }
 
         /**
@@ -512,8 +465,8 @@ public interface WebServer {
         public Builder addNamedRouting(String name, Routing routing) {
             Objects.requireNonNull(name, "Parameter 'name' must not be null!");
             Objects.requireNonNull(routing, "Parameter 'routing' must not be null!");
-
-            routings.put(name, routing);
+            routingBuilders.computeIfAbsent(name, s -> RouterImpl.builder())
+                    .addRouting(routing);
             return this;
         }
 
@@ -636,13 +589,9 @@ public interface WebServer {
             return this;
         }
 
-        /**
-         * Configure experimental features.
-         * @param experimental experimental configuration
-         * @return an updated builder
-         */
-        public Builder experimental(ExperimentalConfiguration experimental) {
-            configurationBuilder.experimental(experimental);
+        @Override
+        public Builder maxUpgradeContentLength(int size) {
+            configurationBuilder.maxUpgradeContentLength(size);
             return this;
         }
 
@@ -678,25 +627,6 @@ public interface WebServer {
          * An additional named server socket may have a dedicated {@link Routing} configured
          * through {@link io.helidon.webserver.WebServer.Builder#addNamedRouting(String, Routing)}.
          *
-         * @param name                the name of the additional server socket configuration
-         * @param socketConfiguration the additional named server socket configuration, never null
-         * @return an updated builder
-         * @deprecated since 2.0.0, please use {@link #addSocket(SocketConfiguration)} instead, name
-         * is now part of socket configuration
-         */
-        @Deprecated
-        public Builder addSocket(String name, SocketConfiguration socketConfiguration) {
-            configurationBuilder.addSocket(name, Objects.requireNonNull(socketConfiguration));
-            return this;
-        }
-
-        /**
-         * Adds an additional named server socket configuration. As a result, the server will listen
-         * on multiple ports.
-         * <p>
-         * An additional named server socket may have a dedicated {@link Routing} configured
-         * through {@link io.helidon.webserver.WebServer.Builder#addNamedRouting(String, Routing)}.
-         *
          * @param config the additional named server socket configuration, never null
          * @return an updated builder
          */
@@ -707,22 +637,35 @@ public interface WebServer {
         }
 
         /**
-         * Adds an additional named server socket configuration builder. As a result, the server will listen
-         * on multiple ports.
+         * Adds or augment existing named server socket configuration.
          * <p>
          * An additional named server socket may have a dedicated {@link Routing} configured
          * through {@link io.helidon.webserver.WebServer.Builder#addNamedRouting(String, Routing)}.
          *
-         * @param name                       the name of the additional server socket configuration
-         * @param socketConfigurationBuilder the additional named server socket configuration builder; will be built as
-         *                                   a first step of this method execution
+         * @param name socket name
+         * @param socket new or existing configuration builder
          * @return an updated builder
-         * @deprecated since 2.0.0, please use {@link #addSocket(Supplier)} instead, name
-         *          is now part of socket configuration
          */
-        @Deprecated
-        public Builder addSocket(String name, Supplier<SocketConfiguration> socketConfigurationBuilder) {
-            configurationBuilder.addSocket(name, socketConfigurationBuilder);
+        public Builder socket(String name, Consumer<SocketConfiguration.Builder> socket) {
+            socket.accept(configurationBuilder.socketBuilder(name));
+            return this;
+        }
+
+        /**
+         * Adds or augment existing named server socket configuration.
+         * <p>
+         * An additional named server socket have a dedicated {@link Routing} configured
+         * through supplied routing builder.
+         *
+         * @param socketName socket name
+         * @param builders consumer with socket configuration and dedicated routing builders
+         * @return an updated builder
+         */
+        public Builder socket(String socketName, BiConsumer<SocketConfiguration.Builder, Router.Builder> builders) {
+            builders.accept(
+                    this.configurationBuilder.socketBuilder(socketName),
+                    routingBuilders.computeIfAbsent(socketName, s -> RouterImpl.builder())
+            );
             return this;
         }
 
@@ -760,8 +703,7 @@ public interface WebServer {
 
 
         /**
-         * Sets an <a href="http://opentracing.io">opentracing.io</a>
-         * tracer. (Default is {@link io.opentracing.util.GlobalTracer}.)
+         * Sets a tracer.
          *
          * @param tracer a tracer to set
          * @return an updated builder
@@ -772,8 +714,7 @@ public interface WebServer {
         }
 
         /**
-         * Sets an <a href="http://opentracing.io">opentracing.io</a>
-         * tracer. (Default is {@link io.opentracing.util.GlobalTracer}.)
+         * Sets a tracer.
          *
          * @param tracerBuilder a tracer builder to set; will be built as a first step of this method execution
          * @return updated builder

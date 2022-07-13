@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ module io.helidon.metrics.traceexemplar {
 
     requires io.helidon.metrics;
     requires io.helidon.common.context;
-    requires io.opentracing.api;
+    requires io.helidon.tracing;
 
     provides io.helidon.metrics.ExemplarService with io.helidon.metrics.exemplartrace.TraceExemplarService;
 }

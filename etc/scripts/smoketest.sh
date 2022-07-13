@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+# Copyright (c) 2019, 2022 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -73,7 +73,7 @@ $(basename ${0}) [ --staged ] [ --giturl=URL ] [ --clean ] [--help ] --version=V
     full
         Runs full smoke test against released version:
         1. archetypes
-        2. functional tests in workspace 
+        2. functional tests in workspace
         3. builds examples
 
     quick
@@ -279,7 +279,7 @@ testApp(){
 }
 
 quick(){
-    readonly archetypes=" 
+    readonly archetypes="
       quickstart-se \
       quickstart-mp \
       bare-se \

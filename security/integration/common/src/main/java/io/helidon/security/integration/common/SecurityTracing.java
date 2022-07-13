@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,14 +20,13 @@ import java.util.Optional;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.security.SecurityContext;
+import io.helidon.tracing.Span;
+import io.helidon.tracing.SpanContext;
+import io.helidon.tracing.Tracer;
 import io.helidon.tracing.config.ComponentTracingConfig;
 import io.helidon.tracing.config.SpanTracingConfig;
 import io.helidon.tracing.config.TracingConfig;
 import io.helidon.tracing.config.TracingConfigUtil;
-
-import io.opentracing.Span;
-import io.opentracing.SpanContext;
-import io.opentracing.Tracer;
 
 /**
  * Security integration utility for tracing support in integration components.
@@ -112,8 +111,8 @@ public final class SecurityTracing extends CommonTracing {
                 .flatMap(tracer -> {
                     SpanTracingConfig spanConfig = componentConfig.span(SPAN_SECURITY);
                     if (spanConfig.enabled()) {
-                        Tracer.SpanBuilder builder = tracer.buildSpan(spanConfig.newName().orElse(SPAN_SECURITY));
-                        parentSpan.ifPresent(builder::asChildOf);
+                        Span.Builder builder = tracer.spanBuilder(spanConfig.newName().orElse(SPAN_SECURITY));
+                        parentSpan.ifPresent(builder::parent);
 
                         return Optional.of(builder.start());
                     } else {
@@ -132,9 +131,9 @@ public final class SecurityTracing extends CommonTracing {
         // first find if we need to trace
         return tracer().flatMap(tracer -> {
             if (spanConfig.enabled()) {
-                Tracer.SpanBuilder builder = tracer.buildSpan(spanConfig.newName().orElse(spanName));
+                Span.Builder builder = tracer.spanBuilder(spanConfig.newName().orElse(spanName));
 
-                parent.ifPresent(builder::asChildOf);
+                parent.ifPresent(builder::parent);
                 return Optional.of(builder.start());
             } else {
                 return Optional.empty();
@@ -155,7 +154,7 @@ public final class SecurityTracing extends CommonTracing {
      * @param context security context for this request
      */
     public void securityContext(SecurityContext context) {
-        span().ifPresent(span -> span.setTag(SPAN_TAG_SECURITY_CONTEXT, context.id()));
+        span().ifPresent(span -> span.tag(SPAN_TAG_SECURITY_CONTEXT, context.id()));
     }
 
     /**
@@ -240,8 +239,10 @@ public final class SecurityTracing extends CommonTracing {
     public OutboundTracing outboundTracing() {
 
         // outbound tracing should be based on current outbound span
-        Optional<SpanContext> parentOptional = Contexts.context()
-                .flatMap(ctx -> ctx.get(TracingConfigUtil.OUTBOUND_SPAN_QUALIFIER, SpanContext.class));
+        Optional<SpanContext> parentOptional = Span.current()
+                .map(Span::context)
+                .or(() -> Contexts.context()
+                        .flatMap(ctx -> ctx.get(TracingConfigUtil.OUTBOUND_SPAN_QUALIFIER, SpanContext.class)));
         if (!parentOptional.isPresent()) {
             parentOptional = parentSpanContext();
         }

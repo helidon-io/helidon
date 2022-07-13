@@ -17,7 +17,8 @@
 package io.helidon.metrics;
 
 import java.util.EnumMap;
-import java.util.concurrent.Semaphore;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import io.helidon.config.Config;
 import io.helidon.metrics.api.MetricsSettings;
@@ -45,7 +46,7 @@ import org.eclipse.microprofile.metrics.MetricRegistry.Type;
 public class RegistryFactory implements io.helidon.metrics.api.RegistryFactory {
 
     private final EnumMap<Type, Registry> registries = new EnumMap<>(Type.class);
-    private final Semaphore metricsSettingsAccess = new Semaphore(1);
+    private final Lock metricsSettingsAccess = new ReentrantLock(true);
     private MetricsSettings metricsSettings;
 
     /**
@@ -68,12 +69,11 @@ public class RegistryFactory implements io.helidon.metrics.api.RegistryFactory {
     }
 
     private void accessMetricsSettings(Runnable operation) {
+        metricsSettingsAccess.lock();
         try {
-            metricsSettingsAccess.acquire();
             operation.run();
-            metricsSettingsAccess.release();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+        } finally {
+            metricsSettingsAccess.unlock();
         }
     }
 
@@ -86,7 +86,7 @@ public class RegistryFactory implements io.helidon.metrics.api.RegistryFactory {
      * @return a new registry factory
      * @deprecated Use {@link io.helidon.metrics.api.RegistryFactory#create()}
      */
-    @Deprecated
+    @Deprecated(since = "2.4.0", forRemoval = true)
     public static RegistryFactory create() {
         return RegistryFactory.class.cast(io.helidon.metrics.api.RegistryFactory.create());
     }
@@ -100,7 +100,7 @@ public class RegistryFactory implements io.helidon.metrics.api.RegistryFactory {
      * @return a new registry factory
      * @deprecated Use {@link io.helidon.metrics.api.RegistryFactory#create(Config)}
      */
-    @Deprecated
+    @Deprecated(since = "2.4.0", forRemoval = true)
     public static RegistryFactory create(Config config) {
         return RegistryFactory.class.cast(io.helidon.metrics.api.RegistryFactory.create(config));
     }
@@ -115,7 +115,7 @@ public class RegistryFactory implements io.helidon.metrics.api.RegistryFactory {
      * @return registry factory singleton
      * @deprecated Use {@link io.helidon.metrics.api.RegistryFactory#getInstance()}
      */
-    @Deprecated
+    @Deprecated(since = "2.4.0", forRemoval = true)
     public static RegistryFactory getInstance() {
         return RegistryFactory.class.cast(io.helidon.metrics.api.RegistryFactory.getInstance());
     }
@@ -128,7 +128,7 @@ public class RegistryFactory implements io.helidon.metrics.api.RegistryFactory {
      * @return registry factory singleton
      * @deprecated Use {@link io.helidon.metrics.api.RegistryFactory#getInstance(MetricsSettings)}
      */
-    @Deprecated
+    @Deprecated(since = "2.4.0", forRemoval = true)
     public static RegistryFactory getInstance(Config config) {
         return RegistryFactory.class.cast(io.helidon.metrics.api.RegistryFactory.getInstance(config));
     }
@@ -164,7 +164,7 @@ public class RegistryFactory implements io.helidon.metrics.api.RegistryFactory {
         });
     }
 
-    private synchronized void ensureBase() {
+    private void ensureBase() {
         if (null == registries.get(Type.BASE)) {
             accessMetricsSettings(() -> {
                 Registry registry = BaseRegistry.create(metricsSettings);

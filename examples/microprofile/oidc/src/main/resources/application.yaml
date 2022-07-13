@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+# Copyright (c) 2019, 2022 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -50,3 +50,5 @@ security:
         identity-uri: "${security.properties.oidc-identity-uri}"
         frontend-uri: "${security.properties.frontend-uri}"
         server-type: "${security.properties.server-type}"
+        # We want to redirect to login page (and token can be received either through cookie or header)
+        redirect: true

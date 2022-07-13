@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.lang.reflect.Type;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -248,7 +249,7 @@ public class HelidonHK2InjectionManagerFactory extends Hk2InjectionManagerFactor
             try {
                 shared.inject(injectMe);
             } catch (Throwable t) {
-                LOGGER.warning(() -> "Injection failed for " + injectMe + " using shared");
+                LOGGER.log(Level.WARNING, "Injection failed for " + injectMe + " using shared", t);
                 forApplication.inject(injectMe);
             }
         }
@@ -258,7 +259,7 @@ public class HelidonHK2InjectionManagerFactory extends Hk2InjectionManagerFactor
             try {
                 shared.inject(injectMe, classAnalyzer);
             } catch (Throwable t) {
-                LOGGER.warning(() -> "Injection failed for " + injectMe + " using shared");
+                LOGGER.log(Level.WARNING, "Injection failed for " + injectMe + " using shared", t);
                 forApplication.inject(injectMe, classAnalyzer);
             }
         }

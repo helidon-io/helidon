@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,20 @@
 
 package io.helidon.grpc.server;
 
-import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import io.helidon.grpc.core.ContextKeys;
+import io.helidon.grpc.core.GrpcTracingContext;
+import io.helidon.grpc.core.GrpcTracingName;
 import io.helidon.grpc.core.InterceptorPriorities;
+import io.helidon.tracing.HeaderProvider;
+import io.helidon.tracing.Span;
+import io.helidon.tracing.SpanContext;
+import io.helidon.tracing.Tracer;
 
 import io.grpc.Context;
 import io.grpc.Contexts;
@@ -31,28 +38,44 @@ import io.grpc.Metadata;
 import io.grpc.ServerCall;
 import io.grpc.ServerCallHandler;
 import io.grpc.ServerInterceptor;
-import io.opentracing.Span;
-import io.opentracing.SpanContext;
-import io.opentracing.Tracer;
-import io.opentracing.contrib.grpc.OpenTracingContextKey;
-import io.opentracing.contrib.grpc.OperationNameConstructor;
-import io.opentracing.propagation.Format;
-import io.opentracing.propagation.TextMapAdapter;
 import jakarta.annotation.Priority;
 
 /**
  * A {@link ServerInterceptor} that adds tracing to gRPC service calls.
  */
 @Priority(InterceptorPriorities.TRACING)
-public class GrpcTracing
-        implements ServerInterceptor {
+public class GrpcTracing implements ServerInterceptor {
+    /**
+     * The Open Tracing {@link Tracer}.
+     */
+    private final Tracer tracer;
+
+    /*
+     * GRPC method name
+     */
+    private final GrpcTracingName operationNameConstructor;
+
+    /**
+     *
+     */
+    private final boolean streaming;
+
+    /**
+     * A flag indicating verbose logging.
+     */
+    private final boolean verbose;
+
+    /**
+     * The set of attributes to log in spans.
+     */
+    private final Set<ServerRequestAttribute> tracedAttributes;
 
     private GrpcTracing(Tracer tracer, GrpcTracingConfig tracingConfig) {
         this.tracer = tracer;
-        operationNameConstructor = tracingConfig.operationNameConstructor();
-        streaming = tracingConfig.isStreaming();
-        verbose = tracingConfig.isVerbose();
-        tracedAttributes = tracingConfig.tracedAttributes();
+        this.operationNameConstructor = tracingConfig.operationNameConstructor();
+        this.streaming = tracingConfig.isStreaming();
+        this.verbose = tracingConfig.isVerbose();
+        this.tracedAttributes = tracingConfig.tracedAttributes();
     }
 
     /**
@@ -80,25 +103,25 @@ public class GrpcTracing
             }
         }
 
-        String operationName = operationNameConstructor.constructOperationName(call.getMethodDescriptor());
+        String operationName = operationNameConstructor.name(call.getMethodDescriptor());
         Span span = getSpanFromHeaders(headerMap, operationName);
 
         if (tracedAttributes.contains(ServerRequestAttribute.ALL)) {
-            span.setTag("grpc.method_type", call.getMethodDescriptor().getType().toString());
-            span.setTag("grpc.method_name", call.getMethodDescriptor().getFullMethodName());
-            span.setTag("grpc.call_attributes", call.getAttributes().toString());
+            span.tag("grpc.method_type", call.getMethodDescriptor().getType().toString());
+            span.tag("grpc.method_name", call.getMethodDescriptor().getFullMethodName());
+            span.tag("grpc.call_attributes", call.getAttributes().toString());
             addMetadata(headers, span);
         } else {
             for (ServerRequestAttribute attr : tracedAttributes) {
                 switch (attr) {
                     case METHOD_TYPE:
-                        span.setTag("grpc.method_type", call.getMethodDescriptor().getType().toString());
+                        span.tag("grpc.method_type", call.getMethodDescriptor().getType().toString());
                         break;
                     case METHOD_NAME:
-                        span.setTag("grpc.method_name", call.getMethodDescriptor().getFullMethodName());
+                        span.tag("grpc.method_name", call.getMethodDescriptor().getFullMethodName());
                         break;
                     case CALL_ATTRIBUTES:
-                        span.setTag("grpc.call_attributes", call.getAttributes().toString());
+                        span.tag("grpc.call_attributes", call.getAttributes().toString());
                         break;
                     case HEADERS:
                         addMetadata(headers, span);
@@ -114,7 +137,7 @@ public class GrpcTracing
         updateContext(ContextKeys.HELIDON_CONTEXT.get(grpcContext), span);
         io.helidon.common.context.Contexts.context().ifPresent(ctx -> updateContext(ctx, span));
 
-        Context ctxWithSpan = grpcContext.withValue(OpenTracingContextKey.getKey(), span);
+        Context ctxWithSpan = grpcContext.withValue(GrpcTracingContext.SPAN_KEY, span);
         ServerCall.Listener<ReqT> listenerWithContext = Contexts.interceptCall(ctxWithSpan, call, headers, next);
 
         return new TracingListener<>(listenerWithContext, span);
@@ -138,26 +161,27 @@ public class GrpcTracing
         metadata.merge(headers);
         metadata.removeAll(ContextKeys.AUTHORIZATION);
 
-        span.setTag("grpc.headers", metadata.toString());
+        span.tag("grpc.headers", metadata.toString());
     }
 
     private Span getSpanFromHeaders(Map<String, String> headers, String operationName) {
         Span span;
 
         try {
-            SpanContext parentSpanCtx = tracer.extract(Format.Builtin.HTTP_HEADERS,
-                                                       new TextMapAdapter(headers));
+            SpanContext parentSpanCtx = tracer.extract(new MapHeaderProvider(headers))
+                    .orElse(null);
+
             if (parentSpanCtx == null) {
-                span = tracer.buildSpan(operationName)
+                span = tracer.spanBuilder(operationName)
                         .start();
             } else {
-                span = tracer.buildSpan(operationName)
-                        .asChildOf(parentSpanCtx)
+                span = tracer.spanBuilder(operationName)
+                        .parent(parentSpanCtx)
                         .start();
             }
         } catch (IllegalArgumentException iae) {
-            span = tracer.buildSpan(operationName)
-                    .withTag("Error", "Extract failed and an IllegalArgumentException was thrown")
+            span = tracer.spanBuilder(operationName)
+                    .tag("Error", "Extract failed and an IllegalArgumentException was thrown")
                     .start();
         }
 
@@ -183,7 +207,7 @@ public class GrpcTracing
         @Override
         public void onMessage(ReqT message) {
             if (streaming || verbose) {
-                span.log(Collections.singletonMap("Message received", message));
+                span.addEvent("onMessage", Map.of("Message received", message));
             }
 
             delegate().onMessage(message);
@@ -192,7 +216,7 @@ public class GrpcTracing
         @Override
         public void onHalfClose() {
             if (streaming) {
-                span.log("Client finished sending messages");
+                span.addEvent("Client finished sending messages");
             }
 
             delegate().onHalfClose();
@@ -200,51 +224,56 @@ public class GrpcTracing
 
         @Override
         public void onCancel() {
-            span.log("Call cancelled");
+            span.addEvent("Call cancelled");
 
             try {
                 delegate().onCancel();
             } finally {
-                span.finish();
+                span.end();
             }
         }
 
         @Override
         public void onComplete() {
             if (verbose) {
-                span.log("Call completed");
+                span.addEvent("Call completed");
             }
 
             try {
                 delegate().onComplete();
             } finally {
-                span.finish();
+                span.end();
             }
         }
     }
 
-    /**
-     * The Open Tracing {@link Tracer}.
-     */
-    private final Tracer tracer;
+    private static class MapHeaderProvider implements HeaderProvider {
+        private final Map<String, String> headers;
 
-    /**
-     * A flag indicating whether to log streaming.
-     */
-    private final OperationNameConstructor operationNameConstructor;
+        MapHeaderProvider(Map<String, String> headers) {
+            this.headers = headers;
+        }
 
-    /**
-     *
-     */
-    private final boolean streaming;
+        @Override
+        public Iterable<String> keys() {
+            return headers.keySet();
+        }
 
-    /**
-     * A flag indicating verbose logging.
-     */
-    private final boolean verbose;
+        @Override
+        public Optional<String> get(String key) {
+            return Optional.ofNullable(headers.get(key));
+        }
 
-    /**
-     * The set of attributes to log in spans.
-     */
-    private final Set<ServerRequestAttribute> tracedAttributes;
+        @Override
+        public Iterable<String> getAll(String key) {
+            // either map the value to list, or get empty list
+            return get(key).map(List::of)
+                    .orElseGet(List::of);
+        }
+
+        @Override
+        public boolean contains(String key) {
+            return headers.containsKey(key);
+        }
+    }
 }

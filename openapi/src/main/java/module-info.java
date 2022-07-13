@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,10 @@ module io.helidon.openapi {
     requires java.desktop; // for java.beans package
     requires org.yaml.snakeyaml;
 
-    requires microprofile.openapi.api;
+    requires transitive microprofile.openapi.api;
+
+    requires static io.helidon.config.metadata;
 
     exports io.helidon.openapi;
+    exports io.helidon.openapi.internal to io.helidon.microprofile.openapi;
 }

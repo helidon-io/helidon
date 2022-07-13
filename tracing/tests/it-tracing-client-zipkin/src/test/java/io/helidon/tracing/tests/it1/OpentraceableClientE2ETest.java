@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.tracing.tests.it1;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -25,7 +26,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import io.helidon.tracing.Span;
 import io.helidon.tracing.jersey.client.ClientTracingFilter;
+import io.helidon.tracing.opentracing.OpenTracing;
 import io.helidon.tracing.zipkin.ZipkinTracer;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
@@ -34,7 +37,6 @@ import brave.Tracing;
 import brave.opentracing.BraveSpanContext;
 import brave.opentracing.BraveTracer;
 import brave.propagation.TraceContext;
-import io.opentracing.Span;
 import io.opentracing.Tracer;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
@@ -52,84 +54,82 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  * The ZipkinClientTest.
  */
-public class OpentraceableClientE2ETest {
-
-    private static WebServer server;
+class OpentraceableClientE2ETest {
 
     private static final int EXPECTED_TRACE_EVENTS_COUNT = 4;
     private static final CountDownLatch EVENTS_LATCH = new CountDownLatch(EXPECTED_TRACE_EVENTS_COUNT);
     private static final Map<String, zipkin2.Span> EVENTS_MAP = new ConcurrentHashMap<>();
-
+    private static WebServer server;
     private static Client client;
 
-    /** Use custom {@link Tracer} that adds events to {@link #EVENTS_MAP} map. */
-    private static Tracer tracer(String serviceName) {
-        Tracing braveTracing = Tracing.newBuilder()
-                                      .localServiceName(serviceName)
-                                      .spanReporter(span -> {
-                                        EVENTS_MAP.put(span.id(), span);
-                                        EVENTS_LATCH.countDown();
-                                      })
-                                      .build();
-
-        // use this to create an OpenTracing Tracer
-        return new ZipkinTracer(BraveTracer.create(braveTracing), List.of());
-    }
-
-    private static WebServer startWebServer() throws InterruptedException, ExecutionException, TimeoutException {
-        return WebServer.builder()
-                        .host("localhost")
-                        .routing(Routing.builder()
-                                 .any((req, res) -> res.send("OK")))
-                        .tracer(tracer("test-server"))
-                        .build()
-                        .start()
-                        .toCompletableFuture()
-                        .get(10, TimeUnit.SECONDS);
+    @BeforeAll
+    static void startServerInitClient() throws Exception {
+        server = startWebServer();
+        client = ClientBuilder.newClient(new ClientConfig(ClientTracingFilter.class));
     }
 
     @Test
-    public void e2e() throws Exception {
-        Tracer tracer = tracer("test-client");
-        Span start = tracer.buildSpan("client-call")
-                           .start();
+    void e2e() throws Exception {
+        io.helidon.tracing.Tracer tracer = tracer("test-client");
+        Span start = tracer.spanBuilder("client-call")
+                .start();
         Response response = client.target("http://localhost:" + server.port())
-                                  .property(ClientTracingFilter.TRACER_PROPERTY_NAME, tracer)
-                                  .property(ClientTracingFilter.CURRENT_SPAN_CONTEXT_PROPERTY_NAME, start.context())
-                                  .request()
-                                  .get();
+                .property(ClientTracingFilter.TRACER_PROPERTY_NAME, tracer)
+                .property(ClientTracingFilter.CURRENT_SPAN_CONTEXT_PROPERTY_NAME, start.context())
+                .request()
+                .get();
 
         assertThat(response.getStatus(), is(200));
 
-        start.finish();
+        start.end();
 
         if (!EVENTS_LATCH.await(10, TimeUnit.SECONDS)) {
             fail("Expected " + EXPECTED_TRACE_EVENTS_COUNT + " trace events but received only: " + EVENTS_MAP.size());
         }
 
-        TraceContext traceContext = ((BraveSpanContext) start.context()).unwrap();
+        TraceContext traceContext = ((BraveSpanContext) start.unwrap(io.opentracing.Span.class).context()).unwrap();
 
         assertSpanChain(EVENTS_MAP.remove(traceContext.traceIdString()), EVENTS_MAP);
         assertThat(EVENTS_MAP.entrySet(), hasSize(0));
-    }
-
-    @BeforeAll
-    public static void startServerInitClient() throws Exception {
-        server = startWebServer();
-        client = ClientBuilder.newClient(new ClientConfig(ClientTracingFilter.class));
     }
 
     @AfterEach
     public void stopAndClose() throws Exception {
         if (server != null) {
             server.shutdown()
-                  .toCompletableFuture()
-                  .get(10, TimeUnit.SECONDS);
+                    .toCompletableFuture()
+                    .get(10, TimeUnit.SECONDS);
         }
 
         client.close();
     }
 
+    /**
+     * Use custom {@link Tracer} that adds events to {@link #EVENTS_MAP} map.
+     */
+    private static io.helidon.tracing.Tracer tracer(String serviceName) {
+        Tracing braveTracing = Tracing.newBuilder()
+                .localServiceName(serviceName)
+                .spanReporter(span -> {
+                    EVENTS_MAP.put(span.id(), span);
+                    EVENTS_LATCH.countDown();
+                })
+                .build();
+
+        // use this to create an OpenTracing Tracer
+        return OpenTracing.create(new ZipkinTracer(BraveTracer.create(braveTracing), List.of()));
+    }
+
+    private static WebServer startWebServer() throws InterruptedException, ExecutionException, TimeoutException {
+        return WebServer.builder()
+                .host("localhost")
+                .routing(Routing.builder()
+                                 .any((req, res) -> res.send("OK")))
+                .tracer(tracer("test-server"))
+                .build()
+                .start()
+                .await(Duration.ofSeconds(10));
+    }
 
     private String printSpans(Map<String, zipkin2.Span> spans) {
         StringBuilder sb = new StringBuilder();
@@ -145,7 +145,9 @@ public class OpentraceableClientE2ETest {
         return sb.toString();
     }
 
-    /** Assert that all the spans are in a strict {@code parent-child-grandchild-[grandgrandchild]-[...]} relationship. */
+    /**
+     * Assert that all the spans are in a strict {@code parent-child-grandchild-[grandgrandchild]-[...]} relationship.
+     */
     private void assertSpanChain(zipkin2.Span topSpan, Map<String, zipkin2.Span> spans) {
         if (spans.isEmpty()) {
             // end the recursion
@@ -153,16 +155,16 @@ public class OpentraceableClientE2ETest {
         }
         Optional<zipkin2.Span> removeSpan = findAndRemoveSpan(topSpan.id(), spans);
         assertSpanChain(removeSpan.orElseThrow(
-                () -> new AssertionError("Span with parent ID not found: " + topSpan.id() + " at: " + printSpans(spans))),
+                                () -> new AssertionError("Span with parent ID not found: " + topSpan.id() + " at: " + printSpans(spans))),
                         spans);
     }
 
     private Optional<zipkin2.Span> findAndRemoveSpan(String id, Map<String, zipkin2.Span> spans) {
         Optional<zipkin2.Span> span = spans.entrySet()
-                                          .stream()
-                                          .filter(entry -> id.equals(entry.getValue().parentId()))
-                                          .map(Map.Entry::getValue)
-                                          .findFirst();
+                .stream()
+                .filter(entry -> id.equals(entry.getValue().parentId()))
+                .map(Map.Entry::getValue)
+                .findFirst();
 
         span.ifPresent(span1 -> spans.remove(span1.id()));
         return span;

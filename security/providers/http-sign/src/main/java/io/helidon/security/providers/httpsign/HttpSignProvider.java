@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -323,10 +323,7 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
         private SignedHeadersConfig inboundRequiredHeaders = SignedHeadersConfig.builder().build();
         private OutboundConfig outboundConfig = OutboundConfig.builder().build();
         private final Map<String, InboundClientDefinition> inboundKeys = new HashMap<>();
-        // not to self - we need to switch default to false in 3.0.0
-        // and probably remove this in 4.0.0
-        @Deprecated
-        private boolean backwardCompatibleEol = true;
+        private boolean backwardCompatibleEol = false;
 
         private Builder() {
         }
@@ -485,9 +482,13 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
         }
 
         /**
-         * Until version 3.0.0 (exclusive) there is a trailing end of line added to the signed
+         * Enable support for Helidon versions before 3.0.0 (exclusive).
+         * <p>
+         * Until version 3.0.0 (exclusive) there was a trailing end of line added to the signed
          * data.
-         * To be able to communicate cross versions, we must configure this for newer versions
+         * To be able to communicate cross versions, we must configure this when talking to older versions of Helidon.
+         * Default value is {@code false}. In Helidon 2.x, this switch exists as well and the default is {@code true}, to
+         * allow communication between versions as needed.
          *
          * @param backwardCompatible whether to run in backward compatible mode
          * @return updated builder instance

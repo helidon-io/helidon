@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import io.helidon.webserver.spi.UpgradeCodecProvider;
+
 /**
  * Reactive web server.
  */
@@ -27,20 +29,20 @@ module io.helidon.webserver {
     requires transitive io.helidon.common.context;
     requires transitive io.helidon.config;
     requires transitive io.helidon.tracing.config;
-    requires transitive io.opentracing.util;
+    requires transitive io.helidon.tracing;
     requires io.helidon.logging.common;
     requires static io.helidon.config.metadata;
 
     requires java.logging;
-    requires io.opentracing.api;
-    requires io.opentracing.noop;
     requires io.netty.handler;
     requires io.netty.codec.http;
     requires io.netty.codec;
     requires io.netty.transport;
     requires io.netty.common;
     requires io.netty.buffer;
-    requires io.netty.codec.http2;
 
     exports io.helidon.webserver;
+    exports io.helidon.webserver.spi;
+
+    uses UpgradeCodecProvider;
 }

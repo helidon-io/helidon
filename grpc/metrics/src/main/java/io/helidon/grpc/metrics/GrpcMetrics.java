@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -152,18 +152,6 @@ public class GrpcMetrics
      */
     public GrpcMetrics units(String units) {
         return new GrpcMetrics(metricRule.units(units));
-    }
-
-    /**
-     * Set the reusability of the metric.
-     * @param reusable {@code true} if this metric may be reused
-     * @return a {@link io.helidon.grpc.metrics.GrpcMetrics} interceptor
-     * @see org.eclipse.microprofile.metrics.Metadata
-     */
-    // TODO 3.0.0-JAKARTA
-    // reusability is missing from new metrics API
-    public GrpcMetrics reusable(boolean reusable) {
-        return new GrpcMetrics(metricRule.reusable(reusable));
     }
 
     /**
@@ -575,12 +563,6 @@ public class GrpcMetrics
         private Optional<String> units = Optional.empty();
 
         /**
-         * The reusability status of this metric.
-         * @see org.eclipse.microprofile.metrics.Metadata
-         */
-        private boolean reusable;
-
-        /**
          * The function to use to obtain the metric name.
          */
         private Optional<NamingFunction> nameFunction = Optional.empty();
@@ -596,7 +578,6 @@ public class GrpcMetrics
             this.displayName = copy.displayName;
             this.units = copy.units;
             this.nameFunction = copy.nameFunction;
-            this.reusable = copy.reusable;
         }
 
         /**
@@ -659,12 +640,6 @@ public class GrpcMetrics
         private MetricsRules units(String units) {
             MetricsRules rules = new MetricsRules(this);
             rules.units = Optional.of(units);
-            return rules;
-        }
-
-        private MetricsRules reusable(boolean reusable) {
-            MetricsRules rules = new MetricsRules(this);
-            rules.reusable = reusable;
             return rules;
         }
 

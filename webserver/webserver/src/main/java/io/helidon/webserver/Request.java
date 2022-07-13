@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,13 +37,10 @@ import io.helidon.common.reactive.Single;
 import io.helidon.media.common.MessageBodyContext;
 import io.helidon.media.common.MessageBodyReadableContent;
 import io.helidon.media.common.MessageBodyReaderContext;
+import io.helidon.tracing.Span;
+import io.helidon.tracing.SpanContext;
 import io.helidon.tracing.config.SpanTracingConfig;
 import io.helidon.tracing.config.TracingConfigUtil;
-
-import io.opentracing.Span;
-import io.opentracing.SpanContext;
-import io.opentracing.Tracer;
-import io.opentracing.tag.Tags;
 
 /**
  * The basic abstract implementation of {@link ServerRequest}.
@@ -219,11 +216,11 @@ abstract class Request implements ServerRequest {
 
             if (spanConfig.enabled()) {
                 // only create a real span if enabled
-                Tracer.SpanBuilder spanBuilder = tracer().buildSpan(spanName);
-                spanBuilder.asChildOf(parentSpan.get());
+                Span.Builder spanBuilder = tracer().spanBuilder(spanName);
+                spanBuilder.parent(parentSpan.get());
 
                 if (type != null) {
-                    spanBuilder.withTag("requested.type", type.getTypeName());
+                    spanBuilder.tag("requested.type", type.getTypeName());
                 }
                 return spanBuilder.start();
             } else {
@@ -241,18 +238,14 @@ abstract class Request implements ServerRequest {
 
             case AFTER_ONERROR:
                 if (readSpan != null) {
-                    Tags.ERROR.set(readSpan, Boolean.TRUE);
+                    readSpan.status(Span.Status.ERROR);
                     Throwable ex = event.asErrorEvent().error();
-                    readSpan.log(Map.of("event", "error",
-                                        "error.kind", "Exception",
-                                        "error.object", ex,
-                                        "message", ex.toString()));
-                    readSpan.finish();
+                    readSpan.end(ex);
                 }
                 break;
             case AFTER_ONCOMPLETE:
                 if (readSpan != null) {
-                    readSpan.finish();
+                    readSpan.end();
                 }
                 break;
             default:

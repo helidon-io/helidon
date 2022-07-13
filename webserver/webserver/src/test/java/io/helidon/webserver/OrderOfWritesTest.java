@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,7 +51,7 @@ public class OrderOfWritesTest {
 
         try {
             server = WebServer.builder()
-                    .routing(Routing.builder()
+                    .routing(r -> r
                             .get((req, res) -> res.send(Multi.just("1", "2", "3")
                                     .map(String::valueOf)
                                     .map(String::getBytes)
@@ -62,8 +62,7 @@ public class OrderOfWritesTest {
                                             DataChunk.create(false, ByteBuffer.wrap(underscore)),
                                             DataChunk.create(true, ByteBuffer.wrap(number))
                                     ))
-                            ))
-                            .build())
+                            )))
                     .host("localhost")
                     .port(0)
                     .build()

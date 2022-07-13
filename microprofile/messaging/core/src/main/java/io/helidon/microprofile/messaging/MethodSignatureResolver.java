@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Flow;
 import java.util.function.Supplier;
 
 import org.eclipse.microprofile.reactive.messaging.Incoming;
@@ -50,6 +51,7 @@ final class MethodSignatureResolver {
     private final List<Supplier<Optional<MethodSignatureType>>> resolveRules = new ArrayList<>();
     private final Method method;
 
+    @SuppressWarnings("checkstyle:MethodLength")
     private MethodSignatureResolver(Method method) {
         this.method = method;
         returnType = method.getReturnType();
@@ -142,9 +144,17 @@ final class MethodSignatureResolver {
         addRule(MethodSignatureType.PROCESSOR_PUBLISHER_MSG_2_MSG,
                 () -> returnsClassWithGenericParams(Publisher.class, MsgType.MESSAGE)
                         && hasFirstParam(MsgType.MESSAGE));
+        // Flow.Publisher<Message<O>> method(Message<I>msg);
+        addRule(MethodSignatureType.PROCESSOR_FLOW_PUBLISHER_MSG_2_MSG,
+                () -> returnsClassWithGenericParams(Flow.Publisher.class, MsgType.MESSAGE)
+                        && hasFirstParam(MsgType.MESSAGE));
         // Publisher<O> method(I payload);
         addRule(MethodSignatureType.PROCESSOR_PUBLISHER_PAYL_2_PAYL,
                 () -> returnsClassWithGenericParams(Publisher.class, MsgType.PAYLOAD)
+                        && hasFirstParam(MsgType.PAYLOAD));
+        // Flow.Publisher<O> method(I payload);
+        addRule(MethodSignatureType.PROCESSOR_FLOW_PUBLISHER_PAYL_2_PAYL,
+                () -> returnsClassWithGenericParams(Flow.Publisher.class, MsgType.PAYLOAD)
                         && hasFirstParam(MsgType.PAYLOAD));
         // Message<O> method(Message<I> msg)
         addRule(MethodSignatureType.PROCESSOR_MSG_2_MSG,
@@ -167,10 +177,18 @@ final class MethodSignatureResolver {
         addRule(MethodSignatureType.OUTGOING_PUBLISHER_MSG_2_VOID,
                 () -> hasNoParams()
                         && returnsClassWithGenericParams(Publisher.class, MsgType.MESSAGE));
+        // Flow.Publisher<Message<U>> method()
+        addRule(MethodSignatureType.OUTGOING_FLOW_PUBLISHER_MSG_2_VOID,
+                () -> hasNoParams()
+                        && returnsClassWithGenericParams(Flow.Publisher.class, MsgType.MESSAGE));
         // Publisher<U> method()
         addRule(MethodSignatureType.OUTGOING_PUBLISHER_PAYL_2_VOID,
                 () -> hasNoParams()
                         && returnsClassWithGenericParams(Publisher.class, MsgType.PAYLOAD));
+        // Flow.Publisher<U> method()
+        addRule(MethodSignatureType.OUTGOING_FLOW_PUBLISHER_PAYL_2_VOID,
+                () -> hasNoParams()
+                        && returnsClassWithGenericParams(Flow.Publisher.class, MsgType.PAYLOAD));
         // PublisherBuilder<Message<U>> method()
         addRule(MethodSignatureType.OUTGOING_PUBLISHER_BUILDER_MSG_2_VOID,
                 () -> hasNoParams()

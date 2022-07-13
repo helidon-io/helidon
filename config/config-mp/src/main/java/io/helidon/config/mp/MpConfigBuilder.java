@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import java.math.BigInteger;
 import java.net.URI;
 import java.net.URL;
 import java.nio.charset.Charset;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
@@ -47,6 +46,7 @@ import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
@@ -54,8 +54,6 @@ import java.util.ServiceLoader;
 import java.util.SimpleTimeZone;
 import java.util.TimeZone;
 import java.util.UUID;
-import java.util.function.BiFunction;
-import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -66,7 +64,7 @@ import io.helidon.config.ConfigException;
 import io.helidon.config.ConfigMappers;
 import io.helidon.config.ConfigValue;
 import io.helidon.config.mp.spi.MpConfigFilter;
-import io.helidon.config.yaml.mp.YamlMpConfigSource;
+import io.helidon.config.mp.spi.MpMetaConfigProvider;
 
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigBuilder;
@@ -82,6 +80,27 @@ import static io.helidon.config.mp.MpMetaConfig.MetaConfigSource;
 class MpConfigBuilder implements ConfigBuilder {
     private static final Logger LOGGER = Logger.getLogger(MpConfigBuilder.class.getName());
     private static final String DEFAULT_CONFIG_SOURCE = "META-INF/microprofile-config.properties";
+
+    private static final Map<String, MpMetaConfigProvider> MP_META_PROVIDERS;
+    static {
+        List<MpMetaConfigProvider> mpMetaConfigProviders =
+                HelidonServiceLoader.builder(ServiceLoader.load(MpMetaConfigProvider.class))
+                        .addService(new MpEnvironmentVariablesMetaConfigProvider())
+                        .addService(new MpSystemPropertiesMetaConfigProvider())
+                        .addService(new MpPropertiesMetaConfigProvider())
+                        .build()
+                        .asList();
+
+        Map<String, MpMetaConfigProvider> theMap = new HashMap<>();
+        // ordered by priority
+        for (MpMetaConfigProvider mpMetaConfigProvider : mpMetaConfigProviders) {
+            for (String supportedType : mpMetaConfigProvider.supportedTypes()) {
+                theMap.putIfAbsent(supportedType, mpMetaConfigProvider);
+            }
+        }
+        MP_META_PROVIDERS = Map.copyOf(theMap);
+    }
+
 
     private final List<OrdinalSource> sources = new LinkedList<>();
     private final List<OrdinalConverter> converters = new LinkedList<>();
@@ -151,14 +170,6 @@ class MpConfigBuilder implements ConfigBuilder {
         }
 
         return doGetType(clazz.getSuperclass());
-    }
-
-    private static String toProfileName(String fileName, String profile) {
-        int i = fileName.lastIndexOf('.');
-        if (i > -1) {
-            return fileName.substring(0, i) + "-" + profile + fileName.substring(i);
-        }
-        return fileName + "-" + profile;
     }
 
     @Override
@@ -236,25 +247,14 @@ class MpConfigBuilder implements ConfigBuilder {
         for (io.helidon.config.Config config : configs) {
             String type = config.get("type").asString()
                     .orElseThrow(() -> new ConfigException("Meta configuration sources must have a \"type\" property defined"));
-            // in MP, we have a hardcoded list of supported configuration source types
-            List<ConfigSource> delegates;
-            switch (type) {
-            case "system-properties":
-                delegates = List.of(MpConfigSources.systemProperties());
-                break;
-            case "environment-variables":
-                delegates = List.of(MpConfigSources.environmentVariables());
-                break;
-            case "properties":
-                delegates = propertiesSource(config);
-                break;
-            case "yaml":
-                delegates = yamlSource(config);
-                break;
-            default:
-                throw new ConfigException("Meta configuration source type \"" + type + "\" is not supported. Use on of: "
-                                                  + "system-properties, environment-variables, properties, yaml");
+            MpMetaConfigProvider mpMetaConfigProvider = MP_META_PROVIDERS.get(type);
+            if (mpMetaConfigProvider == null) {
+                throw new ConfigException("Wrong meta configuration, type " + type
+                        + " not supported, only supporting: " + MP_META_PROVIDERS.keySet());
             }
+
+            List<? extends ConfigSource> delegates = mpMetaConfigProvider.create(type, config, profile);
+
             boolean shouldCount = delegates.size() > 1;
             int counter = 0;
 
@@ -276,163 +276,6 @@ class MpConfigBuilder implements ConfigBuilder {
                 withSources(builder.build());
             }
         }
-    }
-
-    private List<ConfigSource> propertiesSource(io.helidon.config.Config config) {
-        return sourceFromMeta(config,
-                              MpConfigSources::create,
-                              MpConfigSources::classPath,
-                              MpConfigSources::classPath,
-                              MpConfigSources::create);
-    }
-
-    private List<ConfigSource> yamlSource(io.helidon.config.Config config) {
-        return sourceFromMeta(config,
-                              YamlMpConfigSource::create,
-                              YamlMpConfigSource::classPath,
-                              YamlMpConfigSource::classPath,
-                              YamlMpConfigSource::create);
-    }
-
-    private List<ConfigSource> sourceFromMeta(io.helidon.config.Config config,
-                                              Function<Path, ConfigSource> fromPath,
-                                              Function<String, List<ConfigSource>> fromClasspath,
-                                              BiFunction<String, String, List<ConfigSource>> fromClasspathWithProfile,
-                                              Function<URL, ConfigSource> fromUrl) {
-
-        boolean optional = config.get("optional").asBoolean().orElse(false);
-
-        String location;
-        Exception cause = null;
-
-        ConfigValue<Path> pathConfig = config.get("path").as(Path.class);
-        if (pathConfig.isPresent()) {
-            Path path = pathConfig.get();
-            List<ConfigSource> result = sourceFromPathMeta(path, fromPath);
-
-            if (!result.isEmpty()) {
-                return result;
-            }
-            // else the file was not found, check optional
-            location = "path " + path.toAbsolutePath();
-        } else {
-            ConfigValue<String> classpathConfig = config.get("classpath").as(String.class);
-            if (classpathConfig.isPresent()) {
-                String classpath = classpathConfig.get();
-                List<ConfigSource> sources;
-
-                if (profile == null) {
-                    sources = fromClasspath.apply(classpath);
-                } else {
-                    sources = fromClasspathWithProfile.apply(classpath, profile);
-                }
-
-                if (!sources.isEmpty()) {
-                    return sources;
-                }
-                location = "classpath " + classpath;
-            } else {
-                ConfigValue<URL> urlConfig = config.get("url").as(URL.class);
-                if (urlConfig.isPresent()) {
-                    URL url = urlConfig.get();
-                    List<ConfigSource> sources = null;
-                    try {
-                        sources = sourceFromUrlMeta(url, fromUrl);
-                    } catch (ConfigException e) {
-                        cause = e;
-                    }
-
-                    if (sources != null && !sources.isEmpty()) {
-                        return sources;
-                    }
-                    location = "url " + url;
-                } else {
-                    throw new ConfigException("MP meta configuration does not contain config source location. Node: " + config
-                            .key());
-                }
-            }
-        }
-
-        if (optional) {
-            return List.of();
-        }
-        String message = "Meta configuration could not find non-optional config source on " + location;
-        if (cause == null) {
-            throw new ConfigException(message);
-        } else {
-            throw new ConfigException(message, cause);
-        }
-    }
-
-    private List<ConfigSource> sourceFromUrlMeta(URL url, Function<URL, ConfigSource> fromUrl) {
-        ConfigSource profileSource = null;
-        ConfigSource mainSource = null;
-        Exception cause = null;
-
-        if (profile != null) {
-            try {
-                String profileUrl = toProfileName(url.toString(), profile);
-                profileSource = fromUrl.apply(new URL(profileUrl));
-            } catch (Exception e) {
-                cause = e;
-            }
-        }
-
-        try {
-            mainSource = fromUrl.apply(url);
-            if (cause != null) {
-                LOGGER.log(Level.FINEST, "Failed to load profile URL resource, succeeded loading main from " + url, cause);
-            }
-        } catch (ConfigException e) {
-            if (cause != null) {
-                e.addSuppressed(cause);
-                throw e;
-            } else {
-                if (profileSource == null) {
-                    throw e;
-                } else {
-                    LOGGER.log(Level.FINEST, "Did not find main URL config source from " + url + ", have profile source", e);
-                }
-            }
-        }
-        return composite(mainSource, profileSource);
-    }
-
-    private List<ConfigSource> sourceFromPathMeta(Path path, Function<Path, ConfigSource> fromPath) {
-        ConfigSource profileSource = null;
-        ConfigSource mainSource = null;
-
-        if (profile != null) {
-            Path fileNamePath = path.getFileName();
-            String fileName = (fileNamePath == null ? "" : fileNamePath.toString());
-            fileName = toProfileName(fileName, profile);
-            Path profileSpecific = path.resolveSibling(fileName);
-            if (Files.exists(profileSpecific) && Files.isRegularFile(profileSpecific)) {
-                profileSource = fromPath.apply(profileSpecific);
-            }
-        }
-
-        if (Files.exists(path) && Files.isRegularFile(path)) {
-            mainSource = fromPath.apply(path);
-        }
-
-        // now handle profile
-        return composite(mainSource, profileSource);
-    }
-
-    private List<ConfigSource> composite(ConfigSource mainSource, ConfigSource profileSource) {
-        // now handle profile
-        if (profileSource == null) {
-            if (mainSource == null) {
-                return List.of();
-            }
-            return List.of(mainSource);
-        }
-        if (mainSource == null) {
-            return List.of(profileSource);
-        }
-
-        return List.of(MpConfigSources.composite(profileSource, mainSource));
     }
 
     @Override
@@ -668,11 +511,46 @@ class MpConfigBuilder implements ConfigBuilder {
         private OrdinalConverter(Converter<?> converter, Class<?> aClass, int ordinal) {
             this.ordinal = ordinal;
             this.type = aClass;
-            this.converter = converter;
+            this.converter = new NullCheckingConverter<>(aClass, converter);
         }
 
         private OrdinalConverter(Converter<?> converter) {
             this(converter, getConverterType(converter.getClass()), Priorities.find(converter, 100));
+        }
+
+        @Override
+        public String toString() {
+            return type.getName() + "->" + converter;
+        }
+    }
+
+    private static final class NullCheckingConverter<T> implements Converter<T> {
+        private final Converter<T> delegate;
+        private final Class<?> type;
+
+        private NullCheckingConverter(Class<?> type, Converter<T> delegate) {
+            this.delegate = delegate;
+            this.type = type;
+        }
+
+        @Override
+        public T convert(String value) throws IllegalArgumentException, NullPointerException {
+            if (value == null) {
+                throw new NullPointerException("Null not allowed in MP converters. Converter for type " + type.getName());
+            }
+
+            try {
+                return delegate.convert(value);
+            } catch (IllegalArgumentException | NullPointerException e) {
+                throw e;
+            } catch (Exception e) {
+                throw new IllegalArgumentException("Cannot convert value", e);
+            }
+        }
+
+        @Override
+        public String toString() {
+            return type.getName() + "->" + delegate;
         }
     }
 }

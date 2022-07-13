@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,13 +15,13 @@
  */
 package io.helidon.tests.integration.nativeimage.mp3;
 
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-
 import io.helidon.microprofile.server.RoutingPath;
 import io.helidon.security.Security;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.Service;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 
 /**
  * Reactive webserver service.
@@ -30,8 +30,11 @@ import io.helidon.webserver.Service;
 @ApplicationScoped
 @RoutingPath("/reactive")
 public class ReactiveService implements Service {
-    @Inject
     private Security security;
+    @Inject
+    public ReactiveService(Security security) {
+        this.security = security;
+    }
 
     @Override
     public void update(Routing.Rules rules) {

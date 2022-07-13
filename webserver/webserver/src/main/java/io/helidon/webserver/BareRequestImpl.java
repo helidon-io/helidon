@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ import io.helidon.common.reactive.Single;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.HttpVersion;
 
 /**
  * The BareRequestImpl.
@@ -75,6 +76,9 @@ class BareRequestImpl implements BareRequest {
 
     @Override
     public Http.Version version() {
+        if (nettyRequest.protocolVersion() == HttpVersion.HTTP_1_1) {
+            return Http.Version.V1_1;
+        }
         return Http.Version.create(nettyRequest.protocolVersion().text());
     }
 

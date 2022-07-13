@@ -1,6 +1,6 @@
 #!/bin/bash -e
 #
-# Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+# Copyright (c) 2020, 2022 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,17 +24,26 @@
 # Setup error handling using default settings (defined in includes/error_handlers.sh)
 error_trap_setup
 
+# Load OCI-related functions. WS_DIR is already defined, so there is
+# no need to pass arguments.
+. $(dirname -- "${SCRIPT_PATH}")/includes/oci.sh
+
 readonly RESULT_FILE=$(mktemp -t XXXdependency-check-result)
 
 die() { cat ${RESULT_FILE} ; echo "Dependency report in ${WS_DIR}/target" ; echo "${1}" ; exit 1 ;}
 
+# Install OCI shaded full jar, if necessary. This is an idempotent
+# call.
+install_oci_shaded_full_jar
+
 if [ "${PIPELINE}" = "true" ] ; then
     # If in pipeline do a priming build before scan
-    mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml clean install -DskipTests
+    mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml -Poci-sdk-cdi clean install -DskipTests
 fi
 
 mvn ${MAVEN_ARGS} -Dorg.slf4j.simpleLogger.defaultLogLevel=WARN org.owasp:dependency-check-maven:aggregate \
         -f ${WS_DIR}/pom.xml \
+        -Poci-sdk-cdi \
         -Dtop.parent.basedir="${WS_DIR}" \
         > ${RESULT_FILE} || die "Error running the Maven command"
 

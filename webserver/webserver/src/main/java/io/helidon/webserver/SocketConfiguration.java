@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,13 +37,6 @@ import io.helidon.config.metadata.ConfiguredOption;
  * The SocketConfiguration configures a port to listen on and its associated server socket parameters.
  */
 public interface SocketConfiguration {
-
-    /**
-     * The default socket configuration.
-     * @deprecated since 2.0.0 This configuration does not contain a name and will be removed
-     */
-    @Deprecated
-    SocketConfiguration DEFAULT = builder().build();
 
     /**
      * The default backlog size to configure the server sockets with if no other value
@@ -216,6 +209,15 @@ public interface SocketConfiguration {
      * @return initial size of the buffer
      */
     int initialBufferSize();
+
+    /**
+     * Maximum length of the content of an upgrade request.
+     *
+     * @return maximum length of the content of an upgrade request
+     */
+    default int maxUpgradeContentLength(){
+        return 64 * 1024;
+    }
 
     /**
      * Creates a builder of {@link SocketConfiguration} class.
@@ -403,6 +405,17 @@ public interface SocketConfiguration {
         B maxPayloadSize(long size);
 
         /**
+         * Set a maximum length of the content of an upgrade request.
+         * <p>
+         * Default is {@code 64*1024}
+         *
+         * @param size Maximum length of the content of an upgrade request
+         * @return this builder
+         */
+        @ConfiguredOption("65536")
+        B maxUpgradeContentLength(int size);
+
+        /**
          * Update this socket configuration from a {@link io.helidon.config.Config}.
          *
          * @param config configuration on the node of a socket
@@ -478,6 +491,7 @@ public interface SocketConfiguration {
         private int initialBufferSize = 128;
         private boolean enableCompression = false;
         private long maxPayloadSize = -1;
+        private int maxUpgradeContentLength = 64 * 1024;
 
         private Builder() {
         }
@@ -651,6 +665,12 @@ public interface SocketConfiguration {
             return this;
         }
 
+        @Override
+        public Builder maxUpgradeContentLength(int size) {
+            this.maxUpgradeContentLength = size;
+            return this;
+        }
+
         /**
          * Configure a socket name, to bind named routings to.
          *
@@ -793,6 +813,10 @@ public interface SocketConfiguration {
 
         long maxPayloadSize() {
             return maxPayloadSize;
+        }
+
+        int maxUpgradeContentLength() {
+            return maxUpgradeContentLength;
         }
     }
 }

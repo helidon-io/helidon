@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,22 +23,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.ServiceLoader;
-import java.util.stream.Collectors;
 
 import io.helidon.common.context.Contexts;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
+import io.helidon.tracing.HeaderConsumer;
+import io.helidon.tracing.HeaderProvider;
+import io.helidon.tracing.Scope;
+import io.helidon.tracing.Span;
+import io.helidon.tracing.SpanContext;
+import io.helidon.tracing.Tag;
+import io.helidon.tracing.Tracer;
 import io.helidon.tracing.config.SpanTracingConfig;
 import io.helidon.tracing.config.TracingConfigUtil;
 import io.helidon.tracing.jersey.client.internal.TracingContext;
 import io.helidon.tracing.spi.TracerProvider;
 
-import io.opentracing.Span;
-import io.opentracing.SpanContext;
-import io.opentracing.Tracer;
-import io.opentracing.propagation.Format;
-import io.opentracing.propagation.TextMapAdapter;
-import io.opentracing.tag.Tags;
-import io.opentracing.util.GlobalTracer;
 import jakarta.annotation.Priority;
 import jakarta.ws.rs.Priorities;
 import jakarta.ws.rs.client.ClientRequestContext;
@@ -59,7 +58,7 @@ import jakarta.ws.rs.core.MultivaluedMap;
  * <li>From request property {@link #TRACER_PROPERTY_NAME}</li>
  * <li>From JAX-RS server, when the client is invoked in scope of a JAX-RS inbound request
  * and appropriate filter is configured (see helidon-tracing-jersey and helidon-microprofile-tracing modules)</li>
- * <li>From {@link GlobalTracer#get()}</li>
+ * <li>From {@link io.helidon.tracing.Tracer#global()}</li>
  * </ol>
  * <p>
  * The parent {@link SpanContext} is resolved as follows
@@ -100,7 +99,7 @@ public class ClientTracingFilter implements ClientRequestFilter, ClientResponseF
      */
     public static final String JAX_RS_TRACING_COMPONENT = "jax-rs";
     /**
-     * The {@link Tracer} property name.
+     * The {@link io.helidon.tracing.Tracer} property name.
      */
     public static final String TRACER_PROPERTY_NAME = "io.helidon.tracing.tracer";
     /**
@@ -113,29 +112,28 @@ public class ClientTracingFilter implements ClientRequestFilter, ClientResponseF
      */
     public static final String ENABLED_PROPERTY_NAME = ClientTracingFilter.class.getName() + ".span-enabled";
     /**
-     * The {@link SpanContext} property name.
+     * The {@link io.helidon.tracing.SpanContext} property name.
      */
     public static final String CURRENT_SPAN_CONTEXT_PROPERTY_NAME = "io.helidon.tracing.span-context";
-    /**
-     * Name of the configuration of a span created for outbound calls.
-     */
-    private static final String SPAN_OPERATION_NAME = "jersey-client-call";
-    /*
-     * Known headers to be propagated from inbound request
-     */
     /**
      * Header used by Envoy proxy. Automatically propagated when within Jersey and
      * when using helidon-microprofile-tracing module.
      */
     public static final String X_OT_SPAN_CONTEXT = "x-ot-span-context";
+    /*
+     * Known headers to be propagated from inbound request
+     */
     /**
      * Header used by routers. Automatically propagated when within Jersey and
      * when using helidon-microprofile-tracing module.
      */
     public static final String X_REQUEST_ID = "x-request-id";
-
     static final String SPAN_PROPERTY_NAME = ClientTracingFilter.class.getName() + ".span";
-
+    static final String SPAN_SCOPE_PROPERTY_NAME = ClientTracingFilter.class.getName() + ".span-scope";
+    /**
+     * Name of the configuration of a span created for outbound calls.
+     */
+    private static final String SPAN_OPERATION_NAME = "jersey-client-call";
     private static final List<String> PROPAGATED_HEADERS = List.of(X_REQUEST_ID, X_OT_SPAN_CONTEXT);
     private static final int HTTP_STATUS_ERROR_THRESHOLD = 400;
     private static final int HTTP_STATUS_SERVER_ERROR_THRESHOLD = 500;
@@ -176,7 +174,7 @@ public class ClientTracingFilter implements ClientRequestFilter, ClientResponseF
         }
 
         Tracer tracer = findTracer(requestContext, tracingContext);
-        Optional<SpanContext> parentSpan = findParentSpan(tracer, requestContext, tracingContext);
+        Optional<SpanContext> parentSpan = findParentSpan(requestContext, tracingContext);
         Map<String, List<String>> inboundHeaders = findInboundHeaders(tracingContext);
         String spanName = findSpanName(requestContext, spanConfig);
 
@@ -186,8 +184,11 @@ public class ClientTracingFilter implements ClientRequestFilter, ClientResponseF
                                       parentSpan,
                                       spanName);
 
+        Scope spanScope = currentSpan.activate();
+
         // register it so we can close the span on response
         requestContext.setProperty(SPAN_PROPERTY_NAME, currentSpan);
+        requestContext.setProperty(SPAN_SCOPE_PROPERTY_NAME, spanScope);
 
         // and also register it with Context, so we can close the span in case of an exception that does not hit the
         // response filter
@@ -195,14 +196,10 @@ public class ClientTracingFilter implements ClientRequestFilter, ClientResponseF
         Contexts.context().ifPresent(ctx -> ctx.register(TracingConfigUtil.OUTBOUND_SPAN_QUALIFIER, currentSpan.context()));
 
         // propagate tracing headers, so remote service can use currentSpan as its parent
-        Map<String, List<String>> tracingHeaders = tracingHeaders(tracer, currentSpan);
-        Map<String, List<String>> outboundHeaders = tracerProvider
-                .map(provider -> provider.updateOutboundHeaders(currentSpan,
-                                                                tracer,
-                                                                parentSpan.orElse(null),
-                                                                tracingHeaders,
-                                                                inboundHeaders))
-                .orElse(tracingHeaders);
+        Map<String, List<String>> outboundHeaders = new HashMap<>();
+        HeaderProvider provider = HeaderProvider.create(inboundHeaders);
+        HeaderConsumer consumer = HeaderConsumer.create(outboundHeaders);
+        tracingHeaders(tracer, currentSpan, provider, consumer);
 
         // add headers from inbound request that were not added by tracing provider and are needed
         // by supported proxies or routing services
@@ -211,6 +208,40 @@ public class ClientTracingFilter implements ClientRequestFilter, ClientResponseF
         // update the headers to be correctly propagated to remote service
         MultivaluedMap<String, Object> headers = requestContext.getHeaders();
         outboundHeaders.forEach((key, value) -> headers.put(key, new ArrayList<>(value)));
+    }
+
+    @Override
+    public void filter(ClientRequestContext requestContext, ClientResponseContext responseContext) {
+        Object spanProperty = requestContext.getProperty(SPAN_PROPERTY_NAME);
+        Object scopeProperty = requestContext.getProperty(SPAN_SCOPE_PROPERTY_NAME);
+
+        if (spanProperty instanceof Span span) {
+            int status = responseContext.getStatus();
+            Tag.HTTP_STATUS.create(status).apply(span);
+            if (status >= HTTP_STATUS_ERROR_THRESHOLD) {
+                span.status(Span.Status.ERROR);
+                span.addEvent("error", Map.of("message",
+                                              "Response HTTP status: " + status,
+                                              "error.kind",
+                                              (status < HTTP_STATUS_SERVER_ERROR_THRESHOLD) ? "ClientError" : "ServerError"));
+            }
+
+            if (scopeProperty instanceof Scope scope) {
+                scope.close();
+            }
+            span.end();
+
+            requestContext.removeProperty(SPAN_SCOPE_PROPERTY_NAME);
+            requestContext.removeProperty(SPAN_PROPERTY_NAME);
+        }
+    }
+
+    private static <T> Optional<T> property(ClientRequestContext requestContext, Class<T> clazz, String propertyName) {
+        return Optional.ofNullable(requestContext.getProperty(propertyName))
+                .filter(clazz::isInstance)
+                .or(() -> Optional.ofNullable(requestContext.getConfiguration().getProperty(propertyName))
+                        .filter(clazz::isInstance))
+                .map(clazz::cast);
     }
 
     private boolean tracingDisabled(ClientRequestContext requestContext,
@@ -241,29 +272,7 @@ public class ClientTracingFilter implements ClientRequestFilter, ClientResponseF
         return result;
     }
 
-    @Override
-    public void filter(ClientRequestContext requestContext, ClientResponseContext responseContext) {
-        Object property = requestContext.getProperty(SPAN_PROPERTY_NAME);
-
-        if (property instanceof Span) {
-            Span span = (Span) property;
-            int status = responseContext.getStatus();
-            Tags.HTTP_STATUS.set(span, status);
-            if (status >= HTTP_STATUS_ERROR_THRESHOLD) {
-                Tags.ERROR.set(span, true);
-                span.log(Map.of("event",
-                                                 "error",
-                                                 "message",
-                                                 "Response HTTP status: " + status,
-                                                 "error.kind",
-                                                 (status < HTTP_STATUS_SERVER_ERROR_THRESHOLD) ? "ClientError" : "ServerError"));
-            }
-            span.finish();
-            requestContext.removeProperty(SPAN_PROPERTY_NAME);
-        }
-    }
-
-    private Optional<SpanContext> findParentSpan(Tracer tracer, ClientRequestContext requestContext,
+    private Optional<SpanContext> findParentSpan(ClientRequestContext requestContext,
                                                  Optional<TracingContext> tracingContext) {
 
         // parent span lookup
@@ -274,18 +283,16 @@ public class ClientTracingFilter implements ClientRequestFilter, ClientResponseF
         }
 
         // then the active span
-        Span activeSpan = tracer.activeSpan();
-        if (null != activeSpan) {
-            return Optional.of(activeSpan.context());
-        }
-
-        // then spans registered in context
-        return  // from injected span context
-                tracingContext.map(TracingContext::parentSpan)
-                // first look for "our" span context (e.g. one registered by a component that is aware that we exist)
-                .or(() -> Contexts.context().flatMap(ctx -> ctx.get(ClientTracingFilter.class, SpanContext.class)))
-                // then look for overall span context
-                .or(() -> Contexts.context().flatMap(ctx -> ctx.get(SpanContext.class)));
+        return Span.current()
+                .map(Span::context)
+                .or(() ->
+                    // then spans registered in context
+                    // from injected span context
+                    tracingContext.map(TracingContext::parentSpan)
+                        // first look for "our" span context (e.g. one registered by a component that is aware that we exist)
+                        .or(() -> Contexts.context().flatMap(ctx -> ctx.get(ClientTracingFilter.class, SpanContext.class)))
+                        // then look for overall span context
+                        .or(() -> Contexts.context().flatMap(ctx -> ctx.get(SpanContext.class))));
     }
 
     private String findSpanName(ClientRequestContext requestContext, SpanTracingConfig spanConfig) {
@@ -299,40 +306,28 @@ public class ClientTracingFilter implements ClientRequestFilter, ClientResponseF
         return property(requestContext, Tracer.class, TRACER_PROPERTY_NAME)
                 .or(() -> tracingContext.map(TracingContext::tracer))
                 .or(() -> Contexts.context().flatMap(ctx -> ctx.get(Tracer.class)))
-                .orElseGet(GlobalTracer::get);
+                .orElseGet(Tracer::global);
     }
 
-    private static <T> Optional<T> property(ClientRequestContext requestContext, Class<T> clazz, String propertyName) {
-        return Optional.ofNullable(requestContext.getProperty(propertyName))
-                        .filter(clazz::isInstance)
-                .or(() -> Optional.ofNullable(requestContext.getConfiguration().getProperty(propertyName))
-                        .filter(clazz::isInstance))
-                .map(clazz::cast);
-    }
-
-    private Map<String, List<String>> tracingHeaders(Tracer tracer, Span currentSpan) {
-        Map<String, String> tracerHeaders = new HashMap<>();
-
+    private void tracingHeaders(Tracer tracer,
+                                Span currentSpan,
+                                HeaderProvider provider,
+                                HeaderConsumer consumer) {
         tracer.inject(currentSpan.context(),
-                      Format.Builtin.HTTP_HEADERS,
-                      new TextMapAdapter(tracerHeaders));
-
-        return new HashMap<>(tracerHeaders.entrySet()
-                                     .stream()
-                                     .collect(Collectors.toMap(Map.Entry::getKey,
-                                                               entry -> List.of(entry.getValue()))));
+                      provider,
+                      consumer);
     }
 
     private Span createSpan(ClientRequestContext requestContext,
                             Tracer tracer,
                             Optional<SpanContext> parentSpan,
                             String spanName) {
-        Tracer.SpanBuilder spanBuilder = tracer.buildSpan(spanName)
-                      .withTag(Tags.SPAN_KIND.getKey(), Tags.SPAN_KIND_CLIENT)
-                      .withTag(Tags.HTTP_METHOD.getKey(), requestContext.getMethod())
-                      .withTag(Tags.HTTP_URL.getKey(), url(requestContext.getUri()))
-                      .withTag(Tags.COMPONENT.getKey(), "jaxrs");
-        parentSpan.ifPresent(spanBuilder::asChildOf);
+        Span.Builder spanBuilder = tracer.spanBuilder(spanName)
+                .kind(Span.Kind.CLIENT)
+                .tag(Tag.HTTP_METHOD.create(requestContext.getMethod()))
+                .tag(Tag.HTTP_URL.create(url(requestContext.getUri())))
+                .tag(Tag.COMPONENT.create("jaxrs"));
+        parentSpan.ifPresent(spanBuilder::parent);
         return spanBuilder.start();
     }
 

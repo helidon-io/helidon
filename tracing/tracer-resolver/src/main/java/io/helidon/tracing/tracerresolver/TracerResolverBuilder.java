@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,14 +19,14 @@ package io.helidon.tracing.tracerresolver;
 import java.util.logging.Logger;
 
 import io.helidon.config.Config;
-import io.helidon.tracing.TracerBuilder;
+import io.helidon.tracing.opentracing.OpenTracingTracerBuilder;
 
 import io.opentracing.Tracer;
 import io.opentracing.contrib.tracerresolver.TracerResolver;
 import io.opentracing.noop.NoopTracerFactory;
 import io.opentracing.util.GlobalTracer;
 
-class TracerResolverBuilder implements TracerBuilder<TracerResolverBuilder> {
+class TracerResolverBuilder implements OpenTracingTracerBuilder<TracerResolverBuilder> {
     private static final Logger LOGGER = Logger.getLogger(TracerResolverBuilder.class.getName());
 
     private String helidonServiceName;
@@ -116,5 +116,19 @@ class TracerResolverBuilder implements TracerBuilder<TracerResolverBuilder> {
         }
 
         return tracer;
+    }
+
+    @Override
+    public boolean enabled() {
+        return enabled;
+    }
+
+    @Override
+    public <B> B unwrap(Class<B> builderClass) {
+        if (builderClass.isAssignableFrom(this.getClass())) {
+            return builderClass.cast(this);
+        }
+        throw new IllegalArgumentException("Cannot provide an instance of " + builderClass.getName()
+                                                   + ", builder is: " + getClass().getName());
     }
 }

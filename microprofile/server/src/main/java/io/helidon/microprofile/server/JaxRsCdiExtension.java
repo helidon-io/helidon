@@ -278,7 +278,7 @@ public class JaxRsCdiExtension implements Extension {
         JerseySupport.Builder builder = JerseySupport.builder(jaxRsApplication.resourceConfig());
         builder.config(((io.helidon.config.Config) ConfigProvider.getConfig()).get("server.jersey"));
         builder.executorService(jaxRsApplication.executorService().orElseGet(defaultExecutorService));
-        builder.register(new CatchAllExceptionMapper());
+        builder.register(CatchAllExceptionMapper.class);
         builder.injectionManager(injectionManager);
         return builder.build();
     }

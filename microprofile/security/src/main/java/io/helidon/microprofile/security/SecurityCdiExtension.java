@@ -65,7 +65,7 @@ public class SecurityCdiExtension implements Extension {
 
     // priority is high, so we update builder from config as soon as possible
     // all additions by other extension will override configuration options
-    private void configure(@Observes @RuntimeStart @Priority(PLATFORM_BEFORE) Config config) {
+    private void configure(@Observes @RuntimeStart @Priority(PLATFORM_BEFORE + 2) Config config) {
         this.config = config;
         securityBuilder.config(config.get("security"));
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.messaging.connectors.kafka;
 
 import java.lang.annotation.Annotation;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -33,6 +34,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
@@ -40,10 +42,12 @@ import io.helidon.config.mp.MpConfigProviderResolver;
 import io.helidon.config.mp.MpConfigSources;
 import io.helidon.microprofile.messaging.MessagingCdiExtension;
 
-import com.salesforce.kafka.test.junit5.SharedKafkaTestResource;
 import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.se.SeContainer;
 import jakarta.enterprise.inject.se.SeContainerInitializer;
+
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.common.header.Header;
 import org.apache.kafka.common.serialization.LongDeserializer;
 import org.apache.kafka.common.serialization.LongSerializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -52,20 +56,17 @@ import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.eclipse.microprofile.reactive.messaging.spi.Connector;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-@Disabled("3.0.0-JAKARTA")
-// java.lang.reflect.InaccessibleObjectException: Unable to make protected final java.lang.Class java.lang.ClassLoader
-// .defineClass(java.lang.String,byte[],int,int) throws java.lang.ClassFormatError accessible: module java.base does
-// not "opens java.lang" to unnamed module @629f0666
 class KafkaMpTest extends AbstractKafkaTest{
 
     private static final Logger LOGGER = Logger.getLogger(KafkaMpTest.class.getName());
@@ -82,9 +83,7 @@ class KafkaMpTest extends AbstractKafkaTest{
         }
     };
 
-    @RegisterExtension
-    public static final SharedKafkaTestResource kafkaResource = new SharedKafkaTestResource()
-        .withBrokers(4).withBrokerProperty("auto.create.topics.enable", Boolean.toString(false));
+    private static final String DLQ_TOPIC = "DLQ_TOPIC";
     private static final String TEST_TOPIC_1 = "graph-done-1";
     private static final String TEST_TOPIC_2 = "graph-done-2";
     private static final String TEST_TOPIC_3 = "graph-done-3";
@@ -150,7 +149,9 @@ class KafkaMpTest extends AbstractKafkaTest{
                 "mp.messaging.incoming.test-channel-5.connector", KafkaConnector.CONNECTOR_NAME,
                 "mp.messaging.incoming.test-channel-5.bootstrap.servers", KAFKA_SERVER,
                 "mp.messaging.incoming.test-channel-5.topic", TEST_TOPIC_5,
-                "mp.messaging.incoming.test-channel-5.group.id", UUID.randomUUID().toString(),
+                "mp.messaging.incoming.test-channel-5.auto.offset.reset", "earliest",
+                "mp.messaging.incoming.test-channel-5.group.id", "test-group",
+                "mp.messaging.incoming.test-channel-5.nack-dlq", DLQ_TOPIC,
                 "mp.messaging.incoming.test-channel-5.key.deserializer", LongDeserializer.class.getName(),
                 "mp.messaging.incoming.test-channel-5.value.deserializer", StringDeserializer.class.getName()));
         p.putAll(Map.of(
@@ -213,11 +214,16 @@ class KafkaMpTest extends AbstractKafkaTest{
 
     @BeforeAll
     static void prepareTopics() {
+        kafkaResource.startKafka();
+
+        KAFKA_SERVER = kafkaResource.getKafkaConnectString();
+
+        kafkaResource.getKafkaTestUtils().createTopic(DLQ_TOPIC, 1, (short) 1);
         kafkaResource.getKafkaTestUtils().createTopic(TEST_TOPIC_1, 4, (short) 1);
         kafkaResource.getKafkaTestUtils().createTopic(TEST_TOPIC_2, 4, (short) 1);
         kafkaResource.getKafkaTestUtils().createTopic(TEST_TOPIC_3, 4, (short) 1);
         kafkaResource.getKafkaTestUtils().createTopic(TEST_TOPIC_4, 4, (short) 1);
-        kafkaResource.getKafkaTestUtils().createTopic(TEST_TOPIC_5, 4, (short) 1);
+        kafkaResource.getKafkaTestUtils().createTopic(TEST_TOPIC_5, 1, (short) 1);
         kafkaResource.getKafkaTestUtils().createTopic(TEST_TOPIC_7, 4, (short) 1);
         kafkaResource.getKafkaTestUtils().createTopic(TEST_TOPIC_10, 1, (short) 1);
         kafkaResource.getKafkaTestUtils().createTopic(TEST_TOPIC_13, 1, (short) 1);
@@ -233,6 +239,8 @@ class KafkaMpTest extends AbstractKafkaTest{
         cdiContainer.close();
         assertTrue(resources.isEmpty());
         LOGGER.info("Container destroyed");
+
+        kafkaResource.stopKafka();
     }
 
     private static void cdiContainerUp() {
@@ -251,12 +259,13 @@ class KafkaMpTest extends AbstractKafkaTest{
         cdiContainer = startCdiContainer(p, classes);
         assertTrue(cdiContainer.isRunning());
         List<String> topicsInKafka = new ArrayList<>(kafkaResource.getKafkaTestUtils().getTopicNames());
+        topicsInKafka.remove(DLQ_TOPIC);
         //Wait till consumers are ready
         getInstance(KafkaConnector.class, KAFKA_CONNECTOR_LITERAL).stream()
         .flatMap(factory -> factory.resources().stream()).forEach(c -> {
             try {
                 LOGGER.log(Level.FINE, "Waiting for Kafka topic");
-                c.waitForPartitionAssigment(10, TimeUnit.SECONDS);
+                c.waitForPartitionAssigment(30, TimeUnit.SECONDS);
             } catch (InterruptedException | TimeoutException e) {
                 fail(e);
             }
@@ -333,15 +342,36 @@ class KafkaMpTest extends AbstractKafkaTest{
     }
 
     @Test
-    void withBackPressureAndError() {
-        LOGGER.fine(() -> "==========> test withBackPressureAndError()");
-        List<String> testData = Arrays.asList("2222", "2222");
-        AbstractSampleBean kafkaConsumingBean = cdiContainer.select(AbstractSampleBean.Channel5.class).get();
-        produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_5, testData);
-        kafkaConsumingBean.restart();
-        testData = Arrays.asList("not a number");
-        produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_5, Arrays.asList("error"));
+    void noAckDQL() {
+        LOGGER.fine(() -> "==========> test noAckDQL()");
+        Map<byte[], byte[]> testData = LongStream.rangeClosed(0, 10)
+                .boxed()
+                .collect(Collectors.toMap(k -> new LongSerializer().serialize(null, k), v -> v.toString().getBytes()));
+
+        testData.forEach((k, v) -> kafkaResource.produce(k, v, TEST_TOPIC_5));
+
+        AbstractSampleBean.Channel5 channel5 = cdiContainer.select(AbstractSampleBean.Channel5.class).get();
+        List<String> result = channel5.getLatch().await(Duration.ofSeconds(35));
+
+        assertThat(result, containsInAnyOrder("0", "1", "2", "4", "5", "6", "7", "8", "9", "10"));
+
+        List<ConsumerRecord<Long, String>> dlqRecords = kafkaResource.consumeLongString(DLQ_TOPIC);
+
+        assertThat(dlqRecords.size(), is(1));
+        ConsumerRecord<Long, String> consumerRecord = dlqRecords.get(0);
+        Map<String, String> headersMap = Arrays.stream(consumerRecord.headers().toArray())
+                .collect(Collectors.toMap(Header::key, h -> new String(h.value())));
+
+        assertThat(consumerRecord.key(), is(3L));
+        assertThat(consumerRecord.value(), is("3"));
+        assertThat(headersMap.get("dlq-error"), is("java.lang.Exception"));
+        assertThat(headersMap.get("dlq-error-msg"), is("BOOM!"));
+        assertThat(headersMap.get("dlq-orig-topic"), is(TEST_TOPIC_5));
+        assertThat(headersMap.get("dlq-orig-offset"), is(String.valueOf(channel5.getBoomOffset())));
+        assertThat(headersMap.get("dlq-orig-partition"), is("0"));
+
         kafkaResource.getKafkaTestUtils().consumeAllRecordsFromTopic(TEST_TOPIC_5);
+        kafkaResource.getKafkaTestUtils().consumeAllRecordsFromTopic(DLQ_TOPIC);
     }
 
     @Test

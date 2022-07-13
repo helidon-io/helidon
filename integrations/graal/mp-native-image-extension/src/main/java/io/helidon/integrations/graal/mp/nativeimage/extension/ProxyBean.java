@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ import jakarta.enterprise.inject.spi.InjectionPoint;
 final class ProxyBean implements Bean<Object> {
     // this is the bean class (producer class, or the type itself for managed beans)
     private final Class<?> beanClass;
-    // the types of the produced bean (or
+    // the types of the produced bean
     private final Set<Type> types;
 
     ProxyBean(Class<?> beanClass, Set<Type> types) {

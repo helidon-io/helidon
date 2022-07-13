@@ -226,8 +226,14 @@ public final class ModelHelper {
     public static MarshallerSupplier getMarshallerSupplier(GrpcMarshaller annotation) {
         String name = annotation == null ? MarshallerSupplier.DEFAULT : annotation.value();
 
-        Instance<MarshallerSupplier> instance = CDI.current().select(MarshallerSupplier.class, new NamedLiteral(name));
-        if (instance.isUnsatisfied()) {
+        Instance<MarshallerSupplier> instance = null;
+        try {
+            instance = CDI.current().select(MarshallerSupplier.class, new NamedLiteral(name));
+        } catch (IllegalStateException e) {
+            // falls through
+        }
+
+        if (instance == null || instance.isUnsatisfied()) {
             // fall back to service loader discovery
             return StreamSupport.stream(ServiceLoader.load(MarshallerSupplier.class).spliterator(), false)
                     .filter(s -> hasName(s, name))

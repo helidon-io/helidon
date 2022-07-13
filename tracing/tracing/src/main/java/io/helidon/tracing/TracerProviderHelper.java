@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,8 @@
  */
 package io.helidon.tracing;
 
-import java.util.Iterator;
+import java.util.List;
+import java.util.Optional;
 import java.util.ServiceLoader;
 
 import io.helidon.common.serviceloader.HelidonServiceLoader;
@@ -25,19 +26,50 @@ import io.helidon.tracing.spi.TracerProvider;
  * Tracer provider helper to find implementation to use.
  */
 final class TracerProviderHelper {
-    private static final ServiceLoader<TracerProvider> SYSTEM_LOADER = ServiceLoader.load(TracerProvider.class);
-    private static final HelidonServiceLoader<TracerProvider> SERVICE_LOADER = HelidonServiceLoader.create(SYSTEM_LOADER);
+    private static final System.Logger LOGGER = System.getLogger(TracerProviderHelper.class.getName());
+    private static final TracerProvider TRACER_PROVIDER;
+
+    static {
+        TracerProvider provider = null;
+        try {
+            List<TracerProvider> allProviders = HelidonServiceLoader.builder(ServiceLoader.load(TracerProvider.class))
+                    .addService(new NoOpTracerProvider(), 100000)
+                    .build()
+                    .asList();
+
+            if (allProviders.size() == 1 || allProviders.size() == 2) {
+                // only noop or one and noop
+                provider = allProviders.get(0);
+            }
+            for (TracerProvider aProvider : allProviders) {
+                if (aProvider.available()) {
+                    provider = aProvider;
+                    break;
+                }
+            }
+        } catch (Throwable e) {
+            LOGGER.log(System.Logger.Level.WARNING, "Failed to set up tracer provider, using no-op", e);
+        }
+
+        TRACER_PROVIDER = provider == null ? new NoOpTracerProvider() : provider;
+    }
 
     private TracerProviderHelper() {
     }
 
-    static TracerBuilder<?> findTracerBuilder() {
-        Iterator<TracerProvider> iterator = SERVICE_LOADER.iterator();
+    public static Optional<Span> currentSpan() {
+        return TRACER_PROVIDER.currentSpan();
+    }
 
-        if (iterator.hasNext()) {
-            return iterator.next().createBuilder();
-        } else {
-            return NoOpBuilder.create();
-        }
+    static Tracer global() {
+        return TRACER_PROVIDER.global();
+    }
+
+    static void global(Tracer tracer) {
+        TRACER_PROVIDER.global(tracer);
+    }
+
+    static TracerBuilder<?> findTracerBuilder() {
+        return TRACER_PROVIDER.createBuilder();
     }
 }

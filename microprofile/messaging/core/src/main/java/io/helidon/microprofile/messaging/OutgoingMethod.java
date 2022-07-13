@@ -18,6 +18,7 @@ package io.helidon.microprofile.messaging;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Flow;
 
 import io.helidon.common.Errors;
 import io.helidon.config.Config;
@@ -28,6 +29,7 @@ import jakarta.enterprise.inject.spi.DeploymentException;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;
 import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
+import org.reactivestreams.FlowAdapters;
 import org.reactivestreams.Publisher;
 
 
@@ -49,8 +51,14 @@ class OutgoingMethod extends AbstractMessagingMethod implements OutgoingMember {
                     case OUTGOING_PUBLISHER_MSG_2_VOID:
                         publisher = (Publisher<?>) getMethod().invoke(getBeanInstance());
                         break;
+                    case OUTGOING_FLOW_PUBLISHER_MSG_2_VOID:
+                        publisher = FlowAdapters.toPublisher((Flow.Publisher<?>) getMethod().invoke(getBeanInstance()));
+                        break;
                     case OUTGOING_PUBLISHER_PAYL_2_VOID:
                         publisher = new WrappingPublisher((Publisher<?>) getMethod().invoke(getBeanInstance()));
+                        break;
+                    case OUTGOING_FLOW_PUBLISHER_PAYL_2_VOID:
+                        publisher = new WrappingPublisher((Flow.Publisher<?>) getMethod().invoke(getBeanInstance()));
                         break;
                     case OUTGOING_PUBLISHER_BUILDER_MSG_2_VOID:
                         publisher = ((PublisherBuilder<?>) getMethod().invoke(getBeanInstance()))

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,21 +15,16 @@
  */
 package io.helidon.tracing.spi;
 
-import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 
+import io.helidon.tracing.Span;
+import io.helidon.tracing.Tracer;
 import io.helidon.tracing.TracerBuilder;
-
-import io.opentracing.Span;
-import io.opentracing.SpanContext;
-import io.opentracing.Tracer;
-import io.opentracing.propagation.Format;
 
 /**
  * Java service to integrate various distributed tracers.
  * The first tracer configured will be used.
  */
-@FunctionalInterface
 public interface TracerProvider {
     /**
      * Create a new builder for this tracer.
@@ -39,24 +34,32 @@ public interface TracerProvider {
     TracerBuilder<?> createBuilder();
 
     /**
-     * Update headers for outbound requests.
-     * The outboundHeaders already contain injected from tracer via {@link Tracer#inject(SpanContext, Format, Object)}.
-     * This is to enable fine grained tuning of propagated headers for each implementation.
+     * Global tracer that is registered, or a NoOp tracer if none is registered.
      *
-     * @param currentSpan Current span covering the outbound call
-     * @param tracer Tracer used
-     * @param parentSpan Parent span context (may be null)
-     * @param outboundHeaders Tracing headers map as configured by the tracer
-     * @param inboundHeaders Existing inbound headers (may be empty if not within a scope of a request)
-     *
-     * @return new map of outbound headers, defaults to tracing headers
+     * @return current global tracer
      */
-    default Map<String, List<String>> updateOutboundHeaders(Span currentSpan,
-                               Tracer tracer,
-                               SpanContext parentSpan,
-                               Map<String, List<String>> outboundHeaders,
-                               Map<String, List<String>> inboundHeaders) {
+    Tracer global();
 
-        return outboundHeaders;
-    }
+    /**
+     * Register a global tracer instance. This method should not fail except for the case that tracer is null
+     * - if the tracer cannot be registered, silently ignore it.
+     * @param tracer tracer to register as global
+     * @throws java.lang.NullPointerException in case the tracer is null
+     */
+    void global(Tracer tracer);
+
+    /**
+     * Provide current span.
+     *
+     * @return current span, or empty optional if current span cannot be found
+     */
+    Optional<Span> currentSpan();
+
+    /**
+     * Whether there is a tracer available by this provider.
+     * This allows co-existence of multiple tracing providers within the same VM.
+     *
+     * @return whether this tracer provider has a tracer available
+     */
+    boolean available();
 }

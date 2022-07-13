@@ -59,9 +59,7 @@ public class ContextTest {
     static void beforeAll() {
         server = WebServer.builder()
                 .host("localhost")
-                .routing(Routing.builder()
-                        .put((req, res) -> res.send("I'm Frank!"))
-                        .build())
+                .routing(r -> r.put((req, res) -> res.send("I'm Frank!")))
                 .build()
                 .start()
                 .await(TIME_OUT);

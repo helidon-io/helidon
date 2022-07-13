@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,7 +50,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * Class CrossOriginTest.
  */
-@HelidonTest
 @AddBean(CrossOriginTest.CorsResource0.class)
 @AddBean(CrossOriginTest.CorsResource1.class)
 @AddBean(CrossOriginTest.CorsResource2.class)
@@ -58,13 +57,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @AddConfig(key = "cors.paths.0.path-pattern", value = "/cors3")
 @AddConfig(key = "cors.paths.0.allow-origins", value = "http://foo.bar, http://bar.foo")
 @AddConfig(key = "cors.paths.0.allow-methods", value = "DELETE, PUT")
-class CrossOriginTest {
+class CrossOriginTest extends BaseCrossOriginTest {
     @Inject
     private WebTarget target;
-
-    static {
-        System.setProperty("sun.net.http.allowRestrictedHeaders", "true");
-    }
 
     @Path("/cors1")
     static public class CorsResource1 {

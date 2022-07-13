@@ -35,6 +35,7 @@ import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;
 import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
+import org.reactivestreams.FlowAdapters;
 import org.reactivestreams.Processor;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
@@ -64,10 +65,21 @@ class ProcessorMethod extends AbstractMessagingMethod implements OutgoingMember,
         } else {
             switch (getType()) {
                 case PROCESSOR_PUBLISHER_MSG_2_MSG:
-                    processor = invokeProcessor(msg -> ReactiveStreams.fromPublisher(invoke(msg)));
+                    processor = invokeProcessor(msg ->
+                            ReactiveStreams.fromPublisher(invoke(msg)));
+                    break;
+                case PROCESSOR_FLOW_PUBLISHER_MSG_2_MSG:
+                    processor = invokeProcessor(msg ->
+                            ReactiveStreams.fromPublisher(FlowAdapters.toPublisher(invoke(msg))));
                     break;
                 case PROCESSOR_PUBLISHER_PAYL_2_PAYL:
-                    processor = invokeProcessor(msg -> ReactiveStreams.fromPublisher(invoke(msg.getPayload())));
+                    processor = invokeProcessor(msg ->
+                            ReactiveStreams.fromPublisher(invoke(msg.getPayload())));
+                    break;
+                case PROCESSOR_FLOW_PUBLISHER_PAYL_2_PAYL:
+                    processor = invokeProcessor(msg -> {
+                        return ReactiveStreams.fromPublisher(FlowAdapters.toPublisher(invoke(msg.getPayload())));
+                    });
                     break;
                 case PROCESSOR_PUBLISHER_BUILDER_MSG_2_MSG:
                     processor = invokeProcessor(this::invoke);

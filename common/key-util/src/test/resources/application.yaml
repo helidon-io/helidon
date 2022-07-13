@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2020 Oracle and/or its affiliates.
+# Copyright (c) 2020, 2022 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,18 +22,12 @@ unit-1:
     type: "PKCS12"
     passphrase: "password"
 
-# backward compatibility with previous approach
 unit-2:
-  cert-alias: "service_cert"
-  # path to keystore
-  keystore-path: "src/test/resources/keystore/keystore.p12"
-  # Keystore type
-  # PKCS12 or JKS
-  # defaults to jdk default
-  keystore-type: "PKCS12"
-  # password of the keystore
-  keystore-passphrase: "password"
-  # alias of the certificate to get public key from
+  keystore:
+    cert.alias: "service_cert"
+    resource.path: "src/test/resources/keystore/keystore.p12"
+    type: "PKCS12"
+    passphrase: "password"
 
 # private key from keystore
 unit-3:

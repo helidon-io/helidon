@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,13 @@
 
 package io.helidon.grpc.client;
 
+import io.grpc.MethodDescriptor;
 import io.helidon.grpc.client.test.Echo;
 import io.helidon.grpc.client.test.EchoServiceGrpc;
-import io.helidon.grpc.core.JavaMarshaller;
 
-import io.grpc.MethodDescriptor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -66,7 +64,9 @@ public class ClientMethodDescriptorTest {
 
     @Test
     public void shouldCreateBidirectionalMethod() {
-        ClientMethodDescriptor descriptor = ClientMethodDescriptor.bidirectional("FooService", "foo").build();
+        ClientMethodDescriptor descriptor = ClientMethodDescriptor.bidirectional("FooService", "foo")
+                .defaultMarshallerSupplier(new JavaMarshaller.Supplier())
+                .build();
         assertThat(descriptor, is(notNullValue()));
         assertThat(descriptor.name(), is("foo"));
         io.grpc.MethodDescriptor methodDescriptor = descriptor.descriptor();
@@ -76,7 +76,9 @@ public class ClientMethodDescriptorTest {
 
     @Test
     public void shouldCreateClientStreamingMethod() {
-        ClientMethodDescriptor descriptor = ClientMethodDescriptor.clientStreaming("FooService", "foo").build();
+        ClientMethodDescriptor descriptor = ClientMethodDescriptor.clientStreaming("FooService", "foo")
+                .defaultMarshallerSupplier(new JavaMarshaller.Supplier())
+                .build();
         assertThat(descriptor, is(notNullValue()));
         assertThat(descriptor.name(), is("foo"));
         io.grpc.MethodDescriptor methodDescriptor = descriptor.descriptor();
@@ -86,7 +88,9 @@ public class ClientMethodDescriptorTest {
 
     @Test
     public void shouldCreateServerStreamingMethod() {
-        ClientMethodDescriptor descriptor = ClientMethodDescriptor.serverStreaming("FooService", "foo").build();
+        ClientMethodDescriptor descriptor = ClientMethodDescriptor.serverStreaming("FooService", "foo")
+                .defaultMarshallerSupplier(new JavaMarshaller.Supplier())
+                .build();
         assertThat(descriptor, is(notNullValue()));
         assertThat(descriptor.name(), is("foo"));
         io.grpc.MethodDescriptor methodDescriptor = descriptor.descriptor();
@@ -96,7 +100,9 @@ public class ClientMethodDescriptorTest {
 
     @Test
     public void shouldCreateUnaryMethod() {
-        ClientMethodDescriptor descriptor = ClientMethodDescriptor.unary("FooService", "foo").build();
+        ClientMethodDescriptor descriptor = ClientMethodDescriptor.unary("FooService", "foo")
+                .defaultMarshallerSupplier(new JavaMarshaller.Supplier())
+                .build();
         assertThat(descriptor, is(notNullValue()));
         assertThat(descriptor.name(), is("foo"));
         io.grpc.MethodDescriptor methodDescriptor = descriptor.descriptor();
@@ -107,7 +113,8 @@ public class ClientMethodDescriptorTest {
     @Test
     public void shouldSetName() {
         ClientMethodDescriptor.Builder builder = ClientMethodDescriptor
-                .unary("FooService", "foo");
+                .unary("FooService", "foo")
+                .defaultMarshallerSupplier(new JavaMarshaller.Supplier());
 
         builder.fullName("Foo/Bar");
 
@@ -115,17 +122,6 @@ public class ClientMethodDescriptorTest {
 
         assertThat(descriptor.name(), is("Bar"));
         assertThat(descriptor.descriptor().getFullMethodName(), is("Foo/Bar"));
-    }
-
-    @Test
-    public void testMarshallerTypesForNonProtoBuilder() {
-        ClientMethodDescriptor cmd = ClientMethodDescriptor.unary("foo", "bar").build();
-
-        assertThat(cmd.descriptor().getRequestMarshaller().getClass().getName(),
-                   equalTo(JavaMarshaller.class.getName()));
-        assertThat(cmd.descriptor().getResponseMarshaller().getClass().getName(),
-                   equalTo(JavaMarshaller.class.getName()));
-
     }
 
     @Test

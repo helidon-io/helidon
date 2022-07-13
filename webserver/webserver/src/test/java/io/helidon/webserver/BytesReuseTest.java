@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.webserver;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
+import java.time.Duration;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -60,11 +61,12 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class BytesReuseTest {
 
     private static final Logger LOGGER = Logger.getLogger(PlainTest.class.getName());
+    public static final Duration TIMEOUT = Duration.ofSeconds(10);
 
     private static WebServer webServer;
 
-    private static Queue<DataChunk> chunkReference = new ConcurrentLinkedQueue<>();
-    private static ScheduledExecutorService service = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r) {{
+    private static final Queue<DataChunk> chunkReference = new ConcurrentLinkedQueue<>();
+    private static final ScheduledExecutorService service = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r) {{
         setDaemon(true);
     }});
 
@@ -79,7 +81,7 @@ public class BytesReuseTest {
         webServer = WebServer.builder()
                 .host("localhost")
                 .port(port)
-                .routing(Routing.builder()
+                .routing(r -> r
                                  .any((req, res) -> {
                                      req.content().registerFilter(
                                              (Publisher<DataChunk> publisher) -> Multi.create(publisher).map(chunk -> {
@@ -142,8 +144,7 @@ public class BytesReuseTest {
                                  .build())
                 .build()
                 .start()
-                .toCompletableFuture()
-                .get(10, TimeUnit.SECONDS);
+                .await(TIMEOUT);
 
         LOGGER.log(Level.INFO, "Started server at: https://localhost:{0}", webServer.port());
     }
@@ -165,8 +166,7 @@ public class BytesReuseTest {
     public static void close() throws Exception {
         if (webServer != null) {
             webServer.shutdown()
-                    .toCompletableFuture()
-                    .get(10, TimeUnit.SECONDS);
+                    .await(TIMEOUT);
         }
     }
 
@@ -380,11 +380,10 @@ public class BytesReuseTest {
         for (int i = 0; i < 10; i++) {
             flood(false, false, 1_000, false);
             webServer.shutdown()
-                    .toCompletableFuture()
-                    .join();
+                    .await(TIMEOUT);
             startServer();
         }
-        webServer.shutdown().toCompletableFuture().join();
+        webServer.shutdown().await(TIMEOUT);
 
         Thread.currentThread().join();
     }

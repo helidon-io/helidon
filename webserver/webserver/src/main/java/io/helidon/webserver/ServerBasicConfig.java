@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,8 +27,7 @@ import java.util.Set;
 import javax.net.ssl.SSLContext;
 
 import io.helidon.common.context.Context;
-
-import io.opentracing.Tracer;
+import io.helidon.tracing.Tracer;
 
 /**
  * Basic implementation of the {@link ServerConfiguration}.
@@ -40,7 +39,6 @@ class ServerBasicConfig implements ServerConfiguration {
     private final Map<String, SocketConfiguration> socketConfigs;
     private final Duration maxShutdownTimeout;
     private final Duration shutdownQuietPeriod;
-    private final ExperimentalConfiguration experimental;
     private final Optional<Transport> transport;
     private final Context context;
     private final boolean printFeatureDetails;
@@ -56,7 +54,6 @@ class ServerBasicConfig implements ServerConfiguration {
         this.tracer = builder.tracer();
         this.maxShutdownTimeout = builder.maxShutdownTimeout();
         this.shutdownQuietPeriod = builder.shutdownQuietPeriod();
-        this.experimental = builder.experimental();
         this.transport = builder.transport();
         this.context = builder.context();
         this.printFeatureDetails = builder.printFeatureDetails();
@@ -167,11 +164,6 @@ class ServerBasicConfig implements ServerConfiguration {
     }
 
     @Override
-    public ExperimentalConfiguration experimental() {
-        return experimental;
-    }
-
-    @Override
     public Optional<Transport> transport() {
         return transport;
     }
@@ -191,6 +183,8 @@ class ServerBasicConfig implements ServerConfiguration {
         return socketConfig.enableCompression();
     }
 
+
+
     static class SocketConfig implements SocketConfiguration {
 
         private final int port;
@@ -208,6 +202,7 @@ class ServerBasicConfig implements ServerConfiguration {
         private final int initialBufferSize;
         private final boolean enableCompression;
         private final long maxPayloadSize;
+        private final int maxUpgradeContentLength;
 
         /**
          * Creates new instance.
@@ -227,6 +222,7 @@ class ServerBasicConfig implements ServerConfiguration {
             this.initialBufferSize = builder.initialBufferSize();
             this.enableCompression = builder.enableCompression();
             this.maxPayloadSize = builder.maxPayloadSize();
+            this.maxUpgradeContentLength = builder.maxUpgradeContentLength();
             WebServerTls webServerTls = builder.tlsConfig();
             this.webServerTls = webServerTls.enabled() ? webServerTls : null;
         }
@@ -314,6 +310,11 @@ class ServerBasicConfig implements ServerConfiguration {
         @Override
         public int initialBufferSize() {
             return initialBufferSize;
+        }
+
+        @Override
+        public int maxUpgradeContentLength() {
+            return maxUpgradeContentLength;
         }
 
         @Override

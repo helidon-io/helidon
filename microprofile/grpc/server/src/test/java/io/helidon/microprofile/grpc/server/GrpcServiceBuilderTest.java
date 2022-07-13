@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import io.helidon.grpc.core.JavaMarshaller;
 import io.helidon.grpc.server.MethodDescriptor;
 import io.helidon.grpc.server.ServiceDescriptor;
 import io.helidon.microprofile.grpc.core.Grpc;
@@ -38,11 +37,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
-import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -118,8 +117,8 @@ public class GrpcServiceBuilderTest {
         assertThat(grpcDescriptor, is(notNullValue()));
         assertThat(grpcDescriptor.getFullMethodName(), is("ServiceOne/foo/unary"));
         assertThat(grpcDescriptor.getType(), is(io.grpc.MethodDescriptor.MethodType.UNARY));
-        assertThat(grpcDescriptor.getRequestMarshaller(), is(instanceOf(JavaMarshaller.class)));
-        assertThat(grpcDescriptor.getResponseMarshaller(), is(instanceOf(JavaMarshaller.class)));
+        assertThat(grpcDescriptor.getRequestMarshaller(), is(instanceOf(StubMarshaller.class)));
+        assertThat(grpcDescriptor.getResponseMarshaller(), is(instanceOf(StubMarshaller.class)));
 
         methodDescriptor = descriptor.method("clientStreaming");
         assertThat(methodDescriptor, is(notNullValue()));
@@ -130,8 +129,8 @@ public class GrpcServiceBuilderTest {
         assertThat(grpcDescriptor, is(notNullValue()));
         assertThat(grpcDescriptor.getFullMethodName(), is("ServiceOne/foo/clientStreaming"));
         assertThat(grpcDescriptor.getType(), is(io.grpc.MethodDescriptor.MethodType.CLIENT_STREAMING));
-        assertThat(grpcDescriptor.getRequestMarshaller(), is(instanceOf(JavaMarshaller.class)));
-        assertThat(grpcDescriptor.getResponseMarshaller(), is(instanceOf(JavaMarshaller.class)));
+        assertThat(grpcDescriptor.getRequestMarshaller(), is(instanceOf(StubMarshaller.class)));
+        assertThat(grpcDescriptor.getResponseMarshaller(), is(instanceOf(StubMarshaller.class)));
 
         methodDescriptor = descriptor.method("serverStreaming");
         assertThat(methodDescriptor, is(notNullValue()));
@@ -142,8 +141,8 @@ public class GrpcServiceBuilderTest {
         assertThat(grpcDescriptor, is(notNullValue()));
         assertThat(grpcDescriptor.getFullMethodName(), is("ServiceOne/foo/serverStreaming"));
         assertThat(grpcDescriptor.getType(), is(io.grpc.MethodDescriptor.MethodType.SERVER_STREAMING));
-        assertThat(grpcDescriptor.getRequestMarshaller(), is(instanceOf(JavaMarshaller.class)));
-        assertThat(grpcDescriptor.getResponseMarshaller(), is(instanceOf(JavaMarshaller.class)));
+        assertThat(grpcDescriptor.getRequestMarshaller(), is(instanceOf(StubMarshaller.class)));
+        assertThat(grpcDescriptor.getResponseMarshaller(), is(instanceOf(StubMarshaller.class)));
 
         methodDescriptor = descriptor.method("bidiStreaming");
         assertThat(methodDescriptor, is(notNullValue()));
@@ -154,8 +153,8 @@ public class GrpcServiceBuilderTest {
         assertThat(grpcDescriptor, is(notNullValue()));
         assertThat(grpcDescriptor.getFullMethodName(), is("ServiceOne/foo/bidiStreaming"));
         assertThat(grpcDescriptor.getType(), is(io.grpc.MethodDescriptor.MethodType.BIDI_STREAMING));
-        assertThat(grpcDescriptor.getRequestMarshaller(), is(instanceOf(JavaMarshaller.class)));
-        assertThat(grpcDescriptor.getResponseMarshaller(), is(instanceOf(JavaMarshaller.class)));
+        assertThat(grpcDescriptor.getRequestMarshaller(), is(instanceOf(StubMarshaller.class)));
+        assertThat(grpcDescriptor.getResponseMarshaller(), is(instanceOf(StubMarshaller.class)));
     }
 
     @Test
@@ -179,8 +178,8 @@ public class GrpcServiceBuilderTest {
         assertThat(grpcDescriptor, is(notNullValue()));
         assertThat(grpcDescriptor.getFullMethodName(), is("ServiceTwo/One"));
         assertThat(grpcDescriptor.getType(), is(io.grpc.MethodDescriptor.MethodType.UNARY));
-        assertThat(grpcDescriptor.getRequestMarshaller(), is(instanceOf(JavaMarshaller.class)));
-        assertThat(grpcDescriptor.getResponseMarshaller(), is(instanceOf(JavaMarshaller.class)));
+        assertThat(grpcDescriptor.getRequestMarshaller(), is(instanceOf(StubMarshaller.class)));
+        assertThat(grpcDescriptor.getResponseMarshaller(), is(instanceOf(StubMarshaller.class)));
 
         methodDescriptor = descriptor.method("Two");
         assertThat(methodDescriptor, is(notNullValue()));
@@ -191,8 +190,8 @@ public class GrpcServiceBuilderTest {
         assertThat(grpcDescriptor, is(notNullValue()));
         assertThat(grpcDescriptor.getFullMethodName(), is("ServiceTwo/Two"));
         assertThat(grpcDescriptor.getType(), is(io.grpc.MethodDescriptor.MethodType.CLIENT_STREAMING));
-        assertThat(grpcDescriptor.getRequestMarshaller(), is(instanceOf(JavaMarshaller.class)));
-        assertThat(grpcDescriptor.getResponseMarshaller(), is(instanceOf(JavaMarshaller.class)));
+        assertThat(grpcDescriptor.getRequestMarshaller(), is(instanceOf(StubMarshaller.class)));
+        assertThat(grpcDescriptor.getResponseMarshaller(), is(instanceOf(StubMarshaller.class)));
 
         methodDescriptor = descriptor.method("Three");
         assertThat(methodDescriptor, is(notNullValue()));
@@ -203,8 +202,8 @@ public class GrpcServiceBuilderTest {
         assertThat(grpcDescriptor, is(notNullValue()));
         assertThat(grpcDescriptor.getFullMethodName(), is("ServiceTwo/Three"));
         assertThat(grpcDescriptor.getType(), is(io.grpc.MethodDescriptor.MethodType.SERVER_STREAMING));
-        assertThat(grpcDescriptor.getRequestMarshaller(), is(instanceOf(JavaMarshaller.class)));
-        assertThat(grpcDescriptor.getResponseMarshaller(), is(instanceOf(JavaMarshaller.class)));
+        assertThat(grpcDescriptor.getRequestMarshaller(), is(instanceOf(StubMarshaller.class)));
+        assertThat(grpcDescriptor.getResponseMarshaller(), is(instanceOf(StubMarshaller.class)));
 
         methodDescriptor = descriptor.method("Four");
         assertThat(methodDescriptor, is(notNullValue()));
@@ -215,8 +214,8 @@ public class GrpcServiceBuilderTest {
         assertThat(grpcDescriptor, is(notNullValue()));
         assertThat(grpcDescriptor.getFullMethodName(), is("ServiceTwo/Four"));
         assertThat(grpcDescriptor.getType(), is(io.grpc.MethodDescriptor.MethodType.BIDI_STREAMING));
-        assertThat(grpcDescriptor.getRequestMarshaller(), is(instanceOf(JavaMarshaller.class)));
-        assertThat(grpcDescriptor.getResponseMarshaller(), is(instanceOf(JavaMarshaller.class)));
+        assertThat(grpcDescriptor.getRequestMarshaller(), is(instanceOf(StubMarshaller.class)));
+        assertThat(grpcDescriptor.getResponseMarshaller(), is(instanceOf(StubMarshaller.class)));
     }
 
     @SuppressWarnings("unchecked")
@@ -249,6 +248,7 @@ public class GrpcServiceBuilderTest {
     }
 
     @Grpc(name = "ServiceOne/foo")
+    @GrpcMarshaller("stub")
     public static class ServiceOne {
         @GrpcMethod(type = io.grpc.MethodDescriptor.MethodType.UNARY)
         public void unary(String param, StreamObserver<String> observer) {
@@ -270,6 +270,7 @@ public class GrpcServiceBuilderTest {
     }
 
     @Grpc
+    @GrpcMarshaller("stub")
     public static class ServiceTwo {
         @GrpcMethod(name = "One", type = io.grpc.MethodDescriptor.MethodType.UNARY)
         public void unary(String param, StreamObserver<String> observer) {
@@ -308,6 +309,7 @@ public class GrpcServiceBuilderTest {
     }
 
     @Grpc
+    @GrpcMarshaller("stub")
     @Singleton
     public static class ServiceFive {
         @GrpcMethod(type = io.grpc.MethodDescriptor.MethodType.UNARY)
@@ -319,6 +321,7 @@ public class GrpcServiceBuilderTest {
     }
 
     @Grpc
+    @GrpcMarshaller("stub")
     public static class ServiceSix {
         @GrpcMethod(type = io.grpc.MethodDescriptor.MethodType.UNARY)
         public List<Map<Integer, String>> unary(List<Map<Integer, String>> param) {

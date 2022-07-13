@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.microprofile.grpc.client;
 import java.util.Collection;
 import java.util.concurrent.CompletionStage;
 
+import io.helidon.microprofile.grpc.core.GrpcMarshaller;
 import io.helidon.microprofile.grpc.core.Unary;
 
 import org.junit.jupiter.api.Test;
@@ -34,6 +35,7 @@ public class GrpcProxyBuilderTest {
         assertThat(service, is(notNullValue()));
     }
 
+    @GrpcMarshaller("stub")
     public interface TestService {
        @Unary
        CompletionStage<Collection<String>> getBooks();

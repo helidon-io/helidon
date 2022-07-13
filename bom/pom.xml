@@ -45,6 +45,11 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.webserver</groupId>
+                <artifactId>helidon-webserver-http2</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.webserver</groupId>
                 <artifactId>helidon-webserver-jersey</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
@@ -70,7 +75,7 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.webserver</groupId>
-                <artifactId>helidon-webserver-tyrus</artifactId>
+                <artifactId>helidon-webserver-websocket</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
@@ -254,6 +259,11 @@
             <dependency>
                 <groupId>io.helidon.config</groupId>
                 <artifactId>helidon-config-yaml-mp</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.config</groupId>
+                <artifactId>helidon-config-hocon-mp</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
@@ -688,6 +698,18 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
+                <!-- to add tracer builder -->
+                <groupId>io.helidon.tracing</groupId>
+                <artifactId>helidon-tracing-opentracing</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <!-- to add tracer builder -->
+                <groupId>io.helidon.tracing</groupId>
+                <artifactId>helidon-tracing-opentelemetry</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
                 <!-- basic tracing configuration -->
                 <groupId>io.helidon.tracing</groupId>
                 <artifactId>helidon-tracing-config</artifactId>
@@ -703,12 +725,6 @@
                 <!-- to add Jaeger support -->
                 <groupId>io.helidon.tracing</groupId>
                 <artifactId>helidon-tracing-jaeger</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <!-- to add Jaeger metrics integration -->
-                <groupId>io.helidon.metrics</groupId>
-                <artifactId>helidon-metrics-jaeger</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
@@ -913,11 +929,6 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.integrations.cdi</groupId>
-                <artifactId>helidon-integrations-cdi-oci-objectstorage</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>io.helidon.integrations.graal</groupId>
                 <artifactId>helidon-graal-native-image-extension</artifactId>
                 <version>${helidon.version}</version>
@@ -953,43 +964,8 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.integrations.oci</groupId>
-                <artifactId>helidon-integrations-oci-atp</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.integrations.oci</groupId>
-                <artifactId>helidon-integrations-oci-cdi</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.integrations.oci</groupId>
-                <artifactId>helidon-integrations-oci-connect</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.integrations.oci</groupId>
-                <artifactId>helidon-integrations-oci-objectstorage</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.integrations.oci</groupId>
-                <artifactId>helidon-integrations-oci-objectstorage-health</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.integrations.oci</groupId>
-                <artifactId>helidon-integrations-oci-telemetry</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.integrations.oci</groupId>
-                <artifactId>helidon-integrations-oci-vault</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.integrations.oci</groupId>
-                <artifactId>helidon-integrations-oci-vault-health</artifactId>
+                <groupId>io.helidon.integrations.oci.sdk</groupId>
+                <artifactId>helidon-integrations-oci-sdk-cdi</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
@@ -1110,6 +1086,11 @@
             <dependency>
                 <groupId>io.helidon.microprofile.tests</groupId>
                 <artifactId>helidon-microprofile-tests-testng</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.messaging.mock</groupId>
+                <artifactId>helidon-messaging-mock</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <!-- Logging -->

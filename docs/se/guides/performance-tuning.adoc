@@ -1,0 +1,54 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2022 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Performance Tuning
+:description: Helidon SE Performance Tuning
+:feature-name: Performance Tuning
+:microprofile-bundle: false
+:keywords: helidon, se, performance, tuning
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/se.adoc[]
+
+In this guide you fill find basic advice for performance tuning of your Helidon application. Most of them target Netty tuning, as Helidon is based on it.
+You should also consider configuring/tuning Java heap size as per any Java application.
+
+
+== Configure Netty worker thread pool size
+
+The Netty worker thread-pool is what handles your incoming requests. It defaults to 2*NCPU. To set it to something else you can set `worker-count` in `resources/application.yaml`:
+
+[source,yaml]
+----
+server:
+  port: 8080
+  host: 0.0.0.0
+  worker-count: 2
+----
+
+
+== Configure Netty's maxOrder (Helidon 2.4.1 or earlier)
+
+In some situations Netty can aggressively allocate memory per request. This has been addressed in recent versions of Helidon and Netty, but if you are running an earlier version set this system property when you start your Helidon application:
+
+[source,bash]
+----
+-Dio.netty.allocator.maxOrder=6
+----
+
+You can try smaller numbers.

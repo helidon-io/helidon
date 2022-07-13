@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,15 +23,31 @@ import io.helidon.grpc.metrics.GrpcMetrics;
 import io.helidon.grpc.server.GrpcService;
 import io.helidon.grpc.server.MethodDescriptor;
 import io.helidon.grpc.server.ServiceDescriptor;
-import io.helidon.metrics.RegistryFactory;
+import io.helidon.metrics.api.RegistryFactory;
 import io.helidon.microprofile.grpc.core.Grpc;
 import io.helidon.microprofile.grpc.core.Unary;
 
 import io.grpc.ServerInterceptor;
+
+import io.helidon.microprofile.grpc.server.JavaMarshaller;
+import io.helidon.microprofile.grpc.server.test.Services;
+import io.helidon.microprofile.metrics.MetricsCdiExtension;
+import io.helidon.microprofile.server.JaxRsCdiExtension;
+import io.helidon.microprofile.server.ServerCdiExtension;
+import io.helidon.microprofile.tests.junit5.AddBean;
+import io.helidon.microprofile.tests.junit5.AddExtension;
+import io.helidon.microprofile.tests.junit5.DisableDiscovery;
+import io.helidon.microprofile.tests.junit5.HelidonTest;
+
 import io.grpc.stub.StreamObserver;
+import jakarta.enterprise.inject.Typed;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.Produces;
+import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
+import org.eclipse.microprofile.metrics.SimpleTimer;
 import org.eclipse.microprofile.metrics.annotation.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Metered;
@@ -46,14 +62,35 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsEmptyIterable.emptyIterable;
 
-
+/**
+ * Exercises the metrics configurer.
+ *
+ * Because the metrics CDI extension is (as of 3.x) responsible for registering metrics, even gRPC-inspired ones, we need to
+ * start the container. We cannot currently allow the gRPC CDI extension to start because it tries to register both ServiceOne and
+ * ServiceThree under the same name, ServiceOne, because ServiceThree extends ServiceOne. The attempt to register two services
+ * with the same name fails. So we turn off discovery and explicitly add in the beans and extensions we need.
+ */
+@HelidonTest
+@DisableDiscovery
+@AddBean(MetricsConfigurerTest.ServiceOne.class)
+@AddBean(MetricsConfigurerTest.ServiceThree.class)
+@AddBean(MetricsConfigurerTest.ServiceTwoProducer.class)
+@AddBean(NonGrpcMetricAnnotatedBean.class)
+@AddExtension(MetricsCdiExtension.class)
+@AddExtension(ServerCdiExtension.class) // needed for MetricsCdiExtension
+@AddExtension(JaxRsCdiExtension.class)
+@AddExtension(GrpcMetricsCdiExtension.class)
 public class MetricsConfigurerTest {
 
     private static MetricRegistry registry;
 
+    @Inject
+    private NonGrpcMetricAnnotatedBean nonGrpcMetricAnnotatedBean;
+
     @BeforeAll
     public static void setup() {
         registry = RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.APPLICATION);
+
     }
 
     @Test
@@ -73,7 +110,7 @@ public class MetricsConfigurerTest {
         assertThat(methodInterceptors.size(), is(1));
         assertThat(methodInterceptors.get(0), is(instanceOf(GrpcMetrics.class)));
         assertThat(((GrpcMetrics) methodInterceptors.get(0)).metricType(), is(MetricType.COUNTER));
-        assertThat(updReg().getCounters().get(new MetricID(ServiceOne.class.getName() + ".counted")), is(notNullValue()));
+        assertThat(registry.getCounters().get(new MetricID(ServiceOne.class.getName() + ".counted")), is(notNullValue()));
     }
 
     @Test
@@ -93,7 +130,7 @@ public class MetricsConfigurerTest {
         assertThat(methodInterceptors.size(), is(1));
         assertThat(methodInterceptors.get(0), is(instanceOf(GrpcMetrics.class)));
         assertThat(((GrpcMetrics) methodInterceptors.get(0)).metricType(), is(MetricType.METERED));
-        assertThat(updReg().getMeters().get(new MetricID(ServiceOne.class.getName() + ".metered")), is(notNullValue()));
+        assertThat(registry.getMeters().get(new MetricID(ServiceOne.class.getName() + ".metered")), is(notNullValue()));
     }
 
     @Test
@@ -113,7 +150,7 @@ public class MetricsConfigurerTest {
         assertThat(methodInterceptors.size(), is(1));
         assertThat(methodInterceptors.get(0), is(instanceOf(GrpcMetrics.class)));
         assertThat(((GrpcMetrics) methodInterceptors.get(0)).metricType(), is(MetricType.TIMER));
-        assertThat(updReg().getTimers().get(new MetricID(ServiceOne.class.getName() + ".timed")), is(notNullValue()));
+        assertThat(registry.getTimers().get(new MetricID(ServiceOne.class.getName() + ".timed")), is(notNullValue()));
     }
 
     @Test
@@ -133,7 +170,7 @@ public class MetricsConfigurerTest {
         assertThat(methodInterceptors.size(), is(1));
         assertThat(methodInterceptors.get(0), is(instanceOf(GrpcMetrics.class)));
         assertThat(((GrpcMetrics) methodInterceptors.get(0)).metricType(), is(MetricType.SIMPLE_TIMER));
-        assertThat(updReg().getSimpleTimers().get(new MetricID(ServiceOne.class.getName() + ".simplyTimed")), is(notNullValue()));
+        assertThat(registry.getSimpleTimers().get(new MetricID(ServiceOne.class.getName() + ".simplyTimed")), is(notNullValue()));
     }
 
     @Test
@@ -153,7 +190,7 @@ public class MetricsConfigurerTest {
         assertThat(methodInterceptors.size(), is(1));
         assertThat(methodInterceptors.get(0), is(instanceOf(GrpcMetrics.class)));
         assertThat(((GrpcMetrics) methodInterceptors.get(0)).metricType(), is(MetricType.CONCURRENT_GAUGE));
-        assertThat(updReg().getConcurrentGauges().get(new MetricID(ServiceOne.class.getName() + ".concurrentGauge")),
+        assertThat(registry.getConcurrentGauges().get(new MetricID(ServiceOne.class.getName() + ".concurrentGauge")),
                 is(notNullValue()));
     }
 
@@ -174,7 +211,7 @@ public class MetricsConfigurerTest {
         assertThat(methodInterceptors.size(), is(1));
         assertThat(methodInterceptors.get(0), is(instanceOf(GrpcMetrics.class)));
         assertThat(((GrpcMetrics) methodInterceptors.get(0)).metricType(), is(MetricType.COUNTER));
-        assertThat(updReg().getCounters().get(new MetricID(ServiceThree.class.getName() + ".foo")), is(notNullValue()));
+        assertThat(registry.getCounters().get(new MetricID(ServiceThree.class.getName() + ".foo")), is(notNullValue()));
     }
 
     @Test
@@ -296,13 +333,46 @@ public class MetricsConfigurerTest {
         assertThat(methodInterceptors, is(emptyIterable()));
     }
 
+    @Test
+    void checkNonGrpcResourceForMetrics() {
+
+        // Make sure the gRPC metrics observer did not accidentally discard discoveries of legitimate,
+        // non-gRPC metric annotations.
+        Counter helloWorldClassLevelMessage = registry.getCounter(
+                new MetricID(NonGrpcMetricAnnotatedBean.class.getName() + ".message"));
+        assertThat("message counter declared at class level", helloWorldClassLevelMessage, is(notNullValue()));
+
+        SimpleTimer messageWithArgSimpleTimer = registry.getSimpleTimer(
+                new MetricID(NonGrpcMetricAnnotatedBean.MESSAGE_SIMPLE_TIMER));
+        assertThat("messageWithArg simple timer at method level", messageWithArgSimpleTimer, is(notNullValue()));
+
+        Counter helloWorldClassLevelMessageWithArg = registry.getCounter(
+                new MetricID(NonGrpcMetricAnnotatedBean.class.getName() + ".messageWithArg"));
+        assertThat("messageWithArg counter declared at class level",
+                   helloWorldClassLevelMessageWithArg,
+                   is(notNullValue()));
+
+        // Now make sure the gRPC observer left the default interceptors in place.
+        long before = helloWorldClassLevelMessage.getCount();
+        nonGrpcMetricAnnotatedBean.message();
+        assertThat("Change in counter on method with inherited metric annotation",
+                   helloWorldClassLevelMessage.getCount() - before,
+                   is(1L));
+
+        before = helloWorldClassLevelMessageWithArg.getCount();
+        nonGrpcMetricAnnotatedBean.messageWithArg("Joe");
+        assertThat("Change in simple timer on method with explicit metric annotation",
+                   helloWorldClassLevelMessageWithArg.getCount() - before,
+                   is(1L));
+    }
 
     @Grpc
     public static class ServiceOne
             implements GrpcService {
         @Override
         public void update(ServiceDescriptor.Rules rules) {
-            rules.unary("counted", this::counted)
+            rules.marshallerSupplier(new JavaMarshaller.Supplier())
+                 .unary("counted", this::counted)
                  .unary("timed", this::timed)
                  .unary("metered", this::metered)
                  .unary("simplyTimed", this::simplyTimed)
@@ -311,114 +381,108 @@ public class MetricsConfigurerTest {
 
         @Unary
         @Counted
-        public void counted(String request, StreamObserver<String> response) {
+        public void counted(Services.TestRequest request, StreamObserver<Services.TestResponse> response) {
         }
 
         @Unary
         @Timed
-        public void timed(String request, StreamObserver<String> response) {
+        public void timed(Services.TestRequest request, StreamObserver<Services.TestResponse> response) {
         }
 
         @Unary
         @Metered
-        public void metered(String request, StreamObserver<String> response) {
+        public void metered(Services.TestRequest request, StreamObserver<Services.TestResponse> response) {
         }
 
         @Unary
         @SimplyTimed
-        public void simplyTimed(String request, StreamObserver<String> response) {
+        public void simplyTimed(Services.TestRequest request, StreamObserver<Services.TestResponse> response) {
         }
 
         @Unary
         @ConcurrentGauge
-        public void concurrentGauge(String request, StreamObserver<String> response) {
+        public void concurrentGauge(Services.TestRequest request, StreamObserver<Services.TestResponse> response) {
         }
     }
 
     @Grpc
     @SuppressWarnings("CdiManagedBeanInconsistencyInspection")
-    public interface ServiceTwo {
+    public interface ServiceTwo extends GrpcService {
 
         @Unary
         @Counted
-        void counted(String request, StreamObserver<String> response);
+        void counted(Services.TestRequest request, StreamObserver<Services.TestResponse> response);
 
         @Unary
         @Timed
-        void timed(String request, StreamObserver<String> response);
+        void timed(Services.TestRequest request, StreamObserver<Services.TestResponse> response);
 
         @Unary
         @Metered
-        void metered(String request, StreamObserver<String> response);
+        void metered(Services.TestRequest request, StreamObserver<Services.TestResponse> response);
 
         @Unary
         @SimplyTimed
-        void simplyTimed(String request, StreamObserver<String> response);
+        void simplyTimed(Services.TestRequest request, StreamObserver<Services.TestResponse> response);
 
         @Unary
         @ConcurrentGauge
-        void concurrentGauge(String request, StreamObserver<String> response);
+        void concurrentGauge(Services.TestRequest request, StreamObserver<Services.TestResponse> response);
     }
 
     public static class ServiceTwoImpl
-            implements ServiceTwo, GrpcService {
+            implements ServiceTwo {
         @Override
         public void update(ServiceDescriptor.Rules rules) {
-            rules.unary("counted", this::counted)
-                 .unary("timed", this::timed)
-                 .unary("metered", this::metered)
-                 .unary("simplyTimed", this::simplyTimed)
-                 .unary("concurrentGauge", this::concurrentGauge);
+            rules.marshallerSupplier(new JavaMarshaller.Supplier())
+                    .unary("counted", this::counted)
+                    .unary("timed", this::timed)
+                    .unary("metered", this::metered)
+                    .unary("simplyTimed", this::simplyTimed)
+                    .unary("concurrentGauge", this::concurrentGauge);
         }
 
         @Override
-        public void counted(String request, StreamObserver<String> response) {
+        public void counted(Services.TestRequest request, StreamObserver<Services.TestResponse> response) {
         }
 
         @Override
-        public void timed(String request, StreamObserver<String> response) {
+        public void timed(Services.TestRequest request, StreamObserver<Services.TestResponse> response) {
         }
 
         @Override
-        public void metered(String request, StreamObserver<String> response) {
+        public void metered(Services.TestRequest request, StreamObserver<Services.TestResponse> response) {
         }
 
         @Override
-        public void simplyTimed(String request, StreamObserver<String> response) {
+        public void simplyTimed(Services.TestRequest request, StreamObserver<Services.TestResponse> response) {
         }
 
         @Override
-        public void concurrentGauge(String request, StreamObserver<String> response) {
+        public void concurrentGauge(Services.TestRequest request, StreamObserver<Services.TestResponse> response) {
         }
     }
 
+    @Typed(ServiceThree.class) // disambiguate from ServiceOne for CDI
     public static class ServiceThree
             extends ServiceOne {
         @Override
         @Counted(name = "foo")
-        public void counted(String request, StreamObserver<String> response) {
+        public void counted(Services.TestRequest request, StreamObserver<Services.TestResponse> response) {
             super.counted(request, response);
         }
 
         @Override
-        public void timed(String request, StreamObserver<String> response) {
+        public void timed(Services.TestRequest request, StreamObserver<Services.TestResponse> response) {
             super.timed(request, response);
         }
     }
 
-    private static MetricRegistry updReg() {
-        MyMetricsCdiExtension.registerGrpcMetrics();
-        return registry;
-    }
+    static class ServiceTwoProducer {
 
-    /**
-     * Used only for very limited testing purposes.
-     */
-    @Deprecated
-    private static class MyMetricsCdiExtension extends io.helidon.microprofile.metrics.MetricsCdiExtension {
-
-        static void registerGrpcMetrics() {
-            MyMetricsCdiExtension.registerMetricsForAnnotatedSitesFromGrpcTest();
+        @Produces
+        public ServiceTwo create() {
+            return new ServiceTwoImpl();
         }
     }
 }

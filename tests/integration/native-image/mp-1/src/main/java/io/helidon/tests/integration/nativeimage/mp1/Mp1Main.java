@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Base64;
@@ -32,6 +33,15 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
+import io.helidon.common.Errors;
+import io.helidon.common.configurable.Resource;
+import io.helidon.microprofile.server.Server;
+import io.helidon.security.jwt.Jwt;
+import io.helidon.security.jwt.SignedJwt;
+import io.helidon.security.jwt.jwk.JwkKeys;
+import io.helidon.security.jwt.jwk.JwkRSA;
+import io.helidon.tracing.Tracer;
+
 import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.spi.CDI;
 import jakarta.json.JsonArray;
@@ -42,17 +52,6 @@ import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-
-import io.helidon.common.Errors;
-import io.helidon.common.configurable.Resource;
-import io.helidon.microprofile.server.Server;
-import io.helidon.security.jwt.Jwt;
-import io.helidon.security.jwt.SignedJwt;
-import io.helidon.security.jwt.jwk.JwkKeys;
-import io.helidon.security.jwt.jwk.JwkRSA;
-
-import io.opentracing.Tracer;
-import io.opentracing.util.GlobalTracer;
 import org.eclipse.microprofile.faulttolerance.exceptions.TimeoutException;
 
 import static io.helidon.common.http.Http.Status.FORBIDDEN_403;
@@ -71,6 +70,7 @@ public final class Mp1Main {
 
     /**
      * Application main entry point.
+     *
      * @param args command line arguments.
      */
     public static void main(final String[] args) {
@@ -125,6 +125,13 @@ public final class Mp1Main {
         if (failed) {
             System.exit(-1);
         }
+
+        // let the tracer finish
+        try {
+            Thread.sleep(Duration.ofSeconds(2).toMillis());
+        } catch (InterruptedException ignored) {
+        }
+        System.exit(0);
     }
 
     private static String generateJwtToken() {
@@ -134,7 +141,7 @@ public final class Mp1Main {
                 .addScope("admin_scope")
                 .algorithm(JwkRSA.ALG_RS256)
                 .issuer("native-image-mp1")
-                .audience("http://localhost:8087/jwt")
+                .addAudience("http://localhost:8087/jwt")
                 .issueTime(Instant.now())
                 .userPrincipal("jack")
                 .keyId("SIGNING_KEY")
@@ -372,10 +379,11 @@ public final class Mp1Main {
     }
 
     private static void validateTracing(Errors.Collector collector) {
-        Tracer tracer = GlobalTracer.get();
-        if (!tracer.toString().contains("Jaeger")) {
+        Tracer tracer = Tracer.global();
+        if (!tracer.toString().contains("OpenTelemetry")) {
             // could not find how to get the actual instance of tracer from API
-            collector.fatal(tracer, "This application should be configured with Jaeger tracer, yet it is not: " + tracer);
+            collector.fatal(tracer,
+                            "This application should be configured with OpenTelemetry Jaeger tracer, yet it is not: " + tracer);
         }
     }
 
@@ -533,7 +541,7 @@ public final class Mp1Main {
         if (null == healthCheck) {
             collector.fatal("\"" + name + "\" health check is not available");
         } else {
-            String status = healthCheck.getString("state");
+            String status = healthCheck.getString("status");
             if (!"UP".equals(status)) {
                 collector.fatal("Health check \"" + name + "\" should be up, but is " + status);
             }

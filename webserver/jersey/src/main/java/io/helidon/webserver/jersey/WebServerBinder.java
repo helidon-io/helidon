@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,11 @@
 
 package io.helidon.webserver.jersey;
 
+import io.helidon.tracing.Span;
+import io.helidon.tracing.SpanContext;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 
-import io.opentracing.Span;
-import io.opentracing.SpanContext;
 import jakarta.inject.Inject;
 import jakarta.inject.Provider;
 import jakarta.ws.rs.core.GenericType;

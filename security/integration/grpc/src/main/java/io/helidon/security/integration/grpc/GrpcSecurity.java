@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import java.util.logging.Logger;
 
 import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
+import io.helidon.grpc.core.GrpcTracingContext;
 import io.helidon.grpc.core.InterceptorPriorities;
 import io.helidon.grpc.server.GrpcRouting;
 import io.helidon.grpc.server.GrpcService;
@@ -38,6 +39,8 @@ import io.helidon.security.EndpointConfig;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.SecurityEnvironment;
+import io.helidon.tracing.Span;
+import io.helidon.tracing.SpanContext;
 
 import io.grpc.Context;
 import io.grpc.ForwardingServerCallListener;
@@ -48,9 +51,6 @@ import io.grpc.ServerCall;
 import io.grpc.ServerCallHandler;
 import io.grpc.ServerInterceptor;
 import io.grpc.Status;
-import io.opentracing.Span;
-import io.opentracing.SpanContext;
-import io.opentracing.contrib.grpc.OpenTracingContextKey;
 import jakarta.annotation.Priority;
 
 /**
@@ -271,7 +271,7 @@ public final class GrpcSecurity
      * <li>Audit: not modified</li>
      * </ul>
      *
-     * @param explicitAuthenticator name of authenticator as configured in {@link Security}
+     * @param explicitAuthenticator name of authenticator as configured in {@link io.helidon.security.Security}
      * @return {@link GrpcSecurityHandler} instance
      */
     public static GrpcSecurityHandler authenticator(String explicitAuthenticator) {
@@ -289,7 +289,7 @@ public final class GrpcSecurity
      * <li>Audit: not modified</li>
      * </ul>
      *
-     * @param explicitAuthorizer name of authorizer as configured in {@link Security}
+     * @param explicitAuthorizer name of authorizer as configured in {@link io.helidon.security.Security}
      * @return {@link GrpcSecurityHandler} instance
      */
     public static GrpcSecurityHandler authorizer(String explicitAuthorizer) {
@@ -502,7 +502,7 @@ public final class GrpcSecurity
 
             EndpointConfig ec = EndpointConfig.builder().build();
 
-            Span span = OpenTracingContextKey.getKey().get();
+            Span span = GrpcTracingContext.SPAN_KEY.get();
             SpanContext spanContext = span == null ? null : span.context();
             SecurityContext context = security.contextBuilder(String.valueOf(SECURITY_COUNTER.incrementAndGet()))
                     .tracingSpan(spanContext)
@@ -521,9 +521,9 @@ public final class GrpcSecurity
     }
 
     /**
-     * Obtain the {@link Security} instance being used.
+     * Obtain the {@link io.helidon.security.Security} instance being used.
      *
-     * @return  the {@link Security} instance being used
+     * @return  the {@link io.helidon.security.Security} instance being used
      */
     Security getSecurity() {
         return security;

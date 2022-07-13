@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -16,27 +16,27 @@
     limitations under the License.
 
 -->
-<persistence version="3.0"
-        xmlns="https://jakarta.ee/xml/ns/persistence"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence
-                                 https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd">
-  <persistence-unit name="test" transaction-type="JTA">
-    <jta-data-source>test</jta-data-source>
-    <class>io.helidon.tests.integration.nativeimage.mp2.GreetingEntity</class>
-    <properties>
-      <!--
-      The dialect must match the database used.
-      -->
-<!--      <property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect"/>-->
-      <property name="hibernate.dialect" value="org.hibernate.dialect.OracleDialect"/>
-      <!--
-      DDL must be disabled, as it causes conflicts when starting connections and JPA.
-      This is a limitation for native image
-      -->
-      <property name="hibernate.hbm2ddl.auto" value="none"/>
-      <property name="show_sql" value="true"/>
-      <property name="hibernate.temp.use_jdbc_metadata_defaults" value="false"/>
-    </properties>
-  </persistence-unit>
+<persistence xmlns="https://jakarta.ee/xml/ns/persistence"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence
+                                 https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd"
+             version="3.0">
+    <persistence-unit name="test" transaction-type="JTA">
+        <jta-data-source>test</jta-data-source>
+        <class>io.helidon.tests.integration.nativeimage.mp2.GreetingEntity</class>
+        <properties>
+            <!--
+                The dialect must match the database used.
+            -->
+            <!--<property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect"/>-->
+            <property name="hibernate.dialect" value="org.hibernate.dialect.OracleDialect"/>
+            <!--
+                DDL must be disabled, as it causes conflicts when starting connections and JPA.
+                This is a limitation for native image
+            -->
+            <property name="hibernate.hbm2ddl.auto" value="none"/>
+            <property name="show_sql" value="true"/>
+            <property name="hibernate.temp.use_jdbc_metadata_defaults" value="false"/>
+        </properties>
+    </persistence-unit>
 </persistence>

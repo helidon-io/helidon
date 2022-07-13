@@ -1,4 +1,0 @@
-skinparam classBackgroundColor #BDE6EE
-skinparam classBorderColor #00758F
-skinparam noteBackgroundColor #D2E8C5
-skinparam noteBorderColor #3A913F

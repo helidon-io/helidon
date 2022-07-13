@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,17 @@
 
 package io.helidon.grpc.metrics;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import io.helidon.common.LazyValue;
+import io.helidon.grpc.core.MarshallerSupplier;
 import io.helidon.grpc.server.GrpcService;
 import io.helidon.grpc.server.MethodDescriptor;
 import io.helidon.grpc.server.ServiceDescriptor;
@@ -97,7 +103,8 @@ public class GrpcMetricsInterceptorIT {
 
     @Test
     public void shouldUseCountedMetric() throws Exception {
-        ServiceDescriptor descriptor = ServiceDescriptor.builder(createMockService())
+        ServiceDescriptor descriptor = newServiceDescriptorBuilder(createMockService())
+                .marshallerSupplier(new JavaMarshaller.Supplier())
                 .unary("testCounted", this::dummyUnary)
                 .build();
 
@@ -116,7 +123,8 @@ public class GrpcMetricsInterceptorIT {
 
     @Test
     public void shouldUseHistogramMetric() throws Exception {
-        ServiceDescriptor descriptor = ServiceDescriptor.builder(createMockService())
+        ServiceDescriptor descriptor = newServiceDescriptorBuilder(createMockService())
+                .marshallerSupplier(new JavaMarshaller.Supplier())
                 .unary("barHistogram", this::dummyUnary)
                 .build();
 
@@ -135,7 +143,8 @@ public class GrpcMetricsInterceptorIT {
 
     @Test
     public void shouldUseMeteredMetric() throws Exception {
-        ServiceDescriptor descriptor = ServiceDescriptor.builder(createMockService())
+        ServiceDescriptor descriptor = newServiceDescriptorBuilder(createMockService())
+                .marshallerSupplier(new JavaMarshaller.Supplier())
                 .unary("barMetered", this::dummyUnary)
                 .build();
 
@@ -154,7 +163,8 @@ public class GrpcMetricsInterceptorIT {
 
     @Test
     public void shouldUseTimerMetric() throws Exception {
-        ServiceDescriptor descriptor = ServiceDescriptor.builder(createMockService())
+        ServiceDescriptor descriptor = newServiceDescriptorBuilder(createMockService())
+                .marshallerSupplier(new JavaMarshaller.Supplier())
                 .unary("barTimed", this::dummyUnary)
                 .build();
 
@@ -173,7 +183,8 @@ public class GrpcMetricsInterceptorIT {
 
     @Test
     public void shouldUseSimpleTimerMetric() throws Exception {
-        ServiceDescriptor descriptor = ServiceDescriptor.builder(createMockService())
+        ServiceDescriptor descriptor = newServiceDescriptorBuilder(createMockService())
+                .marshallerSupplier(new JavaMarshaller.Supplier())
                 .unary("barSimplyTimed", this::dummyUnary)
                 .build();
 
@@ -192,7 +203,8 @@ public class GrpcMetricsInterceptorIT {
 
     @Test
     public void shouldUseConcurrentGaugeMetric() throws Exception {
-        ServiceDescriptor descriptor = ServiceDescriptor.builder(createMockService())
+        ServiceDescriptor descriptor = newServiceDescriptorBuilder(createMockService())
+                .marshallerSupplier(new JavaMarshaller.Supplier())
                 .unary("barConcurrentGauge", this::dummyUnary)
                 .build();
 
@@ -211,7 +223,8 @@ public class GrpcMetricsInterceptorIT {
 
     @Test
     public void shouldApplyTags() throws Exception {
-        ServiceDescriptor descriptor = ServiceDescriptor.builder(createMockService())
+        ServiceDescriptor descriptor = newServiceDescriptorBuilder(createMockService())
+                .marshallerSupplier(new JavaMarshaller.Supplier())
                 .unary("barTags", this::dummyUnary)
                 .build();
 
@@ -247,7 +260,8 @@ public class GrpcMetricsInterceptorIT {
 
     @Test
     public void shouldApplyDescription() throws Exception {
-        ServiceDescriptor descriptor = ServiceDescriptor.builder(createMockService())
+        ServiceDescriptor descriptor = newServiceDescriptorBuilder(createMockService())
+                .marshallerSupplier(new JavaMarshaller.Supplier())
                 .unary("barDesc", this::dummyUnary)
                 .build();
 
@@ -266,7 +280,8 @@ public class GrpcMetricsInterceptorIT {
 
     @Test
     public void shouldApplyUnits() throws Exception {
-        ServiceDescriptor descriptor = ServiceDescriptor.builder(createMockService())
+        ServiceDescriptor descriptor = newServiceDescriptorBuilder(createMockService())
+                .marshallerSupplier(new JavaMarshaller.Supplier())
                 .unary("barUnits", this::dummyUnary)
                 .build();
 
@@ -285,7 +300,8 @@ public class GrpcMetricsInterceptorIT {
 
     @Test
     public void shouldHaveCorrectNameWithDotsForSlashes() throws Exception {
-        ServiceDescriptor descriptor = ServiceDescriptor.builder(createMockService())
+        ServiceDescriptor descriptor = newServiceDescriptorBuilder(createMockService())
+                .marshallerSupplier(new JavaMarshaller.Supplier())
                 .name("My/Service")
                 .unary("bar", this::dummyUnary)
                 .build();
@@ -305,7 +321,8 @@ public class GrpcMetricsInterceptorIT {
 
     @Test
     public void shouldUseNameFunction() throws Exception {
-        ServiceDescriptor descriptor = ServiceDescriptor.builder(createMockService())
+        ServiceDescriptor descriptor = newServiceDescriptorBuilder(createMockService())
+                .marshallerSupplier(new JavaMarshaller.Supplier())
                 .unary("barUnits", this::dummyUnary)
                 .build();
 
@@ -323,7 +340,7 @@ public class GrpcMetricsInterceptorIT {
     }
 
     private ServerCall<String, String> call(GrpcMetrics metrics, MethodDescriptor methodDescriptor) throws Exception {
-        ServiceDescriptor descriptor = ServiceDescriptor.builder(createMockService()).build();
+        ServiceDescriptor descriptor = newServiceDescriptorBuilder(createMockService()).build();
         return call(metrics, descriptor, methodDescriptor);
     }
 
@@ -370,5 +387,47 @@ public class GrpcMetricsInterceptorIT {
     }
 
     private void dummyUnary(String request, StreamObserver<String> observer) {
+    }
+
+    private ServiceDescriptor.Builder newServiceDescriptorBuilder(GrpcService service) {
+        return ServiceDescriptor.builder(service)
+                .marshallerSupplier(new JavaMarshaller.Supplier());
+    }
+
+    /**
+     * An implementation of a gRPC MethodDescriptor.Marshaller that uses Java
+     * serialization for testing.
+     */
+    private static class JavaMarshaller<T>
+            implements io.grpc.MethodDescriptor.Marshaller<T> {
+
+        @Override
+        public InputStream stream(T obj) {
+            try (ByteArrayOutputStream out = new ByteArrayOutputStream();
+                 ObjectOutputStream oos = new ObjectOutputStream(out)) {
+                oos.writeObject(obj);
+                return new ByteArrayInputStream(out.toByteArray());
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public T parse(InputStream in) {
+            try (ObjectInputStream ois = new ObjectInputStream(in)) {
+                return (T) ois.readObject();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        public static class Supplier
+                implements MarshallerSupplier {
+            @Override
+            public <T> io.grpc.MethodDescriptor.Marshaller<T> get(Class<T> clazz) {
+                return new JavaMarshaller<>();
+            }
+        }
     }
 }

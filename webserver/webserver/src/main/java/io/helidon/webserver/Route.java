@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ import io.helidon.common.http.Http;
 /**
  * A unit of the {@link Routing}.
  */
-interface Route {
+interface Route extends ServerLifecycle {
 
     /**
      * Path matcher for routing which doesn't specify any other path matcher.

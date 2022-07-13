@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,8 @@ import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Method;
 import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -40,7 +42,10 @@ import jakarta.enterprise.inject.spi.configurator.BeanConfigurator;
 import jakarta.enterprise.util.TypeLiteral;
 import jakarta.inject.Named;
 import oracle.ucp.jdbc.PoolDataSource;
+import oracle.ucp.jdbc.PoolDataSourceFactory;
 import oracle.ucp.jdbc.PoolDataSourceImpl;
+import oracle.ucp.jdbc.PoolXADataSource;
+import oracle.ucp.jdbc.PoolXADataSourceImpl;
 
 /**
  * An {@link Extension} that arranges for named {@link DataSource}
@@ -51,13 +56,18 @@ import oracle.ucp.jdbc.PoolDataSourceImpl;
 public class UCPBackedDataSourceExtension extends AbstractDataSourceExtension {
 
     private static final Pattern DATASOURCE_NAME_PATTERN =
-        Pattern.compile("^(?:javax\\.sql\\.|oracle\\.ucp\\.jdbc\\.Pool)DataSource\\.([^.]+)\\.(.*)$");
+        Pattern.compile("^(?:javax\\.sql\\.|oracle\\.ucp\\.jdbc\\.Pool)(XA)?DataSource\\.([^.]+)\\.(.*)$");
+    // Capturing groups:                                               (1 )              (2    )   (3 )
+    //                                                                 Are we XA?        DS name   DS Property
+
+    private final Map<String, Boolean> xa;
 
     /**
      * Creates a new {@link UCPBackedDataSourceExtension}.
      */
     public UCPBackedDataSourceExtension() {
         super();
+        this.xa = new HashMap<>();
     }
 
     @Override
@@ -77,7 +87,10 @@ public class UCPBackedDataSourceExtension extends AbstractDataSourceExtension {
         if (dataSourcePropertyPatternMatcher == null) {
             returnValue = null;
         } else {
-            returnValue = dataSourcePropertyPatternMatcher.group(1);
+            returnValue = dataSourcePropertyPatternMatcher.group(2);
+            // While we have the Matcher available, store whether this
+            // is XA or not.
+            this.xa.put(returnValue, dataSourcePropertyPatternMatcher.group(1) != null);
         }
         return returnValue;
     }
@@ -88,7 +101,7 @@ public class UCPBackedDataSourceExtension extends AbstractDataSourceExtension {
         if (dataSourcePropertyPatternMatcher == null) {
             returnValue = null;
         } else {
-            returnValue = dataSourcePropertyPatternMatcher.group(2);
+            returnValue = dataSourcePropertyPatternMatcher.group(3);
         }
         return returnValue;
     }
@@ -97,13 +110,14 @@ public class UCPBackedDataSourceExtension extends AbstractDataSourceExtension {
     protected final void addBean(final BeanConfigurator<DataSource> beanConfigurator,
                                  final Named dataSourceName,
                                  final Properties dataSourceProperties) {
+        final boolean xa = this.xa.get(dataSourceName.value());
         beanConfigurator
             .addQualifier(dataSourceName)
-            .addTransitiveTypeClosure(PoolDataSourceImpl.class)
+            .addTransitiveTypeClosure(xa ? PoolXADataSourceImpl.class : PoolDataSourceImpl.class)
             .scope(ApplicationScoped.class)
             .produceWith(instance -> {
                     try {
-                        return createDataSource(instance, dataSourceName, dataSourceProperties);
+                        return createDataSource(instance, dataSourceName, xa, dataSourceProperties);
                     } catch (final IntrospectionException | ReflectiveOperationException | SQLException exception) {
                         throw new CreationException(exception.getMessage(), exception);
                     }
@@ -121,14 +135,16 @@ public class UCPBackedDataSourceExtension extends AbstractDataSourceExtension {
                 });
     }
 
-    private static PoolDataSourceImpl createDataSource(final Instance<Object> instance,
-                                                       final Named dataSourceName,
-                                                       final Properties properties)
+    private static PoolDataSource createDataSource(final Instance<Object> instance,
+                                                   final Named dataSourceName,
+                                                   final boolean xa,
+                                                   final Properties properties)
         throws IntrospectionException, ReflectiveOperationException, SQLException {
         // See
         // https://docs.oracle.com/en/database/oracle/oracle-database/19/jjucp/get-started.html#GUID-2CC8D6EC-483F-4942-88BA-C0A1A1B68226
         // for the general pattern.
-        final PoolDataSourceImpl returnValue = new PoolDataSourceImpl();
+        final PoolDataSource returnValue =
+            xa ? PoolDataSourceFactory.getPoolXADataSource() : PoolDataSourceFactory.getPoolDataSource();
         final Set<String> propertyNames = properties.stringPropertyNames();
         if (!propertyNames.isEmpty()) {
             final Properties connectionFactoryProperties = new Properties();
@@ -139,20 +155,13 @@ public class UCPBackedDataSourceExtension extends AbstractDataSourceExtension {
                     boolean handled = false;
                     for (final PropertyDescriptor pd : pds) {
                         if (propertyName.equals(pd.getName())) {
-                            // We have matched a Java Beans property
-                            // on the PoolDataSource implementation
-                            // class.  Set it if we can.  Note that
-                            // these properties are NOT those of the
-                            // PoolDataSource's *underlying* "real"
-                            // connection factory (usually a
-                            // DataSource that provides the actual
-                            // connections ultimately pooled by the
-                            // Universal Connection Pool).  Those are
-                            // handled in a manner unfortunately
-                            // restricted by the limited configuration
-                            // mechanism belonging to the
-                            // PoolDataSource implementation itself
-                            // via the connectionFactoryProperties
+                            // We have matched a Java Beans property on the PoolDataSource implementation
+                            // class.  Set it if we can.  Note that these properties are NOT those of the
+                            // PoolDataSource's *underlying* "real" connection factory (usually a
+                            // DataSource that provides the actual connections ultimately pooled by the
+                            // Universal Connection Pool).  Those are handled in a manner unfortunately
+                            // restricted by the limited configuration mechanism belonging to the
+                            // PoolDataSource implementation itself via the connectionFactoryProperties
                             // object.  See below.
                             final Method writeMethod = pd.getWriteMethod();
                             if (writeMethod != null) {
@@ -174,67 +183,47 @@ public class UCPBackedDataSourceExtension extends AbstractDataSourceExtension {
                         }
                     }
                     if (!handled) {
-                        // We have found a property that is not a Java
-                        // Beans property of the PoolDataSource, but
-                        // is supposed to be a property of the
-                        // connection factory that it wraps.
+                        // We have found a property that is not a Java Beans property of the PoolDataSource, but
+                        // is supposed to be a property of the connection factory that it wraps.
                         //
-                        // (Sadly, "serviceName" and "pdbRoles" are
-                        // special properties that have significance
-                        // to certain connection factories (such as
-                        // Oracle database-oriented DataSources), and
-                        // to the oracle.ucp.jdbc.UCPConnectionBuilder
-                        // class, which underlies getConnection(user,
-                        // password) calls, but which sadly cannot be
-                        // set on a PoolDataSource except by means of
-                        // some irrelevant XML configuration.  We work
-                        // around this design and special case it
+                        // (Sadly, "serviceName" and "pdbRoles" are special properties that have significance
+                        // to certain connection factories (such as Oracle database-oriented DataSources), and
+                        // to the oracle.ucp.jdbc.UCPConnectionBuilder class, which underlies getConnection(user,
+                        // password) calls, but which sadly cannot be set on a PoolDataSource except by means of
+                        // some irrelevant XML configuration.  We work around this design and special case it
                         // below, not here.)
                         //
-                        // Sadly, the Universal Connection Pool lacks
-                        // a mechanism to tunnel arbitrary Java
-                        // Beans-conformant property values destined
-                        // for the underlying connection factory
-                        // (which is usually a DataSource or
-                        // ConnectionPoolDataSource implementation,
-                        // but may be other things) through to that
-                        // underlying connection factory with
-                        // arbitrary type information set properly.
-                        // Because the PoolDataSource is in charge of
-                        // instantiating the connection factory (the
-                        // underlying DataSource), you can't pass a
-                        // fully configured DataSource into it, nor
-                        // can you access an unconfigured instance of
-                        // it that you can work with. The only
-                        // configuration the Universal Connection Pool
-                        // supports is via a Properties object, whose
-                        // values are retrieved by the PoolDataSource
-                        // implementation, as Strings.  This limits
-                        // the kinds of underlying connection
-                        // factories (DataSource implementations,
-                        // usually) that can be fully configured with
-                        // the Universal Connection Pool to Strings
-                        // and those Strings which can be converted by
-                        // the PoolDataSourceImpl#toBasicType(String,
-                        // String) method.
+                        // Sadly, the Universal Connection Pool lacks a mechanism to tunnel arbitrary Java
+                        // Beans-conformant property values destined for the underlying connection factory
+                        // (which is usually a DataSource or ConnectionPoolDataSource implementation,
+                        // but may be other things) through to that underlying connection factory with
+                        // arbitrary type information set properly. Because the PoolDataSource is in charge of
+                        // instantiating the connection factory (the underlying DataSource), you can't pass a
+                        // fully configured DataSource into it, nor can you access an unconfigured instance of
+                        // it that you can work with. The only configuration the Universal Connection Pool
+                        // supports is via a Properties object, whose values are retrieved by the PoolDataSource
+                        // implementation, as Strings.  This limits the kinds of underlying connection
+                        // factories (DataSource implementations, usually) that can be fully configured with
+                        // the Universal Connection Pool to Strings and those Strings which can be converted by
+                        // the PoolDataSourceImpl#toBasicType(String, String) method.
                         connectionFactoryProperties.setProperty(propertyName, properties.getProperty(propertyName));
                     }
                 }
             }
             final Object serviceName = connectionFactoryProperties.remove("serviceName");
             final Object pdbRoles = connectionFactoryProperties.remove("pdbRoles");
+            // Used for OCI ATP Integration
+            // Removing this so that it is not set on connectionFactoryProperties,
+            // Else we get exception with getConnection using this DS, if its set.
+            connectionFactoryProperties.remove("tnsNetServiceName");
             if (!connectionFactoryProperties.stringPropertyNames().isEmpty()) {
-                // We found some String-typed properties that are
-                // destined for the underlying connection factory to
+                // We found some String-typed properties that are destined for the underlying connection factory to
                 // hopefully fully configure it.  Apply them here.
                 returnValue.setConnectionFactoryProperties(connectionFactoryProperties);
             }
-            // Set the PoolDataSource's serviceName property so that
-            // it appears to the PoolDataSource to have been set via
-            // the undocumented XML configuration that the
-            // PoolDataSource can apparently be configured with in
-            // certain (irrelevant for Helidon) application server
-            // cases.
+            // Set the PoolDataSource's serviceName property so that it appears to the PoolDataSource to have been set via
+            // the undocumented XML configuration that the PoolDataSource can apparently be configured with in
+            // certain (irrelevant for Helidon) application server cases.
             if (serviceName instanceof String) {
                 try {
                     Method m = returnValue.getClass().getDeclaredMethod("setServiceName", String.class);
@@ -245,10 +234,8 @@ public class UCPBackedDataSourceExtension extends AbstractDataSourceExtension {
 
                 }
             }
-            // Set the PoolDataSource's pdbRoles property so that it
-            // appears to the PoolDataSource to have been set via the
-            // undocumented XML configuration that the PoolDataSource
-            // can apparently be configured with in certain
+            // Set the PoolDataSource's pdbRoles property so that it appears to the PoolDataSource to have been set via the
+            // undocumented XML configuration that the PoolDataSource can apparently be configured with in certain
             // (irrelevant for Helidon) application server cases.
             if (pdbRoles instanceof Properties) {
                 try {
@@ -266,7 +253,17 @@ public class UCPBackedDataSourceExtension extends AbstractDataSourceExtension {
             returnValue.setSSLContext(sslContextInstance.get());
         }
         // Permit further customization before the bean is actually created
-        instance.select(new TypeLiteral<Event<PoolDataSource>>() {}, dataSourceName).get().fire(returnValue);
+        if (xa) {
+            instance.select(new TypeLiteral<Event<PoolXADataSource>>() {},
+                            dataSourceName)
+                .get()
+                .fire((PoolXADataSource) returnValue);
+        } else {
+            instance.select(new TypeLiteral<Event<PoolDataSource>>() {},
+                            dataSourceName)
+                .get()
+                .fire(returnValue);
+        }
         return returnValue;
     }
 

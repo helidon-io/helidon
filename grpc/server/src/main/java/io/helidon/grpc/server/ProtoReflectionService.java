@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,6 +47,9 @@ import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
 import java.util.WeakHashMap;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Supplier;
 
 import com.google.protobuf.Any;
 import com.google.protobuf.DescriptorProtos;
@@ -88,7 +91,7 @@ import static io.grpc.MethodDescriptor.MethodType.SERVER_STREAMING;
  */
 public final class ProtoReflectionService extends ServerReflectionGrpc.ServerReflectionImplBase {
 
-    private final Object lock = new Object();
+    private final Lock indexAccess = new ReentrantLock(true);
 
     private final Map<Server, ServerReflectionIndex> serverReflectionIndexes = new WeakHashMap<>();
 
@@ -110,7 +113,7 @@ public final class ProtoReflectionService extends ServerReflectionGrpc.ServerRef
      * mutable services or a change in the service names.
      */
     private ServerReflectionIndex getRefreshedIndex() {
-        synchronized (lock) {
+        return accessIndex(() -> {
             Server server = InternalServer.SERVER_CONTEXT_KEY.get();
             ServerReflectionIndex index = serverReflectionIndexes.get(server);
             if (index == null) {
@@ -147,7 +150,7 @@ public final class ProtoReflectionService extends ServerReflectionGrpc.ServerRef
             }
 
             return index;
-        }
+        });
     }
 
     @Override
@@ -592,6 +595,15 @@ public final class ProtoReflectionService extends ServerReflectionGrpc.ServerRef
                         extensionName, new HashMap<Integer, FileDescriptor>());
             }
             fileDescriptorsByExtensionAndNumber.get(extensionName).put(extensionNumber, fd);
+        }
+    }
+
+    private <T> T accessIndex(Supplier<T> operation) {
+        indexAccess.lock();
+        try {
+            return operation.get();
+        } finally {
+            indexAccess.unlock();
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,17 +27,27 @@ import java.util.stream.Collectors;
 final class ConfiguredType {
     private final Set<ConfiguredProperty> allProperties = new HashSet<>();
     private final List<ProducerMethod> producerMethods = new LinkedList<>();
-    /**
+    /*
      * The type that is built by a builder, or created using create method.
      */
     private final String targetClass;
+    /*
+    The type we are processing that has @Configured annotation
+     */
+    private final String annotatedClass;
     private final boolean standalone;
     private final String prefix;
     private final String description;
     private final List<String> provides;
     private final List<String> inherited = new LinkedList<>();
 
-    ConfiguredType(String targetClass, boolean standalone, String prefix, String description, List<String> provides) {
+    ConfiguredType(String annotatedClass,
+                   String targetClass,
+                   boolean standalone,
+                   String prefix,
+                   String description,
+                   List<String> provides) {
+        this.annotatedClass = annotatedClass;
         this.targetClass = targetClass;
         this.standalone = standalone;
         this.prefix = prefix;
@@ -75,6 +85,10 @@ final class ConfiguredType {
         return targetClass;
     }
 
+    String annotatedClass() {
+        return annotatedClass;
+    }
+
     boolean standalone() {
         return standalone;
     }
@@ -87,6 +101,7 @@ final class ConfiguredType {
         JObject typeObject = new JObject();
 
         typeObject.add("type", targetClass());
+        typeObject.add("annotatedType", annotatedClass());
         if (standalone()) {
             typeObject.add("standalone", true);
         }

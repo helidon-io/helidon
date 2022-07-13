@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,13 +34,12 @@ import io.helidon.media.common.MessageBodyFilter;
 import io.helidon.media.common.MessageBodyStreamWriter;
 import io.helidon.media.common.MessageBodyWriter;
 import io.helidon.media.common.MessageBodyWriterContext;
+import io.helidon.tracing.Span;
+import io.helidon.tracing.SpanContext;
 import io.helidon.tracing.config.SpanTracingConfig;
 import io.helidon.tracing.config.TracingConfigUtil;
 
 import io.netty.handler.codec.http.HttpHeaderNames;
-import io.opentracing.Span;
-import io.opentracing.SpanContext;
-import io.opentracing.Tracer;
 
 /**
  * The basic implementation of {@link ServerResponse}.
@@ -147,11 +146,11 @@ abstract class Response implements ServerResponse {
 
         if (spanConfig.enabled()) {
             String spanName = spanConfig.newName().orElse(TRACING_CONTENT_WRITE);
-            Tracer.SpanBuilder spanBuilder = WebTracingConfig.tracer(webServer())
-                    .buildSpan(spanName)
-                    .asChildOf(parentSpan.get());
+            Span.Builder spanBuilder = WebTracingConfig.tracer(webServer())
+                    .spanBuilder(spanName)
+                    .parent(parentSpan.get());
             if (type != null) {
-                spanBuilder.withTag("response.type", type.getTypeName());
+                spanBuilder.tag("response.type", type.getTypeName());
             }
             return spanBuilder.start();
         }
@@ -325,7 +324,7 @@ abstract class Response implements ServerResponse {
 
         void finish() {
             if (span != null) {
-                span.finish();
+                span.end();
             }
         }
 
@@ -344,7 +343,7 @@ abstract class Response implements ServerResponse {
                     break;
                 case AFTER_ONERROR:
                     if (span != null) {
-                        span.finish();
+                        span.end();
                     }
                     break;
                 case BEFORE_ONCOMPLETE:

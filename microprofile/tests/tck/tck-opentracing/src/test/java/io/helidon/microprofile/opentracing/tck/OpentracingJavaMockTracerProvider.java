@@ -16,8 +16,7 @@
 
 package io.helidon.microprofile.opentracing.tck;
 
-import io.helidon.tracing.TracerBuilder;
-import io.helidon.tracing.spi.TracerProvider;
+import io.helidon.tracing.opentracing.spi.OpenTracingProvider;
 
 import jakarta.annotation.Priority;
 
@@ -25,9 +24,9 @@ import jakarta.annotation.Priority;
  * Provider for opentracing TCK.
  */
 @Priority(100)
-public class OpentracingJavaMockTracerProvider implements TracerProvider {
+public class OpentracingJavaMockTracerProvider implements OpenTracingProvider {
     @Override
-    public TracerBuilder<?> createBuilder() {
+    public OpentracingJavaMockTracerBuilder createBuilder() {
         return OpentracingJavaMockTracerBuilder.create();
     }
 }

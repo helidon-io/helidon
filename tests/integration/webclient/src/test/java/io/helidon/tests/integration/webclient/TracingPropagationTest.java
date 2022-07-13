@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.tests.integration.webclient;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -23,6 +24,7 @@ import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.context.Context;
 import io.helidon.config.Config;
+import io.helidon.tracing.opentracing.OpenTracing;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientResponse;
 import io.helidon.webserver.WebServer;
@@ -42,15 +44,16 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
  * Test tracing integration.
  */
 class TracingPropagationTest {
+    private static final Duration TIMEOUT = Duration.ofSeconds(10);
 
     @Test
     void testTracingSuccess() throws ExecutionException, InterruptedException {
         MockTracer mockTracer = new MockTracer();
 
-        WebServer webServer = Main.startServer(mockTracer).toCompletableFuture().get();
+        WebServer webServer = Main.startServer(mockTracer).await(TIMEOUT);
 
         Context context = Context.builder().id("tracing-unit-test").build();
-        context.register(mockTracer);
+        context.register(OpenTracing.create(mockTracer));
 
         String uri = "http://localhost:" + webServer.port() + "/greet";
 
@@ -64,9 +67,8 @@ class TracingPropagationTest {
                 .queryParam("some", "value")
                 .fragment("fragment")
                 .request()
-                .thenCompose(WebClientResponse::close)
-                .toCompletableFuture()
-                .get();
+                .forSingle(WebClientResponse::close)
+                .await(TIMEOUT);
 
         TimeUnit.MILLISECONDS.sleep(1);
         List<MockSpan> mockSpans = mockTracer.finishedSpans();

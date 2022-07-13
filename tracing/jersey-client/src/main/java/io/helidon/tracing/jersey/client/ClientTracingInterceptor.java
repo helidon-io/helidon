@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,15 +15,15 @@
  */
 package io.helidon.tracing.jersey.client;
 
-import java.util.Map;
+import io.helidon.tracing.Scope;
+import io.helidon.tracing.Span;
 
-import io.opentracing.Span;
-import io.opentracing.tag.Tags;
 import jakarta.ws.rs.client.ClientRequestContext;
 import jakarta.ws.rs.client.ClientResponseContext;
 import org.glassfish.jersey.client.spi.PostInvocationInterceptor;
 
 import static io.helidon.tracing.jersey.client.ClientTracingFilter.SPAN_PROPERTY_NAME;
+import static io.helidon.tracing.jersey.client.ClientTracingFilter.SPAN_SCOPE_PROPERTY_NAME;
 
 /**
  * A post-invocation client interceptor. If an exception (e.g. a connection timeout)
@@ -47,16 +47,20 @@ public class ClientTracingInterceptor implements PostInvocationInterceptor {
      */
     @Override
     public void onException(ClientRequestContext requestContext, ExceptionContext exceptionContext) {
-        Object property = requestContext.getProperty(SPAN_PROPERTY_NAME);
-        if (property instanceof Span span) {
-            Tags.ERROR.set(span, true);
-            span.log(Map.of("event",
-                    "error",
-                    "message",
-                    "Exception executing client request: " + exceptionContext.getThrowables().pop(),
-                    "error.kind", "ClientError"));
-            span.finish();
+        Object spanProperty = requestContext.getProperty(SPAN_PROPERTY_NAME);
+        Object scopeProperty = requestContext.getProperty(SPAN_SCOPE_PROPERTY_NAME);
+
+        if (spanProperty instanceof Span span) {
+            span.status(Span.Status.ERROR);
+            span.end(exceptionContext.getThrowables().pop());
             requestContext.removeProperty(SPAN_PROPERTY_NAME);
+        }
+        if (scopeProperty instanceof Scope scope) {
+            scope.close();
+            requestContext.removeProperty(SPAN_SCOPE_PROPERTY_NAME);
+        }
+        for (Throwable throwable : exceptionContext.getThrowables()) {
+            throwable.printStackTrace();
         }
     }
 }

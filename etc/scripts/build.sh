@@ -1,6 +1,6 @@
 #!/bin/bash -e
 #
-# Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+# Copyright (c) 2018, 2022 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,12 +24,20 @@
 # Setup error handling using default settings (defined in includes/error_handlers.sh)
 error_trap_setup
 
+# Load OCI-related functions. WS_DIR is already defined, so there is
+# no need to pass arguments.
+. $(dirname -- "${SCRIPT_PATH}")/includes/oci.sh
+
 mvn ${MAVEN_ARGS} --version
+
+# Install OCI shaded full jar, if necessary. This is an idempotent
+# call.
+install_oci_shaded_full_jar
 
 mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml \
     clean install -e \
     -Dmaven.test.failure.ignore=true \
-    -Pexamples,spotbugs,javadoc,sources,tck,tests,pipeline
+    -Pexamples,archetypes,spotbugs,javadoc,sources,tck,tests,oci-sdk-cdi,pipeline
 
 #
 # test running from jar file, and then from module path
@@ -40,5 +48,5 @@ tests/integration/native-image/mp-1/test-runtime.sh
 # The third integration test tests Helidon Quickstart MP
 tests/integration/native-image/mp-3/test-runtime.sh
 
-# Build site and aggregated javadocs
-mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml site
+# Build site and agregated javadocs
+mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml -Poci-sdk-cdi site

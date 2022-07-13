@@ -1,0 +1,171 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2022 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+ifndef::rootdir[:rootdir: {docdir}/..]
+ifndef::flavor-lc[:flavor-lc: se]
+ifndef::flavor-uc[:flavor-lc: SE]
+ifndef::se-flavor[:se-flavor: true]
+ifndef::h1-prefix[:h1-prefix: SE]
+
+=== Prerequisites
+
+// tag::prerequisites[]
+
+
+[role="flex, sm7"]
+|=======
+
+// tag::prerequisites-table-contents[]
+
+|A Helidon {flavor-uc} Application | You can use your own application or use the
+ xref:{rootdir}/{flavor-lc}/guides/quickstart.adoc[Helidon {flavor-uc} Quickstart] to create a sample application.
+|https://www.oracle.com/technetwork/java/javase/downloads[Java{nbsp}SE{nbsp}17] (http://jdk.java.net[Open{nbsp}JDK{nbsp}17]) |Helidon requires Java 17+.
+|https://maven.apache.org/download.cgi[Maven 3.6.1+]|Helidon requires Maven 3.6.1+.
+|https://docs.docker.com/install/[Docker 18.09+]|You need Docker if you
+want to build and deploy Docker containers.
+|https://kubernetes.io/docs/tasks/tools/install-kubectl/[Kubectl 1.16.5+]|If you want to
+deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster (you can
+xref:{rootdir}/about/kubernetes.adoc[install one on your desktop].
+
+// end::prerequisites-table-contents[]
+
+|=======
+
+
+
+[source,bash]
+.Verify Prerequisites
+----
+java -version
+mvn --version
+docker --version
+kubectl version --short
+----
+
+
+[source,bash]
+.Setting JAVA_HOME
+----
+# On Mac
+export JAVA_HOME=`/usr/libexec/java_home -v 17`
+
+# On Linux
+# Use the appropriate path to your JDK
+export JAVA_HOME=/usr/lib/jvm/jdk-17
+----
+// end::prerequisites[]
+
+
+// tag::prerequisites-helm[]
+
+[role="flex, sm7"]
+|=======
+include::prerequisites.adoc[tag=prerequisites-table-contents]
+
+|https://github.com/helm/helm[Helm] | To manage Kubernetes applications.
+|=======
+
+
+
+[source,bash]
+.Verify Prerequisites
+----
+java -version
+mvn --version
+docker --version
+kubectl version --short
+----
+
+
+[source,bash]
+.Setting JAVA_HOME
+----
+# On Mac
+export JAVA_HOME=`/usr/libexec/java_home -v 17`
+
+# On Linux
+# Use the appropriate path to your JDK
+export JAVA_HOME=/usr/lib/jvm/jdk-17
+----
+
+// end::prerequisites-helm[]
+
+// tag::prerequisites-curl[]
+
+[role="flex, sm7"]
+|=======
+include::prerequisites.adoc[tag=prerequisites-table-contents]
+|https://curl.se/download.html[curl]
+|(Optional) for testing
+|=======
+
+[source,bash]
+.Verify Prerequisites
+----
+java -version
+mvn --version
+docker --version
+kubectl version --short
+----
+
+
+[source,bash]
+.Setting JAVA_HOME
+----
+# On Mac
+export JAVA_HOME=`/usr/libexec/java_home -v 17`
+
+# On Linux
+# Use the appropriate path to your JDK
+export JAVA_HOME=/usr/lib/jvm/jdk-17
+----
+// end::prerequisites-curl[]
+
+
+// tag::prerequisites-graal[]
+
+
+[role="flex, sm7"]
+|=======
+include::prerequisites.adoc[tag=prerequisites-table-contents]
+| https://github.com/graalvm/graalvm-ce-builds/releases/tag/vm-21.0.0[GraalVM CE 21.0.0]|
+|=======
+
+
+
+[source,bash]
+.Verify Prerequisites
+----
+java -version
+mvn --version
+docker --version
+kubectl version --short
+----
+
+
+[source,bash]
+.Setting JAVA_HOME
+----
+# On Mac
+export JAVA_HOME=`/usr/libexec/java_home -v 17`
+
+# On Linux
+# Use the appropriate path to your JDK
+export JAVA_HOME=/usr/lib/jvm/jdk-17
+----
+// end::prerequisites-graal[]

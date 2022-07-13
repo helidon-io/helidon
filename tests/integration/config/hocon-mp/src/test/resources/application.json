@@ -1,0 +1,12 @@
+{
+  "json": {
+    "string": "String",
+    "number": 10,
+    "array": [
+      "Array 1",
+      "Array 2",
+      "Array 3"
+    ],
+    "boolean": true
+  }
+}

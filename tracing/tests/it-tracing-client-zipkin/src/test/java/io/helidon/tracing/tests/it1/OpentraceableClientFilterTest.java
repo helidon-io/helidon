@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,14 +20,14 @@ import java.net.URI;
 import java.util.List;
 import java.util.Map;
 
+import io.helidon.tracing.Span;
+import io.helidon.tracing.Tracer;
 import io.helidon.tracing.TracerBuilder;
 import io.helidon.tracing.jersey.client.ClientTracingFilter;
 
 import brave.internal.codec.HexCodec;
 import brave.opentracing.BraveSpanContext;
 import brave.propagation.TraceContext;
-import io.opentracing.Span;
-import io.opentracing.Tracer;
 import jakarta.ws.rs.client.ClientRequestContext;
 import jakarta.ws.rs.core.Configuration;
 import jakarta.ws.rs.core.MultivaluedHashMap;
@@ -91,7 +91,7 @@ public class OpentraceableClientFilterTest {
                 .when(configurationMock)
                 .getProperty(ClientTracingFilter.TRACER_PROPERTY_NAME);
 
-        Span span = tracer.buildSpan("my-parent").start();
+        Span span = tracer.spanBuilder("my-parent").start();
 
         Mockito.doReturn(span.context())
                 .when(requestContextMock)
@@ -99,7 +99,7 @@ public class OpentraceableClientFilterTest {
 
         filter.filter(requestContextMock);
 
-        TraceContext traceContext = ((BraveSpanContext) span.context()).unwrap();
+        TraceContext traceContext = ((BraveSpanContext) span.unwrap(io.opentracing.Span.class).context()).unwrap();
         assertThat(map,
                    IsMapContaining
                            .hasEntry(Is.is("X-B3-TraceId"), IsCollectionContaining.hasItem(Is.is(traceContext.traceIdString()))));

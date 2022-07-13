@@ -39,15 +39,17 @@ module io.helidon.microprofile.tracing {
     requires transitive io.helidon.tracing;
     requires transitive io.helidon.tracing.jersey;
     requires io.helidon.tracing.tracerresolver;
+    requires io.helidon.tracing.opentelemetry;
 
     requires transitive microprofile.opentracing.api;
     requires microprofile.rest.client.api;
-
+    requires io.opentracing.util;
+    requires io.opentelemetry.opentracingshim;
 
     exports io.helidon.microprofile.tracing;
 
     // this is needed for CDI extensions that use non-public observer methods
-    opens io.helidon.microprofile.tracing to weld.core.impl,hk2.utils, io.helidon.microprofile.cdi;
+    opens io.helidon.microprofile.tracing to weld.core.impl,org.glassfish.hk2.utilities, io.helidon.microprofile.cdi;
 
     provides jakarta.enterprise.inject.spi.Extension
             with io.helidon.microprofile.tracing.TracingCdiExtension;
