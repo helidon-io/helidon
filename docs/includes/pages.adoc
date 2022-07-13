@@ -16,7 +16,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 ifdef::se-flavor[]
-:health-page: {rootdir}/se/health/health.adoc
+:health-page: {rootdir}/se/health.adoc
 :metrics-page: {rootdir}/se/metrics/metrics.adoc
 :openapi-page: {rootdir}/se/openapi.adoc
 endif::[]
