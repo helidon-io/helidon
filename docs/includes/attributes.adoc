@@ -126,6 +126,10 @@ endif::[]
 :microprofile-rest-client-spec-url: {microprofile-rest-client-base-url}/microprofile-rest-client-spec-{version-lib-microprofile-rest-client}.html
 :microprofile-rest-client-javadoc-url: {microprofile-rest-client-base-url}/apidocs
 
+:microprofile-graphql-base-url: {microprofile-base-url}/microprofile-graphql-{version-lib-microprofile-graphql}
+:microprofile-graphql-spec-url: {microprofile-rest-graphql-url}/microprofile-rest-client-spec-{version-lib-microprofile-graphql}.html
+:microprofile-graphql-javadoc-url: {microprofile-rest-graphql-url}/apidocs
+
 // Jakarta versioned URLs
 
 :jakarta-base-url: https://jakarta.ee/specifications
