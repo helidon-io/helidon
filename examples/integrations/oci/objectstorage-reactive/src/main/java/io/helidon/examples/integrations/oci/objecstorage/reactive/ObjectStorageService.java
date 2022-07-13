@@ -31,7 +31,7 @@ import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 
-import com.oracle.bmc.objectstorage.ObjectStorageAsyncClient;
+import com.oracle.bmc.objectstorage.ObjectStorageAsync;
 import com.oracle.bmc.objectstorage.model.RenameObjectDetails;
 import com.oracle.bmc.objectstorage.requests.DeleteObjectRequest;
 import com.oracle.bmc.objectstorage.requests.GetNamespaceRequest;
@@ -47,11 +47,11 @@ import com.oracle.bmc.responses.AsyncHandler;
 
 class ObjectStorageService implements Service {
     private static final Logger LOGGER = Logger.getLogger(ObjectStorageService.class.getName());
-    private final ObjectStorageAsyncClient objectStorageAsyncClient;
+    private final ObjectStorageAsync objectStorageAsyncClient;
     private final String bucketName;
     private final String namespaceName;
 
-    ObjectStorageService(ObjectStorageAsyncClient objectStorageAsyncClient, String bucketName) throws Exception {
+    ObjectStorageService(ObjectStorageAsync objectStorageAsyncClient, String bucketName) throws Exception {
         this.objectStorageAsyncClient = objectStorageAsyncClient;
         this.bucketName = bucketName;
         ResponseHandler<GetNamespaceRequest, GetNamespaceResponse> namespaceHandler =
@@ -123,8 +123,7 @@ class ObjectStorageService implements Service {
     private void upload(ServerRequest req, ServerResponse res) {
         String objectName = req.path().param("file-name");
         PutObjectRequest putObjectRequest = null;
-        try {
-            InputStream stream = new FileInputStream(System.getProperty("user.dir") + File.separator + objectName);
+        try (InputStream stream = new FileInputStream(System.getProperty("user.dir") + File.separator + objectName)) {
             byte[] contents = stream.readAllBytes();
             putObjectRequest =
                     PutObjectRequest.builder()

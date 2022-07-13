@@ -26,6 +26,7 @@ import io.helidon.webserver.WebServer;
 import com.oracle.bmc.ConfigFileReader;
 import com.oracle.bmc.auth.AuthenticationDetailsProvider;
 import com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider;
+import com.oracle.bmc.database.DatabaseAsync;
 import com.oracle.bmc.database.DatabaseAsyncClient;
 import com.oracle.bmc.model.BmcException;
 
@@ -55,13 +56,13 @@ public final class OciAtpMain {
         // this requires OCI configuration in the usual place
         // ~/.oci/config
         AuthenticationDetailsProvider authProvider = new ConfigFileAuthenticationDetailsProvider(ConfigFileReader.parseDefault());
-        DatabaseAsyncClient databseAsyncClient = DatabaseAsyncClient.builder().build(authProvider);
+        DatabaseAsync databaseAsyncClient = DatabaseAsyncClient.builder().build(authProvider);
 
         // Prepare routing for the server
         WebServer server = WebServer.builder()
                 .config(config.get("server"))
                 .routing(Routing.builder()
-                                 .register("/atp", new AtpService(databseAsyncClient, config))
+                                 .register("/atp", new AtpService(databaseAsyncClient, config))
                                  // OCI SDK error handling
                                  .error(BmcException.class, (req, res, ex) -> res.status(ex.getStatusCode())
                                          .send(ex.getMessage())))

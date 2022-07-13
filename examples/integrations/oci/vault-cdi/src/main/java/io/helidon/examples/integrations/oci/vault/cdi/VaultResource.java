@@ -148,7 +148,7 @@ public class VaultResource {
      * Verify a signature. The base64 encoded signature is the entity
      *
      * @param dataToVerify data that was signed
-     * @param signature    request entity
+     * @param signature    signature text
      * @return whether the signature is valid or not
      */
     @POST

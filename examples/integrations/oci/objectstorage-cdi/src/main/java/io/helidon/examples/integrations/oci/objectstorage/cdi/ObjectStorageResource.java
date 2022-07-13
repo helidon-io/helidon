@@ -26,7 +26,7 @@ import java.util.logging.Logger;
 
 import io.helidon.common.http.Http;
 
-import com.oracle.bmc.objectstorage.ObjectStorageClient;
+import com.oracle.bmc.objectstorage.ObjectStorage;
 import com.oracle.bmc.objectstorage.requests.DeleteObjectRequest;
 import com.oracle.bmc.objectstorage.requests.GetNamespaceRequest;
 import com.oracle.bmc.objectstorage.requests.GetObjectRequest;
@@ -50,12 +50,12 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 @Path("/files")
 public class ObjectStorageResource {
     private static final Logger LOGGER = Logger.getLogger(ObjectStorageResource.class.getName());
-    private final ObjectStorageClient objectStorageClient;
+    private final ObjectStorage objectStorageClient;
     private final String namespaceName;
     private final String bucketName;
 
     @Inject
-    ObjectStorageResource(ObjectStorageClient objectStorageClient,
+    ObjectStorageResource(ObjectStorage objectStorageClient,
                           @ConfigProperty(name = "oci.objectstorage.bucketName")
                           String bucketName) {
         this.objectStorageClient = objectStorageClient;
@@ -113,8 +113,7 @@ public class ObjectStorageResource {
     public Response upload(@PathParam("fileName") String fileName) {
 
         PutObjectRequest putObjectRequest = null;
-        try {
-            InputStream stream = new FileInputStream(System.getProperty("user.dir") + File.separator + fileName);
+        try (InputStream stream = new FileInputStream(System.getProperty("user.dir") + File.separator + fileName)) {
             byte[] contents = stream.readAllBytes();
             putObjectRequest =
                     PutObjectRequest.builder()
