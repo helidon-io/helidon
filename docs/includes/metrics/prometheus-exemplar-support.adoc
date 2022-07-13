@@ -97,7 +97,7 @@ Helidon chooses the representative examplar for each value using information tha
 | minimum or maximum of a value
 | any sample with that exact value
 
-| collecs samples into bins (quantiles)
+| collects samples into bins (quantiles)
 | histogram (as with timers)
 | any sample from the bin
 
