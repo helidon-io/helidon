@@ -35,10 +35,10 @@
             <list key="readme-sections">
                 <value file="files/README.md"/>
             </list>
-            <list key="Main-createRouting">
+            <list key="Main-createRouting" if="${media} contains 'json'">
                 <value><![CDATA[        SimpleGreetService simpleGreetService = new SimpleGreetService(config);]]></value>
             </list>
-            <list key="Main-routingBuilder">
+            <list key="Main-routingBuilder" if="${media} contains 'json'">
                 <value><![CDATA[                .register("/simple-greet", simpleGreetService)]]></value>
             </list>
             <value key="Main-readyMessage">System.out.println("WEB server is up! http://localhost:" + ws.port() + "/simple-greet");</value>

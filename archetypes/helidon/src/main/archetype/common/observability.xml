@@ -303,16 +303,6 @@ allRequests_total 0.0
                              optional="true">
                         <output>
                             <model>
-                                <list key="dependencies">
-                                    <map if="${~flavor} == 'mp'">
-                                        <value key="groupId">io.helidon.microprofile.metrics</value>
-                                        <value key="artifactId">helidon-microprofile-metrics</value>
-                                    </map>
-                                    <map if="${~flavor} == 'se'">
-                                        <value key="groupId">io.helidon.metrics</value>
-                                        <value key="artifactId">helidon-metrics</value>
-                                    </map>
-                                </list>
                                 <list key="Main-helidon-imports">
                                     <value>io.helidon.metrics.MetricsSupport</value>
                                 </list>

@@ -279,9 +279,13 @@ docker run --rm --name mongo -p 27017:27017 mongo
                                 <value key="groupId">io.helidon.dbclient</value>
                                 <value key="artifactId">helidon-dbclient-jsonp</value>
                             </map>
-                            <map>
+                            <map if="${~json} != 'jsonb'">
                                 <value key="groupId">io.helidon.media</value>
                                 <value key="artifactId">helidon-media-jsonb</value>
+                            </map>
+                            <map if="${~json} != 'jsonp'">
+                                <value key="groupId">io.helidon.media</value>
+                                <value key="artifactId">helidon-media-jsonp</value>
                             </map>
                             <map if="${server} != 'mongodb'">
                                 <value key="groupId">io.helidon.dbclient</value>

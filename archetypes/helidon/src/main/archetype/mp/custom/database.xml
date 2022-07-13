@@ -111,23 +111,26 @@
                                         </map>
                                     </list>
                                     <list key="maven-plugins">
-                                        <value><![CDATA[            <plugin>
-                <groupId>com.ethlo.persistence.tools</groupId>
-                <artifactId>eclipselink-maven-plugin</artifactId>
+                                        <!-- use template to avoid the substitutions ${} -->
+                                        <value template="mustache"><![CDATA[            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
                 <executions>
                     <execution>
                         <id>weave</id>
                         <phase>process-classes</phase>
                         <goals>
-                            <goal>weave</goal>
+                            <goal>java</goal>
                         </goals>
-                    </execution>
-                    <execution>
-                        <id>modelgen</id>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>modelgen</goal>
-                        </goals>
+                        <configuration combine.self="override">
+                            <mainClass>org.eclipse.persistence.tools.weaving.jpa.StaticWeave</mainClass>
+                            <arguments>
+                                <argument>-loglevel</argument>
+                                <argument>INFO</argument>
+                                <argument>${project.build.outputDirectory}</argument>
+                                <argument>${project.build.outputDirectory}</argument>
+                            </arguments>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>]]></value>

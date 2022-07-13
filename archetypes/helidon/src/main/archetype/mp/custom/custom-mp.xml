@@ -45,10 +45,10 @@
             <list key="config-entries">
                 <value file="files/microprofile-config.properties"/>
             </list>
-            <list key="MainTest-java-imports" if="${~json} == 'jsonp'">
+            <list key="MainTest-java-imports" if="${media} contains 'json' &amp;&amp; ${~json} == 'jsonp'">
                 <value>jakarta.json.JsonObject</value>
             </list>
-            <list key="MainTest-methods" if="${~json} == 'jsonp'">
+            <list key="MainTest-methods" if="${media} contains 'json' &amp;&amp; ${~json} == 'jsonp'">
                 <value><![CDATA[
     @Test
     public void testGreet() throws Exception {
@@ -60,7 +60,7 @@
     }
                 ]]></value>
             </list>
-            <list key="MainTest-methods" if="${~json} != 'jsonp'">
+            <list key="MainTest-methods" if="${media} contains 'json' &amp;&amp; ${~json} != 'jsonp'">
                 <value><![CDATA[
     @Test
     public void testGreet() throws Exception {

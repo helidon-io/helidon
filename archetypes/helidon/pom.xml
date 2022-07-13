@@ -48,6 +48,9 @@
                 <artifactId>helidon-archetype-maven-plugin</artifactId>
                 <configuration>
                     <mavenArchetypeCompatible>false</mavenArchetypeCompatible>
+                    <properties>
+                       <skipTests>true</skipTests>
+                    </properties>
                     <entrypoint>
                         <!-- TODO https://github.com/oracle/helidon-build-tools/issues/698 -->
                         <variables>
