@@ -142,7 +142,7 @@ Defines a compact and self-contained way for securely transmitting information b
 //LRA
 [CARD]
 .Long Running Actions
-[icon=pending_actions,link=../lra/lra.adoc]
+[icon=pending_actions,link=../lra.adoc]
 --
 Distributed transactions for microservices following SAGA pattern.
 --

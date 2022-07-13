@@ -259,7 +259,7 @@ public Response leaveLRA(@HeaderParam(LRA_HTTP_CONTEXT_HEADER) URI lraIdtoLeave)
 
 WARNING: Expected to be called by LRA <<Coordinator, coordinator>> only!
 
-If the coordinator's call to the particpant's method fails, then it will retry the call.
+If the coordinator's call to the participant's method fails, then it will retry the call.
 If the participant is not idempotent, then it may need to report its state to coordinator by declaring method
 annotated with @Status for reporting if previous call did change participant status.
 <<Coordinator, Coordinator>> can call it and decide if compensate or complete retry is needed.
