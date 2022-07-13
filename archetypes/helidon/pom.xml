@@ -79,25 +79,27 @@
                         <!--suppress UnresolvedMavenProperty -->
                         <filter>${security.atn} == 'oidc' || ${security.atn} == 'jwt' || ${security.atn} == 'google' || ${security.atn} == 'http-signature'</filter>
                         <!--suppress UnresolvedMavenProperty -->
-                        <filter>(${security.atz} == 'abac' &amp;&amp; ${security.atn} == 'oidc') || ${security.atz} == ''</filter>
+                        <filter>(${security.atz} == 'abac' &amp;&amp; ${security.atn} == 'oidc') || ${security.atz} == 'none'</filter>
                         <!--suppress UnresolvedMavenProperty -->
-                        <filter>(${app-type} == 'custom' &amp;&amp; ${db} == 'false') || ${app-type} != 'custom'</filter>
+                        <filter>(${app-type} == 'custom' &amp;&amp; ${security} == 'true' &amp;&amp; ${media} == 'none') || ${security} == 'false' || ${app-type} != 'custom'</filter>
                         <!--suppress UnresolvedMavenProperty -->
-                        <filter>(${app-type} == 'custom' &amp;&amp; ${security} == 'true' &amp;&amp; ${media} == '') || ${security} == 'false' || ${app-type} != 'custom'</filter>
-                        <!--suppress UnresolvedMavenProperty -->
-                        <filter>(${app-type} == 'custom' &amp;&amp; ${metrics} == 'true' &amp;&amp; ${media} == '') || ${metrics} == 'false' || ${app-type} != 'custom'</filter>
+                        <filter>(${app-type} == 'custom' &amp;&amp; ${metrics} == 'true' &amp;&amp; ${media} == 'none') || ${metrics} == 'false' || ${app-type} != 'custom'</filter>
                         <!--suppress UnresolvedMavenProperty -->
                         <filter>(${app-type} == 'custom' &amp;&amp; ${metrics} == 'true' &amp;&amp; ${security} == 'false') || ${metrics} == 'false' || ${app-type} != 'custom'</filter>
                         <!--suppress UnresolvedMavenProperty -->
-                        <filter>(${app-type} == 'custom' &amp;&amp; ${docker} == 'true' &amp;&amp; ${media} == '') || ${docker} == 'false' || ${app-type} != 'custom'</filter>
+                        <filter>(${app-type} == 'custom' &amp;&amp; ${docker} == 'true' &amp;&amp; ${media} == 'none') || ${docker} == 'false' || ${app-type} != 'custom'</filter>
                         <!--suppress UnresolvedMavenProperty -->
                         <filter>(${app-type} == 'custom' &amp;&amp; ${docker} == 'true' &amp;&amp; ${security} == 'false') || ${docker} == 'false' || ${app-type} != 'custom'</filter>
                         <!--suppress UnresolvedMavenProperty -->
                         <filter>(${app-type} == 'custom' &amp;&amp; ${docker} == 'true' &amp;&amp; ${tracing} == 'false') || ${docker} == 'false' || ${app-type} != 'custom'</filter>
                         <!--suppress UnresolvedMavenProperty -->
+                        <filter>(${app-type} == 'custom' &amp;&amp; ${db} == 'false') || ${app-type} != 'custom'</filter>
+                        <!--suppress UnresolvedMavenProperty -->
                         <filter>(${app-type} == 'database' &amp;&amp; ${db.auto-ddl} == 'true') &amp;&amp; ${media.json-lib} == 'jackson' || (${db.auto-ddl} == 'false' &amp;&amp; ${media.json-lib} != 'jackson') || ${app-type} != 'database'</filter>
                         <!--suppress UnresolvedMavenProperty -->
                         <filter>(${app-type} == 'database' &amp;&amp; ${db.cp} == 'hikaricp') &amp;&amp; ${media.json-lib} == 'jackson' || (${db.cp} != 'hikaricp' &amp;&amp; ${media.json-lib} != 'jackson' ) || ${app-type} != 'database'</filter>
+                        <!--suppress UnresolvedMavenProperty -->
+                        <filter>(${app-type} == 'database' &amp;&amp; ${health} == 'false') || ${app-type} != 'database'</filter>
                     </inputFilters>
                 </configuration>
             </plugin>

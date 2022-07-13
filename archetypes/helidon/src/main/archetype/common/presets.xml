@@ -21,6 +21,9 @@
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
 
     <presets>
+        <list path="media">
+            <value>json</value>
+        </list>
         <boolean path="metrics">false</boolean>
         <enum path="metrics.provider">microprofile</enum>
         <boolean path="metrics.builtin">false</boolean>

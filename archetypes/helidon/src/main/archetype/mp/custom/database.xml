@@ -169,11 +169,11 @@
                             <output>
                                 <model>
                                     <list key="main-persistence-properties">
-                                        <map if="${~db.jpa-impl} == 'hibernate'">
+                                        <map if="${..jpa-impl} == 'hibernate'">
                                             <value key="name">hibernate.dialect</value>
                                             <value key="value">org.hibernate.dialect.H2Dialect</value>
                                         </map>
-                                        <map if="${~db.jpa-impl} == 'eclipselink'">
+                                        <map if="${..jpa-impl} == 'eclipselink'">
                                             <value key="name">eclipselink.target-database</value>
                                             <value key="value">org.eclipse.persistence.platform.database.H2Platform</value>
                                         </map>
@@ -186,11 +186,11 @@
                             <output>
                                 <model>
                                     <list key="main-persistence-properties">
-                                        <map if="${~db.jpa-impl} == 'hibernate'">
+                                        <map if="${..jpa-impl} == 'hibernate'">
                                             <value key="name">hibernate.dialect</value>
                                             <value key="value">org.hibernate.dialect.MySQLDialect</value>
                                         </map>
-                                        <map if="${~db.jpa-impl} == 'eclipselink'">
+                                        <map if="${..jpa-impl} == 'eclipselink'">
                                             <value key="name">eclipselink.target-database</value>
                                             <value key="value">org.eclipse.persistence.platform.database.MySQLPlatform</value>
                                         </map>
@@ -210,11 +210,11 @@
                             <output>
                                 <model>
                                     <list key="main-persistence-properties">
-                                        <map if="${~db.jpa-impl} == 'hibernate'">
+                                        <map if="${..jpa-impl} == 'hibernate'">
                                             <value key="name">hibernate.dialect</value>
                                             <value key="value">org.hibernate.dialect.OracleDialect</value>
                                         </map>
-                                        <map if="${~db.jpa-impl} == 'eclipselink'">
+                                        <map if="${..jpa-impl} == 'eclipselink'">
                                             <value key="name">eclipselink.target-database</value>
                                             <value key="value">org.eclipse.persistence.platform.database.OraclePlatform</value>
                                         </map>
@@ -236,11 +236,11 @@
                         <output>
                             <model>
                                 <list key="main-persistence-properties">
-                                    <map if="${~db.jpa-impl} == 'hibernate'">
+                                    <map if="${..jpa-impl} == 'hibernate'">
                                         <value key="name">hibernate.hbm2ddl.auto</value>
                                         <value key="value">create-drop</value>
                                     </map>
-                                    <map if="${~db.jpa-impl} == 'eclipselink'">
+                                    <map if="${..jpa-impl} == 'eclipselink'">
                                         <value key="name">eclipselink.ddl-generation</value>
                                         <value key="value">drop-and-create-tables</value>
                                     </map>

@@ -22,19 +22,19 @@
 
     <exec src="/common/common.xml"/>
     <output>
-        <templates engine="mustache" transformations="jsonp-mustache,packaged" if="${json} == 'jsonp'">
+        <templates engine="mustache" transformations="jsonp-mustache,packaged" if="${~json} == 'jsonp'">
             <directory>files</directory>
             <includes>
                 <include>src/*/java/**/*.java.jsonp.mustache</include>
             </includes>
         </templates>
-        <templates engine="mustache" transformations="json-mustache,packaged" if="${json} == 'jsonb' || ${json} == 'jackson'">
+        <templates engine="mustache" transformations="json-mustache,packaged" if="${~json} == 'jsonb' || ${~json} == 'jackson'">
             <directory>files</directory>
             <includes>
                 <include>src/*/java/**/*.json.mustache</include>
             </includes>
         </templates>
-        <templates engine="mustache" transformations="multipart-mustache,packaged" if="${multipart}">
+        <templates engine="mustache" transformations="multipart-mustache,packaged" if="${media} contains 'multipart'">
             <directory>files</directory>
             <includes>
                 <include>src/*/java/**/*.multipart.mustache</include>

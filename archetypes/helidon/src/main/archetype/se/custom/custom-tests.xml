@@ -25,10 +25,10 @@
             <list key="MainTest-other-imports">
                 <value>org.junit.jupiter.api.Order</value>
             </list>
-            <list key="MainTest-other-imports" if="${json} == 'jsonp'">
+            <list key="MainTest-other-imports" if="${~json} == 'jsonp'">
                 <value>jakarta.json.JsonObject</value>
             </list>
-            <list key="MainTest-methods" if="${json} == 'jsonp'">
+            <list key="MainTest-methods" if="${~json} == 'jsonp'">
                 <value><![CDATA[
     @Test
     public void testSimpleGreet() throws Exception {
@@ -39,7 +39,7 @@
         assertThat(jsonObject.getString("message"), is("Hello World!"));
     }]]></value>
             </list>
-            <list key="MainTest-methods" if="${json} != 'jsonp'">
+            <list key="MainTest-methods" if="${~json} != 'jsonp'">
                 <value><![CDATA[    @Test
     public void testSimpleGreet() {
         Message json = webClient.get()

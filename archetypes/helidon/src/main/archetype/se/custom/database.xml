@@ -283,7 +283,7 @@ docker run --rm --name mongo -p 27017:27017 mongo
                                 <value key="groupId">io.helidon.media</value>
                                 <value key="artifactId">helidon-media-jsonb</value>
                             </map>
-                            <map if="${~db.server} != 'mongodb'">
+                            <map if="${server} != 'mongodb'">
                                 <value key="groupId">io.helidon.dbclient</value>
                                 <value key="artifactId">helidon-dbclient-jdbc</value>
                             </map>
@@ -335,7 +335,7 @@ docker run --rm --name mongo -p 27017:27017 mongo
                             <value><![CDATA[                .register("/", new PokemonService(dbClient))]]></value>
                         </list>
                         <value key="Main-readyMessage">System.out.println("Database here : http://localhost:" + ws.port() + "/pokemon");</value>
-                        <list key="DatabaseService-constructor" if="${~db.server} != 'mongodb'">
+                        <list key="DatabaseService-constructor" if="${server} != 'mongodb'">
                             <value><![CDATA[
         dbClient.execute(handle -> handle.namedDml("create-table"))
                 .thenAccept(System.out::println)

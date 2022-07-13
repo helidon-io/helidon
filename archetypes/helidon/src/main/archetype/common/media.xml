@@ -34,8 +34,7 @@
                         <enum id="json-lib" name="Select a JSON library" default="${default-json-lib}" optional="true">
                             <option value="jsonp" name="JSON-P" description="Jakarta JSON Processing" if="${~flavor} == 'se'">
                                 <variables>
-                                    <text path="json">jsonp</text>
-                                    <boolean path="multipart">false</boolean>
+                                    <text path="~json">jsonp</text>
                                 </variables>
                                 <output>
                                     <model>
@@ -62,8 +61,7 @@
                             </option>
                             <option value="jackson" name="Jackson" description="Popular JSON library">
                                 <variables>
-                                    <text path="json">jackson</text>
-                                    <boolean path="multipart">false</boolean>
+                                    <text path="~json">jackson</text>
                                 </variables>
                                 <output>
                                     <model>
@@ -94,8 +92,7 @@
                             </option>
                             <option value="jsonb" name="JSON-B" description="Jakarta JSON Binding">
                                 <variables>
-                                    <text path="json">jsonb</text>
-                                    <boolean path="multipart">false</boolean>
+                                    <text path="~json">jsonb</text>
                                 </variables>
                                 <output>
                                     <model>
@@ -129,8 +126,7 @@
                 </option>
                 <option value="multipart" name="MultiPart" description="Handle 'multipart/form-data' payloads">
                     <variables>
-                        <text path="json">jsonp</text>
-                        <boolean path="multipart">true</boolean>
+                        <text path="~json" />
                     </variables>
                     <output>
                         <model>
@@ -174,6 +170,9 @@
                 </option>
             </list>
         </inputs>
+        <variables>
+            <text path="~json" if="${media} == []"/>
+        </variables>
         <output>
             <!-- TODO https://github.com/oracle/helidon-build-tools/issues/609 -->
             <model>
