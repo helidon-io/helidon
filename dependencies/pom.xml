@@ -42,8 +42,6 @@
         <version.lib.brave-opentracing>1.0.0</version.lib.brave-opentracing>
         <version.lib.byte-buddy>1.11.20</version.lib.byte-buddy>
         <version.lib.reactivestreams>1.0.3</version.lib.reactivestreams>
-        <!-- commons-codec is for dependency convergence only -->
-        <version.lib.commons-codec>1.15</version.lib.commons-codec>
         <version.lib.commons-logging>1.2</version.lib.commons-logging>
         <version.lib.cron-utils>9.1.6</version.lib.cron-utils>
         <version.lib.dropwizard.metrics>4.1.2</version.lib.dropwizard.metrics>
@@ -128,7 +126,6 @@
         <version.lib.netty>4.1.77.Final</version.lib.netty>
         <version.lib.netty-io_uring>0.0.8.Final</version.lib.netty-io_uring>
         <version.lib.oci>2.35.0</version.lib.oci>
-        <version.lib.oci-java-sdk-objectstorage>${version.lib.oci}</version.lib.oci-java-sdk-objectstorage>
         <version.lib.ojdbc8>21.3.0.0</version.lib.ojdbc8>
         <version.lib.database.messaging>19.3.0.0</version.lib.database.messaging>
         <version.lib.okhttp3>3.14.9</version.lib.okhttp3>
@@ -859,18 +856,6 @@
                 <version>${version.lib.postgresql}</version>
             </dependency>
             <dependency>
-                <groupId>com.oracle.oci.sdk</groupId>
-                <artifactId>oci-java-sdk-objectstorage</artifactId>
-                <version>${version.lib.oci-java-sdk-objectstorage}</version>
-                <type>pom</type>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.glassfish.hk2.external</groupId>
-                        <artifactId>jakarta.inject</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
                 <groupId>com.zaxxer</groupId>
                 <artifactId>HikariCP</artifactId>
                 <version>${version.lib.hikaricp}</version>
@@ -1311,16 +1296,6 @@
                 <groupId>org.codehaus.groovy</groupId>
                 <artifactId>groovy-all</artifactId>
                 <version>${version.lib.groovy-all}</version>
-            </dependency>
-            <dependency>
-                <!-- required for dependency convergence, transitive dependency of both
-                com.oracle.oci.sdk:oci-java-sdk-common and
-                org.apache.httpcomponents:httpclient (via com.oracle.oci.sdk:oci-java-sdk-objectstorage)
-                Once we remove oci-java-sdk-objectstorage (in Helidon 3.0) we should be able to remove this.
-                -->
-                <groupId>commons-codec</groupId>
-                <artifactId>commons-codec</artifactId>
-                <version>${version.lib.commons-codec}</version>
             </dependency>
             <dependency>
                 <!-- required for dependency convergence, transitive dependency of both

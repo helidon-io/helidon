@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,12 +18,28 @@ package io.helidon.examples.integrations.oci.telemetry.reactive;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 
 import io.helidon.common.LogConfig;
 import io.helidon.config.Config;
-import io.helidon.integrations.common.rest.ApiEntityResponse;
-import io.helidon.integrations.oci.telemetry.OciMetricsRx;
-import io.helidon.integrations.oci.telemetry.PostMetricData;
+
+import com.oracle.bmc.ConfigFileReader;
+import com.oracle.bmc.auth.AuthenticationDetailsProvider;
+import com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider;
+import com.oracle.bmc.monitoring.MonitoringAsync;
+import com.oracle.bmc.monitoring.MonitoringAsyncClient;
+import com.oracle.bmc.monitoring.model.Datapoint;
+import com.oracle.bmc.monitoring.model.FailedMetricRecord;
+import com.oracle.bmc.monitoring.model.MetricDataDetails;
+import com.oracle.bmc.monitoring.model.PostMetricDataDetails;
+import com.oracle.bmc.monitoring.model.PostMetricDataResponseDetails;
+import com.oracle.bmc.monitoring.requests.PostMetricDataRequest;
+import com.oracle.bmc.monitoring.responses.PostMetricDataResponse;
+import com.oracle.bmc.responses.AsyncHandler;
 
 import static io.helidon.config.ConfigSources.classpath;
 import static io.helidon.config.ConfigSources.file;
@@ -32,6 +48,7 @@ import static io.helidon.config.ConfigSources.file;
  * OCI Metrics example.
  */
 public final class OciMetricsMain {
+
     private OciMetricsMain() {
     }
 
@@ -39,7 +56,7 @@ public final class OciMetricsMain {
      * Main method.
      * @param args ignored
      */
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         LogConfig.configureRuntime();
         // as I cannot share my configuration of OCI, let's combine the configuration
         // from my home directory with the one compiled into the jar
@@ -47,50 +64,66 @@ public final class OciMetricsMain {
         // or use the same approach
         Config config = buildConfig();
 
-        OciMetricsRx metrics = OciMetricsRx.create(config.get("oci"));
+        // this requires OCI configuration in the usual place
+        // ~/.oci/config
+        AuthenticationDetailsProvider authProvider = new ConfigFileAuthenticationDetailsProvider(ConfigFileReader.parseDefault());
+        MonitoringAsync monitoringAsyncClient = new MonitoringAsyncClient(authProvider);
+        monitoringAsyncClient.setEndpoint(monitoringAsyncClient.getEndpoint().replace("telemetry.", "telemetry-ingestion."));
 
-        String compartmentId = config.get("oci.metrics.compartment-ocid").asString().get();
-
-        Instant now = Instant.now();
-        PostMetricData.Request request = PostMetricData.Request.builder()
-                .addMetricData(PostMetricData.MetricData.builder()
-                                       .compartmentId(compartmentId)
-                                       // Add a few data points to see something in the console
-                                       .addDataPoint(now.minus(10, ChronoUnit.SECONDS), 101)
-                                       .addDataPoint(now.minus(5, ChronoUnit.SECONDS), 123)
-                                       .addDataPoint(now, 149)
-                                       .addDimension("resourceId", "myresourceid")
-                                       .addMetaData("unit", "cm")
-                                       .name("my_app.jump")
-                                       .namespace("helidon_examples"));
-
+        PostMetricDataRequest postMetricDataRequest = PostMetricDataRequest.builder()
+                .postMetricDataDetails(getPostMetricDataDetails(config))
+                .build();
         /*
          * Invoke the API call. I use .await() to block the call, as otherwise our
          * main method would finish without waiting for the response.
          * In a real reactive application, this should not be done (as you would write the response
          * to a server response or use other reactive/non-blocking APIs).
          */
-        metrics.postMetricData(request)
-                .peek(it -> {
-                    System.out.println("PostMetrics: " + it.status());
-                    printHeaders(it);
-                })
-                .forSingle(it -> {
-                    int count = it.failedMetricsCount();
-                    System.out.println("Failed count: " + count);
-                    if (count > 0) {
-                        System.out.println("Failed metrics:");
-                        for (PostMetricData.FailedMetric failedMetric : it.failedMetrics()) {
-                            System.out.println("\t" + failedMetric.message() + ": " + failedMetric.failedDataJson());
-                        }
-                    }
-                })
-                .await();
+        ResponseHandler<PostMetricDataRequest, PostMetricDataResponse> monitoringHandler =
+                new ResponseHandler<>();
+        monitoringAsyncClient.postMetricData(postMetricDataRequest, monitoringHandler);
+        PostMetricDataResponse postMetricDataResponse = monitoringHandler.waitForCompletion();
+        PostMetricDataResponseDetails postMetricDataResponseDetails = postMetricDataResponse.getPostMetricDataResponseDetails();
+        int count = postMetricDataResponseDetails.getFailedMetricsCount();
+        System.out.println("Failed count: " + count);
+        if (count > 0) {
+            System.out.println("Failed metrics:");
+            for (FailedMetricRecord failedMetric : postMetricDataResponseDetails.getFailedMetrics()) {
+                System.out.println("\t" + failedMetric.getMessage() + ": " + failedMetric.getMetricData());
+            }
+        }
     }
 
-    private static void printHeaders(ApiEntityResponse response) {
-        System.out.println("\tHeaders:");
-        response.headers().toMap().forEach((key, values) -> System.out.println("\t\t" + key + ": " + values));
+    private static PostMetricDataDetails getPostMetricDataDetails(Config config) {
+        String compartmentId = config.get("oci.metrics.compartment-ocid").asString().get();
+        Instant now = Instant.now();
+        return PostMetricDataDetails.builder()
+                .metricData(
+                        Arrays.asList(
+                                MetricDataDetails.builder()
+                                        .compartmentId(compartmentId)
+                                        // Add a few data points to see something in the console
+                                        .datapoints(
+                                                Arrays.asList(
+                                                        Datapoint.builder()
+                                                                .timestamp(Date.from(
+                                                                        now.minus(10, ChronoUnit.SECONDS)
+                                                                ))
+                                                                .value(101.00)
+                                                                .build(),
+                                                        Datapoint.builder()
+                                                                .timestamp(Date.from(now))
+                                                                .value(149.00)
+                                                                .build()
+                                                ))
+                                        .dimensions(
+                                                makeMap("resourceId", "myresourceid",
+                                                        "unit", "cm"))
+                                        .name("my_app.jump")
+                                        .namespace("helidon_examples")
+                                        .build()
+                        ))
+                .batchAtomicity(PostMetricDataDetails.BatchAtomicity.NonAtomic).build();
     }
 
     private static Config buildConfig() {
@@ -101,5 +134,42 @@ public final class OciMetricsMain {
                         // in jar file (see src/main/resources/application.yaml)
                         classpath("application.yaml"))
                 .build();
+    }
+
+    private static Map<String, String> makeMap(String... data) {
+        Map<String, String> map = new HashMap<>();
+        for (int i = 0; i < data.length; i += 2) {
+            map.put(data[i], data[i + 1]);
+        }
+        return map;
+    }
+
+    private static class ResponseHandler<IN, OUT> implements AsyncHandler<IN, OUT> {
+        private OUT item;
+        private Throwable failed = null;
+        private CountDownLatch latch = new CountDownLatch(1);
+
+        private OUT waitForCompletion() throws Exception {
+            latch.await();
+            if (failed != null) {
+                if (failed instanceof Exception) {
+                    throw (Exception) failed;
+                }
+                throw (Error) failed;
+            }
+            return item;
+        }
+
+        @Override
+        public void onSuccess(IN request, OUT response) {
+            item = response;
+            latch.countDown();
+        }
+
+        @Override
+        public void onError(IN request, Throwable error) {
+            failed = error;
+            latch.countDown();
+        }
     }
 }

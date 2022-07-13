@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,38 +18,57 @@ package io.helidon.examples.integrations.oci.vault.reactive;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Optional;
+import java.util.Date;
 
 import io.helidon.common.Base64Value;
-import io.helidon.common.http.Http;
-import io.helidon.integrations.oci.vault.CreateSecret;
-import io.helidon.integrations.oci.vault.Decrypt;
-import io.helidon.integrations.oci.vault.DeleteSecret;
-import io.helidon.integrations.oci.vault.Encrypt;
-import io.helidon.integrations.oci.vault.GetSecretBundle;
-import io.helidon.integrations.oci.vault.OciVaultRx;
-import io.helidon.integrations.oci.vault.Secret;
-import io.helidon.integrations.oci.vault.Sign;
-import io.helidon.integrations.oci.vault.Verify;
 import io.helidon.webserver.Handler;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 
+import com.oracle.bmc.keymanagement.KmsCryptoAsync;
+import com.oracle.bmc.keymanagement.model.DecryptDataDetails;
+import com.oracle.bmc.keymanagement.model.EncryptDataDetails;
+import com.oracle.bmc.keymanagement.model.SignDataDetails;
+import com.oracle.bmc.keymanagement.model.VerifyDataDetails;
+import com.oracle.bmc.keymanagement.requests.DecryptRequest;
+import com.oracle.bmc.keymanagement.requests.EncryptRequest;
+import com.oracle.bmc.keymanagement.requests.SignRequest;
+import com.oracle.bmc.keymanagement.requests.VerifyRequest;
+import com.oracle.bmc.secrets.SecretsAsync;
+import com.oracle.bmc.secrets.model.Base64SecretBundleContentDetails;
+import com.oracle.bmc.secrets.model.SecretBundleContentDetails;
+import com.oracle.bmc.secrets.requests.GetSecretBundleRequest;
+import com.oracle.bmc.vault.VaultsAsync;
+import com.oracle.bmc.vault.model.Base64SecretContentDetails;
+import com.oracle.bmc.vault.model.CreateSecretDetails;
+import com.oracle.bmc.vault.model.ScheduleSecretDeletionDetails;
+import com.oracle.bmc.vault.model.SecretContentDetails;
+import com.oracle.bmc.vault.requests.CreateSecretRequest;
+import com.oracle.bmc.vault.requests.ScheduleSecretDeletionRequest;
+
+import static io.helidon.examples.integrations.oci.vault.reactive.OciHandler.ociHandler;
+
 class VaultService implements Service {
-    private final OciVaultRx vault;
+    private final SecretsAsync secrets;
+    private final VaultsAsync vaults;
+    private final KmsCryptoAsync crypto;
     private final String vaultOcid;
     private final String compartmentOcid;
     private final String encryptionKeyOcid;
     private final String signatureKeyOcid;
 
-    VaultService(OciVaultRx vault,
+    VaultService(SecretsAsync secrets,
+                 VaultsAsync vaults,
+                 KmsCryptoAsync crypto,
                  String vaultOcid,
                  String compartmentOcid,
                  String encryptionKeyOcid,
                  String signatureKeyOcid) {
-        this.vault = vault;
+        this.secrets = secrets;
+        this.vaults = vaults;
+        this.crypto = crypto;
         this.vaultOcid = vaultOcid;
         this.compartmentOcid = compartmentOcid;
         this.encryptionKeyOcid = encryptionKeyOcid;
@@ -61,94 +80,105 @@ class VaultService implements Service {
         rules.get("/encrypt/{text:.*}", this::encrypt)
                 .get("/decrypt/{text:.*}", this::decrypt)
                 .get("/sign/{text}", this::sign)
-                .get("/verify/{text}/{signature:.*}", this::verify)
+                .post("/verify/{text}", Handler.create(String.class, this::verify))
                 .get("/secret/{id}", this::getSecret)
                 .post("/secret/{name}", Handler.create(String.class, this::createSecret))
                 .delete("/secret/{id}", this::deleteSecret);
     }
 
     private void getSecret(ServerRequest req, ServerResponse res) {
-        vault.getSecretBundle(GetSecretBundle.Request.create(req.path().param("id")))
-                .forSingle(apiResponse -> {
-                    Optional<GetSecretBundle.Response> entity = apiResponse.entity();
-                    if (entity.isEmpty()) {
-                        res.status(Http.Status.NOT_FOUND_404).send();
-                    } else {
-                        GetSecretBundle.Response response = entity.get();
-                        res.send(response.secretString().orElse(""));
-                    }
-                })
-                .exceptionally(res::send);
-
+        secrets.getSecretBundle(GetSecretBundleRequest.builder()
+                                        .secretId(req.path().param("id"))
+                                        .build(), ociHandler(ociRes -> {
+            SecretBundleContentDetails content = ociRes.getSecretBundle().getSecretBundleContent();
+            if (content instanceof Base64SecretBundleContentDetails) {
+                // the only supported type
+                res.send(Base64Value.createFromEncoded(((Base64SecretBundleContentDetails) content).getContent())
+                                 .toDecodedString());
+            } else {
+                req.next(new Exception("Invalid secret content type"));
+            }
+        }));
     }
 
     private void deleteSecret(ServerRequest req, ServerResponse res) {
         // has to be for quite a long period of time - did not work with less than 30 days
-        Instant deleteTime = Instant.now().plus(30, ChronoUnit.DAYS);
+        Date deleteTime = Date.from(Instant.now().plus(30, ChronoUnit.DAYS));
 
-        vault.deleteSecret(DeleteSecret.Request.builder()
-                                   .secretId(req.path().param("id"))
-                                   .timeOfDeletion(deleteTime))
-                .forSingle(it -> res.status(it.status()).send())
-                .exceptionally(res::send);
+        String secretOcid = req.path().param("id");
 
+        vaults.scheduleSecretDeletion(ScheduleSecretDeletionRequest.builder()
+                                              .secretId(secretOcid)
+                                              .scheduleSecretDeletionDetails(ScheduleSecretDeletionDetails.builder()
+                                                                                     .timeOfDeletion(deleteTime)
+                                                                                     .build())
+                                              .build(), ociHandler(ociRes -> res.send("Secret " + secretOcid
+                                                                                              + " was marked for deletion")));
     }
 
     private void createSecret(ServerRequest req, ServerResponse res, String secretText) {
-        vault.createSecret(CreateSecret.Request.builder()
-                                   .secretContent(CreateSecret.SecretContent.create(secretText))
-                                   .vaultId(vaultOcid)
-                                   .compartmentId(compartmentOcid)
-                                   .encryptionKeyId(encryptionKeyOcid)
-                                   .secretName(req.path().param("name")))
-                .map(CreateSecret.Response::secret)
-                .map(Secret::id)
-                .forSingle(res::send)
-                .exceptionally(res::send);
+        SecretContentDetails content = Base64SecretContentDetails.builder()
+                .content(Base64Value.create(secretText).toBase64())
+                .build();
+
+        vaults.createSecret(CreateSecretRequest.builder()
+                                    .createSecretDetails(CreateSecretDetails.builder()
+                                                                 .secretName(req.path().param("name"))
+                                                                 .vaultId(vaultOcid)
+                                                                 .compartmentId(compartmentOcid)
+                                                                 .keyId(encryptionKeyOcid)
+                                                                 .secretContent(content)
+                                                                 .build())
+                                    .build(), ociHandler(ociRes -> res.send(ociRes.getSecret().getId())));
     }
 
-    private void verify(ServerRequest req, ServerResponse res) {
+    private void verify(ServerRequest req, ServerResponse res, String signature) {
         String text = req.path().param("text");
-        String signature = req.path().param("signature");
+        VerifyDataDetails.SigningAlgorithm algorithm = VerifyDataDetails.SigningAlgorithm.Sha224RsaPkcsPss;
 
-        vault.verify(Verify.Request.builder()
-                             .keyId(signatureKeyOcid)
-                             .algorithm(Sign.Request.ALGORITHM_SHA_224_RSA_PKCS_PSS)
-                             .message(Base64Value.create(text))
-                             .signature(Base64Value.createFromEncoded(signature)))
-                .map(Verify.Response::isValid)
-                .map(it -> it ? "Signature Valid" : "Signature Invalid")
-                .forSingle(res::send)
-                .exceptionally(res::send);
+        crypto.verify(VerifyRequest.builder()
+                              .verifyDataDetails(VerifyDataDetails.builder()
+                                                         .keyId(signatureKeyOcid)
+                                                         .signingAlgorithm(algorithm)
+                                                         .message(Base64Value.create(text).toBase64())
+                                                         .signature(signature)
+                                                         .build())
+                              .build(),
+                      ociHandler(ociRes -> {
+                          boolean valid = ociRes.getVerifiedData()
+                                  .getIsSignatureValid();
+                          res.send(valid ? "Signature valid" : "Signature not valid");
+                      }));
     }
 
     private void sign(ServerRequest req, ServerResponse res) {
-        vault.sign(Sign.Request.builder()
-                           .keyId(signatureKeyOcid)
-                           .algorithm(Sign.Request.ALGORITHM_SHA_224_RSA_PKCS_PSS)
-                           .message(Base64Value.create(req.path().param("text"))))
-                .map(Sign.Response::signature)
-                .map(Base64Value::toBase64)
-                .forSingle(res::send)
-                .exceptionally(res::send);
+        crypto.sign(SignRequest.builder()
+                            .signDataDetails(SignDataDetails.builder()
+                                                     .keyId(signatureKeyOcid)
+                                                     .signingAlgorithm(SignDataDetails.SigningAlgorithm.Sha224RsaPkcsPss)
+                                                     .message(Base64Value.create(req.path().param("text")).toBase64())
+                                                     .build())
+                            .build(), ociHandler(ociRes -> res.send(ociRes.getSignedData()
+                                                                            .getSignature())));
     }
 
     private void encrypt(ServerRequest req, ServerResponse res) {
-        vault.encrypt(Encrypt.Request.builder()
-                              .keyId(encryptionKeyOcid)
-                              .data(Base64Value.create(req.path().param("text"))))
-                .map(Encrypt.Response::cipherText)
-                .forSingle(res::send)
-                .exceptionally(res::send);
+        crypto.encrypt(EncryptRequest.builder()
+                               .encryptDataDetails(EncryptDataDetails.builder()
+                                                           .keyId(encryptionKeyOcid)
+                                                           .plaintext(Base64Value.create(req.path().param("text")).toBase64())
+                                                           .build())
+                               .build(), ociHandler(ociRes -> res.send(ociRes.getEncryptedData().getCiphertext())));
     }
 
     private void decrypt(ServerRequest req, ServerResponse res) {
-        vault.decrypt(Decrypt.Request.builder()
-                              .keyId(encryptionKeyOcid)
-                              .cipherText(req.path().param("text")))
-                .map(Decrypt.Response::decrypted)
-                .map(Base64Value::toDecodedString)
-                .forSingle(res::send)
-                .exceptionally(res::send);
+        crypto.decrypt(DecryptRequest.builder()
+                               .decryptDataDetails(DecryptDataDetails.builder()
+                                                           .keyId(encryptionKeyOcid)
+                                                           .ciphertext(req.path().param("text"))
+                                                           .build())
+                               .build(), ociHandler(ociRes -> res.send(Base64Value.createFromEncoded(ociRes.getDecryptedData()
+                                                                                                             .getPlaintext())
+                                                                               .toDecodedString())));
     }
 }

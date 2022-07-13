@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,8 @@ module io.helidon.examples.integrations.oci.metrics.reactive {
     requires java.logging;
 
     requires io.helidon.config;
-    requires io.helidon.integrations.oci.telemetry;
+
+    requires oci.java.sdk.shaded.full;
 
     exports io.helidon.examples.integrations.oci.telemetry.reactive;
 }

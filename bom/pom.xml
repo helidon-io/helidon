@@ -929,11 +929,6 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.integrations.cdi</groupId>
-                <artifactId>helidon-integrations-cdi-oci-objectstorage</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>io.helidon.integrations.graal</groupId>
                 <artifactId>helidon-graal-native-image-extension</artifactId>
                 <version>${helidon.version}</version>
@@ -969,48 +964,8 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.integrations.oci</groupId>
-                <artifactId>helidon-integrations-oci-atp</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.integrations.oci</groupId>
-                <artifactId>helidon-integrations-oci-cdi</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.integrations.oci</groupId>
-                <artifactId>helidon-integrations-oci-connect</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.integrations.oci</groupId>
-                <artifactId>helidon-integrations-oci-objectstorage</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.integrations.oci</groupId>
-                <artifactId>helidon-integrations-oci-objectstorage-health</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>io.helidon.integrations.oci.sdk</groupId>
                 <artifactId>helidon-integrations-oci-sdk-cdi</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.integrations.oci</groupId>
-                <artifactId>helidon-integrations-oci-telemetry</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.integrations.oci</groupId>
-                <artifactId>helidon-integrations-oci-vault</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.integrations.oci</groupId>
-                <artifactId>helidon-integrations-oci-vault-health</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>

@@ -33,14 +33,6 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>connect</module>
-        <module>telemetry</module>
-        <module>objectstorage</module>
-        <module>objectstorage-health</module>
-        <module>vault</module>
-        <module>vault-health</module>
-        <module>cdi</module>
-        <module>atp</module>
         <module>sdk</module>
     </modules>
 </project>
