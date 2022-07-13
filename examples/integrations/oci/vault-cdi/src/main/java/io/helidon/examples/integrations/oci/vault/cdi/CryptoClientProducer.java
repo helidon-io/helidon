@@ -32,7 +32,7 @@ class CryptoClientProducer {
     private final String cryptoEndpoint;
 
     @Inject
-    CryptoClientProducer(@ConfigProperty(name = "oci.properties.cryptographic-endpoint")
+    CryptoClientProducer(@ConfigProperty(name = "app.vault.cryptographic-endpoint")
                          String cryptoEndpoint) {
         this.cryptoEndpoint = cryptoEndpoint;
     }
