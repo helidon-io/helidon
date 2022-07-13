@@ -24,7 +24,7 @@
     <source src="/common/sources.xml"/>
     <output>
         <model>
-            <value key="mainClass">${~package}.Main</value>
+            <value key="mainClass">${package}.Main</value>
             <value key="parent-artifactId">helidon-se</value>
             <list key="dependencies">
                 <map order="999">

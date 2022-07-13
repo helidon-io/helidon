@@ -22,19 +22,19 @@
 
     <output>
         <model>
-            <list key="MainTest-java-imports" if="${~json} == 'jsonp'">
+            <list key="MainTest-java-imports" if="${media.json-lib} == 'jsonp'">
                 <value>java.util.Collections</value>
                 <value>jakarta.json.Json</value>
                 <value>jakarta.json.JsonBuilderFactory</value>
                 <value>jakarta.json.JsonObject</value>
             </list>
-            <list key="MainTest-static-fields" if="${~json} == 'jsonp'">
+            <list key="MainTest-static-fields" if="${media.json-lib} == 'jsonp'">
                 <value><![CDATA[    private static final JsonBuilderFactory JSON_BUILDER = Json.createBuilderFactory(Collections.emptyMap());]]></value>
                 <value><![CDATA[    private static final JsonObject TEST_JSON_OBJECT = JSON_BUILDER.createObjectBuilder()
                 .add("greeting", "Hola")
                 .build();]]></value>
             </list>
-            <list key="MainTest-methods" if="${~json} == 'jsonp'">
+            <list key="MainTest-methods" if="${media.json-lib} == 'jsonp'">
                 <value><![CDATA[    @Test
     public void testGreetings() {
         JsonObject jsonObject;
@@ -59,7 +59,7 @@
         assertThat(jsonObject.getString("message"), is("Hola Joe!"));
     }]]></value>
             </list>
-            <list key="MainTest-methods" if="${~json} != 'jsonp'">
+            <list key="MainTest-methods" if="['jsonb', 'jackson'] contains ${media.json-lib}">
                 <value><![CDATA[    @Test
     public void testGreetings() {
         Message json;

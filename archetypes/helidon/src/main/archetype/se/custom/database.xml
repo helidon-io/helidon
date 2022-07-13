@@ -279,11 +279,11 @@ docker run --rm --name mongo -p 27017:27017 mongo
                                 <value key="groupId">io.helidon.dbclient</value>
                                 <value key="artifactId">helidon-dbclient-jsonp</value>
                             </map>
-                            <map if="${~json} != 'jsonb'">
+                            <map if="${media.json-lib} != 'jsonb'">
                                 <value key="groupId">io.helidon.media</value>
                                 <value key="artifactId">helidon-media-jsonb</value>
                             </map>
-                            <map if="${~json} != 'jsonp'">
+                            <map if="${media.json-lib} != 'jsonp'">
                                 <value key="groupId">io.helidon.media</value>
                                 <value key="artifactId">helidon-media-jsonp</value>
                             </map>
@@ -291,19 +291,19 @@ docker run --rm --name mongo -p 27017:27017 mongo
                                 <value key="groupId">io.helidon.dbclient</value>
                                 <value key="artifactId">helidon-dbclient-jdbc</value>
                             </map>
-                            <map if="${~health}">
+                            <map if="${health}">
                                 <value key="groupId">io.helidon.dbclient</value>
                                 <value key="artifactId">helidon-dbclient-health</value>
                             </map>
-                            <map if="${~metrics}">
+                            <map if="${metrics}">
                                 <value key="groupId">io.helidon.dbclient</value>
                                 <value key="artifactId">helidon-dbclient-metrics-jdbc</value>
                             </map>
-                            <map if="${~metrics}">
+                            <map if="${metrics}">
                                 <value key="groupId">io.helidon.dbclient</value>
                                 <value key="artifactId">helidon-dbclient-metrics</value>
                             </map>
-                            <map if="${~tracing}">
+                            <map if="${tracing}">
                                 <value key="groupId">io.helidon.dbclient</value>
                                 <value key="artifactId">helidon-dbclient-tracing</value>
                             </map>
@@ -316,7 +316,7 @@ docker run --rm --name mongo -p 27017:27017 mongo
                             <value>io.helidon.dbclient.DbClient</value>
                             <value>io.helidon.media.jsonp.JsonpSupport</value>
                             <value>io.helidon.media.jsonb.JsonbSupport</value>
-                            <value if="${~health}">io.helidon.dbclient.health.DbClientHealthCheck</value>
+                            <value if="${health}">io.helidon.dbclient.health.DbClientHealthCheck</value>
                         </list>
                         <list key="Main-serverBuilder">
                             <value><![CDATA[                .addMediaSupport(JsonbSupport.create())]]></value>
@@ -332,7 +332,7 @@ docker run --rm --name mongo -p 27017:27017 mongo
         // Initialize database schema
         InitializeDb.init(dbClient);]]></value>
                         </list>
-                        <list key="Main-healthBuilder" if="${~health}">
+                        <list key="Main-healthBuilder" if="${health}">
                             <value><![CDATA[                .addLiveness(DbClientHealthCheck.create(dbClient, dbConfig.get("health-check")))]]></value>
                         </list>
                         <list key="Main-routingBuilder">

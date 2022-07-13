@@ -46,13 +46,13 @@
                             </includes>
                         </templates>
                         <model>
-                            <list key="dependencies" if="${~flavor} == 'se'">
+                            <list key="dependencies" if="${flavor} == 'se'">
                                 <map>
                                     <value key="groupId">io.helidon.fault-tolerance</value>
                                     <value key="artifactId">helidon-fault-tolerance</value>
                                 </map>
                             </list>
-                            <list key="dependencies" if="${~flavor} == 'mp'">
+                            <list key="dependencies" if="${flavor} == 'mp'">
                                 <map>
                                     <value key="groupId">io.helidon.microprofile</value>
                                     <value key="artifactId">helidon-microprofile-fault-tolerance</value>
@@ -87,32 +87,32 @@
                             <directory>files</directory>
                             <includes>
                                 <include>src/*/java/**/TestCORS.java.mustache</include>
-                                <include if="${~flavor} == 'se'">src/*/java/**/CorsService.java.mustache</include>
+                                <include if="${flavor} == 'se'">src/*/java/**/CorsService.java.mustache</include>
                             </includes>
                         </templates>
                         <model>
                             <list key="dependencies">
-                                <map if="${~flavor} == 'mp'">
+                                <map if="${flavor} == 'mp'">
                                     <value key="groupId">io.helidon.microprofile</value>
                                     <value key="artifactId">helidon-microprofile-cors</value>
                                 </map>
-                                <map if="${~flavor} == 'se'">
+                                <map if="${flavor} == 'se'">
                                     <value key="groupId">io.helidon.webserver</value>
                                     <value key="artifactId">helidon-webserver-cors</value>
                                 </map>
                             </list>
-                            <list key="SimpleGreetService-imports" if="${~flavor} == 'mp'">
+                            <list key="SimpleGreetService-imports" if="${flavor} == 'mp'">
                                 <value>io.helidon.microprofile.cors.CrossOrigin</value>
                                 <value>jakarta.ws.rs.OPTIONS</value>
                                 <value>jakarta.ws.rs.PUT</value>
                                 <value>jakarta.ws.rs.core.Response</value>
                                 <value>jakarta.ws.rs.HttpMethod</value>
                             </list>
-                            <list key="Main-helidon-imports" if="${~flavor} == 'se'">
+                            <list key="Main-helidon-imports" if="${flavor} == 'se'">
                                 <value>io.helidon.webserver.cors.CorsSupport</value>
                                 <value>io.helidon.webserver.cors.CrossOriginConfig</value>
                             </list>
-                            <list key="Main-createRouting" if="${~flavor} == 'se'">
+                            <list key="Main-createRouting" if="${flavor} == 'se'">
                                 <value><![CDATA[
         CorsSupport corsSupport = CorsSupport.builder()
                 .addCrossOrigin(CrossOriginConfig.builder()
@@ -122,10 +122,10 @@
                 .addCrossOrigin(CrossOriginConfig.create())
                 .build();]]></value>
                             </list>
-                            <list key="Main-routingBuilder" if="${~flavor} == 'se'">
+                            <list key="Main-routingBuilder" if="${flavor} == 'se'">
                                 <value><![CDATA[                .register("/cors", corsSupport, new CorsService())]]></value>
                             </list>
-                            <list key="SimpleGreetService-methods" if="${~flavor} == 'mp'">
+                            <list key="SimpleGreetService-methods" if="${flavor} == 'mp'">
                                 <value><![CDATA[
     @PUT
     public Response getCustomMessage(String greeting) {

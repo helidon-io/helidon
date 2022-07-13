@@ -25,7 +25,7 @@
             <replace regex="\.mustache$" replacement=""/>
         </transformation>
         <transformation id="packaged">
-            <replace regex="__pkg__" replacement="${~package/\./\/}"/>
+            <replace regex="__pkg__" replacement="${package/\./\/}"/>
         </transformation>
         <transformation id="json-mustache">
             <replace regex="\.json.mustache$" replacement=""/>

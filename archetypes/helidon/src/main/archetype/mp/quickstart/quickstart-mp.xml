@@ -34,7 +34,7 @@
                 <value>jakarta.ws.rs.client.Entity</value>
                 <value>jakarta.ws.rs.core.MediaType</value>
             </list>
-            <list key="MainTest-methods" if="${~json} == 'jsonp'">
+            <list key="MainTest-methods" if="${media.json-lib} == 'jsonp'">
                 <value><![CDATA[    @Test
     public void testGreetings() throws Exception {
         JsonObject jsonObject = target
@@ -58,7 +58,7 @@
     }
                 ]]></value>
             </list>
-            <list key="MainTest-methods" if="${~json} == 'jsonb' || ${~json} == 'jackson'">
+            <list key="MainTest-methods" if="['jsonb', 'jackson'] contains ${media.json-lib}">
                 <value><![CDATA[    @Test
     public void testGreetings() throws Exception {
         Message jsonMessage = target

@@ -38,42 +38,42 @@
                             <output>
                                 <model>
                                     <list key="dependencies">
-                                        <map if="${~flavor} == 'mp'">
+                                        <map if="${flavor} == 'mp'">
                                             <value key="groupId">org.eclipse.microprofile.metrics</value>
                                             <value key="artifactId">microprofile-metrics-api</value>
                                         </map>
-                                        <map if="${~flavor} == 'mp'">
+                                        <map if="${flavor} == 'mp'">
                                             <value key="groupId">io.helidon.microprofile.metrics</value>
                                             <value key="artifactId">helidon-microprofile-metrics</value>
                                         </map>
-                                        <map if="${~flavor} == 'se'">
+                                        <map if="${flavor} == 'se'">
                                             <value key="groupId">io.helidon.metrics</value>
                                             <value key="artifactId">helidon-metrics</value>
                                         </map>
                                     </list>
                                     <list key="SimpleGreetService-imports">
-                                        <value if="${~flavor} == 'mp'">org.eclipse.microprofile.metrics.MetricUnits</value>
-                                        <value if="${~flavor} == 'mp'">org.eclipse.microprofile.metrics.annotation.Counted</value>
-                                        <value if="${~flavor} == 'mp'">org.eclipse.microprofile.metrics.annotation.Timed</value>
-                                        <value if="${~flavor} == 'mp'">jakarta.ws.rs.PathParam</value>
+                                        <value if="${flavor} == 'mp'">org.eclipse.microprofile.metrics.MetricUnits</value>
+                                        <value if="${flavor} == 'mp'">org.eclipse.microprofile.metrics.annotation.Counted</value>
+                                        <value if="${flavor} == 'mp'">org.eclipse.microprofile.metrics.annotation.Timed</value>
+                                        <value if="${flavor} == 'mp'">jakarta.ws.rs.PathParam</value>
 
-                                        <value if="${~flavor} == 'se'">org.eclipse.microprofile.metrics.MetricRegistry</value>
-                                        <value if="${~flavor} == 'se'">org.eclipse.microprofile.metrics.Counter</value>
-                                        <value if="${~flavor} == 'se'">io.helidon.metrics.api.RegistryFactory</value>
+                                        <value if="${flavor} == 'se'">org.eclipse.microprofile.metrics.MetricRegistry</value>
+                                        <value if="${flavor} == 'se'">org.eclipse.microprofile.metrics.Counter</value>
+                                        <value if="${flavor} == 'se'">io.helidon.metrics.api.RegistryFactory</value>
                                     </list>
                                     <list key="SimpleGreetResource-static-fields">
-                                        <value if="${~flavor} == 'mp'"><![CDATA[
+                                        <value if="${flavor} == 'mp'"><![CDATA[
     private static final String PERSONALIZED_GETS_COUNTER_NAME = "personalizedGets";
     private static final String PERSONALIZED_GETS_COUNTER_DESCRIPTION = "Counts personalized GET operations";
     private static final String GETS_TIMER_NAME = "allGets";
     private static final String GETS_TIMER_DESCRIPTION = "Tracks all GET operations";]]></value>
-                                        <value if="${~flavor} == 'se'"><![CDATA[
+                                        <value if="${flavor} == 'se'"><![CDATA[
     private final MetricRegistry registry = RegistryFactory.getInstance()
             .getRegistry(MetricRegistry.Type.APPLICATION);
     private final Counter accessCtr = registry.counter("accessctr");]]></value>
                                     </list>
                                     <list key="SimpleGreetService-methods">
-                                        <value if="${~flavor} == 'mp'"><![CDATA[
+                                        <value if="${flavor} == 'mp'"><![CDATA[
     @Path("/{name}")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -87,24 +87,24 @@
     public String getMessage(@PathParam("name") String name) {
         return String.format("Hello %s", name);
     }]]></value>
-                                        <value if="${~flavor} == 'se'"><![CDATA[
+                                        <value if="${flavor} == 'se'"><![CDATA[
     private void countAccess(ServerRequest request, ServerResponse response) {
         accessCtr.inc();
         request.next();
     }]]></value>
                                     </list>
-                                    <list key="SimpleGreetResource-update" if="${~flavor} == 'se'">
+                                    <list key="SimpleGreetResource-update" if="${flavor} == 'se'">
                                         <value><![CDATA[        rules.get("/greet-count", this::countAccess, this::getDefaultMessageHandler);]]></value>
                                     </list>
                                     <list key="MainTest-java-imports">
-                                        <value if="${~flavor} == 'mp'">org.eclipse.microprofile.metrics.Counter</value>
-                                        <value if="${~flavor} == 'mp'">org.eclipse.microprofile.metrics.MetricRegistry</value>
+                                        <value if="${flavor} == 'mp'">org.eclipse.microprofile.metrics.Counter</value>
+                                        <value if="${flavor} == 'mp'">org.eclipse.microprofile.metrics.MetricRegistry</value>
                                     </list>
                                     <list key="MainTest-static-imports">
-                                        <value if="${~flavor} == 'mp'">static org.junit.jupiter.api.Assertions.assertEquals</value>
+                                        <value if="${flavor} == 'mp'">static org.junit.jupiter.api.Assertions.assertEquals</value>
                                     </list>
                                     <list key="MainTest-methods">
-                                        <value if="${~flavor} == 'mp'"><![CDATA[
+                                        <value if="${flavor} == 'mp'"><![CDATA[
     @Test
     public void testMicroprofileMetrics() {
         String message = target.path("simple-greet/Joe")
@@ -123,7 +123,7 @@
         double after = counter.getCount();
         assertEquals(1d, after - before, "Difference in personalized greeting counter between successive calls");
     }]]></value>
-                                        <value if="${~flavor} == 'se'"><![CDATA[
+                                        <value if="${flavor} == 'se'"><![CDATA[
     @Test
     public void testMicroprofileMetrics() {
         String get = webClient.get()
@@ -142,12 +142,12 @@
     }]]></value>
                                     </list>
                                     <list key="MainTest-static-fields">
-                                        <value if="${~flavor} == 'mp'"><![CDATA[
+                                        <value if="${flavor} == 'mp'"><![CDATA[
     @Inject
     private MetricRegistry registry;]]></value>
                                     </list>
                                     <list key="MainTest-static-imports">
-                                        <value if="${~flavor} == 'se'">static org.hamcrest.Matchers.containsString</value>
+                                        <value if="${flavor} == 'se'">static org.hamcrest.Matchers.containsString</value>
                                     </list>
                                 </model>
                             </output>
@@ -158,41 +158,41 @@
                             <output>
                                 <model>
                                     <list key="dependencies">
-                                        <map if="${~flavor} == 'mp'">
+                                        <map if="${flavor} == 'mp'">
                                             <value key="groupId">io.helidon.integrations.micrometer</value>
                                             <value key="artifactId">helidon-integrations-micrometer-cdi</value>
                                         </map>
-                                        <map if="${~flavor} == 'se'">
+                                        <map if="${flavor} == 'se'">
                                             <value key="groupId">io.helidon.integrations.micrometer</value>
                                             <value key="artifactId">helidon-integrations-micrometer</value>
                                         </map>
                                     </list>
                                     <list key="SimpleGreetService-imports">
-                                        <value if="${~flavor} == 'mp'">io.micrometer.core.annotation.Counted</value>
-                                        <value if="${~flavor} == 'mp'">io.micrometer.core.annotation.Timed</value>
-                                        <value if="${~flavor} == 'mp'">jakarta.ws.rs.PathParam</value>
+                                        <value if="${flavor} == 'mp'">io.micrometer.core.annotation.Counted</value>
+                                        <value if="${flavor} == 'mp'">io.micrometer.core.annotation.Timed</value>
+                                        <value if="${flavor} == 'mp'">jakarta.ws.rs.PathParam</value>
 
-                                        <value if="${~flavor} == 'se'">io.micrometer.core.instrument.Counter</value>
-                                        <value if="${~flavor} == 'se'">io.micrometer.core.instrument.MeterRegistry</value>
+                                        <value if="${flavor} == 'se'">io.micrometer.core.instrument.Counter</value>
+                                        <value if="${flavor} == 'se'">io.micrometer.core.instrument.MeterRegistry</value>
                                     </list>
                                     <list key="SimpleGreetResource-static-fields">
-                                        <value if="${~flavor} == 'mp'"><![CDATA[
+                                        <value if="${flavor} == 'mp'"><![CDATA[
     private static final String PERSONALIZED_GETS_COUNTER_NAME = "personalizedGets";
     private static final String PERSONALIZED_GETS_COUNTER_DESCRIPTION = "Counts personalized GET operations";
     private static final String GETS_TIMER_NAME = "allGets";
     private static final String GETS_TIMER_DESCRIPTION = "Tracks all GET operations";]]></value>
-                                        <value if="${~flavor} == 'se'"><![CDATA[
+                                        <value if="${flavor} == 'se'"><![CDATA[
     private Counter requestCounter;]]></value>
                                     </list>
                                     <list key="SimpleGreetResource-constructor">
-                                        <value if="${~flavor} == 'se'"><![CDATA[
+                                        <value if="${flavor} == 'se'"><![CDATA[
     SimpleGreetService(Config config, MeterRegistry registry) {
         this(config);
         this.requestCounter = registry.counter("allRequests");
     }]]></value>
                                     </list>
                                     <list key="SimpleGreetService-methods">
-                                        <value if="${~flavor} == 'mp'"><![CDATA[
+                                        <value if="${flavor} == 'mp'"><![CDATA[
     @Path("/{name}")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -201,13 +201,13 @@
     public String getMessage(@PathParam("name") String name) {
         return String.format("Hello %s", name);
     }]]></value>
-                                        <value if="${~flavor} == 'se'"><![CDATA[
+                                        <value if="${flavor} == 'se'"><![CDATA[
     private void countAccess(ServerRequest request, ServerResponse response) {
         requestCounter.increment();
         request.next();
     }]]></value>
                                     </list>
-                                    <list key="SimpleGreetResource-update" if="${~flavor} == 'se'">
+                                    <list key="SimpleGreetResource-update" if="${flavor} == 'se'">
                                         <value><![CDATA[        rules.get("/greet-count", this::countAccess, this::getDefaultMessageHandler);]]></value>
                                     </list>
                                     <list key="Main-helidon-imports">
@@ -221,7 +221,7 @@
                 .register("/micrometer-greet", new SimpleGreetService(config, micrometerSupport.registry()))]]></value>
                                     </list>
                                     <list key="MainTest-methods">
-                                        <value if="${~flavor} == 'mp'"><![CDATA[
+                                        <value if="${flavor} == 'mp'"><![CDATA[
     @Test
     public void testMicrometerMetrics() {
         String message = target.path("simple-greet/Joe")
@@ -240,7 +240,7 @@
         double after = counter.count();
         assertEquals(1d, after - before, "Difference in personalized greeting counter between successive calls");
     }]]></value>
-                                        <value if="${~flavor} == 'se'"><![CDATA[
+                                        <value if="${flavor} == 'se'"><![CDATA[
     @Test
     public void testMicrometerMetrics() {
         String get = webClient.get()
@@ -259,17 +259,17 @@
     }]]></value>
                                     </list>
                                     <list key="MainTest-static-fields">
-                                        <value if="${~flavor} == 'mp'"><![CDATA[
+                                        <value if="${flavor} == 'mp'"><![CDATA[
     @Inject
     private MeterRegistry registry;]]></value>
                                     </list>
                                     <list key="MainTest-java-imports">
-                                        <value if="${~flavor} == 'mp'">io.micrometer.core.instrument.Counter</value>
-                                        <value if="${~flavor} == 'mp'">io.micrometer.core.instrument.MeterRegistry</value>
+                                        <value if="${flavor} == 'mp'">io.micrometer.core.instrument.Counter</value>
+                                        <value if="${flavor} == 'mp'">io.micrometer.core.instrument.MeterRegistry</value>
                                     </list>
                                     <list key="MainTest-static-imports">
-                                        <value if="${~flavor} == 'mp'">static org.junit.jupiter.api.Assertions.assertEquals</value>
-                                        <value if="${~flavor} == 'se'">static org.hamcrest.Matchers.containsString</value>
+                                        <value if="${flavor} == 'mp'">static org.junit.jupiter.api.Assertions.assertEquals</value>
+                                        <value if="${flavor} == 'se'">static org.hamcrest.Matchers.containsString</value>
                                     </list>
                                     <list key="readme-sections">
                                         <value><![CDATA[
@@ -310,7 +310,7 @@ allRequests_total 0.0
                                     <value><![CDATA[                .register(MetricsSupport.create()) // Metrics at "/metrics"]]></value>
                                 </list>
                                 <list key="MainTest-methods">
-                                    <value if="${~flavor} == 'mp'"><![CDATA[
+                                    <value if="${flavor} == 'mp'"><![CDATA[
     @Test
     public void testMetrics() throws Exception {
         Response response = target
@@ -319,7 +319,7 @@ allRequests_total 0.0
                 .get();
         assertThat(response.getStatus(), is(200));
     }]]></value>
-                                    <value if="${~flavor} == 'se'"><![CDATA[
+                                    <value if="${flavor} == 'se'"><![CDATA[
     @Test
     public void testMetrics() throws Exception {
         WebClientResponse response = webClient.get()
@@ -366,15 +366,15 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
                         <output>
                             <model>
                                 <list key="dependencies">
-                                    <map if="${~flavor} == 'mp'">
+                                    <map if="${flavor} == 'mp'">
                                         <value key="groupId">io.helidon.microprofile.health</value>
                                         <value key="artifactId">helidon-microprofile-health</value>
                                     </map>
-                                    <map if="${~flavor} == 'se'">
+                                    <map if="${flavor} == 'se'">
                                         <value key="groupId">io.helidon.health</value>
                                         <value key="artifactId">helidon-health</value>
                                     </map>
-                                    <map if="${~flavor} == 'se'">
+                                    <map if="${flavor} == 'se'">
                                         <value key="groupId">io.helidon.health</value>
                                         <value key="artifactId">helidon-health-checks</value>
                                     </map>
@@ -397,7 +397,7 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
                                     <value><![CDATA[                .register(health) // Health at "/health"]]></value>
                                 </list>
                                 <list key="MainTest-methods">
-                                    <value if="${~flavor} == 'mp'"><![CDATA[
+                                    <value if="${flavor} == 'mp'"><![CDATA[
     @Test
     public void testHealth() throws Exception {
         Response response = target
@@ -406,7 +406,7 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
                 .get();
         assertThat(response.getStatus(), is(200));
     }]]></value>
-                                    <value if="${~flavor} == 'se'"><![CDATA[
+                                    <value if="${flavor} == 'se'"><![CDATA[
     @Test
     public void testHealth() throws Exception {
         WebClientResponse response = webClient.get()
@@ -489,7 +489,7 @@ tracing:
       tag6: 741           # JAEGER_TAGS]]></value>
                                     </list>
                                     <list key="MainTest-methods">
-                                        <value if="${~flavor} == 'mp'"><![CDATA[
+                                        <value if="${flavor} == 'mp'"><![CDATA[
     @Test
     public void testMetricJaeger() {
         Response response = target
@@ -498,7 +498,7 @@ tracing:
                 .get();
         assertThat(response.getStatus(), is(200));
     }]]></value>
-                                        <value if="${~flavor} == 'se'"><![CDATA[
+                                        <value if="${flavor} == 'se'"><![CDATA[
     @Test
     public void testMetricJaeger() {
         WebClientResponse response = webClient.get()

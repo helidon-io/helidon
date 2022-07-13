@@ -52,7 +52,6 @@
                        <skipTests>true</skipTests>
                     </properties>
                     <entrypoint>
-                        <!-- TODO https://github.com/oracle/helidon-build-tools/issues/698 -->
                         <variables>
                             <text path="helidon-version" transient="true">${project.version}</text>
                         </variables>
@@ -62,7 +61,6 @@
                         <!-- TODO test cdata, if not go with a separate file -->
                         <!-- TODO look at multiline expressions -->
                         <!-- TODO look at equality with arrays (== ['foo'] ; == []) -->
-                        <!-- TODO look at contains ['foo', 'bar'] -->
                         <!--suppress UnresolvedMavenProperty -->
                         <filter>${media} == 'multipart' || !(${media} contains 'multipart')</filter>
                         <!--suppress UnresolvedMavenProperty -->

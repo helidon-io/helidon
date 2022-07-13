@@ -16,15 +16,14 @@
     limitations under the License.
 
 -->
-<archetype-script xmlns="https://helidon.io/archetype/2.0"
+<archetype-script xmlns="https://helidon.iøo/archetype/2.0"
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
 
     <step name="Media Support" optional="true">
-        <!-- TODO https://github.com/oracle/helidon-build-tools/issues/698 -->
         <variables>
-            <text path="media.default-json-lib" if="${~flavor} != 'se'">jackson</text>
-            <text path="media.default-json-lib" if="${~flavor} == 'se'">jsonp</text>
+            <text path="media.default-json-lib" if="${flavor} != 'se'">jackson</text>
+            <text path="media.default-json-lib" if="${flavor} == 'se'">jsonp</text>
         </variables>
         <inputs>
             <!-- TODO https://github.com/oracle/helidon-build-tools/issues/699 -->
@@ -32,10 +31,7 @@
                 <option value="json" name="JSON" description="Handle 'application/json' payloads">
                     <inputs>
                         <enum id="json-lib" name="Select a JSON library" default="${default-json-lib}" optional="true">
-                            <option value="jsonp" name="JSON-P" description="Jakarta JSON Processing" if="${~flavor} == 'se'">
-                                <variables>
-                                    <text path="~json">jsonp</text>
-                                </variables>
+                            <option value="jsonp" name="JSON-P" description="Jakarta JSON Processing" if="${flavor} == 'se'">
                                 <output>
                                     <model>
                                         <list key="dependencies">
@@ -60,9 +56,6 @@
                                 </output>
                             </option>
                             <option value="jackson" name="Jackson" description="Popular JSON library">
-                                <variables>
-                                    <text path="~json">jackson</text>
-                                </variables>
                                 <output>
                                     <model>
                                         <list key="dependencies">
@@ -91,9 +84,6 @@
                                 </output>
                             </option>
                             <option value="jsonb" name="JSON-B" description="Jakarta JSON Binding">
-                                <variables>
-                                    <text path="~json">jsonb</text>
-                                </variables>
                                 <output>
                                     <model>
                                         <list key="dependencies">
@@ -125,21 +115,18 @@
                     </inputs>
                 </option>
                 <option value="multipart" name="MultiPart" description="Handle 'multipart/form-data' payloads">
-                    <variables>
-                        <text path="~json" />
-                    </variables>
                     <output>
                         <model>
                             <list key="dependencies">
-                                <map if="${~flavor} == 'mp'">
+                                <map if="${flavor} == 'mp'">
                                     <value key="groupId">org.glassfish.jersey.media</value>
                                     <value key="artifactId">jersey-media-multipart</value>
                                 </map>
-                                <map if="${~flavor} == 'se'">
+                                <map if="${flavor} == 'se'">
                                     <value key="groupId">io.helidon.media</value>
                                     <value key="artifactId">helidon-media-multipart</value>
                                 </map>
-                                <map if="${~flavor} == 'se'">
+                                <map if="${flavor} == 'se'">
                                     <value key="groupId">io.helidon.media</value>
                                     <value key="artifactId">helidon-media-jsonp</value>
                                 </map>
@@ -171,7 +158,7 @@
             </list>
         </inputs>
         <variables>
-            <text path="~json" if="${media} == []"/>
+            <text path="media.json-lib" if="!(${media} contains 'json')"/>
         </variables>
         <output>
             <!-- TODO https://github.com/oracle/helidon-build-tools/issues/609 -->
