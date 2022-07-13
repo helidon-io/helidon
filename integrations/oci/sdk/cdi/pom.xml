@@ -85,16 +85,6 @@
             <scope>runtime</scope>
             <optional>true</optional>
         </dependency>
-        <!--
-            This is a transitive dependency of the manually-installed
-            oci-java-sdk-shaded-full artifact and so must be
-            explicitly mentioned here.
-        -->
-        <dependency>
-            <groupId>org.bouncycastle</groupId>
-            <artifactId>bcpkix-jdk15on</artifactId>
-            <scope>runtime</scope>
-        </dependency>
         <dependency>
             <groupId>org.jboss</groupId>
             <artifactId>jandex</artifactId>
@@ -132,6 +122,16 @@
         <dependency>
             <groupId>io.helidon.microprofile.tests</groupId>
             <artifactId>helidon-microprofile-tests-junit5</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!--
+            This is a transitive dependency of the manually-installed
+            oci-java-sdk-shaded-full artifact and so must be
+            explicitly mentioned here.
+        -->
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcpkix-jdk15on</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
