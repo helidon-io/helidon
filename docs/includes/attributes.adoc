@@ -57,6 +57,7 @@ endif::[]
 :version-lib-jakarta-cdi: 3.0
 :version-lib-jakarta-websockets-api: 2.0
 :version-lib-jakarta-bean-validation: 2.0
+:version-lib-jakarta-jsonp-api: 2.0
 :version-lib-jakarta-jsonb-api: 2.0
 :version-lib-jakarta-transaction-api: 2.0
 :version-lib-jakarta-persistence-api: 3.0
@@ -82,8 +83,8 @@ endif::[]
 
 :microprofile-base-url: https://download.eclipse.org/microprofile
 
-:microprofile-open-api-base-url: {microprofile-base-url}/microprofile-open-api-{version-lib-microprofile-metrics-api}
-:microprofile-open-api-spec-url: {microprofile-open-api-base-url}/microprofile-openapi-spec-{version-lib-microprofile-metrics-api}.html
+:microprofile-open-api-base-url: {microprofile-base-url}/microprofile-open-api-{version-lib-microprofile-openapi-api}
+:microprofile-open-api-spec-url: {microprofile-open-api-base-url}/microprofile-openapi-spec-{version-lib-microprofile-openapi-api}.html
 :microprofile-open-api-javadoc-url: {microprofile-open-api-base-url}/apidocs/org/eclipse/microprofile/openapi/
 
 :microprofile-lra-base-url: {microprofile-base-url}/microprofile-lra-{version-lib-microprofile-lra-api}
@@ -94,12 +95,16 @@ endif::[]
 :microprofile-fault-tolerance-spec-url: {microprofile-fault-tolerance-base-url}/microprofile-fault-tolerance-spec-{version-lib-microprofile-fault-tolerance-api}.html
 :microprofile-fault-tolerance-javadoc-url: {microprofile-fault-tolerance-base-url}/apidocs
 
+:microprofile-graphql-base-url: {microprofile-base-url}/microprofile-graphql-{version-lib-microprofile-graphql}
+:microprofile-graphql-spec-url: {microprofile-graphql-base-url}/microprofile-graphql-spec-{version-lib-microprofile-graphql}.html
+:microprofile-graphql-javadoc-url: {microprofile-graphql-base-url}/apidocs
+
 :microprofile-metrics-base-url: {microprofile-base-url}/microprofile-metrics-{version-lib-microprofile-metrics-api}
 :microprofile-metrics-spec-url: {microprofile-metrics-base-url}/microprofile-metrics-spec-{version-lib-microprofile-metrics-api}.html
 :microprofile-metrics-javadoc-url: {microprofile-metrics-base-url}/apidocs
 
-:microprofile-tracing-base-url: {microprofile-base-url}/microprofile-tracing-{version-lib-microprofile-tracing}
-:microprofile-tracing-spec-url: {microprofile-tracing-base-url}/microprofile-tracing-spec-{version-lib-microprofile-tracing}.html
+:microprofile-tracing-base-url: {microprofile-base-url}/microprofile-opentracing-{version-lib-microprofile-tracing}
+:microprofile-tracing-spec-url: {microprofile-tracing-base-url}/microprofile-opentracing-spec-{version-lib-microprofile-tracing}.html
 :microprofile-tracing-javadoc-url: {microprofile-tracing-base-url}/apidocs
 
 :microprofile-health-base-url: {microprofile-base-url}/microprofile-health-{version-lib-microprofile-health}
@@ -141,6 +146,10 @@ endif::[]
 :jakarta-bean-validation-base-url: {jakarta-base-url}/bean-validation/{version-lib-jakarta-bean-validation}
 :jakarta-bean-validation-spec-url: {jakarta-bean-validation-base-url}/bean-validation_{version-lib-jakarta-bean-validation}.html
 :jakarta-bean-validation-javadoc-url: {jakarta-bean-validation-base-url}/apidocs
+
+:jakarta-jsonp-base-url: {jakarta-base-url}/jsonp/{version-lib-jakarta-jsonp-api}
+:jakarta-jsonp-spec-url: {jakarta-jsonp-base-url}/jakarta-jsonp-spec-{version-lib-jakarta-jsonp-api}.html
+:jakarta-jsonp-javadoc-url: {jakarta-jsonp-base-url}/apidocs
 
 :jakarta-jsonb-base-url: {jakarta-base-url}/jsonb/{version-lib-jakarta-jsonb-api}
 :jakarta-jsonb-spec-url: {jakarta-jsonb-base-url}/jakarta-jsonb-spec-{version-lib-jakarta-jsonb-api}.html

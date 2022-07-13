@@ -42,7 +42,7 @@ pages:
         - "includes/**"
 backend:
     name: "vuetify"
-    homePage: "about/overview.adoc"
+    homePage: "introduction.adoc"
     releases:
         - "${project.version}"
     navigation:
@@ -52,26 +52,11 @@ backend:
         type: "image"
         value: "images/helidon_logo_dark.svg"
       items:
+        - type: "PAGE"
+          title: "Introduction"
+          source: "introduction.adoc"
         - type: "GROUPS"
           items:
-          - type: "GROUP"
-            title: "Introduction"
-            dir: "about"
-            items:
-              - type: "MENU"
-                title: "About"
-                glyph:
-                  type: "icon"
-                  value: "assistant"
-                sources:
-                  - "overview.adoc"
-                  - "introduction.adoc"
-                  - "prerequisites.adoc"
-                  - "managing-dependencies.adoc"
-                  - "windows.adoc"
-                  - "cli.adoc"
-                  - "kubernetes.adoc"
-                  - "upgrade.adoc"
           - type: "GROUP"
             title: "Helidon SE"
             dir: "se"
@@ -289,15 +274,12 @@ backend:
             title: "Helidon MP"
             dir: "mp"
             items:
-              - type: "MENU"
+              - type: "PAGE"
                 title: "Introduction"
-                dir: "introduction"
+                source: "introduction.adoc"
                 glyph:
                   type: "icon"
                   value: "widgets"
-                sources:
-                  - "introduction.adoc"
-                  - "microprofile.adoc"
               - type: "MENU"
                 title: "Guides"
                 dir: "guides"

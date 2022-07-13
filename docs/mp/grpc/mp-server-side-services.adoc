@@ -25,7 +25,7 @@
 
 include::{rootdir}/includes/mp.adoc[]
 
-The gRPC Microprofile APIs are an extension to xref:../introduction/introduction.adoc[Helidon MP] to allow building
+The gRPC Microprofile APIs are an extension to xref:../introduction.adoc[Helidon MP] to allow building
 of gRPC services and clients that integrate with the Microprofile APIs. Using Helidon gRPC MP makes building gRPC services
 and clients an easier process that the traditional approach using Protobuf files and code generation. Services can be built
 using POJOs that are then discovered and deployed at runtime in the same way the Helidon MP discovers and deploys web resources

@@ -59,7 +59,7 @@ The table below shows to primary differences between Helidon SE and Helidon MP.
 |Microframework model with a very small footprint and limited functionality (~7 MB) | https://projects.eclipse.org/proposals/eclipse-microprofile[Eclipse MicroProfile] implementation; slightly larger footprint than SE (~13 MB)
 |Functional style is reactive non-blocking   |Declarative style with dependency injection
 |Transparent "no magic" development experience; pure java application development with no annotations and no dependency injections  |Jakarta EE microprofile development experience; all Jakarta components (CDI, JAX-RS, JSON-P/B)
-|Learn more about xref:../se/introduction.adoc[Helidon SE]. | Learn more about xref:../mp/introduction/introduction.adoc[Helidon MP].
+|Learn more about xref:../se/introduction.adoc[Helidon SE]. | Learn more about xref:../mp/introduction.adoc[Helidon MP].
 |====================
 
 == What's New in Helidon 2.0

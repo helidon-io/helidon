@@ -1,0 +1,116 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Helidon
+:description: Helidon
+:keywords: helidon, java, microservices, microprofile
+:rootdir: {docdir}
+
+include::{rootdir}/includes/attributes.adoc[]
+
+== What is Helidon?
+
+link:https://helidon.io[Helidon] is a collection of Java libraries for writing microservices that run on a fast web core powered by link:https://netty.io[Netty]. It's small, fast and fun to use. 
+
+Helison is open source under Alache 2.0 license. Sources are available on link:{helidon-github-tree-url}[GitHub].
+
+Helidon is cloud-native ready. It provides fast start-up time, has low memory consumption and small disk footprint. It also comes with full observability stack out of the box including Health Checks, Metrics , Tracing and Logging.
+
+Helidon fully supports GraalVM native-image allowing you to build native executable out of your Java application.
+
+Helidon has minimum number of third-party dependencies by design.
+
+== Helidon Flavors
+
+Helidon comes in two flavors: *Helison SE* and *Helidon MP*. Think about flavors as frameworks providing similar functionality using differet development experience.
+
+[cols="3,3"]
+|====================
+| *Helidon SE* |  *Helidon MP*
+
+|Helidon SE gives you full transparency and puts you in control.
+|Helidon MP is built on top of the Helidon SE libraries and provides platform definition that is familiar to enterprise Java developers.
+
+|Microframework model with a very small footprint and limited functionality (~7 MB) 
+| https://projects.eclipse.org/proposals/eclipse-microprofile[MicroProfile] implementation; slightly larger footprint than SE (~13 MB)
+
+|Functional style, reactive, non-blocking   
+|Declarative style with dependency injection
+
+|Transparent "no magic" development experience; pure java application development with no annotations and no dependency injections  
+|Spring Boot, Jakarta EE and MicroProfile development experience; Jakarta EE components (CDI, JAX-RS, JSON-P/B)
+
+|Learn more about xref:{rootdir}/se/introduction.adoc[Helidon SE]. | Learn more about xref:{rootdir}/mp/introduction.adoc[Helidon MP].
+|====================
+
+To better understand differences below are two samples implementing a simple RESTful service. One is using Helidon SE, another Helidon MP.
+
+.Helidon SE sample
+[source,java]
+----
+Routing routing = Routing.builder()
+    .get("/hello", 
+        (req, res) -> res.send("Hello World"))
+    .build();
+
+WebServer.create(routing)
+    .start();
+----
+
+.Helidon MP sample
+[source,java]
+----
+@Path("hello")
+public class HelloWorld {
+    @GET
+    public String hello() {
+        return "Hello World";
+    }
+}
+----
+
+=== What flavor shall I use?
+
+Use Helidon SE if
+
+- Performance is your main goal
+- You are familiar with Reactive Programming
+- Your application is heavily using concurrency
+- You are not planning to use any CDI based components
+- You want to use minimum number of third-party dependencies
+
+Use Helidon MP if
+
+- You want to base your application on modern enterprise Java standards such as Jakarta EE and MicroProfile
+- You are familiar with Java EE, Jakarta EE or Spring Boot and would like to use similar development experience
+- You are migrating existing Java EE/Jakarta EE application to microservices
+- You are planning to use CDI components or extensions
+- You are planning to use JPA for data access and Jersey (JAX-RS) for RESTful services
+
+
+[NOTE]
+====
+If you don't know which Helidon flavor to use – use *Helidon MP*
+====
+
+=== Next Steps
+
+Next would be to choose a Helidon flavor and start using it. Check the following 
+
+- xref:{rootdir}/se/introduction.adoc[Helidon SE Documentation]
+- xref:{rootdir}/mp/introduction.adoc[Helidon MP Documentation]

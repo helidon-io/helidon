@@ -25,7 +25,7 @@
 
 include::{rootdir}/includes/mp.adoc[]
 
-The Microprofile GraphQL APIs are an extension to xref:introduction/introduction.adoc[Helidon MP]
+The Microprofile GraphQL APIs are an extension to xref:introduction.adoc[Helidon MP]
 to allow building of applications that can expose a GraphQL endpoint.
 
 == Experimental
