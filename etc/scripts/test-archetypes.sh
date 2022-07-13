@@ -1,6 +1,6 @@
-#!/bin/bash -e
+#!/bin/bash -ex
 #
-# Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+# Copyright (c) 2022 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -26,19 +26,12 @@ error_trap_setup
 
 mvn ${MAVEN_ARGS} --version
 
+# Temporary workaround until job stages will share maven repository
 mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml \
-    clean install -e \
-    -Dmaven.test.failure.ignore=true \
-    -Pexamples,spotbugs,javadoc,sources,tck,tests,pipeline
+    install -e \
+    -Dmaven.test.skip=true \
+    -DskipTests \
+    -Ppipeline
 
-#
-# test running from jar file, and then from module path
-#
-# The first integration test tests all MP features except for JPA/JTA
-# with multiple JAX-RS applications including security
-tests/integration/native-image/mp-1/test-runtime.sh
-# The third integration test tests Helidon Quickstart MP
-tests/integration/native-image/mp-3/test-runtime.sh
-
-# Build site and aggregated javadocs
-mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml site
+cd ${WS_DIR}/archetypes
+mvn ${MAVEN_ARGS} -e clean install

@@ -89,6 +89,14 @@ pipeline {
                 sh 'etc/scripts/test-packaging-native.sh'
               }
             }
+            stage('test-archetypes'){
+              agent {
+                label "linux"
+              }
+              steps {
+                sh 'etc/scripts/test-archetypes.sh'
+              }
+            }
           }
         }
       }
