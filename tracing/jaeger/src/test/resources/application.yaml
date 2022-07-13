@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+# Copyright (c) 2019, 2022 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -33,16 +33,8 @@ tracing:
     host: "192.168.1.3"   # JAEGER_ENDPOINT
     port: 14240           # JAEGER_ENDPOINT
     path: "/api/traces/mine"   # JAEGER_ENDPOINT
-    token: "token"        # JAEGER_AUTH_TOKEN
-    username:  "user"     # JAEGER_USER
-    password: "pass"      # JAEGER_PASSWORD
-    propagation: "jaeger" # JAEGER_PROPAGATION either "jaeger" or "b3"
-    log-spans: false      # JAEGER_REPORTER_LOG_SPANS
-    max-queue-size: 42    # JAEGER_REPORTER_MAX_QUEUE_SIZE
-    flush-interval-ms: 10001 # JAEGER_REPORTER_FLUSH_INTERVAL
-    sampler-type: "remote"# JAEGER_SAMPLER_TYPE (https://www.jaegertracing.io/docs/latest/sampling/#client-sampling-configuration)
-    sampler-param: 0.5    # JAEGER_SAMPLER_PARAM (number)
-    sampler-manager: "localhost:47877" # JAEGER_SAMPLER_MANAGER_HOST_PORT
+    sampler-type: "ratio"
+    sampler-param: 0.5
     tags:
       tag1: "tag1-value"  # JAEGER_TAGS
       tag2: "tag2-value"  # JAEGER_TAGS
@@ -52,6 +44,3 @@ tracing:
     int-tags:
       tag5: 145           # JAEGER_TAGS
       tag6: 741           # JAEGER_TAGS
-  jaeger-propagations:
-    service: "helidon-propagations"
-    propagation: ["jaeger", "b3"]

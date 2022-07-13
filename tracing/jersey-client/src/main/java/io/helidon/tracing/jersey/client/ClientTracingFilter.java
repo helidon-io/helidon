@@ -28,6 +28,7 @@ import io.helidon.common.context.Contexts;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.tracing.HeaderConsumer;
 import io.helidon.tracing.HeaderProvider;
+import io.helidon.tracing.Scope;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanContext;
 import io.helidon.tracing.Tag;
@@ -128,6 +129,7 @@ public class ClientTracingFilter implements ClientRequestFilter, ClientResponseF
      */
     public static final String X_REQUEST_ID = "x-request-id";
     static final String SPAN_PROPERTY_NAME = ClientTracingFilter.class.getName() + ".span";
+    static final String SPAN_SCOPE_PROPERTY_NAME = ClientTracingFilter.class.getName() + ".span-scope";
     /**
      * Name of the configuration of a span created for outbound calls.
      */
@@ -172,7 +174,7 @@ public class ClientTracingFilter implements ClientRequestFilter, ClientResponseF
         }
 
         Tracer tracer = findTracer(requestContext, tracingContext);
-        Optional<SpanContext> parentSpan = findParentSpan(tracer, requestContext, tracingContext);
+        Optional<SpanContext> parentSpan = findParentSpan(requestContext, tracingContext);
         Map<String, List<String>> inboundHeaders = findInboundHeaders(tracingContext);
         String spanName = findSpanName(requestContext, spanConfig);
 
@@ -182,8 +184,11 @@ public class ClientTracingFilter implements ClientRequestFilter, ClientResponseF
                                       parentSpan,
                                       spanName);
 
+        Scope spanScope = currentSpan.activate();
+
         // register it so we can close the span on response
         requestContext.setProperty(SPAN_PROPERTY_NAME, currentSpan);
+        requestContext.setProperty(SPAN_SCOPE_PROPERTY_NAME, spanScope);
 
         // and also register it with Context, so we can close the span in case of an exception that does not hit the
         // response filter
@@ -207,10 +212,10 @@ public class ClientTracingFilter implements ClientRequestFilter, ClientResponseF
 
     @Override
     public void filter(ClientRequestContext requestContext, ClientResponseContext responseContext) {
-        Object property = requestContext.getProperty(SPAN_PROPERTY_NAME);
+        Object spanProperty = requestContext.getProperty(SPAN_PROPERTY_NAME);
+        Object scopeProperty = requestContext.getProperty(SPAN_SCOPE_PROPERTY_NAME);
 
-        if (property instanceof Span) {
-            Span span = (Span) property;
+        if (spanProperty instanceof Span span) {
             int status = responseContext.getStatus();
             Tag.HTTP_STATUS.create(status).apply(span);
             if (status >= HTTP_STATUS_ERROR_THRESHOLD) {
@@ -220,7 +225,13 @@ public class ClientTracingFilter implements ClientRequestFilter, ClientResponseF
                                               "error.kind",
                                               (status < HTTP_STATUS_SERVER_ERROR_THRESHOLD) ? "ClientError" : "ServerError"));
             }
+
+            if (scopeProperty instanceof Scope scope) {
+                scope.close();
+            }
             span.end();
+
+            requestContext.removeProperty(SPAN_SCOPE_PROPERTY_NAME);
             requestContext.removeProperty(SPAN_PROPERTY_NAME);
         }
     }
@@ -261,7 +272,7 @@ public class ClientTracingFilter implements ClientRequestFilter, ClientResponseF
         return result;
     }
 
-    private Optional<SpanContext> findParentSpan(Tracer tracer, ClientRequestContext requestContext,
+    private Optional<SpanContext> findParentSpan(ClientRequestContext requestContext,
                                                  Optional<TracingContext> tracingContext) {
 
         // parent span lookup
@@ -272,18 +283,16 @@ public class ClientTracingFilter implements ClientRequestFilter, ClientResponseF
         }
 
         // then the active span
-        Span activeSpan = Span.current().orElse(null);
-        if (null != activeSpan) {
-            return Optional.of(activeSpan.context());
-        }
-
-        // then spans registered in context
-        return  // from injected span context
-                tracingContext.map(TracingContext::parentSpan)
+        return Span.current()
+                .map(Span::context)
+                .or(() ->
+                    // then spans registered in context
+                    // from injected span context
+                    tracingContext.map(TracingContext::parentSpan)
                         // first look for "our" span context (e.g. one registered by a component that is aware that we exist)
                         .or(() -> Contexts.context().flatMap(ctx -> ctx.get(ClientTracingFilter.class, SpanContext.class)))
                         // then look for overall span context
-                        .or(() -> Contexts.context().flatMap(ctx -> ctx.get(SpanContext.class)));
+                        .or(() -> Contexts.context().flatMap(ctx -> ctx.get(SpanContext.class))));
     }
 
     private String findSpanName(ClientRequestContext requestContext, SpanTracingConfig spanConfig) {

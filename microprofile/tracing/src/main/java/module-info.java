@@ -39,10 +39,12 @@ module io.helidon.microprofile.tracing {
     requires transitive io.helidon.tracing;
     requires transitive io.helidon.tracing.jersey;
     requires io.helidon.tracing.tracerresolver;
+    requires io.helidon.tracing.opentelemetry;
 
     requires transitive microprofile.opentracing.api;
     requires microprofile.rest.client.api;
     requires io.opentracing.util;
+    requires io.opentelemetry.opentracingshim;
 
     exports io.helidon.microprofile.tracing;
 

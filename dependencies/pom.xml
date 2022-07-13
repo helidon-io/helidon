@@ -69,7 +69,6 @@
         <version.lib.hystrix>1.5.18</version.lib.hystrix>
         <!-- This is the BOM version for Jackson Databind 2.13.2.2 -->
         <version.lib.jackson>2.13.2.20220328</version.lib.jackson>
-        <version.lib.jaegertracing>1.6.0</version.lib.jaegertracing>
         <version.lib.jakarta.activation-api>2.0.1</version.lib.jakarta.activation-api>
         <version.lib.jakarta.annotation-api>2.0.0</version.lib.jakarta.annotation-api>
         <version.lib.jakarta.cdi-api>3.0.0</version.lib.jakarta.cdi-api>
@@ -136,6 +135,7 @@
         <version.lib.okio>1.17.5</version.lib.okio>
         <version.lib.opentelemetry>1.15.0</version.lib.opentelemetry>
         <version.lib.opentelemetry.semconv>1.15.0-alpha</version.lib.opentelemetry.semconv>
+        <version.lib.opentelemetry.opentracing.shim>1.15.0-alpha</version.lib.opentelemetry.opentracing.shim>
         <version.lib.opentracing>0.33.0</version.lib.opentracing>
         <version.lib.opentracing.grpc>0.2.1</version.lib.opentracing.grpc>
         <version.lib.opentracing.tracerresolver>0.1.8</version.lib.opentracing.tracerresolver>
@@ -238,20 +238,14 @@
                 </exclusions>
             </dependency>
             <dependency>
-                <groupId>io.jaegertracing</groupId>
-                <artifactId>jaeger-client</artifactId>
-                <version>${version.lib.jaegertracing}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>javax.annotation</groupId>
-                        <artifactId>javax.annotation-api</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
                 <groupId>io.opentelemetry</groupId>
                 <artifactId>opentelemetry-semconv</artifactId>
                 <version>${version.lib.opentelemetry.semconv}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.opentelemetry</groupId>
+                <artifactId>opentelemetry-opentracing-shim</artifactId>
+                <version>${version.lib.opentelemetry.opentracing.shim}</version>
             </dependency>
             <dependency>
                 <groupId>io.opentracing</groupId>

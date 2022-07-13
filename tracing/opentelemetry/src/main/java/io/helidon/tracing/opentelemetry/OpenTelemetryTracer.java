@@ -15,6 +15,7 @@
  */
 package io.helidon.tracing.opentelemetry;
 
+import java.util.Map;
 import java.util.Optional;
 
 import io.helidon.config.Config;
@@ -39,12 +40,14 @@ class OpenTelemetryTracer implements Tracer {
     private final io.opentelemetry.api.trace.Tracer delegate;
     private final boolean enabled;
     private final TextMapPropagator propagator;
+    private final Map<String, String> tags;
 
-    OpenTelemetryTracer(OpenTelemetry telemetry, io.opentelemetry.api.trace.Tracer tracer) {
+    OpenTelemetryTracer(OpenTelemetry telemetry, io.opentelemetry.api.trace.Tracer tracer, Map<String, String> tags) {
         this.telemetry = telemetry;
         this.delegate = tracer;
         this.enabled = !tracer.getClass().getSimpleName().equals("DefaultTracer");
         this.propagator = telemetry.getPropagators().getTextMapPropagator();
+        this.tags = tags;
     }
 
     static Builder builder() {
@@ -58,23 +61,31 @@ class OpenTelemetryTracer implements Tracer {
 
     @Override
     public Span.Builder<?> spanBuilder(String name) {
-        return new OpenTelemetrySpanBuilder(delegate.spanBuilder(name));
+        OpenTelemetrySpanBuilder builder = new OpenTelemetrySpanBuilder(delegate.spanBuilder(name));
+        tags.forEach(builder::tag);
+        return builder;
     }
 
     @Override
     public Optional<SpanContext> extract(HeaderProvider headersProvider) {
         Context context = propagator.extract(Context.current(), headersProvider, GETTER);
-        context.makeCurrent();
 
-        return Optional.ofNullable(io.opentelemetry.api.trace.Span.current())
-                .map(io.opentelemetry.api.trace.Span::getSpanContext)
+        return Optional.ofNullable(context)
                 .map(OpenTelemetrySpanContext::new);
     }
 
     @Override
     public void inject(SpanContext spanContext, HeaderProvider inboundHeadersProvider, HeaderConsumer outboundHeadersConsumer) {
-        io.opentelemetry.api.trace.Span.wrap(((OpenTelemetrySpanContext) spanContext).openTelemetry()).makeCurrent();
-        propagator.inject(Context.current(), outboundHeadersConsumer, SETTER);
+        propagator.inject(((OpenTelemetrySpanContext) spanContext).openTelemetry(), outboundHeadersConsumer, SETTER);
+    }
+
+    @Override
+    public <T> T unwrap(Class<T> tracerClass) {
+        if (tracerClass.isAssignableFrom(delegate.getClass())) {
+            return tracerClass.cast(delegate);
+        }
+        throw new IllegalArgumentException("Cannot provide an instance of " + tracerClass.getName()
+                                                   + ", telemetry tracer is: " + delegate.getClass().getName());
     }
 
     static class Builder implements TracerBuilder<Builder> {
@@ -88,7 +99,7 @@ class OpenTelemetryTracer implements Tracer {
                 ot = GlobalOpenTelemetry.get();
             }
             io.opentelemetry.api.trace.Tracer tracer = ot.getTracer(serviceName);
-            Tracer result = new OpenTelemetryTracer(ot, tracer);
+            Tracer result = new OpenTelemetryTracer(ot, tracer, Map.of());
             if (registerGlobal) {
                 Tracer.global(result);
             }

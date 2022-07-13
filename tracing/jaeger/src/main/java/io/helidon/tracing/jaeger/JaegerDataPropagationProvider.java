@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,17 +18,17 @@ package io.helidon.tracing.jaeger;
 
 import io.helidon.common.context.Contexts;
 import io.helidon.common.context.spi.DataPropagationProvider;
-
-import io.opentracing.Scope;
-import io.opentracing.Span;
-import io.opentracing.Tracer;
-import io.opentracing.util.GlobalTracer;
+import io.helidon.tracing.Scope;
+import io.helidon.tracing.Span;
+import io.helidon.tracing.Tracer;
+import io.helidon.tracing.opentelemetry.OpenTelemetryTracerProvider;
 
 /**
  * A data propagation provider for Jaeger. Makes sure span are properly propagated
  * across threads managed by {@link io.helidon.common.context.ContextAwareExecutorService}.
  */
 public class JaegerDataPropagationProvider implements DataPropagationProvider<JaegerDataPropagationProvider.JaegerContext> {
+    private static final System.Logger LOGGER = System.getLogger(JaegerDataPropagationProvider.class.getName());
 
     static class JaegerContext {
         private final Span span;
@@ -54,7 +54,7 @@ public class JaegerDataPropagationProvider implements DataPropagationProvider<Ja
     @Override
     public JaegerContext data() {
         return Contexts.context().map(context -> context.get(Span.class).map(span -> {
-            Tracer tracer = context.get(Tracer.class).orElseGet(GlobalTracer::get);
+            Tracer tracer = context.get(Tracer.class).orElseGet(OpenTelemetryTracerProvider::globalTracer);
             return new JaegerContext(tracer, span);
         }).orElse(null)).orElse(null);
     }
@@ -67,7 +67,7 @@ public class JaegerDataPropagationProvider implements DataPropagationProvider<Ja
     @Override
     public void propagateData(JaegerContext context) {
         if (context != null) {
-            context.scope = context.tracer.scopeManager().activate(context.span);
+            context.scope = Span.current().map(Span::activate).orElse(null);
         }
     }
 
@@ -77,7 +77,11 @@ public class JaegerDataPropagationProvider implements DataPropagationProvider<Ja
     @Override
     public void clearData(JaegerContext context) {
         if (context != null && context.scope != null) {
-            context.scope.close();
+            try {
+                context.scope.close();
+            } catch (Exception e) {
+                LOGGER.log(System.Logger.Level.TRACE, "Cannot close tracing span", e);
+            }
         }
     }
 }

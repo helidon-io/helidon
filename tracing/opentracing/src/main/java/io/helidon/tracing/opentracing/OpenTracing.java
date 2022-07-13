@@ -46,4 +46,5 @@ public final class OpenTracing {
     public static Span create(Tracer tracer, io.opentracing.Span span) {
         return new OpenTracingSpan(tracer, span);
     }
+
 }
