@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,18 +18,19 @@
  * Example of integration with OCI object storage in a CDI application.
  */
 module io.helidon.examples.integrations.oci.objectstorage.cdi {
-    requires jakarta.ws.rs;
+    requires java.logging;
     requires jakarta.json.bind;
+
+    requires jakarta.ws.rs;
     requires jakarta.inject;
+
     requires microprofile.config.api;
 
     requires io.helidon.config.yaml.mp;
     requires io.helidon.common.http;
-    requires io.helidon.integrations.common.rest;
-    requires io.helidon.integrations.oci.cdi;
-    requires io.helidon.integrations.oci.objectstorage;
     requires io.helidon.microprofile.cdi;
-    requires io.helidon.integrations.oci.objectstorage.health;
+
+    requires oci.java.sdk.shaded.full;
 
     exports io.helidon.examples.integrations.oci.objectstorage.cdi;
 

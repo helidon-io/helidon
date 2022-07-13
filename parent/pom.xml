@@ -115,6 +115,31 @@
             <email>david.k.kral@oracle.com</email>
             <organization>Oracle Corporation</organization>
         </developer>
+        <developer>
+            <name>Daniel Kec</name>
+            <email>daniel.kec@oracle.com</email>
+            <organization>Oracle Corporation</organization>
+        </developer>
+        <developer>
+            <name>Arjav Desai</name>
+            <email>arjav.desai@oracle.com</email>
+            <organization>Oracle Corporation</organization>
+        </developer>
+        <developer>
+            <name>Keith Lustria</name>
+            <email>keith.lustria@oracle.com</email>
+            <organization>Oracle Corporation</organization>
+        </developer>
+        <developer>
+            <name>Dmitry Aleksandrov</name>
+            <email>dmitry.aleksandrov@oracle.com</email>
+            <organization>Oracle Corporation</organization>
+        </developer>
+        <developer>
+            <name>Jeff Trent</name>
+            <email>jeff.trent@oracle.com</email>
+            <organization>Oracle Corporation</organization>
+        </developer>
     </developers>
 
     <properties>

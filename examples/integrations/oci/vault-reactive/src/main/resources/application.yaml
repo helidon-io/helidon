@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2021 Oracle and/or its affiliates.
+# Copyright (c) 2021, 2022 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,13 +14,13 @@
 # limitations under the License.
 #
 
-# The values are read from
-# ~/helidon/conf/examples.yaml
-# or you can just update them here
-
 server:
   port: 8080
 
+#
+# The following properties under oci are accessed by Helidon. Values
+# under oci.properties.* are read from ~/helidon/conf/examples.yaml.
+#
 oci:
   vault:
     # Vault OCID (the vault you want to use for this example

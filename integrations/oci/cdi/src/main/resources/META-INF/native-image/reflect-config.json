@@ -1,7 +1,0 @@
-[
-    {
-        "name": "io.helidon.integrations.oci.cdi.OciInternal",
-        "allDeclaredMethods": true,
-        "allPublicMethods": true
-    }
-]

@@ -212,6 +212,10 @@ public class UCPBackedDataSourceExtension extends AbstractDataSourceExtension {
             }
             final Object serviceName = connectionFactoryProperties.remove("serviceName");
             final Object pdbRoles = connectionFactoryProperties.remove("pdbRoles");
+            // Used for OCI ATP Integration
+            // Removing this so that it is not set on connectionFactoryProperties,
+            // Else we get exception with getConnection using this DS, if its set.
+            connectionFactoryProperties.remove("tnsNetServiceName");
             if (!connectionFactoryProperties.stringPropertyNames().isEmpty()) {
                 // We found some String-typed properties that are destined for the underlying connection factory to
                 // hopefully fully configure it.  Apply them here.

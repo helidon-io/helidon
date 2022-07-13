@@ -54,14 +54,6 @@ Create and inject a Jedis pool in your application code.
 --
 
 [CARD]
-.OCI Object Storage clients
-[link=cdi-oci-objectstorage.adoc]
---
-Create and inject an Oracle Cloud Infrastructure Object Storage client in your
- application code.
---
-
-[CARD]
 .Java Transaction API objects
 [link=cdi-jta.adoc]
 --
