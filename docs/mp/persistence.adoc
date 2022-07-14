@@ -100,10 +100,12 @@ relational database.  Drivers are database-product-specific.
 Once you have decided upon a relational database product to use, and a
 JDBC driver to use to connect to it,
 xref:../about/managing-dependencies.adoc[ensure your dependencies are
-managed], and then ensure that a `<dependency>` element describing
-your JDBC driver is present as a child element of your project's
-`pom.xml` file's `<dependencies>` element.  A couple of examples
-follow.  They are not exhaustive.
+managed], and then ensure that a `runtime`-scoped `<dependency>`
+element describing your JDBC driver is present as a child element of
+your project's `pom.xml` file's `<dependencies>` element.
+
+A couple of examples are described below for some common database
+products.  They are not exhaustive.
 
 See the
 https://docs.oracle.com/en/java/javase/17/docs/api/java.sql/java/sql/package-summary.html[JDBC
@@ -135,29 +137,61 @@ Ensure the following
      -->
     <groupId>com.oracle.database.jdbc</groupId>
     <!--
-         Why ojdbc*11*? Why not ojdbc*something else*? Because:
-         (a) Helidon targets Java 17
-         (b) Java 17 includes JDBC 4.3, not JDBC 4.2 or any other version
-         (c) ojdbc11 includes JDBC 4.3
-         (d) ojdbc8 only includes JDBC 4.2
+         Why ojdbc*11*? Because:
+         (a) Helidon 3 targets Java 17
+         (b) Java 17 includes JDBC 4.3
+         (c) ojdbc11 implements relevant parts of JDBC 4.3
          Please see
          https://www.oracle.com/database/technologies/maven-central-guide.html
          for more details.
     -->
     <artifactId>ojdbc11</artifactId>
     <!-- 
-       It's actually best to manage this with Maven's <dependencyManagement> feature.
-       If instead you opt for the explicit version here, always check
-       https://search.maven.org/classic/#search%7Cga%7C1%7Cg%3A%22com.oracle.database.jdbc%22
-       for up-to-date available versions, and see
-       https://www.oracle.com/database/technologies/maven-central-guide.html
-       for extremely important information.
+         It's best to manage this with Maven's <dependencyManagement> feature,
+         which is why the <version> element is commented out below.
+         If nevertheless you opt for the explicit version here, always check
+         https://search.maven.org/classic/#search%7Cga%7C1%7Cg%3A%22com.oracle.database.jdbc%22
+         for up-to-date available versions, and see
+         https://www.oracle.com/database/technologies/maven-central-guide.html
+         for extremely important information.
     -->
     <!-- <version>21.3.0.0</version> -->
     <scope>runtime</scope> <!--1-->
-  </dependency>
+</dependency>
 ----
 <1> Note that the `scope` is `runtime`, indicating that the Oracle
+    JDBC driver will be available on the runtime classpath.
+
+===== Maven Coordinates (H2) [[DS-H2-Driver-Setup]]
+
+To include the http://www.h2database.com/html/main.html[H2 JDBC
+driver] in your Helidon MP application so your application can connect
+to an H2 database (whether in-memory or persistent):
+
+* xref:../about/managing-dependencies.adoc[Ensure your dependencies are
+managed]
+
+Ensure the following
+`<dependency>` element is present as a child element of your project's
+`pom.xml` file's `<dependencies>` element:
+
+[source,xml]
+----
+<dependency>
+    <groupId>com.h2database</groupId>
+    <artifactId>h2</artifactId>
+    <!-- 
+         It's best to manage this with Maven's <dependencyManagement> feature,
+         which is why the <version> element is commented out below.
+         If nevertheless you opt for the explicit version here, always check
+         https://search.maven.org/classic/#search%7Cga%7C1%7Cg%3A%22com.h2database%22%20AND%20a%3A%22h2%22
+         for up-to-date available versions.
+    -->
+    <!-- <version>2.1.212</version> -->
+    <scope>runtime</scope> <!--1-->
+</dependency>
+----
+<1> Note that the `scope` is `runtime`, indicating that the H2
     JDBC driver will be available on the runtime classpath.
 
 ==== Common Usage [[DS-Usage]]
