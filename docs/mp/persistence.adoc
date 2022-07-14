@@ -320,7 +320,6 @@ configuration source:
 ----
 javax.sql.DataSource.yourDataSourceName.somePropertyOfYourConnectionPoolAndDataSource = itsValue
 javax.sql.DataSource.yourDataSourceName.someOtherPropertyOfYourConnectionPoolAndDataSource = anotherValue
-System properties on the java command line
 ----
 
 ===== System Properties on the Command Line
