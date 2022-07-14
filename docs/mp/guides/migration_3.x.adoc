@@ -28,7 +28,7 @@ In Helidon 3.x we have made some changes to APIs and runtime behavior. This guid
 will help you migrate a Helidon MP 2.x application to 3.x.
 
 
-include::{rootdir}/includes/guides/migration.adoc[]
+include::{rootdir}/includes/guides/migration_3.x.adoc[]
 
 
 == MicroProfile 5 support
