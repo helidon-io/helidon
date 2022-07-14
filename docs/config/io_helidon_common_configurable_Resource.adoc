@@ -27,7 +27,7 @@ include::{rootdir}/includes/attributes.adoc[]
 // tag::config[]
 
 
-Type: link:{javadoc-base-url}/io.helidon.common.configurable/io.helidon.common.configurable.Resource[io.helidon.common.configurable.Resource]
+Type: link:{javadoc-base-url}/io.helidon.common.configurable/io/helidon/common/configurable/Resource.html[io.helidon.common.configurable.Resource]
 
 
 

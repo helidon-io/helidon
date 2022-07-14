@@ -29,7 +29,7 @@ include::{rootdir}/includes/attributes.adoc[]
 Open ID Connect security provider
 
 
-Type: link:{javadoc-base-url}/io.helidon.security.providers.oidc/io.helidon.security.providers.oidc.OidcProvider[io.helidon.security.providers.oidc.OidcProvider]
+Type: link:{javadoc-base-url}/io.helidon.security.providers.oidc/io/helidon/security/providers/oidc/OidcProvider.html[io.helidon.security.providers.oidc.OidcProvider]
 
 
 [source,text]

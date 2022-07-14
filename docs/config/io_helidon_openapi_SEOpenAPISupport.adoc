@@ -27,7 +27,7 @@ include::{rootdir}/includes/attributes.adoc[]
 // tag::config[]
 
 
-Type: link:{javadoc-base-url}/io.helidon.openapi/io.helidon.openapi.SEOpenAPISupport[io.helidon.openapi.SEOpenAPISupport]
+Type: link:{javadoc-base-url}/io.helidon.openapi/io/helidon/openapi/SEOpenAPISupport.html[io.helidon.openapi.SEOpenAPISupport]
 
 
 [source,text]

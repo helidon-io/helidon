@@ -27,7 +27,7 @@ include::{rootdir}/includes/attributes.adoc[]
 // tag::config[]
 
 
-Type: link:{javadoc-base-url}/io.helidon.faulttolerance/io.helidon.faulttolerance.Timeout[io.helidon.faulttolerance.Timeout]
+Type: link:{javadoc-base-url}/io.helidon.faulttolerance/io/helidon/faulttolerance/Timeout.html[io.helidon.faulttolerance.Timeout]
 
 
 

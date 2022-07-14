@@ -27,7 +27,7 @@ include::{rootdir}/includes/attributes.adoc[]
 // tag::config[]
 
 
-Type: link:{javadoc-base-url}/io.helidon.security.providers.httpauth.ConfigUserStore/io.helidon.security.providers.httpauth.ConfigUserStore.ConfigUser[io.helidon.security.providers.httpauth.ConfigUserStore.ConfigUser]
+Type: link:{javadoc-base-url}/io.helidon.security.providers.httpauth.ConfigUserStore/io/helidon/security/providers/httpauth/ConfigUserStore/ConfigUser.html[io.helidon.security.providers.httpauth.ConfigUserStore.ConfigUser]
 
 
 

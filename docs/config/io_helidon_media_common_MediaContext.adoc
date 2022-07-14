@@ -22,10 +22,11 @@ ifndef::rootdir[:rootdir: {docdir}/..]
 :basic-table-intro: The table below lists the configuration keys that configure io.helidon.media.common.MediaContext
 include::{rootdir}/includes/attributes.adoc[]
 
-= io.helidon.media.common.MediaContext
+= MediaContext (media.common) Configuration
 
 // tag::config[]
-link:{javadoc-base-url}/io.helidon.media.common/io.helidon.media.common.MediaContext[io.helidon.media.common.MediaContext]
+
+Type: link:{javadoc-base-url}/io.helidon.media.common/io/helidon/media/common/MediaContext.html[io.helidon.media.common.MediaContext]
 
 
 

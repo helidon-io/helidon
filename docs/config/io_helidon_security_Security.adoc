@@ -29,7 +29,7 @@ include::{rootdir}/includes/attributes.adoc[]
 Configuration of security providers, integration and other security options
 
 
-Type: link:{javadoc-base-url}/io.helidon.security/io.helidon.security.Security[io.helidon.security.Security]
+Type: link:{javadoc-base-url}/io.helidon.security/io/helidon/security/Security.html[io.helidon.security.Security]
 
 
 This is a standalone configuration type, prefix from configuration root: `security`
