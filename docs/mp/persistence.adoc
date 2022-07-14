@@ -310,7 +310,7 @@ javax.sql.DataSource.test.foo=bar
 Here are some general examples illustrating general configuration
 patterns in various common MicroProfile Config-compatible locations.
 
-===== `META-INF/microprofile-config.properties` Classpath Resource
+====== Example: `META-INF/microprofile-config.properties` Classpath Resource
 
 Here is an example of some data source configuration as might be found
 in a `src/main/resources/META-INF/microprofile-config.properties`
@@ -322,7 +322,7 @@ javax.sql.DataSource.yourDataSourceName.somePropertyOfYourConnectionPoolAndDataS
 javax.sql.DataSource.yourDataSourceName.someOtherPropertyOfYourConnectionPoolAndDataSource = anotherValue
 ----
 
-===== System Properties on the Command Line
+====== Example: System Properties on the Command Line
 
 Here is an example using system properties on the command line instead:
 
@@ -334,7 +334,7 @@ java \
   # ...
 ----
 
-===== Environment Variables Set By the Shell
+====== Example: Environment Variables Set By the Shell
 
 Here is an example using environment variables as typed directly into
 a command line shell, taking advantage of MicroProfile Config's
@@ -348,7 +348,7 @@ JAVAX_SQL_DATASOURCE_YOURDATASOURCENAME_SOMEOTHERPROPERTYOFYOURCONNECTIONPOOLAND
 java # ...
 ----
 
-===== Environment Variables Set By the `env` Command
+====== Example: Environment Variables Set By the `env` Command
 
 Here is an example using environment variables as supplied via the
 `env` shell command, thus removing the need for MicroProfile Config's
@@ -361,7 +361,7 @@ env 'javax.sql.DataSource.yourDataSourceName.somePropertyOfYourConnectionPoolAnd
   java # ...
 ----
 
-===== `application.yaml` Classpath Resource
+====== Example: `application.yaml` Classpath Resource
 
 Here is an example of some data source configuration as might be found
 in a `src/main/resources/application.yaml` classpath resource
@@ -378,9 +378,23 @@ javax:
         someOtherPropertyOfYourConnectionPoolAndDataSource: anotherValue
 ----
 
-====== Configuring the Oracle Universal Connection Pool and Oracle JDBC [[DS-Configuration-UCP-Oracle-Example]]
+====== Example: Configuring the Oracle Universal Connection Pool and Oracle JDBC [[DS-Configuration-UCP-Oracle-Example]]
 
-TODO
+This example, in Java properties file format, configures an Oracle
+Universal Connection Pool-managed data source named `main` to connect
+to an Oracle Database on `localhost` port `1521` using the Oracle JDBC
+"thin" driver with a service name of `XE`, a `user` of `scott`, and a
+`password` of `tiger`:
+
+[source,properties]
+----
+# (Why "connectionFactoryClassName"? See
+# https://docs.oracle.com/en/database/oracle/oracle-database/21/jjuar/oracle/ucp/jdbc/PoolDataSourceImpl.html#setConnectionFactoryClassName_java_lang_String_)
+javax.sql.DataSource.main.connectionFactoryClassName = oracle.jdbc.pool.OracleDataSource
+javax.sql.DataSource.main.url = jdbc:oracle:thin://@localhost:1521/XE # see https://docs.oracle.com/en/database/oracle/oracle-database/21/jjdbc/data-sources-and-URLs.html#GUID-EF07727C-50AB-4DCE-8EDC-57F0927FF61A
+javax.sql.DataSource.main.user = scott
+javax.sql.DataSource.main.password = tiger
+----
 
 ==== Usage [[DS-Usage]]
 
