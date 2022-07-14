@@ -110,8 +110,39 @@ import jakarta.inject.Named;
 @Named("test") // <2>
 private DataSource ds; // <3>
 ----
-<1> `@Inject` marks the field as an injection point.
+<1> `@Inject` marks the field as an injection point.  Its behavior is
+    defined by the
+    https://jakarta.ee/specifications/dependency-injection/2.0/[Jakarta
+    Dependency Injection specification].
+
 <2> `@Named("test")` says to use the data source named `test`.
 <3> The injection point has a type of `javax.sql.DataSource` and may
     be named anything you like.
+
+Here is how to define a constructor parameter injection point:
+
+[source,java]
+----
+import javax.sql.DataSource;
+
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
+
+// ...
+
+private final DataSource ds; // <1>
+
+@Inject // <2>
+public SomeConstructor(@Named("test") DataSource ds) { // <3>
+    this.ds = ds; // <4>
+}
+----
+<1> This is the field whose value will be set in the constructor.
+<2> `@Inject` marks the constructor as one containing parameter
+    injection points.  Its behavior is defined by the
+    https://jakarta.ee/specifications/dependency-injection/2.0/[Jakarta
+    Dependency Injection specification].    
+<3> The injection point has a type of `javax.sql.DataSource` and mae
+    be named anything you like.
+<4> The parameter, when injected, will never be `null`.
 
