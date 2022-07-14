@@ -274,7 +274,7 @@ exhaustive.
 All configuration for Helidon MP's named data source integration
 support follows a common pattern:
 
-_objecttype_._datasourcename_._propertyname_=_value_
+> _objecttype_._datasourcename_._propertyname_=_value_
 
 The name of a given configuration property always begins with the
 fully-qualified Java type of the object being configured.  Most
