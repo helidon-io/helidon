@@ -176,11 +176,10 @@ include::{rootdir}/includes/metrics/metrics-config.adoc[tag=config-intro]
 
 == Examples
 
-* xref:example-application-code[]
-* xref:example-configuration[]
+* <<example-application-code,Example Application Code>>
+* <<example-configuration,Example Configuration>>
 
-
-[[example-application-code]]
+[#example-application-code]
 === Example Application Code
 
 ==== Adding Method-level Annotations
