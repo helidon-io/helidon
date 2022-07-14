@@ -28,6 +28,7 @@ include::{rootdir}/includes/mp.adoc[]
 * <<Overview, Overview>>
 * <<DS, Named Data Source Integration>>
 ** <<DS-HikariCP-Setup, Setting Up the Hikari CP Connection Pool>>
+** <<DS-Driver-Setup, Setting Up Your Database Driver>>
 ** <<DS-Usage, Common Usage>>
 
 == Overview [[Overview]]
@@ -85,8 +86,79 @@ dependencies are managed], and then ensure the following
     <scope>runtime</scope> <!--1-->
 </dependency>
 ----
-<1> Note that the scope is `runtime`, indicating that the HikariCP
+<1> Note that the `scope` is `runtime`, indicating that the HikariCP
     integration will be available on the runtime classpath.
+
+==== Setting Up Your Database Driver [[DS-Driver-Setup]]
+
+===== Overview
+
+Regardless of which connection pool you use, ultimately a JDBC
+database driver is responsible for making any connections to a
+relational database.  Drivers are database-product-specific.
+
+Once you have decided upon a relational database product to use, and a
+JDBC driver to use to connect to it,
+xref:../about/managing-dependencies.adoc[ensure your dependencies are
+managed], and then ensure that a `<dependency>` element describing
+your JDBC driver is present as a child element of your project's
+`pom.xml` file's `<dependencies>` element.  A couple of examples
+follow.  They are not exhaustive.
+
+See the
+https://docs.oracle.com/en/java/javase/17/docs/api/java.sql/java/sql/package-summary.html[JDBC
+4.3 Specification] for more information about JDBC.
+
+===== Maven Coordinates (Oracle JDBC) [[DS-Oracle-Driver-Setup]]
+
+To include the Oracle JDBC driver in your Helidon MP application so
+your application can connect to an Oracle database:
+
+* xref:../about/managing-dependencies.adoc[Ensure your dependencies are
+managed]
+
+* Read and understand
+  https://www.oracle.com/database/technologies/maven-central-guide.html[Developer's
+  Guide For Oracle JDBC 21c on Maven Central]
+
+Ensure the following
+`<dependency>` element is present as a child element of your project's
+`pom.xml` file's `<dependencies>` element:
+
+[source,xml]
+----
+<dependency>
+    <!--
+         See
+         https://www.oracle.com/database/technologies/maven-central-guide.html
+         for more details.
+     -->
+    <groupId>com.oracle.database.jdbc</groupId>
+    <!--
+         Why ojdbc*11*? Why not ojdbc*something else*? Because:
+         (a) Helidon targets Java 17
+         (b) Java 17 includes JDBC 4.3, not JDBC 4.2 or any other version
+         (c) ojdbc11 includes JDBC 4.3
+         (d) ojdbc8 only includes JDBC 4.2
+         Please see
+         https://www.oracle.com/database/technologies/maven-central-guide.html
+         for more details.
+    -->
+    <artifactId>ojdbc11</artifactId>
+    <!-- 
+       It's actually best to manage this with Maven's <dependencyManagement> feature.
+       If instead you opt for the explicit version here, always check
+       https://search.maven.org/classic/#search%7Cga%7C1%7Cg%3A%22com.oracle.database.jdbc%22
+       for up-to-date available versions, and see
+       https://www.oracle.com/database/technologies/maven-central-guide.html
+       for extremely important information.
+    -->
+    <!-- <version>21.3.0.0</version> -->
+    <scope>runtime</scope> <!--1-->
+  </dependency>
+----
+<1> Note that the `scope` is `runtime`, indicating that the Oracle
+    JDBC driver will be available on the runtime classpath.
 
 ==== Common Usage [[DS-Usage]]
 
