@@ -53,8 +53,6 @@ include::{rootdir}/includes/dependencies.adoc[]
 
 == Usage
 
-=== Instrumenting Your Service
-
 include::{rootdir}/includes/metrics/metrics-shared.adoc[tag=usage-body]
 
 === Enabling the `MetricsSupport` REST Service
@@ -73,42 +71,6 @@ Routing.builder()
         .build();
 ----
 
-== Accessing Metrics Endpoint
-
-Access metrics data via the `/metrics` endpoint. Two reporting formats
-are supported. The HTTP Accept header sent by the client determines
-the reporting format:
-
-1. JSON format - used when the HTTP Accept header matches `application/json`
-2. Prometheus text format - used when the HTTP Accept header is `text/plain`
-   or otherwise does not match `application/json`
-
-[source,bash]
-.Example Reporting: Prometheus format
-----
-curl -s -H 'Accept: text/plain' -X GET http://localhost:8080/metrics/
-# TYPE base:classloader_total_loaded_class_count counter
-# HELP base:classloader_total_loaded_class_count Displays the total number of classes that have been loaded since the Java virtual machine has started execution.
-base:classloader_total_loaded_class_count 3157
-----
-
-[source,bash]
-.Example Reporting: JSON format
-----
-curl -s -H 'Accept: application/json' -X GET http://localhost:8080/metrics/ | json_pp
-{
-   "base" : {
-      "memory.maxHeap" : 3817865216,
-      "memory.committedHeap" : 335544320,
-    }
-}
-----
-
-In addition to your application metrics the reports contain other
-metrics of interest such as system and VM information.
-
-For full details see the link:{microprofile-metrics-spec-url}[MicroProfile Metrics] specification.
-The metrics component in Helidon SE is the core for the Helidon MP implementation of the MicroProfile Metrics specification.
 
 == API
 To work with Helidon Metrics in your code, follow these steps:
@@ -160,6 +122,10 @@ include::{rootdir}/includes/metrics/metrics-shared.adoc[tag=metric-registry-api]
 include::{rootdir}/includes/metrics/metrics-config.adoc[tag=config-intro]
 
 == Examples
+
+include::{rootdir}/includes/metrics/metrics-shared.adoc[tag=example-apps]
+
+The rest of this section shows how to add a metric to your code and how to configure the Helidon metrics subsystem.
 
 === Example Application Code
 
