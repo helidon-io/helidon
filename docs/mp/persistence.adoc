@@ -237,6 +237,9 @@ Ensure the following
 
 ==== Common Usage [[DS-Usage]]
 
+You use Helidon MP's named data source integration support in the same
+way, regardless of your choice of database driver and connection pool.
+
 To use Helidon MP's named data source integration support in your
 application, create a
 https://docs.oracle.com/en/java/javase/17/docs/api/java.sql/javax/sql/DataSource.html[`DataSource`]-typed
