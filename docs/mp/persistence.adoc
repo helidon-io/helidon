@@ -247,7 +247,9 @@ Ensure the following
 
 To configure Helidon MP's named data source integration support:
 
-1. Decide where the configuration will reside.
+1. Decide where the configuration will reside, as permitted by
+   xref:config/introduction.adoc[Helidon MP's MicroProfile Config
+   implementation]
 
 2. Create configuration suitable for the combination of your selected
    connection pool and database driver in that location.
@@ -307,8 +309,8 @@ javax.sql.DataSource.test.foo=bar
 
 ===== Examples [[DS-Configuration-Examples]]
 
-Here are some general examples illustrating general configuration
-patterns in various common MicroProfile Config-compatible locations.
+Here are some examples illustrating general configuration patterns in
+various common MicroProfile Config-compatible locations.
 
 ====== Example: `META-INF/microprofile-config.properties` Classpath Resource
 
@@ -364,9 +366,7 @@ env 'javax.sql.DataSource.yourDataSourceName.somePropertyOfYourConnectionPoolAnd
 ====== Example: `application.yaml` Classpath Resource
 
 Here is an example of some data source configuration as might be found
-in a `src/main/resources/application.yaml` classpath resource
-(assuming the resource is registered as a MicroProfile Config
-configuration source):
+in a `src/main/resources/application.yaml` classpath resource:
 
 [source,yaml]
 ----
@@ -382,8 +382,8 @@ javax:
 
 This example, in Java properties file format, configures an Oracle
 Universal Connection Pool-managed data source named `main` to connect
-to an Oracle Database on `localhost` port `1521` using the Oracle JDBC
-"thin" driver with a service name of `XE`, a `user` of `scott`, and a
+to an Oracle Database on `localhost` port `1521`, using the Oracle JDBC
+"thin" driver, with a service name of `XE`, a `user` of `scott`, and a
 `password` of `tiger`:
 
 [source,properties]
@@ -395,6 +395,17 @@ javax.sql.DataSource.main.url = jdbc:oracle:thin://@localhost:1521/XE # see http
 javax.sql.DataSource.main.user = scott
 javax.sql.DataSource.main.password = tiger
 ----
+
+In general, the properties that can be set on the Oracle
+Universal Connection Pool can be inferred from the "setter" methods
+found in
+https://docs.oracle.com/en/database/oracle/oracle-database/21/jjuar/oracle/ucp/jdbc/PoolDataSourceImpl.html[the
+javadoc for the `PoolDataSourceImpl` class].
+
+In general, the properties that can be set on the Oracle JDBC driver
+can be inferred from the "setter" methods found in
+https://docs.oracle.com/en/database/oracle/oracle-database/21/jajdb/oracle/jdbc/pool/OracleDataSource.html[the
+javadoc for the `OracleDataSource` class].
 
 ====== Example: Configuring the HikariCP Connection Pool and H2 [[DS-Configuration-HikariCP-H2-Example]]
 
@@ -409,11 +420,20 @@ password:
 # https://github.com/brettwooldridge/HikariCP#essentials
 javax.sql.DataSource.test.dataSourceClassName = org.h2.jdbcx.JdbcDataSource
 # Why "dataSource."? See
-# https://github.com/brettwooldridge/HikariCP/blob/HikariCP-5.0.0/src/main/java/com/zaxxer/hikari/util/PropertyElf.java#L47-L49
+# https://github.com/brettwooldridge/HikariCP/blob/HikariCP-5.0.1/src/main/java/com/zaxxer/hikari/util/PropertyElf.java#L47-L49
 javax.sql.DataSource.test.dataSource.url = jdbc:h2:mem:unit-testing;DB_CLOSE_DELAY=-1 # see http://www.h2database.com/html/features.html#database_url
 javax.sql.DataSource.test.dataSource.user = sa
 javax.sql.DataSource.test.dataSource.password =
 ----
+
+HikariCP's configuration properties are described
+https://github.com/brettwooldridge/HikariCP#gear-configuration-knobs-baby[on
+its Github repository].
+
+In general, the properties that can be set on the H2 JDBC driver can
+be inferred from the "setter" methods found in
+http://www.h2database.com/javadoc/org/h2/jdbcx/JdbcDataSource.html[the
+javadoc for the `JdbcxDataSource` class].
 
 ==== Usage [[DS-Usage]]
 
