@@ -25,6 +25,11 @@
 :microprofile-bundle: false
 :rootdir: {docdir}/../..
 
+== ToC
+
+- <<Overview, Overview>>
+- <<NACK Strategy, NACK Strategy>>
+
 include::{rootdir}/includes/mp.adoc[]
 include::{rootdir}/includes/dependencies.adoc[]
 
@@ -36,8 +41,10 @@ include::{rootdir}/includes/dependencies.adoc[]
 </dependency>
 ----
 
-== Reactive Kafka Connector
+== Overview
 Connecting streams to Kafka with Reactive Messaging couldn't be easier.
+There is a standard Kafka client behind the scenes, all the link:{kafka-client-base-url}#producerconfigs[producer] and link:{kafka-client-base-url}#consumerconfigs[consumer] configs can
+be propagated through messaging config.
 
 [source,yaml]
 .Example of connector config:
@@ -47,7 +54,7 @@ mp.messaging:
   incoming.from-kafka:
     connector: helidon-kafka
     topic: messaging-test-topic-1
-    auto.offset.reset: latest
+    auto.offset.reset: latest # <1>
     enable.auto.commit: true
     group.id: example-group-id
 
@@ -57,12 +64,15 @@ mp.messaging:
 
   connector:
     helidon-kafka:
-      bootstrap.servers: localhost:9092
+      bootstrap.servers: localhost:9092 # <2>
       key.serializer: org.apache.kafka.common.serialization.StringSerializer
       value.serializer: org.apache.kafka.common.serialization.StringSerializer
       key.deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value.deserializer: org.apache.kafka.common.serialization.StringDeserializer
 ----
+
+<1> Kafka client consumer's property auto.offset.reset configuration for `from-kafka` channel only
+<2> Kafka client's property link:{kafka-client-base-url}#consumerconfigs_bootstrap.servers[bootstrap.servers] configuration for all channels using the connector
 
 [source,java]
 .Example of consuming from Kafka:
@@ -81,6 +91,69 @@ public void consumeKafka(String msg) {
 public PublisherBuilder<String> produceToKafka() {
     return ReactiveStreams.of("test1", "test2");
 }
+----
+
+== NACK Strategy
+
+|===
+| Strategy | Description
+| Kill channel | Nacked message sends error signal and causes channel failure so Messaging Health check can report it as DOWN
+| DLQ | Nacked messages are sent to specified dead-letter-queue
+| Log only | Nacked message is logged and channel continues normally
+|===
+
+=== Kill channel
+Default NACK strategy for Kafka connector. When
+
+=== Dead Letter Queue
+
+Sends nacked messages to error topic, link:https://en.wikipedia.org/wiki/Dead_letter_queue[DLQ] is well known pattern for dealing with unprocessed messages.
+
+Helidon can derive connection settings for DLQ topic automatically if the error
+topic is present on the same Kafka cluster.
+Serializers are derived from deserializers used for consumption
+`org.apache.kafka.common.serialization.StringDeserializer` >
+`org.apache.kafka.common.serialization.StringSerializer`.
+In this ideal case only the name of error topic is needed.
+
+[source,yaml]
+.Example of derived DLQ config:
+----
+mp.messaging:
+  incoming:
+    my-channel:
+      nack-dlq: dql_topic_name
+----
+
+In case custom connection is needed, all the usual producer configuration is possible
+under the `nack-dlq` key.
+
+[source,yaml]
+.Example of custom DLQ config:
+----
+mp.messaging:
+  incoming:
+    my-channel:
+      nack-dlq:
+        topic: dql_topic_name
+        bootstrap.servers: localhost:9092
+        key.serializer: org.apache.kafka.common.serialization.StringSerializer
+        value.serializer: org.apache.kafka.common.serialization.StringSerializer
+
+----
+
+=== Log only
+
+Only logs nacked messages and throws them away, offset is committed and channel
+continues normally consuming subsequent messages.
+
+[source,yaml]
+.Example of log only enabled nack strategy
+----
+mp.messaging:
+  incoming:
+    my-channel:
+      nack-log-only: true
 ----
 
 Don't forget to check out the examples with pre-configured Kafka docker image, for easy testing:

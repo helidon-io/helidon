@@ -203,6 +203,7 @@ endif::[]
 :eclipselink-doc-base-url: https://www.eclipse.org/eclipselink/documentation/{version-lib-exclipselink}
 :jib-base-url: https://github.com/GoogleContainerTools/jib/blob/v{version-plugin-jib}-maven/jib-maven-plugin
 :jedis-base-url: {javadoc-io-base-url}/redis.clients/jedis/{version-lib-jedis}/redis/clients
+:kafka-client-base-url: https://kafka.apache.org/28/documentation.html
 
 :oci-sdk-config-url: https://docs.oracle.com/en-us/iaas/Content/API/Concepts/sdkconfig.htm#SDK_and_CLI_Configuration_File
 :oci-database-url: https://docs.oracle.com/en-us/iaas/Content/Database/home.htm
