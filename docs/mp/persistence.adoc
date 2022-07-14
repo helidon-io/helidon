@@ -31,8 +31,8 @@ include::{rootdir}/includes/mp.adoc[]
 *** <<DS-HikariCP-Project-Setup, Setting Up the Hikari CP Connection Pool>>
 *** <<DS-UCP-Project-Setup, Setting Up the Oracle Universal Connection Pool>>
 ** <<DS-Driver-Project-Setup, Setting Up a Database Driver>>
-*** <<DS-Oracle-Driver-Project-Setup, Setting Up Oracle JDBC>>
 *** <<DS-H2-Driver-Project-Setup, Setting Up H2>>
+*** <<DS-Oracle-Driver-Project-Setup, Setting Up Oracle JDBC>>
 ** <<DS-Usage, Usage>>
 
 == Overview [[Overview]]
@@ -154,6 +154,40 @@ See the
 https://docs.oracle.com/en/java/javase/17/docs/api/java.sql/java/sql/package-summary.html[JDBC
 4.3 Specification] for more information about JDBC.
 
+===== Setting Up H2 [[DS-H2-Driver-Project-Setup]]
+
+====== Maven Coordinates (H2) [[DS-H2-Driver-Maven-Coordinates]]
+
+To include the http://www.h2database.com/html/main.html[H2 JDBC
+driver] in your Helidon MP application so your application can connect
+to an H2 database (whether in-memory or persistent):
+
+* xref:../about/managing-dependencies.adoc[Ensure your dependencies are
+managed]
+
+Ensure the following
+`<dependency>` element is present as a child element of your project's
+`pom.xml` file's `<dependencies>` element:
+
+[source,xml]
+----
+<dependency>
+    <groupId>com.h2database</groupId>
+    <artifactId>h2</artifactId>
+    <!--
+         It's best to manage this with Maven's <dependencyManagement> feature,
+         which is why the <version> element is commented out below.
+         If nevertheless you opt for the explicit version here, check
+         https://search.maven.org/search?q=g:com.h2database%20a:h2
+         for up-to-date available versions.
+    -->
+    <!-- <version>2.1.212</version> -->
+    <scope>runtime</scope> <!--1-->
+</dependency>
+----
+<1> Note that the `scope` is `runtime`, indicating that the H2
+    JDBC driver will be available on the runtime classpath.
+
 ===== Setting Up Oracle JDBC [[DS-Oracle-Driver-Project-Setup]]
 
 ====== Maven Coordinates (Oracle JDBC) [[DS-Oracle-Driver-Maven-Coordinates]]
@@ -205,40 +239,6 @@ Ensure the following
 </dependency>
 ----
 <1> Note that the `scope` is `runtime`, indicating that the Oracle
-    JDBC driver will be available on the runtime classpath.
-
-===== Setting Up H2 [[DS-H2-Driver-Project-Setup]]
-
-====== Maven Coordinates (H2) [[DS-H2-Driver-Maven-Coordinates]]
-
-To include the http://www.h2database.com/html/main.html[H2 JDBC
-driver] in your Helidon MP application so your application can connect
-to an H2 database (whether in-memory or persistent):
-
-* xref:../about/managing-dependencies.adoc[Ensure your dependencies are
-managed]
-
-Ensure the following
-`<dependency>` element is present as a child element of your project's
-`pom.xml` file's `<dependencies>` element:
-
-[source,xml]
-----
-<dependency>
-    <groupId>com.h2database</groupId>
-    <artifactId>h2</artifactId>
-    <!--
-         It's best to manage this with Maven's <dependencyManagement> feature,
-         which is why the <version> element is commented out below.
-         If nevertheless you opt for the explicit version here, check
-         https://search.maven.org/search?q=g:com.h2database%20a:h2
-         for up-to-date available versions.
-    -->
-    <!-- <version>2.1.212</version> -->
-    <scope>runtime</scope> <!--1-->
-</dependency>
-----
-<1> Note that the `scope` is `runtime`, indicating that the H2
     JDBC driver will be available on the runtime classpath.
 
 ==== Usage [[DS-Usage]]
