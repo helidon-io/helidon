@@ -271,19 +271,35 @@ exhaustive.
 
 ===== Configuration Prefixes
 
-All configuration for Helidon MP's named data source integration
-support follows a common pattern:
+All MicroProfile Config-compatible property names for Helidon MP's
+named data source integration support follow a common pattern:
 
-> _objecttype_._datasourcename_._propertyname_=_value_
+> _objecttype_._datasourcename_._propertyname_
 
-The name of a given configuration property always begins with the
-fully-qualified Java type of the object being configured.  Most
-configuration for Helidon MP's named data source integration concerns
-the behavior of `javax.sql.DataSource` objects, so most configuration
-property names begin with `javax.sql.DataSource.`.
+* The name of a given configuration property always begins with the
+  fully-qualified Java class name of the object being configured.
+  Most configuration for Helidon MP's named data source integration
+  concerns the behavior of `javax.sql.DataSource` objects, so most
+  configuration property names begin with `javax.sql.DataSource`.
 
-The name of the data source being configured comes next.  It cannot
-contain a period (`.`).
+* A period (`.`) separates the _objecttype_ portion from the rest of
+  the property name.
+
+* The name of the data source being configured comes next.  It cannot
+  contain a period (`.`).
+
+* A period (`.`) separates the _datasourcename_ portion from the rest
+  of the property name.
+
+* The connection pool- or driver-specific property name comes next.
+
+As an example, configuration to set an imaginary `foo` property on the
+`test` data source to `bar` looks like this:
+
+[source]
+----
+javax.sql.DataSource.test.foo=bar
+----
 
 ==== Usage [[DS-Usage]]
 
