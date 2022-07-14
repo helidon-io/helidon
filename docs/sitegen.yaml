@@ -171,10 +171,9 @@ backend:
                   value: "av_timer"
                 sources:
                   - "metrics.adoc"
-                  - "metrics-capable-components.adoc"
                   - "micrometer.adoc"
-                  - "prometheus.adoc"
                   - "prometheus-exemplar-support.adoc"
+                  - "metrics-capable-components.adoc"
               - type: "PAGE"
                 title: "OpenAPI"
                 source: "openapi.adoc"

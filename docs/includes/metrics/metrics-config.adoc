@@ -43,8 +43,10 @@ The rest of this section illustrates some of the most common scenarios:
 * <<config-disable,Disable metrics entirely.>>
 * <<config-selective,Selectively enable or disable metrics by metric registry type and, within type, by name.>>
 * <<config-kpi,Choose whether to collect extended key performance indicator metrics.>>
+ifdef::mp-flavor[]
 * <<config-rest-request,Control `REST.request` metrics collection.>>
 
+endif::[]
 [[config-disable]]
 ==== Disable Metrics Subsystem
 
@@ -147,10 +149,10 @@ metrics:
 endif::[]
 
 [[config-rest-request]]
+ifdef::mp-flavor[]
 ==== Enable `REST.request` metrics
 
 .Controlling REST request metrics
-ifdef::mp-flavor[]
 [source,properties]
 ----
 metrics.rest-request-enabled=true

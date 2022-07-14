@@ -47,7 +47,7 @@ link:https://www.merriam-webster.com/dictionary/exemplar[_exemplar_] - one that 
 -- Merriam-Webster Dictionary
 --
 
-In the context of metrics, an _exemplar_ for a given metric is a specific trace which, in some sense, made a typical contribution to the metric's value. For example, an exemplar for a `SimpleTimer` might be a trace in which the duration it contributed to the value of a `SimpleTimer` is near the mean of the durations over all traces.
+In the context of metrics, an _exemplar_ for a given metric is a specific sample which, in some sense, made a typical contribution to the metric's value. For example, an exemplar for a `SimpleTimer` might be a sample in which the duration it contributed to the value of a `SimpleTimer` is near the mean of the durations over all samples. The metrics output identifies the exemplar sample using the trace ID of the trace which triggered that sample.
 
 include::{rootdir}/includes/dependencies.adoc[]
 

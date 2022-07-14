@@ -135,12 +135,15 @@ meter registries.
 
 // tag::accessing-endpoint-intro[]
 === Accessing the Helidon Micrometer Endpoint
-Helidon automatically creates a REST endpoint which clients can access to retrieve Micrometer metrics, by default at the `/micrometer` endpoint.
+
+ifdef::mp-flavor[Helidon MP Micrometer integration automatically creates]
+ifdef::se-flavor[Your application can easily have Helidon create]
+a REST endpoint which clients can access to retrieve Micrometer metrics, by default at the `/micrometer` endpoint.
 
 ifdef::se-flavor[]
-Within Helidon, each type of meter registry is paired with code that examines the incoming HTTP request and decides
+Within Helidon, each type of meter registry is paired with some code that examines the incoming HTTP request to `/micrometer` and decides
 whether the request matches up with the associated meter registry. The first pairing that accepts the request
-returns the response.
+returns the response. You will need to take advantage of this if your application uses additional meter registries beyond what Helidon automatically provides _and_ you want those meter registries reflected in the output from the `/micrometer` REST endpoint.
 endif::[]
 // end::accessing-endpoint-intro[]
 

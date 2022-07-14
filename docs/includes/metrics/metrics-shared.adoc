@@ -1,0 +1,124 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+// tag::overview[]
+
+ifndef::rootdir[:rootdir: {docdir}/../..]
+ifndef::flavor-lc[:flavor-lc: se]
+:description: Helidon metrics
+:keywords: helidon, metrics
+:writing-code-content: code which explicitly invokes the metrics API to register metrics, retrieve previously-registered metrics, and update metric values.
+
+* a unified way for
+ifdef::mp-flavor[MicroProfile]
+ifdef::se-flavor[Helidon]
+servers to export monitoring data--telemetry--to management agents, and
+* a unified Java API which all application programmers can use to register and update metrics to expose telemetry data from their services.
+ifdef::mp-flavor[]
+* support for metrics-related annotations.
+
+endif::[]
+Learn more about the https://github.com/eclipse/microprofile-metrics/releases/tag/{version-lib-microprofile-metrics-api}[MicroProfile Metrics specification].
+
+// end::overview[]
+
+// tag::usage-body[]
+You add metrics to your service
+ifdef::se-flavor[]
+by writing {writing-code-content}
+endif::[]
+ifdef::mp-flavor[]
+in these ways:
+
+* Annotate bean methods--typically your REST resource endpoint methods (the Java code that receives incoming REST requests); Helidon automatically registers these metrics and updates them when the annotated methods are invoked via CDI.
+* Write {writing-code-content}
+* Configure some simple `REST.request` metrics which Helidon automatically registers and updates for all REST resource endpoints.
+endif::[]
+
+Later sections of this document describe how to do
+ifdef::mp-flavor[each of these.]
+ifdef::se-flavor[this.]
+
+=== Categorizing Types of Metrics
+Helidon distinguishes among three general _types_, or scopes, of metrics, as described in the MP metrics specification.
+
+.Types (scopes) of metrics
+[%autowidth]
+|====
+| Type/scope | Typical Usage
+
+| base | Mandated by the MP metrics specification, such as OS or Java runtime measurements (available heap, disk space, etc.).
+| vendor | Implemented by vendors, including the `REST.request` metrics and other key performance indicator measurements (described in later sections).
+| application | Declared via annotations or programmatically registered by your service code.
+|====
+
+When you add metrics annotations to your service code, Helidon registers the resulting metrics as type `application`.
+
+=== Metric Registries
+A _metric registry_ collects registered metrics of a given type. Helidon supports three registries, one for each of the three metrics types.
+
+When you add code to your service to create a metric programmatically, the code first locates the appropriate registry and then the registers the metric with that registry.
+
+=== Retrieving Metrics Reports from your Service
+When you add the metrics dependency to your project, Helidon automatically provides a built-in REST endpoint `/metrics` which responds with a report of the registered metrics and their values.
+
+Clients can request a particular output format.
+
+.Formats for `/metrics` output
+[%autowidth]
+|====
+| Format | Requested by
+
+| OpenMetrics (Prometheus) | default
+| JSON | Header `Accept: application/json`
+|====
+
+Clients can also limit the report by appending the metric type to the path:
+
+* `/metrics/base`
+* `/metrics/vendor`
+* `/metrics/application`
+
+Further, clients can narrow down to a specific metric name by adding the name as a subpath such as `/metrics/application/myCount`.
+
+// end::usage-body[]
+
+// tag::metric-registry-api[]
+=== The `MetricRegistry` API
+To register or look up metrics programmatically, your service code uses one of the three  link:{microprofile-metrics-javadoc-url}/org/eclipse/microprofile/metrics/MetricRegistry.html[`MetricRegistry`] instances (base, vendor, and application) which Helidon furnishes automatically.
+
+ifdef::mp-flavor[]
+To get a `MetricRegistry` reference
+
+* `@Inject` the metric registry you want, perhaps also using the link:{microprofile-metrics-javadoc-annotation-url}/RegistryType.html[`@RegistryType`] annotation to select the registry type, or
+* Get a Helidon link:{metrics-javadoc-base-url}/RegistryFactory.html[`RegistryFactory`]; either
++
+--
+** `@Inject` `RegistryFactory` or
+** Invoke one of the static `getInstance` methods on `RegistryFactory`
+--
++
+Then invoke `getRegistry` on the `RegistryFactory` instance.
+endif::[]
+ifdef::se-flavor[]
+To get a `MetricRegistry` reference, first get a Helidon link:{metrics-javadoc-base-url}/RegistryFactory.html[`RegistryFactory`].
+Then invoke `getRegistry` on the `RegistryFactory` instance.
+endif::[]
+
+The `MetricRegistry` allows your code to register new metrics, look-up previously-registered metrics, and remove metrics.
+// end::metric-registry-api[]
