@@ -82,7 +82,7 @@ dependencies are managed], and then ensure the following
 <dependency>
     <groupId>io.helidon.integrations.cdi</groupId>
     <artifactId>helidon-integrations-cdi-datasource-hikaricp</artifactId>
-    <scope>runtime</scope> <!-- 1 -->
+    <scope>runtime</scope> <!--1-->
 </dependency>
 ----
 <1> Note that the scope is `runtime`, indicating that the HikariCP
