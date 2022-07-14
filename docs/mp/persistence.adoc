@@ -27,9 +27,10 @@ include::{rootdir}/includes/mp.adoc[]
 
 * <<Overview, Overview>>
 * <<DS, Named Data Source Integration>>
-** <<DS-HikariCP-Project-Setup, Setting Up the Hikari CP Connection Pool>>
-** <<DS-UCP-Project-Setup, Setting Up the Oracle Universal Connection Pool>>
-** <<DS-Driver-Project-Setup, Setting Up Your Database Driver>>
+** <<DS-CP-Project-Setup, Setting Up a Connection Pool>>
+*** <<DS-HikariCP-Project-Setup, Setting Up the Hikari CP Connection Pool>>
+*** <<DS-UCP-Project-Setup, Setting Up the Oracle Universal Connection Pool>>
+** <<DS-Driver-Project-Setup, Setting Up a Database Driver>>
 ** <<DS-Usage, Common Usage>>
 
 == Overview [[Overview]]
@@ -69,9 +70,22 @@ How you set up Helidon MP's named data source integration differs
 depending on which of these two connection pools you use.  Each setup
 is described below.
 
-==== Setting Up the HikariCP Connection Pool [[DS-HikariCP-Project-Setup]]
+==== Setting Up a Connection Pool [[DS-CP-Project-Setup]]
 
-===== Maven Coordinates [[DS-HikariCP-Maven-Coordinates]]
+Helidon MP's named data source integration requires a connection pool.
+Helidon MP comes with support for two connection pools:
+
+1. https://github.com/brettwooldridge/HikariCP[HikariCP]
+
+2. https://docs.oracle.com/en/database/oracle/oracle-database/21/jjucp/index.html[Oracle
+   Universal Connection Pool]
+
+You can choose to use either, but not both.  Details concerning each
+connection pool's setup are described below.
+
+===== Setting Up the HikariCP Connection Pool [[DS-HikariCP-Project-Setup]]
+
+====== Maven Coordinates [[DS-HikariCP-Maven-Coordinates]]
 
 To include the HikariCP connection pool in your Helidon MP
 application, xref:../about/managing-dependencies.adoc[ensure your
@@ -90,9 +104,9 @@ dependencies are managed], and then ensure the following
 <1> Note that the `scope` is `runtime`, indicating that the HikariCP
     integration will be available on the runtime classpath.
 
-==== Setting up the Oracle Universal Connection Pool [[DS-UCP-Project-Setup]]
+===== Setting up the Oracle Universal Connection Pool [[DS-UCP-Project-Setup]]
 
-===== Maven Coordinates [[DS-UCP-Maven-Coordinates]]
+====== Maven Coordinates [[DS-UCP-Maven-Coordinates]]
 
 To include the Oracle Universal Connection Pool in your Helidon MP
 application, xref:../about/managing-dependencies.adoc[ensure your
@@ -112,7 +126,7 @@ dependencies are managed], and then ensure the following
     Universal Connection Pool integration will be available on the
     runtime classpath.
 
-==== Setting Up Your Database Driver [[DS-Driver-Project-Setup]]
+==== Setting Up a Database Driver [[DS-Driver-Project-Setup]]
 
 ===== Overview
 
