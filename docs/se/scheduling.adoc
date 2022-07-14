@@ -26,7 +26,7 @@
 :rootdir: {docdir}/..
 
 
-== ToC
+== Contents
 
 - <<Overview, Overview>>
 - <<Maven Coordinates, Maven Coordinates>>
@@ -51,10 +51,9 @@ include::{rootdir}/includes/dependencies.adoc[]
 ----
 
 == Usage
-For scheduling periodic tasks it is possible to choose fixed rate setup or Cron expression.
+For scheduling periodic tasks, it is possible to choose a fixed rate or a Cron expression.
 
 === Fixed rate
-For simple fixed rate invocation use .
 
 [source,java]
 .Scheduling with fixed rate use `Scheduling.fixedRateBuilder()` builder.
@@ -81,11 +80,11 @@ Scheduling.fixedRateBuilder()
 
 === Cron expression
 
-For more complicated interval definition, cron expression can be leveraged with
+For more complicated interval definition, Cron expression can be leveraged with
 `Scheduling.cronBuilder()` builder.
 
 [source,java]
-.Scheduling with cron expression
+.Scheduling with Cron expression
 ----
 Scheduling.cronBuilder()
     .expression("0 15 8 ? * *")
@@ -101,7 +100,7 @@ Configuration properties are added to `application.yaml` file:
 [width="90%",cols="3,10",frame="topbot",options="header"]
 |====
 | Property              | Description
-| cron                  | String containing cron setup
+| cron                  | String containing Cron setup
 | concurrent            | Boolean, equivalent `concurrentExecution` property of `@Scheduled`. Default `true`.
 |====
 
@@ -131,7 +130,7 @@ Scheduling.fixedRateBuilder()
 ----
 
 Metadata like human-readable interval description or configured values are available through
-FixedRateInvocation provided as task parameter.
+`FixedRateInvocation` provided as task parameter.
 
 
 [source,java]
