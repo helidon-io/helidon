@@ -26,7 +26,7 @@ include::{rootdir}/includes/mp.adoc[]
 == Contents
 
 * <<Overview, Overview>>
-* <<DS, Named Data Source-Integration>>
+* <<DS, Named Data Source Integration>>
 ** <<DS-HikariCP-Setup, Setting Up the Hikari CP Connection Pool>>
 ** <<DS-Usage, Common Usage>>
 
@@ -80,18 +80,38 @@ dependencies are managed], and then ensure the following
 [source,xml]
 ----
 <dependency>
-  <groupId>io.helidon.integrations.cdi</groupId>
-  <artifactId>helidon-integrations-cdi-datasource-hikaricp</artifactId>
-  <!-- 
-       It's actually best to manage this with Maven's <dependencyManagement> feature.
-       If instead you opt for the explicit version here, always check
-       https://search.maven.org/classic/#search%7Cga%7C1%7Chelidon for up-to-date
-       available versions.
-  -->
-  <!-- <version>3.0.0</version> -->
-  <scope>runtime</scope>
+    <groupId>io.helidon.integrations.cdi</groupId>
+    <artifactId>helidon-integrations-cdi-datasource-hikaricp</artifactId>
+    <scope>runtime</scope>
 </dependency>
 ----
 
 ==== Common Usage [[DS-Usage]]
+
+To use Helidon MP's named data source integration support in your
+application, create a
+https://docs.oracle.com/en/java/javase/17/docs/api/java.sql/javax/sql/DataSource.html[`DataSource`]-typed
+injection point somewhere in your application,
+https://jakarta.ee/specifications/dependency-injection/2.0/apidocs/jakarta/inject/named[annotated
+with the name] of the data source you wish to use.
+
+Here is how to define a field-backed injection point:
+
+[source,java]
+----
+import javax.sql.DataSource;
+
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
+
+// ...
+
+@Inject // <1>
+@Named("test") // <2>
+private DataSource ds; // <3>
+----
+<1> `@Inject` marks the field as an injection point.
+<2> `@Named("test")` says to use the data source named `test`.
+<3> The injection point has a type of `javax.sql.DataSource` and may
+    be named anything you like.
 
