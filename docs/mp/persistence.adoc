@@ -47,9 +47,8 @@ used together or separately:
 * https://jakarta.ee/specifications/transactions/2.0/[Jakarta Transactions] (JTA)
 * https://jakarta.ee/specifications/persistence/3.0/[Jakarta Persistence] (JPA)
 
-The integrations supported for each technology, their
-<<DS-Setup,setup>>, their <<DS-Configuration,configuration>>, and
-their <<DS-Usage,usage>> are described below.
+The integrations supported for each technology, their setup, their
+configuration, and their usage are described below.
 
 == Named Data Source Integration [[DS]]
 
