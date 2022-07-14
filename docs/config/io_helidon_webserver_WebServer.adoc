@@ -29,7 +29,7 @@ include::{rootdir}/includes/attributes.adoc[]
 Configuration of the HTTP server.
 
 
-Type: link:{javadoc-base-url}/io.helidon.webserver/io.helidon.webserver.WebServer[io.helidon.webserver.WebServer]
+Type: link:{javadoc-base-url}/io.helidon.webserver/io/helidon/webserver/WebServer.html[io.helidon.webserver.WebServer]
 
 
 This is a standalone configuration type, prefix from configuration root: `server`

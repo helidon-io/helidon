@@ -27,7 +27,7 @@ include::{rootdir}/includes/attributes.adoc[]
 // tag::config[]
 
 
-Type: link:{javadoc-base-url}/io.helidon.metrics.api/io.helidon.metrics.api.MetricsSettings[io.helidon.metrics.api.MetricsSettings]
+Type: link:{javadoc-base-url}/io.helidon.metrics.api/io/helidon/metrics/api/MetricsSettings.html[io.helidon.metrics.api.MetricsSettings]
 
 
 [source,text]

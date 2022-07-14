@@ -29,7 +29,7 @@ include::{rootdir}/includes/attributes.adoc[]
 OpenAPI support configuration
 
 
-Type: link:{javadoc-base-url}/io.helidon.openapi/io.helidon.openapi.OpenAPISupport[io.helidon.openapi.OpenAPISupport]
+Type: link:{javadoc-base-url}/io.helidon.openapi/io/helidon/openapi/OpenAPISupport.html[io.helidon.openapi.OpenAPISupport]
 
 
 
