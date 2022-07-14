@@ -111,7 +111,7 @@
         <version.lib.microprofile-jwt>2.0</version.lib.microprofile-jwt>
         <version.lib.microprofile-metrics-api>4.0</version.lib.microprofile-metrics-api>
         <version.lib.microprofile-openapi-api>3.0</version.lib.microprofile-openapi-api>
-        <version.lib.microprofile-reactive-messaging-api>3.0-RC2</version.lib.microprofile-reactive-messaging-api>
+        <version.lib.microprofile-reactive-messaging-api>3.0-RC3</version.lib.microprofile-reactive-messaging-api>
         <version.lib.microprofile-reactive-streams-operators-api>3.0-RC1</version.lib.microprofile-reactive-streams-operators-api>
         <version.lib.microprofile-reactive-streams-operators-core>3.0-RC1</version.lib.microprofile-reactive-streams-operators-core>
         <version.lib.microprofile-rest-client>3.0</version.lib.microprofile-rest-client>
