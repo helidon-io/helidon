@@ -139,6 +139,7 @@ Learn how to use JBatch with Helidon MP.
 --
 Learn how to improve performance of your application.
 --
+====
 
 == Build and Deploy
 
@@ -185,7 +186,6 @@ Learn how to use Jib to create a container image without Docker.
 .Deploying to OKE
 [link=../../guides/oke.adoc]
 --
-Learn how to deploy your application to Oracle Cloud Infrastructure Container
- Engine for Kubernetes (OKE).
+Learn how to deploy your application to Oracle Cloud Infrastructure Container Engine for Kubernetes (OKE).
 --
 ====
