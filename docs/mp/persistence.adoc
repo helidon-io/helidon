@@ -34,6 +34,7 @@ include::{rootdir}/includes/mp.adoc[]
 *** <<DS-H2-Driver-Project-Setup, Setting Up H2>>
 *** <<DS-Oracle-Driver-Project-Setup, Setting Up Oracle JDBC>>
 ** <<DS-Configuration, Configuration>>
+*** <<DS-Configuration-Examples, Examples>>
 ** <<DS-Usage, Usage>>
 
 == Overview [[Overview]]
