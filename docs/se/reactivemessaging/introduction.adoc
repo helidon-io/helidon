@@ -22,9 +22,11 @@
 :toc-placement: preamble
 :description: Reactive Messaging support in Helidon SE
 :keywords: helidon, se, messaging
-:h1Prefix: SE
 :feature-name: Reactive Messaging
-:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/se.adoc[]
+include::{rootdir}/includes/dependencies.adoc[]
 
 == ToC
 
