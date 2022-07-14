@@ -85,7 +85,7 @@ connection pool's setup are described below.
 
 ===== Setting Up the HikariCP Connection Pool [[DS-HikariCP-Project-Setup]]
 
-====== Maven Coordinates [[DS-HikariCP-Maven-Coordinates]]
+====== Maven Coordinates (HikariCP) [[DS-HikariCP-Maven-Coordinates]]
 
 To include the HikariCP connection pool in your Helidon MP
 application, xref:../about/managing-dependencies.adoc[ensure your
@@ -106,7 +106,7 @@ dependencies are managed], and then ensure the following
 
 ===== Setting up the Oracle Universal Connection Pool [[DS-UCP-Project-Setup]]
 
-====== Maven Coordinates [[DS-UCP-Maven-Coordinates]]
+====== Maven Coordinates (Oracle Universal Connection Pool) [[DS-UCP-Maven-Coordinates]]
 
 To include the Oracle Universal Connection Pool in your Helidon MP
 application, xref:../about/managing-dependencies.adoc[ensure your
