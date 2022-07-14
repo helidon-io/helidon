@@ -203,7 +203,7 @@ Ensure the following
 
 ===== Setting Up H2 [[DS-H2-Driver-Project-Setup]]
 
-===== Maven Coordinates (H2) [[DS-H2-Driver-Maven-Coordinates]]
+====== Maven Coordinates (H2) [[DS-H2-Driver-Maven-Coordinates]]
 
 To include the http://www.h2database.com/html/main.html[H2 JDBC
 driver] in your Helidon MP application so your application can connect
