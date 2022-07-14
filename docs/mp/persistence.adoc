@@ -25,6 +25,9 @@ include::{rootdir}/includes/mp.adoc[]
 
 == Contents
 
+- <<Overview, Overview>>
+- <<Named-Data-Sources, Named Data Sources>>
+
 == Overview
 
 Helidon MP comes with deep integration for three broad,
