@@ -30,7 +30,34 @@ include::{rootdir}/includes/guides/migration.adoc[]
 
 == New Routing
 
-<...describe...>
+Handling routes based on the protocol version is now possible by registering specific routes
+on routing builder.
+
+For further information check xref:../webserver.adoc[WebServer Documentation]
+
+== Http/2 Support
+
+Helidon now supports Http/2 upgrade from Http/1, Http/2 without prior knowledge
+and Http/2 with ALPN over TLS.
+
+For further information check xref:../webserver.adoc[WebServer Documentation]
+
+== WebSocket
+
+Helidon SE support is now based on the `WebSocketRouting` class which enables Helidon application to
+configure routing for both annotated and programmatic WebSocket endpoints.
+`TyrusSupport` is now deprecated.
+
+Use new dependency to enable `WebSocket`:
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.webserver</groupId>
+    <artifactId>helidon-webserver-websocket</artifactId>
+</dependency>
+----
+
 
 == Reactive Deprecations
 
