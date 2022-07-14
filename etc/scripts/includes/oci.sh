@@ -159,24 +159,10 @@ if [ -z "${__OCI_INCLUDED__}" ]; then
         fi
 
         if [ -n "${JENKINS_HOME}" ] ; then
-
-            local lockfile
-            lockfile="${artifact_dir}/lock"
-            exec 200>${lockfile}
-
-            # acquire the lock
-            flock 200 --timeout 600
-
-            local exit_code
-            set +e
-            _install_oci_shaded_full_jar "${artifact_dir}/${jar_filename}" "${oci_version}"
-            exit_code="${?}"
-            set -e
-
-            # release the lock
-            rm -f ${lockfile}
-
-            return ${exit_code}
+            (
+              flock -w 600 200
+              _install_oci_shaded_full_jar "${artifact_dir}/${jar_filename}" "${oci_version}"
+            ) 200>"${artifact_dir}/lock"
         else
             _install_oci_shaded_full_jar "${artifact_dir}/${jar_filename}" "${oci_version}"
         fi
