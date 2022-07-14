@@ -21,10 +21,25 @@
 :toc-placement: preamble
 :description: Scheduling in Helidon SE
 :keywords: helidon, se, scheduling
+:h1Prefix: SE
 :feature-name: Scheduling
 :rootdir: {docdir}/..
 
-include::{rootdir}/includes/se.adoc[]
+
+== Contents
+
+- <<Overview, Overview>>
+- <<Maven Coordinates, Maven Coordinates>>
+- <<Usage, Usage>>
+- <<Configuration, Configuration>>
+- <<Examples, Examples>>
+- <<Reference, Reference>>
+
+== Overview
+
+Scheduling is an essential feature for the Enterprise. Helidon has its own implementation of Scheduling functionality
+based on https://github.com/jmrozanec/cron-utils[Cron-utils].
+
 include::{rootdir}/includes/dependencies.adoc[]
 
 [source,xml]
@@ -35,8 +50,70 @@ include::{rootdir}/includes/dependencies.adoc[]
 </dependency>
 ----
 
-== Scheduling
-For scheduling periodic tasks it is possible to choose fixed rate setup or Cron expression.
+== Usage
+For scheduling periodic tasks, it is possible to choose a fixed rate or a Cron expression.
+
+=== Fixed rate
+
+[source,java]
+.Scheduling with fixed rate use `Scheduling.fixedRateBuilder()` builder.
+----
+Scheduling.fixedRateBuilder()
+        .delay(10)
+        .initialDelay(5)
+        .timeUnit(TimeUnit.MINUTES)
+        .task(inv -> System.out.println("Every 10 minutes, first invocation 5 minutes after start"))
+        .build();
+----
+
+Metadata like human-readable interval description or configured values are available through
+FixedRateInvocation provided as task parameter.
+
+[source,java]
+.Invocation metadata
+----
+Scheduling.fixedRateBuilder()
+        .delay(10)
+        .task(inv -> System.out.println("Method invoked " + inv.description()))
+        .build();
+----
+
+=== Cron expression
+
+For more complicated interval definition, Cron expression can be leveraged with
+`Scheduling.cronBuilder()` builder.
+
+[source,java]
+.Scheduling with Cron expression
+----
+Scheduling.cronBuilder()
+    .expression("0 15 8 ? * *")
+    .task(inv -> System.out.println("Executer every day at 8:15"))
+    .build();
+----
+
+== Configuration
+
+Configuration properties are added to `application.yaml` file:
+
+.Configuration properties
+[width="90%",cols="3,10",frame="topbot",options="header"]
+|====
+| Property              | Description
+| cron                  | String containing Cron setup
+| concurrent            | Boolean, equivalent `concurrentExecution` property of `@Scheduled`. Default `true`.
+|====
+
+=== Cron expression
+
+Cron expressions should be configured as follows.
+
+include::{rootdir}/includes/cron.adoc[lines=19..]
+
+Metadata like human-readable interval description or configured values are available through
+CronInvocation provided as task parameter.
+
+== Examples
 
 === Fixed rate
 For simple fixed rate invocation use .
@@ -53,7 +130,8 @@ Scheduling.fixedRateBuilder()
 ----
 
 Metadata like human-readable interval description or configured values are available through
-FixedRateInvocation provided as task parameter.
+`FixedRateInvocation` provided as task parameter.
+
 
 [source,java]
 .Example with invocation metadata
@@ -64,30 +142,7 @@ Scheduling.fixedRateBuilder()
         .build();
 ----
 
-=== Cron expression
+== Reference
 
-For more complicated interval definition, cron expression can be leveraged with
-`Scheduling.cronBuilder()` builder.
-
-[source,java]
-.Example of scheduling with cron expression
-----
-Scheduling.cronBuilder()
-    .expression("0 15 8 ? * *")
-    .task(inv -> System.out.println("Executer every day at 8:15"))
-    .build();
-----
-
-include::{rootdir}/includes/cron.adoc[lines=19..]
-
-Metadata like human-readable interval description or configured values are available through
-CronInvocation provided as task parameter.
-
-[source,java]
-.Example with invocation metadata
-----
-Scheduling.cronBuilder()
-    .expression("0 15 8 ? * *")
-    .task(inv -> System.out.println("Method invoked " + inv.description()))
-    .build();
-----
+* https://github.com/jmrozanec/cron-utils[Cron-utils GitHub page]
+* link:{scheduling-javadoc-base-url}/io/helidon/microprofile/scheduling/package-summary.html[Helidon Scheduling JavaDoc]
