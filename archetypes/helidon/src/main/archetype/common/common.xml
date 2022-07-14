@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2021 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -25,13 +25,23 @@
             <replace regex="\.mustache$" replacement=""/>
         </transformation>
         <transformation id="packaged">
-            <replace regex="__pkg__" replacement="${ROOT.package/\./\/}"/>
+            <replace regex="__pkg__" replacement="${package/\./\/}"/>
+        </transformation>
+        <transformation id="json-mustache">
+            <replace regex="\.json.mustache$" replacement=""/>
+        </transformation>
+        <transformation id="jsonp-mustache">
+            <replace regex="\.jsonp.mustache$" replacement=""/>
+        </transformation>
+        <transformation id="multipart-mustache">
+            <replace regex="\.multipart.mustache$" replacement=""/>
         </transformation>
         <templates engine="mustache" transformations="mustache">
             <directory>files</directory>
             <includes>
                 <include>.helidon.mustache</include>
                 <include>README.md.mustache</include>
+                <include>app.yaml.mustache</include>
             </includes>
         </templates>
         <model>

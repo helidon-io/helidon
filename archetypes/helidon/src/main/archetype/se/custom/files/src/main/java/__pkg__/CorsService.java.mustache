@@ -1,0 +1,25 @@
+package {{package}};
+
+import io.helidon.webserver.Routing;
+import io.helidon.webserver.ServerRequest;
+import io.helidon.webserver.ServerResponse;
+import io.helidon.webserver.Service;
+
+public class CorsService implements Service {
+
+    @Override
+    public void update(Routing.Rules rules) {
+        rules.put("/{greeting}", this::getCustomMessage)
+             .get("/", this::getDefaultMessage);
+    }
+
+    private void getCustomMessage(ServerRequest request, ServerResponse response) {
+        String msg = String.format("%s %s!", request.path().param("greeting"), "World");
+        response.send(msg);
+    }
+
+    private void getDefaultMessage(ServerRequest request, ServerResponse response) {
+        response.send("Hello World!");
+    }
+
+}
