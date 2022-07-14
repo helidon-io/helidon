@@ -48,6 +48,16 @@ pipeline {
             sh './etc/scripts/checkstyle.sh'
           }
         }
+        stage('archetypes'){
+          agent {
+            label "linux"
+          }
+          steps {
+            sh 'etc/scripts/test-archetypes.sh'
+            archiveArtifacts artifacts: "**/target/surefire-reports/*.txt"
+            junit testResults: '**/target/surefire-reports/*.xml'
+          }
+        }
         stage('integration-tests') {
           stages {
             stage('test-vault') {
@@ -86,16 +96,6 @@ pipeline {
               }
               steps {
                 sh 'etc/scripts/test-packaging-native.sh'
-              }
-            }
-            stage('test-archetypes'){
-              agent {
-                label "linux"
-              }
-              steps {
-                sh 'etc/scripts/test-archetypes.sh'
-                archiveArtifacts artifacts: "**/target/surefire-reports/*.txt"
-                junit testResults: '**/target/surefire-reports/*.xml'
               }
             }
           }
