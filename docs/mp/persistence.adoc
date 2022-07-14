@@ -40,7 +40,7 @@ used together or separately:
 * https://jakarta.ee/specifications/transactions/2.0/[Jakarta Transactions] (JTA)
 * https://jakarta.ee/specifications/persistence/3.0/[Jakarta Persistence] (JPA)
 
-The supported integration for each technology is detailed below.
+The integrations supported for each technology are described below.
 
 == Named Data Source Integration [[DS]]
 
@@ -63,9 +63,9 @@ connection pool implementations:
 2. https://docs.oracle.com/en/database/oracle/oracle-database/21/jjucp/index.html[Oracle
    Universal Connection Pool]
 
-How you set up named data source integration differs depending on
-which of these two connection pools you use.  Each setup is described
-below.
+How you set up Helidon MP's named data source integration differs
+depending on which of these two connection pools you use.  Each setup
+is described below.
 
 ==== Setting Up the HikariCP Connection Pool [[DS-HikariCP-Setup]]
 
@@ -82,16 +82,18 @@ dependencies are managed], and then ensure the following
 <dependency>
     <groupId>io.helidon.integrations.cdi</groupId>
     <artifactId>helidon-integrations-cdi-datasource-hikaricp</artifactId>
-    <scope>runtime</scope>
+    <scope>runtime</scope> <!-- 1 -->
 </dependency>
 ----
+<1> Note that the scope is `runtime`, indicating that the HikariCP
+    integration will be available on the runtime classpath.
 
 ==== Common Usage [[DS-Usage]]
 
 To use Helidon MP's named data source integration support in your
 application, create a
 https://docs.oracle.com/en/java/javase/17/docs/api/java.sql/javax/sql/DataSource.html[`DataSource`]-typed
-injection point somewhere in your application,
+injection point in a CDI bean somewhere in your application,
 https://jakarta.ee/specifications/dependency-injection/2.0/apidocs/jakarta/inject/named[annotated
 with the name] of the data source you wish to use.
 
@@ -117,8 +119,9 @@ private DataSource ds; // <3>
     Dependency Injection specification].
 <2> https://jakarta.ee/specifications/dependency-injection/2.0/apidocs/jakarta/inject/named[`@Named("test")`]
     says to use the data source named `test`.
-<3> The injection point has a type of `javax.sql.DataSource` and may
-    be named anything you like.
+<3> The field injection point has a type of
+    https://docs.oracle.com/en/java/javase/17/docs/api/java.sql/javax/sql/DataSource.html[`javax.sql.DataSource`]
+    and may be named anything you like.
 
 Here is how to define a constructor parameter injection point:
 
@@ -134,7 +137,7 @@ import jakarta.inject.Named;
 private final DataSource ds; // <1>
 
 @Inject // <2>
-public SomeConstructor(@Named("test") DataSource ds) { // <3>
+public SomeObject(@Named("test") DataSource ds) { // <3>
     this.ds = ds; // <4>
 }
 ----
@@ -144,7 +147,10 @@ public SomeConstructor(@Named("test") DataSource ds) { // <3>
     points.  Its behavior is defined by the
     https://jakarta.ee/specifications/dependency-injection/2.0/[Jakarta
     Dependency Injection specification].
-<3> The injection point has a type of `javax.sql.DataSource` and mae
-    be named anything you like.
-<4> The parameter, when injected, will never be `null`.
+<3> https://jakarta.ee/specifications/dependency-injection/2.0/apidocs/jakarta/inject/named[`@Named("test")`]
+    says to use the data source named `test`.  The parameter injection
+    point has a type of
+    https://docs.oracle.com/en/java/javase/17/docs/api/java.sql/javax/sql/DataSource.html[`javax.sql.DataSource`]
+    and may be named anything you like.
+<4> The injected argument will never be `null`.
 
