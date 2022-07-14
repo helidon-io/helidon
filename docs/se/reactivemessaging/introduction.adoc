@@ -25,9 +25,6 @@
 :feature-name: Reactive Messaging
 :rootdir: {docdir}/../..
 
-include::{rootdir}/includes/se.adoc[]
-include::{rootdir}/includes/dependencies.adoc[]
-
 == ToC
 
 - Overview
