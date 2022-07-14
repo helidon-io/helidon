@@ -22,9 +22,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import io.helidon.tracing.Span;
 import io.helidon.tracing.jersey.client.ClientTracingFilter;
@@ -42,11 +40,13 @@ import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.core.Response;
 import org.glassfish.jersey.client.ClientConfig;
-import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -63,9 +63,27 @@ class OpentraceableClientE2ETest {
     private static Client client;
 
     @BeforeAll
-    static void startServerInitClient() throws Exception {
+    static void startServerInitClient() {
         server = startWebServer();
         client = ClientBuilder.newClient(new ClientConfig(ClientTracingFilter.class));
+    }
+
+    @AfterAll
+    static void stopAndClose() throws Exception {
+        if (server != null) {
+            server.shutdown()
+                    .toCompletableFuture()
+                    .get(10, TimeUnit.SECONDS);
+        }
+
+        if (client != null) {
+            client.close();
+        }
+    }
+
+    @BeforeEach
+    void resetTraces() {
+        EVENTS_MAP.clear();
     }
 
     @Test
@@ -89,19 +107,11 @@ class OpentraceableClientE2ETest {
 
         TraceContext traceContext = ((BraveSpanContext) start.unwrap(io.opentracing.Span.class).context()).unwrap();
 
-        assertSpanChain(EVENTS_MAP.remove(traceContext.traceIdString()), EVENTS_MAP);
+        zipkin2.Span reportedSpan = EVENTS_MAP.remove(traceContext.traceIdString());
+        assertThat("Span with id " + reportedSpan.traceId() + " was not found in "
+                           + printSpans(EVENTS_MAP), reportedSpan, notNullValue());
+        assertSpanChain(reportedSpan, EVENTS_MAP);
         assertThat(EVENTS_MAP.entrySet(), hasSize(0));
-    }
-
-    @AfterEach
-    public void stopAndClose() throws Exception {
-        if (server != null) {
-            server.shutdown()
-                    .toCompletableFuture()
-                    .get(10, TimeUnit.SECONDS);
-        }
-
-        client.close();
     }
 
     /**
@@ -111,7 +121,7 @@ class OpentraceableClientE2ETest {
         Tracing braveTracing = Tracing.newBuilder()
                 .localServiceName(serviceName)
                 .spanReporter(span -> {
-                    EVENTS_MAP.put(span.id(), span);
+                    EVENTS_MAP.put(span.traceId(), span);
                     EVENTS_LATCH.countDown();
                 })
                 .build();
@@ -120,7 +130,7 @@ class OpentraceableClientE2ETest {
         return OpenTracing.create(new ZipkinTracer(BraveTracer.create(braveTracing), List.of()));
     }
 
-    private static WebServer startWebServer() throws InterruptedException, ExecutionException, TimeoutException {
+    private static WebServer startWebServer() {
         return WebServer.builder()
                 .host("localhost")
                 .routing(Routing.builder()
