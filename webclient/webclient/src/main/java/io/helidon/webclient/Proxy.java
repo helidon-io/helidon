@@ -35,7 +35,6 @@ import io.helidon.common.configurable.LruCache;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.config.metadata.ConfiguredValue;
 
 import io.netty.channel.ChannelHandler;
 import io.netty.handler.proxy.HttpProxyHandler;
