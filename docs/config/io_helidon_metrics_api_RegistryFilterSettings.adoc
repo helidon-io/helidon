@@ -16,30 +16,35 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-:description: Configuration of io.helidon.common.pki.KeyConfig
-:keywords: helidon, config, io.helidon.common.pki.KeyConfig
-:basic-table-intro: The table below lists the configuration keys that configure io.helidon.common.pki.KeyConfig
+ifndef::rootdir[:rootdir: {docdir}/..]
+:description: Configuration of io.helidon.metrics.api.RegistryFilterSettings
+:keywords: helidon, config, io.helidon.metrics.api.RegistryFilterSettings
+:basic-table-intro: The table below lists the configuration keys that configure io.helidon.metrics.api.RegistryFilterSettings
+include::{rootdir}/includes/attributes.adoc[]
 
-[source,text]
-.Type
-----
-io.helidon.common.pki.KeyConfig
-----
+= RegistryFilterSettings (metrics.api) Configuration
+
+// tag::config[]
+
+
+Type: link:{javadoc-base-url}/io.helidon.metrics.api/io.helidon.metrics.api.RegistryFilterSettings[io.helidon.metrics.api.RegistryFilterSettings]
 
 
 
-==== Configuration options
 
+== Configuration options
 
 
 
 Optional configuration options:
-[cols="3,3,2,5"]
+[cols="3,3,2,5a"]
 
 |===
 |key |type |default value |description
 
-|`pem` |link:../../shared/config/io.helidon.common.pki.KeyConfig.PemBuilder.adoc[PemBuilder] |{nbsp} |Update this builder with information from a pem builder.
-|`keystore` |link:../../shared/config/io.helidon.common.pki.KeyConfig.KeystoreBuilder.adoc[KeystoreBuilder] |{nbsp} |Update this builder with information from a keystore builder.
+|`exclude` |string |{nbsp} |Regular expression matching metric names to exclude
+|`include` |string |{nbsp} |Regular expression matching metrics names to include
 
 |===
+
+// end::config[]

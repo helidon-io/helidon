@@ -16,32 +16,41 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-:description: Configuration of io.helidon.common.configurable.ScheduledThreadPoolSupplier
-:keywords: helidon, config, io.helidon.common.configurable.ScheduledThreadPoolSupplier
-:basic-table-intro: The table below lists the configuration keys that configure io.helidon.common.configurable.ScheduledThreadPoolSupplier
+ifndef::rootdir[:rootdir: {docdir}/..]
+:description: Configuration of io.helidon.metrics.api.BaseMetricsSettings
+:keywords: helidon, config, io.helidon.metrics.api.BaseMetricsSettings
+:basic-table-intro: The table below lists the configuration keys that configure io.helidon.metrics.api.BaseMetricsSettings
+include::{rootdir}/includes/attributes.adoc[]
+
+= BaseMetricsSettings (metrics.api) Configuration
+
+// tag::config[]
+
+
+Type: link:{javadoc-base-url}/io.helidon.metrics.api/io.helidon.metrics.api.BaseMetricsSettings[io.helidon.metrics.api.BaseMetricsSettings]
+
 
 [source,text]
-.Type
+.Config key
 ----
-io.helidon.common.configurable.ScheduledThreadPoolSupplier
+metrics.base
 ----
 
 
 
-==== Configuration options
-
+== Configuration options
 
 
 
 Optional configuration options:
-[cols="3,3,2,5"]
+[cols="3,3,2,5a"]
 
 |===
 |key |type |default value |description
 
-|`thread-name-prefix` |string |`helidon-` |Name prefix for threads in this thread pool executor.
-|`should-prestart` |boolean |`true` |Whether to prestart core threads in this thread pool executor.
-|`core-pool-size` |int |`16` |Core pool size of the thread pool executor.
-|`is-daemon` |boolean |`true` |Is daemon of the thread pool executor.
+|`enabled` |boolean |`true` |Sets whether base metrics should be enabled.
+|`x.y.enabled` |boolean |`true` |Sets whether a specific base metric should be enabled.
 
 |===
+
+// end::config[]

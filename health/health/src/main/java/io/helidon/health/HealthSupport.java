@@ -304,7 +304,7 @@ public final class HealthSupport extends HelidonRestServiceSupport {
     /**
      * Fluent API builder for {@link io.helidon.health.HealthSupport}.
      */
-    @Configured(prefix = Builder.HEALTH_CONFIG_KEY)
+    @Configured(prefix = Builder.HEALTH_CONFIG_KEY, root = true)
     public static final class Builder extends HelidonRestServiceSupport.Builder<Builder, HealthSupport> {
 
         /**

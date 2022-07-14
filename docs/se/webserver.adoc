@@ -102,7 +102,7 @@ just use `Config.create()`
 
 === Configuration options
 
-include::{rootdir}/includes/config/io.helidon.webserver.WebServer.adoc[]
+include::{rootdir}/config/io_helidon_webserver_WebServer.adoc[leveloffset=+2,tag=config]
 
 == Routing [[routing]]
 Routing lets you use request matching criteria to bind requests to a `handler` that implements
@@ -1027,7 +1027,7 @@ server:
 
 === Configuration options
 
-include::{rootdir}/includes/config/io.helidon.webserver.WebServerTls.adoc[]
+include::{rootdir}/config/io_helidon_webserver_WebServerTls.adoc[leveloffset=+2,tag=config]
 
 
 == HTTP Compression
