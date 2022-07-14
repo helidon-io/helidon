@@ -33,6 +33,7 @@ include::{rootdir}/includes/mp.adoc[]
 ** <<DS-Driver-Project-Setup, Setting Up a Database Driver>>
 *** <<DS-H2-Driver-Project-Setup, Setting Up H2>>
 *** <<DS-Oracle-Driver-Project-Setup, Setting Up Oracle JDBC>>
+** <<DS-Configuration, Configuration>>
 ** <<DS-Usage, Usage>>
 
 == Overview [[Overview]]
@@ -136,9 +137,10 @@ dependencies are managed], and then ensure the following
 
 ===== Overview
 
-Regardless of which connection pool you use, ultimately at the lowest
-level a JDBC database driver is responsible for making any connections
-to a relational database.  Drivers are database-product-specific.
+Regardless of which connection pool you use, at the lowest level a
+JDBC database driver is responsible for making any connections to a
+relational database.  JDBC database drivers are
+database-product-specific.
 
 Once you have decided upon a relational database product to use, and a
 JDBC driver to use to connect to it,
@@ -240,6 +242,31 @@ Ensure the following
 ----
 <1> Note that the `scope` is `runtime`, indicating that the Oracle
     JDBC driver will be available on the runtime classpath.
+
+==== Configuration [[DS-Configuration]]
+
+To configure Helidon MP's named data source integration support:
+
+1. Decide where the configuration will reside.
+
+2. Create configuration suitable for the combination of your selected
+   connection pool and database driver in that location.
+
+Helidon MP's named data source integration support relies on
+xref:config/introduction.adoc[Helidon MP's usage of MicroProfile
+Config], so you have many choices when deciding on your
+configuration's location in (1) above.
+
+The configuration values themselves are necessarily specific to the
+connection pool you selected and the database driver responsible for
+actually connecting to your relational database.  In general, you supply:
+
+* a JDBC URL describing where the database is located
+
+* information required to authenticate to the database
+
+Some examples for common combinations follow.  They are not
+exhaustive.
 
 ==== Usage [[DS-Usage]]
 
