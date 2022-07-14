@@ -536,7 +536,7 @@ backend:
             type: "icon"
             value: "library_books"
         - type: "MENU"
-          title: "Config docs"
+          title: "Config Reference"
           dir: "config"
           glyph:
             type: "icon"
