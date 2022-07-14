@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2022 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<archetype-script xmlns="https://helidon.io/archetype/2.0"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
+
+    <step name="Packaging and Deployment" optional="true">
+        <exec src="docker.xml"/>
+        <inputs>
+            <boolean id="k8s"
+                     name="Kubernetes Support"
+                     description="Add Kubernetes manifests to your project"
+                     default="false"
+                     optional="true">
+                <output>
+                    <model>
+                        <list key="yaml-section">
+                            <value template="mustache"><![CDATA[
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: {{artifactId}}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{artifactId}}
+  template:
+    metadata:
+      labels:
+        app: {{artifactId}}
+        version: v1
+    spec:
+      imagePullSecrets:
+      - name: ocirsecret
+      containers:
+      - name: {{artifactId}}
+        image: {{artifactId}}
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+]]></value>
+                        </list>
+                    </model>
+                </output>
+            </boolean>
+            <boolean id="v8o"
+                     name="Verrazzano Support"
+                     description="Add Verrazzano manifests to your project"
+                     default="false"
+                     optional="true">
+                <output>
+                    <model>
+                        <list key="yaml-section">
+                            <value template="mustache"><![CDATA[
+kind: Component
+apiVersion: core.oam.dev/v1alpha2
+metadata:
+  name: {{artifactId}}
+spec:
+  workload:
+    apiVersion: oam.verrazzano.io/v1alpha1
+    kind: VerrazzanoHelidonWorkload
+    metadata:
+      name: hello-helidon-workload
+      labels:
+        app: hello-helidon
+  spec:
+      deploymentTemplate:
+        metadata:
+          name: hello-helidon-deployment
+        podSpec:
+          containers:
+            - name: hello-helidon-container
+              image : {{artifactId}}
+              ports:
+                - containerPort: 8080
+                  name: http
+]]></value>
+                        </list>
+                    </model>
+                </output>
+            </boolean>
+        </inputs>
+    </step>
+</archetype-script>

@@ -29,25 +29,11 @@ spec:
     targetPort: 8080
     name: http
 ---
-kind: Deployment
-apiVersion: apps/v1
-metadata:
-  name: {{artifactId}}
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: {{artifactId}}
-  template:
-    metadata:
-      labels:
-        app: {{artifactId}}
-        version: v1
-    spec:
-      containers:
-      - name: {{artifactId}}
-        image: {{artifactId}}
-        imagePullPolicy: IfNotPresent
-        ports:
-        - containerPort: 8080
+{{#yaml-section}}
+{{.}}
 ---
+{{/yaml-section}}
+
+{{#app-yaml-content}}
+{{.}}
+{{/app-yaml-content}}
