@@ -297,12 +297,91 @@ named data source integration support follow a common pattern:
   comes last.
 
 As an example, configuration to set an imaginary `foo` property on the
-`test` data source to `bar` looks like this:
+`test` data source to `bar` looks like this in Java
+`.properties`-style format:
 
 [source]
 ----
 javax.sql.DataSource.test.foo=bar
 ----
+
+===== Examples [[DS-Configuration-Examples]]
+
+Here are some general examples illustrating general configuration
+patterns in various common MicroProfile Config-compatible locations.
+
+===== `META-INF/microprofile-config.properties` Classpath Resource
+
+Here is an example of some data source configuration as might be found
+in a `src/main/resources/META-INF/microprofile-config.properties`
+configuration source:
+
+[source,properties]
+----
+javax.sql.DataSource.yourDataSourceName.somePropertyOfYourConnectionPoolAndDataSource = itsValue
+javax.sql.DataSource.yourDataSourceName.someOtherPropertyOfYourConnectionPoolAndDataSource = anotherValue
+System properties on the java command line
+----
+
+===== System Properties on the Command Line
+
+Here is an example using system properties on the command line instead:
+
+[source,shell]
+----
+java \
+  -Djavax.sql.DataSource.yourDataSourceName.somePropertyOfYourConnectionPoolAndDataSource=itsValue \
+  -Djavax.sql.DataSource.yourDataSourceName.someOtherPropertyOfYourConnectionPoolAndDataSource=anotherValue \
+  # ...
+----
+
+===== Environment Variables Set By the Shell
+
+Here is an example using environment variables as typed directly into
+a command line shell, taking advantage of MicroProfile Config's
+mapping rules, since many shells will not understand environment
+variable names with periods (.) in them:
+
+[source,shell]
+----
+JAVAX_SQL_DATASOURCE_YOURDATASOURCENAME_SOMEPROPERTYOFYOURCONNECTIONPOOLANDDATASOURCE=itsValue \
+JAVAX_SQL_DATASOURCE_YOURDATASOURCENAME_SOMEOTHERPROPERTYOFYOURCONNECTIONPOOLANDDATASOURCE=anotherValue \
+java # ...
+----
+
+===== Environment Variables Set By the `env` Command
+
+Here is an example using environment variables as supplied via the
+`env` shell command, thus removing the need for MicroProfile Config's
+mapping rules:
+
+[source,shell]
+----
+env 'javax.sql.DataSource.yourDataSourceName.somePropertyOfYourConnectionPoolAndDataSource=itsValue' \
+  'javax.sql.DataSource.yourDataSourceName.someOtherPropertyOfYourConnectionPoolAndDataSource=anotherValue' \
+  java # ...
+----
+
+===== `application.yaml` Classpath Resource
+
+Here is an example of some data source configuration as might be found
+in a `src/main/resources/application.yaml` classpath resource
+(assuming the resource is registered as a MicroProfile Config
+configuration source):
+
+[source,yaml]
+----
+javax:
+  sql:
+    DataSource:
+      yourDataSourceName:
+        somePropertyOfYourConnectionPoolAndDataSource: itsValue
+        someOtherPropertyOfYourConnectionPoolAndDataSource: anotherValue
+----
+
+====== Configuring the Oracle Universal Connection Pool and Oracle JDBC [[DS-Configuration-UCP-Oracle-Example]]
+
+TODO
 
 ==== Usage [[DS-Usage]]
 
