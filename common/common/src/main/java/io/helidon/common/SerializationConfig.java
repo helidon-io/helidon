@@ -126,7 +126,20 @@ public final class SerializationConfig {
      * This is a one-off call to set up global filter.
      */
     public static void configureRuntime() {
-        builder().onNoConfig(Action.CONFIGURE).build().configure();
+        builder().build().configureDefaults();
+    }
+
+    /*
+    Called from configureRuntime to ensure we set up at least the defaults (if no custom configuration is used)
+     */
+    private void configureDefaults() {
+        if (EXISTING_CONFIG.compareAndSet(null, options)) {
+            // we should configure this instance as the global
+            doConfigure();
+        } else {
+            LOGGER.log(Level.FINER, "Will not configure defaults, "
+                    + "there is already a serialization config in place: " + EXISTING_CONFIG.get());
+        }
     }
 
     /**
@@ -139,52 +152,8 @@ public final class SerializationConfig {
      */
     public void configure() {
         if (EXISTING_CONFIG.compareAndSet(null, options)) {
-            // this process is responsible for setting everything up, nobody else can reach this line
-
-            ObjectInputFilter currentFilter = ObjectInputFilter.Config.getSerialFilter();
-
-            if (currentFilter == null) {
-                switch (options.onNoConfig()) {
-                case FAIL:
-                    throw new IllegalStateException("There is no global serial filter configured. To automatically configure"
-                                                            + " a filter, please set system property " + PROP_NO_CONFIG_ACTION
-                                                            + " to \"configure\"");
-                case WARN:
-                    AtomicBoolean logged = new AtomicBoolean();
-                    configureTracingFilter(options, it -> {
-                        if (it.serialClass() != null && logged.compareAndSet(false, true)) {
-                            LOGGER.warning("Deserialization attempted for class " + it.serialClass().getName()
-                                                   + ", yet there is no global serial filter configured. "
-                                                   + "To automatically configure"
-                                                   + " a filter, please set system property \"" + PROP_NO_CONFIG_ACTION
-                                                   + "\" to \"configure\"");
-                        }
-                        return ObjectInputFilter.Status.UNDECIDED;
-                    });
-                    return;
-                case IGNORE:
-                    LOGGER.finest("Ignoring that there is no global serial filter configured. To automatically configure"
-                                          + " a filter, please set system property " + PROP_NO_CONFIG_ACTION
-                                          + " to \"configure\"");
-                    configureTracingFilter(options, null);
-                    return;
-                default:
-                    throw new IllegalArgumentException("Unsupported no configuration action: " + options.onNoConfig());
-                case CONFIGURE:
-                    // this is the only option that continues with execution
-                    configureGlobalFilter(options);
-                    break;
-                }
-            } else {
-                Action action = options.onWrongConfig();
-
-                if (action == Action.IGNORE) {
-                    LOGGER.finest("Existing serialization config is ignored by Helidon.");
-                    return;
-                }
-
-                validateExistingFilter(currentFilter, action);
-            }
+            // we were explicitly asked to configure this instance
+            doConfigure();
         } else {
             ConfigOptions existingOptions = EXISTING_CONFIG.get();
             if (options.equals(existingOptions)) {
@@ -198,6 +167,55 @@ public final class SerializationConfig {
 
     ConfigOptions options() {
         return options;
+    }
+
+    private void doConfigure() {
+        // this process is responsible for setting everything up, nobody else can reach this line
+
+        ObjectInputFilter currentFilter = ObjectInputFilter.Config.getSerialFilter();
+
+        if (currentFilter == null) {
+            switch (options.onNoConfig()) {
+            case FAIL:
+                throw new IllegalStateException("There is no global serial filter configured. To automatically configure"
+                                                        + " a filter, please set system property " + PROP_NO_CONFIG_ACTION
+                                                        + " to \"configure\"");
+            case WARN:
+                AtomicBoolean logged = new AtomicBoolean();
+                configureTracingFilter(options, it -> {
+                    if (it.serialClass() != null && logged.compareAndSet(false, true)) {
+                        LOGGER.warning("Deserialization attempted for class " + it.serialClass().getName()
+                                               + ", yet there is no global serial filter configured. "
+                                               + "To automatically configure"
+                                               + " a filter, please set system property \"" + PROP_NO_CONFIG_ACTION
+                                               + "\" to \"configure\"");
+                    }
+                    return ObjectInputFilter.Status.UNDECIDED;
+                });
+                return;
+            case IGNORE:
+                LOGGER.finest("Ignoring that there is no global serial filter configured. To automatically configure"
+                                      + " a filter, please set system property " + PROP_NO_CONFIG_ACTION
+                                      + " to \"configure\"");
+                configureTracingFilter(options, null);
+                return;
+            default:
+                throw new IllegalArgumentException("Unsupported no configuration action: " + options.onNoConfig());
+            case CONFIGURE:
+                // this is the only option that continues with execution
+                configureGlobalFilter(options);
+                break;
+            }
+        } else {
+            Action action = options.onWrongConfig();
+
+            if (action == Action.IGNORE) {
+                LOGGER.finest("Existing serialization config is ignored by Helidon.");
+                return;
+            }
+
+            validateExistingFilter(currentFilter, action);
+        }
     }
 
     private void validateExistingFilter(ObjectInputFilter currentFilter, Action action) {
@@ -367,7 +385,7 @@ public final class SerializationConfig {
      */
     public static class Builder implements io.helidon.common.Builder<Builder, SerializationConfig> {
         private Action onWrongConfig = configuredAction(PROP_WRONG_CONFIG_ACTION, Action.FAIL);
-        private Action onNoConfig = configuredAction(PROP_NO_CONFIG_ACTION, Action.FAIL);
+        private Action onNoConfig = configuredAction(PROP_NO_CONFIG_ACTION, Action.CONFIGURE);
         private String filterPattern = System.getProperty(PROP_PATTERN);
         private TraceOption traceSerialization = configuredTrace(TraceOption.NONE);
         private boolean ignoreFiles = Boolean.getBoolean(PROP_IGNORE_FILES);
@@ -437,7 +455,7 @@ public final class SerializationConfig {
         /**
          * What action to do in case of no configuration of the global filter.
          *
-         * @param onNoConfig action to do
+         * @param onNoConfig action to do, defaults to {@link io.helidon.common.SerializationConfig.Action#CONFIGURE}
          * @return updated builder
          */
         public Builder onNoConfig(Action onNoConfig) {
