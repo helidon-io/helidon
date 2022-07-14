@@ -259,7 +259,8 @@ configuration's location in (1) above.
 
 The configuration values themselves are necessarily specific to the
 connection pool you selected and the database driver responsible for
-actually connecting to your relational database.  In general, you supply:
+actually connecting to your relational database.  In general, at a
+minimum, you supply:
 
 * a JDBC URL describing where the database is located
 
@@ -267,6 +268,22 @@ actually connecting to your relational database.  In general, you supply:
 
 Some examples for common combinations follow.  They are not
 exhaustive.
+
+===== Configuration Prefixes
+
+All configuration for Helidon MP's named data source integration
+support follows a common pattern:
+
+_objecttype_._datasourcename_._propertyname_=_value_
+
+The name of a given configuration property always begins with the
+fully-qualified Java type of the object being configured.  Most
+configuration for Helidon MP's named data source integration concerns
+the behavior of `javax.sql.DataSource` objects, so most configuration
+property names begin with `javax.sql.DataSource.`.
+
+The name of the data source being configured comes next.  It cannot
+contain a period (`.`).
 
 ==== Usage [[DS-Usage]]
 
