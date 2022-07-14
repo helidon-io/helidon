@@ -31,7 +31,7 @@ include::{rootdir}/includes/mp.adoc[]
 *** <<DS-HikariCP-Project-Setup, Setting Up the Hikari CP Connection Pool>>
 *** <<DS-UCP-Project-Setup, Setting Up the Oracle Universal Connection Pool>>
 ** <<DS-Driver-Project-Setup, Setting Up a Database Driver>>
-** <<DS-Usage, Common Usage>>
+** <<DS-Usage, Usage>>
 
 == Overview [[Overview]]
 
@@ -66,9 +66,13 @@ connection pool implementations:
 2. https://docs.oracle.com/en/database/oracle/oracle-database/21/jjucp/index.html[Oracle
    Universal Connection Pool]
 
+The connections managed by the connection pool will be supplied by
+your relational database vendor's JDBC driver.
+
 How you set up Helidon MP's named data source integration differs
-depending on which of these two connection pools you use.  Each setup
-is described below.
+depending on which of these two connection pools, which JDBC driver,
+and which relational database product you use.  Example setups are
+described below.
 
 ==== Setting Up a Connection Pool [[DS-CP-Project-Setup]]
 
@@ -235,15 +239,16 @@ Ensure the following
 <1> Note that the `scope` is `runtime`, indicating that the H2
     JDBC driver will be available on the runtime classpath.
 
-==== Common Usage [[DS-Usage]]
+==== Usage [[DS-Usage]]
 
 You use Helidon MP's named data source integration support in the same
-way, regardless of your choice of database driver and connection pool.
+way, regardless of your choices of database driver and connection pool.
 
 To use Helidon MP's named data source integration support in your
 application, create a
 https://docs.oracle.com/en/java/javase/17/docs/api/java.sql/javax/sql/DataSource.html[`DataSource`]-typed
-injection point in a CDI bean somewhere in your application,
+injection point in a Java class representing a CDI bean somewhere in
+your application,
 https://jakarta.ee/specifications/dependency-injection/2.0/apidocs/jakarta/inject/named[annotated
 with the name] of the data source you wish to use.
 
@@ -270,7 +275,7 @@ private DataSource ds; // <3>
 <2> https://jakarta.ee/specifications/dependency-injection/2.0/apidocs/jakarta/inject/named[`@Named("test")`]
     says to use the data source named `test`.
 <3> The field injection point has a type of
-    https://docs.oracle.com/en/java/javase/17/docs/api/java.sql/javax/sql/DataSource.html[`javax.sql.DataSource`]
+    https://docs.oracle.com/en/java/javase/17/docs/api/java.sql/javax/sql/DataSource.html[`javax.sql.DataSource`],
     and may be named anything you like.
 
 Here is how to define a constructor parameter injection point:
@@ -300,6 +305,6 @@ public SomeObject(@Named("test") DataSource ds) { // <3>
 <3> https://jakarta.ee/specifications/dependency-injection/2.0/apidocs/jakarta/inject/named[`@Named("test")`]
     says to use the data source named `test`.  The parameter injection
     point has a type of
-    https://docs.oracle.com/en/java/javase/17/docs/api/java.sql/javax/sql/DataSource.html[`javax.sql.DataSource`]
+    https://docs.oracle.com/en/java/javase/17/docs/api/java.sql/javax/sql/DataSource.html[`javax.sql.DataSource`],
     and may be named anything you like.
 <4> The injected argument will never be `null`.
