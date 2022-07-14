@@ -203,4 +203,4 @@ As the API is the same for xref:../../mp/reactivemessaging/introduction.adoc[Mic
 `@ApplicationScoped`. Such connector is treated as a bean in Helidon MP.
 
 For specific information about creating messaging connectors for Helidon MP visit
-xref:../../mp/reactivemessaging/connector.adoc[Messaging Connector Bean].
+xref:../../mp/reactivemessaging/introduction.adoc#Connector[Messaging Connector Bean].
