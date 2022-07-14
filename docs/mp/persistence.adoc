@@ -393,6 +393,12 @@ javax:
 
 ====== Example: Configuring the Oracle Universal Connection Pool and Oracle JDBC [[DS-Configuration-UCP-Oracle-Example]]
 
+This example presumes you have:
+
+* <<DS-UCP-Project-Setup,set up the Oracle Universal Connection Pool>>
+
+* <<DS-Oracle-Driver-Project-Setup,set up Oracle JDBC>>
+
 This example, in Java properties file format, configures an Oracle
 Universal Connection Pool-managed data source named `main` to connect
 to an Oracle Database on `localhost` port `1521`, using the
@@ -433,6 +439,12 @@ https://docs.oracle.com/en/database/oracle/oracle-database/21/jajdb/oracle/jdbc/
 javadoc].
 
 ====== Example: Configuring the HikariCP Connection Pool and H2 [[DS-Configuration-HikariCP-H2-Example]]
+
+This example presumes you have:
+
+* <<DS-HikariCP-Project-Setup,set up the HikariCP connection pool>>
+
+* <<DS-H2-Driver-Project-Setup,set up H2>>
 
 This example, in Java properties file format, configures a
 HikariCP-managed data source named `test` to connect to an in-memory
