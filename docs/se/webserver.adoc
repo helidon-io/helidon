@@ -31,7 +31,9 @@ include::{rootdir}/includes/se.adoc[]
 - <<Configuration, Configuration>>
 - <<Routing, Routing>>
 - <<Request Handling, Request Handling>>
+- <<Protocol Specific Routing, Protocol Specific Routing>>
 - <<Error Handling, Error Handling>>
+- <<Http/2 Support, Http/2 Support>>
 - <<Static Content Support, Static Content Support>>
 - <<Jersey (JAX-RS) Support, Jersey (JAX-RS) Support>>
 - <<JSON Support, JSON Support>>
@@ -299,6 +301,22 @@ To complete the request handling, you must send a response by calling the `res.s
 <1> handler that terminates the request handling for any HTTP method using the `/hello` path
 <2> send the response
 
+== Protocol Specific Routing
+Handling routes based on the protocol version is possible by registering specific routes
+on routing builder.
+
+[source,java]
+.Routing based on HTTP version
+----
+.routing(r -> r
+        .get("/any-version", (req, res) -> res.send("HTTP Version " + req.version()))
+        .route(Http1Route.route(GET, "/version-specific", (req, res) -> res.send("HTTP/1.1 route")))
+        .route(Http2Route.route(GET, "/version-specific", (req, res) -> res.send("HTTP/2 route")))
+)
+----
+
+While `Http1Route` for Http/1 is always available with Helidon webserver,
+other routes like `Http2Route` for <<Http/2 Support, Http/2>> needs to be added as additional dependency.
 
 == Error Handling
 
@@ -377,6 +395,22 @@ exception called `req.next()`, then the exception is translated to an HTTP respo
 * Otherwise, the exceptions are translated to an Internal Server Error HTTP
 error code `500`.
 
+== Http/2 Support
+
+Helidon supports Http/2 upgrade from Http/1, Http/2 without prior knowledge
+and Http/2 with ALPN over TLS.
+Http/2 support is enabled in webserver by default when it's artefact is available on classpath.
+
+=== Maven Coordinates
+To enable Http/2 support add the following dependency to your project's `pom.xml`.
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.webserver</groupId>
+    <artifactId>helidon-webserver-http2</artifactId>
+</dependency>
+----
 
 == Static Content Support
 
