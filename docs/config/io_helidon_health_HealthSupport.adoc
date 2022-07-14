@@ -30,11 +30,7 @@ include::{rootdir}/includes/attributes.adoc[]
 Type: link:{javadoc-base-url}/io.helidon.health/io.helidon.health.HealthSupport[io.helidon.health.HealthSupport]
 
 
-[source,text]
-.Config key
-----
-health
-----
+This is a standalone configuration type, prefix from configuration root: `health`
 
 
 

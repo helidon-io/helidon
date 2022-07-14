@@ -26,7 +26,7 @@ include::{rootdir}/includes/attributes.adoc[]
 
 // tag::config[]
 
-    Open ID Connect security provider
+Open ID Connect security provider
 
 
 Type: link:{javadoc-base-url}/io.helidon.security.providers.oidc/io.helidon.security.providers.oidc.OidcProvider[io.helidon.security.providers.oidc.OidcProvider]

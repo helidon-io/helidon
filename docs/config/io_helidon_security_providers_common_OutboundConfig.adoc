@@ -26,7 +26,7 @@ include::{rootdir}/includes/attributes.adoc[]
 
 // tag::config[]
 
-    Outbound configuration for outbound security
+Outbound configuration for outbound security
 
 
 Type: link:{javadoc-base-url}/io.helidon.security.providers.common/io.helidon.security.providers.common.OutboundConfig[io.helidon.security.providers.common.OutboundConfig]

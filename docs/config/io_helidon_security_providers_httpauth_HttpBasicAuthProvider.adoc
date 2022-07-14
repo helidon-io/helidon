@@ -26,7 +26,7 @@ include::{rootdir}/includes/attributes.adoc[]
 
 // tag::config[]
 
-    HTTP Basic Authentication provider
+HTTP Basic Authentication provider
 
 
 Type: link:{javadoc-base-url}/io.helidon.security.providers.httpauth/io.helidon.security.providers.httpauth.HttpBasicAuthProvider[io.helidon.security.providers.httpauth.HttpBasicAuthProvider]
