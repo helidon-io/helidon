@@ -27,8 +27,9 @@ include::{rootdir}/includes/mp.adoc[]
 
 * <<Overview, Overview>>
 * <<DS, Named Data Source Integration>>
-** <<DS-HikariCP-Setup, Setting Up the Hikari CP Connection Pool>>
-** <<DS-Driver-Setup, Setting Up Your Database Driver>>
+** <<DS-HikariCP-Project-Setup, Setting Up the Hikari CP Connection Pool>>
+** <<DS-UCP-Project-Setup, Setting Up the Oracle Universal Connection Pool>>
+** <<DS-Driver-Project-Setup, Setting Up Your Database Driver>>
 ** <<DS-Usage, Common Usage>>
 
 == Overview [[Overview]]
@@ -68,7 +69,7 @@ How you set up Helidon MP's named data source integration differs
 depending on which of these two connection pools you use.  Each setup
 is described below.
 
-==== Setting Up the HikariCP Connection Pool [[DS-HikariCP-Setup]]
+==== Setting Up the HikariCP Connection Pool [[DS-HikariCP-Project-Setup]]
 
 ===== Maven Coordinates [[DS-HikariCP-Maven-Coordinates]]
 
@@ -89,7 +90,27 @@ dependencies are managed], and then ensure the following
 <1> Note that the `scope` is `runtime`, indicating that the HikariCP
     integration will be available on the runtime classpath.
 
-==== Setting Up Your Database Driver [[DS-Driver-Setup]]
+===== Maven Coordinates [[DS-UCP-Maven-Coordinates]]
+
+To include the Oracle Universal Connection Pool in your Helidon MP
+application, xref:../about/managing-dependencies.adoc[ensure your
+dependencies are managed], and then ensure the following
+`<dependency>` element is present as a child element of your project's
+`pom.xml` file's `<dependencies>` element:
+
+[source,xml]
+----
+<dependency>
+  <groupId>io.helidon.integrations.cdi</groupId>
+  <artifactId>helidon-integrations-cdi-datasource-ucp</artifactId>
+  <scope>runtime</scope> <!--1-->
+</dependency>
+----
+<1> Note that the `scope` is `runtime`, indicating that the Oracle
+    Universal Connection Pool integration will be available on the
+    runtime classpath.
+
+==== Setting Up Your Database Driver [[DS-Driver-Project-Setup]]
 
 ===== Overview
 
@@ -111,7 +132,7 @@ See the
 https://docs.oracle.com/en/java/javase/17/docs/api/java.sql/java/sql/package-summary.html[JDBC
 4.3 Specification] for more information about JDBC.
 
-===== Maven Coordinates (Oracle JDBC) [[DS-Oracle-Driver-Setup]]
+===== Maven Coordinates (Oracle JDBC) [[DS-Oracle-Driver-Project-Setup]]
 
 To include the Oracle JDBC driver in your Helidon MP application so
 your application can connect to an Oracle database:
@@ -146,7 +167,7 @@ Ensure the following
          for more details.
     -->
     <artifactId>ojdbc11</artifactId>
-    <!-- 
+    <!--
          It's best to manage this with Maven's <dependencyManagement> feature,
          which is why the <version> element is commented out below.
          If nevertheless you opt for the explicit version here, always check
@@ -162,7 +183,7 @@ Ensure the following
 <1> Note that the `scope` is `runtime`, indicating that the Oracle
     JDBC driver will be available on the runtime classpath.
 
-===== Maven Coordinates (H2) [[DS-H2-Driver-Setup]]
+===== Maven Coordinates (H2) [[DS-H2-Driver-Project-Setup]]
 
 To include the http://www.h2database.com/html/main.html[H2 JDBC
 driver] in your Helidon MP application so your application can connect
@@ -180,7 +201,7 @@ Ensure the following
 <dependency>
     <groupId>com.h2database</groupId>
     <artifactId>h2</artifactId>
-    <!-- 
+    <!--
          It's best to manage this with Maven's <dependencyManagement> feature,
          which is why the <version> element is commented out below.
          If nevertheless you opt for the explicit version here, always check
@@ -259,4 +280,3 @@ public SomeObject(@Named("test") DataSource ds) { // <3>
     https://docs.oracle.com/en/java/javase/17/docs/api/java.sql/javax/sql/DataSource.html[`javax.sql.DataSource`]
     and may be named anything you like.
 <4> The injected argument will never be `null`.
-
