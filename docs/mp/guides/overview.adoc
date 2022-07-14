@@ -102,7 +102,7 @@ Learn how to build a Helidon MicroProfile (MP) application from scratch.
 .Helidon MP Upgrade guide
 [link=migration.adoc]
 --
-Learn how Upgrade your Helidon MP application.
+Learn how to upgrade your Helidon MP application from 1.x to 2.x.
 --
 
 [CARD]
@@ -123,7 +123,7 @@ Learn how to use tracing in your Helidon MP application.
 .Testing with JUnit 5
 [link=testing-junit5.adoc]
 --
-Helidon has great integration with JUnit5, learn how to use it for testing your Helidon application.
+Learn how to use JUnit5 for testing your applications.
 --
 
 [CARD]
@@ -137,7 +137,7 @@ Learn how to use JBatch with Helidon MP.
 .Performance tuning in Helidon MP
 [link=performance-tuning.adoc]
 --
-Learn how to tune your Helidon MicroProfile (MP) application.
+Learn how to improve performance of your application.
 --
 
 == Build and Deploy
