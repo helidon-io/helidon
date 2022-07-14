@@ -27,7 +27,7 @@ include::{rootdir}/includes/attributes.adoc[]
 // tag::config[]
 
 
-Type: link:{javadoc-base-url}/io.helidon.faulttolerance/io.helidon.faulttolerance.Retry[io.helidon.faulttolerance.Retry]
+Type: link:{javadoc-base-url}/io.helidon.faulttolerance/io/helidon/faulttolerance/Retry.html[io.helidon.faulttolerance.Retry]
 
 
 

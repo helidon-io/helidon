@@ -27,7 +27,7 @@ include::{rootdir}/includes/attributes.adoc[]
 // tag::config[]
 
 
-Type: link:{javadoc-base-url}/io.helidon.microprofile.openapi/io.helidon.microprofile.openapi.MPOpenAPISupport[io.helidon.microprofile.openapi.MPOpenAPISupport]
+Type: link:{javadoc-base-url}/io.helidon.microprofile.openapi/io/helidon/microprofile/openapi/MPOpenAPISupport.html[io.helidon.microprofile.openapi.MPOpenAPISupport]
 
 
 [source,text]

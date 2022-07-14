@@ -27,7 +27,7 @@ include::{rootdir}/includes/attributes.adoc[]
 // tag::config[]
 
 
-Type: link:{javadoc-base-url}/io.helidon.common.configurable/io.helidon.common.configurable.ScheduledThreadPoolSupplier[io.helidon.common.configurable.ScheduledThreadPoolSupplier]
+Type: link:{javadoc-base-url}/io.helidon.common.configurable/io/helidon/common/configurable/ScheduledThreadPoolSupplier.html[io.helidon.common.configurable.ScheduledThreadPoolSupplier]
 
 
 

@@ -27,7 +27,7 @@ include::{rootdir}/includes/attributes.adoc[]
 // tag::config[]
 
 
-Type: link:{javadoc-base-url}/io.helidon.webserver/io.helidon.webserver.WebServerTls[io.helidon.webserver.WebServerTls]
+Type: link:{javadoc-base-url}/io.helidon.webserver/io/helidon/webserver/WebServerTls.html[io.helidon.webserver.WebServerTls]
 
 
 

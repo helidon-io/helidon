@@ -27,7 +27,7 @@ include::{rootdir}/includes/attributes.adoc[]
 // tag::config[]
 
 
-Type: link:{javadoc-base-url}/io.helidon.webserver.SocketConfiguration/io.helidon.webserver.SocketConfiguration.SocketConfigurationBuilder[io.helidon.webserver.SocketConfiguration.SocketConfigurationBuilder]
+Type: link:{javadoc-base-url}/io.helidon.webserver.SocketConfiguration/io/helidon/webserver/SocketConfiguration/SocketConfigurationBuilder.html[io.helidon.webserver.SocketConfiguration.SocketConfigurationBuilder]
 
 
 

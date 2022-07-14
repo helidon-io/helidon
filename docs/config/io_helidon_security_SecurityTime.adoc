@@ -27,7 +27,7 @@ include::{rootdir}/includes/attributes.adoc[]
 // tag::config[]
 
 
-Type: link:{javadoc-base-url}/io.helidon.security/io.helidon.security.SecurityTime[io.helidon.security.SecurityTime]
+Type: link:{javadoc-base-url}/io.helidon.security/io/helidon/security/SecurityTime.html[io.helidon.security.SecurityTime]
 
 
 
