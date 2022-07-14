@@ -396,6 +396,25 @@ javax.sql.DataSource.main.user = scott
 javax.sql.DataSource.main.password = tiger
 ----
 
+====== Example: Configuring the HikariCP Connection Pool and H2 [[DS-Configuration-HikariCP-H2-Example]]
+
+This example, in Java properties file format, configures a
+HikariCP-managed data source named `test` to connect to an in-memory
+H2 database named `unit-testing` with a `user` of `sa` and an empty
+password:
+
+[source,properties]
+----
+# Why "dataSourceClassName"? See
+# https://github.com/brettwooldridge/HikariCP#essentials
+javax.sql.DataSource.test.dataSourceClassName = org.h2.jdbcx.JdbcDataSource
+# Why "dataSource."? See
+# https://github.com/brettwooldridge/HikariCP/blob/HikariCP-5.0.0/src/main/java/com/zaxxer/hikari/util/PropertyElf.java#L47-L49
+javax.sql.DataSource.test.dataSource.url = jdbc:h2:mem:unit-testing;DB_CLOSE_DELAY=-1 # see http://www.h2database.com/html/features.html#database_url
+javax.sql.DataSource.test.dataSource.user = sa
+javax.sql.DataSource.test.dataSource.password =
+----
+
 ==== Usage [[DS-Usage]]
 
 You use Helidon MP's named data source integration support in the same
