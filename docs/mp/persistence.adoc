@@ -421,16 +421,16 @@ Connection Pool can be inferred from the "setter" methods found in
 https://docs.oracle.com/en/database/oracle/oracle-database/21/jjuar/oracle/ucp/jdbc/PoolDataSourceImpl.html[the
 javadoc for the `PoolDataSourceImpl` class].
 
-(Note that the Oracle Universal Connection Pool does not distinguish
+NOTE: The Oracle Universal Connection Pool does not distinguish
 cleanly between configuration properties that affect _its_ behavior
 and those that affect the behavior of the vendor-supplied `DataSource`
 implementation whose connections it pools, so in the example above it
 is not possible to tell that `connectionFactoryClassName` is a
-property of the connection pool, and `user` is a property of the
-vendor-supplied `DataSource` implementation.  In some cases, the
-Oracle Universal Connection Pool will set the given property on _both_
-the connection pool itself _and_ on the vendor-supplied `DataSource`
-it manages.)
+property of the Oracle Universal Connection Pool, and `user` is a
+property of the `oracle.jdbc.pool.OracleDataSource` `DataSource`
+implementation.  In some cases, the Oracle Universal Connection Pool
+will set the given property on _both_ the connection pool itself _and_
+on the vendor-supplied `DataSource` it manages.
 
 In general, the properties that can be set on the
 `oracle.jdbc.pool.OracleDataSource` vendor-supplied `DataSource` can
