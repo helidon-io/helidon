@@ -421,6 +421,12 @@ Connection Pool can be inferred from the "setter" methods found in
 https://docs.oracle.com/en/database/oracle/oracle-database/21/jjuar/oracle/ucp/jdbc/PoolDataSourceImpl.html[the
 javadoc for the `PoolDataSourceImpl` class].
 
+In general, the properties that can be set on the
+`oracle.jdbc.pool.OracleDataSource` `DataSource` implementation can be
+inferred from the "setter" methods found in
+https://docs.oracle.com/en/database/oracle/oracle-database/21/jajdb/oracle/jdbc/pool/OracleDataSource.html[its
+javadoc].
+
 NOTE: The Oracle Universal Connection Pool does not distinguish
 cleanly between configuration properties that affect _its_ behavior
 and those that affect the behavior of the vendor-supplied `DataSource`
@@ -431,12 +437,6 @@ property of the `oracle.jdbc.pool.OracleDataSource` `DataSource`
 implementation.  In some cases, the Oracle Universal Connection Pool
 will set the given property on _both_ the connection pool itself _and_
 on the vendor-supplied `DataSource` it manages.
-
-In general, the properties that can be set on the
-`oracle.jdbc.pool.OracleDataSource` vendor-supplied `DataSource` can
-be inferred from the "setter" methods found in
-https://docs.oracle.com/en/database/oracle/oracle-database/21/jajdb/oracle/jdbc/pool/OracleDataSource.html[its
-javadoc].
 
 ====== Example: Configuring the HikariCP Connection Pool and H2 [[DS-Configuration-HikariCP-H2-Example]]
 
@@ -465,7 +465,9 @@ javax.sql.DataSource.test.dataSource.password =
 
 HikariCP's configuration properties are described
 https://github.com/brettwooldridge/HikariCP#gear-configuration-knobs-baby[on
-its Github repository].
+its Github repository].  Properties that should be "passed through" to
+the vendor-supplied `DataSource` are prefixed with `dataSource.` as
+seen in the example above.
 
 In general, the properties that can be set on the
 `org.h2.jdbcx.JdbcDataSource` vendor-supplied `DataSource` can be
