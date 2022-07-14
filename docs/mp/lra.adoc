@@ -25,11 +25,10 @@
 :feature-name: Long Running Actions
 :spec-version: 1.0-RC3
 :spec-name: Micro Profile {feature-name} specification
-:spec-link: https://download.eclipse.org/microprofile/microprofile-lra-{spec-version}/microprofile-lra-spec-{spec-version}.html
 :javadoc-link: https://download.eclipse.org/microprofile/microprofile-lra-{spec-version}/apidocs/org/eclipse/microprofile/lra/annotation/
 :rootdir: {docdir}/..
 
-== ToC
+== Contents
 
 - <<Overview, Overview>>
 - <<Maven Coordinates, Maven Coordinates>>
@@ -42,7 +41,7 @@
 
 == Overview
 
-Distributed transactions for microservices are known as SAGA design patterns and are defined by the {spec-link}[{spec-name}].
+Distributed transactions for microservices are known as SAGA design patterns and are defined by the {microprofile-lra-spec-url}[{spec-name}].
 Unlike well known XA protocol, LRA is asynchronous and therefore much more scalable. Every LRA JAX-RS resource (<<Participant, participant>>) defines endpoints to be invoked when transaction needs to be _completed_ or _compensated_.
 
 
@@ -63,7 +62,7 @@ include::{rootdir}/includes/dependencies.adoc[]
 == Usage
 
 LRA transactions need to be coordinated over REST API by the LRA coordinator. <<Coordinator, Coordinator>>
-keeps track of all transactions and calls the @Compensate or @Complete endpoints for all participants involved in the particular
+keeps track of all transactions and calls the `@Compensate` or `@Complete` endpoints for all participants involved in the particular
 transaction. LRA transaction is first started, then joined by <<Participant, participant>>.
 Participant reports the successful finish of transaction by calling complete. Coordinator then calls the JAX-RS
 _complete_ endpoint that was registered during the join of each
@@ -343,7 +342,7 @@ mp.lra:
 <3> Url of the LRA enabled service overrides standard base uri,
 so coordinator can call load-balancer instead of the service
 
-For more information continue to {spec-link}[{spec-name}].
+For more information continue to {microprofile-lra-spec-url}[{spec-name}].
 
 == Examples
 
@@ -456,6 +455,6 @@ with port `8070` defined in the snippet above you need to configure your Helidon
 == Reference
 
 * https://github.com/eclipse/microprofile-lra[MicroProfile LRA GitHub Repository]
-* {spec-link}[{spec-name}]
+* {microprofile-lra-spec-url}[{spec-name}]
 * https://download.eclipse.org/microprofile/microprofile-lra-{spec-version}/apidocs/org/eclipse/microprofile/lra/[Microprofile LRA JavaDoc]
 * https://helidon.io/docs/v2/apidocs/io.helidon.lra.coordinator.client/module-summary.html[Helidon LRA Client JavaDoc]
