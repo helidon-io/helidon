@@ -54,8 +54,6 @@ include::{rootdir}/includes/dependencies.adoc[]
 
 == Usage
 
-=== Instrumenting Your Service
-
 include::{rootdir}/includes/metrics/metrics-shared.adoc[tag=usage-body]
 
 
@@ -111,6 +109,11 @@ include::{rootdir}/includes/metrics/metrics-shared.adoc[tag=metric-registry-api]
 include::{rootdir}/includes/metrics/metrics-config.adoc[tag=config-intro]
 
 == Examples
+
+Helidon MP includes a prewritten example application illustrating
+link:{helidon-github-tree-url}/examples/metrics/filtering/mp[enabling/disabling metrics] using configuration.
+
+The rest of this section contains other examples of working with metrics:
 
 * <<example-application-code,Example Application Code>>
 * <<example-configuration,Example Configuration>>

@@ -38,6 +38,8 @@ Learn more about the https://github.com/eclipse/microprofile-metrics/releases/ta
 // end::overview[]
 
 // tag::usage-body[]
+=== Instrumenting Your Service
+
 You add metrics to your service
 ifdef::se-flavor[]
 by writing {writing-code-content}
@@ -84,7 +86,7 @@ Clients can request a particular output format.
 |====
 | Format | Requested by
 
-| OpenMetrics (Prometheus) | default
+| OpenMetrics (Prometheus) | default (`text/plain`)
 | JSON | Header `Accept: application/json`
 |====
 
@@ -95,6 +97,39 @@ Clients can also limit the report by appending the metric type to the path:
 * `/metrics/application`
 
 Further, clients can narrow down to a specific metric name by adding the name as a subpath such as `/metrics/application/myCount`.
+
+[source,bash]
+.Example Reporting: Prometheus format
+----
+curl -s -H 'Accept: text/plain' -X GET http://localhost:8080/metrics/
+----
+
+[listing]
+----
+# TYPE base:classloader_total_loaded_class_count counter
+# HELP base:classloader_total_loaded_class_count Displays the total number of classes that have been loaded since the Java virtual machine has started execution.
+base:classloader_total_loaded_class_count 3157
+----
+
+
+.Example Reporting: JSON format
+[source,bash]
+----
+curl -s -H 'Accept: application/json' -X GET http://localhost:8080/metrics/
+----
+
+[listing]
+----
+{
+   "base" : {
+      "memory.maxHeap" : 3817865216,
+      "memory.committedHeap" : 335544320,
+    }
+}
+----
+
+In addition to your application metrics the reports contain other
+metrics of interest such as system and VM information.
 
 // end::usage-body[]
 
@@ -122,3 +157,15 @@ endif::[]
 
 The `MetricRegistry` allows your code to register new metrics, look-up previously-registered metrics, and remove metrics.
 // end::metric-registry-api[]
+
+// tag::example-apps[]
+Helidon {flavor-uc} includes several prewritten example applications illustrating aspects of metrics:
+
+* link:{helidon-github-tree-url}/examples/metrics/filtering/{flavor-lc}[Enabling/disabling metrics] using
+ifdef::se-flavor[`MetricsSettings`]
+ifdef::mp-flavor[configuration]
+ifdef::se-flavor[]
+* link:{helidon-github-tree-url}/examples/metrics/kpi[Controlling key performance indicator metrics] using configuration and `KeyPerformanceIndicatorMetricsSettings`.
+endif::[]
+
+// end::example-apps[]

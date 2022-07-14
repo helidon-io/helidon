@@ -126,6 +126,12 @@ But some consumers, such as trace collectors and their U/Is, understand the exem
 
 == Examples
 
+ifdef::se-flavor[]
+Helidon includes an example application, based on the QuickStart application, which link:{helidon-github-tree-url}/examples/metrics/exemplar[illustrates exemplar support].
+endif::[]
+
+Once you enable exemplar support you can see the exemplars in the metrics output.
+
 .Exemplar output - `Timer`
 [listing,subs="quotes"]
 ----

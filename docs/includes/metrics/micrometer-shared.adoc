@@ -186,5 +186,9 @@ endif::[]
 can create, look up, and update metrics programmatically using the Micrometer `MeterRegistry` API. The link:{micrometer-api-url}[Micrometer concepts document] provides a good starting point for learning how to use Micrometer's interfaces and classes.
 // end::use-micrometer-api[]
 
+// tag::example-apps[]
+Helidon {flavor-uc} includes an link:{helidon-github-tree-url}/examples/integrations/micrometer/{flavor-lc}[example application] which uses Micrometer support.
+// end::example-apps[]
+
 // end::all-micrometer[]
 

@@ -47,7 +47,7 @@ ifdef::mp-flavor[]
 * <<config-rest-request,Control `REST.request` metrics collection.>>
 
 endif::[]
-[[config-disable]]
+[#config-disable]
 ==== Disable Metrics Subsystem
 
 .Disabling metrics entirely
@@ -66,7 +66,7 @@ metrics:
 endif::[]
 Helidon does not update metrics, and the `/metrics` endpoints respond with `404` plus a message that the metrics subsystem is disabled.
 
-[[config-selective]]
+[#config-selective]
 ==== Disable Selected Metrics
 
 You can be even more selective. Within a registry type you can configure up to two regular expression patterns:
@@ -112,7 +112,7 @@ endif::[]
 
 This setting excludes metrics with names starting with `myapp.supplier` _except_ for the metric `myapp.supplier.updates`. The `exclude` and `include` values are regular expressions.
 
-[[config-kpi]]
+[#config-kpi]
 ==== Collecting Basic and Extended Key Performance Indicator (KPI) Metrics
 
 Any time you include the Helidon metrics module in your application, Helidon tracks two basic performance indicator metrics:
@@ -148,7 +148,7 @@ metrics:
 ----
 endif::[]
 
-[[config-rest-request]]
+[#config-rest-request]
 ifdef::mp-flavor[]
 ==== Enable `REST.request` metrics
 

@@ -56,9 +56,9 @@ include::{rootdir}/includes/metrics/micrometer-shared.adoc[tag=configuring-endpo
 
 == Examples
 
-Helidon provides an link:{helidon-github-tree-url}/examples/integrations/micrometer/se[example SE application] using Micrometer integration.
+include::{rootdir}/includes/metrics/micrometer-shared.adoc[tag=example-apps]
 
-You need to make two types of changes to your application to use Helidon SE integration with Micrometer:
+The rest of this section takes you through the process of changing your application to use Helidon SE integration with Micrometer:
 
 . Register an instance of link:{micrometer-javadoc-base-url}/io/helidon/integrations/micrometer/MicrometerSupport.html[`MicrometerSupport`] with the web server.
 . Create  meters using the meter registry managed by Helidon's `MicrometerSupport`  and then update and query those meters.
