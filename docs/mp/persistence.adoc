@@ -130,9 +130,9 @@ dependencies are managed], and then ensure the following
 
 ===== Overview
 
-Regardless of which connection pool you use, ultimately a JDBC
-database driver is responsible for making any connections to a
-relational database.  Drivers are database-product-specific.
+Regardless of which connection pool you use, ultimately at the lowest
+level a JDBC database driver is responsible for making any connections
+to a relational database.  Drivers are database-product-specific.
 
 Once you have decided upon a relational database product to use, and a
 JDBC driver to use to connect to it,
@@ -188,8 +188,8 @@ Ensure the following
     <!--
          It's best to manage this with Maven's <dependencyManagement> feature,
          which is why the <version> element is commented out below.
-         If nevertheless you opt for the explicit version here, always check
-         https://search.maven.org/classic/#search%7Cga%7C1%7Cg%3A%22com.oracle.database.jdbc%22
+         If nevertheless you opt for the explicit version here, check
+         https://search.maven.org/search?q=g:com.oracle.database.jdbc
          for up-to-date available versions, and see
          https://www.oracle.com/database/technologies/maven-central-guide.html
          for extremely important information.
@@ -224,8 +224,8 @@ Ensure the following
     <!--
          It's best to manage this with Maven's <dependencyManagement> feature,
          which is why the <version> element is commented out below.
-         If nevertheless you opt for the explicit version here, always check
-         https://search.maven.org/classic/#search%7Cga%7C1%7Cg%3A%22com.h2database%22%20AND%20a%3A%22h2%22
+         If nevertheless you opt for the explicit version here, check
+         https://search.maven.org/search?q=g:com.h2database%20a:h2
          for up-to-date available versions.
     -->
     <!-- <version>2.1.212</version> -->
