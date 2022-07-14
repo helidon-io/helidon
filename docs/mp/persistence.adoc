@@ -78,7 +78,7 @@ depending on which of these two connection pools, which JDBC driver,
 and which relational database product you use.  Example setups are
 described below.
 
-=== Project Setup
+=== Project Setup [[DS-Project-Setup]]
 
 ==== Setting Up a Connection Pool [[DS-CP-Project-Setup]]
 
@@ -250,6 +250,8 @@ Ensure the following
 
 === Configuration [[DS-Configuration]]
 
+==== Overview
+
 Each connection pool supported by Helidon's named data source
 integration support is, itself, a `DataSource` that wraps a
 vendor-supplied `DataSource` present in the JDBC driver classes you
@@ -319,7 +321,7 @@ As an example, configuration to set an imaginary `foo` property on the
 `test` data source to `bar` looks like this in Java
 `.properties`-style format:
 
-[source]
+[source,properties]
 ----
 javax.sql.DataSource.test.foo=bar
 ----
@@ -341,7 +343,7 @@ javax.sql.DataSource.yourDataSourceName.somePropertyOfYourConnectionPoolAndDataS
 javax.sql.DataSource.yourDataSourceName.someOtherPropertyOfYourConnectionPoolAndDataSource = anotherValue
 ----
 
-===== Example: System Properties on the Command Line
+===== Example: System Properties Set on the Command Line
 
 Here is an example using system properties on the command line instead:
 
@@ -353,7 +355,7 @@ java \
   # ...
 ----
 
-===== Example: Environment Variables Set By the Shell
+===== Example: Environment Variables Set on the Command Line
 
 Here is an example using environment variables as typed directly into
 a command line shell, taking advantage of MicroProfile Config's
@@ -469,9 +471,9 @@ javax.sql.DataSource.test.dataSource.password =
 
 HikariCP's configuration properties are described
 https://github.com/brettwooldridge/HikariCP#gear-configuration-knobs-baby[on
-its Github repository].  Properties that should be "passed through" to
-the vendor-supplied `DataSource` are prefixed with `dataSource.` as
-seen in the example above.
+its Github repository].  Properties that should be forwarded on to the
+vendor-supplied `DataSource` are prefixed with `dataSource.` as seen
+in the example above.
 
 In general, the properties that can be set on the
 `org.h2.jdbcx.JdbcDataSource` vendor-supplied `DataSource` can be
@@ -486,7 +488,8 @@ way, regardless of your choices of vendor-supplied `DataSource` and
 connection pool.
 
 To use Helidon MP's named data source integration support in your
-application, once it has been set up and configured, create a
+application, once it has been <<DS-Project-Setup,set up>> and
+<<DS-Configuration,configured>>, create a
 https://docs.oracle.com/en/java/javase/17/docs/api/java.sql/javax/sql/DataSource.html[`DataSource`]-typed
 injection point in a Java class representing a CDI bean somewhere in
 your application,
