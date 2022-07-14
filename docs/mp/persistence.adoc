@@ -26,10 +26,11 @@ include::{rootdir}/includes/mp.adoc[]
 == Contents
 
 * <<Overview, Overview>>
-* <<Named-Data-Sources, Named Data Sources>>
-** <<Using-the-HikariCP-Connection-Pool, Using the Hikari CP Connection Pool>>
+* <<DS, Named Data Source-Integration>>
+** <<DS-HikariCP-Setup, Setting Up the Hikari CP Connection Pool>>
+** <<DS-Usage, Common Usage>>
 
-== Overview
+== Overview [[Overview]]
 
 Helidon MP comes with deep integration for three broad,
 specification-defined, persistence-related technologies that can be
@@ -39,9 +40,9 @@ used together or separately:
 * https://jakarta.ee/specifications/transactions/2.0/[Jakarta Transactions] (JTA)
 * https://jakarta.ee/specifications/persistence/3.0/[Jakarta Persistence] (JPA)
 
-Each technology is detailed below.
+The supported integration for each technology is detailed below.
 
-== Named Data Sources
+== Named Data Source Integration [[DS]]
 
 === Overview
 
@@ -62,17 +63,19 @@ connection pool implementations:
 2. https://docs.oracle.com/en/database/oracle/oracle-database/21/jjucp/index.html[Oracle
    Universal Connection Pool]
 
-The way you set up named data source integration differs depending on
-which connection pool you use.  Each setup is described below.
+How you set up named data source integration differs depending on
+which of these two connection pools you use.  Each setup is described
+below.
 
-==== Using the HikariCP Connection Pool
+==== Setting Up the HikariCP Connection Pool [[DS-HikariCP-Setup]]
 
-===== Maven Coordinates [[Maven-Coordinates]]
+===== Maven Coordinates [[DS-HikariCP-Maven-Coordinates]]
 
-To use the HikariCP, xref:../about/managing-dependencies.adoc[ensure
-your dependencies are managed] and then ensure the following
-dependency element is present as a child element of your project's
-`pom.xml`'s `<dependencies>` element:
+To include the HikariCP connection pool in your Helidon MP
+application, xref:../about/managing-dependencies.adoc[ensure your
+dependencies are managed], and then ensure the following
+`<dependency>` element is present as a child element of your project's
+`pom.xml` file's `<dependencies>` element:
 
 [source,xml]
 ----
@@ -81,7 +84,7 @@ dependency element is present as a child element of your project's
   <artifactId>helidon-integrations-cdi-datasource-hikaricp</artifactId>
   <!-- 
        It's actually best to manage this with Maven's <dependencyManagement> feature.
-       If you opt for the explicit version here, always check
+       If instead you opt for the explicit version here, always check
        https://search.maven.org/classic/#search%7Cga%7C1%7Chelidon for up-to-date
        available versions.
   -->
@@ -89,3 +92,6 @@ dependency element is present as a child element of your project's
   <scope>runtime</scope>
 </dependency>
 ----
+
+==== Common Usage [[DS-Usage]]
+
