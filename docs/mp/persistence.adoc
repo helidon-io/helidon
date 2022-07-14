@@ -25,8 +25,9 @@ include::{rootdir}/includes/mp.adoc[]
 
 == Contents
 
-- <<Overview, Overview>>
-- <<Named-Data-Sources, Named Data Sources>>
+* <<Overview, Overview>>
+* <<Named-Data-Sources, Named Data Sources>>
+** <<Using-the-HikariCP-Connection-Pool, Using the Hikari CP Connection Pool>>
 
 == Overview
 
@@ -54,4 +55,37 @@ https://docs.oracle.com/en/java/javase/17/docs/api/java.sql/java/sql/Connection.
 objects]
 https://docs.oracle.com/en/java/javase/17/docs/api/java.sql/javax/sql/DataSource.html#getConnection()[acquired]
 from these data sources will be pooled by one of two possible
-connection pool implementations.
+connection pool implementations:
+
+1. https://github.com/brettwooldridge/HikariCP[HikariCP]
+
+2. https://docs.oracle.com/en/database/oracle/oracle-database/21/jjucp/index.html[Oracle
+   Universal Connection Pool]
+
+The way you set up named data source integration differs depending on
+which connection pool you use.  Each setup is described below.
+
+==== Using the HikariCP Connection Pool
+
+===== Maven Coordinates [[Maven-Coordinates]]
+
+To use the HikariCP, xref:../about/managing-dependencies.adoc[ensure
+your dependencies are managed] and then ensure the following
+dependency element is present as a child element of your project's
+`pom.xml`'s `<dependencies>` element:
+
+[source,xml]
+----
+<dependency>
+  <groupId>io.helidon.integrations.cdi</groupId>
+  <artifactId>helidon-integrations-cdi-datasource-hikaricp</artifactId>
+  <!-- 
+       It's actually best to manage this with Maven's <dependencyManagement> feature.
+       If you opt for the explicit version here, always check
+       https://search.maven.org/classic/#search%7Cga%7C1%7Chelidon for up-to-date
+       available versions.
+  -->
+  <!-- <version>3.0.0</version> -->
+  <scope>runtime</scope>
+</dependency>
+----
