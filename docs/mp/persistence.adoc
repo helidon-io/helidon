@@ -31,6 +31,8 @@ include::{rootdir}/includes/mp.adoc[]
 *** <<DS-HikariCP-Project-Setup, Setting Up the Hikari CP Connection Pool>>
 *** <<DS-UCP-Project-Setup, Setting Up the Oracle Universal Connection Pool>>
 ** <<DS-Driver-Project-Setup, Setting Up a Database Driver>>
+*** <<DS-Oracle-Driver-Project-Setup, Setting Up Oracle JDBC>>
+*** <<DS-H2-Driver-Project-Setup, Setting Up H2>>
 ** <<DS-Usage, Usage>>
 
 == Overview [[Overview]]
