@@ -53,9 +53,14 @@ pipeline {
             label "linux"
           }
           steps {
-            sh 'etc/scripts/test-archetypes.sh'
-            archiveArtifacts artifacts: "archetypes/**/target/**/*.txt"
-            junit testResults: '**/target/surefire-reports/*.xml'
+            script {
+              try {
+                sh 'etc/scripts/test-archetypes.sh'
+              } finally {
+                archiveArtifacts artifacts: "archetypes/**/target/**/*.txt"
+                junit testResults: '**/target/surefire-reports/*.xml'
+              }
+            }
           }
         }
         stage('integration-tests') {
