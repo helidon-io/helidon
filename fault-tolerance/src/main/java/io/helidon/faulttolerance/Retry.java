@@ -83,7 +83,7 @@ public interface Retry extends FtHandler {
          * @param policy retry policy
          * @return updated builder instance
          */
-        @ConfiguredOption(kind = ConfiguredOption.Kind.MAP)
+        @ConfiguredOption(provider = true)
         public Builder retryPolicy(RetryPolicy policy) {
             this.retryPolicy = policy;
             return this;

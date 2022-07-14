@@ -16,36 +16,41 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
+ifndef::rootdir[:rootdir: {docdir}/..]
 :description: Configuration of io.helidon.webserver.cors.CrossOriginConfig
 :keywords: helidon, config, io.helidon.webserver.cors.CrossOriginConfig
 :basic-table-intro: The table below lists the configuration keys that configure io.helidon.webserver.cors.CrossOriginConfig
+include::{rootdir}/includes/attributes.adoc[]
 
-[source,text]
-.Type
-----
-io.helidon.webserver.cors.CrossOriginConfig
-----
+= CrossOriginConfig (webserver.cors) Configuration
 
+// tag::config[]
 
 
-==== Configuration options
+Type: link:{javadoc-base-url}/io.helidon.webserver.cors/io.helidon.webserver.cors.CrossOriginConfig[io.helidon.webserver.cors.CrossOriginConfig]
 
+
+
+
+== Configuration options
 
 
 
 Optional configuration options:
-[cols="3,3,2,5"]
+[cols="3,3,2,5a"]
 
 |===
 |key |type |default value |description
 
-|`path-pattern` |string |`{+}` |Updates the path prefix for this cross-origin config.
-|`allow-headers` |string[&#93; |`*` |Sets the allow headers.
-|`max-age-seconds` |long |`3600` |Sets the maximum age.
 |`allow-credentials` |boolean |`false` |Sets the allow credentials flag.
-|`allow-origins` |string[&#93; |`*` |Sets the allowOrigins.
-|`expose-headers` |string[&#93; |{nbsp} |Sets the expose headers.
+|`allow-headers` |string[&#93; |`*` |Sets the allow headers.
 |`allow-methods` |string[&#93; |`*` |Sets the allow methods.
+|`allow-origins` |string[&#93; |`*` |Sets the allowOrigins.
 |`enabled` |boolean |`true` |Sets whether this config should be enabled or not.
+|`expose-headers` |string[&#93; |{nbsp} |Sets the expose headers.
+|`max-age-seconds` |long |`3600` |Sets the maximum age.
+|`path-pattern` |string |`{+}` |Updates the path prefix for this cross-origin config.
 
 |===
+
+// end::config[]
