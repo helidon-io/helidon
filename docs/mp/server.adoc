@@ -1,0 +1,373 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2022 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= MicroProfile Server
+:spec-name: MicroProfile Server
+:description: {spec-name} support in Helidon MP
+:keywords: helidon, mp, microprofile, server
+:feature-name: MicroProfile Server
+:microprofile-bundle: true
+:rootdir: {docdir}/..
+
+include::{rootdir}/includes/mp.adoc[]
+
+== Content
+
+- <<Overview, Overview>>
+- <<Maven-Coordinates, Maven Coordinates>>
+- <<Usage, Usage>>
+- <<API, API>>
+- <<Configuration, Configuration>>
+- <<Examples, Examples>>
+- <<Reference, Reference>>
+
+== Overview
+
+Helidon provides a MicroProfile server implementation (`io.helidon.microprofile.server`) that encapsulates the Helidon WebServer.
+
+== Maven-Coordinates
+
+To enable MicroProfile Server add the helidon-microprofile-core bundle dependency to your project's `pom.xml`
+(see xref:../about/managing-dependencies.adoc[Managing Dependencies]).
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.microprofile.bundles</groupId>
+    <artifactId>helidon-microprofile-core</artifactId>
+</dependency>
+----
+
+MicroProfile Server is already included in the bundle.
+
+If full control over the dependencies is required, and you want to minimize the quantity of the dependencies -
+`Helidon MicroProfile Server` should be used. In this case the following dependencies should be included in your
+project's `pom.xml`:
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.microprofile.server</groupId>
+    <artifactId>helidon-microprofile-server</artifactId>
+</dependency>
+----
+
+== Usage
+
+Helidon Microprofile Server is used to collect and deploy JAX-RS application. You can either instantiate the server directly
+as is done in the xref:../guides/quickstart.adoc[Helidon MP Quickstart example]
+or use its built-in `create`. It will create the `server` instance. Calling `start` method will run the server.
+
+[source,java]
+----
+Server server = Server.create().start();
+----
+
+Call the `stop` method to stop the server.
+
+[source,java]
+----
+Server server = Server.create().start();
+...
+server.stop();
+----
+
+== API
+
+include::{rootdir}/includes/config/io.helidon.microprofile.server.Server.adoc[]
+
+The following table provides a brief description of routing annotations, including its parameters. More information
+in <<Configuring a reactive route>> section.
+
+[cols="3,5", role="flex, sm10"]
+|===
+|Annotation |Description
+
+a|
+----
+@RoutingName(
+    value = ""
+    required = false
+)
+----
+| Binds a JAX-RS Application or Helidon Service to a specific (named) routing on `WebServer`.The routing should have
+a corresponding named socket configured on the WebServer to run the routing on.
+
+a|
+----
+@RoutingPath("/path")
+----
+| Path of a Helidon Service to register with routing.
+
+|===
+
+== Configuration
+
+By default, the server uses the MicroProfile Config, but you may also want to use Helidon configuration.
+
+There are 3 default MicroProfile Config sources:
+
+* `System.getProperties()`
+* `System.getenv()`
+* all `META-INF/microprofile-config.properties` files on the class path
+* `application.yaml` on the classpath (read by default by Helidon Config)
+
+In this example, the configuration is in a file, and it includes Helidon configuration options.
+
+[source,properties]
+.META-INF/microprofile-config.properties - Server configuration
+----
+# default is localhost
+server.host=some.host
+# default is 7001
+server.port=7011
+
+# Helidon configuration (optional)
+
+# Length of queue for incoming connections. Default is 1024
+server.backlog=512
+# TCP receive window. Default is 0 to use implementation default
+server.receive-buffer=256
+# Socket timeout milliseconds - defaults to 0 (infinite)
+server.timeout=30000
+# Defaults to Runtime.availableProcessors()
+server.workers=4
+----
+
+=== Configuring TLS
+
+Helidon MP also supports custom TLS configuration.
+
+User is able to set following properties:
+
+* Server truststore
+    - Keystore with trusted certificates
+* Private key and certificate
+    - Server certificate which will be used in TLS handshake
+
+[source,properties]
+.META-INF/microprofile-config.properties - Server configuration
+----
+#Truststore setup
+server.tls.trust.keystore.resource.resource-path=server.p12
+server.tls.trust.keystore.passphrase=password
+server.tls.trust.keystore.trust-store=true
+
+#Keystore with private key and server certificate
+server.tls.private-key.keystore.resource.resource-path=server.p12
+server.tls.private-key.keystore.passphrase=password
+----
+
+Or the same configuration done in application.yaml file.
+
+[source,yaml]
+.application.yaml - Server configuration
+----
+server:
+  tls:
+    #Truststore setup
+    trust:
+      keystore:
+        passphrase: "password"
+        trust-store: true
+        resource:
+          resource-path: "keystore.p12"
+    #Keystore with private key and server certificate
+    private-key:
+      keystore:
+        passphrase: "password"
+        resource:
+          resource-path: "keystore.p12"
+----
+
+=== Configuring additional ports [[conf-additional-ports]]
+
+Helidon MP can expose multiple ports, with the following limitations:
+
+- The default port is the port that serves your application (JAX-RS applications and resources)
+- Other ports (in this example we configure one "admin" port) can be assigned endpoints that are exposed by Helidon components,
+    currently supported by MP Health and MP Metrics
+
+For this example, we will use a `yaml` file:
+
+- The port `7011` is the default port and will serve your application
+- The port `8011` is named "admin" (this is an arbitrary name)
+- MP Metrics are configured to use the "admin" port through the `routing` configuration (reference is by name)
+- MP Health is configured the same way to reference the "admin" port
+
+[source,yaml]
+.application.yaml - Server configuration
+----
+server:
+  port: 7011
+  host: "some.host"
+  sockets:
+    admin:
+      port: 8011
+      bind-address: "some.host"
+
+metrics:
+  routing: "admin"
+
+health:
+  routing: "admin"
+----
+
+=== Configuring a reactive route
+
+Helidon MP Server will pick up CDI beans that implement the `io.helidon.webserver.Service`
+interface and configure them with the underlying WebServer.
+
+This allows configuration of reactive routes to run alongside a JAX-RS application.
+
+The bean is expected to be either `ApplicationScoped` or `Dependent` and will be requested
+only once during the boot of the `Server`.
+
+The bean will support injection of `ApplicationScoped` and `Dependent` scoped beans.
+You cannot inject `RequestScoped` beans. Please use WebServer features to handle request
+related objects.
+
+==== Customizing the reactive service
+The service can be customized using annotations and/or configuration to be
+
+- registered on a specific path
+- registered with a named routing
+
+===== Assigning a reactive service to named ports
+Helidon has the concept of named routing. These correspond to the named ports
+configured with WebServer.
+
+You can assign a reactive service to a named routing (and as a result to a named port) using
+either an annotation or configuration (or both to override the value from annotation).
+
+====== Annotation `@RoutingName` [[annotation-routing-name]]
+You can annotate a service bean with this annotation to assign it to a specific named routing,
+that is (most likely) going to be bound to a specific port.
+
+The annotation has two attributes:
+- `value` that defines the routing name
+- `required` to mark that the routing name MUST be configured in Helidon server
+
+[source,java]
+.`@RoutingName` example
+----
+@ApplicationScoped
+@RoutingName(value="admin", required="true")
+@RoutingPath("/admin")
+public class AdminService implements Service {
+}
+----
+
+The example above will be bound to `admin` routing (and port) and will fail if such a port
+is not configured.
+
+====== Configuration override of routing name
+
+For each service bean you can define the routing name and its required flag by specifying a configuration
+option `bean-class-name.routing-name.name` and `bean-class-name.routing-name.required`.
+For service beans produced with producer method replace `bean-class-name` with `class-name.producer-method-name`.
+
+Example (YAML) configuration for a service bean `io.helidon.examples.AdminService` that changes the
+routing name to `management` and its required flag to `false`:
+
+[source,yaml]
+----
+io.helidon.examples.AdminService:
+  routing-name:
+    name: "management"
+    required: false
+----
+
+==== Configuring a reactive service path
+
+Each service is registered on a path. If none is configured, then the service would be
+configured on the root path.
+
+You can configure service path using an annotation or configuration (or both to override value from annotation)
+
+===== Annotation `@RoutingPath`
+
+You can configure `@RoutingPath` to define the path a service is registered on.
+
+===== Configuration override of routing path
+
+For each reactive service class you can define the routing path by specifying a configuration
+option `class-name.routing-path.path`.
+
+Example (YAML) configuration for a class `io.helidon.example.AdminService` that changes the
+routing path to `/management`:
+
+[source,yaml]
+----
+io.helidon.examples.AdminService:
+  routing-path:
+    path: "/management"
+----
+
+=== Serving Static Content
+
+[source,properties]
+.META-INF/microprofile-config.properties - File system static content
+----
+# Location of content on file system
+server.static.path.location=/var/www/html
+# default is index.html
+server.static.path.welcome=resource.html
+# static content path - default is "/"
+# server.static.path.context=/static-file
+----
+
+[source,properties]
+.META-INF/microprofile-config.properties - Classpath static content
+----
+# src/main/resources/WEB in your source tree
+server.static.classpath.location=/WEB
+# default is index.html
+server.static.classpath.welcome=resource.html
+# static content path - default is "/"
+# server.static.classpath.context=/static-cp
+----
+
+== Examples
+
+See <<Usage>> for same simple examples.
+
+=== Example configuration of routing
+
+A full configuration example (YAML):
+
+[source,yaml]
+----
+server:
+  port: 8080
+  sockets:
+   management:
+   port: 8090
+
+io.helidon.examples.AdminApplication:
+  routing-name:
+    name: "management"
+    required: true
+  routing-path:
+    path: "/management"
+----
+
+== Reference
+
+* link:https://helidon.io/docs/v2/apidocs/io.helidon.microprofile.server/module-summary.html[Helidon MicroProfile Server Javadoc]
+* link:https://github.com/oracle/helidon/tree/master/microprofile/server[Helidon MicroProfile Server on GitHub]
