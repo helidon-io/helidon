@@ -78,6 +78,8 @@ depending on which of these two connection pools, which JDBC driver,
 and which relational database product you use.  Example setups are
 described below.
 
+=== Project Setup
+
 ==== Setting Up a Connection Pool [[DS-CP-Project-Setup]]
 
 Helidon MP's named data source integration requires a connection pool.
@@ -244,7 +246,7 @@ Ensure the following
 <1> Note that the `scope` is `runtime`, indicating that the Oracle
     JDBC driver classes will be available on the runtime classpath.
 
-==== Configuration [[DS-Configuration]]
+=== Configuration [[DS-Configuration]]
 
 Each connection pool supported by Helidon's named data source
 integration support is, itself, a `DataSource` that wraps a
@@ -268,7 +270,7 @@ Config], so you have many choices when deciding on your
 configuration's location in (1) above.
 
 The configuration values themselves are necessarily specific to the
-connection pool you selected and the vendor-supplied `DataSource`
+connection pool you selected, and the vendor-supplied `DataSource`
 responsible for actually connecting to your relational database.  In
 general, at a minimum, you typically supply:
 
@@ -284,7 +286,7 @@ general, at a minimum, you typically supply:
 Some examples for common combinations follow.  They are not
 exhaustive.
 
-===== Configuration Prefixes
+==== Configuration Prefixes
 
 All MicroProfile Config-compatible property names for Helidon MP's
 named data source integration support follow a common pattern:
@@ -320,12 +322,12 @@ As an example, configuration to set an imaginary `foo` property on the
 javax.sql.DataSource.test.foo=bar
 ----
 
-===== Examples [[DS-Configuration-Examples]]
+==== Examples [[DS-Configuration-Examples]]
 
 Here are some examples illustrating general configuration patterns in
 various common MicroProfile Config-compatible locations.
 
-====== Example: `META-INF/microprofile-config.properties` Classpath Resource
+===== Example: `META-INF/microprofile-config.properties` Classpath Resource
 
 Here is an example of some data source configuration as might be found
 in a `src/main/resources/META-INF/microprofile-config.properties`
@@ -337,7 +339,7 @@ javax.sql.DataSource.yourDataSourceName.somePropertyOfYourConnectionPoolAndDataS
 javax.sql.DataSource.yourDataSourceName.someOtherPropertyOfYourConnectionPoolAndDataSource = anotherValue
 ----
 
-====== Example: System Properties on the Command Line
+===== Example: System Properties on the Command Line
 
 Here is an example using system properties on the command line instead:
 
@@ -349,7 +351,7 @@ java \
   # ...
 ----
 
-====== Example: Environment Variables Set By the Shell
+===== Example: Environment Variables Set By the Shell
 
 Here is an example using environment variables as typed directly into
 a command line shell, taking advantage of MicroProfile Config's
@@ -363,7 +365,7 @@ JAVAX_SQL_DATASOURCE_YOURDATASOURCENAME_SOMEOTHERPROPERTYOFYOURCONNECTIONPOOLAND
 java # ...
 ----
 
-====== Example: Environment Variables Set By the `env` Command
+===== Example: Environment Variables Set By the `env` Command
 
 Here is an example using environment variables as supplied via the
 `env` shell command, thus removing the need for MicroProfile Config's
@@ -376,7 +378,7 @@ env 'javax.sql.DataSource.yourDataSourceName.somePropertyOfYourConnectionPoolAnd
   java # ...
 ----
 
-====== Example: `application.yaml` Classpath Resource
+===== Example: `application.yaml` Classpath Resource
 
 Here is an example of some data source configuration as might be found
 in a `src/main/resources/application.yaml` classpath resource:
@@ -391,7 +393,7 @@ javax:
         someOtherPropertyOfYourConnectionPoolAndDataSource: anotherValue
 ----
 
-====== Example: Configuring the Oracle Universal Connection Pool and Oracle JDBC [[DS-Configuration-UCP-Oracle-Example]]
+===== Example: Configuring the Oracle Universal Connection Pool and Oracle JDBC [[DS-Configuration-UCP-Oracle-Example]]
 
 This example presumes you have:
 
@@ -438,7 +440,7 @@ implementation.  In some cases, the Oracle Universal Connection Pool
 will set the given property on _both_ the connection pool itself _and_
 on the vendor-supplied `DataSource` it manages.
 
-====== Example: Configuring the HikariCP Connection Pool and H2 [[DS-Configuration-HikariCP-H2-Example]]
+===== Example: Configuring the HikariCP Connection Pool and H2 [[DS-Configuration-HikariCP-H2-Example]]
 
 This example presumes you have:
 
@@ -482,7 +484,7 @@ way, regardless of your choices of vendor-supplied `DataSource` and
 connection pool.
 
 To use Helidon MP's named data source integration support in your
-application, create a
+application, once it has been set up and configured, create a
 https://docs.oracle.com/en/java/javase/17/docs/api/java.sql/javax/sql/DataSource.html[`DataSource`]-typed
 injection point in a Java class representing a CDI bean somewhere in
 your application,
