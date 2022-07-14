@@ -1,0 +1,52 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2022 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Persistence
+:description: Persistence-related support in Helidon MP
+:keywords: datasource, helidon, jpa, jta, microprofile, mp
+:rootdir: {docdir}/..
+
+include::{rootdir}/includes/mp.adoc[]
+
+== Contents
+
+== Overview
+
+Helidon MP comes with deep integration for three broad,
+specification-defined, persistence-related technologies that can be
+used together or separately:
+
+* Named https://docs.oracle.com/en/java/javase/17/docs/api/java.sql/javax/sql/DataSource.html[data sources]
+* https://jakarta.ee/specifications/transactions/2.0/[Jakarta Transactions] (JTA)
+* https://jakarta.ee/specifications/persistence/3.0/[Jakarta Persistence] (JPA)
+
+Each technology is detailed below.
+
+== Named Data Sources
+
+=== Overview
+
+Helidon MP's named data source integration allows you to safely inject
+managed
+https://docs.oracle.com/en/java/javase/17/docs/api/java.sql/javax/sql/DataSource.html[`javax.sql.DataSource`]
+instances that are annotated with
+https://jakarta.ee/specifications/dependency-injection/2.0/apidocs/jakarta/inject/named[`jakarta.inject.Named`
+annotations] into your Helidon MP application.
+https://docs.oracle.com/en/java/javase/17/docs/api/java.sql/java/sql/Connection.html[`java.sql.Connection`s]
+acquired from these data sources will be pooled by one of two possible
+connection pool implementations.
