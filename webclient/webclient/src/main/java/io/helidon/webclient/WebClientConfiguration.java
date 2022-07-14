@@ -340,7 +340,7 @@ class WebClientConfiguration {
          * @param connectTimeout new connection timeout
          * @return updated builder instance
          */
-        @ConfiguredOption(key = "connect-timeout-millis", type = Long.class, description = "Request connection timeout")
+        @ConfiguredOption(key = "connect-timeout-millis", type = Long.class, value = "1 minute")
         public B connectTimeout(Duration connectTimeout) {
             this.connectTimeout = connectTimeout;
             return me;
@@ -352,7 +352,7 @@ class WebClientConfiguration {
          * @param readTimeout new read timeout
          * @return updated builder instance
          */
-        @ConfiguredOption(key = "read-timeout-millis", type = Long.class, description = "Response read timeout")
+        @ConfiguredOption(key = "read-timeout-millis", type = Long.class, value = "10 minutes")
         public B readTimeout(Duration readTimeout) {
             this.readTimeout = readTimeout;
             return me;
@@ -364,19 +364,19 @@ class WebClientConfiguration {
          * @param followRedirects follow redirection
          * @return updated builder instance
          */
-        @ConfiguredOption(key = "follow-redirects", description = "Whether redirects should be followed or not")
+        @ConfiguredOption("false")
         public B followRedirects(boolean followRedirects) {
             this.followRedirects = followRedirects;
             return me;
         }
 
         /**
-         * Sets new user agent of the request.
+         * Name of the user agent which should be used.
          *
          * @param userAgent user agent
          * @return updated builder instance
          */
-        @ConfiguredOption(key = "user-agent", description = "Name of the user agent which should be used")
+        @ConfiguredOption
         public B userAgent(String userAgent) {
             this.userAgent = LazyValue.create(() -> userAgent);
             return me;
@@ -423,7 +423,7 @@ class WebClientConfiguration {
          * @param maxRedirects max redirects
          * @return updated builder instance
          */
-        @ConfiguredOption(key = "max-redirects", description = "Max number of followed redirections")
+        @ConfiguredOption("5")
         public B maxRedirects(int maxRedirects) {
             this.maxRedirects = maxRedirects;
             return me;
@@ -506,7 +506,7 @@ class WebClientConfiguration {
          * @param relativeUris relative URIs flag
          * @return updated builder instance
          */
-        @ConfiguredOption(key = "relative-uris")
+        @ConfiguredOption("false")
         public B relativeUris(boolean relativeUris) {
             this.relativeUris = relativeUris;
             return me;
@@ -535,6 +535,7 @@ class WebClientConfiguration {
          *
          * @return updated builder instance
          */
+        @ConfiguredOption(type = String.class)
         public B uri(URI uri) {
             this.uri = uri;
             return me;
@@ -614,6 +615,7 @@ class WebClientConfiguration {
             return me;
         }
 
+        @ConfiguredOption("true")
         B keepAlive(boolean keepAlive) {
             this.keepAlive = keepAlive;
             return me;

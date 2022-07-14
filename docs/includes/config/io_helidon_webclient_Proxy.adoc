@@ -16,45 +16,51 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
+ifndef::rootdir[:rootdir: {docdir}/..]
 :description: Configuration of io.helidon.webclient.Proxy
 :keywords: helidon, config, io.helidon.webclient.Proxy
 :basic-table-intro: The table below lists the configuration keys that configure io.helidon.webclient.Proxy
+include::{rootdir}/includes/attributes.adoc[]
 
-[source,text]
-.Type
-----
-io.helidon.webclient.Proxy
-----
+= Proxy (webclient) Configuration
 
+// tag::config[]
 
 
-==== Configuration options
+Type: link:{javadoc-base-url}/io.helidon.webclient/io.helidon.webclient.Proxy[io.helidon.webclient.Proxy]
 
+
+
+
+== Configuration options
 
 
 
 Optional configuration options:
-[cols="3,3,2,5"]
+[cols="3,3,2,5a"]
 
 |===
 |key |type |default value |description
 
+|`host` |string |{nbsp} |Sets a new host value.
+|`no-proxy` |string[&#93; |{nbsp} |Configure a host pattern that is not going through a proxy.
+
+ Options are:
+
+- IP Address, such as `192.168.1.1`
+- IP V6 Address, such as `[2001:db8:85a3:8d3:1319:8a2e:370:7348]`
+- Hostname, such as `localhost`
+- Domain name, such as `helidon.io`
+- Domain name and all sub-domains, such as `.helidon.io` (leading dot)
+- Combination of all options from above with a port, such as `.helidon.io:80`
+
+
 |`password` |string |{nbsp} |Sets a new password for the proxy.
 |`port` |int |{nbsp} |Sets a port value.
-|`host` |string |{nbsp} |Sets a new host value.
+|`type` |string (HTTP, SOCKS_4, SOCKS_5, SYSTEM) |`HTTP` |Sets a new proxy type.
 |`use-system-selector` |boolean |`false` |Configure proxy from environment variables and system properties.
 |`username` |string |{nbsp} |Sets a new username for the proxy.
-|`type` |string (HTTP, SOCKS_4, SOCKS_5, SYSTEM) |`HTTP` |Sets a new proxy type.
-|`no-proxy` |string[&#93; |{nbsp} |Configure a host pattern that is not going through a proxy.
- <p>
- Options are:
- <ul>
-     <li>IP Address, such as `192.168.1.1`</li>
-     <li>IP V6 Address, such as `[2001:db8:85a3:8d3:1319:8a2e:370:7348]`</li>
-     <li>Hostname, such as `localhost`</li>
-     <li>Domain name, such as `helidon.io`</li>
-     <li>Domain name and all sub-domains, such as `.helidon.io` (leading dot)</li>
-     <li>Combination of all options from above with a port, such as `.helidon.io:80`</li>
- </ul>
 
 |===
+
+// end::config[]

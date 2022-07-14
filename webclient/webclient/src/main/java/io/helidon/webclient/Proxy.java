@@ -502,14 +502,7 @@ public class Proxy {
          * @param type proxy type
          * @return updated builder instance
          */
-        @ConfiguredOption(type = String.class,
-                          allowedValues = {
-                                  @ConfiguredValue(value = "HTTP", description = "HTTP proxy"),
-                                  @ConfiguredValue(value = "SOCKS_4", description = "SOCKS V4 proxy"),
-                                  @ConfiguredValue(value = "SOCKS_5", description = "SOCKS V5 proxy"),
-                                  @ConfiguredValue(value = "SYSTEM", description = "Proxy obtained from the system")
-                          },
-                          value = "HTTP")
+        @ConfiguredOption("HTTP")
         public Builder type(ProxyType type) {
             this.type = type;
             return this;
@@ -591,7 +584,7 @@ public class Proxy {
          * @param useIt use system selector
          * @return updated builder instance
          */
-        @ConfiguredOption(key = "use-system-selector", value = "false")
+        @ConfiguredOption("false")
         public Builder useSystemSelector(boolean useIt) {
             if (useIt) {
                 this.type = ProxyType.SYSTEM;

@@ -16,33 +16,38 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
+ifndef::rootdir[:rootdir: {docdir}/..]
 :description: Configuration of io.helidon.webclient.WebClientTls
 :keywords: helidon, config, io.helidon.webclient.WebClientTls
 :basic-table-intro: The table below lists the configuration keys that configure io.helidon.webclient.WebClientTls
+include::{rootdir}/includes/attributes.adoc[]
 
-[source,text]
-.Type
-----
-io.helidon.webclient.WebClientTls
-----
+= WebClientTls (webclient) Configuration
 
+// tag::config[]
 
 
-==== Configuration options
+Type: link:{javadoc-base-url}/io.helidon.webclient/io.helidon.webclient.WebClientTls[io.helidon.webclient.WebClientTls]
 
+
+
+
+== Configuration options
 
 
 
 Optional configuration options:
-[cols="3,3,2,5"]
+[cols="3,3,2,5a"]
 
 |===
 |key |type |default value |description
 
+|`client.keystore` |xref:{rootdir}/config/io_helidon_common_pki_KeyConfig.adoc[KeyConfig] |{nbsp} |Client key store which contains client private key and certificate
+|`server.cipher-suite` |string[&#93; |{nbsp} |List of allowed ciphers. If set, replaces those present by default
 |`server.disable-hostname-verification` |boolean |`false` |Whether this client should perform hostname verification
 |`server.trust-all` |boolean |`false` |Whether this client should trust all certificates
-|`server.truststore` |link:../../shared/config/io.helidon.common.pki.KeyConfig.adoc[KeyConfig] |{nbsp} |Trust store which contains trusted certificates. If set, replaces those present by default
-|`server.cipher-suite` |string[&#93; |{nbsp} |List of allowed ciphers. If set, replaces those present by default
-|`client.keystore` |link:../../shared/config/io.helidon.common.pki.KeyConfig.adoc[KeyConfig] |{nbsp} |Client key store which contains client private key and certificate
+|`server.truststore` |xref:{rootdir}/config/io_helidon_common_pki_KeyConfig.adoc[KeyConfig] |{nbsp} |Trust store which contains trusted certificates. If set, replaces those present by default
 
 |===
+
+// end::config[]

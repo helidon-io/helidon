@@ -16,45 +16,50 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
+ifndef::rootdir[:rootdir: {docdir}/..]
 :description: Configuration of io.helidon.webclient.WebClientConfiguration
 :keywords: helidon, config, io.helidon.webclient.WebClientConfiguration
 :basic-table-intro: The table below lists the configuration keys that configure io.helidon.webclient.WebClientConfiguration
+include::{rootdir}/includes/attributes.adoc[]
 
-[source,text]
-.Type
-----
-io.helidon.webclient.WebClientConfiguration
-----
+= WebClientConfiguration (webclient) Configuration
+
+// tag::config[]
 
 Configuration of the HTTP client
+
+
+Type: link:{javadoc-base-url}/io.helidon.webclient/io.helidon.webclient.WebClientConfiguration[io.helidon.webclient.WebClientConfiguration]
 
 
 This is a standalone configuration type, prefix from configuration root: `client`
 
 
-==== Configuration options
 
+== Configuration options
 
 
 
 Optional configuration options:
-[cols="3,3,2,5"]
+[cols="3,3,2,5a"]
 
 |===
 |key |type |default value |description
 
-|`proxy` |link:../../shared/config/io.helidon.webclient.Proxy.adoc[Proxy] |{nbsp} |Sets new request proxy.
-|`headers` |Map |{nbsp} |Default headers to be used in each request. Each list entry has to have "name" and "value" node
-|`relative-uris` |boolean |{nbsp} |Can be set to `true` to force the use of relative URIs in all requests,
- regardless of the presence or absence of proxies or no-proxy lists.
-|`follow-redirects` |boolean |{nbsp} |Whether redirects should be followed or not
-|`read-timeout-millis` |long |{nbsp} |Response read timeout
-|`max-redirects` |int |{nbsp} |Max number of followed redirections
+|`connect-timeout-millis` |long |{nbsp} |Request connection timeout
 |`cookies.automatic-store-enabled` |boolean |{nbsp} |Whether to allow automatic cookie storing
 |`cookies.default-cookies` |Map |{nbsp} |Default cookies to be used in each request. Each list entry has to have "name" and "value" node
-|`tls` |link:../../shared/config/io.helidon.webclient.WebClientTls.adoc[WebClientTls] |{nbsp} |New TLS configuration.
-|`connect-timeout-millis` |long |{nbsp} |Request connection timeout
+|`follow-redirects` |boolean |{nbsp} |Whether redirects should be followed or not
+|`headers` |Map |{nbsp} |Default headers to be used in each request. Each list entry has to have "name" and "value" node
+|`max-redirects` |int |{nbsp} |Max number of followed redirections
+|`media-support` |xref:{rootdir}/config/io_helidon_media_common_MediaContext.adoc[MediaContext] |{nbsp} |
+|`proxy` |xref:{rootdir}/config/io_helidon_webclient_Proxy.adoc[Proxy] |{nbsp} |Sets new request proxy.
+|`read-timeout-millis` |long |{nbsp} |Response read timeout
+|`relative-uris` |boolean |{nbsp} |Can be set to `true` to force the use of relative URIs in all requests,
+ regardless of the presence or absence of proxies or no-proxy lists.
+|`tls` |xref:{rootdir}/config/io_helidon_webclient_WebClientTls.adoc[WebClientTls] |{nbsp} |New TLS configuration.
 |`user-agent` |string |{nbsp} |Name of the user agent which should be used
-|`media-support` |link:../../shared/config/io.helidon.media.common.MediaContext.adoc[MediaContext] |{nbsp} |
 
 |===
+
+// end::config[]

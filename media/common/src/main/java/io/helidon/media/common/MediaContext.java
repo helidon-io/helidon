@@ -164,10 +164,10 @@ public final class MediaContext {
          * @return this {@link Builder}
          */
         @ConfiguredOption(key = "services",
-                          type = Object.class,
+                          type = MediaSupportProvider.class,
                           kind = ConfiguredOption.Kind.LIST,
-                          description = "Configuration section for each service. Each entry has to have \"name\" parameter. "
-                                  + "It is also used for filtering of loaded services")
+                          required = true,
+                          provider = true)
         public Builder config(Config config) {
             config.get("register-defaults").asBoolean().ifPresent(this::registerDefaults);
             config.get("discover-services").asBoolean().ifPresent(this::discoverServices);
@@ -232,12 +232,12 @@ public final class MediaContext {
         }
 
         /**
-         * Whether defaults should be included.
+         * Whether default readers and writers should be registered.
          *
          * @param registerDefaults register defaults
          * @return this builder instance
          */
-        @ConfiguredOption(key = "register-defaults", description = "Whether default readers and writers should be registered")
+        @ConfiguredOption("true")
         public Builder registerDefaults(boolean registerDefaults) {
             this.registerDefaults = registerDefaults;
             return this;
@@ -249,7 +249,7 @@ public final class MediaContext {
          * @param discoverServices use Java Service Loader
          * @return this builder instance
          */
-        @ConfiguredOption(key = "discover-services")
+        @ConfiguredOption("false")
         public Builder discoverServices(boolean discoverServices) {
             this.discoverServices = discoverServices;
             return this;
@@ -262,7 +262,7 @@ public final class MediaContext {
          * @param filterServices filter services
          * @return this builder instance
          */
-        @ConfiguredOption(key = "filter-services")
+        @ConfiguredOption("false")
         public Builder filterServices(boolean filterServices) {
             this.filterServices = filterServices;
             return this;

@@ -109,7 +109,7 @@ Single<String> response = client.get()
 
 The class responsible for WebClient configuration is:
 
-include::{rootdir}/includes/config/io.helidon.webclient.WebClientConfiguration.adoc[]
+include::{rootdir}/includes/config/io_helidon_webclient_WebClientConfiguration.adoc[leveloffset=+1,tag=config]
 
 === Example of a WebClient Runtime Configuration
 
@@ -122,7 +122,7 @@ WebClient client = WebClient.builder()
         .build();
 ----
 
-=== Example of a WebClient Yaml Configuration
+=== Example of a WebClient YAML Configuration
 
 [source, java]
 ----
@@ -253,7 +253,7 @@ Configure TLS either programmatically or by the Helidon configuration framework.
 
 ==== Configuring TLS in your code
 
-The one way to configure TLS in WebClient is in your application code.
+One way to configure TLS in WebClient is in your application code as shown below.
 
 [source,java]
 ----
@@ -276,7 +276,7 @@ WebClient.builder()
 
 ==== Configuring TLS in the config file
 
-It is also possible to configure TLS via the config file.
+Another way to configure TLS in WebClient is through the `application.yaml` configuration file.
 
 [source,yaml]
 .WebClient TLS configuration file `application.yaml`
