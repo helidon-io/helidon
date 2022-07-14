@@ -137,17 +137,17 @@ dependencies are managed], and then ensure the following
 
 ===== Overview
 
-Regardless of which connection pool you use, at the lowest level a
-JDBC database driver is responsible for making any connections to a
-relational database.  JDBC database drivers are
+Regardless of which connection pool you use, at the lowest level JDBC
+database driver classes are responsible for making any connections to
+a relational database.  JDBC database driver classes are
 database-product-specific.
 
-Once you have decided upon a relational database product to use, and a
-JDBC driver to use to connect to it,
+Once you have decided upon a relational database product to use, and
+JDBC driver classes to use to connect to it,
 xref:../about/managing-dependencies.adoc[ensure your dependencies are
 managed], and then ensure that a `runtime`-scoped `<dependency>`
-element describing your JDBC driver is present as a child element of
-your project's `pom.xml` file's `<dependencies>` element.
+element describing your JDBC driver classes is present as a child
+element of your project's `pom.xml` file's `<dependencies>` element.
 
 A couple of examples are described below for some common database
 products.  They are not exhaustive.
@@ -161,8 +161,8 @@ https://docs.oracle.com/en/java/javase/17/docs/api/java.sql/java/sql/package-sum
 ====== Maven Coordinates (H2) [[DS-H2-Driver-Maven-Coordinates]]
 
 To include the http://www.h2database.com/html/main.html[H2 JDBC
-driver] in your Helidon MP application so your application can connect
-to an H2 database (whether in-memory or persistent):
+driver] classes in your Helidon MP application so your application can
+connect to an H2 database (whether in-memory or persistent):
 
 * xref:../about/managing-dependencies.adoc[Ensure your dependencies are
 managed]
@@ -188,14 +188,14 @@ Ensure the following
 </dependency>
 ----
 <1> Note that the `scope` is `runtime`, indicating that the H2
-    JDBC driver will be available on the runtime classpath.
+    JDBC driver classes will be available on the runtime classpath.
 
 ===== Setting Up Oracle JDBC [[DS-Oracle-Driver-Project-Setup]]
 
 ====== Maven Coordinates (Oracle JDBC) [[DS-Oracle-Driver-Maven-Coordinates]]
 
-To include the Oracle JDBC driver in your Helidon MP application so
-your application can connect to an Oracle database:
+To include the Oracle JDBC driver classes in your Helidon MP
+application so your application can connect to an Oracle database:
 
 * xref:../about/managing-dependencies.adoc[Ensure your dependencies are
 managed]
@@ -241,9 +241,15 @@ Ensure the following
 </dependency>
 ----
 <1> Note that the `scope` is `runtime`, indicating that the Oracle
-    JDBC driver will be available on the runtime classpath.
+    JDBC driver classes will be available on the runtime classpath.
 
 ==== Configuration [[DS-Configuration]]
+
+Each connection pool supported by Helidon's named data source
+integration support is, itself, a `DataSource` that wraps a
+vendor-supplied `DataSource` present in the JDBC driver classes you
+added to your project.  You must configure both the pool and the
+vendor supplied `DataSource`.
 
 To configure Helidon MP's named data source integration support:
 
@@ -252,7 +258,8 @@ To configure Helidon MP's named data source integration support:
    implementation]
 
 2. Create configuration suitable for the combination of your selected
-   connection pool and database driver in that location.
+   connection pool and your selected vendor-supplied `DataSource`
+   implementation in that location.
 
 Helidon MP's named data source integration support relies on
 xref:config/introduction.adoc[Helidon MP's usage of MicroProfile
@@ -260,13 +267,18 @@ Config], so you have many choices when deciding on your
 configuration's location in (1) above.
 
 The configuration values themselves are necessarily specific to the
-connection pool you selected and the database driver responsible for
-actually connecting to your relational database.  In general, at a
-minimum, you supply:
+connection pool you selected and the vendor-supplied `DataSource`
+responsible for actually connecting to your relational database.  In
+general, at a minimum, you typically supply:
 
-* a JDBC URL describing where the database is located
+* information so the connection pool knows which vendor-supplied
+  `DataSource` implementation to manage
 
-* information required to authenticate to the database
+* a JDBC URL describing where the database is located, so the managed
+  vendor-supplied `DataSource` knows how to connect to it
+
+* information required for the vendor-supplied `DataSource` to
+  authenticate to the database
 
 Some examples for common combinations follow.  They are not
 exhaustive.
@@ -295,8 +307,8 @@ named data source integration support follow a common pattern:
   of the property name.
 
 * The _propertyname_ portion comes next, identifying the
-  connection-pool- or driver-specific configuration property name,
-  comes last.
+  connection-pool- or vendor-supplied-`DataSource`-specific
+  configuration property name, comes last.
 
 As an example, configuration to set an imaginary `foo` property on the
 `test` data source to `bar` looks like this in Java
@@ -382,9 +394,10 @@ javax:
 
 This example, in Java properties file format, configures an Oracle
 Universal Connection Pool-managed data source named `main` to connect
-to an Oracle Database on `localhost` port `1521`, using the Oracle JDBC
-"thin" driver, with a service name of `XE`, a `user` of `scott`, and a
-`password` of `tiger`:
+to an Oracle Database on `localhost` port `1521`, using the
+`oracle.jdbc.poolOracleDataSource` vendor-supplied `DataSource`, with
+a service name of `XE`, a `user` of `scott`, and a `password` of
+`tiger`:
 
 [source,properties]
 ----
@@ -396,16 +409,27 @@ javax.sql.DataSource.main.user = scott
 javax.sql.DataSource.main.password = tiger
 ----
 
-In general, the properties that can be set on the Oracle
-Universal Connection Pool can be inferred from the "setter" methods
-found in
+In general, the properties that can be set on the Oracle Universal
+Connection Pool can be inferred from the "setter" methods found in
 https://docs.oracle.com/en/database/oracle/oracle-database/21/jjuar/oracle/ucp/jdbc/PoolDataSourceImpl.html[the
 javadoc for the `PoolDataSourceImpl` class].
 
-In general, the properties that can be set on the Oracle JDBC driver
-can be inferred from the "setter" methods found in
-https://docs.oracle.com/en/database/oracle/oracle-database/21/jajdb/oracle/jdbc/pool/OracleDataSource.html[the
-javadoc for the `OracleDataSource` class].
+(Note that the Oracle Universal Connection Pool does not distinguish
+cleanly between configuration properties that affect _its_ behavior
+and those that affect the behavior of the vendor-supplied `DataSource`
+implementation whose connections it pools, so in the example above it
+is not possible to tell that `connectionFactoryClassName` is a
+property of the connection pool, and `user` is a property of the
+vendor-supplied `DataSource` implementation.  In some cases, the
+Oracle Universal Connection Pool will set the given property on _both_
+the connection pool itself _and_ on the vendor-supplied `DataSource`
+it manages.)
+
+In general, the properties that can be set on the
+`oracle.jdbc.pool.OracleDataSource` vendor-supplied `DataSource` can
+be inferred from the "setter" methods found in
+https://docs.oracle.com/en/database/oracle/oracle-database/21/jajdb/oracle/jdbc/pool/OracleDataSource.html[its
+javadoc].
 
 ====== Example: Configuring the HikariCP Connection Pool and H2 [[DS-Configuration-HikariCP-H2-Example]]
 
@@ -430,15 +454,17 @@ HikariCP's configuration properties are described
 https://github.com/brettwooldridge/HikariCP#gear-configuration-knobs-baby[on
 its Github repository].
 
-In general, the properties that can be set on the H2 JDBC driver can
-be inferred from the "setter" methods found in
-http://www.h2database.com/javadoc/org/h2/jdbcx/JdbcDataSource.html[the
-javadoc for the `JdbcxDataSource` class].
+In general, the properties that can be set on the
+`org.h2.jdbcx.JdbcDataSource` vendor-supplied `DataSource` can be
+inferred from the "setter" methods found in
+http://www.h2database.com/javadoc/org/h2/jdbcx/JdbcDataSource.html[its
+javadoc].
 
 ==== Usage [[DS-Usage]]
 
 You use Helidon MP's named data source integration support in the same
-way, regardless of your choices of database driver and connection pool.
+way, regardless of your choices of vendor-supplied `DataSource` and
+connection pool.
 
 To use Helidon MP's named data source integration support in your
 application, create a
