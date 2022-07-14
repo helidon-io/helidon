@@ -76,7 +76,7 @@ if [ -z "${__OCI_INCLUDED__}" ]; then
       jar_path="shaded/lib/oci-java-sdk-full-shaded-${oci_version}.jar"
 
       local oci_zip_file
-      oci_zip_file="$(mktemp -t oci-sdk)"
+      oci_zip_file="$(mktemp -t XXX-oci-sdk)"
 
       # Download the all-in-one zip file
       # if that works, unzip oci-java-sdk-full-shaded-${oci_version}.jar contained inside it.
