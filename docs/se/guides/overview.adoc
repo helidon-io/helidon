@@ -72,7 +72,7 @@ Learn how to trace a Helidon SE application.
 .OIDC Guide
 [link=security-oidc.adoc]
 --
-Learn how to set up OIDC Helidon SE application.
+Learn how to set up an OIDC Helidon SE application
 --
 
 [CARD]
@@ -90,10 +90,10 @@ Learn how to use the Helidon SE Reactive WebClient
 --
 
 [CARD]
-.Helidon SE DBClient Guide
+.Helidon SE DB Client Guide
 [link=dbclient.adoc]
 --
-Learn how to use the Helidon SE Reactive DBClient
+Learn how to use the Helidon SE Reactive DB Client
 --
 
 [CARD]
