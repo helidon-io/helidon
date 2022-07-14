@@ -82,6 +82,8 @@ described below.
 
 ==== Setting Up a Connection Pool [[DS-CP-Project-Setup]]
 
+===== Overview
+
 Helidon MP's named data source integration requires a connection pool.
 Helidon MP comes with support for two connection pools:
 
