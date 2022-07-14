@@ -65,21 +65,6 @@
                         <dependency>org.eclipse.microprofile.reactive.messaging:microprofile-reactive-messaging-tck
                         </dependency>
                     </dependenciesToScan>
-                    <excludes>
-                        <!--
-                            Enable tests after upgrade to higher version of tck tests than 3.0-RC2
-                        -->
-                        <exclude>**/AsynchronousMessageProcessorAckTest.java</exclude>
-                        <exclude>**/AsynchronousMessageSubscriberAckTest.java</exclude>
-                        <exclude>**/AsynchronousPayloadProcessorAckTest.java</exclude>
-                        <exclude>**/AsynchronousPayloadSubscriberAckTest.java</exclude>
-                        <exclude>**/MessageProcessorAckTest.java</exclude>
-                        <exclude>**/PayloadProcessorAckTest.java</exclude>
-                        <exclude>**/PayloadSubscriberAckTest.java</exclude>
-                        <exclude>**/DefaultOverflowStrategyOverflowTest.java</exclude>
-                        <exclude>**/ThrowExceptionOverflowStrategyOverflowTest.java</exclude>
-                        <exclude>**/EmitterOfMessageAcknowledgementTest.java</exclude>
-                    </excludes>
                 </configuration>
                 <dependencies>
                     <dependency>
