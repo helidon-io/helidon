@@ -148,7 +148,9 @@ See the
 https://docs.oracle.com/en/java/javase/17/docs/api/java.sql/java/sql/package-summary.html[JDBC
 4.3 Specification] for more information about JDBC.
 
-===== Maven Coordinates (Oracle JDBC) [[DS-Oracle-Driver-Project-Setup]]
+===== Setting Up Oracle JDBC [[DS-Oracle-Driver-Project-Setup]]
+
+====== Maven Coordinates (Oracle JDBC) [[DS-Oracle-Driver-Maven-Coordinates]]
 
 To include the Oracle JDBC driver in your Helidon MP application so
 your application can connect to an Oracle database:
@@ -199,7 +201,9 @@ Ensure the following
 <1> Note that the `scope` is `runtime`, indicating that the Oracle
     JDBC driver will be available on the runtime classpath.
 
-===== Maven Coordinates (H2) [[DS-H2-Driver-Project-Setup]]
+===== Setting Up H2 [[DS-H2-Driver-Project-Setup]]
+
+===== Maven Coordinates (H2) [[DS-H2-Driver-Maven-Coordinates]]
 
 To include the http://www.h2database.com/html/main.html[H2 JDBC
 driver] in your Helidon MP application so your application can connect
