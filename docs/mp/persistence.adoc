@@ -90,6 +90,8 @@ dependencies are managed], and then ensure the following
 <1> Note that the `scope` is `runtime`, indicating that the HikariCP
     integration will be available on the runtime classpath.
 
+==== Setting up the Oracle Universal Connection Pool [[DS-UCP-Project-Setup]]
+
 ===== Maven Coordinates [[DS-UCP-Maven-Coordinates]]
 
 To include the Oracle Universal Connection Pool in your Helidon MP
