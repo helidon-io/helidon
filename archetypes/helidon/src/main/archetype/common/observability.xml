@@ -453,11 +453,6 @@ curl -s -X GET http://localhost:8080/health
                                             <value key="groupId">io.helidon.tracing</value>
                                             <value key="artifactId">helidon-tracing-jaeger</value>
                                         </map>
-                                        <map>
-                                            <value key="groupId">io.helidon.metrics</value>
-                                            <value key="artifactId">helidon-metrics-jaeger</value>
-                                            <value key="scope">runtime</value>
-                                        </map>
                                     </list>
                                     <list key="app-yaml-content">
                                         <value><![CDATA[
