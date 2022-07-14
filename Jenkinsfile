@@ -54,7 +54,7 @@ pipeline {
           }
           steps {
             sh 'etc/scripts/test-archetypes.sh'
-            archiveArtifacts artifacts: "**/target/surefire-reports/*.txt"
+            archiveArtifacts artifacts: "archetypes/**/target/**/*.txt"
             junit testResults: '**/target/surefire-reports/*.xml'
           }
         }
