@@ -152,7 +152,7 @@ Health checks may be configured using the following properties.
 
 The class responsible for configuration is:
 
-include::{rootdir}/includes/config/io.helidon.health.HealthSupport.adoc[leveloffset=-1]
+include::{rootdir}/config/io_helidon_health_HealthSupport.adoc[leveloffset=+1,tag=config]
 
 Current properties may be set in `application.yaml` or in `microprofile-config.properties` with `health` prefix.
 

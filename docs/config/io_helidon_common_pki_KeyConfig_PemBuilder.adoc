@@ -16,32 +16,37 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
+ifndef::rootdir[:rootdir: {docdir}/..]
 :description: Configuration of io.helidon.common.pki.KeyConfig.PemBuilder
 :keywords: helidon, config, io.helidon.common.pki.KeyConfig.PemBuilder
 :basic-table-intro: The table below lists the configuration keys that configure io.helidon.common.pki.KeyConfig.PemBuilder
+include::{rootdir}/includes/attributes.adoc[]
 
-[source,text]
-.Type
-----
-io.helidon.common.pki.KeyConfig.PemBuilder
-----
+= PemBuilder (common.pki.KeyConfig) Configuration
 
+// tag::config[]
 
 
-==== Configuration options
+Type: link:{javadoc-base-url}/io.helidon.common.pki.KeyConfig/io.helidon.common.pki.KeyConfig.PemBuilder[io.helidon.common.pki.KeyConfig.PemBuilder]
 
+
+
+
+== Configuration options
 
 
 
 Optional configuration options:
-[cols="3,3,2,5"]
+[cols="3,3,2,5a"]
 
 |===
 |key |type |default value |description
 
-|`cert-chain.resource` |link:../../shared/config/io.helidon.common.configurable.Resource.adoc[Resource] |{nbsp} |Load certificate chain from PEM resource.
-|`key.resource` |link:../../shared/config/io.helidon.common.configurable.Resource.adoc[Resource] |{nbsp} |Read a private key from PEM format from a resource definition.
+|`cert-chain.resource` |xref:{rootdir}/config/io_helidon_common_configurable_Resource.adoc[Resource] |{nbsp} |Load certificate chain from PEM resource.
 |`key.passphrase` |string |{nbsp} |Passphrase for private key. If the key is encrypted (and in PEM PKCS#8 format), this passphrase will be used to
  decrypt it.
+|`key.resource` |xref:{rootdir}/config/io_helidon_common_configurable_Resource.adoc[Resource] |{nbsp} |Read a private key from PEM format from a resource definition.
 
 |===
+
+// end::config[]

@@ -16,25 +16,26 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
+ifndef::rootdir[:rootdir: {docdir}/..]
 :description: Configuration of io.helidon.media.common.MediaContext
 :keywords: helidon, config, io.helidon.media.common.MediaContext
 :basic-table-intro: The table below lists the configuration keys that configure io.helidon.media.common.MediaContext
+include::{rootdir}/includes/attributes.adoc[]
 
-[source,text]
-.Type
-----
-io.helidon.media.common.MediaContext
-----
+= io.helidon.media.common.MediaContext
+
+// tag::config[]
+link:{javadoc-base-url}/io.helidon.media.common/io.helidon.media.common.MediaContext[io.helidon.media.common.MediaContext]
 
 
 
-==== Configuration options
 
+== Configuration options
 
 
 
 Optional configuration options:
-[cols="3,3,2,5"]
+[cols="3,3,2,5a"]
 
 |===
 |key |type |default value |description
@@ -46,3 +47,5 @@ Optional configuration options:
 |`services` |Object[&#93; |{nbsp} |Configuration section for each service. Each entry has to have "name" parameter. It is also used for filtering of loaded services
 
 |===
+
+// end::config[]

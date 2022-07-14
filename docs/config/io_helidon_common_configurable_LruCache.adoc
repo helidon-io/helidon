@@ -16,25 +16,28 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
+ifndef::rootdir[:rootdir: {docdir}/..]
 :description: Configuration of io.helidon.common.configurable.LruCache
 :keywords: helidon, config, io.helidon.common.configurable.LruCache
 :basic-table-intro: The table below lists the configuration keys that configure io.helidon.common.configurable.LruCache
+include::{rootdir}/includes/attributes.adoc[]
 
-[source,text]
-.Type
-----
-io.helidon.common.configurable.LruCache
-----
+= LruCache (common.configurable) Configuration
 
+// tag::config[]
 
 
-==== Configuration options
+Type: link:{javadoc-base-url}/io.helidon.common.configurable/io.helidon.common.configurable.LruCache[io.helidon.common.configurable.LruCache]
 
+
+
+
+== Configuration options
 
 
 
 Optional configuration options:
-[cols="3,3,2,5"]
+[cols="3,3,2,5a"]
 
 |===
 |key |type |default value |description
@@ -42,3 +45,5 @@ Optional configuration options:
 |`capacity` |int |`10000` |Configure capacity of the cache.
 
 |===
+
+// end::config[]

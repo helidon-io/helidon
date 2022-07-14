@@ -168,7 +168,7 @@ In addition, a client can specify the HTTP header `Accept:` as either `applicati
 
 Helidon OpenAPI configuration supports the following settings:
 
-include::{rootdir}/includes/config/io.helidon.microprofile.openapi.MPOpenAPISupport.adoc[leveloffset=-1]
+include::{rootdir}/config/io_helidon_microprofile_openapi_MPOpenAPISupport.adoc[leveloffset=+1,tag=config]
 
 == Examples
 
