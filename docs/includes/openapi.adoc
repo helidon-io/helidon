@@ -31,7 +31,7 @@ The OpenAPI support in Helidon {flavor-uc} performs two main tasks:
 * Build an in-memory model of the REST API your service implements.
 * Expose the model in text format (typically yaml) via the `/openapi` endpoint.
 
-To construct the model, Helidon OpenAPI gathers information about the service API from whichever of these sources are present in the application:
+To construct the model, Helidon gathers information about the service API from whichever of these sources are present in the application:
 
 * a _model reader_
 +
@@ -148,7 +148,7 @@ There is not yet an adopted IANA YAML media type, but a proposed one specificall
 for OpenAPI documents that has some support is `application/vnd.oai.openapi`.
 That is what Helidon returns, by default.
 
-In addition, a client can specify the HTTP header `Accept:` as either `application/vnd.oai.openapi+json` or
+In addition, a client can specify the HTTP header `Accept` as either `application/vnd.oai.openapi+json` or
 `application/json` to request JSON. Alternatively, the client can pass the query parameter `format` as either `JSON`
 or `YAML` to receive `application/json` or `application/vnd.oai.openapi` (YAML) output, respectively.
 // end::usage-access-endpoint[]
@@ -167,19 +167,6 @@ endif::[]
 
 // end::api[]
 
-// tag::common-config[]
-Helidon {h1-prefix} also supports additional properties specific to Helidon.
-
-.Helidon-specific OpenAPI Config Properties
-|===
-|Property |Use
-
-|`openapi.web-context` |Path which serves the OpenAPI document (defaults to `/openapi`)
-|`openapi.static-file` |Full path to the static OpenAPI file (defaults to
-`META-INF/openapi.yml`,
-`META-INF/openapi.yaml`, or
-`META-INF/openapi.json`)
-|===
 
 // tag::additional-building-jandex[]
 

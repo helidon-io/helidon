@@ -83,7 +83,7 @@ include::{rootdir}/includes/openapi.adoc[tag=usage-access-endpoint]
 
 include::{rootdir}/includes/openapi.adoc[tag=api]
 
-Helidon {flavor-uc} provides an API for creating and setting up the REST endpoint which serves OpenAPI documents to clients at the `/openapi` path. Use either static methods on link:{openapi-javadoc-base-url}/OpenAPISupport.html[`OpenAPISupport`]  use its link:{openapi-javadoc-base-url}/OpenAPISupport.Builder.html[`Builder`] to create an instance of `OpenAPISupport`. Then add that instance to your application's routing. The <<#register_openapisupport,example>> below shows how to do this.
+Helidon {flavor-uc} provides an API for creating and setting up the REST endpoint which serves OpenAPI documents to clients at the `/openapi` path. Use either static methods on link:{openapi-javadoc-base-url}/OpenAPISupport.html[`OpenAPISupport`]  or use its link:{openapi-javadoc-base-url}/OpenAPISupport.Builder.html[`Builder`] to create an instance of `OpenAPISupport`. Then add that instance to your application's routing. The <<#register_openapisupport,example>> below shows how to do this.
 
 == Configuration
 
@@ -120,7 +120,7 @@ top level of the application JAR.
 == Examples
 
 Helidon SE provides a link:{helidon-github-tree-url}/examples/openapi[complete OpenAPI example]
-based on the SE quick-start sample app which includes a model reader and a filter.
+based on the SE QuickStart sample app which includes a model reader and a filter.
 
 Most Helidon {flavor-uc} applications need only to create and register `OpenAPISupport`.
 
