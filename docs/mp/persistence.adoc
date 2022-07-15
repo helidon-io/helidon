@@ -636,7 +636,7 @@ an integral value in seconds:
 
 [source,shell]
 ----
-java -Dcom.arjuna.ats.arjuna.coordinator.defaultTimeout=300 # ...
+java -Dcom.arjuna.ats.arjuna.coordinator.defaultTimeout=60 # ...
 ----
 
 For more on configuring Narayana, see
@@ -646,7 +646,7 @@ Properties] in the Naryana documentation.
 === Usage [[JTA-Usage]]
 
 To use Helidon MP's Jakarta Transactions integration, annotate a
-method with the `jakarta.transaction.Transactional` annotation:
+method with the https://jakarta.ee/specifications/transactions/2.0/apidocs/jakarta/transaction/transactional[`jakarta.transaction.Transactional`] annotation:
 
 [source,java]
 ----
@@ -659,12 +659,16 @@ public String getGreeting(Integer id) {
   // Use a JTA-aware facility to do something transactional here. <2>
 }
 ----
-<1> The `@Transactional` annotation indicates that this method should
-    be invoked in the scope of a JTA transaction.  **The object on
-    which the method is invoked must be one that Helidon MP's CDI
-    container has created**, i.e. it must be managed.  (CDI beans are
-    managed, as are Jakarta RESTful Web Services resource classes.)
-<2> For `@Transactional` to have any effect, whatever is used inside
-    the method must be JTA-aware (such as a Jakarta Persistence
-    construct like an `EntityManager`).
+<1> The
+    https://jakarta.ee/specifications/transactions/2.0/apidocs/jakarta/transaction/transactional[`@Transactional`
+    annotation] indicates that this method should be invoked in the
+    scope of a JTA transaction.  **The object on which the method is
+    invoked must be one that Helidon MP's CDI container has created**,
+    i.e. it must be managed.  (CDI beans are managed, as are Jakarta
+    RESTful Web Services resource classes.)
+<2> For
+    https://jakarta.ee/specifications/transactions/2.0/apidocs/jakarta/transaction/transactional[`@Transactional`]
+    to have any effect, whatever is used inside the method must be
+    JTA-aware (such as a Jakarta Persistence construct like an
+    `EntityManager`).
 
