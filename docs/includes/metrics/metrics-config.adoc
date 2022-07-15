@@ -157,14 +157,7 @@ ifdef::mp-flavor[]
 ----
 metrics.rest-request-enabled=true
 ----
-endif::[]
-ifdef::se-flavor[]
-[source,yaml]
-----
-metrics:
-  rest-request-enabled: true
-----
-endif::[]
 Helidon will automatically register and update `SimpleTimer` metrics for every REST endpoint in your service.
+endif::[]
 
 // end::config-examples[]

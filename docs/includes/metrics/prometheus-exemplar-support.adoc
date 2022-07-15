@@ -91,7 +91,7 @@ Helidon chooses the representative examplar for each value using information tha
 .Selection of exemplars for types of metrics
 [%autowidth]
 |====
-|Metric Type| Example | Sample Selected as Exemplar
+|Metric Value Type| Example | Sample Selected as Exemplar
 
 | corresponds directly to a specific sample
 | minimum or maximum of a value
@@ -127,7 +127,7 @@ But some consumers, such as trace collectors and their U/Is, understand the exem
 == Examples
 
 ifdef::se-flavor[]
-Helidon includes an example application, based on the QuickStart application, which link:{helidon-github-tree-url}/examples/metrics/exemplar[illustrates exemplar support].
+Helidon includes an link:{helidon-github-tree-url}/examples/metrics/exemplar[example application], based on the QuickStart application, which illustrates exemplar support.
 endif::[]
 
 Once you enable exemplar support you can see the exemplars in the metrics output.

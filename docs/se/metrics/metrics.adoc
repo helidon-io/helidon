@@ -179,7 +179,7 @@ Prometheus documentation: https://prometheus.io/docs/introduction/overview/.
 
 NOTE: Helidon's fully-functional, built-in metrics implementation supports Prometheus (OpenMetrics) output. Use this optional support only if you want to use the Prometheus API from your application code.
 
-[[prom-maven-coordinates]]
+[#prom-maven-coordinates]
 ==== Maven Coordinates
 
 .Dependency for Helidon Prometheus API support
@@ -191,12 +191,12 @@ NOTE: Helidon's fully-functional, built-in metrics implementation supports Prome
     </dependency>
 ----
 
-[[prom-usage]]
+[#prom-usage]
 ==== Usage
 Your application code uses the Prometheus API to manage metrics.
 To expose those metrics to clients via a REST endpoint, your code uses the `PrometheusSupport` interface which Helidon provides.
 
-[[prom-api]]
+[#prom-api]
 ==== API
 Your code creates a link:{prometheus-javadoc-base-url}/PrometheusSupport.html[`PrometheusSupport`] object either using a static factory method (shown in the following example) or by using its link:{prometheus-javadoc-base-url}/PrometheusSupport.Builder.html[`Builder`].
 
