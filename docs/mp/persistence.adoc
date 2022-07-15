@@ -818,7 +818,7 @@ elements of your project's `pom.xml` file's `<dependencies>` element:
 
 ===== Setting Up Static Weaving (Hibernate ORM) [[JPA-Hibernate-Weaving]]
 
-Hibernate ORM alters your classes' bytecodes at build time to keep
+Hibernate ORM alters your classes' bytecode at build time to keep
 track of changes made to objects participating in Jakarta Persistence
 workflows.
 
@@ -863,7 +863,7 @@ with the following line as its sole contents:
 
 [source,properties]
 ----
-hibernate.bytecode-provider=none
+hibernate.bytecode.provider=none
 ----
 
 For more on the `hibernate-enhance-maven-plugin` in particular, see
