@@ -43,6 +43,7 @@ include::{rootdir}/includes/mp.adoc[]
 ** <<JTA-Usage,Usage>>
 * <<JPA, Jakarta Persistence (JPA) Integration>>
 ** <<JPA-Setup, Project Setup>>
+** <<JPA-Configuration, Configuration>>
 
 == Overview [[Overview]]
 
@@ -1016,3 +1017,30 @@ https://wiki.eclipse.org/EclipseLink/UserGuide/JPA/Advanced_JPA_Development/Perf
 Weaving] in the Eclipselink documentation.
 
 === Configuration [[JPA-Configuration]]
+
+To configure Helidon MP's Jakarta Persistence integration, you author
+a `src/main/resources/META-INF/persistence.xml` file.  It contains a
+mix of standardized elements and JPA provider-specific elements.
+
+For more on the structure and syntax of the `META-INF/persistence.xml`
+file, see
+https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0.html#persistence-xml-file[persistence.xml
+file] in the Jakarta Persistence specification.
+
+Your `src/main/resources/META-INF/persistence.xml` file must begin
+(and end) with the following XML:
+
+.src/main/resources/META-INF/persistence.xml
+[source,xml]
+----
+<persistence xmlns="https://jakarta.ee/xml/ns/persistence"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence
+          https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd"
+        version="3.0">
+
+    <!-- <persistence-unit> elements are listed here -->
+
+</persistence>
+----
+
