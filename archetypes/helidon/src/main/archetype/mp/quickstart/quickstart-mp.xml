@@ -30,6 +30,12 @@
     <output>
         <model>
             <value key="readme-description">Sample Helidon MP project that includes multiple REST operations.</value>
+            <list key="readme-exercise-the-application">
+                <value file="files/README.md"/>
+            </list>
+            <list key="readme-sections">
+                <value file="files/README.native.md" if="${docker.native-image}" template="mustache"/>
+            </list>
             <list key="MainTest-java-imports">
                 <value>jakarta.ws.rs.client.Entity</value>
                 <value>jakarta.ws.rs.core.MediaType</value>

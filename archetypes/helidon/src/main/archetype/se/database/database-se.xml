@@ -28,8 +28,11 @@
     <output>
         <model>
             <value key="title">Helidon SE Database</value>
-            <list key="readme-sections">
+            <list key="readme-exercise-the-application">
                 <value file="files/README.md" template="mustache"/>
+            </list>
+            <list key="readme-sections">
+                <value file="files/README.native.md" if="${docker.native-image}" template="mustache"/>
             </list>
         </model>
     </output>

@@ -32,13 +32,13 @@
     <output>
         <model>
             <value order="0" key="readme-description">Minimal Helidon SE project suitable to start from scratch.</value>
-            <list key="readme-sections">
+            <list key="readme-exercise-the-application">
                 <value file="files/README.md"/>
             </list>
-            <list key="Main-createRouting" if="${media} contains 'json'">
+            <list key="Main-createRouting" if="!(${media} contains 'multipart')">
                 <value><![CDATA[        SimpleGreetService simpleGreetService = new SimpleGreetService(config);]]></value>
             </list>
-            <list key="Main-routingBuilder" if="${media} contains 'json'">
+            <list key="Main-routingBuilder" if="!(${media} contains 'multipart')">
                 <value><![CDATA[                .register("/simple-greet", simpleGreetService)]]></value>
             </list>
             <value key="Main-readyMessage">System.out.println("WEB server is up! http://localhost:" + ws.port() + "/simple-greet");</value>
