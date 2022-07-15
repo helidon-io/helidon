@@ -38,6 +38,9 @@ include::{rootdir}/includes/mp.adoc[]
 *** <<DS-Configuration-Examples, Examples>>
 ** <<DS-Usage, Usage>>
 * <<JTA, Jakarta Transactions (JTA) Integration>>
+** <<JTA-Maven-Coordinates,Maven Coordinates>>
+** <<JTA-Configuration,Configuration>>
+** <<JTA-Usage,Usage>>
 
 == Overview [[Overview]]
 
