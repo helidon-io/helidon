@@ -41,26 +41,7 @@ include::{rootdir}/includes/dependencies.adoc[]
 
 == Configuring Zipkin
 
-The Zipkin tracer supports the following configuration options:
-
-[cols="2,2,2,4", role="flex, sm10"]
-|===
-|Key            |Default value      |Builder method     |Description
-
-|service        |N/A                |serviceName        |Name of the service, to distinguish traces crossing service boundaries;
-                                                            Zipkin is using lower-case only, name will be automatically lower-cased
-|protocol       |http               |collectorProtocol  |Protocol of the Zipkin trace collector (http or https)
-|host           |localhost          |collectorHost      |Host of the Zipkin trace collector (IP Address, hostname, or FQDN)
-|port           |9411               |collectorPort      |Port of the Zipkin trace collector
-|path           |defined by version |collectorPath      |Path of the Zipkin trace collector, each version uses a different path
-                                                            by default.
-|api-version    |2                  |version            |Zipkin specific method, set the protocol version to communicate with
-                                                            trace collector
-|enabled        |true               |enabled            |If set to false, tracing would be disabled
-|tags           |N/A                |addTracerTag(String, String) |`String` tags to add to each span
-|boolean-tags   |N/A                |addTracerTag(String, boolean)|`boolean` tags to add to each span
-|int-tags       |N/A                |addTracerTag(String, int)    |`int` tags to add to each span
-|===
+include::{rootdir}/config/io_helidon_tracing_zipkin_ZipkinTracerBuilder.adoc[tag=config,levelOffset=+1]
 
 The following is an example of a Zipkin configuration, specified in the YAML format.
 [source,yaml]
@@ -69,7 +50,7 @@ tracing:
   zipkin:
     service: "helidon-service"
     protocol: "https"
-    host: "192.168.1.1"
+    host: "zipkin"
     port: 9987
     api-version: 1
     # this is the default path for API version 2
