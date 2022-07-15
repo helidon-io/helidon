@@ -16,9 +16,22 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
+= Helidon Reactive Engine
+
 ifndef::rootdir[:rootdir: {docdir}/../..]
 
 :feature-name: Reactive Engine
+
+== Contents
+
+- <<Overview, Overview>>
+- <<maven-coordinates, Maven Coordinates>>
+- <<Usage, Usage>>
+
+== Overview
+
+Helidon has its own set of reactive operators that have no dependencies outside of the Helidon ecosystem.
+These operators can be used with `java.util.concurrent.Flow` based reactive streams.
 
 include::{rootdir}/includes/dependencies.adoc[]
 
@@ -30,10 +43,8 @@ include::{rootdir}/includes/dependencies.adoc[]
 </dependency>
 ----
 
-== Reactive Engine
+== Usage
 
-Helidon has its own set of reactive operators that have no dependencies outside of the Helidon ecosystem.
-These operators can be used with `java.util.concurrent.Flow` based reactive streams.
 Stream processing operator chain can be easily constructed by `io.helidon.common.reactive.Multi`, or
 `io.helidon.common.reactive.Single` for streams with single value.
 
@@ -134,22 +145,21 @@ In the situations when part of the operator chain needs to be prepared in advanc
 [source,java]
 .Combining operator chains:
 ----
-        // Assembly of stream, nothing is streamed yet
-        Multi<String> publisherStage =
-                Multi.just("foo", "bar")
-                        .map(String::trim);
+// Assembly of stream, nothing is streamed yet
+Multi<String> publisherStage =
+        Multi.just("foo", "bar")
+                .map(String::trim);
 
-        Function<Multi<T>, Multi<T>> processorStage =
-                upstream ->
-                    upstream.map(String::toUpperCase);
+Function<Multi<T>, Multi<T>> processorStage =
+        upstream ->
+                upstream.map(String::toUpperCase);
 
-        // Execution of pre-prepared stream
-        publisherStage
-                .compose(processorStage)
-                .map(s -> "Item received: " + s)
-                .forEach(System.out::println);
+// Execution of pre-prepared stream
+publisherStage
+        .compose(processorStage)
+        .map(s -> "Item received: " + s)
+        .forEach(System.out::println);
 
 > Item received: FOO
 > Item received: BAR
 ----
-
