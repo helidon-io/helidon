@@ -695,17 +695,41 @@ among other things, how its implementations:
 
 4. Interact with <<DS, named data sources>>
 
-Jakarta Persistence may be used in an entirely standalone manner,
-which requires no integration at all.  This "application-managed mode"
-places the burden of error handling, thread safety and transaction
-management on the user.  This documentation does not cover
-application-managed mode JPA.
+Jakarta Persistence may be used in an entirely application-managed
+manner, which requires no integration at all.  This
+application-managed mode places the burden of error handling, thread
+safety, transaction management, and other concerns on the user.
+**This documentation does not cover application-managed mode JPA.**
 
 Jakarta Persistence may be used in a fully managed manner, which
 requires that a container, like Helidon MP, handle error management,
-thread safety and transaction management on behalf of the user.  This
-documentation covers this "container-managed mode" usage of JPA
-exclusively.
+thread safety and transaction management on behalf of the user.
+**This documentation covers this container-managed mode of JPA
+exclusively.**
 
-=== Maven Coordinates (JPA) [[JPA-Maven-Coordinates]]
+Helidon MP's Jakarta Persistence integration comes with support for two JPA implementations, known as _JPA providers_:
+
+1. https://hibernate.org/orm/documentation/6.1/[Hibernate ORM]
+
+2. https://www.eclipse.org/eclipselink/documentation/[Eclipselink]
+
+How you set up Helidon MP's Jakarta Persistence integration differs
+depending on which of these JPA providers you choose to use.
+
+=== Project Setup [[JPA-Setup]]
+
+==== Setting Up a JPA Provider
+
+===== Overview
+
+While the Jakarta Persistence specification standardizes many aspects
+around usage, it leaves many setup and configuration aspects up to the
+JPA provider.
+
+To set up Helidon MP's Jakarta Persistence integration in your
+application to work with your chosen JPA provider, you must:
+
+1. Include the proper Helidon dependencies
+
+2. Set up your project for _static weaving_
 
