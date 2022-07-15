@@ -25,6 +25,7 @@
 include::{rootdir}/includes/se.adoc[]
 include::{rootdir}/includes/dependencies.adoc[]
 
+// tag::tracing-dependency[]
 [source,xml]
 ----
 <dependency>
@@ -32,6 +33,7 @@ include::{rootdir}/includes/dependencies.adoc[]
     <artifactId>helidon-tracing</artifactId>
 </dependency>
 ----
+// end::tracing-dependency[]
 
 == Tracing Support
 Helidon includes support for tracing through the https://opentracing.io/[OpenTracing] APIs.

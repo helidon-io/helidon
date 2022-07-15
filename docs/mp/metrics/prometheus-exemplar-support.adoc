@@ -16,9 +16,9 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Metrics Support for Exemplars
+= OpenMetrics Exemplar Support
 :description: Helidon metrics
-:keywords: helidon, metrics, exemplar, prometheus, OpenMetrics
+:keywords: helidon, metrics, exemplar, prometheus, OpenMetrics, tracing
 :rootdir: {docdir}/../..
 
 include::{rootdir}/includes/mp.adoc[]

@@ -151,7 +151,7 @@ Distributed transactions for microservices following SAGA pattern.
 //Metrics
 [CARD]
 .Metrics
-[icon=av_timer,link=../metrics/introduction.adoc]
+[icon=av_timer,link=../metrics/metrics.adoc]
 --
 Instrumentation to expose metrics of your applications.
 --

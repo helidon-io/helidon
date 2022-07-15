@@ -43,6 +43,8 @@ The following section lists all configurable types in Helidon.
 - xref:{rootdir}/config/io_helidon_media_common_MediaContext.adoc[MediaContext (media.common)]
 - xref:{rootdir}/config/io_helidon_microprofile_openapi_MPOpenAPISupport.adoc[MPOpenAPISupport.adoc (microprofile.openapi)]
 - xref:{rootdir}/config/io_helidon_metrics_api_MetricsSettings.adoc[MetricsSettings.adoc (metrics.api)]
+- xref:{rootdir}/config/io_helidon_metrics_serviceapi_MetricsSupport.adoc[MetricsSupport.adoc (metrics.serviceapi)]
+- xref:{rootdir}/config/io_helidon_integrations_micrometer_MicrometerSupport.adoc[MicrometerSupport.adoc (integrations.micrometer)]
 - xref:{rootdir}/config/io_helidon_security_providers_oidc_common_OidcConfig.adoc[OidcConfig.adoc (security.providers.oidc.common)]
 - xref:{rootdir}/config/io_helidon_security_providers_oidc_OidcProvider.adoc[OidcProvider.adoc (security.providers.oidc)]
 - xref:{rootdir}/config/io_helidon_openapi_OpenAPISupport.adoc[OpenAPISupport.adoc (openapi)]

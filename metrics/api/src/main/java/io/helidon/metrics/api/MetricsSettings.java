@@ -214,7 +214,7 @@ public interface MetricsSettings {
          * @return updated builder
          */
         @ConfiguredOption(key = REGISTRIES_CONFIG_KEY,
-                          kind = ConfiguredOption.Kind.LIST,
+                          kind = ConfiguredOption.Kind.MAP,
                           type = RegistrySettings.class)
         Builder registrySettings(MetricRegistry.Type registryType, RegistrySettings registrySettings);
 
