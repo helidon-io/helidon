@@ -793,7 +793,7 @@ elements of your project's `pom.xml` file's `<dependencies>` element:
     provider-independent Jakarta Persistence integration is available at
     runtime.
 
-This `<dependency>` does not set up a JPA provider.  See below.
+These `<dependency>` elements do not set up a JPA provider.  See below.
 
 ===== Setting Up Static Metamodel Generation [[JPA-MetaModel]]
 
