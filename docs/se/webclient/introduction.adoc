@@ -29,7 +29,7 @@ include::{rootdir}/includes/se.adoc[]
 - <<Overview, Overview>>
 - <<Maven Coordinates, Maven Coordinates>>
 - <<Usage, Usage>>
-- <<Configuration, Configuration>>
+- <<Configuring the WebClient, Configuring the WebClient>>
 - <<Examples, Examples>>
 - <<Reference, Reference>>
 
@@ -109,7 +109,7 @@ Single<String> response = client.get()
 
 The class responsible for WebClient configuration is:
 
-include::{rootdir}/includes/config/io_helidon_webclient_WebClientConfiguration.adoc[leveloffset=+1,tag=config]
+include::{rootdir}/config/io_helidon_webclient_WebClientConfiguration.adoc[leveloffset=+1,tag=config]
 
 === Example of a WebClient Runtime Configuration
 

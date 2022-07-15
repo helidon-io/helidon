@@ -247,7 +247,6 @@ backend:
                   value: "http"
                 sources:
                   - "introduction.adoc"
-                  - "tls-configuration.adoc"
               - type: "PAGE"
                 title: "Websocket"
                 source: "websocket.adoc"

@@ -29,7 +29,7 @@ include::{rootdir}/includes/attributes.adoc[]
 Configuration of the HTTP client
 
 
-Type: link:{javadoc-base-url}/io.helidon.webclient/io.helidon.webclient.WebClientConfiguration[io.helidon.webclient.WebClientConfiguration]
+Type: link:{javadoc-base-url}/io.helidon.webclient/io/helidon/webclient/WebClientConfiguration.html[io.helidon.webclient.WebClientConfiguration]
 
 
 This is a standalone configuration type, prefix from configuration root: `client`

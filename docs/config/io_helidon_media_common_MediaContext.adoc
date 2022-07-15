@@ -26,6 +26,7 @@ include::{rootdir}/includes/attributes.adoc[]
 
 // tag::config[]
 
+
 Type: link:{javadoc-base-url}/io.helidon.media.common/io/helidon/media/common/MediaContext.html[io.helidon.media.common.MediaContext]
 
 
@@ -42,9 +43,9 @@ Optional configuration options:
 |key |type |default value |description
 
 |`discover-services` |boolean |{nbsp} |Whether Java Service Loader should be used to load MediaSupportProvider.
-|`register-defaults` |boolean |{nbsp} |Whether default readers and writers should be registered
 |`filter-services` |boolean |{nbsp} |Whether services loaded by Java Service Loader should be filtered.
  All of the services which should pass the filter, have to be present under `services` section of configuration.
+|`register-defaults` |boolean |{nbsp} |Whether default readers and writers should be registered
 |`services` |Object[&#93; |{nbsp} |Configuration section for each service. Each entry has to have "name" parameter. It is also used for filtering of loaded services
 
 |===
