@@ -46,7 +46,7 @@ Optional configuration options:
 |===
 |key |type |default value |description
 
-|`connect-timeout-millis` |long |`1 minute` |Sets new connection timeout of the request.
+|`connect-timeout-millis` |long |`60000` |Sets new connection timeout of the request.
 |`cookies.automatic-store-enabled` |boolean |{nbsp} |Whether to allow automatic cookie storing
 |`cookies.default-cookies` |Map |{nbsp} |Default cookies to be used in each request. Each list entry has to have "name" and "value" node
 |`follow-redirects` |boolean |`false` |Whether to follow any response redirections or not.
@@ -54,7 +54,7 @@ Optional configuration options:
 |`max-redirects` |int |`5` |Sets max number of followed redirects.
 |`media-support` |xref:{rootdir}/config/io_helidon_media_common_MediaContext.adoc[MediaContext] |{nbsp} |
 |`proxy` |xref:{rootdir}/config/io_helidon_webclient_Proxy.adoc[Proxy] |{nbsp} |Sets new request proxy.
-|`read-timeout-millis` |long |`10 minutes` |Sets new read timeout of the response.
+|`read-timeout-millis` |long |`600000` |Sets new read timeout of the response.
 |`relative-uris` |boolean |`false` |Can be set to `true` to force the use of relative URIs in all requests,
  regardless of the presence or absence of proxies or no-proxy lists.
 |`tls` |xref:{rootdir}/config/io_helidon_webclient_WebClientTls.adoc[WebClientTls] |{nbsp} |New TLS configuration.

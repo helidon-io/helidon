@@ -340,7 +340,7 @@ class WebClientConfiguration {
          * @param connectTimeout new connection timeout
          * @return updated builder instance
          */
-        @ConfiguredOption(key = "connect-timeout-millis", type = Long.class, value = "1 minute")
+        @ConfiguredOption(key = "connect-timeout-millis", type = Long.class, value = "60000")
         public B connectTimeout(Duration connectTimeout) {
             this.connectTimeout = connectTimeout;
             return me;
@@ -352,7 +352,7 @@ class WebClientConfiguration {
          * @param readTimeout new read timeout
          * @return updated builder instance
          */
-        @ConfiguredOption(key = "read-timeout-millis", type = Long.class, value = "10 minutes")
+        @ConfiguredOption(key = "read-timeout-millis", type = Long.class, value = "600000")
         public B readTimeout(Duration readTimeout) {
             this.readTimeout = readTimeout;
             return me;
