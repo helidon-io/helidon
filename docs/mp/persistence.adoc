@@ -1051,21 +1051,31 @@ element.  Each `<persistence-unit>` element identifies a named
 persistence unit that will correspond to an `EntityManager` in your
 code, and represents a collection of entities in a relational database.
 
-Here is an example of a persistence unit named `prod`:
+Here is an example of a persistence unit named `prod` with a helpful
+description:
 
 .`src/main/resources/META-INF/persistence.xml`
 [source,xml]
 ----
 <!-- ... -->
 
-<persistence-unit name="prod">
+<persistence-unit name="prod" transaction-type="JTA"> <!--1-->
+    <description>The production database</description>
 
-  <!-- Characteristics of the persistence unit are enclosed here.  Order matters. -->
+    <!--
+        Other characteristics of the persistence unit are enclosed
+        here.  Order matters.  See
+        https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0.html#persistence-xml-schema.
+    -->
 
 </persistence-unit>
 
 <!-- ... -->
 ----
+<1> Because Helidon MP's JPA integration is for container-managed JPA,
+    the
+    https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0.html#a12296[`transaction-type`
+    attribute] must always be set to `JTA`.
 
 NOTE: In most microservices, there will be only one persistence unit.
 
@@ -1091,7 +1101,7 @@ helpful description, linked with a JTA data source named `main`:
 ----
 <!-- ... --->
 
-<persistence-unit name="prod">
+<persistence-unit name="prod" transaction-type="JTA">
     <description>The production database</description>
     <jta-data-source>main</jta-data-source> <!--1-->
 
@@ -1137,7 +1147,7 @@ describe managed classes], but they may or may not be honored by a
 given JPA provider.
 
 Here is a partial example of a persitsence unit named `prod`, with a
-helpful description, linked with a JTA data source named `main`, and
+helpful description, linked with a JTA data source named `main`,
 containing two entity classes:
 
 .`src/main/resources/META-INF/persistence.xml`
@@ -1145,7 +1155,7 @@ containing two entity classes:
 ----
 <!-- ... --->
 
-<persistence-unit name="prod">
+<persistence-unit name="prod" transaction-type="JTA">
     <description>The production database</description>
     <jta-data-source>main</jta-data-source>
     <class>com.example.ExampleEntity0</class>
