@@ -372,7 +372,7 @@ public final class HttpDigestAuthProvider extends SynchronousProvider implements
          * @param store User store to use
          * @return updated builder instance
          */
-        @ConfiguredOption(key = "users")
+        @ConfiguredOption(key = "users", type = ConfigUserStore.ConfigUser.class, kind = ConfiguredOption.Kind.LIST)
         public Builder userStore(SecureUserStore store) {
             this.userStore = store;
             return this;

@@ -68,7 +68,7 @@ Optional configuration options:
  This secret must be the same for all service instances (or all services that want to share the same authentication).
  Defaults to a random password - e.g. if deployed to multiple servers, the authentication WILL NOT WORK. You MUST
  provide your own password to work in a distributed environment with non-sticky load balancing.
-|`users` |xref:{rootdir}/config/io_helidon_security_providers_httpauth_SecureUserStore.adoc[SecureUserStore] |{nbsp} |Set user store to obtain passwords and roles based on logins.
+|`users` |xref:{rootdir}/config/io_helidon_security_providers_httpauth_ConfigUserStore_ConfigUser.adoc[ConfigUser[&#93;] |{nbsp} |Set user store to obtain passwords and roles based on logins.
 
 |===
 
