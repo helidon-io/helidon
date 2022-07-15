@@ -701,8 +701,8 @@ application-managed mode places the burden of error handling, thread
 safety, transaction management, and other concerns on the user.
 **This documentation does _not_ cover application-managed mode JPA.**
 
-Jakarta Persistence may be used in a fully container-managed manner,
-which requires that a container, like Helidon MP, handle error
+Jakarta Persistence may instead be used in a fully container-managed
+manner, which requires that a container, like Helidon MP, handle error
 management, thread safety and transaction management on behalf of the
 user.  **This documentation covers this container-managed mode of JPA
 exclusively.**
@@ -742,9 +742,10 @@ choose.
 To set up Helidon MP's Jakarta Persistence integration in your
 application to work with your chosen JPA provider, you must:
 
-1. <<DS, Set up named data sources as appropriate>>
+1. <<DS, Set up and configure named data sources as appropriate>>
 
-2. <<JTA, Set up Helidon MP's Jakarta Transactions support>>
+2. <<JTA, Set up and configure Helidon MP's Jakarta Transactions
+   support>>
 
 3. Include the proper Jakarta Persistence-related dependencies
 
@@ -760,10 +761,11 @@ include the core of Helidon's Jakarta Persistence integration:
 * xref:../about/managing-dependencies.adoc[Ensure your dependencies
   are managed]
 
-* <<DS, Ensure you have set up named data sources as appropriate>>
+* <<DS, Ensure you have set up and configured named data sources as
+  appropriate>>
 
-* <<JTA, Ensure you have set up Helidon MP's Jakarta Transactions
-  support>>
+* <<JTA, Ensure you have set up and configured Helidon MP's Jakarta
+  Transactions support>>
 
 Ensure the following '<dependency>' elements are present as child
 elements of your project's `pom.xml` file's `<dependencies>` element:
@@ -814,6 +816,65 @@ elements of your project's `pom.xml` file's `<dependencies>` element:
 <1> The `scope` is `runtime`, which ensures that Helidon MP's
     Hibernate ORM integration is available at runtime.
 
+===== Setting Up Static Weaving (Hibernate ORM) [[JPA-Hibernate-Weaving]]
+
+Hibernate ORM alters your classes' bytecodes at build time to keep
+track of changes made to objects participating in Jakarta Persistence
+workflows.
+
+To set up this required static weaving for Hibernate ORM, ensure that
+the following `<plugin>` element is present as a child element of your
+project's `pom.xml` file's `<plugins>` element:
+
+[source,xml]
+----
+<plugin>
+    <groupId>org.hibernate.orm.tooling</groupId>
+    <artifactId>hibernate-enhance-maven-plugin</artifactId>
+    <!--
+        Ideally, your plugin versions are managed via a
+        <pluginManagement> element, which is why the <version> element
+        is commented out below.  If, nevertheless, you opt for the
+        explicit version, check
+        https://search.maven.org/artifact/org.hibernate.orm/hibernate-enhance-maven-plugin
+        for up-to-date versions, and make sure the version is the same
+        as that of Hibernate ORM itself.
+    -->
+    <!-- <version>6.1.1.Final</version> -->
+    <executions>
+        <execution>
+            <id>Statically enhance JPA entities for Hibernate</id>
+            <phase>compile</phase>
+            <goals>
+                <goal>enhance</goal>
+            </goals>
+            <configuration>
+                <failOnError>true</failOnError>
+                <enableDirtyTracking>true</enableDirtyTracking>
+                <enableLazyInitialization>true</enableLazyInitialization>
+            </configuration>
+        </execution>
+    </executions>
+</plugin>
+----
+
+Add a file named `src/main/resources/META-INF/hibernate.properties`
+with the following line as its sole contents:
+
+[source,properties]
+----
+hibernate.bytecode-provider=none
+----
+
+For more on the `hibernate-enhance-maven-plugin` in particular, see
+https://docs.jboss.org/hibernate/orm/6.1/userguide/html_single/Hibernate_User_Guide.html#tooling-maven[its
+documentation].
+
+For more on Hibernate ORM's bytecode enhancement (weaving) in general,
+see
+https://docs.jboss.org/hibernate/orm/6.1/userguide/html_single/Hibernate_User_Guide.html#BytecodeEnhancement[Bytecode
+Enhancement] in Hibernate ORM's documentation.
+
 ===== Maven Coordinates (Eclipselink) [[JPA-Eclipselink-Maven-Coordinates]]
 
 To include Helidon's Jakarta Persistence-related integration for
@@ -839,3 +900,4 @@ elements of your project's `pom.xml` file's `<dependencies>` element:
 <1> The `scope` is `runtime`, which ensures that Helidon MP's
     Eclipselink integration is available at runtime.
 
+===== Setting Up Static Weaving (Eclipselink) [[JPA-Eclipselink-Weaving]]
