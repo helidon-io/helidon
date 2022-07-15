@@ -259,7 +259,7 @@ vendor-supplied `DataSource` present in the JDBC driver classes you
 added to your project.  You must configure both the pool and the
 vendor supplied `DataSource`.
 
-To configure Helidon MP's named data source integration support:
+To configure Helidon MP's named data source integration:
 
 1. Decide where the configuration will reside, as permitted by
    xref:config/introduction.adoc[Helidon MP's MicroProfile Config
@@ -269,7 +269,7 @@ To configure Helidon MP's named data source integration support:
    connection pool and your selected vendor-supplied `DataSource`
    implementation in that location.
 
-Helidon MP's named data source integration support relies on
+Helidon MP's named data source integration relies on
 xref:config/introduction.adoc[Helidon MP's usage of MicroProfile
 Config], so you have many choices when deciding on your
 configuration's location in (1) above.
@@ -294,7 +294,7 @@ exhaustive.
 ==== Configuration Prefixes
 
 All MicroProfile Config-compatible property names for Helidon MP's
-named data source integration support follow a common pattern:
+named data source integration follow a common pattern:
 
 > _objecttype_._datasourcename_._propertyname_
 
@@ -484,20 +484,20 @@ javadoc].
 
 ==== Usage [[DS-Usage]]
 
-You use Helidon MP's named data source integration support in the same
-way, regardless of your choices of vendor-supplied `DataSource` and
+You use Helidon MP's named data source integration in the same way,
+regardless of your choices of vendor-supplied `DataSource` and
 connection pool.
 
-To use Helidon MP's named data source integration support in your
-application, once it has been <<DS-Project-Setup,set up>> and
-<<DS-Configuration,configured>>, create a
+To use Helidon MP's named data source integration in your application,
+once it has been <<DS-Project-Setup,set up>> and
+<<DS-Configuration,configured>>, create an ordinary
 https://docs.oracle.com/en/java/javase/17/docs/api/java.sql/javax/sql/DataSource.html[`DataSource`]-typed
 injection point in a Java class representing a CDI bean somewhere in
 your application,
 https://jakarta.ee/specifications/dependency-injection/2.0/apidocs/jakarta/inject/named[annotated
 with the name] of the data source you wish to use.
 
-Here is how to define a field-backed injection point:
+Here is how to define such a field-backed injection point:
 
 [source,java]
 ----
@@ -523,7 +523,7 @@ private DataSource ds; // <3>
     https://docs.oracle.com/en/java/javase/17/docs/api/java.sql/javax/sql/DataSource.html[`javax.sql.DataSource`],
     and may be named anything you like.
 
-Here is how to define a constructor parameter injection point:
+Here is how to define such a constructor parameter injection point:
 
 [source,java]
 ----
@@ -553,3 +553,44 @@ public SomeObject(@Named("test") DataSource ds) { // <3>
     https://docs.oracle.com/en/java/javase/17/docs/api/java.sql/javax/sql/DataSource.html[`javax.sql.DataSource`],
     and may be named anything you like.
 <4> The injected argument will never be `null`.
+
+== Jakarta Transactions (JTA) Integration [[JTA]]
+
+=== Overview
+
+Helidon MP's Jakarta Transactions integration integrates the
+https://www.narayana.io/[Naryana transaction engine], an
+implementation of the Jakarta Transactions Specification, into Helidon
+MP.  It lets you use
+https://jakarta.ee/specifications/transactions/2.0/apidocs/jakarta/transaction/transactional[`@jakarta.transaction.Transactional`]
+to declare JTA transactions in your Java code.
+
+=== Maven Coordinates (JTA) [[JTA-Maven-Coordinates]]
+
+To include Helidon's JTA integration in your application:
+
+* xref:../about/managing-dependencies.adoc[Ensure your dependencies are
+managed]
+
+Ensure the following `<dependency>` elements are present as child
+elements of your project's `pom.xml` file's `<dependencies>` element:
+
+[source,xml]
+----
+<dependency>
+    <groupId>jakarta.transaction</groupId>
+    <artifactId>jakarta.transaction-api</artifactId>
+    <scope>provided</scope> <!--1-->
+</dependency>
+<dependency>
+    <groupId>io.helidon.integrations.cdi</groupId>
+    <artifactId>helidon-integrations-cdi-jta-weld</artifactId>
+    <scope>runtime</scope> <!--2-->
+</dependency>
+----
+<1> Note that the `scope` is `provided`, which ensures that the JTA
+    classes required for compilation are available at compile time.    
+<2> The implementation of these API classes will be available at
+    runtime.
+
+
