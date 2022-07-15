@@ -1030,7 +1030,7 @@ file] in the Jakarta Persistence specification.
 Your `src/main/resources/META-INF/persistence.xml` file must begin
 (and end) with the following XML:
 
-.src/main/resources/META-INF/persistence.xml
+.`src/main/resources/META-INF/persistence.xml`
 [source,xml]
 ----
 <persistence xmlns="https://jakarta.ee/xml/ns/persistence"
@@ -1042,5 +1042,23 @@ Your `src/main/resources/META-INF/persistence.xml` file must begin
     <!-- <persistence-unit> elements are listed here -->
 
 </persistence>
+----
+
+You list your application's _persistence units_ as
+`<persistence-unit>` child elements of the enclosing `<persistence>`
+element.  Each `<persistence-unit>` element identifies a named
+persistence unit that will correspond to an `EntityManager` in your
+code, and represents a collection of entities in a relational database.
+
+Here is an example of a persistence unit named `prod`:
+
+.`src/main/resources/META-INF/persistence.xml`
+[source,xml]
+----
+<persistence-unit name="prod">
+
+  <!-- Characteristics of the persistence unit are enclosed here.  Order matters. -->
+
+</persistence-unit>
 ----
 
