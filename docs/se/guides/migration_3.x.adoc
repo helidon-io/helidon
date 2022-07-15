@@ -58,7 +58,6 @@ Use new dependency to enable `WebSocket`:
 </dependency>
 ----
 
+== JEP-290 security hardening
 
-== Reactive Deprecations
-
-<...describe...>
+We are taking security seriously. Deserialization is now disabled by default. JEP-290 gives us tools to harden security when deserializing objects (using Java Serialization). In Helidon 3.x, we have decided to forbid any deserialization by default. Helidon does not use Java Serialization at all, and we consider it a high security risk. Java Serialization can still be used if required (requires additional setup to allow specific classes to be deserialized, or by explicitly switching off our JEP-290 support).
