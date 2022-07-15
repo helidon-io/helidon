@@ -1,5 +1,3 @@
-## GraalVM Native Support
-
 The generation of native binaries requires an installation of GraalVM 22.1.0+.
 
 In order to produce a native binary, you must run the {{db}} Database as a separate process

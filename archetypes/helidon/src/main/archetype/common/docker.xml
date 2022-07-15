@@ -62,6 +62,15 @@ docker build -t {{artifactId}} .
 ```
                                 ]]>
                         </value>
+                        <value template="mustache" if="${native-image}">
+                            <![CDATA[
+## Building a Native Image
+
+{{#native-sections}}
+{{.}}
+{{/native-sections}}
+]]>
+                        </value>
                         <value order="40" template="mustache" if="${jlink-image}">
                             <![CDATA[
 ## Building a Custom Runtime Image

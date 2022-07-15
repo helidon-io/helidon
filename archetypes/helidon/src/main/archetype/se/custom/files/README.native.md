@@ -1,5 +1,3 @@
-## Building a Native Image
-
 Make sure you have GraalVM locally installed:
 
 ```

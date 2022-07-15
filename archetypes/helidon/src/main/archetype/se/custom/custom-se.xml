@@ -35,8 +35,10 @@
             <list key="readme-exercise-the-application">
                 <value file="files/README.md"/>
             </list>
-            <list key="readme-sections" if="${docker}">
-                <value file="files/README.native.md" if="${docker.native-image}" template="mustache"/>
+            <list key="native-sections" if="${docker}">
+                <value file="files/README.native.md"
+                       if="${docker.native-image} &amp;&amp; !(${db})"
+                       template="mustache"/>
             </list>
             <list key="Main-createRouting">
                 <value><![CDATA[        SimpleGreetService simpleGreetService = new SimpleGreetService(config);]]></value>
