@@ -48,9 +48,6 @@
                 <artifactId>helidon-archetype-maven-plugin</artifactId>
                 <configuration>
                     <mavenArchetypeCompatible>false</mavenArchetypeCompatible>
-                    <properties>
-                       <skipTests>true</skipTests>
-                    </properties>
                     <entrypoint>
                         <variables>
                             <text path="helidon-version" transient="true">${project.version}</text>
@@ -61,6 +58,8 @@
                         <!-- TODO test cdata, if not go with a separate file -->
                         <!-- TODO look at multiline expressions -->
                         <!-- TODO look at equality with arrays (== ['foo'] ; == []) -->
+                        <!--suppress UnresolvedMavenProperty -->
+                        <filter>!(${flavor} == 'mp' &amp;&amp; ${app-type} == 'database')</filter>
                         <!--suppress UnresolvedMavenProperty -->
                         <filter>${media} == 'multipart' || !(${media} contains 'multipart')</filter>
                         <!--suppress UnresolvedMavenProperty -->

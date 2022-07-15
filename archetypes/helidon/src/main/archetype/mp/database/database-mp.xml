@@ -30,7 +30,9 @@
             <value key="title">Helidon MP Database</value>
             <value key="readme-description">Helidon MP application that uses JPA with an in-memory H2 database.</value>
             <list key="readme-sections">
-                <value if="${docker.native-image}" file="README.native.md"/>
+                <value file="files/README.native.md"
+                       if="${docker.native-image} &amp;&amp; ${db.server} != 'mongodb'"
+                       template="mustache"/>
             </list>
             <list key="readme-exercise-the-application">
                 <value file="files/README.md"/>

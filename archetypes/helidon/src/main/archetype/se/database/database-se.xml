@@ -32,7 +32,9 @@
                 <value file="files/README.md" template="mustache"/>
             </list>
             <list key="readme-sections">
-                <value file="files/README.native.md" if="${docker.native-image}" template="mustache"/>
+                <value file="files/README.native.md"
+                       if="${docker.native-image} &amp;&amp; ${db.server} != 'mongodb'"
+                       template="mustache"/>
             </list>
         </model>
     </output>

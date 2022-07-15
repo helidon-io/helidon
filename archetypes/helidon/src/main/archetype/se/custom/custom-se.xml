@@ -24,10 +24,10 @@
     <source src="/common/media-sources.xml"/>
     <exec src="/se/common/common-se.xml"/>
     <exec src="/common/observability.xml"/>
-    <exec src="/se/custom/database.xml"/>
     <exec src="/common/security.xml"/>
     <source src="/common/extra.xml"/>
     <exec src="/common/packaging.xml"/>
+    <exec src="/se/custom/database.xml"/>
     <exec src="/se/custom/custom-tests.xml"/>
     <output>
         <model>
@@ -35,10 +35,13 @@
             <list key="readme-exercise-the-application">
                 <value file="files/README.md"/>
             </list>
-            <list key="Main-createRouting" if="!(${media} contains 'multipart')">
+            <list key="readme-sections" if="${docker}">
+                <value file="files/README.native.md" if="${docker.native-image}" template="mustache"/>
+            </list>
+            <list key="Main-createRouting">
                 <value><![CDATA[        SimpleGreetService simpleGreetService = new SimpleGreetService(config);]]></value>
             </list>
-            <list key="Main-routingBuilder" if="!(${media} contains 'multipart')">
+            <list key="Main-routingBuilder">
                 <value><![CDATA[                .register("/simple-greet", simpleGreetService)]]></value>
             </list>
             <value key="Main-readyMessage">System.out.println("WEB server is up! http://localhost:" + ws.port() + "/simple-greet");</value>

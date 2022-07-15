@@ -53,7 +53,7 @@
                     </includes>
                 </templates>
                 <model>
-                    <list key="readme-section">
+                    <list key="readme-sections">
                         <value order="50" template="mustache">
                             <![CDATA[
 ## Build the Docker Image

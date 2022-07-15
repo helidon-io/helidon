@@ -1,24 +1,20 @@
 ## GraalVM Native Support
 
-The generation of native binaries requires an installation of GraalVM 20.1.0+. For more
-information about the steps necessary to use GraalVM with Helidon
-see https://helidon.io/docs/v2/#/se/guides/36_graalnative.
+The generation of native binaries requires an installation of GraalVM 22.1.0+. 
 
-The H2 Database when configured to use the in-memory mode is currently _not compatible_
-with GraalVM native.
-In order to produce a native binary, you must run the H2 Database as a separate process
+In order to produce a native binary, you must run the {{db}} Database as a separate process
 and use a network connection for access. The simplest way to do this is by starting a Docker
 container as follows:
 
 ```
-docker run -d -p 1521:1521 -p 81:81 -e H2_OPTIONS='-ifNotExists' --name=h2 oscarfonts/h2
+{{readme-native-docker}}
 ```
 
 The resulting container will listen to port 1521 for network connections.
-Switch the `url` in `application.yaml` to use a TCP connection:
+Switch the `url` in `application.yaml` :
 
 ```
-url: jdbc:h2:tcp://localhost:1521/test
+{{readme-native-url}}
 ```
 
 Next, uncomment the following dependency in your project's pom file:
@@ -26,7 +22,7 @@ Next, uncomment the following dependency in your project's pom file:
 ```
 <dependency>
     <groupId>io.helidon.integrations.db</groupId>
-    <artifactId>h2</artifactId>
+    <artifactId>{{integration-artifactId}}</artifactId>
 </dependency>
 ```
 

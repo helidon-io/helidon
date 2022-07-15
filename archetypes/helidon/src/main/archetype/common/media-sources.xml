@@ -22,8 +22,7 @@
 
     <exec src="/common/common.xml"/>
     <output>
-        <templates engine="mustache" transformations="mustache,packaged"
-                   if="!(${media} contains 'json') &amp;&amp; !(${media} contains 'multipart')">
+        <templates engine="mustache" transformations="mustache,packaged" if="!(${media} contains 'json')">
             <directory>files</directory>
             <includes>
                 <include>src/*/java/**/SimpleGreetService.java.mustache</include>
