@@ -36,6 +36,7 @@ include::{rootdir}/includes/mp.adoc[]
 ** <<DS-Configuration, Configuration>>
 *** <<DS-Configuration-Examples, Examples>>
 ** <<DS-Usage, Usage>>
+* <<JTA, Jakarta Transactions (JTA) Integration>>
 
 == Overview [[Overview]]
 
