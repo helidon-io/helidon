@@ -203,7 +203,8 @@ class HelidonConnector implements Connector {
 
         final CompletionStage<InputStream> stream = HelidonStructures.hasEntity(webClientResponse)
                 ? webClientResponse.content().as(InputStream.class)
-                : CompletableFuture.supplyAsync(() -> NO_CONTENT_INPUT_STREAM, executorServiceKeeper.getExecutorService(requestContext));
+                : CompletableFuture.supplyAsync(() -> NO_CONTENT_INPUT_STREAM,
+                                                executorServiceKeeper.getExecutorService(requestContext));
 
         return stream.thenApply((a) -> {
             responseContext.setEntityStream(new FilterInputStream(a) {
