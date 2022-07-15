@@ -67,6 +67,41 @@ Learn how to use Helidon SE built-in and application metrics.
 --
 Learn how to trace a Helidon SE application.
 --
+
+[CARD]
+.OIDC Guide
+[link=security-oidc.adoc]
+--
+Learn how to set up an OIDC Helidon SE application
+--
+
+[CARD]
+.Helidon SE Upgrade Guide
+[link=migration.adoc]
+--
+Learn how to Upgrade your Helidon SE application
+--
+
+[CARD]
+.Helidon SE WebClient Guide
+[link=webclient.adoc]
+--
+Learn how to use the Helidon SE Reactive WebClient
+--
+
+[CARD]
+.Helidon SE DB Client Guide
+[link=dbclient.adoc]
+--
+Learn how to use the Helidon SE Reactive DB Client
+--
+
+[CARD]
+.Helidon SE Performance Tuning Guide
+[link=performance-tuning.adoc]
+--
+Learn how to tune your Helidon SE application
+--
 ====
 
 == Build and Deploy
