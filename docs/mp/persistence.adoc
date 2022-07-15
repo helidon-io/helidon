@@ -653,10 +653,10 @@ public String getGreeting(Integer id) {
 }
 ----
 <1> The `@Transactional` annotation indicates that this method should
-    be invoked in the scope of a JTA transaction.  The object
-    containing this method must be one that Helidon MP's CDI container
-    has created, i.e. it must be managed.  (CDI beans are managed, as
-    are Jakarta RESTful Web Services resource classes.)
+    be invoked in the scope of a JTA transaction.  **The object on
+    which the method is invoked must be one that Helidon MP's CDI
+    container has created**, i.e. it must be managed.  (CDI beans are
+    managed, as are Jakarta RESTful Web Services resource classes.)
 <2> For `@Transactional` to have any effect, whatever is used inside
     the method must be JTA-aware (such as a Jakarta Persistence
     construct like an `EntityManager`).
