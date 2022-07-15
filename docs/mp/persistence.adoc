@@ -27,12 +27,13 @@ include::{rootdir}/includes/mp.adoc[]
 
 * <<Overview, Overview>>
 * <<DS, Named Data Source Integration>>
-** <<DS-CP-Project-Setup, Setting Up a Connection Pool>>
-*** <<DS-HikariCP-Project-Setup, Setting Up the Hikari CP Connection Pool>>
-*** <<DS-UCP-Project-Setup, Setting Up the Oracle Universal Connection Pool>>
-** <<DS-Driver-Project-Setup, Setting Up a Database Driver>>
-*** <<DS-H2-Driver-Project-Setup, Setting Up H2>>
-*** <<DS-Oracle-Driver-Project-Setup, Setting Up Oracle JDBC>>
+** <<DS-Setup, Project Setup>>
+*** <<DS-CP-Project-Setup, Setting Up a Connection Pool>>
+**** <<DS-HikariCP-Project-Setup, Setting Up the Hikari CP Connection Pool>>
+**** <<DS-UCP-Project-Setup, Setting Up the Oracle Universal Connection Pool>>
+*** <<DS-Driver-Project-Setup, Setting Up a Database Driver>>
+**** <<DS-H2-Driver-Project-Setup, Setting Up H2>>
+**** <<DS-Oracle-Driver-Project-Setup, Setting Up Oracle JDBC>>
 ** <<DS-Configuration, Configuration>>
 *** <<DS-Configuration-Examples, Examples>>
 ** <<DS-Usage, Usage>>
@@ -604,6 +605,9 @@ configuration, but configuration is possible.  Because configuration
 is of the https://narayana.io/[underlying Narayana transaction
 engine], any restrictions are those of the engine, not of Helidon
 itself.
+
+Narayana, unlike Helidon MP, does not use MicroProfile Config, so its
+configuration options are less flexible.  Some common examples follow.
 
 ==== Configuring the Object Store Directory
 
