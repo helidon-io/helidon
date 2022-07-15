@@ -69,27 +69,12 @@ project's `pom.xml`:
 
 == Usage
 
-Helidon Microprofile Server is used to collect and deploy JAX-RS application. You can either instantiate the server directly
-as is done in the xref:../guides/quickstart.adoc[Helidon MP Quickstart example]
-or use its built-in `create`. It will create the `server` instance. Calling `start` method will run the server.
-
-[source,java]
-----
-Server server = Server.create().start();
-----
-
-Call the `stop` method to stop the server.
-
-[source,java]
-----
-Server server = Server.create().start();
-...
-server.stop();
-----
+Helidon Microprofile Server is used to collect and deploy JAX-RS application. It is recommended to instantiate the server directly
+as is done in the xref:guides/quickstart.adoc[Helidon MP Quickstart example]. Note that the server lifecycle is bound to CDI.
 
 == API
 
-include::{rootdir}/includes/config/io.helidon.microprofile.server.Server.adoc[]
+include::{rootdir}/config/io_helidon_microprofile_server_Server.adoc[]
 
 The following table provides a brief description of routing annotations, including its parameters. More information
 in <<Configuring a reactive route>> section.
@@ -118,36 +103,13 @@ a|
 
 == Configuration
 
-By default, the server uses the MicroProfile Config, but you may also want to use Helidon configuration.
-
-There are 3 default MicroProfile Config sources:
-
-* `System.getProperties()`
-* `System.getenv()`
-* all `META-INF/microprofile-config.properties` files on the class path
-* `application.yaml` on the classpath (read by default by Helidon Config)
+By default, the server uses the MicroProfile Config, but you may also want to use xref:config/introduction.adoc[Helidon configuration].
 
 In this example, the configuration is in a file, and it includes Helidon configuration options.
 
-[source,properties]
-.META-INF/microprofile-config.properties - Server configuration
-----
-# default is localhost
-server.host=some.host
-# default is 7001
-server.port=7011
+include::{rootdir}/config/io_helidon_webserver_WebServer.adoc[]
 
-# Helidon configuration (optional)
-
-# Length of queue for incoming connections. Default is 1024
-server.backlog=512
-# TCP receive window. Default is 0 to use implementation default
-server.receive-buffer=256
-# Socket timeout milliseconds - defaults to 0 (infinite)
-server.timeout=30000
-# Defaults to Runtime.availableProcessors()
-server.workers=4
-----
+== Examples
 
 === Configuring TLS
 
@@ -156,9 +118,9 @@ Helidon MP also supports custom TLS configuration.
 User is able to set following properties:
 
 * Server truststore
-    - Keystore with trusted certificates
+- Keystore with trusted certificates
 * Private key and certificate
-    - Server certificate which will be used in TLS handshake
+- Server certificate which will be used in TLS handshake
 
 [source,properties]
 .META-INF/microprofile-config.properties - Server configuration
@@ -201,7 +163,7 @@ Helidon MP can expose multiple ports, with the following limitations:
 
 - The default port is the port that serves your application (JAX-RS applications and resources)
 - Other ports (in this example we configure one "admin" port) can be assigned endpoints that are exposed by Helidon components,
-    currently supported by MP Health and MP Metrics
+currently supported by MP Health and MP Metrics
 
 For this example, we will use a `yaml` file:
 
@@ -343,9 +305,6 @@ server.static.classpath.welcome=resource.html
 # server.static.classpath.context=/static-cp
 ----
 
-== Examples
-
-See <<Usage>> for same simple examples.
 
 === Example configuration of routing
 
