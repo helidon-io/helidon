@@ -38,7 +38,7 @@ This document explains Helidon {h1-prefix} metrics-capable components and applic
 // end::preamble[]
 
 // tag::all-beginning-text[]
-== Introduction
+
 Think of Helidon metrics in three related but different parts:
 
 * The Helidon metrics API.
@@ -170,7 +170,7 @@ Doing so allows your code to operate regardless of whether the full-featured met
 ----
 This module defines the metrics API: `RegistryFactory`, `MetricRegistry`, and the various metrics themselves.
 
-ifeval::["{h1-prefix}" == "SE"]
+ifdef::se-flavor[]
 . To permit the use of the built-in metrics web service support for the `/metrics` endpoint, add this dependency:
 +
 [source,xml]
