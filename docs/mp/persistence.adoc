@@ -749,6 +749,10 @@ application to work with your chosen JPA provider, you must:
 
 3. Include the proper Jakarta Persistence-related dependencies
 
+4. Set up your project to generate and compile the
+   https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0.html#a6933[static
+   metamodel]
+
 4. Set up your project for _static weaving_
 
 Details and examples for each supported JPA provider are below.
@@ -790,6 +794,58 @@ elements of your project's `pom.xml` file's `<dependencies>` element:
     runtime.
 
 This `<dependency>` does not set up a JPA provider.  See below.
+
+===== Setting Up Static Metamodel Generation [[JPA-MetaModel]]
+
+To generate and compile the Jakarta Persistence static metamodel for
+your application, regardless of whether you are using Hibernate ORM or
+Eclipselink, make sure the `<plugin>` element in the following code
+snippet is present as a child element of the
+`<pluginManagement><plugins>` element sequence as shown below:
+
+[source,xml]
+----
+<pluginManagement>
+    <plugins>
+
+        <!-- ... -->
+
+        <plugin>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <executions>
+                <execution>
+                    <id>default-compile</id>
+                    <configuration>
+                        <annotationProcessorPaths>
+                            <annotationProcessorPath>
+                                <groupId>org.hibernate.orm</groupId>
+                                <artifactId>hibernate-jpamodelgen</artifactId>
+                                <!--
+                                    Always check
+                                    https://search.maven.org/artifact/org.hibernate.orm/hibernate-jpamodelgen
+                                    for up to date versions and make
+                                    sure the version used is that of
+                                    Hibernate ORM itself.
+                                -->
+                                <version>6.1.1.Final</version>
+                            </annotationProcessorPath>
+                        </annotationProcessorPaths>
+                    </configuration>
+                </execution>
+            </executions>
+        </plugin>
+
+        <!-- ... -->
+
+    </plugins>
+</pluginManagement>
+----
+
+For more on the Hibernate ORM `hibernate-jpamodelgen` annotation
+processor, see
+https://hibernate.org/orm/tooling/#hibernate-metamodel-generator[Hibernate
+Metamodel Generator] in Hibernate ORM's documentation.  Note that many
+aspects of this documentation are outdated.
 
 ===== Maven Coordinates (Hibernate ORM) [[JPA-Hibernate-Maven-Coordinates]]
 
@@ -950,5 +1006,5 @@ project's `pom.xml` file's `<plugins>` element:
 
 For more on the Eclipselink static weaving command-line utility, see
 https://wiki.eclipse.org/EclipseLink/UserGuide/JPA/Advanced_JPA_Development/Performance/Weaving/Static_Weaving#Use_the_Command_Line[Static
-Weaving] in its documentation.
+Weaving] in the Eclipselink documentation.
 
