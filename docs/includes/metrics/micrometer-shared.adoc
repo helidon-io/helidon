@@ -135,12 +135,15 @@ meter registries.
 
 // tag::accessing-endpoint-intro[]
 === Accessing the Helidon Micrometer Endpoint
-Helidon automatically creates a REST endpoint which clients can access to retrieve Micrometer metrics, by default at the `/micrometer` endpoint.
+
+ifdef::mp-flavor[Helidon MP Micrometer integration automatically creates]
+ifdef::se-flavor[Your application can easily have Helidon create]
+a REST endpoint which clients can access to retrieve Micrometer metrics, by default at the `/micrometer` endpoint.
 
 ifdef::se-flavor[]
-Within Helidon, each type of meter registry is paired with code that examines the incoming HTTP request and decides
+Within Helidon, each type of meter registry is paired with some code that examines the incoming HTTP request to `/micrometer` and decides
 whether the request matches up with the associated meter registry. The first pairing that accepts the request
-returns the response.
+returns the response. You will need to take advantage of this if your application uses additional meter registries beyond what Helidon automatically provides _and_ you want those meter registries reflected in the output from the `/micrometer` REST endpoint.
 endif::[]
 // end::accessing-endpoint-intro[]
 
@@ -148,7 +151,7 @@ endif::[]
 == Configuration
 You can configure the Helidon Micrometer REST service as you can other built-in Helidon services by adding configuration settings under the `micrometer` top-level key.
 
-include::{rootdir}/config/io_helidon_integrations_micrometer_MicrometerSupport.adoc[leveloffset=+1]
+include::{rootdir}/config/io_helidon_integrations_micrometer_MicrometerSupport.adoc[tag=config,leveloffset=+1]
 
 By default, Helidon Micrometer integration exposes the `/micrometer` endpoint.
 You can override the path using
@@ -182,6 +185,10 @@ endif::[]
 // tag::use-micrometer-api[]
 can create, look up, and update metrics programmatically using the Micrometer `MeterRegistry` API. The link:{micrometer-api-url}[Micrometer concepts document] provides a good starting point for learning how to use Micrometer's interfaces and classes.
 // end::use-micrometer-api[]
+
+// tag::example-apps[]
+Helidon {flavor-uc} includes an link:{helidon-github-tree-url}/examples/integrations/micrometer/{flavor-lc}[example application] which uses Micrometer support.
+// end::example-apps[]
 
 // end::all-micrometer[]
 

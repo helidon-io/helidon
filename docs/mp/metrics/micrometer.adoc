@@ -65,9 +65,9 @@ include::{rootdir}/includes/metrics/micrometer-shared.adoc[tag=use-micrometer-ap
 include::{rootdir}/includes/metrics/micrometer-shared.adoc[tag=configuring-endpoint]
 
 == Examples
-Helidon provides an link:{helidon-github-tree-url}/examples/integrations/micrometer/mp[example MP application] using Micrometer integration.
+include::{rootdir}/includes/metrics/micrometer-shared.adoc[tag=example-apps]
 
-The examples below enhance the Helidon MP QuickStart application to track (by time and invocation count) all `GET` methods and to count all requests for a personalized greeting.
+The examples below take you step-by-step through the process of enhancing the Helidon MP QuickStart application to track (by time and invocation count) all `GET` methods and to count all requests for a personalized greeting.
 
 === Add Micrometer annotations
 

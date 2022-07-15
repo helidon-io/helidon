@@ -40,10 +40,7 @@ include::{rootdir}/includes/mp.adoc[]
 == Overview
 Helidon MP metrics implements the MicroProfile Metrics specification, providing:
 
-* a unified way for MicroProfile servers to export monitoring data--telemetry--to management agents, and
-* a unified Java API which all application programmers can use to expose telemetry data from their services.
-
-Learn more about the https://github.com/eclipse/microprofile-metrics/releases/tag/{version-lib-microprofile-metrics-api}[MicroProfile Metrics specification].
+include::{rootdir}/includes/metrics/metrics-shared.adoc[tag=overview]
 
 include::{rootdir}/includes/dependencies.adoc[]
 
@@ -57,56 +54,8 @@ include::{rootdir}/includes/dependencies.adoc[]
 
 == Usage
 
-=== Instrumenting your Service
-You can add metrics to your service in these ways:
+include::{rootdir}/includes/metrics/metrics-shared.adoc[tag=usage-body]
 
-* Annotate bean methods--typically your REST resource endpoint methods (the Java code that receives incoming REST requests); Helidon automatically registers these metrics and updates them when the annotated methods are invoked via CDI.
-* Write code in your service which explicitly invokes the metrics API to register metrics, retrieve previously-registered metrics, and update metric values.
-* Configure some simple `REST.request` metrics which Helidon automatically registers and updates for all REST resource endpoints.
-
-Later sections of this document describe how to do each of these.
-
-=== Categorizing Types of Metrics
-Helidon distinguishes among three general _types_, or scopes, of metrics, as described in the MP metrics specification.
-
-.Types (scopes) of metrics
-[%autowidth]
-|====
-| Type/scope | Typical Usage
-
-| base | Mandated by the MP metrics specification, such as OS or Java runtime measurements (available heap, disk space, etc.).
-| vendor | Implemented by vendors, including the `REST.request` metrics and other key performance indicator measurements (described in later sections).
-| application | Declared via annotations or programmatically registered by your service code.
-|====
-
-When you add metrics annotations to your service code, Helidon registers the resulting metrics as type `application`.
-
-=== Metric Registries
-A _metric registry_ collects registered metrics of a given type. Helidon supports three registries, one for each of the three metrics types.
-
-When you add code to your service to create a metric programmatically, the code first locates the appropriate registry and then the registers the metric with that registry.
-
-=== Retrieving Metrics Reports from your Service
-When you add the metrics dependency to your project, Helidon automatically provides a built-in REST endpoint `/metrics` which responds with a report of the registered metrics and their values.
-
-Clients can request a particular output format.
-
-.Formats for `/metrics` output
-[%autowidth]
-|====
-| Format | Requested by
-
-| OpenMetrics (Prometheus) | default
-| JSON | Header `Accept: application/json`
-|====
-
-Clients can also limit the report by appending the metric type to the path:
-
-* `/metrics/base`
-* `/metrics/vendor`
-* `/metrics/application`
-
-Further, clients can narrow down to a specific metric name by adding the name as a subpath such as `/metrics/application/myCount`.
 
 == API
 
@@ -154,27 +103,17 @@ You can also add `@Metric` on a constructor or method parameter to trigger injec
 
 Helidon automatically looks up the metric referenced from any injection site and provides a reference to the metric. Your code then simply invokes methods on the injected metric.
 
-=== The `MetricRegistry` API
-To register or look up metrics programmatically, your service code uses one of the three  link:{microprofile-metrics-javadoc-url}/org/eclipse/microprofile/metrics/MetricRegistry.html[`MetricRegistry`] instances (base, vendor, and application) which Helidon furnishes automatically.
-
-To get a `MetricRegistry` reference
-
-* `@Inject` the metric registry you want, perhaps also using the link:{microprofile-metrics-javadoc-annotation-url}/RegistryType.html[`@RegistryType`] annotation to select the registry type, or
-* Get a Helidon link:{metrics-javadoc-base-url}/RegistryFactory.html[`RegistryFactory`]; either
-+
---
-** `@Inject` `RegistryFactory` or
-** Invoke one of the static `getInstance` methods on `RegistryFactory`
---
-+
-Then invoke `getRegistry` on the `RegistryFactory` instance.
-
-The `MetricRegistry` allows your code to register new metrics, look-up previously-registered metrics, and remove metrics.
+include::{rootdir}/includes/metrics/metrics-shared.adoc[tag=metric-registry-api]
 
 // Here's Configuration.
 include::{rootdir}/includes/metrics/metrics-config.adoc[tag=config-intro]
 
 == Examples
+
+Helidon MP includes a prewritten example application illustrating
+link:{helidon-github-tree-url}/examples/metrics/filtering/mp[enabling/disabling metrics] using configuration.
+
+The rest of this section contains other examples of working with metrics:
 
 * <<example-application-code,Example Application Code>>
 * <<example-configuration,Example Configuration>>
