@@ -71,13 +71,8 @@ annotations] into your Helidon MP application.
 https://docs.oracle.com/en/java/javase/17/docs/api/java.sql/java/sql/Connection.html[`java.sql.Connection`
 objects]
 https://docs.oracle.com/en/java/javase/17/docs/api/java.sql/javax/sql/DataSource.html#getConnection()[acquired]
-from these data sources will be pooled by one of two possible
-connection pool implementations:
-
-1. https://github.com/brettwooldridge/HikariCP[HikariCP]
-
-2. https://docs.oracle.com/en/database/oracle/oracle-database/21/jjucp/index.html[Oracle
-   Universal Connection Pool]
+from these data sources will be pooled by your choice of one of two
+possible connection pool implementations.
 
 The connections managed by the connection pool will be supplied by
 your relational database vendor's JDBC driver.
