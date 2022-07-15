@@ -24,7 +24,7 @@
 
 include::{rootdir}/includes/se.adoc[]
 
-== ToC
+== Contents
 
 - <<Implemented Security Providers, Implemented Security Providers>>
 - <<Reference, Reference>>
