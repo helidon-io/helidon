@@ -74,7 +74,7 @@ When you add metrics annotations to your service code, Helidon registers the res
 === Metric Registries
 A _metric registry_ collects registered metrics of a given type. Helidon supports three registries, one for each of the three metrics types.
 
-When you add code to your service to create a metric programmatically, the code first locates the appropriate registry and then the registers the metric with that registry.
+When you add code to your service to create a metric programmatically, the code first locates the appropriate registry and then registers the metric with that registry.
 
 === Retrieving Metrics Reports from your Service
 When you add the metrics dependency to your project, Helidon automatically provides a built-in REST endpoint `/metrics` which responds with a report of the registered metrics and their values.
@@ -155,7 +155,7 @@ To get a `MetricRegistry` reference, first get a Helidon link:{metrics-javadoc-b
 Then invoke `getRegistry` on the `RegistryFactory` instance.
 endif::[]
 
-The `MetricRegistry` allows your code to register new metrics, look-up previously-registered metrics, and remove metrics.
+The `MetricRegistry` allows your code to register new metrics, look up previously-registered metrics, and remove metrics.
 // end::metric-registry-api[]
 
 // tag::example-apps[]
