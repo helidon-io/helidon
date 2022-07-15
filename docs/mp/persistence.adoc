@@ -561,8 +561,9 @@ public SomeObject(@Named("test") DataSource ds) { // <3>
 
 Helidon MP's Jakarta Transactions integration integrates the
 https://www.narayana.io/[Naryana transaction engine], an
-implementation of the Jakarta Transactions Specification, into Helidon
-MP.  It lets you use
+implementation of the
+https://jakarta.ee/specifications/transactions/2.0/[Jakarta
+Transactions Specification], into Helidon MP.  It lets you use
 https://jakarta.ee/specifications/transactions/2.0/apidocs/jakarta/transaction/transactional[`@jakarta.transaction.Transactional`]
 to declare JTA transactions in your Java code.
 
