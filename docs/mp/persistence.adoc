@@ -1039,6 +1039,8 @@ Your `src/main/resources/META-INF/persistence.xml` file must begin
 </persistence>
 ----
 
+==== Persistence Units
+
 You list your application's _persistence units_ as
 `<persistence-unit>` child elements of the enclosing `<persistence>`
 element.  Each `<persistence-unit>` element identifies a named
@@ -1056,3 +1058,34 @@ Here is an example of a persistence unit named `prod`:
 
 </persistence-unit>
 ----
+
+===== Data Sources
+
+A persistence unit is always associated with exactly one <<DS, named
+data source>>.
+
+Because Helidon MP's Jakarta Persistence integration provides support
+for container-managed JPA, the kind of named data source is always a
+<<JTA, JTA>> data source.  The `<jta-data-source>` element, a child of
+the `<persistence-unit>` element, is where you link a persistence unit
+to a <<DS, named data source>> you previously <<DS-Configuration,
+configured>>.
+
+Here is a partial example of a persistence unit named `prod`, with a
+helpful description, linked with a JTA data source named `main`:
+
+[source,xml]
+----
+<persistence-unit name="prod">
+    <description>The production database</description>
+    <jta-data-source>main</jta-data-source> <!--1-->
+
+    <!-- Other persistence unit characteristics go here. -->
+
+</persistence-unit>
+----
+<1> This links this persistence unit to a <<DS, data source>> named
+    `main`, whose <<DS-Configuration, connectivity information>> can
+    be found in a MicroProfile-Config-compatible location, as detailed
+    in the <<DS-Configuration>> section above.
+
