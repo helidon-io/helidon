@@ -819,7 +819,7 @@ snippet is present as a child element of the
                         <annotationProcessorPaths>
                             <annotationProcessorPath>
                                 <groupId>org.hibernate.orm</groupId>
-                                <artifactId>hibernate-jpamodelgen</artifactId>
+                                <artifactId>hibernate-jpamodelgen</artifactId> <!--1-->
                                 <!--
                                     Always check
                                     https://search.maven.org/artifact/org.hibernate.orm/hibernate-jpamodelgen
@@ -840,6 +840,9 @@ snippet is present as a child element of the
     </plugins>
 </pluginManagement>
 ----
+<1> This adds the `hibernate-jpamodelgen` jar, which contains a Java
+    annotation processor, to the Java compiler's annotation processor path
+    so that it is active at compile time.
 
 For more on the Hibernate ORM `hibernate-jpamodelgen` annotation
 processor, see
