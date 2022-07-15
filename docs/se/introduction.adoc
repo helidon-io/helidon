@@ -134,7 +134,7 @@ Profile and monitor your applications across multiple services.
 //WebClient
 [CARD]
 .WebClient
-[icon=http,link=webclient/introduction.adoc]
+[icon=http,link=webclient.adoc]
 --
 HTTP client that handles responses to the HTTP requests in a reactive way.
 --

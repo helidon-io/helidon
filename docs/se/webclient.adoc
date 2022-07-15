@@ -20,7 +20,7 @@
 :description: Helidon WebClient
 :keywords: helidon, se, rest, httpclient, webclient, reactive
 :feature-name: WebClient
-:rootdir: {docdir}/../..
+:rootdir: {docdir}/..
 
 include::{rootdir}/includes/se.adoc[]
 

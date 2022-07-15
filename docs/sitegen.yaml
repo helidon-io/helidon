@@ -239,14 +239,12 @@ backend:
                 glyph:
                   type: "icon"
                   value: "timeline"
-              - type: "MENU"
+              - type: "PAGE"
                 title: "Web Client"
-                dir: "webclient"
+                source: "webclient.adoc"
                 glyph:
                   type: "icon"
                   value: "http"
-                sources:
-                  - "introduction.adoc"
               - type: "PAGE"
                 title: "Websocket"
                 source: "websocket.adoc"
