@@ -37,8 +37,8 @@ Example:
 [source,xml]
 ----
 <dependency>
-    <groupId>javax.activation</groupId>
-    <artifactId>javax.activation-api</artifactId>
+    <groupId>javax.ws.rs</groupId>
+    <artifactId>javax.ws.rs-api</artifactId>
 </dependency>
 ----
 
@@ -46,8 +46,18 @@ should be changed to
 [source,xml]
 ----
 <dependency>
-    <groupId>jakarta.activation</groupId>
-    <artifactId>jakarta.activation-api</artifactId>
+    <groupId>jakarta.ws.rs</groupId>
+    <artifactId>jakarta.ws.rs-api</artifactId>
 </dependency>
 ----
 As the `javax` module is no longer in dependency management of Helidon parent pom files.
+
+== Project Starter
+Project Starter is a new web UI for creating Helidon projects. It’s highly customizable and provides various options allowing users to select Helidon features they want to add to the project. At the end users will be able to generate projects up to their taste. Check it out <...>
+
+
+== Updated CLI
+In version 3.x Helidon CLI brings all benefits of the Project Starter to the command line allowing users to enjoy customizable project generation without leaving the terminal. See it in action <...>
+
+
+
