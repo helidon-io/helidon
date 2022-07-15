@@ -82,9 +82,10 @@ endif::[]
 
 :microprofile-base-url: https://download.eclipse.org/microprofile
 
-:microprofile-open-api-base-url: {microprofile-base-url}/microprofile-open-api-{version-lib-microprofile-metrics-api}
-:microprofile-open-api-spec-url: {microprofile-open-api-base-url}/microprofile-openapi-spec-{version-lib-microprofile-metrics-api}.html
-:microprofile-open-api-javadoc-url: {microprofile-open-api-base-url}/apidocs/org/eclipse/microprofile/openapi/
+:microprofile-open-api-base-url: {microprofile-base-url}/microprofile-open-api-{version-lib-microprofile-openapi-api}
+:microprofile-open-api-spec-url: {microprofile-open-api-base-url}/microprofile-openapi-spec-{version-lib-microprofile-openapi-api}.html
+:microprofile-open-api-javadoc-base-url: {microprofile-open-api-base-url}/apidocs
+:microprofile-open-api-javadoc-url: {microprofile-open-api-javadoc-base-url}/apidocs/org/eclipse/microprofile/openapi/
 
 :microprofile-lra-base-url: {microprofile-base-url}/microprofile-lra-{version-lib-microprofile-lra-api}
 :microprofile-lra-spec-url: {microprofile-lra-base-url}/microprofile-lra-spec-{version-lib-microprofile-lra-api}.html
@@ -192,6 +193,7 @@ endif::[]
 :mp-cors-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.cors
 :mp-tyrus-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.tyrus
 :mp-restclient-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.restclient
+:openapi-javadoc-base-url: {javadoc-base-url}/io.helidon.openapi
 :reactive-base-url: {javadoc-base-url}/io.helidon.common.reactive
 :scheduling-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.scheduling
 :webclient-javadoc-base-url: {javadoc-base-url}/io.helidon.webclient
@@ -209,6 +211,9 @@ endif::[]
 :jib-base-url: https://github.com/GoogleContainerTools/jib/blob/v{version-plugin-jib}-maven/jib-maven-plugin
 :jedis-base-url: {javadoc-io-base-url}/redis.clients/jedis/{version-lib-jedis}/redis/clients
 :kafka-client-base-url: https://kafka.apache.org/28/documentation.html
+:openapi-version: 3.0.0
+:openapi-spec-base-url: https://github.com/OAI/OpenAPI-Specification/blob/master/versions
+:openapi-spec-url: {openapi-spec-base-url}/{openapi-version}.md
 
 :oci-sdk-config-url: https://docs.oracle.com/en-us/iaas/Content/API/Concepts/sdkconfig.htm#SDK_and_CLI_Configuration_File
 :oci-database-url: https://docs.oracle.com/en-us/iaas/Content/Database/home.htm

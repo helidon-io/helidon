@@ -27,7 +27,7 @@
 
 include::{rootdir}/includes/mp.adoc[]
 
-== ToC
+== Contents
 
 - <<Overview, Overview>>
 - <<Maven Coordinates, Maven Coordinates>>
@@ -39,8 +39,7 @@ include::{rootdir}/includes/mp.adoc[]
 
 == Overview
 
-Easily allow your Helidon MP application to serve an OpenAPI document
-that describes your application's endpoints.
+include::{rootdir}/includes/openapi.adoc[tag=overview]
 
 include::{rootdir}/includes/dependencies.adoc[]
 
@@ -82,65 +81,7 @@ To use OpenAPI from your Helidon MP app:
 2. Furnish OpenAPI information about your application's endpoints.
 3. Update your application's configuration (optional).
 
-
-==== Furnish OpenAPI information about your endpoints
-Helidon MP OpenAPI combines information from all of the following sources as it
-builds its in-memory model of your application's API. It constructs the OpenAPI
-document from this internal model. Your application can use one or more of these
-techniques.
-
-===== Annotate the endpoints in your app
-You can add MicroProfile OpenAPI annotations to the endpoints in your source code.
-These annotations allow the Helidon MP OpenAPI runtime to discover the endpoints
-and information about them via CDI at app start-up.
-
-Here is one of the endpoints, annotated for OpenAPI, from the example mentioned earlier:
-
-[source,java]
-----
-@GET
-@Operation(summary = "Returns a generic greeting", // <1>
-        description = "Greets the user generically")
-@APIResponse(description = "Simple JSON containing the greeting", // <2>
-        content = @Content(mediaType = "application/json",
-                           schema = @Schema(implementation = GreetingMessage.class)))
-@Produces(MediaType.APPLICATION_JSON)
-public JsonObject getDefaultMessage() {...}
-----
-<1> `@Operation` gives information about this endpoint.
-<2> `@APIResponse` describes the HTTP response and declares its media type and contents.
-
-You can also define any request parameters the endpoint expects, although this
-endpoint uses none.
-
-This excerpt shows only a few annotations for illustration. The
-link:{helidon-github-tree-url}/examples/microprofile/openapi-basic[Helidon MP OpenAPI example] illustrates more,
-and the link:{microprofile-open-api-spec-url}[MicroProfile OpenAPI spec] describes them all.
-
-===== Provide a static OpenAPI file
-Add a static file at `META-INF/openapi.yml`, `META-INF/openapi.yaml`,
-or `META-INF/openapi.json`. Tools such as Swagger let you describe your app's API
-and they then generate an OpenAPI document file which you can include in your application
-so OpenAPI can use it.
-
-===== Write and configure a model reader class
-Write a Java class that implements the OpenAPI
-link:{microprofile-open-api-javadoc-url}/OASModelReader.html[`org.eclipse.microprofile.openapi.OASModelReader`] interface. Your
-model reader code programmatically adds elements to the internal model that OpenAPI
-builds.
-
-Change your application's MP configuration to set `mp.openapi.model.reader` as the
-fully-qualified class name of your class.
-
-===== Write and configure a filter class
-Write a Java class that implements the OpenAPI
-link:{microprofile-open-api-javadoc-url}/OASFilter.html[`org.eclipse.microprofile.openapi.OASFilter`] interface.
-As OpenAPI composes its internal model, it invokes your filter with each
-model element _before_ adding the element to the model. Your filter can
-accept the element as-is, modify it, or suppress it.
-
-Change your application's configuration to set `mp.openapi.filter` as the full-qualified
-class name of your class.
+include::{rootdir}/includes/openapi.adoc[tag=furnish-openapi-info]
 
 === Update your application configuration
 Beyond the two config properties that denote the model reader and filter, Helidon
@@ -148,21 +89,11 @@ MP OpenAPI supports a number of other mandated settings. These are described in 
 link:{microprofile-open-api-spec-url}#configuration[configuration section] of the MicroProfile
 OpenAPI spec.
 
+include::{rootdir}/includes/openapi.adoc[tag=usage-access-endpoint]
 
-== REST Endpoint
+== API
 
-The Helidon MP application will automatically respond to the built-in endpoint --
-`/openapi` -- and it will return the OpenAPI document describing the endpoints
-in your application.
-
-By default, per the MicroProfile OpenAPI spec, the default format of the OpenAPI document is YAML.
-There is not yet an adopted IANA YAML media type, but a proposed one specifically
-for OpenAPI documents that has some support is `application/vnd.oai.openapi`.
-That is what Helidon returns, by default.
-
-In addition, a client can specify the HTTP header `Accept:` as either `application/vnd.oai.openapi+json` or
- `application/json` to request JSON. Alternatively, the client can pass the query parameter `format` as either `JSON`
- or `YAML` to receive `application/json` or `application/vnd.oai.openapi` (YAML) output, respectively.
+include::{rootdir}/includes/openapi.adoc[tag=api]
 
 == Configuration
 
@@ -336,44 +267,7 @@ Full example is available link:{helidon-github-tree-url}}/examples/microprofile/
 
 
 == Additional Information
-
-=== Building the Jandex index
-
-A Jandex index stores information about the classes and methods in your app and
-what annotations they have. It allows CDI to process annotations faster during your
-application's start-up.
-
-Add the link:https://github.com/wildfly/jandex-maven-plugin[Jandex maven plug-in] to the `<build><plugins>`
-section of your `pom.xml`:
-
-[source,xml,subs="attributes+"]
-----
-<plugin>
-    <groupId>org.jboss.jandex</groupId>
-    <artifactId>jandex-maven-plugin</artifactId>
-    <version>{jandex-plugin-version}</version>
-    <executions>
-      <execution>
-        <id>make-index</id>
-        <goals>
-          <goal>jandex</goal>
-        </goals>
-      </execution>
-    </executions>
-</plugin>
-----
-When you build your app `maven` should include the index `META-INF/jandex.idx` in
-the JAR.
-
-[NOTE]
-====
-If you _do not_ modify your build to create
-the index then the Helidon MP OpenAPI runtime automatically creates one in memory during
-app start-up. This slows down your app start-up and, depending on how CDI is
-configured, might inadvertently miss information.
-
-We _strongly recommend_ using the Jandex plug-in to build the index into your app.
-====
+include::{rootdir}/includes/openapi.adoc[tag=additional-building-jandex]
 
 == Reference
 
