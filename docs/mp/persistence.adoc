@@ -85,7 +85,7 @@ depending on which of these two connection pools, which JDBC driver,
 and which relational database product you use.  Example setups are
 described below.
 
-=== Project Setup [[DS-Project-Setup]]
+=== Project Setup [[DS-Setup]]
 
 ==== Setting Up a Connection Pool [[DS-CP-Project-Setup]]
 
@@ -699,22 +699,33 @@ Jakarta Persistence may be used in an entirely application-managed
 manner, which requires no integration at all.  This
 application-managed mode places the burden of error handling, thread
 safety, transaction management, and other concerns on the user.
-**This documentation does not cover application-managed mode JPA.**
+**This documentation does _not_ cover application-managed mode JPA.**
 
-Jakarta Persistence may be used in a fully managed manner, which
-requires that a container, like Helidon MP, handle error management,
-thread safety and transaction management on behalf of the user.
-**This documentation covers this container-managed mode of JPA
+Jakarta Persistence may be used in a fully container-managed manner,
+which requires that a container, like Helidon MP, handle error
+management, thread safety and transaction management on behalf of the
+user.  **This documentation covers this container-managed mode of JPA
 exclusively.**
 
-Helidon MP's Jakarta Persistence integration comes with support for two JPA implementations, known as _JPA providers_:
+Helidon MP's Jakarta Persistence integration comes with support for
+two JPA implementations, known as _JPA providers_:
 
 1. https://hibernate.org/orm/documentation/6.1/[Hibernate ORM]
 
 2. https://www.eclipse.org/eclipselink/documentation/[Eclipselink]
 
+In any given project, you use one or the other, but not both.
+
 How you set up Helidon MP's Jakarta Persistence integration differs
 depending on which of these JPA providers you choose to use.
+
+Jakarta Persistence requires <<JTA, Jakarta Transactions>> and makes
+use of <<DS, named data sources>>, so as you set up your project you
+will need to understand:
+
+* <<DS, Helidon MP's named data source integration>>
+
+* <<JTA, Helidon MP's Jakarta Transactions integration>>
 
 === Project Setup [[JPA-Setup]]
 
@@ -723,13 +734,108 @@ depending on which of these JPA providers you choose to use.
 ===== Overview
 
 While the Jakarta Persistence specification standardizes many aspects
-around usage, it leaves many setup and configuration aspects up to the
-JPA provider.
+around programming and usage, it deliberately leaves many required
+setup and configuration aspects up to the JPA provider.  You will need
+to set up your project differently depending on which JPA provider you
+choose.
 
 To set up Helidon MP's Jakarta Persistence integration in your
 application to work with your chosen JPA provider, you must:
 
-1. Include the proper Helidon dependencies
+1. <<DS, Set up named data sources as appropriate>>
 
-2. Set up your project for _static weaving_
+2. <<JTA, Set up Helidon MP's Jakarta Transactions support>>
+
+3. Include the proper Jakarta Persistence-related dependencies
+
+4. Set up your project for _static weaving_
+
+Details and examples for each supported JPA provider are below.
+
+===== Maven Coordinates (Common) [[JPA-Maven-Coordinates]]
+
+To include the Jakarta Persistence APIs that you will need and to
+include the core of Helidon's Jakarta Persistence integration:
+
+* xref:../about/managing-dependencies.adoc[Ensure your dependencies
+  are managed]
+
+* <<DS, Ensure you have set up named data sources as appropriate>>
+
+* <<JTA, Ensure you have set up Helidon MP's Jakarta Transactions
+  support>>
+
+Ensure the following '<dependency>' elements are present as child
+elements of your project's `pom.xml` file's `<dependencies>` element:
+
+[source,xml]
+----
+<dependency>
+    <groupId>jakarta.persistence</groupId>
+    <artifactId>jakarta.persistence-api</artifactId>
+    <scope>provided</scope> <!--1-->
+</dependency>
+<dependency>
+    <groupId>io.helidon.integrations.cdi</groupId>
+    <artifactId>helidon-integrations-cdi-jpa</artifactId>
+    <scope>runtime</scope> <!--2-->
+</dependency>
+----
+<1> The `scope` is `provided`, which ensures that the JPA classes
+    required for compilation are available at compile time.
+<2> The `scope` is `runtime`, which ensures that Helidon's core,
+    provider-independent Jakarta Persistence integration is available at
+    runtime.
+
+This `<dependency>` does not set up a JPA provider.  See below.
+
+===== Maven Coordinates (Hibernate ORM) [[JPA-Hibernate-Maven-Coordinates]]
+
+To include Helidon's Jakarta Persistence-related integration for
+Hibernate ORM:
+
+* xref:../about/managing-dependencies.adoc[Ensure your dependencies are
+managed]
+
+* <<JPA-Maven-Coordinates,Ensure the basics of your JPA project are
+  set up properly>>
+
+Ensure the following `<dependency>` elements are present as child
+elements of your project's `pom.xml` file's `<dependencies>` element:
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.integrations.cdi</groupId>
+    <artifactId>helidon-integrations-cdi-eclipselink</artifactId>
+    <scope>runtime</scope> <!--1-->
+</dependency>
+----
+<1> The `scope` is `runtime`, which ensures that Helidon MP's
+    Hibernate ORM integration is available at runtime.
+
+===== Maven Coordinates (Eclipselink) [[JPA-Eclipselink-Maven-Coordinates]]
+
+To include Helidon's Jakarta Persistence-related integration for
+Eclipselink:
+
+* xref:../about/managing-dependencies.adoc[Ensure your dependencies are
+managed]
+
+* <<JPA-Maven-Coordinates,Ensure the basics of your JPA project are
+  set up properly>>
+
+Ensure the following `<dependency>` elements are present as child
+elements of your project's `pom.xml` file's `<dependencies>` element:
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.integrations.cdi</groupId>
+    <artifactId>helidon-integrations-cdi-eclipselink</artifactId>
+    <scope>runtime</scope> <!--1-->
+</dependency>
+----
+<1> The `scope` is `runtime`, which ensures that Helidon MP's
+    Eclipselink integration is available at runtime.
 
