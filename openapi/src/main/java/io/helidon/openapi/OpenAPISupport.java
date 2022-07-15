@@ -820,12 +820,12 @@ public abstract class OpenAPISupport implements Service {
         }
 
         /**
-         * Sets the file system path of the static OpenAPI document file.
+         * Sets the file system path of the static OpenAPI document file. Default types are `json`, `yaml`, and `yml`.
          *
          * @param path non-null location of the static OpenAPI document file
          * @return updated builder instance
          */
-        @ConfiguredOption(DEFAULT_STATIC_FILE_PATH_PREFIX + "(" + OpenAPIMediaType.TYPE_LIST + ")")
+        @ConfiguredOption(value = DEFAULT_STATIC_FILE_PATH_PREFIX + "*")
         public B staticFile(String path) {
             Objects.requireNonNull(path, "path to static file must be non-null");
             staticFilePath = Optional.of(path);
