@@ -22,13 +22,13 @@
 
     <source src="/common/media.xml"/>
     <source src="/common/media-sources.xml"/>
-    <exec src="/se/common/common-se.xml"/>
     <exec src="/common/observability.xml"/>
     <exec src="/common/security.xml"/>
     <source src="/common/extra.xml"/>
     <exec src="/common/packaging.xml"/>
     <exec src="/se/custom/database.xml"/>
     <exec src="/se/custom/custom-tests.xml"/>
+    <exec src="/se/common/common-se.xml"/>
     <output>
         <model>
             <value order="0" key="readme-description">Minimal Helidon SE project suitable to start from scratch.</value>

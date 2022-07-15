@@ -59,8 +59,6 @@
                         <!-- TODO look at multiline expressions -->
                         <!-- TODO look at equality with arrays (== ['foo'] ; == []) -->
                         <!--suppress UnresolvedMavenProperty -->
-                        <filter>!(${flavor} == 'mp' &amp;&amp; ${app-type} == 'database')</filter>
-                        <!--suppress UnresolvedMavenProperty -->
                         <filter>${media} == 'multipart' || !(${media} contains 'multipart')</filter>
                         <!--suppress UnresolvedMavenProperty -->
                         <filter>!(${metrics} || ${tracing} || ${health}) || (${metrics} &amp;&amp; ${tracing} &amp;&amp; ${health})</filter>
