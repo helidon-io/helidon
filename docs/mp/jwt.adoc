@@ -25,7 +25,6 @@
 :feature-name: JWT Authentication
 :microprofile-bundle: true
 :rootdir: {docdir}/..
-:spec-version: 1.2
 include::{rootdir}/includes/mp.adoc[]
 
 == Contents
@@ -41,9 +40,9 @@ include::{rootdir}/includes/mp.adoc[]
 
 == Overview
 
-JSON Web Tokens are an open, industry standard https://datatracker.ietf.org/doc/html/rfc7519[RFC 7519] method for representing claims securely between two parties.
+JSON Web Tokens (JWT) are an open, industry standard https://datatracker.ietf.org/doc/html/rfc7519[(RFC 7519)] method for representing claims securely between two parties.
 
-JSON Web Token (JWT) defines a compact and self-contained way for securely transmitting information between parties as a JSON object. With JWT Auth you can integrate security features such as single sign on into your Helidon MP applications.
+JSON Web Token defines a compact and self-contained way for securely transmitting information between parties as a JSON object. With JWT Auth you can integrate security features such as single sign on into your Helidon MP applications.
 
 
 include::{rootdir}/includes/dependencies.adoc[]
@@ -165,5 +164,6 @@ link:{microprofile-jwt-base-url}#_introduction[Eclipse MicroProfile Interoperabl
 
 == Reference
 
+* {microprofile-jwt-spec-url}[MicroProfile JWT Auth Spec]
 * https://github.com/eclipse/microprofile-jwt-auth[MicroProfile JWT Auth GitHub Repository]
-* https://download.eclipse.org/microprofile/microprofile-jwt-auth-{spec-version}/microprofile-jwt-auth-spec-{spec-version}.html[MicroProfile JWT Auth Spec]
+
