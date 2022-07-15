@@ -608,7 +608,7 @@ itself.
 ==== Configuring the Object Store Directory
 
 Narayana features an object store directory which it uses to store
-information about transaction outcomes.  To configure it, you may set
+information about transaction outcomes.  To set its location, you may set
 the `ObjectStoreEnvironmentBean.objectStoreDir` system property to the
 full path of a writeable directory:
 
@@ -635,3 +635,29 @@ java -Dcom.arjuna.ats.arjuna.coordinator.defaultTimeout=300 # ...
 For more on configuring Narayana, see
 https://www.narayana.io//docs/project/index.html#chap-JBossJTA_Installation_Guide-Test_Chapter[Setting
 Properties] in the Naryana documentation.
+
+=== Usage [[JTA-Usage]]
+
+To use Helidon MP's Jakarta Transactions integration, annotate a
+method with the `jakarta.transaction.Transactional` annotation:
+
+[source,java]
+----
+import jakarta.transaction.Transactional;
+
+// ...
+
+@Transactional // <1>
+public String getGreeting(Integer id) {
+  // Use a JTA-aware facility to do something transactional here. <2>
+}
+----
+<1> The `@Transactional` annotation indicates that this method should
+    be invoked in the scope of a JTA transaction.  The object
+    containing this method must be one that Helidon MP's CDI container
+    has created, i.e. it must be managed.  (CDI beans are managed, as
+    are Jakarta RESTful Web Services resource classes.)
+<2> For `@Transactional` to have any effect, whatever is used inside
+    the method must be JTA-aware (such as a Jakarta Persistence
+    construct like an `EntityManager`).
+
