@@ -327,7 +327,7 @@ public void whenLRAFinishes(URI lraId, LRAStatus status)
 
 == Configuration
 
-include::{rootdir}/includes/config/io.helidon.microprofile.lra.coordinator.adoc[leveloffset=-1]
+include::{rootdir}/config/io_helidon_microprofile_lra_Coordinator.adoc[leveloffset=+1,tag=config]
 
 [source,yaml]
 .Example of LRA configuration

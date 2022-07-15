@@ -18,18 +18,19 @@
 
 //MANUALLY CREATED DOCUMENT
 
-:description: Configuration of io.helidon.microprofile.lra.coordinator
-:keywords: helidon, io.helidon.microprofile.lra.coordinator
-:basic-table-intro: The table below lists the configuration keys that configure io.helidon.microprofile.lra.coordinator
+:description: Configuration of io_helidon_microprofile_lra_Coordinator
+:keywords: helidon, io_helidon_microprofile_lra_Coordinator
+:basic-table-intro: The table below lists the configuration keys that configure io_helidon_microprofile_lra_Coordinator
+
+= LRA Configuration
+
+// tag::config[]
 
 [source,text]
 .Type
 ----
 io.helidon.microprofile.lra
 ----
-
-==== Configuration options
-
 
 Optional configuration options:
 [cols="3,3,2,5"]
@@ -44,3 +45,5 @@ Optional configuration options:
 |`mp.lra.coordinator.timeout-unit` |string |{nbsp} |Timeout unit for synchronous communication with coordinator.
 
 |===
+
+// end::config[]
