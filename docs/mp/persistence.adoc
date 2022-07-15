@@ -41,6 +41,7 @@ include::{rootdir}/includes/mp.adoc[]
 ** <<JTA-Maven-Coordinates,Maven Coordinates>>
 ** <<JTA-Configuration,Configuration>>
 ** <<JTA-Usage,Usage>>
+* <<JPA, Jakarta Persistence (JPA) Integration>>
 
 == Overview [[Overview]]
 
@@ -671,4 +672,21 @@ public String getGreeting(Integer id) {
     to have any effect, whatever is used inside the method must be
     JTA-aware (such as a Jakarta Persistence construct like an
     `EntityManager`).
+
+== Jakarta Persistence (JPA) [[JPA]]
+
+=== Overview
+
+Helidon MP's Jakarta Persistence integration allows you to interact
+with Jakarta Persistence objects as if your code were running in an
+application server, handling automatic creation and management of
+objects such as `EntityManager` and `EntityManagerFactory` instances.
+
+Jakarta Persistence is a Jakarta EE specification that describes how its implementations:
+
+1. Map Java objects to relational database tables
+
+2. Manage such persistent Java objects
+
+3. Interact with <<JTA,Jakarta Transactions>>
 
