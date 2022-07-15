@@ -25,6 +25,8 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 import io.helidon.config.Config;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.tracing.Tag;
 import io.helidon.tracing.TracerBuilder;
 import io.helidon.tracing.opentracing.OpenTracingTracerBuilder;
@@ -106,6 +108,7 @@ import zipkin2.reporter.urlconnection.URLConnectionSender;
  * @see <a href="http://zipkin.io/pages/instrumenting.html#core-data-structures">Zipkin Attributes</a>
  * @see <a href="https://github.com/openzipkin/zipkin/issues/962">Zipkin Missing Service Name</a>
  */
+@Configured(prefix = "tracing", root = true, description = "Zipkin tracer configuration")
 public class ZipkinTracerBuilder implements OpenTracingTracerBuilder<ZipkinTracerBuilder> {
     static final Logger LOGGER = Logger.getLogger(ZipkinTracerBuilder.class.getName());
     static final String DEFAULT_PROTOCOL = "http";
@@ -342,6 +345,7 @@ public class ZipkinTracerBuilder implements OpenTracingTracerBuilder<ZipkinTrace
      * @param version version to use
      * @return updated builder instance
      */
+    @ConfiguredOption(value = "V2", key = "api-version")
     public ZipkinTracerBuilder version(Version version) {
         this.version = version;
         return this;

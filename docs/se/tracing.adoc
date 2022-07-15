@@ -17,12 +17,35 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Tracing
-:description: Helidon Tracing Support
-:feature-name: Tracing
+:description: Helidon SE Tracing Support
+:feature-name: Helidon Tracing
 :keywords: helidon, tracing
-:rootdir: {docdir}/../..
+:rootdir: {docdir}/..
 
 include::{rootdir}/includes/se.adoc[]
+
+== ToC
+
+- <<Overview, Overview>>
+- <<Maven Coordinates, Maven Coordinates>>
+- <<Usage, Usage>>
+- <<Configuration, Configuration>>
+- <<Additional Information, Additional Information>>
+** <<Span Propagation, Span Propagation>>
+** <<Zipkin Tracing, Zipkin Tracing>>
+** <<Jaeger Tracing, Jaeger Tracing>>
+- <<Reference, Reference>>
+
+== Overview
+
+Distributed tracing is a critical feature of micro-service based applications, since it traces workflow both
+within a service and across multiple services. This provides insight to sequence and timing data for specific blocks of work,
+which helps you identify performance and operational issues.
+Helidon includes support for distributed tracing through its own API, backed by either
+through the https://opentelemetry.io/docs/instrumentation/js/api/tracing/[OpenTelemetry API], or by
+https://opentracing.io[OpenTracing API]. Tracing is integrated with WebServer, gRPC Server,
+and Security.
+
 include::{rootdir}/includes/dependencies.adoc[]
 
 // tag::tracing-dependency[]
@@ -35,19 +58,29 @@ include::{rootdir}/includes/dependencies.adoc[]
 ----
 // end::tracing-dependency[]
 
-== Tracing Support
-Helidon includes support for tracing through the https://opentracing.io/[OpenTracing] APIs.
-Tracing is integrated with WebServer, gRPC Server, and Security.
+== Usage
+
+This section explains a few concepts that you need to understand before you get started with tracing.
+
+* In the context of this document, a _service_ is synonymous with an application.
+* A _span_ is the basic unit of work done within a single service, on a single host.
+Every span has a name, starting timestamp, and duration.
+For example, the work done by a REST endpoint is a span.
+A span is associated to a single service, but its descendants can belong to different services and hosts.
+* A _trace_ contains a collection of spans from one or more services, running on one or more hosts. For example,
+if you trace a service endpoint that calls another service, then the trace would contain spans from both services.
+Within a trace, spans are organized as a directed acyclic graph (DAG) and
+can belong to multiple services, running on multiple hosts.
 
 Support for specific tracers is abstracted. Your application can depend on
-the abstraction layer and provide a specific tracer implementation as a Java
+the Helidon abstraction layer and provide a specific tracer implementation as a Java
 `ServiceLoader` service.
+Helidon provides such an implementation for:
 
-== Configuring Tracing with Helidon SE
+- OpenTracing tracers, either using the `GlobalTracer`, provider resolver approach, or explicitly using Zipkin tracer
+- OpenTelemetry tracers, either using the global OpenTelemetry instance, or explicitly using Jaeger tracer
 
-=== Configuring Tracing with WebServer
-
-To configure tracer with WebServer:
+=== Setup WebServer
 
 [source,java]
 .Configuring OpenTracing `Tracer`
@@ -61,12 +94,12 @@ ServerConfiguration.builder()
 <1> The name of the application (service) to associate with the tracing events
 <2> The endpoint for tracing events, specific to the tracer used, usually loaded from Config
 
-=== Configuring Tracing with gRPC Server
+=== Setup gRPC Server
 
 [source,java]
-.Configuring OpenTracing `Tracer`
+.Configuring `Tracer`
 ----
-Tracer tracer = (Tracer) TracerBuilder.create("Server")
+Tracer tracer = TracerBuilder.create("Server")
         .collectorUri(URI.create("http://10.0.0.18:9411"))   // <1>
         .build();
 ----
@@ -93,9 +126,7 @@ GrpcServerConfiguration serverConfig = GrpcServerConfiguration.builder().port(0)
                 .build();
 ----
 
-include::{rootdir}/includes/tracing/common-config.adoc[]
-
-== Creating custom spans
+=== Creating custom spans
 
 To create a custom span that is a child of the WebServer request:
 
@@ -108,19 +139,15 @@ Span span = request.tracer()
 ----
 
 
-== Trace propagation across services
-
-Automated trace propagation is supported currently only with Jersey client.
-
-[source,java]
-.Tracing propagation with Jersey client
-----
-Response response = client.target(serviceEndpoint)
-    .request()
-    .get();
-----
+=== Helidon Spans
 
 include::{rootdir}/includes/tracing/common-spans.adoc[]
+
+== Configuration
+
+The following configuration should be supported by all tracer implementations (if feasible)
+
+include::{rootdir}/config/io_helidon_tracing_Tracer.adoc[tag=config,levelOffset=1]
 
 === Traced spans configuration
 
@@ -246,3 +273,56 @@ Parameters provided:
 1. Method - HTTP method
 2. Path - path of the request (such as '/greet')
 3. Query - query of the request (may be null)
+
+== Additional Information
+
+=== Span Propagation
+
+Span propagation is supported with Helidon WebClient (and with Jersey client, though it is blocking and not suitable for
+reactive implementations).
+Tracing propagation is automatic as long as the current span context is available in Helidon Context
+(which is automatic when running within a WebServer request).
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.webclient</groupId>
+    <artifactId>helidon-webclient</artifactId>
+</dependency>
+<dependency>
+    <groupId>io.helidon.webclient</groupId>
+    <artifactId>helidon-webclient-tracing</artifactId>
+</dependency>
+
+----
+
+[source,java]
+.Tracing propagation with Helidon WebClient
+----
+WebClient client = WebClient.builder()
+    .addService(WebClientTracing.create())
+    .build();
+
+Single<String> response = client.get()
+    .uri(uri)
+    .request(String.class);
+----
+
+=== Zipkin Tracing [[zipkin-tracing]]
+
+include::{rootdir}/includes/tracing/tracer-zipkin.adoc[tag=zipkin-dependency]
+include::{rootdir}/includes/tracing/tracer-zipkin.adoc[tag=zipkin-configuration]
+
+=== Jaeger Tracing [[jaeger-tracing]]
+
+include::{rootdir}/includes/tracing/tracer-jaeger.adoc[tag=jaeger-dependency]
+include::{rootdir}/includes/tracing/tracer-jaeger.adoc[tag=jaeger-configuration]
+
+=== Jaeger Tracing Metrics [[jaeger-tracing-metrics]]
+
+As the <<jaeger-tracing, Jaeger Tracing>> section describes, you can use Jaeger tracing in your Helidon application.
+
+== Reference
+
+* link:https://opentracing.io/[Opentracing Project]
+* link:https://opentelemetry.io/docs/instrumentation/js/api/tracing/[OpenTelemetry API]

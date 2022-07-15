@@ -17,20 +17,22 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 ifndef::rootdir[:rootdir: {docdir}/..]
-:description: Configuration of io.helidon.tracing.TracerBuilder
-:keywords: helidon, config, io.helidon.tracing.TracerBuilder
-:basic-table-intro: The table below lists the configuration keys that configure io.helidon.tracing.TracerBuilder
+:description: Configuration of io.opentracing.Tracer
+:keywords: helidon, config, io.opentracing.Tracer
+:basic-table-intro: The table below lists the configuration keys that configure io.opentracing.Tracer
 include::{rootdir}/includes/attributes.adoc[]
 
-= TracerBuilder (tracing) Configuration
+= io.opentracing.Tracer Configuration
 
 // tag::config[]
 
-Tracer configuration.
+Zipkin tracer configuration
 
 
-Type: link:{javadoc-base-url}/io.helidon.tracing/io/helidon/tracing/TracerBuilder.html[io.helidon.tracing.TracerBuilder]
+Type: io.opentracing.Tracer
 
+
+This is a standalone configuration type, prefix from configuration root: `tracing`
 
 
 
@@ -44,6 +46,8 @@ Optional configuration options:
 |===
 |key |type |default value |description
 
+|`api-version` |Version (V1, V2) |`V2` |Version of Zipkin API to use.
+ Defaults to Version#V2.
 |`boolean-tags` |Map&lt;string, boolean&gt; |{nbsp} |Tracer level tags that get added to all reported spans.
 |`enabled` |boolean |`true` |When enabled, tracing will be sent. If enabled is false, tracing should
  use a no-op tracer.

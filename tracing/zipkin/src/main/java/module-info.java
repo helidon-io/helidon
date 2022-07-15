@@ -22,6 +22,7 @@ module io.helidon.tracing.zipkin {
     requires io.helidon.config;
     requires io.helidon.tracing;
     requires io.helidon.tracing.opentracing;
+    requires static io.helidon.config.metadata;
 
     requires java.logging;
     requires io.opentracing.util;

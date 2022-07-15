@@ -23,6 +23,7 @@ import java.util.logging.Logger;
 
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.tracing.Tracer;
 import io.helidon.tracing.TracerBuilder;
 import io.helidon.tracing.opentelemetry.HelidonOpenTelemetry;
@@ -288,6 +289,7 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
      * @param resource key resource
      * @return updated builder
      */
+    @ConfiguredOption(key = "private-key-pem")
     public JaegerTracerBuilder privateKey(io.helidon.common.configurable.Resource resource) {
         this.privateKey = resource.bytes();
         return this;
@@ -299,6 +301,7 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
      * @param resource certificate resource
      * @return updated builder
      */
+    @ConfiguredOption(key = "client-cert-pem")
     public JaegerTracerBuilder clientCertificate(io.helidon.common.configurable.Resource resource) {
         this.certificate = resource.bytes();
         return this;
@@ -310,6 +313,7 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
      * @param resource trusted certificates resource
      * @return updated builder
      */
+    @ConfiguredOption(key = "trusted-cert-pem")
     public JaegerTracerBuilder trustedCertificates(io.helidon.common.configurable.Resource resource) {
         this.trustedCertificates = resource.bytes();
         return this;
@@ -321,6 +325,7 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
      * @param exporterTimeout timeout to use
      * @return updated builder
      */
+    @ConfiguredOption(key = "exporter-timeout-millis", value = "10000")
     public JaegerTracerBuilder exporterTimeout(Duration exporterTimeout) {
         this.exporterTimeout = exporterTimeout;
         return this;
@@ -353,6 +358,7 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
      * @param samplerParam parameter of the sampler
      * @return updated builder instance
      */
+    @ConfiguredOption("1")
     public JaegerTracerBuilder samplerParam(Number samplerParam) {
         this.samplerParam = samplerParam;
         return this;
@@ -366,6 +372,7 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
      * @param samplerType type of the sampler
      * @return updated builder instance
      */
+    @ConfiguredOption("CONSTANT")
     public JaegerTracerBuilder samplerType(SamplerType samplerType) {
         this.samplerType = samplerType;
         return this;
