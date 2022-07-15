@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,7 +59,6 @@ import jakarta.annotation.security.RolesAllowed;
  * @see #create(Config)
  */
 public final class AbacProvider extends SynchronousProvider implements AuthorizationProvider {
-    private static final String CONFIG_KEY = "abac";
 
     private final List<AbacValidator<? extends AbacValidatorConfig>> validators = new ArrayList<>();
     private final Set<Class<? extends Annotation>> supportedAnnotations;
@@ -142,7 +141,7 @@ public final class AbacProvider extends SynchronousProvider implements Authoriza
         // list all custom objects and check those that implement AttributeConfig and ...
         validateCustom(epConfig, collector);
 
-        Optional<Config> abacConfig = epConfig.config(CONFIG_KEY);
+        Optional<Config> abacConfig = epConfig.config(AbacProviderService.PROVIDER_CONFIG_KEY);
 
         for (var validator : validators) {
             // order of preference - explicit class, configuration, annotation
@@ -239,7 +238,7 @@ public final class AbacProvider extends SynchronousProvider implements Authoriza
     }
 
     private void validateConfig(EndpointConfig config, Errors.Collector collector) {
-        config.config(CONFIG_KEY)
+        config.config(AbacProviderService.PROVIDER_CONFIG_KEY)
                 .ifPresent(abacConfig -> validateAbacConfig(abacConfig, collector));
     }
 
@@ -336,7 +335,7 @@ public final class AbacProvider extends SynchronousProvider implements Authoriza
     /**
      * A fluent API builder for {@link AbacProvider}.
      */
-    @Configured(prefix = "abac",
+    @Configured(prefix = AbacProviderService.PROVIDER_CONFIG_KEY,
                 description = "Attribute Based Access Control provider",
                 provides = {SecurityProvider.class, AuthorizationProvider.class})
     public static final class Builder implements io.helidon.common.Builder<Builder, AbacProvider> {

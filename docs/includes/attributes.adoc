@@ -198,6 +198,14 @@ endif::[]
 :webserver-staticcontent-javadoc-base-url: {webserver-javadoc-base-url}.staticcontent
 :webserver-cors-javadoc-base-url: {javadoc-base-url}/io.helidon.webserver.cors
 :graphql-javadoc-base-url: {javadoc-base-url}/io.helidon.graphql.server
+:security-provider-oidc-base-url: {javadoc-base-url}/io.helidon.security.providers.oidc
+:security-provider-httpauth-base-url: {javadoc-base-url}/io.helidon.security.providers.httpauth
+:security-provider-header-base-url: {javadoc-base-url}/io.helidon.security.providers.header
+:security-provider-httpsign-base-url: {javadoc-base-url}/io.helidon.security.providers.httpsign
+:security-provider-idcs-mapper-base-url: {javadoc-base-url}/io.helidon.security.providers.idcs.mapper
+:security-provider-abac-base-url: {javadoc-base-url}/io.helidon.security.providers.abac
+:security-provider-google-login-base-url: {javadoc-base-url}/io.helidon.security.providers.google.login
+:security-provider-jwt-base-url: {javadoc-base-url}/io.helidon.security.providers.jwt
 
 // 3rd party versioned URLs
 :jaeger-doc-base-url: https://www.jaegertracing.io/docs/{version-lib-jaeger}

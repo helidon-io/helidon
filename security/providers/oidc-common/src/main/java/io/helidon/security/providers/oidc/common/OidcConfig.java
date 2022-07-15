@@ -1383,6 +1383,7 @@ public final class OidcConfig {
          * @param crossOriginConfig cross-origin settings to apply to the redirect endpoint
          * @return updated builder instance
          */
+        @ConfiguredOption(key = "cors")
         public Builder crossOriginConfig(CrossOriginConfig crossOriginConfig) {
             this.crossOriginConfig = crossOriginConfig;
             return this;

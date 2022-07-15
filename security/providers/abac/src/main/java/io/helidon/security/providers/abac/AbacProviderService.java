@@ -24,9 +24,12 @@ import io.helidon.security.spi.SecurityProviderService;
  * A java service to register this provider with {@link io.helidon.security.Security}.
  */
 public class AbacProviderService implements SecurityProviderService {
+
+    static final String PROVIDER_CONFIG_KEY = "abac";
+
     @Override
     public String providerConfigKey() {
-        return "abac";
+        return PROVIDER_CONFIG_KEY;
     }
 
     @Override

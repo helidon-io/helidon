@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,8 @@ import io.helidon.common.http.FormParams;
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.Grant;
 import io.helidon.security.ProviderRequest;
@@ -44,6 +46,7 @@ import io.helidon.security.jwt.Jwt;
 import io.helidon.security.jwt.SignedJwt;
 import io.helidon.security.jwt.Validator;
 import io.helidon.security.providers.oidc.common.OidcConfig;
+import io.helidon.security.spi.SecurityProvider;
 import io.helidon.security.spi.SubjectMappingProvider;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientRequestBuilder;
@@ -260,6 +263,7 @@ public abstract class IdcsRoleMapperRxProviderBase implements SubjectMappingProv
      * Fluent API builder for {@link IdcsRoleMapperRxProviderBase}.
      * @param <B> Type of the extending builder
      */
+    @Configured
     public static class Builder<B extends Builder<B>> {
 
         private final Set<SubjectType> supportedTypes = EnumSet.noneOf(SubjectType.class);
@@ -313,6 +317,7 @@ public abstract class IdcsRoleMapperRxProviderBase implements SubjectMappingProv
          * @param config oidc specific configuration, must have at least identity endpoint and client credentials configured
          * @return updated builder instance
          */
+        @ConfiguredOption
         public B oidcConfig(OidcConfig config) {
             this.oidcConfig = config;
             return me;
@@ -347,6 +352,7 @@ public abstract class IdcsRoleMapperRxProviderBase implements SubjectMappingProv
          * @param subjectType type of subject to use when requesting roles from IDCS
          * @return updated builder instance
          */
+        @ConfiguredOption(IDCS_SUBJECT_TYPE_USER)
         public B defaultIdcsSubjectType(String subjectType) {
             this.defaultIdcsSubjectType = subjectType;
             return me;
@@ -362,6 +368,7 @@ public abstract class IdcsRoleMapperRxProviderBase implements SubjectMappingProv
          * @param type subject type to add to the list of supported types
          * @return updated builder instance
          */
+        @ConfiguredOption(key = "subject-types", kind = ConfiguredOption.Kind.LIST, value = "USER")
         public B addSubjectType(SubjectType type) {
             this.supportedTypes.add(type);
             return me;
