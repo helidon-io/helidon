@@ -83,7 +83,7 @@ Build gRPC servers and clients.
 //Health Checks
 [CARD]
 .Health Checks
-[icon=favorite_outline,link=health/health.adoc]
+[icon=favorite_outline,link=health.adoc]
 --
 Expose health statuses of your applications.
 --
@@ -127,7 +127,7 @@ A tool-chain to handle authentication, authorization and context propagation.
 //Tracing
 [CARD]
 .Tracing
-[icon=timeline,link=tracing/tracing.adoc]
+[icon=timeline,link=tracing.adoc]
 --
 Profile and monitor your applications across multiple services.
 --

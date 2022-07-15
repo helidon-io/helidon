@@ -1,0 +1,13 @@
+server:
+  port: 8080
+  host: 0.0.0.0
+
+app:
+  greeting: "Hello"
+
+security:
+  enabled: false
+
+{{#config-test}}
+{{.}}
+{{/config-test}}

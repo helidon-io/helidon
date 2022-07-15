@@ -18,10 +18,6 @@
 
 ifndef::rootdir[:rootdir: {docdir}/..]
 
-=== Helidon GraphQL
-In addition, we provide the following configuration options:
-
-
 The following configuration keys can be used to set up integration with WebServer:
 
 [cols="2,2,5"]

@@ -97,6 +97,48 @@ in your Helidon MP application.
 --
 Learn how to build a Helidon MicroProfile (MP) application from scratch.
 --
+
+[CARD]
+.Helidon MP Upgrade guide
+[link=migration.adoc]
+--
+Learn how to upgrade your Helidon MP application from 1.x to 2.x.
+--
+
+[CARD]
+.OIDC Tutorial
+[link=security-oidc.adoc]
+--
+Learn how to set up OIDC security in your Helidon MP application.
+--
+
+[CARD]
+.Helidon MP Tracing
+[link=tracing.adoc]
+--
+Learn how to use tracing in your Helidon MP application.
+--
+
+[CARD]
+.Testing with JUnit 5
+[link=testing-junit5.adoc]
+--
+Learn how to use JUnit5 for testing your applications.
+--
+
+[CARD]
+.Helidon MP and JBatch
+[link=jbatch.adoc]
+--
+Learn how to use JBatch with Helidon MP.
+--
+
+[CARD]
+.Performance tuning in Helidon MP
+[link=performance-tuning.adoc]
+--
+Learn how to improve performance of your application.
+--
 ====
 
 == Build and Deploy
@@ -144,7 +186,6 @@ Learn how to use Jib to create a container image without Docker.
 .Deploying to OKE
 [link=../../guides/oke.adoc]
 --
-Learn how to deploy your application to Oracle Cloud Infrastructure Container
- Engine for Kubernetes (OKE).
+Learn how to deploy your application to Oracle Cloud Infrastructure Container Engine for Kubernetes (OKE).
 --
 ====

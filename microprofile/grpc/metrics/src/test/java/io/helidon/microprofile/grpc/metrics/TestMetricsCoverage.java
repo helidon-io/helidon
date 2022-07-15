@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,10 @@ package io.helidon.microprofile.grpc.metrics;
 import java.lang.annotation.Annotation;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import io.helidon.microprofile.tests.junit5.AddBean;
 import io.helidon.microprofile.tests.junit5.AddExtension;
@@ -44,27 +46,18 @@ public class TestMetricsCoverage {
 
     @Test
     public void checkThatAllMetricsAnnotationsAreCoveredByTestBeans() {
-        assertThat("Some metrics annotations are not covered by test beans",
+        assertThat("Metrics annotations not covered by test beans",
                 extension.annotationClassesNotCoveredByTestBeans(), is(empty()));
-    }
-
-    @Test
-    public void checkThatAllMetricsWereRemovedFromGrpcMethods() {
-
-        Map<AnnotatedMethod<?>, Set<Class<? extends Annotation>>> leftoverAnnotations =
-                extension.remainingTestBeanMethodAnnotations();
-
-        assertThat("Metrics annotations unexpectedly remain on method", leftoverAnnotations.keySet(), is(empty()));
     }
 
     @Test
     public void checkThatAllMetricsAnnotationsWereEncountered() {
 
         Set<Class<? extends Annotation>> metricsAnnotationsUnused =
-                new HashSet<>(GrpcMetricsCdiExtension.METRICS_ANNOTATIONS.values());
+                new HashSet<>(MetricsConfigurer.METRIC_ANNOTATION_INFO.keySet());
         metricsAnnotationsUnused.removeAll(extension.metricsAnnotationsUsed());
 
-        assertThat("The CoverageTestBeanBase subclasses seem not to cover all known annotations", metricsAnnotationsUnused,
+        assertThat("Known annotations not covered by CoverageTestBeanBase subclasses", metricsAnnotationsUnused,
                 is(empty()));
     }
 
@@ -84,12 +77,18 @@ public class TestMetricsCoverage {
      */
     @Test
     public void checkForAllMetricsInMetricInfo() {
-        Set<Class<? extends Annotation>> metricsAnnotations =
-                new HashSet<>(GrpcMetricsCdiExtension.METRICS_ANNOTATIONS.values());
+        var metricTypesSupportedByGrpc = new HashSet<>(List.of(MetricType.values()));
+        metricTypesSupportedByGrpc.removeAll(Set.of(MetricType.GAUGE, MetricType.HISTOGRAM, MetricType.INVALID));
 
-        metricsAnnotations.removeAll(MetricsConfigurer.metricsAnnotationsSupported());
-        assertThat("One or more metrics annotations seem not supported in MetricsConfigurer but should be",
-                metricsAnnotations, is(empty()));
+        var metricTypesAbsentFromMetricsConfigurer = new HashSet<>(metricTypesSupportedByGrpc);
+
+        // Remove metrics types represented in the MetricsConfigurer's annotation info.
+        MetricsConfigurer.METRIC_ANNOTATION_INFO.forEach((annotationClass, metricInfo) -> {
+            metricTypesAbsentFromMetricsConfigurer.remove(MetricType.from(metricInfo.metricClass()));
+        });
+
+        assertThat("Metrics types not supported in MetricsConfigurer but should be",
+                metricTypesAbsentFromMetricsConfigurer, is(empty()));
     }
 
     /**
@@ -106,9 +105,14 @@ public class TestMetricsCoverage {
         Set<MetricType> incorrectlySkippedMetricTypes = new HashSet<>(Arrays.asList(MetricType.values()));
         incorrectlySkippedMetricTypes.removeAll(ignoredMetricTypes);
 
-        incorrectlySkippedMetricTypes.removeAll(GrpcMetricsCdiExtension.METRICS_ANNOTATIONS.keySet());
+        MetricsConfigurer.METRIC_ANNOTATION_INFO.values()
+                                                        .stream()
+                                                        .map(MetricsConfigurer.MetricInfo::metricClass)
+                                                        .map(MetricType::from)
+                                                        .toList()
+                                                        .forEach(incorrectlySkippedMetricTypes::remove);
         assertThat("At least one MicroProfile metric with an annotation exists that is not present in "
-                        + "GrpcMetricsCdiExtension.METRICS_ANNOTATIONS",
+                        + "MetricsConfigurer.METRIC_ANNOTATION_INFO",
                 incorrectlySkippedMetricTypes, is(empty()));
     }
 }

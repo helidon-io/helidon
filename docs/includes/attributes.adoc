@@ -97,6 +97,7 @@ endif::[]
 :microprofile-metrics-base-url: {microprofile-base-url}/microprofile-metrics-{version-lib-microprofile-metrics-api}
 :microprofile-metrics-spec-url: {microprofile-metrics-base-url}/microprofile-metrics-spec-{version-lib-microprofile-metrics-api}.html
 :microprofile-metrics-javadoc-url: {microprofile-metrics-base-url}/apidocs
+:microprofile-metrics-javadoc-annotation-url: {microprofile-metrics-javadoc-url}/org/eclipse/microprofile/metrics/annotation
 
 :microprofile-tracing-base-url: {microprofile-base-url}/microprofile-tracing-{version-lib-microprofile-tracing}
 :microprofile-tracing-spec-url: {microprofile-tracing-base-url}/microprofile-tracing-spec-{version-lib-microprofile-tracing}.html
@@ -125,6 +126,10 @@ endif::[]
 :microprofile-rest-client-base-url: {microprofile-base-url}/microprofile-rest-client-{version-lib-microprofile-rest-client}
 :microprofile-rest-client-spec-url: {microprofile-rest-client-base-url}/microprofile-rest-client-spec-{version-lib-microprofile-rest-client}.html
 :microprofile-rest-client-javadoc-url: {microprofile-rest-client-base-url}/apidocs
+
+:microprofile-graphql-base-url: {microprofile-base-url}/microprofile-graphql-{version-lib-microprofile-graphql}
+:microprofile-graphql-spec-url: {microprofile-rest-graphql-url}/microprofile-rest-client-spec-{version-lib-microprofile-graphql}.html
+:microprofile-graphql-javadoc-url: {microprofile-rest-graphql-url}/apidocs
 
 // Jakarta versioned URLs
 
@@ -179,6 +184,7 @@ endif::[]
 :media-jsonb-javadoc-base-url: {javadoc-base-url}/io.helidon.media.jsonb
 :media-jackson-javadoc-base-url: {javadoc-base-url}/io.helidon.media.jackson
 :metrics-javadoc-base-url: {javadoc-base-url}/io.helidon.metrics.api
+:metrics-mp-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.metrics
 :metrics-serviceapi-javadoc-base-url: {javadoc-base-url}/io.helidon.metrics.serviceapi
 :micrometer-javadoc-base-url: {javadoc-base-url}/io.helidon.integrations.micrometer
 :mp-cors-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.cors
@@ -191,6 +197,7 @@ endif::[]
 :webserver-jersey-javadoc-base-url: {javadoc-base-url}/io.helidon.webserver.jersey
 :webserver-staticcontent-javadoc-base-url: {webserver-javadoc-base-url}.staticcontent
 :webserver-cors-javadoc-base-url: {javadoc-base-url}/io.helidon.webserver.cors
+:graphql-javadoc-base-url: {javadoc-base-url}/io.helidon.graphql.server
 
 // 3rd party versioned URLs
 :jaeger-doc-base-url: https://www.jaegertracing.io/docs/{version-lib-jaeger}
@@ -199,6 +206,7 @@ endif::[]
 :eclipselink-doc-base-url: https://www.eclipse.org/eclipselink/documentation/{version-lib-exclipselink}
 :jib-base-url: https://github.com/GoogleContainerTools/jib/blob/v{version-plugin-jib}-maven/jib-maven-plugin
 :jedis-base-url: {javadoc-io-base-url}/redis.clients/jedis/{version-lib-jedis}/redis/clients
+:kafka-client-base-url: https://kafka.apache.org/28/documentation.html
 
 :oci-sdk-config-url: https://docs.oracle.com/en-us/iaas/Content/API/Concepts/sdkconfig.htm#SDK_and_CLI_Configuration_File
 :oci-database-url: https://docs.oracle.com/en-us/iaas/Content/Database/home.htm
@@ -212,5 +220,9 @@ endif::[]
 :oci-javasdk-objstore-javadoc-base-url: {oci-javasdk-javadoc-base-url}/com/oracle/bmc/objectstorage
 :oci-javasdk-vault-javadoc-base-url: {oci-javasdk-javadoc-base-url}/com/oracle/bmc/vault
 
+:openmetrics-exemplar-spec-url: https://github.com/OpenObservability/OpenMetrics/blob/main/specification/OpenMetrics.md#exemplars
+
+:micrometer-url: https://micrometer.io
+:micrometer-api-url: https://micrometer.io/docs/concepts
 
 endif::attributes-included[]

@@ -17,24 +17,34 @@ package io.helidon.tracing.opentelemetry;
 
 import io.helidon.tracing.SpanContext;
 
-class OpenTelemetrySpanContext implements SpanContext {
-    private final io.opentelemetry.api.trace.SpanContext delegate;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.context.Context;
 
-    OpenTelemetrySpanContext(io.opentelemetry.api.trace.SpanContext context) {
-        this.delegate = context;
+class OpenTelemetrySpanContext implements SpanContext {
+    private final Context context;
+
+    OpenTelemetrySpanContext(Context context) {
+        this.context = context;
     }
 
     @Override
     public String traceId() {
-        return delegate.getTraceId();
+        return Span.fromContext(context).getSpanContext().getTraceId();
     }
 
     @Override
     public String spanId() {
-        return delegate.getSpanId();
+        return Span.fromContext(context).getSpanContext().getSpanId();
     }
 
-    io.opentelemetry.api.trace.SpanContext openTelemetry() {
-        return delegate;
+    @Override
+    public void asParent(io.helidon.tracing.Span.Builder<?> spanBuilder) {
+        spanBuilder.unwrap(OpenTelemetrySpanBuilder.class)
+                .openTelemetry()
+                .setParent(context);
+    }
+
+    public Context openTelemetry() {
+        return context;
     }
 }

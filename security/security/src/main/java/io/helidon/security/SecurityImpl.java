@@ -29,6 +29,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
+import io.helidon.common.LazyValue;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.security.internal.SecurityAuditEvent;
@@ -67,7 +68,7 @@ final class SecurityImpl implements Security {
     private final Optional<SubjectMappingProvider> subjectMappingProvider;
     private final String instanceUuid;
     private final ProviderSelectionPolicy providerSelectionPolicy;
-    private final Tracer securityTracer;
+    private final LazyValue<Tracer> securityTracer;
     private final SecurityTime serverTime;
     private final Supplier<ExecutorService> executorService;
     private final Config securityConfig;
@@ -84,7 +85,7 @@ final class SecurityImpl implements Security {
         this.serverTime = builder.serverTime();
         this.executorService = builder.executorService();
         this.annotations.addAll(SecurityUtil.getAnnotations(builder.allProviders()));
-        this.securityTracer = SecurityUtil.getTracer(builder.tracingEnabled(), builder.tracer());
+        this.securityTracer = LazyValue.create(() -> SecurityUtil.getTracer(builder.tracingEnabled(), builder.tracer()));
         this.subjectMappingProvider = Optional.ofNullable(builder.subjectMappingProvider());
         this.securityConfig = builder.config();
 
@@ -173,7 +174,7 @@ final class SecurityImpl implements Security {
         return new SecurityContext.Builder(this)
                 .id(newId)
                 .executorService(executorService)
-                .tracingTracer(securityTracer)
+                .tracingTracer(securityTracer.get())
                 .serverTime(serverTime);
     }
 
@@ -184,7 +185,7 @@ final class SecurityImpl implements Security {
 
     @Override
     public Tracer tracer() {
-        return securityTracer;
+        return securityTracer.get();
     }
 
     @Override

@@ -26,7 +26,9 @@ import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.tracing.TracerBuilder;
 import io.helidon.webserver.WebTracingConfig;
 
+import io.opentelemetry.opentracingshim.OpenTracingShim;
 import io.opentracing.Tracer;
+import io.opentracing.util.GlobalTracer;
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Initialized;
@@ -53,7 +55,8 @@ public class TracingCdiExtension implements Extension {
         bbd.addAnnotatedType(TracerProducer.class, "TracingTracerProducer");
     }
 
-    private void prepareTracer(@Observes @Priority(PLATFORM_BEFORE + 11) @Initialized(ApplicationScoped.class) Object event,
+    // must be configured before security
+    private void prepareTracer(@Observes @Priority(PLATFORM_BEFORE + 1) @Initialized(ApplicationScoped.class) Object event,
                                BeanManager bm) {
         JaxRsCdiExtension jaxrs = bm.getExtension(JaxRsCdiExtension.class);
         ServerCdiExtension server = bm.getExtension(ServerCdiExtension.class);
@@ -70,12 +73,31 @@ public class TracingCdiExtension implements Extension {
                 .config(config)
                 .build();
 
-        Tracer tracer;
-        try {
-            tracer = helidonTracer.unwrap(Tracer.class);
-        } catch (Exception e) {
-            throw new DeploymentException("MicroProfile tracing requires an OpenTracing based tracer", e);
+        if (!helidonTracer.enabled()) {
+            Logger.getLogger(TracingCdiExtension.class.getName())
+                    .warning("helidon-microprofile-tracing is on the classpath, yet there is no tracer implementation "
+                                     + "library. Tracing uses a no-op tracer. As a result, no tracing will be configured"
+                                     + " for WebServer and JAX-RS");
+
+            Contexts.globalContext().register(io.helidon.tracing.Tracer.noOp());
+            Contexts.globalContext().register(GlobalTracer.get());
+            // no need to register all of this
+            return;
         }
+
+        Tracer registeredTracer;
+        try {
+            registeredTracer = helidonTracer.unwrap(Tracer.class);
+        } catch (Exception e) {
+            try {
+                io.opentelemetry.api.trace.Tracer otelTracer = helidonTracer.unwrap(io.opentelemetry.api.trace.Tracer.class);
+                registeredTracer = OpenTracingShim.createTracerShim(otelTracer);
+            } catch (Exception ex) {
+                throw new DeploymentException("MicroProfile tracing requires an OpenTracing or OpenTelemetry based tracer", ex);
+            }
+        }
+
+        Tracer tracer = registeredTracer;
 
         // tracer is available in global
         Contexts.globalContext().register(tracer);
@@ -87,15 +109,7 @@ public class TracingCdiExtension implements Extension {
         Contexts.context()
                 .ifPresent(ctx -> ctx.register(tracer));
 
-        if (!helidonTracer.enabled()) {
-            Logger.getLogger(TracingCdiExtension.class.getName())
-                    .warning("helidon-microprofile-tracing is on the classpath, yet there is no tracer implementation "
-                                     + "library. Tracing uses a no-op tracer. As a result, no tracing will be configured"
-                                     + " for WebServer and JAX-RS");
 
-            // no need to register all of this
-            return;
-        }
 
         server.serverRoutingBuilder()
                 .register(WebTracingConfig.create(config));

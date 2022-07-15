@@ -60,7 +60,7 @@
                 <groupId>io.helidon.build-tools</groupId>
                 <artifactId>helidon-archetype-maven-plugin</artifactId>
                 <configuration>
-                    <generateCombinations>false</generateCombinations>
+                    <generatePermutations>false</generatePermutations>
                     <externalValues>
                         <artifactId>myproject</artifactId>
                     </externalValues>

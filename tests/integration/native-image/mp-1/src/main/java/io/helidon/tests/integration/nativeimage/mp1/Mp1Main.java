@@ -20,6 +20,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Base64;
@@ -39,9 +40,8 @@ import io.helidon.security.jwt.Jwt;
 import io.helidon.security.jwt.SignedJwt;
 import io.helidon.security.jwt.jwk.JwkKeys;
 import io.helidon.security.jwt.jwk.JwkRSA;
+import io.helidon.tracing.Tracer;
 
-import io.opentracing.Tracer;
-import io.opentracing.util.GlobalTracer;
 import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.spi.CDI;
 import jakarta.json.JsonArray;
@@ -70,6 +70,7 @@ public final class Mp1Main {
 
     /**
      * Application main entry point.
+     *
      * @param args command line arguments.
      */
     public static void main(final String[] args) {
@@ -124,6 +125,13 @@ public final class Mp1Main {
         if (failed) {
             System.exit(-1);
         }
+
+        // let the tracer finish
+        try {
+            Thread.sleep(Duration.ofSeconds(2).toMillis());
+        } catch (InterruptedException ignored) {
+        }
+        System.exit(0);
     }
 
     private static String generateJwtToken() {
@@ -371,10 +379,11 @@ public final class Mp1Main {
     }
 
     private static void validateTracing(Errors.Collector collector) {
-        Tracer tracer = GlobalTracer.get();
-        if (!tracer.toString().contains("Jaeger")) {
+        Tracer tracer = Tracer.global();
+        if (!tracer.toString().contains("OpenTelemetry")) {
             // could not find how to get the actual instance of tracer from API
-            collector.fatal(tracer, "This application should be configured with Jaeger tracer, yet it is not: " + tracer);
+            collector.fatal(tracer,
+                            "This application should be configured with OpenTelemetry Jaeger tracer, yet it is not: " + tracer);
         }
     }
 

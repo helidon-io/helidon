@@ -33,13 +33,106 @@ if [ -z "${WS_DIR}" ]; then
         exit 1
     fi
 
-    readonly WS_DIR=$(cd $(dirname -- "${1}") ; cd "${2}" ; pwd -P)
+    readonly WS_DIR=$(cd "$(dirname -- ${1})" ; cd "${2}" ; pwd -P)
 
 fi
 
 # Multiple definition protection.
 if [ -z "${__OCI_INCLUDED__}" ]; then
     readonly __OCI_INCLUDED__='true'
+
+    # The presumed artifact ID of the shaded full jar
+    # as defined in https://github.com/oracle/oci-java-sdk/blob/v2.35.0/bmc-shaded/bmc-shaded-full/pom.xml
+    readonly OCI_SHADED_FULL_ARTIFACT_ID="oci-java-sdk-shaded-full"
+
+    # evaluate a maven property
+    # arg: property to evaluate
+    mvn_eval() {
+      mvn ${MAVEN_ARGS} -q -N -f "${WS_DIR}/pom.xml" help:evaluate -Dexpression="${1}" -DforceStdout
+    }
+
+    # download the oci shaded jar
+    # arg1: oci_version
+    # arg2: target path
+    download_shaded_jar() {
+
+      # See
+      # https://docs.oracle.com/en-us/iaas/Content/API/SDKDocs/javasdkgettingstarted.htm
+      # https://docs.oracle.com/en-us/iaas/Content/API/SDKDocs/javasdkexamples.htm
+
+      local oci_version
+      oci_version="${1}"
+
+      local target_path
+      target_path="${2}"
+
+      local zip_filename
+      zip_filename="oci-java-sdk-${oci_version}.zip"
+
+      local oci_zip_url
+      oci_zip_url="https://github.com/oracle/oci-java-sdk/releases/download/v${oci_version}/${zip_filename}"
+
+      local jar_path
+      jar_path="shaded/lib/oci-java-sdk-full-shaded-${oci_version}.jar"
+
+      local oci_zip_file
+      oci_zip_file="$(mktemp -t XXX-oci-sdk)"
+
+      # Download the all-in-one zip file
+      # if that works, unzip oci-java-sdk-full-shaded-${oci_version}.jar contained inside it.
+      curl -L -s -S -o "${oci_zip_file}" "${oci_zip_url}" && \
+      unzip -j -n -p -q "${oci_zip_file}" "${jar_path}" > "${target_path}" && \
+      rm "${oci_zip_file}"
+    }
+
+    # install a jar in the local maven repository
+    # arg1: file
+    # arg2: groupId
+    # arg3: artifactId
+    # arg4: version
+    mvn_install_jar() {
+      mvn ${MAVEN_ARGS} -N -q \
+        -f "${WS_DIR}/pom.xml" \
+        install:install-file \
+        -Dfile="${1}" \
+        -DgroupId="${2}" \
+        -DartifactId="${3}" \
+        -Dversion="${4}" \
+        -Dpackaging="jar"
+    }
+
+    # download and install the oci shaded jar
+    # arg1: artifact_file
+    # arg2: oci_version
+    _install_oci_shaded_full_jar() {
+        local artifact_file
+        artifact_file="${1}"
+
+        local oci_version
+        oci_version="${2}"
+
+        if [ -e "${artifact_file}" ]; then
+          # already installed
+          return 0
+        fi
+
+        local cache_dir
+        if [ -n "${JENKINS_HOME}" ] ; then
+          cache_dir="/cache"
+        else
+          cache_dir="$(mktemp -d)"
+        fi
+
+        local jar_file
+        jar_file="${cache_dir}/$(basename ${artifact_file})"
+        if [ ! -e "${jar_file}" ]; then
+            echo "Downloading OCI SDK v${oci_version}"
+            download_shaded_jar "${oci_version}" "${jar_file}"
+        fi
+
+        echo "Installing OCI SDK v${oci_version}"
+        mvn_install_jar "${jar_file}" "com.oracle.oci.sdk" "${OCI_SHADED_FULL_ARTIFACT_ID}" "${oci_version}"
+    }
 
     #
     # Downloads and installs the OCI Java SDK's shaded full jar into
@@ -49,155 +142,29 @@ if [ -z "${__OCI_INCLUDED__}" ]; then
     #
     install_oci_shaded_full_jar() {
 
-        # The presumed artifact ID of the shaded full jar, as defined
-        # in, e.g.,
-        # https://github.com/oracle/oci-java-sdk/blob/v2.35.0/bmc-shaded/bmc-shaded-full/pom.xml#L10,
-        # although that that pom.xml file seems to be a stub of sorts.
-        # We anticipate this will be the artifact ID of the shaded
-        # full jar that OCI will eventually push to Maven Central,
-        # rendering this workaround moot.  See also
-        # https://github.com/oracle/oci-java-sdk/issues/371#issuecomment-1086331705.
-        #
-        # Note carefully that this is different from the shaded jar's
-        # location in the .zip file for some reason.
-        local OCI_SHADED_FULL_ARTIFACT_ID
-        readonly OCI_SHADED_FULL_ARTIFACT_ID=oci-java-sdk-shaded-full
+        local oci_version
+        oci_version="$(mvn_eval 'version.lib.oci')"
 
-        # The version of OCI in use.
-        if [ -z "${OCI_VERSION}" ]; then
-            local OCI_VERSION
-            readonly OCI_VERSION="$(mvn ${MAVEN_ARGS} --file "${WS_DIR}/pom.xml" --non-recursive --quiet org.apache.maven.plugins:maven-help-plugin:evaluate -Dexpression=version.lib.oci -DforceStdout)"
+        local jar_filename
+        readonly jar_filename="${OCI_SHADED_FULL_ARTIFACT_ID}-${oci_version}.jar"
+
+        local maven_repo_local
+        maven_repo_local="$(mvn_eval 'settings.localRepository')"
+
+        local artifact_dir
+        artifact_dir="${maven_repo_local}/com/oracle/oci/sdk/${OCI_SHADED_FULL_ARTIFACT_ID}/${oci_version}"
+
+        if [ -e "${artifact_dir}/${jar_filename}" ]; then
+          return 0
         fi
 
-        # The relative name of the shaded full jar as implied by the
-        # artifact ID above.
-        local OCI_SHADED_FULL_JAR
-        readonly OCI_SHADED_FULL_JAR="${OCI_SHADED_FULL_ARTIFACT_ID}-${OCI_VERSION}.jar"
-
-        # Figure out where the local Maven repository (cache) is.
-        if [ -z "${MAVEN_REPO_LOCAL}" ]; then
-            local MAVEN_REPO_LOCAL
-            readonly MAVEN_REPO_LOCAL="$(mvn ${MAVEN_ARGS} --file "${WS_DIR}/pom.xml" --non-recursive --quiet help:evaluate -Dexpression=settings.localRepository -DforceStdout)"
-        fi
-
-        if [ ! -e "${MAVEN_REPO_LOCAL}/com/oracle/oci/sdk/${OCI_SHADED_FULL_ARTIFACT_ID}/${OCI_VERSION}/${OCI_SHADED_FULL_JAR}" ]; then
-
-            # If the local Maven repository (cache) doesn't already
-            # have the shaded full jar, it's time to install it.
-
-            # Set where to download it (if downloading turns out to be
-            # necessary).  The containing directory is assumed to be
-            # writeable.  In the Helidon pipelines environment, this
-            # assumption will always be true.
-            if [ -z "${CACHED_OCI_SHADED_FULL_JAR}" ]; then
-                local CACHED_OCI_SHADED_FULL_JAR
-                readonly CACHED_OCI_SHADED_FULL_JAR="/cache/${OCI_SHADED_FULL_JAR}"
-            fi
-
-            if [ ! -e "${CACHED_OCI_SHADED_FULL_JAR}" ]; then
-
-                # The downloaded shaded full jar does not exist.  It
-                # is time to download it.  To do this, we have to
-                # download the all-in-one .zip file that OCI publishes
-                # to their Github repository, and then extract the
-                # shaded full jar from that.  See
-                # https://docs.oracle.com/en-us/iaas/Content/API/SDKDocs/javasdkgettingstarted.htm#:~:text=Oracle%20development%20tools.-,Downloading%20the%20SDK%20from%20GitHub,-You%20can%20download
-                # to start, and then
-                # https://docs.oracle.com/en-us/iaas/Content/API/SDKDocs/javasdkexamples.htm#:~:text=your%20own%20environment.-,Running%20Examples,-Download%20the%20SDK
-                # and
-                # https://docs.oracle.com/en-us/iaas/Content/API/SDKDocs/javasdkexamples.htm#:~:text=Third%2DParty%20Dependencies%20and%20Shading.
-
-                # The relative name of the OCI SDK zip file once it
-                # has been downloaded.
-                local OCI_ZIP
-                readonly OCI_ZIP="oci-java-sdk-${OCI_VERSION}.zip"
-
-                # The (usually Github) URI identifying the full OCI
-                # SDK zip file to be downloaded.
-                if [ -z "${OCI_ZIP_URI}" ]; then
-                    local OCI_ZIP_URI
-                    readonly OCI_ZIP_URI="https://github.com/oracle/oci-java-sdk/releases/download/v${OCI_VERSION}/${OCI_ZIP}"
-                fi
-
-                # A directory where a lock file to be used by flock(1)
-                # will be placed.  The directory is presumed to exist.
-                if [ -z "${LOCKFILE_DIR}" ]; then
-                    local LOCKFILE_DIR;
-                    readonly LOCKFILE_DIR=$(dirname -- "${CACHED_OCI_SHADED_FULL_JAR}")
-                fi
-
-                # Run flock(1) to acquire an exclusive lock on the
-                # lowest-numbered unused file descriptor greater than
-                # or equal to 10, waiting ten minutes (600 seconds) if
-                # necessary before giving up, and perform the
-                # download.  See
-                # https://www.gnu.org/software/bash/manual/bash.html#Redirections:~:text=Each%20redirection%20that%20may%20be%20preceded%20by%20a%20file%20descriptor%20number%20may%20instead%20be%20preceded%20by%20a%20word%20of%20the%20form%20%7Bvarname%7D. and
-                # https://stackoverflow.com/questions/8297415/in-bash-how-to-find-the-lowest-numbered-unused-file-descriptor#comment39126452_17030546.
-                #
-                # Recall that the file being downloaded is nearly a
-                # gigabyte in size so this can take a great deal of
-                # time.
-                #
-                # Note below that the file descriptor is redirected to
-                # ${LOCKFILE_DIR}/${OCI_ZIP}.download.lock. flock(1)
-                # on recent kernels will apparently work even in the
-                # presence of NFS, which is most likely where
-                # ${LOCKFILE_DIR} is mounted.
-                local LOCKFILE_FD
-                ( flock --exclusive --timeout 600 ${LOCKFILE_FD} || exit 1
-
-                  # The temporary directory into which ${OCI_ZIP_URI}'s
-                  # referent will be downloaded.
-                  #
-                  # For storage planning purposes, note that this file
-                  # is about 721 MB.  It is (remotely) conceivable that
-                  # n jobs could be running that reference different n
-                  # different OCI versions, so there could be the need
-                  # for n * 721 MB of space for these downloads.
-                  local OCI_ZIP_TEMPDIR
-                  readonly OCI_ZIP_TEMPDIR="$(mktemp -d)"
-
-                  # Download the all-in-one zip file, and, if that
-                  # works, unzip the
-                  # oci-java-sdk-full-shaded-${OCI_VERSION}.jar file
-                  # contained inside it quietly (-q) to stdout (-p)
-                  # discarding path information (-j), and making sure
-                  # not to ever query or overwrite (-n) redirect its
-                  # contents into ${CACHED_OCI_SHADED_FULL_JAR}, and, if
-                  # that works, remove the .zip file we downloaded and
-                  # any temporary directories created along the way.
-                  # The end result will be
-                  # ${CACHED_OCI_SHADED_FULL_JAR}.
-                  #
-                  # For storage planning purposes, the shaded full jar
-                  # is approximately 106 MB in size.
-                  #
-                  # Note that for some reason the shaded full jar is
-                  # present in the all-in-one zip file as
-                  # shaded/lib/oci-java-sdk-full-shaded..., not, as you
-                  # might expect,
-                  # shaded/lib/oci-java-sdk-shaded-full....  That is not
-                  # a mistake or a typo.
-                  curl --location --output "${OCI_ZIP_TEMPDIR}/${OCI_ZIP}" --show-error --silent "${OCI_ZIP_URI}" && \
-                      unzip -j -n -p -q "${OCI_ZIP_TEMPDIR}/${OCI_ZIP}" "shaded/lib/oci-java-sdk-full-shaded-${OCI_VERSION}.jar" > "${CACHED_OCI_SHADED_FULL_JAR}" && \
-                      rm "${OCI_ZIP_TEMPDIR}/${OCI_ZIP}" && \
-                      rmdir "${OCI_ZIP_TEMPDIR}"
-
-                ) {LOCKFILE_FD}>"${LOCKFILE_DIR}/${OCI_ZIP}.download.lock" # the braces without $ around FD are on purpose
-
-            fi
-
-            # Install the cached shaded full jar into the local Maven
-            # repository (cache) since we determined that it did not
-            # exist prior to all this.
-            mvn ${MAVEN_ARGS} --file "${WS_DIR}/pom.xml" --non-recursive --quiet org.apache.maven.plugins:maven-install-plugin:install-file \
-                -Dfile="${CACHED_OCI_SHADED_FULL_JAR}" \
-                -DlocalRepositoryPath="${MAVEN_REPO_LOCAL}" \
-                -DgroupId=com.oracle.oci.sdk \
-                -DartifactId="${OCI_SHADED_FULL_ARTIFACT_ID}" \
-                -Dversion="${OCI_VERSION}" \
-                -Dpackaging=jar
-
+        if [ -n "${JENKINS_HOME}" ] ; then
+            (
+              flock -w 600 200
+              _install_oci_shaded_full_jar "${artifact_dir}/${jar_filename}" "${oci_version}"
+            ) 200>"${artifact_dir}/lock"
+        else
+            _install_oci_shaded_full_jar "${artifact_dir}/${jar_filename}" "${oci_version}"
         fi
     }
 else

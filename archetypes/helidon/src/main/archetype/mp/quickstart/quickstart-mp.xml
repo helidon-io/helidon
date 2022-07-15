@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2021 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -20,7 +20,13 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
 
-    <source src="../bare/bare-mp.xml"/>
+    <source src="/common/sources.xml"/>
+    <exec src="/common/presets.xml"/>
+    <presets>
+        <boolean path="db">false</boolean>
+    </presets>
+    <exec src="/mp/custom/custom-mp.xml"/>
+    <source src="/common/media-sources.xml"/>
     <output>
         <model>
             <value key="readme-description">Sample Helidon MP project that includes multiple REST operations.</value>
@@ -28,7 +34,7 @@
                 <value>jakarta.ws.rs.client.Entity</value>
                 <value>jakarta.ws.rs.core.MediaType</value>
             </list>
-            <list key="MainTest-methods">
+            <list key="MainTest-methods" if="${media.json-lib} == 'jsonp'">
                 <value><![CDATA[    @Test
     public void testGreetings() throws Exception {
         JsonObject jsonObject = target
@@ -49,6 +55,30 @@
                 .request()
                 .get(JsonObject.class);
         assertThat(jsonObject.getString("message"), is("Hola Jose!"));
+    }
+                ]]></value>
+            </list>
+            <list key="MainTest-methods" if="['jsonb', 'jackson'] contains ${media.json-lib}">
+                <value><![CDATA[    @Test
+    public void testGreetings() throws Exception {
+        Message jsonMessage = target
+                .path("greet/Joe")
+                .request()
+                .get(Message.class);
+        assertThat(jsonMessage.getMessage(), is("Hello Joe!"));
+
+        try (Response r = target
+                .path("greet/greeting")
+                .request()
+                .put(Entity.entity("{\"greeting\" : \"Hola\"}", MediaType.APPLICATION_JSON))) {
+            assertThat(r.getStatus(), is(204));
+        }
+
+        jsonMessage = target
+                .path("greet/Jose")
+                .request()
+                .get(Message.class);
+        assertThat(jsonMessage.getMessage(), is("Hola Jose!"));
     }
                 ]]></value>
             </list>

@@ -20,7 +20,6 @@
 :spec-name: MicroProfile Health
 :description: {spec-name} support in Helidon MP
 :keywords: helidon, mp, microprofile, health
-:health-release: {version.lib.microprofile-health}
 :feature-name: MicroProfile Health
 :microprofile-bundle: true
 :rootdir: {docdir}/..
@@ -91,8 +90,7 @@ To enable built-in health checks add the following dependency
 
 == Usage
 
-Helidon MP Health implements MicroProfile Health Checks
-link:http://download.eclipse.org/microprofile/microprofile-health-{health-release}/microprofile-health-spec.pdf[Specification].
+Helidon implements link:{microprofile-health-spec-url}[MicroProfile Health] Specification.
 The spec prescribes how external tools probe a service's health checks and how you
 implement health checks as part of your microservice that are specific to your service's needs.
 
@@ -154,7 +152,7 @@ Health checks may be configured using the following properties.
 
 The class responsible for configuration is:
 
-include::{rootdir}/includes/config/io.helidon.health.HealthSupport.adoc[leveloffset=-1]
+include::{rootdir}/config/io_helidon_health_HealthSupport.adoc[leveloffset=+1,tag=config]
 
 Current properties may be set in `application.yaml` or in `microprofile-config.properties` with `health` prefix.
 

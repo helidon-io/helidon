@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,8 +34,11 @@ import jakarta.enterprise.inject.spi.Extension;
 import jakarta.enterprise.inject.spi.ProcessAnnotatedType;
 import jakarta.enterprise.inject.spi.ProcessManagedBean;
 import jakarta.enterprise.inject.spi.WithAnnotations;
+import jakarta.interceptor.Interceptor;
 
 public class GrpcMetricsCoverageTestCdiExtension implements Extension {
+
+    private static final int OBSERVER_PRIORITY = Interceptor.Priority.APPLICATION;
 
     private static final Logger LOGGER = Logger.getLogger(GrpcMetricsCoverageTestCdiExtension.class.getName());
 
@@ -55,7 +58,7 @@ public class GrpcMetricsCoverageTestCdiExtension implements Extension {
         String testBeanClassBaseName = CoverageTestBeanBase.class.getName();
         String testBeanClassNamePrefix = testBeanClassBaseName.substring(0, testBeanClassBaseName.indexOf("Base"));
 
-        GrpcMetricsCdiExtension.METRICS_ANNOTATIONS.values().forEach(annotationClass -> {
+        MetricsConfigurer.METRIC_ANNOTATION_INFO.forEach((annotationClass, metricInfo) -> {
             String testBeanClassName = testBeanClassNamePrefix + annotationClass.getSimpleName();
             try {
                 Class<?> testBeanClass = Class.forName(testBeanClassName);
@@ -81,7 +84,7 @@ public class GrpcMetricsCoverageTestCdiExtension implements Extension {
      * </p>
      * @param pat
      */
-    void recordMetricsAnnotationsOnTestBean(@Observes @Priority(GrpcMetricsCdiExtension.OBSERVER_PRIORITY - 10)
+    void recordMetricsAnnotationsOnTestBean(@Observes @Priority(OBSERVER_PRIORITY - 10)
                 @WithAnnotations(GrpcMethod.class) ProcessAnnotatedType<? extends CoverageTestBeanBase> pat) {
 
         pat.getAnnotatedType()
@@ -92,7 +95,7 @@ public class GrpcMetricsCoverageTestCdiExtension implements Extension {
                                     .map(Annotation::annotationType)
                                     .collect(Collectors.toSet());
 
-                    metricsAnnotationClassesForThisMethod.retainAll(GrpcMetricsCdiExtension.METRICS_ANNOTATIONS.values());
+                    metricsAnnotationClassesForThisMethod.retainAll(MetricsConfigurer.METRIC_ANNOTATION_INFO.keySet());
                     LOGGER.log(Level.FINE, () -> String.format("Recording annotation(s) %s on %s",
                             metricsAnnotationClassesForThisMethod, m.getJavaMember().toString()));
                     metricsAnnotationsUsed.addAll(metricsAnnotationClassesForThisMethod);
@@ -113,7 +116,7 @@ public class GrpcMetricsCoverageTestCdiExtension implements Extension {
                                     .map(Annotation::annotationType)
                                     .collect(Collectors.toSet());
 
-                    remainingMetricsAnnotationsForThisMethod.retainAll(GrpcMetricsCdiExtension.METRICS_ANNOTATIONS.values());
+                    remainingMetricsAnnotationsForThisMethod.retainAll(MetricsConfigurer.METRIC_ANNOTATION_INFO.keySet());
                     if (!remainingMetricsAnnotationsForThisMethod.isEmpty()) {
                         remainingTestBeanMethodAnnotations.put(m, remainingMetricsAnnotationsForThisMethod);
                     }

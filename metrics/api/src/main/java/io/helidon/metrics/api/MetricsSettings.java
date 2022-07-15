@@ -193,7 +193,7 @@ public interface MetricsSettings {
          * @return updated builder
          */
         @ConfiguredOption(key = KeyPerformanceIndicatorMetricsSettings.Builder.KEY_PERFORMANCE_INDICATORS_CONFIG_KEY,
-                          kind = ConfiguredOption.Kind.MAP)
+                          type = KeyPerformanceIndicatorMetricsSettings.class)
         Builder keyPerformanceIndicatorSettings(KeyPerformanceIndicatorMetricsSettings.Builder kpiSettings);
 
         /**
@@ -203,7 +203,7 @@ public interface MetricsSettings {
          * @return updated builder
          */
         @ConfiguredOption(key = BASE_CONFIG_KEY,
-                          kind = ConfiguredOption.Kind.MAP)
+                          type = BaseMetricsSettings.class)
         Builder baseMetricsSettings(BaseMetricsSettings.Builder baseMetricsSettingsBuilder);
 
         /**
@@ -214,7 +214,7 @@ public interface MetricsSettings {
          * @return updated builder
          */
         @ConfiguredOption(key = REGISTRIES_CONFIG_KEY,
-                          kind = ConfiguredOption.Kind.LIST,
+                          kind = ConfiguredOption.Kind.MAP,
                           type = RegistrySettings.class)
         Builder registrySettings(MetricRegistry.Type registryType, RegistrySettings registrySettings);
 
