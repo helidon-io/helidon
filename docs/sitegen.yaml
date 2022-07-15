@@ -424,10 +424,10 @@ backend:
                   type: "icon"
                   value: "av_timer"
                 sources:
-                  - "introduction.adoc"
-                  - "metrics-capable-components.adoc"
+                  - "metrics.adoc"
                   - "micrometer.adoc"
                   - "prometheus-exemplar-support.adoc"
+                  - "metrics-capable-components.adoc"
               - type: "PAGE"
                 title: "OpenAPI"
                 source: "openapi.adoc"
