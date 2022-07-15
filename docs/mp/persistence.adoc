@@ -114,7 +114,7 @@ dependencies are managed], and then ensure the following
     <scope>runtime</scope> <!--1-->
 </dependency>
 ----
-<1> Note that the `scope` is `runtime`, indicating that the HikariCP
+<1> Thehe `scope` is `runtime`, indicating that the HikariCP
     integration will be available on the runtime classpath.
 
 ===== Setting up the Oracle Universal Connection Pool [[DS-UCP-Project-Setup]]
@@ -135,7 +135,7 @@ dependencies are managed], and then ensure the following
   <scope>runtime</scope> <!--1-->
 </dependency>
 ----
-<1> Note that the `scope` is `runtime`, indicating that the Oracle
+<1> The `scope` is `runtime`, indicating that the Oracle
     Universal Connection Pool integration will be available on the
     runtime classpath.
 
@@ -193,7 +193,7 @@ Ensure the following
     <scope>runtime</scope> <!--1-->
 </dependency>
 ----
-<1> Note that the `scope` is `runtime`, indicating that the H2
+<1> The `scope` is `runtime`, indicating that the H2
     JDBC driver classes will be available on the runtime classpath.
 
 ===== Setting Up Oracle JDBC [[DS-Oracle-Driver-Project-Setup]]
@@ -246,7 +246,7 @@ Ensure the following
     <scope>runtime</scope> <!--1-->
 </dependency>
 ----
-<1> Note that the `scope` is `runtime`, indicating that the Oracle
+<1> The `scope` is `runtime`, indicating that the Oracle
     JDBC driver classes will be available on the runtime classpath.
 
 === Configuration [[DS-Configuration]]
@@ -588,9 +588,8 @@ elements of your project's `pom.xml` file's `<dependencies>` element:
     <scope>runtime</scope> <!--2-->
 </dependency>
 ----
-<1> Note that the `scope` is `provided`, which ensures that the JTA
+<1> The `scope` is `provided`, which ensures that the JTA
     classes required for compilation are available at compile time.    
 <2> The implementation of these API classes will be available at
     runtime.
-
 
