@@ -595,3 +595,43 @@ elements of your project's `pom.xml` file's `<dependencies>` element:
 <2> The implementation of these API classes will be available at
     runtime.
 
+=== Configuration [[JTA-Configuration]]
+
+==== Overview
+
+Helidon MP's Jakarta Transactions integration does not require
+configuration, but configuration is possible.  Because configuration
+is of the https://narayana.io/[underlying Narayana transaction
+engine], any restrictions are those of the engine, not of Helidon
+itself.
+
+==== Configuring the Object Store Directory
+
+Narayana features an object store directory which it uses to store
+information about transaction outcomes.  To configure it, you may set
+the `ObjectStoreEnvironmentBean.objectStoreDir` system property to the
+full path of a writeable directory:
+
+[source,shell]
+----
+java -DObjectStoreEnvironmentBean.objectStoreDir=/var/tmp # ...
+----
+
+See
+https://www.narayana.io//docs/project/index.html#d0e4013[Specifying
+the object store location] for more information.
+
+==== Configuring the Default Transaction Manager Timeout
+
+To configure Narayana's default transaction manager timeout, set the
+`com.arjuna.ats.arjuna.coordinator.defaultTimeout` system property to
+an integral value in seconds:
+
+[source,shell]
+----
+java -Dcom.arjuna.ats.arjuna.coordinator.defaultTimeout=300 # ...
+----
+
+For more on configuring Narayana, see
+https://www.narayana.io//docs/project/index.html#chap-JBossJTA_Installation_Guide-Test_Chapter[Setting
+Properties] in the Naryana documentation.
