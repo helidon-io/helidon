@@ -1022,6 +1022,10 @@ file, see
 https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0.html#persistence-xml-file[persistence.xml
 file] in the Jakarta Persistence specification.
 
+Fundamentally, a `META-INF/persistence.xml` file contains a collection
+of _persistence units_.  A persistence unit represents a collection of
+entities in a relational database.
+
 Your `src/main/resources/META-INF/persistence.xml` file must begin
 (and end) with the following XML:
 
@@ -1039,9 +1043,9 @@ Your `src/main/resources/META-INF/persistence.xml` file must begin
 </persistence>
 ----
 
-==== Persistence Units
+==== Persistence Unit
 
-You list your application's _persistence units_ as
+You list your application's persistence units as
 `<persistence-unit>` child elements of the enclosing `<persistence>`
 element.  Each `<persistence-unit>` element identifies a named
 persistence unit that will correspond to an `EntityManager` in your
@@ -1052,30 +1056,41 @@ Here is an example of a persistence unit named `prod`:
 .`src/main/resources/META-INF/persistence.xml`
 [source,xml]
 ----
+<!-- ... -->
+
 <persistence-unit name="prod">
 
   <!-- Characteristics of the persistence unit are enclosed here.  Order matters. -->
 
 </persistence-unit>
+
+<!-- ... -->
 ----
 
-===== Data Sources
+NOTE: In most microservices, there will be only one persistence unit.
+
+===== Data Source
 
 A persistence unit is always associated with exactly one <<DS, named
 data source>>.
 
 Because Helidon MP's Jakarta Persistence integration provides support
-for container-managed JPA, the kind of named data source is always a
-<<JTA, JTA>> data source.  The `<jta-data-source>` element, a child of
-the `<persistence-unit>` element, is where you link a persistence unit
-to a <<DS, named data source>> you previously <<DS-Configuration,
+for container-managed JPA, and because container-managed JPA requires
+Jakarta Transactions (JTA), the kind of named data source a
+persistence unit is associated with is always a <<JTA, JTA>> data
+source.  The `<jta-data-source>` element, a child of the
+`<persistence-unit>` element, is how you link a persistence unit to a
+<<DS, named data source>> you previously <<DS-Configuration,
 configured>>.
 
 Here is a partial example of a persistence unit named `prod`, with a
 helpful description, linked with a JTA data source named `main`:
 
+.`src/main/resources/META-INF/persistence.xml`
 [source,xml]
 ----
+<!-- ... --->
+
 <persistence-unit name="prod">
     <description>The production database</description>
     <jta-data-source>main</jta-data-source> <!--1-->
@@ -1083,9 +1098,11 @@ helpful description, linked with a JTA data source named `main`:
     <!-- Other persistence unit characteristics go here. -->
 
 </persistence-unit>
+
+<!-- ... -->
 ----
 <1> This links this persistence unit to a <<DS, data source>> named
     `main`, whose <<DS-Configuration, connectivity information>> can
     be found in a MicroProfile-Config-compatible location, as detailed
-    in the <<DS-Configuration>> section above.
-
+    in the <<DS-Configuration, data source configuration>> section
+    above.
