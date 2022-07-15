@@ -351,11 +351,7 @@ public final class HttpDigestAuthProvider extends SynchronousProvider implements
          * @param subjectType type of principal
          * @return updated builder instance
          */
-        @ConfiguredOption(key = "principal-type",
-                          value = "USER",
-                          description = "Type of authenticated entity, can be used in combination with other authentication "
-                                  + "mechanism to authenticate both the user (as in person sitting in front of a computer) "
-                                  + "and a service (as in the application requesting this service on user's behalf)")
+        @ConfiguredOption(key = "principal-type", value = "USER")
         public Builder subjectType(SubjectType subjectType) {
             this.subjectType = subjectType;
 
@@ -376,11 +372,7 @@ public final class HttpDigestAuthProvider extends SynchronousProvider implements
          * @param store User store to use
          * @return updated builder instance
          */
-        @ConfiguredOption(key = "users",
-                          kind = ConfiguredOption.Kind.LIST,
-                          type = String.class,
-                          description = "List of users when using configuration based approach. "
-                                  + "As an alternative, you can implement a java service (see below).")
+        @ConfiguredOption(key = "users")
         public Builder userStore(SecureUserStore store) {
             this.userStore = store;
             return this;
@@ -434,7 +426,7 @@ public final class HttpDigestAuthProvider extends SynchronousProvider implements
          */
         @ConfiguredOption(key = "nonce-timeout-millis",
                           type = Long.class,
-                          value = "1 day",
+                          value = "86400000",
                           description = "How long will the nonce value be valid. When timed-out, "
                                   + "browser will re-request username/password.")
         public Builder digestNonceTimeout(long duration, TimeUnit unit) {

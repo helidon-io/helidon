@@ -426,7 +426,7 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
          * @param client a single client configuration for inbound communication
          * @return updated builder instance
          */
-        @ConfiguredOption(key = "inbound.keys")
+        @ConfiguredOption(key = "inbound.keys", kind = ConfiguredOption.Kind.LIST)
         public Builder addInbound(InboundClientDefinition client) {
             this.inboundKeys.put(client.keyId(), client);
             return this;
@@ -461,7 +461,7 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
          * @param header header to look for signature
          * @return updated builder instance
          */
-        @ConfiguredOption(key = "headers", kind = ConfiguredOption.Kind.LIST, type = String.class)
+        @ConfiguredOption(key = "headers", kind = ConfiguredOption.Kind.LIST)
         public Builder addAcceptHeader(HttpSignHeader header) {
             this.acceptHeaders.add(header);
             return this;

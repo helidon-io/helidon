@@ -61,9 +61,9 @@ Optional configuration options:
  To be able to communicate cross versions, we must configure this when talking to older versions of Helidon.
  Default value is `false`. In Helidon 2.x, this switch exists as well and the default is `true`, to
  allow communication between versions as needed.
-|`headers` |string[&#93; |{nbsp} |Add a header that is validated on inbound requests. Provider may support more than
+|`headers` |HttpSignHeader[&#93; (SIGNATURE, AUTHORIZATION, CUSTOM) |{nbsp} |Add a header that is validated on inbound requests. Provider may support more than
  one header to validate.
-|`inbound.keys` |xref:{rootdir}/config/io_helidon_security_providers_httpsign_InboundClientDefinition.adoc[InboundClientDefinition] |{nbsp} |Add inbound configuration. This is used to validate signature and authenticate the
+|`inbound.keys` |xref:{rootdir}/config/io_helidon_security_providers_httpsign_InboundClientDefinition.adoc[InboundClientDefinition[&#93;] |{nbsp} |Add inbound configuration. This is used to validate signature and authenticate the
  party.
 
  The same can be done through configuration:

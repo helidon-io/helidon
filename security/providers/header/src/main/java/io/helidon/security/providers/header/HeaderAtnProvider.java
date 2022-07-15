@@ -297,9 +297,7 @@ public class HeaderAtnProvider extends SynchronousProvider implements Authentica
          * @param tokenHandler token handler instance
          * @return updated builder instance
          */
-        @ConfiguredOption(key = "outbound-token",
-                          description = "Token handler to create outbound headers to propagate identity. "
-                                  + "If not defined, {@link #atnTokenHandler} will be used.")
+        @ConfiguredOption(key = "outbound-token")
         public Builder outboundTokenHandler(TokenHandler tokenHandler) {
             this.outboundTokenHandler = tokenHandler;
 
@@ -326,7 +324,7 @@ public class HeaderAtnProvider extends SynchronousProvider implements Authentica
          * @param target outbound target
          * @return updated builder instance
          */
-        @ConfiguredOption(key = "outbound", description = "A list of outbound configurations.")
+        @ConfiguredOption(key = "outbound", kind = ConfiguredOption.Kind.LIST)
         public Builder addOutboundTarget(OutboundTarget target) {
             this.outboundBuilder.addTarget(target);
             return this;

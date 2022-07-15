@@ -222,7 +222,7 @@ public interface EvictableCache<K, V> {
          * @param timeoutUnit timeout unit
          * @return updated builder instance
          */
-        @ConfiguredOption(key = "cache-timeout-millis", value = "60 minutes", type = Long.class)
+        @ConfiguredOption(key = "cache-timeout-millis", value = "3600000", type = Long.class)
         public Builder<K, V> timeout(long timeout, TimeUnit timeoutUnit) {
             this.cacheTimeout = timeout;
             this.cacheTimeoutUnit = timeoutUnit;
@@ -236,7 +236,7 @@ public interface EvictableCache<K, V> {
          * @param timeoutUnit timeout unit
          * @return updated builder instance
          */
-        @ConfiguredOption(key = "cache-overall-timeout-millis", value = "60 minutes", type = Long.class)
+        @ConfiguredOption(key = "cache-overall-timeout-millis", value = "3600000", type = Long.class)
         public Builder<K, V> overallTimeout(long timeout, TimeUnit timeoutUnit) {
             this.overallTimeout = timeout;
             this.overallTimeoutUnit = timeoutUnit;
@@ -249,7 +249,7 @@ public interface EvictableCache<K, V> {
          * @param cacheMaxSize maximal number of records to store in the cache
          * @return updated builder instance
          */
-        @ConfiguredOption("" + CACHE_MAX_SIZE)
+        @ConfiguredOption("100000")
         public Builder<K, V> maxSize(long cacheMaxSize) {
             this.cacheMaxSize = cacheMaxSize;
             return this;
@@ -263,9 +263,9 @@ public interface EvictableCache<K, V> {
          * @param evictTimeUnit time unit to use for these values
          * @return updated builder instance
          */
-        @ConfiguredOption(key = "cache-evict-delay-millis", value = "1 minute", type = Long.class,
+        @ConfiguredOption(key = "cache-evict-delay-millis", value = "60000", type = Long.class,
                           description = "Delay from the creation of the cache to first eviction")
-        @ConfiguredOption(key = "cache-evict-period-millis", value = "5 minutes", type = Long.class,
+        @ConfiguredOption(key = "cache-evict-period-millis", value = "300000", type = Long.class,
                           description = "How often to evict records")
         public Builder<K, V> evictSchedule(long evictDelay, long evictPeriod, TimeUnit evictTimeUnit) {
             this.cacheEvictDelay = evictDelay;
@@ -280,7 +280,7 @@ public interface EvictableCache<K, V> {
          * @param parallelismThreshold see {@link ConcurrentHashMap#forEachKey(long, Consumer)}
          * @return updated builder instance
          */
-        @ConfiguredOption("" + EVICT_PARALLELISM_THRESHOLD)
+        @ConfiguredOption("10000")
         public Builder<K, V> parallelismThreshold(long parallelismThreshold) {
             this.parallelismThreshold = parallelismThreshold;
             return this;
