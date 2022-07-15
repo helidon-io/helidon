@@ -1069,7 +1069,7 @@ Here is an example of a persistence unit named `prod`:
 
 NOTE: In most microservices, there will be only one persistence unit.
 
-===== Data Source
+===== JTA Data Source
 
 A persistence unit is always associated with exactly one <<DS, named
 data source>>.
@@ -1106,3 +1106,48 @@ helpful description, linked with a JTA data source named `main`:
     be found in a MicroProfile-Config-compatible location, as detailed
     in the <<DS-Configuration, data source configuration>> section
     above.
+
+===== Classes
+
+A persistence unit lists the classes that should be managed and that
+will take part in Jakarta Persistence workflows.  You must list:
+
+1. https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0.html#a18[Entity
+   classes]
+
+2. https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0.html#a487[Embeddable
+   classes]
+
+3. https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0.html#mapped-superclasses[Mapped
+   superclasses]
+
+4. https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0.html#a2999[Converter
+   classes]
+
+You use a sequence of `<class>` elements to do this.  Each `<class>`
+element contains the fully-qualified class name of one of the types of
+managed classes listed above.
+
+Here is a partial example of a persitsence unit named `prod`, with a
+helpful description, linked with a JTA data source named `main`, and
+containing two entity classes:
+
+.`src/main/resources/META-INF/persistence.xml`
+[source,xml]
+----
+<!-- ... --->
+
+<persistence-unit name="prod">
+    <description>The production database</description>
+    <jta-data-source>main</jta-data-source>
+    <class>com.example.ExampleEntity0</class>
+    <class>com.example.ExampleEntity1</class>
+
+    <!-- Other <class> elements, perhaps -->
+
+    <!-- Other persistence unit characteristics go here. -->
+
+</persistence-unit>
+
+<!-- ... -->
+----
