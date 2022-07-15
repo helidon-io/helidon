@@ -42,6 +42,7 @@ include::{rootdir}/includes/mp.adoc[]
 ** <<JTA-Configuration,Configuration>>
 ** <<JTA-Usage,Usage>>
 * <<JPA, Jakarta Persistence (JPA) Integration>>
+** <<JPA-Setup, Project Setup>>
 
 == Overview [[Overview]]
 
@@ -841,8 +842,9 @@ snippet is present as a child element of the
 </pluginManagement>
 ----
 <1> This adds the `hibernate-jpamodelgen` jar, which contains a Java
-    annotation processor, to the Java compiler's annotation processor path
-    so that it is active at compile time.
+    annotation processor that generates the static metamodel source
+    code, to the Java compiler's annotation processor path so that it
+    is active at compile time.
 
 For more on the Hibernate ORM `hibernate-jpamodelgen` annotation
 processor, see
@@ -1012,3 +1014,5 @@ project's `pom.xml` file's `<plugins>` element:
 For more on the Eclipselink static weaving command-line utility, see
 https://wiki.eclipse.org/EclipseLink/UserGuide/JPA/Advanced_JPA_Development/Performance/Weaving/Static_Weaving#Use_the_Command_Line[Static
 Weaving] in the Eclipselink documentation.
+
+=== Configuration [[JPA-Configuration]]
