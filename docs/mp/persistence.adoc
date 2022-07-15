@@ -1079,7 +1079,7 @@ description:
 
 NOTE: In most microservices, there will be only one persistence unit.
 
-===== JTA Data Source
+===== JTA Data Source [[JPA-JTA-Data-Source]]
 
 A persistence unit is always associated with exactly one <<DS, named
 data source>>.
@@ -1146,7 +1146,7 @@ mechanisms that can be used in a `META-INF/persistence.xml` file to
 describe managed classes], but they may or may not be honored by a
 given JPA provider.
 
-Here is a partial example of a persitsence unit named `prod`, with a
+Here is a partial example of a persistence unit named `prod`, with a
 helpful description, linked with a JTA data source named `main`,
 containing two entity classes:
 
@@ -1169,3 +1169,50 @@ containing two entity classes:
 
 <!-- ... -->
 ----
+
+===== Properties
+
+Persistence units can have simple properties attached to them to
+further configure the backing JPA provider.  You use the
+`<properties>` element to specify them.
+
+NOTE: Helidon MP's Jakarta Persistence integration is for
+container-managed JPA, so many of the vendor-independent properties
+https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0.html#a12384[described
+in the specification] **do not apply**, particularly those describing
+database connectivity information.  See <<JPA-JTA-Data-Source, the JTA
+Data Source>> section above for how a persistence unit is linked to a
+<<DS,named data source>>.
+
+Here is a partial exmaple of a persistence unit named `prod`, with a
+helpful description, linked with a JTA data source named `main`,
+containing two entity classes, configuring a Hibernate ORM-specific
+property:
+
+.`src/main/resources/META-INF/persistence.xml`
+[source,xml]
+----
+<!-- ... --->
+
+<persistence-unit name="prod" transaction-type="JTA">
+    <description>The production database</description>
+    <jta-data-source>main</jta-data-source>
+    <class>com.example.ExampleEntity0</class>
+    <class>com.example.ExampleEntity1</class>
+    <properties>
+        <property name="hibernate.show_sql" value="true"/> <!--1-->
+    </properties>
+
+    <!-- Other persistence unit characteristics go here. -->
+
+</persistence-unit>
+
+<!-- ... -->
+----
+<1> This is a Hibernate ORM-specific property and will be ignored if
+    the JPA provider you have <<JPA-Setup,set up>> is Eclipselink.
+    See
+    https://docs.jboss.org/hibernate/orm/6.1/userguide/html_single/Hibernate_User_Guide.html#configurations-logging[Statement
+    logging and statistics] in the Hibernate ORM documentation for
+    more on the `hibernate.show_sql` property.
+
