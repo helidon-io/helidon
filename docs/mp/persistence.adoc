@@ -818,7 +818,7 @@ elements of your project's `pom.xml` file's `<dependencies>` element:
 
 ===== Setting Up Static Weaving (Hibernate ORM) [[JPA-Hibernate-Weaving]]
 
-Hibernate ORM alters your classes' bytecode at build time to keep
+Hibernate ORM can alter your classes' bytecode at build time to keep
 track of changes made to objects participating in Jakarta Persistence
 workflows.
 
@@ -901,3 +901,54 @@ elements of your project's `pom.xml` file's `<dependencies>` element:
     Eclipselink integration is available at runtime.
 
 ===== Setting Up Static Weaving (Eclipselink) [[JPA-Eclipselink-Weaving]]
+
+Eclipselink can alter your classes' bytecode at build time to keep
+track of changes made to objects participating in Jakarta Persistence
+workflows.
+
+To set up this required static weaving for Eclipselink, ensure that
+the following `<plugin>` element is present as a child element of your
+project's `pom.xml` file's `<plugins>` element:
+
+[source,xml]
+----
+<plugin>
+    <groupId>org.codehaus.mojo</groupId>
+    <artifactId>exec-maven-plugin</artifactId>
+    <!--
+        Ideally, your plugin versions are managed via a
+        <pluginManagement> element, which is why the <version> element
+        is commented out below.  If, nevertheless, you opt for the
+        explicit version, check
+        https://search.maven.org/artifact/org.codehaus.mojo/exec-maven-plugin
+        for up-to-date versions.
+    -->
+    <!-- <version>3.1.0</version> -->
+    <executions>
+        <execution>
+            <id>weave</id>
+            <phase>process-classes</phase>
+            <goals>
+                <goal>java</goal>
+            </goals>
+            <configuration combine.self="override">
+                <classpathScope>compile</classpathScope>
+                <mainClass>org.eclipse.persistence.tools.weaving.jpa.StaticWeave</mainClass>
+                <arguments>
+                    <argument>-loglevel</argument>
+                    <argument>INFO</argument>
+                    <argument>-persistenceinfo</argument>
+                    <argument>${project.build.outputDirectory}</argument>
+                    <argument>${project.build.outputDirectory}</argument>
+                    <argument>${project.build.outputDirectory}</argument>
+                </arguments>
+            </configuration>
+        </execution>
+    </executions>
+</plugin>
+----
+
+For more on the Eclipselink static weaving command-line utility, see
+https://wiki.eclipse.org/EclipseLink/UserGuide/JPA/Advanced_JPA_Development/Performance/Weaving/Static_Weaving#Use_the_Command_Line[Static
+Weaving] in its documentation.
+
