@@ -57,3 +57,7 @@ Helidon 3.x is Passing the 5 Jakarta Specification TCKs:
 * Jakarta Annotations 2.0.0
 
 Corresponding changes to Helidon code were made to support the corresponding specifications' versions.
+
+== TestNG test support
+
+In Helidon 3.x you have the option to use link:https://testng.org/doc/[TestNG] to test your application. For more information follow the official documents xref..
