@@ -25,15 +25,13 @@
 :feature-name: Reactive Messaging
 :rootdir: {docdir}/../..
 
-== ToC
+== Contents
 
-- Overview
-- Maven Coordinates
-- Usage
-- Configuration
-- Reference
-- Examples
-- Additional Information
+- <<Overview, Overview>>
+- <<Maven Coordinates, Maven Coordinates>>
+- <<Usage, Usage>>
+- <<Configuration, Configuration>>
+- <<Reference, Reference>>
 
 == Overview
 
@@ -143,34 +141,6 @@ Example of such a versatile connectors in Helidon:
 * <<Kafka Connector,Kafka connector>>
 * <<JMS Connector,JMS connector>>
 * <<AQ Connector,AQ Connector>>
-
-
-
-== Configuration
-
-* <<Configuration for Messaging connector,Configuration for Messaging connector>>
-* <<Explicit config with config builder for Kafka Connector, Explicit configuration with config builder for Kafka Connector>>
-* <<Implicit Helidon Config for Kafka Connector, Implicit Helidon Configuration for Kafka Connector>>
-* <<Explicit config with config builder for JMS Connector, Explicit configuration with config builder for JMS Connector>>
-* <<Implicit Helidon Config for JMS Connector, Implicit Helidon Configuration for JMS Connector>>
-
-== Reference
-
-* link:{microprofile-reactive-messaging-spec-url}[MicroProfile Reactive Messaging Specification]
-* link:https://github.com/eclipse/microprofile-reactive-messaging[MicroProfile Reactive Messaging on GitHub]
-
-== Examples
-
-* <<Channel,Example of simple channel>>
-* <<Processor,Example of processor usage>>
-* <<Kafka Connector,Kafka connector>>
-* <<JMS Connector,JMS connector>>
-* <<AQ Connector,AQ Connector>>
-
-For a complete example, see link:{helidon-github-tree-url}/examples/messaging[Helidon Messaging Examples].
-
-== Additional Information
-
 
 === Messaging Connector
 Connector for Reactive Messaging is a factory producing Publishers and Subscribers for
@@ -705,3 +675,17 @@ Messaging.builder()<5>
 <5> Register connector and channels
 <6> Add a publisher for several test messages to publish them to `example_queue_1` immediately
 <7> Subscribe callback for any message coming from `example_queue_1`
+
+== Configuration
+
+* <<Configuration for Messaging connector,Configuration for Messaging connector>>
+* <<Explicit config with config builder for Kafka Connector, Explicit configuration with config builder for Kafka Connector>>
+* <<Implicit Helidon Config for Kafka Connector, Implicit Helidon Configuration for Kafka Connector>>
+* <<Explicit config with config builder for JMS Connector, Explicit configuration with config builder for JMS Connector>>
+* <<Implicit Helidon Config for JMS Connector, Implicit Helidon Configuration for JMS Connector>>
+
+== Reference
+
+* link:{microprofile-reactive-messaging-spec-url}[MicroProfile Reactive Messaging Specification]
+* link:https://github.com/eclipse/microprofile-reactive-messaging[MicroProfile Reactive Messaging on GitHub]
+* link:{helidon-github-tree-url}/examples/messaging[Helidon Messaging Examples]
