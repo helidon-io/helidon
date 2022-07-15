@@ -1124,9 +1124,17 @@ will take part in Jakarta Persistence workflows.  You must list:
 4. https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0.html#a2999[Converter
    classes]
 
-You use a sequence of `<class>` elements to do this.  Each `<class>`
-element contains the fully-qualified class name of one of the types of
-managed classes listed above.
+You use a
+https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0.html#list-of-managed-classes[sequence
+of `<class>` elements] to do this.  Each `<class>` element contains
+the fully-qualified class name of one of the types of managed classes
+listed above.
+
+NOTE: There are
+https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0.html#a12305[other
+mechanisms that can be used in a `META-INF/persistence.xml` file to
+describe managed classes], but they may or may not be honored by a
+given JPA provider.
 
 Here is a partial example of a persitsence unit named `prod`, with a
 helpful description, linked with a JTA data source named `main`, and
