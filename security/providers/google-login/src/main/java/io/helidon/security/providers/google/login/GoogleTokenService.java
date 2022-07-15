@@ -24,9 +24,9 @@ import io.helidon.security.spi.SecurityProviderService;
  * Java service ({@link SecurityProviderService}) for google token provider.
  */
 public class GoogleTokenService implements SecurityProviderService {
-    
+
     static final String CONFIG_PROVIDER_KEY = "google-login";
-    
+
     @Override
     public String providerConfigKey() {
         return CONFIG_PROVIDER_KEY;

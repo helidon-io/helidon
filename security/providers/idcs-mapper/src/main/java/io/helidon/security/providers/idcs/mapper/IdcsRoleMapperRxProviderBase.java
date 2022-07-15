@@ -46,7 +46,6 @@ import io.helidon.security.jwt.Jwt;
 import io.helidon.security.jwt.SignedJwt;
 import io.helidon.security.jwt.Validator;
 import io.helidon.security.providers.oidc.common.OidcConfig;
-import io.helidon.security.spi.SecurityProvider;
 import io.helidon.security.spi.SubjectMappingProvider;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientRequestBuilder;

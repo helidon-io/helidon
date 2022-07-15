@@ -36,7 +36,6 @@ import javax.crypto.Cipher;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.config.metadata.ConfiguredValue;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.Principal;
 import io.helidon.security.ProviderRequest;
