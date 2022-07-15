@@ -16,9 +16,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Reactive Streams Operators
-:toc:
-:toc-placement: preamble
+= MicroProfile Reactive Streams Operators
 :description: MicroProfile Reactive Streams Operators support in Helidon SE
 :keywords: helidon, se, microprofile, reactivestreams
 :feature-name: Reactive Streams

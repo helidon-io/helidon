@@ -199,7 +199,6 @@ backend:
                   type: "icon"
                   value: "waves"
                 sources:
-                  - "overview.adoc"
                   - "engine.adoc"
                   - "rsoperators.adoc"
               - type: "MENU"
@@ -447,7 +446,6 @@ backend:
                   type: "icon"
                   value: "waves"
                 sources:
-                  - "overview.adoc"
                   - "engine.adoc"
                   - "rsoperators.adoc"
               - type: "MENU"
