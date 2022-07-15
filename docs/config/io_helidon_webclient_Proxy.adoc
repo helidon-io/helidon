@@ -57,7 +57,7 @@ Optional configuration options:
 
 |`password` |string |{nbsp} |Sets a new password for the proxy.
 |`port` |int |{nbsp} |Sets a port value.
-|`type` |string (HTTP, SOCKS_4, SOCKS_5, SYSTEM) |`HTTP` |Sets a new proxy type.
+|`type` |ProxyType (NONE, SYSTEM, HTTP, SOCKS_4, SOCKS_5) |`HTTP` |Sets a new proxy type.
 |`use-system-selector` |boolean |`false` |Configure proxy from environment variables and system properties.
 |`username` |string |{nbsp} |Sets a new username for the proxy.
 
