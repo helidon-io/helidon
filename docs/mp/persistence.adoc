@@ -677,16 +677,35 @@ public String getGreeting(Integer id) {
 
 === Overview
 
-Helidon MP's Jakarta Persistence integration allows you to interact
-with Jakarta Persistence objects as if your code were running in an
+Helidon MP's
+https://jakarta.ee/specifications/persistence/3.0/[Jakarta
+Persistence] integration allows you to interact with Jakarta
+Persistence (JPA) objects as if your code were running in an
 application server, handling automatic creation and management of
 objects such as `EntityManager` and `EntityManagerFactory` instances.
 
-Jakarta Persistence is a Jakarta EE specification that describes how its implementations:
+Jakarta Persistence is a Jakarta EE specification that describes,
+among other things, how its implementations:
 
 1. Map Java objects to relational database tables
 
 2. Manage such persistent Java objects
 
-3. Interact with <<JTA,Jakarta Transactions>>
+3. Interact with <<JTA, Jakarta Transactions>>
+
+4. Interact with <<DS, named data sources>>
+
+Jakarta Persistence may be used in an entirely standalone manner,
+which requires no integration at all.  This "application-managed mode"
+places the burden of error handling, thread safety and transaction
+management on the user.  This documentation does not cover
+application-managed mode JPA.
+
+Jakarta Persistence may be used in a fully managed manner, which
+requires that a container, like Helidon MP, handle error management,
+thread safety and transaction management on behalf of the user.  This
+documentation covers this "container-managed mode" usage of JPA
+exclusively.
+
+=== Maven Coordinates (JPA) [[JPA-Maven-Coordinates]]
 
