@@ -261,9 +261,9 @@ Ensure the following
 
 Each connection pool supported by Helidon's named data source
 integration support is, itself, a `DataSource` that wraps a
-vendor-supplied `DataSource` present in the JDBC driver classes you
+_vendor-supplied `DataSource`_ present in the JDBC driver classes you
 added to your project.  You must configure both the pool and the
-vendor supplied `DataSource`.
+vendor-supplied `DataSource`.
 
 To configure Helidon MP's named data source integration:
 
@@ -597,8 +597,8 @@ elements of your project's `pom.xml` file's `<dependencies>` element:
 ----
 <1> The `scope` is `provided`, which ensures that the JTA
     classes required for compilation are available at compile time.
-<2> The implementation of these API classes will be available at
-    runtime.
+<2> The implementation of these API classes (provided by
+    https://narayana.io/[Narayana]) will be available at runtime.
 
 === Configuration [[JTA-Configuration]]
 
@@ -611,7 +611,9 @@ engine], any restrictions are those of the engine, not of Helidon
 itself.
 
 Narayana, unlike Helidon MP, does not use MicroProfile Config, so its
-configuration options are less flexible.  Some common examples follow.
+configuration options are less flexible.
+
+Some common examples of Narayana configuration follow.
 
 ==== Configuring the Object Store Directory
 
