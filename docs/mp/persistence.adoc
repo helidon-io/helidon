@@ -214,8 +214,12 @@ Ensure the following
 
 ====== Maven Coordinates (Oracle JDBC) [[DS-Oracle-Driver-Maven-Coordinates]]
 
-To include the Oracle JDBC driver classes in your Helidon MP
-application so your application can connect to an Oracle database:
+To include the
+https://docs.oracle.com/en/database/oracle/oracle-database/21/jajdb/index.html[Oracle
+JDBC driver classes] in your Helidon MP application so your
+application can
+https://docs.oracle.com/en/database/oracle/oracle-database/21/jjdbc/data-sources-and-URLs.html#GUID-C4F2CA86-0F68-400C-95DA-30171C9FB8F0[connect
+to an Oracle database]:
 
 * xref:../about/managing-dependencies.adoc[Ensure your dependencies are
 managed]
@@ -1373,6 +1377,9 @@ relational database tables, and how to perform other related tasks.
 
 * https://docs.oracle.com/en/database/oracle/oracle-database/21/jjuar/index.html#[Oracle®
   Universal Connection Pool Java API Reference, Release 21c]
+
+* https://docs.oracle.com/en/database/oracle/oracle-database/21/jjdbc/index.html[Oracle®
+  Database JDBC Developer's Guide and Reference, Release 21c]
 
 * https://docs.oracle.com/en/database/oracle/oracle-database/21/jajdb/index.html[Oracle®
   Database JDBC Java API Reference, Release 21c]
