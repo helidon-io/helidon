@@ -1090,8 +1090,10 @@ element.  Each `<persistence-unit>` element identifies a named
 persistence unit that will correspond to an `EntityManager` in your
 code, and represents a collection of entities in a relational database.
 
-Here is an example of a persistence unit named `prod` with a helpful
-description:
+====== Example: Persistence Unit Skeleton
+
+Here is a partial example of a persistence unit named `prod` with a
+helpful description:
 
 .`src/main/resources/META-INF/persistence.xml`
 [source,xml]
