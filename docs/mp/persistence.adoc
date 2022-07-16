@@ -38,9 +38,9 @@ include::{rootdir}/includes/mp.adoc[]
 *** <<DS-Configuration-Examples, Examples>>
 ** <<DS-Usage, Usage>>
 * <<JTA, Jakarta Transactions (JTA) Integration>>
-** <<JTA-Maven-Coordinates,Maven Coordinates>>
-** <<JTA-Configuration,Configuration>>
-** <<JTA-Usage,Usage>>
+** <<JTA-Maven-Coordinates, Maven Coordinates>>
+** <<JTA-Configuration, Configuration>>
+** <<JTA-Usage, Usage>>
 * <<JPA, Jakarta Persistence (JPA) Integration>>
 ** <<JPA-Setup, Project Setup>>
 *** <<JPA-Maven-Coordinates, Common Maven Coordinates>>
@@ -304,7 +304,7 @@ general, at a minimum, you typically supply:
 Some examples for common combinations follow.  They are not
 exhaustive.
 
-==== Configuration Prefixes
+==== Configuration Prefixes [[DS-Configuration-Prefixes]]
 
 All MicroProfile Config-compatible property names for Helidon MP's
 named data source integration follow a common pattern:
@@ -1263,24 +1263,28 @@ property:
 
 <persistence-unit name="prod" transaction-type="JTA">
     <description>The production database</description>
-    <jta-data-source>main</jta-data-source>
+    <jta-data-source>main</jta-data-source> <!--1-->
     <class>com.example.ExampleEntity0</class>
     <class>com.example.ExampleEntity1</class>
     <properties>
-        <property name="hibernate.show_sql" value="true"/> <!--1-->
-        <property name="eclipselink.weaving" value="false"/> <!--2-->
+        <property name="hibernate.show_sql" value="true"/> <!--2-->
+        <property name="eclipselink.weaving" value="false"/> <!--3-->
     </properties>
 </persistence-unit>
 
 <!-- ... -->
 ----
-<1> This is a Hibernate ORM-specific property and will be properly
+<1> The name identifies a name present in the
+    <<DS-Configuration_Prefixes, _datasourcename_ portion of a named
+    datasource configuration>>.  There is no need for any kind of
+    reserved prefix (like `java:comp/env`).
+<2> This is a Hibernate ORM-specific property and will be properly
     ignored if the JPA provider you have <<JPA-Setup,set up>> is
     Eclipselink.  See
     https://docs.jboss.org/hibernate/orm/6.1/userguide/html_single/Hibernate_User_Guide.html#configurations-logging[Statement
     logging and statistics] in the Hibernate ORM documentation for
     more details about the `hibernate.show_sql` property.
-<2> This is an Eclipselink-specific property (and (a) is required and
+<3> This is an Eclipselink-specific property (and (a) is required and
     (b) must be set to `false` if you are using Eclipselink), and will
     be properly ignored if the JPA provider you have <<JPA-Setup, set
     up>> is Hibernate ORM.  See
