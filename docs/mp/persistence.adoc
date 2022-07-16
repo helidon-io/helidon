@@ -1024,7 +1024,8 @@ file] in the Jakarta Persistence specification.
 
 Fundamentally, a `META-INF/persistence.xml` file contains a collection
 of _persistence units_.  A persistence unit represents a collection of
-entities in a relational database.
+entities in a relational database, loosely coupled to a <<DS, named
+data source>> that knows how to connect to it.
 
 Your `src/main/resources/META-INF/persistence.xml` file must begin
 (and end) with the following XML:
@@ -1078,6 +1079,11 @@ description:
     attribute] must always be set to `JTA`.
 
 NOTE: In most microservices, there will be only one persistence unit.
+
+TIP: A `<persistence-unit>` is represented in Jakarta Persistence as
+an instance of the
+https://jakarta.ee/specifications/persistence/3.0/apidocs/jakarta.persistence/jakarta/persistence/spi/persistenceunitinfo[`PersistenceUnitInfo`]
+class.
 
 ===== JTA Data Source [[JPA-JTA-Data-Source]]
 
