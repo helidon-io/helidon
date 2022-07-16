@@ -1017,7 +1017,7 @@ Weaving] in the Eclipselink documentation.
 
 To configure Helidon MP's Jakarta Persistence integration, you author
 a `src/main/resources/META-INF/persistence.xml` file.  It contains a
-mix of standardized elements and JPA provider-specific elements.
+mix of standardized elements and JPA provider-specific properties.
 
 For more on the structure and syntax of the `META-INF/persistence.xml`
 file, see
@@ -1275,6 +1275,10 @@ specification] for details on how to map your entity classes to
 relational database tables, and how to perform other related tasks.
 
 = References [[References]]
+
+* xref:../about/managing-dependencies.adoc[Managing Dependencies in Helidon MP]
+
+* xref:config/introduction.adoc[MicroProfile Config in Helidon MP]
 
 * https://docs.oracle.com/en/java/javase/17/docs/api/java.sql/java/sql/package-summary.html[JDBC
   4.3 Specification]
