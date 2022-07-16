@@ -1300,10 +1300,16 @@ relational database tables, and how to perform other related tasks.
 * https://jakarta.ee/specifications/transactions/2.0/jakarta-transactions-spec-2.0.html[Jakarta
   Transactions 2.0 Specification]
 
+* https://jakarta.ee/specifications/transactions/2.0/apidocs/[Jakarta
+  Transactions 2.0 API Reference]
+
 * https://www.narayana.io//docs/project/index.html[Narayana Project Documentation]
 
 * https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0.html[Jakarta
   Persistence 3.0 Specification]
+
+* https://jakarta.ee/specifications/persistence/3.0/apidocs/[Jakarta
+  Persistence 3.0 API Reference]
 
 * https://docs.jboss.org/hibernate/orm/6.1/userguide/html_single/Hibernate_User_Guide.html[Hibernate
   ORM 6.1.1 User Guide]
