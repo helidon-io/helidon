@@ -618,9 +618,10 @@ Some common examples of Narayana configuration follow.
 ==== Configuring the Object Store Directory
 
 Narayana features an object store directory which it uses to store
-information about transaction outcomes.  To set its location, you may set
-the `ObjectStoreEnvironmentBean.objectStoreDir` system property to the
-full path of a writeable directory:
+information about transaction outcomes.  To set its location, you may
+set the
+https://www.narayana.io/docs/api/com/arjuna/ats/arjuna/common/ObjectStoreEnvironmentBean.html#setObjectStoreType-java.lang.String-[`ObjectStoreEnvironmentBean.objectStoreDir`]
+system property to the full path of a writeable directory:
 
 [source,shell]
 ----
@@ -633,7 +634,9 @@ the object store location] for more information.
 
 ==== Configuring the Default Transaction Manager Timeout
 
-To configure Narayana's default transaction manager timeout, set the
+To configure Narayana's
+https://www.narayana.io/docs/api/com/arjuna/ats/arjuna/common/CoordinatorEnvironmentBean.html#setDefaultTimeout-int-[default
+transaction manager timeout], set the
 `com.arjuna.ats.arjuna.coordinator.defaultTimeout` system property to
 an integral value in seconds:
 
@@ -1321,6 +1324,8 @@ relational database tables, and how to perform other related tasks.
   Transactions 2.0 API Reference]
 
 * https://www.narayana.io//docs/project/index.html[Narayana Project Documentation]
+
+* https://www.narayana.io/docs/api/index.html[Narayana API Reference]
 
 * https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0.html[Jakarta
   Persistence 3.0 Specification]
