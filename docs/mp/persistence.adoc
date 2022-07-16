@@ -189,7 +189,8 @@ not exhaustive.
 
 To include the http://www.h2database.com/html/main.html[H2 JDBC
 driver] classes in your Helidon MP application so your application can
-connect to an H2 database (whether in-memory or persistent):
+http://www.h2database.com/html/features.html#database_url[connect to
+an H2 database] (whether in-memory or persistent):
 
 * xref:../about/managing-dependencies.adoc[Ensure your dependencies are
 managed]
