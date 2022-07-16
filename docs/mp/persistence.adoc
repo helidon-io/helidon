@@ -919,9 +919,11 @@ project's `pom.xml` file's `<plugins>` element:
 </plugin>
 ----
 
-Add a file named `src/main/resources/META-INF/hibernate.properties`
-with the following line as its sole contents:
+You must also add a file named
+`src/main/resources/META-INF/hibernate.properties` with the following
+line as its sole contents:
 
+.`src/main/resources/META-INF/hibernate.properties`
 [source,properties]
 ----
 hibernate.bytecode.provider=none
