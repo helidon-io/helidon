@@ -90,7 +90,8 @@ How you set up Helidon MP's named data source integration differs
 depending on which of these two connection pools, which JDBC driver,
 and which relational database product you use.
 
-Example setups are described below.
+Representative setups are described below.  The list of such setups is
+not exhaustive.
 
 === Project Setup [[DS-Setup]]
 
@@ -98,16 +99,20 @@ Example setups are described below.
 
 ===== Overview
 
-Helidon MP's named data source integration requires a connection pool.
-Helidon MP comes with support for two connection pools:
+Helidon MP's named data source integration requires a connection pool
+implementation.
+
+Helidon MP comes with support for two connection
+pools:
 
 1. https://github.com/brettwooldridge/HikariCP[HikariCP]
 
 2. https://docs.oracle.com/en/database/oracle/oracle-database/21/jjucp/index.html[Oracle
    Universal Connection Pool]
 
-You can choose to use either, but not both.  Details concerning each
-connection pool's setup are described below.
+You can choose to use either, but not both.
+
+Details concerning each connection pool's setup are described below.
 
 ===== Setting Up the HikariCP Connection Pool [[DS-HikariCP-Project-Setup]]
 
