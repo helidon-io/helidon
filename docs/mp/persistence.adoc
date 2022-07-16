@@ -350,8 +350,9 @@ javax.sql.DataSource.test.foo.bar=baz # <1> <2> <3>
 ==== Examples [[DS-Configuration-Examples]]
 
 Here are some examples illustrating general named data source
-configuration patterns in various common MicroProfile
-Config-compatible locations.
+configuration patterns in various
+xref:config/config-sources.adoc[common MicroProfile Config-compatible
+locations].
 
 ===== Example: `META-INF/microprofile-config.properties` Classpath Resource
 
