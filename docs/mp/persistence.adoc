@@ -228,9 +228,9 @@ managed]
   https://www.oracle.com/database/technologies/maven-central-guide.html[Developer's
   Guide For Oracle JDBC 21c on Maven Central]
 
-Ensure the following
-`<dependency>` element is present as a child element of your project's
-`pom.xml` file's `<dependencies>` element:
+For a basic setup, ensure the following `<dependency>` element is
+present as a child element of your project's `pom.xml` file's
+`<dependencies>` element:
 
 [source,xml]
 ----
