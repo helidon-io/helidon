@@ -530,8 +530,9 @@ To use Helidon MP's named data source integration in your application,
 once it has been <<DS-Project-Setup,set up>> and
 <<DS-Configuration,configured>>, create an ordinary
 https://docs.oracle.com/en/java/javase/17/docs/api/java.sql/javax/sql/DataSource.html[`DataSource`]-typed
-injection point in a Java class representing a CDI bean somewhere in
-your application,
+injection point in a
+https://github.com/oracle/helidon/wiki/FAQ#how-do-i-make-a-class-a-cdi-bean[Java
+class representing a CDI bean] somewhere in your application,
 https://jakarta.ee/specifications/dependency-injection/2.0/apidocs/jakarta/inject/named[annotated
 with the name] of the data source you wish to use.
 
