@@ -469,12 +469,16 @@ NOTE: The Oracle Universal Connection Pool does not distinguish
 cleanly between configuration properties that affect _its_ behavior
 and those that affect the behavior of the vendor-supplied `DataSource`
 implementation whose connections it pools, so in the example above it
-is not possible to tell that `connectionFactoryClassName` is a
-property of the Oracle Universal Connection Pool, and `user` is a
-property of the `oracle.jdbc.pool.OracleDataSource` `DataSource`
-implementation.  In some cases, the Oracle Universal Connection Pool
-will set the given property on _both_ the connection pool itself _and_
-on the vendor-supplied `DataSource` it manages.
+is not possible to tell that
+https://docs.oracle.com/en/database/oracle/oracle-database/21/jjuar/oracle/ucp/jdbc/PoolDataSourceImpl.html#setConnectionFactoryClassName_java_lang_String_[`connectionFactoryClassName`
+is a property of the Oracle Universal Connection Pool], and
+https://docs.oracle.com/en/database/oracle/oracle-database/21/jajdb/oracle/jdbc/datasource/impl/OracleDataSource.html#setUser_java_lang_String_[`user`
+is a property of the `oracle.jdbc.pool.OracleDataSource` `DataSource`
+implementation].  In some cases, the Oracle Universal Connection Pool
+will
+https://docs.oracle.com/en/database/oracle/oracle-database/21/jjuar/oracle/ucp/jdbc/PoolDataSource.html#setUser_java_lang_String_[set
+the given property on _both_ the connection pool itself _and_ on the
+vendor-supplied `DataSource` it manages].
 
 ===== Example: Configuring the HikariCP Connection Pool and H2 [[DS-Configuration-HikariCP-H2-Example]]
 
