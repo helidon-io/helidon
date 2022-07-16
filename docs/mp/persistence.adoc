@@ -677,7 +677,7 @@ public String getGreeting(Integer id) {
     https://jakarta.ee/specifications/transactions/2.0/apidocs/jakarta/transaction/transactional[`@Transactional`]
     to have any effect, whatever is used inside the method must be
     JTA-aware (such as a Jakarta Persistence construct like an
-    `EntityManager`).
+    https://jakarta.ee/specifications/persistence/3.0/apidocs/jakarta.persistence/jakarta/persistence/entitymanager[`EntityManager`]).
 
 == Jakarta Persistence (JPA) [[JPA]]
 
