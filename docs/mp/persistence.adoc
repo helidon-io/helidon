@@ -340,11 +340,11 @@ the `test` data source to `baz` looks like this in Java
 ----
 javax.sql.DataSource.test.foo.bar=baz # <1> <2> <3>
 ----
-<1> The _objecttype_ portion of the configuration property name is
+<1> The *_objecttype_* portion of the configuration property name is
     `javax.sql.DataSource`.
-<2> The _datasourcename_ portion of the configuration property name is
-    `test`.
-<3> The _propertyname_ portion of the configuration property name is
+<2> The *_datasourcename_* portion of the configuration property name
+    is `test`.
+<3> The *_propertyname_* portion of the configuration property name is
     `foo.bar`.
 
 ==== Examples [[DS-Configuration-Examples]]
