@@ -204,14 +204,6 @@ Ensure the following
 <dependency>
     <groupId>com.h2database</groupId>
     <artifactId>h2</artifactId>
-    <!--
-         It's best to manage this with Maven's <dependencyManagement> feature,
-         which is why the <version> element is commented out below.
-         If nevertheless you opt for the explicit version here, check
-         https://search.maven.org/search?q=g:com.h2database%20a:h2
-         for up-to-date available versions.
-    -->
-    <!-- <version>2.1.212</version> -->
     <scope>runtime</scope> <!--1-->
 </dependency>
 ----
