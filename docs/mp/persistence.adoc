@@ -1283,7 +1283,7 @@ relational database tables, and how to perform other related tasks.
   5.0.1 documentation]
 
 * https://docs.oracle.com/en/database/oracle/oracle-database/21/jjucp/index.html[Oracle®
-  Universal Connection Pool Developer's Guide,21c]
+  Universal Connection Pool Developer's Guide, Release 21c]
 
 * https://docs.oracle.com/en/database/oracle/oracle-database/21/jjuar/index.html#[Oracle®
   Universal Connection Pool Java API Reference, Release 21c]
