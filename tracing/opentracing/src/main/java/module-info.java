@@ -22,6 +22,7 @@ module io.helidon.tracing.opentracing {
     requires transitive io.helidon.common;
     requires transitive io.helidon.config;
     requires transitive io.helidon.tracing;
+    requires static io.helidon.config.metadata;
 
     requires io.opentracing.util;
     requires io.opentracing.api;

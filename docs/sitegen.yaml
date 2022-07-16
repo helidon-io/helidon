@@ -171,10 +171,9 @@ backend:
                   value: "av_timer"
                 sources:
                   - "metrics.adoc"
-                  - "metrics-capable-components.adoc"
                   - "micrometer.adoc"
-                  - "prometheus.adoc"
                   - "prometheus-exemplar-support.adoc"
+                  - "metrics-capable-components.adoc"
               - type: "PAGE"
                 title: "OpenAPI"
                 source: "openapi.adoc"
@@ -199,7 +198,6 @@ backend:
                   type: "icon"
                   value: "waves"
                 sources:
-                  - "overview.adoc"
                   - "engine.adoc"
                   - "rsoperators.adoc"
               - type: "MENU"
@@ -238,17 +236,12 @@ backend:
                 glyph:
                   type: "icon"
                   value: "access_alarm"
-              - type: "MENU"
+              - type: "PAGE"
                 title: "Tracing"
-                dir: "tracing"
+                source: "tracing.adoc"
                 glyph:
                   type: "icon"
                   value: "timeline"
-                sources:
-                  - "tracing.adoc"
-                  - "zipkin.adoc"
-                  - "jaeger.adoc"
-                  - "jaeger-metrics.adoc"
               - type: "PAGE"
                 title: "Vault"
                 source: "vault.adoc"
@@ -409,14 +402,11 @@ backend:
                   value: "verified_user"
               - type: "MENU"
                 title: "Long Running Actions"
-                dir: "lra"
                 glyph:
                   type: "icon"
                   value: "pending_actions"
                 sources:
-                  - "introduction.adoc"
-                  - "coordinator.adoc"
-                  - "participant.adoc"
+                  - "lra.adoc"
               - type: "MENU"
                 title: "Metrics"
                 dir: "metrics"
@@ -424,10 +414,10 @@ backend:
                   type: "icon"
                   value: "av_timer"
                 sources:
-                  - "introduction.adoc"
-                  - "metrics-capable-components.adoc"
+                  - "metrics.adoc"
                   - "micrometer.adoc"
                   - "prometheus-exemplar-support.adoc"
+                  - "metrics-capable-components.adoc"
               - type: "PAGE"
                 title: "OpenAPI"
                 source: "openapi.adoc"
@@ -452,7 +442,6 @@ backend:
                   type: "icon"
                   value: "waves"
                 sources:
-                  - "overview.adoc"
                   - "engine.adoc"
                   - "rsoperators.adoc"
               - type: "MENU"
@@ -515,7 +504,6 @@ backend:
                   value: "save"
               - type: "MENU"
                 title: "Testing"
-                dir: "testing"
                 glyph:
                   type: "icon"
                   value: "thumbs_up_down"

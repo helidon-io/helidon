@@ -25,7 +25,7 @@
 
 include::{rootdir}/includes/mp.adoc[]
 
-== ToC
+== Contents
 
 - <<Overview, Overview>>
 - <<Maven Coordinates, Maven Coordinates>>
@@ -185,9 +185,6 @@ The specification defines the following configuration options:
 |`mp.graphql.exceptionsWhiteList` |{nbsp} |Array of unchecked exception classes that should return message to caller (instead of default error message)
 
 |===
-
-These configuration options are more significant that the configuration options
-that can be used to configure GraphQL invocation (see below).
 
 include::{rootdir}/includes/graphql.adoc[]
 

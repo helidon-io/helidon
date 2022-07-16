@@ -16,16 +16,13 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Reactive Streams Operators
-:toc:
-:toc-placement: preamble
-:description: MicroProfile Reactive Streams Operators support in Helidon MP
-:keywords: helidon, mp, microprofile, reactivestreams
-:feature-name: Reactive Streams
+= MicroProfile Reactive Streams Operators
+:spec-name: MicroProfile Reactive Streams Operators
+:description: {spec-name} support in Helidon MP
+:keywords: helidon, mp, microprofile, reactive, operators
+:microprofile-bundle: true
 :rootdir: {docdir}/../..
 
 include::{rootdir}/includes/mp.adoc[]
-
-== Reactive Streams Operators
 
 include::{rootdir}/includes/reactivestreams/rsoperators.adoc[lines=21..]

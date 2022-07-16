@@ -113,7 +113,7 @@ Use prepared tools for repetitive use case scenarios.
 //Reactive Streams
 [CARD]
 .Reactive Streams
-[icon=waves,link=reactivestreams/overview.adoc]
+[icon=waves,link=reactivestreams/engine.adoc]
 --
 APIs to work with reactive streams in Helidon.
 --
@@ -127,7 +127,7 @@ A tool-chain to handle authentication, authorization and context propagation.
 //Tracing
 [CARD]
 .Tracing
-[icon=timeline,link=tracing/tracing.adoc]
+[icon=timeline,link=tracing.adoc]
 --
 Profile and monitor your applications across multiple services.
 --

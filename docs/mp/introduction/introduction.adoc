@@ -142,7 +142,7 @@ Defines a compact and self-contained way for securely transmitting information b
 //LRA
 [CARD]
 .Long Running Actions
-[icon=pending_actions,link=../lra/introduction.adoc]
+[icon=pending_actions,link=../lra.adoc]
 --
 Distributed transactions for microservices following SAGA pattern.
 --
@@ -151,7 +151,7 @@ Distributed transactions for microservices following SAGA pattern.
 //Metrics
 [CARD]
 .Metrics
-[icon=av_timer,link=../metrics/introduction.adoc]
+[icon=av_timer,link=../metrics/metrics.adoc]
 --
 Instrumentation to expose metrics of your applications.
 --
@@ -174,7 +174,7 @@ Use prepared tools for repetitive use case scenarios.
 //Reactive Streams
 [CARD]
 .Reactive Streams
-[icon=waves,link=../reactivestreams/overview.adoc]
+[icon=waves,link=../reactivestreams/rsoperators.adoc]
 --
 APIs to work with reactive streams in Helidon.
 --
@@ -242,4 +242,3 @@ Follow step-by-step guides to build your applications using Helidon MP.
 Browse the Helidon Javadocs.
 --
 ====
-

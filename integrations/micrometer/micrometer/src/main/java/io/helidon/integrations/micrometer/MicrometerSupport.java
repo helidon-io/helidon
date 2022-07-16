@@ -19,6 +19,7 @@ import java.util.function.Supplier;
 import java.util.logging.Logger;
 
 import io.helidon.config.Config;
+import io.helidon.config.metadata.Configured;
 import io.helidon.servicecommon.rest.HelidonRestServiceSupport;
 import io.helidon.webserver.Handler;
 import io.helidon.webserver.Routing;
@@ -119,6 +120,7 @@ public class MicrometerSupport extends HelidonRestServiceSupport {
     /**
      * Fluid builder for {@code MicrometerSupport} objects.
      */
+    @Configured(prefix = "micrometer")
     public static class Builder extends HelidonRestServiceSupport.Builder<Builder, MicrometerSupport>
             implements io.helidon.common.Builder<Builder, MicrometerSupport> {
 

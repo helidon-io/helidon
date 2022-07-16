@@ -26,7 +26,7 @@ include::{rootdir}/includes/attributes.adoc[]
 
 // tag::config[]
 
-OpenTracing tracer configuration.
+Tracer configuration.
 
 
 Type: link:{javadoc-base-url}/io.helidon.tracing/io/helidon/tracing/TracerBuilder.html[io.helidon.tracing.TracerBuilder]

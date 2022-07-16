@@ -45,7 +45,7 @@ Optional configuration options:
 |key |type |default value |description
 
 |`cors` |xref:{rootdir}/config/io_helidon_webserver_cors_CrossOriginConfig.adoc[CrossOriginConfig] |{nbsp} |Assigns the CORS settings for the OpenAPI endpoint.
-|`static-file` |string |`META-INF/openapi.(json|yaml|yml)` |Sets the file system path of the static OpenAPI document file.
+|`static-file` |string |`META-INF/openapi.*` |Sets the file system path of the static OpenAPI document file. Default types are `json`, `yaml`, and `yml`.
 |`web-context` |string |`/openapi` |Sets the web context path for the OpenAPI endpoint.
 
 |===

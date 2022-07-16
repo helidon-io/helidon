@@ -34,7 +34,7 @@ class SerializationConfigTest {
 
         SerializationConfig.ConfigOptions options = serializationConfig.options();
         assertThat(options.traceSerialization(), is(SerializationConfig.TraceOption.NONE));
-        assertThat(options.onNoConfig(), is(SerializationConfig.Action.FAIL));
+        assertThat(options.onNoConfig(), is(SerializationConfig.Action.CONFIGURE));
         assertThat(options.onWrongConfig(), is(SerializationConfig.Action.FAIL));
         assertThat(options.filterPattern(), is("!*"));
     }

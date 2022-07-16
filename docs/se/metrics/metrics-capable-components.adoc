@@ -26,9 +26,7 @@
 
 include::{rootdir}/includes/se.adoc[]
 
-include::{rootdir}/includes/metrics/metrics-capable-components.adoc[tags=preamble]
-include::{rootdir}/includes/metrics/metrics-capable-components.adoc[tags=all-beginning-text]
-include::{rootdir}/includes/metrics/metrics-capable-components.adoc[tags=writing-code-beginning]
+include::{rootdir}/includes/metrics/metrics-capable-components.adoc[tags=preamble;all-beginning-text;writing-code-intro]
 
 [[writing_SE,SE Application Techniques]]
 ==== Writing and Packaging a Metrics-capable _Helidon SE Application_
