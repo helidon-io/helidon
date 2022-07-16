@@ -798,13 +798,15 @@ elements of your project's `pom.xml` file's `<dependencies>` element:
     <scope>runtime</scope> <!--2-->
 </dependency>
 ----
-<1> The `scope` is `provided`, which ensures that the JPA classes
-    required for compilation are available at compile time.
+<1> The `scope` is `provided`, which ensures that the
+    https://jakarta.ee/specifications/persistence/3.0/apidocs/jakarta.persistence/jakarta/persistence/package-summary.html[JPA
+    classes required for compilation] are available at compile time.
 <2> The `scope` is `runtime`, which ensures that Helidon's core,
     provider-independent Jakarta Persistence integration is available at
     runtime.
 
-These `<dependency>` elements do not set up a JPA provider.  See below.
+These `<dependency>` elements do not set up a JPA provider.  See
+details below for the JPA provider you have chosen to use.
 
 ===== Setting Up Static Metamodel Generation [[JPA-MetaModel]]
 
