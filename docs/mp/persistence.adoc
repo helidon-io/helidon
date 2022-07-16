@@ -1059,7 +1059,7 @@ file] in the Jakarta Persistence specification.
 
 Fundamentally, a `META-INF/persistence.xml` file contains a collection
 of _persistence units_.  A persistence unit represents a collection of
-entities in a relational database, loosely coupled to a <<DS, named
+entities in a relational database loosely coupled to a <<DS, named
 data source>> that knows how to connect to it.
 
 Your `src/main/resources/META-INF/persistence.xml` file must begin
@@ -1072,12 +1072,14 @@ Your `src/main/resources/META-INF/persistence.xml` file must begin
              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
              xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence
                                  https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd"
-             version="3.0">
+             version="3.0"> <!--1-->
 
     <!-- <persistence-unit> elements are listed here -->
 
 </persistence>
 ----
+<1> Helidon MP's Jakarta Persistence integration supports version
+    Jakarta Persistence 3.0.
 
 ==== Persistence Unit
 
