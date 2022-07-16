@@ -273,35 +273,37 @@ vendor-supplied `DataSource`.
 
 To configure Helidon MP's named data source integration:
 
-1. Decide where the configuration will reside, as permitted by
-   xref:config/introduction.adoc[Helidon MP's MicroProfile Config
-   implementation]
+1. Decide where each property of the configuration will reside, as
+   permitted by xref:config/introduction.adoc[Helidon MP's
+   MicroProfile Config implementation]
 
 2. Create configuration suitable for the combination of your selected
    connection pool and your selected vendor-supplied `DataSource`
-   implementation in that location.
+   implementation in those locations
 
 Helidon MP's named data source integration relies on
 xref:config/introduction.adoc[Helidon MP's usage of MicroProfile
-Config], so you have many choices when deciding on your
-configuration's location in (1) above.
+Config], so you have many choices for each configuration property when
+deciding on your configuration's location in (1) above.
 
-The configuration values themselves are necessarily specific to the
-connection pool you selected, and the vendor-supplied `DataSource`
-responsible for actually connecting to your relational database.  In
-general, at a minimum, you typically supply:
+The configuration property values themselves are necessarily specific
+to the connection pool you selected, and to the vendor-supplied
+`DataSource` responsible for actually connecting to your relational
+database.  In general, at a minimum, in your configuration you
+typically supply:
 
-* information so the connection pool knows which vendor-supplied
+* Information so the connection pool knows which vendor-supplied
   `DataSource` implementation to manage
 
-* a JDBC URL describing where the database is located, so the managed
-  vendor-supplied `DataSource` knows how to connect to it
+* A JDBC URL specific to the vendor-supplied `DataSource` describing
+  where the database is located, so the managed vendor-supplied
+  `DataSource` knows how to connect to it
 
-* information required for the vendor-supplied `DataSource` to
-  authenticate to the database
+* Information required for the vendor-supplied `DataSource` to
+  authenticate to the database and otherwise tailor itself to it
 
-Some examples for common combinations follow.  They are not
-exhaustive.
+Some examples for representative configurations follow.  The list of
+such configurations is not exhaustive.
 
 ==== Configuration Prefixes [[DS-Configuration-Prefixes]]
 
@@ -326,9 +328,9 @@ named data source integration follow a common pattern:
 * A period (`.`) separates the _datasourcename_ portion from the rest
   of the property name.
 
-* The _propertyname_ portion comes next, identifying the
-  connection-pool- or vendor-supplied-`DataSource`-specific
-  configuration property name, comes last.
+* The _propertyname_ portion, identifying the connection-pool- or
+  vendor-supplied-`DataSource`-specific configuration property name,
+  comes last.
 
 As an example, configuration to set an imaginary `foo.bar` property on
 the `test` data source to `baz` looks like this in Java
