@@ -348,13 +348,15 @@ javax.sql.DataSource.test.foo.bar=baz # <1> <2> <3>
 
 ==== Examples [[DS-Configuration-Examples]]
 
-Here are some examples illustrating general configuration patterns in
-various common MicroProfile Config-compatible locations.
+Here are some examples illustrating general named data source
+configuration patterns in various common MicroProfile
+Config-compatible locations.
 
 ===== Example: `META-INF/microprofile-config.properties` Classpath Resource
 
-Here is an example of some data source configuration as might be found
-in a `src/main/resources/META-INF/microprofile-config.properties`
+Here is an example of some named data source configuration as might be
+found in a
+`src/main/resources/META-INF/microprofile-config.properties`
 configuration source:
 
 [source,properties]
@@ -365,7 +367,8 @@ javax.sql.DataSource.yourDataSourceName.someOtherPropertyOfYourConnectionPoolAnd
 
 ===== Example: System Properties Set on the Command Line
 
-Here is an example using system properties on the command line instead:
+Here is an example of some named data source configuration using
+system properties on the command line instead:
 
 [source,shell]
 ----
@@ -377,10 +380,12 @@ java \
 
 ===== Example: Environment Variables Set on the Command Line
 
-Here is an example using environment variables as typed directly into
-a command line shell, taking advantage of MicroProfile Config's
-mapping rules, since many shells will not understand environment
-variable names with periods (.) in them:
+Here is an example of some named data source configuration using
+environment variables as typed directly into a command line shell,
+relying on
+https://github.com/eclipse/microprofile-config/blob/master/spec/src/main/asciidoc/configsources.asciidoc#environment-variables-mapping-rules[MicroProfile
+Config's mapping rules], since many shells will not understand
+environment variable names with periods (.)  in them:
 
 [source,shell]
 ----
@@ -391,9 +396,12 @@ java # ...
 
 ===== Example: Environment Variables Set By the `env` Command
 
-Here is an example using environment variables as supplied via the
-`env` shell command, thus removing the need for MicroProfile Config's
-mapping rules:
+Here is an example of some named data source configuration using
+environment variables as supplied via the
+https://www.gnu.org/software/coreutils/manual/html_node/env-invocation.html[`env`
+shell command], thus removing the need for
+https://github.com/eclipse/microprofile-config/blob/master/spec/src/main/asciidoc/configsources.asciidoc#environment-variables-mapping-rules[MicroProfile
+Config's mapping rules]:
 
 [source,shell]
 ----
@@ -404,8 +412,8 @@ env 'javax.sql.DataSource.yourDataSourceName.somePropertyOfYourConnectionPoolAnd
 
 ===== Example: `application.yaml` Classpath Resource
 
-Here is an example of some data source configuration as might be found
-in a `src/main/resources/application.yaml` classpath resource:
+Here is an example of some named data source configuration as might be
+found in a `src/main/resources/application.yaml` classpath resource:
 
 [source,yaml]
 ----
