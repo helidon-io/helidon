@@ -465,8 +465,7 @@ found in
 https://docs.oracle.com/en/database/oracle/oracle-database/21/jajdb/oracle/jdbc/pool/OracleDataSource.html[its
 javadoc].
 
-NOTE:
-https://github.com/brettwooldridge/HikariCP/blob/HikariCP-5.0.1/src/main/java/com/zaxxer/hikari/util/PropertyElf.java#L46-L53[Unlike
+NOTE: https://github.com/brettwooldridge/HikariCP/blob/HikariCP-5.0.1/src/main/java/com/zaxxer/hikari/util/PropertyElf.java#L46-L53[Unlike
 HikariCP], the Oracle Universal Connection Pool does not distinguish
 cleanly between configuration properties that affect _its_ behavior
 and those that affect the behavior of the vendor-supplied `DataSource`
