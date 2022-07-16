@@ -456,8 +456,9 @@ https://docs.oracle.com/en/database/oracle/oracle-database/21/jjuar/oracle/ucp/j
 javadoc for the `PoolDataSourceImpl` class].
 
 In general, the properties that can be set on the
-`oracle.jdbc.pool.OracleDataSource` `DataSource` implementation can be
-inferred from the "setter" methods found in
+https://docs.oracle.com/en/database/oracle/oracle-database/21/jajdb/oracle/jdbc/pool/OracleDataSource.html[`oracle.jdbc.pool.OracleDataSource`]
+`DataSource` implementation can be inferred from the "setter" methods
+found in
 https://docs.oracle.com/en/database/oracle/oracle-database/21/jajdb/oracle/jdbc/pool/OracleDataSource.html[its
 javadoc].
 
