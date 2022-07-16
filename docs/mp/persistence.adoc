@@ -689,6 +689,12 @@ Persistence (JPA) objects as if your code were running in an
 application server, handling automatic creation and management of
 objects such as `EntityManager` and `EntityManagerFactory` instances.
 
+More pragmatically, it allows you to inject managed
+https://jakarta.ee/specifications/persistence/3.0/apidocs/jakarta.persistence/jakarta/persistence/entitymanager[`EntityManager`]
+instances using the
+https://jakarta.ee/specifications/persistence/3.0/apidocs/jakarta.persistence/jakarta/persistence/persistencecontext[`@PersistenceContext`]
+annotation.
+
 Jakarta Persistence is a Jakarta EE specification that describes,
 among other things, how its implementations:
 
