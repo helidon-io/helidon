@@ -51,6 +51,7 @@ include::{rootdir}/includes/mp.adoc[]
 *** <<JPA-Eclipselink-Weaving, Setting Up Static Weaving (Eclipselink)>>
 ** <<JPA-Configuration, Configuration>>
 ** <<JPA-Usage, Usage>>
+** <<JPA-Examples, Examples>>
 * <<References, References>>
 
 == Overview [[Overview]]
@@ -1327,6 +1328,11 @@ this documentation.  Consult
 https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0.html#entities[the
 specification] for details on how to map your entity classes to
 relational database tables, and how to perform other related tasks.
+
+== Examples [[JPA-Examples]]
+
+* https://github.com/oracle/helidon/tree/master/examples/integrations/cdi/pokemons[JPA
+  Pokemons Example]
 
 = References [[References]]
 
