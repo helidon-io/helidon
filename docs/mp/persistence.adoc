@@ -1114,7 +1114,7 @@ description:
 <1> Because Helidon MP's JPA integration is for container-managed JPA,
     the
     https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0.html#a12296[`transaction-type`
-    attribute] must always be set to `JTA`.
+    attribute] must in practice always be set to `JTA`.
 
 NOTE: In most microservices, there will be only one persistence unit.
 
