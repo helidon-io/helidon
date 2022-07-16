@@ -46,7 +46,7 @@ include::{rootdir}/includes/mp.adoc[]
 *** <<JPA-Maven-Coordinates, Common Maven Coordinates>>
 *** <<JPA-MetaModel, Setting Up Static Metamodel Generation>>
 *** <<JPA-Hibernate-Maven-Coordinates, Maven Coordinates (Hibernate ORM)>>
-*** <<JPA-Hibernate-Weaving, Hibernate ORM Setting Up Static Weaving (Hibernate ORM)>>
+*** <<JPA-Hibernate-Weaving, Setting Up Static Weaving (Hibernate ORM)>>
 *** <<JPA-Eclipselink-Maven-Coordinates, Maven Coordinates (Eclipselink)>>
 *** <<JPA-Eclipselink-Weaving, Setting Up Static Weaving (Eclipselink)>>
 ** <<JPA-Configuration, Configuration>>
