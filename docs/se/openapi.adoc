@@ -91,31 +91,7 @@ Helidon SE OpenAPI configuration supports the following settings:
 
 include::{rootdir}/config/io_helidon_openapi_SEOpenAPISupport.adoc[leveloffset=+1,tag=config]
 
-=== Update application configuration
-Helidon SE support for OpenAPI supports a handful of config properties patterned after
-those described in the MicroProfile OpenAPI spec, two of which were mentioned above.
 
-[[se_config]]
-.Helidon SE OpenAPI Config Properties
-|===
-|Property |Use
-
-|`openapi.model.reader` |Fully-qualified class name for the model reader
-|`openapi.filter` |Fully-qualified class name for the filter
-|`openapi.servers` |Lists servers that provide connectivity information
-|`openapi.servers.path` |Prefix for config properties specifying alternative
-servers for given paths
-|`openapi.servers.operation` |Prefix for config properties specifying alternative
-servers for given operations
-|`openapi.schema` |Prefix for config properties defining the schema for a class
-|===
-For more information on what these settings do consult the MicroProfile OpenAPI spec.
-
-include::{rootdir}/includes/openapi.adoc[common-config]
-
-Set these config properties in one of the config sources your app uses so the
-Helidon config system will load them. Often developers use `application.yaml` at the
-top level of the application JAR.
 
 == Examples
 
