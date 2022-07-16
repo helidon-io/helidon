@@ -1103,6 +1103,7 @@ helpful description:
 <persistence-unit name="prod" transaction-type="JTA"> <!--1-->
     <description>The production database</description>
 
+    <!--2-->
     <!--
         Other characteristics of the persistence unit are enclosed
         here.  Order matters.  See
@@ -1117,6 +1118,9 @@ helpful description:
     the
     https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0.html#a12296[`transaction-type`
     attribute] must in practice always be set to `JTA`.
+<2> The order of child elements is significant and governed by the
+    https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0.html#persistence-xml-schema[XML
+    schema].
 
 NOTE: In most microservices, there will be only one persistence unit.
 
