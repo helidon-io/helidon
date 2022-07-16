@@ -1047,8 +1047,10 @@ Weaving] in the Eclipselink documentation.
 === Configuration [[JPA-Configuration]]
 
 To configure Helidon MP's Jakarta Persistence integration, you author
-a `src/main/resources/META-INF/persistence.xml` file.  It contains a
-mix of standardized elements and JPA provider-specific properties.
+a
+https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0.html#persistence-xml-file[`src/main/resources/META-INF/persistence.xml`
+file].  It contains a mix of standardized elements and JPA
+provider-specific properties.
 
 For details about the structure and syntax of the
 `META-INF/persistence.xml` file, see
