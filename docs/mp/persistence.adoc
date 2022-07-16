@@ -319,14 +319,14 @@ named data source integration follow a common pattern:
   `javax.sql.DataSource` objects, so most configuration property
   names begin with `javax.sql.DataSource`.
 
-* A period (`.`) separates the _objecttype_ portion from the rest of
-  the property name.
+** A period (`.`) separates the _objecttype_ portion from the rest of
+   the property name.
 
 * The *_datasourcename_* portion, the name of the data source being
   configured, comes next.  It cannot contain a period (`.`).
 
-* A period (`.`) separates the _datasourcename_ portion from the rest
-  of the property name.
+** A period (`.`) separates the _datasourcename_ portion from the rest
+   of the property name.
 
 * The *_propertyname_* portion, identifying the connection-pool- or
   vendor-supplied-`DataSource`-specific configuration property name,
