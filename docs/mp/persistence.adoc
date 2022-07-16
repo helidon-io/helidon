@@ -60,12 +60,12 @@ Helidon MP comes with deep integration for three broad,
 specification-defined, persistence-related technologies that can be
 used together or separately:
 
-* Named https://docs.oracle.com/en/java/javase/17/docs/api/java.sql/javax/sql/DataSource.html[data sources]
-* https://jakarta.ee/specifications/transactions/2.0/[Jakarta Transactions] (JTA)
-* https://jakarta.ee/specifications/persistence/3.0/[Jakarta Persistence] (JPA)
+* <<DS, Named data sources>>
+* <<JTA, Jakarta Transactions (JTA)>>
+* <<JPA, Jakarta Persistence (JPA)>>
 
-The integrations supported for each technology, their setup, their
-configuration, and their usage are described below.
+Each integration's setup, configuration, and usage are described
+below.
 
 == Named Data Source Integration [[DS]]
 
