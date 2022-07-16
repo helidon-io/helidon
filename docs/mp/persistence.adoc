@@ -1214,5 +1214,12 @@ property:
     See
     https://docs.jboss.org/hibernate/orm/6.1/userguide/html_single/Hibernate_User_Guide.html#configurations-logging[Statement
     logging and statistics] in the Hibernate ORM documentation for
-    more on the `hibernate.show_sql` property.
+    more details about the `hibernate.show_sql` property.
 
+TIP: For an exhaustive list of Hibernate ORM-specific properties, see
+https://docs.jboss.org/hibernate/orm/6.1/userguide/html_single/Hibernate_User_Guide.html#configurations[Configurations]
+in the Hibernate ORM documentation.
+
+TIP: For an exhaustive list of Eclipselink-specific properties, see
+https://www.eclipse.org/eclipselink/documentation/3.0/jpa/extensions/persistenceproperties_ref.htm#sthref733[Persistence
+Property Extensions Reference] in the Eclipselink documentation.
