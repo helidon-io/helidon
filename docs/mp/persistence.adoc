@@ -839,9 +839,10 @@ snippet is present as a child element of the
     </plugins>
 </pluginManagement>
 ----
-<1> This adds the `hibernate-jpamodelgen` jar, which contains a Java
+<1> This adds the `hibernate-jpamodelgen` jar, which contains a
+    https://github.com/hibernate/hibernate-orm/blob/6.1.1/tooling/metamodel-generator/src/main/java/org/hibernate/jpamodelgen/JPAMetaModelEntityProcessor.java#L59[Java
     annotation processor that generates the static metamodel source
-    code, to the Java compiler's annotation processor path so that it
+    code], to the Java compiler's annotation processor path so that it
     is active at compile time.
 
 For more on the Hibernate ORM `hibernate-jpamodelgen` annotation
