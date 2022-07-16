@@ -237,29 +237,23 @@ Ensure the following
      -->
     <groupId>com.oracle.database.jdbc</groupId>
     <!--
-         Why ojdbc*11*? Because:
-         (a) Helidon 3 targets Java 17
+         Why ojdbc11? What does 11 mean? This is because:
+         (a) Helidon 3.x targets Java 17
          (b) Java 17 includes JDBC 4.3
          (c) ojdbc11 implements relevant parts of JDBC 4.3
          Please see
          https://www.oracle.com/database/technologies/maven-central-guide.html
          for more details.
     -->
-    <artifactId>ojdbc11</artifactId>
-    <!--
-         It's best to manage this with Maven's <dependencyManagement> feature,
-         which is why the <version> element is commented out below.
-         If nevertheless you opt for the explicit version here, check
-         https://search.maven.org/search?q=g:com.oracle.database.jdbc
-         for up-to-date available versions, and see
-         https://www.oracle.com/database/technologies/maven-central-guide.html
-         for extremely important information.
-    -->
-    <!-- <version>21.3.0.0</version> -->
-    <scope>runtime</scope> <!--1-->
+    <artifactId>ojdbc11</artifactId> <!--1-->
+    <scope>runtime</scope> <!--2-->
 </dependency>
 ----
-<1> The `scope` is `runtime`, indicating that the Oracle
+<1> The `ojdbc11` artifact
+    https://www.oracle.com/database/technologies/maven-central-guide.html#:~:text=ojdbc11.jar,JDK14%20and%20JDK15.[implements
+    relevant parts of the JDBC 4.3 specification], which forms part of
+    Java 17, which is the Java version targeted by Helidon 3.
+<2> The `scope` is `runtime`, indicating that the Oracle
     JDBC driver classes will be available on the runtime classpath.
 
 === Configuration [[DS-Configuration]]
@@ -552,7 +546,7 @@ private DataSource ds; // <3>
     data source configuration property).
 <3> The field injection point has a type of
     https://docs.oracle.com/en/java/javase/17/docs/api/java.sql/javax/sql/DataSource.html[`javax.sql.DataSource`],
-    and may be named anything you like.
+    and the field itselfmay be named anything you like.
 
 Here is how to define such a constructor parameter injection point:
 
@@ -584,7 +578,7 @@ public SomeObject(@Named("test") DataSource ds) { // <3>
     data source configuration property).  The parameter injection
     point has a type of
     https://docs.oracle.com/en/java/javase/17/docs/api/java.sql/javax/sql/DataSource.html[`javax.sql.DataSource`],
-    and may be named anything you like.
+    and the parameter itself may be named anything you like.
 <4> The injected argument will never be `null`.
 
 == Jakarta Transactions (JTA) Integration [[JTA]]
