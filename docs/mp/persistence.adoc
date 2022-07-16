@@ -331,14 +331,20 @@ named data source integration follow a common pattern:
   connection-pool- or vendor-supplied-`DataSource`-specific
   configuration property name, comes last.
 
-As an example, configuration to set an imaginary `foo` property on the
-`test` data source to `bar` looks like this in Java
-`.properties`-style format:
+As an example, configuration to set an imaginary `foo.bar` property on
+the `test` data source to `baz` looks like this in Java
+`.properties` format:
 
 [source,properties]
 ----
-javax.sql.DataSource.test.foo=bar
+javax.sql.DataSource.test.foo.bar=baz # <1> <2> <3>
 ----
+<1> The _objecttype_ portion of the configuration property name is
+    `javax.sql.DataSource`.
+<2> The _datasourcename_ portion of the configuration property name is
+    `test`.
+<3> The _propertyname_ portion of the configuration property name is
+    `foo.bar`
 
 ==== Examples [[DS-Configuration-Examples]]
 
