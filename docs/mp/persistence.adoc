@@ -505,8 +505,9 @@ vendor-supplied `DataSource` are prefixed with `dataSource.` as seen
 in the example above.
 
 In general, the properties that can be set on the
-`org.h2.jdbcx.JdbcDataSource` vendor-supplied `DataSource` can be
-inferred from the "setter" methods found in
+http://www.h2database.com/javadoc/org/h2/jdbcx/JdbcDataSource.html[`org.h2.jdbcx.JdbcDataSource`]
+vendor-supplied `DataSource` can be inferred from the "setter" methods
+found in
 http://www.h2database.com/javadoc/org/h2/jdbcx/JdbcDataSource.html[its
 javadoc].
 
