@@ -1298,6 +1298,9 @@ relational database tables, and how to perform other related tasks.
 * https://github.com/brettwooldridge/HikariCP/tree/HikariCP-5.0.1#readme[HikariCP
   5.0.1 documentation]
 
+* https://www.oracle.com/database/technologies/maven-central-guide.html[Developers
+  Guide For Oracle JDBC 21c on Maven Central]
+
 * https://docs.oracle.com/en/database/oracle/oracle-database/21/jjucp/index.html[Oracle®
   Universal Connection Pool Developer's Guide, Release 21c]
 
