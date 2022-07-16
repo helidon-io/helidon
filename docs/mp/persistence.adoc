@@ -1078,8 +1078,9 @@ Your `src/main/resources/META-INF/persistence.xml` file must begin
 
 </persistence>
 ----
-<1> Helidon MP's Jakarta Persistence integration supports version
-    Jakarta Persistence 3.0.
+<1> Helidon MP's Jakarta Persistence integration supports
+    https://jakarta.ee/specifications/persistence/3.0/[Jakarta
+    Persistence version 3.0].
 
 ==== Persistence Unit
 
