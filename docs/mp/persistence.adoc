@@ -547,7 +547,9 @@ private DataSource ds; // <3>
     https://jakarta.ee/specifications/dependency-injection/2.0/[Jakarta
     Dependency Injection specification].
 <2> https://jakarta.ee/specifications/dependency-injection/2.0/apidocs/jakarta/inject/named[`@Named("test")`]
-    says to use the data source named `test`.
+    says to use the data source named `test` (as declared by the
+    <<DS-Configuration-Prefixes, _datasourcename_ portion>> of a named
+    data source configuration property).
 <3> The field injection point has a type of
     https://docs.oracle.com/en/java/javase/17/docs/api/java.sql/javax/sql/DataSource.html[`javax.sql.DataSource`],
     and may be named anything you like.
