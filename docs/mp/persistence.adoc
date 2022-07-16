@@ -310,7 +310,7 @@ such configurations is not exhaustive.
 All MicroProfile Config-compatible property names for Helidon MP's
 named data source integration follow a common pattern:
 
-> _objecttype_._datasourcename_._propertyname_
+> *_objecttype_*._datasourcename_._propertyname_
 
 * The name of a given configuration property always begins with the
   *_objecttype_* portion: a fully-qualified Java class name of the
