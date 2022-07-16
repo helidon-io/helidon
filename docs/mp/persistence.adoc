@@ -1274,7 +1274,7 @@ https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0.h
 specification] for details on how to map your entity classes to
 relational database tables, and how to perform other related tasks.
 
-= References
+= References [[References]]
 
 * https://docs.oracle.com/en/java/javase/17/docs/api/java.sql/java/sql/package-summary.html[JDBC
   4.3 Specification]
@@ -1282,11 +1282,16 @@ relational database tables, and how to perform other related tasks.
 * https://github.com/brettwooldridge/HikariCP/tree/HikariCP-5.0.1#readme[HikariCP
   5.0.1 documentation]
 
-* https://docs.oracle.com/en/database/oracle/oracle-database/21/jjucp/index.html[Oracle
-  Universal Connection Pool Developer's Guide for version 21c]
+* https://docs.oracle.com/en/database/oracle/oracle-database/21/jjucp/index.html[Oracle®
+  Universal Connection Pool Developer's Guide,21c]
 
-* https://docs.oracle.com/en/database/oracle/oracle-database/21/jjuar/index.html#[Oracle
-  Universal Connection Pool API Reference for version 21c]
+* https://docs.oracle.com/en/database/oracle/oracle-database/21/jjuar/index.html#[Oracle®
+  Universal Connection Pool Java API Reference, Release 21c]
+
+* https://docs.oracle.com/en/database/oracle/oracle-database/21/jajdb/index.html[Oracle®
+  Database JDBC Java API Reference, Release 21c]
+
+* http://www.h2database.com/html/main.html[H2 Database Engine documentation]
 
 * https://jakarta.ee/specifications/transactions/2.0/jakarta-transactions-spec-2.0.html[Jakarta
   Transactions 2.0 Specification]
