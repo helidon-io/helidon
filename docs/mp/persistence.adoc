@@ -1283,10 +1283,15 @@ relational database tables, and how to perform other related tasks.
   5.0.1 documentation]
 
 * https://docs.oracle.com/en/database/oracle/oracle-database/21/jjucp/index.html[Oracle
-  Universal Connection Pool 21c documentation]
+  Universal Connection Pool Developer's Guide for version 21c]
+
+* https://docs.oracle.com/en/database/oracle/oracle-database/21/jjuar/index.html#[Oracle
+  Universal Connection Pool API Reference for version 21c]
 
 * https://jakarta.ee/specifications/transactions/2.0/jakarta-transactions-spec-2.0.html[Jakarta
   Transactions 2.0 Specification]
+
+* https://www.narayana.io//docs/project/index.html[Narayana Project Documentation]
 
 * https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0.html[Jakarta
   Persistence 3.0 Specification]
@@ -1295,4 +1300,3 @@ relational database tables, and how to perform other related tasks.
   ORM 6.1.1 User Guide]
 
 * https://www.eclipse.org/eclipselink/documentation/[Eclipselink documentation]
-
