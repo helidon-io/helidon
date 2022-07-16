@@ -1255,16 +1255,16 @@ property:
 
 <!-- ... -->
 ----
-<1> This is a Hibernate ORM-specific property and will be ignored if
-    the JPA provider you have <<JPA-Setup,set up>> is Eclipselink.
-    See
+<1> This is a Hibernate ORM-specific property and will be properly
+    ignored if the JPA provider you have <<JPA-Setup,set up>> is
+    Eclipselink.  See
     https://docs.jboss.org/hibernate/orm/6.1/userguide/html_single/Hibernate_User_Guide.html#configurations-logging[Statement
     logging and statistics] in the Hibernate ORM documentation for
     more details about the `hibernate.show_sql` property.
 <2> This is an Eclipselink-specific property (and (a) is required and
     (b) must be set to `false` if you are using Eclipselink), and will
-    be ignored if the JPA provider you have <<JPA-Setup, set up>> is
-    Hibernate ORM.  See
+    be properly ignored if the JPA provider you have <<JPA-Setup, set
+    up>> is Hibernate ORM.  See
     https://www.eclipse.org/eclipselink/documentation/3.0/jpa/extensions/persistenceproperties_ref.htm#weaving[weaving]
     in the Eclipselink documentation for more details about the
     `eclipselink.weaving` property.
