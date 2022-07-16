@@ -436,8 +436,9 @@ This example presumes you have:
 * <<DS-Oracle-Driver-Project-Setup,set up Oracle JDBC>>
 
 This example, in Java properties file format, configures an Oracle
-Universal Connection Pool-managed data source named `main` to connect
-to an Oracle Database on `localhost` port `1521`, using the
+Universal Connection Pool-managed data source named `main` to
+https://docs.oracle.com/en/database/oracle/oracle-database/21/jjdbc/data-sources-and-URLs.html#GUID-C4F2CA86-0F68-400C-95DA-30171C9FB8F0[connect
+to an Oracle Database] on `localhost` port `1521`, using the
 `oracle.jdbc.poolOracleDataSource` vendor-supplied `DataSource`, with
 a service name of `XE`, a `user` of `scott`, and a `password` of
 `tiger`:
