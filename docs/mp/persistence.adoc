@@ -330,7 +330,7 @@ named data source integration follow a common pattern:
 
 * The *_propertyname_* portion, identifying the connection-pool- or
   vendor-supplied-`DataSource`-specific configuration property name,
-  comes last.
+  comes last.  It may contain periods (`.`).
 
 As an example, configuration to set an imaginary `foo.bar` property on
 the `test` data source to `baz` looks like this in Java
