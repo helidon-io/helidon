@@ -929,8 +929,9 @@ the following line as its sole contents:
 ----
 hibernate.bytecode.provider=none # <1>
 ----
-<1> This instructs Hibernate ORM to not attempt to perform weaving at
-    runtime.
+<1> This instructs Hibernate ORM to
+    https://github.com/hibernate/hibernate-orm/blob/6.1.1/hibernate-core/src/main/java/org/hibernate/cfg/Environment.java#L236[not
+    attempt to perform weaving at runtime].
 
 For more on the `hibernate-enhance-maven-plugin` in particular, see
 https://docs.jboss.org/hibernate/orm/6.1/userguide/html_single/Hibernate_User_Guide.html#tooling-maven[its
