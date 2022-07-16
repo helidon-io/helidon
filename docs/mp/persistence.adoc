@@ -268,7 +268,7 @@ Ensure the following
 
 Each connection pool supported by Helidon's named data source
 integration support is, itself, a `DataSource` that wraps a
-_vendor-supplied `DataSource`_ present in the JDBC driver classes you
+_vendor-supplied_ `DataSource` present in the JDBC driver classes you
 added to your project.  You must configure both the pool and the
 vendor-supplied `DataSource`.
 
