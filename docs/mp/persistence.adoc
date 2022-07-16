@@ -44,6 +44,8 @@ include::{rootdir}/includes/mp.adoc[]
 * <<JPA, Jakarta Persistence (JPA) Integration>>
 ** <<JPA-Setup, Project Setup>>
 ** <<JPA-Configuration, Configuration>>
+** <<JPA-Usage, Usage>>
+* <<References, References>>
 
 == Overview [[Overview]]
 
@@ -1164,7 +1166,7 @@ containing two entity classes:
 <persistence-unit name="prod" transaction-type="JTA">
     <description>The production database</description>
     <jta-data-source>main</jta-data-source>
-    <class>com.example.ExampleEntity0</class>
+    <class>com.example.ExampleEntity0</class> <!--1-->
     <class>com.example.ExampleEntity1</class>
 
     <!-- Other <class> elements, perhaps -->
@@ -1175,6 +1177,8 @@ containing two entity classes:
 
 <!-- ... -->
 ----
+<1> Each entity class is listed with a separate `<class>` element, and
+    there is no containing `<classes>` element or similar.
 
 ===== Properties
 
@@ -1211,9 +1215,6 @@ property:
         <property name="hibernate.show_sql" value="true"/> <!--1-->
         <property name="eclipselink.weaving" value="false"/> <!--2-->
     </properties>
-
-    <!-- Other persistence unit characteristics go here. -->
-
 </persistence-unit>
 
 <!-- ... -->
@@ -1239,3 +1240,59 @@ in the Hibernate ORM documentation.
 TIP: For an exhaustive list of Eclipselink-specific properties, see
 https://www.eclipse.org/eclipselink/documentation/3.0/jpa/extensions/persistenceproperties_ref.htm#sthref733[Persistence
 Property Extensions Reference] in the Eclipselink documentation.
+
+== Usage [[JPA-Usage]]
+
+To use Helidon MP's Jakarta Persistence integration, once you have
+<<JPA-Setup, set up>> and <<JPA-Configuration, configured>> your
+project, you use the Jakarta Persistence APIs in almost the same
+manner as if your project were deployed to a Jakarta EE server.
+
+Specifically, you:
+
+1. Annotate your managed classes (entities, mapped superclasses, etc.)
+   appropriately (using
+   https://jakarta.ee/specifications/persistence/3.0/apidocs/jakarta.persistence/jakarta/persistence/entity[`@Entity`]
+   and the like)
+
+2. Inject
+   https://jakarta.ee/specifications/persistence/3.0/apidocs/jakarta.persistence/jakarta/persistence/entitymanager[`EntityManager`]
+   instances appropriately with the
+   https://jakarta.ee/specifications/persistence/3.0/apidocs/jakarta.persistence/jakarta/persistence/persistencecontext[`@PersistenceContext`
+   annotation]
+
+3. Use an injected
+   https://jakarta.ee/specifications/persistence/3.0/apidocs/jakarta.persistence/jakarta/persistence/entitymanager[`EntityManager`]
+   to work with your managed objects
+
+In addition, you <<JTA-Usage, use Helidon MP's JTA integration>> to
+declare transactional boundaries where appropriate.
+
+A full tutorial of Jakarta Persistence is _well_ beyond the scope of
+this documentation.  Consult
+https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0.html#entities[the
+specification] for details on how to map your entity classes to
+relational database tables, and how to perform other related tasks.
+
+= References
+
+* https://docs.oracle.com/en/java/javase/17/docs/api/java.sql/java/sql/package-summary.html[JDBC
+  4.3 Specification]
+
+* https://github.com/brettwooldridge/HikariCP/tree/HikariCP-5.0.1#readme[HikariCP
+  5.0.1 documentation]
+
+* https://docs.oracle.com/en/database/oracle/oracle-database/21/jjucp/index.html[Oracle
+  Universal Connection Pool 21c documentation]
+
+* https://jakarta.ee/specifications/transactions/2.0/jakarta-transactions-spec-2.0.html[Jakarta
+  Transactions 2.0 Specification]
+
+* https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0.html[Jakarta
+  Persistence 3.0 Specification]
+
+* https://docs.jboss.org/hibernate/orm/6.1/userguide/html_single/Hibernate_User_Guide.html[Hibernate
+  ORM 6.1.1 User Guide]
+
+* https://www.eclipse.org/eclipselink/documentation/[Eclipselink documentation]
+
