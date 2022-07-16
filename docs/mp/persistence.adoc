@@ -344,7 +344,7 @@ javax.sql.DataSource.test.foo.bar=baz # <1> <2> <3>
 <2> The _datasourcename_ portion of the configuration property name is
     `test`.
 <3> The _propertyname_ portion of the configuration property name is
-    `foo.bar`
+    `foo.bar`.
 
 ==== Examples [[DS-Configuration-Examples]]
 
