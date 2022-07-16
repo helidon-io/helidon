@@ -712,11 +712,11 @@ application-managed mode places the burden of error handling, thread
 safety, transaction management, and other concerns on the user.
 **This documentation does _not_ cover application-managed mode JPA.**
 
-Jakarta Persistence may instead be used in a fully container-managed
-manner, which requires that a container, like Helidon MP, handle error
-management, thread safety and transaction management on behalf of the
-user.  **This documentation covers this container-managed mode of JPA
-exclusively.**
+Jakarta Persistence may also (preferably) be used in a fully
+container-managed manner, which requires that a container, like
+Helidon MP, handle error management, thread safety and transaction
+management on behalf of the user.  **This documentation covers this
+container-managed mode of JPA exclusively.**
 
 Helidon MP's Jakarta Persistence integration comes with support for
 two JPA implementations, known as _JPA providers_:
@@ -1042,8 +1042,8 @@ To configure Helidon MP's Jakarta Persistence integration, you author
 a `src/main/resources/META-INF/persistence.xml` file.  It contains a
 mix of standardized elements and JPA provider-specific properties.
 
-For more on the structure and syntax of the `META-INF/persistence.xml`
-file, see
+For details about the structure and syntax of the
+`META-INF/persistence.xml` file, see
 https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0.html#persistence-xml-file[persistence.xml
 file] in the Jakarta Persistence specification.
 
