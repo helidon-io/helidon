@@ -469,8 +469,8 @@ NOTE: https://github.com/brettwooldridge/HikariCP/blob/HikariCP-5.0.1/src/main/j
 HikariCP], the Oracle Universal Connection Pool does not distinguish
 cleanly between configuration properties that affect _its_ behavior
 and those that affect the behavior of the vendor-supplied `DataSource`
-implementation whose connections it pools, so in the example above it
-is not possible to tell that
+implementation whose connections it pools.  For example, in the
+example above it is not possible to tell that
 https://docs.oracle.com/en/database/oracle/oracle-database/21/jjuar/oracle/ucp/jdbc/PoolDataSourceImpl.html#setConnectionFactoryClassName_java_lang_String_[`connectionFactoryClassName`
 is a property of the Oracle Universal Connection Pool], and
 https://docs.oracle.com/en/database/oracle/oracle-database/21/jajdb/oracle/jdbc/datasource/impl/OracleDataSource.html#setUser_java_lang_String_[`user`
