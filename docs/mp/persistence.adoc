@@ -334,8 +334,8 @@ named data source integration follow a common pattern:
   comes last.  It may contain periods (`.`).
 
 As an example, configuration to set an imaginary `foo.bar` property on
-the `test` data source to `baz` looks like this in Java
-`.properties` format:
+the `test` data source's associated connection pool or vendor-specific
+`DataSource` to `baz` looks like this in Java `.properties` format:
 
 [source,properties]
 ----
