@@ -1137,6 +1137,8 @@ source.  The `<jta-data-source>` element, a child of the
 <<DS, named data source>> you previously <<DS-Configuration,
 configured>>.
 
+====== Example: Persistence Unit with JTA Data Source
+
 Here is a partial example of a persistence unit named `prod`, with a
 helpful description, linked with a JTA data source named `main`:
 
@@ -1190,6 +1192,8 @@ mechanisms that can be used in a `META-INF/persistence.xml` file to
 describe managed classes], but they may or may not be honored by a
 given JPA provider.
 
+====== Example: Persistence Unit with Class Elements
+
 Here is a partial example of a persistence unit named `prod`, with a
 helpful description, linked with a JTA data source named `main`,
 containing two entity classes:
@@ -1231,6 +1235,8 @@ information, such as `jakarta.persistence.jdbc.url`, **do not apply**
 and will be ignored if present.  See <<JPA-JTA-Data-Source, the JTA
 Data Source>> section above for how a persistence unit is linked to a
 <<DS,named data source>>.
+
+====== Example: Persistence Unit with Properties
 
 Here is a partial exmaple of a persistence unit named `prod`, with a
 helpful description, linked with a JTA data source named `main`,
@@ -1289,7 +1295,7 @@ Specifically, you:
 1. Annotate your managed classes (entities, mapped superclasses, etc.)
    appropriately (using
    https://jakarta.ee/specifications/persistence/3.0/apidocs/jakarta.persistence/jakarta/persistence/entity[`@Entity`]
-   and the like)
+   and similar annotations)
 
 2. Inject
    https://jakarta.ee/specifications/persistence/3.0/apidocs/jakarta.persistence/jakarta/persistence/entitymanager[`EntityManager`]
