@@ -671,12 +671,17 @@ public String getGreeting(Integer id) {
     annotation] indicates that this method should be invoked in the
     scope of a JTA transaction.  **The object on which the method is
     invoked must be one that Helidon MP's CDI container has created**,
-    i.e. it must be managed.  (CDI beans are managed, as are Jakarta
-    RESTful Web Services resource classes.)
+    i.e. it must be managed.
+    (https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0.html#implementation[CDI
+    beans are managed], as are
+    https://jakarta.ee/specifications/restful-ws/3.1/jakarta-restful-ws-spec-3.1.html#resource-classes[Jakarta
+    RESTful Web Services resource classes].)
 <2> For
     https://jakarta.ee/specifications/transactions/2.0/apidocs/jakarta/transaction/transactional[`@Transactional`]
     to have any effect, whatever is used inside the method must be
-    JTA-aware (such as a Jakarta Persistence construct like an
+    JTA-aware (such as a
+    https://jakarta.ee/specifications/persistence/3.0/[Jakarta
+    Persistence] object like a managed
     https://jakarta.ee/specifications/persistence/3.0/apidocs/jakarta.persistence/jakarta/persistence/entitymanager[`EntityManager`]).
 
 == Jakarta Persistence (JPA) [[JPA]]
