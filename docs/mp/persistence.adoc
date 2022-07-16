@@ -176,12 +176,12 @@ managed], and then ensure that a `runtime`-scoped `<dependency>`
 element describing your JDBC driver classes is present as a child
 element of your project's `pom.xml` file's `<dependencies>` element.
 
-A couple of examples are described below for some common database
-products.  They are not exhaustive.
-
 See the
 https://docs.oracle.com/en/java/javase/17/docs/api/java.sql/java/sql/package-summary.html[JDBC
 4.3 Specification] for more information about JDBC.
+
+Representative setups are described below.  The list of such setups is
+not exhaustive.
 
 ===== Setting Up H2 [[DS-H2-Driver-Project-Setup]]
 
