@@ -317,7 +317,7 @@ named data source integration follow a common pattern:
   object being configured.  Most configuration for Helidon MP's named
   data source integration concerns the behavior of
   `javax.sql.DataSource` objects, so most configuration property
-  *names begin with `javax.sql.DataSource`.
+  names begin with `javax.sql.DataSource`.
 
 * A period (`.`) separates the _objecttype_ portion from the rest of
   the property name.
