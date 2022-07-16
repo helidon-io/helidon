@@ -1275,9 +1275,8 @@ property:
 <!-- ... -->
 ----
 <1> The name identifies a name present in the
-    <<DS-Configuration_Prefixes, _datasourcename_ portion of a named
-    datasource configuration>>.  There is no need for any kind of
-    reserved prefix (like `java:comp/env`).
+    <<DS-Configuration_Prefixes, _datasourcename_ portion of a named datasource configuration>>.
+    There is no need for any kind of reserved prefix (like `java:comp/env`).
 <2> This is a Hibernate ORM-specific property and will be properly
     ignored if the JPA provider you have <<JPA-Setup,set up>> is
     Eclipselink.  See
