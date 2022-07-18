@@ -66,8 +66,8 @@ endif::[]
 // 3rd party
 :version-lib-jaeger: 1.22
 :version-lib-jedis: 2.9.0
-:version-lib-hikaricp: 2.7.8
-:version-lib-exclipselink: 3.0
+:version-lib-hikaricp: 5.0.1
+:version-lib-eclipselink: 3.0
 :version-plugin-jib: 0.10.1
 :version-plugin-jandex: 1.0.6
 
@@ -215,7 +215,7 @@ endif::[]
 :jaeger-doc-base-url: https://www.jaegertracing.io/docs/{version-lib-jaeger}
 :hikaricp-base-url: https://github.com/brettwooldridge/HikariCP/blob/HikariCP-{version-lib-hikaricp}
 :hikaricp-javadoc-url: {javadoc-io-base-url}/com.zaxxer/HikariCP/{version-lib-hikaricp}
-:eclipselink-doc-base-url: https://www.eclipse.org/eclipselink/documentation/{version-lib-exclipselink}
+:eclipselink-doc-base-url: https://www.eclipse.org/eclipselink/documentation/{version-lib-eclipselink}
 :jib-base-url: https://github.com/GoogleContainerTools/jib/blob/v{version-plugin-jib}-maven/jib-maven-plugin
 :jedis-base-url: {javadoc-io-base-url}/redis.clients/jedis/{version-lib-jedis}/redis/clients
 :kafka-client-base-url: https://kafka.apache.org/28/documentation.html
