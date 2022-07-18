@@ -29,8 +29,10 @@ include::{rootdir}/includes/mp.adoc[]
 * <<DS, Named Data Source Integration>>
 ** <<DS-Setup, Project Setup>>
 *** <<DS-CP-Project-Setup, Setting Up a Connection Pool>>
-**** <<DS-HikariCP-Project-Setup, Setting Up the Hikari CP Connection Pool>>
+**** <<DS-HikariCP-Project-Setup, Setting Up the HikariCP Connection Pool>>
+***** <<DS-HikariCP-Maven-Coordinates, Maven Coordinates (HikariCP)>>
 **** <<DS-UCP-Project-Setup, Setting Up the Oracle Universal Connection Pool>>
+***** <<DS-UCP-Maven-Coordinates, Maven Coordinates (Oracle Universal Connection Pool)>>
 *** <<DS-Driver-Project-Setup, Setting Up a Database Driver>>
 **** <<DS-H2-Driver-Project-Setup, Setting Up H2>>
 **** <<DS-Oracle-Driver-Project-Setup, Setting Up Oracle JDBC>>
@@ -231,10 +233,10 @@ managed]
   https://www.oracle.com/database/technologies/maven-central-guide.html[Developer's
   Guide For Oracle JDBC 21c on Maven Central]
 
-For a basic setup, ensure the following `<dependency>` element is
-present as a child element of your project's `pom.xml` file's
-`<dependencies>` element:
-
+* For a basic setup, ensure the following `<dependency>` element is
+  present as a child element of your project's `pom.xml` file's
+  `<dependencies>` element:
++
 [source,xml]
 ----
 <dependency>
