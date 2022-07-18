@@ -149,9 +149,9 @@ Universal Connection Pool] in your Helidon MP application:
 * xref:../about/managing-dependencies.adoc[Ensure your dependencies are
 managed]
 
-Ensure the following `<dependency>` element is present as a child
-element of your project's `pom.xml` file's `<dependencies>` element:
-
+* Ensure the following `<dependency>` element is present as a child
+  element of your project's `pom.xml` file's `<dependencies>` element:
++
 [source,xml]
 ----
 <dependency>
@@ -199,10 +199,9 @@ an H2 database] (whether in-memory or persistent):
 * xref:../about/managing-dependencies.adoc[Ensure your dependencies are
 managed]
 
-Ensure the following
-`<dependency>` element is present as a child element of your project's
-`pom.xml` file's `<dependencies>` element:
-
+* Ensure the following `<dependency>` element is present as a child
+  element of your project's `pom.xml` file's `<dependencies>` element:
++
 [source,xml]
 ----
 <dependency>
@@ -621,9 +620,9 @@ To include Helidon's JTA integration in your application:
 * xref:../about/managing-dependencies.adoc[Ensure your dependencies are
 managed]
 
-Ensure the following `<dependency>` elements are present as child
-elements of your project's `pom.xml` file's `<dependencies>` element:
-
+* Ensure the following `<dependency>` elements are present as child
+  elements of your project's `pom.xml` file's `<dependencies>` element:
++
 [source,xml]
 ----
 <dependency>
@@ -830,9 +829,9 @@ include the core of Helidon's Jakarta Persistence integration:
 * <<JTA, Ensure you have set up and configured Helidon MP's Jakarta
   Transactions support>>
 
-Ensure the following `<dependency>` elements are present as child
-elements of your project's `pom.xml` file's `<dependencies>` element:
-
+* Ensure the following `<dependency>` elements are present as child
+  elements of your project's `pom.xml` file's `<dependencies>` element:
++
 [source,xml]
 ----
 <dependency>
@@ -926,9 +925,10 @@ managed]
 * <<JPA-Maven-Coordinates,Ensure the basics of your JPA project are
   set up properly>>
 
-Ensure the following `<dependency>` elements are present as child
-elements of your project's `pom.xml` file's `<dependencies>` element:
-
+* Ensure the following `<dependency>` elements are present as child
+  elements of your project's `pom.xml` file's `<dependencies>`
+  element:
++
 [source,xml]
 ----
 <dependency>
@@ -1020,9 +1020,10 @@ managed]
 * <<JPA-Maven-Coordinates,Ensure the basics of your JPA project are
   set up properly>>
 
-Ensure the following `<dependency>` elements are present as child
-elements of your project's `pom.xml` file's `<dependencies>` element:
-
+* Ensure the following `<dependency>` elements are present as child
+  elements of your project's `pom.xml` file's `<dependencies>`
+  element:
++
 [source,xml]
 ----
 <dependency>
