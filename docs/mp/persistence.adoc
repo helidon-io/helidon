@@ -126,7 +126,7 @@ managed]
 
 * Ensure the following `<dependency>` element is present as a child
   element of your project's `pom.xml` file's `<dependencies>` element:
-
++
 [source,xml]
 ----
 <dependency>
