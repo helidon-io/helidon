@@ -37,7 +37,7 @@ endif::[]
 // versions
 :version-plugin-helidon: 3.0.0-M3
 
-:version-lib-microprofile-api: 3.3
+:version-lib-microprofile-api: 5.0
 
 // microprofile specifications
 :version-lib-microprofile-lra-api: 2.0-RC1
