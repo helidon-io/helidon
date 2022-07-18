@@ -27,10 +27,10 @@ include::{rootdir}/includes/mp.adoc[]
 == ToC
 
 - <<Overview, Overview>>
-- <<Maven-Coordinates, Maven Coordinates>>
+- <<maven-coordinates, Maven Coordinates>>
 - <<Usage, Usage>>
 - <<Examples, Examples>>
-- <<Local Testing, Local Testing>>
+- <<Local-Testing, Local Testing>>
 - <<References, References>>
 
 == Overview
@@ -516,7 +516,7 @@ public class TransitResource {
 <9> Verify HMAC.
 <10> Verify signature.
 
-== Local Testing
+== Local Testing [[Local-Testing]]
 
 Vault is available as a docker image, so to test locally, you can simply:
 

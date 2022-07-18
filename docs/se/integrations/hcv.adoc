@@ -27,10 +27,10 @@ include::{rootdir}/includes/se.adoc[]
 == ToC
 
 - <<Overview, Overview>>
-- <<Maven-Coordinates, Maven Coordinates>>
+- <<maven-coordinates, Maven Coordinates>>
 - <<Usage, Usage>>
 - <<Examples, Examples>>
-- <<Local Testing, Local Testing>>
+- <<Local-Testing, Local Testing>>
 - <<References, References>>
 
 == Overview
@@ -562,7 +562,7 @@ class K8sExample {
 <3> Disable Kubernetes authentication if needed.
 <4> Function used to enable Kubernetes authentication.
 
-== Local testing
+== Local testing [[Local-Testing]]
 
 Vault is available as a docker image, so to test locally, you can simply:
 
