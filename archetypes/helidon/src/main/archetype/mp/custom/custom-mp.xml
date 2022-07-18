@@ -21,15 +21,14 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
 
-    <exec src="/mp/common/common-mp.xml"/>
-    <!--source src="/common/sources.xml"/-->
     <exec src="/common/media.xml"/>
     <source src="/common/media-sources.xml"/>
     <source src="/common/observability.xml"/>
-    <exec src="/mp/custom/database.xml"/>
     <exec src="/common/security.xml"/>
     <source src="/common/extra.xml"/>
     <exec src="/common/packaging.xml"/>
+    <exec src="/mp/custom/database.xml"/>
+    <exec src="/mp/common/common-mp.xml"/>
     <output>
         <files if="${security}">
             <directory>files</directory>
@@ -39,8 +38,13 @@
         </files>
         <model>
             <value key="readme-description">Minimal Helidon MP project suitable to start from scratch.</value>
-            <list key="readme-sections">
+            <list key="readme-exercise-the-application">
                 <value file="files/README.md"/>
+            </list>
+            <list key="native-sections" if="${docker}">
+                <value file="files/README.native.md"
+                       if="${docker.native-image} &amp;&amp; !(${db})"
+                       template="mustache"/>
             </list>
             <list key="config-entries">
                 <value file="files/microprofile-config.properties"/>

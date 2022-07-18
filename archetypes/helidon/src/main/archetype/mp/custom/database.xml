@@ -171,6 +171,17 @@
                         <option value="h2" name="H2" description="In-memory relational database">
                             <output>
                                 <model>
+                                    <value key="readme-description">Helidon MP application that uses the dbclient API with an in-memory H2 database.</value>
+                                    <value key="readme-native-docker">docker run -d -p 1521:1521 -p 81:81 -e H2_OPTIONS='-ifNotExists' --name=h2 oscarfonts/h2</value>
+                                    <value key="readme-native-url">javax.sql.DataSource.test.dataSource.url=jdbc:h2:tcp://localhost:1521/test</value>
+                                    <value key="integration-artifactId">h2</value>
+                                    <value key="db">H2</value>
+                                    <list key="run-comment">
+                                        <value><![CDATA[
+This example requires a database.
+Instructions for H2 can be found here: https://www.h2database.com/html/cheatSheet.html
+]]></value>
+                                    </list>
                                     <list key="main-persistence-properties">
                                         <map if="${..jpa-impl} == 'hibernate'">
                                             <value key="name">hibernate.dialect</value>
@@ -188,6 +199,20 @@
                         <option value="mysql" name="MySQL" description="Relational database">
                             <output>
                                 <model>
+                                    <value key="readme-description">Helidon MP application that uses the dbclient API with MySQL database.</value>
+                                    <value key="readme-native-docker">docker run --rm --name mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=pokemon -e MYSQL_USER=user -e MYSQL_PASSWORD=password  mysql:5.7</value>
+                                    <value key="readme-native-url">url: jdbc:mysql:tcp://127.0.0.1:3306/pokemon?useSSL=false</value>
+                                    <value key="integration-artifactId">helidon-integrations-db-mysql</value>
+                                    <value key="db">MySQL</value>
+                                    <list key="run-comment">
+                                        <value><![CDATA[
+This example requires a MySQL database, start it using docker:
+
+```
+docker run --rm --name mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=pokemon -e MYSQL_USER=user -e MYSQL_PASSWORD=password  mysql:5.7
+```
+]]></value>
+                                    </list>
                                     <list key="main-persistence-properties">
                                         <map if="${..jpa-impl} == 'hibernate'">
                                             <value key="name">hibernate.dialect</value>
@@ -212,6 +237,20 @@
                         <option value="oracledb" name="Oracle DB" description="Multi-model database">
                             <output>
                                 <model>
+                                    <value key="readme-description">Helidon MP application that uses the dbclient API with OracleDB database.</value>
+                                    <value key="readme-native-docker">docker run --rm --name xe -p 1521:1521 -p 8888:8080 -e ORACLE_PWD=oracle wnameless/oracle-xe-11g-r2</value>
+                                    <value key="readme-native-url">url: jdbc:oracle:thin:@localhost:1521/XE</value>
+                                    <value key="integration-artifactId">ojdbc</value>
+                                    <value key="db">OracleDB</value>
+                                    <list key="run-comment">
+                                        <value><![CDATA[
+This example requires a oracleDB database, start it using docker:
+
+```
+docker run --rm --name xe -p 1521:1521 -p 8888:8080 -e ORACLE_PWD=oracle wnameless/oracle-xe-11g-r2
+```
+]]></value>
+                                    </list>
                                     <list key="main-persistence-properties">
                                         <map if="${..jpa-impl} == 'hibernate'">
                                             <value key="name">hibernate.dialect</value>
@@ -270,6 +309,9 @@
                         </includes>
                     </templates>
                     <model>
+                        <list key="native-sections" if="${docker}">
+                            <value file="../database/files/README.native.md" if="${docker.native-image}" template="mustache"/>
+                        </list>
                         <value key="database">true</value>
                         <value key="pu-name">${pu-name}</value>
                         <value key="ds-name">${ds-name}</value>

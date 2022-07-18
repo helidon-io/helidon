@@ -37,6 +37,24 @@
                                 description="Expose metrics using the MicroProfile API">
                             <output>
                                 <model>
+                                    <list key="readme-sections">
+                                        <value><![CDATA[
+## Try metrics
+
+```
+# Prometheus Format
+curl -s -X GET http://localhost:8080/metrics
+# TYPE base:gc_g1_young_generation_count gauge
+. . .
+
+# JSON Format
+curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
+{"base":...
+. . .
+```
+
+]]></value>
+                                    </list>
                                     <list key="dependencies">
                                         <map if="${flavor} == 'mp'">
                                             <value key="groupId">org.eclipse.microprofile.metrics</value>
@@ -50,6 +68,12 @@
                                             <value key="groupId">io.helidon.metrics</value>
                                             <value key="artifactId">helidon-metrics</value>
                                         </map>
+                                    </list>
+                                    <list key="Main-helidon-imports">
+                                        <value>io.helidon.metrics.MetricsSupport</value>
+                                    </list>
+                                    <list key="Main-routingBuilder">
+                                        <value><![CDATA[                .register(MetricsSupport.create()) // Metrics at "/metrics"]]></value>
                                     </list>
                                     <list key="SimpleGreetService-imports">
                                         <value if="${flavor} == 'mp'">org.eclipse.microprofile.metrics.MetricUnits</value>
@@ -303,10 +327,16 @@ allRequests_total 0.0
                              optional="true">
                         <output>
                             <model>
-                                <list key="Main-helidon-imports">
+                                <list key="dependencies">
+                                    <map if="${flavor} == 'se' &amp;&amp; !(${metrics.provider} == 'microprofile')">
+                                        <value key="groupId">io.helidon.metrics</value>
+                                        <value key="artifactId">helidon-metrics</value>
+                                    </map>
+                                </list>
+                                <list key="Main-helidon-imports" if="!(${metrics.provider} == 'microprofile')">
                                     <value>io.helidon.metrics.MetricsSupport</value>
                                 </list>
-                                <list key="Main-routingBuilder">
+                                <list key="Main-routingBuilder" if="!(${metrics.provider} == 'microprofile')">
                                     <value><![CDATA[                .register(MetricsSupport.create()) // Metrics at "/metrics"]]></value>
                                 </list>
                                 <list key="MainTest-methods">
@@ -329,7 +359,7 @@ allRequests_total 0.0
         assertThat(response.status().code(), is(200));
     }]]></value>
                                 </list>
-                                <list key="readme-sections">
+                                <list key="readme-sections" if="!(${metrics.provider} == 'microprofile')">
                                     <value><![CDATA[
 ## Try metrics
 
