@@ -37,6 +37,7 @@
             </includes>
         </files>
         <model>
+            <value key="helidon-test">true</value>
             <value key="readme-description">Minimal Helidon MP project suitable to start from scratch.</value>
             <list key="readme-exercise-the-application">
                 <value file="files/README.md"/>
