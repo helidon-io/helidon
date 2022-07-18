@@ -29,6 +29,8 @@ module io.helidon.security.providers.google.login {
     requires io.helidon.security.util;
     requires io.helidon.tracing;
 
+    requires static io.helidon.config.metadata;
+
     exports io.helidon.security.providers.google.login;
 
     provides io.helidon.security.spi.SecurityProviderService with io.helidon.security.providers.google.login.GoogleTokenService;
