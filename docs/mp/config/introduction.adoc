@@ -137,7 +137,7 @@ default properties. Profile properties can be defined using `%profile` prefix, s
 Helidon MicroProfile Config offers the following features on top of the specification:
 
 === Helidon {spec-name} Sources
-Helidon configuration sources can use different formats for the configuration data. You can specify the format on per-source bases, mixing and matching formats as required.
+Helidon configuration sources can use different formats for the configuration data. You can specify the format on a per source bases, mixing and matching formats as required.
 
 The following configuration sources can be used to retrieve the configuration:
 
@@ -213,7 +213,7 @@ client_secret=${CLEAR=known_password}
 You can configure the Config using Helidon MP Config meta configuration feature. The meta-config allows configuration of config sources and other
 configuration options, including addition of discovered sources and converters.
 
-This is a Helidon specific feature available since version 2.3.0. See
+See
  xref:advanced-configuration.adoc#_creating_microprofile_config_sources_from_meta_config[Microprofile Config Sources] for detailed information.
 
 NOTE: For backward compatibility, we will support usage of Helidon SE meta-configuration until version 3.0.0. Using this approach causes behavior that is not compatible with {spec-name} specification.
@@ -224,7 +224,7 @@ Config sources can be configured using the following properties.
 
 The class responsible for configuration is:
 
-include::{rootdir}/includes/config/io.helidon.config.mp.MpConfigBuilder.adoc[leveloffset=-1]
+include::{rootdir}/config/io_helidon_config_mp_MpConfigBuilder.adoc[leveloffset=-1]
 
 Current properties may be set in `application.yaml` or in `microprofile-config.properties` with `mp.config` prefix.
 
@@ -236,7 +236,7 @@ See xref:#Config-Profiles[Config Profiles] for more information.
 ====
 [CARD]
 .MP Config Guide
-[link={rootdir}/mp/guides/config.adoc]
+[xref={rootdir}/mp/guides/config.adoc]
 --
 Step-by-step guide about using {spec-name} in your Helidon MP application.
 --

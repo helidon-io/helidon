@@ -325,8 +325,7 @@ other config topics.
 |===
 | Topic |Documentation
 
-| Where config comes from |xref:#config_sources[Config sources],xref:config-profiles.adoc[Config Profiles],
-xref:advanced-configuration.adoc#Config-Advanced-metaconfig[meta-configuration]
+| Where config comes from |xref:#config_sources[Config sources],xref:config-profiles.adoc[Config Profiles]
 | What format config data is expressed in |xref:#parsers[Config parsers],
 xref:supported-formats.adoc[supported formats]
 | How to filter, override, and dereference values |xref:advanced-configuration.adoc#filters-and-overrides[Filters and overrides]

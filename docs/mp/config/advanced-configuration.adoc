@@ -29,7 +29,7 @@ include::{rootdir}/includes/mp.adoc[]
 - <<Creating MicroProfile Config Sources for Manual Setup of Config>>
 - <<Creating Custom Config Sources>>
 - <<Creating MicroProfile Config Sources from meta-config>>
-- <<Extending meta-config to create a custom config source type>>
+- <<Extending Meta-Config to Create a Custom Config Source Type>>
 - <<Creating MicroProfile Config Source from Helidon SE Config Source>>
 - <<Creating MicroProfile Config Source from Helidon SE Config Instance>>
 
@@ -77,9 +77,9 @@ resolver.registerConfig(config, null); <5>
 <4> Builds the MicroProfile Config Source.
 <5> Registers the config, so it can be used by other components
 
-=== Create Yaml MicroProfile Config Source
+=== Create YAML MicroProfile Config Source
 
-You can create Yaml Microprofile Config Source from a path or a URL. When you create a MicroProfile instance from the builder,
+You can create YAML Microprofile Config Source from a path or a URL. When you create a MicroProfile instance from the builder,
 the `YamlMpConfigSource` allows you to create a custom Config Source and register
 it with the builder.
 
@@ -205,7 +205,7 @@ sources:
         </dependency>
 ----
 
-== Extending meta-config to create a custom config source type
+== Extending Meta-Config to Create a Custom Config Source Type
 
 Helidon meta-config by default supports the following types: environment-variables, system-properties, properties, yaml, hocon and json. Users can also extend meta-config to create a custom config source type by loading it using the Java Service Loader pattern. This is achieved  by implementing `io.helidon.config.mp.spi.MpMetaConfigProvider` SPI and registering it as a service (Using `META-INF/services/${class-name}` file when using classpath, or using the `provides` statement in `module-info.java` when using module path).
 
@@ -271,7 +271,7 @@ public class CustomMpMetaConfigProvider implements MpMetaConfigProvider {
 <3> Method to parse config source from a specified `path`
 <4> Processes config source from classpath location if `classpath` is provided.
 <5> Method to parse config source from a specified `classpath`
-<6> Processes config source from url location if `location` is provided.
+<6> Processes config source from URL location if `location` is provided.
 <7> Method to parse config source from a specified `url`
 <8> Returns an empty result if set to `optional` and config source is not found.
 <9> Throws a ConfigException if not set to `optional` and config source is not found.
