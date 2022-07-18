@@ -16,6 +16,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
+
 = Oracle Cloud Infrastructure Integration
 :description: Helidon OCI Integration
 :keywords: oci, cdi
@@ -23,6 +24,16 @@
 :rootdir: {docdir}/../..
 
 include::{rootdir}/includes/mp.adoc[]
+
+== ToC
+
+- <<Overview, Overview>>
+- <<Maven-Coordinates, Maven Coordinates>>
+- <<Usage, Usage>>
+- <<Examples, Examples>>
+- <<Reference, Reference>>
+
+== Overview
 
 Helidon MP OCI Integration provides easy access to Oracle Cloud Infrastructure using the OCI Java SDK.
 
@@ -36,24 +47,24 @@ include::{rootdir}/includes/dependencies.adoc[]
 </dependency>
 ----
 
-== The Helidon OCI SDK Extension
+== Usage
 
-When added to your application this link:{jakarta-cdi-spec-url}#spi[CDI portable extension] provides support for
+When added to your application Helidon OCI SDK link:{jakarta-cdi-spec-url}#spi[CDI portable extension] provides support for
 injecting link:{oci-javasdk-url}[Oracle Cloud Infrastructure SDK Clients] in your Helidon MicroProfile application.
 
 The extension also handles authenticating with OCI by automatically picking up OCI credentials from your environment.
 
-== Configuring the Helidon OCI SDK Extension
+=== Configuring the Helidon OCI SDK Extension
 
 When you inject an OCI SDK Client object, the Helidon OCI SDK extension
 configures and constructs the object for you. The configuration primarily
-consists of initializing an OCI `AuthenticationDetailsProvider`. By default
+consists of initializing an OCI `AuthenticationDetailsProvider`. By default,
 the extension will examine your environment and select the best
 `AuthenticationDetailsProvider` and configure it for you.
 
 This means if your environment is already set up to work with the OCI SDK or
 the OCI command line, then it is very likely you do not need to do any additional
-configuration of the extension. Just add it as a dependency and it will self-configure.
+configuration of the extension. Just add it as a dependency, and it will self-configure.
 
 If for some reason you require full control over the OCI configuration you have
 that as well. For more information concerning the extension and its configuration
@@ -62,7 +73,7 @@ link:{integration-oci-sdk-cdi-javadoc-base-url}/io/helidon/integrations/oci/sdk/
 javadocs. In particular the `oci.auth-strategies` property lets you control which
 `AuthenticationDetailsProvider` will be used.
 
-== Accessing OCI Services
+=== Accessing OCI Services
 
 Since the Helidon OCI SDK extension supports injecting any OCI client
 from the OCI SDK, you can use it to access any OCI service supported by the
@@ -74,9 +85,57 @@ You will also need to configure your environment to authenticate with OCI.
 It is recommended that you do this first, and verify your configuration
 by using the link:{oci-javasdk-url}[OCI CLI] to access the service.
 
-The following documentation will help you get started with some
-common OCI Services:
+== Examples
 
-- xref:object-storage.adoc[OCI Object Storage]
-- xref:vault.adoc[OCI Vault]
-- xref:atp.adoc[OCI ATP]
+This example describes how to use Helidon OCI SDK Extension to access OCI Object Storage.
+
+As mentioned above in xref:#_accessing_oci_services[], you need to add a dependency on the OCI SDK
+Object Storage API:
+
+[source,xml]
+----
+<dependency>
+    <groupId>com.oracle.oci.sdk</groupId>
+    <artifactId>oci-java-sdk-objectstorage</artifactId>
+</dependency>
+----
+
+=== Injecting an Object Storage Client
+
+Now you can inject OCI SDK Clients.
+
+[source,java]
+.Field-injection example
+----
+@Inject
+private ObjectStorage client;
+----
+
+[source,java]
+.Constructor-injection example
+----
+public class MyClass {
+
+    private final ObjectStorage client;
+
+    @Inject
+    public YourConstructor(@Named("orders") ObjectStorage client) {
+        this.client = client;
+    }
+}
+----
+
+The extension implements this injection point by creating an Object Storage client
+object in the link:{jakarta-inject-javadoc-url}/jakarta/inject/Singleton.html[singleton scope].
+
+=== Using the Object Storage client
+
+Once you have injected an ObjectStorage client you can use it as described in:
+
+* link:{oci-javasdk-objstore-javadoc-base-url}/package-summary.html[OCI SDK Object Storage Javadocs]
+* link:{oci-objstore-url}[OCI Object Storage Overview]
+
+== References
+
+* link:{integration-oci-sdk-cdi-javadoc-base-url}/io/helidon/integrations/oci/sdk/cdi/OciExtension.html[OciExtension] Javadocs
+* link:{helidon-github-tree-url}/examples/integrations/oci[OCI SDK Usage Examples]
