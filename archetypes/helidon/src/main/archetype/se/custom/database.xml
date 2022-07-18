@@ -290,7 +290,7 @@ docker run --rm --name mongo -p 27017:27017 mongo
                         </includes>
                     </templates>
                     <model>
-                        <list key="native-sections">
+                        <list key="native-sections" if="${docker}">
                             <value file="../database/files/README.native.md" if="${docker.native-image} &amp;&amp; ${server} != 'mongodb'" template="mustache"/>
                         </list>
                         <list key="dependencies">

@@ -309,7 +309,7 @@ docker run --rm --name xe -p 1521:1521 -p 8888:8080 -e ORACLE_PWD=oracle wnamele
                         </includes>
                     </templates>
                     <model>
-                        <list key="native-sections">
+                        <list key="native-sections" if="${docker}">
                             <value file="../database/files/README.native.md" if="${docker.native-image}" template="mustache"/>
                         </list>
                         <value key="database">true</value>
