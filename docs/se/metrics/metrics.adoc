@@ -36,20 +36,25 @@ include::{rootdir}/includes/se.adoc[]
 
 == Overview
 Helidon SE metrics is inspired by--but does not fully implement--the MicroProfile Metrics specification.
-In particular, Helidon metrics furnishes
+In particular, the Helidon metrics subsystem furnishes
 include::{rootdir}/includes/metrics/metrics-shared.adoc[tag=overview]
 
-
-
+// Maven coordinates comes next
 include::{rootdir}/includes/dependencies.adoc[]
 
+.Packaging full-featured metrics
 [source,xml]
 ----
 <dependency>
-    <groupId>io.helidon.metrics.api</groupId>
+    <groupId>io.helidon.metrics</groupId>
     <artifactId>helidon-metrics</artifactId>
 </dependency>
 ----
+
+Adding this dependency packages the full-featured metrics implementation with your service.
+
+=== Other packaging options
+Helidon gives you flexibility in how you make metrics available to your service. xref:{rootdir}/se/metrics/metrics-capable-components.adoc[This document] explains your options.
 
 == Usage
 
@@ -177,7 +182,7 @@ To use it, your service registers Prometheus support with your routing set-up.
 You can customize its configuration. For information about using Prometheus, see the
 Prometheus documentation: https://prometheus.io/docs/introduction/overview/.
 
-NOTE: Helidon's fully-functional, built-in metrics implementation supports Prometheus (OpenMetrics) output. Use this optional support only if you want to use the Prometheus API from your application code.
+NOTE: Helidon's fully-functional, built-in metrics implementation supports Prometheus (OpenMetrics) output. Use the optional support described in _this_ section only if you want to use the Prometheus _API_ from your application code.
 
 [#prom-maven-coordinates]
 ==== Maven Coordinates

@@ -60,14 +60,13 @@ include::{rootdir}/includes/dependencies.adoc[]
 </dependency>
 ----
 
-Also, include the Helidon integration module for a tracing implementation, see
+Also, include the Helidon integration module for a tracing implementation (such as
 ifdef::se-flavor[]
-xref:{rootdir}/se/tracing.adoc#zipkin-tracing[Helidon Zipkin]
+xref:{rootdir}/se/tracing.adoc#zipkin-tracing[Helidon Zipkin])
 endif::[]
 ifdef::mp-flavor[]
-xref:{rootdir}/mp/tracing.adoc#zipkin-tracing[Helidon Zipkin]:
+xref:{rootdir}/mp/tracing.adoc#zipkin-tracing[Helidon Zipkin])
 endif::[]
-support:
 include::{rootdir}/includes/tracing/tracer-zipkin.adoc[tag=zipkin-dependency]
 
 Add the Helidon tracing component itself:
