@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,8 @@ import io.helidon.common.context.Contexts;
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.Grant;
 import io.helidon.security.ProviderRequest;
@@ -39,6 +41,7 @@ import io.helidon.security.integration.common.SecurityTracing;
 import io.helidon.security.providers.common.EvictableCache;
 import io.helidon.security.providers.oidc.common.OidcConfig;
 import io.helidon.security.spi.SecurityProvider;
+import io.helidon.security.spi.SubjectMappingProvider;
 import io.helidon.security.util.TokenHandler;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientRequestBuilder;
@@ -336,6 +339,9 @@ public class IdcsMtRoleMapperRxProvider extends IdcsRoleMapperRxProviderBase {
      *
      * @param <B> type of a descendant of this builder
      */
+    @Configured(prefix = IdcsRoleMapperProviderService.PROVIDER_CONFIG_KEY,
+                description = "Multitenant IDCS role mapping provider",
+                provides = {SecurityProvider.class, SubjectMappingProvider.class})
     public static class Builder<B extends Builder<B>>
             extends IdcsRoleMapperRxProviderBase.Builder<Builder<B>>
             implements io.helidon.common.Builder<Builder<B>, IdcsMtRoleMapperRxProvider> {
@@ -379,6 +385,7 @@ public class IdcsMtRoleMapperRxProvider extends IdcsRoleMapperRxProviderBase {
          * @param idcsAppNameTokenHandler new token handler to extract IDCS application name
          * @return updated builder instance
          */
+        @ConfiguredOption(key = "idcs-app-name-handler")
         public B idcsAppNameTokenHandler(TokenHandler idcsAppNameTokenHandler) {
             this.idcsAppNameTokenHandler = idcsAppNameTokenHandler;
             return me;
@@ -391,7 +398,7 @@ public class IdcsMtRoleMapperRxProvider extends IdcsRoleMapperRxProviderBase {
          * @param idcsTenantTokenHandler new token handler to extract IDCS tenant ID
          * @return updated builder instance
          */
-
+        @ConfiguredOption(key = "idcs-tenant-handler")
         public B idcsTenantTokenHandler(TokenHandler idcsTenantTokenHandler) {
             this.idcsTenantTokenHandler = idcsTenantTokenHandler;
             return me;
@@ -414,6 +421,7 @@ public class IdcsMtRoleMapperRxProvider extends IdcsRoleMapperRxProviderBase {
          * @param roleCache cache to use
          * @return updated builder instance
          */
+        @ConfiguredOption(key = "cache-config", type = EvictableCache.class)
         public B cache(EvictableCache<MtCacheKey, List<Grant>> roleCache) {
             this.cache = roleCache;
             return me;
