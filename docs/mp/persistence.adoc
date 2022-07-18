@@ -77,13 +77,13 @@ below.
 
 Helidon MP's named data source integration allows you to safely inject
 managed
-https://docs.oracle.com/en/java/javase/17/docs/api/java.sql/javax/sql/DataSource.html[`javax.sql.DataSource`]
+link:{jdk-javadoc-url}/java.sql/javax/sql/DataSource.html[`javax.sql.DataSource`]
 instances that are annotated with
-https://jakarta.ee/specifications/dependency-injection/2.0/apidocs/jakarta/inject/named[`jakarta.inject.Named`
+link:{jakarta-inject-javadoc-url}/jakarta/inject/named[`jakarta.inject.Named`
 annotations] into your Helidon MP application.
-https://docs.oracle.com/en/java/javase/17/docs/api/java.sql/java/sql/Connection.html[`java.sql.Connection`
+link:{jdk-javadoc-url}/java.sql/java/sql/Connection.html[`java.sql.Connection`
 objects]
-https://docs.oracle.com/en/java/javase/17/docs/api/java.sql/javax/sql/DataSource.html#getConnection()[acquired]
+link:{jdk-javadoc-url}/java.sql/javax/sql/DataSource.html#getConnection()[acquired]
 from these data sources will be pooled by your choice of one of two
 possible connection pool implementations.
 
@@ -111,8 +111,8 @@ pools:
 
 1. https://github.com/brettwooldridge/HikariCP[HikariCP]
 
-2. https://docs.oracle.com/en/database/oracle/oracle-database/21/jjucp/index.html[Oracle
-   Universal Connection Pool]
+2. link:{oracle-ucp-doc-base-url}index.html[Oracle Universal
+   Connection Pool]
 
 You can choose to use either, but not both.
 
@@ -146,8 +146,7 @@ managed]
 
 ====== Maven Coordinates (Oracle Universal Connection Pool) [[DS-UCP-Maven-Coordinates]]
 
-To include the
-https://docs.oracle.com/en/database/oracle/oracle-database/21/jjucp/index.html[Oracle
+To include the link:{oracle-ucp-doc-base-url}index.html[Oracle
 Universal Connection Pool] in your Helidon MP application:
 
 * xref:../about/managing-dependencies.adoc[Ensure your dependencies are
@@ -185,8 +184,8 @@ element describing your JDBC driver classes is present as a child
 element of your project's `pom.xml` file's `<dependencies>` element.
 
 See the
-https://docs.oracle.com/en/java/javase/17/docs/api/java.sql/java/sql/package-summary.html[JDBC
-4.3 Specification] for more information about JDBC.
+link:{jdk-javadoc-url}/java.sql/java/sql/package-summary.html[JDBC 4.3
+Specification] for more information about JDBC.
 
 Representative setups are described below.  The list of such setups is
 not exhaustive.
@@ -221,11 +220,10 @@ managed]
 
 ====== Maven Coordinates (Oracle JDBC) [[DS-Oracle-Driver-Maven-Coordinates]]
 
-To include the
-https://docs.oracle.com/en/database/oracle/oracle-database/21/jajdb/index.html[Oracle
+To include the link:{oracle-jdbc-javadoc-base-url}/index.html[Oracle
 JDBC driver classes] in your Helidon MP application so your
 application can
-https://docs.oracle.com/en/database/oracle/oracle-database/21/jjdbc/data-sources-and-URLs.html#GUID-EF07727C-50AB-4DCE-8EDC-57F0927FF61A[connect
+link:{oracle-jdbc-doc-base-url}/data-sources-and-URLs.html#GUID-EF07727C-50AB-4DCE-8EDC-57F0927FF61A[connect
 to an Oracle database]:
 
 * xref:../about/managing-dependencies.adoc[Ensure your dependencies are
@@ -242,30 +240,19 @@ managed]
 [source,xml]
 ----
 <dependency>
-    <!--
-         See
-         https://www.oracle.com/database/technologies/maven-central-guide.html
-         for more details.
-     -->
-    <groupId>com.oracle.database.jdbc</groupId>
-    <!--
-         Why ojdbc11? What does 11 mean? This is because:
-         (a) Helidon 3.x targets Java 17
-         (b) Java 17 includes JDBC 4.3
-         (c) ojdbc11 implements relevant parts of JDBC 4.3
-         Please see
-         https://www.oracle.com/database/technologies/maven-central-guide.html
-         for more details.
-    -->
-    <artifactId>ojdbc11</artifactId> <!--1-->
-    <scope>runtime</scope> <!--2-->
+    <groupId>com.oracle.database.jdbc</groupId> <!--1-->
+    <artifactId>ojdbc11</artifactId> <!--2-->
+    <scope>runtime</scope> <!--3-->
 </dependency>
 ----
-<1> The `ojdbc11` artifact
+<1> See
+    https://www.oracle.com/database/technologies/maven-central-guide.html[[Developer's
+    Guide For Oracle JDBC 21c on Maven Central] for more details.
+<2> The `ojdbc11` artifact
     https://www.oracle.com/database/technologies/maven-central-guide.html#:~:text=ojdbc11.jar,JDK14%20and%20JDK15[implements
     relevant parts of the JDBC 4.3 specification], which forms part of
     Java 17, which is the Java version targeted by Helidon 3.
-<2> The `scope` is `runtime`, indicating that the Oracle
+<3> The `scope` is `runtime`, indicating that the Oracle
     JDBC driver classes will be available on the runtime classpath.
 
 === Configuration [[DS-Configuration]]
@@ -394,7 +381,7 @@ java \
 Here is an example of some named data source configuration using
 environment variables as typed directly into a command line shell,
 relying on
-https://github.com/eclipse/microprofile-config/blob/master/spec/src/main/asciidoc/configsources.asciidoc#environment-variables-mapping-rules[MicroProfile
+link:{microprofile-config-javadoc-url}/org/eclipse/microprofile/config/spi/ConfigSource.html#default_config_sources[MicroProfile
 Config's mapping rules], since many shells will not understand
 environment variable names with periods (.)  in them:
 
@@ -411,7 +398,7 @@ Here is an example of some named data source configuration using
 environment variables as supplied via the
 https://www.gnu.org/software/coreutils/manual/html_node/env-invocation.html[`env`
 shell command], thus removing the need for
-https://github.com/eclipse/microprofile-config/blob/master/spec/src/main/asciidoc/configsources.asciidoc#environment-variables-mapping-rules[MicroProfile
+link:{microprofile-config-javadoc-url}/org/eclipse/microprofile/config/spi/ConfigSource.html#default_config_sources[MicroProfile
 Config's mapping rules]:
 
 [source,shell]
@@ -446,7 +433,7 @@ This example presumes you have:
 
 This example, in Java properties file format, configures an Oracle
 Universal Connection Pool-managed data source named `main` to
-https://docs.oracle.com/en/database/oracle/oracle-database/21/jjdbc/data-sources-and-URLs.html#GUID-C4F2CA86-0F68-400C-95DA-30171C9FB8F0[connect
+link:{oracle-jdbc-doc-base-url}/data-sources-and-URLs.html#GUID-C4F2CA86-0F68-400C-95DA-30171C9FB8F0[connect
 to an Oracle Database] on `localhost` port `1521`, using the
 `oracle.jdbc.poolOracleDataSource` vendor-supplied `DataSource`, with
 a service name of `XE`, a `user` of `scott`, and a `password` of
@@ -454,39 +441,42 @@ a service name of `XE`, a `user` of `scott`, and a `password` of
 
 [source,properties]
 ----
-# (Why "connectionFactoryClassName"? See
-# https://docs.oracle.com/en/database/oracle/oracle-database/21/jjuar/oracle/ucp/jdbc/PoolDataSourceImpl.html#setConnectionFactoryClassName_java_lang_String_)
-javax.sql.DataSource.main.connectionFactoryClassName = oracle.jdbc.pool.OracleDataSource
-javax.sql.DataSource.main.url = jdbc:oracle:thin://@localhost:1521/XE # see https://docs.oracle.com/en/database/oracle/oracle-database/21/jjdbc/data-sources-and-URLs.html#GUID-EF07727C-50AB-4DCE-8EDC-57F0927FF61A
+javax.sql.DataSource.main.connectionFactoryClassName = oracle.jdbc.pool.OracleDataSource # <1>
+javax.sql.DataSource.main.url = jdbc:oracle:thin://@localhost:1521/XE # <2>
 javax.sql.DataSource.main.user = scott
 javax.sql.DataSource.main.password = tiger
 ----
+<1> Why `connectionFactoryClassName`? See
+    link:{oracle-ucp-javadoc-base-url}oracle/ucp/jdbc/PoolDataSourceImpl.html#setConnectionFactoryClassName_java_lang_String_)[`PoolDataSourceImpl#setConnectionFactoryClassName(String)`].
+<2> See
+    link:{oracle-jdbc-doc-base-url}/data-sources-and-URLs.html#GUID-EF07727C-50AB-4DCE-8EDC-57F0927FF61A[Thin-style
+    Service Name Syntax].
 
 In general, the properties that can be set on the Oracle Universal
 Connection Pool can be inferred from the "setter" methods found in
-https://docs.oracle.com/en/database/oracle/oracle-database/21/jjuar/oracle/ucp/jdbc/PoolDataSourceImpl.html[the
+link:{oracle-ucp-javadoc-base-url}oracle/ucp/jdbc/PoolDataSourceImpl.html[the
 javadoc for the `PoolDataSourceImpl` class].
 
 In general, the properties that can be set on the
-https://docs.oracle.com/en/database/oracle/oracle-database/21/jajdb/oracle/jdbc/pool/OracleDataSource.html[`oracle.jdbc.pool.OracleDataSource`]
+link:{oracle-jdbc-javadoc-base-url}/oracle/jdbc/pool/OracleDataSource.html[`oracle.jdbc.pool.OracleDataSource`]
 `DataSource` implementation can be inferred from the "setter" methods
 found in
-https://docs.oracle.com/en/database/oracle/oracle-database/21/jajdb/oracle/jdbc/pool/OracleDataSource.html[its
+link:{oracle-jdbc-javadoc-base-url}/oracle/jdbc/pool/OracleDataSource.html[its
 javadoc].
 
-NOTE: https://github.com/brettwooldridge/HikariCP/blob/HikariCP-5.0.1/src/main/java/com/zaxxer/hikari/util/PropertyElf.java#L46-L53[Unlike
+NOTE: link:{hikaricp-base-url}/src/main/java/com/zaxxer/hikari/util/PropertyElf.java#L46-L53[Unlike
 HikariCP], the Oracle Universal Connection Pool does not distinguish
 cleanly between configuration properties that affect _its_ behavior
 and those that affect the behavior of the vendor-supplied `DataSource`
 implementation whose connections it pools.  For example, in the
 example above it is not possible to tell that
-https://docs.oracle.com/en/database/oracle/oracle-database/21/jjuar/oracle/ucp/jdbc/PoolDataSourceImpl.html#setConnectionFactoryClassName_java_lang_String_[`connectionFactoryClassName`
+link:{oracle-ucp-javadoc-base-url}oracle/ucp/jdbc/PoolDataSourceImpl.html#setConnectionFactoryClassName_java_lang_String_[`connectionFactoryClassName`
 is a property of the Oracle Universal Connection Pool], and
-https://docs.oracle.com/en/database/oracle/oracle-database/21/jajdb/oracle/jdbc/datasource/impl/OracleDataSource.html#setUser_java_lang_String_[`user`
+link:{oracle-jdbc-javadoc-base-url}/oracle/jdbc/datasource/impl/OracleDataSource.html#setUser_java_lang_String_[`user`
 is a property of the `oracle.jdbc.pool.OracleDataSource` `DataSource`
 implementation].  In some cases, the Oracle Universal Connection Pool
 will
-https://docs.oracle.com/en/database/oracle/oracle-database/21/jjuar/oracle/ucp/jdbc/PoolDataSource.html#setUser_java_lang_String_[set
+link:{oracle-ucp-javadoc-base-url}oracle/ucp/jdbc/PoolDataSource.html#setUser_java_lang_String_[set
 the given property on _both_ the connection pool itself _and_ on the
 vendor-supplied `DataSource` it manages].
 
@@ -505,21 +495,27 @@ password:
 
 [source,properties]
 ----
-# Why "dataSourceClassName"? See
-# https://github.com/brettwooldridge/HikariCP#essentials
-javax.sql.DataSource.test.dataSourceClassName = org.h2.jdbcx.JdbcDataSource
-# Why "dataSource."? See
-# https://github.com/brettwooldridge/HikariCP/blob/HikariCP-5.0.1/src/main/java/com/zaxxer/hikari/util/PropertyElf.java#L47-L49
-javax.sql.DataSource.test.dataSource.url = jdbc:h2:mem:unit-testing;DB_CLOSE_DELAY=-1 # see http://www.h2database.com/html/features.html#database_url
+javax.sql.DataSource.test.dataSourceClassName = org.h2.jdbcx.JdbcDataSource # <1>
+javax.sql.DataSource.test.dataSource.url = jdbc:h2:mem:unit-testing;DB_CLOSE_DELAY=-1 # <2> <3>
 javax.sql.DataSource.test.dataSource.user = sa
 javax.sql.DataSource.test.dataSource.password =
 ----
+<1> Why `dataSourceClassName`? See
+    https://github.com/brettwooldridge/HikariCP#essentials[HikariCP's
+    configuration documentation] for information about how HikariCP
+    separates configuration of the connection pool itself from
+    configuration of the vendor-supplied `DataSource`.
+<2> Why `dataSource.`? See
+    link:{hikaricp-base-url}/src/main/java/com/zaxxer/hikari/util.PropertyElf.java#L47-49[`PropertyElf.java`,
+    lines 47–49].
+<3> See https://www.h2database.com/html/features.html#database_url[the
+    H2 database's documentation about its URL format].
 
 HikariCP's configuration properties are described
 https://github.com/brettwooldridge/HikariCP#gear-configuration-knobs-baby[on
 its Github repository].  Properties that should be forwarded on to the
 vendor-supplied `DataSource`
-https://github.com/brettwooldridge/HikariCP/blob/HikariCP-5.0.1/src/main/java/com/zaxxer/hikari/util/PropertyElf.java#L46-L53[are
+link:{hikaricp-base-url}/src/main/java/com/zaxxer/hikari/util/PropertyElf.java#L46-L53[are
 prefixed with `dataSource.`] as seen in the example above.
 
 In general, the properties that can be set on the
@@ -538,12 +534,12 @@ connection pool.
 To use Helidon MP's named data source integration in your application,
 once it has been <<DS-Setup,set up>> and
 <<DS-Configuration,configured>>, create an ordinary
-https://docs.oracle.com/en/java/javase/17/docs/api/java.sql/javax/sql/DataSource.html[`DataSource`]-typed
+link:{jdk-javadoc-url}/java.sql/javax/sql/DataSource.html[`DataSource`]-typed
 injection point in a
 https://github.com/oracle/helidon/wiki/FAQ#how-do-i-make-a-class-a-cdi-bean[Java
 class representing a CDI bean] somewhere in your application,
-https://jakarta.ee/specifications/dependency-injection/2.0/apidocs/jakarta/inject/named[annotated
-with the name] of the data source you wish to use.
+link:{jakarta-inject-javadoc-url}/jakarta/inject/named[annotated with
+the name] of the data source you wish to use.
 
 Here is how to define such a field-backed injection point:
 
@@ -560,17 +556,16 @@ import jakarta.inject.Named;
 @Named("test") // <2>
 private DataSource ds; // <3>
 ----
-<1> https://jakarta.ee/specifications/dependency-injection/2.0/apidocs/jakarta/inject/inject[`@Inject`]
+<1> link:{jakarta-inject-javadoc-url}/jakarta/inject/inject[`@Inject`]
     marks the field as an injection point.  Its behavior is defined by
-    the
-    https://jakarta.ee/specifications/dependency-injection/2.0/[Jakarta
-    Dependency Injection specification].
-<2> https://jakarta.ee/specifications/dependency-injection/2.0/apidocs/jakarta/inject/named[`@Named("test")`]
+    the link:{jakarta-inject-spec-url}[Jakarta Dependency Injection
+    specification].
+<2> link:{jakarta-inject-javadoc-url}/jakarta/inject/named[`@Named("test")`]
     says to use the data source named `test` (as declared by the
     <<DS-Configuration-Prefixes, _datasourcename_ portion>> of a named
     data source configuration property).
 <3> The field injection point has a type of
-    https://docs.oracle.com/en/java/javase/17/docs/api/java.sql/javax/sql/DataSource.html[`javax.sql.DataSource`],
+    link:{jdk-javadoc-url}/java.sql/javax/sql/DataSource.html[`javax.sql.DataSource`],
     and the field itselfmay be named anything you like.
 
 Here is how to define such a constructor parameter injection point:
@@ -592,18 +587,19 @@ public SomeObject(@Named("test") DataSource ds) { // <3>
 }
 ----
 <1> This is the field whose value will be set in the constructor.
-<2> https://jakarta.ee/specifications/dependency-injection/2.0/apidocs/jakarta/inject/inject[`@Inject`]
+<2> link:{jakarta-inject-javadoc-url}/jakarta/inject/inject[`@Inject`]
     marks the constructor as one containing parameter injection
     points.  Its behavior is defined by the
-    https://jakarta.ee/specifications/dependency-injection/2.0/[Jakarta
-    Dependency Injection specification].
-<3> https://jakarta.ee/specifications/dependency-injection/2.0/apidocs/jakarta/inject/named[`@Named("test")`]
+    link:{jakarta-inject-spec-url}[Jakarta Dependency Injection
+    specification].
+<3> link:{jakarta-inject-javadoc-url}/jakarta/inject/named[`@Named("test")`]
     says to use the data source named `test` (as declared by the
     <<DS-Configuration-Prefixes, _datasourcename_ portion>> of a named
     data source configuration property).  The parameter injection
     point has a type of
-    https://docs.oracle.com/en/java/javase/17/docs/api/java.sql/javax/sql/DataSource.html[`javax.sql.DataSource`],
+    link:{jdk-javadoc-url}/java.sql/javax/sql/DataSource.html[`javax.sql.DataSource`],
     and the parameter itself may be named anything you like.
+
 <4> The injected argument will never be `null`.
 
 == Jakarta Transactions (JTA) Integration [[JTA]]
@@ -612,10 +608,9 @@ public SomeObject(@Named("test") DataSource ds) { // <3>
 
 Helidon MP's Jakarta Transactions integration integrates the
 https://www.narayana.io/[Naryana transaction engine], an
-implementation of the
-https://jakarta.ee/specifications/transactions/2.0/[Jakarta
+implementation of the link:{jakarta-transactions-base-url}/[Jakarta
 Transactions Specification], into Helidon MP.  It lets you use
-https://jakarta.ee/specifications/transactions/2.0/apidocs/jakarta/transaction/transactional[`@jakarta.transaction.Transactional`]
+link:{jakarta-transactions-javadoc-url}/jakarta/transaction/transactional[`@jakarta.transaction.Transactional`]
 to declare JTA transactions in your Java code.
 
 === Maven Coordinates (JTA) [[JTA-Maven-Coordinates]]
@@ -642,7 +637,7 @@ managed]
 </dependency>
 ----
 <1> The `scope` is `provided`, which ensures that the
-    https://jakarta.ee/specifications/transactions/2.0/apidocs/jakarta/transaction/transactional[JTA
+    link:{jakarta-transactions-javadoc-url}/jakarta/transaction/transactional[JTA
     classes required for compilation] are available at compile time.
 <2> The implementation of these API classes (provided by
     https://narayana.io/[Narayana]) will be available at runtime.
@@ -675,8 +670,7 @@ system property to the full path of a writeable directory:
 java -DObjectStoreEnvironmentBean.objectStoreDir=/var/tmp # ...
 ----
 
-See
-https://www.narayana.io//docs/project/index.html#d0e4013[Specifying
+See https://www.narayana.io/docs/project/index.html#d0e4013[Specifying
 the object store location] for more information.
 
 ==== Configuring the Default Transaction Manager Timeout
@@ -699,7 +693,9 @@ Properties] in the Naryana documentation.
 === Usage [[JTA-Usage]]
 
 To use Helidon MP's Jakarta Transactions integration, annotate a
-method with the https://jakarta.ee/specifications/transactions/2.0/apidocs/jakarta/transaction/transactional[`jakarta.transaction.Transactional`] annotation:
+method with the
+link:{jakarta-transactions-javadoc-url}/jakarta/transaction/transactional[`jakarta.transaction.Transactional`]
+annotation:
 
 [source,java]
 ----
@@ -713,38 +709,36 @@ public String getGreeting(Integer id) {
 }
 ----
 <1> The
-    https://jakarta.ee/specifications/transactions/2.0/apidocs/jakarta/transaction/transactional[`@Transactional`
+    link:{jakarta-transactions-javadoc-url}/jakarta/transaction/transactional[`@Transactional`
     annotation] indicates that this method should be invoked in the
     scope of a JTA transaction.  **The object on which the method is
     invoked must be one that Helidon MP's CDI container has created**,
     i.e. it must be managed.
-    (https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0.html#implementation[CDI
-    beans are managed], as are
-    https://jakarta.ee/specifications/restful-ws/3.1/jakarta-restful-ws-spec-3.1.html#resource-classes[Jakarta
-    RESTful Web Services resource classes].)
+    (link:{jakarta-cdi-spec-url}#implementation[CDI beans are
+    managed], as are
+    link:{jakarta-jaxrs-spec-url}#resource-classes[Jakarta RESTful Web
+    Services resource classes].)
 <2> For
-    https://jakarta.ee/specifications/transactions/2.0/apidocs/jakarta/transaction/transactional[`@Transactional`]
+    link:{jakarta-transactions-javadoc-url}/jakarta/transaction/transactional[`@Transactional`]
     to have any effect, whatever is used inside the method must be
-    JTA-aware (such as a
-    https://jakarta.ee/specifications/persistence/3.0/[Jakarta
+    JTA-aware (such as a link:{jakarta-persistence-base-url}/[Jakarta
     Persistence] object like a managed
-    https://jakarta.ee/specifications/persistence/3.0/apidocs/jakarta.persistence/jakarta/persistence/entitymanager[`EntityManager`]).
+    link:{jakarta-persistence-javadoc-url}/jakarta.persistence/jakarta/persistence/entitymanager[`EntityManager`]).
 
 == Jakarta Persistence (JPA) [[JPA]]
 
 === Overview
 
-Helidon MP's
-https://jakarta.ee/specifications/persistence/3.0/[Jakarta
-Persistence] integration allows you to interact with Jakarta
-Persistence (JPA) objects as if your code were running in an
-application server, handling automatic creation and management of
-objects such as `EntityManager` and `EntityManagerFactory` instances.
+Helidon MP's link:{jakarta-persistence-base-url}/[Jakarta Persistence]
+integration allows you to interact with Jakarta Persistence (JPA)
+objects as if your code were running in an application server,
+handling automatic creation and management of objects such as
+`EntityManager` and `EntityManagerFactory` instances.
 
 More pragmatically, it allows you to inject managed
-https://jakarta.ee/specifications/persistence/3.0/apidocs/jakarta.persistence/jakarta/persistence/entitymanager[`EntityManager`]
+link:{jakarta-persistence-javadoc-url}/jakarta.persistence/jakarta/persistence/entitymanager[`EntityManager`]
 instances using the
-https://jakarta.ee/specifications/persistence/3.0/apidocs/jakarta.persistence/jakarta/persistence/persistencecontext[`@PersistenceContext`]
+link:{jakarta-persistence-javadoc-url}/jakarta.persistence/jakarta/persistence/persistencecontext[`@PersistenceContext`]
 annotation.
 
 Jakarta Persistence is a Jakarta EE specification that describes,
@@ -773,7 +767,7 @@ container-managed mode of JPA exclusively.**
 Helidon MP's Jakarta Persistence integration comes with support for
 two JPA implementations, known as _JPA providers_:
 
-1. https://hibernate.org/orm/documentation/6.1/[Hibernate ORM]
+1. link:{hibernate-doc-base-url}[Hibernate ORM]
 
 2. https://www.eclipse.org/eclipselink/documentation/[Eclipselink]
 
@@ -813,8 +807,7 @@ application to work with your chosen JPA provider, you must:
 3. Include the proper Jakarta Persistence-related dependencies
 
 4. Set up your project to generate and compile the
-   https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0.html#a6933[static
-   metamodel]
+   link:{jakarta-persistence-spec-url}#a6933[static metamodel]
 
 5. Set up your project for _static weaving_
 
@@ -851,7 +844,7 @@ include the core of Helidon's Jakarta Persistence integration:
 </dependency>
 ----
 <1> The `scope` is `provided`, which ensures that the
-    https://jakarta.ee/specifications/persistence/3.0/apidocs/jakarta.persistence/jakarta/persistence/package-summary.html[JPA
+    link:{jakarta-persistence-javadoc-url}/jakarta.persistence/jakarta/persistence/package-summary.html[JPA
     classes required for compilation] are available at compile time.
 <2> The `scope` is `runtime`, which ensures that Helidon's core,
     provider-independent Jakarta Persistence integration is available at
@@ -885,14 +878,7 @@ snippet is present as a child element of the
                             <annotationProcessorPath>
                                 <groupId>org.hibernate.orm</groupId>
                                 <artifactId>hibernate-jpamodelgen</artifactId> <!--1-->
-                                <!--
-                                    Always check
-                                    https://search.maven.org/artifact/org.hibernate.orm/hibernate-jpamodelgen
-                                    for up to date versions and make
-                                    sure the version used is that of
-                                    Hibernate ORM itself.
-                                -->
-                                <version>6.1.1.Final</version>
+                                <version>6.1.1.Final</version> <!--2-->
                             </annotationProcessorPath>
                         </annotationProcessorPaths>
                     </configuration>
@@ -906,10 +892,14 @@ snippet is present as a child element of the
 </pluginManagement>
 ----
 <1> This adds the `hibernate-jpamodelgen` jar, which contains a
-    https://github.com/hibernate/hibernate-orm/blob/6.1.1/tooling/metamodel-generator/src/main/java/org/hibernate/jpamodelgen/JPAMetaModelEntityProcessor.java#L59[Java
+    link:{hibernate-javadoc-base-url}/org/hibernate/jpamodelgen/JPAMetaModelEntityProcessor.html[Java
     annotation processor that generates the static metamodel source
     code], to the Java compiler's annotation processor path so that it
     is active at compile time.
+<2> Always check
+    https://search.maven.org/artifact/org.hibernate.orm/hibernate-jpamodelgen[Maven
+    Central] for up to date versions and make sure the version used is
+    that of Hibernate ORM itself.
 
 For more on the Hibernate ORM `hibernate-jpamodelgen` annotation
 processor, see
@@ -997,21 +987,21 @@ the following line as its sole contents:
 ----
 hibernate.bytecode.provider=none # <1>
 ----
-<1> This instructs Hibernate ORM to
-    https://github.com/hibernate/hibernate-orm/blob/6.1.1/hibernate-core/src/main/java/org/hibernate/cfg/Environment.java#L236[not
+<1> The value of `none` instructs Hibernate ORM to
+    link:{hibernate-javadoc-base-url}/org/hibernate/cfg/Environment.html#BYTECODE_PROVIDER_NAME_NONE[not
     attempt to perform weaving at runtime].
 
 For more on the `hibernate-enhance-maven-plugin` in particular, see
-https://docs.jboss.org/hibernate/orm/6.1/userguide/html_single/Hibernate_User_Guide.html#tooling-maven[its
+link:{hibernate-doc-jboss-url}/userguide/html_single/Hibernate_User_Guide.html#tooling-maven[its
 documentation].
 
 For more on Hibernate ORM's bytecode enhancement (weaving) in general,
 see
-https://docs.jboss.org/hibernate/orm/6.1/userguide/html_single/Hibernate_User_Guide.html#BytecodeEnhancement[Bytecode
+link:{hibernate-doc-jboss-url}/userguide/html_single/Hibernate_User_Guide.html#BytecodeEnhancement[Bytecode
 Enhancement] in Hibernate ORM's documentation.
 
 For more on bytecode enhancement properties, see
-https://docs.jboss.org/hibernate/orm/6.1/userguide/html_single/Hibernate_User_Guide.html#configurations-bytecode-enhancement[Bytecode
+link:{hibernate-doc-jboss-url}/userguide/html_single/Hibernate_User_Guide.html#configurations-bytecode-enhancement[Bytecode
 Enhancement Properties] in Hibernate ORM's documentation.
 
 ===== Maven Coordinates (Eclipselink) [[JPA-Eclipselink-Maven-Coordinates]]
@@ -1055,15 +1045,7 @@ project's `pom.xml` file's `<plugins>` element:
 <plugin>
     <groupId>org.codehaus.mojo</groupId>
     <artifactId>exec-maven-plugin</artifactId>
-    <!--
-        Ideally, your plugin versions are managed via a
-        <pluginManagement> element, which is why the <version> element
-        is commented out below.  If, nevertheless, you opt for the
-        explicit version, check
-        https://search.maven.org/artifact/org.codehaus.mojo/exec-maven-plugin
-        for up-to-date versions.
-    -->
-    <!-- <version>3.1.0</version> -->
+    <version>3.1.0</version> <!--1-->
     <executions>
         <execution>
             <id>weave</id>
@@ -1087,6 +1069,9 @@ project's `pom.xml` file's `<plugins>` element:
     </executions>
 </plugin>
 ----
+<1> Always check
+    https://search.maven.org/artifact/org.codehaus.mojo/exec-maven-plugin[Maven
+    Central] for up-to-date versions.
 
 For more on the Eclipselink static weaving command-line utility, see
 https://wiki.eclipse.org/EclipseLink/UserGuide/JPA/Advanced_JPA_Development/Performance/Weaving/Static_Weaving#Use_the_Command_Line[Static
@@ -1096,13 +1081,13 @@ Weaving] in the Eclipselink documentation.
 
 To configure Helidon MP's Jakarta Persistence integration, you author
 a
-https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0.html#persistence-xml-file[`src/main/resources/META-INF/persistence.xml`
+link:{jakarta-persistence-spec-url}#persistence-xml-file[`src/main/resources/META-INF/persistence.xml`
 file].  It contains a mix of standardized elements and JPA
 provider-specific properties.
 
 For details about the structure and syntax of the
 `META-INF/persistence.xml` file, see
-https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0.html#persistence-xml-file[persistence.xml
+link:{jakarta-persistence-spec-url}#persistence-xml-file[persistence.xml
 file] in the Jakarta Persistence specification.
 
 Fundamentally, a `META-INF/persistence.xml` file contains a collection
@@ -1122,13 +1107,14 @@ Your `src/main/resources/META-INF/persistence.xml` file must begin
                                  https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd"
              version="3.0"> <!--1-->
 
-    <!-- <persistence-unit> elements are listed here -->
+    <!--2-->
 
 </persistence>
 ----
 <1> Helidon MP's Jakarta Persistence integration supports
-    https://jakarta.ee/specifications/persistence/3.0/[Jakarta
-    Persistence version 3.0].
+    link:{jakarta-persistence-base-url}/[Jakarta Persistence version
+    3.0].
+<2> `<persistence-unit> elements are listed here.
 
 ==== Persistence Unit
 
@@ -1152,29 +1138,24 @@ helpful description:
     <description>The production database</description>
 
     <!--2-->
-    <!--
-        Other characteristics of the persistence unit are enclosed
-        here.  Order matters.  See
-        https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0.html#persistence-xml-schema.
-    -->
 
 </persistence-unit>
 
 <!-- ... -->
 ----
 <1> Because Helidon MP's JPA integration is for container-managed JPA,
-    the
-    https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0.html#a12296[`transaction-type`
+    the link:{jakarta-persistence-spec-url}#a12296[`transaction-type`
     attribute] must in practice always be set to `JTA`.
-<2> The order of child elements is significant and governed by the
-    https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0.html#persistence-xml-schema[XML
+<2> The order of subsequent child elements is significant and governed
+    by the
+    link:{jakarta-persistence-spec-url}#persistence-xml-schema[XML
     schema].
 
 NOTE: In most microservices, there will be only one persistence unit.
 
 TIP: A `<persistence-unit>` is represented in Jakarta Persistence as
 an instance of the
-https://jakarta.ee/specifications/persistence/3.0/apidocs/jakarta.persistence/jakarta/persistence/spi/persistenceunitinfo[`PersistenceUnitInfo`]
+link:{jakarta-persistence-javadoc-url}/jakarta.persistence/jakarta/persistence/spi/persistenceunitinfo[`PersistenceUnitInfo`]
 class.
 
 ===== JTA Data Source [[JPA-JTA-Data-Source]]
@@ -1205,7 +1186,7 @@ helpful description, linked with a JTA data source named `main`:
     <description>The production database</description>
     <jta-data-source>main</jta-data-source> <!--1-->
 
-    <!-- Other persistence unit characteristics go here. -->
+    <!--2-->
 
 </persistence-unit>
 
@@ -1216,32 +1197,29 @@ helpful description, linked with a JTA data source named `main`:
     be found in a MicroProfile-Config-compatible location, as detailed
     in the <<DS-Configuration, data source configuration>> section
     above.
+<2> Other persistence unit characteristics go here.
 
 ===== Classes
 
 A persistence unit lists the classes that should be managed and that
 will take part in Jakarta Persistence workflows.  You must list:
 
-1. https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0.html#a18[Entity
-   classes]
+1. link:{jakarta-persistence-spec-url}#a18[Entity classes]
 
-2. https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0.html#a487[Embeddable
-   classes]
+2. link:{jakarta-persistence-spec-url}#a487[Embeddable classes]
 
-3. https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0.html#mapped-superclasses[Mapped
+3. link:{jakarta-persistence-spec-url}#mapped-superclasses[Mapped
    superclasses]
 
-4. https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0.html#a2999[Converter
-   classes]
+4. link:{jakarta-persistence-spec-url}#a2999[Converter classes]
 
 You use a
-https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0.html#list-of-managed-classes[sequence
+link:{jakarta-persistence-spec-url}#list-of-managed-classes[sequence
 of `<class>` elements] to do this.  Each `<class>` element contains
 the fully-qualified class name of one of the types of managed classes
 listed above.
 
-NOTE: There are
-https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0.html#a12305[other
+NOTE: There are link:{jakarta-persistence-spec-url}#a12305[other
 mechanisms that can be used in a `META-INF/persistence.xml` file to
 describe managed classes], but they may or may not be honored by a
 given JPA provider.
@@ -1263,9 +1241,7 @@ containing two entity classes:
     <class>com.example.ExampleEntity0</class> <!--1-->
     <class>com.example.ExampleEntity1</class>
 
-    <!-- Other <class> elements, perhaps -->
-
-    <!-- Other persistence unit characteristics go here. -->
+    <!--2-->
 
 </persistence-unit>
 
@@ -1273,17 +1249,18 @@ containing two entity classes:
 ----
 <1> Each entity class is listed with a separate `<class>` element, and
     there is no containing `<classes>` element or similar.
+<2> Other persistence unit characteristics go here.
 
 ===== Properties
 
 Persistence units can have simple properties attached to them to
 further configure the backing JPA provider.  You use the
-https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0.html#a12384[`<properties>`
+link:{jakarta-persistence-spec-url}#a12384[`<properties>`
 element] to specify them.
 
 NOTE: Helidon MP's Jakarta Persistence integration is for
 container-managed JPA, so the vendor-independent properties
-https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0.html#a12384[described
+link:{jakarta-persistence-spec-url}#a12384[described
 in the specification] directly concerned with database connectivity
 information, such as `jakarta.persistence.jdbc.url`, **do not apply**
 and will be ignored if present.  See <<JPA-JTA-Data-Source, the JTA
@@ -1322,23 +1299,23 @@ property:
 <2> This is a Hibernate ORM-specific property and will be properly
     ignored if the JPA provider you have <<JPA-Setup,set up>> is
     Eclipselink.  See
-    https://docs.jboss.org/hibernate/orm/6.1/userguide/html_single/Hibernate_User_Guide.html#configurations-logging[Statement
+    link:{hibernate-doc-jboss-url}/userguide/html_single/Hibernate_User_Guide.html#configurations-logging[Statement
     logging and statistics] in the Hibernate ORM documentation for
     more details about the `hibernate.show_sql` property.
 <3> This is an Eclipselink-specific property (and (a) is required and
     (b) must be set to `false` if you are using Eclipselink), and will
     be properly ignored if the JPA provider you have <<JPA-Setup, set
     up>> is Hibernate ORM.  See
-    https://www.eclipse.org/eclipselink/documentation/3.0/jpa/extensions/persistenceproperties_ref.htm#weaving[weaving]
+    link:{eclipselink-doc-base-url}/jpa/extensions/persistenceproperties_ref.htm#weaving[weaving]
     in the Eclipselink documentation for more details about the
     `eclipselink.weaving` property.
 
 TIP: For an exhaustive list of Hibernate ORM-specific properties, see
-https://docs.jboss.org/hibernate/orm/6.1/userguide/html_single/Hibernate_User_Guide.html#configurations[Configurations]
+link:{hibernate-doc-jboss-url}/userguide/html_single/Hibernate_User_Guide.html#configurations[Configurations]
 in the Hibernate ORM documentation.
 
 TIP: For an exhaustive list of Eclipselink-specific properties, see
-https://www.eclipse.org/eclipselink/documentation/3.0/jpa/extensions/persistenceproperties_ref.htm#sthref733[Persistence
+link:{eclipselink-doc-base-url}/jpa/extensions/persistenceproperties_ref.htm#sthref733[Persistence
 Property Extensions Reference] in the Eclipselink documentation.
 
 === Usage [[JPA-Usage]]
@@ -1352,17 +1329,17 @@ Specifically, you:
 
 1. Annotate your managed classes (entities, mapped superclasses, etc.)
    appropriately (using
-   https://jakarta.ee/specifications/persistence/3.0/apidocs/jakarta.persistence/jakarta/persistence/entity[`@Entity`]
+   link:{jakarta-persistence-javadoc-url}/jakarta.persistence/jakarta/persistence/entity[`@Entity`]
    and similar annotations)
 
 2. Inject
-   https://jakarta.ee/specifications/persistence/3.0/apidocs/jakarta.persistence/jakarta/persistence/entitymanager[`EntityManager`]
+   link:{jakarta-persistence-javadoc-url}/jakarta.persistence/jakarta/persistence/entitymanager[`EntityManager`]
    instances appropriately with the
-   https://jakarta.ee/specifications/persistence/3.0/apidocs/jakarta.persistence/jakarta/persistence/persistencecontext[`@PersistenceContext`
+   link:{jakarta-persistence-javadoc-url}/jakarta.persistence/jakarta/persistence/persistencecontext[`@PersistenceContext`
    annotation]
 
 3. Use an injected
-   https://jakarta.ee/specifications/persistence/3.0/apidocs/jakarta.persistence/jakarta/persistence/entitymanager[`EntityManager`]
+   link:{jakarta-persistence-javadoc-url}/jakarta.persistence/jakarta/persistence/entitymanager[`EntityManager`]
    to work with your managed objects
 
 In addition, you <<JTA-Usage, use Helidon MP's JTA integration>> to
@@ -1370,13 +1347,13 @@ declare transactional boundaries where appropriate.
 
 A full tutorial of Jakarta Persistence is _well_ beyond the scope of
 this documentation.  Consult
-https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0.html#entities[the
+link:{jakarta-persistence-spec-url}#entities[the
 specification] for details on how to map your entity classes to
 relational database tables, and how to perform other related tasks.
 
 === Examples [[JPA-Examples]]
 
-* https://github.com/oracle/helidon/tree/master/examples/integrations/cdi/pokemons[JPA
+* link:{helidon-github-tree-url}/examples/integrations/cdi/pokemons[JPA
   Pokemons Example]
 
 == References [[References]]
@@ -1385,46 +1362,46 @@ relational database tables, and how to perform other related tasks.
 
 * xref:config/introduction.adoc[MicroProfile Config in Helidon MP]
 
-* https://docs.oracle.com/en/java/javase/17/docs/api/java.sql/java/sql/package-summary.html[JDBC
+* link:{jdk-javadoc-url}/java.sql/java/sql/package-summary.html[JDBC
   4.3 Specification]
 
-* https://github.com/brettwooldridge/HikariCP/tree/HikariCP-5.0.1#readme[HikariCP
-  5.0.1 documentation]
+* link:{hikaricp-base-url}#readme[HikariCP {version-lib-hikaricp}
+  documentation]
 
 * https://www.oracle.com/database/technologies/maven-central-guide.html[Developers
   Guide For Oracle JDBC 21c on Maven Central]
 
-* https://docs.oracle.com/en/database/oracle/oracle-database/21/jjucp/index.html[Oracle®
-  Universal Connection Pool Developer's Guide, Release 21c]
+* link:{oracle-ucp-doc-base-url}index.html[Oracle® Universal
+  Connection Pool Developer's Guide, Release 21c]
 
-* https://docs.oracle.com/en/database/oracle/oracle-database/21/jjuar/index.html#[Oracle®
-  Universal Connection Pool Java API Reference, Release 21c]
+* link:{oracle-ucp-javadoc-base-url}index.html#[Oracle® Universal
+  Connection Pool Java API Reference, Release 21c]
 
-* https://docs.oracle.com/en/database/oracle/oracle-database/21/jjdbc/index.html[Oracle®
-  Database JDBC Developer's Guide and Reference, Release 21c]
+* link:{oracle-jdbc-doc-base-url}/index.html[Oracle® Database JDBC
+  Developer's Guide and Reference, Release 21c]
 
-* https://docs.oracle.com/en/database/oracle/oracle-database/21/jajdb/index.html[Oracle®
-  Database JDBC Java API Reference, Release 21c]
+* link:{oracle-jdbc-javadoc-base-url}/index.html[Oracle® Database JDBC
+  Java API Reference, Release 21c]
 
-* http://www.h2database.com/html/main.html[H2 Database Engine documentation]
+* https://www.h2database.com/html/main.html[H2 Database Engine documentation]
 
-* https://jakarta.ee/specifications/transactions/2.0/jakarta-transactions-spec-2.0.html[Jakarta
-  Transactions 2.0 Specification]
+* link:{jakarta-transactions-spec-url}[Jakarta Transactions
+  {version-lib-jakarta-transaction-api} Specification]
 
-* https://jakarta.ee/specifications/transactions/2.0/apidocs/[Jakarta
-  Transactions 2.0 API Reference]
+* link:{jakarta-transactions-javadoc-url}/[Jakarta Transactions
+  {version-lib-jakarta-transaction-api} API Reference]
 
 * https://www.narayana.io//docs/project/index.html[Narayana Project Documentation]
 
 * https://www.narayana.io/docs/api/index.html[Narayana API Reference]
 
-* https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0.html[Jakarta
-  Persistence 3.0 Specification]
+* link:{jakarta-persistence-spec-url}[Jakarta Persistence
+  {persistence-lib-jakarta-persistence-api} Specification]
 
-* https://jakarta.ee/specifications/persistence/3.0/apidocs/[Jakarta
-  Persistence 3.0 API Reference]
+* link:{jakarta-persistence-javadoc-url}/[Jakarta Persistence
+  {persistence-lib-jakarta-persistence-api} API Reference]
 
-* https://docs.jboss.org/hibernate/orm/6.1/userguide/html_single/Hibernate_User_Guide.html[Hibernate
-  ORM 6.1.1 User Guide]
+* link:{hibernate-doc-jboss-url}userguide/html_single/Hibernate_User_Guide.html[Hibernate
+  ORM User Guide]
 
 * https://www.eclipse.org/eclipselink/documentation/[Eclipselink documentation]

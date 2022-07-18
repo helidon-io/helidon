@@ -68,6 +68,9 @@ endif::[]
 :version-lib-jedis: 2.9.0
 :version-lib-hikaricp: 5.0.1
 :version-lib-eclipselink: 3.0
+:version-lib-hibernate: 6.1
+:version-lib-oracle-jdbc: 21
+:version-lib-oracle-ucp: {version-lib-oracle-jdbc}
 :version-plugin-jib: 0.10.1
 :version-plugin-jandex: 1.0.6
 
@@ -216,6 +219,10 @@ endif::[]
 :hikaricp-base-url: https://github.com/brettwooldridge/HikariCP/blob/HikariCP-{version-lib-hikaricp}
 :hikaricp-javadoc-url: {javadoc-io-base-url}/com.zaxxer/HikariCP/{version-lib-hikaricp}
 :eclipselink-doc-base-url: https://www.eclipse.org/eclipselink/documentation/{version-lib-eclipselink}
+:hibernate-base-url: https://github.com/hibernate/hibernate-orm/blob/{version-lib-
+:hibernate-doc-base-url: https://hibernate.org/orm/documentation/{version-lib-hibernate}
+:hibernate-doc-jboss-url: https://docs.jboss.org/hibernate/orm/{version-lib-hibernate}
+:hibernate-javadoc-base-url: {hibernate-doc-jboss-url}/javadocs
 :jib-base-url: https://github.com/GoogleContainerTools/jib/blob/v{version-plugin-jib}-maven/jib-maven-plugin
 :jedis-base-url: {javadoc-io-base-url}/redis.clients/jedis/{version-lib-jedis}/redis/clients
 :kafka-client-base-url: https://kafka.apache.org/28/documentation.html
@@ -236,6 +243,11 @@ endif::[]
 :oci-javasdk-vault-javadoc-base-url: {oci-javasdk-javadoc-base-url}/com/oracle/bmc/vault
 
 :openmetrics-exemplar-spec-url: https://github.com/OpenObservability/OpenMetrics/blob/main/specification/OpenMetrics.md#exemplars
+
+:oracle-jdbc-doc-base-url: https://docs.oracle.com/en/database/oracle/oracle-database/{version-lib-oracle-jdbc}/jjdbc
+:oracle-jdbc-javadoc-base-url: https://docs.oracle.com/en/database/oracle/oracle-database/{version-lib-oracle-jdbc}/jajdb
+:oracle-ucp-doc-base-url: https://docs.oracle.com/en/database/oracle/oracle-database/{version-lib-oracle-ucp}/jjucp
+:oracle-ucp-javadoc-base-url: https://docs.oracle.com/en/database/oracle/oracle-database/{version-lib-oracle-ucp}/jjuar/
 
 :micrometer-url: https://micrometer.io
 :micrometer-api-url: https://micrometer.io/docs/concepts
