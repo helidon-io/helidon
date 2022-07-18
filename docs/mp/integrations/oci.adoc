@@ -37,6 +37,8 @@ include::{rootdir}/includes/mp.adoc[]
 
 Helidon MP OCI Integration provides easy access to Oracle Cloud Infrastructure using the OCI Java SDK.
 
+NOTE: OCI SDK uses JAX-RS Client 2.1.6 (javax package names), which makes it incompatible with Helidon 3 applications and any application that uses JAX-RS 3 (jakarta package naming). Please see our xref:{rootdir}/includes/oci.adoc[Guide] for detailed information on how to work around this issue.
+
 include::{rootdir}/includes/dependencies.adoc[]
 
 [source,xml]
