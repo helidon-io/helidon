@@ -52,6 +52,11 @@ include::{rootdir}/includes/dependencies.adoc[]
 </dependency>
 ----
 
+Adding this dependency packages the full-featured metrics implementation with your service.
+
+=== Other packaging options
+Helidon gives you flexibility in how you make metrics available to your service. xref:{rootdir}/mp/metrics/metrics-capable-components.adoc[This document] explains your options.
+
 == Usage
 
 include::{rootdir}/includes/metrics/metrics-shared.adoc[tag=usage-body]

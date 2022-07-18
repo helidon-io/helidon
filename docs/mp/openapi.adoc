@@ -69,17 +69,11 @@ document shows what changes you need to make to your application and how to acce
 the OpenAPI document for your application at runtime.
 
 === Changing your application
-Helidon MP conforms to the link:{microprofile-open-api-spec-url}[MicroProfile OpenAPI specification],
-which was inspired by the link:https://github.com/OAI/OpenAPI-Specification[OpenAPI spec] itself.
 
-Helidon MP includes a link:{helidon-github-tree-url}/examples/microprofile/openapi-basic[complete OpenAPI example]
-based on the MP quick-start sample app.
+To use OpenAPI from your Helidon MP app, in addition to adding dependencies as described above:
 
-To use OpenAPI from your Helidon MP app:
-
-1. Edit your `pom.xml`.
-2. Furnish OpenAPI information about your application's endpoints.
-3. Update your application's configuration (optional).
+1. Furnish OpenAPI information about your application's endpoints.
+2. Update your application's configuration (optional).
 
 include::{rootdir}/includes/openapi.adoc[tag=furnish-openapi-info]
 
@@ -102,6 +96,9 @@ Helidon OpenAPI configuration supports the following settings:
 include::{rootdir}/config/io_helidon_microprofile_openapi_MPOpenAPISupport.adoc[leveloffset=+1,tag=config]
 
 == Examples
+
+Helidon MP includes a link:{helidon-github-tree-url}/examples/microprofile/openapi-basic[complete OpenAPI example]
+based on the MP quick-start sample app. The rest of this section shows, step-by-step, how one might change the original QuickStart service to adopt OpenAPI.
 
 === Helidon MP Basic OpenAPI Example
 
