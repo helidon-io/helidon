@@ -27,12 +27,18 @@
             <includes>
                 <include>src/*/java/**/*.java.mustache</include>
             </includes>
+            <excludes>
+                <exclude if="${flavor} == 'mp' &amp;&amp; ${db}">src/test/**/*.mustache</exclude>
+            </excludes>
         </templates>
         <templates engine="mustache" transformations="mustache">
             <directory>files</directory>
             <includes>
                 <include>src/*/resources/**/*.mustache</include>
             </includes>
+            <excludes>
+                <exclude if="${flavor} == 'mp' &amp;&amp; ${db}">src/test/resources/**/*.mustache</exclude>
+            </excludes>
         </templates>
         <files>
             <directory>files</directory>
@@ -41,6 +47,7 @@
             </includes>
             <excludes>
                 <exclude>**/*.mustache</exclude>
+                <exclude if="${flavor} == 'mp' &amp;&amp; ${db}">src/test/resources/**</exclude>
             </excludes>
         </files>
         <model>
