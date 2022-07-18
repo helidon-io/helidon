@@ -21,6 +21,7 @@ ifndef::rootdir[:rootdir: {docdir}/../../..]
 === Header Authentication Provider
 :description: Helidon Security Header Provider
 :keywords: helidon, security, header
+:feature-name: Header Authentication Security Provider
 
 Asserts user or service identity based on a value of a header.
 
@@ -35,17 +36,9 @@ Asserts user or service identity based on a value of a header.
 </dependency>
 ----
 
-[source,text]
-.Provider class name
-----
-io.helidon.security.providers.header.HeaderAtnProvider
-----
+==== Overview
 
-[source,text]
-.Provider configuration key
-----
-header-atn
-----
+include::{rootdir}/config/io_helidon_security_providers_header_HeaderAtnProvider.adoc[leveloffset=+2,tag=config]
 
 ==== Example code
 
@@ -68,35 +61,6 @@ security:
           outbound-token:
             header: "X-Service-Auth"
 ----
-
-==== Configuration options
-The following table shows all configuration options of the provider and their default values
-
-[cols="2,2,5"]
-
-|===
-|key |default value |description
-
-|`optional` |`false` |If set to `true`, failure to authenticate will return `ABSTAIN` result instead of `FAILURE`. This is
-    an important distinction when more than one provider is used
-|`authenticate` |`true` |If set to `false`, authentication will not be attempted (outbound security can still be used)
-|`propagate` |`false` |If explicitly set to `false`, identity propagation will not be done. Otherwise it is done if an `outbound`
-                section is configured
-|`principal-type` |`USER` |Can be `USER` or `SERVICE`
-|`atn-token` |`none` | Token extraction and propagation, you can define which header to use and how to extract it
-|`outbound` |{nbsp} |A list of outbound configurations
-|`outbound.*.name` |{nbsp} |Required name of outbound configuration
-|`outbound.*.username` |{nbsp} |Optional username used for outbound security; if not provided, current identity is propagated
-|`outbound.*.transports` |any transport |An array of transports this outbound configuration should be used for
-|`outbound.*.hosts` |any host |An array of hosts this outbound configuration should be used for, can be a regular expression
-|`outbound.*.paths` |any path |An array of paths this outbound configuration should be used for (such as `/greet`), can be a regular expression
-|`outbound.*.methods` |any method |An array of HTTP methods this outbound configuration should be used for
-|`outbound.*.outbound-token` |same as `atn-token` |Configuration of outbound header used to propagate
-|`outbound.*.outbound-token.header` |{nbsp} |Name of the header used to propagate the token
-|`outbound.*.outbound-token.prefix` |{nbsp} |Prefix for the header value, such as `"username "` (only one of `prefix`, `regexp` and `format` should be defined, `regexp` wins over `prefix`, `format` wins over `regexp`)
-|`outbound.*.outbound-token.format` |{nbsp} |String format with a single parameter to create the header value, such as `"username %1s"`
-|`outbound.*.outbound-token.regexp` |{nbsp} |Regular expression to create the header value, such as `"username (.*)"`
-|===
 
 ==== How does it work?
 This provider inspects a specified request header and extracts the username/service name from it and
