@@ -535,7 +535,7 @@ regardless of your choices of vendor-supplied `DataSource` and
 connection pool.
 
 To use Helidon MP's named data source integration in your application,
-once it has been <<DS-Project-Setup,set up>> and
+once it has been <<DS-Setup,set up>> and
 <<DS-Configuration,configured>>, create an ordinary
 https://docs.oracle.com/en/java/javase/17/docs/api/java.sql/javax/sql/DataSource.html[`DataSource`]-typed
 injection point in a
