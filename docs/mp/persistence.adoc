@@ -317,7 +317,8 @@ such configurations is not exhaustive.
 All MicroProfile Config-compatible property names for Helidon MP's
 named data source integration follow a common pattern:
 
-> *_objecttype_*.*_datasourcename_*.*_propertyname_*
+[example]
+*_objecttype_*.*_datasourcename_*.*_propertyname_*
 
 * The name of a given configuration property always begins with the
   *_objecttype_* portion: a fully-qualified Java class name of the
@@ -815,7 +816,7 @@ application to work with your chosen JPA provider, you must:
    https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0.html#a6933[static
    metamodel]
 
-4. Set up your project for _static weaving_
+5. Set up your project for _static weaving_
 
 Details and examples for each supported JPA provider are below.
 
@@ -1137,7 +1138,7 @@ element.  Each `<persistence-unit>` element identifies a named
 persistence unit that will correspond to an `EntityManager` in your
 code, and represents a collection of entities in a relational database.
 
-====== Example: Persistence Unit Skeleton
+===== Example: Persistence Unit Skeleton
 
 Here is a partial example of a persistence unit named `prod` with a
 helpful description:
@@ -1340,7 +1341,7 @@ TIP: For an exhaustive list of Eclipselink-specific properties, see
 https://www.eclipse.org/eclipselink/documentation/3.0/jpa/extensions/persistenceproperties_ref.htm#sthref733[Persistence
 Property Extensions Reference] in the Eclipselink documentation.
 
-== Usage [[JPA-Usage]]
+=== Usage [[JPA-Usage]]
 
 To use Helidon MP's Jakarta Persistence integration, once you have
 <<JPA-Setup, set up>> and <<JPA-Configuration, configured>> your
@@ -1373,12 +1374,12 @@ https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0.h
 specification] for details on how to map your entity classes to
 relational database tables, and how to perform other related tasks.
 
-== Examples [[JPA-Examples]]
+=== Examples [[JPA-Examples]]
 
 * https://github.com/oracle/helidon/tree/master/examples/integrations/cdi/pokemons[JPA
   Pokemons Example]
 
-= References [[References]]
+== References [[References]]
 
 * xref:../about/managing-dependencies.adoc[Managing Dependencies in Helidon MP]
 
