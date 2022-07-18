@@ -56,9 +56,9 @@ include::{rootdir}/includes/mp.adoc[]
 
 == Overview [[Overview]]
 
-Helidon MP comes with deep integration for three broad,
-specification-defined, persistence-related technologies that can be
-used together or separately:
+Helidon MP comes with deep integration for three
+specification-defined, broadly persistence-related technologies that
+can be used together or separately:
 
 * <<DS, Named data sources>>
 * <<JTA, Jakarta Transactions (JTA)>>
