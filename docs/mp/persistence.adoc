@@ -35,7 +35,9 @@ include::{rootdir}/includes/mp.adoc[]
 ***** <<DS-UCP-Maven-Coordinates, Maven Coordinates (Oracle Universal Connection Pool)>>
 *** <<DS-Driver-Project-Setup, Setting Up a Database Driver>>
 **** <<DS-H2-Driver-Project-Setup, Setting Up H2>>
+***** <<DS-H2-Driver-Maven-Coordinates, Maven Coordinates (H2)>>
 **** <<DS-Oracle-Driver-Project-Setup, Setting Up Oracle JDBC>>
+***** <<DS-Oracle-Driver-Maven-Coordinates, Maven Coordinates (Oracle JDBC)>>
 ** <<DS-Configuration, Configuration>>
 *** <<DS-Configuration-Examples, Examples>>
 ** <<DS-Usage, Usage>>
