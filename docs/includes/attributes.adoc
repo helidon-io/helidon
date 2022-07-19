@@ -196,6 +196,8 @@ endif::[]
 :openapi-javadoc-base-url: {javadoc-base-url}/io.helidon.openapi
 :reactive-base-url: {javadoc-base-url}/io.helidon.common.reactive
 :scheduling-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.scheduling
+:security-integration-jersey-base-url: {javadoc-base-url}/io.helidon.security.integration.jersey
+:security-integration-webserver-base-url: {javadoc-base-url}/io.helidon.security.integration.webserver
 :webclient-javadoc-base-url: {javadoc-base-url}/io.helidon.webclient
 :webserver-javadoc-base-url: {javadoc-base-url}/io.helidon.webserver
 :webserver-jersey-javadoc-base-url: {javadoc-base-url}/io.helidon.webserver.jersey
