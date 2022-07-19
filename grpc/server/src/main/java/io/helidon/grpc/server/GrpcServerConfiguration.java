@@ -21,6 +21,8 @@ import java.util.function.Supplier;
 
 import io.helidon.common.context.Context;
 import io.helidon.config.Config;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.grpc.core.GrpcTlsDescriptor;
 import io.helidon.tracing.Tracer;
 
@@ -146,6 +148,7 @@ public interface GrpcServerConfiguration {
     /**
      * A {@link GrpcServerConfiguration} builder.
      */
+    @Configured
     final class Builder implements io.helidon.common.Builder<Builder, GrpcServerConfiguration> {
         private static final AtomicInteger GRPC_SERVER_COUNTER = new AtomicInteger(1);
 
@@ -174,6 +177,10 @@ public interface GrpcServerConfiguration {
          * @param config configuration instance
          * @return updated builder
          */
+        @ConfiguredOption(key = "native",
+                type = Boolean.class,
+                value = "false",
+                description = "Specify if native transport should be used.")
         public Builder config(Config config) {
             if (config == null) {
                 return this;
@@ -196,6 +203,7 @@ public interface GrpcServerConfiguration {
          *
          * @return an updated builder
          */
+        @ConfiguredOption(key = "name", value = DEFAULT_NAME)
         public Builder name(String name) {
             this.name = name == null ? null : name.trim();
             return this;
@@ -209,6 +217,7 @@ public interface GrpcServerConfiguration {
          * @param port the server port
          * @return an updated builder
          */
+        @ConfiguredOption(value = "" + DEFAULT_PORT)
         public Builder port(int port) {
             this.port = port < 0 ? 0 : port;
             return this;
@@ -268,6 +277,7 @@ public interface GrpcServerConfiguration {
          * @param workers a workers count
          * @return an updated builder
          */
+        @ConfiguredOption(key = "workers", value = "Number of processors available to the JVM")
         public Builder workersCount(int workers) {
             this.workers = workers;
             return this;

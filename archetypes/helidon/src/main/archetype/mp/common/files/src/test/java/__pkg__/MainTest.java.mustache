@@ -17,10 +17,12 @@ import {{.}};
 import {{.}};
 {{/MainTest-static-imports}}
 
+{{#helidon-test}}
 @HelidonTest
 @TestMethodOrder(MethodOrderer.MethodName.class)
+{{/helidon-test}}
 public class MainTest {
-
+{{#helidon-test}}
 {{#MainTest-static-fields}}
 {{.}}
 {{/MainTest-static-fields}}
@@ -31,4 +33,5 @@ public class MainTest {
 {{#MainTest-methods}}
 {{.}}
 {{/MainTest-methods}}
+{{/helidon-test}}
 }

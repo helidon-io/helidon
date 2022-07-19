@@ -22,6 +22,13 @@
 
     <exec src="/common/common.xml"/>
     <output>
+        <templates engine="mustache" transformations="mustache,packaged" if="!(${media} contains 'json')">
+            <directory>files</directory>
+            <includes>
+                <include>src/*/java/**/SimpleGreetService.java.mustache</include>
+                <include>src/*/java/**/SimpleGreetResource.java.mustache</include>
+            </includes>
+        </templates>
         <templates engine="mustache" transformations="jsonp-mustache,packaged" if="${media.json-lib} == 'jsonp'">
             <directory>files</directory>
             <includes>

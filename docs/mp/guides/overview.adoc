@@ -68,30 +68,6 @@ Learn how to trace a Helidon MP application.
 --
 
 [CARD]
-.Using DataSources
-[link=datasource.adoc]
---
-Learn how to configure and use DataSources
-in your Helidon MP application.
---
-
-[CARD]
-.Using Transactions
-[link=jta.adoc]
---
-Learn how to configure and use Java Transaction API (JTA)-compliant transactions
-in your Helidon MP application.
---
-
-[CARD]
-.Using JPA
-[link=jpa.adoc]
---
-Learn how to configure and use the Java Persistence API (JPA)
-in your Helidon MP application.
---
-
-[CARD]
 .Helidon MP Tutorial
 [link=mp-tutorial.adoc]
 --

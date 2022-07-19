@@ -23,4 +23,6 @@ module io.helidon.grpc.client {
     requires transitive io.helidon.grpc.core;
 
     requires io.helidon.tracing;
+
+    requires static io.helidon.config.metadata;
 }

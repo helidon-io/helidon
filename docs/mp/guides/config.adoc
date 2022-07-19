@@ -39,7 +39,7 @@ Helidon provides a very flexible and comprehensive configuration system, offerin
 You can include configuration data from a variety of sources using different formats, like JSON and YAML.
 Furthermore, you can customize the precedence of sources and make them optional or mandatory.
 This guide introduces Helidon MP configuration and demonstrates the fundamental concepts using several examples.
-Refer to xref:../../se/config/introduction.adoc[Helidon Config] for the full configuration concepts documentation.
+Refer to xref:{rootdir}/mp/config/introduction.adoc[Helidon Config] for the full configuration concepts documentation.
 
 === Create a Sample Helidon MP Project
 
@@ -72,8 +72,8 @@ For example, if you specify a custom server port in `META-INF/microprofile-confi
 then your server will listen on that port.
 
 A main class is also required to start up the server and run the
-application. By default the Quickstart sample project uses the built-in
-Helidon main class. In this guide you want to use your own main class so you have
+application. By default, the Quickstart sample project uses the built-in
+Helidon main class. In this guide you want to use your own main class, so you have
 more control over the server initialization. First define your own `Main`:
 
 [source,java]
@@ -148,7 +148,7 @@ NOTE: Because environment variable names are restricted to alphanumeric characte
 Helidon adds aliases to the environment configuration source, allowing entries with dotted and/or
 hyphenated keys to be overridden.  For example, this mapping allows an environment variable named "APP_GREETING" to override
 an entry key named "app.greeting".  In the same way, an environment variable named "APP_dash_GREETING" will map to
-"app-greeting".  See xref:../../se/config/advanced-configuration.adoc[Advanced Configuration] for more information.
+"app-greeting".  See link:{microprofile-config-spec-url}[Microprofile Config Specifications] for more information.
 
 The following examples will demonstrate the default precedence order.
 
@@ -235,11 +235,8 @@ curl http://localhost:8080/greet
 
 == Accessing Config within an Application
 
-You have used Helidon to customize configuration behavior from your code using the `Config` and
-`Config.Builder` classes.  The examples in this section will demonstrate how to access that config data
-at runtime.  As discussed previously, Helidon reads configuration from a config source, which uses a config parser
-to translate the source into an immutable in-memory tree representing the configuration’s structure and values.
-Your application uses the `Config` object to access the in-memory tree, retrieving config data.
+The examples in this section will demonstrate how to access that config data
+at runtime. Your application uses the `Config` object to access the in-memory tree, retrieving config data.
 
 The generated project already accesses configuration data in the `GreetingProvider` class  as  follows:
 
@@ -372,10 +369,9 @@ curl http://localhost:8080/greet
 === Navigating the Config Tree
 
 Helidon offers a variety of methods to access in-memory configuration.  These can be categorized as _key access_ or _tree navigation_.
-You have been using _key access_ for all of the examples to this point.  For example `app.greeting` is accessing
-the `greeting` child node of the `app` parent node.  There are many options for access this data using navigation
-methods as described in xref:../../se/config/hierarchical-features.adoc[Hierarchical Configuration] and xref:../../se/config/advanced-configuration.adoc[Advanced Configuration].
-This simple example below demonstrates how to access a child node as a detached configuration sub-tree.
+You have been using _key access_ for all the examples to this point.  For example `app.greeting` is accessing the `greeting` child node of the `app` parent node.
+
+This simple example below demonstrates how to access a child node as a detached configuration subtree.
 
 [source,yaml]
 .Create a file `config-file.yaml` in the `helidon-quickstart-mp` directory and add the following contents:
@@ -622,7 +618,9 @@ kubectl delete configmap  helidon-configmap
 == Summary
 
 This guide has demonstrated how to use basic Helidon configuration features. For more information about using the advanced Helidon configuration features, including mutability support and extensions, see
- xref:../../se/config/introduction.adoc[Helidon Configuration].
+ xref:{rootdir}/mp/config/introduction.adoc[Helidon Configuration].
+
+== References
 
 Refer to the following references for additional information:
 

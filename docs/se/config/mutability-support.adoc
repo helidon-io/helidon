@@ -19,22 +19,27 @@
 = Mutability Support
 :description: Helidon mutability support
 :keywords: helidon, config
+:feature-name: Config
 :rootdir: {docdir}/../..
 
 include::{rootdir}/includes/se.adoc[]
 
-An in-memory config tree, once loaded, is immutable, even though the data in the underlying
-config sources _can_ change over time. Your application can find out metadata about a
-loaded in-memory config and can track changes in config sources.
+== ToC
+
+- <<Overview>>
+- <<Using Config Metadata>>
+- <<Responding to Changes in Config Sources>>
+- <<Accessing Always-current Values>>
 
 == Overview
-Even though in-memory config trees are immutable, the config system internally
+An in-memory config tree, once loaded, is immutable, even though the data in the underlying
+config sources _can_ change over time. The config system internally
 records which config sources it used to load each config tree and some metadata
 about the configuration. Your application can be aware of updates to the underlying
 config sources by:
 
 1. using the metadata the config system maintains,
-2. responding to changes when the config sources are updated, or
+2. responding to change when the config sources are updated, or
 3. using ``Supplier``s of particular config values to obtain the always-current
 value for a key.
 
@@ -82,7 +87,7 @@ Any code you write using the existing `Config.changes()` method might need
 to change at that time.
 ====
 
-Although in-memory config trees do not change once loaded, applications can respond to changes
+Although in-memory config trees do not change once loaded, applications can respond to change
 in the underlying config sources by:
 
 1. setting up change detection for the config sources used to build a configuration, and
@@ -240,7 +245,7 @@ to your `onNext` method. The original subscription remains in force for changes
 to the "new" instance.
 
 == Accessing Always-current Values
-Some applications do not need to respond to changes as they happen. Instead it's
+Some applications do not need to respond to change as they happen. Instead, it's
 sufficient that they simply have access to the current value for a particular
 key in the configuration.
 

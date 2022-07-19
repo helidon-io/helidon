@@ -76,7 +76,7 @@ Build GraphQL servers.
 //gRPC
 [CARD]
 .gRPC
-[icon=swap_horiz,link=grpc/introduction.adoc]
+[icon=swap_horiz,link=grpc/server.adoc]
 --
 Build gRPC servers and clients.
 --
@@ -105,7 +105,7 @@ Support OpenAPI from your application.
 //Reactive Messaging
 [CARD]
 .Reactive Messaging
-[icon=message,link=reactivemessaging/introduction.adoc]
+[icon=message,link=reactive-messaging.adoc]
 --
 Use prepared tools for repetitive use case scenarios.
 --
@@ -134,7 +134,7 @@ Profile and monitor your applications across multiple services.
 //WebClient
 [CARD]
 .WebClient
-[icon=http,link=webclient/introduction.adoc]
+[icon=http,link=webclient.adoc]
 --
 HTTP client that handles responses to the HTTP requests in a reactive way.
 --

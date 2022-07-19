@@ -48,9 +48,6 @@
                 <artifactId>helidon-archetype-maven-plugin</artifactId>
                 <configuration>
                     <mavenArchetypeCompatible>false</mavenArchetypeCompatible>
-                    <properties>
-                       <skipTests>true</skipTests>
-                    </properties>
                     <entrypoint>
                         <variables>
                             <text path="helidon-version" transient="true">${project.version}</text>
