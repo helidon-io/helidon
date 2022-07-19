@@ -143,6 +143,7 @@
                         <option value="hikaricp" name="HikariCP" description="&quot;zero overhead&quot; JDBC connection pool">
                             <output>
                                 <model>
+                                    <value key="database-hikari">true</value>
                                     <list key="dependencies">
                                         <map>
                                             <value key="groupId">io.helidon.integrations.cdi</value>
@@ -156,6 +157,7 @@
                         <option value="ucp" name="UCP" description="Universal Connection Pool">
                             <output>
                                 <model>
+                                    <value key="database-ucp">true</value>
                                     <list key="dependencies">
                                         <map>
                                             <value key="groupId">io.helidon.integrations.cdi</value>
@@ -171,6 +173,17 @@
                         <option value="h2" name="H2" description="In-memory relational database">
                             <output>
                                 <model>
+                                    <value key="readme-description">Helidon MP application that uses the dbclient API with an in-memory H2 database.</value>
+                                    <value key="readme-native-docker">docker run -d -p 1521:1521 -p 81:81 -e H2_OPTIONS='-ifNotExists' --name=h2 oscarfonts/h2</value>
+                                    <value key="readme-native-url">javax.sql.DataSource.test.dataSource.url=jdbc:h2:tcp://localhost:1521/test</value>
+                                    <value key="integration-artifactId">h2</value>
+                                    <value key="db">H2</value>
+                                    <list key="run-comment">
+                                        <value><![CDATA[
+This example requires a database.
+Instructions for H2 can be found here: https://www.h2database.com/html/cheatSheet.html
+]]></value>
+                                    </list>
                                     <list key="main-persistence-properties">
                                         <map if="${..jpa-impl} == 'hibernate'">
                                             <value key="name">hibernate.dialect</value>
@@ -182,12 +195,99 @@
                                         </map>
                                     </list>
                                     <value key="jdbcDataSource">org.h2.jdbcx.JdbcDataSource</value>
+                                    <value key="databaseUrl">jdbc:h2:mem:test;DB_CLOSE_DELAY=-1</value>
+                                    <list key="MainTest-methods">
+                                        <value><![CDATA[
+    @Test
+    void testPokemonTypes() {
+        JsonArray types = target
+                .path("type")
+                .request()
+                .get(JsonArray.class);
+        assertThat(types.size(), is(18));
+    }
+
+    @Test
+    void testPokemon() {
+        assertThat(getPokemonCount(), is(6));
+
+        Pokemon pokemon = target
+                .path("pokemon/1")
+                .request()
+                .get(Pokemon.class);
+        assertThat(pokemon.getName(), is("Bulbasaur"));
+
+        pokemon = target
+                .path("pokemon/name/Charmander")
+                .request()
+                .get(Pokemon.class);
+        assertThat(pokemon.getType(), is(10));
+
+        Response response = target
+                .path("pokemon/1")
+                .request()
+                .get();
+        assertThat(response.getStatus(), is(200));
+
+        Pokemon test = new Pokemon();
+        test.setType(1);
+        test.setId(100);
+        test.setName("Test");
+        response = target
+                .path("pokemon")
+                .request()
+                .post(Entity.entity(test, MediaType.APPLICATION_JSON));
+        assertThat(response.getStatus(), is(204));
+        assertThat(getPokemonCount(), is(7));
+
+        response = target
+                .path("pokemon/100")
+                .request()
+                .delete();
+        assertThat(response.getStatus(), is(204));
+        assertThat(getPokemonCount(), is(6));
+    }
+
+    private int getPokemonCount() {
+        JsonArray pokemons = target
+                .path("pokemon")
+                .request()
+                .get(JsonArray.class);
+        return pokemons.size();
+    }
+]]></value>
+                                    </list>
+                                    <list key="main-persistence-properties">
+                                        <map>
+                                            <value key="name">jakarta.persistence.sql-load-script-source</value>
+                                            <value key="value">META-INF/init_script.sql</value>
+                                        </map>
+                                        <map>
+                                            <value key="name">jakarta.persistence.schema-generation.database.action</value>
+                                            <value key="value">drop-and-create</value>
+                                        </map>
+                                    </list>
                                 </model>
                             </output>
                         </option>
                         <option value="mysql" name="MySQL" description="Relational database">
                             <output>
                                 <model>
+                                    <value key="helidon-test">false</value>
+                                    <value key="readme-description">Helidon MP application that uses the dbclient API with MySQL database.</value>
+                                    <value key="readme-native-docker">docker run --rm --name mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=pokemon -e MYSQL_USER=user -e MYSQL_PASSWORD=password  mysql:5.7</value>
+                                    <value key="readme-native-url">url: jdbc:mysql:tcp://127.0.0.1:3306/pokemon?useSSL=false</value>
+                                    <value key="integration-artifactId">helidon-integrations-db-mysql</value>
+                                    <value key="db">MySQL</value>
+                                    <list key="run-comment">
+                                        <value><![CDATA[
+This example requires a MySQL database, start it using docker:
+
+```
+docker run --rm --name mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=pokemon -e MYSQL_USER=user -e MYSQL_PASSWORD=password  mysql:5.7
+```
+]]></value>
+                                    </list>
                                     <list key="main-persistence-properties">
                                         <map if="${..jpa-impl} == 'hibernate'">
                                             <value key="name">hibernate.dialect</value>
@@ -212,6 +312,21 @@
                         <option value="oracledb" name="Oracle DB" description="Multi-model database">
                             <output>
                                 <model>
+                                    <value key="helidon-test">false</value>
+                                    <value key="readme-description">Helidon MP application that uses the dbclient API with OracleDB database.</value>
+                                    <value key="readme-native-docker">docker run --rm --name xe -p 1521:1521 -p 8888:8080 -e ORACLE_PWD=oracle wnameless/oracle-xe-11g-r2</value>
+                                    <value key="readme-native-url">url: jdbc:oracle:thin:@localhost:1521/XE</value>
+                                    <value key="integration-artifactId">ojdbc</value>
+                                    <value key="db">OracleDB</value>
+                                    <list key="run-comment">
+                                        <value><![CDATA[
+This example requires a oracleDB database, start it using docker:
+
+```
+docker run --rm --name xe -p 1521:1521 -p 8888:8080 -e ORACLE_PWD=oracle wnameless/oracle-xe-11g-r2
+```
+]]></value>
+                                    </list>
                                     <list key="main-persistence-properties">
                                         <map if="${..jpa-impl} == 'hibernate'">
                                             <value key="name">hibernate.dialect</value>
@@ -243,7 +358,7 @@
                                         <value key="name">hibernate.hbm2ddl.auto</value>
                                         <value key="value">create-drop</value>
                                     </map>
-                                    <map if="${..jpa-impl} == 'eclipselink'">
+                                    <map if="${..jpa-impl} == 'eclipselink' &amp;&amp; ${..server} != 'h2'">
                                         <value key="name">eclipselink.ddl-generation</value>
                                         <value key="value">drop-and-create-tables</value>
                                     </map>
@@ -259,7 +374,6 @@
                         <directory>../database/files</directory>
                         <includes>
                             <include>src/*/resources/*/init_script.sql</include>
-                            <include>src/test/resources/*/microprofile-config.properties</include>
                         </includes>
                     </files>
                     <templates engine="mustache" transformations="mustache,packaged">
@@ -270,6 +384,9 @@
                         </includes>
                     </templates>
                     <model>
+                        <list key="native-sections" if="${docker}">
+                            <value file="../database/files/README.native.md" if="${docker.native-image}" template="mustache"/>
+                        </list>
                         <value key="database">true</value>
                         <value key="pu-name">${pu-name}</value>
                         <value key="ds-name">${ds-name}</value>
@@ -365,67 +482,6 @@
                     </execution>
                 </executions>
             </plugin>]]></value>
-                        </list>
-                        <list key="MainTest-methods">
-                            <value><![CDATA[
-    @Test
-    void testPokemonTypes() {
-        JsonArray types = target
-                .path("type")
-                .request()
-                .get(JsonArray.class);
-        assertThat(types.size(), is(18));
-    }
-
-    @Test
-    void testPokemon() {
-        assertThat(getPokemonCount(), is(6));
-
-        Pokemon pokemon = target
-                .path("pokemon/1")
-                .request()
-                .get(Pokemon.class);
-        assertThat(pokemon.getName(), is("Bulbasaur"));
-
-        pokemon = target
-                .path("pokemon/name/Charmander")
-                .request()
-                .get(Pokemon.class);
-        assertThat(pokemon.getType(), is(10));
-
-        Response response = target
-                .path("pokemon/1")
-                .request()
-                .get();
-        assertThat(response.getStatus(), is(200));
-
-        Pokemon test = new Pokemon();
-        test.setType(1);
-        test.setId(100);
-        test.setName("Test");
-        response = target
-                .path("pokemon")
-                .request()
-                .post(Entity.entity(test, MediaType.APPLICATION_JSON));
-        assertThat(response.getStatus(), is(204));
-        assertThat(getPokemonCount(), is(7));
-
-        response = target
-                .path("pokemon/100")
-                .request()
-                .delete();
-        assertThat(response.getStatus(), is(204));
-        assertThat(getPokemonCount(), is(6));
-    }
-
-    private int getPokemonCount() {
-        JsonArray pokemons = target
-                .path("pokemon")
-                .request()
-                .get(JsonArray.class);
-        return pokemons.size();
-    }
-]]></value>
                         </list>
                     </model>
                 </output>

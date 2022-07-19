@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,8 @@ import java.util.Optional;
 
 import io.helidon.common.pki.KeyConfig;
 import io.helidon.config.Config;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.security.SubjectType;
 
 /**
@@ -147,6 +149,7 @@ public class InboundClientDefinition {
      * Fluent API builder to create a new instance of {@link InboundClientDefinition}.
      * Use {@link #build()} to create the instance.
      */
+    @Configured
     public static final class Builder implements io.helidon.common.Builder<Builder, InboundClientDefinition> {
         private String keyId;
         private String algorithm;
@@ -164,6 +167,7 @@ public class InboundClientDefinition {
          * @param name name of security principal
          * @return updated builder instance
          */
+        @ConfiguredOption
         public Builder principalName(String name) {
             this.principalName = name;
             return this;
@@ -175,6 +179,7 @@ public class InboundClientDefinition {
          * @param keyId key id as provided in inbound signature
          * @return updated builder instance
          */
+        @ConfiguredOption
         public Builder keyId(String keyId) {
             this.keyId = keyId;
             if (this.principalName == null) {
@@ -189,6 +194,7 @@ public class InboundClientDefinition {
          * @param type principal type
          * @return updated builder instance
          */
+        @ConfiguredOption(key = "principal-type", value = "SERVICE")
         public Builder subjectType(SubjectType type) {
             this.subjectType = type;
             return this;
@@ -205,6 +211,7 @@ public class InboundClientDefinition {
          * @param algorithm algorithm used
          * @return updated builder instance
          */
+        @ConfiguredOption
         public Builder algorithm(String algorithm) {
             this.algorithm = algorithm;
             return this;
@@ -216,6 +223,7 @@ public class InboundClientDefinition {
          * @param keyConfig keys configured to access a public key to validate signature
          * @return updated builder instance
          */
+        @ConfiguredOption(key = "public-key")
         public Builder publicKeyConfig(KeyConfig keyConfig) {
             if (null == algorithm) {
                 algorithm = HttpSignProvider.ALGORITHM_RSA;
@@ -249,6 +257,7 @@ public class InboundClientDefinition {
          * @param secret shared secret to validate signature
          * @return updated builder instance
          */
+        @ConfiguredOption(key = "hmac.secret")
         public Builder hmacSecret(String secret) {
             return hmacSecret(secret.getBytes(StandardCharsets.UTF_8));
         }

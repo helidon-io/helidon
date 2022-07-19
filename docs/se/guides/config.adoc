@@ -98,8 +98,8 @@ In order to properly configure your application using configuration sources, you
 the precedence rules that Helidon uses to merge your configuration data.  By default,
 Helidon will use the following sources in precedence order:
 
-1. Environment variables
-2. Java system properties
+1. Java system properties
+2. Environment variables
 3. Configuration specified in `application.yaml`
 
 If any of the Helidon required properties are not specified in one of these source, like `server.port`, then Helidon will use a default value.

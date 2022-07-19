@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,9 +24,12 @@ import io.helidon.security.spi.SecurityProviderService;
  * Java service ({@link SecurityProviderService}) for google token provider.
  */
 public class GoogleTokenService implements SecurityProviderService {
+
+    static final String CONFIG_PROVIDER_KEY = "google-login";
+
     @Override
     public String providerConfigKey() {
-        return "google-login";
+        return CONFIG_PROVIDER_KEY;
     }
 
     @Override

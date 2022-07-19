@@ -113,7 +113,7 @@ Use prepared tools for repetitive use case scenarios.
 //Reactive Streams
 [CARD]
 .Reactive Streams
-[icon=waves,link=reactivestreams/overview.adoc]
+[icon=waves,link=reactivestreams/engine.adoc]
 --
 APIs to work with reactive streams in Helidon.
 --
@@ -134,7 +134,7 @@ Profile and monitor your applications across multiple services.
 //WebClient
 [CARD]
 .WebClient
-[icon=http,link=webclient/introduction.adoc]
+[icon=http,link=webclient.adoc]
 --
 HTTP client that handles responses to the HTTP requests in a reactive way.
 --

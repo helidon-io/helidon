@@ -21,6 +21,7 @@ ifndef::rootdir[:rootdir: {docdir}/../../..]
 === ABAC Provider
 :description: Helidon Security ABAC Provider
 :keywords: helidon, security, authorization, abac
+:feature-name: ABAC Security Provider
 
 Attribute based access control authorization provider.
 
@@ -35,17 +36,9 @@ Attribute based access control authorization provider.
 </dependency>
 ----
 
-[source,text]
-.Provider class name
-----
-io.helidon.security.providers.abac.AbacProvider
-----
+==== Overview
 
-[source,text]
-.Provider configuration key
-----
-abac
-----
+include::{rootdir}/config/io_helidon_security_providers_abac_AbacProvider.adoc[leveloffset=+2,tag=config]
 
 ==== Example code
 

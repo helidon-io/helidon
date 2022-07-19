@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,9 +25,12 @@ import io.helidon.security.spi.SecurityProviderService;
  * automatic loading of this provider from configuration.
  */
 public class HttpSignService implements SecurityProviderService {
+
+    static final String PROVIDER_CONFIG_KEY = "http-signatures";
+
     @Override
     public String providerConfigKey() {
-        return "http-signatures";
+        return PROVIDER_CONFIG_KEY;
     }
 
     @Override

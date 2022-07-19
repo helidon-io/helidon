@@ -58,6 +58,7 @@ Optional configuration options:
 |`optional` |boolean |`false` |Whether authentication is required.
  By default, request will fail if the authentication cannot be verified.
  If set to false, request will process and this provider will abstain.
+|`outbound` |xref:{rootdir}/config/io_helidon_security_providers_common_OutboundTarget.adoc[OutboundTarget[&#93;] |{nbsp} |Add a new outbound target to configure identity propagation or explicit username/password.
 |`principal-type` |SubjectType (USER, SERVICE) |`USER` |Principal type this provider extracts (and also propagates).
 |`realm` |string |`helidon` |Set the realm to use when challenging users.
 |`users` |xref:{rootdir}/config/io_helidon_security_providers_httpauth_ConfigUserStore_ConfigUser.adoc[ConfigUser[&#93;] |{nbsp} |Set user store to validate users.

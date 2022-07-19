@@ -38,28 +38,37 @@ This document explains Helidon {h1-prefix} metrics-capable components and applic
 // end::preamble[]
 
 // tag::all-beginning-text[]
-== Introduction
-Think of Helidon metrics in three related but different parts:
 
-* The Helidon metrics API.
+Think of Helidon metrics in several related but different parts:
+
+=== APIs
+* The Helidon metrics API
 +
-The API allows your code to register, look-up, remove, and update metrics using
+This API allows your code to register, look-up, remove, and update metrics using
 the `RegistryFactory`, `MetricRegistry`, and individual metrics interfaces.
+* The Helidon metrics REST service API
++
+This API allows your code to set up and respond to the `/metrics` endpoint so clients can retreive metrics information.
+
+=== Implementations of the APIs
 * Implementations of the Helidon metrics API.
 +
-Helidon provides two and selects which one to use at runtime,
+Helidon provides two--minimal and full-featured--and selects which one to use at runtime,
 based on what components are present on the runtime path and whether metrics is configured to be enabled or disabled.
-* The built-in Helidon metrics web service.
 +
-This service supports the `/metrics` endpoint by which clients can retrieve metadata and
-values of the registered metrics.
-ifeval::["{h1-prefix}" == "MP"]
-Helidon MP apps which use metrics enable the metrics service by default.
+ifdef::mp-flavor[By default, Helidon MP services use the full-featured implementation.]
+ifdef::se-flavor[You control which implementation your Helidon SE service uses by which dependency you add to your project.]
+* Implementations of the Helidon metrics REST service API.
++
+Helidon provides two--minimal and full-featured--and selects which one to use at runtime.
++
+ifdef::mp-flavor[]
+By default, Helidon MP apps which use metrics use the full-featured metrics REST service by default.
 endif::[]
-ifeval::["{h1-prefix}" == "SE"]
+ifdef::se-flavor[]
 Your Helidon SE app provides this feature (if at all) by explicitly using the `MetricsSupport` interface.
 +
-Most Helidon applications are web-based and their developers choose to expose the built-in metrics web service.
+Most Helidon SE applications are web-based and their developers choose to expose the built-in metrics web service.
 But by separating the parts of metrics this way,
 Helidon allows non-web apps to work with metrics as well, just without the web service support.
 endif::[]
@@ -170,7 +179,7 @@ Doing so allows your code to operate regardless of whether the full-featured met
 ----
 This module defines the metrics API: `RegistryFactory`, `MetricRegistry`, and the various metrics themselves.
 
-ifeval::["{h1-prefix}" == "SE"]
+ifdef::se-flavor[]
 . To permit the use of the built-in metrics web service support for the `/metrics` endpoint, add this dependency:
 +
 [source,xml]

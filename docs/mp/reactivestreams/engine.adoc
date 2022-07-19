@@ -24,6 +24,4 @@
 
 include::{rootdir}/includes/mp.adoc[]
 
-==  Helidon Reactive Engine
-
 include::{rootdir}/includes/reactivestreams/engine.adoc[lines=21..]

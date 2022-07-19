@@ -81,16 +81,14 @@ One of the new features in Helidon 2.0 is the addition of a command line interfa
 The new database client for Helidon SE will include support for the MongoDB reactive driver and brings Health Checks,
  Metrics, and Tracing support to every Helidon API. xref:../se/dbclient.adoc[Learn more about the DB Client].
 
-
 * *Extending MicroProfile Reactive Messaging and Reactive Operators Support* +
 MP Reactive Operators will be included in both frameworks, while MP Reactive Messaging will only be included in
  Helidon MP. xref:../mp/reactivemessaging/introduction.adoc[Learn more about Reactive Messaging] and
- xref:../mp/reactivestreams/overview.adoc[Reactive Streams].
+ xref:../mp/reactivestreams/rsoperators.adoc[Reactive Streams].
 
 * *Helidon Web Client* +
 The new reactive web client can integrate with other Helidon SE APIs.
-xref:../se/webclient/introduction.adoc[Learn more about the Helidon Web Client].
-
+xref:../se/webclient.adoc[Learn more about the Helidon Web Client].
 
 * *Additional Websocket Support* +
 Based upon the Tyrus implementation, Helidon receives WebSocket API support.

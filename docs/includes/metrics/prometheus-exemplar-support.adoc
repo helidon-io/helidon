@@ -47,7 +47,7 @@ link:https://www.merriam-webster.com/dictionary/exemplar[_exemplar_] - one that 
 -- Merriam-Webster Dictionary
 --
 
-In the context of metrics, an _exemplar_ for a given metric is a specific trace which, in some sense, made a typical contribution to the metric's value. For example, an exemplar for a `SimpleTimer` might be a trace in which the duration it contributed to the value of a `SimpleTimer` is near the mean of the durations over all traces.
+In the context of metrics, an _exemplar_ for a given metric is a specific sample which, in some sense, made a typical contribution to the metric's value. For example, an exemplar for a `SimpleTimer` might be a sample in which the duration it contributed to the value of a `SimpleTimer` is near the mean of the durations over all samples. The metrics output identifies the exemplar sample using the trace ID of the trace which triggered that sample.
 
 include::{rootdir}/includes/dependencies.adoc[]
 
@@ -60,14 +60,13 @@ include::{rootdir}/includes/dependencies.adoc[]
 </dependency>
 ----
 
-Also, include the Helidon integration module for a tracing implementation, see
+Also, include the Helidon integration module for a tracing implementation (such as
 ifdef::se-flavor[]
-xref:{rootdir}/se/tracing.adoc#zipkin-tracing[Helidon Zipkin]
+xref:{rootdir}/se/tracing.adoc#zipkin-tracing[Helidon Zipkin])
 endif::[]
 ifdef::mp-flavor[]
-xref:{rootdir}/mp/tracing.adoc#zipkin-tracing[Helidon Zipkin]:
+xref:{rootdir}/mp/tracing.adoc#zipkin-tracing[Helidon Zipkin])
 endif::[]
-support:
 include::{rootdir}/includes/tracing/tracer-zipkin.adoc[tag=zipkin-dependency]
 
 Add the Helidon tracing component itself:
@@ -91,13 +90,13 @@ Helidon chooses the representative examplar for each value using information tha
 .Selection of exemplars for types of metrics
 [%autowidth]
 |====
-|Metric Type| Example | Sample Selected as Exemplar
+|Metric Value Type| Example | Sample Selected as Exemplar
 
 | corresponds directly to a specific sample
 | minimum or maximum of a value
 | any sample with that exact value
 
-| collecs samples into bins (quantiles)
+| collects samples into bins (quantiles)
 | histogram (as with timers)
 | any sample from the bin
 
@@ -125,6 +124,12 @@ Even downstream consumers of OpenMetrics output that do not recognize the exempl
 But some consumers, such as trace collectors and their U/Is, understand the exemplar format, and they allow you to browse metrics and then navigate directly to the trace for the metric's exemplar.
 
 == Examples
+
+ifdef::se-flavor[]
+Helidon includes an link:{helidon-github-tree-url}/examples/metrics/exemplar[example application], based on the QuickStart application, which illustrates exemplar support.
+endif::[]
+
+Once you enable exemplar support you can see the exemplars in the metrics output.
 
 .Exemplar output - `Timer`
 [listing,subs="quotes"]

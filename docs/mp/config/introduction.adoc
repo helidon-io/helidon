@@ -18,18 +18,28 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = MicroProfile Config
-:toc:
-:toc-placement: preamble
 :spec-name: MicroProfile Config
-:description: MicroProfile Config support in Helidon MP
+:description: {spec-name} support in Helidon MP
 :keywords: helidon, mp, microprofile, config, encryption, reference
+:config-release: {version-lib-microprofile-config}
 :feature-name: MicroProfile Config
 :rootdir: {docdir}/../..
 :microprofile-bundle: true
 
 include::{rootdir}/includes/mp.adoc[]
 
-Helidon MicroProfile provides an implementation of Eclipse MicroProfile Config. It allows you to configure your applications using MicroProfile configuration sources and APIs.
+== ToC
+
+- <<Overview>>
+- <<Maven Coordinates>>
+- <<Usage>>
+- <<Configuration>>
+- <<Guides>>
+- <<Reference>>
+
+== Overview
+
+Helidon {spec-name} is an implementation of https://github.com/eclipse/microprofile-config/[Eclipse {spec-name}]. You can configure your applications using MicroProfile's config configuration sources and APIs. You can also extend the configuration using MicroProfile SPI to add custom `ConfigSource` and `Converter`.
 
 include::{rootdir}/includes/dependencies.adoc[]
 
@@ -41,31 +51,36 @@ include::{rootdir}/includes/dependencies.adoc[]
 </dependency>
 ----
 
-== About {spec-name}
-
-Helidon MicroProfile Config is an implementation of https://github.com/eclipse/microprofile-config/[Eclipse MicroProfile Config].
-You can configure your applications using MicroProfile's config configuration sources and APIs. You can also extend the
-configuration using MicroProfile SPI to add custom `ConfigSource` and `Converter`.
+== Usage
 
 === {spec-name} Features
 
-{spec-name} uses `ConfigSource` SPI to load configuration data, either from default configuration sources such
-file `META-INF/microprofile-config.properties`, environment variables, and system properties; or from custom `ConfigSource`
-located by Java Service Loader.
+==== {spec-name} Sources
 
-The data is then available through {spec-name} APIs to be injected into CDI Beans, or to be obtained using a `Config`
-instance programmatically.
+A Config Source provides configuration values from different sources such as property files and user classes that are registered by the application.
 
-{spec-name} provides typed access to configuration values, using built-in converters, and `Converter` implementations located
-by Java Service Loader.
+By default, the following configuration sources are used to retrieve the configuration:
+
+[cols="3,5"]
+|===
+|Source |Description
+
+|System properties   |A mutable source that uses `System.getProperties()` to obtain configuration values.
+
+|Environment variables   |An immutable source that uses `System.env()` to obtain configuration values and resolves aliases as defined by the {spec-name} specification.
+
+|`META-INF/microprofile-config.properties`   |The properties config source as defined by {spec-name} specification.
+|===
+
+{spec-name} uses `ConfigSource` SPI to load configuration data, either from default configuration sources or from custom `ConfigSource` located by Java Service Loader.
 
 ==== Using {spec-name} API
 
-You can use MicroProfile Config API to get configuration properties by using `ConfigProvider.getConfig()`
-or injecting configuration values with `@ConfigProperty`.
+You can use {spec-name} API to get configuration properties by using a `Config`
+instance programmatically or injecting configuration values with `@ConfigProperty`.
 
 [source,java]
-.Using ConfigProvider.getConfig()
+.Using `Config`
 ----
 org.eclipse.microprofile.config.Config config = ConfigProvider.getConfig();
 config.getOptionalValue("app.greeting", String.class).orElse("Hello");
@@ -80,7 +95,23 @@ public GreetingProvider(@ConfigProperty(name = "app.greeting", defaultValue = "H
 }
 ----
 
-==== {spec-name} Config Sources
+{spec-name} provides typed access to configuration values, using built-in converters, and `Converter` implementations located by Java Service Loader.
+
+==== Ordering of Default Config Sources
+
+In order to properly configure your application using configuration sources, you need to understand the precedence rules used to merge your configuration data. The default MicroProfile Config Sources ordering is:
+
+* System properties (ordinal=400)
+* Environment variables (ordinal=300)
+* /META-INF/microprofile-config.properties (ordinal=100)
+
+Each Config Source has an ordinal that determines the priority of the Config Source.
+A Config Source with higher ordinal has higher priority as compared to the Config Source with
+lower ordinal. The values taken from the high-priority Config Source overrides the values
+from low-priority Config Source.
+
+This helps to customize the configuration of Config Sources using external Config Source
+if an external Config Source has higher ordinal values than the built-in Config Sources of the application.
 
 The example below shows how the MicroProfile configuration file `microprofile-config.properties` can be used to modify the server listen port property.
 
@@ -94,7 +125,7 @@ server.port=8080
 server.host=0.0.0.0
 ----
 
-==== {spec-name} Profiles
+==== {spec-name} Profiles [[Config-Profiles]]
 
 {spec-name} supports a concept of configuration profiles. You can define a profile using the configuration property `mp.config.profile`
 (when using default configuration, this can be defined as a system property, environment variable or as a property in `microprofile-config.properties`).
@@ -105,7 +136,31 @@ default properties. Profile properties can be defined using `%profile` prefix, s
 
 Helidon MicroProfile Config offers the following features on top of the specification:
 
-* *References* +
+=== Helidon {spec-name} Sources
+Helidon configuration sources can use different formats for the configuration data. You can specify the format on a per source bases, mixing and matching formats as required.
+
+The following configuration sources can be used to retrieve the configuration:
+
+[cols="3,5"]
+|===
+|Source |Description
+|File    |Creates the source from a properties file on the file system with `MpConfigSources.create(Path)`.
+
+|URL    |Creates the source from properties from a URL with `MpConfigSources.create(URL)`.
+
+|`Map<String, String>`   |Creates the source from a Map with `MpConfigSources.create(Map)`.
+
+|`Properties`    |Creates the source directly from Properties with `MpConfigSources.create(Properties)`.
+
+|File on classpath    |Creates the source from a properties file on classpath with `MpConfigSources.classpath(String)`.
+
+|YAML    |Creates the source from YAML using `YamlMpConfigSource.create(Path)` or `YamlMpConfigSource.create(URL)`.
+
+|===
+
+See xref:advanced-configuration.adoc#_creating_microprofile_config_sources_for_manual_setup_of_config[manual setup of config] section for more information.
+
+==== References
 You can use `${reference}` to reference another configuration key in a key value. This
 allows to configure a single key to be reused in multiple other keys.
 
@@ -117,7 +172,7 @@ service-1: "${uri}/service1"
 service-2: "${uri}/service2"
 ----
 
-* *Change support* +
+==== Change support
 Polling (or change watching) for file based config sources (not classpath based).
 
 To enable polling for a config source created using meta configuration (see below), or using
@@ -137,10 +192,10 @@ See link:{jdk-javadoc-url}/java.base/java/nio/file/WatchService.html
 
 |===
 
-* *Encryption* +
+==== Encryption
 You can encrypt secrets using a master password and store them in a configuration file.
 The config encryption filter in MicroProfile Config is enabled by default.
-For more information, see xref:../security/configuration-secrets.adoc[Configuration Secrets].
+For more information, see xref:{rootdir}/mp/security/configuration-secrets.adoc[Configuration Secrets].
 
 [source,properties]
 .Example of encrypted secrets
@@ -154,14 +209,26 @@ client_secret=${RSA=mYRkg+4Q4hua1kvpCCI2hg==}
 client_secret=${CLEAR=known_password}
 ----
 
-* *Meta Configuration* +
+==== Meta Configuration
 You can configure the Config using Helidon MP Config meta configuration feature. The meta-config allows configuration of config sources and other
 configuration options, including addition of discovered sources and converters.
 
-This is a Helidon specific feature available since version 2.3.0. See
- xref:../config/config-sources.adoc[Microprofile Config Sources] for detailed information.
+See
+ xref:advanced-configuration.adoc#_creating_microprofile_config_sources_from_meta_config[Microprofile Config Sources] for detailed information.
 
 NOTE: For backward compatibility, we will support usage of Helidon SE meta-configuration until version 3.0.0. Using this approach causes behavior that is not compatible with {spec-name} specification.
+
+== Configuration
+
+Config sources can be configured using the following properties.
+
+The class responsible for configuration is:
+
+include::{rootdir}/config/io_helidon_config_mp_MpConfigBuilder.adoc[leveloffset=+1,tag=config]
+
+Current properties may be set in `application.yaml` or in `microprofile-config.properties` with `mp.config` prefix.
+
+See xref:#Config-Profiles[Config Profiles] for more information.
 
 == Guides
 
@@ -169,14 +236,13 @@ NOTE: For backward compatibility, we will support usage of Helidon SE meta-confi
 ====
 [CARD]
 .MP Config Guide
-[link=../guides/config.adoc]
+[xref={rootdir}/mp/guides/config.adoc]
 --
 Step-by-step guide about using {spec-name} in your Helidon MP application.
 --
 ====
 
-== Additional Information
+== Reference
 
-- link:{javadoc-base-url}/io.helidon.config/io/helidon/config/spi/package-summary.html[Helidon Config SPI]
-- link:{javadoc-base-url}/io.helidon.config/io/helidon/config/package-summary.html[Helidon Config API]
-- link:{microprofile-config-spec-url}[MicroProfile Config API]
+* link:{microprofile-config-spec-url}}[{spec-name} Specifications]
+* link:{microprofile-fault-tolerance-javadoc-url}[{spec-name} Javadocs]
