@@ -123,10 +123,11 @@ Helidon MP supports building RESTful services using JAX-RS/Jersey.
 
 //JPA
 [CARD]
-.JPA
-[icon=dns,link=../jpa.adoc]
+.Persistence
+[icon=dns,link=../persistence.adoc]
 --
-Work with JPA in Helidon MP in all the ways that you’re familiar with.
+Work with named data sources, JTA and JPA in Helidon MP in all the
+ways that you’re familiar with.
 --
 
 

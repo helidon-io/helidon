@@ -101,8 +101,8 @@ mp:
       type: queue
 ----
 
-Its also possible and preferable to refer to xref:../guides/datasource.adoc[configured datasource],
-in our example xref:../extensions/cdi-datasource-ucp.adoc[Oracle UCP datasource]:
+Its also possible and preferable to refer to xref:../persistence.adoc[configured datasource],
+in our example xref:../persistence.adoc[Oracle UCP datasource]:
 
 [source,yaml]
 .Example of connector config with Oracle UCP datasource:
