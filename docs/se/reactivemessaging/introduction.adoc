@@ -30,6 +30,13 @@
 - <<Overview, Overview>>
 - <<Maven Coordinates, Maven Coordinates>>
 - <<Usage, Usage>>
+** <<Channel, Channel>>
+** <<Processor, Processor>>
+** <<Message, Message>>
+** <<Connectors, Connectors>>
+*** <<Kafka Connector, Kafka Connector>>
+*** <<JMS Connector, JMS Connector>>
+*** <<AQ Connector,AQ Connector>>
 - <<Configuration, Configuration>>
 - <<Reference, Reference>>
 
@@ -68,9 +75,10 @@ Helidon SE Messaging with some limitation(there is no CDI in Helidon SE).
 All <<Messaging Connector,Messaging connectors>> in Helidon are made to be universally usable by Helidon MP and SE.
 
 === Channel
+
 Channel is a named pair of `Publisher` and `Subscriber`. Channels can be connected together by
 <<Processor,processors>>. Registering of `Publisher` or `Subscriber` for a channel can be done
-by Messaging API, or configured implicitly for using registered <<Connector,connector>>
+by Messaging API, or configured implicitly for using registered <<Connectors,connectors>>
 for generating such `Publisher` or `Subscriber`.
 
 [source,java]
@@ -87,6 +95,7 @@ Messaging.builder()
 ----
 
 === Processor
+
 Processor is a typical reactive processor acting as a `Subscriber` to upstream and as a `Publisher`
 to downstream. In terms of reactive messaging it is able to connect two <<Channel,channels>> to one
 reactive stream.
@@ -118,6 +127,7 @@ Messaging.builder()
 ----
 
 === Message
+
 Reactive Messaging in Helidon SE uses the same concept of
 message wrapping as MicroProfile messaging.
 The only notable difference is that SE Messaging does almost no implicit or automatic
@@ -128,9 +138,10 @@ Only exception to this are variants of methods `Messaging.Builder#listener` and
 for you. After such implicit unwrapping is not possible to do a manual acknowledgement, therefore
 implicit ack before callback is executed is necessary.
 
-=== Connector
+=== Connectors
+
 Connector concept is a way for connecting <<Channel,channels>> to external sources.
-To make xref:connector.adoc[creation and usage of connectors]
+To make <<Messaging Connector,creation and usage of connectors>>
 as easy and versatile as possible, Helidon SE Messaging uses same API for connectors
 like xref:../../mp/reactivemessaging/introduction.adoc[MicroProfile Reactive Messaging] does.
 This allows connectors to be usable in both flavors of Helidon with one limitation which is
@@ -142,7 +153,8 @@ Example of such a versatile connectors in Helidon:
 * <<JMS Connector,JMS connector>>
 * <<AQ Connector,AQ Connector>>
 
-=== Messaging Connector
+==== Messaging Connector
+
 Connector for Reactive Messaging is a factory producing Publishers and Subscribers for
 Channels in Reactive Messaging. Messaging connector is just an implementation of
 `IncomingConnectorFactory`, `OutgoingConnectorFactory` or both.
@@ -194,7 +206,6 @@ Messaging.builder()
 > Connector says: fie
 ----
 
-
 [source,java]
 .Example consuming from connector:
 ----
@@ -213,7 +224,8 @@ Messaging.builder()
 > Consuming: bar
 ----
 
-==== Configuration for Messaging connector
+===== Configuration for Messaging connector
+
 Messaging connector in Helidon SE can be configured explicitly by API or implicitly
 by config following notation of link:https://download.eclipse.org/microprofile/microprofile-reactive-messaging-1.0/microprofile-reactive-messaging-spec.html#_configuration[MicroProfile Reactive Messaging].
 
@@ -242,7 +254,7 @@ public class ExampleConnector implements IncomingConnectorFactory {
 ----
 <1> Config context is merged from channel and connector contexts
 
-===== Explicit Config for Messaging connector
+====== Explicit Config for Messaging connector
 
 An explicit config for channel's publisher is possible with `Channel.Builder#publisherConfig(Config config)`
 and for subscriber with `Channel.Builder#subscriberConfig(Config config)`.
@@ -283,7 +295,8 @@ Messaging messaging = Messaging.builder()
 <2> Channel -> connector mapping is automatic when using `KafkaConnector.configBuilder()`
 <3> Prepare Kafka connector, can be used by any channel
 
-===== Implicit Config for Messaging connector
+====== Implicit Config for Messaging connector
+
 Implicit config without any hard-coding is possible with xref:../config/introduction.adoc[Helidon Config] following notation of link:https://download.eclipse.org/microprofile/microprofile-reactive-messaging-1.0/microprofile-reactive-messaging-spec.html#_configuration[MicroProfile Reactive Messaging].
 
 [source,yaml]
@@ -315,6 +328,7 @@ Messaging.builder()
 ----
 
 ==== Reusability in MP Messaging
+
 As the API is the same for xref:../../mp/reactivemessaging/introduction.adoc[MicroProfile Reactive Messaging]
 connectors, all that is needed to make connector work in both ways is annotating it with
 `@ApplicationScoped`. Such connector is treated as a bean in Helidon MP.
@@ -322,11 +336,10 @@ connectors, all that is needed to make connector work in both ways is annotating
 For specific information about creating messaging connectors for Helidon MP visit
 xref:../../mp/reactivemessaging/introduction.adoc[MicroProfile Reactive Messaging].
 
-=== Kafka Connector
-
-include::{rootdir}/includes/dependencies.adoc[]
+==== Kafka Connector
 
 [source,xml]
+.Maven dependency
 ----
 <dependency>
     <groupId>io.helidon.messaging.kafka</groupId>
@@ -334,7 +347,8 @@ include::{rootdir}/includes/dependencies.adoc[]
 </dependency>
 ----
 
-==== Reactive Kafka Connector
+===== Reactive Kafka Connector
+
 Connecting streams to Kafka with Reactive Messaging couldn't be easier.
 
 ===== Explicit config with config builder for Kafka Connector
@@ -472,14 +486,10 @@ Don't forget to check out the examples with pre-configured Kafka docker image, f
 
 * https://github.com/oracle/helidon/tree/master/examples/messaging
 
-
-
-=== JMS Connector
-:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
-
-include::{rootdir}/includes/dependencies.adoc[]
+==== JMS Connector
 
 [source,xml]
+.Maven dependency
 ----
 <dependency>
     <groupId>io.helidon.messaging.jms</groupId>
@@ -487,7 +497,8 @@ include::{rootdir}/includes/dependencies.adoc[]
 </dependency>
 ----
 
-==== Reactive JMS Connector
+===== Reactive JMS Connector
+
 Connecting streams to JMS with Reactive Messaging couldn't be easier.
 
 ===== Explicit config with config builder for JMS Connector
@@ -614,13 +625,10 @@ Don't forget to check out the examples with pre-configured ActiveMQ docker image
 
 * https://github.com/oracle/helidon/tree/master/examples/messaging
 
-
-=== AQ Connector
-:common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
-
-include::{rootdir}/includes/dependencies.adoc[]
+==== AQ Connector
 
 [source,xml]
+.Maven dependency
 ----
 <dependency>
     <groupId>io.helidon.messaging.aq</groupId>
@@ -628,7 +636,7 @@ include::{rootdir}/includes/dependencies.adoc[]
 </dependency>
 ----
 
-==== Reactive Oracle AQ Connector
+===== Reactive Oracle AQ Connector
 
 ===== Sending and receiving
 

@@ -205,10 +205,6 @@ backend:
                   value: "message"
                 sources:
                   - "introduction.adoc"
-                  - "connector.adoc"
-                  - "kafka.adoc"
-                  - "jms.adoc"
-                  - "aq.adoc"
               - type: "PAGE"
                 title: "Reactive Webserver"
                 source: "webserver.adoc"
