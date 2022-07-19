@@ -88,7 +88,7 @@ MP Reactive Operators will be included in both frameworks, while MP Reactive Mes
 
 * *Helidon Web Client* +
 The new reactive web client can integrate with other Helidon SE APIs.
-xref:../se/webclient/introduction.adoc[Learn more about the Helidon Web Client].
+xref:../se/webclient.adoc[Learn more about the Helidon Web Client].
 
 * *Additional Websocket Support* +
 Based upon the Tyrus implementation, Helidon receives WebSocket API support.
