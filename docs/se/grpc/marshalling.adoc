@@ -18,7 +18,7 @@
 
 = Marshalling
 :description: Helidon gRPC Marshalling
-:keywords: helidon, grpc, java
+:keywords: helidon, grpc, java, marshalling
 :rootdir: {docdir}/../..
 
 include::{rootdir}/includes/se.adoc[]

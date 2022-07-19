@@ -21,6 +21,8 @@ import java.util.function.Supplier;
 
 import io.helidon.common.context.Context;
 import io.helidon.config.Config;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.grpc.core.GrpcTlsDescriptor;
 import io.helidon.tracing.Tracer;
 
@@ -146,6 +148,7 @@ public interface GrpcServerConfiguration {
     /**
      * A {@link GrpcServerConfiguration} builder.
      */
+    @Configured
     final class Builder implements io.helidon.common.Builder<Builder, GrpcServerConfiguration> {
         private static final AtomicInteger GRPC_SERVER_COUNTER = new AtomicInteger(1);
 
@@ -174,6 +177,22 @@ public interface GrpcServerConfiguration {
          * @param config configuration instance
          * @return updated builder
          */
+        @ConfiguredOption(key = "name",
+                type = String.class,
+                value = DEFAULT_NAME,
+                description = "Name of the gRPC server")
+        @ConfiguredOption(key = "port",
+                type = Integer.class,
+                value = "" + DEFAULT_PORT,
+                description = "Specify the gRPC server port")
+        @ConfiguredOption(key = "native",
+                type = Boolean.class,
+                value = "false",
+                description = "Specify if native transport should be used.")
+        @ConfiguredOption(key = "workers",
+                type = String.class,
+                value = "Number of processors available to the JVM",
+                description = "Specify the count of threads in pool used to process HTTP requests.")
         public Builder config(Config config) {
             if (config == null) {
                 return this;
