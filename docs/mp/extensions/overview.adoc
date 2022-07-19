@@ -32,31 +32,10 @@ Helidon provides link:{jakarta-cdi-spec-url}#spi[CDI portable extensions] that y
 ====
 
 [CARD]
-.HikariCP data sources
-[link=cdi-datasource-hikaricp.adoc]
---
-Create and inject a HikariCP data source in your application code.
---
-
-[CARD]
-.Oracle UCP data sources
-[link=cdi-datasource-ucp.adoc]
---
-Create and inject an Oracle Universal Connection Pool data source in
-your application code.
---
-
-[CARD]
 .Jedis clients
 [link=cdi-jedis.adoc]
 --
 Create and inject a Jedis pool in your application code.
 --
 
-[CARD]
-.Java Transaction API objects
-[link=cdi-jta.adoc]
---
-Use the Java Transaction API in your application code.
---
 ====
