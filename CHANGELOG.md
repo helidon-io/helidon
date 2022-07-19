@@ -9,9 +9,167 @@ For Helidon 2.x releases please see [Helidon 2.x CHANGELOG.md](https://github.co
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
-## [3.0.0-SNAPSHOT]
+## [3.0.0-RC2]
+
+This is the second RC release of Helidon 3.0. It contains significant new
+features, enhancements and fixes. It also contains backward incompatible changes.
+(see Compatibility below). This milestone release is provided for customers that
+want early access to Helidon 3.0 for experimentation. It should be considered
+unstable and is not intended for production use. APIs and features might not be
+fully implemented and tested and are subject to change. Documentation is incomplete.
+Those looking for a stable release should use Helidon 2.
+
+Notable changes from 2.x:
+
+- MicroProfile 5.0 support
+- javax to jakarta Java package namespace change for Jakarta 9 APIs
+- Java 11 no longer supported. Java 17 or newer is required.
+
+### Compatibility
+
+3.0.0-RC2 contains the following incompatibilities with 2.x:
+
+- Java 17 or newer is required
+- Java package namespace for Jakarta APIs has changed from `javax` to `jakarta`
+- Deprecated APIs have been removed
 
 ### CHANGES
+
+Changes from RC1:
+
+- Archetypes: 3.0 archetypes minor issues : Multiple fix to templates [4556](https://github.com/oracle/helidon/pull/4556)
+- Archetypes: Fix Ambiguous dependencies for type PersistenceUnitInfo [4568](https://github.com/oracle/helidon/pull/4568)
+- Dependencies: Bump Reactive Messaging API to 3.0-RC3 to allow CCR [4535](https://github.com/oracle/helidon/pull/4535)
+- Dependencies: Integrate build tools 3.0.0-RC2 [4562](https://github.com/oracle/helidon/pull/4562)
+- Deserialization configuration update. [4533](https://github.com/oracle/helidon/pull/4533)
+- Native Image: Add module info to native image extensions. [4529](https://github.com/oracle/helidon/pull/4529)
+- Documentation updates: [4546](https://github.com/oracle/helidon/pull/4546) [4541](https://github.com/oracle/helidon/pull/4541) [4478](https://github.com/oracle/helidon/pull/4478) [4558](https://github.com/oracle/helidon/pull/4558) [4520](https://github.com/oracle/helidon/pull/4520) [4560](https://github.com/oracle/helidon/pull/4560) [4506](https://github.com/oracle/helidon/pull/4506) [4543](https://github.com/oracle/helidon/pull/4543) [4557](https://github.com/oracle/helidon/pull/4557) [4563](https://github.com/oracle/helidon/pull/4563) [4521](https://github.com/oracle/helidon/pull/4521) [4536](https://github.com/oracle/helidon/pull/4536) [4515](https://github.com/oracle/helidon/pull/4515) [4513](https://github.com/oracle/helidon/pull/4513) [4525](https://github.com/oracle/helidon/pull/4525) [4527](https://github.com/oracle/helidon/pull/4527) [4505](https://github.com/oracle/helidon/pull/4505) [4555](https://github.com/oracle/helidon/pull/4555) [4469](https://github.com/oracle/helidon/pull/4469) [4477](https://github.com/oracle/helidon/pull/4477) [4528](https://github.com/oracle/helidon/pull/4528)
+
+## [3.0.0-RC1]
+
+This is the first RC release of Helidon 3.0. It contains significant new
+features, enhancements and fixes. It also contains backward incompatible changes.
+(see Compatibility below). This milestone release is provided for customers that
+want early access to Helidon 3.0 for experimentation. It should be considered
+unstable and is not intended for production use. APIs and features might not be
+fully implemented and tested and are subject to change. Documentation is incomplete.
+Those looking for a stable release should use Helidon 2.
+
+Notable changes from 2.x:
+
+- MicroProfile 5.0 support
+- javax to jakarta Java package namespace change for Jakarta 9 APIs
+- Java 11 no longer supported. Java 17 or newer is required.
+
+### Compatibility
+
+3.0.0-RC1 contains the following incompatibilities with 2.x:
+
+- Java 17 or newer is required
+- Java package namespace for Jakarta APIs has changed from `javax` to `jakarta`
+- Deprecated APIs have been removed
+
+### CHANGES
+
+- WebServer: Routing 3 [4236](https://github.com/oracle/helidon/pull/4236)
+- WebServer: Removed deprecated classes from WebServer, mostly static content. [4376](https://github.com/oracle/helidon/pull/4376)
+- WebServer: Remove deprecated method from `HelidonRestServiceSupport` [4393](https://github.com/oracle/helidon/pull/4393)
+- WebServer: Nocache [4258](https://github.com/oracle/helidon/pull/4258)
+- Tracing: Tracing abstraction for Helidon [4458](https://github.com/oracle/helidon/pull/4458)
+- Tracing: Add OpenTelemetry support [4518](https://github.com/oracle/helidon/pull/4518)
+- Test: ThreadPoolTest rc fix [4460](https://github.com/oracle/helidon/pull/4460)
+- Test: Removed final from proxied types, these could no longer be proxied. [4489](https://github.com/oracle/helidon/pull/4489)
+- Test: Re-enable Packaging Tests [4412](https://github.com/oracle/helidon/pull/4412)
+- Test: Mock connector [4457](https://github.com/oracle/helidon/pull/4457)
+- Test: Load both bean definitions of the same type instead of choosing just one [4494](https://github.com/oracle/helidon/pull/4494)
+- Test: Intermittent SubscriberPublMsgToPaylRetComplVoidBean test fix [4474](https://github.com/oracle/helidon/pull/4474)
+- Test: Intermittent SubscriberPublMsgToMsgRetComplBean test fix [4491](https://github.com/oracle/helidon/pull/4491)
+- Test: Use 127.0.0.1 for client connections in test (instead of 0.0.0.0) [4279](https://github.com/oracle/helidon/pull/4279)
+- Test: Add test-nightly.sh [4278](https://github.com/oracle/helidon/pull/4278)
+- Security: RoleContainer support added [4271](https://github.com/oracle/helidon/pull/4271)
+- Security: Remove deprecated method from Jwt. [4400](https://github.com/oracle/helidon/pull/4400)
+- Security: OIDC update to support HTTPS identity provider on plain socket Helidon [4222](https://github.com/oracle/helidon/pull/4222)
+- Security: HTTP Signatures: Fixed deprecation and modified defaults. [4399](https://github.com/oracle/helidon/pull/4399)
+- Security: Change defaults for Open ID Connect [4335](https://github.com/oracle/helidon/pull/4335)
+- Security: Added X509 certificate context key when client certificate is present and pem trust store configuration [4185](https://github.com/oracle/helidon/pull/4185)
+- Security: Add IDCS related info to MP Security example [4343](https://github.com/oracle/helidon/pull/4343)
+- Reactive: Multi support in Reactive Messaging 3.0 [4475](https://github.com/oracle/helidon/pull/4475)
+- OCI: Makes OCI CDI extension work with OCI's shaded full jar [4498](https://github.com/oracle/helidon/pull/4498) [4531](https://github.com/oracle/helidon/pull/4531) [4483](https://github.com/oracle/helidon/pull/4483) [4488](https://github.com/oracle/helidon/pull/4488) [4522](https://github.com/oracle/helidon/pull/4522)
+- OCI: Integration Examples Update and Deprecation [4516](https://github.com/oracle/helidon/pull/4516)
+- Misc: Remove experimental flags from relevant modules. [4361](https://github.com/oracle/helidon/pull/4361)
+- Metrics: Properly count completed and failed thread pool tasks (master) [4247](https://github.com/oracle/helidon/pull/4247)
+- Metrics: Deal with deprecations in metrics [4397](https://github.com/oracle/helidon/pull/4397)
+- Metrics: Correct Prometheus output for timer and JSON output for SimpleTimer [4243](https://github.com/oracle/helidon/pull/4243)
+- Metrics: Convert  `synchronized` to use semaphores [4284](https://github.com/oracle/helidon/pull/4284)
+- Metrics: Address deprecations in MP metrics [4500](https://github.com/oracle/helidon/pull/4500)
+- Messaging: Messaging Deprecations cleanup [4454](https://github.com/oracle/helidon/pull/4454)
+- Messaging: Kafka nack support [4443](https://github.com/oracle/helidon/pull/4443)
+- Messaging: JMS configurable producer properties #3980 [4272](https://github.com/oracle/helidon/pull/4272)
+- LRA: LRA Deprecations removal [4449](https://github.com/oracle/helidon/pull/4449)
+- JPA: Updates persistence.xmls to 3.0. Re-enables JPA tests. Removes eclips… [4446](https://github.com/oracle/helidon/pull/4446)
+- gRPC: Removed support for JavaMarshaller as default marshaller [4423](https://github.com/oracle/helidon/pull/4423)
+- gRPC: Fixing module-info files so that gRPC works when using Java modules [4235](https://github.com/oracle/helidon/pull/4235)
+- GraphQL: Update to mp-graphql 2.0 [4190](https://github.com/oracle/helidon/pull/4190)
+- FT: Update feature catalog with FT for SE (master) [4351](https://github.com/oracle/helidon/pull/4351)
+- FT: Port of a few Fault Tolerance related PRs to master [4255](https://github.com/oracle/helidon/pull/4255)
+- FT: Fixed problem in DelayRetryPolicyTest that would cause all delays to be zero (master) [4221](https://github.com/oracle/helidon/pull/4221)
+- FT: Avoid calling getPackage() on an annotation type (master) [4350](https://github.com/oracle/helidon/pull/4350)
+- FT: Added config support for bulkheads, breakers, timeouts and retries (master) [4357](https://github.com/oracle/helidon/pull/4357)
+- Examples: Uses lowercase for database column names in se database archetype to fix issue #4187 [4273](https://github.com/oracle/helidon/pull/4273)
+- Examples: Gradle: Add helidon test dependency. Add task dependency for jandex [4231](https://github.com/oracle/helidon/pull/4231)
+- Examples: Use standard graalvm base image in Dockerfile.native [4501](https://github.com/oracle/helidon/pull/4501)
+- Docs: [New Docs PR] - Helidon MP WebSocket 4213 [4442](https://github.com/oracle/helidon/pull/4442)
+- Docs: [New Docs PR] - Helidon MP Scheduling #4206 [4456](https://github.com/oracle/helidon/pull/4456)
+- Docs: [New Docs PR] - Helidon MP OpenTracing #4199 [4428](https://github.com/oracle/helidon/pull/4428)
+- Docs: [New Docs PR] - Helidon MP OpenAPI #4209 [4421](https://github.com/oracle/helidon/pull/4421)
+- Docs: [New Docs PR] - Helidon MP Bean Validation #4202 [4426](https://github.com/oracle/helidon/pull/4426)
+- Docs: WebServer documentation [4461](https://github.com/oracle/helidon/pull/4461)
+- Docs: Updated doc for FT MP using new template [4438](https://github.com/oracle/helidon/pull/4438)
+- Docs: Updated FT SE documentation [4465](https://github.com/oracle/helidon/pull/4465)
+- Docs: New formatting for Helidon Health Checks SE document [4495](https://github.com/oracle/helidon/pull/4495)
+- Docs: New formatting for GraphQL MP document [4514](https://github.com/oracle/helidon/pull/4514)
+- Docs: New formatting for CORS SE documentation [4470](https://github.com/oracle/helidon/pull/4470)
+- Docs: New doc file that briefly describes the JAX-RS Client API [4451](https://github.com/oracle/helidon/pull/4451)
+- Docs: MP CORS doc update [4511](https://github.com/oracle/helidon/pull/4511)
+- Docs: Latest sitegen and functional docs improvements [4463](https://github.com/oracle/helidon/pull/4463)
+- Docs: Java doc typo fixing [4473](https://github.com/oracle/helidon/pull/4473)
+- Docs: Helidon MP RestClient documentation [4448](https://github.com/oracle/helidon/pull/4448)
+- Docs: Helidon MP Health new style documentation  [4387](https://github.com/oracle/helidon/pull/4387)
+- Docs: Fix config doc annotations for OpenAPI builder [4419](https://github.com/oracle/helidon/pull/4419)
+- Docs: Fix Javadoc links [4479](https://github.com/oracle/helidon/pull/4479)
+- Docs: Documentation : Helidon DB Client Guide [2673](https://github.com/oracle/helidon/pull/2673)
+- Docs: Change last use of '{...}' for a placeholder to `*` [4455](https://github.com/oracle/helidon/pull/4455)
+- Docs: Add default value constants and use in config doc [4408](https://github.com/oracle/helidon/pull/4408)
+- Docs: 4367 doc update for java marshaller deprecation [4441](https://github.com/oracle/helidon/pull/4441)
+- Docs: Update OCI integration documentation to reflect use of new OCI SDK CDI Extension [4409](https://github.com/oracle/helidon/pull/4409)
+- Docs: Add tuning guides [4156](https://github.com/oracle/helidon/pull/4156)
+- Dependencies: Yasson version increased to 2.0.4 [4260](https://github.com/oracle/helidon/pull/4260)
+- Dependencies: Upgrades Jandex to 2.4.3.Final [4487](https://github.com/oracle/helidon/pull/4487)
+- Dependencies: Upgrades HikariCP to 5.0.1 [4519](https://github.com/oracle/helidon/pull/4519)
+- Dependencies: Upgrades Hibernate to version 6.1.1.Final [4484](https://github.com/oracle/helidon/pull/4484)
+- Dependencies: Upgrades H2 to 2.1.212 [4298](https://github.com/oracle/helidon/pull/4298)
+- Dependencies: Revert back to using javax.validation as jakarta.validation is not supported by micronaut [4476](https://github.com/oracle/helidon/pull/4476)
+- Dependencies: Restoring dependency with Tyrus 2.0.1 [4429](https://github.com/oracle/helidon/pull/4429)
+- Dependencies: Bump derby from 10.13.1.1 to 10.14.2.0 in /examples/jbatch [4453](https://github.com/oracle/helidon/pull/4453)
+- Dependencies: Upgrade Netty to 4.1.77.Final [4252](https://github.com/oracle/helidon/pull/4252)
+- Dependencies: Upgrade Jackson to 2.13.2.2 [4178](https://github.com/oracle/helidon/pull/4178)
+- Dependencies: Move mockito dependency management to root pom [4285](https://github.com/oracle/helidon/pull/4285)
+- Dependencies: upgrade google api client [4297](https://github.com/oracle/helidon/pull/4297)
+- DataSource: Adds XA support to Helidon's UCP integration [4291](https://github.com/oracle/helidon/pull/4291)
+- Config: Support Hocon/Json Configuration Source for MP [4347](https://github.com/oracle/helidon/pull/4347)
+- Config: Metadata argument number changed [4386](https://github.com/oracle/helidon/pull/4386)
+- Config: Deserialization disabled by default. [4334](https://github.com/oracle/helidon/pull/4334)
+- Config: Config metadata update [4403](https://github.com/oracle/helidon/pull/4403)
+- Config: Add helidon-config-yaml-mp as a dependency in helidon-microprofile-config [4379](https://github.com/oracle/helidon/pull/4379)
+- Common: Removal of deprecated code in common context [4388](https://github.com/oracle/helidon/pull/4388)
+- Common: Removal of deprecated code in common configurable [4405](https://github.com/oracle/helidon/pull/4405)
+- Common: Enable thread pool growth at threshold instead of above it (master) [4248](https://github.com/oracle/helidon/pull/4248)
+- Common: Remove dependency on helidon-common-reactive from config (#4225) [4229](https://github.com/oracle/helidon/pull/4229)
+- Cleanup: Fix code with 'TODO 3.0.0-JAKARTA' comment [4447](https://github.com/oracle/helidon/pull/4447)
+- CORS: Preserve order of mapped cross-origin config path entries from config; add test [4431](https://github.com/oracle/helidon/pull/4431)
+- CORS: Correct return of path from MP CORS request adapter; add test [4435](https://github.com/oracle/helidon/pull/4435)
+- CDI: Updates all beans.xml files to version 3.0 [4404](https://github.com/oracle/helidon/pull/4404)
+
 
 ## [3.0.0-M2]
 
@@ -203,6 +361,7 @@ Notable changes:
 - Examples: Update bare-mp archetype to use microprofile-core [3795](https://github.com/oracle/helidon/pull/3795)
 
 
-[3.0.0-SHAPSHOT]: https://github.com/oracle/helidon/compare/3.0.0-M2...HEAD
+[3.0.0-RC2]: https://github.com/oracle/helidon/compare/3.0.0-RC1...3.0.0-RC2
+[3.0.0-RC1]: https://github.com/oracle/helidon/compare/3.0.0-M2...3.0.0-RC1
 [3.0.0-M2]: https://github.com/oracle/helidon/compare/3.0.0-M1...3.0.0-M2
 [3.0.0-M1]: https://github.com/oracle/helidon/compare/2.4.0...3.0.0-M1
