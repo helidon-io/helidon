@@ -20,6 +20,10 @@
 :keywords: helidon, config, io.helidon.microprofile.server.Server
 :basic-table-intro: The table below lists the configuration keys that configure io.helidon.microprofile.server.Server
 
+= Server Configuration
+
+// tag::config[]
+
 [source,text]
 .Type
 ----
@@ -47,3 +51,5 @@ Optional configuration options:
 |`host` |string |{nbsp} |Configure listen host.
 
 |===
+
+// end::config[]

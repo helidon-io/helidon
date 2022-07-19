@@ -74,7 +74,7 @@ as is done in the xref:guides/quickstart.adoc[Helidon MP Quickstart example]. No
 
 == API
 
-include::{rootdir}/config/io_helidon_microprofile_server_Server.adoc[]
+include::{rootdir}/config/io_helidon_microprofile_server_Server.adoc[leveloffset=+1,tag=config]
 
 The following table provides a brief description of routing annotations, including its parameters. More information
 in `Configuring a reactive route` section.
