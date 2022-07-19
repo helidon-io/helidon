@@ -154,8 +154,7 @@ public class GrpcTlsDescriptor {
          * @param jdkSSL true to use JDK based SSL, false otherwise
          * @return this instance for fluent API
          */
-        @ConfiguredOption(key = "jdk-ssl")
-        @Value(key = "jdk-ssl")
+        @ConfiguredOption(key = "jdk-ssl", value = "false")
         public Builder jdkSSL(boolean jdkSSL) {
             this.jdkSSL = jdkSSL;
             return this;
@@ -166,7 +165,7 @@ public class GrpcTlsDescriptor {
          * @param tlsCert the path to client's certificate
          * @return this instance for fluent API
          */
-        @ConfiguredOption(key = "tls-cert")
+        @ConfiguredOption
         @Value(key = "tls-cert")
         public Builder tlsCert(Resource tlsCert) {
             this.tlsCert = tlsCert;
@@ -178,7 +177,7 @@ public class GrpcTlsDescriptor {
          * @param tlsKey the 's TLS private key
          * @return this instance for fluent API
          */
-        @ConfiguredOption(key = "tls-key")
+        @ConfiguredOption
         @Value(key = "tls-key")
         public Builder tlsKey(Resource tlsKey) {
             this.tlsKey = tlsKey;

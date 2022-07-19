@@ -215,7 +215,6 @@ public class GrpcChannelDescriptor {
          *
          * @see io.grpc.ManagedChannelBuilder#defaultLoadBalancingPolicy(String)
          */
-        // @ConfiguredOption
         public Builder loadBalancerPolicy(String policy) {
             loadBalancerPolicy = policy;
             return this;
@@ -229,7 +228,6 @@ public class GrpcChannelDescriptor {
          *
          * @see io.grpc.ManagedChannelBuilder#nameResolverFactory(io.grpc.NameResolver.Factory)
          */
-        // @ConfiguredOption
         public Builder nameResolverFactory(NameResolver.Factory factory) {
             this.nameResolver = factory;
             return this;

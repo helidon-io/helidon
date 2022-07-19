@@ -177,22 +177,10 @@ public interface GrpcServerConfiguration {
          * @param config configuration instance
          * @return updated builder
          */
-        @ConfiguredOption(key = "name",
-                type = String.class,
-                value = DEFAULT_NAME,
-                description = "Name of the gRPC server")
-        @ConfiguredOption(key = "port",
-                type = Integer.class,
-                value = "" + DEFAULT_PORT,
-                description = "Specify the gRPC server port")
         @ConfiguredOption(key = "native",
                 type = Boolean.class,
                 value = "false",
                 description = "Specify if native transport should be used.")
-        @ConfiguredOption(key = "workers",
-                type = String.class,
-                value = "Number of processors available to the JVM",
-                description = "Specify the count of threads in pool used to process HTTP requests.")
         public Builder config(Config config) {
             if (config == null) {
                 return this;
@@ -215,6 +203,7 @@ public interface GrpcServerConfiguration {
          *
          * @return an updated builder
          */
+        @ConfiguredOption(key = "name", value = DEFAULT_NAME)
         public Builder name(String name) {
             this.name = name == null ? null : name.trim();
             return this;
@@ -228,6 +217,7 @@ public interface GrpcServerConfiguration {
          * @param port the server port
          * @return an updated builder
          */
+        @ConfiguredOption(value = "" + DEFAULT_PORT)
         public Builder port(int port) {
             this.port = port < 0 ? 0 : port;
             return this;
@@ -287,6 +277,7 @@ public interface GrpcServerConfiguration {
          * @param workers a workers count
          * @return an updated builder
          */
+        @ConfiguredOption(key = "workers", value = "Number of processors available to the JVM")
         public Builder workersCount(int workers) {
             this.workers = workers;
             return this;

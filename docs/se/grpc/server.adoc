@@ -879,7 +879,7 @@ include::{rootdir}/config/io_helidon_grpc_server_GrpcServerConfiguration.adoc[le
 .GrpcServer configuration file example using  `application.yaml`
 [source,yaml]
 ----
-grpcserver:
+grpc:
   port: 3333
 ----
 

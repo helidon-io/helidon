@@ -42,10 +42,17 @@ Optional configuration options:
 |===
 |key |type |default value |description
 
-|`name` |string |`grpc.server` |Name of the gRPC server
+|`name` |string |`grpc.server` |Set the name of the gRPC server.
+
+ Configuration key: `name`
 |`native` |boolean |`false` |Specify if native transport should be used.
-|`port` |int |`1408` |Specify the gRPC server port
-|`workers` |string |`Number of processors available to the JVM` |Specify the count of threads in pool used to process HTTP requests.
+|`port` |int |`1408` |Sets server port. If port is `0` or less then any available ephemeral port will be used.
+
+ Configuration key: `port`
+|`workers` |int |`Number of processors available to the JVM` |Sets a count of threads in pool used to process HTTP requests.
+ Default value is `CPU_COUNT * 2`.
+
+ Configuration key: `workers`
 
 |===
 
