@@ -47,6 +47,8 @@ module io.helidon.grpc.core {
 
     requires jakarta.inject;
 
+    requires static io.helidon.config.metadata;
+
     provides MarshallerSupplier with
             MarshallerSupplier.DefaultMarshallerSupplier,
             MarshallerSupplier.ProtoMarshallerSupplier,

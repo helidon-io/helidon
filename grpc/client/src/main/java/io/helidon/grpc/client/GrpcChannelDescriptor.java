@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package io.helidon.grpc.client;
 
 import java.util.Optional;
 
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.config.objectmapping.Value;
 import io.helidon.grpc.core.GrpcTlsDescriptor;
 
@@ -127,6 +129,7 @@ public class GrpcChannelDescriptor {
     /**
      * Builder builds a GrpcChannelDescriptor.
      */
+    @Configured
     public static class Builder implements io.helidon.common.Builder<Builder, GrpcChannelDescriptor> {
         private boolean inProcessChannel;
         private String host = GrpcChannelsProvider.DEFAULT_HOST;
@@ -157,6 +160,7 @@ public class GrpcChannelDescriptor {
          *
          * @see io.grpc.ManagedChannelBuilder#forTarget(String)
          */
+        @ConfiguredOption()
         @Value
         public Builder target(String target) {
             this.target = target;
@@ -169,6 +173,7 @@ public class GrpcChannelDescriptor {
          *
          * @return this instance for fluent API
          */
+        @ConfiguredOption(value = GrpcChannelsProvider.DEFAULT_HOST)
         @Value(withDefault = GrpcChannelsProvider.DEFAULT_HOST)
         public Builder host(String host) {
             this.host = host;
@@ -181,6 +186,7 @@ public class GrpcChannelDescriptor {
          *
          * @return this instance for fluent API
          */
+        @ConfiguredOption(value = "" + GrpcChannelsProvider.DEFAULT_PORT)
         @Value(withDefault = "" + GrpcChannelsProvider.DEFAULT_PORT)
         public Builder port(int port) {
             this.port = port;
@@ -194,6 +200,7 @@ public class GrpcChannelDescriptor {
          *
          * @return this instance for fluent API
          */
+        @ConfiguredOption(key = "tls")
         @Value(key = "tls")
         public Builder sslDescriptor(GrpcTlsDescriptor tlsDescriptor) {
             this.tlsDescriptor = tlsDescriptor;
