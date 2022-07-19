@@ -31,7 +31,7 @@ For this 10 minute tutorial, you will need the following:
 
 include::{rootdir}/includes/prerequisites.adoc[tag=prerequisites]
 
-Helidon MP supports xref:../server.adoc#_configuring_a_reactive_route[Reactive routing] which brings possibility for reusing
+Helidon MP supports xref:../server.adoc#configuring-a-reactive-route[Reactive routing] which brings possibility for reusing
 `io.helidon.webserver.Service` implementations in Helidon MP. Such feature can be quite useful for common
 solutions for filtering, auditing, logging or augmenting REST endpoints in hybrid Helidon SE/MP environment.
 
@@ -91,4 +91,4 @@ public class MyBean {
 You can leverage annotations:
 
 * @RoutingPath - path of the WebServer service
-* @RoutingName - select routing when xref:../server.adoc#annotation-routing-name[serving requests on multiple ports]
+* @RoutingName - select routing when xref:../server.adoc[serving requests on multiple ports]

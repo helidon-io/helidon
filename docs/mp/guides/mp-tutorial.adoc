@@ -332,7 +332,7 @@ Rebuild the application and run it again.  Notice that it now uses port
  8080 as specified in the configuration file.
 
 TIP: You can learn more about options for configuring the Helidon Server on the
- xref:../server.adoc#_configuration[Server Configuration] page.
+ xref:../server.adoc[Server Configuration] page.
 
 In addition to predefined server properties, application-specific
  configuration information can be added to this file.  Add the `app.greeting`
