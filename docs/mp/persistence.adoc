@@ -368,7 +368,7 @@ javax.sql.DataSource.yourDataSourceName.someOtherPropertyOfYourConnectionPoolAnd
 Here is an example of some named data source configuration using
 system properties on the command line instead:
 
-[source,shell]
+[source,bash]
 ----
 java \
   -Djavax.sql.DataSource.yourDataSourceName.somePropertyOfYourConnectionPoolAndDataSource=itsValue \
@@ -385,7 +385,7 @@ link:{microprofile-config-javadoc-url}/org/eclipse/microprofile/config/spi/Confi
 Config's mapping rules], since many shells will not understand
 environment variable names with periods (.)  in them:
 
-[source,shell]
+[source,bash]
 ----
 JAVAX_SQL_DATASOURCE_YOURDATASOURCENAME_SOMEPROPERTYOFYOURCONNECTIONPOOLANDDATASOURCE=itsValue \
 JAVAX_SQL_DATASOURCE_YOURDATASOURCENAME_SOMEOTHERPROPERTYOFYOURCONNECTIONPOOLANDDATASOURCE=anotherValue \
@@ -401,7 +401,7 @@ shell command], thus removing the need for
 link:{microprofile-config-javadoc-url}/org/eclipse/microprofile/config/spi/ConfigSource.html#default_config_sources[MicroProfile
 Config's mapping rules]:
 
-[source,shell]
+[source,bash]
 ----
 env 'javax.sql.DataSource.yourDataSourceName.somePropertyOfYourConnectionPoolAndDataSource=itsValue' \
   'javax.sql.DataSource.yourDataSourceName.someOtherPropertyOfYourConnectionPoolAndDataSource=anotherValue' \
@@ -447,14 +447,14 @@ javax.sql.DataSource.main.user = scott
 javax.sql.DataSource.main.password = tiger
 ----
 <1> Why `connectionFactoryClassName`? See
-    link:{oracle-ucp-javadoc-base-url}oracle/ucp/jdbc/PoolDataSourceImpl.html#setConnectionFactoryClassName_java_lang_String_)[`PoolDataSourceImpl#setConnectionFactoryClassName(String)`].
+    link:{oracle-ucp-javadoc-base-url}/oracle/ucp/jdbc/PoolDataSourceImpl.html#setConnectionFactoryClassName_java_lang_String_)[`PoolDataSourceImpl#setConnectionFactoryClassName(String)`].
 <2> See
     link:{oracle-jdbc-doc-base-url}/data-sources-and-URLs.html#GUID-EF07727C-50AB-4DCE-8EDC-57F0927FF61A[Thin-style
     Service Name Syntax].
 
 In general, the properties that can be set on the Oracle Universal
 Connection Pool can be inferred from the "setter" methods found in
-link:{oracle-ucp-javadoc-base-url}oracle/ucp/jdbc/PoolDataSourceImpl.html[the
+link:{oracle-ucp-javadoc-base-url}/oracle/ucp/jdbc/PoolDataSourceImpl.html[the
 javadoc for the `PoolDataSourceImpl` class].
 
 In general, the properties that can be set on the
@@ -470,13 +470,13 @@ cleanly between configuration properties that affect _its_ behavior
 and those that affect the behavior of the vendor-supplied `DataSource`
 implementation whose connections it pools.  For example, in the
 example above it is not possible to tell that
-link:{oracle-ucp-javadoc-base-url}oracle/ucp/jdbc/PoolDataSourceImpl.html#setConnectionFactoryClassName_java_lang_String_[`connectionFactoryClassName`
+link:{oracle-ucp-javadoc-base-url}/oracle/ucp/jdbc/PoolDataSourceImpl.html#setConnectionFactoryClassName_java_lang_String_[`connectionFactoryClassName`
 is a property of the Oracle Universal Connection Pool], and
 link:{oracle-jdbc-javadoc-base-url}/oracle/jdbc/datasource/impl/OracleDataSource.html#setUser_java_lang_String_[`user`
 is a property of the `oracle.jdbc.pool.OracleDataSource` `DataSource`
 implementation].  In some cases, the Oracle Universal Connection Pool
 will
-link:{oracle-ucp-javadoc-base-url}oracle/ucp/jdbc/PoolDataSource.html#setUser_java_lang_String_[set
+link:{oracle-ucp-javadoc-base-url}/oracle/ucp/jdbc/PoolDataSource.html#setUser_java_lang_String_[set
 the given property on _both_ the connection pool itself _and_ on the
 vendor-supplied `DataSource` it manages].
 
@@ -519,10 +519,10 @@ link:{hikaricp-base-url}/src/main/java/com/zaxxer/hikari/util/PropertyElf.java#L
 prefixed with `dataSource.`] as seen in the example above.
 
 In general, the properties that can be set on the
-http://www.h2database.com/javadoc/org/h2/jdbcx/JdbcDataSource.html[`org.h2.jdbcx.JdbcDataSource`]
+https://www.h2database.com/javadoc/org/h2/jdbcx/JdbcDataSource.html[`org.h2.jdbcx.JdbcDataSource`]
 vendor-supplied `DataSource` can be inferred from the "setter" methods
 found in
-http://www.h2database.com/javadoc/org/h2/jdbcx/JdbcDataSource.html[its
+https://www.h2database.com/javadoc/org/h2/jdbcx/JdbcDataSource.html[its
 javadoc].
 
 ==== Usage [[DS-Usage]]
@@ -665,7 +665,7 @@ set the
 https://www.narayana.io/docs/api/com/arjuna/ats/arjuna/common/ObjectStoreEnvironmentBean.html#setObjectStoreType-java.lang.String-[`ObjectStoreEnvironmentBean.objectStoreDir`]
 system property to the full path of a writeable directory:
 
-[source,shell]
+[source,bash]
 ----
 java -DObjectStoreEnvironmentBean.objectStoreDir=/var/tmp # ...
 ----
@@ -681,7 +681,7 @@ transaction manager timeout], set the
 `com.arjuna.ats.arjuna.coordinator.defaultTimeout` system property to
 an integral value in seconds:
 
-[source,shell]
+[source,bash]
 ----
 java -Dcom.arjuna.ats.arjuna.coordinator.defaultTimeout=60 # ...
 ----
@@ -1371,10 +1371,10 @@ relational database tables, and how to perform other related tasks.
 * https://www.oracle.com/database/technologies/maven-central-guide.html[Developers
   Guide For Oracle JDBC 21c on Maven Central]
 
-* link:{oracle-ucp-doc-base-url}index.html[Oracle® Universal
+* link:{oracle-ucp-doc-base-url}/index.html[Oracle® Universal
   Connection Pool Developer's Guide, Release 21c]
 
-* link:{oracle-ucp-javadoc-base-url}index.html#[Oracle® Universal
+* link:{oracle-ucp-javadoc-base-url}/index.html#[Oracle® Universal
   Connection Pool Java API Reference, Release 21c]
 
 * link:{oracle-jdbc-doc-base-url}/index.html[Oracle® Database JDBC

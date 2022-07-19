@@ -219,7 +219,6 @@ endif::[]
 :hikaricp-base-url: https://github.com/brettwooldridge/HikariCP/blob/HikariCP-{version-lib-hikaricp}
 :hikaricp-javadoc-url: {javadoc-io-base-url}/com.zaxxer/HikariCP/{version-lib-hikaricp}
 :eclipselink-doc-base-url: https://www.eclipse.org/eclipselink/documentation/{version-lib-eclipselink}
-:hibernate-base-url: https://github.com/hibernate/hibernate-orm/blob/{version-lib-
 :hibernate-doc-base-url: https://hibernate.org/orm/documentation/{version-lib-hibernate}
 :hibernate-doc-jboss-url: https://docs.jboss.org/hibernate/orm/{version-lib-hibernate}
 :hibernate-javadoc-base-url: {hibernate-doc-jboss-url}/javadocs
@@ -247,7 +246,7 @@ endif::[]
 :oracle-jdbc-doc-base-url: https://docs.oracle.com/en/database/oracle/oracle-database/{version-lib-oracle-jdbc}/jjdbc
 :oracle-jdbc-javadoc-base-url: https://docs.oracle.com/en/database/oracle/oracle-database/{version-lib-oracle-jdbc}/jajdb
 :oracle-ucp-doc-base-url: https://docs.oracle.com/en/database/oracle/oracle-database/{version-lib-oracle-ucp}/jjucp
-:oracle-ucp-javadoc-base-url: https://docs.oracle.com/en/database/oracle/oracle-database/{version-lib-oracle-ucp}/jjuar/
+:oracle-ucp-javadoc-base-url: https://docs.oracle.com/en/database/oracle/oracle-database/{version-lib-oracle-ucp}/jjuar
 
 :micrometer-url: https://micrometer.io
 :micrometer-api-url: https://micrometer.io/docs/concepts
