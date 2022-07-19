@@ -687,7 +687,7 @@ java -Dcom.arjuna.ats.arjuna.coordinator.defaultTimeout=60 # ...
 ----
 
 For more on configuring Narayana, see
-https://www.narayana.io//docs/project/index.html#chap-JBossJTA_Installation_Guide-Test_Chapter[Setting
+https://www.narayana.io/docs/project/index.html#chap-JBossJTA_Installation_Guide-Test_Chapter[Setting
 Properties] in the Naryana documentation.
 
 === Usage [[JTA-Usage]]
@@ -1391,7 +1391,7 @@ relational database tables, and how to perform other related tasks.
 * link:{jakarta-transactions-javadoc-url}/[Jakarta Transactions
   {version-lib-jakarta-transaction-api} API Reference]
 
-* https://www.narayana.io//docs/project/index.html[Narayana Project Documentation]
+* https://www.narayana.io/docs/project/index.html[Narayana Project Documentation]
 
 * https://www.narayana.io/docs/api/index.html[Narayana API Reference]
 
