@@ -1,0 +1,699 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Reactive Messaging
+:h1Prefix: SE
+:toc:
+:toc-placement: preamble
+:description: Reactive Messaging support in Helidon SE
+:keywords: helidon, se, messaging
+:feature-name: Reactive Messaging
+:rootdir: {docdir}/..
+
+== Contents
+
+- <<Overview, Overview>>
+- <<Maven Coordinates, Maven Coordinates>>
+- <<Usage, Usage>>
+** <<Channel, Channel>>
+** <<Processor, Processor>>
+** <<Message, Message>>
+** <<Connectors, Connectors>>
+*** <<Kafka Connector, Kafka Connector>>
+*** <<JMS Connector, JMS Connector>>
+*** <<AQ Connector,AQ Connector>>
+- <<Configuration, Configuration>>
+- <<Reference, Reference>>
+
+== Overview
+
+Asynchronous messaging is a commonly used form of communication in the world of microservices.
+While its possible to start building your reactive streams directly by combining operators and
+connecting them to reactive APIs, with Helidon SE Reactive Messaging, you can now use prepared
+tools for repetitive use case scenarios .
+
+include::{rootdir}/includes/dependencies.adoc[]
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.messaging</groupId>
+    <artifactId>helidon-messaging</artifactId>
+</dependency>
+----
+
+== Usage
+
+For example connecting your streams to external services usually requires a lot of boiler-plate
+code for configuration handling, backpressure propagation, acknowledgement and more.
+
+For such tasks there is a system of connectors, emitters and means to orchestrate them in Helidon,
+called *Reactive Messaging*. It's basically an API for connecting and configuring
+Connectors and Emitters with your reactive streams through so called <<Channel,Channels>>.
+
+You may wonder how *Reactive Messaging* relates to
+xref:../mp/reactivemessaging/introduction.adoc[MicroProfile Reactive Messaging].
+As the making of connectors or even configuring them can be repetitive task leading to
+the same results, Helidon SE Reactive Messaging supports very same configuration format
+for connectors as its MicroProfile counterpart does. Also, MP Connectors are reusable in
+Helidon SE Messaging with some limitation(there is no CDI in Helidon SE).
+All <<Messaging Connector,Messaging connectors>> in Helidon are made to be universally usable by Helidon MP and SE.
+
+=== Channel
+
+Channel is a named pair of `Publisher` and `Subscriber`. Channels can be connected together by
+<<Processor,processors>>. Registering of `Publisher` or `Subscriber` for a channel can be done
+by Messaging API, or configured implicitly for using registered <<Connectors,connectors>>
+for generating such `Publisher` or `Subscriber`.
+
+[source,java]
+.Example of simple channel:
+----
+Channel<String> channel1 = Channel.create("channel1");
+
+Messaging.builder()
+        .publisher(channel1, Multi.just("message 1", "message 2")
+                                  .map(Message::of))
+        .listener(channel1, s -> System.out.println("Intecepted message " + s))
+        .build()
+        .start();
+----
+
+=== Processor
+
+Processor is a typical reactive processor acting as a `Subscriber` to upstream and as a `Publisher`
+to downstream. In terms of reactive messaging it is able to connect two <<Channel,channels>> to one
+reactive stream.
+
+[source,java]
+.Example of processor usage:
+----
+Channel<String> firstChannel = Channel.create("first-channel");
+Channel<String> secondChannel = Channel.create("second-channel");
+
+Messaging.builder()
+        .publisher(secondChannel, ReactiveStreams.of("test1", "test2", "test3")
+                .map(Message::of))
+        .processor(secondChannel, firstChannel, ReactiveStreams.<Message<String>>builder()
+                .map(Message::getPayload)
+                .map(String::toUpperCase)
+                .map(Message::of)
+        )
+        .subscriber(firstChannel, ReactiveStreams.<Message<String>>builder()
+                .peek(Message::ack)
+                .map(Message::getPayload)
+                .forEach(s -> System.out.println("Consuming message " + s)))
+        .build()
+        .start();
+
+>Consuming message TEST1
+>Consuming message TEST2
+>Consuming message TEST3
+----
+
+=== Message
+
+Reactive Messaging in Helidon SE uses the same concept of
+message wrapping as MicroProfile messaging.
+The only notable difference is that SE Messaging does almost no implicit or automatic
+acknowledgement due to _no magic_ philosophy of Helidon SE.
+
+Only exception to this are variants of methods `Messaging.Builder#listener` and
+`Messaging.Builder#processor` with consumer or function params,  conveniently unwrapping payload
+for you. After such implicit unwrapping is not possible to do a manual acknowledgement, therefore
+implicit ack before callback is executed is necessary.
+
+=== Connectors
+
+Connector concept is a way for connecting <<Channel,channels>> to external sources.
+To make <<Messaging Connector,creation and usage of connectors>>
+as easy and versatile as possible, Helidon SE Messaging uses same API for connectors
+like xref:../mp/reactivemessaging/introduction.adoc[MicroProfile Reactive Messaging] does.
+This allows connectors to be usable in both flavors of Helidon with one limitation which is
+that connector has to be able to work without CDI.
+
+Example of such a versatile connectors in Helidon:
+
+* <<Kafka Connector,Kafka connector>>
+* <<JMS Connector,JMS connector>>
+* <<AQ Connector,AQ Connector>>
+
+==== Messaging Connector
+
+Connector for Reactive Messaging is a factory producing Publishers and Subscribers for
+Channels in Reactive Messaging. Messaging connector is just an implementation of
+`IncomingConnectorFactory`, `OutgoingConnectorFactory` or both.
+
+[source,java]
+.Example connector `example-connector`:
+----
+@Connector("example-connector")
+public class ExampleConnector implements IncomingConnectorFactory, OutgoingConnectorFactory {
+
+   @Override
+   public PublisherBuilder<? extends Message<?>> getPublisherBuilder(Config config) {
+       return ReactiveStreams.of("foo", "bar")
+               .map(Message::of);
+   }
+
+   @Override
+   public SubscriberBuilder<? extends Message<?>, Void> getSubscriberBuilder(Config config) {
+       return ReactiveStreams.<Message<?>>builder()
+               .map(Message::getPayload)
+               .forEach(o -> System.out.println("Connector says: " + o));
+   }
+}
+----
+
+[source,yaml]
+.Example of channel to connector mapping config:
+----
+mp.messaging.outgoing.to-connector-channel.connector: example-connector
+mp.messaging.incoming.from-connector-channel.connector: example-connector
+----
+
+[source,java]
+.Example producing to connector:
+----
+Config config = Config.create();
+
+Messaging.builder()
+         .config(config)
+         .connector(new ExampleConnector())
+         .publisher(Channel.create("to-connector-channel"),
+                ReactiveStreams.of("fee", "fie")
+                    .map(Message::of)
+         )
+         .build()
+         .start();
+
+> Connector says: fee
+> Connector says: fie
+----
+
+[source,java]
+.Example consuming from connector:
+----
+Messaging.builder()
+        .connector(new ExampleConnector())
+        .subscriber(Channel.create("from-connector-channel"),
+                ReactiveStreams.<Message<String>>builder()
+                    .peek(Message::ack)
+                    .map(Message::getPayload)
+                    .forEach(s -> System.out.println("Consuming: " + s))
+        )
+        .build()
+        .start();
+
+> Consuming: foo
+> Consuming: bar
+----
+
+===== Configuration for Messaging connector
+
+Messaging connector in Helidon SE can be configured explicitly by API or implicitly
+by config following notation of link:https://download.eclipse.org/microprofile/microprofile-reactive-messaging-1.0/microprofile-reactive-messaging-spec.html#_configuration[MicroProfile Reactive Messaging].
+
+Configuration is being supplied to connector by Messaging implementation,
+two mandatory attributes are always present:
+
+* `channel-name` name of the channel which has this connector configured as Publisher or Subscriber, `Channel.create('name-of-channel')` in case of explicit configuration or `mp.messaging.incoming.name-of-channel.connector: connector-name` in case of implicit config
+* `connector` name of the connector `@Connector("connector-name")`
+
+[source,java]
+.Example connector accessing configuration:
+----
+@Connector("example-connector")
+public class ExampleConnector implements IncomingConnectorFactory {
+
+    @Override
+    public PublisherBuilder<? extends Message<?>> getPublisherBuilder(final Config config) {
+
+        String firstPropValue = config.getValue("first-test-prop", String.class);<1>
+        String secondPropValue = config.getValue("second-test-prop", String.class);
+
+        return ReactiveStreams.of(firstPropValue, secondPropValue)
+                .map(Message::of);
+    }
+}
+----
+<1> Config context is merged from channel and connector contexts
+
+====== Explicit Config for Messaging connector
+
+An explicit config for channel's publisher is possible with `Channel.Builder#publisherConfig(Config config)`
+and for subscriber with `Channel.Builder#subscriberConfig(Config config)`.
+Supplied xref:config/introduction.adoc[Helidon Config] is merged with
+mandatory attributes and any implicit config found. Resulting config is served to Connector.
+
+[source,java]
+.Example consuming from Kafka connector with explicit config:
+----
+String kafkaServer = config.get("app.kafka.bootstrap.servers").asString().get();
+String topic = config.get("app.kafka.topic").asString().get();
+
+Channel<String> fromKafka = Channel.<String>builder()<1><2>
+        .name("from-kafka")
+        .publisherConfig(KafkaConnector.configBuilder()
+                .bootstrapServers(kafkaServer)
+                .groupId("example-group-" + session.getId())
+                .topic(topic)
+                .autoOffsetReset(KafkaConfigBuilder.AutoOffsetReset.LATEST)
+                .enableAutoCommit(true)
+                .keyDeserializer(StringDeserializer.class)
+                .valueDeserializer(StringDeserializer.class)
+                .build()
+        )
+        .build();
+
+KafkaConnector kafkaConnector = KafkaConnector.create();<3>
+
+Messaging messaging = Messaging.builder()
+        .connector(kafkaConnector)
+        .listener(fromKafka, payload -> {
+            System.out.println("Kafka says: " + payload);
+        })
+        .build()
+        .start();
+----
+<1> Prepare channel for connecting kafka connector with specific publisher configuration -> listener,
+<2> Channel -> connector mapping is automatic when using `KafkaConnector.configBuilder()`
+<3> Prepare Kafka connector, can be used by any channel
+
+====== Implicit Config for Messaging connector
+
+Implicit config without any hard-coding is possible with xref:config/introduction.adoc[Helidon Config] following notation of link:https://download.eclipse.org/microprofile/microprofile-reactive-messaging-1.0/microprofile-reactive-messaging-spec.html#_configuration[MicroProfile Reactive Messaging].
+
+[source,yaml]
+.Example of channel to connector mapping config with custom properties:
+----
+mp.messaging.incoming.from-connector-channel.connector: example-connector<1>
+mp.messaging.incoming.from-connector-channel.first-test-prop: foo<2>
+mp.messaging.connector.example-connector.second-test-prop: bar<3>
+----
+<1> Channel -> Connector mapping
+<2> Channel configuration properties
+<3> Connector configuration properties
+
+[source,java]
+.Example consuming from connector:
+----
+Config config = Config.create();
+
+Messaging.builder()
+        .config(config)
+        .connector(new ExampleConnector())
+        .listener(Channel.create("from-connector-channel"),
+                    s -> System.out.println("Consuming: " + s))
+        .build()
+        .start();
+
+> Consuming: foo
+> Consuming: bar
+----
+
+==== Reusability in MP Messaging
+
+As the API is the same for xref:../mp/reactivemessaging/introduction.adoc[MicroProfile Reactive Messaging]
+connectors, all that is needed to make connector work in both ways is annotating it with
+`@ApplicationScoped`. Such connector is treated as a bean in Helidon MP.
+
+For specific information about creating messaging connectors for Helidon MP visit
+xref:../mp/reactivemessaging/introduction.adoc[MicroProfile Reactive Messaging].
+
+==== Kafka Connector
+
+[source,xml]
+.Maven dependency
+----
+<dependency>
+    <groupId>io.helidon.messaging.kafka</groupId>
+    <artifactId>helidon-messaging-kafka</artifactId>
+</dependency>
+----
+
+===== Reactive Kafka Connector
+
+Connecting streams to Kafka with Reactive Messaging couldn't be easier.
+
+===== Explicit config with config builder for Kafka Connector
+
+[source,java]
+.Example of consuming from Kafka:
+----
+String kafkaServer = config.get("app.kafka.bootstrap.servers").asString().get();
+String topic = config.get("app.kafka.topic").asString().get();
+
+Channel<String> fromKafka = Channel.<String>builder()<1><2>
+        .name("from-kafka")
+        .publisherConfig(KafkaConnector.configBuilder()
+                .bootstrapServers(kafkaServer)
+                .groupId("example-group-" + session.getId())
+                .topic(topic)
+                .autoOffsetReset(KafkaConfigBuilder.AutoOffsetReset.LATEST)
+                .enableAutoCommit(true)
+                .keyDeserializer(StringDeserializer.class)
+                .valueDeserializer(StringDeserializer.class)
+                .build()
+        )
+        .build();
+
+KafkaConnector kafkaConnector = KafkaConnector.create();<3>
+
+Messaging messaging = Messaging.builder()
+        .connector(kafkaConnector)
+        .listener(fromKafka, payload -> {
+            System.out.println("Kafka says: " + payload);
+        })
+        .build()
+        .start();
+----
+<1> Prepare a channel for connecting kafka connector with specific publisher configuration -> listener
+<2> Channel -> connector mapping is automatic when using KafkaConnector.configBuilder()
+<3> Prepare Kafka connector, can be used by any channel
+
+[source,java]
+.Example of producing to Kafka:
+----
+String kafkaServer = config.get("app.kafka.bootstrap.servers").asString().get();
+String topic = config.get("app.kafka.topic").asString().get();
+
+Channel<String> toKafka = Channel.<String>builder()<1><2>
+        .subscriberConfig(KafkaConnector.configBuilder()
+                .bootstrapServers(kafkaServer)
+                .topic(topic)
+                .keySerializer(StringSerializer.class)
+                .valueSerializer(StringSerializer.class)
+                .build()
+        ).build();
+
+KafkaConnector kafkaConnector = KafkaConnector.create();<3>
+
+messaging = Messaging.builder()
+        .publisher(toKafka, Multi.just("test1", "test2").map(Message::of))
+        .connector(kafkaConnector)
+        .build()
+        .start();
+----
+<1> Prepare a channel for connecting kafka connector with specific publisher configuration -> listener
+<2> Channel -> connector mapping is automatic when using KafkaConnector.configBuilder()
+<3> Prepare Kafka connector, can be used by any channel
+
+===== Implicit Helidon Config for Kafka Connector
+
+[source,yaml]
+.Example of connector config:
+----
+mp.messaging:
+
+  incoming.from-kafka:
+    connector: helidon-kafka
+    topic: messaging-test-topic-1
+    auto.offset.reset: latest # <1>
+    enable.auto.commit: true
+    group.id: example-group-id
+
+  outgoing.to-kafka:
+    connector: helidon-kafka
+    topic: messaging-test-topic-1
+
+  connector:
+    helidon-kafka:
+      bootstrap.servers: localhost:9092 # <2>
+      key.serializer: org.apache.kafka.common.serialization.StringSerializer
+      value.serializer: org.apache.kafka.common.serialization.StringSerializer
+      key.deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value.deserializer: org.apache.kafka.common.serialization.StringDeserializer
+----
+
+<1> Kafka client consumer's property auto.offset.reset configuration for `from-kafka` channel only
+<2> Kafka client's property link:{kafka-client-base-url}#consumerconfigs_bootstrap.servers[bootstrap.servers] configuration for all channels using the connector
+
+[source,java]
+.Example of consuming from Kafka:
+----
+Config config = Config.create();
+
+Channel<String> fromKafka = Channel.create("from-kafka");
+
+KafkaConnector kafkaConnector = KafkaConnector.create();<1>
+
+Messaging messaging = Messaging.builder()
+        .config(config)
+        .connector(kafkaConnector)
+        .listener(fromKafka, payload -> {
+            System.out.println("Kafka says: " + payload);
+        })
+        .build()
+        .start();
+----
+<1> Prepare Kafka connector, can be used by any channel
+
+[source,java]
+.Example of producing to Kafka:
+----
+Config config = Config.create();
+
+Channel<String> toKafka = Channel.create("to-kafka");
+
+KafkaConnector kafkaConnector = KafkaConnector.create();<1>
+
+messaging = Messaging.builder()
+        .config(config)
+        .publisher(toKafka, Multi.just("test1", "test2").map(Message::of))
+        .connector(kafkaConnector)
+        .build()
+        .start();
+----
+<1> Prepare Kafka connector, can be used by any channel
+
+Don't forget to check out the examples with pre-configured Kafka docker image, for easy testing:
+
+* https://github.com/oracle/helidon/tree/master/examples/messaging
+
+==== JMS Connector
+
+[source,xml]
+.Maven dependency
+----
+<dependency>
+    <groupId>io.helidon.messaging.jms</groupId>
+    <artifactId>helidon-messaging-jms</artifactId>
+</dependency>
+----
+
+===== Reactive JMS Connector
+
+Connecting streams to JMS with Reactive Messaging couldn't be easier.
+
+===== Explicit config with config builder for JMS Connector
+
+[source,java]
+.Example of consuming from JMS:
+----
+Channel<String> fromJms = Channel.<String>builder()<1><2>
+        .name("from-jms")
+        .publisherConfig(JmsConnector.configBuilder()
+                .jndiInitialFactory(ActiveMQInitialContextFactory.class)
+                .jndiProviderUrl("tcp://127.0.0.1:61616")
+                .type(JmsConfigBuilder.Type.QUEUE)
+                .destination("se-example-queue-1")
+                .build()
+        )
+        .build();
+
+JmsConnector jmsConnector = JmsConnector.create();<3>
+
+Messaging messaging = Messaging.builder()
+        .connector(jmsConnector)
+        .listener(fromJms, payload -> {
+            System.out.println("Jms says: " + payload);
+        })
+        .build()
+        .start();
+----
+<1> Prepare a channel for connecting jms connector with specific publisher configuration -> listener
+<2> Channel -> connector mapping is automatic when using JmsConnector.configBuilder()
+<3> Prepare JMS connector, can be used by any channel
+
+[source,java]
+.Example of producing to JMS:
+----
+Channel<String> toJms = Channel.<String>builder()<1><2>
+        .subscriberConfig(JmsConnector.configBuilder()
+                .jndiInitialFactory(ActiveMQInitialContextFactory.class)
+                .jndiProviderUrl("tcp://127.0.0.1:61616")
+                .type(JmsConfigBuilder.Type.QUEUE)
+                .destination("se-example-queue-1")
+                .build()
+        ).build();
+
+JmsConnector jmsConnector = JmsConnector.create();<3>
+
+messaging = Messaging.builder()
+        .publisher(toJms, Multi.just("test1", "test2").map(Message::of))
+        .connector(jmsConnector)
+        .build()
+        .start();
+----
+<1> Prepare a channel for connecting jms connector with specific publisher configuration -> listener
+<2> Channel -> connector mapping is automatic when using JmsConnector.configBuilder()
+<3> Prepare JMS connector, can be used by any channel
+
+===== Implicit Helidon Config for JMS Connector
+
+[source,yaml]
+.Example of connector config:
+----
+mp.messaging:
+
+  incoming.from-jms:
+    connector: helidon-jms
+    destination: se-example-queue-1
+    session-group-id: session-group-1
+    type: queue
+
+  outgoing.to-jms:
+    connector: helidon-jms
+      destination: se-example-queue-1
+      type: queue
+
+  connector:
+    helidon-jms:
+      jndi:
+        jms-factory: ConnectionFactory
+        env-properties:
+          java.naming.factory.initial: org.apache.activemq.jndi.ActiveMQInitialContextFactory
+          java.naming.provider.url: tcp://127.0.0.1:61616
+
+----
+
+[source,java]
+.Example of consuming from JMS:
+----
+Config config = Config.create();
+
+Channel<String> fromJms = Channel.create("from-jms");
+
+JmsConnector jmsConnector = JmsConnector.create();<1>
+
+Messaging messaging = Messaging.builder()
+        .config(config)
+        .connector(jmsConnector)
+        .listener(fromJms, payload -> {
+            System.out.println("Jms says: " + payload);
+        })
+        .build()
+        .start();
+----
+<1> Prepare JMS connector, can be used by any channel
+
+[source,java]
+.Example of producing to JMS:
+----
+Config config = Config.create();
+
+Channel<String> toJms = Channel.create("to-jms");
+
+JmsConnector jmsConnector = JmsConnector.create();<1>
+
+messaging = Messaging.builder()
+        .config(config)
+        .publisher(toJms, Multi.just("test1", "test2").map(Message::of))
+        .connector(jmsConnector)
+        .build()
+        .start();
+----
+<1> Prepare JMS connector, can be used by any channel
+
+Don't forget to check out the examples with pre-configured ActiveMQ docker image, for easy testing:
+
+* https://github.com/oracle/helidon/tree/master/examples/messaging
+
+==== AQ Connector
+
+[source,xml]
+.Maven dependency
+----
+<dependency>
+    <groupId>io.helidon.messaging.aq</groupId>
+    <artifactId>helidon-messaging-aq</artifactId>
+</dependency>
+----
+
+===== Reactive Oracle AQ Connector
+
+===== Sending and receiving
+
+[source,java]
+.Example of producing to and consuming from Oracle AQ:
+----
+PoolDataSource pds = PoolDataSourceFactory.getPoolDataSource();<1>
+pds.setConnectionFactoryClassName("oracle.jdbc.pool.OracleDataSource");
+pds.setURL("jdbc:oracle:thin:@(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(Host=192.168.0.123)(Port=1521))(CONNECT_DATA=(SID=XE)))");
+pds.setUser("frank");
+pds.setPassword("frank");
+
+AqConnector seConn = AqConnector.builder()<2>
+    .dataSource("test-ds", pds)
+    .build();
+
+Channel<String> toAq = Channel.<String>builder()<3>
+    .name("toAq")
+    .subscriberConfig(AqConnector.configBuilder()
+        .queue("example_queue_1")
+        .dataSource("test-ds")
+        .build())
+    .build();
+
+Channel<String> fromAq = Channel.<String>builder()<4>
+    .name("fromAq")
+    .publisherConfig(AqConnector.configBuilder()
+        .queue("example_queue_1")
+        .dataSource("test-ds")
+        .build())
+    .build();
+
+Messaging.builder()<5>
+    .connector(seConn)
+    .publisher(toAq, Multi.just("Hello", "world", "from", "Oracle", "DB!").map(Message::of))<6>
+    .listener(fromAq, s -> System.out.pritln("Message received: "+s))<7>
+    .build()
+    .start();
+----
+<1> Prepare Oracle UCP
+<2> Setup AQ connector and provide datasource with an identifier `test-ds`
+<3> Setup channel for sending messages to queue `example_queue_1` with datasource `test-ds`
+<4> Setup channel for receiving messages from queue `example_queue_1` with datasource `test-ds`
+<5> Register connector and channels
+<6> Add a publisher for several test messages to publish them to `example_queue_1` immediately
+<7> Subscribe callback for any message coming from `example_queue_1`
+
+== Configuration
+
+* <<Configuration for Messaging connector,Configuration for Messaging connector>>
+* <<Explicit config with config builder for Kafka Connector, Explicit configuration with config builder for Kafka Connector>>
+* <<Implicit Helidon Config for Kafka Connector, Implicit Helidon Configuration for Kafka Connector>>
+* <<Explicit config with config builder for JMS Connector, Explicit configuration with config builder for JMS Connector>>
+* <<Implicit Helidon Config for JMS Connector, Implicit Helidon Configuration for JMS Connector>>
+
+== Reference
+
+* link:{microprofile-reactive-messaging-spec-url}[MicroProfile Reactive Messaging Specification]
+* link:https://github.com/eclipse/microprofile-reactive-messaging[MicroProfile Reactive Messaging on GitHub]
+* link:{helidon-github-tree-url}/examples/messaging[Helidon Messaging Examples]

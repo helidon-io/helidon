@@ -197,18 +197,12 @@ backend:
                 sources:
                   - "engine.adoc"
                   - "rsoperators.adoc"
-              - type: "MENU"
+              - type: "PAGE"
                 title: "Reactive Messaging"
-                dir: "reactivemessaging"
+                source: "reactive-messaging.adoc"
                 glyph:
                   type: "icon"
                   value: "message"
-                sources:
-                  - "introduction.adoc"
-                  - "connector.adoc"
-                  - "kafka.adoc"
-                  - "jms.adoc"
-                  - "aq.adoc"
               - type: "PAGE"
                 title: "Reactive Webserver"
                 source: "webserver.adoc"
