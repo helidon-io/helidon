@@ -105,7 +105,7 @@ Support OpenAPI from your application.
 //Reactive Messaging
 [CARD]
 .Reactive Messaging
-[icon=message,link=reactivemessaging/introduction.adoc]
+[icon=message,link=reactive-messaging.adoc]
 --
 Use prepared tools for repetitive use case scenarios.
 --
