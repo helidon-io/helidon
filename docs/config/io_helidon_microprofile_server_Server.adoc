@@ -30,7 +30,7 @@ Configuration of Helidon Microprofile Server
 
 
 
-==== Configuration options
+== Configuration options
 
 
 
