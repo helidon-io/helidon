@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,8 @@ import io.helidon.common.LazyValue;
 import io.helidon.common.context.Context;
 import io.helidon.config.Config;
 import io.helidon.config.DeprecatedConfig;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.media.common.MediaContext;
 import io.helidon.media.common.MediaContextBuilder;
 import io.helidon.media.common.MediaSupport;
@@ -286,6 +288,7 @@ class WebClientConfiguration {
     /**
      * A fluent API builder for {@link WebClientConfiguration}.
      */
+    @Configured(root = true, prefix = "client", description = "Configuration of the HTTP client")
     static class Builder<B extends Builder<B, T>, T extends WebClientConfiguration>
             implements io.helidon.common.Builder<B, T>,
                        ParentingMediaContextBuilder<B>,
@@ -337,6 +340,7 @@ class WebClientConfiguration {
          * @param connectTimeout new connection timeout
          * @return updated builder instance
          */
+        @ConfiguredOption(key = "connect-timeout-millis", type = Long.class, value = "60000")
         public B connectTimeout(Duration connectTimeout) {
             this.connectTimeout = connectTimeout;
             return me;
@@ -348,6 +352,7 @@ class WebClientConfiguration {
          * @param readTimeout new read timeout
          * @return updated builder instance
          */
+        @ConfiguredOption(key = "read-timeout-millis", type = Long.class, value = "600000")
         public B readTimeout(Duration readTimeout) {
             this.readTimeout = readTimeout;
             return me;
@@ -359,17 +364,19 @@ class WebClientConfiguration {
          * @param followRedirects follow redirection
          * @return updated builder instance
          */
+        @ConfiguredOption("false")
         public B followRedirects(boolean followRedirects) {
             this.followRedirects = followRedirects;
             return me;
         }
 
         /**
-         * Sets new user agent of the request.
+         * Name of the user agent which should be used.
          *
          * @param userAgent user agent
          * @return updated builder instance
          */
+        @ConfiguredOption
         public B userAgent(String userAgent) {
             this.userAgent = LazyValue.create(() -> userAgent);
             return me;
@@ -392,6 +399,7 @@ class WebClientConfiguration {
          * @param proxy request proxy
          * @return updated builder instance
          */
+        @ConfiguredOption
         public B proxy(Proxy proxy) {
             this.proxy = proxy;
             return me;
@@ -403,6 +411,7 @@ class WebClientConfiguration {
          * @param webClientTls tls configuration
          * @return updated builder instance
          */
+        @ConfiguredOption
         public B tls(WebClientTls webClientTls) {
             this.webClientTls = webClientTls;
             return me;
@@ -414,6 +423,7 @@ class WebClientConfiguration {
          * @param maxRedirects max redirects
          * @return updated builder instance
          */
+        @ConfiguredOption("5")
         public B maxRedirects(int maxRedirects) {
             this.maxRedirects = maxRedirects;
             return me;
@@ -449,6 +459,9 @@ class WebClientConfiguration {
          * @param cookiePolicy cookie policy
          * @return updated builder instance
          */
+        @ConfiguredOption(key = "cookies.automatic-store-enabled",
+                          type = Boolean.class,
+                          description = "Whether to allow automatic cookie storing")
         public B cookiePolicy(CookiePolicy cookiePolicy) {
             this.cookiePolicy = cookiePolicy;
             return me;
@@ -461,6 +474,10 @@ class WebClientConfiguration {
          * @param value cookie value
          * @return updated builder instance
          */
+        @ConfiguredOption(key = "cookies.default-cookies",
+                          type = Map.class,
+                          description = "Default cookies to be used in each request. "
+                                  + "Each list entry has to have \"name\" and \"value\" node")
         public B defaultCookie(String key, String value) {
             defaultCookies.put(key, value);
             return me;
@@ -473,6 +490,10 @@ class WebClientConfiguration {
          * @param values header value
          * @return updated builder instance
          */
+        @ConfiguredOption(key = "headers",
+                          type = Map.class,
+                          description = "Default headers to be used in each request. "
+                                  + "Each list entry has to have \"name\" and \"value\" node")
         public B defaultHeader(String key, List<String> values) {
             clientHeaders.put(key, values);
             return me;
@@ -485,12 +506,14 @@ class WebClientConfiguration {
          * @param relativeUris relative URIs flag
          * @return updated builder instance
          */
+        @ConfiguredOption("false")
         public B relativeUris(boolean relativeUris) {
             this.relativeUris = relativeUris;
             return me;
         }
 
         @Override
+        @ConfiguredOption(key = "media-support")
         public B mediaContext(MediaContext mediaContext) {
             writerContextParent(mediaContext.writerContext());
             readerContextParent(mediaContext.readerContext());
@@ -512,6 +535,7 @@ class WebClientConfiguration {
          *
          * @return updated builder instance
          */
+        @ConfiguredOption(type = String.class)
         public B uri(URI uri) {
             this.uri = uri;
             return me;
@@ -591,6 +615,7 @@ class WebClientConfiguration {
             return me;
         }
 
+        @ConfiguredOption("true")
         B keepAlive(boolean keepAlive) {
             this.keepAlive = keepAlive;
             return me;

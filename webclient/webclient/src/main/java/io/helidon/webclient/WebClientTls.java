@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,8 @@ import javax.net.ssl.SSLContext;
 
 import io.helidon.common.pki.KeyConfig;
 import io.helidon.config.Config;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * Configuration of TLS requests.
@@ -159,6 +161,7 @@ public class WebClientTls {
     /**
      * Fluent API builder for {@link WebClientTls} instance.
      */
+    @Configured
     public static final class Builder implements io.helidon.common.Builder<Builder, WebClientTls> {
 
         private boolean trustAll = false;
@@ -178,6 +181,9 @@ public class WebClientTls {
          * @param disableHostnameVerification disabled verification
          * @return updated builder instance
          */
+        @ConfiguredOption(key = "server.disable-hostname-verification",
+                          value = "false",
+                          description = "Whether this client should perform hostname verification")
         public Builder disableHostnameVerification(boolean disableHostnameVerification) {
             this.disableHostnameVerification = disableHostnameVerification;
             return this;
@@ -189,6 +195,9 @@ public class WebClientTls {
          * @param trustAll trust all certificates
          * @return updated builder instance
          */
+        @ConfiguredOption(key = "server.trust-all",
+                          value = "false",
+                          description = "Whether this client should trust all certificates")
         public Builder trustAll(boolean trustAll) {
             this.trustAll = trustAll;
             return this;
@@ -200,6 +209,9 @@ public class WebClientTls {
          * @param keyStore trust store
          * @return updated builder instance
          */
+        @ConfiguredOption(key = "server.truststore",
+                          description = "Trust store which contains trusted certificates. "
+                                  + "If set, replaces those present by default")
         public Builder certificateTrustStore(KeyConfig keyStore) {
             Objects.requireNonNull(keyStore);
             certificates = keyStore.certs();
@@ -212,6 +224,8 @@ public class WebClientTls {
          * @param keyConfig key store
          * @return updated builder instance
          */
+        @ConfiguredOption(key = "client.keystore",
+                          description = "Client key store which contains client private key and certificate")
         public Builder clientKeyStore(KeyConfig keyConfig) {
             Objects.requireNonNull(keyConfig);
             keyConfig.privateKey().ifPresent(privateKey -> clientPrivateKey = privateKey);
@@ -236,6 +250,10 @@ public class WebClientTls {
          * @param allowedCipherSuite cipher suite
          * @return updated builder instance
          */
+        @ConfiguredOption(key = "server.cipher-suite",
+                          type = String.class,
+                          kind = ConfiguredOption.Kind.LIST,
+                          description = "List of allowed ciphers. If set, replaces those present by default")
         public Builder allowedCipherSuite(List<String> allowedCipherSuite) {
             Objects.requireNonNull(allowedCipherSuite, "Allowed cipher suite cannot be null");
             if (allowedCipherSuite.isEmpty()) {

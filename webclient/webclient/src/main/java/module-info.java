@@ -38,6 +38,8 @@ module io.helidon.webclient {
     requires io.netty.handler.proxy;
     requires io.netty.transport;
 
+    requires static io.helidon.config.metadata;
+
     exports io.helidon.webclient;
     exports io.helidon.webclient.spi;
 
