@@ -98,7 +98,7 @@ Expose GraphQL API using Microprofile GraphQL.
 //gRPC
 [CARD]
 .gRPC
-[icon=swap_horiz,link=../grpc/mp-server-side-services.adoc]
+[icon=swap_horiz,link=../grpc/server-side-services.adoc]
 --
 Build gRPC servers and clients.
 --

@@ -18,6 +18,8 @@ package io.helidon.grpc.core;
 
 import io.helidon.common.configurable.Resource;
 import io.helidon.config.Config;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.config.objectmapping.Value;
 
 /**
@@ -109,6 +111,7 @@ public class GrpcTlsDescriptor {
     /**
      * Builder to build a new instance of {@link GrpcTlsDescriptor}.
      */
+    @Configured
     public static class Builder implements io.helidon.common.Builder<Builder, GrpcTlsDescriptor> {
 
         private boolean enabled = true;
@@ -139,6 +142,7 @@ public class GrpcTlsDescriptor {
          * @param enabled true to enable, false otherwise
          * @return this instance for fluent API
          */
+        @ConfiguredOption(value = "true")
         @Value(withDefault = "true")
         public Builder enabled(boolean enabled) {
             this.enabled = enabled;
@@ -150,7 +154,7 @@ public class GrpcTlsDescriptor {
          * @param jdkSSL true to use JDK based SSL, false otherwise
          * @return this instance for fluent API
          */
-        @Value(key = "jdk-ssl")
+        @ConfiguredOption(key = "jdk-ssl", value = "false")
         public Builder jdkSSL(boolean jdkSSL) {
             this.jdkSSL = jdkSSL;
             return this;
@@ -161,6 +165,7 @@ public class GrpcTlsDescriptor {
          * @param tlsCert the path to client's certificate
          * @return this instance for fluent API
          */
+        @ConfiguredOption
         @Value(key = "tls-cert")
         public Builder tlsCert(Resource tlsCert) {
             this.tlsCert = tlsCert;
@@ -172,6 +177,7 @@ public class GrpcTlsDescriptor {
          * @param tlsKey the 's TLS private key
          * @return this instance for fluent API
          */
+        @ConfiguredOption
         @Value(key = "tls-key")
         public Builder tlsKey(Resource tlsKey) {
             this.tlsKey = tlsKey;
@@ -183,6 +189,7 @@ public class GrpcTlsDescriptor {
          * @param caCert the path to CA certificate
          * @return this instance for fluent API
          */
+        @ConfiguredOption(key = "tls-ca-cert")
         @Value(key = "tls-ca-cert")
         public Builder tlsCaCert(Resource caCert) {
             this.tlsCaCert = caCert;
