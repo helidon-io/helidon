@@ -52,11 +52,11 @@ Helidon MP is an Eclipse MicroProfile {version-lib-microprofile-api} runtime tha
 | link:{jakarta-jaxrs-spec-url}[{version-lib-jakarta-jaxrs-api}]
 | API to develop web services following the REST pattern
 
-| xref:{rootdir}/mp/jpa.adoc[Jakarta Persistence (JPA)]
+| xref:{rootdir}/mp/persistence.adoc#JPA[Jakarta Persistence (JPA)]
 | link:{jakarta-persistence-spec-url}[{version-lib-jakarta-persistence-api}]
 | Management of persistence and object/relational mapping
 
-| Jakarta Transactions (JTA)
+| xref:{rootdir}/mp/persistence.adoc#JTA[Jakarta Transactions (JTA)]
 | link:{jakarta-transactions-spec-url}[{version-lib-jakarta-transaction-api}]
 | Allows handling transactions consistent with X/Open XA-spec
 
@@ -130,7 +130,7 @@ Helidon MP is an Eclipse MicroProfile {version-lib-microprofile-api} runtime tha
 | xref:{rootdir}/mp/cors/cors.adoc[CORS]
 | Cross Origin Resource Sharing – API to control if and how REST resources served by their applications can be shared across origins 
 
-| xref:{rootdir}/mp/grpc/mp-server-side-services.adoc[gRPC]
+| xref:{rootdir}/mp/grpc/server-side-services.adoc[gRPC]
 | gRPC servers and clients.
 
 | xref:{rootdir}/mp/integrations/oci.adoc[OCI SDK]
