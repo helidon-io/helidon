@@ -57,16 +57,6 @@ A flexible configuration framework with support for multiple sources and
  formats.
 --
 
-
-//CDI Extensions
-[CARD]
-.CDI Extensions
-[icon=extension,link=../extensions/overview.adoc]
---
-In addition to MicroProfile support, Helidon MP provides additional CDI extensions to address areas not covered by MicroProfile.
---
-
-
 //CORS
 [CARD]
 .CORS

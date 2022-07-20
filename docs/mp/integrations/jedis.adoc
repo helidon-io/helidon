@@ -76,7 +76,7 @@ and inject a Jedis pool named `orders` in your application code.
 
 Helidon implements this injection point by creating a
 link:{jedis-base-url}/jedis/JedisPool.html[JedisPool] object in the
-link:{jakarta-cdi-javadoc-url}/javax/enterprise/context/ApplicationScoped.html[application scope].
+link:{jakarta-cdi-javadoc-url}/jakarta/enterprise/context/ApplicationScoped.html[application scope].
 
 You can configure the object using xref:../jaxrs/server-configuration.adoc[MicroProfile config].
 For example, the Jedis pool created above can be configured as follows:
