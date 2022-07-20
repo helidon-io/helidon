@@ -68,7 +68,7 @@ public interface Router {
     }
 
     /**
-     * Generic builder interface used by both {@link io.helidon.webserver.Router.Builder} and {@code io.helidon.nima.webserver.WebServer.Builder}.
+     * Generic builder interface used by {@link io.helidon.webserver.Router.Builder}.
      *
      * @param <B> type of the builder
      */
@@ -76,7 +76,7 @@ public interface Router {
         /**
          * Add a new routing to this router.
          *
-         * @param routing routing to add, such as {@code io.helidon.nima.webserver.http.HttpRouting}
+         * @param routing routing to add
          * @return updated builder
          */
         B addRouting(Routing routing);
@@ -84,7 +84,7 @@ public interface Router {
         /**
          * Add a new routing to this router.
          *
-         * @param routing routing to add, such as {@code io.helidon.nima.webserver.http.HttpRouting}
+         * @param routing routing to add
          * @return updated builder
          */
         default B addRouting(Supplier<? extends Routing> routing) {
