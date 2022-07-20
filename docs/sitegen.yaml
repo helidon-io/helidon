@@ -339,12 +339,9 @@ backend:
                   type: "icon"
                   value: "settings_ethernet"
                 sources:
-                  - "server-configuration.adoc"
                   - "application-configuration.adoc"
-                  - "static-content.adoc"
                   - "jaxrs-applications.adoc"
                   - "jaxrs-client.adoc"
-                  - "reactive-routing.adoc"
               - type: "PAGE"
                 title: "Persistence"
                 source: "persistence.adoc"
@@ -446,6 +443,9 @@ backend:
                 glyph:
                   type: "icon"
                   value: "sync_alt"
+              - type: "PAGE"
+                title: "Server"
+                source: "server.adoc"
               - type: "PAGE"
                 title: "AOT"
                 source: "aot.adoc"

@@ -24,7 +24,7 @@
 
 include::{rootdir}/includes/mp.adoc[]
 
-== ToC
+== Contents
 
 - <<Overview, Overview>>
 - <<maven-coordinates, Maven Coordinates>>
@@ -78,12 +78,9 @@ Helidon implements this injection point by creating a
 link:{jedis-base-url}/jedis/JedisPool.html[JedisPool] object in the
 link:{jakarta-cdi-javadoc-url}/jakarta/enterprise/context/ApplicationScoped.html[application scope].
 
-You can configure the object using xref:../jaxrs/server-configuration.adoc[MicroProfile config].
-For example, the Jedis pool created above can be configured as follows:
-
 == Configuration
 
-You can configure the object using xref:../jaxrs/server-configuration.adoc[MicroProfile config].
+You can configure the object using xref:{rootdir}/mp/config/introduction.adoc[MicroProfile config].
 For example, the Jedis pool created above can be configured as follows:
 
 [source, properties]
@@ -174,10 +171,12 @@ Injection without a `@Named` annotation is also possible:
  @Inject
  private JedisPool ordersPool;
 ----
-In this case, the properties for JedisPoolConfig and JedisPool that can be set will start wih `redis.clients.jedis.JedisPoolConfig.default` and `redis.clients.jedis.JedisPool.default` respectively.
+In this case, the properties for JedisPoolConfig and JedisPool that can be set will start
+with `redis.clients.jedis.JedisPoolConfig.default` and `redis.clients.jedis.JedisPool.default` respectively.
 
 == References
 
-* link:{helidon-github-tree-url}/examples/integrations/cdi/jedis[Helidon Jedis Usage Examples]
-* link:{jedis-base-url}/jedis/JedisPool.html[JedisPool] javadoc
+* link:{helidon-github-tree-url}/examples/integrations/cdi/jedis[Helidon Jedis Example]
+* link:{jedis-base-url}/jedis/package-summary.html[Jedis Javadoc]
+* link:https://github.com/xetorthio/jedis[Jedis]
 * link:https://github.com/redis/redis[Redis]
