@@ -88,3 +88,4 @@ The following section lists all configurable types in Helidon.
 - xref:{rootdir}/config/io_helidon_webserver_WebServerTls.adoc[WebServerTls (webserver)]
 - xref:{rootdir}/config/io_helidon_tracing_zipkin_ZipkinTracerBuilder.adoc[ZipkinTracer (tracing.zipkin)]
 - xref:{rootdir}/config/io_smallrye_openapi_api_OpenApiConfig.adoc[io_smallrye_openapi_api_OpenApiConfig]
+- xref:{rootdir}/config/io_helidon_microprofile_server_Server.adoc[Server (microprofile.server)]

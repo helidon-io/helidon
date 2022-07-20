@@ -116,7 +116,7 @@ Expose health statuses of your applications.
 //JAXRS
 [CARD]
 .JAX-RS/Jersey
-[icon=settings_ethernet,link=../jaxrs/server-configuration.adoc]
+[icon=settings_ethernet,link=../server.adoc]
 --
 Helidon MP supports building RESTful services using JAX-RS/Jersey.
 --

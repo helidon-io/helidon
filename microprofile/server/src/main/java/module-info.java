@@ -41,6 +41,7 @@ module io.helidon.microprofile.server {
     // there is now a hardcoded dependency on Weld, to configure additional bean defining annotation
     requires java.management;
     requires microprofile.config.api;
+    requires io.helidon.config.metadata;
 
     exports io.helidon.microprofile.server;
 
