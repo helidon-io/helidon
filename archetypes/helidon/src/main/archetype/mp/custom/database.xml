@@ -445,7 +445,6 @@ docker run --rm --name xe -p 1521:1521 -p 8888:8080 -e ORACLE_PWD=oracle wnamele
                             <map>
                                 <value key="groupId">org.hibernate.validator</value>
                                 <value key="artifactId">hibernate-validator</value>
-                                <value key="version">7.0.2.Final</value>
                                 <value key="scope">runtime</value>
                             </map>
                             <map>
