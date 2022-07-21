@@ -98,18 +98,18 @@ Helidon MP is an Eclipse MicroProfile {version-lib-microprofile-api} runtime tha
 
 | xref:{rootdir}/mp/metrics/metrics.adoc[MicroProfile Metrics]
 | link:{microprofile-metrics-spec-url}[{version-lib-microprofile-metrics-api}]
-| Telemetry data in Prometheus format
+| Defining and exposing telemetry data in Prometheus and JSON formats
 
 | xref:{rootdir}/mp/openapi.adoc[MicroProfile Open API]
-| link:{microprofile-reactive-messaging-spec-url}[{version-lib-microprofile-reactive-messaging-api}]
-| Tracking service calls in distributed environment
+| link:{microprofile-open-api-spec-url}[{version-lib-microprofile-openapi-api}]
+| Annotations for documenting your application endpoints
 
 | xref:{rootdir}/mp/tracing.adoc[MicroProfile OpenTracing]
 | link:{microprofile-tracing-spec-url}[{version-lib-microprofile-tracing}]
 | Profile and monitor your applications across multiple services
 
 | xref:{rootdir}/mp/reactivemessaging/introduction.adoc[MicroProfile Reactive Messaging]
-| link:{microprofile-open-api-spec-url}[{version-lib-microprofile-openapi-api}]
+| link:{microprofile-reactive-messaging-spec-url}[{version-lib-microprofile-reactive-messaging-api}]
 | Standard API for sending and receiving messages/events using streams
 
 | xref:{rootdir}/mp/reactivestreams/rsoperators.adoc[MicroProfile Reactive Streams Operators]
@@ -131,7 +131,7 @@ Helidon MP is an Eclipse MicroProfile {version-lib-microprofile-api} runtime tha
 | Cross Origin Resource Sharing – API to control if and how REST resources served by their applications can be shared across origins 
 
 | xref:{rootdir}/mp/grpc/server-side-services.adoc[gRPC]
-| gRPC servers and clients.
+| gRPC server and client
 
 | xref:{rootdir}/mp/integrations/oci.adoc[OCI SDK]
 | Full set of APIs for working with OCI services
@@ -140,7 +140,7 @@ Helidon MP is an Eclipse MicroProfile {version-lib-microprofile-api} runtime tha
 | Scheduling functionality based on https://github.com/jmrozanec/cron-utils[Cron-utils]
 
 | xref:{rootdir}/mp/security/security.adoc[Security]
-| A tool-chain to handle authentication, authorization and context propagation.
+| A tool-chain to handle authentication, authorization and context propagation
 
 !===
 

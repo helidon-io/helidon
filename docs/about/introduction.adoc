@@ -35,9 +35,9 @@ include::{rootdir}/includes/attributes.adoc[]
 
 link:https://helidon.io[Helidon] is a collection of Java libraries for writing microservices that run on a fast web core powered by link:https://netty.io[Netty]. It's small, fast and fun to use. 
 
-Helison is open source under Alache 2.0 license. Sources are available on link:{helidon-github-tree-url}[GitHub].
+Helidon is open source under Alache 2.0 license. Sources are available on link:{helidon-github-tree-url}[GitHub].
 
-Helidon is cloud-native ready. It provides fast start-up time, has low memory consumption and small disk footprint. It also comes with full observability stack out of the box including Health Checks, Metrics , Tracing and Logging.
+Helidon is cloud-native ready. It provides fast start-up time, has low memory consumption and small disk footprint. It also comes with full observability stack out of the box including Health Checks, Metrics, Tracing and Logging.
 
 Helidon fully supports GraalVM native-image allowing you to build native executable out of your Java application.
 
@@ -45,7 +45,7 @@ Helidon has minimum number of third-party dependencies by design.
 
 == Helidon Flavors
 
-Helidon comes in two flavors: *Helison SE* and *Helidon MP*. Think about flavors as frameworks providing similar functionality using differet development experience.
+Helidon comes in two flavors: *Helidon SE* and *Helidon MP*. Think about flavors as frameworks providing similar functionality using differet development experience.
 
 [cols="3,3"]
 |====================
