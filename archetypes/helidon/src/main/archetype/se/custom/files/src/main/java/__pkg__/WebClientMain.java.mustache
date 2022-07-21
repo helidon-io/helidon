@@ -3,7 +3,9 @@ package {{package}};
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
-import io.helidon.media.jsonp.JsonpSupport;
+{{#WebClient-media-imports}}
+import {{.}};
+{{/WebClient-media-imports}}
 import io.helidon.webclient.WebClient;
 
 public class WebClientMain {
@@ -34,7 +36,9 @@ public class WebClientMain {
         WebClient webClient = WebClient.builder()
                 .baseUri(url)
                 .config(config.get("client"))
-                .addMediaSupport(JsonpSupport.create())
+{{#WebClient-builder}}
+    {{.}}
+{{/WebClient-builder}}
                 .build();
 
         performGetMethod(webClient).await();
