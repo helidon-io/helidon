@@ -1,1 +1,1 @@
-# Helidon SE gRPC Server Examples
+# Helidon MP and SE gRPC Server Examples

@@ -67,6 +67,7 @@ public class Client {
         client.serverStreaming();
         client.clientStreaming();
         client.bidirectional();
+        System.exit(0);
     }
 
     /**
