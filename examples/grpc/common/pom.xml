@@ -64,6 +64,10 @@
             <artifactId>helidon-common</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.media</groupId>
+            <artifactId>helidon-media-jsonb</artifactId>
+        </dependency>
+        <dependency>
             <!--
             3.0.0-JAKARTA
             need to use this version to work around the same groupId/artifactId and

@@ -38,7 +38,7 @@ import jakarta.enterprise.context.ApplicationScoped;
  */
 @Grpc
 @ApplicationScoped
-@GrpcMarshaller("java")
+@GrpcMarshaller("jsonb")
 public class StringService {
 
     /**

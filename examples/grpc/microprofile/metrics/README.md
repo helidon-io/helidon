@@ -14,7 +14,8 @@ mvn -f ../../pom.xml -pl common,microprofile/metrics package
 java -jar target/helidon-examples-grpc-microprofile-metrics.jar
 ```
 
-Run the basic-client to invoke activity on the gRPC endpoint `localhost:1408`.
+Run the basic-client from [Basic gRPC Client example](../basic-client/README.md) to invoke 
+activity on the gRPC endpoint `localhost:1408`.
 ```bash
 java -jar target/helidon-examples-grpc-microprofile-client.jar 
 ```

@@ -19,6 +19,7 @@ package io.helidon.grpc.examples.common;
 import java.util.Optional;
 
 import io.helidon.config.Config;
+import io.helidon.grpc.core.JsonbMarshaller;
 import io.helidon.grpc.server.GrpcService;
 import io.helidon.grpc.server.ServiceDescriptor;
 
@@ -47,7 +48,7 @@ public class GreetServiceJava
 
     @Override
     public void update(ServiceDescriptor.Rules rules) {
-        rules.marshallerSupplier(new JavaMarshaller.Supplier())
+        rules.marshallerSupplier(new JsonbMarshaller.Supplier())
                 .unary("Greet", this::greet)
                 .unary("SetGreeting", this::setGreeting);
     }

@@ -34,7 +34,7 @@ import io.grpc.stub.StreamObserver;
  * so that it will be discovered and loaded using CDI when the MP gRPC server starts.
  */
 @Grpc
-@GrpcMarshaller("java")
+@GrpcMarshaller("jsonb")
 @SuppressWarnings("CdiManagedBeanInconsistencyInspection")
 public interface StringService {
 

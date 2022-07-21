@@ -18,10 +18,16 @@ java -cp target/helidon-examples-grpc-security.jar \
 ```
 
 # Sample client output:
+SecureGreetClient:
 ```bash
 message: "Hello Aleks!"
 
 greeting: "Hey"
 
 message: "Hey Aleks!"
+```
+
+SecureStringClient:
+```bash
+Response from Lower method call is 'abcde'
 ```
