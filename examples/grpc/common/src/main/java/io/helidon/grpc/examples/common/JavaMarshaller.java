@@ -17,7 +17,7 @@
 /*
  * IMPORTANT NOTE: JavaMarshaller is useful for quick prototypes, but it is not recommended for production use. For
  * one, it only supports gRPC-based communication between Java clients and servers, which is quite limiting. It is also
- * not very efficient, and last but not least, it introduces security vulnerabilities
+ * not very efficient, and last but not least, it introduces security vulnerabilities.
  */
 
 package io.helidon.grpc.examples.common;
@@ -28,14 +28,16 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
-import io.grpc.MethodDescriptor;
 import io.helidon.grpc.core.MarshallerSupplier;
 
+import io.grpc.MethodDescriptor;
 import jakarta.inject.Named;
 
 /**
  * An implementation of a gRPC {@link MethodDescriptor.Marshaller} that
  * uses Java serialization for testing.
+ *
+ * @param <T>  the type of value to be marshalled
  */
 public class JavaMarshaller<T>
         implements MethodDescriptor.Marshaller<T> {
