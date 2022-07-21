@@ -41,8 +41,6 @@ Helidon is cloud-native ready. It provides fast start-up time, has low memory co
 
 Helidon fully supports GraalVM native-image allowing you to build native executable out of your Java application.
 
-Helidon has minimum number of third-party dependencies by design.
-
 == Helidon Flavors
 
 Helidon comes in two flavors: *Helidon SE* and *Helidon MP*. Think about flavors as frameworks providing similar functionality using differet development experience.
