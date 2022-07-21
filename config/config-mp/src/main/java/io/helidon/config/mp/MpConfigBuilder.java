@@ -79,7 +79,7 @@ import static io.helidon.config.mp.MpMetaConfig.MetaConfigSource;
 /**
  * Configuration builder.
  */
-@Configured(prefix = "mp.config")
+@Configured(prefix = "mp.config", root = true)
 class MpConfigBuilder implements ConfigBuilder {
     private static final Logger LOGGER = Logger.getLogger(MpConfigBuilder.class.getName());
     private static final String DEFAULT_CONFIG_SOURCE = "META-INF/microprofile-config.properties";

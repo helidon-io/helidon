@@ -40,8 +40,8 @@ This is a standalone configuration type, prefix from configuration root: `server
 
 
 
-Optional configuration options:
-[cols="3,3,2,5a"]
+.Optional configuration options
+[cols="3,3a,2,5a"]
 
 |===
 |key |type |default value |description

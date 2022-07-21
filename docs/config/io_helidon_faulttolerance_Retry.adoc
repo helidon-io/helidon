@@ -36,8 +36,8 @@ Type: link:{javadoc-base-url}/io.helidon.faulttolerance/io/helidon/faulttoleranc
 
 
 
-Optional configuration options:
-[cols="3,3,2,5a"]
+.Optional configuration options
+[cols="3,3a,2,5a"]
 
 |===
 |key |type |default value |description
@@ -48,7 +48,14 @@ Optional configuration options:
 |`overall-timeout` |Duration |`PT1S` |Overall timeout.
  When overall timeout is reached, execution terminates (even if the retry policy
  was not exhausted).
-|`retry-policy` |io.helidon.faulttolerance.Retry.RetryPolicy (service provider interface) |{nbsp} |Configure a retry policy to use to calculate delays between retries.
+|`retry-policy` |io.helidon.faulttolerance.Retry.RetryPolicy (service provider interface)
+
+Such as:
+
+ - xref:{rootdir}/config/io_helidon_faulttolerance_Retry_DelayingRetryPolicy.adoc[DelayingRetryPolicy]
+ - xref:{rootdir}/config/io_helidon_faulttolerance_Retry_JitterRetryPolicy.adoc[JitterRetryPolicy]
+
+ |{nbsp} |Configure a retry policy to use to calculate delays between retries.
  Defaults to a io.helidon.faulttolerance.Retry.JitterRetryPolicy
  with 4 calls (initial call + 3 retries), delay of 200 millis and a jitter of 50 millis.
 

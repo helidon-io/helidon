@@ -38,20 +38,34 @@ This is a standalone configuration type, prefix from configuration root: `securi
 
 == Configuration options
 
-Required configuration options:
-[cols="3,3,2,5a"]
+.Required configuration options
+[cols="3,3a,2,5a"]
 |===
 |key |type |default value |description
 
-|`providers` |io.helidon.security.spi.SecurityProvider[&#93; (service provider interface) |{nbsp} |Add a provider, works as #addProvider(io.helidon.security.spi.SecurityProvider, String), where the name is set
+|`providers` |io.helidon.security.spi.SecurityProvider[&#93; (service provider interface)
+
+Such as:
+
+ - xref:{rootdir}/config/io_helidon_security_providers_httpauth_HttpBasicAuthProvider.adoc[http-basic-auth (HttpBasicAuthProvider)]
+ - xref:{rootdir}/config/io_helidon_security_providers_google_login_GoogleTokenProvider.adoc[google-login (GoogleTokenProvider)]
+ - xref:{rootdir}/config/io_helidon_security_providers_oidc_OidcProvider.adoc[oidc (OidcProvider)]
+ - xref:{rootdir}/config/io_helidon_security_providers_httpauth_HttpDigestAuthProvider.adoc[http-digest-auth (HttpDigestAuthProvider)]
+ - xref:{rootdir}/config/io_helidon_security_providers_idcs_mapper_IdcsMtRoleMapperRxProvider.adoc[idcs-role-mapper (IdcsMtRoleMapperRxProvider)]
+ - xref:{rootdir}/config/io_helidon_security_providers_jwt_JwtProvider.adoc[jwt (JwtProvider)]
+ - xref:{rootdir}/config/io_helidon_security_providers_header_HeaderAtnProvider.adoc[header-atn (HeaderAtnProvider)]
+ - xref:{rootdir}/config/io_helidon_security_providers_idcs_mapper_IdcsRoleMapperRxProvider.adoc[idcs-role-mapper (IdcsRoleMapperRxProvider)]
+ - xref:{rootdir}/config/io_helidon_security_providers_abac_AbacProvider.adoc[abac (AbacProvider)]
+
+ |{nbsp} |Add a provider, works as #addProvider(io.helidon.security.spi.SecurityProvider, String), where the name is set
  to `Class#getSimpleName()`.
 
 |===
 
 
 
-Optional configuration options:
-[cols="3,3,2,5a"]
+.Optional configuration options
+[cols="3,3a,2,5a"]
 
 |===
 |key |type |default value |description

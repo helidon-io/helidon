@@ -128,8 +128,8 @@ public interface Server {
     /**
      * Builder to build {@link Server} instance.
      */
-    @Configured(prefix = "server", description = "Configuration of Helidon Microprofile Server")
-    final class Builder {
+    @Configured(prefix = "server", description = "Configuration of Helidon Microprofile Server", root = true)
+    final class Builder implements io.helidon.common.Builder<Builder, Server> {
         private static final Logger STARTUP_LOGGER = Logger.getLogger("io.helidon.microprofile.startup.builder");
 
         private final List<Class<?>> resourceClasses = new LinkedList<>();
@@ -172,6 +172,7 @@ public interface Server {
          * @return Server instance to be started
          * @throws MpException in case the server fails to be created
          */
+        @Override
         public Server build() {
             STARTUP_LOGGER.entering(Builder.class.getName(), "build");
 

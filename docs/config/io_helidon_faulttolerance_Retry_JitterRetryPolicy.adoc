@@ -31,13 +31,17 @@ Type: link:{javadoc-base-url}/io.helidon.faulttolerance.Retry/io/helidon/faultto
 
 
 
+This type provides the following service implementations:
+
+- `io.helidon.faulttolerance.Retry.RetryPolicy`
+
 
 == Configuration options
 
 
 
-Optional configuration options:
-[cols="3,3,2,5a"]
+.Optional configuration options
+[cols="3,3a,2,5a"]
 
 |===
 |key |type |default value |description
