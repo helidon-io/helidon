@@ -78,18 +78,9 @@
                 ]]></value>
             </list>
             <list key="dependencies">
-                <map>
+                <map order="1000">
                     <value key="groupId">io.helidon.microprofile.bundles</value>
                     <value key="artifactId">helidon-microprofile-core</value>
-                </map>
-                <map>
-                    <value key="groupId">org.glassfish.jersey.media</value>
-                    <value key="artifactId">jersey-media-json-binding</value>
-                    <value key="scope">runtime</value>
-                </map>
-                <map>
-                    <value key="groupId">io.helidon.webclient</value>
-                    <value key="artifactId">helidon-webclient</value>
                 </map>
             </list>
         </model>

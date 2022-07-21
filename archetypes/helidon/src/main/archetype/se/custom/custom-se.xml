@@ -46,7 +46,7 @@
             <list key="Main-routingBuilder">
                 <value><![CDATA[                .register("/simple-greet", simpleGreetService)]]></value>
             </list>
-            <value key="Main-readyMessage">System.out.println("WEB server is up! http://localhost:" + ws.port() + "/simple-greet");</value>
+            <value key="Main-readyMessage" if="${app-type} != 'quickstart'">System.out.println("WEB server is up! http://localhost:" + ws.port() + "/simple-greet");</value>
             <list key="config-entries">
                 <value file="files/src/main/resources/application.config.yaml"/>
             </list>
