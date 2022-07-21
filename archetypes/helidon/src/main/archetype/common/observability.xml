@@ -56,15 +56,15 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
 ]]></value>
                                     </list>
                                     <list key="dependencies">
-                                        <map if="${flavor} == 'mp'">
+                                        <map order="800" if="${flavor} == 'mp'">
                                             <value key="groupId">org.eclipse.microprofile.metrics</value>
                                             <value key="artifactId">microprofile-metrics-api</value>
                                         </map>
-                                        <map if="${flavor} == 'mp'">
+                                        <map order="800" if="${flavor} == 'mp'">
                                             <value key="groupId">io.helidon.microprofile.metrics</value>
                                             <value key="artifactId">helidon-microprofile-metrics</value>
                                         </map>
-                                        <map if="${flavor} == 'se'">
+                                        <map order="800" if="${flavor} == 'se'">
                                             <value key="groupId">io.helidon.metrics</value>
                                             <value key="artifactId">helidon-metrics</value>
                                         </map>
@@ -328,7 +328,7 @@ allRequests_total 0.0
                         <output>
                             <model>
                                 <list key="dependencies">
-                                    <map if="${flavor} == 'se' &amp;&amp; !(${metrics.provider} == 'microprofile')">
+                                    <map order="800" if="${flavor} == 'se' &amp;&amp; !(${metrics.provider} == 'microprofile')">
                                         <value key="groupId">io.helidon.metrics</value>
                                         <value key="artifactId">helidon-metrics</value>
                                     </map>
@@ -396,15 +396,15 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
                         <output>
                             <model>
                                 <list key="dependencies">
-                                    <map if="${flavor} == 'mp'">
+                                    <map order="800" if="${flavor} == 'mp'">
                                         <value key="groupId">io.helidon.microprofile.health</value>
                                         <value key="artifactId">helidon-microprofile-health</value>
                                     </map>
-                                    <map if="${flavor} == 'se'">
+                                    <map order="800" if="${flavor} == 'se'">
                                         <value key="groupId">io.helidon.health</value>
                                         <value key="artifactId">helidon-health</value>
                                     </map>
-                                    <map if="${flavor} == 'se'">
+                                    <map order="800" if="${flavor} == 'se'">
                                         <value key="groupId">io.helidon.health</value>
                                         <value key="artifactId">helidon-health-checks</value>
                                     </map>
@@ -479,7 +479,7 @@ curl -s -X GET http://localhost:8080/health
                             <output>
                                 <model>
                                     <list key="dependencies">
-                                        <map>
+                                        <map order="800">
                                             <value key="groupId">io.helidon.tracing</value>
                                             <value key="artifactId">helidon-tracing-jaeger</value>
                                         </map>
@@ -542,7 +542,7 @@ tracing:
                             <output>
                                 <model>
                                     <list key="dependencies">
-                                        <map>
+                                        <map order="800">
                                             <value key="groupId">io.helidon.tracing</value>
                                             <value key="artifactId">helidon-tracing-zipkin</value>
                                         </map>

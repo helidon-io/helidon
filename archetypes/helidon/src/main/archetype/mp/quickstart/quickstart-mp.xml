@@ -92,8 +92,8 @@
             </list>
             <list key="dependencies">
                 <map order="1000">
-                    <value key="groupId">io.helidon.microprofile.bundles</value>
-                    <value key="artifactId">helidon-microprofile</value>
+                    <value key="groupId">io.helidon.microprofile.openapi</value>
+                    <value key="artifactId">helidon-microprofile-openapi</value>
                 </map>
             </list>
         </model>

@@ -36,7 +36,12 @@ public class WebClientMainTest {
     @Test
     public void getSimpleGreetTest() throws Exception {
         WebClientMain.performGetMethod(webClient)
+{{#media-json}}
                 .thenAccept(it -> assertThat(it, is("{\"message\":\"Hello World!\"}")))
+{{/media-json}}
+{{^media-json}}
+                .thenAccept(it -> assertThat(it, is("Hello World!")))
+{{/media-json}}
         .await();
     }
 

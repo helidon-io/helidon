@@ -54,51 +54,7 @@
                         </variables>
                         <exec src="flavor.xml"/>
                     </entrypoint>
-                    <inputFilters>
-                        <!-- TODO test cdata, if not go with a separate file -->
-                        <!-- TODO look at multiline expressions -->
-                        <!-- TODO look at equality with arrays (== ['foo'] ; == []) -->
-                        <!--suppress UnresolvedMavenProperty -->
-                        <filter>${media} == 'multipart' || !(${media} contains 'multipart')</filter>
-                        <!--suppress UnresolvedMavenProperty -->
-                        <filter>!(${metrics} || ${tracing} || ${health}) || (${metrics} &amp;&amp; ${tracing} &amp;&amp; ${health})</filter>
-                        <!--suppress UnresolvedMavenProperty -->
-                        <filter>!${health} || (${health.builtin})</filter>
-                        <!--suppress UnresolvedMavenProperty -->
-                        <filter>!${metrics} || (${metrics.builtin})</filter>
-                        <!--suppress UnresolvedMavenProperty -->
-                        <filter>!${tracing} || (${tracing} &amp;&amp; ${metrics.provider} == 'microprofile')</filter>
-                        <!--suppress UnresolvedMavenProperty -->
-                        <filter>${extra} == [] || (${extra} contains 'cors' &amp;&amp; ${extra} contains 'webclient' &amp;&amp; ${extra} contains 'fault-tolerance')</filter>
-                        <!--suppress UnresolvedMavenProperty -->
-                        <filter>!(${docker} || ${k8s} || ${v8o}) || (${docker} &amp;&amp; ${k8s} &amp;&amp; ${v8o})</filter>
-                        <!--suppress UnresolvedMavenProperty -->
-                        <filter>!${docker} || (${docker.native-image} &amp;&amp; ${docker.jlink-image})</filter>
-                        <!--suppress UnresolvedMavenProperty -->
-                        <filter>${security.atn} == 'oidc' || ${security.atn} == 'jwt' || ${security.atn} == 'google' || ${security.atn} == 'http-signature'</filter>
-                        <!--suppress UnresolvedMavenProperty -->
-                        <filter>(${security.atz} == 'abac' &amp;&amp; ${security.atn} == 'oidc') || ${security.atz} == 'none'</filter>
-                        <!--suppress UnresolvedMavenProperty -->
-                        <filter>(${app-type} == 'custom' &amp;&amp; ${security} == 'true' &amp;&amp; ${media} == 'none') || ${security} == 'false' || ${app-type} != 'custom'</filter>
-                        <!--suppress UnresolvedMavenProperty -->
-                        <filter>(${app-type} == 'custom' &amp;&amp; ${metrics} == 'true' &amp;&amp; ${media} == 'none') || ${metrics} == 'false' || ${app-type} != 'custom'</filter>
-                        <!--suppress UnresolvedMavenProperty -->
-                        <filter>(${app-type} == 'custom' &amp;&amp; ${metrics} == 'true' &amp;&amp; ${security} == 'false') || ${metrics} == 'false' || ${app-type} != 'custom'</filter>
-                        <!--suppress UnresolvedMavenProperty -->
-                        <filter>(${app-type} == 'custom' &amp;&amp; ${docker} == 'true' &amp;&amp; ${media} == 'none') || ${docker} == 'false' || ${app-type} != 'custom'</filter>
-                        <!--suppress UnresolvedMavenProperty -->
-                        <filter>(${app-type} == 'custom' &amp;&amp; ${docker} == 'true' &amp;&amp; ${security} == 'false') || ${docker} == 'false' || ${app-type} != 'custom'</filter>
-                        <!--suppress UnresolvedMavenProperty -->
-                        <filter>(${app-type} == 'custom' &amp;&amp; ${docker} == 'true' &amp;&amp; ${tracing} == 'false') || ${docker} == 'false' || ${app-type} != 'custom'</filter>
-                        <!--suppress UnresolvedMavenProperty -->
-                        <filter>(${app-type} == 'custom' &amp;&amp; ${db} == 'false') || ${app-type} != 'custom'</filter>
-                        <!--suppress UnresolvedMavenProperty -->
-                        <filter>(${app-type} == 'database' &amp;&amp; ${db.auto-ddl} == 'true') &amp;&amp; ${media.json-lib} == 'jackson' || (${db.auto-ddl} == 'false' &amp;&amp; ${media.json-lib} != 'jackson') || ${app-type} != 'database'</filter>
-                        <!--suppress UnresolvedMavenProperty -->
-                        <filter>(${app-type} == 'database' &amp;&amp; ${db.cp} == 'hikaricp') &amp;&amp; ${media.json-lib} == 'jackson' || (${db.cp} != 'hikaricp' &amp;&amp; ${media.json-lib} != 'jackson' ) || ${app-type} != 'database'</filter>
-                        <!--suppress UnresolvedMavenProperty -->
-                        <filter>(${app-type} == 'database' &amp;&amp; ${health} == 'false') || ${app-type} != 'database'</filter>
-                    </inputFilters>
+                    <inputFiltersFile>filters.properties</inputFiltersFile>
                 </configuration>
             </plugin>
             <plugin>
