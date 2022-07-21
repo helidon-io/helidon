@@ -25,7 +25,7 @@
 :microprofile-bundle: false
 :rootdir: {docdir}/../..
 
-== ToC
+== Contents
 
 - <<Overview, Overview>>
 - <<Emitting data, Emitting data>>

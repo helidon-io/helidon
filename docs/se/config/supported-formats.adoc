@@ -24,7 +24,7 @@
 
 include::{rootdir}/includes/se.adoc[]
 
-== ToC
+== Contents
 
 - <<Overview>>
 - <<Additional Config Formats and Parsers>>
