@@ -16,6 +16,7 @@
 
 package io.helidon.examples.integrations.oci.atp.cdi;
 
+import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -39,7 +40,7 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Response;
 
-import com.oracle.bmc.database.DatabaseClient;
+import com.oracle.bmc.database.Database;
 import com.oracle.bmc.database.model.GenerateAutonomousDatabaseWalletDetails;
 import com.oracle.bmc.database.requests.GenerateAutonomousDatabaseWalletRequest;
 import com.oracle.bmc.database.responses.GenerateAutonomousDatabaseWalletResponse;
@@ -54,7 +55,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 public class AtpResource {
     private static final Logger LOGGER = Logger.getLogger(AtpResource.class.getName());
 
-    private final DatabaseClient databaseClient;
+    private final Database databaseClient;
     private final PoolDataSource atpDataSource;
     private final String atpTnsNetServiceName;
 
@@ -62,7 +63,7 @@ public class AtpResource {
     private final String walletPassword;
 
     @Inject
-    AtpResource(DatabaseClient databaseClient, @Named("atp") PoolDataSource atpDataSource,
+    AtpResource(Database databaseClient, @Named("atp") PoolDataSource atpDataSource,
                 @ConfigProperty(name = "oracle.ucp.jdbc.PoolDataSource.atp.tnsNetServiceName") String atpTnsNetServiceName,
                 @ConfigProperty(name = "oci.atp.ocid") String atpOcid,
                 @ConfigProperty(name = "oci.atp.walletPassword") String walletPassword) {
@@ -130,9 +131,9 @@ public class AtpResource {
      * @param walletContent
      * @return SSLContext
      */
-    public SSLContext getSSLContext(byte[] walletContent) throws IllegalStateException {
+    private static SSLContext getSSLContext(byte[] walletContent) throws IllegalStateException {
         SSLContext sslContext = null;
-        try (ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(walletContent))) {
+        try (ZipInputStream zis = new ZipInputStream(new BufferedInputStream(new ByteArrayInputStream(walletContent)))) {
             ZipEntry entry = null;
             while ((entry = zis.getNextEntry()) != null) {
                 if (entry.getName().equals("cwallet.sso")) {
@@ -147,6 +148,8 @@ public class AtpResource {
                 }
                 zis.closeEntry();
             }
+        } catch (RuntimeException | Error throwMe) {
+            throw throwMe;
         } catch (Exception e) {
             throw new IllegalStateException("Error while getting SSLContext from wallet.", e);
         }
@@ -160,19 +163,19 @@ public class AtpResource {
      * @param tnsNetServiceName
      * @return String
      */
-    public String getJdbcUrl(byte[] walletContent, String tnsNetServiceName) throws IllegalStateException {
+    private static String getJdbcUrl(byte[] walletContent, String tnsNetServiceName) throws IllegalStateException {
         String jdbcUrl = null;
-        try (ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(walletContent))) {
+        try (ZipInputStream zis = new ZipInputStream(new BufferedInputStream(new ByteArrayInputStream(walletContent)))) {
             ZipEntry entry = null;
             while ((entry = zis.getNextEntry()) != null) {
                 if (entry.getName().equals("tnsnames.ora")) {
                     jdbcUrl = new String(zis.readAllBytes(), StandardCharsets.UTF_8)
-                            .replaceFirst(tnsNetServiceName + "\\s+=\\s+", "jdbc:oracle:thin:@")
+                            .replaceFirst(tnsNetServiceName + "\\s*=\\s*", "jdbc:oracle:thin:@")
                             .replaceAll("\\n[^\\n]+", "");
                 }
                 zis.closeEntry();
             }
-        } catch (Exception e) {
+        } catch (IOException e) {
             throw new IllegalStateException("Error while getting JDBC URL from wallet.", e);
         }
         return jdbcUrl;

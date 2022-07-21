@@ -16,6 +16,7 @@
 
 package io.helidon.examples.integrations.oci.atp.reactive;
 
+import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -40,7 +41,7 @@ import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 
-import com.oracle.bmc.database.DatabaseAsyncClient;
+import com.oracle.bmc.database.DatabaseAsync;
 import com.oracle.bmc.database.model.GenerateAutonomousDatabaseWalletDetails;
 import com.oracle.bmc.database.requests.GenerateAutonomousDatabaseWalletRequest;
 import com.oracle.bmc.database.responses.GenerateAutonomousDatabaseWalletResponse;
@@ -52,11 +53,11 @@ import oracle.ucp.jdbc.PoolDataSourceFactory;
 class AtpService implements Service {
     private static final Logger LOGGER = Logger.getLogger(AtpService.class.getName());
 
-    private final DatabaseAsyncClient databseAsyncClient;
+    private final DatabaseAsync databaseAsyncClient;
     private final Config config;
 
-    AtpService(DatabaseAsyncClient databseAsyncClient, Config config) {
-        this.databseAsyncClient = databseAsyncClient;
+    AtpService(DatabaseAsync databaseAsyncClient, Config config) {
+        this.databaseAsyncClient = databaseAsyncClient;
         this.config = config;
     }
 
@@ -74,7 +75,7 @@ class AtpService implements Service {
                 new OciResponseHandler<>();
         GenerateAutonomousDatabaseWalletResponse walletResponse = null;
         try {
-            databseAsyncClient.generateAutonomousDatabaseWallet(
+            databaseAsyncClient.generateAutonomousDatabaseWallet(
                     GenerateAutonomousDatabaseWalletRequest.builder()
                             .autonomousDatabaseId(config.get("oci.atp.ocid").asString().get())
                             .generateAutonomousDatabaseWalletDetails(
@@ -134,7 +135,6 @@ class AtpService implements Service {
                                        try {
                                            return pds.getConnection();
                                        } catch (SQLException e) {
-                                           LOGGER.log(Level.SEVERE, "Error while setting up new connection", e);
                                            throw new IllegalStateException("Error while setting up new connection", e);
                                        }
                                    })
@@ -146,9 +146,9 @@ class AtpService implements Service {
      *
      * @return SSLContext
      */
-    public SSLContext getSSLContext(byte[] walletContent) throws IllegalStateException {
+    private static SSLContext getSSLContext(byte[] walletContent) throws IllegalStateException {
         SSLContext sslContext = null;
-        try (ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(walletContent))) {
+        try (ZipInputStream zis = new ZipInputStream(new BufferedInputStream(new ByteArrayInputStream(walletContent)))) {
             ZipEntry entry = null;
             while ((entry = zis.getNextEntry()) != null) {
                 if (entry.getName().equals("cwallet.sso")) {
@@ -163,6 +163,8 @@ class AtpService implements Service {
                 }
                 zis.closeEntry();
             }
+        } catch (RuntimeException | Error throwMe) {
+            throw throwMe;
         } catch (Exception e) {
             throw new IllegalStateException("Error while getting SSLContext from wallet.", e);
         }
@@ -176,19 +178,19 @@ class AtpService implements Service {
      * @param tnsNetServiceName
      * @return String
      */
-    public String getJdbcUrl(byte[] walletContent, String tnsNetServiceName) throws IllegalStateException {
+    private static String getJdbcUrl(byte[] walletContent, String tnsNetServiceName) throws IllegalStateException {
         String jdbcUrl = null;
-        try (ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(walletContent))) {
+        try (ZipInputStream zis = new ZipInputStream(new BufferedInputStream(new ByteArrayInputStream(walletContent)))) {
             ZipEntry entry = null;
             while ((entry = zis.getNextEntry()) != null) {
                 if (entry.getName().equals("tnsnames.ora")) {
                     jdbcUrl = new String(zis.readAllBytes(), StandardCharsets.UTF_8)
-                            .replaceFirst(tnsNetServiceName + "\\s+=\\s+", "jdbc:oracle:thin:@")
+                            .replaceFirst(tnsNetServiceName + "\\s*=\\s*", "jdbc:oracle:thin:@")
                             .replaceAll("\\n[^\\n]+", "");
                 }
                 zis.closeEntry();
             }
-        } catch (Exception e) {
+        } catch (IOException e) {
             throw new IllegalStateException("Error while getting JDBC URL from wallet.", e);
         }
         return jdbcUrl;

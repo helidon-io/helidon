@@ -60,7 +60,7 @@ OCI SDK Clients.
 .Field-injection example
 ----
  @Inject
- private DatabaseClient databaseClient;
+ private Database databaseClient;
 ----
 
 The extension implements these injection points by creating

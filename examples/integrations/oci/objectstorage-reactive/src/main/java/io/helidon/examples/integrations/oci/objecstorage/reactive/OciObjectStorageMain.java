@@ -25,6 +25,7 @@ import com.oracle.bmc.ConfigFileReader;
 import com.oracle.bmc.auth.AuthenticationDetailsProvider;
 import com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider;
 import com.oracle.bmc.model.BmcException;
+import com.oracle.bmc.objectstorage.ObjectStorageAsync;
 import com.oracle.bmc.objectstorage.ObjectStorageAsyncClient;
 
 import static io.helidon.config.ConfigSources.classpath;
@@ -56,7 +57,7 @@ public final class OciObjectStorageMain {
         // this requires OCI configuration in the usual place
         // ~/.oci/config
         AuthenticationDetailsProvider authProvider = new ConfigFileAuthenticationDetailsProvider(ConfigFileReader.parseDefault());
-        ObjectStorageAsyncClient objectStorageAsyncClient = new ObjectStorageAsyncClient(authProvider);
+        ObjectStorageAsync objectStorageAsyncClient = new ObjectStorageAsyncClient(authProvider);
 
         // the following parameters are required
         String bucketName = ociConfig.get("objectstorage").get("bucketName").asString().get();

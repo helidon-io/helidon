@@ -30,6 +30,7 @@ import io.helidon.config.Config;
 import com.oracle.bmc.ConfigFileReader;
 import com.oracle.bmc.auth.AuthenticationDetailsProvider;
 import com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider;
+import com.oracle.bmc.monitoring.MonitoringAsync;
 import com.oracle.bmc.monitoring.MonitoringAsyncClient;
 import com.oracle.bmc.monitoring.model.Datapoint;
 import com.oracle.bmc.monitoring.model.FailedMetricRecord;
@@ -66,46 +67,11 @@ public final class OciMetricsMain {
         // this requires OCI configuration in the usual place
         // ~/.oci/config
         AuthenticationDetailsProvider authProvider = new ConfigFileAuthenticationDetailsProvider(ConfigFileReader.parseDefault());
-        MonitoringAsyncClient monitoringAsyncClient = new MonitoringAsyncClient(authProvider);
+        MonitoringAsync monitoringAsyncClient = new MonitoringAsyncClient(authProvider);
         monitoringAsyncClient.setEndpoint(monitoringAsyncClient.getEndpoint().replace("telemetry.", "telemetry-ingestion."));
 
-        String compartmentId = config.get("oci.metrics.compartment-ocid").asString().get();
-        Instant now = Instant.now();
         PostMetricDataRequest postMetricDataRequest = PostMetricDataRequest.builder()
-                .postMetricDataDetails(
-                        PostMetricDataDetails.builder()
-                                .metricData(
-                                        Arrays.asList(
-                                                MetricDataDetails.builder()
-                                                        .compartmentId(compartmentId)
-                                                        // Add a few data points to see something in the console
-                                                        .datapoints(
-                                                                Arrays.asList(
-                                                                        Datapoint.builder()
-                                                                                .timestamp(Date.from(
-                                                                                        now.minus(10, ChronoUnit.SECONDS)
-                                                                                ))
-                                                                                .value(101.00)
-                                                                                .build(),
-                                                                        Datapoint.builder()
-                                                                                .timestamp(Date.from(
-                                                                                        now.minus(5, ChronoUnit.SECONDS)
-                                                                                ))
-                                                                                .value(123.00)
-                                                                                .build(),
-                                                                        Datapoint.builder()
-                                                                                .timestamp(Date.from(now))
-                                                                                .value(149.00)
-                                                                                .build()
-                                                                ))
-                                                        .dimensions(
-                                                                makeMap("resourceId", "myresourceid",
-                                                                        "unit", "cm"))
-                                                        .name("my_app.jump")
-                                                        .namespace("helidon_examples")
-                                                        .build()
-                                        ))
-                                .batchAtomicity(PostMetricDataDetails.BatchAtomicity.NonAtomic).build())
+                .postMetricDataDetails(getPostMetricDataDetails(config))
                 .build();
         /*
          * Invoke the API call. I use .await() to block the call, as otherwise our
@@ -126,6 +92,38 @@ public final class OciMetricsMain {
                 System.out.println("\t" + failedMetric.getMessage() + ": " + failedMetric.getMetricData());
             }
         }
+    }
+
+    private static PostMetricDataDetails getPostMetricDataDetails(Config config) {
+        String compartmentId = config.get("oci.metrics.compartment-ocid").asString().get();
+        Instant now = Instant.now();
+        return PostMetricDataDetails.builder()
+                .metricData(
+                        Arrays.asList(
+                                MetricDataDetails.builder()
+                                        .compartmentId(compartmentId)
+                                        // Add a few data points to see something in the console
+                                        .datapoints(
+                                                Arrays.asList(
+                                                        Datapoint.builder()
+                                                                .timestamp(Date.from(
+                                                                        now.minus(10, ChronoUnit.SECONDS)
+                                                                ))
+                                                                .value(101.00)
+                                                                .build(),
+                                                        Datapoint.builder()
+                                                                .timestamp(Date.from(now))
+                                                                .value(149.00)
+                                                                .build()
+                                                ))
+                                        .dimensions(
+                                                makeMap("resourceId", "myresourceid",
+                                                        "unit", "cm"))
+                                        .name("my_app.jump")
+                                        .namespace("helidon_examples")
+                                        .build()
+                        ))
+                .batchAtomicity(PostMetricDataDetails.BatchAtomicity.NonAtomic).build();
     }
 
     private static Config buildConfig() {
