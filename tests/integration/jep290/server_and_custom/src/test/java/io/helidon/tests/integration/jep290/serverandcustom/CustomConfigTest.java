@@ -47,6 +47,8 @@ class CustomConfigTest {
         SerializationConfig.builder()
                 .traceSerialization(SerializationConfig.TraceOption.FULL)
                 .filterPattern(ConfiguredInBuilder.class.getName())
+                // default is warn, we want to configure (default is configure since 3.0.0)
+                .onNoConfig(SerializationConfig.Action.CONFIGURE)
                 .build()
                 .configure();
 
