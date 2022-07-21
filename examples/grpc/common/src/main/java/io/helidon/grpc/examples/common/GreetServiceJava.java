@@ -47,8 +47,9 @@ public class GreetServiceJava
 
     @Override
     public void update(ServiceDescriptor.Rules rules) {
-        rules.unary("Greet", this::greet)
-             .unary("SetGreeting", this::setGreeting);
+        rules.marshallerSupplier(new JavaMarshaller.Supplier())
+                .unary("Greet", this::greet)
+                .unary("SetGreeting", this::setGreeting);
     }
 
     // ---- service methods -------------------------------------------------

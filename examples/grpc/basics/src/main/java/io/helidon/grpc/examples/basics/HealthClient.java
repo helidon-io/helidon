@@ -56,7 +56,7 @@ public class HealthClient {
         HealthCheckResponse response = grpcClient.blockingUnary("Check",
                 HealthCheckRequest.newBuilder().setService("GreetService").build());
 
-        System.out.println(response);
+        System.out.println("GreetService response -> " + response);
 
         // query the health of a non-existent service
         try {
@@ -64,7 +64,7 @@ public class HealthClient {
                     HealthCheckRequest.newBuilder().setService("FooService").build());
         } catch (StatusRuntimeException e) {
             // expect to catch a NOT_FOUND exception
-            System.out.println(e.getMessage());
+            System.out.println("FooService StatusRuntimeException.getMessage() -> " + e.getMessage());
         }
     }
 }

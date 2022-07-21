@@ -22,6 +22,7 @@ import java.util.stream.Stream;
 import io.helidon.microprofile.grpc.core.Bidirectional;
 import io.helidon.microprofile.grpc.core.ClientStreaming;
 import io.helidon.microprofile.grpc.core.Grpc;
+import io.helidon.microprofile.grpc.core.GrpcMarshaller;
 import io.helidon.microprofile.grpc.core.ServerStreaming;
 import io.helidon.microprofile.grpc.core.Unary;
 
@@ -34,6 +35,7 @@ import io.grpc.stub.StreamObserver;
  * so that it will be discovered and loaded using CDI when the MP gRPC server starts.
  */
 @Grpc
+@GrpcMarshaller("java")
 @SuppressWarnings("CdiManagedBeanInconsistencyInspection")
 public interface AsyncStringService {
 

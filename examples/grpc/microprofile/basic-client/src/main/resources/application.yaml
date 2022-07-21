@@ -19,9 +19,6 @@ grpc:
     test-server:
       host: localhost
       port: 1408
-  marshaller:
-    java:
-      enabled: true
 
 mp.initializer:
   allow: true

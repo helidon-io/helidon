@@ -16,9 +16,6 @@
 
 grpc:
   port: 1408
-  marshaller:
-    java:
-      enabled: true
 
 security:
   providers:
@@ -83,7 +80,5 @@ security:
                   - from: "12:30"
                     to: "17:30"
                 days-of-week: ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"]
-              policy:
+              policy-validator:
                 statement: "${env.time.year >= 2017}"
-
-

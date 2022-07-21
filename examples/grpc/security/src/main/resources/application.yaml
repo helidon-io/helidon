@@ -20,9 +20,6 @@ app:
 grpc:
   name: "test.server"
   port: 1408
-  marshaller:
-    java:
-      enabled: true
 
 webserver:
   port: 8080

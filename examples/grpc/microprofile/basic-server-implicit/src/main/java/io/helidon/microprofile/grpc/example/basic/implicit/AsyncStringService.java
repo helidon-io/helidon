@@ -25,6 +25,7 @@ import io.helidon.grpc.server.CollectingObserver;
 import io.helidon.microprofile.grpc.core.Bidirectional;
 import io.helidon.microprofile.grpc.core.ClientStreaming;
 import io.helidon.microprofile.grpc.core.Grpc;
+import io.helidon.microprofile.grpc.core.GrpcMarshaller;
 import io.helidon.microprofile.grpc.core.ServerStreaming;
 import io.helidon.microprofile.grpc.core.Unary;
 
@@ -40,6 +41,7 @@ import jakarta.enterprise.context.ApplicationScoped;
  */
 @Grpc
 @ApplicationScoped
+@GrpcMarshaller("java")
 public class AsyncStringService {
 
     /**
