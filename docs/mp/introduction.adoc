@@ -41,14 +41,14 @@ Helidon MP is an Eclipse MicroProfile {version-lib-microprofile-api} runtime tha
 | Declarative dependency injection and supporting services
 
 | Jakarta JSON Processing (JSONP)
-| link:{jakarta-jsonp-spec-url}[{version-lib-jakarta-jsonp-api}]
+| link:{jakarta-jsonp-javadoc-url}[{version-lib-jakarta-jsonp-api}]
 | API to parse, generate, transform, and query JSON docs
 
 | Jakarta JSON Binding (JSONB)
 | link:{jakarta-jsonb-spec-url}[{version-lib-jakarta-jsonb-api}]
 | Binding framework for converting POJOs to/from JSON docs
 
-| xref:{rootdir}/mp/jaxrs/server-configuration.adoc[Jakarta RESTful Web Services (JAX-RS)]
+| xref:{rootdir}/mp/server.adoc[Jakarta RESTful Web Services (JAX-RS)]
 | link:{jakarta-jaxrs-spec-url}[{version-lib-jakarta-jaxrs-api}]
 | API to develop web services following the REST pattern
 
