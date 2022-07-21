@@ -22,9 +22,6 @@ module io.helidon.examples.integrations.oci.objectstorage.cdi {
     requires java.ws.rs;
     requires java.json.bind;
 
-    requires jakarta.inject.api;
-    requires jakarta.enterprise.cdi.api;
-
     requires microprofile.config.api;
 
     requires io.helidon.config.yaml.mp;
