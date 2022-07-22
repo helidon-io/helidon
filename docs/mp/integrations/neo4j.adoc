@@ -53,7 +53,7 @@ NOTE: Check <<Neo4j Metrics propagation, Neo4j Metrics propagation>> and <<Neo4j
 
 The support for Neo4j is implemented in Neo4j driver level. Just add the dependency, add configuration in `microprofile-config.properties` file and Neo4j driver will be configured by Helidon and can be injected using CDI.
 
-First describe Neo4j connection properties:
+To implement Neo4j, you must first provide the connection properties as shown below:
 
 [source,properties]
 ----
