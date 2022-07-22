@@ -262,5 +262,34 @@
    <cve>CVE-2022-33915</cve>
 </suppress>
 
+<!-- False Positive. Matching "platform" in "junit-platform-" to "fan_platform" project.
+     See https://github.com/jeremylong/DependencyCheck/issues/4670
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: junit-platform-commons-1.7.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.junit\.platform/junit\-platform\-commons@.*$</packageUrl>
+   <cve>CVE-2022-31514</cve>
+</suppress>
+
+<!-- False Positive. Matching "pki" in "zipkin" to "pki-core" project.
+     See  https://github.com/jeremylong/DependencyCheck/issues/4692
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: zipkin-2.12.5.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/io\.zipkin\.zipkin2/zipkin@.*$</packageUrl>
+   <cve>CVE-2022-2393</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: zipkin-reporter-2.12.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/io\.zipkin\.reporter2/zipkin\-reporter@.*$</packageUrl>
+   <cve>CVE-2022-2393</cve>
+</suppress>
+
 
 </suppressions>
