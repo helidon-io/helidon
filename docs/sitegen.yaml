@@ -59,6 +59,12 @@ backend:
             type: "icon"
             value: "widgets"
         - type: "PAGE"
+          title: "Get Strted"
+          source: "about/prerequisities.adoc"
+          glyph:
+            type: "icon"
+            value: "widgets"
+        - type: "PAGE"
           title: "Helidon CLI"
           source: "about/cli.adoc"
           glyph:
