@@ -77,5 +77,6 @@
         <module>set_c_f_c</module>
         <module>set_f</module>
         <module>set_o</module>
+        <module>server_and_custom</module>
     </modules>
 </project>
