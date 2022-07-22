@@ -527,7 +527,7 @@ public static void main(String[] args) throws Exception {
 
 <1> Create a `ClientServiceDescriptor` for the `HelloService`.
 <2> Specify custom marshaller using the built-in JsonB marshaller to marshall request and response values.
-<3> Add the `SayHello` unary method to the `ClientServiceDescriptor`.
+<3> Add the `SayHello` unary method to the `ClientServiceDescriptor`, which will use the specified custom marshaller.
 <4> Create a gRPC `Channel` that will communicate with the server running in localhost and on port 1408 (using plaintext).
 <5> Create the `GrpcServiceClient` that uses the above `Channel` and `ClientServiceDescriptor`. `GrpcClientService` represents
 a client that can be used to define the set of methods described by the specified `ClientServiceDescriptor`. In our case, the
