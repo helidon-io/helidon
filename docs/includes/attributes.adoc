@@ -37,7 +37,7 @@ endif::[]
 // versions
 :version-plugin-helidon: 3.0.0-M3
 
-:version-lib-microprofile-api: 3.3
+:version-lib-microprofile-api: 5.0
 
 // microprofile specifications
 :version-lib-microprofile-lra-api: 2.0-RC1
@@ -57,6 +57,7 @@ endif::[]
 :version-lib-jakarta-cdi: 3.0
 :version-lib-jakarta-websockets-api: 2.0
 :version-lib-jakarta-bean-validation: 2.0
+:version-lib-jakarta-jsonp-api: 2.0
 :version-lib-jakarta-jsonb-api: 2.0
 :version-lib-jakarta-transaction-api: 2.0
 :version-lib-jakarta-persistence-api: 3.0
@@ -104,8 +105,8 @@ endif::[]
 :microprofile-metrics-javadoc-annotation-url: {microprofile-metrics-javadoc-url}/org/eclipse/microprofile/metrics/annotation
 :microprofile-metrics-javadoc-metric-url: {microprofile-metrics-javadoc-url}/org/eclipse/microprofile/metrics
 
-:microprofile-tracing-base-url: {microprofile-base-url}/microprofile-tracing-{version-lib-microprofile-tracing}
-:microprofile-tracing-spec-url: {microprofile-tracing-base-url}/microprofile-tracing-spec-{version-lib-microprofile-tracing}.html
+:microprofile-tracing-base-url: {microprofile-base-url}/microprofile-opentracing-{version-lib-microprofile-tracing}
+:microprofile-tracing-spec-url: {microprofile-tracing-base-url}/microprofile-opentracing-spec-{version-lib-microprofile-tracing}.html
 :microprofile-tracing-javadoc-url: {microprofile-tracing-base-url}/apidocs
 
 :microprofile-health-base-url: {microprofile-base-url}/microprofile-health-{version-lib-microprofile-health}
@@ -133,7 +134,7 @@ endif::[]
 :microprofile-rest-client-javadoc-url: {microprofile-rest-client-base-url}/apidocs
 
 :microprofile-graphql-base-url: {microprofile-base-url}/microprofile-graphql-{version-lib-microprofile-graphql}
-:microprofile-graphql-spec-url: {microprofile-rest-graphql-url}/microprofile-rest-client-spec-{version-lib-microprofile-graphql}.html
+:microprofile-graphql-spec-url: {microprofile-graphql-base-url}/microprofile-graphql-spec-{version-lib-microprofile-graphql}.html
 :microprofile-graphql-javadoc-url: {microprofile-rest-graphql-url}/apidocs
 
 // Jakarta versioned URLs
@@ -151,6 +152,9 @@ endif::[]
 :jakarta-bean-validation-base-url: {jakarta-base-url}/bean-validation/{version-lib-jakarta-bean-validation}
 :jakarta-bean-validation-spec-url: {jakarta-bean-validation-base-url}/bean-validation_{version-lib-jakarta-bean-validation}.html
 :jakarta-bean-validation-javadoc-url: {jakarta-bean-validation-base-url}/apidocs
+
+:jakarta-jsonp-base-url: {jakarta-base-url}/jsonp/{version-lib-jakarta-jsonp-api}
+:jakarta-jsonp-javadoc-url: {jakarta-jsonp-base-url}/apidocs
 
 :jakarta-jsonb-base-url: {jakarta-base-url}/jsonb/{version-lib-jakarta-jsonb-api}
 :jakarta-jsonb-spec-url: {jakarta-jsonb-base-url}/jakarta-jsonb-spec-{version-lib-jakarta-jsonb-api}.html
