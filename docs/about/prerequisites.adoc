@@ -27,19 +27,7 @@ Everything you need to get started with Helidon is listed here.
 
 == Prerequisites
 
-Helidon 3 requires Java 17 (or newer) and Maven. You need Docker if you
-want to build and deploy Docker containers. If you want to
-deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster (you can
-xref:kubernetes.adoc[install one on your desktop]).
-
-[role="flex, sm7"]
-|=======
-|https://www.oracle.com/technetwork/java/javase/downloads[Java{nbsp}SE{nbsp}17] (http://jdk.java.net[Open{nbsp}JDK{nbsp}17]) or newer
-|https://maven.apache.org/download.cgi[Maven 3.6.1+]
-|https://docs.docker.com/install/[Docker 18.09+]
-|https://kubernetes.io/docs/tasks/tools/install-kubectl/[Kubectl 1.16.5+]
-|=======
-
+include::{rootdir}/about/introduction.adoc[tag=prereqs]
 
 [source,bash]
 .Verify Prerequisites
@@ -50,10 +38,10 @@ docker --version
 kubectl version --short
 ----
 
-== Setting JAVA_HOME
+== Setting `JAVA_HOME`
 
 [source,bash]
-.Setting JAVA_HOME
+.Setting `JAVA_HOME`
 ----
 # On Mac
 export JAVA_HOME=`/usr/libexec/java_home -v 17`

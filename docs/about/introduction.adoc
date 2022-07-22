@@ -33,38 +33,38 @@ include::{rootdir}/includes/attributes.adoc[]
 
 == What is Helidon?
 
-link:https://helidon.io[Helidon] is a collection of Java libraries for writing microservices that run on a fast web core powered by link:https://netty.io[Netty]. It's small, fast and fun to use. 
+link:https://helidon.io[Helidon] is a collection of Java libraries for writing microservices that run on a fast web core powered by link:https://netty.io[Netty]. It's small, fast, and fun to use.
 
-Helidon is open source under Alache 2.0 license. Sources are available on link:{helidon-github-tree-url}[GitHub].
+Helidon is open source under the Apache 2.0 license. Sources are available on link:{helidon-github-tree-url}[GitHub].
 
-Helidon is cloud-native ready. It provides fast start-up time, has low memory consumption and small disk footprint. It also comes with full observability stack out of the box including Health Checks, Metrics, Tracing and Logging.
+Helidon is cloud-native ready. It provides fast start-up time and has low memory consumption and a small disk footprint. It also comes with a full observability stack out of the box including health checks, metrics, tracing and logging.
 
-Helidon fully supports GraalVM native-image allowing you to build native executable out of your Java application.
+Helidon fully supports GraalVM native image allowing you to build a native executable from your Java application.
 
 == Helidon Flavors
 
-Helidon comes in two flavors: *Helidon SE* and *Helidon MP*. Think about flavors as frameworks providing similar functionality using differet development experience.
+Helidon comes in two flavors: *Helidon SE* and *Helidon MP*. Think about these flavors as frameworks providing similar functionality but offering different developer experiences.
 
 [cols="3,3"]
 |====================
 | *Helidon SE* |  *Helidon MP*
 
-|Helidon SE gives you full transparency and puts you in control.
-|Helidon MP is built on top of the Helidon SE libraries and provides platform definition that is familiar to enterprise Java developers.
+|Gives you full transparency and puts you in control.
+|Built on top of the Helidon SE libraries and provides a platform  that is familiar to enterprise Java developers.
 
-|Microframework model with a very small footprint and limited functionality (~7 MB) 
-| https://projects.eclipse.org/proposals/eclipse-microprofile[MicroProfile] implementation; slightly larger footprint than SE (~13 MB)
+|Microframework model with a very small footprint and limited functionality (~7 MB).
+| https://projects.eclipse.org/proposals/eclipse-microprofile[MicroProfile] implementation; slightly larger footprint than SE (~13 MB).
 
-|Functional style, reactive, non-blocking   
-|Declarative style with dependency injection
+|Functional style, reactive, non-blocking.
+|Declarative style with dependency injection.
 
-|Transparent "no magic" development experience; pure java application development with no annotations and no dependency injections  
-|Spring Boot, Jakarta EE and MicroProfile development experience; Jakarta EE components (CDI, JAX-RS, JSON-P/B)
+|Transparent "no magic" development experience; pure java application development with no annotations and no dependency injections.
+|Developer experience similar to that of Spring Boot, Jakarta EE and MicroProfile; layers on some Jakarta EE components (CDI, JAX-RS, JSON-P, JSON-B).
 
 |Learn more about xref:{rootdir}/se/introduction.adoc[Helidon SE]. | Learn more about xref:{rootdir}/mp/introduction.adoc[Helidon MP].
 |====================
 
-To better understand differences below are two samples implementing a simple RESTful service. One is using Helidon SE, another Helidon MP.
+To help illustrate the differences, below are two samples implementing a simple RESTful service. One uses Helidon SE, the other Helidon MP.
 
 .Helidon SE sample
 [source,java]
@@ -94,40 +94,43 @@ public class HelloWorld {
 
 Use Helidon SE if
 
-- Performance is your main goal
-- You are familiar with Reactive Programming
-- Your application is heavily using concurrency
-- You are not planning to use any CDI based components
-- You want to use minimum number of third-party dependencies
+- Performance is your main goal.
+- You are familiar with reactive programming.
+- Your application is heavily using concurrency.
+- You are not planning to use any CDI-based components.
+- You want to use a minimum number of third-party dependencies.
 
 Use Helidon MP if
 
-- You want to base your application on modern enterprise Java standards such as Jakarta EE and MicroProfile
-- You are familiar with Java EE, Jakarta EE or Spring Boot and would like to use similar development experience
-- You are migrating existing Java EE/Jakarta EE application to microservices
-- You are planning to use CDI components or extensions
-- You are planning to use JPA for data access and Jersey (JAX-RS) for RESTful services
+- You want to base your application on modern enterprise Java standards such as Jakarta EE and MicroProfile.
+- You are familiar with Java EE, Jakarta EE or Spring Boot and would like to have a  similar development experience.
+- You are migrating existing Java EE/Jakarta EE application to microservices.
+- You are planning to use CDI components or extensions.
+- You are planning to use JPA for data access and Jersey (JAX-RS) for RESTful services.
 
 
 [NOTE]
 ====
-If you don't know which Helidon flavor to use – use *Helidon MP*
+If you don't know which Helidon flavor to use – use *Helidon MP*.
 ====
 
 == Prerequisites
 
-Helidon 3 requires Java 17 (or newer) and Maven. You need Docker if you want to build and deploy Docker containers. If you want to deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster (you can xref:kubernetes.adoc[install one on your desktop]).
+// tag::prereqs[]
+Helidon requires Java and Maven.
+You might also need Docker and Kubernetes depending on how you plan to deploy your services.
 
-- https://www.oracle.com/technetwork/java/javase/downloads[Java{nbsp}SE{nbsp}17] (http://jdk.java.net[Open{nbsp}JDK{nbsp}17]) or newer
-- https://maven.apache.org/download.cgi[Maven 3.8.6+]
-- https://docs.docker.com/install/[Docker 18.09+]
-- https://kubernetes.io/docs/tasks/tools/install-kubectl/[Kubectl 1.16.5+]
-
-We are also strongly suggesting installing xref:cli.adoc[Helidon CLI] (Command Line Interface) which helps generating and building Helidon projects.
+.Prerequisite product versions for Helidon {helidon-version}
+[%autowidth]
+|====
+include::{rootdir}/includes/prerequisites.adoc[tag=prerequisites-table-details]
+|====
+// end::prereqs[]
+We also strongly suggest installing the xref:cli.adoc[Helidon CLI] (command line interface) which helps in generating and building Helidon projects.
 
 == Next Steps
 
-Next would be to choose a Helidon flavor and start using it. Check the following 
+Choose a Helidon flavor to explore and start using it. Check out the following:
 
 - xref:{rootdir}/se/introduction.adoc[Helidon SE Documentation]
 - xref:{rootdir}/mp/introduction.adoc[Helidon MP Documentation]
