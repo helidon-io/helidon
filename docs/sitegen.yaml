@@ -60,7 +60,7 @@ backend:
             value: "widgets"
         - type: "PAGE"
           title: "Get Strted"
-          source: "about/prerequisities.adoc"
+          source: "about/prerequisites.adoc"
           glyph:
             type: "icon"
             value: "widgets"
