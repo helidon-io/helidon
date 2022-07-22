@@ -59,6 +59,8 @@ endif::[]
 :version-lib-jakarta-bean-validation: 2.0
 :version-lib-jakarta-jsonp-api: 2.0
 :version-lib-jakarta-jsonb-api: 2.0
+:version-lib-jakarta-jsonp-api: 2.0.1
+:version-lib-jakarta-annotations-api: 2.0
 :version-lib-jakarta-transaction-api: 2.0
 :version-lib-jakarta-persistence-api: 3.0
 :version-lib-jakarta-jaxrs-api: 3.0

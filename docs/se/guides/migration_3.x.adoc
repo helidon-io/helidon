@@ -26,7 +26,10 @@ include::{rootdir}/includes/se.adoc[]
 In Helidon 3 we have made some changes to APIs and runtime behavior. This guide
 will help you migrate a Helidon SE 2.x application to 3.x.
 
-include::{rootdir}/includes/guides/migration.adoc[]
+
+== Java 17 Runtime
+
+Java 11 is no longer supported in Helidon 3. Java 17 or newer is required.
 
 == New Routing
 
@@ -37,8 +40,7 @@ For further information check xref:../webserver.adoc[WebServer Documentation]
 
 == Http/2 Support
 
-Helidon now supports Http/2 upgrade from Http/1, Http/2 without prior knowledge
-and Http/2 with ALPN over TLS.
+Helidon now has the support of HTTP/2 with ALPN over TLS.
 
 For further information check xref:../webserver.adoc[WebServer Documentation]
 
@@ -60,4 +62,11 @@ Use new dependency to enable `WebSocket`:
 
 == JEP-290 security hardening
 
-We are taking security seriously. Deserialization is now disabled by default. JEP-290 gives us tools to harden security when deserializing objects (using Java Serialization). In Helidon 3.x, we have decided to forbid any deserialization by default. Helidon does not use Java Serialization at all, and we consider it a high security risk. Java Serialization can still be used if required (requires additional setup to allow specific classes to be deserialized, or by explicitly switching off our JEP-290 support).
+We are taking security seriously. Deserialization is now disabled by default. JEP-290 gives us tools to harden security when deserializing objects (using Java Serialization). In Helidon 3.x, we have decided to forbid any deserialization by default. Helidon does not use Java Serialization at all, and we consider it a high security risk. Java Serialization can still be used if required (requires additional setup to allow specific classes to be deserialized, or by explicitly switching off our JEP-290 support). More information xref:{rootdir}/includes/security/jep-290.adoc[here].
+
+
+== Updated CLI
+In version 3.x Helidon CLI brings all benefits of the Project Starter to the command line allowing users to enjoy customizable project generation without leaving the terminal. See it in action xref:{rootdir}/about/cli.adoc[here]!
+
+== Project Starter
+Project Starter is a new web UI for creating Helidon projects. It’s highly customizable and provides various options allowing users to select Helidon features they want to add to the project. At the end users will be able to generate projects up to their taste. Check it out at link:https://helidon.io/starter[Helidon Starter Page]!
