@@ -32,6 +32,7 @@ include::{rootdir}/includes/mp.adoc[]
 - <<API, API>>
 - <<Configuration, Configuration>>
 - <<Usage, Usage>>
+- <<Examples, Examples>>
 
 == Overview
 Building Java gRPC clients using the Helidon MP gRPC APIs is very simple and removes a lot of the boiler plate code typically
@@ -198,7 +199,7 @@ proxy internally by the Helidon MP gRPC APIs.
 === Building a gRPC Client
 There are a few steps to building and using a gRPC client in Helidon MP.
 
-As discussed in the xref:server-side-services.adoc#_defining_service_methods[Defining Service methods] section of the xref:server-side-services.adoc[Server-Side Services] there are four different types of gRPC method.
+As discussed in the xref:server.adoc#_defining_service_methods[Defining Service methods] section of the xref:server.adoc[Server-Side Services] there are four different types of gRPC method.
 
 * Unary - a simple method with at most a single request value and returning at most a single response value.
 * Server Streaming - a method that takes at most a single request value but may return zero or more response values.
@@ -276,3 +277,10 @@ public interface StringService {
     public CompletableFuture<String> upper(String s);
 }
 ----
+
+== Examples
+link:{helidon-github-tree-url}/examples/grpc/microprofile/basic-client[Basic gRPC Client] example demonstrates  a
+simple gRPC client that invokes services from deployed gRPC server applications provided in the
+link:{helidon-github-tree-url}/examples/grpc/microprofile/basic-server-implicit[Basic gRPC Server] and
+link:{helidon-github-tree-url}/examples/grpc/microprofile/metrics[gRPC Server metrics] examples.
+

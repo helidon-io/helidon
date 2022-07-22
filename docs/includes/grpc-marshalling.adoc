@@ -16,12 +16,11 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Marshalling
+ifndef::rootdir[:rootdir: {docdir}/..]
 :description: Helidon gRPC Marshalling
 :keywords: helidon, grpc, java, marshalling
-:rootdir: {docdir}/../..
 
-include::{rootdir}/includes/se.adoc[]
+= Marshalling
 
 == Default Marshalling Support
 
@@ -31,8 +30,11 @@ That means that you don't need any special handling or configuration in order to
 
 == Custom Marshalling
 
-Helidon makes the use of custom marshallers trivial, and provides one custom implementation, `JsonbMarshaller`, out of the box.
+Helidon makes the use of custom marshallers trivial and provides one custom implementation, link:{helidon-github-tree-url}/grpc/core/src/main/java/io/helidon/grpc/core/JsonbMarshaller.java[`JsonbMarshaller`], out of the box.
 
-You can also easily implement your own marshallers to support serialization formats that are not supported natively by Helidon, by implementing `Marshaller` and `MarshallerSupplier` interfaces.
+You can also easily implement your own marshaller to support serialization formats that are not supported natively
+by Helidon, by implementing `Marshaller` and `MarshallerSupplier` interfaces. Check out the mentioned built-in marshaller,
+link:{helidon-github-tree-url}/grpc/core/src/main/java/io/helidon/grpc/core/JsonbMarshaller.java[JsonbMarshaller.java],
+as an implementation example.
 
-For example, https://coherence.community/[Oracle Coherence CE] provides a marshaller for a highly optimized, binary, platform independent Portable Object Format (POF). You can find more information about POF in https://coherence.community/20.12/docs/#/docs/core/04_portable_types[Coherence documentation]
+Furthermore, https://coherence.community/[Oracle Coherence CE] provides a marshaller for a highly optimized, binary, platform independent Portable Object Format (POF). You can find more information about POF in https://coherence.community/20.12/docs/#/docs/core/04_portable_types[Coherence documentation]

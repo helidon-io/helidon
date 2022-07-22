@@ -315,7 +315,7 @@ backend:
                   type: "icon"
                   value: "swap_horiz"
                 sources:
-                  - "server-side-services.adoc"
+                  - "server.adoc"
                   - "client.adoc"
               - type: "PAGE"
                 title: "GraphQL"
