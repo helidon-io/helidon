@@ -28,7 +28,17 @@ In Helidon 3.x we have made some changes to APIs and runtime behavior. This guid
 will help you migrate a Helidon MP 2.x application to 3.x.
 
 
-include::{rootdir}/includes/guides/migration_3.x.adoc[]
+== Java 17 Runtime
+
+Java 11 is no longer supported in Helidon 3. Java 17 or newer is required.
+
+
+== javax.* namespace to jakarta.* namespace
+
+Due to trademark restrictions imposed on the javax.* namespace, Jakarta EE will rename all of its specifications to use jakarta.* in order to move forward with evolving the platform with features as the cloud-native Java platform.
+In version 3.x Helidon supports MicroProfile 5 specification, which now is fully migrated to `jakarta.x` namespace.
+
+As the `javax` module is no longer in dependency management of Helidon parent pom files.
 
 
 == MicroProfile 5 support
@@ -39,25 +49,32 @@ MicroProfile 5 lays the foundation for the rapid innovation of MicroProfile APIs
 
 Microprofile 5 is an umbrella for the following specifications and their corresponding versions:
 
-* MicroProfile Config 3.0
-* MicroProfile Fault Tolerance 4.0
-* MicroProfile Health 4.0
-* MicroProfile JWT Authentication 2.0
-* MicroProfile Metrics 4.0
-* MicroProfile OpenAPI 3.0
-* MicroProfile OpenTracing 3.0
-* MicroProfile Rest Client 3.0
+* MicroProfile Config {version-lib-microprofile-config}
+* MicroProfile Fault Tolerance {version-lib-microprofile-fault-tolerance-api}
+* MicroProfile Health {version-lib-microprofile-health}
+* MicroProfile JWT Authentication {version-lib-microprofile-jwt}
+* MicroProfile Metrics {version-lib-microprofile-metrics-api}
+* MicroProfile OpenAPI {version-lib-microprofile-openapi-api}
+* MicroProfile OpenTracing {version-lib-microprofile-tracing}
+* MicroProfile Rest Client {version-lib-microprofile-rest-client}
 
 Helidon 3.x is Passing the 5 Jakarta Specification TCKs:
 
-* CDI (Jakarta Contexts and Dependency Injection) 3.0.0
-* JAX-RS (Jakarta RESTful Web Services) 3.0.0
-* JSON-B (Jakarta JSON Binding) 2.0.0
-* JSON-P (Jakarta JSON Processing) 2.0.1
-* Jakarta Annotations 2.0.0
+* CDI (Jakarta Contexts and Dependency Injection) {version-lib-jakarta-cdi}
+* JAX-RS (Jakarta RESTful Web Services) {version-lib-jakarta-jaxrs-api}
+* JSON-B (Jakarta JSON Binding) {version-lib-jakarta-jsonb-api}
+* JSON-P (Jakarta JSON Processing) {version-lib-jakarta-jsonp-api}
+* Jakarta Annotations {version-lib-jakarta-annotations-api}
 
 Corresponding changes to Helidon code were made to support the corresponding specifications' versions.
 
+
+== Updated CLI
+In version 3.x Helidon CLI brings all benefits of the Project Starter to the command line allowing users to enjoy customizable project generation without leaving the terminal. See it in action xref:{rootdir}/about/cli.adoc[here]!
+
+== Project Starter
+Project Starter is a new web UI for creating Helidon projects. It’s highly customizable and provides various options allowing users to select Helidon features they want to add to the project. At the end users will be able to generate projects up to their taste. Check it out at link:https://helidon.io/starter[Helidon Starter Page]!
+
 == TestNG test support
 
-In Helidon 3.x you have the option to use link:https://testng.org/doc/[TestNG] to test your application. For more information follow the official documents xref..
+In Helidon 3.x you have the option to use link:https://testng.org/doc/[TestNG] to test your application. For more information follow the official documents xref:{rootdir}/mp/testing-ng.adoc
