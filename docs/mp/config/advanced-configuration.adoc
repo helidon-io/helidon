@@ -24,7 +24,7 @@
 
 include::{rootdir}/includes/mp.adoc[]
 
-== ToC
+== Contents
 
 - <<Creating MicroProfile Config Sources for Manual Setup of Config>>
 - <<Creating Custom Config Sources>>

@@ -26,7 +26,7 @@
 
 include::{rootdir}/includes/mp.adoc[]
 
-== ToC
+== Contents
 
 - <<Overview, Overview>>
 - <<Maven-Coordinates, Maven Coordinates>>

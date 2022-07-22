@@ -22,7 +22,7 @@
 :feature-name: Testing with TestNG
 :rootdir: {docdir}/..
 
-== ToC
+== Contents
 
 - <<Overview, Overview>>
 - <<Maven Coordinates, Maven Coordinates>>
