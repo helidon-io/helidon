@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import jakarta.websocket.EndpointConfig;
 import jakarta.websocket.MessageHandler;
 import jakarta.websocket.Session;
 import org.glassfish.tyrus.client.ClientManager;
+import org.glassfish.tyrus.container.jdk.client.JdkClientContainer;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -51,7 +52,7 @@ public class MessageBoardTest {
     private static final Logger LOGGER = Logger.getLogger(MessageBoardTest.class.getName());
 
     private static WebClient restClient = WebClient.create();
-    private static ClientManager websocketClient = ClientManager.createClient();
+    private static ClientManager websocketClient = ClientManager.createClient(JdkClientContainer.class.getName());
     private static WebServer server;
 
     private String[] messages = { "Whisky", "Tango", "Foxtrot" };

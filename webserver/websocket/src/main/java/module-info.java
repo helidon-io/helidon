@@ -32,9 +32,10 @@ module io.helidon.webserver.websocket {
     requires io.netty.buffer;
     requires io.netty.common;
 
-    requires tyrus.core;
-    requires tyrus.server;
-    requires tyrus.spi;
+    requires org.glassfish.tyrus.core;
+    requires org.glassfish.tyrus.server;
+    requires org.glassfish.tyrus.spi;
+    requires org.glassfish.tyrus.client;
 
     provides UpgradeCodecProvider
             with io.helidon.webserver.websocket.WebsocketUpgradeCodecProvider;

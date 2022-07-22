@@ -27,4 +27,9 @@ open module helidon.webserver.websocket.test {
     requires hamcrest.all;
     requires org.junit.jupiter.api;
     requires org.junit.jupiter.params;
+
+    requires org.glassfish.tyrus.client;
+    requires org.glassfish.tyrus.container.jdk.client;
+
+    exports io.helidon.webserver.websocket.test;
 }

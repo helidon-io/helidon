@@ -37,6 +37,7 @@ import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.Response;
 import org.glassfish.tyrus.client.ClientManager;
+import org.glassfish.tyrus.container.jdk.client.JdkClientContainer;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -53,7 +54,7 @@ class MessageBoardTest {
 
     private final WebTarget webTarget;
     private final ServerCdiExtension server;
-    private final ClientManager websocketClient = ClientManager.createClient();
+    private final ClientManager websocketClient = ClientManager.createClient(JdkClientContainer.class.getName());
 
     @Inject
     MessageBoardTest(WebTarget webTarget, ServerCdiExtension server) {
