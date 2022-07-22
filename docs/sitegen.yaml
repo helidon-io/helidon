@@ -178,6 +178,7 @@ backend:
                 sources:
                   - "oci.adoc"
                   - "hcv.adoc"
+                  - "neo4j.adoc"
               - type: "MENU"
                 title: "Reactive Streams"
                 dir: "reactivestreams"
@@ -388,6 +389,7 @@ backend:
                   - "oci.adoc"
                   - "hcv.adoc"
                   - "jedis.adoc"
+                  - "neo4j.adoc"
               - type: "MENU"
                 title: "Reactive Streams"
                 dir: "reactivestreams"
