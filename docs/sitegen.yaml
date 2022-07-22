@@ -299,15 +299,6 @@ backend:
                 sources:
                   - "introduction.adoc"
                   - "advanced-configuration.adoc"
-              - type: "MENU"
-                title: "CDI Extensions"
-                dir: "extensions"
-                glyph:
-                  type: "icon"
-                  value: "extension"
-                sources:
-                  - "overview.adoc"
-                  - "cdi-jedis.adoc"
               - type: "PAGE"
                 title: "CORS"
                 source: "cors/cors.adoc"
@@ -396,6 +387,7 @@ backend:
                 sources:
                   - "oci.adoc"
                   - "hcv.adoc"
+                  - "jedis.adoc"
               - type: "MENU"
                 title: "Reactive Streams"
                 dir: "reactivestreams"
