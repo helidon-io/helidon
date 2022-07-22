@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,19 @@
 
 package io.helidon.examples.integrations.oci.atp.reactive;
 
+import java.io.IOException;
+
 import io.helidon.common.LogConfig;
 import io.helidon.config.Config;
-import io.helidon.integrations.oci.atp.OciAutonomousDbRx;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 
-import static io.helidon.config.ConfigSources.classpath;
-import static io.helidon.config.ConfigSources.file;
+import com.oracle.bmc.ConfigFileReader;
+import com.oracle.bmc.auth.AuthenticationDetailsProvider;
+import com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider;
+import com.oracle.bmc.database.DatabaseAsync;
+import com.oracle.bmc.database.DatabaseAsyncClient;
+import com.oracle.bmc.model.BmcException;
 
 /**
  * Main class of the example.
@@ -41,24 +46,26 @@ public final class OciAtpMain {
      *
      * @param args command line arguments.
      */
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         // load logging configuration
         LogConfig.configureRuntime();
 
         // By default this will pick up application.yaml from the classpath
         Config config = Config.create();
 
-        Config ociConfig = config.get("oci");
-
         // this requires OCI configuration in the usual place
         // ~/.oci/config
-        OciAutonomousDbRx autonomousDbRx = OciAutonomousDbRx.create(ociConfig);
+        AuthenticationDetailsProvider authProvider = new ConfigFileAuthenticationDetailsProvider(ConfigFileReader.parseDefault());
+        DatabaseAsync databaseAsyncClient = DatabaseAsyncClient.builder().build(authProvider);
 
         // Prepare routing for the server
         WebServer server = WebServer.builder()
                 .config(config.get("server"))
                 .routing(Routing.builder()
-                                 .register("/atp", new AtpService(autonomousDbRx, config)))
+                                 .register("/atp", new AtpService(databaseAsyncClient, config))
+                                 // OCI SDK error handling
+                                 .error(BmcException.class, (req, res, ex) -> res.status(ex.getStatusCode())
+                                         .send(ex.getMessage())))
                 .build();
 
         // Start the server and print some info.

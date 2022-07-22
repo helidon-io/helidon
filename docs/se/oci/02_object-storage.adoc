@@ -37,7 +37,7 @@ use the OCI Java SDK directly, in particular the Async clients. For more informa
 
 * link:{oci-objstore-url}[OCI Object Storage Documentation ]
 * link:{oci-objstore-javadoc}[OCI Object Storage Javadoc ]
-* link:{helidon-tag}/examples/integrations/oci/vault-reactive/[Helidon SE OCI Vault Example]
+* link:{helidon-tag}/examples/integrations/oci/objectstorage-reactive/[Helidon SE OCI Object Storage Example]
 
 == Experimental
 

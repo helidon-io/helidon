@@ -26,9 +26,12 @@ import io.helidon.webserver.WebServer;
 import com.oracle.bmc.ConfigFileReader;
 import com.oracle.bmc.auth.AuthenticationDetailsProvider;
 import com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider;
+import com.oracle.bmc.keymanagement.KmsCryptoAsync;
 import com.oracle.bmc.keymanagement.KmsCryptoAsyncClient;
 import com.oracle.bmc.model.BmcException;
+import com.oracle.bmc.secrets.SecretsAsync;
 import com.oracle.bmc.secrets.SecretsAsyncClient;
+import com.oracle.bmc.vault.VaultsAsync;
 import com.oracle.bmc.vault.VaultsAsyncClient;
 
 import static io.helidon.config.ConfigSources.classpath;
@@ -67,11 +70,11 @@ public final class OciVaultMain {
         // ~/.oci/config
         AuthenticationDetailsProvider authProvider = new ConfigFileAuthenticationDetailsProvider(ConfigFileReader.parseDefault());
 
-        SecretsAsyncClient secrets = SecretsAsyncClient.builder().build(authProvider);
-        KmsCryptoAsyncClient crypto = KmsCryptoAsyncClient.builder()
+        SecretsAsync secrets = SecretsAsyncClient.builder().build(authProvider);
+        KmsCryptoAsync crypto = KmsCryptoAsyncClient.builder()
                 .endpoint(cryptoEndpoint)
                 .build(authProvider);
-        VaultsAsyncClient vaults = VaultsAsyncClient.builder().build(authProvider);
+        VaultsAsync vaults = VaultsAsyncClient.builder().build(authProvider);
 
         WebServer.builder()
                 .config(config.get("server"))

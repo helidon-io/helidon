@@ -37,7 +37,7 @@ use the OCI Java SDK directly, in particular the Async clients. For more informa
 
 * link:{oci-atp-url}[OCI Database Documentation ]
 * link:{oci-atp-javadoc}[OCI Database Javadoc ]
-* link:{helidon-tag}/examples/integrations/oci/vault-reactive/[Helidon SE OCI Vault Example]
+* link:{helidon-tag}/examples/integrations/oci/atp-reactive/[Helidon SE OCI ATP Example]
 
 == Experimental
 

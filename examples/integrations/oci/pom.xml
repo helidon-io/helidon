@@ -33,6 +33,8 @@
     <description>Examples of integration with OCI (Oracle Cloud).</description>
 
     <modules>
+        <module>atp-reactive</module>
+        <module>atp-cdi</module>
         <module>metrics-reactive</module>
         <module>objectstorage-reactive</module>
         <module>objectstorage-cdi</module>

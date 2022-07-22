@@ -29,7 +29,7 @@
     <artifactId>helidon-integrations-vault-project</artifactId>
     <name>Helidon Integrations Vault Project</name>
 
-    <description>Support for HashiCorp and OCI vaults</description>
+    <description>Support for HashiCorp Vault</description>
     <packaging>pom</packaging>
 
     <modules>
