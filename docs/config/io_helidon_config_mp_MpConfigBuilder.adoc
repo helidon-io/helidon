@@ -17,24 +17,20 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 ifndef::rootdir[:rootdir: {docdir}/..]
-:description: Configuration of io.helidon.config.mp.MpConfigBuilder
-:keywords: helidon, config, io.helidon.config.mp.MpConfigBuilder
-:basic-table-intro: The table below lists the configuration keys that configure io.helidon.config.mp.MpConfigBuilder
+:description: Configuration of org.eclipse.microprofile.config.Config
+:keywords: helidon, config, org.eclipse.microprofile.config.Config
+:basic-table-intro: The table below lists the configuration keys that configure org.eclipse.microprofile.config.Config
 include::{rootdir}/includes/attributes.adoc[]
 
-= MpConfigBuilder (config.mp) Configuration
+= org.eclipse.microprofile.config.Config Configuration
 
 // tag::config[]
 
 
-Type: link:{javadoc-base-url}/io.helidon.config.mp/io/helidon/config/mp/MpConfigBuilder.html[io.helidon.config.mp.MpConfigBuilder]
+Type: org.eclipse.microprofile.config.Config
 
 
-[source,text]
-.Config key
-----
-mp.config
-----
+This is a standalone configuration type, prefix from configuration root: `mp.config`
 
 
 
