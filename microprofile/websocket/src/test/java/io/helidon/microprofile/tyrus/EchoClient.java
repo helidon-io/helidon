@@ -35,6 +35,7 @@ import jakarta.websocket.Extension;
 import jakarta.websocket.MessageHandler;
 import jakarta.websocket.Session;
 import org.glassfish.tyrus.client.ClientManager;
+import org.glassfish.tyrus.container.jdk.client.JdkClientContainer;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -45,7 +46,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 class EchoClient {
     private static final Logger LOGGER = Logger.getLogger(EchoClient.class.getName());
 
-    private static final ClientManager client = ClientManager.createClient();
+    private static final ClientManager client = ClientManager.createClient(JdkClientContainer.class.getName());
     private static final long TIMEOUT_SECONDS = 10;
 
     private final URI uri;
