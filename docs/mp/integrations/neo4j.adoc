@@ -51,7 +51,7 @@ NOTE: Check <<Neo4j Metrics propagation, Neo4j Metrics propagation>> and <<Neo4j
 
 == Usage
 
-The support for Neo4j is implemented in Neo4j Driver level. Just add the dependency, add configuration in `microprofile-config.properties` file and Neo4j driver will be configured by Helidon and can be injected using CDI.
+The support for Neo4j is implemented in Neo4j driver level. Just add the dependency, add configuration in `microprofile-config.properties` file and Neo4j driver will be configured by Helidon and can be injected using CDI.
 
 First describe Neo4j connection properties:
 
@@ -126,7 +126,7 @@ metrics.rest-request.enabled=true
 
 This includes both connection information and enables Neo4j metrics propagation.
 
-Finally, we are able to inject and use the `Neo4j` driver. Domain objects (_Movie_, _Actor_, _Person_) code is omitted.
+Finally, we are able to inject and use the `Neo4j` driver.
 
 [source,java]
 ----
@@ -173,8 +173,8 @@ public class MovieRepository {
 }
 
 ----
-<1> `Neo4j` Driver constructor injection
-<2> Use `Neo4j` Driver to extract all Movies
+<1> `Neo4j` driver constructor injection
+<2> Use of `Neo4j` driver to extract all Movies
 
 Movies can now be returned as JSON objects:
 

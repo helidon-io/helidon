@@ -50,7 +50,7 @@ include::{rootdir}/includes/dependencies.adoc[]
 
 == Usage
 
-The support for Neo4j is implemented in Neo4j Driver level. Just add the dependency, add configuration in `application.yaml` file and Neo4j driver will be configured by Helidon and can be used with `Neo4j` support object.
+The support for Neo4j is implemented in Neo4j driver level. Just add the dependency, add configuration in `application.yaml` file and Neo4j driver will be configured by Helidon and can be used with `Neo4j` support object.
 
 First describe Neo4j connection properties:
 
@@ -124,7 +124,7 @@ neo4j:
 
 This includes both connection information and enables Neo4j metrics propagation.
 
-Finally, we are able to use the `Neo4j` driver. Domain objects (_Movie_, _Actor_, _Person_) code is omitted.
+Finally, we are able to use the `Neo4j` driver.
 
 [source,java]
 ----
@@ -171,7 +171,7 @@ public class MovieRepository {
 
 ----
 <1> Constructor with `Neo4j` driver parameter
-<2> Use `Neo4j` Driver to extract all Movies
+<2> Use `Neo4j` driver to extract all Movies
 
 Movies can now be returned as JSON objects:
 
@@ -230,9 +230,9 @@ private static Routing createRouting(Config config) {
                 .build();
         }
 ----
-<1> Use `Neo4j` support object to initialise and configure the driver.
-<2> Use `Neo4jMetricsSupport` to add _Neo4j_ metrics to `/metrics` output.
-<3> Use `Neo4jHealthCheck` to add _Neo4j_ health support.
+<1> Use of `Neo4j` support object to initialise and configure the driver.
+<2> Use of `Neo4jMetricsSupport` to add _Neo4j_ metrics to `/metrics` output.
+<3> Use of `Neo4jHealthCheck` to add _Neo4j_ health support.
 <4> Initialize `MovieService` with _Neo4j_ driver.
 <5> Register the services in _Routing_.
 
@@ -274,7 +274,7 @@ Full example code is available in link:https://github.com/oracle/helidon/tree/ma
 
 === Neo4j Metrics propagation
 
-Neo4j metrics can be propagated to the user as `MicroProfile` metrics. This is implemented in a separate Maven module. Just add
+Neo4j metrics can be propagated to the user as `MicroProfile` metrics. This is implemented in a separate Maven module. Just add:
 
 [source,xml]
 ----
