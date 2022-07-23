@@ -411,7 +411,7 @@ The service name and the method name ("Join") are specified.
 The service name and the method name ("Split") are specified.
 <7> Use the `bidirectional()` method on `ClientMethodDescriptor` to create a builder for a gRPC Bidi streaming method.
 The service name and the method name ("Echo") are specified.
-<8> Create a `ClientServiceDescriptor` for service named `StringService` and add all our ``ClientMethodDescriptor``s.
+<8> Create a `ClientServiceDescriptor` for a service named `StringService` and add all the defined  ``ClientMethodDescriptor``s.
 <9> We create a `Channel` to the service that is running on `localhost:1408`.
 <10> Finally, we create our `GrpcServiceClient` by using the above-mentioned `ClientServiceDescriptor`
 and `Channel`.
