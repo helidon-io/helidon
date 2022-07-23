@@ -119,9 +119,9 @@ grpc:
 ----
 <1> The `tls` section of the channel configuration is used to configure TLS.
 <2> The `enabled` value is used to enable or disable TLS for this channel.
-<3> The `tls-cert` value is the location of the TLS certificate file
-<4> The `tls-key` value is the location of the TLS key file
-<5> The `tls-ca-cert` value is the location of the TLS CA certificate file
+<3> The `tls-cert` value is the location of the TLS certificate file.
+<4> The `tls-key` value is the location of the TLS key file.
+<5> The `tls-ca-cert` value is the location of the TLS CA certificate file.
 
 The SSL configuration uses the Helidon `Resource` class to locate configured keys and certificates.
 In the example above the `tls-cert-path` config key has the `-path` suffix which tells the configuration to load `/certs/foo.cert`
@@ -186,7 +186,7 @@ public class Client {
 ----
 
 <1> The `@Inject` annotation tells the CDI to inject the client implementation.
-<2> The `@GrpcProxy` annotation is used by the CDI container to match the injection point to the gRPC MP APIs provider
+<2> The `@GrpcProxy` annotation is used by the CDI container to match the injection point to the gRPC MP APIs provider.
 <3> The `@GrpcChannel` annotation identifies the gRPC channel to be used by the client. The name used in the annotation refers to
 a channel name in the application configuration.
 

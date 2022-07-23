@@ -77,7 +77,7 @@ taken if the service was *not* built from protobuf files or if the `protoc` gene
 available to the client.
 // * The last option is to load the method descriptions from a configuration file. (** Not yet implemented**).
 . The next step is to create a gRPC `Channel` to use to communicate with the server.
-. Finally, you create an instance of `GrpcServiceClient` passing the `ClientMethodDescriptor` and the `Channel` instances.
+. Finally, we create an instance of `GrpcServiceClient` passing the `ClientMethodDescriptor` and the `Channel` instances.
 
 === Creating gRPC clients from `protoc` generated artifacts
 
@@ -160,7 +160,7 @@ the `ServiceDescriptor`, the builder detects the service name, the set of method
 each method (like Unary, ServerStreaming, etc.), the request and response types (and
 hence their corresponding Marshallers), etc.
 <2> We create a `Channel` to the service that is running on `localhost:1408`.
-<3> Finally, we create our `GrpcServiceClient` by using the above mentioned `ClientServiceDescriptor`
+<3> Finally, we create our `GrpcServiceClient` by using the above mentioned `ClientServiceDescriptor`.
 and `Channel`. This `client` reference will be used to invoke various gRPC methods in our
 `StringService`
 <4> We define a static inner class that implements the `io.grpc.StreamObserver` interface. An instance
@@ -411,9 +411,9 @@ The service name and the method name ("Join") are specified.
 The service name and the method name ("Split") are specified.
 <7> Use the `bidirectional()` method on `ClientMethodDescriptor` to create a builder for a gRPC Bidi streaming method.
 The service name and the method name ("Echo") are specified.
-<8> Create a `ClientServiceDescriptor` for service named `StringService` and add all our `ClientMethodDescriptor` s.
+<8> Create a `ClientServiceDescriptor` for service named `StringService` and add all our ``ClientMethodDescriptor``s.
 <9> We create a `Channel` to the service that is running on `localhost:1408`.
-<10> Finally, we create our `GrpcServiceClient` by using the above mentioned `ClientServiceDescriptor`
+<10> Finally, we create our `GrpcServiceClient` by using the above-mentioned `ClientServiceDescriptor`
 and `Channel`.
 
 At this point the `client` object can be used to invoke any of the four types of methods we have seen in the

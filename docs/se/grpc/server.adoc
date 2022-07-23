@@ -434,7 +434,7 @@ private static GrpcRouting createRouting() {
 }
 ----
 
-<1> Configure custom health check for an existing or legacy service
+<1> Configure custom health check for an existing or legacy service.
 
 ==== Exposing Health Checks
 
@@ -465,7 +465,7 @@ However, they can also be exposed to REST clients via the standard Helidon/Micro
 <2> Start the gRPC server which will deploy all the services and register default and custom health checks.
 <3> Add gRPC server managed health checks to `HealthSupport` instance.
 <4> Add `HealthSupport` to the web server routing definition.
-<5> Create and start the web server
+<5> Create and start the web server.
 
 All gRPC health checks will now be available via the `/health` REST endpoint, in
 addition to the standard gRPC `HealthService`
