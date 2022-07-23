@@ -19,9 +19,8 @@
 = Upgrading from 2.x
 :description: Helidon Upgrade Guide
 :keywords: helidon upgrade migration
-:rootdir: {docdir}/..
 
-include::{rootdir}/includes/attributes.adoc[]
+include::../attributes.adoc[]
 
 == Upgrade Guides
 
