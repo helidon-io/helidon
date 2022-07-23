@@ -21,13 +21,15 @@
 :keywords: helidon, porting, migration, upgrade, incompatibilities
 :rootdir: {docdir}/../..
 
+include::{rootdir}/includes/se.adoc[]
+
 In Helidon 3 we have made some changes to APIs and runtime behavior. This guide
 will help you upgrade a Helidon SE 2.x application to 3.x.
 
 
 == Java 17 Runtime
 
-Java 11 is no longer supported in Helidon 3. Java 17 or newer is required. Please follow the instructions in xref:{rootdir}/about/prerequisites.adoc[Prerequisites] for proper installation.
+Java 11 is no longer supported in Helidon 3. Java 17 or newer is required.
 
 == New Routing
 
@@ -38,46 +40,7 @@ For further information check xref:../webserver.adoc[WebServer Documentation]
 
 == Http/2 Support
 
-Helidon support of Http/2 is no longer experimental.
-
-Http/2 needed to be explicitly enabled by configuration in Helidon 2:
-
-.Enabling Http/2 support in Helidon 2
-[source,yaml]
-----
-server:
-  port: 8080
-  host: 0.0.0.0
-  experimental:
-    enable-http2: true
-    http2-max-content-length: 16384
-----
-
-In Helidon 3 Http/2 is automatically enabled when artifact with Http/2 support is
-available on the classpath.
-
-.Enabling Http/2 support in Helidon 3 by adding dependency
-[source,xml]
-----
-<dependency>
-    <groupId>io.helidon.webserver</groupId>
-    <artifactId>helidon-webserver-http2</artifactId>
-</dependency>
-----
-
-With above dependency Helidon 3 supports Http/2 upgrade from Http/1,
-cleartext Http/2 without prior knowledge and Http/2 with ALPN over TLS.
-
-In Helidon 2, max content length was configurable with `server.experimental.http2-max-content-length`, in Helidon 3 can be configured with `server.max-upgrade-content-length` globally or per socket with the same `max-upgrade-content-length` key.
-
-.Max upgrade content length in Helidon 3
-[source,yaml]
-----
-server:
-  port: 8080
-  host: 0.0.0.0
-  max-upgrade-content-length: 16384
-----
+Helidon now has the support of HTTP/2 with ALPN over TLS.
 
 For further information check xref:../webserver.adoc[WebServer Documentation]
 
@@ -85,18 +48,10 @@ For further information check xref:../webserver.adoc[WebServer Documentation]
 
 Helidon SE support is now based on the `WebSocketRouting` class which enables Helidon application to
 configure routing for both annotated and programmatic WebSocket endpoints.
-`TyrusSupport` is now deprecated. Websocket support in now placed in different artifact.
+`TyrusSupport` is now deprecated.
 
-.Helidon 2 WebSocket support dependency
-[source,xml]
-----
-<dependency>
-    <groupId>io.helidon.webserver</groupId>
-    <artifactId>helidon-webserver-tyrus</artifactId>
-</dependency>
-----
+Use new dependency to enable `WebSocket`:
 
-.Helidon 3 WebSocket support dependency
 [source,xml]
 ----
 <dependency>
@@ -105,162 +60,13 @@ configure routing for both annotated and programmatic WebSocket endpoints.
 </dependency>
 ----
 
-In Helidon 2, WebSocket routing is defined by registering `TyrusSupport` as additional service:
+== JEP-290 security hardening
 
-.Helidon 2 WebSocket route registering
-[source, java]
-----
-WebServer.builder(Routing.builder()
-             .register("/rest", new SomeRestService()) //<1>
-             .register("/websocket",TyrusSupport.builder() //<2>
-                 .register(ServerEndpointConfig.Builder
-                           .create(MessageBoardEndpoint.class, "/")
-                           .encoders(encoders)
-                           .build())
-                 .build()
-             ))
-             .port(8080)
-   .build();
-----
-<1> Traditional REST routing service registration
-<2> WebSocket setup with Tyrus service
-
-In Helidon 3, WebSocket routing is defined by adding another routing:
-
-.Helidon 3 WebSocket route registering
-[source, java]
-----
-WebServer.builder()
-         .routing(r -> r
-              .register("/rest", new SomeRestService()) //<1>
-         )
-         .addRouting(WebSocketRouting.builder() //<2>
-                        .endpoint("/websocket", ServerEndpointConfig.Builder
-                                .create(MessageBoardEndpoint.class, "/board")
-                                .encoders(encoders)
-                                .build())
-                        .build())
-         .port(8080)
-----
-<1> Traditional REST routing service registration
-<2> WebSocket routing setup
+We are taking security seriously. Deserialization is now disabled by default. JEP-290 gives us tools to harden security when deserializing objects (using Java Serialization). In Helidon 3.x, we have decided to forbid any deserialization by default. Helidon does not use Java Serialization at all, and we consider it a high security risk. Java Serialization can still be used if required (requires additional setup to allow specific classes to be deserialized, or by explicitly switching off our JEP-290 support).
 
 
-== Deprecations
+== Updated CLI
+In version 3.x Helidon CLI brings all benefits of the Project Starter to the command line allowing users to enjoy customizable project generation without leaving the terminal. See it in action xref:{rootdir}/about/cli.adoc[here]!
 
-- The custom Helidon OCI clients have been deprecated (link:https://github.com/oracle/helidon/pull/4015[See PR]). Use the OCI Java SDK instead. If you use Helidon MP you can inject OCI SDK clients by adding the dependency `io.helidon.integrations.oci.sdk:helidon-integrations-oci-sdk-cdi`.
-
-NOTE: See xref:{rootdir}/se/integrations/oci.adoc#oci-compatibility[Resolving compatibility issue with OCI SDK] for detailed information on how to work around this issue.
-
-- The MultiPart buffered readers have been deprecated (link:https://github.com/oracle/helidon/pull/4096[See PR]). Use the MultiPart stream readers instead.
-
-=== Helidon Common
-
-Deprecations in the following classes:
-
-* `Resource` - old configuration approach (since 2.0)
-* `ThreadPoolSupplier` - Named thread pools (since 2.4.2)
-
-More information in the following link:https://github.com/oracle/helidon/issues/4363[Task].
-
-=== Media Common
-
-Deprecations in the following classes:
-
-* `ContentReaders` - Methods with alternatives (since 2.0)
-* `ContentTypeCharset` - Class with alternative (since 2.0)
-* `ContentWriters` - Methods with alternatives (since 2.0)
-* `MessageBodyReaderContext` - Methods with alternatives (since 2.0)
-* `MessageBodyWriterContext` - Methods with alternatives (since 2.0)
-* `ReadableByteChannelPublisher` - Class with alternative (since 2.0)
-
-More information in the following link:https://github.com/oracle/helidon/issues/4364[Task].
-
-=== Metrics
-
-Deprecations in the following classes:
-
-* `MetricsSupport` - 3 methods, replacing Config with metrics settings
-* `KeyPerformanceIndicatorMetricsSettings` - New class in metrics API, for backward compatibility only
-* `RegistryFactory` - New class in metrics API, for backward compatibility only
-
-More information in the following link:https://github.com/oracle/helidon/issues/4365[Task].
-
-=== Common Context
-
-Deprecations in the following class:
-
-* `DataPropagationProvider` - clearData should use new method
-
-More information in the following link:https://github.com/oracle/helidon/issues/4366[Task].
-
-
-=== GRPC core
-
-Deprecations:
-
-* `JavaMarshaller` - removed support for JavaMarshaller
-
-More information in the following link:https://github.com/oracle/helidon/issues/4367[Task].
-
-
-=== LRA
-
-Deprecations in the following class:
-
-* `CoordinatorClient` - multiple methods
-* `Headers`
-
-More information in the following link:https://github.com/oracle/helidon/issues/4368[Task].
-
-
-=== MP Messaging
-
-Deprecations in the following class:
-
-* `MessagingCdiExtension` - Alternative methods used
-
-More information in the following link:https://github.com/oracle/helidon/issues/4369[Task].
-
-
-=== JWT
-
-Deprecations in the following class:
-
-* `Jwt` - Audience can be a list (since 2.4.0)
-
-More information in the following link:https://github.com/oracle/helidon/issues/4370[Task].
-
-
-=== MP Metrics
-
-Deprecations in the following class:
-
-* `MetricUtil` - multiple methods
-* `MetricsCdiExtension` - multiple methods
-
-More information in the following link:https://github.com/oracle/helidon/issues/4371[Task].
-
-
-=== HTTP Signature Security Provider
-
-* `backwardCompatibleEol` - set to false
-
-More information in the following link:https://github.com/oracle/helidon/issues/4372[Task].
-
-
-=== Service Common
-
-Deprecations in the following class:
-
-* `HelidonRestServiceSupport` - method _configureEndpoint(Rules)_
-
-More information in the following link:https://github.com/oracle/helidon/issues/4371[Task].
-
-
-=== WebServer
-
-* `Static content support` in `WebServer` - moved to a separate module. Fully removed from `WebServer` module.
-
-More information in the following link:https://github.com/oracle/helidon/issues/4374[Task].
-
+== Project Starter
+Project Starter is a new web UI for creating Helidon projects. It’s highly customizable and provides various options allowing users to select Helidon features they want to add to the project. At the end users will be able to generate projects up to their taste. Check it out at link:https://helidon.io/starter[Helidon Starter Page]!
