@@ -162,7 +162,7 @@ hence their corresponding Marshallers), etc.
 <2> We create a `Channel` to the service that is running on `localhost:1408`.
 <3> Finally, we create our `GrpcServiceClient` by using the above mentioned `ClientServiceDescriptor`.
 and `Channel`. This `client` reference will be used to invoke various gRPC methods in our
-`StringService`
+`StringService`.
 <4> We define a static inner class that implements the `io.grpc.StreamObserver` interface. An instance
 of this class can be used wherever a `io.grpc.StreamObserver` is required (like server streaming,
 bi-directional streaming methods).
@@ -420,7 +420,7 @@ At this point the `client` object can be used to invoke any of the four types of
 earlier sections.
 
 
-=== Creating gRPC clients for non protobuf services
+=== Creating gRPC clients for non-protobuf services
 
 If your service is *not* using protobuf for serialization, then the client framework allows
 you to programmatically initialize `ClientMethodDescriptor` and create clients to invoke
