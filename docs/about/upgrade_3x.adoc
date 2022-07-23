@@ -28,5 +28,5 @@ include::{rootdir}/includes/attributes.adoc[]
 Helidon 3.x is not fully backwards compatible with Helidon 2.x. For information
 concerning upgrading from Helidon 2.x to 3.x see the following upgrade guides:
 
-* xref:../mp/guides/migration_3.x.adoc[Helidon MP 3.x Upgrade Guide]
-* xref:../se/guides/migration_3.x.adoc[Helidon SE 3.x Upgrade Guide]
+* xref:../mp/guides/migration_3x.adoc[Helidon MP 3.x Upgrade Guide]
+* xref:../se/guides/migration_3x.adoc[Helidon SE 3.x Upgrade Guide]

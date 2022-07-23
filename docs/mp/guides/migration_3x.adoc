@@ -37,7 +37,7 @@ Java 11 is no longer supported in Helidon 3. Java 17 or newer is required.
 
 Helidon 3 supports MicroProfile 5 and Jakarta EE 9 APIs. In Jakarta EE 9 the Java package namespace was changed from `javax` to `jakarta`. Therefore, you must change your application to use `jakarta` instead of `javax` for Jakarta EE packages.
 
-In version 3.x Helidon supports MicroProfile 5 specification, which now is fully migrated to `jakarta.x` namespace.
+In version 3.x Helidon supports MicroProfile 5 specification, which now is fully migrated to `jakarta` namespace.
 
 As a result, `javax` module is no longer in dependency management of Helidon parent pom files.
 

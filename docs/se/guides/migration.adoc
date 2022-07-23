@@ -16,7 +16,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Helidon SE Upgrade Guide
+= Helidon SE 2.x Upgrade Guide
 :description: Helidon Upgrade Guide
 :keywords: helidon, porting, migration, upgrade, incompatibilities
 :rootdir: {docdir}/../..
