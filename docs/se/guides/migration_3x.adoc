@@ -21,8 +21,6 @@
 :keywords: helidon, porting, migration, upgrade, incompatibilities
 :rootdir: {docdir}/../..
 
-include::{rootdir}/includes/se.adoc[]
-
 In Helidon 3 we have made some changes to APIs and runtime behavior. This guide
 will help you upgrade a Helidon SE 2.x application to 3.x.
 
@@ -62,8 +60,7 @@ Use new dependency to enable `WebSocket`:
 
 == JEP-290 security hardening
 
-We are taking security seriously. Deserialization is now disabled by default. JEP-290 gives us tools to harden security when deserializing objects (using Java Serialization). In Helidon 3.x, we have decided to forbid any deserialization by default. Helidon does not use Java Serialization at all, and we consider it a high security risk. Java Serialization can still be used if required (requires additional setup to allow specific classes to be deserialized, or by explicitly switching off our JEP-290 support).
-
+We are taking security seriously. Deserialization is now disabled by default. JEP-290 gives us tools to harden security when deserializing objects (using Java Serialization). In Helidon 3.x, we have decided to forbid any deserialization by default. Helidon does not use Java Serialization at all, and we consider it a high security risk. Java Serialization can still be used if required (requires additional setup to allow specific classes to be deserialized, or by explicitly switching off our JEP-290 support). More information is available xref:{rootdir}/includes/security/jep-290.adoc[here]!
 
 == Updated CLI
 In version 3.x Helidon CLI brings all benefits of the Project Starter to the command line allowing users to enjoy customizable project generation without leaving the terminal. See it in action xref:{rootdir}/about/cli.adoc[here]!
