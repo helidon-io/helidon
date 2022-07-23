@@ -41,7 +41,7 @@ allows a uniform way to access gRPC services that use either Protobuf or some cu
 significantly simpler.
 * It allows you to configure some of the Helidon value-added features, such
 as xref:server.adoc#_security[security],  xref:server.adoc#_service_metrics[metrics collection] and xref:server.adoc#_interceptors[interceptors] down to the method level.
-* It allows you to easily specify custom marshaller for requests and
+* It allows you to easily specify custom marshallers for requests and
 responses if `protobuf` does not satisfy your needs.
 
 The class `GrpcServiceClient` acts as the client object for accessing a gRPC service. Creating a `GrpcServiceClient` involves:
@@ -111,7 +111,7 @@ Client that uses the Client Framework to invoke various types of gRPC methods.
 
 ==== Creating and initializing a ClientServiceDescriptor for StringService (generated from `protoc`)
 
-Lets build a class called `ProtoBasedStringServiceClient` that invokes the various types of
+Let's build a class called `ProtoBasedStringServiceClient` that invokes the various types of
 gRPC methods that our `StringService` offers.
 
 
@@ -197,20 +197,20 @@ public class ProtoBasedStringServiceClient {
 <1> This variant of the `unary` API takes the method name and a request object and returns
 a `CompletableFuture<Response>` where `<Response>` is the response type. Here we invoke the
 `Lower` method passing the input `StringMessage`. This method returns a `CompletableFuture<StringMessage>`
-as response thus allowing the client to obtain the result asynchronously.
-<2> This is simply a wrapper around the above method. This method blocks till the result is available.
+as its response thus allowing the client to obtain the result asynchronously.
+<2> This is simply a wrapper around the above method. This method blocks until the result is available.
 <3> Here, we invoke the `unary` method by passing the `StringMessageStream` whose `onNext` method
 will be called (once) when the result is available.
 
 ==== Invoking a client streaming method on the StringService
 
-Lets invoke the `Join` method which causes the server to return a single result *after* the client
-has streamed the request values to the server. gRPC API expects the client application to provide
+Let's invoke the `Join` method which causes the server to return a single result *after* the client
+has streamed the request values to the server. The gRPC API expects the client application to provide
 an instance of `io.grpc.StreamObserver` as an argument during the invocation of the client
 streaming method.
 
-In order to simplify the task of invoking Client Streaming methods, Helidon Client Framework provides
-a couple of methods to invoke gRPC Client Streaming methods. The first variant takes an `Iterable` as
+In order to simplify the task of invoking Client Streaming methods, the Helidon Client Framework provides
+two methods to invoke gRPC Client Streaming methods. The first variant takes an `Iterable` as
 argument which in turn is converted into a `io.grpc.StreamObserver`. The second variant takes a
 `io.grpc.StreamObserver` as argument. The first variant can be used if the number of values to be
 streamed in small and known a priori.
@@ -246,7 +246,7 @@ public class ProtoBasedStringServiceClient {
         clientStream.onCompleted();  // <5>
     }
 
-    public static class StringMessageStream<T> { /* code imitted */ }
+    public static class StringMessageStream<T> { /* code is omitted */ }
 
 }
 ----
@@ -266,7 +266,7 @@ have been streamed from the client.
 
 === Invoking a server streaming method on the StringService (generated from `protoc`)
 
-Lets invoke the "Split" method which causes the server to stream the results back.
+Let's invoke the "Split" method which causes the server to stream the results back.
 
 [source,java]
 ----
@@ -284,7 +284,7 @@ public class ProtoBasedStringServiceClient {
         grpcClient.serverStreaming("Split", input, observer);  // <3>
     }
 
-    public static class StringMessageStream<T> { /* code imitted */ }
+    public static class StringMessageStream<T> { /* code is omitted */ }
 
 }
 ----
@@ -297,7 +297,7 @@ each word.
 
 === Invoking a bi-directional streaming method on the StringService (generated from `protoc`)
 
-Now lets invoke the `Echo` method in which both the client and the server have to stream
+Now let's invoke the `Echo` method in which both the client and the server have to stream
 the request and response.
 
 [source,java]
@@ -321,7 +321,7 @@ public class ProtoBasedStringServiceClient {
         clientStream.onCompleted();  // <4>
     }
 
-    public static class StringMessageStream<T> { /* code imitted */ }
+    public static class StringMessageStream<T> { /* code is omitted */ }
 
 }
 ----
@@ -338,18 +338,18 @@ streamed all its values.
 
 === Programmatically creating ClientServiceDescriptor for StringService
 
-Assuming that the service is still running on port 1408, lets see how to create our Client
-without using the `StringService` 's proto `ServiceDescriptor`.
+Assuming that the service is still running on port 1408, let's see how to create our Client
+without using the ``StringService``'s proto `ServiceDescriptor`.
 
-Since we are *not* going to use the `StringService` 's proto `ServiceDescriptor`, we need to
-describe the methods that the client need to invoke. The Helidon client framework provides a
-bunch of APIs to easily describe gRPC methods.
+Since we are *not* going to use the ``StringService``'s proto `ServiceDescriptor`, we need to
+describe the methods that the client needs to invoke. The Helidon client framework provides
+several methods to easily describe gRPC methods.
 
 For example, to register a unary method, we need to use the `unary` method and configure it to
 specify the request and response types.
 
-Other than describing the methods that our client will invoke, the rest of the following
-code should be very similar (or same) as the previous section!!
+Other than describing the methods that our client will invoke, the rest of the code should be
+very similar to (or the same as) the previous section!!
 
 [source,java]
 ----
@@ -422,7 +422,7 @@ earlier sections.
 
 === Creating gRPC clients for non protobuf services
 
-If your service is *not* using protobuf for serialization, then the Client framework allows
+If your service is *not* using protobuf for serialization, then the client framework allows
 you to programmatically initialize `ClientMethodDescriptor` and create clients to invoke
 methods on the service.
 
@@ -451,12 +451,12 @@ public static void main(String[] args) throws Exception {
                                         .map(w -> StringMessage.newBuilder().setText(w).build())
                                         .collect(Collectors.toList());
 
-  CompletableFuture<StringMessage> result = grpcClient.clientStreaming("Join", input);
+    CompletableFuture<StringMessage> result = grpcClient.clientStreaming("Join", input);
 }
 ----
 
 <1> Create a `ClientServiceDescriptor` for the `HelloService`.
-<2> Specify custom marshaller using the built-in JsonB marshaller to marshall requests and responses.
+<2> Specify a custom marshaller using the built-in JSON-B marshaller to serialize/deserialize requests and responses.
 <3> Add the "JoinString" client streaming method to the `ClientServiceDescriptor`.
 
 Since we didn't set the request or response type (like we did in the previous sections), the custom marshaller will be
@@ -526,8 +526,8 @@ public static void main(String[] args) throws Exception {
 ----
 
 <1> Create a `ClientServiceDescriptor` for the `HelloService`.
-<2> Specify custom marshaller using the built-in JsonB marshaller to marshall request and response values.
-<3> Add the `SayHello` unary method to the `ClientServiceDescriptor`, which will use the specified custom marshaller.
+<2> Specify a custom marshaller using the built-in JSON-B marshaller to serialize/deserialize request and response values.
+<3> Add the `SayHello` unary method to the `ClientServiceDescriptor` which will use the specified custom marshaller.
 <4> Create a gRPC `Channel` that will communicate with the server running in localhost and on port 1408 (using plaintext).
 <5> Create the `GrpcServiceClient` that uses the above `Channel` and `ClientServiceDescriptor`. `GrpcClientService` represents
 a client that can be used to define the set of methods described by the specified `ClientServiceDescriptor`. In our case, the

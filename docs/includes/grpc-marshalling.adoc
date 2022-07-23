@@ -30,11 +30,78 @@ That means that you don't need any special handling or configuration in order to
 
 == Custom Marshalling
 
-Helidon makes the use of custom marshallers trivial and provides one custom implementation, link:{helidon-github-tree-url}/grpc/core/src/main/java/io/helidon/grpc/core/JsonbMarshaller.java[`JsonbMarshaller`], out of the box.
+Helidon makes the use of custom marshallers trivial and provides one custom implementation, link:{helidon-github-tree-url}/grpc/core/src/main/java/io/helidon/grpc/core/JsonbMarshaller.java[JSON-B Marshaller], out of the box.
 
 You can also easily implement your own marshaller to support serialization formats that are not supported natively
-by Helidon, by implementing `Marshaller` and `MarshallerSupplier` interfaces. Check out the mentioned built-in marshaller,
-link:{helidon-github-tree-url}/grpc/core/src/main/java/io/helidon/grpc/core/JsonbMarshaller.java[JsonbMarshaller.java],
-as an implementation example.
+by Helidon, by implementing `Marshaller` and `MarshallerSupplier` interfaces. As an example, check out
+the source code of the built-in marshaller:
+link:{helidon-github-tree-url}/grpc/core/src/main/java/io/helidon/grpc/core/JsonbMarshaller.java[JsonbMarshaller.java].
 
 Furthermore, https://coherence.community/[Oracle Coherence CE] provides a marshaller for a highly optimized, binary, platform independent Portable Object Format (POF). You can find more information about POF in https://coherence.community/20.12/docs/#/docs/core/04_portable_types[Coherence documentation]
+
+=== Setting the custom marshaller
+ifeval::["{flavor-lc}" == "mp"]
+
+You can annotate your service's class or interface with @GrpcMarshaller:
+
+.Sample code with `@GrpcMarshaller` annotation
+[source,java]
+----
+@Grpc
+@ApplicationScoped
+@GrpcMarshaller("jsonb")  //<1>
+public class AsyncStringService {
+    // code is omitted
+}
+----
+<1> Set the named marshaller supplier via the @GrpcMarshaller annotation.
+
+endif::[]
+
+ifeval::["{flavor-lc}" == "se"]
+
+ifeval::["{feature-name}" == "gRPC Server"]
+You can implement the `update` method on your service's class and set the custom marshaller supplier via the
+`ServiceDescriptor.Rules.marshallerSupplier()` method:
+
+.Sample code for setting the marshaller on the gRPC service
+[source,java]
+----
+public class GreetServiceJava
+        implements GrpcService {
+    private String greeting;
+
+
+    public GreetServiceJava(Config config) {
+        this.greeting = config.get("app.greeting").asString().orElse("Ciao");
+    }
+
+    @Override
+    public void update(ServiceDescriptor.Rules rules) {
+        rules.marshallerSupplier(new JsonbMarshaller.Supplier())  // <1>
+                .unary("Greet", this::greet)
+                .unary("SetGreeting", this::setGreeting);
+    }
+
+    // Implement Service methods
+}
+----
+<1> Specify the custom marshaller to use.
+endif::[]
+
+ifeval::["{feature-name}" == "gRPC Client"]
+You can set the custom marshaller supplier via the `ClientServiceDescriptor.builder.marshallerSupplier()` method:
+
+.Sample code for setting the marshaller on the ClientServiceDescriptor
+[source,java]
+----
+ClientServiceDescriptor descriptor = ClientServiceDescriptor
+        .builder(HelloService.class)
+        .marshallerSupplier(new JsonbMarshaller.Supplier())  // <1>
+        .clientStreaming("JoinString")
+        .build();
+----
+<1> Specify the custom marshaller to use.
+endif::[]
+
+endif::[]

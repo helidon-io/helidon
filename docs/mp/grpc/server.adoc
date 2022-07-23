@@ -149,7 +149,7 @@ The Helidon gRPC MP API determines a method type by its annotation, which should
 A gRPC service method typically takes a request parameter and returns a response value (`streaming` methods may take or return
 multiple requests or responses). In traditional gRPC Java, the types used for the request and response values must be
 Protobuf serializable classes but this is not the case with Helidon gRPC. Helidon supports
-link:../../includes/grpc-marshalling.adoc[pluggable Marshallers] and by default will support Protobuf types. Any type that
+<<Custom Marshalling, pluggable Marshallers>> and by default will support Protobuf types. Any type that
 can be marshalled by the built-in marshallers or custom supplied marshaller may be used as a request or response type.
 
 ==== Unary Methods
@@ -296,8 +296,7 @@ public class StringService implements GrpcService {
 ----
 
 ==== Implement a GrpcMpExtension
-If it is not possible to annotate the service class (for example the code is built by a third party), another way to deploy none
-CDI bean services is to implement a gRPC MP server extension.
+If it is not possible to annotate the service class (for example the code is built by a third party), another way to deploy non-CDI bean services is to implement a gRPC MP server extension.
 The extension will then be called when the MP server is starting and be given the chance to add additional services for deployment.
 An extension should implement the `io.helidon.microprofile.grpc.server.spi.GrpcMpExtension` interface.
 
@@ -316,11 +315,13 @@ public class MyExtension
 
 <1> The `configure` method of the extension will be called to allow the extension to add extra configuration to the server.
 <2> In this example, an instance of the `StringService` is registered with the routing (as described in
-the xref:../../se/grpc/server.adoc#_grpc_server_routing[basic gRPC server documentation about Routing]).
+the xref:../../se/grpc/server.adoc#_grpc_server_routing[gRPC server routing] documentation).
 
 The `GrpcMpExtension` instances are discovered and loaded using the service loader so for the example above to work, a file
 `META-INF/services/io.helidon.microprofile.grpc.server.spi.GrpcMpExtension` would need to be created that contained the names
 of the service implementations.
+
+include::{rootdir}/includes/grpc-marshalling.adoc[leveloffset=2]
 
 == Configuration
 Configure the gRPC Server using the Helidon microprofile configuration framework by which the ConfigSource defaults to
@@ -341,7 +342,7 @@ grpc:
 <2> Sets the server port.
 
 == Examples
-Helidon MP includes some examples that demonstrate gRPC server usage:
+Helidon MP includes some examples that demonstrate the gRPC server usage:
 
 * link:{helidon-github-tree-url}/examples/grpc/microprofile/basic-server-implicit[Basic gRPC Server example] provides
 a simple gRPC application that deploys a gRPC service that will be discovered by CDI. Two additional services are
