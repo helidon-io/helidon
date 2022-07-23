@@ -23,21 +23,9 @@ ifndef::rootdir[:rootdir: {docdir}/..]
 
 With Helidon 3, we are now implementing the MicroProfile 5 Platform and selected Jakarta EE 9.1 specifications. We are also going away from javax.* packages and fully embracing jakarta.* package.
 
-However, the current release 2.35.0 of OCI Java SDK is still using javax.* packages which created compatibility issues e.g. Helidon 3 uses JAX-RS 3.0.0 (jakarta package names) and the corresponding Jersey implementation. OCI SDK 2.35.0 uses JAX-RS Client 2.1.6 (javax package names) and the corresponding Jersey implementation. Therefore, the OCI SDK is incompatible with Helidon 3 applications and any application that uses JAX-RS 3. We have filed an issue with OCI SDK team, see https://github.com/oracle/oci-java-sdk/issues/371 for details on this.
+However, the current release 2.37.0 of OCI Java SDK is still using javax.* packages which created compatibility issues e.g. Helidon 3 uses JAX-RS 3.0.0 (jakarta package names) and the corresponding Jersey implementation. OCI SDK 2.37.0 uses JAX-RS Client 2.1.6 (javax package names) and the corresponding Jersey implementation. Therefore, the OCI SDK is incompatible with Helidon 3 applications and any application that uses JAX-RS 3. We have filed an issue with OCI SDK team, see https://github.com/oracle/oci-java-sdk/issues/371 for details on this.
 
-OCI SDK team has provided us with `shaded` jar as workaround as mentioned in the issue. However, this jar is not available in maven-central as of now. See issue https://github.com/oracle/oci-java-sdk/issues/410 for details on that, so user will have to do manual setup/install of this `shaded` jar. You only have to do this once per version of SDK.
-
-* Download OCI SDK from https://github.com/oracle/oci-java-sdk/releases/download/v2.35.0/oci-java-sdk-2.35.0.zip
-* Unzip the SDK
-[source,bash]
-----
-unzip -j -p oci-java-sdk-2.35.0.zip shaded/lib/oci-java-sdk-full-shaded-2.35.0.jar > oci-java-sdk-shaded-full-2.35.0.jar
-----
-* Install `shaded` jar in your local maven repo, see https://maven.apache.org/guides/mini/guide-3rd-party-jars-local.html
-[source,bash]
-----
-mvn -N org.apache.maven.plugins:maven-install-plugin:install-file -Dfile=oci-java-sdk-shaded-full-2.35.0.jar -DlocalRepositoryPath="~/.m2/repository" -DgroupId=com.oracle.oci.sdk -DartifactId=oci-java-sdk-shaded-full -Dversion=2.35.0 -Dpackaging=jar
-----
+OCI SDK team has provided us with `shaded` jar as workaround as mentioned in the issue.
 
 Now, when you want to use modules from OCI SDK in your application, instead of using individual modules as defined in our OCI integration documentation, you need to use `full shaded` jar.
 
@@ -46,7 +34,7 @@ Now, when you want to use modules from OCI SDK in your application, instead of u
     <dependency>
       <groupId>com.oracle.oci.sdk</groupId>
       <artifactId>oci-java-sdk-shaded-full</artifactId>
-      <version>2.35.0</version>
+      <version>2.37.0</version>
     </dependency>
 ----
 

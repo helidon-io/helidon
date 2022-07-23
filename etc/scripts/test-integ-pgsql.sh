@@ -24,24 +24,16 @@
 # Setup error handling using default settings (defined in includes/error_handlers.sh)
 error_trap_setup
 
-# Load OCI-related functions. WS_DIR is already defined, so there is
-# no need to pass arguments.
-. $(dirname -- "${SCRIPT_PATH}")/includes/oci.sh
-
 # Set Graal VM into JAVA_HOME and PATH (defined in includes/pipeline-env.sh)
 graalvm
 
 mvn ${MAVEN_ARGS} --version
 
-# Install OCI shaded full jar, if necessary. This is an idempotent
-# call.
-install_oci_shaded_full_jar
-
 # Temporary workaround until job stages will share maven repository
 mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml \
     clean install -e \
     -DskipTests \
-    -Ppipeline,oci-sdk-cdi
+    -Ppipeline
 
 # Run tests in Java VM application
 (cd tests/integration/jpa && \

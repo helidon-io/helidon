@@ -24,10 +24,6 @@
 # Setup error handling using default settings (defined in includes/error_handlers.sh)
 error_trap_setup
 
-# Load OCI-related functions. WS_DIR is already defined, so there is
-# no need to pass arguments.
-. $(dirname -- "${SCRIPT_PATH}")/includes/oci.sh
-
 usage(){
     cat <<EOF
 
@@ -86,10 +82,6 @@ if [ -z "${COMMAND}" ] ; then
     exit 1
 fi
 
-# Install OCI shaded full jar, if necessary. This is an idempotent
-# call.
-install_oci_shaded_full_jar
-
 # Hooks for version substitution work
 readonly PREPARE_HOOKS=( )
 
@@ -121,7 +113,6 @@ printf "\n%s: FULL_VERSION=%s\n\n" "$(basename ${0})" "${FULL_VERSION}"
 update_version(){
     # Update version
     mvn ${MAVEN_ARGS} -f ${WS_DIR}/parent/pom.xml versions:set versions:set-property \
-        -Poci-sdk-cdi \
         -DgenerateBackupPoms=false \
         -DnewVersion="${FULL_VERSION}" \
         -Dproperty=helidon.version \
@@ -161,7 +152,7 @@ release_site(){
     fi
 
     # Generate site
-    mvn ${MAVEN_ARGS} -Poci-sdk-cdi site
+    mvn ${MAVEN_ARGS} site
 
     # Sign site jar
     gpg -ab ${WS_DIR}/target/helidon-project-${FULL_VERSION}-site.jar
@@ -219,7 +210,7 @@ release_build(){
 
     # Perform deployment
     mvn ${MAVEN_ARGS} clean deploy \
-       -Prelease,archetypes,oci-sdk-cdi \
+       -Prelease,archetypes \
       -DskipTests \
       -DstagingRepositoryId="${STAGING_REPO_ID}" \
       -DretryFailedDeploymentCount="10"
