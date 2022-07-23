@@ -47,10 +47,11 @@ include::{rootdir}/includes/dependencies.adoc[]
    <artifactId>helidon-integrations-neo4j</artifactId>
 </dependency>
 ----
+NOTE: Check <<Neo4j Metrics propagation, Neo4j Metrics propagation>> and <<Neo4j Health Checks, Neo4j Health Checks>> for additional dependencies for _Neo4j_ `Metrics` and `Health Checks` integration.
 
 == Usage
 
-The support for Neo4j is implemented in drivel level. Just add the dependency, add configuration in `microprofile-config.properties` file and Neo4j driver will be configured by Helidon and can be injected using CDI.
+The support for Neo4j is implemented in Neo4j Driver level. Just add the dependency, add configuration in `microprofile-config.properties` file and Neo4j driver will be configured by Helidon and can be injected using CDI.
 
 First describe Neo4j connection properties:
 
@@ -81,7 +82,7 @@ include::{rootdir}/config/io_helidon_integrations_neo4j.adoc[leveloffset=+1,tag=
 
 == Examples
 
-This example implements a simple Neo4j REST service using MicroProfile. For this example a working Neo4j database is required. Neo4j Movie database is used for this example.
+This example implements a simple Neo4j REST service using MicroProfile. For this example a working Neo4j database is required. The Neo4j Movie database is used for this example.
 
 Bring up a Neo4j instance via Docker
 
@@ -89,7 +90,7 @@ Bring up a Neo4j instance via Docker
 docker run --publish=7474:7474 --publish=7687:7687 -e 'NEO4J_AUTH=neo4j/secret'  neo4j:latest
 ```
 
-Goto the Neo4j browser and play the first step of the movies graph: link:http://localhost:7474/browser/?cmd=play&arg=movies[`:play movies`]
+Go to the Neo4j browser and play the first step of the movies graph: link:http://localhost:7474/browser/?cmd=play&arg=movies[`:play movies`]
 
 Now go to the `pom.xml` and add the following dependencies:
 
@@ -123,7 +124,7 @@ neo4j.pool.metricsEnabled: true
 metrics.rest-request.enabled=true
 ----
 
-this includes both connection information and enables Neo4j metrics propagation.
+This includes both connection information and enables Neo4j metrics propagation.
 
 Finally, we are able to inject and use the `Neo4j` driver. Domain objects (_Movie_, _Actor_, _Person_) code is omitted.
 
@@ -175,7 +176,7 @@ public class MovieRepository {
 <1> `Neo4j` Driver constructor injection
 <2> Use `Neo4j` Driver to extract all Movies
 
-Movies now ca be returned as JSON objects:
+Movies can now be returned as JSON objects:
 
 [source,java]
 ----
@@ -225,7 +226,7 @@ Full example code is available in link:https://github.com/oracle/helidon/tree/ma
 
 === Neo4j Metrics propagation
 
-Neo4j metrics can be propagated to user as `MicroProfile` metrics. This is implemented in a separate Maven module. Just add
+Neo4j metrics can be propagated to the user as `MicroProfile` metrics. This is implemented in a separate Maven module. Just add
 
 [source,xml]
 ----
@@ -234,6 +235,8 @@ Neo4j metrics can be propagated to user as `MicroProfile` metrics. This is imple
    <artifactId>helidon-integrations-neo4j-metrics</artifactId>
 </dependency>
 ----
+
+NOTE: Works with _Neo4j Integration_ main dependency described in <<maven-coordinates, Maven Coordinates>>.
 
 To enable metrics in Neo4j, add the following property to `microprofile-config.properties`:
 
@@ -246,7 +249,7 @@ By applying these two actions, Neo4j metrics will be automatically added to the 
 
 === Neo4j Health Checks
 
-If your application is highly dependent on Neo4j database, health and liveness checks are essential for the correct work of this application.
+If your application is highly dependent on Neo4j database, health and liveness checks are essential for this application to work correctly.
 
 `MicroProfile` Health checks for Neo4j are implemented in a separate Maven module:
 
@@ -257,6 +260,7 @@ If your application is highly dependent on Neo4j database, health and liveness c
    <artifactId>helidon-integrations-neo4j-health</artifactId>
 </dependency>
 ----
+NOTE: Works with _Neo4j Integration_ main dependency described in <<maven-coordinates, Maven Coordinates>>.
 
 Health checks for Neo4j will be included in `/health` endpoint output.
 
