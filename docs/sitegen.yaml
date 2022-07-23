@@ -275,6 +275,7 @@ backend:
                   - "tracing.adoc"
                   - "mp-tutorial.adoc"
                   - "migration.adoc"
+                  - "migration_3.x.adoc"
                   - "maven-build.adoc"
                   - "gradle-build.adoc"
                   - "graalnative.adoc"
