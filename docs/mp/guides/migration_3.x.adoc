@@ -25,7 +25,7 @@ include::{rootdir}/includes/mp.adoc[]
 
 
 In Helidon 3.x we have made some changes to APIs and runtime behavior. This guide
-will help you migrate a Helidon MP 2.x application to 3.x.
+will help you upgrade a Helidon MP 2.x application to 3.x.
 
 
 == Java 17 Runtime
@@ -35,17 +35,18 @@ Java 11 is no longer supported in Helidon 3. Java 17 or newer is required.
 
 == javax.* namespace to jakarta.* namespace
 
-Due to trademark restrictions imposed on the javax.* namespace, Jakarta EE will rename all of its specifications to use jakarta.* in order to move forward with evolving the platform with features as the cloud-native Java platform.
+Helidon 3 supports MicroProfile 5 and Jakarta EE 9 APIs. In Jakarta EE 9 the Java package namespace was changed from `javax` to `jakarta`. Therefore, you must change your application to use `jakarta` instead of `javax` for Jakarta EE packages.
+
 In version 3.x Helidon supports MicroProfile 5 specification, which now is fully migrated to `jakarta.x` namespace.
 
-As the `javax` module is no longer in dependency management of Helidon parent pom files.
+As a result, `javax` module is no longer in dependency management of Helidon parent pom files.
 
 
 == MicroProfile 5 support
 
 MicroProfile 5 enables MicroProfile APIs to be used together with Jakarta EE 9.1 (Jakarta EE namespace). This release was mainly focused on updating dependencies from `javax` to `jakarta`, as well as overall stability and usability improvements.
 
-MicroProfile 5 lays the foundation for the rapid innovation of MicroProfile APIs  for its 2022 releases.
+MicroProfile 5 lays the foundation for the rapid innovation of MicroProfile APIs for its 2022 releases.
 
 Microprofile 5 is an umbrella for the following specifications and their corresponding versions:
 
@@ -58,7 +59,7 @@ Microprofile 5 is an umbrella for the following specifications and their corresp
 * MicroProfile OpenTracing {version-lib-microprofile-tracing}
 * MicroProfile Rest Client {version-lib-microprofile-rest-client}
 
-Helidon 3.x is Passing the 5 Jakarta Specification TCKs:
+Helidon 3.x is passing the 5 Jakarta Specification TCKs:
 
 * CDI (Jakarta Contexts and Dependency Injection) {version-lib-jakarta-cdi}
 * JAX-RS (Jakarta RESTful Web Services) {version-lib-jakarta-jaxrs-api}
