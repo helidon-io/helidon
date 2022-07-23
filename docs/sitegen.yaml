@@ -59,7 +59,7 @@ backend:
             type: "icon"
             value: "widgets"
         - type: "PAGE"
-          title: "Get Strted"
+          title: "Get Started"
           source: "about/prerequisites.adoc"
           glyph:
             type: "icon"
