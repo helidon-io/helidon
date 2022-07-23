@@ -33,7 +33,7 @@ include::{rootdir}/includes/se.adoc[]
 - <<Examples, Examples>>
 
 == Overview
-The Helidon gRPC Server provides a framework for creating link:http://grpc.io/[gRPC] applications.
+The Helidon gRPC server provides a framework for creating link:http://grpc.io/[gRPC] applications.
 While it allows you to deploy any standard gRPC service that
 implements `io.grpc.BindableService` interface, including services generated
 from the Protobuf IDL files (and even allows you to customize them to a certain
@@ -438,7 +438,7 @@ private static GrpcRouting createRouting() {
 
 ==== Exposing Health Checks
 
-All gRPC service health checks are managed by the Helidon gRPC Server, and are
+All gRPC service health checks are managed by the Helidon gRPC server, and are
 automatically exposed to the gRPC clients using a custom implementation of the
 standard gRPC `HealthService` API.
 
@@ -471,12 +471,12 @@ All gRPC health checks will now be available via the `/health` REST endpoint, in
 addition to the standard gRPC `HealthService`
 
 === Service Metrics
-The Helidon gRPC Server has built-in support for metrics capture, which allows
+The Helidon gRPC server has built-in support for metrics capture, which allows
 service developers to easily enable application-level metrics for their services.
 
 ==== Enabling Metrics Capture
 
-By default, the gRPC Server only captures two vendor-level metrics: `grpc.request.count`
+By default, the gRPC server only captures two vendor-level metrics: `grpc.request.count`
 and `grpc.request.meter`. These metrics provide an aggregate view of requests across
 all services, and serve as an indication of the overall server load.
 
@@ -558,7 +558,7 @@ WebServer.create(webServerConfig(), routing)  // <2>
 <1> Add the `MetricsSupport` instance to web server routing.
 <2> Create and start the Helidon web server.
 
-See xref:../metrics/metrics.adoc[Helidon Metrics] documentation for more details.
+See xref:{rootdir}/se/metrics/metrics.adoc[Helidon Metrics] documentation for more details.
 
 ==== Specifying Metric Metadata
 
@@ -845,12 +845,12 @@ Response webResponse = client.target(url)
 include::{rootdir}/includes/grpc-marshalling.adoc[leveloffset=2]
 
 == Configuration
-Configure the gRPC Server using the Helidon configuration framework, either programmatically
+Configure the gRPC server using the Helidon configuration framework, either programmatically
 or via a configuration file.
 
-=== Configuring the gRPC Server in your code
+=== Configuring the gRPC server in your code
 
-The easiest way to configure the gRPC Server is in your application code.
+The easiest way to configure the gRPC server is in your application code.
 
 [source,java]
 ----
@@ -863,7 +863,7 @@ GrpcServer grpcServer = GrpcServer.create(configuration, routing);
 See all configuration options
 link:{javadoc-base-url}/io.helidon.grpc/GrpcServerConfiguration.html[here].
 
-=== Configuring the gRPC Server in a configuration file
+=== Configuring the gRPC server in a configuration file
 
 You can also define the gRPC server configuration in a file.
 
@@ -905,7 +905,7 @@ public static void main(String[] args) throws Exception {
             .toCompletableFuture()
             .get(10, TimeUnit.SECONDS); // Implement the simplest possible gRPC service. // <3>
 
-    System.out.println("gRPC Server started at: http://localhost:" + grpcServer.port()); // <4>
+    System.out.println("gRPC server started at: http://localhost:" + grpcServer.port()); // <4>
 }
 
 static class HelloService implements GrpcService { // <5>
@@ -925,8 +925,8 @@ static class HelloService implements GrpcService { // <5>
 <6> Specify a custom marshaller using the built-in JsonB marshaller to marshall requests and responses.
 <7> Add unary method `HelloService/SayHello` to the service definition.
 
-=== Additional gRPC Server examples
-A set of gRPC Server examples for Helidon SE can be found in the following links:
+=== Additional gRPC server examples
+A set of gRPC server examples for Helidon SE can be found in the following links:
 
 * link:{helidon-github-tree-url}/examples/grpc/basics[Basic gRPC Server]
 * link:{helidon-github-tree-url}/examples/grpc/metrics[gRPC Server Metrics]

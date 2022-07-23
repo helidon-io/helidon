@@ -24,13 +24,13 @@ ifndef::rootdir[:rootdir: {docdir}/..]
 
 == Default Marshalling Support
 
-Helidon gRPC supports Protobuf out of the box. Protobuf marshaller will be used by default for any request and response classes that extend `com.google.protobuf.MessageLite` class, which is the case for all classes generated from a `proto` file using `protoc` compiler.
+Helidon gRPC supports Protobuf out of the box. The Protobuf marshaller will be used by default for any request and response classes that extend `com.google.protobuf.MessageLite`, which is the case for all classes generated from a `proto` file using `protoc` compiler.
 
 That means that you don't need any special handling or configuration in order to support Protobuf serialization of requests and responses.
 
 == Custom Marshalling
 
-Helidon makes the use of custom marshallers trivial and provides one custom implementation, link:{helidon-github-tree-url}/grpc/core/src/main/java/io/helidon/grpc/core/JsonbMarshaller.java[JSON-B Marshaller], out of the box.
+Helidon makes the use of custom marshallers trivial and provides one custom implementation, link:{helidon-github-tree-url}/grpc/core/src/main/java/io/helidon/grpc/core/JsonbMarshaller.java[JsonbMarshaller], out of the box.
 
 You can also easily implement your own marshaller to support serialization formats that are not supported natively
 by Helidon, by implementing `Marshaller` and `MarshallerSupplier` interfaces. As an example, check out

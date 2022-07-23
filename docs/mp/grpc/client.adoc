@@ -35,8 +35,8 @@ include::{rootdir}/includes/mp.adoc[]
 - <<Examples, Examples>>
 
 == Overview
-Building java-based gRPC clients using the Helidon MP gRPC APIs is very simple and removes a lot of the boiler plate code typically
-associated to more traditional approaches of writing gRPC java clients. At its simplest, a gRPC java client can be written using
+Building Java-based gRPC clients using the Helidon MP gRPC APIs is very simple and removes a lot of the boilerplate code typically
+associated to more traditional approaches of writing gRPC Java clients. At its simplest, a gRPC Java client can be written using
 nothing more than a suitably annotated interface.
 
 include::{rootdir}/includes/dependencies.adoc[]
@@ -65,7 +65,7 @@ CDI beans that require them.
 include::{rootdir}/config/io_helidon_grpc_client_GrpcChannelDescriptor.adoc[leveloffset=1, tag=config]
 
 Channels are configured in the `grpc` section of the Helidon application configuration. The examples below use an `application.yaml`
-file but there are many other ways to use and override xref:../config/introduction.adoc[configuration in Helidon]
+file but there are many other ways to use and override xref:{rootdir}/mp/config/introduction.adoc[configuration in Helidon]
 
 .General form of a gRPC channels configuration
 [source,yaml]

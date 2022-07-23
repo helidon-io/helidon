@@ -34,8 +34,8 @@ include::{rootdir}/includes/se.adoc[]
 
 == Overview
 
-Helidon gRPC Client provides a framework for creating link:http://grpc.io/[gRPC] client applications. The client framework
-allows a uniform way to access gRPC services that use either Protobuf or some custom serialization format. The benefits of using Helidon gRPC Client Framework include:
+Helidon gRPC client provides a framework for creating link:http://grpc.io/[gRPC] client applications. The client framework
+allows a uniform way to access gRPC services that use either Protobuf or some custom serialization format. The benefits of using Helidon gRPC client Framework include:
 
 * It provides a number of helper methods that make client implementation
 significantly simpler.
@@ -65,7 +65,7 @@ include::{rootdir}/includes/dependencies.adoc[]
 === Client Implementation Basics
 
 . The first step to create a Helidon gRPC client application is to describe the set of methods in the gRPC service. Helidon
-gRPC Client Framework (simply called the "Client framework" in the remainder of the document) provides a class called
+gRPC client Framework (simply called the "Client framework" in the remainder of the document) provides a class called
 `ClientServiceDescriptor` to describe the set of methods of a service that the client may invoke. There are several ways to build and initialize a `ClientServiceDescriptor`.
 * The first option is to initialize `ClientServiceDescriptor` using `protoc` generated artifacts like
 `BindableService` or `io.grpc.ServiceDescriptor`. This option is possible if the gRPC service
@@ -210,7 +210,7 @@ an instance of `io.grpc.StreamObserver` as an argument during the invocation of 
 streaming method.
 
 In order to simplify the task of invoking Client Streaming methods, the Helidon Client Framework provides
-two methods to invoke gRPC Client Streaming methods. The first variant takes an `Iterable` as
+two methods to invoke gRPC client Streaming methods. The first variant takes an `Iterable` as
 argument which in turn is converted into a `io.grpc.StreamObserver`. The second variant takes a
 `io.grpc.StreamObserver` as argument. The first variant can be used if the number of values to be
 streamed in small and known a priori.
@@ -404,7 +404,7 @@ The service name and the method name ("Lower") are specified.
 <2> Set the request type of the method to be `StringMessage` (since the `Lower` method takes `StringMessage` as a parameter).
 <3> Set the response type of the method to be `StringMessage` (since the `Lower` method returns a `StringMessage` as a parameter).
 <4> Build the `ClientMethodDescriptor`. Note that the return value is a `ClientMethodDescriptor` that contains
-the correct Marshaller for the request & response types.
+the correct marshaller for the request & response types.
 <5> Use the `clientStreaming()` method on `ClientMethodDescriptor` to create a builder for a gRPC client streaming method.
 The service name and the method name ("Join") are specified.
 <6> Use the `serverStreaming()` method on `ClientMethodDescriptor` to create a builder for a gRPC server streaming method.
@@ -501,7 +501,7 @@ Please refer to gRPC documentation: https://grpc.io/grpc-java/javadoc/io/grpc/Ma
 === Quick Start
 
 First, create and run a minimalist `HelloService` gRPC server application as described in the
-xref:server.adoc#_quick_start[gRPC Server quick start example].
+xref:server.adoc#_quick_start[gRPC server quick start example].
 
 Assuming that the server is running on port 1408, create a client as follows:
 
@@ -535,7 +535,7 @@ a client that can be used to define the set of methods described by the specifie
 <6> Invoke the `SayHello` method which returns a `CompletionStage<String>`.
 <7> Print the result.
 
-=== Additional gRPC Client examples
+=== Additional gRPC client examples
 A set of gRPC client examples for Helidon SE can be found in the following links:
 
 * link:{helidon-github-tree-url}/examples/grpc/client-standalone[Basic gRPC Standalone Client]

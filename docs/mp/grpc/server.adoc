@@ -35,7 +35,7 @@ include::{rootdir}/includes/mp.adoc[]
 - <<Examples, Examples>>
 
 == Overview
-The gRPC Microprofile APIs are an extension to xref:../introduction.adoc[Helidon MP] to allow building
+The gRPC Microprofile APIs are an extension to xref:{rootdir}/mp/introduction.adoc[Helidon MP] to allow building
 of gRPC services and clients that integrate with the Microprofile APIs. Using Helidon gRPC MP makes building gRPC services
 and clients an easier process compared to the traditional approach using Protobuf files and code generation. Services can be built
 using POJOs that are then discovered and deployed at runtime in the same way the Helidon MP discovers and deploys web resources
@@ -107,6 +107,7 @@ annotations.
 @ApplicationScoped                             // <1>
 @io.helidon.microprofile.grpc.core.Grpc        // <2>
 public class StringService {
+    /* code is omitted */
 }
 ----
 
@@ -273,7 +274,7 @@ public StreamObserver<RequestType> invoke(StreamObserver<ResponseType> observer)
 === Deploying Protobuf Services
 Whilst the examples above show how simple it is to write gRPC services with basic POJOs, there may be cases where there is a
 requirement to deploy services built the traditional way using gRPC Java generated classes or built as
-xref:../../se/grpc/server.adoc#_service_implementation[non-microprofile Helidon gRPC services].
+xref:{rootdir}/se/grpc/server.adoc#_service_implementation[non-microprofile Helidon gRPC services].
 
 ==== Annotate the Service Implementation
 When the gRPC MP server is starting, it will discover all CDI beans of type `io.grpc.BindableService`. Service sub-classes
@@ -315,7 +316,7 @@ public class MyExtension
 
 <1> The `configure` method of the extension will be called to allow the extension to add extra configuration to the server.
 <2> In this example, an instance of the `StringService` is registered with the routing (as described in
-the xref:../../se/grpc/server.adoc#_grpc_server_routing[gRPC server routing] documentation).
+the xref:{rootdir}/se/grpc/server.adoc#_grpc_server_routing[gRPC server routing] documentation).
 
 The `GrpcMpExtension` instances are discovered and loaded using the service loader so for the example above to work, a file
 `META-INF/services/io.helidon.microprofile.grpc.server.spi.GrpcMpExtension` would need to be created that contained the names
@@ -324,9 +325,9 @@ of the service implementations.
 include::{rootdir}/includes/grpc-marshalling.adoc[leveloffset=2]
 
 == Configuration
-Configure the gRPC Server using the Helidon microprofile configuration framework by which the ConfigSource defaults to
+Configure the gRPC server using the Helidon microprofile configuration framework by which the ConfigSource defaults to
 `microprofile-config.properties`. Alternatively, you can also use other ConfigSources such as `application.yaml`.
-Refer to xref:../config/introduction.adoc[MicroProfile Config] for more details about the different options for
+Refer to xref:{rootdir}/mp/config/introduction.adoc[MicroProfile Config] for more details about the different options for
 ConfigSources.
 
 include::{rootdir}/config/io_helidon_grpc_server_GrpcServerConfiguration.adoc[leveloffset=1, tag=config]
