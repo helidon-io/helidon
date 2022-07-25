@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,11 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
+package io.helidon.lra.coordinator;
 
 import java.net.URI;
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
+import java.util.Map;
 
 import javax.json.JsonArray;
 import javax.json.JsonValue;
@@ -25,7 +26,6 @@ import io.helidon.common.LazyValue;
 import io.helidon.common.reactive.Multi;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.lra.coordinator.CoordinatorService;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.webclient.WebClient;
 import io.helidon.webserver.Routing;
@@ -42,6 +42,8 @@ public class CoordinatorTest {
 
     private static final String CONTEXT_PATH = "/test";
     private static final String COORDINATOR_ROUTING_NAME = "coordinator";
+
+    private static final Duration TIMEOUT = Duration.ofSeconds(10);
     private static WebServer server;
     private static String serverUrl;
     private static WebClient webClient;
@@ -54,7 +56,12 @@ public class CoordinatorTest {
 
         coordinatorService = CoordinatorService.builder()
                 .url(coordinatorUri::get)
-                .config(Config.builder(() -> ConfigSources.classpath("application.yaml").build())
+                .config(Config.builder(
+                                () -> ConfigSources.create(Map.of(
+                                        "helidon.lra.coordinator.db.connection.url", "jdbc:h2:file:./target/lra-coordinator"
+                                )).build(),
+                                () -> ConfigSources.classpath("application.yaml").build()
+                        )
                         .build().get(CoordinatorService.CONFIG_PREFIX))
                 .build();
         server = WebServer.builder()
@@ -72,7 +79,7 @@ public class CoordinatorTest {
                         }))
                         .build())
                 .build();
-        server.start().await();
+        server.start().await(TIMEOUT);
         serverUrl = "http://localhost:" + server.port();
         webClient = WebClient.builder()
                 .keepAlive(false)
@@ -82,8 +89,12 @@ public class CoordinatorTest {
 
     @AfterAll
     static void afterAll() {
-        server.shutdown();
-        coordinatorService.shutdown();
+        if (server != null) {
+            server.shutdown();
+        }
+        if (coordinatorService != null) {
+            coordinatorService.shutdown();
+        }
     }
 
     @Test
@@ -118,7 +129,7 @@ public class CoordinatorTest {
                 .path("start")
                 .submit()
                 .flatMapSingle(res -> res.content().as(String.class))
-                .await(500, TimeUnit.MILLISECONDS);
+                .await(TIMEOUT);
     }
 
     private LRAStatus getParsedStatusOfLra(String lraId) {
@@ -135,7 +146,7 @@ public class CoordinatorTest {
                 .map(jo -> jo.getString("status"))
                 .map(LRAStatus::valueOf)
                 .first()
-                .await(500, TimeUnit.MILLISECONDS);
+                .await(TIMEOUT);
     }
 
     private LRAStatus status(String lraId) {
@@ -148,7 +159,7 @@ public class CoordinatorTest {
                 .request()
                 .flatMapSingle(res -> res.content().as(String.class))
                 .map(LRAStatus::valueOf)
-                .await(500, TimeUnit.MILLISECONDS);
+                .await(TIMEOUT);
     }
 
     private void close(String lraId) {
@@ -159,7 +170,7 @@ public class CoordinatorTest {
                 .build()
                 .put()
                 .submit()
-                .await(500, TimeUnit.MILLISECONDS);
+                .await(TIMEOUT);
     }
 
     private void cancel(String lraId) {
@@ -170,6 +181,6 @@ public class CoordinatorTest {
                 .build()
                 .put()
                 .submit()
-                .await(500, TimeUnit.MILLISECONDS);
+                .await(TIMEOUT);
     }
 }
