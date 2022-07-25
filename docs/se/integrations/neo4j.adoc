@@ -48,6 +48,7 @@ include::{rootdir}/includes/dependencies.adoc[]
 </dependency>
 ----
 NOTE: Check <<Neo4j Metrics propagation, Neo4j Metrics propagation>> and <<Neo4j Health Checks, Neo4j Health Checks>> for additional dependencies for _Neo4j_ `Metrics` and `Health Checks` integration.
+
 == Usage
 
 The support for Neo4j is implemented in Neo4j driver level. Just add the dependency, add configuration in `application.yaml` file and Neo4j driver will be configured by Helidon and can be used with `Neo4j` support object.
