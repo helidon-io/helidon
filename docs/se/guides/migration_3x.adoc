@@ -154,3 +154,9 @@ In version 3.x Helidon CLI brings all benefits of the Project Starter to the com
 
 == Project Starter
 Project Starter is a new web UI for creating Helidon projects. It’s highly customizable and provides various options allowing users to select Helidon features they want to add to the project. At the end users will be able to generate projects up to their taste. Check it out at link:https://helidon.io/starter[Helidon Starter Page]!
+
+== Deprecations
+
+- The custom Helidon OCI clients have been deprecated (link:https://github.com/oracle/helidon/pull/4015[See PR]). Use the OCI Java SDK instead. If you use Helidon MP you can inject OCI SDK clients by adding the dependency `io.helidon.integrations.oci.sdk:helidon-integrations-oci-sdk-cdi`.
+
+- The MultiPart buffered readers have been deprecated (link:https://github.com/oracle/helidon/pull/4096[See PR]). Use the MultiPart stream readers instead.

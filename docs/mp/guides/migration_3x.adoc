@@ -164,3 +164,9 @@ Project Starter is a new web UI for creating Helidon projects. It’s highly cus
 == TestNG test support
 
 In Helidon 3.x you have the option to use link:https://testng.org/doc/[TestNG] to test your application. For more information follow the official documents xref:{rootdir}/mp/testing-ng.adoc
+
+== Deprecations
+
+- The custom Helidon OCI clients have been deprecated (link:https://github.com/oracle/helidon/pull/4015[See PR]). Use the OCI Java SDK instead. If you use Helidon MP you can inject OCI SDK clients by adding the dependency `io.helidon.integrations.oci.sdk:helidon-integrations-oci-sdk-cdi`.
+
+- The MultiPart buffered readers have been deprecated (link:https://github.com/oracle/helidon/pull/4096[See PR]). Use the MultiPart stream readers instead.
