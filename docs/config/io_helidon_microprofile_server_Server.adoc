@@ -16,21 +16,23 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
+ifndef::rootdir[:rootdir: {docdir}/..]
 :description: Configuration of io.helidon.microprofile.server.Server
 :keywords: helidon, config, io.helidon.microprofile.server.Server
 :basic-table-intro: The table below lists the configuration keys that configure io.helidon.microprofile.server.Server
+include::{rootdir}/includes/attributes.adoc[]
 
-= Server Configuration
+= Server (microprofile.server) Configuration
 
 // tag::config[]
 
-[source,text]
-.Type
-----
-io.helidon.microprofile.server.Server
-----
-
 Configuration of Helidon Microprofile Server
+
+
+Type: link:{javadoc-base-url}/io.helidon.microprofile.server/io/helidon/microprofile/server/Server.html[io.helidon.microprofile.server.Server]
+
+
+This is a standalone configuration type, prefix from configuration root: `server`
 
 
 
@@ -38,17 +40,16 @@ Configuration of Helidon Microprofile Server
 
 
 
-
-Optional configuration options:
-[cols="3,3,2,5"]
+.Optional configuration options
+[cols="3,3a,2,5a"]
 
 |===
 |key |type |default value |description
 
 |`executor-service` |ExecutorService> |{nbsp} |Set a supplier of an executor service to use for tasks connected with application
  processing (JAX-RS).
-|`port` |int |{nbsp} |Configure listen port.
 |`host` |string |{nbsp} |Configure listen host.
+|`port` |int |{nbsp} |Configure listen port.
 
 |===
 

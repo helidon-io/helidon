@@ -36,8 +36,8 @@ Type: link:{javadoc-base-url}/io.helidon.grpc.server/io/helidon/grpc/server/Grpc
 
 
 
-Optional configuration options:
-[cols="3,3,2,5a"]
+.Optional configuration options
+[cols="3,3a,2,5a"]
 
 |===
 |key |type |default value |description

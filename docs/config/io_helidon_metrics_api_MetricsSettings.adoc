@@ -42,8 +42,8 @@ metrics
 
 
 
-Optional configuration options:
-[cols="3,3,2,5a"]
+.Optional configuration options
+[cols="3,3a,2,5a"]
 
 |===
 |key |type |default value |description
@@ -52,7 +52,7 @@ Optional configuration options:
 |`base` |xref:{rootdir}/config/io_helidon_metrics_api_BaseMetricsSettings.adoc[BaseMetricsSettings] |{nbsp} |Set the base metrics settings.
 |`enabled` |boolean |{nbsp} |Sets whether metrics should be enabled.
 |`key-performance-indicators` |xref:{rootdir}/config/io_helidon_metrics_api_KeyPerformanceIndicatorMetricsSettings.adoc[KeyPerformanceIndicatorMetricsSettings] |{nbsp} |Set the KPI metrics settings.
-|`registries` |xref:{rootdir}/config/io_helidon_metrics_api_RegistrySettings.adoc[RegistrySettings[&#93;] |{nbsp} |Sets the registry settings for the specified registry type.
+|`registries` |xref:{rootdir}/config/io_helidon_metrics_api_RegistrySettings.adoc[Map&lt;string, RegistrySettings&gt;] |{nbsp} |Sets the registry settings for the specified registry type.
 |`tags` |Map&lt;string, string&gt; |{nbsp} |Sets the global tags to be applied to all metrics.
 
 |===

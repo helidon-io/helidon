@@ -48,8 +48,8 @@ This type provides the following service implementations:
 
 
 
-Optional configuration options:
-[cols="3,3,2,5a"]
+.Optional configuration options
+[cols="3,3a,2,5a"]
 
 |===
 |key |type |default value |description
