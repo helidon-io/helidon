@@ -16,7 +16,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Helidon MP Upgrade Guide
+= Helidon MP 2.x Upgrade Guide
 :description: Helidon MP Upgrade Guide
 :keywords: helidon, porting, migration, upgrade, incompatibilities
 :rootdir: {docdir}/../..

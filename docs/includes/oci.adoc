@@ -19,6 +19,7 @@
 ifndef::rootdir[:rootdir: {docdir}/..]
 
 == Resolving javax and jakarta package compatibility issue with OCI SDK
+[[oci-compatibility]]
 
 With Helidon 3, we are now implementing the MicroProfile 5 Platform and selected Jakarta EE 9.1 specifications. We are also going away from javax.* packages and fully embracing jakarta.* package.
 
