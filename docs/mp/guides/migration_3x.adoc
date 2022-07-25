@@ -157,6 +157,9 @@ NOTE: Please, read each specification carefully for incompatible changes!
 
 - The custom Helidon OCI clients have been deprecated. Use the OCI Java SDK instead. If you use Helidon MP you can inject OCI SDK clients by adding the dependency `io.helidon.integrations.oci.sdk:helidon-integrations-oci-sdk-cdi`.
 
+NOTE: Our integration works with OCI a bit differently, please follow xref:{rootdir}/includes/oci.adoc[OCI Documentation] for details!
+
+
 - The `MultiPart buffered readers` have been deprecated. Use the `MultiPart stream readers` instead.
 
 === Helidon Common
