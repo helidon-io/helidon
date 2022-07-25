@@ -85,10 +85,18 @@ For further information check xref:../webserver.adoc[WebServer Documentation]
 
 Helidon SE support is now based on the `WebSocketRouting` class which enables Helidon application to
 configure routing for both annotated and programmatic WebSocket endpoints.
-`TyrusSupport` is now deprecated.
+`TyrusSupport` is now deprecated. Websocket support in now placed in different artifact.
 
-Use new dependency to enable `WebSocket`:
+.Helidon 2 WebSocket support dependency
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.webserver</groupId>
+    <artifactId>helidon-webserver-tyrus</artifactId>
+</dependency>
+----
 
+.Helidon 3 WebSocket support dependency
 [source,xml]
 ----
 <dependency>
@@ -96,6 +104,46 @@ Use new dependency to enable `WebSocket`:
     <artifactId>helidon-webserver-websocket</artifactId>
 </dependency>
 ----
+
+In Helidon 2, WebSocket routing is defined by registering `TyrusSupport` as additional service:
+
+.Helidon 2 WebSocket route registering
+[source, java]
+----
+WebServer.builder(Routing.builder()
+             .register("/rest", new SomeRestService()) //<1>
+             .register("/websocket",TyrusSupport.builder() //<2>
+                 .register(ServerEndpointConfig.Builder
+                           .create(MessageBoardEndpoint.class, "/")
+                           .encoders(encoders)
+                           .build())
+                 .build()
+             ))
+             .port(8080)
+   .build();
+----
+<1> Traditional REST routing service registration
+<2> WebSocket setup with Tyrus service
+
+In Helidon 3, WebSocket routing is defined by adding another routing:
+
+.Helidon 3 WebSocket route registering
+[source, java]
+----
+WebServer.builder()
+         .routing(r -> r
+              .register("/rest", new SomeRestService()) //<1>
+         )
+         .addRouting(WebSocketRouting.builder() //<2>
+                        .endpoint("/websocket", ServerEndpointConfig.Builder
+                                .create(MessageBoardEndpoint.class, "/board")
+                                .encoders(encoders)
+                                .build())
+                        .build())
+         .port(8080)
+----
+<1> Traditional REST routing service registration
+<2> WebSocket routing setup
 
 == JEP-290 security hardening
 
