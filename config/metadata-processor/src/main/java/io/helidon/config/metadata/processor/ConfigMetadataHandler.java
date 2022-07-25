@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -89,6 +89,7 @@ class ConfigMetadataHandler {
     private TypeMirror builderType;
     private TypeMirror configType;
     private TypeMirror erasedListType;
+    private TypeMirror erasedIterableType;
     private TypeMirror erasedSetType;
     private TypeMirror erasedMapType;
 
@@ -111,6 +112,7 @@ class ConfigMetadataHandler {
         configType = elementUtils.getTypeElement("io.helidon.config.Config").asType();
         erasedListType = typeUtils.erasure(elementUtils.getTypeElement(List.class.getName()).asType());
         erasedSetType = typeUtils.erasure(elementUtils.getTypeElement(Set.class.getName()).asType());
+        erasedIterableType = typeUtils.erasure(elementUtils.getTypeElement(Iterable.class.getName()).asType());
         erasedMapType = typeUtils.erasure(elementUtils.getTypeElement(Map.class.getName()).asType());
     }
 
@@ -184,7 +186,8 @@ class ConfigMetadataHandler {
           - an interface/abstract class only used for inheritance
          */
 
-        ConfiguredType type = new ConfiguredType(targetClass,
+        ConfiguredType type = new ConfiguredType(className,
+                                                 targetClass,
                                                  standalone,
                                                  keyPrefix,
                                                  description,
@@ -250,6 +253,19 @@ class ConfigMetadataHandler {
                     if (found.isBuilder) {
                         return found;
                     }
+                }
+            }
+        }
+        TypeMirror superMirror = classElement.getSuperclass();
+        String buildTarget = findBuildMethodTarget(classElement);
+        if (superMirror.getKind() != TypeKind.NONE) {
+            TypeElement superclass = (TypeElement) typeUtils.asElement(typeUtils.erasure(superMirror));
+            found = findBuilder(superclass);
+            if (found.isBuilder) {
+                if (buildTarget == null) {
+                    return found;
+                } else {
+                    return new BuilderTypeInfo(buildTarget);
                 }
             }
         }
@@ -469,6 +485,23 @@ class ConfigMetadataHandler {
         }
     }
 
+    private String findBuildMethodTarget(TypeElement typeElement) {
+        return elementUtils.getAllMembers(typeElement)
+                .stream()
+                .filter(it -> it.getKind() == ElementKind.METHOD)
+                .map(ExecutableElement.class::cast)
+                // public
+                .filter(it -> it.getModifiers().contains(Modifier.PUBLIC))
+                // static
+                .filter(it -> !it.getModifiers().contains(Modifier.STATIC))
+                .filter(it -> it.getSimpleName().contentEquals("build"))
+                .filter(it -> it.getParameters().isEmpty())
+                .filter(it -> it.getReturnType().getKind() != TypeKind.VOID)
+                .findFirst()
+                .map(it -> it.getReturnType().toString())
+                .orElse(null);
+    }
+
     private boolean hasCreate(TypeElement typeElement) {
         return elementUtils.getAllMembers(typeElement)
                 .stream()
@@ -570,7 +603,8 @@ class ConfigMetadataHandler {
                 TypeMirror paramType = parameter.asType();
                 TypeMirror erasedType = typeUtils.erasure(paramType);
 
-                if (typeUtils.isSameType(erasedType, erasedListType) || typeUtils.isSameType(erasedType, erasedSetType)) {
+                if (typeUtils.isSameType(erasedType, erasedListType) || typeUtils.isSameType(erasedType, erasedSetType)
+                        || typeUtils.isSameType(erasedType, erasedIterableType)) {
                     DeclaredType type = (DeclaredType) paramType;
                     TypeMirror genericType = type.getTypeArguments().get(0);
                     return new OptionType(genericType.toString(), "LIST");
@@ -697,7 +731,7 @@ class ConfigMetadataHandler {
     }
 
     static List<AllowedValue> allowedValues(Elements elementUtils, TypeElement typeElement) {
-        if (typeElement.getKind() == ElementKind.ENUM) {
+        if (typeElement != null && typeElement.getKind() == ElementKind.ENUM) {
             return typeElement.getEnclosedElements()
                     .stream()
                     .filter(element -> element.getKind().equals(ElementKind.ENUM_CONSTANT))

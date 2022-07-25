@@ -73,7 +73,7 @@ javadocs. In particular the `oci.auth-strategies` property lets you control whic
 
 == Accessing OCI Services
 
-Since the Helidion OCI SDK extension supports injecting any OCI client
+Since the Helidon OCI SDK extension supports injecting any OCI client
 from the OCI SDK, you can use it to access any OCI service supported by the
 OCI SDK. In addition to adding the Helidon OCI SDK Extension dependency
 (as described above) you will need to add dependencies for the specific
