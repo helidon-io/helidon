@@ -13,16 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.helidon.lra.coordinator;
 
 import java.net.URI;
+import java.time.Duration;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.reactive.Multi;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.lra.coordinator.CoordinatorService;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.webclient.WebClient;
 import io.helidon.webserver.Routing;
@@ -41,6 +41,8 @@ public class CoordinatorTest {
 
     private static final String CONTEXT_PATH = "/test";
     private static final String COORDINATOR_ROUTING_NAME = "coordinator";
+
+    private static final Duration TIMEOUT = Duration.ofSeconds(10);
     private static WebServer server;
     private static String serverUrl;
     private static WebClient webClient;
@@ -72,7 +74,7 @@ public class CoordinatorTest {
                         .build())
                 .routing(r -> r.register(CONTEXT_PATH, rules -> rules.put((req, res) -> res.send())))
                 .build();
-        server.start().await();
+        server.start().await(TIMEOUT);
         serverUrl = "http://localhost:" + server.port();
         webClient = WebClient.builder()
                 .keepAlive(false)
@@ -122,7 +124,7 @@ public class CoordinatorTest {
                 .path("start")
                 .submit()
                 .flatMapSingle(res -> res.content().as(String.class))
-                .await(500, TimeUnit.MILLISECONDS);
+                .await(TIMEOUT);
     }
 
     private LRAStatus getParsedStatusOfLra(String lraId) {
@@ -139,7 +141,7 @@ public class CoordinatorTest {
                 .map(jo -> jo.getString("status"))
                 .map(LRAStatus::valueOf)
                 .first()
-                .await(500, TimeUnit.MILLISECONDS);
+                .await(TIMEOUT);
     }
 
     private LRAStatus status(String lraId) {
@@ -152,7 +154,7 @@ public class CoordinatorTest {
                 .request()
                 .flatMapSingle(res -> res.content().as(String.class))
                 .map(LRAStatus::valueOf)
-                .await(500, TimeUnit.MILLISECONDS);
+                .await(TIMEOUT);
     }
 
     private void close(String lraId) {
@@ -163,7 +165,7 @@ public class CoordinatorTest {
                 .build()
                 .put()
                 .submit()
-                .await(500, TimeUnit.MILLISECONDS);
+                .await(TIMEOUT);
     }
 
     private void cancel(String lraId) {
@@ -174,6 +176,6 @@ public class CoordinatorTest {
                 .build()
                 .put()
                 .submit()
-                .await(500, TimeUnit.MILLISECONDS);
+                .await(TIMEOUT);
     }
 }
