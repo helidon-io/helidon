@@ -27,7 +27,7 @@ will help you upgrade a Helidon SE 2.x application to 3.x.
 
 == Java 17 Runtime
 
-Java 11 is no longer supported in Helidon 3. Java 17 or newer is required.
+Java 11 is no longer supported in Helidon 3. Java 17 or newer is required. Please follow the instructions in xref:{rootdir}/includes/prerequisites.adoc}[Prerequisites] for proper installation.
 
 == New Routing
 
