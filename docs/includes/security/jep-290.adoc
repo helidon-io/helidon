@@ -21,10 +21,21 @@ ifndef::rootdir[:rootdir: {docdir}/../..]
 :keywords: helidon, security, serialization, java, JEP-290
 :metainf: META-INF/helidon/serial-config.properties
 
-= Deserialization setup
+= JEP-290
+
+== Contents
+
+- <<Overview, Overview>>
+- <<Deserialization setup, Deserialization setup>>
+- <<System property configuration, System property configuration>>
+- <<Programmatic configuration, Programmatic configuration>>
+
+== Overview
 
 link:https://openjdk.org/jeps/290[JEP-290] brought support for deserialization filters to Java programming language.
 Such filtering allows us to control which classes may be deserialized using Java serialization.
+
+== Deserialization setup
 
 Helidon default settings forbids any deserialization except for patterns defined in a `pattern`
 property of any `{metainf}` on classpath. The patterns are semicolon delimited strings, such as `io.myapp.&#42;&#42;;java.util.HashMap` (any subpackage of `io.myapp` and class `java.util.HashMap`).
