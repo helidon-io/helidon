@@ -75,7 +75,7 @@ import org.eclipse.microprofile.config.spi.Converter;
 public class ConfigCdiExtension implements Extension {
     private static final Logger LOGGER = Logger.getLogger(ConfigCdiExtension.class.getName());
     private static final Pattern SPLIT_PATTERN = Pattern.compile("(?<!\\\\),");
-    private static final Pattern ESCAPED_COMMA_PATTERN = Pattern.compile("\\\\,", Pattern.LITERAL);
+    private static final Pattern ESCAPED_COMMA_PATTERN = Pattern.compile("\\,", Pattern.LITERAL);
     private static final Annotation CONFIG_PROPERTY_LITERAL = new ConfigPropertyLiteral();
     // we must do manual boxing of primitive types, to make sure the injection points match
     // the producers
