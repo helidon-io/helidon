@@ -38,7 +38,46 @@ For further information check xref:../webserver.adoc[WebServer Documentation]
 
 == Http/2 Support
 
-Helidon now has the support of HTTP/2 with ALPN over TLS.
+Helidon support of Http/2 is no longer experimental.
+
+Http/2 needed to be explicitly enabled by configuration in Helidon 2:
+
+.Enabling Http/2 support in Helidon 2
+[source,yaml]
+----
+server:
+  port: 8080
+  host: 0.0.0.0
+  experimental:
+    enable-http2: true
+    http2-max-content-length: 16384
+----
+
+In Helidon 3 Http/2 is automatically enabled when artifact with Http/2 support is
+available on the classpath.
+
+.Enabling Http/2 support in Helidon 3 by adding dependency
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.webserver</groupId>
+    <artifactId>helidon-webserver-http2</artifactId>
+</dependency>
+----
+
+With above dependency Helidon 3 supports Http/2 upgrade from Http/1,
+cleartext Http/2 without prior knowledge and Http/2 with ALPN over TLS.
+
+In Helidon 2, max content length was configurable with `server.experimental.http2-max-content-length`, in Helidon 3 can be configured with `server.max-upgrade-content-length` globally or per socket with the same `max-upgrade-content-length` key.
+
+.Max upgrade content length in Helidon 3
+[source,yaml]
+----
+server:
+  port: 8080
+  host: 0.0.0.0
+  max-upgrade-content-length: 16384
+----
 
 For further information check xref:../webserver.adoc[WebServer Documentation]
 
