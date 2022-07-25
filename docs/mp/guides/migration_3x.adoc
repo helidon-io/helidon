@@ -165,8 +165,120 @@ Project Starter is a new web UI for creating Helidon projects. It’s highly cus
 
 In Helidon 3.x you have the option to use link:https://testng.org/doc/[TestNG] to test your application. For more information follow the official documents xref:{rootdir}/mp/testing-ng.adoc
 
+
 == Deprecations
 
 - The custom Helidon OCI clients have been deprecated (link:https://github.com/oracle/helidon/pull/4015[See PR]). Use the OCI Java SDK instead. If you use Helidon MP you can inject OCI SDK clients by adding the dependency `io.helidon.integrations.oci.sdk:helidon-integrations-oci-sdk-cdi`.
 
 - The MultiPart buffered readers have been deprecated (link:https://github.com/oracle/helidon/pull/4096[See PR]). Use the MultiPart stream readers instead.
+
+=== Helidon Common
+
+Deprecations in the following classes:
+
+* `Resource` - old configuration approach (since 2.0)
+* `ThreadPoolSupplier` - Named thread pools (since 2.4.2)
+
+More information in the following link:https://github.com/oracle/helidon/issues/4363[Task].
+
+=== Media Common
+
+Deprecations in the following classes:
+
+* `ContentReaders` - Methods with alternatives (since 2.0)
+* `ContentTypeCharset` - Class with alternative (since 2.0)
+* `ContentWriters` - Methods with alternatives (since 2.0)
+* `MessageBodyReaderContext` - Methods with alternatives (since 2.0)
+* `MessageBodyWriterContext` - Methods with alternatives (since 2.0)
+* `ReadableByteChannelPublisher` - Class with alternative (since 2.0)
+
+More information in the following link:https://github.com/oracle/helidon/issues/4364[Task].
+
+=== Metrics
+
+Deprecations in the following classes:
+
+* `MetricsSupport` - 3 methods, replacing Config with metrics settings
+* `KeyPerformanceIndicatorMetricsSettings` - New class in metrics API, for backward compatibility only
+* `RegistryFactory` - New class in metrics API, for backward compatibility only
+
+More information in the following link:https://github.com/oracle/helidon/issues/4365[Task].
+
+=== Common Context
+
+Deprecations in the following class:
+
+* `DataPropagationProvider` - clearData should use new method
+
+More information in the following link:https://github.com/oracle/helidon/issues/4366[Task].
+
+
+=== GRPC core
+
+Deprecations:
+
+* `JavaMarshaller` - removed support for JavaMarshaller
+
+More information in the following link:https://github.com/oracle/helidon/issues/4367[Task].
+
+
+=== LRA
+
+Deprecations in the following class:
+
+* `CoordinatorClient` - multiple methods
+* `Headers`
+
+More information in the following link:https://github.com/oracle/helidon/issues/4368[Task].
+
+
+=== MP Messaging
+
+Deprecations in the following class:
+
+* `MessagingCdiExtension` - Alternative methods used
+
+More information in the following link:https://github.com/oracle/helidon/issues/4369[Task].
+
+
+=== JWT
+
+Deprecations in the following class:
+
+* `Jwt` - Audience can be a list (since 2.4.0)
+
+More information in the following link:https://github.com/oracle/helidon/issues/4370[Task].
+
+
+=== MP Metrics
+
+Deprecations in the following class:
+
+* `MetricUtil` - multiple methods
+* `MetricsCdiExtension` - multiple methods
+
+More information in the following link:https://github.com/oracle/helidon/issues/4371[Task].
+
+
+=== HTTP Signature Security Provider
+
+* `backwardCompatibleEol` - set to false
+
+More information in the following link:https://github.com/oracle/helidon/issues/4372[Task].
+
+
+=== Service Common
+
+Deprecations in the following class:
+
+* `HelidonRestServiceSupport` - method _configureEndpoint(Rules)_
+
+More information in the following link:https://github.com/oracle/helidon/issues/4371[Task].
+
+
+=== WebServer
+
+* `Static content support` in `WebServer` - moved to a separate module. Fully removed from `WebServer` module.
+
+More information in the following link:https://github.com/oracle/helidon/issues/4374[Task].
+
