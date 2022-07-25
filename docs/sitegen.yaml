@@ -351,13 +351,12 @@ backend:
                 glyph:
                   type: "icon"
                   value: "verified_user"
-              - type: "MENU"
-                title: "Long Running Actions"
+              - type: "PAGE"
+                title: "Long Running Actions (LRA)"
+                source: "lra.adoc"
                 glyph:
                   type: "icon"
                   value: "pending_actions"
-                sources:
-                  - "lra.adoc"
               - type: "MENU"
                 title: "Metrics"
                 dir: "metrics"
@@ -443,6 +442,9 @@ backend:
               - type: "PAGE"
                 title: "Server"
                 source: "server.adoc"
+                glyph:
+                  type: "icon"
+                  value: "settings_ethernet"
               - type: "PAGE"
                 title: "AOT"
                 source: "aot.adoc"
