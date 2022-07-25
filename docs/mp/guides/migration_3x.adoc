@@ -30,7 +30,7 @@ will help you upgrade a Helidon MP 2.x application to 3.x.
 
 == Java 17 Runtime
 
-Java 11 is no longer supported in Helidon 3. Java 17 or newer is required. Please follow the instructions in xref:{rootdir}/includes/prerequisites.adoc}[Prerequisites] for proper installation.
+Java 11 is no longer supported in Helidon 3. Java 17 or newer is required. Please follow the instructions in xref:{rootdir}/about/prerequisites.adoc[Prerequisites] for proper installation.
 
 
 == javax.* namespace to jakarta.* namespace
@@ -157,7 +157,7 @@ NOTE: Please, read each specification carefully for incompatible changes!
 
 - The custom Helidon OCI clients have been deprecated. Use the OCI Java SDK instead. If you use Helidon MP you can inject OCI SDK clients by adding the dependency `io.helidon.integrations.oci.sdk:helidon-integrations-oci-sdk-cdi`.
 
-NOTE: Our integration works with OCI a bit differently, please follow xref:{rootdir}/includes/oci.adoc[OCI Documentation] for details!
+NOTE: See xref:{rootdir}/mp/integrations/oci.adoc#oci-compatibility[Resolving compatibility issue with OCI SDK] for detailed information on how to work around this issue.
 
 
 - The `MultiPart buffered readers` have been deprecated. Use the `MultiPart stream readers` instead.
