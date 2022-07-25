@@ -128,6 +128,20 @@ include::{rootdir}/includes/prerequisites.adoc[tag=prerequisites-table-details]
 // end::prereqs[]
 We also strongly suggest installing the xref:cli.adoc[Helidon CLI] (command line interface) which helps in generating and building Helidon projects.
 
+== Migration
+
+In case you need to upgrade the version of Helidon, follow the `Migration Guides`.
+
+For migration from Helidon 1.x to 2.x:
+
+* xref:{rootdir}/se/guides/migration.adoc[Helidon SE 2x Migration Guide]
+* xref:{rootdir}/mp/guides/migration.adoc[Helidon MP 2x Migration Guide]
+
+For migration from Helidon 2.x to 3.x:
+
+* xref:{rootdir}/se/guides/migration_3x.adoc[Helidon SE 3x Migration Guide]
+* xref:{rootdir}/mp/guides/migration_3x.adoc[Helidon MP 3x Migration Guide]
+
 == Next Steps
 
 Choose a Helidon flavor to explore and start using it. Check out the following:
