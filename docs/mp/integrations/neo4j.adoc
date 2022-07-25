@@ -1,0 +1,272 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2022 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Neo4j
+:description: Neo4j integration
+:keywords: neo4j
+:feature-name: Neo4j
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/mp.adoc[]
+
+== Contents
+
+- <<Overview, Overview>>
+- <<maven-coordinates, Maven Coordinates>>
+- <<Usage, Usage>>
+- <<Configuration, Configuration>>
+- <<Examples, Examples>>
+- <<Additional Information, Additional Information>>
+- <<References, References>>
+
+== Overview
+
+Neo4j is a graph database management system developed by Neo4j, Inc. It is an ACID-compliant transactional database with native graph storage and processing. Neo4j is available in a GPL3-licensed open-source “community edition”.
+
+include::{rootdir}/includes/dependencies.adoc[]
+
+[source,xml]
+----
+<dependency>
+   <groupId>io.helidon.integrations.neo4j</groupId>
+   <artifactId>helidon-integrations-neo4j</artifactId>
+</dependency>
+----
+NOTE: Check <<Neo4j Metrics propagation, Neo4j Metrics propagation>> and <<Neo4j Health Checks, Neo4j Health Checks>> for additional dependencies for _Neo4j_ `Metrics` and `Health Checks` integration.
+
+== Usage
+
+The support for Neo4j is implemented in Neo4j driver level. Just add the dependency, add configuration in `microprofile-config.properties` file and Neo4j driver will be configured by Helidon and can be injected using CDI.
+
+First describe Neo4j connection properties:
+
+[source,properties]
+----
+# Neo4j settings
+neo4j.uri=bolt://localhost:7687
+neo4j.authentication.username=neo4j
+neo4j.authentication.password: secret
+neo4j.pool.metricsEnabled: true
+----
+
+Then just inject the driver:
+
+[source,java]
+----
+@Inject
+public MovieRepository(Driver driver) {
+   this.driver = driver;
+}
+----
+
+The driver can be used according to the link:https://neo4j.com/developer/java/[Neo4j documentation].
+
+== Configuration
+
+include::{rootdir}/config/io_helidon_integrations_neo4j.adoc[leveloffset=+1,tag=config]
+
+== Examples
+
+This example implements a simple Neo4j REST service using MicroProfile. For this example a working Neo4j database is required. The Neo4j Movie database is used for this example.
+
+Bring up a Neo4j instance via Docker
+
+```bash
+docker run --publish=7474:7474 --publish=7687:7687 -e 'NEO4J_AUTH=neo4j/secret'  neo4j:latest
+```
+
+Go to the Neo4j browser and play the first step of the movies graph: link:http://localhost:7474/browser/?cmd=play&arg=movies[`:play movies`]
+
+Now go to the `pom.xml` and add the following dependencies:
+
+[source,xml]
+----
+ <dependency>
+    <groupId>io.helidon.integrations.neo4j</groupId>
+    <artifactId>helidon-integrations-neo4j</artifactId>
+</dependency>
+<dependency>
+    <groupId>io.helidon.integrations.neo4j</groupId>
+    <artifactId>helidon-integrations-neo4j-metrics</artifactId>
+</dependency>
+<dependency>
+    <groupId>io.helidon.integrations.neo4j</groupId>
+    <artifactId>helidon-integrations-neo4j-health</artifactId>
+</dependency>
+----
+
+Next add the connection configuration properties for Neo4j:
+
+[source,properties]
+----
+# Neo4j settings
+neo4j.uri=bolt://localhost:7687
+neo4j.authentication.username=neo4j
+neo4j.authentication.password: secret
+neo4j.pool.metricsEnabled: true
+
+# Enable the optional MicroProfile Metrics REST.request metrics
+metrics.rest-request.enabled=true
+----
+
+This includes both connection information and enables Neo4j metrics propagation.
+
+Finally, we are able to inject and use the `Neo4j` driver.
+
+[source,java]
+----
+@ApplicationScoped
+public class MovieRepository {
+
+    private final Driver driver;
+
+    @Inject
+    public MovieRepository(Driver driver) { // <1>
+        this.driver = driver;
+    }
+
+    public List<Movie> findAll() { // <2>
+
+        try (var session = driver.session()) {
+
+            var query = ""
+                    + "match (m:Movie) "
+                    + "match (m) <- [:DIRECTED] - (d:Person) "
+                    + "match (m) <- [r:ACTED_IN] - (a:Person) "
+                    + "return m, collect(d) as directors, collect({name:a.name, roles: r.roles}) as actors";
+
+            return session.readTransaction(tx -> tx.run(query).list(r -> {
+                var movieNode = r.get("m").asNode();
+
+                var directors = r.get("directors").asList(v -> {
+                    var personNode = v.asNode();
+                    return new Person(personNode.get("born").asInt(), personNode.get("name").asString());
+                });
+
+                var actors = r.get("actors").asList(v -> {
+                    return new Actor(v.get("name").asString(), v.get("roles").asList(Value::asString));
+                });
+
+                var m = new Movie(movieNode.get("title").asString(), movieNode.get("tagline").asString());
+                m.setReleased(movieNode.get("released").asInt());
+                m.setDirectorss(directors);
+                m.setActors(actors);
+                return m;
+            }));
+        }
+    }
+}
+
+----
+<1> `Neo4j` driver constructor injection
+<2> Use of `Neo4j` driver to extract all Movies
+
+Movies can now be returned as JSON objects:
+
+[source,java]
+----
+@GET
+@Produces(MediaType.APPLICATION_JSON)
+public List<Movie> getAllMovies() {
+    return movieRepository.findAll();
+}
+----
+
+Now build and run with JDK17+
+[source,bash]
+----
+mvn package
+java -jar target/helidon-examples-integration-neo4j-mp.jar
+----
+
+Exercise the application:
+
+[source,bash]
+----
+curl -X GET http://localhost:8080/movies
+{. . .}
+
+# Try health and metrics
+
+curl -s -X GET http://localhost:8080/health
+{"outcome":"UP",...
+. . .
+
+# Prometheus Format
+curl -s -X GET http://localhost:8080/metrics
+# TYPE base:gc_g1_young_generation_count gauge
+. . .
+
+# JSON Format
+curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
+{"base":...
+. . .
+
+----
+
+Full example code is available in link:https://github.com/oracle/helidon/tree/master/examples/integrations/neo4j/neo4j-mp[Helidon GitHub Repository].
+
+
+== Additional Information
+
+=== Neo4j Metrics propagation
+
+Neo4j metrics can be propagated to the user as `MicroProfile` metrics. This is implemented in a separate Maven module. Just add
+
+[source,xml]
+----
+<dependency>
+   <groupId>io.helidon.integrations.neo4j</groupId>
+   <artifactId>helidon-integrations-neo4j-metrics</artifactId>
+</dependency>
+----
+
+NOTE: Works with _Neo4j Integration_ main dependency described in <<maven-coordinates, Maven Coordinates>>.
+
+To enable metrics in Neo4j, add the following property to `microprofile-config.properties`:
+
+[source,properties]
+----
+neo4j.pool.metricsEnabled=true
+----
+
+By applying these two actions, Neo4j metrics will be automatically added to the output of the `/metrics` endpoint.
+
+=== Neo4j Health Checks
+
+If your application is highly dependent on Neo4j database, health and liveness checks are essential for this application to work correctly.
+
+`MicroProfile` Health checks for Neo4j are implemented in a separate Maven module:
+
+[source, xml]
+----
+<dependency>
+   <groupId>io.helidon.integrations.neo4j</groupId>
+   <artifactId>helidon-integrations-neo4j-health</artifactId>
+</dependency>
+----
+NOTE: Works with _Neo4j Integration_ main dependency described in <<maven-coordinates, Maven Coordinates>>.
+
+Health checks for Neo4j will be included in `/health` endpoint output.
+
+== References
+
+* link:https://neo4j.com/[Neo4j official website]
+* link:https://neo4j.com/developer/java/[Neo4j Java developer guide]
+
+
