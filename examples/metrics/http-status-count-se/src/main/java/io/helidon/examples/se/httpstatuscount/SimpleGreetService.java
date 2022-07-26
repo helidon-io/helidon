@@ -18,6 +18,10 @@ package io.helidon.examples.se.httpstatuscount;
 import java.util.Collections;
 import java.util.logging.Logger;
 
+import javax.json.Json;
+import javax.json.JsonBuilderFactory;
+import javax.json.JsonObject;
+
 import io.helidon.config.Config;
 import io.helidon.metrics.api.RegistryFactory;
 import io.helidon.webserver.Routing;
@@ -25,9 +29,6 @@ import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 
-import javax.json.Json;
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObject;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 
