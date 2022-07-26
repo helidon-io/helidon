@@ -18,18 +18,18 @@ package io.helidon.examples.se.httpstatuscount;
 import java.util.Collections;
 import java.util.logging.Logger;
 
-import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.Counter;
-import io.helidon.metrics.api.RegistryFactory;
-import jakarta.json.Json;
-import jakarta.json.JsonBuilderFactory;
-import jakarta.json.JsonObject;
-
 import io.helidon.config.Config;
+import io.helidon.metrics.api.RegistryFactory;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
+
+import jakarta.json.Json;
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonObject;
+import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.eclipse.microprofile.metrics.Counter;
 
 /**
  * A simple service to greet you. Examples:

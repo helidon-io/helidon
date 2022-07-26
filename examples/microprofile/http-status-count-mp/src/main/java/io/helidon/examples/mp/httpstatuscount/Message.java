@@ -16,31 +16,60 @@
  */
 package io.helidon.examples.mp.httpstatuscount;
 
+/**
+ * Greeting message.
+ */
 public class Message {
 
     private String message;
 
     private String greeting;
 
+    /**
+     * Creates a new instance.
+     */
     public Message() {
     }
 
+    /**
+     * Creates a new instance with a preset message.
+     *
+     * @param message initial message
+     */
     public Message(String message) {
         this.message = message;
     }
 
+    /**
+     * Sets the message content.
+     *
+     * @param message the new message
+     */
     public void setMessage(String message) {
         this.message = message;
     }
 
+    /**
+     *
+     * @return the current message content
+     */
     public String getMessage() {
         return this.message;
     }
 
+    /**
+     * Sets the greeting.
+     *
+     * @param greeting new greeting
+     */
     public void setGreeting(String greeting) {
         this.greeting = greeting;
     }
 
+    /**
+     *
+     * @return the greeting
+     */
     public String getGreeting() {
         return this.greeting;
     }
