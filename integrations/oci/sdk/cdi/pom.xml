@@ -34,8 +34,6 @@
     </description>
 
     <properties>
-        <!-- See, e.g., https://github.com/oracle/oci-java-sdk/blob/v2.35.0/pom.xml#L51 -->
-        <bouncycastle.version>1.70</bouncycastle.version>
         <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
     </properties>
 
@@ -45,11 +43,6 @@
           <groupId>com.oracle.oci.sdk</groupId>
           <artifactId>oci-java-sdk-shaded-full</artifactId>
           <version>${version.lib.oci}</version>
-        </dependency>
-        <dependency>
-          <groupId>org.bouncycastle</groupId>
-          <artifactId>bcpkix-jdk15on</artifactId>
-          <version>${bouncycastle.version}</version>
         </dependency>
       </dependencies>
     </dependencyManagement>
@@ -122,16 +115,6 @@
         <dependency>
             <groupId>io.helidon.microprofile.tests</groupId>
             <artifactId>helidon-microprofile-tests-junit5</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <!--
-            This is a transitive dependency of the manually-installed
-            oci-java-sdk-shaded-full artifact and so must be
-            explicitly mentioned here.
-        -->
-        <dependency>
-            <groupId>org.bouncycastle</groupId>
-            <artifactId>bcpkix-jdk15on</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
