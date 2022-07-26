@@ -14,6 +14,6 @@
  * limitations under the License.
  */
 /**
- * HTTP status counter package
+ * HTTP status counter example.
  */
 package io.helidon.examples.se.httpstatuscount;
