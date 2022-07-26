@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +14,9 @@
  * limitations under the License.
  */
 
-package io.helidon.webserver;
+package io.helidon.common.http;
 
 import java.net.URLDecoder;
-
-import io.helidon.common.http.HashParameters;
-import io.helidon.common.http.Parameters;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -31,7 +28,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * @author Paul Sandoz
  * @author Marek Potociar (marek.potociar at oracle.com)
  */
-final class UriComponent {
+final public class UriComponent {
 
     private UriComponent() {
     }
@@ -47,7 +44,7 @@ final class UriComponent {
      *               should be in decoded form.
      * @return the multivalued map of query parameters.
      */
-    static Parameters decodeQuery(String query, boolean decode) {
+    public static Parameters decodeQuery(String query, boolean decode) {
         return decodeQuery(query, true, decode);
     }
 
@@ -64,7 +61,7 @@ final class UriComponent {
      *                     should be in decoded form.
      * @return the multivalued map of query parameters.
      */
-    static Parameters decodeQuery(String query, boolean decodeNames, boolean decodeValues) {
+    public static Parameters decodeQuery(String query, boolean decodeNames, boolean decodeValues) {
         Parameters queryParameters = HashParameters.create();
 
         if (query == null || query.isEmpty()) {
