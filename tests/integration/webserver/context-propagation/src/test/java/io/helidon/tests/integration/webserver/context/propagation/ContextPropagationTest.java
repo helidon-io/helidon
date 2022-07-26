@@ -70,6 +70,7 @@ class ContextPropagationTest {
         context.register(ContextPropagationMain.CLASSIFIER_VALUES, new String[] {"second", "third"});
         context.register(ContextPropagationMain.CLASSIFIER_DEFAULT, "fourth");
         context.register(ContextPropagationMain.CLASSIFIER_DEFAULTS, new String[] {"fifth", "sixth"});
+        context.register(ContextPropagationMain.NOT_PROPAGATED, "value");
 
         DataDto dto = client.get()
                 .context(context)
@@ -82,5 +83,6 @@ class ContextPropagationTest {
         assertThat(dto.getDefaultValue(), is("fourth"));
         assertThat(dto.getDefaultValues(), is(arrayContaining("fifth",
                                                               "sixth")));
+        assertThat(dto.getNotPropagated(), is(nullValue()));
     }
 }

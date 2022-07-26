@@ -25,6 +25,8 @@ public class DataDto {
     private String[] values;
     private String[] defaultValues;
 
+    private String notPropagated;
+
     public String getValue() {
         return value;
     }
@@ -55,5 +57,13 @@ public class DataDto {
 
     public void setDefaultValues(String[] defaultValues) {
         this.defaultValues = defaultValues;
+    }
+
+    public String getNotPropagated() {
+        return notPropagated;
+    }
+
+    public void setNotPropagated(String notPropagated) {
+        this.notPropagated = notPropagated;
     }
 }

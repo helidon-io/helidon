@@ -33,14 +33,11 @@ import io.helidon.webserver.context.propagation.ContextPropagationFilter;
  * Starts the server and configures context propagation on it.
  */
 public class ContextPropagationMain {
-    static final String HEADER_VALUE = "x_helidon_value";
-    static final String HEADER_VALUES = "x_helidon_values";
-    static final String HEADER_DEFAULT = "x_helidon_default";
-    static final String HEADER_DEFAULTS = "x_helidon_defaults";
     static final String CLASSIFIER_VALUE = "io.helidon.tests.integration.value";
     static final String CLASSIFIER_VALUES = "io.helidon.tests.integration.values";
     static final String CLASSIFIER_DEFAULT = "io.helidon.tests.integration.default";
     static final String CLASSIFIER_DEFAULTS = "io.helidon.tests.integration.defaults";
+    static final String NOT_PROPAGATED = "some.random.classifier";
     static final Duration TIMEOUT = Duration.ofSeconds(10);
     private static WebServer server;
     private static WebClient client;
@@ -90,6 +87,8 @@ public class ContextPropagationMain {
 
         ctx.get(CLASSIFIER_DEFAULT, String.class).ifPresent(dto::setDefaultValue);
         ctx.get(CLASSIFIER_DEFAULTS, String[].class).ifPresent(dto::setDefaultValues);
+
+        ctx.get(NOT_PROPAGATED, String.class).ifPresent(dto::setNotPropagated);
 
         res.send(dto);
     }
