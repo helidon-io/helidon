@@ -48,6 +48,9 @@ import io.helidon.webserver.Service;
  * The message is returned as a JSON object
  */
 
+/**
+ * Greeting service.
+ */
 public class GreetService implements Service {
 
     /**
