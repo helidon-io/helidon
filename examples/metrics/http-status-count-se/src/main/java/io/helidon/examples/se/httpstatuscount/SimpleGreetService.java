@@ -28,8 +28,8 @@ import io.helidon.webserver.Service;
 import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;
 import jakarta.json.JsonObject;
-import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.Counter;
+import org.eclipse.microprofile.metrics.MetricRegistry;
 
 /**
  * A simple service to greet you. Examples:

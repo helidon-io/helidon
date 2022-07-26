@@ -16,17 +16,16 @@
  */
 package io.helidon.examples.mp.httpstatuscount;
 
-import jakarta.ws.rs.PathParam;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Timed;
-
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 /**
  * A simple JAX-RS resource to greet you. Examples:
@@ -45,6 +44,10 @@ public class SimpleGreetResource {
     private static final String GETS_TIMER_DESCRIPTION = "Tracks all GET operations";
     private final String message;
 
+    /**
+     * Creates a new instance using the configured default greeting.
+     * @param message initial greeting message
+     */
     @Inject
     public SimpleGreetResource(@ConfigProperty(name = "app.greeting") String message) {
         this.message = message;
@@ -64,7 +67,12 @@ public class SimpleGreetResource {
         return message;
     }
 
-
+    /**
+     * Returns a personalized greeting.
+     *
+     * @param name name with which to personalize the greeting
+     * @return personalized greeting message
+     */
     @Path("/{name}")
     @GET
     @Produces(MediaType.APPLICATION_JSON)

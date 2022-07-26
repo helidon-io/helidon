@@ -100,8 +100,7 @@ public final class Main {
                 .register(health) // Health at "/health"
                 .register(HttpStatusMetricService.create()) // no endpoint, just metrics updates
                 .register("/simple-greet", simpleGreetService)
-                .register("/greet", greetService)
-;
+                .register("/greet", greetService);
 
 
         return builder;
