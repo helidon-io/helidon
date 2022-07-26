@@ -36,11 +36,11 @@ on routing builder.
 
 For further information check xref:../webserver.adoc[WebServer Documentation]
 
-== Http/2 Support
+== HTTP/2 Support
 
-Helidon support of Http/2 is no longer experimental.
+Helidon support of HTTP/2 is no longer experimental.
 
-Http/2 needed to be explicitly enabled by configuration in Helidon 2:
+HTTP/2 had to be explicitly enabled by configuration in Helidon 2.x:
 
 .Enabling Http/2 support in Helidon 2
 [source,yaml]
@@ -53,10 +53,9 @@ server:
     http2-max-content-length: 16384
 ----
 
-In Helidon 3 Http/2 is automatically enabled when artifact with Http/2 support is
-available on the classpath.
+In Helidon 3.x, HTTP/2 is automatically enabled when an artifact with HTTP/2 support is available in the classpath.
 
-.Enabling Http/2 support in Helidon 3 by adding dependency
+.Enabling HTTP/2 support in Helidon 3 by adding dependency
 [source,xml]
 ----
 <dependency>
@@ -65,10 +64,9 @@ available on the classpath.
 </dependency>
 ----
 
-With above dependency Helidon 3 supports Http/2 upgrade from Http/1,
-cleartext Http/2 without prior knowledge and Http/2 with ALPN over TLS.
+By adding the Helidon WebServer dependency in Helidon 3.x, you can upgrade HTTP/1 to HTTP/2, use without prior knowledge the HTTP/2 Cleartext (H2C) client, and extend HTTP/2 with Application-Layer Protocol Negotiation (ALPN) over TLS.
 
-In Helidon 2, max content length was configurable with `server.experimental.http2-max-content-length`, in Helidon 3 can be configured with `server.max-upgrade-content-length` globally or per socket with the same `max-upgrade-content-length` key.
+In Helidon 2.x, max content length was configurable with `server.experimental.http2-max-content-length`. In Helidon 3.x max content length can be configured with `server.max-upgrade-content-length` globally or per socket with the same `max-upgrade-content-length` key.
 
 .Max upgrade content length in Helidon 3
 [source,yaml]
@@ -79,15 +77,15 @@ server:
   max-upgrade-content-length: 16384
 ----
 
-For further information check xref:../webserver.adoc[WebServer Documentation]
+For more information, see xref:../webserver.adoc[WebServer Documentation]
 
 == WebSocket
 
 Helidon SE support is now based on the `WebSocketRouting` class which enables Helidon application to
 configure routing for both annotated and programmatic WebSocket endpoints.
-`TyrusSupport` is now deprecated. Websocket support in now placed in different artifact.
+`TyrusSupport` is now deprecated. Websocket support in now placed in a different artifact.
 
-.Helidon 2 WebSocket support dependency
+.Helidon 2.x WebSocket support dependency
 [source,xml]
 ----
 <dependency>
@@ -96,7 +94,7 @@ configure routing for both annotated and programmatic WebSocket endpoints.
 </dependency>
 ----
 
-.Helidon 3 WebSocket support dependency
+.Helidon 3.x WebSocket support dependency
 [source,xml]
 ----
 <dependency>
@@ -105,7 +103,7 @@ configure routing for both annotated and programmatic WebSocket endpoints.
 </dependency>
 ----
 
-In Helidon 2, WebSocket routing is defined by registering `TyrusSupport` as additional service:
+In Helidon 2.x, WebSocket routing is defined by registering `TyrusSupport` as an additional service:
 
 .Helidon 2 WebSocket route registering
 [source, java]
@@ -195,7 +193,7 @@ Deprecations in the following class:
 More information in the following link:https://github.com/oracle/helidon/issues/4366[Task].
 
 
-=== GRPC core
+=== GRPC Core
 
 Deprecations:
 

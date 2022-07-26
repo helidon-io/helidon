@@ -33,7 +33,7 @@ will help you upgrade a Helidon MP 2.x application to 3.x.
 Java 11 is no longer supported in Helidon 3. Java 17 or newer is required. Please follow the instructions in xref:{rootdir}/about/prerequisites.adoc[Prerequisites] for proper installation.
 
 
-== javax.* namespace to jakarta.* namespace
+== `javax` namespace to `jakarta` namespace
 
 Helidon 3 supports MicroProfile 5.0  and _selected_ Jakarta EE 9.1 APIs. In Jakarta EE 9.1 the Java package namespace was changed from `javax` to `jakarta`. Therefore, you must change your application to use `jakarta` instead of corresponding `javax` for Jakarta EE packages.
 
@@ -42,7 +42,7 @@ In version 3.x Helidon supports MicroProfile 5.0  specification, which now is fu
 As a result, `javax` module is no longer in dependency management of Helidon parent pom files.
 
 
-== MicroProfile 5.0  support
+== MicroProfile 5.0 Support
 
 MicroProfile 5.0  enables MicroProfile APIs to be used together with Jakarta EE 9.1 (Jakarta EE namespace). This release was mainly focused on updating dependencies from `javax` to `jakarta`, as well as overall stability and usability improvements.
 
@@ -71,13 +71,13 @@ Helidon 3.x supports the following Jakarta EE specifications:
 * Jakarta WebSocket API {version-lib-jakarta-websockets-api}
 * Jakarta Bean Validation {version-lib-jakarta-bean-validation}
 
-Corresponding changes to Helidon code were made to support the corresponding specifications' versions.
+Helidon code was modified to support the corresponding specification's versions.
 
 === Incompatible changes for each specification
 
-Migration from `javax` to `jakarta` namespace is making this release backward incompatible with previous version of MicroProfile. For each specification there are also API and functional changes, described below.
+The migration from `javax` to `jakarta` namespace makes this release backward incompatible with previous versions of MicroProfile. For each specification there are also API and functional changes that are described below.
 
-==== MicroProfile specifications
+=== MicroProfile specifications
 
 * *MicroProfile Config {version-lib-microprofile-config}*:
 +
@@ -150,7 +150,7 @@ Moved to `jakarta` namespace. Changes described in link:https://jakarta.ee/speci
 +
 Moved to `jakarta` namespace. Changes described in link:https://jakarta.ee/specifications/bean-validation/2.0/bean-validation_2.0.html#changelog[Jakarta Bean Validation {version-lib-jakarta-bean-validation} Specification]
 
-NOTE: Please, read each specification carefully for incompatible changes!
+NOTE:  Before you migrate to Helidon 3.x, make sure that you have read each specification for a complete list of incompatible changes.
 
 
 == Deprecations
@@ -169,7 +169,7 @@ Deprecations in the following classes:
 * `Resource` - old configuration approach (since 2.0)
 * `ThreadPoolSupplier` - Named thread pools (since 2.4.2)
 
-More information in the following link:https://github.com/oracle/helidon/issues/4363[Task].
+More information, see the link:https://github.com/oracle/helidon/issues/4363[GitHub issue].
 
 === Media Common
 
@@ -203,7 +203,7 @@ Deprecations in the following class:
 More information in the following link:https://github.com/oracle/helidon/issues/4366[Task].
 
 
-=== GRPC core
+=== GRPC Core
 
 Deprecations:
 
