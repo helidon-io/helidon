@@ -94,7 +94,7 @@ public class GreetResource {
     /**
      * Set the greeting to use in future messages.
      *
-     * @param jsonNode JSON containing the new greeting
+     * @param message the new greeting message
      * @return {@link Response}
      */
     @Path("/greeting")

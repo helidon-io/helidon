@@ -15,13 +15,13 @@
  */
 package io.helidon.examples.se.httpstatuscount;
 
-import io.helidon.media.jsonp.JsonpSupport;
-import io.helidon.metrics.MetricsSupport;
-import io.helidon.health.HealthSupport;
-import io.helidon.health.checks.HealthChecks;
 import io.helidon.common.LogConfig;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
+import io.helidon.health.HealthSupport;
+import io.helidon.health.checks.HealthChecks;
+import io.helidon.media.jsonp.JsonpSupport;
+import io.helidon.metrics.MetricsSupport;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 
@@ -100,8 +100,7 @@ public final class Main {
                 .register(health) // Health at "/health"
                 .register(HttpStatusMetricService.create()) // no endpoint, just metrics updates
                 .register("/simple-greet", simpleGreetService)
-                .register("/greet", greetService)
-;
+                .register("/greet", greetService);
 
 
         return builder;

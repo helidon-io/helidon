@@ -16,8 +16,8 @@
  */
 package io.helidon.examples.mp.httpstatuscount;
 
-import jakarta.ws.rs.PathParam;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
@@ -44,6 +44,11 @@ public class SimpleGreetResource {
     private static final String GETS_TIMER_DESCRIPTION = "Tracks all GET operations";
     private final String message;
 
+    /**
+     * Creates a new instance using the configured default initial greeting.
+     *
+     * @param message configured initial greeting message
+     */
     @Inject
     public SimpleGreetResource(@ConfigProperty(name = "app.greeting") String message) {
         this.message = message;
@@ -63,7 +68,12 @@ public class SimpleGreetResource {
         return message;
     }
 
-
+    /**
+     * Returns a personalized greeting.
+     *
+     * @param name name to use in personalizing the greeting
+     * @return the personalized greeting
+     */
     @Path("/{name}")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
