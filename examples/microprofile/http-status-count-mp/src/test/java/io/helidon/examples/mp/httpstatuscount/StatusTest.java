@@ -44,11 +44,11 @@ public class StatusTest {
     @Inject
     private MetricRegistry metricRegistry;
 
-    private Counter[] STATUS_COUNTERS = new Counter[6];
+    private final Counter[] STATUS_COUNTERS = new Counter[6];
 
     @BeforeEach
     void findStatusMetrics() {
-        for (int i = 1; i < 6; i++) {
+        for (int i = 1; i < STATUS_COUNTERS.length; i++) {
             STATUS_COUNTERS[i] = metricRegistry.getCounters().get(new MetricID(HttpStatusMetricFilter.STATUS_COUNTER_NAME,
                                                                      new Tag(HttpStatusMetricFilter.STATUS_TAG_NAME, i + "xx")));
         }
