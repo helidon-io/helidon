@@ -74,7 +74,7 @@ public class StatusTest {
     @BeforeEach
     void findStatusMetrics() {
         metricRegistry = RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.APPLICATION);
-        for (int i = 1; i < 6; i++) {
+        for (int i = 1; i < STATUS_COUNTERS.length; i++) {
             STATUS_COUNTERS[i] = metricRegistry.counter(new MetricID(HttpStatusMetricService.STATUS_COUNTER_NAME,
                                                                      new Tag(HttpStatusMetricService.STATUS_TAG_NAME, i + "xx")));
         }

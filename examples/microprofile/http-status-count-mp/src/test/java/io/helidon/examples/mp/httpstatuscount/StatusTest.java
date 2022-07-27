@@ -47,7 +47,7 @@ public class StatusTest {
 
     @BeforeEach
     void findStatusMetrics() {
-        for (int i = 1; i < 6; i++) {
+        for (int i = 1; i < STATUS_COUNTERS.length; i++) {
             STATUS_COUNTERS[i] = metricRegistry.counter(new MetricID(HttpStatusMetricFilter.STATUS_COUNTER_NAME,
                                                                      new Tag(HttpStatusMetricFilter.STATUS_TAG_NAME, i + "xx")));
         }
