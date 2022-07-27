@@ -15,14 +15,15 @@
  */
 package io.helidon.examples.mp.httpstatuscount;
 
+import javax.inject.Inject;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+
 import io.helidon.common.http.Http;
 import io.helidon.microprofile.tests.junit5.AddBean;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 
-import jakarta.inject.Inject;
-import jakarta.ws.rs.client.WebTarget;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
@@ -48,7 +49,7 @@ public class StatusTest {
     @BeforeEach
     void findStatusMetrics() {
         for (int i = 1; i < 6; i++) {
-            STATUS_COUNTERS[i] = metricRegistry.counter(new MetricID(HttpStatusMetricFilter.STATUS_COUNTER_NAME,
+            STATUS_COUNTERS[i] = metricRegistry.getCounters().get(new MetricID(HttpStatusMetricFilter.STATUS_COUNTER_NAME,
                                                                      new Tag(HttpStatusMetricFilter.STATUS_TAG_NAME, i + "xx")));
         }
     }
