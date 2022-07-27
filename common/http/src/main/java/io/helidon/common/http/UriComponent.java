@@ -24,11 +24,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * Extracted from Jersey
  * <p>
  * Utility class for validating, encoding and decoding components of a URI.
- *
- * @author Paul Sandoz
- * @author Marek Potociar (marek.potociar at oracle.com)
  */
-final public class UriComponent {
+public final class UriComponent {
 
     private UriComponent() {
     }
