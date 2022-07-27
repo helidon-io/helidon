@@ -77,9 +77,10 @@ endif::[]
 As you plan and write Helidon components and applications,
 you make some choices about exactly how your code will use metrics.
 This document gives some background information,
-describes the choices you face, explains their ramifications, and provides some code examples.
+describes each option and its effect, and provides some code examples.
 
 == Usage
+This section helps you decide how incorporate metrics into your software by describing the categories of metrics usage, explaining generally how Helidon implements metrics, and illustrating how to write the metrics-related code accordingly.
 
 === Categorizing Metrics Usage
 We can place each Helidon component and Helidon application into one of three categories based on how it relies on metrics.
@@ -103,10 +104,10 @@ The type of module dictates the compile-time dependency you declare in the proje
 |metrics-dependent
 |===
 
-Whenever possible, if your component or app uses metrics write it as metrics-capable code.
+Whenever possible, if your component or application uses metrics, then write it as metrics-capable code.
 
 === Understanding the Two Metrics Implementations
-Helidon provides two metrics implementations.
+Helidon provides two metrics implementations:
 
 * _Full-featured_ metrics allows registering, removing, and updating metrics and observing metrics' changing values.
 The `helidon-metrics` component contains full-featured metrics.
@@ -292,8 +293,8 @@ Helidon returns either a full-featured `RegistryFactory` or a minimal one, depen
 // tag::writing-code-ending[]
 
 == Examples
-=== An Example: Docker Images
-Here is an example showing how useful metrics-capable code can be.
+
+Here is an example showing how useful metrics-capable code can be in the context of building Docker images.
 
 You (or others) could assemble a Docker image with your metrics-capable app as its top layer or your metrics-capable component in a middle layer, built on a lower  layer containing several Helidon modules including the full metrics implementation.
 When that Docker image runs, your app will run with full-featured metrics support.

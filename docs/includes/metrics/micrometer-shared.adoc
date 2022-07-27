@@ -124,7 +124,7 @@ Note that the first config example is equivalent to the default Helidon Micromet
 
 The configuration keys that are valid for the `builtin-registries` child entries depend on the type of Micrometer meter
 registry.
-For example, the Prometheus meter registry supports the `prefix` configuration setting but other meter registries might not and might support other settings.
+For example, support in Helidon for the link:{micrometer-javadoc-registry-prometheus-base-url}/PrometheusConfig.html[Prometheus meter registry] respects the `prefix` configuration setting but other meter registries might not and might support other settings.
 Refer to the documentation for the meter registry you want to configure to find out what items apply to that registry
 type.
 
