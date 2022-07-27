@@ -34,7 +34,7 @@
     <name>Helidon Examples Metrics HTTP Status Counters</name>
 
     <properties>
-        <helidon.version>3.0.0-RC2</helidon.version>
+        <helidon.version>2.5.2-SNAPSHOT</helidon.version>
     </properties>
 
     <dependencies>
