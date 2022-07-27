@@ -43,7 +43,7 @@ public class StatusTest {
     @Inject
     private MetricRegistry metricRegistry;
 
-    private Counter[] STATUS_COUNTERS = new Counter[6];
+    private final Counter[] STATUS_COUNTERS = new Counter[6];
 
     @BeforeEach
     void findStatusMetrics() {

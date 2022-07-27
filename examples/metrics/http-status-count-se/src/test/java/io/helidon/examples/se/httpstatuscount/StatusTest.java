@@ -45,9 +45,7 @@ public class StatusTest {
     private static WebServer webServer;
     private static WebClient webClient;
 
-    private Counter[] STATUS_COUNTERS = new Counter[6];
-
-    private MetricRegistry metricRegistry;
+    private final Counter[] STATUS_COUNTERS = new Counter[6];
 
     @BeforeAll
     static void init() {
@@ -73,7 +71,7 @@ public class StatusTest {
 
     @BeforeEach
     void findStatusMetrics() {
-        metricRegistry = RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.APPLICATION);
+        MetricRegistry metricRegistry = RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.APPLICATION);
         for (int i = 1; i < STATUS_COUNTERS.length; i++) {
             STATUS_COUNTERS[i] = metricRegistry.counter(new MetricID(HttpStatusMetricService.STATUS_COUNTER_NAME,
                                                                      new Tag(HttpStatusMetricService.STATUS_TAG_NAME, i + "xx")));
