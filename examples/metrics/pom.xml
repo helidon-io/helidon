@@ -35,6 +35,7 @@
         <module>exemplar</module>
         <module>kpi</module>
         <module>filtering</module>
+        <module>http-status-count-se</module>
     </modules>
 
 </project>
