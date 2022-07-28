@@ -24,18 +24,14 @@
     <parent>
         <groupId>io.helidon.applications</groupId>
         <artifactId>helidon-mp</artifactId>
-        <version>3.0.0-RC2</version>
-        <relativePath/>
+        <version>3.0.1-SNAPSHOT</version>
+        <relativePath>../../../applications/mp/pom.xml</relativePath>
     </parent>
     <groupId>io.helidon.examples</groupId>
     <artifactId>http-status-count-mp</artifactId>
     <version>1.0-SNAPSHOT</version>
 
     <name>Helidon Examples Metrics HTTP Status Counters</name>
-
-    <properties>
-        <helidon.version>3.0.0-RC2</helidon.version>
-    </properties>
 
     <dependencies>
         <dependency>
