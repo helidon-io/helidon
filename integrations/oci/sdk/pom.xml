@@ -32,15 +32,7 @@
     <name>Helidon Integrations OCI SDK Project</name>
 
     <modules>
+        <module>cdi</module>
     </modules>
-
-    <profiles>
-        <profile>
-            <id>oci-sdk-cdi</id>
-            <modules>
-                <module>cdi</module>
-            </modules>
-        </profile>
-    </profiles>
 
 </project>

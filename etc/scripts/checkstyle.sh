@@ -24,25 +24,17 @@
 # Setup error handling using default settings (defined in includes/error_handlers.sh)
 error_trap_setup
 
-# Load OCI-related functions. WS_DIR is already defined, so there is
-# no need to pass arguments.
-. $(dirname -- "${SCRIPT_PATH}")/includes/oci.sh
-
 readonly LOG_FILE=$(mktemp -t XXXcheckstyle-log)
 
 readonly RESULT_FILE=$(mktemp -t XXXcheckstyle-result)
 
 die() { echo "${1}" ; exit 1 ;}
 
-# Install OCI shaded full jar, if necessary. This is an idempotent
-# call.
-install_oci_shaded_full_jar
-
 mvn ${MAVEN_ARGS} checkstyle:checkstyle-aggregate \
     -f ${WS_DIR}/pom.xml \
     -Dcheckstyle.output.format="plain" \
     -Dcheckstyle.output.file="${RESULT_FILE}" \
-    -Pexamples,oci-sdk-cdi,ossrh-releases > ${LOG_FILE} 2>&1 || (cat ${LOG_FILE} ; exit 1)
+    -Pexamples,ossrh-releases > ${LOG_FILE} 2>&1 || (cat ${LOG_FILE} ; exit 1)
 
 grep "^\[ERROR\]" ${RESULT_FILE} \
     && die "CHECKSTYLE ERROR" || echo "CHECKSTYLE OK"
