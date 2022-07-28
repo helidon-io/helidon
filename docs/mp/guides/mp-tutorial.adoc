@@ -948,7 +948,7 @@ Add a new `Dockerfile` in the project root directory with the following content:
 [source,bash]
 .Dockerfile content
 ----
-FROM maven:3.6-jdk-11 as build <1>
+FROM maven:3.8.4-openjdk-17-slim as build <1>
 WORKDIR /helidon
 
 ADD pom.xml .
@@ -958,7 +958,7 @@ ADD src src
 RUN mvn package -DskipTests <3>
 RUN echo "done!"
 
-FROM openjdk:11-jre-slim <4>
+FROM openjdk:17-jdk-slim <4>
 WORKDIR /helidon
 
 COPY --from=build /helidon/target/helidon-mp-tutorial.jar ./ <5>

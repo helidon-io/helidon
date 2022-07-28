@@ -56,10 +56,18 @@
                     <list key="readme-sections">
                         <value order="50" template="mustache">
                             <![CDATA[
-## Build the Docker Image
+## Building the Docker Image
 ```
 docker build -t {{artifactId}} .
 ```
+
+## Running the Docker Image
+
+```
+docker run --rm -p 8080:8080 {{artifactId}}:latest
+```
+
+Exercise the application as described above.
                                 ]]>
                         </value>
                         <value template="mustache" if="${native-image}">
