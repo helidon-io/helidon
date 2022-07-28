@@ -65,7 +65,7 @@ class MethodIntrospector {
                         .stream()
                         .filter(am -> am.getJavaMember().equals(method))
                         .findFirst();
-        this.annotatedMethod = annotatedMethodOptional.orElseThrow();
+        this.annotatedMethod = annotatedMethodOptional.orElse(new FtAnnotatedMethod(method));
 
         this.retry = isAnnotationEnabled(Retry.class) ? new RetryAntn(annotatedMethod) : null;
         this.circuitBreaker = isAnnotationEnabled(CircuitBreaker.class)
