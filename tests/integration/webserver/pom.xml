@@ -36,5 +36,6 @@
 
     <modules>
         <module>gh2631</module>
+        <module>context-propagation</module>
     </modules>
 </project>

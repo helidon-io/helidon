@@ -59,6 +59,11 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.helidon.webserver</groupId>
+                <artifactId>helidon-webserver-context-propagation</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.helidon.metrics</groupId>
                 <artifactId>helidon-metrics-prometheus</artifactId>
                 <version>${helidon.version}</version>
@@ -128,6 +133,11 @@
             <dependency>
                 <groupId>io.helidon.webclient</groupId>
                 <artifactId>helidon-webclient-security</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.webclient</groupId>
+                <artifactId>helidon-webclient-context-propagation</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <!-- Fault tolerance -->

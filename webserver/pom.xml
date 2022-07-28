@@ -40,5 +40,6 @@
         <module>tyrus</module>
         <module>cors</module>
         <module>static-content</module>
+        <module>context-propagation</module>
     </modules>
 </project>
