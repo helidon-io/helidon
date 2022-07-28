@@ -103,11 +103,26 @@
     },
     {
         "name": "java.time.Instant",
+        "allPublicConstructors": true,
+        "allPublicMethods": true,
+        "allPublicFields": true,
         "methods": [
             {
                 "name": "now",
                 "parameterTypes": []
             }
         ]
+    },
+    {
+        "name": "java.time.temporal.ChronoUnit",
+        "allPublicConstructors": true,
+        "allPublicMethods": true,
+        "allPublicFields": true
+    },
+    {
+        "name": "java.time.temporal.Temporal",
+        "allPublicConstructors": true,
+        "allPublicMethods": true,
+        "allPublicFields": true
     }
 ]
