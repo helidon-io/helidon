@@ -28,7 +28,7 @@ import org.eclipse.microprofile.rest.client.annotation.RegisterProvider;
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 
 /**
- * RestClient interfaces that includes a few FT annotations.
+ * RestClient interface for a simple greet resource that includes a few FT annotations.
  */
 @Path("/greet")
 @RegisterProvider(GreetResourceFilter.class)

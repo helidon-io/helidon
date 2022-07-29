@@ -25,6 +25,9 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import java.util.Collections;
 
+/**
+ * A typical greet resource that only handles a single GET for a default message.
+ */
 @Path("/greet")
 public class GreetResource {
 
