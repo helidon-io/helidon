@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -110,7 +110,10 @@ class InterceptionRunnerImpl implements InterceptionRunner {
                     RuntimeException::new);
         }
         if (escapingException != null) {
-            LOGGER.log(Level.WARNING, ERROR_DURING_INTERCEPTION, escapingException);
+            // this exception is to be handled by JAX-RS after reported here, it should not be logged automatically
+            if (LOGGER.isLoggable(Level.FINE)) {
+                LOGGER.log(Level.FINE, ERROR_DURING_INTERCEPTION, escapingException);
+            }
             throw escapingException;
         }
         return result;
