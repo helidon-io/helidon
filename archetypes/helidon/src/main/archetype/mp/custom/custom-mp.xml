@@ -30,12 +30,6 @@
     <exec src="/mp/custom/database.xml"/>
     <exec src="/mp/common/common-mp.xml"/>
     <output>
-        <files if="${security}">
-            <directory>files</directory>
-            <includes>
-                <include if="${security.atn} contains 'http-signature'">src/*/resources/keystore.p12</include>
-            </includes>
-        </files>
         <model>
             <value key="helidon-test">true</value>
             <value key="readme-description">Minimal Helidon MP project suitable to start from scratch.</value>
