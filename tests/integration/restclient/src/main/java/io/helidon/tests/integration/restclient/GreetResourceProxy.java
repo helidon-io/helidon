@@ -29,6 +29,11 @@ import javax.ws.rs.core.UriInfo;
 import org.eclipse.microprofile.rest.client.RestClientBuilder;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 
+/**
+ * A greet resource proxy class that forwards calls to the real greet service
+ * using a RestClient proxy. It tries both a proxy built manually as well as
+ * one injected into this class.
+ */
 @Path("/proxy")
 public class GreetResourceProxy {
 

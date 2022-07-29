@@ -24,7 +24,9 @@ import java.io.IOException;
 import java.net.URI;
 
 /**
- * Replaces 8080 port by ephemeral port allocated for the webserver.
+ * A client request filter that replaces port 8080 by the ephemeral port allocated for the
+ * webserver in each run. This is necessary since {@link GreetResourceClient} uses an annotation
+ * to specify the base URI, and its value cannot be changed dynamically.
  */
 public class GreetResourceFilter implements ClientRequestFilter  {
 
