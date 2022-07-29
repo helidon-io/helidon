@@ -5,7 +5,7 @@ A basic example gRPC server.
 ## Build and run
 
 ```bash
-mvn package
+mvn -f ../pom.xml -pl common,basics package
 java -jar target/helidon-examples-grpc-basics.jar
 ```
 
@@ -15,6 +15,10 @@ java -cp target/helidon-examples-grpc-basics.jar \
     io.helidon.grpc.examples.basics.HealthClient
 ```
 
-The HealthClient will report a SERVING status for the
-first check, and a NOT_FOUND status for a non-existent
-service.
+The HealthClient will give this output:
+```bash
+GreetService response -> status: SERVING
+
+FooService StatusRuntimeException.getMessage() -> NOT_FOUND: Service 'FooService' does not exist or does not have a registered health check
+
+```
