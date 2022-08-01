@@ -21,7 +21,6 @@
 :common-page-prefix-inc: ../../shared/common_prereqs/common_prereqs.adoc
 //:helidon-tag: https://github.com/oracle/helidon/tree/{helidon-version}
 //:thread-pool-example-link: {helidon-tag}/examples/webserver/threadpool
-:h1Prefix: MP
 
 // tag::intro[]
 

@@ -24,6 +24,7 @@
 :common-guides: ../../common/guides
 :metrics-common: {common-guides}/metrics.adoc
 :lower-case-flavor: mp
+:upper-case-flavor: MP
 :intro-project-name: MicroProfile (MP)
 :helidon-tag: https://github.com/oracle/helidon/tree/{helidon-version}
 :thread-pool-example-link: {helidon-tag}/examples/webserver/threadpool
