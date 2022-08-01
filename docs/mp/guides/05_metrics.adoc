@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@
 :common-guides: ../../common/guides
 :metrics-common: {common-guides}/metrics.adoc
 :lower-case-flavor: mp
+:upper-case-flavor: MP
 :intro-project-name: MicroProfile (MP)
 :helidon-tag: https://github.com/oracle/helidon/tree/{helidon-version}
 :thread-pool-example-link: {helidon-tag}/examples/webserver/threadpool
