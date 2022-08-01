@@ -25,6 +25,7 @@ module io.helidon.webserver.websocket {
 
     requires java.logging;
     requires transitive io.helidon.webserver;
+    requires io.helidon.common.http;
     requires transitive jakarta.websocket;
     requires io.netty.transport;
     requires io.netty.handler;

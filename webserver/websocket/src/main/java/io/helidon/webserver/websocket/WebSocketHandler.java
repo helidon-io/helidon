@@ -20,13 +20,17 @@ package io.helidon.webserver.websocket;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.ByteBuffer;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import io.helidon.common.http.Parameters;
+import io.helidon.common.http.UriComponent;
 import io.helidon.common.reactive.BufferedEmittingPublisher;
 import io.helidon.common.reactive.Multi;
 
@@ -60,6 +64,7 @@ class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
 
     private final WebSocketEngine engine;
     private final String path;
+    private final String queryString;
     private final FullHttpRequest upgradeRequest;
     private final HttpHeaders upgradeResponseHeaders;
     private final WebSocketRouting webSocketRouting;
@@ -72,7 +77,14 @@ class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
                             FullHttpRequest upgradeRequest,
                             HttpHeaders upgradeResponseHeaders,
                             WebSocketRouting webSocketRouting) {
-        this.path = path;
+        int k = path.indexOf('?');
+        if (k > 0) {
+            this.path = path.substring(0, k);
+            this.queryString = path.substring(k + 1);
+        } else {
+            this.path = path;
+            this.queryString = "";
+        }
         this.upgradeRequest = upgradeRequest;
         this.upgradeResponseHeaders = upgradeResponseHeaders;
         this.webSocketRouting = webSocketRouting;
@@ -166,11 +178,16 @@ class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
 
     WebSocketEngine.UpgradeInfo upgrade(ChannelHandlerContext ctx) {
         LOGGER.fine("Initiating WebSocket handshake ...");
-        // Create Tyrus request context and copy request headers
+
+        // Create Tyrus request context, copy request headers and query params
+        Map<String, String[]> paramsMap = new HashMap<>();
+        Parameters params = UriComponent.decodeQuery(queryString, true);
+        params.toMap().forEach((key, value) -> paramsMap.put(key, value.toArray(new String[0])));
         RequestContext requestContext = RequestContext.Builder.create()
                 .requestURI(URI.create(path))      // excludes context path
+                .queryString(queryString)
+                .parameterMap(paramsMap)
                 .build();
-
         upgradeRequest.headers().forEach(e -> requestContext.getHeaders().put(e.getKey(), List.of(e.getValue())));
 
         // Use Tyrus to process a WebSocket upgrade request
