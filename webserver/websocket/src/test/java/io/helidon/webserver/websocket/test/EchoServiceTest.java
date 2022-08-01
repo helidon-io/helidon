@@ -37,7 +37,7 @@ public class EchoServiceTest extends TyrusSupportBaseTest {
     @Test
     public void testEchoSingle() {
         try {
-            URI uri = URI.create("ws://localhost:" + webServer().port() + "/tyrus/echo");
+            URI uri = URI.create("ws://localhost:" + webServer().port() + "/tyrus/echo?user=Helidon");
             new EchoClient(uri).echo("One");
         } catch (Exception e) {
             fail("Unexpected exception " + e);
@@ -47,7 +47,7 @@ public class EchoServiceTest extends TyrusSupportBaseTest {
     @Test
     public void testEchoMultiple() {
         try {
-            URI uri = URI.create("ws://localhost:" + webServer().port() + "/tyrus/echo");
+            URI uri = URI.create("ws://localhost:" + webServer().port() + "/tyrus/echo?user=Helidon");
             new EchoClient(uri).echo("One", "Two", "Three");
         } catch (Exception e) {
             fail("Unexpected exception " + e);

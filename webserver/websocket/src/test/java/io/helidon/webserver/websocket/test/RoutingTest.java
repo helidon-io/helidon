@@ -37,7 +37,7 @@ public class RoutingTest extends TyrusSupportBaseTest {
     @Test
     public void testEcho() {
         try {
-            URI uri = URI.create("ws://localhost:" + webServer().port() + "/tyrus/echo");
+            URI uri = URI.create("ws://localhost:" + webServer().port() + "/tyrus/echo?user=Helidon");
             new EchoClient(uri).echo("One");
         } catch (Exception e) {
             fail("Unexpected exception " + e);
@@ -47,7 +47,7 @@ public class RoutingTest extends TyrusSupportBaseTest {
     @Test
     public void testDoubleEcho() {
         try {
-            URI uri = URI.create("ws://localhost:" + webServer().port() + "/tyrus/doubleEcho");
+            URI uri = URI.create("ws://localhost:" + webServer().port() + "/tyrus/doubleEcho?user=Helidon");
             new EchoClient(uri, (s1, s2) -> s2.equals(s1 + s1)).echo("One");
         } catch (Exception e) {
             fail("Unexpected exception " + e);

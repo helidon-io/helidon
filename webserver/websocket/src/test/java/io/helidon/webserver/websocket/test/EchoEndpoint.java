@@ -63,6 +63,24 @@ public class EchoEndpoint {
         }
     }
 
+    /**
+     * Verify session includes expected query params.
+     *
+     * @param session Websocket session.
+     * @param logger A logger.
+     * @throws IOException Exception during close.
+     */
+    private static void verifyQueryParams(Session session, Logger logger) throws IOException {
+        if (!"user=Helidon".equals(session.getQueryString())) {
+            logger.warning("Websocket session does not include required query params");
+            session.close();
+        }
+        if (!session.getRequestParameterMap().get("user").get(0).equals("Helidon")) {
+            logger.warning("Websocket session does not include required query parameter map");
+            session.close();
+        }
+    }
+
     public static class ServerConfigurator extends ServerEndpointConfig.Configurator {
 
         @Override
@@ -77,6 +95,7 @@ public class EchoEndpoint {
     public void onOpen(Session session) throws IOException {
         LOGGER.info("OnOpen called");
         verifyRunningThread(session, LOGGER);
+        verifyQueryParams(session, LOGGER);
         if (!modifyHandshakeCalled.get()) {
             session.close();        // unexpected
         }
@@ -86,6 +105,7 @@ public class EchoEndpoint {
     public void echo(Session session, String message) throws Exception {
         LOGGER.info("Endpoint OnMessage called '" + message + "'");
         verifyRunningThread(session, LOGGER);
+        verifyQueryParams(session, LOGGER);
         if (!isDecoded(message)) {
             throw new InternalError("Message has not been decoded");
         }
@@ -102,6 +122,7 @@ public class EchoEndpoint {
     public void onClose(Session session) throws IOException {
         LOGGER.info("OnClose called");
         verifyRunningThread(session, LOGGER);
+        verifyQueryParams(session, LOGGER);
         modifyHandshakeCalled.set(false);
     }
 }
