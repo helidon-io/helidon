@@ -70,7 +70,7 @@ import org.eclipse.microprofile.config.spi.Converter;
 
 /**
  * Extension to enable config injection in CDI container (all of {@link io.helidon.config.Config},
- * {@link org.eclipse.microprofile.config.Config} and {@link ConfigProperty}).
+ * {@link org.eclipse.microprofile.config.Config} and {@link ConfigProperty} and {@link ConfigProperties}).
  */
 public class ConfigCdiExtension implements Extension {
     private static final Logger LOGGER = Logger.getLogger(ConfigCdiExtension.class.getName());
