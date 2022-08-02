@@ -17,7 +17,9 @@
 
 -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
     <parent>
@@ -39,8 +41,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-        <surefire.argLine>-Xmx1024m -Dfile.encoding=UTF-8</surefire.argLine>
-        <failsafe.argLine>-Xmx1024m -Dfile.encoding=UTF-8</failsafe.argLine>
+        <surefire.argLine>-Xmx1024m -Dfile.encoding=UTF-8 --enable-preview</surefire.argLine>
+        <failsafe.argLine>-Xmx1024m -Dfile.encoding=UTF-8 --enable-preview</failsafe.argLine>
         <surefire.coverage.argline />
         <failsafe.coverage.argline />
 
@@ -1552,35 +1554,6 @@ helidon-parent,helidon-dependencies,helidon-bom,helidon-se,helidon-mp,io.grpc,he
                         </executions>
                     </plugin>
                 </plugins>
-            </build>
-        </profile>
-        <profile>
-            <id>loom</id>
-            <activation>
-                <jdk>18-loom</jdk>
-            </activation>
-            <build>
-                <pluginManagement>
-                    <plugins>
-                        <plugin>
-                            <groupId>org.apache.maven.plugins</groupId>
-                            <artifactId>maven-compiler-plugin</artifactId>
-                            <configuration>
-                                <source>18</source>
-                                <target>18</target>
-                                <release>18</release>
-                            </configuration>
-                        </plugin>
-                        <plugin>
-                            <groupId>org.apache.maven.plugins</groupId>
-                            <artifactId>maven-javadoc-plugin</artifactId>
-                            <configuration>
-                                <source>18</source>
-                                <release>18</release>
-                            </configuration>
-                        </plugin>
-                    </plugins>
-                </pluginManagement>
             </build>
         </profile>
     </profiles>
