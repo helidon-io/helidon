@@ -76,7 +76,7 @@ if [ -z "${__PIPELINE_ENV_INCLUDED__}" ]; then
         # Needed for generating site
         MAVEN_OPTS="${MAVEN_OPTS} --add-opens=java.desktop/com.sun.imageio.plugins.png=ALL-UNNAMED"
         export MAVEN_OPTS
-        export PATH="/tools/apache-maven-3.6.3/bin:${JAVA_HOME}/bin:/tools/node-v12/bin:${PATH}"
+        export PATH="/tools/apache-maven-3.8.6/bin:${JAVA_HOME}/bin:/tools/node-v12/bin:${PATH}"
         if [ -n "${GITHUB_SSH_KEY}" ] ; then
             export GIT_SSH_COMMAND="ssh -i ${GITHUB_SSH_KEY}"
         fi
