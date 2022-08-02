@@ -27,12 +27,12 @@
 if [ -z "${WS_DIR}" ]; then
 
     if [ -z "${1}" ]; then
-        echo "ERROR: Missing required script path, exitting"
+        echo "ERROR: Missing required script path, exiting"
         exit 1
     fi
 
     if [ -z "${2}" ]; then
-        echo "ERROR: Missing required cd to Helidon root directory from script path, exitting"
+        echo "ERROR: Missing required cd to Helidon root directory from script path, exiting"
         exit 1
     fi
 
@@ -67,7 +67,7 @@ if [ -z "${__PIPELINE_ENV_INCLUDED__}" ]; then
 
     if [ -n "${JENKINS_HOME}" ] ; then
         export PIPELINE="true"
-        export JAVA_HOME="/tools/jdk17"
+        export JAVA_HOME="/tools/jdk-19"
         MAVEN_OPTS="${MAVEN_OPTS} -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
         MAVEN_OPTS="${MAVEN_OPTS} -Dorg.slf4j.simpleLogger.showDateTime=true"
         MAVEN_OPTS="${MAVEN_OPTS} -Dorg.slf4j.simpleLogger.dateTimeFormat=HH:mm:ss,SSS"

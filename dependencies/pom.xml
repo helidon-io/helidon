@@ -40,7 +40,7 @@
         <version.lib.animal-sniffer>1.18</version.lib.animal-sniffer>
         <version.lib.annotation-api>1.3.5</version.lib.annotation-api>
         <version.lib.brave-opentracing>1.0.0</version.lib.brave-opentracing>
-        <version.lib.byte-buddy>1.11.20</version.lib.byte-buddy>
+        <version.lib.byte-buddy>1.12.13</version.lib.byte-buddy>
         <version.lib.reactivestreams>1.0.3</version.lib.reactivestreams>
         <version.lib.commons-logging>1.2</version.lib.commons-logging>
         <version.lib.cron-utils>9.1.6</version.lib.cron-utils>
