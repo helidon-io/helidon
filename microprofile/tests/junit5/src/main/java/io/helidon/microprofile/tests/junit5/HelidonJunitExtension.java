@@ -134,7 +134,7 @@ class HelidonJunitExtension implements BeforeAllCallback,
 
         configure(classLevelConfigMeta);
 
-        if (!classLevelConfigMeta.useExisting) {
+        if (!classLevelConfigMeta.useExisting && container == null) {
             // the container startup is delayed in case we `useExisting`, so the is first set up by the user
             // when we do not need to `useExisting`, we want to start early, so parameterized test method sources that use CDI
             // can work
@@ -315,6 +315,8 @@ class HelidonJunitExtension implements BeforeAllCallback,
                                 List<AddExtension> extensionAnnotations,
                                 boolean disableDiscovery) {
 
+        System.setProperty("mp.initializer.allow", "true");
+
         // now let's prepare the CDI bootstrapping
         SeContainerInitializer initializer = SeContainerInitializer.newInstance();
 
@@ -355,6 +357,8 @@ class HelidonJunitExtension implements BeforeAllCallback,
                                                ReflectiveInvocationContext<Constructor<T>> invocationContext,
                                                ExtensionContext extensionContext) throws Throwable {
 
+        testClass = extensionContext.getRequiredTestClass();
+
         if (resetPerTest) {
             // Junit creates test instance
             return invocation.proceed();
@@ -389,6 +393,7 @@ class HelidonJunitExtension implements BeforeAllCallback,
             // we need to start container before the test class is instantiated, to honor @BeforeAll that
             // creates a custom MP config
             if (container == null) {
+                //.getRequiredTestClass()
                 startContainer(classLevelBeans, classLevelExtensions, classLevelDisableDiscovery);
             }
         }
