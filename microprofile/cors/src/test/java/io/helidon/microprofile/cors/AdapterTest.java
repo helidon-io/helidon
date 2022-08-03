@@ -12,12 +12,16 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */package io.helidon.microprofile.cors;
+ */
+package io.helidon.microprofile.cors;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+
+import io.helidon.common.http.Http;
+import io.helidon.microprofile.tests.junit5.AddBean;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.RequestScoped;
@@ -30,10 +34,6 @@ import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.core.Application;
 import jakarta.ws.rs.core.Response;
-
-import io.helidon.common.http.Http;
-import io.helidon.microprofile.tests.junit5.AddBean;
-
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
