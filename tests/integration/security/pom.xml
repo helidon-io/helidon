@@ -38,6 +38,7 @@
         <module>gh1487</module>
         <module>gh2297</module>
         <module>gh2455</module>
+        <module>gh2772</module>
         <module>path-params</module>
         <module>security-response-mapper</module>
     </modules>
