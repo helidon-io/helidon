@@ -19,7 +19,9 @@ package io.helidon.security.providers.oidc.common;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.fail;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.net.URI;
 import java.util.Arrays;
@@ -30,6 +32,7 @@ import java.util.Map;
  */
 class OidcConfigFromBuilderTest extends OidcConfigAbstractTest {
     private OidcConfig oidcConfig;
+    private String cookieEncryptionPasswordValue;
 
     OidcConfigFromBuilderTest() {
         oidcConfig = OidcConfig.builder()
@@ -53,24 +56,26 @@ class OidcConfigFromBuilderTest extends OidcConfigAbstractTest {
 
     @Test
     void testCookieEncryptionPasswordFromBuilderConfig() {
-        // Allow a String
-        getBuilder(Map.of("cookie-encryption-password", "PasswordString"));
-        // Don't allow empty password values
-        for (String passwordValue : Arrays.asList("", "    ")) {
-            try {
-                getBuilder(Map.of("cookie-encryption-password", passwordValue));
-                fail("Empty value for cookie-encryption-password is not allowed");
-            } catch (IllegalArgumentException ie) {
-                // this is expected
-            }
+        OidcConfig.Builder builder = new TestOidcConfigBuilder();
+        for (String passwordValue : Arrays.asList("PasswordString", "", "   ")) {
+            builder.config(Config.builder()
+                    .sources(ConfigSources.create(Map.of("cookie-encryption-password", passwordValue)))
+                    .build()
+            );
+            assertThat(cookieEncryptionPasswordValue, is(passwordValue));
+            // reset the value
+            cookieEncryptionPasswordValue = null;
         }
     }
 
-    private OidcConfig.Builder getBuilder(Map<String, String> map) {
-        return OidcConfig.builder().config(
-                Config.builder()
-                        .sources(ConfigSources.create(map))
-                        .build()
-                );
+    // Stub the Builder class to be able to retrieve the cookie-encryption-password value
+    private class TestOidcConfigBuilder extends OidcConfig.Builder {
+        // Stub the method to be able to store the cookie-encryption-password to a variable for later retrieval
+        @Override
+        public OidcConfig.Builder cookieEncryptionPassword(char[] cookieEncryptionPassword) {
+            cookieEncryptionPasswordValue = String.valueOf(cookieEncryptionPassword);
+            super.cookieEncryptionPassword(cookieEncryptionPassword);
+            return this;
+        }
     }
 }
