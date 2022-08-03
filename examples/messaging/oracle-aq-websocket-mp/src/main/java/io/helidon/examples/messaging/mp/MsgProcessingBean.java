@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import java.util.concurrent.SubmissionPublisher;
 import io.helidon.common.reactive.BufferedEmittingPublisher;
 import io.helidon.common.reactive.Multi;
 import io.helidon.messaging.connectors.aq.AqMessage;
+import io.helidon.microprofile.server.Server;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.jms.JMSException;
@@ -90,9 +91,10 @@ public class MsgProcessingBean {
      * @param msg Message to broadcast
      */
     @Incoming("from-queue-2")
-    public void fromSecondQueue(AqMessage<String> msg) {
+    public CompletionStage<Void> fromSecondQueue(AqMessage<String> msg) {
         // Broadcast to all subscribers
         broadCaster.submit(msg.getPayload());
+        return CompletableFuture.completedFuture(null);
     }
 
     /**
