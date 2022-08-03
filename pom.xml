@@ -587,7 +587,7 @@
                     <version>${version.plugin.protobuf}</version>
                     <configuration>
                         <!--suppress UnresolvedMavenProperty -->
-                        <protocArtifact>com.google.protobuf:protoc:3.17.3:exe:${os.detected.classifier}</protocArtifact>
+                        <protocArtifact>com.google.protobuf:protoc:${version.lib.google-protobuf}:exe:${os.detected.classifier}</protocArtifact>
                         <pluginId>grpc-java</pluginId>
                         <!--suppress UnresolvedMavenProperty -->
                         <pluginArtifact>
