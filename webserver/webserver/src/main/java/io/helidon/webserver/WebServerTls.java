@@ -176,7 +176,7 @@ public final class WebServerTls {
         public Builder config(Config config) {
             config.get("enabled").asBoolean().ifPresent(this::enabled);
 
-            if (!enabled) {
+            if (explicitEnabled != null && !explicitEnabled) {
                 return this;
             }
 
