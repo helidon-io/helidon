@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+# Copyright (c) 2018, 2022 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -67,7 +67,7 @@ if [ -z "${__PIPELINE_ENV_INCLUDED__}" ]; then
 
     if [ -n "${JENKINS_HOME}" ] ; then
         export PIPELINE="true"
-        export JAVA_HOME="/tools/jdk-17"
+        export JAVA_HOME="/tools/jdk17"
         MAVEN_OPTS="${MAVEN_OPTS} -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
         MAVEN_OPTS="${MAVEN_OPTS} -Dorg.slf4j.simpleLogger.showDateTime=true"
         MAVEN_OPTS="${MAVEN_OPTS} -Dorg.slf4j.simpleLogger.dateTimeFormat=HH:mm:ss,SSS"
