@@ -294,7 +294,7 @@ Helidon returns either a full-featured `RegistryFactory` or a minimal one, depen
 
 == Examples
 
-Here is an example showing how useful metrics-capable code can be in the context of building Docker images.
+The following example shows how useful metrics-capable code can be in the context of building Docker images.
 
 You (or others) could assemble a Docker image with your metrics-capable app as its top layer or your metrics-capable component in a middle layer, built on a lower  layer containing several Helidon modules including the full metrics implementation.
 When that Docker image runs, your app will run with full-featured metrics support.
