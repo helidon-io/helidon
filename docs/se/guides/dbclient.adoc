@@ -155,7 +155,6 @@ Select `Generic H2` from `Saved Settings`. The following settings should be set 
 
 Password must stay empty. Click **Connect**, the browser displays a web page. The database is correctly set and running.
 
-image::images/guides/h2-login.png[H2 login]
 
 === Create a Sample SE Project Using Maven Archetype
 
