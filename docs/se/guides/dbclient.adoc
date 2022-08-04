@@ -135,7 +135,7 @@ java -jar h2-\{latest-version}.jar -webAllowOthers -tcpAllowOthers
 
 
 [source,bash]
-.Print the terminal output
+.Terminal output
 ----
 Web Console server running at http://127.0.1.1:8082 (others can connect)
 Opening in existing browser session.
@@ -155,7 +155,7 @@ Select `Generic H2` from `Saved Settings`. The following settings should be set 
 
 Password must stay empty. Click **Connect**, the browser displays a web page. The database is correctly set and running.
 
-image::images/h2-login.png[H2 login]
+image::images/guides/h2-login.png[H2 login]
 
 === Create a Sample SE Project Using Maven Archetype
 
