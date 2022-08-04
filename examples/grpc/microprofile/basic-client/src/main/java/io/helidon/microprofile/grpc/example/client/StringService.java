@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.util.stream.Stream;
 import io.helidon.microprofile.grpc.core.Bidirectional;
 import io.helidon.microprofile.grpc.core.ClientStreaming;
 import io.helidon.microprofile.grpc.core.Grpc;
+import io.helidon.microprofile.grpc.core.GrpcMarshaller;
 import io.helidon.microprofile.grpc.core.ServerStreaming;
 import io.helidon.microprofile.grpc.core.Unary;
 
@@ -33,6 +34,7 @@ import io.grpc.stub.StreamObserver;
  * so that it will be discovered and loaded using CDI when the MP gRPC server starts.
  */
 @Grpc
+@GrpcMarshaller("jsonb")
 @SuppressWarnings("CdiManagedBeanInconsistencyInspection")
 public interface StringService {
 

@@ -202,7 +202,7 @@ class TracerBuilderTest {
 
         @Override
         public Tracer build() {
-            tracer = new NoOpTracer();
+            tracer = NoOpTracer.instance();
             return tracer;
         }
     }

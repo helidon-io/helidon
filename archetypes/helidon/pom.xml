@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.archetypes</groupId>
         <artifactId>helidon-archetypes-project</artifactId>
-        <version>3.0.0-SNAPSHOT</version>
+        <version>3.0.1-SNAPSHOT</version>
     </parent>
     <packaging>helidon-archetype</packaging>
     <artifactId>helidon</artifactId>
@@ -47,12 +47,14 @@
                 <groupId>io.helidon.build-tools</groupId>
                 <artifactId>helidon-archetype-maven-plugin</artifactId>
                 <configuration>
+                    <mavenArchetypeCompatible>false</mavenArchetypeCompatible>
                     <entrypoint>
                         <variables>
                             <text path="helidon-version" transient="true">${project.version}</text>
                         </variables>
                         <exec src="flavor.xml"/>
                     </entrypoint>
+                    <inputFiltersFile>filters.properties</inputFiltersFile>
                 </configuration>
             </plugin>
             <plugin>

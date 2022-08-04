@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,23 +18,34 @@ package io.helidon.examples.integrations.oci.vault.cdi;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Optional;
+import java.util.Date;
 
 import io.helidon.common.Base64Value;
-import io.helidon.integrations.oci.vault.CreateSecret;
-import io.helidon.integrations.oci.vault.Decrypt;
-import io.helidon.integrations.oci.vault.DeleteSecret;
-import io.helidon.integrations.oci.vault.Encrypt;
-import io.helidon.integrations.oci.vault.GetSecretBundle;
-import io.helidon.integrations.oci.vault.OciVault;
-import io.helidon.integrations.oci.vault.Sign;
-import io.helidon.integrations.oci.vault.Verify;
 
+import com.oracle.bmc.keymanagement.KmsCrypto;
+import com.oracle.bmc.keymanagement.model.DecryptDataDetails;
+import com.oracle.bmc.keymanagement.model.EncryptDataDetails;
+import com.oracle.bmc.keymanagement.model.SignDataDetails;
+import com.oracle.bmc.keymanagement.model.VerifyDataDetails;
+import com.oracle.bmc.keymanagement.requests.DecryptRequest;
+import com.oracle.bmc.keymanagement.requests.EncryptRequest;
+import com.oracle.bmc.keymanagement.requests.SignRequest;
+import com.oracle.bmc.keymanagement.requests.VerifyRequest;
+import com.oracle.bmc.secrets.Secrets;
+import com.oracle.bmc.secrets.model.Base64SecretBundleContentDetails;
+import com.oracle.bmc.secrets.model.SecretBundleContentDetails;
+import com.oracle.bmc.secrets.requests.GetSecretBundleRequest;
+import com.oracle.bmc.vault.Vaults;
+import com.oracle.bmc.vault.model.Base64SecretContentDetails;
+import com.oracle.bmc.vault.model.CreateSecretDetails;
+import com.oracle.bmc.vault.model.ScheduleSecretDeletionDetails;
+import com.oracle.bmc.vault.model.SecretContentDetails;
+import com.oracle.bmc.vault.requests.CreateSecretRequest;
+import com.oracle.bmc.vault.requests.ScheduleSecretDeletionRequest;
 import jakarta.inject.Inject;
-import jakarta.inject.Named;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
-import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.InternalServerErrorException;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
@@ -45,23 +56,29 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
  */
 @Path("/vault")
 public class VaultResource {
-    private final OciVault vault;
+    private final Secrets secrets;
+    private final KmsCrypto crypto;
+    private final Vaults vaults;
     private final String vaultOcid;
     private final String compartmentOcid;
     private final String encryptionKeyOcid;
     private final String signatureKeyOcid;
 
     @Inject
-    VaultResource(@Named("custom") OciVault vault,
+    VaultResource(Secrets secrets,
+                  KmsCrypto crypto,
+                  Vaults vaults,
                   @ConfigProperty(name = "app.vault.vault-ocid")
-                          String vaultOcid,
+                  String vaultOcid,
                   @ConfigProperty(name = "app.vault.compartment-ocid")
-                          String compartmentOcid,
+                  String compartmentOcid,
                   @ConfigProperty(name = "app.vault.encryption-key-ocid")
-                          String encryptionKeyOcid,
+                  String encryptionKeyOcid,
                   @ConfigProperty(name = "app.vault.signature-key-ocid")
-                          String signatureKeyOcid) {
-        this.vault = vault;
+                  String signatureKeyOcid) {
+        this.secrets = secrets;
+        this.crypto = crypto;
+        this.vaults = vaults;
         this.vaultOcid = vaultOcid;
         this.compartmentOcid = compartmentOcid;
         this.encryptionKeyOcid = encryptionKeyOcid;
@@ -77,10 +94,14 @@ public class VaultResource {
     @GET
     @Path("/encrypt/{text}")
     public String encrypt(@PathParam("text") String secret) {
-        return vault.encrypt(Encrypt.Request.builder()
-                                     .keyId(encryptionKeyOcid)
-                                     .data(Base64Value.create(secret)))
-                .cipherText();
+        return crypto.encrypt(EncryptRequest.builder()
+                                      .encryptDataDetails(EncryptDataDetails.builder()
+                                                                  .keyId(encryptionKeyOcid)
+                                                                  .plaintext(Base64Value.create(secret).toBase64())
+                                                                  .build())
+                                      .build())
+                .getEncryptedData()
+                .getCiphertext();
     }
 
     /**
@@ -92,10 +113,14 @@ public class VaultResource {
     @GET
     @Path("/decrypt/{text: .*}")
     public String decrypt(@PathParam("text") String cipherText) {
-        return vault.decrypt(Decrypt.Request.builder()
-                                     .keyId(encryptionKeyOcid)
-                                     .cipherText(cipherText))
-                .decrypted()
+        return Base64Value.createFromEncoded(crypto.decrypt(DecryptRequest.builder()
+                                                                    .decryptDataDetails(DecryptDataDetails.builder()
+                                                                                                .keyId(encryptionKeyOcid)
+                                                                                                .ciphertext(cipherText)
+                                                                                                .build())
+                                                                    .build())
+                                                     .getDecryptedData()
+                                                     .getPlaintext())
                 .toDecodedString();
     }
 
@@ -108,31 +133,40 @@ public class VaultResource {
     @GET
     @Path("/sign/{text}")
     public String sign(@PathParam("text") String dataToSign) {
-        return vault.sign(Sign.Request.builder()
-                                  .keyId(signatureKeyOcid)
-                                  .algorithm(Sign.Request.ALGORITHM_SHA_224_RSA_PKCS_PSS)
-                                  .message(Base64Value.create(dataToSign)))
-                .signature()
-                .toBase64();
+        return crypto.sign(SignRequest.builder()
+                                   .signDataDetails(SignDataDetails.builder()
+                                                            .keyId(signatureKeyOcid)
+                                                            .signingAlgorithm(SignDataDetails.SigningAlgorithm.Sha224RsaPkcsPss)
+                                                            .message(Base64Value.create(dataToSign).toBase64())
+                                                            .build())
+                                   .build())
+                .getSignedData()
+                .getSignature();
     }
 
     /**
-     * Verify a signature.
+     * Verify a signature. The base64 encoded signature is the entity
      *
      * @param dataToVerify data that was signed
-     * @param signature signature text
+     * @param signature    signature text
      * @return whether the signature is valid or not
      */
-    @GET
-    @Path("/sign/{text}/{signature: .*}")
+    @POST
+    @Path("/verify/{text}")
     public String verify(@PathParam("text") String dataToVerify,
-                         @PathParam("signature") String signature) {
-        boolean valid = vault.verify(Verify.Request.builder()
-                                             .keyId(signatureKeyOcid)
-                                             .message(Base64Value.create(dataToVerify))
-                                             .algorithm(Sign.Request.ALGORITHM_SHA_224_RSA_PKCS_PSS)
-                                             .signature(Base64Value.createFromEncoded(signature)))
-                .isValid();
+                         String signature) {
+        VerifyDataDetails.SigningAlgorithm algorithm = VerifyDataDetails.SigningAlgorithm.Sha224RsaPkcsPss;
+
+        boolean valid = crypto.verify(VerifyRequest.builder()
+                                              .verifyDataDetails(VerifyDataDetails.builder()
+                                                                         .keyId(signatureKeyOcid)
+                                                                         .signingAlgorithm(algorithm)
+                                                                         .message(Base64Value.create(dataToVerify).toBase64())
+                                                                         .signature(signature)
+                                                                         .build())
+                                              .build())
+                .getVerifiedData()
+                .getIsSignatureValid();
 
         return valid ? "Signature valid" : "Signature not valid";
     }
@@ -146,15 +180,18 @@ public class VaultResource {
     @GET
     @Path("/secret/{id}")
     public String getSecret(@PathParam("id") String secretOcid) {
-        Optional<GetSecretBundle.Response> response = vault.getSecretBundle(GetSecretBundle.Request.builder()
-                                                                                    .secretId(secretOcid))
-                .entity();
+        SecretBundleContentDetails content = secrets.getSecretBundle(GetSecretBundleRequest.builder()
+                                                                             .secretId(secretOcid)
+                                                                             .build())
+                .getSecretBundle()
+                .getSecretBundleContent();
 
-        if (response.isEmpty()) {
-            throw new NotFoundException("Secret with id " + secretOcid + " does not exist");
+        if (content instanceof Base64SecretBundleContentDetails) {
+            // the only supported type
+            return Base64Value.createFromEncoded(((Base64SecretBundleContentDetails) content).getContent()).toDecodedString();
+        } else {
+            throw new InternalServerErrorException("Invalid secret content type");
         }
-
-        return response.get().secretString().orElse("");
     }
 
     /**
@@ -168,19 +205,22 @@ public class VaultResource {
     @Path("/secret/{id}")
     public String deleteSecret(@PathParam("id") String secretOcid) {
         // has to be for quite a long period of time - did not work with less than 30 days
-        Instant deleteTime = Instant.now().plus(30, ChronoUnit.DAYS);
+        Date deleteTime = Date.from(Instant.now().plus(30, ChronoUnit.DAYS));
 
-        vault.deleteSecret(DeleteSecret.Request.builder()
-                                   .secretId(secretOcid)
-                                   .timeOfDeletion(deleteTime));
+        vaults.scheduleSecretDeletion(ScheduleSecretDeletionRequest.builder()
+                                              .secretId(secretOcid)
+                                              .scheduleSecretDeletionDetails(ScheduleSecretDeletionDetails.builder()
+                                                                                     .timeOfDeletion(deleteTime)
+                                                                                     .build())
+                                              .build());
 
-        return "Secret " + secretOcid + " was deleted";
+        return "Secret " + secretOcid + " was marked for deletion";
     }
 
     /**
      * Create a new secret.
      *
-     * @param name name of the secret
+     * @param name       name of the secret
      * @param secretText secret content
      * @return OCID of the created secret
      */
@@ -188,14 +228,20 @@ public class VaultResource {
     @Path("/secret/{name}")
     public String createSecret(@PathParam("name") String name,
                                String secretText) {
-        return vault.createSecret(CreateSecret.Request.builder()
-                                          .secretName(name)
-                                          .secretContent(CreateSecret.SecretContent.create(secretText))
-                                          .vaultId(vaultOcid)
-                                          .compartmentId(compartmentOcid)
-                                          .encryptionKeyId(encryptionKeyOcid))
-                .secret()
-                .id();
+        SecretContentDetails content = Base64SecretContentDetails.builder()
+                .content(Base64Value.create(secretText).toBase64())
+                .build();
 
+        return vaults.createSecret(CreateSecretRequest.builder()
+                                           .createSecretDetails(CreateSecretDetails.builder()
+                                                                        .secretName(name)
+                                                                        .vaultId(vaultOcid)
+                                                                        .compartmentId(compartmentOcid)
+                                                                        .keyId(encryptionKeyOcid)
+                                                                        .secretContent(content)
+                                                                        .build())
+                                           .build())
+                .getSecret()
+                .getId();
     }
 }

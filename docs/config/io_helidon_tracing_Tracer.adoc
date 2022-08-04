@@ -1,0 +1,75 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2022 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+ifndef::rootdir[:rootdir: {docdir}/..]
+:description: Configuration of io.helidon.tracing.Tracer
+:keywords: helidon, config, io.helidon.tracing.Tracer
+:basic-table-intro: The table below lists the configuration keys that configure io.helidon.tracing.Tracer
+include::{rootdir}/includes/attributes.adoc[]
+
+= Tracer (tracing) Configuration
+
+// tag::config[]
+
+Jaeger tracer configuration.
+
+
+Type: link:{javadoc-base-url}/io.helidon.tracing/io/helidon/tracing/Tracer.html[io.helidon.tracing.Tracer]
+
+
+This is a standalone configuration type, prefix from configuration root: `tracing`
+
+
+
+== Configuration options
+
+
+
+.Optional configuration options
+[cols="3,3a,2,5a"]
+
+|===
+|key |type |default value |description
+
+|`boolean-tags` |Map&lt;string, boolean&gt; |{nbsp} |Tracer level tags that get added to all reported spans.
+|`client-cert-pem` |xref:{rootdir}/config/io_helidon_common_configurable_Resource.adoc[Resource] |{nbsp} |Certificate of client in PEM format.
+|`enabled` |boolean |`true` |When enabled, tracing will be sent. If enabled is false, tracing should
+ use a no-op tracer.
+|`exporter-timeout-millis` |Duration |`10000` |Timeout of exporter requests.
+|`global` |boolean |`true` |When enabled, the created instance is also registered as a global tracer.
+|`host` |string |{nbsp} |Host to use to connect to tracing collector.
+ Default is defined by each tracing integration.
+|`int-tags` |Map&lt;string, int&gt; |{nbsp} |Tracer level tags that get added to all reported spans.
+|`path` |string |{nbsp} |Path on the collector host to use when sending data to tracing collector.
+ Default is defined by each tracing integration.
+|`port` |int |{nbsp} |Port to use to connect to tracing collector.
+ Default is defined by each tracing integration.
+|`private-key-pem` |xref:{rootdir}/config/io_helidon_common_configurable_Resource.adoc[Resource] |{nbsp} |Private key in PEM format.
+|`protocol` |string |{nbsp} |Protocol to use (such as `http` or `https`) to connect to tracing collector.
+ Default is defined by each tracing integration.
+|`sampler-param` |Number |`1` |The sampler parameter (number).
+|`sampler-type` |SamplerType (CONSTANT, RATIO) |`CONSTANT` |Sampler type.
+
+ See <a href="https://www.jaegertracing.io/docs/latest/sampling/#client-sampling-configuration">Sampler types</a>.
+|`service` |string |{nbsp} |Service name of the traced service.
+|`tags` |Map&lt;string, string&gt; |{nbsp} |Tracer level tags that get added to all reported spans.
+|`trusted-cert-pem` |xref:{rootdir}/config/io_helidon_common_configurable_Resource.adoc[Resource] |{nbsp} |Trusted certificates in PEM format.
+
+|===
+
+// end::config[]

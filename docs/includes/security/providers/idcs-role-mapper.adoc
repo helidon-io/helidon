@@ -21,6 +21,7 @@ ifndef::rootdir[:rootdir: {docdir}/../../..]
 === IDCS Role Mapper
 :description: Helidon Security IDCS Role Mapper Provider
 :keywords: helidon, security, idcs
+:feature-name: IDCS Role Mapper Security Provider
 
 A role mapper to retrieve roles from Oracle IDCS.
 
@@ -35,17 +36,13 @@ A role mapper to retrieve roles from Oracle IDCS.
 </dependency>
 ----
 
-[source,text]
-.Provider class name
-----
-io.helidon.security.providers.idcs.mapper.IdcsRoleMapperProvider
-----
+==== Single-tenant IDCS Role Mapper
 
-[source,text]
-.Provider configuration key
-----
-idcs-role-mapper
-----
+include::{rootdir}/config/io_helidon_security_providers_idcs_mapper_IdcsRoleMapperRxProvider.adoc[leveloffset=+2,tag=config]
+
+==== Multi-tenant IDCS Role Mapper
+
+include::{rootdir}/config/io_helidon_security_providers_idcs_mapper_IdcsMtRoleMapperRxProvider.adoc[leveloffset=+2,tag=config]
 
 ==== Example code
 
@@ -63,32 +60,6 @@ security:
             client-secret: "client-secret"
             identity-uri: "IDCS identity server address"
 ----
-
-==== Configuration options
-The following table shows all configuration options of the provider and their default values
-
-[cols="2,2,5"]
-
-|===
-|key |default value |description
-
-|`multitenant` |`true` |Whether to support multi-tenancy with this provider
-|`idcs-tenant-handler` |Header `X-USER-IDENTITY-SERVICE-GUID` |Multi-tenant specific `TokenHandler` configuration to retrieve the tenant id
-|`idcs-app-name-handler` |Header `X-RESOURCE-SERVICE-INSTANCE-IDENTITY-APPNAME` |Multi-tenant specific `TokenHandler` configuration to retrieve the application name
-|`cache-config` |{nbsp} |Configuration of cache of roles for subjects
-|`cache-config.cache-enabled` |`true` |Possibility to disable the cache altogether
-|`cache-config.max-size` |`100_000` |Maximal number of records in the cache
-|`cache-config.cache-timeout-millis` |1 hour |Cache timeout in milliseconds
-|`cache-config.cache-evict-delay-millis` |1 minute |How long to wait before starting the first eviction process
-|`cache-config.cache-evict-period-millis` |5 minutes |Period of running the eviction process
-|`cache-config.parallelism-threshold` |`10_000` |Threshold as used by `ConcurrentHashMap.forEachKey`
-|`cache-config.evictor-class` |{nbsp} |Implementation of `BiFunction` that receives key and value, and returns `true` for records that should be removed
-    from the cache. Eviction mechanism should be fast, as it is called within methods of `ConcurrentHashMap`
-|`subject-types` |`USER` |Can use `USER` and/or `SERVICE`
-|`default-idcs-subject-type` |`user` |Default subject type to use when requesting roles, can be `user` or `client`
-|`oidc-config` |{nbsp} |`OidcConfig` configuration, except `validate-with-jwk` is set to `false`,
-        and `server-type` is set to `idcs`
-|===
 
 ==== How does it work?
 The provider asks the IDCS server to provide list of roles for the currently

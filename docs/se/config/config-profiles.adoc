@@ -19,11 +19,19 @@
 = Configuration Profiles
 :description: Helidon config profiles
 :keywords: helidon, config, profile
-:toc: preamble
-:toclevels: 4
+:feature-name: Config
 :rootdir: {docdir}/../..
 
 include::{rootdir}/includes/se.adoc[]
+
+== Contents
+
+- <<Overview, Overview>>
+- <<Profile options, Profile options>>
+- <<Profile-Config-Source, Profile Config Source>>
+- <<Profile-File, Profile Files>>
+
+== Overview
 
 Configuration profiles provide a capability to prepare structure of configuration for each
 environment in advance, and then simply switch between these structures using a system property

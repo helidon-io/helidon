@@ -19,13 +19,29 @@
 = Extensions
 :description: Helidon config extensions
 :keywords: helidon, config
+:feature-name: Config
 :rootdir: {docdir}/../..
 
 include::{rootdir}/includes/se.adoc[]
 
+== Contents
+
+- <<Overview,>>
+- <<Introduction>>
+- <<Setting up an extension>>
+- <<Config-SPI-ConfigSource>>
+- <<Config-SPI-ConfigParser>>
+- <<Config-SPI-OverrideSource>>
+- <<Config-SPI-ConfigFilter>>
+- <<Config-SPI-ConfigMapperProvider>>
+- <<Change support SPI>>
+- <<Config-SPI-RetryPolicy>>
+
+== Overview
+
 Developer-provided extensions influence how the config system behaves.
 
-The xref:introduction.adoc[config system introduction] explains the design of the config
+The xref:introduction.adoc#_getting_started[config system introduction] explains the design of the config
 system and how its parts work together to read and parse config data, convert it
 to Java types, fine-tune the look-up of config data, and reload and
 reprocess data when it changes. _Config extensions_ provided by the application
@@ -160,7 +176,7 @@ The following diagram depicts the `Content` API.
 
 image::config/spi-content.png[title="Content SPI",align="center"]
 
-Some of the methods provided are not always mandatory, yet they are part of the APIs to simplify the overall class structure:
+Some methods provided are not always mandatory, yet they are part of the APIs to simplify the overall class structure:
 
 * ConfigContent.stamp() - this method is used by `PollingStrategy` to determine if content has been changed.
 This can be always
@@ -190,7 +206,7 @@ The `ConfigParser.Content` interface defines operations on the content that is t
 The application can register parsers for a builder by invoking `Config.Builder#addParser(ConfigParser)`.
 The config system also uses the Java service loader mechanism to load automatically, for all builders, any parsers listed in the
 `META-INF/services/io.helidon.config.spi.ConfigParser` resource on the runtime classpath.
-Prevent auto loading of parsers for a given builder by invoking `Config.Builder#disableParserServices()`.
+Prevent autoloading of parsers for a given builder by invoking `Config.Builder#disableParserServices()`.
 
 `ConfigParser` accepts `@Priority`.
 See <<priority-info, About Priority>>.
@@ -250,7 +266,7 @@ link:{config-javadoc-base-url}/io/helidon/config/Config.Builder.html[`addFilter`
 system also uses the Java service loader mechanism to load
 additional filters automatically, for all builders, using
 the service interface described in the following table. Prevent a given
-builder from using the auto-loaded filters by invoking the
+builder from using the autoloaded filters by invoking the
 link:{config-javadoc-base-url}/io/helidon/config/Config.Builder.html#disableFilterServices--[`disableFilterServices`]
 method.
 
@@ -327,7 +343,7 @@ For `Config.as(GenericType)` - the first two steps are skipped.
 The config system also uses the Java `ServiceLoader` mechanism to load automatically,
 for all builders, any mappers returned by the providers listed in the
 `META-INF/services/io.helidon.config.spi.ConfigMapperProvider` resource on the
-runtime classpath. The application can prevent auto loading of mappers for a
+runtime classpath. The application can prevent autoloading of mappers for a
 given builder by invoking `Config.Builder#disableMapperServices()`. Note
 that the built-in mappers described in `ConfigMappers` still operate.
 
@@ -441,7 +457,7 @@ image::config/spi-RetryPolicy.png[title="RetryPolicy SPI",align="center"]
 The application can try to cancel the overall execution of a `RetryPolicy` by invoking the
  `RetryPolicy#cancel(boolean mayInterruptIfRunning)` method.
 Ideally the retry policy implementation should be able to abort the execution of the retry policy, even while a
- function call is in progress, but the policy must respond to cancels between function calls.
+ function call is in progress, but the policy must respond to cancel between function calls.
 In either case `cancel` returns `true` if the retry was aborted without a successful call to the function, and
  `false` otherwise, including if the function call had already completed successfully or had previously been
  successfully canceled.

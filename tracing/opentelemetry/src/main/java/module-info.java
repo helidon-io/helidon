@@ -20,9 +20,11 @@ module io.helidon.tracing.opentelemetry {
     requires io.helidon.tracing;
     requires io.helidon.common.context;
 
-    requires io.opentelemetry.api;
-    requires io.opentelemetry.context;
-    requires io.opentelemetry.semconv;
+    requires transitive io.opentelemetry.api;
+    requires transitive io.opentelemetry.semconv;
+    requires transitive io.opentelemetry.context;
+    requires transitive io.opentelemetry.extension.trace.propagation;
+
     requires io.helidon.common;
     requires io.helidon.config;
 

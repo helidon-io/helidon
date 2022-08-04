@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,29 +16,49 @@
 
 package io.helidon.examples.integrations.oci.objecstorage.reactive;
 
-import java.util.Optional;
-import java.util.OptionalLong;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.concurrent.CountDownLatch;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
-import io.helidon.integrations.oci.objectstorage.DeleteObject;
-import io.helidon.integrations.oci.objectstorage.GetObject;
-import io.helidon.integrations.oci.objectstorage.GetObjectRx;
-import io.helidon.integrations.oci.objectstorage.OciObjectStorageRx;
-import io.helidon.integrations.oci.objectstorage.PutObject;
-import io.helidon.integrations.oci.objectstorage.RenameObject;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 
-class ObjectStorageService implements Service {
-    private final OciObjectStorageRx objectStorage;
-    private final String bucketName;
+import com.oracle.bmc.objectstorage.ObjectStorageAsync;
+import com.oracle.bmc.objectstorage.model.RenameObjectDetails;
+import com.oracle.bmc.objectstorage.requests.DeleteObjectRequest;
+import com.oracle.bmc.objectstorage.requests.GetNamespaceRequest;
+import com.oracle.bmc.objectstorage.requests.GetObjectRequest;
+import com.oracle.bmc.objectstorage.requests.PutObjectRequest;
+import com.oracle.bmc.objectstorage.requests.RenameObjectRequest;
+import com.oracle.bmc.objectstorage.responses.DeleteObjectResponse;
+import com.oracle.bmc.objectstorage.responses.GetNamespaceResponse;
+import com.oracle.bmc.objectstorage.responses.GetObjectResponse;
+import com.oracle.bmc.objectstorage.responses.PutObjectResponse;
+import com.oracle.bmc.objectstorage.responses.RenameObjectResponse;
+import com.oracle.bmc.responses.AsyncHandler;
 
-    ObjectStorageService(OciObjectStorageRx objectStorage, String bucketName) {
-        this.objectStorage = objectStorage;
+class ObjectStorageService implements Service {
+    private static final Logger LOGGER = Logger.getLogger(ObjectStorageService.class.getName());
+    private final ObjectStorageAsync objectStorageAsyncClient;
+    private final String bucketName;
+    private final String namespaceName;
+
+    ObjectStorageService(ObjectStorageAsync objectStorageAsyncClient, String bucketName) throws Exception {
+        this.objectStorageAsyncClient = objectStorageAsyncClient;
         this.bucketName = bucketName;
+        ResponseHandler<GetNamespaceRequest, GetNamespaceResponse> namespaceHandler =
+                new ResponseHandler<>();
+        this.objectStorageAsyncClient.getNamespace(GetNamespaceRequest.builder().build(), namespaceHandler);
+        GetNamespaceResponse namespaceResponse = namespaceHandler.waitForCompletion();
+        this.namespaceName = namespaceResponse.getValue();
     }
 
     @Override
@@ -52,67 +72,152 @@ class ObjectStorageService implements Service {
     private void delete(ServerRequest req, ServerResponse res) {
         String objectName = req.path().param("file-name");
 
-        objectStorage.deleteObject(DeleteObject.Request.builder()
-                                           .bucket(bucketName)
-                                           .objectName(objectName))
-                .forSingle(response -> res.status(response.status()).send())
-                .exceptionally(res::send);
+        ResponseHandler<DeleteObjectRequest, DeleteObjectResponse> deleteObjectHandler =
+                new ResponseHandler<>();
+
+        objectStorageAsyncClient.deleteObject(DeleteObjectRequest.builder()
+                                                      .namespaceName(namespaceName)
+                                                      .bucketName(bucketName)
+                                                      .objectName(objectName).build(), deleteObjectHandler);
+        try {
+            DeleteObjectResponse deleteObjectResponse = deleteObjectHandler.waitForCompletion();
+            res.status(Http.Status.OK_200)
+                    .send();
+            return;
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Error deleting object", e);
+            res.status(Http.Status.INTERNAL_SERVER_ERROR_500).send();
+            return;
+        }
     }
 
     private void rename(ServerRequest req, ServerResponse res) {
         String oldName = req.path().param("old-name");
         String newName = req.path().param("new-name");
 
-        objectStorage.renameObject(RenameObject.Request.builder()
-                                           .bucket(bucketName)
-                                           .objectName(oldName)
-                                           .newObjectName(newName))
-                .forSingle(it -> res.send("Renamed to " + newName))
-                .exceptionally(res::send);
+        RenameObjectRequest renameObjectRequest = RenameObjectRequest.builder()
+                .namespaceName(namespaceName)
+                .bucketName(bucketName)
+                .renameObjectDetails(RenameObjectDetails.builder()
+                                             .newName(newName)
+                                             .sourceName(oldName)
+                                             .build())
+                .build();
+
+        ResponseHandler<RenameObjectRequest, RenameObjectResponse> renameObjectHandler =
+                new ResponseHandler<>();
+
+        try {
+            objectStorageAsyncClient.renameObject(renameObjectRequest, renameObjectHandler);
+            RenameObjectResponse renameObjectResponse = renameObjectHandler.waitForCompletion();
+            res.status(Http.Status.OK_200)
+                    .send();
+            return;
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Error renaming object", e);
+            res.status(Http.Status.INTERNAL_SERVER_ERROR_500).send();
+            return;
+        }
     }
 
     private void upload(ServerRequest req, ServerResponse res) {
-        OptionalLong contentLength = req.headers().contentLength();
-        if (contentLength.isEmpty()) {
-            req.content().forEach(DataChunk::release);
-            res.status(Http.Status.BAD_REQUEST_400).send("Content length must be defined");
+        String objectName = req.path().param("file-name");
+        PutObjectRequest putObjectRequest = null;
+        try (InputStream stream = new FileInputStream(System.getProperty("user.dir") + File.separator + objectName)) {
+            byte[] contents = stream.readAllBytes();
+            putObjectRequest =
+                    PutObjectRequest.builder()
+                            .namespaceName(namespaceName)
+                            .bucketName(bucketName)
+                            .objectName(objectName)
+                            .putObjectBody(new ByteArrayInputStream(contents))
+                            .contentLength(Long.valueOf(contents.length))
+                            .build();
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Error creating PutObjectRequest", e);
+            res.status(Http.Status.INTERNAL_SERVER_ERROR_500).send();
             return;
         }
 
-        String objectName = req.path().param("file-name");
+        ResponseHandler<PutObjectRequest, PutObjectResponse> putObjectHandler =
+                new ResponseHandler<>();
 
-        PutObject.Request request = PutObject.Request.builder()
-                .objectName(objectName)
-                .bucket(bucketName)
-                .contentLength(contentLength.getAsLong());
-
-        req.headers().contentType().ifPresent(request::requestMediaType);
-
-        objectStorage.putObject(request,
-                                req.content())
-                .forSingle(response -> res.send(response.requestId()))
-                .exceptionally(res::send);
+        try {
+            objectStorageAsyncClient.putObject(putObjectRequest, putObjectHandler);
+            PutObjectResponse putObjectResponse = putObjectHandler.waitForCompletion();
+            res.status(Http.Status.OK_200).send();
+            return;
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Error uploading object", e);
+            res.status(Http.Status.INTERNAL_SERVER_ERROR_500).send();
+            return;
+        }
     }
 
     private void download(ServerRequest req, ServerResponse res) {
         String objectName = req.path().param("file-name");
+        ResponseHandler<GetObjectRequest, GetObjectResponse> objectHandler =
+                new ResponseHandler<>();
+        GetObjectRequest getObjectRequest =
+                GetObjectRequest.builder()
+                        .namespaceName(namespaceName)
+                        .bucketName(bucketName)
+                        .objectName(objectName)
+                        .build();
+        GetObjectResponse getObjectResponse = null;
+        try {
+            objectStorageAsyncClient.getObject(getObjectRequest, objectHandler);
+            getObjectResponse = objectHandler.waitForCompletion();
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Error getting object", e);
+            res.status(Http.Status.INTERNAL_SERVER_ERROR_500).send();
+            return;
+        }
 
-        objectStorage.getObject(GetObject.Request.builder()
-                                        .bucket(bucketName)
-                                        .objectName(objectName))
-                .forSingle(apiResponse -> {
-                    Optional<GetObjectRx.Response> entity = apiResponse.entity();
-                    if (entity.isEmpty()) {
-                        res.status(Http.Status.NOT_FOUND_404).send();
-                    } else {
-                        GetObjectRx.Response response = entity.get();
-                        // copy the content length header to response
-                        apiResponse.headers()
-                                .first(Http.Header.CONTENT_LENGTH)
-                                .ifPresent(res.headers()::add);
-                        res.send(response.publisher());
-                    }
-                })
-                .exceptionally(res::send);
+        if (getObjectResponse.getContentLength() == 0) {
+            LOGGER.log(Level.SEVERE, "GetObjectResponse is empty");
+            res.status(Http.Status.NOT_FOUND_404).send();
+            return;
+        }
+
+        try (InputStream fileStream = getObjectResponse.getInputStream()) {
+            byte[] objectContent = fileStream.readAllBytes();
+            res.addHeader(Http.Header.CONTENT_DISPOSITION, "attachment; filename=\"" + objectName + "\"")
+                    .status(Http.Status.OK_200).send(objectContent);
+            return;
+        } catch (IOException e) {
+            LOGGER.log(Level.SEVERE, "Error processing GetObjectResponse", e);
+            res.status(Http.Status.INTERNAL_SERVER_ERROR_500).send();
+            return;
+        }
+    }
+
+    private static class ResponseHandler<IN, OUT> implements AsyncHandler<IN, OUT> {
+        private OUT item;
+        private Throwable failed = null;
+        private CountDownLatch latch = new CountDownLatch(1);
+
+        private OUT waitForCompletion() throws Exception {
+            latch.await();
+            if (failed != null) {
+                if (failed instanceof Exception) {
+                    throw (Exception) failed;
+                }
+                throw (Error) failed;
+            }
+            return item;
+        }
+
+        @Override
+        public void onSuccess(IN request, OUT response) {
+            item = response;
+            latch.countDown();
+        }
+
+        @Override
+        public void onError(IN request, Throwable error) {
+            failed = error;
+            latch.countDown();
+        }
     }
 }

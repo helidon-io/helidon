@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2021 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -20,220 +20,17 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
 
-    <exec src="../common/common-mp.xml"/>
-    <source src="/common/project-sources.xml"/>
+    <exec src="/common/presets.xml"/>
+    <presets>
+        <boolean path="db">true</boolean>
+    </presets>
+    <exec src="/mp/custom/custom-mp.xml"/>
     <output>
         <model>
             <value key="title">Helidon MP Database</value>
             <value key="readme-description">Helidon MP application that uses JPA with an in-memory H2 database.</value>
-            <list key="readme-sections">
+            <list key="readme-exercise-the-application">
                 <value file="files/README.md"/>
-            </list>
-            <list key="dependencies">
-                <map order="1000">
-                    <value key="groupId">io.helidon.microprofile.bundles</value>
-                    <value key="artifactId">helidon-microprofile</value>
-                </map>
-                <map>
-                    <value key="groupId">jakarta.annotation</value>
-                    <value key="artifactId">jakarta.annotation-api</value>
-                </map>
-                <map>
-                    <value key="groupId">jakarta.enterprise</value>
-                    <value key="artifactId">jakarta.enterprise.cdi-api</value>
-                </map>
-                <map>
-                    <value key="groupId">jakarta.inject</value>
-                    <value key="artifactId">jakarta.inject-api</value>
-                </map>
-                <map>
-                    <value key="groupId">jakarta.ws.rs</value>
-                    <value key="artifactId">jakarta.ws.rs-api</value>
-                </map>
-                <map>
-                    <value key="groupId">jakarta.json.bind</value>
-                    <value key="artifactId">jakarta.json.bind-api</value>
-                </map>
-                <map>
-                    <value key="groupId">jakarta.persistence</value>
-                    <value key="artifactId">jakarta.persistence-api</value>
-                </map>
-                <map>
-                    <value key="groupId">jakarta.transaction</value>
-                    <value key="artifactId">jakarta.transaction-api</value>
-                </map>
-                <map>
-                    <value key="groupId">io.helidon.common</value>
-                    <value key="artifactId">helidon-common</value>
-                </map>
-                <map>
-                    <value key="groupId">jakarta.xml.bind</value>
-                    <value key="artifactId">jakarta.xml.bind-api</value>
-                </map>
-                <map>
-                    <value key="groupId">com.h2database</value>
-                    <value key="artifactId">h2</value>
-                    <value key="scope">runtime</value>
-                </map>
-                <map>
-                    <value key="groupId">io.helidon.integrations.cdi</value>
-                    <value key="artifactId">helidon-integrations-cdi-hibernate</value>
-                    <value key="scope">runtime</value>
-                </map>
-                <map>
-                    <value key="groupId">io.helidon.integrations.cdi</value>
-                    <value key="artifactId">helidon-integrations-cdi-jta-weld</value>
-                    <value key="scope">runtime</value>
-                </map>
-                <map>
-                    <value key="groupId">io.helidon.integrations.cdi</value>
-                    <value key="artifactId">helidon-integrations-cdi-datasource-hikaricp</value>
-                    <value key="scope">runtime</value>
-                </map>
-                <map>
-                    <value key="groupId">io.helidon.integrations.cdi</value>
-                    <value key="artifactId">helidon-integrations-cdi-jpa</value>
-                    <value key="scope">runtime</value>
-                </map>
-                <map>
-                    <value key="groupId">org.glassfish.jersey.media</value>
-                    <value key="artifactId">jersey-media-json-binding</value>
-                    <value key="scope">runtime</value>
-                </map>
-                <!--
-                    TODO investigate why HV and EL are required
-                -->
-                <map>
-                    <value key="groupId">org.hibernate.validator</value>
-                    <value key="artifactId">hibernate-validator</value>
-                    <value key="version">7.0.2.Final</value>
-                    <value key="scope">runtime</value>
-                </map>
-                <map>
-                    <value key="groupId">org.glassfish</value>
-                    <value key="artifactId">jakarta.el</value>
-                    <value key="scope">runtime</value>
-                </map>
-            </list>
-            <!--
-                TODO investigate how to use org.jvnet.jaxb2.maven2:maven-jaxb2-plugin
-             -->
-            <list key="maven-plugins">
-                <value><![CDATA[            <plugin>
-                <groupId>com.evolvedbinary.maven.jvnet</groupId>
-                <artifactId>jaxb30-maven-plugin</artifactId>
-                <version>0.15.0</version>
-                <executions>
-                    <execution>
-                        <id>Generate persistence.xml Java objects</id>
-                        <goals>
-                            <goal>generate</goal>
-                        </goals>
-                        <configuration>
-                            <generatePackage>io.helidon.archetypes.tests.jaxb</generatePackage>
-                            <markGenerated>true</markGenerated>
-                            <schemas>
-                                <schema>
-                                    <dependencyResource>
-                                        <groupId>jakarta.persistence</groupId>
-                                        <artifactId>jakarta.persistence-api</artifactId>
-                                        <resource>jakarta/persistence/persistence_3_0.xsd</resource>
-                                    </dependencyResource>
-                                </schema>
-                            </schemas>
-                            <strict>false</strict>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.hibernate.orm.tooling</groupId>
-                <artifactId>hibernate-enhance-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <configuration>
-                            <failOnError>true</failOnError>
-                            <enableLazyInitialization>true</enableLazyInitialization>
-                            <enableDirtyTracking>true</enableDirtyTracking>
-                        </configuration>
-                        <goals>
-                            <goal>enhance</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>]]></value>
-            </list>
-            <list key="config-entries">
-                <value file="files/microprofile-config.properties"/>
-            </list>
-            <list key="MainTest-java-imports">
-                <value>jakarta.ws.rs.core.MediaType</value>
-                <value>jakarta.json.JsonArray</value>
-                <value>jakarta.json.JsonObject</value>
-            </list>
-            <list key="MainTest-helidon-imports">
-                <value>io.helidon.media.jsonp.JsonpSupport</value>
-            </list>
-            <list key="MainTest-methods">
-                <value><![CDATA[
-    @Test
-    void testPokemonTypes() {
-        JsonArray types = client.target(serverUrl)
-                .path("type")
-                .request()
-                .get(JsonArray.class);
-        assertThat(types.size(), is(18));
-    }
-
-    @Test
-    void testPokemon() {
-        assertThat(getPokemonCount(), is(6));
-
-        Pokemon pokemon = client.target(serverUrl)
-                .path("pokemon/1")
-                .request()
-                .get(Pokemon.class);
-        assertThat(pokemon.getName(), is("Bulbasaur"));
-
-        pokemon = client.target(serverUrl)
-                .path("pokemon/name/Charmander")
-                .request()
-                .get(Pokemon.class);
-        assertThat(pokemon.getType(), is(10));
-
-        Response response = client.target(serverUrl)
-                .path("pokemon/1")
-                .request()
-                .get();
-        assertThat(response.getStatus(), is(200));
-
-        Pokemon test = new Pokemon();
-        test.setType(1);
-        test.setId(100);
-        test.setName("Test");
-        response = client.target(serverUrl)
-                .path("pokemon")
-                .request()
-                .post(Entity.entity(test, MediaType.APPLICATION_JSON));
-        assertThat(response.getStatus(), is(204));
-        assertThat(getPokemonCount(), is(7));
-
-        response = client.target(serverUrl)
-                .path("pokemon/100")
-                .request()
-                .delete();
-        assertThat(response.getStatus(), is(204));
-        assertThat(getPokemonCount(), is(6));
-    }
-
-    private int getPokemonCount() {
-        JsonArray pokemons = client.target(serverUrl)
-                .path("pokemon")
-                .request()
-                .get(JsonArray.class);
-        return pokemons.size();
-    }
-]]></value>
             </list>
         </model>
     </output>

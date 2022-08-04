@@ -70,7 +70,7 @@ import org.eclipse.microprofile.config.spi.Converter;
 
 /**
  * Extension to enable config injection in CDI container (all of {@link io.helidon.config.Config},
- * {@link org.eclipse.microprofile.config.Config} and {@link ConfigProperty}).
+ * {@link org.eclipse.microprofile.config.Config} and {@link ConfigProperty} and {@link ConfigProperties}).
  */
 public class ConfigCdiExtension implements Extension {
     private static final Logger LOGGER = Logger.getLogger(ConfigCdiExtension.class.getName());
@@ -248,10 +248,19 @@ public class ConfigCdiExtension implements Extension {
                                        + " container initialization. This will not work nicely with Graal native-image");
         }
 
-        return produce(configKey, ip.getType(), defaultValue(annotation));
+        return produce(configKey, ip.getType(), defaultValue(annotation), configKey.equals(fullPath.replace('$', '.')));
     }
 
-    private Object produce(String configKey, Type type, String defaultValue) {
+    /*
+     * Produce configuration value from injection point.
+     *
+     * @param configKey actual configuration key to find
+     * @param type type of the injected field/parameter
+     * @param defaultValue default value to be used
+     * @param defaultConfigKey whether the configKey is constructed from class name and field
+     * @return produced value to be injected
+     */
+    private Object produce(String configKey, Type type, String defaultValue, boolean defaultConfigKey) {
         /*
              Supported types
              group x:
@@ -287,7 +296,7 @@ public class ConfigCdiExtension implements Extension {
             }
         }
 
-        Object value = configValue(config, fieldTypes, configKey, defaultValue);
+        Object value = configValue(config, fieldTypes, configKey, defaultValue, defaultConfigKey);
 
         if (value == null) {
             throw new NoSuchElementException("Cannot find value for key: " + configKey);
@@ -295,7 +304,11 @@ public class ConfigCdiExtension implements Extension {
         return value;
     }
 
-    private Object configValue(Config config, FieldTypes fieldTypes, String configKey, String defaultValue) {
+    private Object configValue(Config config,
+                               FieldTypes fieldTypes,
+                               String configKey,
+                               String defaultValue,
+                               boolean defaultConfigKey) {
         Class<?> type0 = fieldTypes.field0().rawType();
         Class<?> type1 = fieldTypes.field1().rawType();
         Class<?> type2 = fieldTypes.field2().rawType();
@@ -307,6 +320,7 @@ public class ConfigCdiExtension implements Extension {
         // generic declaration
         return parameterizedConfigValue(config,
                                         configKey,
+                                        defaultConfigKey,
                                         defaultValue,
                                         type0,
                                         type1,
@@ -371,6 +385,7 @@ public class ConfigCdiExtension implements Extension {
 
     private static Object parameterizedConfigValue(Config config,
                                                    String configKey,
+                                                   boolean defaultConfigKey,
                                                    String defaultValue,
                                                    Class<?> rawType,
                                                    Class<?> typeArg,
@@ -382,6 +397,7 @@ public class ConfigCdiExtension implements Extension {
                 return Optional
                         .ofNullable(parameterizedConfigValue(config,
                                                              configKey,
+                                                             defaultConfigKey,
                                                              defaultValue,
                                                              typeArg,
                                                              typeArg2,
@@ -395,17 +411,23 @@ public class ConfigCdiExtension implements Extension {
             } else {
                 return (Supplier<?>) () -> parameterizedConfigValue(config,
                                                                     configKey,
+                                                                    defaultConfigKey,
                                                                     defaultValue,
                                                                     typeArg,
                                                                     typeArg2,
                                                                     typeArg2);
             }
         } else if (Map.class.isAssignableFrom(rawType)) {
+            // config key we have should serve as a prefix, and the properties should have it removed
+            // similar to what the original io.helidon.config.Config.get(configKey).detach()
             Map<String, String> result = new HashMap<>();
             config.getPropertyNames()
                     .forEach(name -> {
-                        // workaround for race condition (if key disappears from source after we call getPropertyNames
-                        config.getOptionalValue(name, String.class).ifPresent(value -> result.put(name, value));
+                        if (defaultConfigKey || name.startsWith(configKey)) {
+                            String key = removePrefix(configKey, defaultConfigKey, name);
+                            // workaround for race condition (if key disappears from source after we call getPropertyNames)
+                            config.getOptionalValue(name, String.class).ifPresent(value -> result.put(key, value));
+                        }
                     });
             return result;
         } else if (Set.class.isAssignableFrom(rawType)) {
@@ -414,6 +436,18 @@ public class ConfigCdiExtension implements Extension {
             throw new IllegalArgumentException("Cannot create config property for " + rawType + "<" + typeArg + ">, key: "
                                                        + configKey);
         }
+    }
+
+    private static String removePrefix(String prefix, boolean defaultConfigKey, String key) {
+        if (defaultConfigKey) {
+            return key;
+        }
+
+        String intermediate = key.substring(prefix.length());
+        if (intermediate.startsWith(".")) {
+            return intermediate.substring(1);
+        }
+        return intermediate;
     }
 
     static String[] toArray(String stringValue) {

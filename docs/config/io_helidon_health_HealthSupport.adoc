@@ -1,0 +1,61 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2022 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+ifndef::rootdir[:rootdir: {docdir}/..]
+:description: Configuration of io.helidon.health.HealthSupport
+:keywords: helidon, config, io.helidon.health.HealthSupport
+:basic-table-intro: The table below lists the configuration keys that configure io.helidon.health.HealthSupport
+include::{rootdir}/includes/attributes.adoc[]
+
+= HealthSupport (health) Configuration
+
+// tag::config[]
+
+
+Type: link:{javadoc-base-url}/io.helidon.health/io/helidon/health/HealthSupport.html[io.helidon.health.HealthSupport]
+
+
+This is a standalone configuration type, prefix from configuration root: `health`
+
+
+
+== Configuration options
+
+
+
+.Optional configuration options
+[cols="3,3a,2,5a"]
+
+|===
+|key |type |default value |description
+
+|`cors` |xref:{rootdir}/config/io_helidon_webserver_cors_CrossOriginConfig.adoc[CrossOriginConfig] |{nbsp} |Sets the cross-origin config builder for use in establishing CORS support for the service endpoints.
+|`enabled` |boolean |`true` |HealthSupport can be disabled by invoking this method.
+|`exclude` |string[&#93; |{nbsp} |Add health checks to a black list.
+ Health check results that match by name with a blacklisted records will not be
+ part of the result.
+|`exclude-classes` |Class<?>[&#93; |{nbsp} |A class may be excluded from invoking health checks on it.
+ This allows configurable approach to disabling broken health-checks.
+|`include` |string[&#93; |{nbsp} |Add health checks to a white list (in case #includeAll is set to `false`.
+|`routing` |string |{nbsp} |Sets the routing name to use for setting up the service's endpoint.
+|`timeout-millis` |long |`10000` |health endpoint timeout (ms)
+|`web-context` |string |{nbsp} |Sets the web context to use for the service's endpoint.
+
+|===
+
+// end::config[]

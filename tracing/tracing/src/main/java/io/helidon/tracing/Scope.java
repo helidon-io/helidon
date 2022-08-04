@@ -19,4 +19,12 @@ package io.helidon.tracing;
  * A Scope that can be (eventually) closed. Used when making a span active.
  */
 public interface Scope extends AutoCloseable {
+    @Override
+    void close();
+
+    /**
+     * Whether the method {@link #close()} was already called or not.
+     * @return if this scope is closed
+     */
+    boolean isClosed();
 }

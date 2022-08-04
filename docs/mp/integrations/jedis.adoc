@@ -1,0 +1,182 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Jedis
+:description: Helidon Jedis integration
+:keywords: jedis, redis
+:feature-name: Jedis
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/mp.adoc[]
+
+== Contents
+
+- <<Overview, Overview>>
+- <<maven-coordinates, Maven Coordinates>>
+- <<Usage, Usage>>
+- <<Configuration, Configuration>>
+- <<References, References>>
+
+== Overview
+
+link:https://github.com/xetorthio/jedis[Jedis] is a Java client for link:https://github.com/redis/redis[Redis].
+
+This link:{jakarta-cdi-spec-url}#spi[CDI portable extension] provides support for
+injecting Jedis clients in your Helidon MicroProfile applications.
+
+include::{rootdir}/includes/dependencies.adoc[]
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.integrations.cdi</groupId>
+    <artifactId>helidon-integrations-cdi-jedis</artifactId>
+</dependency>
+----
+
+== Usage
+
+After you have added the above dependency to your project you can inject
+a Jedis client in your application. The following examples show how to create
+and inject a Jedis pool named `orders` in your application code.
+
+[source,java]
+.Field-injection example
+----
+ @Inject
+ @Named("orders")
+ private JedisPool ordersPool;
+----
+
+[source,java]
+.Constructor-injection example
+----
+ private final JedisPool ordersPool;
+ @Inject
+ public YourConstructor(@Named("orders") JedisPool pool) {
+   super();
+   this.ordersPool = pool;
+ }
+----
+
+Helidon implements this injection point by creating a
+link:{jedis-base-url}/jedis/JedisPool.html[JedisPool] object in the
+link:{jakarta-cdi-javadoc-url}/jakarta/enterprise/context/ApplicationScoped.html[application scope].
+
+== Configuration
+
+You can configure the object using xref:{rootdir}/mp/config/introduction.adoc[MicroProfile config].
+For example, the Jedis pool created above can be configured as follows:
+
+[source, properties]
+.META-INF/microprofile-config.properties
+----
+redis.clients.jedis.JedisPool.orders.port=6379
+----
+
+The Jedis client can be configured using the following properties.
+
+Property names that start with
+`redis.clients.jedis.JedisPoolConfig.instanceName.` are parsed, and
+the remaining portion of each name is treated as a Java Bean property
+of link:{jedis-base-url}/jedis/JedisPoolConfig.html[`JedisPoolConfig`].  Because
+the `JedisPoolConfig` class inherits from
+link:https://commons.apache.org/proper/commons-pool/apidocs/org/apache/commons/pool2/impl/GenericObjectPoolConfig.html[Apache
+commons-pool's `GenericObjectPoolConfig`] class and from
+link:https://commons.apache.org/proper/commons-pool/apidocs/org/apache/commons/pool2/impl/BaseObjectPoolConfig.html[Apache commons-pool's
+`BaseObjectPoolConfig`] class, those writable Java Bean properties are
+available as well.
+
+Accordingly, the `JedisPoolConfig` Java Bean properties that can be
+set are as follows, where `instanceName` should be replaced with the
+actual name used in application code:
+
+[role="flex, md7"]
+|===
+| `redis.clients.jedis.JedisPoolConfig.instanceName.blockWhenExhausted`
+| `redis.clients.jedis.JedisPoolConfig.instanceName.evictionPolicyClassName`
+| `redis.clients.jedis.JedisPoolConfig.instanceName.fairness`
+| `redis.clients.jedis.JedisPoolConfig.instanceName.jmxEnabled`
+| `redis.clients.jedis.JedisPoolConfig.instanceName.jmxNameBase`
+| `redis.clients.jedis.JedisPoolConfig.instanceName.jmxNamePrefix`
+| `redis.clients.jedis.JedisPoolConfig.instanceName.lifo`
+| `redis.clients.jedis.JedisPoolConfig.instanceName.maxIdle`
+| `redis.clients.jedis.JedisPoolConfig.instanceName.maxTotal`
+| `redis.clients.jedis.JedisPoolConfig.instanceName.maxWaitMillis`
+| `redis.clients.jedis.JedisPoolConfig.instanceName.minEvictableTimeMillis`
+| `redis.clients.jedis.JedisPoolConfig.instanceName.minIdle`
+| `redis.clients.jedis.JedisPoolConfig.instanceName.numTestsPerEvictionRun`
+| `redis.clients.jedis.JedisPoolConfig.instanceName.softMinEvictableIdleTimeMillis`
+| `redis.clients.jedis.JedisPoolConfig.instanceName.testOnBorrow`
+| `redis.clients.jedis.JedisPoolConfig.instanceName.testOnCreate`
+| `redis.clients.jedis.JedisPoolConfig.instanceName.testOnReturn`
+| `redis.clients.jedis.JedisPoolConfig.instanceName.testWhileIdle`
+| `redis.clients.jedis.JedisPoolConfig.instanceName.timeBetweenEvictionRunsMillis`
+|===
+
+Any documentation for these properties that exists may be found in the
+javadocs for the
+link:{jedis-base-url}/jedis/JedisPoolConfig.html[`JedisPoolConfig`],
+link:https://commons.apache.org/proper/commons-pool/apidocs/org/apache/commons/pool2/impl/GenericObjectPoolConfig.html[`GenericObjectPoolConfig`]
+and
+link:https://commons.apache.org/proper/commons-pool/apidocs/org/apache/commons/pool2/impl/BaseObjectPoolConfig.html[`BaseObjectPoolConfig`]
+classes.
+
+Property names that start with
+`redis.clients.jedis.JedisPool.instanceName.` are parsed, and the
+remaining portion of each name is treated as a Java Bean property of
+link:{jedis-base-url}/jedis/JedisPool.html[`JedisPool`], or as a primitive value
+accepted by link:{jedis-base-url}/jedis/JedisPool.html#JedisPool-org.apache.commons.pool2.impl.GenericObjectPoolConfig-java.lang.String-int-int-java.lang.String-int-boolean-javax.net.ssl.SSLSocketFactory-javax.net.ssl.SSLParameters-javax.net.ssl.HostnameVerifier-[its constructor].  Because the
+`JedisPool` class inherits from the link:{jedis-base-url}/util/Pool.html[`Pool`] class, its writable Java Bean
+properties are available as well.
+
+Accordingly, the `JedisPool` properties that can be set are as
+follows, where `instanceName` should be replaced with the actual named
+used in application code:
+
+[role="flex, md7"]
+|===
+| `redis.clients.jedis.JedisPool.instanceName.clientName`
+| `redis.clients.jedis.JedisPool.instanceName.connectionTimeout`
+| `redis.clients.jedis.JedisPool.instanceName.database`
+| `redis.clients.jedis.JedisPool.instanceName.host`
+| `redis.clients.jedis.JedisPool.instanceName.password`
+| `redis.clients.jedis.JedisPool.instanceName.port`
+| `redis.clients.jedis.JedisPool.instanceName.socketTimeout`
+| `redis.clients.jedis.JedisPool.instanceName.ssl`
+|===
+
+Any documentation for these properties that exists may be found in the
+javadocs for the link:{jedis-base-url}/jedis/JedisPool.html[`JedisPool`] and
+link:{jedis-base-url}/util/Pool.html[`Pool`] classes.
+
+Injection without a `@Named` annotation is also possible:
+[source,java]
+----
+ @Inject
+ private JedisPool ordersPool;
+----
+In this case, the properties for JedisPoolConfig and JedisPool that can be set will start
+with `redis.clients.jedis.JedisPoolConfig.default` and `redis.clients.jedis.JedisPool.default` respectively.
+
+== References
+
+* link:{helidon-github-tree-url}/examples/integrations/cdi/jedis[Helidon Jedis Example]
+* link:{jedis-base-url}/jedis/package-summary.html[Jedis Javadoc]
+* link:https://github.com/xetorthio/jedis[Jedis]
+* link:https://github.com/redis/redis[Redis]

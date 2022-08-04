@@ -16,6 +16,8 @@
 package io.helidon.tracing.opentelemetry;
 
 
+import java.util.Map;
+
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.Tracer;
@@ -30,11 +32,12 @@ public final class HelidonOpenTelemetry {
      * Wrap an open telemetry tracer.
      *
      * @param telemetry open telemetry instance
-     * @param tracer tracer
+     * @param tracer    tracer
+     * @param tags      tracer tags
      * @return Helidon {@link io.helidon.tracing.Tracer}
      */
-    public static OpenTelemetryTracer create(OpenTelemetry telemetry, Tracer tracer) {
-        return new OpenTelemetryTracer(telemetry, tracer);
+    public static OpenTelemetryTracer create(OpenTelemetry telemetry, Tracer tracer, Map<String, String> tags) {
+        return new OpenTelemetryTracer(telemetry, tracer, tags);
     }
 
     /**

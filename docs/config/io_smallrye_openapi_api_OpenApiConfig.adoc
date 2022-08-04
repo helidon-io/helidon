@@ -1,0 +1,56 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2022 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+ifndef::rootdir[:rootdir: {docdir}/..]
+:description: Configuration of io.smallrye.openapi.api.OpenApiConfig
+:keywords: helidon, config, io.smallrye.openapi.api.OpenApiConfig
+:basic-table-intro: The table below lists the configuration keys that configure io.smallrye.openapi.api.OpenApiConfig
+include::{rootdir}/includes/attributes.adoc[]
+
+= io.smallrye.openapi.api.OpenApiConfig Configuration
+
+// tag::config[]
+
+
+Type: io.smallrye.openapi.api.OpenApiConfig
+
+
+
+
+== Configuration options
+
+
+
+.Optional configuration options
+[cols="3,3a,2,5a"]
+
+|===
+|key |type |default value |description
+
+|`application-path-disable` |boolean |`false` |Sets whether the app path search should be disabled.
+|`custom-schema-registry-class` |string |{nbsp} |Sets the custom schema registry class.
+|`filter` |string |{nbsp} |Sets the developer-provided OpenAPI filter class name.
+|`model.reader` |string |{nbsp} |Sets the developer-provided OpenAPI model reader class name.
+|`schema.*` |string |{nbsp} |Sets the schema for the indicated fully-qualified class name (represented here by '*'); value is the schema in JSON format. Repeat for multiple classes. 
+|`servers` |string[&#93; |{nbsp} |Sets servers.
+|`servers.operation.*` |string[&#93; |{nbsp} |Sets alternative servers to service the indicated operation (represented here by '*'). Repeat for multiple operations.
+|`servers.path.*` |string[&#93; |{nbsp} |Sets alternative servers to service all operations at the indicated path (represented here by '*'). Repeat for multiple paths.
+
+|===
+
+// end::config[]

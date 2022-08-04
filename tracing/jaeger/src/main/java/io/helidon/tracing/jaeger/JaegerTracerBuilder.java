@@ -16,26 +16,36 @@
 
 package io.helidon.tracing.jaeger;
 
-import java.util.ArrayList;
+import java.time.Duration;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.tracing.opentracing.OpenTracingTracerBuilder;
+import io.helidon.tracing.Tracer;
+import io.helidon.tracing.TracerBuilder;
+import io.helidon.tracing.opentelemetry.HelidonOpenTelemetry;
+import io.helidon.tracing.opentelemetry.OpenTelemetryTracerProvider;
 
-import io.jaegertracing.Configuration;
-import io.jaegertracing.internal.JaegerTracer;
-import io.opentracing.Tracer;
-import io.opentracing.noop.NoopTracerFactory;
-import io.opentracing.util.GlobalTracer;
+import io.opentelemetry.api.GlobalOpenTelemetry;
+import io.opentelemetry.api.OpenTelemetry;
+import io.opentelemetry.api.common.Attributes;
+import io.opentelemetry.context.propagation.ContextPropagators;
+import io.opentelemetry.exporter.jaeger.JaegerGrpcSpanExporter;
+import io.opentelemetry.exporter.jaeger.JaegerGrpcSpanExporterBuilder;
+import io.opentelemetry.extension.trace.propagation.B3Propagator;
+import io.opentelemetry.sdk.OpenTelemetrySdk;
+import io.opentelemetry.sdk.resources.Resource;
+import io.opentelemetry.sdk.trace.SdkTracerProvider;
+import io.opentelemetry.sdk.trace.export.SimpleSpanProcessor;
+import io.opentelemetry.sdk.trace.export.SpanExporter;
+import io.opentelemetry.sdk.trace.samplers.Sampler;
+import io.opentelemetry.semconv.resource.attributes.ResourceAttributes;
 
 /**
- * The JaegerTracerBuilder is a convenience builder for {@link io.opentracing.Tracer} to use with Jaeger.
+ * The JaegerTracerBuilder is a convenience builder for {@link io.helidon.tracing.Tracer} to use with Jaeger.
  * <p>
  * <b>Unless You want to explicitly depend on Jaeger in Your code, please
  * use {@link io.helidon.tracing.TracerBuilder#create(String)} or
@@ -45,7 +55,7 @@ import io.opentracing.util.GlobalTracer;
  * Except for {@code protocol} and {@code service} these are honored, unless overridden in configuration
  * or through the builder methods.
  * See <a href="https://github.com/jaegertracing/jaeger-client-java/blob/master/jaeger-core/README.md">Jaeger documentation</a>
- *  for details.
+ * for details.
  * <p>
  * The following table lists jaeger specific defaults and configuration options.
  * <table class="config">
@@ -58,78 +68,58 @@ import io.opentracing.util.GlobalTracer;
  *     <tr>
  *         <td>{@code service}</td>
  *         <td>&nbsp;</td>
- *         <td>Required service name</td>
+ *         <td>Service name</td>
  *     </tr>
  *     <tr>
  *         <td>{@code protocol}</td>
  *         <td>{@code http}</td>
- *         <td>The protocol to use. By default http is used. To switch to agent
- *          mode, use {@code udp}</td>
+ *         <td>The protocol to use. By default http is used.</td>
  *     </tr>
  *     <tr>
  *         <td>{@code host}</td>
- *         <td>{@code 127.0.0.1} for {@code http}, library default for {@code udp}</td>
- *         <td>Host to used - used by both UDP and HTTP endpoints</td>
+ *         <td>{@code 127.0.0.1}</td>
+ *         <td>Host to use</td>
  *     </tr>
  *     <tr>
  *         <td>{@code port}</td>
- *         <td>{@code 14268} for {@code http}, library default for {@code udp}</td>
- *         <td>Port to be used - used by both UDP and HTTP endpoints</td>
+ *         <td>{@value  #DEFAULT_HTTP_PORT}</td>
+ *         <td>Port to be used</td>
  *     </tr>
  *     <tr>
  *         <td>{@code path}</td>
- *         <td>{@code /api/traces}</td>
- *         <td>Path to be used when using {@code http}</td>
- *     </tr>
- *     <tr>
- *         <td>{@code token}</td>
  *         <td>&nbsp;</td>
- *         <td>Authentication token to use</td>
+ *         <td>Path to be used.</td>
  *     </tr>
  *     <tr>
- *         <td>{@code username}</td>
+ *         <td>{@code exporter-timeout-millis}</td>
+ *         <td>10 seconds</td>
+ *         <td>Timeout of exporter</td>
+ *     </tr>
+ *     <tr>
+ *         <td>{@code private-key-pem}</td>
  *         <td>&nbsp;</td>
- *         <td>User to use to authenticate (basic authentication)</td>
+ *         <td>Client private key in PEM format</td>
  *     </tr>
  *     <tr>
- *         <td>{@code password}</td>
+ *         <td>{@code client-cert-pem}</td>
  *         <td>&nbsp;</td>
- *         <td>Password to use to authenticate (basic authentication)</td>
+ *         <td>Client certificate in PEM format</td>
  *     </tr>
  *     <tr>
- *         <td>{@code propagation}</td>
- *         <td>library default</td>
- *         <td>Propagation type to use, supports {@code jaeger} and {@code b3}</td>
- *     </tr>
- *     <tr>
- *         <td>{@code log-spans}</td>
- *         <td>library default</td>
- *         <td>Whether reporter should log spans</td>
- *     </tr>
- *     <tr>
- *         <td>{@code max-queue-size}</td>
- *         <td>library default</td>
- *         <td>Maximal queue size of the reporter</td>
- *     </tr>
- *     <tr>
- *         <td>{@code flush-interval-ms}</td>
- *         <td>library default</td>
- *         <td>Reporter flush interval in milliseconds</td>
+ *         <td>{@code trusted-cert-pem}</td>
+ *         <td>&nbsp;</td>
+ *         <td>Trusted certificates in PEM format</td>
  *     </tr>
  *     <tr>
  *         <td>{@code sampler-type}</td>
- *         <td>library default</td>
- *         <td>Sampler type ({@code const}, {@code probabilistic}, {@code ratelimiting}, or {@code remote})</td>
+ *         <td>{@code const} with param set to {@code 1}</td>
+ *         <td>Sampler type {@code const} (0 to disable, 1 to always enabled),
+ *              {@code ratio} (sample param contains the ratio as a double)</td>
  *     </tr>
  *     <tr>
  *         <td>{@code sampler-param}</td>
- *         <td>library default</td>
- *         <td>Numeric parameter specifying details for the sampler type (see Jaeger docs)</td>
- *     </tr>
- *     <tr>
- *         <td>sampler-manager</td>
- *         <td>library default</td>
- *         <td>host and port of the sampler manager</td>
+ *         <td>sampler type default</td>
+ *         <td>Numeric parameter specifying details for the sampler type.</td>
  *     </tr>
  *     <tr>
  *         <td>{@code tags}</td>
@@ -147,37 +137,29 @@ import io.opentracing.util.GlobalTracer;
  *         <td>see {@link io.helidon.tracing.TracerBuilder}</td>
  *     </tr>
  * </table>
- *
- * @see <a href="https://github.com/jaegertracing/jaeger-client-java/blob/master/jaeger-core/README.md">Jaeger configuration</a>
  */
 @Configured(prefix = "tracing", root = true, description = "Jaeger tracer configuration.")
-public class JaegerTracerBuilder implements OpenTracingTracerBuilder<JaegerTracerBuilder> {
+public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
     static final Logger LOGGER = Logger.getLogger(JaegerTracerBuilder.class.getName());
 
     static final boolean DEFAULT_ENABLED = true;
     static final String DEFAULT_HTTP_HOST = "localhost";
-    static final int DEFAULT_HTTP_PORT = 14268;
-    static final String DEFAULT_HTTP_PATH = "/api/traces";
-
+    static final int DEFAULT_HTTP_PORT = 14250;
 
     private final Map<String, String> tags = new HashMap<>();
-    private final List<Configuration.Propagation> propagations = new ArrayList<>();
     private String serviceName;
-    private String protocol;
-    private String host;
-    private Integer port;
-    private String path;
-    private String token;
-    private String username;
-    private String password;
-    private Boolean reporterLogSpans;
-    private Integer reporterMaxQueueSize;
-    private Long reporterFlushIntervalMillis;
-    private SamplerType samplerType;
-    private Number samplerParam;
-    private String samplerManager;
+    private String protocol = "http";
+    private String host = DEFAULT_HTTP_HOST;
+    private int port = DEFAULT_HTTP_PORT;
+    private SamplerType samplerType = SamplerType.CONSTANT;
+    private Number samplerParam = 1;
     private boolean enabled = DEFAULT_ENABLED;
     private boolean global = true;
+    private Duration exporterTimeout = Duration.ofSeconds(10);
+    private byte[] privateKey;
+    private byte[] certificate;
+    private byte[] trustedCertificates;
+    private String path;
 
     /**
      * Default constructor, does not modify any state.
@@ -186,7 +168,7 @@ public class JaegerTracerBuilder implements OpenTracingTracerBuilder<JaegerTrace
     }
 
     /**
-     * Get a Jaeger {@link io.opentracing.Tracer} builder for processing tracing data of a service with a given name.
+     * Get a Jaeger {@link io.helidon.tracing.Tracer } builder for processing tracing data of a service with a given name.
      *
      * @param serviceName name of the service that will be using the tracer.
      * @return {@code Tracer} builder for Jaeger.
@@ -225,23 +207,11 @@ public class JaegerTracerBuilder implements OpenTracingTracerBuilder<JaegerTrace
     }
 
     @Override
-    public JaegerTracerBuilder collectorHost(String host) {
-        this.host = host;
-        return this;
-    }
-
-    @Override
     public JaegerTracerBuilder collectorPort(int port) {
         this.port = port;
         return this;
     }
 
-    /**
-     * Override path to use.
-     *
-     * @param path path to override the default
-     * @return updated builder instance
-     */
     @Override
     public JaegerTracerBuilder collectorPath(String path) {
         this.path = path;
@@ -249,8 +219,8 @@ public class JaegerTracerBuilder implements OpenTracingTracerBuilder<JaegerTrace
     }
 
     @Override
-    public JaegerTracerBuilder enabled(boolean enabled) {
-        this.enabled = enabled;
+    public JaegerTracerBuilder collectorHost(String host) {
+        this.host = host;
         return this;
     }
 
@@ -273,40 +243,6 @@ public class JaegerTracerBuilder implements OpenTracingTracerBuilder<JaegerTrace
     }
 
     @Override
-    public JaegerTracerBuilder registerGlobal(boolean global) {
-        this.global = global;
-        return this;
-    }
-
-    /**
-     * Configure username and password for basic authentication.
-     *
-     * @param username username to use
-     * @param password password to use
-     * @return updated builder instance
-     */
-    @ConfiguredOption(key = "username", type = String.class)
-    @ConfiguredOption(key = "password", type = String.class)
-    public JaegerTracerBuilder basicAuth(String username, String password) {
-        username(username);
-        password(password);
-        return this;
-    }
-
-    /**
-     * Add propagation type to use.
-     *
-     * @param propagation propagation value
-     * @return updated builder instance
-     */
-    @ConfiguredOption(key = "propagation", kind = ConfiguredOption.Kind.LIST, type = Configuration.Propagation.class)
-    public JaegerTracerBuilder addPropagation(Configuration.Propagation propagation) {
-        this.propagations.add(propagation);
-
-        return this;
-    }
-
-    @Override
     public JaegerTracerBuilder config(Config config) {
         config.get("enabled").asBoolean().ifPresent(this::enabled);
         config.get("service").asString().ifPresent(this::serviceName);
@@ -314,22 +250,12 @@ public class JaegerTracerBuilder implements OpenTracingTracerBuilder<JaegerTrace
         config.get("host").asString().ifPresent(this::collectorHost);
         config.get("port").asInt().ifPresent(this::collectorPort);
         config.get("path").asString().ifPresent(this::collectorPath);
-        config.get("token").asString().ifPresent(this::token);
-        config.get("username").asString().ifPresent(this::username);
-        config.get("password").asString().ifPresent(this::password);
-        config.get("propagation").asList(String.class).ifPresent(propagations -> {
-            propagations.stream()
-                    .map(String::toUpperCase)
-                    .map(Configuration.Propagation::valueOf)
-                    .forEach(this::addPropagation);
-
-        });
-        config.get("log-spans").asBoolean().ifPresent(this::logSpans);
-        config.get("max-queue-size").asInt().ifPresent(this::maxQueueSize);
-        config.get("flush-interval-ms").asLong().ifPresent(this::flushIntervalMs);
         config.get("sampler-type").asString().as(SamplerType::create).ifPresent(this::samplerType);
         config.get("sampler-param").asDouble().ifPresent(this::samplerParam);
-        config.get("sampler-manager").asString().ifPresent(this::samplerManager);
+        config.get("exporter-timeout-millis").asLong().ifPresent(it -> exporterTimeout(Duration.ofMillis(it)));
+        config.get("private-key-pem").as(io.helidon.common.configurable.Resource::create).ifPresent(this::privateKey);
+        config.get("client-cert-pem").as(io.helidon.common.configurable.Resource::create).ifPresent(this::clientCertificate);
+        config.get("trusted-cert-pem").as(io.helidon.common.configurable.Resource::create).ifPresent(this::trustedCertificates);
 
         config.get("tags").detach()
                 .asMap()
@@ -358,21 +284,81 @@ public class JaegerTracerBuilder implements OpenTracingTracerBuilder<JaegerTrace
     }
 
     /**
-     * The host name and port when using the remote controlled sampler.
+     * Private key in PEM format.
      *
-     * @param samplerManagerHostPort host and port of the sampler manager
-     * @return updated builder instance
+     * @param resource key resource
+     * @return updated builder
      */
-    public JaegerTracerBuilder samplerManager(String samplerManagerHostPort) {
-        this.samplerManager = samplerManagerHostPort;
+    @ConfiguredOption(key = "private-key-pem")
+    public JaegerTracerBuilder privateKey(io.helidon.common.configurable.Resource resource) {
+        this.privateKey = resource.bytes();
         return this;
     }
 
     /**
+     * Certificate of client in PEM format.
+     *
+     * @param resource certificate resource
+     * @return updated builder
+     */
+    @ConfiguredOption(key = "client-cert-pem")
+    public JaegerTracerBuilder clientCertificate(io.helidon.common.configurable.Resource resource) {
+        this.certificate = resource.bytes();
+        return this;
+    }
+
+    /**
+     * Trusted certificates in PEM format.
+     *
+     * @param resource trusted certificates resource
+     * @return updated builder
+     */
+    @ConfiguredOption(key = "trusted-cert-pem")
+    public JaegerTracerBuilder trustedCertificates(io.helidon.common.configurable.Resource resource) {
+        this.trustedCertificates = resource.bytes();
+        return this;
+    }
+
+    /**
+     * Timeout of exporter requests.
+     *
+     * @param exporterTimeout timeout to use
+     * @return updated builder
+     */
+    @ConfiguredOption(key = "exporter-timeout-millis", value = "10000")
+    public JaegerTracerBuilder exporterTimeout(Duration exporterTimeout) {
+        this.exporterTimeout = exporterTimeout;
+        return this;
+    }
+
+    @Override
+    public JaegerTracerBuilder enabled(boolean enabled) {
+        this.enabled = enabled;
+        return this;
+    }
+
+    @Override
+    public JaegerTracerBuilder registerGlobal(boolean global) {
+        this.global = global;
+        return this;
+    }
+
+    @Override
+    public <B> B unwrap(Class<B> builderClass) {
+        if (builderClass.isAssignableFrom(getClass())) {
+            return builderClass.cast(this);
+        }
+        throw new IllegalArgumentException("This builder is a Jaeger tracer builder, cannot be unwrapped to "
+                                                   + builderClass.getName());
+    }
+
+    /**
      * The sampler parameter (number).
+     *
      * @param samplerParam parameter of the sampler
      * @return updated builder instance
      */
+    @ConfiguredOption("1")
     public JaegerTracerBuilder samplerParam(Number samplerParam) {
         this.samplerParam = samplerParam;
         return this;
@@ -386,60 +372,14 @@ public class JaegerTracerBuilder implements OpenTracingTracerBuilder<JaegerTrace
      * @param samplerType type of the sampler
      * @return updated builder instance
      */
+    @ConfiguredOption("CONSTANT")
     public JaegerTracerBuilder samplerType(SamplerType samplerType) {
         this.samplerType = samplerType;
         return this;
     }
 
     /**
-     * The reporter's flush interval.
-     *
-     * @param value amount in the unit specified
-     * @param timeUnit the time unit
-     * @return updated builder instance
-     */
-    public JaegerTracerBuilder flushInterval(long value, TimeUnit timeUnit) {
-        flushIntervalMs(timeUnit.toMillis(value));
-        return this;
-    }
-
-    /**
-     * The reporter's maximum queue size.
-     *
-     * @param maxQueueSize maximal size of the queue
-     * @return updated builder instance
-     */
-    public JaegerTracerBuilder maxQueueSize(int maxQueueSize) {
-        this.reporterMaxQueueSize = maxQueueSize;
-        return this;
-    }
-
-    /**
-     * Whether the reporter should also log the spans.
-     *
-     * @param logSpans whether to log spans
-     * @return updated builder instance
-     */
-    @ConfiguredOption
-    public JaegerTracerBuilder logSpans(boolean logSpans) {
-        this.reporterLogSpans = logSpans;
-        return this;
-    }
-
-    /**
-     * Authentication token sent as a "Bearer" to the endpoint.
-     *
-     * @param token token to authenticate
-     * @return updated builder instance
-     */
-    @ConfiguredOption
-    public JaegerTracerBuilder token(String token) {
-        this.token = token;
-        return this;
-    }
-
-    /**
-     * Builds the {@link io.opentracing.Tracer} for Jaeger based on the configured parameters.
+     * Builds the {@link io.helidon.tracing.Tracer} for Jaeger based on the configured parameters.
      *
      * @return the tracer
      */
@@ -448,138 +388,68 @@ public class JaegerTracerBuilder implements OpenTracingTracerBuilder<JaegerTrace
         Tracer result;
 
         if (enabled) {
-            if (null == serviceName) {
+            if (serviceName == null) {
                 throw new IllegalArgumentException(
                         "Configuration must at least contain the 'service' key ('tracing.service` in MP) with service name");
             }
 
-            JaegerTracer.Builder builder = jaegerConfig().getTracerBuilder();
-            builder.withScopeManager(new JaegerScopeManager());     // use our scope manager
-            result = builder.build();
-            LOGGER.info(() -> "Creating Jaeger tracer for '" + serviceName + "' configured with " + protocol + "://"
-                    + host + ":" + port);
+            JaegerGrpcSpanExporterBuilder spanExporterBuilder = JaegerGrpcSpanExporter.builder()
+                    .setEndpoint(protocol + "://" + host + ":" + port + (path == null ? "" : path))
+                    .setTimeout(exporterTimeout);
+
+            if (privateKey != null && certificate != null) {
+                spanExporterBuilder.setClientTls(privateKey, certificate);
+            }
+
+            if (trustedCertificates != null) {
+                spanExporterBuilder.setTrustedCertificates(trustedCertificates);
+            }
+
+            SpanExporter exporter = spanExporterBuilder.build();
+
+            Sampler sampler = switch (samplerType) {
+                case RATIO -> Sampler.traceIdRatioBased(samplerParam.doubleValue());
+                case CONSTANT -> samplerParam.intValue() == 1
+                        ? Sampler.alwaysOn()
+                        : Sampler.alwaysOff();
+            };
+
+            Resource serviceName = Resource.create(Attributes.of(ResourceAttributes.SERVICE_NAME, this.serviceName));
+            OpenTelemetry ot = OpenTelemetrySdk.builder()
+                    .setTracerProvider(SdkTracerProvider.builder()
+                                               .addSpanProcessor(SimpleSpanProcessor.create(exporter))
+                                               .setSampler(sampler)
+                                               .setResource(serviceName)
+                                               .build())
+                    .setPropagators(ContextPropagators.create(B3Propagator.injectingMultiHeaders()))
+                    .build();
+
+            result = HelidonOpenTelemetry.create(ot, ot.getTracer(this.serviceName), tags);
+
+            if (global) {
+                GlobalOpenTelemetry.set(ot);
+            }
+
+            LOGGER.info(() -> "Creating Jaeger tracer for '" + this.serviceName + "' configured with " + protocol
+                    + "://" + host + ":" + port);
         } else {
             LOGGER.info("Jaeger Tracer is explicitly disabled.");
-            result = NoopTracerFactory.create();
+            result = Tracer.noOp();
         }
 
         if (global) {
-            GlobalTracer.registerIfAbsent(result);
+            OpenTelemetryTracerProvider.globalTracer(result);
         }
 
         return result;
     }
 
-    @Override
-    public boolean enabled() {
-        return enabled;
-    }
-
-    @Override
-    public <B> B unwrap(Class<B> builderClass) {
-        if (builderClass.isAssignableFrom(getClass())) {
-            return builderClass.cast(this);
-        }
-        throw new IllegalArgumentException("This builder is a Jaeger tracer builder, cannot be unwrapped to "
-                                                   + builderClass.getName());
-    }
-
-    Configuration jaegerConfig() {
-        /*
-         * Preload from environment, then override configured values
-         */
-        Configuration config = Configuration.fromEnv(serviceName);
-
-        if (null != tags) {
-            config.withTracerTags(tags);
-        }
-
-        /*
-         * Sender configuration
-         */
-        Configuration.SenderConfiguration sender = Configuration.SenderConfiguration.fromEnv();
-        if ((null == protocol) || "http".equals(protocol) || "https".equals(protocol)) {
-            if (null == host) {
-                host = DEFAULT_HTTP_HOST;
-            }
-            if (null == port) {
-                port = DEFAULT_HTTP_PORT;
-            }
-            if (null == path) {
-                path = DEFAULT_HTTP_PATH;
-            }
-            if (null == protocol) {
-                protocol = "http";
-            }
-            sender.withEndpoint(protocol + "://" + host + ":" + port + path);
-        } else if ("udp".equals(protocol)) {
-            // UDP
-            if (null != host) {
-                sender.withAgentHost(host);
-            }
-            if (null != port) {
-                sender.withAgentPort(port);
-            }
-        } // else use library defaults for other type of protocols
-
-        if (null != token) {
-            sender.withAuthToken(token);
-        } else {
-            // token has precedence over basic auth
-            if (null != username) {
-                sender.withAuthUsername(username);
-            }
-            if (null != password) {
-                sender.withAuthPassword(password);
-            }
-        }
-
-        Configuration.ReporterConfiguration reporter = Configuration.ReporterConfiguration.fromEnv();
-        if (null != reporterLogSpans) {
-            reporter.withLogSpans(reporterLogSpans);
-        }
-        if (null != reporterMaxQueueSize) {
-            reporter.withMaxQueueSize(reporterMaxQueueSize);
-        }
-        if (null != reporterFlushIntervalMillis) {
-            reporter.withFlushInterval(reporterFlushIntervalMillis.intValue());
-        }
-
-        reporter.withSender(sender);
-        config.withReporter(reporter);
-
-        if (null != samplerType) {
-            Configuration.SamplerConfiguration sampler = Configuration.SamplerConfiguration.fromEnv();
-            sampler.withType(samplerType.config);
-
-            if (null != samplerParam) {
-                sampler.withParam(samplerParam);
-            }
-
-            if (null != samplerManager) {
-                sampler.withManagerHostPort(samplerManager);
-            }
-
-            config.withSampler(sampler);
-        }
-
-        if (!propagations.isEmpty()) {
-            Configuration.CodecConfiguration codec = Configuration.CodecConfiguration.fromEnv();
-            for (Configuration.Propagation propagation : propagations) {
-                codec.withPropagation(propagation);
-            }
-            config.withCodec(codec);
-        }
-
-        return config;
+    String path() {
+        return path;
     }
 
     Map<String, String> tags() {
         return tags;
-    }
-
-    List<Configuration.Propagation> propagations() {
-        return propagations;
     }
 
     String serviceName() {
@@ -598,34 +468,6 @@ public class JaegerTracerBuilder implements OpenTracingTracerBuilder<JaegerTrace
         return port;
     }
 
-    String path() {
-        return path;
-    }
-
-    String token() {
-        return token;
-    }
-
-    String username() {
-        return username;
-    }
-
-    String password() {
-        return password;
-    }
-
-    Boolean reporterLogSpans() {
-        return reporterLogSpans;
-    }
-
-    Integer reporterMaxQueueSize() {
-        return reporterMaxQueueSize;
-    }
-
-    Long reporterFlushIntervalMillis() {
-        return reporterFlushIntervalMillis;
-    }
-
     SamplerType samplerType() {
         return samplerType;
     }
@@ -634,24 +476,8 @@ public class JaegerTracerBuilder implements OpenTracingTracerBuilder<JaegerTrace
         return samplerParam;
     }
 
-    String samplerManager() {
-        return samplerManager;
-    }
-
     boolean isEnabled() {
         return enabled;
-    }
-
-    private void username(String username) {
-        this.username = username;
-    }
-
-    private void password(String password) {
-        this.password = password;
-    }
-
-    private void flushIntervalMs(Long aLong) {
-        this.reporterFlushIntervalMillis = aLong;
     }
 
     /**
@@ -665,29 +491,13 @@ public class JaegerTracerBuilder implements OpenTracingTracerBuilder<JaegerTrace
          */
         CONSTANT("const"),
         /**
-         * Probabilistic sampler makes a random sampling decision with the
-         * probability of sampling equal to the value of the property.
+         * Ratio of the requests to sample, double value.
          */
-        PROBABILISTIC("probabilistic"),
-        /**
-         * Rate Limiting sampler uses a leaky bucket rate limiter to ensure that
-         * traces are sampled with a certain constant rate.
-         */
-        RATE_LIMITING("ratelimiting"),
-        /**
-         * Remote sampler consults Jaeger agent for the appropriate sampling
-         * strategy to use in the current service.
-         */
-        REMOTE("remote");
+        RATIO("ratio");
         private final String config;
-
 
         SamplerType(String config) {
             this.config = config;
-        }
-
-        String config() {
-            return config;
         }
 
         static SamplerType create(String value) {
@@ -697,6 +507,10 @@ public class JaegerTracerBuilder implements OpenTracingTracerBuilder<JaegerTrace
                 }
             }
             throw new IllegalStateException("SamplerType " + value + " is not supported");
+        }
+
+        String config() {
+            return config;
         }
     }
 }

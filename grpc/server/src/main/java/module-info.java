@@ -34,5 +34,7 @@ module io.helidon.grpc.server {
     requires jakarta.annotation;
     requires java.logging;
 
+    requires static io.helidon.config.metadata;
+
     requires jakarta.inject;
 }

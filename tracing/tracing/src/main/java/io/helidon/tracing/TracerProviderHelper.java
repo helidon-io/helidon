@@ -15,6 +15,7 @@
  */
 package io.helidon.tracing;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.ServiceLoader;
 
@@ -31,11 +32,21 @@ final class TracerProviderHelper {
     static {
         TracerProvider provider = null;
         try {
-            provider = HelidonServiceLoader.builder(ServiceLoader.load(TracerProvider.class))
+            List<TracerProvider> allProviders = HelidonServiceLoader.builder(ServiceLoader.load(TracerProvider.class))
                     .addService(new NoOpTracerProvider(), 100000)
                     .build()
-                    .asList()
-                    .get(0);
+                    .asList();
+
+            if (allProviders.size() == 1 || allProviders.size() == 2) {
+                // only noop or one and noop
+                provider = allProviders.get(0);
+            }
+            for (TracerProvider aProvider : allProviders) {
+                if (aProvider.available()) {
+                    provider = aProvider;
+                    break;
+                }
+            }
         } catch (Throwable e) {
             LOGGER.log(System.Logger.Level.WARNING, "Failed to set up tracer provider, using no-op", e);
         }

@@ -20,9 +20,10 @@
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.helidon.examples.grpc.microprofile</groupId>
-        <artifactId>helidon-examples-grpc-microprofile-project</artifactId>
-        <version>3.0.0-SNAPSHOT</version>
+        <groupId>io.helidon.applications</groupId>
+        <artifactId>helidon-mp</artifactId>
+        <version>3.0.1-SNAPSHOT</version>
+        <relativePath>../../../../applications/mp/pom.xml</relativePath>
     </parent>
     <artifactId>helidon-examples-grpc-microprofile-metrics</artifactId>
     <name>Helidon Microprofile Examples gRPC Metrics</name>
@@ -68,35 +69,29 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-libs</id>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.jboss.jandex</groupId>
                 <artifactId>jandex-maven-plugin</artifactId>
                 <executions>
                     <execution>
                         <id>make-index</id>
-                        <goals>
-                            <goal>jandex</goal>
-                        </goals>
-                        <phase>process-classes</phase>
                     </execution>
                 </executions>
             </plugin>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-failsafe-plugin</artifactId>
-                <configuration>
-                    <reuseForks>false</reuseForks>
-                    <includes>
-                        <include>**/*IT.java</include>
-                    </includes>
-                </configuration>
+                <groupId>io.helidon.build-tools</groupId>
+                <artifactId>helidon-maven-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>verify</id>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>integration-test</goal>
-                            <goal>verify</goal>
-                        </goals>
+                        <id>third-party-license-report</id>
                     </execution>
                 </executions>
             </plugin>

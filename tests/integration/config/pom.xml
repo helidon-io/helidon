@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.tests.integration</groupId>
         <artifactId>helidon-tests-integration</artifactId>
-        <version>3.0.0-SNAPSHOT</version>
+        <version>3.0.1-SNAPSHOT</version>
     </parent>
 
     <packaging>pom</packaging>
@@ -37,6 +37,7 @@
     <modules>
         <module>gh-2171</module>
         <module>gh-2171-yml</module>
+        <module>gh-4375</module>
         <module>hocon-mp</module>
     </modules>
 </project>

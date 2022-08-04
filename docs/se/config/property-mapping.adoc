@@ -19,9 +19,20 @@
 = Property Mapping
 :description: Helidon config property mapping
 :keywords: helidon, config
+:feature-name: Config
 :rootdir: {docdir}/../..
 
 include::{rootdir}/includes/se.adoc[]
+
+== Contents
+
+- <<Overview>>
+- <<Converting Configuration to Simple Types>>
+- <<Converting Configuration to Complex Types>>
+- <<Advanced Conversions using Explicit Mapping Logic>>
+- <<Conversions using JavaBean Deserialization>>
+
+== Overview
 
 Although config values are originally text, you can use the config system's
 built-in conversions or add your own to translate text
@@ -135,7 +146,7 @@ package JavaDoc].
 Some of those approaches require that the target class -- the class to which
 you want to convert the configuration data -- have certain characteristics
  or that you add a method to the class to help do the mapping.
-You might want to avoid changing the target class or you
+You might want to avoid changing the target class else you
 might not even be able to if you do not control its source.
 
 Here are two approaches that will always work without requiring changes
@@ -407,8 +418,7 @@ object from the config data.
 By default, the system matches potential JavaBean property names with
 config keys in the configuration.
 
-Use the link:{config-javadoc-base-url}/io/helidon/config/Value.html[`Value`] annotation to control some of the JavaBean processing for a
-given property.
+Use the link:{config-javadoc-base-url}/io/helidon/config/Value.html[`Value`] annotation to control some of JavaBean processing for a given property.
 
 .`Value` Annotation
 |===
@@ -675,7 +685,7 @@ The factory method returns the new initialized `AppConfig` instance.
 Note the consistent use of `@Value(key = "...")` on each parameter.
 <3> Because the property `greeting` does not specify a default value
 the property is **mandatory** and must appear in the configuration source.
-Otherwise the config system throws a `ConfigMappingException`.
+Otherwise, the config system throws a `ConfigMappingException`.
 
 Alternatively, you can use an annotated constructor instead of a static factory
 method. Revising the example above, make the constructor public, annotate its

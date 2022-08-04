@@ -20,6 +20,18 @@ ifndef::rootdir[:rootdir: {docdir}/../..]
 
 :feature-name: Reactive Streams
 
+== Contents
+
+- <<Overview, Overview>>
+- <<maven-coordinates, Maven Coordinates>>
+- <<Usage, Usage>>
+- <<Reference, Reference>>
+
+== Overview
+
+Helidon implements link:{microprofile-rs-operators-spec-url}[MicroProfile Reactive Streams Operators] specification which defines reactive operators and provides a standartized tool for manipulation with https://www.reactive-streams.org/[Reactive Streams]. Use it you want stick with MicroProfile ecosystem which guarantees source-level portability between different implementations of the specification.
+
+
 include::{rootdir}/includes/dependencies.adoc[]
 
 [source,xml]
@@ -30,13 +42,9 @@ include::{rootdir}/includes/dependencies.adoc[]
 </dependency>
 ----
 
-== Reactive Streams Operators
+== Usage
 
-Implementation of
-link:{microprofile-rs-operators-spec-url}[MicroProfile Reactive Streams Operators]
-specification. A standardised tool for manipulation with https://www.reactive-streams.org/[Reactive Streams],
-provides set of operators as so called stages,
-and the builders to prepare graphs of stages for streams to be build from.
+The specification provides a set of operators as so called stages, and the builders to prepare graphs of stages for streams to be build from.
 
 [source,java]
 .Example of simple closed graph usage:
@@ -104,26 +112,31 @@ link:{microprofile-rs-operators-spec-url}#_graphs[Graphs] are pre-prepared strea
 [source,java]
 .Combining the graphs and running the stream:
 ----
-        // Assembly of stream, nothing is streamed yet
-        PublisherBuilder<String> publisherStage =
-                ReactiveStreams.of("foo", "bar")
-                        .map(String::trim);
+// Assembly of stream, nothing is streamed yet
+PublisherBuilder<String> publisherStage =
+        ReactiveStreams.of("foo", "bar")
+                .map(String::trim);
 
-        ProcessorBuilder<String, String> processorStage =
-                ReactiveStreams.<String>builder()
-                        .map(String::toUpperCase);
+ProcessorBuilder<String, String> processorStage =
+        ReactiveStreams.<String>builder()
+                .map(String::toUpperCase);
 
-        SubscriberBuilder<String, Void> subscriberStage =
-                ReactiveStreams.<String>builder()
-                        .map(s -> "Item received: " + s)
-                        .forEach(System.out::println);
+SubscriberBuilder<String, Void> subscriberStage =
+        ReactiveStreams.<String>builder()
+                .map(s -> "Item received: " + s)
+                .forEach(System.out::println);
 
-        // Execution of pre-prepared stream
-        publisherStage
-                .via(processorStage)
-                .to(subscriberStage).run();
+// Execution of pre-prepared stream
+publisherStage
+        .via(processorStage)
+        .to(subscriberStage).run();
 
 > Item received: FOO
 > Item received: BAR
 ----
 
+== Reference
+
+* link:{microprofile-rs-operators-spec-url}[MicroProfile Reactive Streams Operators Specification]
+* link:{microprofile-rs-operators-javadoc-url}[MicroProfile Reactive Streams Operators JavaDoc]
+* link:https://github.com/eclipse/microprofile-reactive-streams-operators[MicroProfile Reactive Streams Operators on GitHub]

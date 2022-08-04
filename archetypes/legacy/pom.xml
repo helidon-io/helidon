@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.archetypes</groupId>
         <artifactId>helidon-archetypes-project</artifactId>
-        <version>3.0.0-SNAPSHOT</version>
+        <version>3.0.1-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-archetypes-legacy-project</artifactId>
     <name>Helidon Legacy Archetypes</name>
@@ -60,7 +60,7 @@
                 <groupId>io.helidon.build-tools</groupId>
                 <artifactId>helidon-archetype-maven-plugin</artifactId>
                 <configuration>
-                    <generateCombinations>false</generateCombinations>
+                    <generatePermutations>false</generatePermutations>
                     <externalValues>
                         <artifactId>myproject</artifactId>
                     </externalValues>

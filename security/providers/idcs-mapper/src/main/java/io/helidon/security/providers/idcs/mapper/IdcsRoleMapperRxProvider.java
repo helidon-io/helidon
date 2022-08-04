@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,8 @@ import io.helidon.common.context.Contexts;
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.Grant;
 import io.helidon.security.ProviderRequest;
@@ -218,6 +220,9 @@ public class IdcsRoleMapperRxProvider extends IdcsRoleMapperRxProviderBase imple
      *
      * @param <B> type of builder extending this builder
      */
+    @Configured(prefix = IdcsRoleMapperProviderService.PROVIDER_CONFIG_KEY,
+                description = "IDCS role mapping provider",
+                provides = {SecurityProvider.class, SubjectMappingProvider.class})
     public static class Builder<B extends Builder<B>> extends IdcsRoleMapperRxProviderBase.Builder<Builder<B>>
             implements io.helidon.common.Builder<Builder<B>, IdcsRoleMapperRxProvider> {
         private EvictableCache<String, List<Grant>> roleCache;
@@ -264,6 +269,7 @@ public class IdcsRoleMapperRxProvider extends IdcsRoleMapperRxProviderBase imple
          * @param roleCache cache to use
          * @return update builder instance
          */
+        @ConfiguredOption(key = "cache-config", type = EvictableCache.class)
         public B roleCache(EvictableCache<String, List<Grant>> roleCache) {
             this.roleCache = roleCache;
             return me;

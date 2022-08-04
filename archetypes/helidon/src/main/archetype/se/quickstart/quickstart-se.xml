@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2021 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -20,48 +20,26 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
 
-    <source src="../bare/bare-se.xml"/>
+    <exec src="/common/presets.xml"/>
+    <presets>
+        <boolean path="db">false</boolean>
+    </presets>
+    <exec src="/se/custom/custom-se.xml"/>
+    <source src="/common/media-sources.xml"/>
+    <exec src="/se/quickstart/quickstart-tests.xml"/>
     <output>
         <model>
             <value key="readme-description">Sample Helidon SE project that includes multiple REST operations.</value>
-            <list key="MainTest-java-imports">
-                <value>java.util.Collections</value>
-                <value>jakarta.json.Json</value>
-                <value>jakarta.json.JsonBuilderFactory</value>
+            <list key="readme-exercise-the-application">
+                <value file="files/README.md"/>
             </list>
-            <list key="MainTest-static-fields">
-                <value><![CDATA[    private static final JsonBuilderFactory JSON_BUILDER = Json.createBuilderFactory(Collections.emptyMap());]]></value>
-                <value><![CDATA[    private static final JsonObject TEST_JSON_OBJECT = JSON_BUILDER.createObjectBuilder()
-                .add("greeting", "Hola")
-                .build();]]></value>
+            <list key="Main-createRouting">
+                <value><![CDATA[        GreetService greetService = new GreetService(config);]]></value>
             </list>
-            <list key="MainTest-methods">
-                <value><![CDATA[
-    @Test
-    public void testGreetings() {
-        JsonObject jsonObject;
-        WebClientResponse response;
-
-        jsonObject = webClient.get()
-                .path("/greet/Joe")
-                .request(JsonObject.class)
-                .await();
-        assertThat(jsonObject.getString("message"), is("Hello Joe!"));
-
-        response = webClient.put()
-                .path("/greet/greeting")
-                .submit(TEST_JSON_OBJECT)
-                .await();
-        assertThat(response.status().code(), is(204));
-
-        jsonObject = webClient.get()
-                .path("/greet/Joe")
-                .request(JsonObject.class)
-                .await();
-        assertThat(jsonObject.getString("message"), is("Hola Joe!"));
-    }
-                ]]></value>
+            <list key="Main-routingBuilder">
+                <value><![CDATA[                .register("/greet", greetService)]]></value>
             </list>
+            <value key="Main-readyMessage">System.out.println("WEB server is up! http://localhost:" + ws.port() + "/greet");</value>
         </model>
     </output>
 </archetype-script>

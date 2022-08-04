@@ -1,0 +1,68 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2022 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+ifndef::rootdir[:rootdir: {docdir}/..]
+:description: Configuration of io.helidon.webclient.WebClientConfiguration
+:keywords: helidon, config, io.helidon.webclient.WebClientConfiguration
+:basic-table-intro: The table below lists the configuration keys that configure io.helidon.webclient.WebClientConfiguration
+include::{rootdir}/includes/attributes.adoc[]
+
+= WebClientConfiguration (webclient) Configuration
+
+// tag::config[]
+
+Configuration of the HTTP client
+
+
+Type: link:{javadoc-base-url}/io.helidon.webclient/io/helidon/webclient/WebClientConfiguration.html[io.helidon.webclient.WebClientConfiguration]
+
+
+This is a standalone configuration type, prefix from configuration root: `client`
+
+
+
+== Configuration options
+
+
+
+.Optional configuration options
+[cols="3,3a,2,5a"]
+
+|===
+|key |type |default value |description
+
+|`connect-timeout-millis` |long |`60000` |Sets new connection timeout of the request.
+|`cookies.automatic-store-enabled` |boolean |{nbsp} |Whether to allow automatic cookie storing
+|`cookies.default-cookies` |Map |{nbsp} |Default cookies to be used in each request. Each list entry has to have "name" and "value" node
+|`follow-redirects` |boolean |`false` |Whether to follow any response redirections or not.
+|`headers` |Map |{nbsp} |Default headers to be used in each request. Each list entry has to have "name" and "value" node
+|`max-redirects` |int |`5` |Sets max number of followed redirects.
+|`media-support` |xref:{rootdir}/config/io_helidon_media_common_MediaContext.adoc[MediaContext] |{nbsp} |
+|`proxy` |xref:{rootdir}/config/io_helidon_webclient_Proxy.adoc[Proxy] |{nbsp} |Sets new request proxy.
+|`read-timeout-millis` |long |`600000` |Sets new read timeout of the response.
+|`relative-uris` |boolean |`false` |Can be set to `true` to force the use of relative URIs in all requests,
+ regardless of the presence or absence of proxies or no-proxy lists.
+|`tls` |xref:{rootdir}/config/io_helidon_webclient_WebClientTls.adoc[WebClientTls] |{nbsp} |New TLS configuration.
+|`uri` |string |{nbsp} |Base uri for each request.
+
+ @return updated builder instance
+|`user-agent` |string |{nbsp} |Name of the user agent which should be used.
+
+|===
+
+// end::config[]

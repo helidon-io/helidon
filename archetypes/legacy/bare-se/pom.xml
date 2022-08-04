@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.archetypes</groupId>
         <artifactId>helidon-archetypes-legacy-project</artifactId>
-        <version>3.0.0-SNAPSHOT</version>
+        <version>3.0.1-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-bare-se</artifactId>
     <packaging>helidon-archetype</packaging>
@@ -31,6 +31,6 @@
 
     <properties>
         <flavor>se</flavor>
-        <app-type>bare</app-type>
+        <app-type>custom</app-type>
     </properties>
 </project>

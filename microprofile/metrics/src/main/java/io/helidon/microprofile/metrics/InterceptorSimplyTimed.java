@@ -16,9 +16,18 @@
 
 package io.helidon.microprofile.metrics;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
 import jakarta.annotation.Priority;
+import jakarta.enterprise.util.AnnotationLiteral;
 import jakarta.interceptor.Interceptor;
+import jakarta.interceptor.InterceptorBinding;
 import org.eclipse.microprofile.metrics.SimpleTimer;
+import org.eclipse.microprofile.metrics.annotation.Metered;
 import org.eclipse.microprofile.metrics.annotation.SimplyTimed;
 
 /**
@@ -29,7 +38,7 @@ import org.eclipse.microprofile.metrics.annotation.SimplyTimed;
  *     method, and the separate {@link InterceptorSyntheticRestRequest} interceptor deals with those.
  * </p>
  */
-@SimplyTimed
+@InterceptorSimplyTimed.Binding
 @Interceptor
 @Priority(Interceptor.Priority.PLATFORM_BEFORE + 10)
 final class InterceptorSimplyTimed extends InterceptorTimedBase<SimpleTimer> {
@@ -38,9 +47,33 @@ final class InterceptorSimplyTimed extends InterceptorTimedBase<SimpleTimer> {
         super(SimplyTimed.class, SimpleTimer.class);
     }
 
+    static Binding.Literal binding() {
+        return Binding.Literal.instance();
+    }
+
     @Override
     void postComplete(SimpleTimer metric) {
         metric.update(duration());
     }
 
+    @Inherited
+    @InterceptorBinding
+    @Target({ElementType.TYPE})
+    @Retention(RetentionPolicy.RUNTIME)
+    @Metered
+    @interface Binding {
+        class Literal extends AnnotationLiteral<Binding> implements Binding {
+
+            private static final long serialVersionUID = 1L;
+
+            private static final Literal INSTANCE = new Literal();
+
+            static Literal instance() {
+                return INSTANCE;
+            }
+
+            private Literal() {
+            }
+        }
+    }
 }

@@ -18,6 +18,7 @@ package io.helidon.microprofile.config;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
+import java.util.Map;
 
 import io.helidon.microprofile.config.Converters.Ctor;
 import io.helidon.microprofile.config.Converters.Of;
@@ -37,6 +38,7 @@ import static java.lang.annotation.ElementType.FIELD;
 import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
@@ -59,7 +61,29 @@ class MpConfigInjectionTest {
     private SubBean subBean;
 
     @Test
-    public void testImplicitConversion() {
+    void testInjectMapNoPrefix() {
+        Map<String, String> allProperties = bean.allProperties;
+        assertAll(
+                () -> assertThat(allProperties, hasEntry("inject.of", "of")),
+                () -> assertThat(allProperties, hasEntry("inject.valueOf", "valueOf")),
+                () -> assertThat(allProperties, hasEntry("inject.parse", "parse")),
+                () -> assertThat(allProperties, hasEntry("inject.ctor", "ctor"))
+        );
+    }
+
+    @Test
+    void testInjectMapWithPrefix() {
+        Map<String, String> injectProperties = bean.injectProperties;
+        assertAll(
+                () -> assertThat(injectProperties, hasEntry("of", "of")),
+                () -> assertThat(injectProperties, hasEntry("valueOf", "valueOf")),
+                () -> assertThat(injectProperties, hasEntry("parse", "parse")),
+                () -> assertThat(injectProperties, hasEntry("ctor", "ctor"))
+        );
+    }
+
+    @Test
+    void testImplicitConversion() {
         assertAll("Implicit conversion injection",
                   () -> assertThat("of", bean.of, is(Of.of("of"))),
                   () -> assertThat("valueOf", bean.valueOf, is(ValueOf.valueOf("valueOf"))),
@@ -69,7 +93,7 @@ class MpConfigInjectionTest {
     }
 
     @Test
-    public void testImplicitConversionSubclass() {
+    void testImplicitConversionSubclass() {
         assertAll("Implicit conversion injection",
                   () -> assertThat("of", subBean.of, is(Of.of("of"))),
                   () -> assertThat("valueOf", subBean.valueOf, is(ValueOf.valueOf("valueOf"))),
@@ -94,6 +118,14 @@ class MpConfigInjectionTest {
         @Inject
         @ConfigProperty(name = "inject.ctor")
         public Ctor ctor;
+
+        @Inject
+        @ConfigProperty(name = "")
+        public Map<String, String> allProperties;
+
+        @Inject
+        @ConfigProperty(name = "inject")
+        public Map<String, String> injectProperties;
     }
 
     @Qualifier

@@ -22,12 +22,11 @@
 
     <step name="Application Type" optional="true">
         <inputs>
-            <enum id="app-type" name="Select archetype" default="bare" global="true" optional="true">
-                <option value="bare"
-                        name="Bare"
-                        description="Bare Helidon MP project suitable to start from scratch">
-                    <exec src="bare/bare-mp.xml"/>
-                </option>
+            <enum id="app-type"
+                  name="Select an Application Type"
+                  default="quickstart"
+                  global="true"
+                  optional="true">
                 <option value="quickstart"
                         name="Quickstart"
                         description="Sample Helidon MP project that includes multiple REST operations">
@@ -37,6 +36,11 @@
                         name="Database"
                         description="Helidon MP application that uses a database with JPA">
                     <exec src="database/database-mp.xml"/>
+                </option>
+                <option value="custom"
+                        name="Custom"
+                        description="Custom Helidon MP project">
+                    <exec src="custom/custom-mp.xml"/>
                 </option>
             </enum>
         </inputs>

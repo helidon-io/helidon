@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,8 @@ import java.util.logging.Logger;
 
 import io.helidon.common.configurable.ServerThreadPoolSupplier;
 import io.helidon.common.context.Contexts;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.config.mp.MpConfig;
 import io.helidon.config.mp.MpConfigSources;
 import io.helidon.microprofile.cdi.HelidonContainer;
@@ -126,7 +128,8 @@ public interface Server {
     /**
      * Builder to build {@link Server} instance.
      */
-    final class Builder {
+    @Configured(prefix = "server", description = "Configuration of Helidon Microprofile Server", root = true)
+    final class Builder implements io.helidon.common.Builder<Builder, Server> {
         private static final Logger STARTUP_LOGGER = Logger.getLogger("io.helidon.microprofile.startup.builder");
 
         private final List<Class<?>> resourceClasses = new LinkedList<>();
@@ -169,6 +172,7 @@ public interface Server {
          * @return Server instance to be started
          * @throws MpException in case the server fails to be created
          */
+        @Override
         public Server build() {
             STARTUP_LOGGER.entering(Builder.class.getName(), "build");
 
@@ -266,6 +270,7 @@ public interface Server {
          * @param host hostname
          * @return modified builder
          */
+        @ConfiguredOption
         public Builder host(String host) {
             this.host = host;
             return this;
@@ -294,6 +299,7 @@ public interface Server {
          *                 service
          * @return updated builder instance
          */
+        @ConfiguredOption(key = "executor-service")
         public Builder defaultExecutorServiceSupplier(Supplier<? extends ExecutorService> supplier) {
             this.defaultExecutorService = supplier;
             return this;
@@ -305,6 +311,7 @@ public interface Server {
          * @param port port
          * @return modified builder
          */
+        @ConfiguredOption
         public Builder port(int port) {
             this.port = port;
             return this;

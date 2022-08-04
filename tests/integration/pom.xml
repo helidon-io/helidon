@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.tests</groupId>
         <artifactId>helidon-tests-project</artifactId>
-        <version>3.0.0-SNAPSHOT</version>
+        <version>3.0.1-SNAPSHOT</version>
     </parent>
 
     <groupId>io.helidon.tests.integration</groupId>
@@ -54,6 +54,7 @@
         <module>config</module>
         <module>jep290</module>
         <module>mp-bean-validation</module>
+        <module>restclient</module>
     </modules>
 
     <profiles>

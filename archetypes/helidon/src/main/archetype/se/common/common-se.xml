@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2021 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -21,13 +21,10 @@
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
 
     <exec src="/common/common.xml"/>
-    <source src="/common/project-sources.xml"/>
+    <source src="/common/sources.xml"/>
     <output>
         <model>
             <value key="mainClass">${package}.Main</value>
-            <list key="readme-sections">
-                <value file="files/README.md"/>
-            </list>
             <value key="parent-artifactId">helidon-se</value>
             <list key="dependencies">
                 <map order="999">
@@ -37,18 +34,6 @@
                 <map order="999">
                     <value key="groupId">io.helidon.config</value>
                     <value key="artifactId">helidon-config-yaml</value>
-                </map>
-                <map order="999">
-                    <value key="groupId">io.helidon.health</value>
-                    <value key="artifactId">helidon-health</value>
-                </map>
-                <map order="999">
-                    <value key="groupId">io.helidon.health</value>
-                    <value key="artifactId">helidon-health-checks</value>
-                </map>
-                <map order="999">
-                    <value key="groupId">io.helidon.metrics</value>
-                    <value key="artifactId">helidon-metrics</value>
                 </map>
                 <map order="0">
                     <value key="groupId">org.junit.jupiter</value>
@@ -63,17 +48,12 @@
                 <map order="0">
                     <value key="groupId">io.helidon.webclient</value>
                     <value key="artifactId">helidon-webclient</value>
-                    <value key="scope">test</value>
                 </map>
             </list>
             <list key="Main-helidon-imports">
                 <value>io.helidon.common.LogConfig</value>
                 <value>io.helidon.common.reactive.Single</value>
                 <value>io.helidon.config.Config</value>
-                <value>io.helidon.health.HealthSupport</value>
-                <value>io.helidon.health.checks.HealthChecks</value>
-                <value>io.helidon.media.jsonp.JsonpSupport</value>
-                <value>io.helidon.metrics.MetricsSupport</value>
                 <value>io.helidon.webserver.Routing</value>
                 <value>io.helidon.webserver.WebServer</value>
             </list>

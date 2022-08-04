@@ -1,0 +1,164 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Helidon MP
+:description: about Helidon MP
+:keywords: helidon, java, microservices, microprofile
+:rootdir: {docdir}/..
+
+include::{rootdir}/includes/mp.adoc[]
+
+== Introduction
+
+Helidon MP is an Eclipse MicroProfile {version-lib-microprofile-api} runtime that allows the Jakarta EE community to run microservices in a portable way. It designed for ease of use and provides Spring Boot like development experience with heavily usage of dependency injection and annotations. 
+
+== Supported Jakarta EE Specifications
+
+|===
+| Specification | Version | Description
+
+| xref:{rootdir}/mp/beanvalidation.adoc[Jakarta Bean Validation]
+| link:{jakarta-bean-validation-spec-url}[{version-lib-jakarta-bean-validation}]
+| Object level constraint declaration and validation facility
+
+| Jakarta Context and Dependency Injection (CDI)
+| link:{jakarta-cdi-spec-url}[{version-lib-jakarta-cdi}]
+| Declarative dependency injection and supporting services
+
+| Jakarta JSON Processing (JSON-P)
+| link:{jakarta-jsonp-javadoc-url}[{version-lib-jakarta-jsonp-api}]
+| API to parse, generate, transform, and query JSON docs
+
+| Jakarta JSON Binding (JSON-B)
+| link:{jakarta-jsonb-spec-url}[{version-lib-jakarta-jsonb-api}]
+| Binding framework for converting POJOs to/from JSON docs
+
+| xref:{rootdir}/mp/server.adoc[Jakarta RESTful Web Services (JAX-RS)]
+| link:{jakarta-jaxrs-spec-url}[{version-lib-jakarta-jaxrs-api}]
+| API to develop web services following the REST pattern
+
+| xref:{rootdir}/mp/persistence.adoc#JPA[Jakarta Persistence (JPA)]
+| link:{jakarta-persistence-spec-url}[{version-lib-jakarta-persistence-api}]
+| Management of persistence and object/relational mapping
+
+| xref:{rootdir}/mp/persistence.adoc#JTA[Jakarta Transactions (JTA)]
+| link:{jakarta-transactions-spec-url}[{version-lib-jakarta-transaction-api}]
+| Allows handling transactions consistent with X/Open XA-spec
+
+| xref:{rootdir}/mp/websocket.adoc[Jakarta WebSocket]
+| link:{jakarta-websocket-spec-url}[{version-lib-jakarta-websockets-api}]
+| API for Server and Client Endpoints for WebSocket protocol
+
+|===
+
+== Supported MicroProfile Specifications
+
+|===
+| Specification | Version | Description
+
+| xref:{rootdir}/mp/config/introduction.adoc[MicroProfile Config]
+| link:{microprofile-config-spec-url}[{version-lib-microprofile-config}]
+| A flexible configuration framework with support for multiple sources and
+ formats
+
+| xref:{rootdir}/mp/fault-tolerance.adoc[MicroProfile Fault Tolerance]
+| link:{microprofile-fault-tolerance-spec-url}[{version-lib-microprofile-fault-tolerance-api}]
+| Common strategies for various system problems such as time-outs, retries, Circuit Breaker, etc.
+
+| xref:{rootdir}/mp/graphql.adoc[MicroProfile GraphQL]
+| link:{microprofile-graphql-spec-url}[{version-lib-microprofile-graphql}]
+| API for working with GraphQL
+
+| xref:{rootdir}/mp/health.adoc[MicroProfile Health]
+| link:{microprofile-health-spec-url}[{version-lib-microprofile-health}]
+| Health checks for automatic service restart/shutdown
+
+| xref:{rootdir}/mp/jwt.adoc[MicroProfile JWT Auth]
+| link:{microprofile-jwt-spec-url}[{version-lib-microprofile-jwt}]
+| Defines a compact and self-contained way for securely transmitting information between parties as a JSON object
+
+| xref:{rootdir}/mp/lra.adoc[MicroProfile Long-Running Actions (LRA)]
+| link:{microprofile-lra-spec-url}[{version-lib-microprofile-lra-api}]
+| Distributed transactions for microservices following SAGA pattern
+
+| xref:{rootdir}/mp/metrics/metrics.adoc[MicroProfile Metrics]
+| link:{microprofile-metrics-spec-url}[{version-lib-microprofile-metrics-api}]
+| Defining and exposing telemetry data in Prometheus and JSON formats
+
+| xref:{rootdir}/mp/openapi.adoc[MicroProfile Open API]
+| link:{microprofile-open-api-spec-url}[{version-lib-microprofile-openapi-api}]
+| Annotations for documenting your application endpoints
+
+| xref:{rootdir}/mp/tracing.adoc[MicroProfile OpenTracing]
+| link:{microprofile-tracing-spec-url}[{version-lib-microprofile-tracing}]
+| Profile and monitor your applications across multiple services
+
+| xref:{rootdir}/mp/reactivemessaging/introduction.adoc[MicroProfile Reactive Messaging]
+| link:{microprofile-reactive-messaging-spec-url}[{version-lib-microprofile-reactive-messaging-api}]
+| Standard API for sending and receiving messages/events using streams
+
+| xref:{rootdir}/mp/reactivestreams/rsoperators.adoc[MicroProfile Reactive Streams Operators]
+| link:{microprofile-rs-operators-spec-url}[{version-lib-microprofile-rs-operators-api}]
+| Control flow and error processing for event streams
+
+| xref:{rootdir}/mp/restclient.adoc[MicroProfile REST Client]
+| link:{microprofile-rest-client-spec-url}[{version-lib-microprofile-rest-client}]
+| Type-safe API for RESTful Web Services
+
+|===
+
+== Other Components
+
+!===
+| Component | Description
+
+| xref:{rootdir}/mp/cors/cors.adoc[CORS]
+| Cross Origin Resource Sharing – API to control if and how REST resources served by their applications can be shared across origins 
+
+| xref:{rootdir}/mp/grpc/server.adoc[gRPC]
+| gRPC server and client
+
+| xref:{rootdir}/mp/integrations/oci.adoc[OCI SDK]
+| Full set of APIs for working with OCI services
+
+| xref:{rootdir}/mp/scheduling.adoc[Scheduling]
+| Scheduling functionality based on https://github.com/jmrozanec/cron-utils[Cron-utils]
+
+| xref:{rootdir}/mp/security/security.adoc[Security]
+| A tool-chain to handle authentication, authorization and context propagation
+
+!===
+
+== Migration
+
+In case you need to upgrade the version of Helidon, follow the `Migration Guides`.
+
+For migration from Helidon 1.x to 2.x:
+
+* xref:{rootdir}/mp/guides/migration.adoc[Helidon MP 2x Migration Guide]
+
+For migration from Helidon 2.x to 3.x:
+
+* xref:{rootdir}/mp/guides/migration_3x.adoc[Helidon MP 3x Migration Guide]
+
+== Next Steps
+
+- Try the xref:{rootdir}/mp/guides/overview.adoc[Helidon MP quickstart guides] to get your
+first Helidon MP application up and running in minutes.
+
+- Browse the link:{javadoc-base-url}/index.html?overview-summary.html[Helidon Javadocs]

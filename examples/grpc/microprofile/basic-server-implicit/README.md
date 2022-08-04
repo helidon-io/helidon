@@ -18,14 +18,15 @@ which provides a microprofile gRPC client that uses the services deployed in thi
 
 ## Build
 
-```
-mvn package
+```bash
+mvn -f ../../pom.xml -pl common,microprofile/basic-server-implicit package
 ```
 
 ## Run
 
-```
-mvn exec:exec
+```bash
+java -jar target/helidon-examples-grpc-microprofile-basic-implicit.jar
 ```
 
-Then the services can be accessed on the gRPC endpoint `localhost:1408`
+Then the services can be accessed on the gRPC endpoint `localhost:1408`. As noted above, the client in
+[Basic gRPC Client example](../basic-client/README.md) can be used for this purpose.

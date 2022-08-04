@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,9 +23,12 @@ import io.helidon.security.spi.SecurityProviderService;
  * Service for {@link IdcsRoleMapperRxProvider}.
  */
 public class IdcsRoleMapperProviderService implements SecurityProviderService {
+
+    static final String PROVIDER_CONFIG_KEY = "idcs-role-mapper";
+
     @Override
     public String providerConfigKey() {
-        return "idcs-role-mapper";
+        return PROVIDER_CONFIG_KEY;
     }
 
     // This is for backward compatibility only. This will be changed in 3.x

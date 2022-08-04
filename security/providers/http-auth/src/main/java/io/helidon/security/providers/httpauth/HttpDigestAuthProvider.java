@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,8 @@ import java.util.stream.Collectors;
 import javax.crypto.Cipher;
 
 import io.helidon.config.Config;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.Principal;
 import io.helidon.security.ProviderRequest;
@@ -43,6 +45,7 @@ import io.helidon.security.SecurityResponse;
 import io.helidon.security.Subject;
 import io.helidon.security.SubjectType;
 import io.helidon.security.spi.AuthenticationProvider;
+import io.helidon.security.spi.SecurityProvider;
 import io.helidon.security.spi.SynchronousProvider;
 
 /**
@@ -269,7 +272,12 @@ public final class HttpDigestAuthProvider extends SynchronousProvider implements
     /**
      * {@link HttpDigestAuthProvider} fluent API builder.
      */
+    @Configured(prefix = HttpDigestAuthService.PROVIDER_CONFIG_KEY,
+                description = "Http digest authentication security provider",
+                provides = {SecurityProvider.class, AuthenticationProvider.class})
     public static final class Builder implements io.helidon.common.Builder<Builder, HttpDigestAuthProvider> {
+
+        private static final String DEFAULT_REALM = "Helidon";
         private static final SecureUserStore EMPTY_STORE = login -> Optional.empty();
         /**
          * Default is 24 hours.
@@ -278,7 +286,7 @@ public final class HttpDigestAuthProvider extends SynchronousProvider implements
         private final List<HttpDigest.Qop> digestQopOptions = new LinkedList<>();
         private SecureUserStore userStore = EMPTY_STORE;
         private boolean optional = false;
-        private String realm = "Helidon";
+        private String realm = DEFAULT_REALM;
         private SubjectType subjectType = SubjectType.USER;
         private HttpDigest.Algorithm digestAlgorithm = HttpDigest.Algorithm.MD5;
         private boolean noDigestQop = false;
@@ -290,6 +298,7 @@ public final class HttpDigestAuthProvider extends SynchronousProvider implements
 
         /**
          * Update builder from configuration.
+         *
          * @param config to read configuration from, located on the node of the provider
          * @return updated builder instance
          */
@@ -342,6 +351,7 @@ public final class HttpDigestAuthProvider extends SynchronousProvider implements
          * @param subjectType type of principal
          * @return updated builder instance
          */
+        @ConfiguredOption(key = "principal-type", value = "USER")
         public Builder subjectType(SubjectType subjectType) {
             this.subjectType = subjectType;
 
@@ -362,6 +372,7 @@ public final class HttpDigestAuthProvider extends SynchronousProvider implements
          * @param store User store to use
          * @return updated builder instance
          */
+        @ConfiguredOption(key = "users", type = ConfigUserStore.ConfigUser.class, kind = ConfiguredOption.Kind.LIST)
         public Builder userStore(SecureUserStore store) {
             this.userStore = store;
             return this;
@@ -375,6 +386,7 @@ public final class HttpDigestAuthProvider extends SynchronousProvider implements
          * @param optional whether authentication is optional (true) or required (false)
          * @return updated builder instance
          */
+        @ConfiguredOption("false")
         public Builder optional(boolean optional) {
             this.optional = optional;
             return this;
@@ -386,6 +398,7 @@ public final class HttpDigestAuthProvider extends SynchronousProvider implements
          * @param realm security realm name to send to browser (or any other client) when unauthenticated
          * @return updated builder instance
          */
+        @ConfiguredOption(DEFAULT_REALM)
         public Builder realm(String realm) {
             this.realm = realm;
             return this;
@@ -397,6 +410,7 @@ public final class HttpDigestAuthProvider extends SynchronousProvider implements
          * @param algorithm Algorithm to use, default is {@link HttpDigest.Algorithm#MD5}
          * @return updated builder instance
          */
+        @ConfiguredOption(key = "algorithm", value = "MD5")
         public Builder digestAlgorithm(HttpDigest.Algorithm algorithm) {
             this.digestAlgorithm = algorithm;
             return this;
@@ -410,6 +424,11 @@ public final class HttpDigestAuthProvider extends SynchronousProvider implements
          * @param unit     Duration time unit
          * @return updated builder instance
          */
+        @ConfiguredOption(key = "nonce-timeout-millis",
+                          type = Long.class,
+                          value = "86400000",
+                          description = "How long will the nonce value be valid. When timed-out, "
+                                  + "browser will re-request username/password.")
         public Builder digestNonceTimeout(long duration, TimeUnit unit) {
             this.digestNonceTimeoutMillis = unit.toMillis(duration);
             return this;
@@ -425,6 +444,7 @@ public final class HttpDigestAuthProvider extends SynchronousProvider implements
          * @param serverSecret a password to encrypt our nonce values with
          * @return updated builder instance
          */
+        @ConfiguredOption(key = "server-secret", type = String.class)
         public Builder digestServerSecret(char[] serverSecret) {
             this.digestServerSecret = Arrays.copyOf(serverSecret, serverSecret.length);
 
@@ -437,6 +457,10 @@ public final class HttpDigestAuthProvider extends SynchronousProvider implements
          * @param qop qop to add to list of supported qops
          * @return updated builder instance
          */
+        @ConfiguredOption(key = "qop",
+                          value = "NONE",
+                          description = "Only `AUTH` supported. If left empty,"
+                                  + " uses the legacy approach (older RFC version). `AUTH-INT` is not supported.")
         public Builder addDigestQop(HttpDigest.Qop qop) {
             this.digestQopOptions.add(qop);
             return this;

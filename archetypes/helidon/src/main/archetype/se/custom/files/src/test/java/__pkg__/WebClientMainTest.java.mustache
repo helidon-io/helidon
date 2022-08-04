@@ -1,0 +1,48 @@
+package {{package}};
+
+import io.helidon.webclient.WebClient;
+import io.helidon.webserver.WebServer;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
+import java.util.concurrent.TimeUnit;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+
+public class WebClientMainTest {
+
+    private static WebServer webServer;
+    private static WebClient webClient;
+
+    @BeforeAll
+    public static void startTheServer() {
+        webServer = Main.startServer().await();
+        webClient = WebClient.builder()
+                .baseUri("http://localhost:" + webServer.port() + "/simple-greet")
+                .build();
+    }
+
+    @AfterAll
+    public static void stopServer() throws Exception {
+        if (webServer != null) {
+            webServer.shutdown()
+                    .toCompletableFuture()
+                    .get(10, TimeUnit.SECONDS);
+        }
+    }
+
+    @Test
+    public void getSimpleGreetTest() throws Exception {
+        WebClientMain.performGetMethod(webClient)
+{{#media-json}}
+                .thenAccept(it -> assertThat(it, is("{\"message\":\"Hello World!\"}")))
+{{/media-json}}
+{{^media-json}}
+                .thenAccept(it -> assertThat(it, is("Hello World!")))
+{{/media-json}}
+        .await();
+    }
+
+}

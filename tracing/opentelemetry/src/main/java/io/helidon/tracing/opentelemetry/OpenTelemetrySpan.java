@@ -24,6 +24,7 @@ import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.common.AttributesBuilder;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.StatusCode;
+import io.opentelemetry.context.Context;
 
 class OpenTelemetrySpan implements io.helidon.tracing.Span {
     private final Span delegate;
@@ -63,7 +64,7 @@ class OpenTelemetrySpan implements io.helidon.tracing.Span {
 
     @Override
     public SpanContext context() {
-        return new OpenTelemetrySpanContext(delegate.getSpanContext());
+        return new OpenTelemetrySpanContext(Context.current().with(delegate));
     }
 
     @Override

@@ -1,4 +1,4 @@
-#!/bin/bash -ex
+#!/bin/bash -e
 #
 # Copyright (c) 2021, 2022 Oracle and/or its affiliates.
 #
@@ -35,6 +35,7 @@ if [ ! -x "${GRAALVM_HOME}/bin/native-image" ]; then
 fi
 
 mvn ${MAVEN_ARGS} --version
+
 echo "GRAALVM_HOME=${GRAALVM_HOME}";
 ${GRAALVM_HOME}/bin/native-image --version;
 

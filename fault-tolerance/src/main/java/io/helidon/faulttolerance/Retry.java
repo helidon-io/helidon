@@ -83,7 +83,7 @@ public interface Retry extends FtHandler {
          * @param policy retry policy
          * @return updated builder instance
          */
-        @ConfiguredOption(kind = ConfiguredOption.Kind.MAP)
+        @ConfiguredOption(provider = true)
         public Builder retryPolicy(RetryPolicy policy) {
             this.retryPolicy = policy;
             return this;
@@ -390,7 +390,8 @@ public interface Retry extends FtHandler {
         /**
          * Fluent API builder for {@link io.helidon.faulttolerance.Retry.DelayingRetryPolicy}.
          */
-        @Configured
+        @Configured(provides = RetryPolicy.class, description = "A retry policy that prolongs the delays between retries by "
+                + "a defined factor.")
         public static class Builder implements io.helidon.common.Builder<Builder, DelayingRetryPolicy> {
             private int calls = 3;
             private double delayFactor = 2;
@@ -548,7 +549,7 @@ public interface Retry extends FtHandler {
         /**
          * Fluent API builder for {@link io.helidon.faulttolerance.Retry.JitterRetryPolicy}.
          */
-        @Configured
+        @Configured(provides = RetryPolicy.class)
         public static class Builder implements io.helidon.common.Builder<Builder, JitterRetryPolicy> {
             private int calls = 3;
             private Duration delay = Duration.ofMillis(200);

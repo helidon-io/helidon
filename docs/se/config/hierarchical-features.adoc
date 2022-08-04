@@ -19,12 +19,23 @@
 = Hierarchical Features
 :description: Helidon hierarchical features
 :keywords: helidon, config
-:toc: preamble
-:toclevels: 2
+:feature-name: Config
 :rootdir: {docdir}/../..
 :imagesdir: {rootdir}/images
 
 include::{rootdir}/includes/se.adoc[]
+
+== Contents
+
+- <<Overview>>
+- <<Configuration Node Types>>
+- <<Configuration Key>>
+- <<In-memory Representation of Configuration>>
+- <<Access by Key>>
+- <<Access by General Navigation>>
+- <<Detaching a Config Subtree>>
+
+== Overview
 
 The config system represents configuration as a tree in memory. Many developers
 will choose to work directly with config values -- values from
@@ -66,6 +77,27 @@ the config system returns a `Config` node object with
 type `MISSING`. The in-memory config tree contains nodes only of types `OBJECT`, `LIST`,
 and `VALUE`.
 ====
+
+== Configuration Key
+Each config node (except the root) has a non-null key. Here is the formal
+definition of what keys can be:
+[source,abnf]
+.The ABNF syntax of config key
+----
+config-key = *1( key-token *( "." key-token ) )
+ key-token = *( unescaped / escaped )
+ unescaped = %x00-2D / %x2F-7D / %x7F-10FFFF
+           ; %x2E ('.') and %x7E ('~') are excluded from 'unescaped'
+   escaped = "~" ( "0" / "1" )
+           ; representing '~' and '.', respectively
+----
+
+[IMPORTANT]
+=========
+To emphasize, the dot character ("`.`") has special meaning as a name separator
+in keys. To include a dot as a character in a key escape it as
+"`~1`". To include a tilda escape it as "`~0`".
+=========
 
 == In-memory Representation of Configuration
 The following example is in link:https://github.com/lightbend/config/blob/master/HOCON.md[HOCON]
@@ -137,7 +169,7 @@ notation to separate the names of the nodes along the path. The code can
 navigate one level at a time using chained `get` invocations, each specifying
 one level of the path to the expected node. Or, you can mix the two styles.
 
-All of the following lines retrieve the same `Config` node.
+All the following lines retrieve the same `Config` node.
 [source,java]
 .Equivalent Config Retrievals
 ----

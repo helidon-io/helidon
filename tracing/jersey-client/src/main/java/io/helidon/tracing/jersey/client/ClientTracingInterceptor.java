@@ -15,6 +15,7 @@
  */
 package io.helidon.tracing.jersey.client;
 
+import io.helidon.tracing.Scope;
 import io.helidon.tracing.Span;
 
 import jakarta.ws.rs.client.ClientRequestContext;
@@ -22,6 +23,7 @@ import jakarta.ws.rs.client.ClientResponseContext;
 import org.glassfish.jersey.client.spi.PostInvocationInterceptor;
 
 import static io.helidon.tracing.jersey.client.ClientTracingFilter.SPAN_PROPERTY_NAME;
+import static io.helidon.tracing.jersey.client.ClientTracingFilter.SPAN_SCOPE_PROPERTY_NAME;
 
 /**
  * A post-invocation client interceptor. If an exception (e.g. a connection timeout)
@@ -45,11 +47,17 @@ public class ClientTracingInterceptor implements PostInvocationInterceptor {
      */
     @Override
     public void onException(ClientRequestContext requestContext, ExceptionContext exceptionContext) {
-        Object property = requestContext.getProperty(SPAN_PROPERTY_NAME);
-        if (property instanceof Span span) {
+        Object spanProperty = requestContext.getProperty(SPAN_PROPERTY_NAME);
+        Object scopeProperty = requestContext.getProperty(SPAN_SCOPE_PROPERTY_NAME);
+
+        if (spanProperty instanceof Span span) {
             span.status(Span.Status.ERROR);
             span.end(exceptionContext.getThrowables().pop());
             requestContext.removeProperty(SPAN_PROPERTY_NAME);
+        }
+        if (scopeProperty instanceof Scope scope) {
+            scope.close();
+            requestContext.removeProperty(SPAN_SCOPE_PROPERTY_NAME);
         }
         for (Throwable throwable : exceptionContext.getThrowables()) {
             throwable.printStackTrace();

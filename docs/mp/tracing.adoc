@@ -25,7 +25,7 @@
 
 include::{rootdir}/includes/mp.adoc[]
 
-== ToC
+== Contents
 
 - <<Overview, Overview>>
 - <<Maven Coordinates, Maven Coordinates>>
@@ -33,20 +33,21 @@ include::{rootdir}/includes/mp.adoc[]
 - <<Configuration, Configuration>>
 - <<Examples, Examples>>
 - <<Additional Information, Additional Information>>
-** <<Jaeger Tracing, Jaeger Tracing>>
 ** <<Zipkin Tracing, Zipkin Tracing>>
+** <<Jaeger Tracing, Jaeger Tracing>>
 - <<Reference, Reference>>
 
 == Overview
 
 Distributed tracing is a critical feature of micro-service based applications, since it traces workflow both
-within a service and across multiple services.  This provides insight to sequence and timing data for specific blocks of work,
-which helps you identify performance and operational issues.  Helidon MP includes support for distributed tracing
-through the https://opentracing.io[OpenTracing API].  Tracing is integrated with WebServer, gRPC Server,
-and Security using either the https://zipkin.io[Zipkin] or https://www.jaegertracing.io[Jaeger] tracers.
+within a service and across multiple services. This provides insight to sequence and timing data for specific blocks of work,
+which helps you identify performance and operational issues. Helidon MP includes support for distributed tracing
+through the https://opentracing.io[OpenTracing API]. Tracing is integrated with WebServer, gRPC Server,
+and Security.
 
 include::{rootdir}/includes/dependencies.adoc[]
 
+// tag::tracing-dependency[]
 [source,xml]
 ----
 <dependency>
@@ -54,6 +55,7 @@ include::{rootdir}/includes/dependencies.adoc[]
     <artifactId>helidon-microprofile-tracing</artifactId>
 </dependency>
 ----
+// end::tracing-dependency[]
 
 == Usage
 
@@ -69,7 +71,8 @@ if you trace a service endpoint that calls another service, then the trace would
 Within a trace, spans are organized as a directed acyclic graph (DAG) and
 can belong to multiple services, running on multiple hosts.  The _OpenTracing Data Model_ describes the details
 at https://opentracing.io/specification[The OpenTracing Semantic Specification].
-Spans are automatically created by Helidon as needed during execution of the REST request.
+Spans are automatically created by Helidon as needed during execution of the REST request. Additional spans can be added
+through MP annotation `@Traced` or through OpenTracing APIs.
 
 include::{rootdir}/includes/tracing/common-spans.adoc[]
 
@@ -81,15 +84,7 @@ You can configure a custom service name using the `tracing.service` configuratio
 property is undefined, name is created from JAX-RS Application name, or `Helidon MP` is used if no application
 is defined.
 
-All tracer specific configuration is expected in configuration under key `tracing`.
-
-[source,properties]
-.Example `microprofile-config.properties` with customized service name.
-----
-tracing.service=event-service
-----
-
-include::{rootdir}/includes/tracing/common-config.adoc[]
+include::{rootdir}/config/io_helidon_tracing_Tracer.adoc[tag=config,levelOffset=2]
 
 To disable Helidon tracing for web server and security:
 [source,properties]
@@ -104,25 +99,26 @@ To disables MP Tracing as by specification:
 mp.opentracing.server.skip-pattern=.*
 ----
 
-Tracing configuration can be defined in `microprofile-config.properties` file.
+Tracing configuration can be defined in `application.yaml` file.
 
-[source,properties]
-.Configuration properties example:
+[source,yaml]
+.Tracing configuration example
 ----
-tracing.paths.0.path="/favicon.ico"
-tracing.paths.0.enabled=false
-tracing.paths.1.path="/metrics"
-tracing.paths.1.enabled=false
-tracing.paths.2.path="/health"
-tracing.paths.2.enabled=false
-----
-
-[source, properties]
-.Tracing configuration example:
-----
-tracing.components.web-server.spans.0.name="HTTP Request"
-tracing.components.web-server.spans.0.logs.0.name="content-write"
-tracing.components.web-server.spans.0.logs.0.enabled=false
+tracing:
+  paths:
+    - path: "/favicon.ico"
+      enabled: false
+    - path: "/metrics"
+      enabled: false
+    - path: "/health"
+      enabled: false
+  components:
+    web-server:
+      spans:
+        - name: "HTTP Request"
+          logs:
+            - name: "content-write"
+              enabled: false
 ----
 
 === Controlling Tracing Output
@@ -574,7 +570,6 @@ tracing.service=helidon-mp-2
 
 # Microprofile server properties
 server.port=8081
-server.host=0.0.0.0
 ----
 
 [source,bash]
@@ -636,7 +631,6 @@ public class GreetResource {
     this.greetingProvider = greetingConfig;
   }
 
-  @SuppressWarnings("checkstyle:designforextension")
   @GET
   @Produces(MediaType.APPLICATION_JSON)
   public JsonObject getDefaultMessage() {
@@ -696,9 +690,10 @@ You can now stop your second service, it is no longer used in this guide.
 The following example demonstrate how to use Zipkin from a Helidon application running in Kubernetes.
 
 [source,bash]
-.Add the following line to `META-INF/microprofile-config.properties`:
+.Update `application.yaml`:
 ----
-tracing.host=zipkin
+tracing:
+  host: "zipkin"
 ----
 
 [source,bash]
@@ -903,69 +898,6 @@ include::{rootdir}/includes/tracing/tracer-jaeger.adoc[tag=jaeger-configuration]
 === Jaeger Tracing Metrics [[jaeger-tracing-metrics]]
 
 As the <<jaeger-tracing, Jaeger Tracing>> section describes, you can use Jaeger tracing in your Helidon application.
-
-Jaeger maintains several metrics about its own activity (briefly outlined in the
- link:{jaeger-doc-base-url}}/monitoring/#metrics[Jaeger client documentation]). This document explains how you can
- integrate those Jaeger tracing metrics with Helidon's metrics.
-
-=== Prerequisites
-Your `pom.xml` file should already contain the dependency for Helidon-Jaeger tracing integration.
-
-To enable integration with Jaeger's metrics, add the following dependency:
-
-[source,xml,subs="verbatim,attributes"]
-----
-<dependency>
-    <groupId>io.helidon.metrics</groupId>
-    <artifactId>helidon-metrics-jaeger</artifactId>
-    <scope>runtime</scope>
-</dependency>
-----
-
-You can leave your application's Java code unchanged.
-By adding this dependency, you instruct Helidon to monitor the Jaeger tracing metrics internally and to publish them using the Helidon metrics system.
-
-Rebuild and start your application.
-
-== Accessing Jaeger Tracing Metrics
-Submit a few requests to your application's endpoints.
-This causes Jaeger to update its internal metrics.
-
-Then, when you access your application's metrics endpoint (`/metrics` by default), Helidon displays the updated Jaeger tracing metrics as part of the `vendor` metrics section.
-
-[source,bash]
-----
-curl -H "Accept: application/json" -X GET http://localhost:8080/metrics/vendor
-----
-[source,json]
-.Partial Helidon Metrics `vendor` Output Showing Jaeger Metrics
-----
-{
-  "jaeger_tracer_baggage_restrictions_updates;result=err": 0,
-  "jaeger_tracer_baggage_restrictions_updates;result=ok": 0,
-  "jaeger_tracer_baggage_truncations": 0,
-  "jaeger_tracer_baggage_updates;result=err": 0,
-  "jaeger_tracer_baggage_updates;result=ok": 0,
-  "jaeger_tracer_finished_spans": 0,
-  "jaeger_tracer_reporter_queue_length": 0,
-  "jaeger_tracer_reporter_spans;result=dropped": 0,
-  "jaeger_tracer_reporter_spans;result=err": 0,
-  "jaeger_tracer_reporter_spans;result=ok": 0,
-  "jaeger_tracer_sampler_queries;result=err": 1,
-  "jaeger_tracer_sampler_queries;result=ok": 0,
-  "jaeger_tracer_sampler_updates;result=err": 0,
-  "jaeger_tracer_sampler_updates;result=ok": 0,
-  "jaeger_tracer_span_context_decoding_errors": 0,
-  "jaeger_tracer_started_spans;sampled=n": 15,
-  "jaeger_tracer_started_spans;sampled=y": 0,
-  "jaeger_tracer_traces;sampled=n;state=joined": 2,
-  "jaeger_tracer_traces;sampled=n;state=started": 3,
-  "jaeger_tracer_traces;sampled=y;state=joined": 0,
-  "jaeger_tracer_traces;sampled=y;state=started": 0
-}
-----
-Helidon publishes whatever metrics Jaeger creates.
-
 
 == Reference
 

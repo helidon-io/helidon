@@ -28,6 +28,8 @@ import java.util.logging.Logger;
 import io.helidon.common.Errors;
 import io.helidon.common.configurable.Resource;
 import io.helidon.config.Config;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.Grant;
@@ -50,6 +52,7 @@ import io.helidon.security.providers.common.OutboundTarget;
 import io.helidon.security.providers.common.TokenCredential;
 import io.helidon.security.spi.AuthenticationProvider;
 import io.helidon.security.spi.OutboundSecurityProvider;
+import io.helidon.security.spi.SecurityProvider;
 import io.helidon.security.spi.SynchronousProvider;
 import io.helidon.security.util.TokenHandler;
 
@@ -592,6 +595,9 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
     /**
      * Fluent API builder for {@link JwtProvider}.
      */
+    @Configured(prefix = JwtProviderService.PROVIDER_CONFIG_KEY,
+                description = "JWT authentication provider",
+                provides = {SecurityProvider.class, AuthenticationProvider.class})
     public static final class Builder implements io.helidon.common.Builder<Builder, JwtProvider> {
         private boolean verifySignature = true;
         private boolean optional = false;
@@ -628,6 +634,7 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
          * @param propagate whether to propagate identity (true) or not (false)
          * @return updated builder instance
          */
+        @ConfiguredOption("true")
         public Builder propagate(boolean propagate) {
             this.propagate = propagate;
             return this;
@@ -639,6 +646,7 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
          * @param authenticate whether to authenticate (true) or not (false)
          * @return updated builder instance
          */
+        @ConfiguredOption("true")
         public Builder authenticate(boolean authenticate) {
             this.authenticate = authenticate;
             return this;
@@ -652,6 +660,7 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
          * @param allowImpersonation set to true to allow impersonation
          * @return updated builder instance
          */
+        @ConfiguredOption("false")
         public Builder allowImpersonation(boolean allowImpersonation) {
             this.allowImpersonation = allowImpersonation;
             return this;
@@ -668,6 +677,7 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
          * @param allowUnsigned to allow unsigned (insecure) JWT
          * @return updated builder insdtance
          */
+        @ConfiguredOption("false")
         public Builder allowUnsigned(boolean allowUnsigned) {
             this.allowUnsigned = allowUnsigned;
             return this;
@@ -685,6 +695,7 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
          * @param shouldValidate set to false to disable validation of JWT signatures
          * @return updated builder instance
          */
+        @ConfiguredOption(key = "atn-token.verify-signature", value = "true")
         public Builder verifySignature(boolean shouldValidate) {
             this.verifySignature = shouldValidate;
             return this;
@@ -696,6 +707,7 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
          * @param subjectType type of principal
          * @return updated builder instance
          */
+        @ConfiguredOption(key = "principal-type", value = "USER")
         public Builder subjectType(SubjectType subjectType) {
             this.subjectType = subjectType;
 
@@ -716,9 +728,9 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
          * @param tokenHandler token handler instance
          * @return updated builder instance
          */
+        @ConfiguredOption(key = "atn-token.handler")
         public Builder atnTokenHandler(TokenHandler tokenHandler) {
             this.atnTokenHandler = tokenHandler;
-
             return this;
         }
 
@@ -730,6 +742,7 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
          * @param optional whether authentication is optional (true) or required (false)
          * @return updated builder instance
          */
+        @ConfiguredOption("false")
         public Builder optional(boolean optional) {
             this.optional = optional;
             return this;
@@ -742,6 +755,7 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
          *               to add our configuration.
          * @return updated builder instance
          */
+        @ConfiguredOption(key = "sign-token")
         public Builder outboundConfig(OutboundConfig config) {
             this.outboundConfig = config;
             return this;
@@ -753,6 +767,7 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
          * @param signJwkResource resource pointing to a JSON with keys
          * @return updated builder instance
          */
+        @ConfiguredOption(key = "sign-token.jwk.resource")
         public Builder signJwk(Resource signJwkResource) {
             this.signKeys = JwkKeys.builder().resource(signJwkResource).build();
             return this;
@@ -764,6 +779,7 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
          * @param verifyJwkResource resource pointing to a JSON with keys
          * @return updated builder instance
          */
+        @ConfiguredOption(key = "atn-token.jwk.resource")
         public Builder verifyJwk(Resource verifyJwkResource) {
             this.verifyKeys = JwkKeys.builder().resource(verifyJwkResource).build();
 
@@ -776,6 +792,7 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
          * @param issuer issuer to add to the issuer claim
          * @return updated builder instance
          */
+        @ConfiguredOption(key = "sign-token.jwt-issuer")
         public Builder issuer(String issuer) {
             this.issuer = issuer;
             return this;
@@ -810,6 +827,7 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
          *
          * @param audience audience string
          */
+        @ConfiguredOption(key = "atn-token.jwt-audience")
         public void expectedAudience(String audience) {
             this.expectedAudience = audience;
         }
@@ -821,6 +839,7 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
          * @param useJwtGroups whether to use {@code groups} claim from JWT to retrieve roles
          * @return updated builder instance
          */
+        @ConfiguredOption("true")
         public Builder useJwtGroups(boolean useJwtGroups) {
             this.useJwtGroups = useJwtGroups;
             return this;

@@ -33,6 +33,7 @@ import io.helidon.common.context.Contexts;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.common.http.Parameters;
+import io.helidon.common.http.UriComponent;
 import io.helidon.common.reactive.Single;
 import io.helidon.media.common.MessageBodyContext;
 import io.helidon.media.common.MessageBodyReadableContent;

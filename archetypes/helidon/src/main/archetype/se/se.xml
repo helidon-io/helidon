@@ -22,10 +22,11 @@
 
     <step name="Application Type" optional="true">
         <inputs>
-            <enum id="app-type" name="Select archetype" default="bare" global="true" optional="true">
-                <option value="bare" name="Bare" description="Bare Helidon SE project suitable to start from scratch">
-                    <exec src="bare/bare-se.xml"/>
-                </option>
+            <enum id="app-type"
+                  name="Select an Application Type"
+                  default="quickstart"
+                  global="true"
+                  optional="true">
                 <option value="quickstart"
                         name="Quickstart"
                         description="Sample Helidon SE project that includes multiple REST operations">
@@ -35,6 +36,11 @@
                         name="Database"
                         description="Helidon SE application that uses a database with the DB Client API">
                     <exec src="database/database-se.xml"/>
+                </option>
+                <option value="custom"
+                        name="Custom"
+                        description="Custom Helidon SE project">
+                    <exec src="custom/custom-se.xml"/>
                 </option>
             </enum>
         </inputs>

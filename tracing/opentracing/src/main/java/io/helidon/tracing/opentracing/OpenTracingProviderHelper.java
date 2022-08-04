@@ -34,6 +34,10 @@ final class OpenTracingProviderHelper {
     private OpenTracingProviderHelper() {
     }
 
+    public static boolean available() {
+        return !TRACER_PROVIDER.createBuilder().getClass().equals(NoOpBuilder.class);
+    }
+
     static OpenTracingProvider provider() {
         return TRACER_PROVIDER;
     }

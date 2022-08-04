@@ -1,0 +1,379 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2022 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<archetype-script xmlns="https://helidon.io/archetype/2.0"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
+
+    <step name="Database" optional="true">
+        <inputs>
+            <boolean id="db"
+                     name="Database Support"
+                     description="Manage data in your application"
+                     default="false"
+                     optional="true">
+                <inputs>
+                    <enum id="server" name="Select a Database Server" default="h2" optional="true">
+                        <option value="h2" name="H2" description="In-memory relational database">
+                            <output>
+                                <model>
+                                    <value key="readme-description">Helidon SE application that uses the dbclient API with an in-memory H2 database.</value>
+                                    <value key="readme-native-docker">docker run -d -p 1521:1521 -p 81:81 -e H2_OPTIONS='-ifNotExists' --name=h2 oscarfonts/h2</value>
+                                    <value key="readme-native-url">url: jdbc:h2:tcp://localhost:1521/test</value>
+                                    <value key="integration-artifactId">h2</value>
+                                    <value key="db">H2</value>
+                                    <list key="run-comment">
+                                        <value><![CDATA[
+This example requires a database.
+Instructions for H2 can be found here: https://www.h2database.com/html/cheatSheet.html
+]]></value>
+                                    </list>
+                                    <list key="config-entries">
+                                        <value file="files/application.h2.yaml"/>
+                                    </list>
+                                    <list key="config-test">
+                                        <value file="files/application.h2.yaml"/>
+                                    </list>
+                                    <list key="dependencies">
+                                        <map>
+                                            <value key="groupId">com.h2database</value>
+                                            <value key="artifactId">h2</value>
+                                        </map>
+                                        <map>
+                                            <value key="groupId">com.zaxxer</value>
+                                            <value key="artifactId">HikariCP</value>
+                                        </map>
+                                    </list>
+                                    <value key="id">id</value>
+                                    <value key="name">name</value>
+                                    <value key="id_type">id_type</value>
+                                    <value key="PokemonType-constructor-arg">id.as(Integer.class), name.as(String.class)</value>
+                                    <value key="Pokemon-constructor-arg">id.as(Integer.class), name.as(String.class), type.as(Integer.class)</value>
+                                    <list key="MainTest-methods">
+                                        <value template="mustache"><![CDATA[
+    @Test
+    public void testPokemonTypes() throws Exception {
+        webClient.get()
+                .path("/type")
+                .request(JsonArray.class)
+                .thenAccept(array -> {
+                    assertThat(array.size(), is(18));
+                    assertThat(array.get(0).asJsonObject().getInt("{{id}}"), is(1));
+                    assertThat(array.get(0).asJsonObject().getString("{{name}}"), is("Normal"));
+                })
+                .toCompletableFuture()
+                .get();
+    }
+
+    @Test
+    public void testPokemons() throws Exception {
+        assertThat(getPokemonCount(), is(6));
+
+        webClient.get()
+                .path("/pokemon/1")
+                .request(JsonObject.class)
+                .thenAccept(pokemon -> assertThat(pokemon.getString("{{name}}"), is("Bulbasaur")))
+                .toCompletableFuture()
+                .get();
+
+        webClient.get()
+                .path("/pokemon/name/Charmander")
+                .request(JsonObject.class)
+                .thenAccept(pokemon -> assertThat(pokemon.getJsonNumber("{{id_type}}").intValue(), is(10)))
+                .toCompletableFuture()
+                .get();
+
+        JsonObject json = JSON_BUILDER.createObjectBuilder()
+                .add("id", 100)
+                .add("idType", 1)
+                .add("name", "Test")
+                .build();
+        webClient.post()
+                .path("/pokemon")
+                .submit(json)
+                .thenAccept(r -> assertThat(r.status(), is(Http.Status.OK_200)))
+                .toCompletableFuture()
+                .get();
+        assertThat(getPokemonCount(), is(7));
+
+        webClient.delete()
+                .path("/pokemon/100")
+                .request()
+                .thenAccept(r -> assertThat(r.status(), is(Http.Status.OK_200)))
+                .toCompletableFuture()
+                .get();
+
+        assertThat(getPokemonCount(), is(6));
+    }
+
+    private int getPokemonCount() throws Exception {
+        CompletableFuture<Integer> result = new CompletableFuture<>();
+        webClient.get()
+                .path("/pokemon")
+                .request(JsonArray.class)
+                .thenAccept(array -> result.complete(array.size()));
+        return result.get();
+    }
+                ]]></value>
+                                    </list>
+                                    <list key="MainTest-helidon-imports">
+                                        <value>io.helidon.common.http.Http</value>
+                                        <value>io.helidon.media.jsonp.JsonpSupport</value>
+                                        <value>io.helidon.media.jsonb.JsonbSupport</value>
+                                    </list>
+                                    <list key="MainTest-java-imports">
+                                        <value>java.util.Collections</value>
+                                        <value>jakarta.json.Json</value>
+                                        <value>jakarta.json.JsonBuilderFactory</value>
+                                        <value>jakarta.json.JsonArray</value>
+                                        <value>jakarta.json.JsonObject</value>
+                                    </list>
+                                    <list key="MainTest-clientBuilder">
+                                        <value><![CDATA[                .addMediaSupport(JsonpSupport.create())
+                .addMediaSupport(JsonbSupport.create())]]></value>
+                                    </list>
+                                    <list key="MainTest-static-fields">
+                                        <value><![CDATA[    private static final JsonBuilderFactory JSON_BUILDER = Json.createBuilderFactory(Collections.emptyMap());]]></value>
+                                    </list>
+                                </model>
+                            </output>
+                        </option>
+                        <option value="mysql" name="MySQL" description="Relational database">
+                            <output>
+                                <model>
+                                    <value key="readme-description">Helidon SE application that uses the dbclient API with MySQL database.</value>
+                                    <value key="readme-native-docker">docker run --rm --name mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=pokemon -e MYSQL_USER=user -e MYSQL_PASSWORD=password  mysql:5.7</value>
+                                    <value key="readme-native-url">url: jdbc:mysql:tcp://127.0.0.1:3306/pokemon?useSSL=false</value>
+                                    <value key="integration-artifactId">helidon-integrations-db-mysql</value>
+                                    <value key="db">MySQL</value>
+                                    <list key="run-comment">
+                                        <value><![CDATA[
+This example requires a MySQL database, start it using docker:
+
+```
+docker run --rm --name mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=pokemon -e MYSQL_USER=user -e MYSQL_PASSWORD=password  mysql:5.7
+```
+]]></value>
+                                    </list>
+                                    <list key="config-entries">
+                                        <value file="files/application.mysql.yaml"/>
+                                    </list>
+                                    <list key="config-test">
+                                        <value file="files/application.h2.yaml"/>
+                                    </list>
+                                    <list key="dependencies">
+                                        <map>
+                                            <value key="groupId">mysql</value>
+                                            <value key="artifactId">mysql-connector-java</value>
+                                            <value key="scope">runtime</value>
+                                        </map>
+                                        <map>
+                                            <value key="groupId">com.h2database</value>
+                                            <value key="artifactId">h2</value>
+                                            <value key="scope">test</value>
+                                        </map>
+                                    </list>
+                                    <value key="id">id</value>
+                                    <value key="name">name</value>
+                                    <value key="id_type">id_type</value>
+                                    <value key="PokemonType-constructor-arg">id.as(Integer.class), name.as(String.class)</value>
+                                    <value key="Pokemon-constructor-arg">id.as(Integer.class), name.as(String.class), type.as(Integer.class)</value>
+                                </model>
+                            </output>
+                        </option>
+                        <option value="oracledb" name="Oracle DB" description="Multi-model database">
+                            <output>
+                                <model>
+                                    <value key="readme-description">Helidon SE application that uses the dbclient API with OracleDB database.</value>
+                                    <value key="readme-native-docker">docker run --rm --name xe -p 1521:1521 -p 8888:8080 -e ORACLE_PWD=oracle wnameless/oracle-xe-11g-r2</value>
+                                    <value key="readme-native-url">url: jdbc:oracle:thin:@localhost:1521/XE</value>
+                                    <value key="integration-artifactId">ojdbc</value>
+                                    <value key="db">OracleDB</value>
+                                    <list key="run-comment">
+                                        <value><![CDATA[
+This example requires a oracleDB database, start it using docker:
+
+```
+docker run --rm --name xe -p 1521:1521 -p 8888:8080 -e ORACLE_PWD=oracle wnameless/oracle-xe-11g-r2
+```
+]]></value>
+                                    </list>
+                                    <list key="config-entries">
+                                        <value file="files/application.oracledb.yaml"/>
+                                    </list>
+                                    <list key="config-test">
+                                        <value file="files/application.h2.yaml"/>
+                                    </list>
+                                    <list key="dependencies">
+                                        <map>
+                                            <value key="groupId">io.helidon.integrations.db</value>
+                                            <value key="artifactId">ojdbc</value>
+                                        </map>
+                                        <map>
+                                            <value key="groupId">com.h2database</value>
+                                            <value key="artifactId">h2</value>
+                                            <value key="scope">test</value>
+                                        </map>
+                                    </list>
+                                    <value key="id">ID</value>
+                                    <value key="name">NAME</value>
+                                    <value key="id_type">ID_TYPE</value>
+                                    <value key="PokemonType-constructor-arg"><![CDATA[Integer.parseInt(id.as(String.class)), name.as(String.class)]]></value>
+                                    <value key="Pokemon-constructor-arg"><![CDATA[
+                    Integer.parseInt(id.as(String.class)),
+                    name.as(String.class),
+                    Integer.parseInt(type.as(String.class))]]></value>
+                                </model>
+                            </output>
+                        </option>
+                        <option value="mongodb" name="MongoDB" description="NoSQL / Document database">
+                            <output>
+                                <model>
+                                    <value key="readme-description">Helidon SE application that uses the dbclient API with MongoDB database.</value>
+                                    <list key="run-comment">
+                                        <value><![CDATA[
+This example requires a mongoDB database, start it using docker:
+
+```
+docker run --rm --name mongo -p 27017:27017 mongo
+```
+]]></value>
+                                    </list>
+                                    <list key="config-entries">
+                                        <value file="files/application.mongo.yaml"/>
+                                    </list>
+                                    <list key="config-test">
+                                        <value file="files/application.h2.yaml"/>
+                                    </list>
+                                    <list key="dependencies">
+                                        <map>
+                                            <value key="groupId">io.helidon.dbclient</value>
+                                            <value key="artifactId">helidon-dbclient-mongodb</value>
+                                        </map>
+                                        <map>
+                                            <value key="groupId">com.h2database</value>
+                                            <value key="artifactId">h2</value>
+                                            <value key="scope">test</value>
+                                        </map>
+                                    </list>
+                                    <value key="id">id</value>
+                                    <value key="name">name</value>
+                                    <value key="id_type">id_type</value>
+                                    <value key="PokemonType-constructor-arg">id.as(Integer.class), name.as(String.class)</value>
+                                    <value key="Pokemon-constructor-arg">id.as(Integer.class), name.as(String.class), type.as(Integer.class)</value>
+                                </model>
+                            </output>
+                        </option>
+                    </enum>
+                </inputs>
+                <output>
+                    <templates engine="mustache" transformations="mustache,packaged">
+                        <directory>../database/files</directory>
+                        <includes>
+                            <include>src/*/java/**/*.java.mustache</include>
+                            <include>src/*/resources/**/*</include>
+                        </includes>
+                    </templates>
+                    <model>
+                        <list key="native-sections" if="${docker}">
+                            <value file="../database/files/README.native.md" if="${docker.native-image} &amp;&amp; ${server} != 'mongodb'" template="mustache"/>
+                        </list>
+                        <list key="dependencies">
+                            <map>
+                                <value key="groupId">io.helidon.dbclient</value>
+                                <value key="artifactId">helidon-dbclient</value>
+                            </map>
+                            <map>
+                                <value key="groupId">io.helidon.dbclient</value>
+                                <value key="artifactId">helidon-dbclient-jsonp</value>
+                            </map>
+                            <map if="${media.json-lib} != 'jsonb'">
+                                <value key="groupId">io.helidon.media</value>
+                                <value key="artifactId">helidon-media-jsonb</value>
+                            </map>
+                            <map if="${media.json-lib} != 'jsonp'">
+                                <value key="groupId">io.helidon.media</value>
+                                <value key="artifactId">helidon-media-jsonp</value>
+                            </map>
+                            <map if="${server} != 'mongodb'">
+                                <value key="groupId">io.helidon.dbclient</value>
+                                <value key="artifactId">helidon-dbclient-jdbc</value>
+                            </map>
+                            <map if="${health}">
+                                <value key="groupId">io.helidon.dbclient</value>
+                                <value key="artifactId">helidon-dbclient-health</value>
+                            </map>
+                            <map if="${metrics}">
+                                <value key="groupId">io.helidon.dbclient</value>
+                                <value key="artifactId">helidon-dbclient-metrics-jdbc</value>
+                            </map>
+                            <map if="${metrics}">
+                                <value key="groupId">io.helidon.dbclient</value>
+                                <value key="artifactId">helidon-dbclient-metrics</value>
+                            </map>
+                            <map if="${tracing}">
+                                <value key="groupId">io.helidon.dbclient</value>
+                                <value key="artifactId">helidon-dbclient-tracing</value>
+                            </map>
+                            <map>
+                                <value key="groupId">org.slf4j</value>
+                                <value key="artifactId">slf4j-jdk14</value>
+                            </map>
+                        </list>
+                        <list key="Main-helidon-imports">
+                            <value>io.helidon.dbclient.DbClient</value>
+                            <value>io.helidon.media.jsonp.JsonpSupport</value>
+                            <value>io.helidon.media.jsonb.JsonbSupport</value>
+                            <value if="${health}">io.helidon.dbclient.health.DbClientHealthCheck</value>
+                        </list>
+                        <list key="Main-serverBuilder">
+                            <value><![CDATA[                .addMediaSupport(JsonbSupport.create())]]></value>
+                            <value><![CDATA[                .addMediaSupport(JsonpSupport.create())]]></value>
+                        </list>
+                        <list key="Main-createRouting">
+                            <value><![CDATA[
+        Config dbConfig = config.get("db");
+
+        // Client services are added through a service loader
+        DbClient dbClient = DbClient.builder(dbConfig).build();
+
+        // Initialize database schema
+        InitializeDb.init(dbClient);]]></value>
+                        </list>
+                        <list key="Main-healthBuilder" if="${health}">
+                            <value><![CDATA[                .addLiveness(DbClientHealthCheck.create(dbClient, dbConfig.get("health-check")))]]></value>
+                        </list>
+                        <list key="Main-routingBuilder">
+                            <value><![CDATA[                .register("/", new PokemonService(dbClient))]]></value>
+                        </list>
+                        <value key="Main-readyMessage">System.out.println("Database here : http://localhost:" + ws.port() + "/pokemon");</value>
+                        <list key="DatabaseService-constructor" if="${server} != 'mongodb'">
+                            <value><![CDATA[
+        dbClient.execute(handle -> handle.namedDml("create-table"))
+                .thenAccept(System.out::println)
+                .exceptionally(throwable -> {
+                    LOGGER.log(Level.WARNING, "Failed to create table, maybe it already exists?", throwable);
+                    return null;
+                });]]></value>
+                        </list>
+                    </model>
+                </output>
+            </boolean>
+        </inputs>
+    </step>
+</archetype-script>

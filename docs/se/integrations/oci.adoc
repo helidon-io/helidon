@@ -1,0 +1,118 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Oracle Cloud Infrastructure Integration
+:description: Helidon OCI Integration
+:keywords: oci
+:feature-name: OCI Integration
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/se.adoc[]
+
+== Contents
+
+- <<Overview, Overview>>
+- <<Usage, Usage>>
+- <<Examples, Examples>>
+- <<References, References>>
+
+== Overview
+
+Helidon SE OCI Integration provides easy access to Oracle Cloud Infrastructure using the OCI Java SDK.
+
+NOTE: OCI SDK uses JAX-RS Client 2.1.6 (javax package names), which makes it incompatible with Helidon 3 applications and any application that uses JAX-RS 3 (jakarta package naming). See <<oci-compatibility, Resolving compatibility issue with OCI SDK>> for detailed information on how to work around this issue.
+
+== Usage
+
+It is recommended that you use the OCI Java SDK directly, in particular the Async clients. All you need to do is configure and create an OCI SDK Client object. The configuration primarily
+consists of setting up authenticate with OCI.
+
+=== Configuring the OCI SDK Client
+
+Authentication with OCI is abstracted through `AuthenticationDetailsProvider`.
+
+If your environment is already set up to work with the OCI SDK or
+the OCI command line, then it is very likely you do not need to do any additional
+configuration. It is recommended that you do this first, and verify your configuration
+by using the link:{oci-javasdk-url}[OCI CLI] to access the service.
+
+[source,java]
+----
+ConfigFile config
+= ConfigFileReader.parse("~/.oci/config", "DEFAULT");
+AuthenticationDetailsProvider authProvider = new ConfigFileAuthenticationDetailsProvider(config);
+----
+
+You also need to add the following dependency to your application for this
+
+[source,xml]
+----
+<dependency>
+    <groupId>com.oracle.oci.sdk</groupId>
+    <artifactId>oci-java-sdk-common</artifactId>
+</dependency>
+----
+
+=== Accessing OCI Services
+
+Once you have authentication with OCI configured, you can use it to access any OCI service
+supported by the OCI SDK. You will need to add dependencies for the specific
+ODI SDK clients you will use.
+
+== Examples
+
+This example describes how to access OCI Object Storage.
+
+As mentioned above in <<_accessing_oci_services>>, you need to add a dependency on the OCI SDK
+Object Storage API:
+
+[source,xml]
+----
+<dependency>
+    <groupId>com.oracle.oci.sdk</groupId>
+    <artifactId>oci-java-sdk-objectstorage</artifactId>
+</dependency>
+----
+
+=== Creating an Object Storage Client
+
+Now you can create OCI SDK Clients.
+
+[source,java]
+----
+ConfigFile config
+= ConfigFileReader.parse("~/.oci/config", "DEFAULT");
+AuthenticationDetailsProvider authProvider = new ConfigFileAuthenticationDetailsProvider(config);
+ObjectStorageAsync objectStorageAsyncClient = new ObjectStorageAsyncClient(authProvider);
+----
+
+=== Using the Object Storage client
+
+Once you have created an ObjectStorage client you can use it as described in:
+
+* link:{oci-javasdk-objstore-javadoc-base-url}/package-summary.html[OCI SDK Object Storage Javadocs]
+* link:{oci-objstore-url}[OCI Object Storage Overview]
+
+
+include::{rootdir}/includes/oci.adoc[leveloffset=+1]
+
+== References
+
+* link:{helidon-github-tree-url}/examples/integrations/oci[OCI SDK Usage Examples]
+* link:https://docs.oracle.com/en-us/iaas/Content/home.htm[OCI Documentation]
+]

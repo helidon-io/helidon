@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.examples.integrations</groupId>
         <artifactId>helidon-examples-integrations-project</artifactId>
-        <version>3.0.0-SNAPSHOT</version>
+        <version>3.0.1-SNAPSHOT</version>
     </parent>
     <groupId>io.helidon.examples.integrations.oci</groupId>
     <artifactId>helidon-examples-integrations-oci-project</artifactId>
@@ -33,10 +33,13 @@
     <description>Examples of integration with OCI (Oracle Cloud).</description>
 
     <modules>
+        <module>atp-reactive</module>
+        <module>atp-cdi</module>
         <module>metrics-reactive</module>
         <module>objectstorage-reactive</module>
         <module>objectstorage-cdi</module>
         <module>vault-reactive</module>
         <module>vault-cdi</module>
     </modules>
+
 </project>

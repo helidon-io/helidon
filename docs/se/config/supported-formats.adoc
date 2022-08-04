@@ -19,21 +19,20 @@
 = Additional Supported Formats and Sources
 :description: Helidon config supported formats and sources
 :keywords: helidon, config
-:toc: preamble
-:toclevels: 2
+:feature-name: Config
 :rootdir: {docdir}/../..
 
 include::{rootdir}/includes/se.adoc[]
 
-Helidon Config provides several extension modules that support other configuration
- formats (parsers) and sources. This section describes how to add these modules
-to your build and how to use them from your application.
+== Contents
 
-== Introduction
-This document describes the additional config formats and sources the Helidon
-config system supports and how to include them and use them in your project. In each
-case you need to add module dependencies to your project and, in some cases,
-write your application accordingly.
+- <<Overview>>
+- <<Additional Config Formats and Parsers>>
+- <<Additional Config Source Types>>
+
+== Overview
+Helidon Config provides several extension modules that support other configuration
+formats (parsers) and sources. This document describes how to include them and use them in your project. In each case you need to add module dependencies to your project and, in some cases, write your application accordingly.
 
 == Additional Config Formats and Parsers
 

@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.tests.integration</groupId>
         <artifactId>helidon-tests-integration</artifactId>
-        <version>3.0.0-SNAPSHOT</version>
+        <version>3.0.1-SNAPSHOT</version>
     </parent>
 
     <packaging>pom</packaging>
@@ -38,6 +38,7 @@
         <module>gh1487</module>
         <module>gh2297</module>
         <module>gh2455</module>
+        <module>gh2772</module>
         <module>path-params</module>
         <module>security-response-mapper</module>
     </modules>

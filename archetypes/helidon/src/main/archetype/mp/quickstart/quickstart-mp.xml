@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2021 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -20,15 +20,29 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
 
-    <source src="../bare/bare-mp.xml"/>
+    <exec src="/common/presets.xml"/>
+    <presets>
+        <boolean path="db">false</boolean>
+    </presets>
+    <exec src="/mp/custom/custom-mp.xml"/>
+    <source src="/common/media-sources.xml"/>
     <output>
+        <templates engine="mustache" transformations="mustache,packaged">
+            <directory>files</directory>
+            <includes>
+                <include>src/*/java/**/GreetingProvider.java.mustache</include>
+            </includes>
+        </templates>
         <model>
             <value key="readme-description">Sample Helidon MP project that includes multiple REST operations.</value>
+            <list key="readme-exercise-the-application">
+                <value file="files/README.md"/>
+            </list>
             <list key="MainTest-java-imports">
                 <value>jakarta.ws.rs.client.Entity</value>
                 <value>jakarta.ws.rs.core.MediaType</value>
             </list>
-            <list key="MainTest-methods">
+            <list key="MainTest-methods" if="${media.json-lib} == 'jsonp'">
                 <value><![CDATA[    @Test
     public void testGreetings() throws Exception {
         JsonObject jsonObject = target
@@ -52,10 +66,34 @@
     }
                 ]]></value>
             </list>
+            <list key="MainTest-methods" if="['jsonb', 'jackson'] contains ${media.json-lib}">
+                <value><![CDATA[    @Test
+    public void testGreetings() throws Exception {
+        Message jsonMessage = target
+                .path("greet/Joe")
+                .request()
+                .get(Message.class);
+        assertThat(jsonMessage.getMessage(), is("Hello Joe!"));
+
+        try (Response r = target
+                .path("greet/greeting")
+                .request()
+                .put(Entity.entity("{\"greeting\" : \"Hola\"}", MediaType.APPLICATION_JSON))) {
+            assertThat(r.getStatus(), is(204));
+        }
+
+        jsonMessage = target
+                .path("greet/Jose")
+                .request()
+                .get(Message.class);
+        assertThat(jsonMessage.getMessage(), is("Hola Jose!"));
+    }
+                ]]></value>
+            </list>
             <list key="dependencies">
                 <map order="1000">
-                    <value key="groupId">io.helidon.microprofile.bundles</value>
-                    <value key="artifactId">helidon-microprofile</value>
+                    <value key="groupId">io.helidon.microprofile.openapi</value>
+                    <value key="artifactId">helidon-microprofile-openapi</value>
                 </map>
             </list>
         </model>

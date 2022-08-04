@@ -21,6 +21,7 @@ ifndef::rootdir[:rootdir: {docdir}/../../..]
 === HTTP Digest Authentication Provider
 :description: Helidon Security HTTP Digest Provider
 :keywords: helidon, security, digest
+:feature-name: HTTP Digest Authentication Security Provider
 
 HTTP Digest authentication support
 
@@ -35,17 +36,9 @@ HTTP Digest authentication support
 </dependency>
 ----
 
-[source,text]
-.Provider class name
-----
-io.helidon.security.providers.httpauth.HttpDigestAuthProvider
-----
+==== Overview
 
-[source,text]
-.Provider configuration key
-----
-http-digest-auth
-----
+include::{rootdir}/config/io_helidon_security_providers_httpauth_HttpDigestAuthProvider.adoc[leveloffset=+2,tag=config]
 
 ==== Example code
 
@@ -65,27 +58,6 @@ security:
         password: "password"
         roles: ["user", "admin"]
 ----
-
-==== Configuration options
-The following table shows all configuration options of the provider and their default values
-
-[cols="2,2,5"]
-
-|===
-|key |default value |description
-
-|`optional` |`false` |If set to `true`, failure to authenticate will return `ABSTAIN` result instead of `FAILURE`. This is
-an important distinction when more than one provider is used
-|`realm` |`helidon` |The realm shown in challenge when user accesses a service without authentication
-|`principal-type` |`USER` |Type of authenticated entity - either `USER` or `SERVICE`, can be used in combination with
-                            other authentication mechanism to authenticate both the user (as in person sitting in front of a computer)
-                            and a service (as in the application requesting this service on user's behalf)
-|`users` |{nbsp} |List of users when using configuration based approach. As an alternative, you can implement a java service (see below).
-|`algorithm` |`MD5` |Only `MD5` supported
-|`nonce-timeout-millis` |1 day |Number of milliseconds for the nonce timeout
-|`server-secret` |random |A string to use as a server secret - this is to use digest auth between multiple servers (e.g. when in a cluster). Used to encrypt nonce. This must not be known outside of this app, as others may create digest requests we would trust.
-|`qop` |`NONE` |only `AUTH` supported. If left empty, uses the legacy approach (older RFC version). `AUTH-INT` is not supported.
-|===
 
 ==== How does it work?
 See https://tools.ietf.org/html/rfc7616[].

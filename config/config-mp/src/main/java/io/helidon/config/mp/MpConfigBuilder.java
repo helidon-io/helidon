@@ -58,11 +58,14 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
+import io.helidon.common.Builder;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.common.serviceloader.Priorities;
 import io.helidon.config.ConfigException;
 import io.helidon.config.ConfigMappers;
 import io.helidon.config.ConfigValue;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.config.mp.spi.MpConfigFilter;
 import io.helidon.config.mp.spi.MpMetaConfigProvider;
 
@@ -77,7 +80,8 @@ import static io.helidon.config.mp.MpMetaConfig.MetaConfigSource;
 /**
  * Configuration builder.
  */
-class MpConfigBuilder implements ConfigBuilder {
+@Configured(prefix = "mp.config", root = true)
+class MpConfigBuilder implements Builder<MpConfigBuilder, Config>, ConfigBuilder {
     private static final Logger LOGGER = Logger.getLogger(MpConfigBuilder.class.getName());
     private static final String DEFAULT_CONFIG_SOURCE = "META-INF/microprofile-config.properties";
 
@@ -363,6 +367,7 @@ class MpConfigBuilder implements ConfigBuilder {
      * @param profile name of the profile, such as {@code dev, test}
      * @return updated builder instance
      */
+    @ConfiguredOption(key = "profile", type = String.class, description = "Configure an explicit profile name.")
     public MpConfigBuilder profile(String profile) {
         this.profile = profile;
         return this;

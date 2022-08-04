@@ -15,10 +15,13 @@
  */
 package io.helidon.tracing.opentelemetry;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import io.helidon.tracing.Scope;
 
 class OpenTelemetryScope implements Scope {
     private final io.opentelemetry.context.Scope delegate;
+    private final AtomicBoolean closed = new AtomicBoolean();
 
     OpenTelemetryScope(io.opentelemetry.context.Scope scope) {
         delegate = scope;
@@ -26,6 +29,13 @@ class OpenTelemetryScope implements Scope {
 
     @Override
     public void close() {
-        delegate.close();
+        if (closed.compareAndSet(false, true) && delegate != null) {
+            delegate.close();
+        }
+    }
+
+    @Override
+    public boolean isClosed() {
+        return closed.get();
     }
 }

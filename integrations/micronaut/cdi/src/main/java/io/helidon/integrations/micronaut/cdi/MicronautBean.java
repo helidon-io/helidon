@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@ class MicronautBean {
 
     @Override
     public String toString() {
-        return beanType.getName();
+        // Add hashcode to return a unique name for cases where bean types are the same
+        return beanType.getName() + "@" + Integer.toHexString(this.hashCode());
     }
 }

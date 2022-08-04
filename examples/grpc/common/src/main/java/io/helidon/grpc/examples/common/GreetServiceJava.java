@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.grpc.examples.common;
 import java.util.Optional;
 
 import io.helidon.config.Config;
+import io.helidon.grpc.core.JsonbMarshaller;
 import io.helidon.grpc.server.GrpcService;
 import io.helidon.grpc.server.ServiceDescriptor;
 
@@ -47,8 +48,9 @@ public class GreetServiceJava
 
     @Override
     public void update(ServiceDescriptor.Rules rules) {
-        rules.unary("Greet", this::greet)
-             .unary("SetGreeting", this::setGreeting);
+        rules.marshallerSupplier(new JsonbMarshaller.Supplier())
+                .unary("Greet", this::greet)
+                .unary("SetGreeting", this::setGreeting);
     }
 
     // ---- service methods -------------------------------------------------

@@ -17,10 +17,12 @@ import {{.}};
 import {{.}};
 {{/MainTest-static-imports}}
 
+{{#helidon-test}}
 @HelidonTest
 @TestMethodOrder(MethodOrderer.MethodName.class)
+{{/helidon-test}}
 public class MainTest {
-
+{{#helidon-test}}
 {{#MainTest-static-fields}}
 {{.}}
 {{/MainTest-static-fields}}
@@ -28,25 +30,8 @@ public class MainTest {
     @Inject
     private WebTarget target;
 
-    @Test
-    public void testHealth() throws Exception {
-        Response response = target
-                .path("health")
-                .request()
-                .get();
-        assertThat(response.getStatus(), is(200));
-    }
-
-    @Test
-    public void testMetrics() throws Exception {
-        Response response = target
-                .path("metrics")
-                .request()
-                .get();
-        assertThat(response.getStatus(), is(200));
-    }
-
 {{#MainTest-methods}}
 {{.}}
 {{/MainTest-methods}}
+{{/helidon-test}}
 }

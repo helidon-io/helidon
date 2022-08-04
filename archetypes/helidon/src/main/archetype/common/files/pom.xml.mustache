@@ -17,7 +17,6 @@
 {{#mainClass}}
         <mainClass>{{package}}.Main</mainClass>
 {{/mainClass}}
-        <helidon.version>{{helidon-version}}</helidon.version>
     </properties>
 
     <dependencies>
@@ -26,11 +25,14 @@
             <groupId>{{groupId}}</groupId>
             <artifactId>{{artifactId}}</artifactId>
 {{#version}}
-    <version>{{.}}</version>
+            <version>{{.}}</version>
 {{/version}}
 {{#scope}}
             <scope>{{.}}</scope>
 {{/scope}}
+{{#type}}
+            <type>{{.}}</type>
+{{/type}}
         </dependency>
         {{/dependencies}}
     </dependencies>

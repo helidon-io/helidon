@@ -20,11 +20,19 @@ import java.util.Map;
 import java.util.Optional;
 
 class NoOpTracer implements Tracer {
-    static final SpanContext SPAN_CONTEXT = new SpanContext();
+    private static final NoOpTracer INSTANCE = new NoOpTracer();
+    private static final SpanContext SPAN_CONTEXT = new SpanContext();
     private static final Builder BUILDER = new Builder();
     private static final Span SPAN = new Span();
 
     private static final Scope SCOPE = new Scope();
+
+    private NoOpTracer() {
+    }
+
+    static Tracer instance() {
+        return INSTANCE;
+    }
 
     @Override
     public boolean enabled() {
@@ -140,11 +148,20 @@ class NoOpTracer implements Tracer {
         public String spanId() {
             return "no-op";
         }
+
+        @Override
+        public void asParent(io.helidon.tracing.Span.Builder<?> spanBuilder) {
+        }
     }
 
     private static class Scope implements io.helidon.tracing.Scope {
         @Override
-        public void close() throws Exception {
+        public void close() {
+        }
+
+        @Override
+        public boolean isClosed() {
+            return true;
         }
     }
 }
