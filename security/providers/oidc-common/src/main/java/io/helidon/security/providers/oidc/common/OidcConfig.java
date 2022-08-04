@@ -1282,7 +1282,9 @@ public final class OidcConfig {
             config.get("header-token").as(TokenHandler.class).ifPresent(this::headerTokenHandler);
             // encryption of cookies
             config.get("cookie-encryption-enabled").asBoolean().ifPresent(this::cookieEncryptionEnabled);
-            config.get("cookie-encryption-password").as(char[].class).ifPresent(this::cookieEncryptionPassword);
+            config.get("cookie-encryption-password").as(String.class)
+                    .map(String::toCharArray)
+                    .ifPresent(this::cookieEncryptionPassword);
             config.get("cookie-encryption-name").asString().ifPresent(this::cookieEncryptionName);
 
             // OIDC server configuration
