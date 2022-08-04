@@ -174,6 +174,12 @@ public final class WebServerTls {
          * @return this builder
          */
         public Builder config(Config config) {
+            config.get("enabled").asBoolean().ifPresent(this::enabled);
+
+            if (explicitEnabled != null && !explicitEnabled) {
+                return this;
+            }
+
             config.get("client-auth").asString().ifPresent(this::clientAuth);
             config.get("private-key")
                     .ifExists(it -> privateKey(KeyConfig.create(it)));
@@ -187,8 +193,6 @@ public final class WebServerTls {
             DeprecatedConfig.get(config, "session-timeout-seconds", "session-timeout")
                     .asLong()
                     .ifPresent(this::sessionTimeoutSeconds);
-
-            config.get("enabled").asBoolean().ifPresent(this::enabled);
 
             return this;
         }
