@@ -173,6 +173,11 @@ public final class ConfigValues {
         Supplier<Optional<Map<String, String>>> valueSupplier = () -> {
             Map<?, ?> map = mapperManager.map(config, Map.class);
 
+            map = map.entrySet().stream().collect(
+                    Collectors.toMap(
+                            entry -> Config.Key.unescapeName(entry.getKey().toString()), entry -> entry.getValue()
+                    )
+            );
             if (map instanceof ConfigMappers.StringMap) {
                 return Optional.of((ConfigMappers.StringMap) map);
             }
