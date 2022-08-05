@@ -152,6 +152,7 @@ Moved to `jakarta` namespace. Changes described in link:https://jakarta.ee/speci
 
 NOTE:  Before you migrate to Helidon 3.x, make sure that you have read each specification for a complete list of incompatible changes.
 
+
 == Deprecations and API Changes
 
 - The custom Helidon OCI clients have been deprecated. Use the OCI Java SDK instead. If you use Helidon MP you can inject OCI SDK clients by adding the dependency `io.helidon.integrations.oci.sdk:helidon-integrations-oci-sdk-cdi`.
@@ -199,8 +200,6 @@ Deprecations in the following classes:
 * `MessageBodyReaderContext` - Methods with alternatives (since 2.0)
 * `MessageBodyWriterContext` - Methods with alternatives (since 2.0)
 * `ReadableByteChannelPublisher` - Class with alternative (since 2.0)
-
-More information in the following link:https://github.com/oracle/helidon/issues/4364[Task].
 
 === Metrics
 
@@ -296,13 +295,9 @@ Deprecations in the following class:
 
 Deprecations in the following class:
 
-* `HelidonRestServiceSupport` - method _configureEndpoint(Rules)_
-
-More information in the following link:https://github.com/oracle/helidon/issues/4371[Task].
+* `HelidonRestServiceSupport` - method _configureEndpoint(Rules)_ deprecated.
 
 
 === WebServer
 
-* `Static content support` in `WebServer` - moved to a separate module. Fully removed from `WebServer` module.
-
-More information in the following link:https://github.com/oracle/helidon/issues/4374[Task].
+* `io.helidon.webserver.staticcontent.*` in `WebServer` - moved to a separate module. Fully removed from `WebServer` module.

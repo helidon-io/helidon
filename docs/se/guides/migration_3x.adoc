@@ -192,8 +192,6 @@ Deprecations in the following classes:
 * `MessageBodyWriterContext` - Methods with alternatives (since 2.0)
 * `ReadableByteChannelPublisher` - Class with alternative (since 2.0)
 
-More information in the following link:https://github.com/oracle/helidon/issues/4364[Task].
-
 === Metrics
 
 Deprecations in the following classes:
@@ -288,13 +286,9 @@ Deprecations in the following class:
 
 Deprecations in the following class:
 
-* `HelidonRestServiceSupport` - method _configureEndpoint(Rules)_
-
-More information in the following link:https://github.com/oracle/helidon/issues/4371[Task].
+* `HelidonRestServiceSupport` - method _configureEndpoint(Rules)_ deprecated.
 
 
 === WebServer
 
-* `Static content support` in `WebServer` - moved to a separate module. Fully removed from `WebServer` module.
-
-More information in the following link:https://github.com/oracle/helidon/issues/4374[Task].
+* `io.helidon.webserver.staticcontent.*` in `WebServer` - moved to a separate module. Fully removed from `WebServer` module.
