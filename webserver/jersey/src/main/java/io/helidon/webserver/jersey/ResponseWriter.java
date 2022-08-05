@@ -344,11 +344,13 @@ class ResponseWriter implements ContainerResponseWriter {
                     Thread.sleep(millis);
                     millis *= 2;        // exponential backoff
                 } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();     // set interrupt flag
+                    LOGGER.finest("Thread interrupted while waiting for ByteBufs");
                     throw new RuntimeException(e);
                 }
             }
             if (millis > MAX_WAIT) {
-                LOGGER.info("Max waiting time to allocate ByteBuf exceeded");
+                LOGGER.warning("Max waiting time to allocate ByteBuf exceeded");
                 throw new IllegalStateException("Unable to allocate ByteBuf even after waiting "
                         + "for " + millis + " milliseconds");
             }
