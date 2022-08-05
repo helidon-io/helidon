@@ -184,6 +184,7 @@ class ResponseWriter implements ContainerResponseWriter {
             while (len > 0) {
                 if (byteBuf == null) {
                     awaitRequest();
+                    ensureBoundedMemory();
                     byteBuf = PooledByteBufAllocator.DEFAULT.buffer(BYTEBUF_DEFAULT_SIZE);
                     byteBufRef = byteBuf;
                 }
@@ -325,6 +326,31 @@ class ResponseWriter implements ContainerResponseWriter {
 
             if (req == CANCEL) {
                 throw new IOException("Bad news: the stream has been closed");
+            }
+        }
+
+        // We should allow to override these values via config
+        private static final int MIN_WAIT = 100;
+        private static final int MAX_WAIT = 1600;
+        private static final long MEMORY_LIMIT_MB = 256 * 1024 * 1024;
+
+        private void ensureBoundedMemory() {
+            int millis = MIN_WAIT;
+            while (millis < MAX_WAIT
+                    && (PooledByteBufAllocator.DEFAULT.pinnedHeapMemory() > MEMORY_LIMIT_MB
+                            || PooledByteBufAllocator.DEFAULT.pinnedDirectMemory() > MEMORY_LIMIT_MB)) {
+                try {
+                    LOGGER.finest("Waiting " + millis + " to allocate another ByteBuf");
+                    Thread.sleep(millis);
+                    millis *= 2;        // exponential backoff
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            if (millis >= MAX_WAIT) {
+                LOGGER.info("Max waiting time to allocate ByteBuf exceeded");
+                throw new IllegalStateException("Unable to allocate ByteBuf even after waiting "
+                        + "for " + millis + " milliseconds");
             }
         }
     }
