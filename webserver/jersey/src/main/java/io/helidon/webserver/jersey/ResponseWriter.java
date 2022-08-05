@@ -336,7 +336,7 @@ class ResponseWriter implements ContainerResponseWriter {
 
         private void ensureBoundedMemory() {
             int millis = MIN_WAIT;
-            while (millis < MAX_WAIT
+            while (millis <= MAX_WAIT
                     && (PooledByteBufAllocator.DEFAULT.pinnedHeapMemory() > MEMORY_LIMIT_MB
                             || PooledByteBufAllocator.DEFAULT.pinnedDirectMemory() > MEMORY_LIMIT_MB)) {
                 try {
@@ -347,7 +347,7 @@ class ResponseWriter implements ContainerResponseWriter {
                     throw new RuntimeException(e);
                 }
             }
-            if (millis >= MAX_WAIT) {
+            if (millis > MAX_WAIT) {
                 LOGGER.info("Max waiting time to allocate ByteBuf exceeded");
                 throw new IllegalStateException("Unable to allocate ByteBuf even after waiting "
                         + "for " + millis + " milliseconds");
