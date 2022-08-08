@@ -115,7 +115,7 @@ include::{rootdir}/config/io_helidon_webserver_WebServer.adoc[leveloffset=+1,tag
 
 Helidon MP also supports custom TLS configuration.
 
-User is able to set following properties:
+You can set the following properties:
 
 * Server truststore
 - Keystore with trusted certificates
@@ -165,7 +165,7 @@ Helidon MP can expose multiple ports, with the following limitations:
 - Other ports (in this example we configure one "admin" port) can be assigned endpoints that are exposed by Helidon components,
 currently supported by MP Health and MP Metrics
 
-For this example, we will use a `yaml` file:
+For this example, we will use a `YAML` file:
 
 - The port `7011` is the default port and will serve your application
 - The port `8011` is named "admin" (this is an arbitrary name)
@@ -190,7 +190,7 @@ health:
   routing: "admin"
 ----
 
-=== Configuring a reactive route
+=== Configuring A Reactive Route
 
 Helidon MP Server will pick up CDI beans that implement the `io.helidon.webserver.Service`
 interface and configure them with the underlying WebServer.
@@ -210,14 +210,14 @@ The service can be customized using annotations and/or configuration to be
 - registered on a specific path
 - registered with a named routing
 
-===== Assigning a reactive service to named ports
+==== Assigning a reactive service to named ports
 Helidon has the concept of named routing. These correspond to the named ports
 configured with WebServer.
 
 You can assign a reactive service to a named routing (and as a result to a named port) using
 either an annotation or configuration (or both to override the value from annotation).
 
-====== Annotation `@RoutingName` [[annotation-routing-name]]
+===== Annotation `@RoutingName` [[annotation-routing-name]]
 You can annotate a service bean with this annotation to assign it to a specific named routing,
 that is (most likely) going to be bound to a specific port.
 
@@ -238,7 +238,7 @@ public class AdminService implements Service {
 The example above will be bound to `admin` routing (and port) and will fail if such a port
 is not configured.
 
-====== Configuration override of routing name
+===== Configuration override of routing name
 
 For each service bean you can define the routing name and its required flag by specifying a configuration
 option `bean-class-name.routing-name.name` and `bean-class-name.routing-name.required`.

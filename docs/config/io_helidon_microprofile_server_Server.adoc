@@ -36,7 +36,7 @@ This is a standalone configuration type, prefix from configuration root: `server
 
 
 
-== Configuration options
+== Configuration Options
 
 
 
