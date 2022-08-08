@@ -26,7 +26,6 @@ import java.util.concurrent.SubmissionPublisher;
 import io.helidon.common.reactive.BufferedEmittingPublisher;
 import io.helidon.common.reactive.Multi;
 import io.helidon.messaging.connectors.aq.AqMessage;
-import io.helidon.microprofile.server.Server;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.jms.JMSException;
@@ -64,7 +63,7 @@ public class MsgProcessingBean {
      * Example of resending message from one queue to another and logging the payload to DB in the process.
      *
      * @param msg received message
-     * @return message to be sent
+     * @return future of the sent message
      */
     @Incoming("from-queue-1")
     @Outgoing("to-queue-2")
@@ -89,6 +88,7 @@ public class MsgProcessingBean {
      * Broadcasts an event.
      *
      * @param msg Message to broadcast
+     * @return completed completion stage
      */
     @Incoming("from-queue-2")
     public CompletionStage<Void> fromSecondQueue(AqMessage<String> msg) {
