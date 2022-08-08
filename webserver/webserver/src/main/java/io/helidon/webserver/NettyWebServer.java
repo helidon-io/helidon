@@ -74,7 +74,6 @@ class NettyWebServer implements WebServer {
 
     private static final Logger LOGGER = Logger.getLogger(NettyWebServer.class.getName());
     private static final String EXIT_ON_STARTED_KEY = "exit.on.started";
-    private static final boolean EXIT_ON_STARTED = "!".equals(System.getProperty(EXIT_ON_STARTED_KEY));
 
     private final Transport transport;
     private final EventLoopGroup bossGroup;
@@ -325,7 +324,8 @@ class NettyWebServer implements WebServer {
     }
 
     private void started(WebServer server) {
-        if (EXIT_ON_STARTED) {
+        // this must be done at runtime, so it works in native image
+        if ("!".equals(System.getProperty(EXIT_ON_STARTED_KEY))) {
             LOGGER.info(String.format("Exiting, -D%s set.", EXIT_ON_STARTED_KEY));
             System.exit(0);
         } else {

@@ -95,7 +95,6 @@ pipeline {
                 sh 'etc/scripts/test-packaging-jlink.sh'
               }
             }
-            /* TODO:java19
             stage('test-packaging-native'){
               agent {
                 label "linux"
@@ -104,7 +103,6 @@ pipeline {
                 sh 'etc/scripts/test-packaging-native.sh'
               }
             }
-            */
           }
         }
       }
