@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package io.helidon.common.serviceloader;
 
+import java.lang.System.Logger.Level;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -24,8 +25,6 @@ import java.util.List;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import io.helidon.common.Prioritized;
@@ -82,7 +81,7 @@ public final class HelidonServiceLoader<T> implements Iterable<T> {
      */
     public static final String SYSTEM_PROPERTY_EXCLUDE = "io.helidon.common.serviceloader.exclude";
 
-    private static final Logger LOGGER = Logger.getLogger(HelidonServiceLoader.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(HelidonServiceLoader.class.getName());
 
     private final List<T> services;
 
@@ -292,7 +291,7 @@ public final class HelidonServiceLoader<T> implements Iterable<T> {
         private boolean notExcluded(ServiceWithPriority<T> service) {
             String className = service.instance.getClass().getName();
             if (excludedServiceClasses.contains(className)) {
-                LOGGER.finest(() -> "Excluding service implementation " + className);
+                LOGGER.log(Level.DEBUG, () -> "Excluding service implementation " + className);
                 return false;
             }
             return true;
@@ -305,12 +304,12 @@ public final class HelidonServiceLoader<T> implements Iterable<T> {
                     .map(ServiceWithPriority::instance)
                     .collect(Collectors.toList());
 
-            if (LOGGER.isLoggable(Level.FINEST)) {
-                LOGGER.finest("Final order of enabled service implementations for service: " + serviceLoader);
+            if (LOGGER.isLoggable(Level.DEBUG)) {
+                LOGGER.log(Level.DEBUG, "Final order of enabled service implementations for service: " + serviceLoader);
                 result.stream()
                         .map(Object::getClass)
                         .map(Class::getName)
-                        .forEach(LOGGER::finest);
+                        .forEach(it -> LOGGER.log(Level.DEBUG, it));
             }
 
             return result;
@@ -323,7 +322,7 @@ public final class HelidonServiceLoader<T> implements Iterable<T> {
             }
 
             for (String exclude : excludes.split(",")) {
-                LOGGER.finest(() -> "Adding exclude from system properties: " + exclude);
+                LOGGER.log(Level.DEBUG, () -> "Adding exclude from system properties: " + exclude);
                 addExcludedClassName(exclude);
             }
         }

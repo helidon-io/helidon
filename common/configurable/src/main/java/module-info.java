@@ -20,7 +20,6 @@
  * @see io.helidon.common.configurable.Resource
  */
 module io.helidon.common.configurable {
-    requires java.logging;
     requires java.management;
     requires transitive io.helidon.config;
     requires io.helidon.common;

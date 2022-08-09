@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,14 +17,13 @@ package io.helidon.common.media.type;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.System.Logger.Level;
 import java.net.URL;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.common.media.type.spi.MediaTypeDetector;
 
@@ -33,7 +32,7 @@ import io.helidon.common.media.type.spi.MediaTypeDetector;
  */
 class CustomDetector implements MediaTypeDetector {
     private static final String MEDIA_TYPE_RESOURCE = "META-INF/helidon/media-types.properties";
-    private static final Logger LOGGER = Logger.getLogger(CustomDetector.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(CustomDetector.class.getName());
     private static final Map<String, String> MAPPINGS = new HashMap<>();
 
     static {
@@ -45,7 +44,7 @@ class CustomDetector implements MediaTypeDetector {
             Enumeration<URL> resources = classLoader.getResources(MEDIA_TYPE_RESOURCE);
             while (resources.hasMoreElements()) {
                 URL url = resources.nextElement();
-                LOGGER.finest(() -> "Loading custom media type mapping from: " + url);
+                LOGGER.log(Level.DEBUG, () -> "Loading custom media type mapping from: " + url);
                 try (InputStream is = url.openStream()) {
                     Properties properties = new Properties();
                     properties.load(is);
@@ -55,7 +54,7 @@ class CustomDetector implements MediaTypeDetector {
                 }
             }
         } catch (IOException e) {
-            LOGGER.log(Level.SEVERE, "Failed to load custom media types mapping", e);
+            LOGGER.log(Level.ERROR, "Failed to load custom media types mapping", e);
         }
     }
 
