@@ -27,12 +27,12 @@
 if [ -z "${WS_DIR}" ]; then
 
     if [ -z "${1}" ]; then
-        echo "ERROR: Missing required script path, exitting"
+        echo "ERROR: Missing required script path, exiting"
         exit 1
     fi
 
     if [ -z "${2}" ]; then
-        echo "ERROR: Missing required cd to Helidon root directory from script path, exitting"
+        echo "ERROR: Missing required cd to Helidon root directory from script path, exiting"
         exit 1
     fi
 
@@ -47,7 +47,7 @@ if [ -z "${__PIPELINE_ENV_INCLUDED__}" ]; then
     . ${WS_DIR}/etc/scripts/includes/error_handlers.sh
 
     if [ -z "${GRAALVM_HOME}" ]; then
-        export GRAALVM_HOME="/tools/graalvm-ce-java17-21.3.0"
+        export GRAALVM_HOME="/tools/graal-19-23"
     fi
 
     require_env() {
@@ -67,7 +67,7 @@ if [ -z "${__PIPELINE_ENV_INCLUDED__}" ]; then
 
     if [ -n "${JENKINS_HOME}" ] ; then
         export PIPELINE="true"
-        export JAVA_HOME="/tools/jdk17"
+        export JAVA_HOME="/tools/jdk19"
         MAVEN_OPTS="${MAVEN_OPTS} -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
         MAVEN_OPTS="${MAVEN_OPTS} -Dorg.slf4j.simpleLogger.showDateTime=true"
         MAVEN_OPTS="${MAVEN_OPTS} -Dorg.slf4j.simpleLogger.dateTimeFormat=HH:mm:ss,SSS"
@@ -76,7 +76,7 @@ if [ -z "${__PIPELINE_ENV_INCLUDED__}" ]; then
         # Needed for generating site
         MAVEN_OPTS="${MAVEN_OPTS} --add-opens=java.desktop/com.sun.imageio.plugins.png=ALL-UNNAMED"
         export MAVEN_OPTS
-        export PATH="/tools/apache-maven-3.6.3/bin:${JAVA_HOME}/bin:/tools/node-v12/bin:${PATH}"
+        export PATH="/tools/apache-maven-3.8.6/bin:${JAVA_HOME}/bin:/tools/node-v12/bin:${PATH}"
         if [ -n "${GITHUB_SSH_KEY}" ] ; then
             export GIT_SSH_COMMAND="ssh -i ${GITHUB_SSH_KEY}"
         fi
