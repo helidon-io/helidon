@@ -36,6 +36,9 @@ include::{rootdir}/includes/metrics/micrometer-shared.adoc[tags=intro]
 include::{rootdir}/includes/metrics/micrometer-shared.adoc[tags=prereq]
 
 == Usage
+Your application registers and updates Micrometer meters using annotations or direct use of the Micrometer API.
+
+Your users retrieve Micrometer meters using an endpoint which Helidon creates automatically.
 
 === Registering and Updating Meters
 Your code

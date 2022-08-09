@@ -76,6 +76,7 @@ endif::[]
 :version-lib-oracle-ucp: {version-lib-oracle-jdbc}
 :version-plugin-jib: 0.10.1
 :version-plugin-jandex: 1.0.6
+:version-lib-micrometer: 1.6.6
 
 :jdk-version: 17
 
@@ -258,5 +259,7 @@ endif::[]
 
 :micrometer-url: https://micrometer.io
 :micrometer-api-url: https://micrometer.io/docs/concepts
+:micrometer-javadoc-base-url: https://javadoc.io/doc/io.micrometer
+:micrometer-javadoc-registry-prometheus-base-url: {micrometer-javadoc-base-url}/micrometer-registry-prometheus/{version-lib-micrometer}/io/micrometer/prometheus
 
 endif::attributes-included[]

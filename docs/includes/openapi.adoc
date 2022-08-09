@@ -29,7 +29,7 @@ ifdef::se-flavor[OpenAPI support in Helidon {flavor-uc} draws its inspiration fr
 The OpenAPI support in Helidon {flavor-uc} performs two main tasks:
 
 * Build an in-memory model of the REST API your service implements.
-* Expose the model in text format (typically yaml) via the `/openapi` endpoint.
+* Expose the model in text format (typically YAML) via the `/openapi` endpoint.
 
 To construct the model, Helidon gathers information about the service API from whichever of these sources are present in the application:
 

@@ -81,7 +81,7 @@ Helidon updates and reports a metric only if two conditions hold:
 ** there is no `include` regex pattern, or
 ** the metric name matches the `include` pattern.
 
-[CAUTION]
+[NOTE]
 ====
 Make sure any `include` regex pattern you specify matches _all_ the metric names you want to capture.
 ====
@@ -150,14 +150,14 @@ endif::[]
 
 [#config-rest-request]
 ifdef::mp-flavor[]
-==== Enable `REST.request` metrics
+==== Enable `REST.request` Metrics
 
 .Controlling REST request metrics
 [source,properties]
 ----
 metrics.rest-request-enabled=true
 ----
-Helidon will automatically register and update `SimpleTimer` metrics for every REST endpoint in your service.
+Helidon automatically registers and updates `SimpleTimer` metrics for every REST endpoint in your service.
 endif::[]
 
 // end::config-examples[]

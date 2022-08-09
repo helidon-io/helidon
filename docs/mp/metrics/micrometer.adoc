@@ -36,6 +36,9 @@ include::{rootdir}/includes/metrics/micrometer-shared.adoc[tag=intro]
 include::{rootdir}/includes/metrics/micrometer-shared.adoc[tag=prereq]
 
 == Usage
+Your application registers and updates Micrometer meters using annotations or direct use of the Micrometer API.
+
+Your users retrieve Micrometer meters using an endpoint which Helidon creates automatically.
 
 === Registering and Updating Meters
 To use Micrometer support, you can simply add the Micrometer `@Timed` and `@Counted` annotations to methods in your application. Helidon automatically registers those meters with the Micrometer composite `MeterRegistry`.
@@ -50,6 +53,7 @@ include::{rootdir}/includes/metrics/micrometer-shared.adoc[tag=accessing-endpoin
 
 
 == API
+To incorporate Micrometer metrics into your code, you will work with two APIs: a small one specific to Helidon, and the Micrometer API itself.
 
 === The Helidon Micrometer API
 Helidon automatically registers and updates meters associated with methods in your service where you add the Micrometer annotations.
