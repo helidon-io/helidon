@@ -57,7 +57,7 @@ ifdef::mp-flavor[each of these.]
 ifdef::se-flavor[this.]
 
 === Categorizing Types of Metrics
-Helidon distinguishes among three general _types_, or scopes, of metrics, as described in the MP metrics specification.
+Helidon distinguishes among three general _types_, or scopes, of metrics, as described in the link:{microprofile-metrics-spec-url}[MP metrics specification].
 
 .Types (scopes) of metrics
 [%autowidth]
@@ -128,7 +128,7 @@ curl -s -H 'Accept: application/json' -X GET http://localhost:8080/metrics/
 }
 ----
 
-In addition to your application metrics the reports contain other
+In addition to your application metrics, the reports contain other
 metrics of interest such as system and VM information.
 
 // end::usage-body[]
