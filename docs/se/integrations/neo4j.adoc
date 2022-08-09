@@ -47,7 +47,7 @@ include::{rootdir}/includes/dependencies.adoc[]
    <artifactId>helidon-integrations-neo4j</artifactId>
 </dependency>
 ----
-NOTE: Check <<Neo4j Metrics propagation, Neo4j Metrics propagation>> and <<Neo4j Health Checks, Neo4j Health Checks>> for additional dependencies for _Neo4j_ `Metrics` and `Health Checks` integration.
+NOTE: Check <<Neo4j Metrics Propagation, Neo4j Metrics Propagation>> and <<Neo4j Health Checks, Neo4j Health Checks>> for additional dependencies for _Neo4j_ `Metrics` and `Health Checks` integration.
 
 == Usage
 
@@ -273,7 +273,7 @@ Full example code is available in link:https://github.com/oracle/helidon/tree/ma
 
 == Additional Information
 
-=== Neo4j Metrics propagation
+=== Neo4j Metrics Propagation
 
 Neo4j metrics can be propagated to the user as `MicroProfile` metrics. This is implemented in a separate Maven module. Just add:
 
