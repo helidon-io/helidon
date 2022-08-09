@@ -18,3 +18,5 @@ We are pleased to announce Helidon 4.0.0 a major release that includes significa
 ### Notable Changes
 
 - Java 19 (with Loom support) as the minimal Java version
+- Using System.Logger instead of java util logging (incremental change)
+- `HelidonServiceLoader` is now part of `helidon-common` module

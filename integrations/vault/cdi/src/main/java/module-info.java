@@ -29,7 +29,6 @@ module io.helidon.integrations.vault.cdi {
     requires microprofile.config.api;
 
     requires io.helidon.integrations.vault;
-    requires io.helidon.common.serviceloader;
     requires io.helidon.microprofile.cdi;
 
     exports io.helidon.integrations.vault.cdi;

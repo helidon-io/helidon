@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.common.LazyValue;
-import io.helidon.common.serviceloader.HelidonServiceLoader;
+import io.helidon.common.HelidonServiceLoader;
 import io.helidon.metrics.api.MetricsSettings;
 import io.helidon.metrics.serviceapi.spi.MetricsSupportProvider;
 import io.helidon.servicecommon.rest.RestServiceSettings;

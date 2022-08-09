@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import java.util.ServiceLoader;
 import io.helidon.common.GenericType;
 import io.helidon.common.Prioritized;
 import io.helidon.common.mapper.spi.MapperProvider;
-import io.helidon.common.serviceloader.HelidonServiceLoader;
+import io.helidon.common.HelidonServiceLoader;
 
 /**
  * Mapper manager of all configured mappers.
@@ -140,8 +140,8 @@ public interface MapperManager {
          * <p>
          * If the same provider implementation would be loaded by Java Service loader, the service loader instance is ignored.
          * If you need to add a new implementation of the same type, please use the full features
-         * of the {@link io.helidon.common.serviceloader.HelidonServiceLoader} and invoke
-         * {@link MapperManager#create(io.helidon.common.serviceloader.HelidonServiceLoader)}.
+         * of the {@link io.helidon.common.HelidonServiceLoader} and invoke
+         * {@link MapperManager#create(io.helidon.common.HelidonServiceLoader)}.
          *
          * @param provider prioritized mapper provider to use
          * @return updated builder instance
@@ -156,7 +156,7 @@ public interface MapperManager {
          * from system service loader with a custom priority.
          *
          * @param provider a mapper provider instance
-         * @param priority priority of the provider (see {@link io.helidon.common.serviceloader.HelidonServiceLoader}
+         * @param priority priority of the provider (see {@link io.helidon.common.HelidonServiceLoader}
          *                 documentation for details about priority handling)
          * @return updated builder instance
          * @see #addMapperProvider(io.helidon.common.mapper.spi.MapperProvider)

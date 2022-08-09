@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 import io.helidon.common.context.spi.DataPropagationProvider;
-import io.helidon.common.serviceloader.HelidonServiceLoader;
+import io.helidon.common.HelidonServiceLoader;
 
 class ContextAwareExecutorImpl implements ContextAwareExecutorService {
 

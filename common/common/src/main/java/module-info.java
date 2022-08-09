@@ -20,6 +20,7 @@
 module io.helidon.common {
     // used only by LogConfig
     requires java.logging;
+    requires jakarta.annotation;
 
     exports io.helidon.common;
 }

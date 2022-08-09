@@ -23,7 +23,6 @@ module io.helidon.microprofile.grpc.server {
 
     requires transitive io.helidon.grpc.server;
     requires transitive io.helidon.microprofile.grpc.core;
-    requires io.helidon.common.serviceloader;
     requires io.helidon.microprofile.server;
     requires io.helidon.config.mp;
 

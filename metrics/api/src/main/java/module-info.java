@@ -24,7 +24,6 @@ module io.helidon.metrics.api {
     requires java.logging;
 
     requires io.helidon.common.http;
-    requires io.helidon.common.serviceloader;
     requires transitive io.helidon.config;
 
     requires transitive microprofile.metrics.api;

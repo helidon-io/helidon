@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.ServiceLoader;
 
-import io.helidon.common.serviceloader.HelidonServiceLoader;
+import io.helidon.common.HelidonServiceLoader;
 import io.helidon.tracing.spi.TracerProvider;
 
 /**

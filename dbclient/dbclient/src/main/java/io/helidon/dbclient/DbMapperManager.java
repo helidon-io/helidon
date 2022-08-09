@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import java.util.ServiceLoader;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.mapper.MapperException;
-import io.helidon.common.serviceloader.HelidonServiceLoader;
+import io.helidon.common.HelidonServiceLoader;
 import io.helidon.dbclient.spi.DbMapperProvider;
 
 /**
@@ -60,7 +60,7 @@ public interface DbMapperManager {
     }
 
     /**
-     * Create a new mapper manager from customized {@link io.helidon.common.serviceloader.HelidonServiceLoader}.
+     * Create a new mapper manager from customized {@link io.helidon.common.HelidonServiceLoader}.
      *
      * @param serviceLoader service loader to use to read all {@link io.helidon.dbclient.spi.DbMapperProvider}
      * @return mapper manager

@@ -35,7 +35,6 @@ module io.helidon.microprofile.server {
     requires io.helidon.jersey.media.jsonp;
 
     requires java.logging;
-    requires io.helidon.common.serviceloader;
     requires io.helidon.webserver.staticcontent;
 
     // there is now a hardcoded dependency on Weld, to configure additional bean defining annotation

@@ -19,7 +19,6 @@
  */
 module io.helidon.common.context {
     requires io.helidon.common;
-    requires io.helidon.common.serviceloader;
 
     exports io.helidon.common.context;
     exports io.helidon.common.context.spi;

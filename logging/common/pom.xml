@@ -30,8 +30,7 @@
     <dependencies>
         <dependency>
             <groupId>io.helidon.common</groupId>
-            <artifactId>helidon-common-service-loader</artifactId>
+            <artifactId>helidon-common</artifactId>
         </dependency>
     </dependencies>
-
 </project>

@@ -17,7 +17,7 @@ package io.helidon.tracing.opentracing;
 
 import java.util.ServiceLoader;
 
-import io.helidon.common.serviceloader.HelidonServiceLoader;
+import io.helidon.common.HelidonServiceLoader;
 import io.helidon.tracing.opentracing.spi.OpenTracingProvider;
 
 /**

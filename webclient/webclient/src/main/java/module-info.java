@@ -28,7 +28,6 @@ module io.helidon.webclient {
     requires transitive io.helidon.config;
     requires transitive io.helidon.media.common;
     requires io.helidon.common.pki;
-    requires io.helidon.common.serviceloader;
 
     requires io.netty.buffer;
     requires io.netty.codec;

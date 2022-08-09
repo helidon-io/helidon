@@ -28,7 +28,7 @@ import java.util.function.Supplier;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.http.Http;
-import io.helidon.common.serviceloader.HelidonServiceLoader;
+import io.helidon.common.HelidonServiceLoader;
 import io.helidon.config.Config;
 import io.helidon.media.common.MediaContext;
 import io.helidon.media.common.MediaContextBuilder;

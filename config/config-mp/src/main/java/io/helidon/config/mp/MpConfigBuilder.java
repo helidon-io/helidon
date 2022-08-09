@@ -59,8 +59,8 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import io.helidon.common.Builder;
-import io.helidon.common.serviceloader.HelidonServiceLoader;
-import io.helidon.common.serviceloader.Priorities;
+import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.Priorities;
 import io.helidon.config.ConfigException;
 import io.helidon.config.ConfigMappers;
 import io.helidon.config.ConfigValue;

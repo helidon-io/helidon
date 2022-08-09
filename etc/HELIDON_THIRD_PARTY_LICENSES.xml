@@ -1355,7 +1355,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <licenseName>Eclipse Public License 2.0 + GPL v.2 with CPE</licenseName>
             <consumers>
                 <consumer>helidon-bundles-config</consumer>
-                <consumer>helidon-common-service-loader</consumer>
                 <consumer>helidon-config</consumer>
                 <consumer>helidon-config-hocon</consumer>
                 <consumer>helidon-config-mp</consumer>

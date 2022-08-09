@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,17 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.common.serviceloader;
-
-import jakarta.annotation.Priority;
+package io.helidon.common;
 
 /**
- * A service implementation.
+ * Testing Java Service loader service interface.
  */
-@Priority(22)
-public class ServiceImpl3 implements ServiceInterface {
-    @Override
-    public String message() {
-        return getClass().getName();
-    }
+public interface ServiceInterface {
+    String message();
 }

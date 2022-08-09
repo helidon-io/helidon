@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.helidon.common;
+
 /**
- * Java Service loader extension.
+ * A service implementation.
  */
-package io.helidon.common.serviceloader;
+public class ServiceImpl2 implements ServiceInterface, Prioritized {
+    private final String message;
+
+    public ServiceImpl2() {
+        this.message = ServiceImpl2.class.getName();
+    }
+
+    public ServiceImpl2(String message) {
+        this.message = message;
+    }
+
+    @Override
+    public String message() {
+        return message;
+    }
+
+    @Override
+    public int priority() {
+        return 12;
+    }
+}

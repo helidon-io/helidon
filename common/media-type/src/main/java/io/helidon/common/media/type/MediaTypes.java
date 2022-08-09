@@ -23,8 +23,8 @@ import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
 
+import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.media.type.spi.MediaTypeDetector;
-import io.helidon.common.serviceloader.HelidonServiceLoader;
 
 /**
  * Media type detection based on a resource.

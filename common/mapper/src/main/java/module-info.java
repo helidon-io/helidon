@@ -19,7 +19,6 @@
  */
 module io.helidon.common.mapper {
     requires transitive io.helidon.common;
-    requires transitive io.helidon.common.serviceloader;
 
     exports io.helidon.common.mapper;
     exports io.helidon.common.mapper.spi;

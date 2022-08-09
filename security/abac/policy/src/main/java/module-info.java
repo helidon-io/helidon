@@ -20,7 +20,6 @@
 module io.helidon.security.abac.policy {
     requires io.helidon.security.providers.abac;
     requires java.logging;
-    requires io.helidon.common.serviceloader;
 
     exports io.helidon.security.abac.policy;
     exports io.helidon.security.abac.policy.spi;

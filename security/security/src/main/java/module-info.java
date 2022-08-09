@@ -33,7 +33,6 @@ module io.helidon.security {
 
     requires io.helidon.security.util;
     requires io.helidon.common.context;
-    requires io.helidon.common.serviceloader;
 
     exports io.helidon.security;
     exports io.helidon.security.spi;

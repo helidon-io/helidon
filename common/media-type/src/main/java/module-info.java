@@ -18,7 +18,7 @@
  * Helidon Common Media Type.
  */
 module io.helidon.common.media.type {
-    requires io.helidon.common.serviceloader;
+    requires io.helidon.common;
 
     exports io.helidon.common.media.type;
     exports io.helidon.common.media.type.spi;

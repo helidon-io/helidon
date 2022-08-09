@@ -20,7 +20,6 @@ module io.helidon.metrics.serviceapi {
 
     requires java.logging;
 
-    requires io.helidon.common.serviceloader;
     requires io.helidon.webserver;
     requires io.helidon.config.metadata;
     requires io.helidon.servicecommon.rest;

@@ -21,7 +21,6 @@ module io.helidon.security.providers.abac {
     requires transitive io.helidon.config;
     requires transitive io.helidon.common;
     requires transitive io.helidon.security;
-    requires io.helidon.common.serviceloader;
     requires static io.helidon.config.metadata;
 
     exports io.helidon.security.providers.abac;

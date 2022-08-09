@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.common.serviceloader;
+package io.helidon.common;
 
 import java.lang.System.Logger.Level;
 import java.util.Collections;
@@ -26,8 +26,6 @@ import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-
-import io.helidon.common.Prioritized;
 
 /**
  * Helidon specific support for Java Service Loaders.
@@ -77,7 +75,7 @@ import io.helidon.common.Prioritized;
 public final class HelidonServiceLoader<T> implements Iterable<T> {
     /**
      * System property used to exclude some implementation from the list of services that are configured for Java Service
-     * loader or services that are registered using {@link io.helidon.common.serviceloader.HelidonServiceLoader.Builder}.
+     * loader or services that are registered using {@link HelidonServiceLoader.Builder}.
      */
     public static final String SYSTEM_PROPERTY_EXCLUDE = "io.helidon.common.serviceloader.exclude";
 
@@ -133,7 +131,7 @@ public final class HelidonServiceLoader<T> implements Iterable<T> {
     }
 
     /**
-     * Fluent api builder for {@link io.helidon.common.serviceloader.HelidonServiceLoader}.
+     * Fluent api builder for {@link HelidonServiceLoader}.
      *
      * @param <T> type of the service to be loaded
      */

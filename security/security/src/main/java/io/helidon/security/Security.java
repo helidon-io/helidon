@@ -40,7 +40,7 @@ import java.util.stream.Collectors;
 
 import io.helidon.common.configurable.ThreadPoolSupplier;
 import io.helidon.common.reactive.Single;
-import io.helidon.common.serviceloader.HelidonServiceLoader;
+import io.helidon.common.HelidonServiceLoader;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
 import io.helidon.config.metadata.Configured;
