@@ -27,7 +27,7 @@ include::{rootdir}/includes/se.adoc[]
 == Contents
 
 - <<Overview, Overview>>
-- <<maven-coordinates, Maven Coordinates>>
+- <<Maven Coordinates, Maven Coordinates>>
 - <<Usage, Usage>>
 - <<Configuration, Configuration>>
 - <<Examples, Examples>>
