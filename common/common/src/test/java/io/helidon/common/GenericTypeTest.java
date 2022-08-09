@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ class GenericTypeTest {
 
     @Test
     void testIsClass() {
-        GenericType<String> type = new GenericType<String>(){};
+        GenericType<String> type = GenericType.STRING;
         assertThat(type.isClass(), is(true));
 
         GenericType<List<String>> type2 = new GenericType<List<String>>(){};

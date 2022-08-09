@@ -230,7 +230,6 @@ public class JwtHeaders extends JwtClaims {
      */
     public static class Builder implements io.helidon.common.Builder<Builder, JwtHeaders> {
         private static final GenericType<List<String>> STRING_LIST_TYPE = new GenericType<List<String>>() { };
-        private static final GenericType<String> STRING_TYPE = GenericType.create(String.class);
 
         private static final Map<String, KnownField<? extends Object>> KNOWN_HEADER_CLAIMS;
         private static final KnownField<String> TYPE_FIELD = KnownField.create("typ", Builder::type);
@@ -487,7 +486,7 @@ public class JwtHeaders extends JwtClaims {
         }
 
         static KnownField<String> create(String name, BiConsumer<Builder, String> valueConsumer) {
-            return new KnownField<>(name, Builder.STRING_TYPE, valueConsumer, KnownField::jsonToString);
+            return new KnownField<>(name, GenericType.STRING, valueConsumer, KnownField::jsonToString);
         }
 
         private static String jsonToString(JsonValue jsonValue) {

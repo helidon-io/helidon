@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import io.helidon.common.mapper.spi.MapperProvider;
  * Maps String to Integer, and String to Short using type.
  */
 public class ServiceLoaderMapper2 implements MapperProvider {
-    static final GenericType<String> STRING_TYPE = GenericType.create(String.class);
     static final GenericType<Integer> INTEGER_TYPE = GenericType.create(Integer.class);
     static final GenericType<Short> SHORT_TYPE = GenericType.create(Short.class);
 
@@ -35,11 +34,11 @@ public class ServiceLoaderMapper2 implements MapperProvider {
 
     @Override
     public <SOURCE, TARGET> Optional<Mapper<?, ?>> mapper(GenericType<SOURCE> sourceType, GenericType<TARGET> targetType) {
-        if (sourceType.equals(STRING_TYPE) && targetType.equals(INTEGER_TYPE)) {
+        if (sourceType.equals(GenericType.STRING) && targetType.equals(INTEGER_TYPE)) {
             return Optional.of(string -> Integer.parseInt((String)string) + 1);
         }
 
-        if (sourceType.equals(STRING_TYPE) && targetType.equals(SHORT_TYPE)) {
+        if (sourceType.equals(GenericType.STRING) && targetType.equals(SHORT_TYPE)) {
             return Optional.of(string -> Short.parseShort((String)string));
         }
         return Optional.empty();

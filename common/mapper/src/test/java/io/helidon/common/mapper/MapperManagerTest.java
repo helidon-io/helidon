@@ -42,11 +42,11 @@ class MapperManagerTest {
         assertThat(result, is(10));
 
         // using generic types
-        result = mm.map(source, ServiceLoaderMapper2.STRING_TYPE, ServiceLoaderMapper2.INTEGER_TYPE);
+        result = mm.map(source, GenericType.STRING, ServiceLoaderMapper2.INTEGER_TYPE);
         assertThat(result, is(11));
 
         // search for opposite (use class, find type and vice versa)
-        Long longResult = mm.map(source, ServiceLoaderMapper2.STRING_TYPE, GenericType.create(Long.class));
+        Long longResult = mm.map(source, GenericType.STRING, GenericType.create(Long.class));
         assertThat(longResult, is(10L));
         // must be the same
         longResult = mm.map(source, String.class, Long.class);
@@ -55,7 +55,7 @@ class MapperManagerTest {
         Short shortResult = mm.map(source, String.class, Short.class);
         assertThat(shortResult, is((short) 10));
         // must be the same
-        shortResult = mm.map(source, ServiceLoaderMapper2.STRING_TYPE, ServiceLoaderMapper2.SHORT_TYPE);
+        shortResult = mm.map(source, GenericType.STRING, ServiceLoaderMapper2.SHORT_TYPE);
         assertThat(shortResult, is((short) 10));
 
         assertThrows(MapperException.class, () -> mm.map(source, String.class, Object.class));
@@ -75,18 +75,18 @@ class MapperManagerTest {
         assertThat(result, is(10));
 
         // using generic types
-        result = mm.map(source, ServiceLoaderMapper2.STRING_TYPE, ServiceLoaderMapper2.INTEGER_TYPE);
+        result = mm.map(source, GenericType.STRING, ServiceLoaderMapper2.INTEGER_TYPE);
         assertThat(result, is(10));
 
         // search for opposite (use class, find type and vice versa)
-        Long longResult = mm.map(source, ServiceLoaderMapper2.STRING_TYPE, GenericType.create(Long.class));
+        Long longResult = mm.map(source, GenericType.STRING, GenericType.create(Long.class));
         assertThat(longResult, is(10L));
         // must be the same
         longResult = mm.map(source, String.class, Long.class);
         assertThat(longResult, is(10L));
 
         assertThrows(MapperException.class, () -> mm.map(source, String.class, Short.class));
-        assertThrows(MapperException.class, () -> mm.map(source, ServiceLoaderMapper2.STRING_TYPE,
+        assertThrows(MapperException.class, () -> mm.map(source, GenericType.STRING,
                                                          ServiceLoaderMapper2.SHORT_TYPE));
         assertThrows(MapperException.class, () -> mm.map(source, String.class, Object.class));
     }
@@ -95,7 +95,7 @@ class MapperManagerTest {
     void testUsingServiceLoaderAndCustomMappers() {
         MapperManager mm = MapperManager.builder()
                 .addMapper(String::valueOf, Integer.class, String.class)
-                .addMapper(String::valueOf, ServiceLoaderMapper2.SHORT_TYPE, ServiceLoaderMapper2.STRING_TYPE)
+                .addMapper(String::valueOf, ServiceLoaderMapper2.SHORT_TYPE, GenericType.STRING)
                 .build();
 
         String source = "10";
@@ -104,11 +104,11 @@ class MapperManagerTest {
         assertThat(result, is(10));
 
         // using generic types
-        result = mm.map(source, ServiceLoaderMapper2.STRING_TYPE, ServiceLoaderMapper2.INTEGER_TYPE);
+        result = mm.map(source, GenericType.STRING, ServiceLoaderMapper2.INTEGER_TYPE);
         assertThat(result, is(11));
 
         // search for opposite (use class, find type and vice versa)
-        Long longResult = mm.map(source, ServiceLoaderMapper2.STRING_TYPE, GenericType.create(Long.class));
+        Long longResult = mm.map(source, GenericType.STRING, GenericType.create(Long.class));
         assertThat(longResult, is(10L));
         // must be the same
         longResult = mm.map(source, String.class, Long.class);
@@ -117,7 +117,7 @@ class MapperManagerTest {
         Short shortResult = mm.map(source, String.class, Short.class);
         assertThat(shortResult, is((short) 10));
         // must be the same
-        shortResult = mm.map(source, ServiceLoaderMapper2.STRING_TYPE, ServiceLoaderMapper2.SHORT_TYPE);
+        shortResult = mm.map(source, GenericType.STRING, ServiceLoaderMapper2.SHORT_TYPE);
         assertThat(shortResult, is((short) 10));
 
         assertThrows(MapperException.class, () -> mm.map(source, String.class, Object.class));
@@ -125,12 +125,12 @@ class MapperManagerTest {
         // and add tests for integer and short types
         String stringResult = mm.map(42, Integer.class, String.class);
         assertThat(stringResult, is("42"));
-        stringResult = mm.map(42, GenericType.create(Integer.class), ServiceLoaderMapper2.STRING_TYPE);
+        stringResult = mm.map(42, GenericType.create(Integer.class), GenericType.STRING);
         assertThat(stringResult, is("42"));
 
         stringResult = mm.map((short)42, Short.class, String.class);
         assertThat(stringResult, is("42"));
-        stringResult = mm.map((short)42, ServiceLoaderMapper2.SHORT_TYPE, ServiceLoaderMapper2.STRING_TYPE);
+        stringResult = mm.map((short)42, ServiceLoaderMapper2.SHORT_TYPE, GenericType.STRING);
         assertThat(stringResult, is("42"));
     }
 }
