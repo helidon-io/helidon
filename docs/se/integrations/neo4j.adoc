@@ -53,7 +53,7 @@ NOTE: Check <<Neo4j Metrics Propagation, Neo4j Metrics Propagation>> and <<Neo4j
 
 The support for Neo4j is implemented in Neo4j driver level. Just add the dependency, add configuration in `application.yaml` file and Neo4j driver will be configured by Helidon and can be used with `Neo4j` support object.
 
-First describe Neo4j connection properties:
+To implement Neo4j, you must first provide the connection properties as shown below:
 
 [source,properties]
 ----
@@ -197,7 +197,7 @@ public class MovieService implements Service {
 
 ----
 
-To use the service, as well as to add metrics and health support the following routing should be created:
+To use the service, as well as to add metrics and health support, the following routing should be created:
 
 [source,java]
 ----
