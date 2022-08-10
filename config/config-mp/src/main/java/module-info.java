@@ -23,7 +23,6 @@ module io.helidon.config.mp {
     requires io.helidon.config;
     requires transitive microprofile.config.api;
     requires jakarta.annotation;
-    requires io.helidon.common.serviceloader;
     requires static io.helidon.config.metadata;
 
     exports io.helidon.config.mp;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
@@ -115,7 +114,7 @@ public final class Errors extends LinkedList<Errors.ErrorMessage> {
      * otherwise.
      */
 
-    public boolean log(Logger logger) {
+    public boolean log(System.Logger logger) {
         if (!isEmpty()) {
             StringBuilder fatals = new StringBuilder("\n");
             StringBuilder warnings = new StringBuilder();
@@ -141,14 +140,14 @@ public final class Errors extends LinkedList<Errors.ErrorMessage> {
             if (hasFatal) {
                 fatals.append(warnings).append(hints);
 
-                logger.severe("Fatal issues found: " + fatals);
+                logger.log(System.Logger.Level.ERROR, "Fatal issues found: " + fatals);
             } else {
                 if (warnings.length() > 0) {
-                    logger.warning("Warnings found: \n" + warnings);
+                    logger.log(System.Logger.Level.WARNING, "Warnings found: \n" + warnings);
                 }
 
                 if (hints.length() > 0) {
-                    logger.config("Hints found: \n" + hints);
+                    logger.log(System.Logger.Level.TRACE, "Hints found: \n" + hints);
                 }
             }
 

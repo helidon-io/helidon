@@ -21,7 +21,6 @@
  */
 module io.helidon.tracing {
     requires io.helidon.common;
-    requires io.helidon.common.serviceloader;
     requires io.helidon.config;
 
     requires static io.helidon.config.metadata;

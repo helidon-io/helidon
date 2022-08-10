@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.stream.Stream;
-
-import io.helidon.common.Prioritized;
 
 import jakarta.annotation.Priority;
 
@@ -157,13 +155,9 @@ public class PriorityBag<T> implements Iterable<T> {
      */
     public void add(T value) {
         if (value != null) {
-            int priority;
-            if (value instanceof Prioritized) {
-                priority = ((Prioritized) value).priority();
-            } else {
-                Priority annotation = value.getClass().getAnnotation(Priority.class);
-                priority = annotation == null ? defaultPriority : annotation.value();
-            }
+            Priority annotation = value.getClass().getAnnotation(Priority.class);
+            int priority = annotation == null ? defaultPriority : annotation.value();
+
             add(value, priority);
         }
     }

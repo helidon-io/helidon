@@ -16,17 +16,16 @@
 
 package io.helidon.tracing.tracerresolver;
 
-import io.helidon.common.Prioritized;
+import io.helidon.common.Weight;
+import io.helidon.common.Weighted;
 import io.helidon.tracing.opentracing.OpenTracingTracerBuilder;
 import io.helidon.tracing.opentracing.spi.OpenTracingProvider;
-
-import jakarta.annotation.Priority;
 
 /**
  * Service to use {@link io.opentracing.contrib.tracerresolver.TracerResolver} to find tracer to use with Helidon.
  */
 // lower priority, so this get overridden by specific tracers if present
-@Priority(Prioritized.DEFAULT_PRIORITY + 1000)
+@Weight(Weighted.DEFAULT_WEIGHT - 60)
 public class TracerResolverProvider implements OpenTracingProvider {
     @Override
     public OpenTracingTracerBuilder<?> createBuilder() {

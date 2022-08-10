@@ -17,7 +17,7 @@ package io.helidon.tracing.opentracing;
 
 import java.util.ServiceLoader;
 
-import io.helidon.common.serviceloader.HelidonServiceLoader;
+import io.helidon.common.HelidonServiceLoader;
 import io.helidon.tracing.opentracing.spi.OpenTracingProvider;
 
 /**
@@ -26,7 +26,7 @@ import io.helidon.tracing.opentracing.spi.OpenTracingProvider;
 final class OpenTracingProviderHelper {
     private static final OpenTracingProvider TRACER_PROVIDER =
             HelidonServiceLoader.builder(ServiceLoader.load(OpenTracingProvider.class))
-                    .addService(NoOpBuilder::create, 100000)
+                    .addService(NoOpBuilder::create, 0)
                     .build()
                     .iterator()
                     .next();

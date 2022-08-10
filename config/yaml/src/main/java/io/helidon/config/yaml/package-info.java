@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@
  * if not {@link io.helidon.config.Config.Builder#disableParserServices() disabled}.
  * Priority of the {@code YamlConfigParser} to be used by {@link io.helidon.config.Config.Builder},
  * if loaded automatically as a {@link java.util.ServiceLoader service},
- * is {@value io.helidon.config.yaml.YamlConfigParser#PRIORITY}.
+ * is {@value io.helidon.config.yaml.YamlConfigParser#WEIGHT}.
  * And of course it can be {@link io.helidon.config.Config.Builder#addParser(io.helidon.config.spi.ConfigParser)
  * registered programmatically} using {@link io.helidon.config.yaml.YamlConfigParser#create()}.
  * <p>

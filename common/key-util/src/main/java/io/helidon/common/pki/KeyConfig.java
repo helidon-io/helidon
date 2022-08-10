@@ -18,6 +18,7 @@ package io.helidon.common.pki;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.System.Logger.Level;
 import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -29,8 +30,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.configurable.ResourceException;
@@ -73,7 +72,7 @@ import io.helidon.config.metadata.ConfiguredOption;
  */
 public final class KeyConfig {
     private static final String DEFAULT_PRIVATE_KEY_ALIAS = "1";
-    private static final Logger LOGGER = Logger.getLogger(KeyConfig.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(KeyConfig.class.getName());
     private static final char[] EMPTY_CHARS = new char[0];
 
     private final PrivateKey privateKey;
@@ -527,7 +526,7 @@ public final class KeyConfig {
                     builder.privateKey(PkiUtil.loadPrivateKey(keyStore, keyAlias, keyPassphrase));
                 } catch (Exception e) {
                     if (guessing) {
-                        LOGGER.log(Level.FINEST, "Failed to read private key from default alias", e);
+                        LOGGER.log(Level.DEBUG, "Failed to read private key from default alias", e);
                     } else {
                         throw e;
                     }
@@ -548,7 +547,7 @@ public final class KeyConfig {
                         certChain.forEach(builder::addCertChain);
                     } catch (Exception e) {
                         if (guessing) {
-                            LOGGER.log(Level.FINEST, "Failed to certificate chain from alias \"" + certChainAlias + "\"", e);
+                            LOGGER.log(Level.DEBUG, "Failed to certificate chain from alias \"" + certChainAlias + "\"", e);
                         } else {
                             throw e;
                         }

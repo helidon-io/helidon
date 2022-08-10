@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package io.helidon.common;
 
 import java.util.Optional;
-import java.util.logging.Logger;
 
 import org.junit.jupiter.api.Test;
 
@@ -31,7 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * Unit test for {@link Errors}.
  */
 class ErrorsTest {
-    private static final Logger LOGGER = Logger.getLogger(ErrorsTest.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(ErrorsTest.class.getName());
 
     private static void assertErrorMessage(Optional<Errors.ErrorMessage> actual, String expected, String message) {
         assertThat(actual, not(Optional.empty()));

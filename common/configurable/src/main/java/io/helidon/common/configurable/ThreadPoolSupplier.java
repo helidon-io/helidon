@@ -21,7 +21,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
-import java.util.logging.Logger;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.context.Contexts;
@@ -34,7 +33,7 @@ import io.helidon.config.metadata.ConfiguredOption;
  * The returned thread pool supports {@link io.helidon.common.context.Context} propagation.
  */
 public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
-    private static final Logger LOGGER = Logger.getLogger(ThreadPoolSupplier.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(ThreadPoolSupplier.class.getName());
     private static final ThreadPool.RejectionHandler DEFAULT_REJECTION_POLICY = new ThreadPool.RejectionHandler();
     private static final AtomicInteger DEFAULT_NAME_COUNTER = new AtomicInteger();
     private static final int DEFAULT_CORE_POOL_SIZE = 10;
@@ -113,7 +112,7 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
     ExecutorService getThreadPool() {
         if (useVirtualThreads) {
             if (VirtualExecutorUtil.isVirtualSupported()) {
-                LOGGER.fine("Using unbounded virtual executor service for pool " + name);
+                LOGGER.log(System.Logger.Level.TRACE, "Using unbounded virtual executor service for pool " + name);
                 return ObserverManager.registerExecutorService(this, VirtualExecutorUtil.executorService());
             }
         }
@@ -175,7 +174,7 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
         public ThreadPoolSupplier build() {
             if (name == null) {
                 if (threadNamePrefix == null) {
-                    LOGGER.warning("Neither a thread name prefix nor a pool name specified");
+                    LOGGER.log(System.Logger.Level.WARNING, "Neither a thread name prefix nor a pool name specified");
                     threadNamePrefix = DEFAULT_THREAD_NAME_PREFIX;
                 }
                 name = threadNamePrefix + "thread-pool-" + DEFAULT_NAME_COUNTER.incrementAndGet();
@@ -445,7 +444,8 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
         }
 
         private void warnExperimental(String key) {
-            LOGGER.warning(String.format("Config key \"executor-service.%s\" is EXPERIMENTAL and subject to change.", key));
+            LOGGER.log(System.Logger.Level.WARNING,
+                       String.format("Config key \"executor-service.%s\" is EXPERIMENTAL and subject to change.", key));
         }
 
         /**

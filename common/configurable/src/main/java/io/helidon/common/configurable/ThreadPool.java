@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
+import java.lang.System.Logger.Level;
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
 import java.nio.charset.StandardCharsets;
@@ -48,8 +49,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Predicate;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import javax.management.NotificationEmitter;
 
@@ -59,7 +58,7 @@ import io.helidon.common.context.ContextAwareExecutorService;
  * A {@link ThreadPoolExecutor} with an extensible growth policy and queue state accessors.
  */
 public class ThreadPool extends ThreadPoolExecutor {
-    private static final Logger LOGGER = Logger.getLogger(ThreadPool.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(ThreadPool.class.getName());
     private static final int MAX_GROWTH_RATE = 100;
 
     private final String name;
@@ -188,8 +187,8 @@ public class ThreadPool extends ThreadPoolExecutor {
         this.growthRate = growthRate;
         this.rejectionHandler = rejectionHandler;
         queue.setPool(this);
-        if (LOGGER.isLoggable(Level.FINE)) {
-            LOGGER.fine(toString());
+        if (LOGGER.isLoggable(Level.TRACE)) {
+            LOGGER.log(Level.TRACE, toString());
         }
     }
 
@@ -346,7 +345,7 @@ public class ThreadPool extends ThreadPoolExecutor {
     @Override
     public void setMaximumPoolSize(int maximumPoolSize) {
         if (maximumPoolSize != getMaximumPoolSize()) {
-            LOGGER.warning("Maximum pool size cannot be changed in " + this);
+            LOGGER.log(Level.WARNING, "Maximum pool size cannot be changed in " + this);
         }
     }
 
@@ -427,7 +426,7 @@ public class ThreadPool extends ThreadPoolExecutor {
 
                 // No capacity, so reject
 
-                LOGGER.warning(rejectionMessage(executor));
+                LOGGER.log(Level.WARNING, rejectionMessage(executor));
                 rejections.incrementAndGet();
                 throwException(executor);
             }
@@ -743,8 +742,9 @@ public class ThreadPool extends ThreadPoolExecutor {
                     // check above is not accurate); in this case, the rejection handler will just add it to
                     // the queue.
 
-                    if (LOGGER.isLoggable(Level.FINE)) {
-                        LOGGER.fine("Adding a thread, pool size = " + pool.getPoolSize() + ", queue size = " + size());
+                    if (LOGGER.isLoggable(Level.TRACE)) {
+                        LOGGER.log(Level.TRACE,
+                                   "Adding a thread, pool size = " + pool.getPoolSize() + ", queue size = " + size());
                     }
                     return false;
 
@@ -916,7 +916,7 @@ public class ThreadPool extends ThreadPoolExecutor {
         private static void add(Type type, ThreadPool pool, WorkQueue queue) {
             if (shouldAdd()) {
                 if (!STARTED.getAndSet(true)) {
-                    LOGGER.info("Recording up to " + MAX_EVENTS + " thread pool events");
+                    LOGGER.log(Level.INFO, "Recording up to " + MAX_EVENTS + " thread pool events");
                     for (GarbageCollectorMXBean bean : ManagementFactory.getGarbageCollectorMXBeans()) {
                         final NotificationEmitter emitter = (NotificationEmitter) bean;
                         emitter.addNotificationListener((notification, handback) -> {
@@ -946,7 +946,7 @@ public class ThreadPool extends ThreadPoolExecutor {
         private static void write() {
             if (!EVENTS.isEmpty() && !WRITTEN.getAndSet(true)) {
                 final Path file = Paths.get(EVENTS_FILE_NAME).toAbsolutePath();
-                LOGGER.info("Writing thread pool events to " + file);
+                LOGGER.log(Level.INFO, "Writing thread pool events to " + file);
                 EVENTS.sort(null);
                 try (OutputStream out = Files.newOutputStream(file,
                                                               StandardOpenOption.CREATE,
@@ -956,9 +956,9 @@ public class ThreadPool extends ThreadPoolExecutor {
                     for (Event event : EVENTS) {
                         out.write(event.toCsv().getBytes(StandardCharsets.UTF_8));
                     }
-                    LOGGER.info("Finished writing thread pool events");
+                    LOGGER.log(Level.INFO, "Finished writing thread pool events");
                 } catch (Throwable e) {
-                    LOGGER.warning("failed to write thread pool events" + e);
+                    LOGGER.log(Level.WARNING, "failed to write thread pool events" + e);
                 }
             }
         }

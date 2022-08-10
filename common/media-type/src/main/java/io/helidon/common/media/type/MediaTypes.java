@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,10 +22,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Logger;
 
+import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.media.type.spi.MediaTypeDetector;
-import io.helidon.common.serviceloader.HelidonServiceLoader;
 
 /**
  * Media type detection based on a resource.
@@ -37,15 +36,14 @@ import io.helidon.common.serviceloader.HelidonServiceLoader;
  * </ul>
  */
 public final class MediaTypes {
-    private static final Logger LOGGER = Logger.getLogger(MediaTypes.class.getName());
     private static final List<MediaTypeDetector> DETECTORS;
     private static final ConcurrentHashMap<String, Optional<String>> CACHE = new ConcurrentHashMap<>();
 
     static {
         // and load media type detectors
         DETECTORS = HelidonServiceLoader.builder(ServiceLoader.load(MediaTypeDetector.class))
-                .addService(new BuiltInsDetector(), 100100)
-                .addService(new CustomDetector(), 100000)
+                .addService(new BuiltInsDetector(), 10)
+                .addService(new CustomDetector(), 50)
                 .build()
                 .asList();
     }

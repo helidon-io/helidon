@@ -22,8 +22,8 @@ import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
-import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
 import io.helidon.metrics.api.spi.RegistryFactoryProvider;
 
@@ -78,7 +78,7 @@ class RegistryFactoryManager {
 
     private static RegistryFactoryProvider loadRegistryFactoryProvider() {
         RegistryFactoryProvider provider = HelidonServiceLoader.builder(ServiceLoader.load(RegistryFactoryProvider.class))
-                .addService(NO_OP_FACTORY_PROVIDER, Integer.MAX_VALUE)
+                .addService(NO_OP_FACTORY_PROVIDER, 0)
                 .build()
                 .asList()
                 .get(0);

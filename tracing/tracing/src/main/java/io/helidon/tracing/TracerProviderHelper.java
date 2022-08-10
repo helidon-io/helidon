@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.ServiceLoader;
 
-import io.helidon.common.serviceloader.HelidonServiceLoader;
+import io.helidon.common.HelidonServiceLoader;
 import io.helidon.tracing.spi.TracerProvider;
 
 /**
@@ -33,7 +33,7 @@ final class TracerProviderHelper {
         TracerProvider provider = null;
         try {
             List<TracerProvider> allProviders = HelidonServiceLoader.builder(ServiceLoader.load(TracerProvider.class))
-                    .addService(new NoOpTracerProvider(), 100000)
+                    .addService(new NoOpTracerProvider(), 0)
                     .build()
                     .asList();
 

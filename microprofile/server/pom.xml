@@ -61,10 +61,6 @@
             <artifactId>helidon-webserver-jersey</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.common</groupId>
-            <artifactId>helidon-common-service-loader</artifactId>
-        </dependency>
-        <dependency>
             <groupId>jakarta.interceptor</groupId>
             <artifactId>jakarta.interceptor-api</artifactId>
         </dependency>

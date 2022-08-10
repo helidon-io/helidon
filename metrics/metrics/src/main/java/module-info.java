@@ -20,7 +20,6 @@ module io.helidon.metrics {
     requires java.logging;
 
     requires io.helidon.common;
-    requires io.helidon.common.serviceloader;
     requires io.helidon.webserver.cors;
     requires transitive io.helidon.metrics.api;
     requires transitive io.helidon.metrics.serviceapi;

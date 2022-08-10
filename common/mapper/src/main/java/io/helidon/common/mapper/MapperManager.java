@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,9 @@ import java.util.Optional;
 import java.util.ServiceLoader;
 
 import io.helidon.common.GenericType;
-import io.helidon.common.Prioritized;
+import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.Weighted;
 import io.helidon.common.mapper.spi.MapperProvider;
-import io.helidon.common.serviceloader.HelidonServiceLoader;
 
 /**
  * Mapper manager of all configured mappers.
@@ -140,8 +140,8 @@ public interface MapperManager {
          * <p>
          * If the same provider implementation would be loaded by Java Service loader, the service loader instance is ignored.
          * If you need to add a new implementation of the same type, please use the full features
-         * of the {@link io.helidon.common.serviceloader.HelidonServiceLoader} and invoke
-         * {@link MapperManager#create(io.helidon.common.serviceloader.HelidonServiceLoader)}.
+         * of the {@link io.helidon.common.HelidonServiceLoader} and invoke
+         * {@link MapperManager#create(io.helidon.common.HelidonServiceLoader)}.
          *
          * @param provider prioritized mapper provider to use
          * @return updated builder instance
@@ -156,7 +156,7 @@ public interface MapperManager {
          * from system service loader with a custom priority.
          *
          * @param provider a mapper provider instance
-         * @param priority priority of the provider (see {@link io.helidon.common.serviceloader.HelidonServiceLoader}
+         * @param priority priority of the provider (see {@link io.helidon.common.HelidonServiceLoader}
          *                 documentation for details about priority handling)
          * @return updated builder instance
          * @see #addMapperProvider(io.helidon.common.mapper.spi.MapperProvider)
@@ -177,7 +177,7 @@ public interface MapperManager {
          * @return updated builder instance
          */
         public <S, T> Builder addMapper(Mapper<S, T> mapper, Class<S> sourceType, Class<T> targetType) {
-            return addMapper(mapper, sourceType, targetType, Prioritized.DEFAULT_PRIORITY);
+            return addMapper(mapper, sourceType, targetType, Weighted.DEFAULT_WEIGHT);
         }
 
         /**
@@ -186,12 +186,15 @@ public interface MapperManager {
          * @param mapper     the mapper to map source instances to target instances
          * @param sourceType class of the source instance
          * @param targetType class of the target instance
-         * @param priority   order of the mapper usage
+         * @param weight     weight of the mapper
          * @param <S>        type of source
          * @param <T>        type of target
          * @return updated builder instance
          */
-        public <S, T> Builder addMapper(Mapper<S, T> mapper, Class<S> sourceType, Class<T> targetType, int priority) {
+        public <S, T> Builder addMapper(Mapper<S, T> mapper,
+                                        Class<S> sourceType,
+                                        Class<T> targetType,
+                                        double weight) {
             this.providers.addService(new MapperProvider() {
                 @SuppressWarnings({"unchecked", "ObjectEquality"})
                 @Override
@@ -202,7 +205,7 @@ public interface MapperManager {
                     }
                     return Optional.empty();
                 }
-            }, priority);
+            }, weight);
             return this;
         }
 
@@ -217,7 +220,7 @@ public interface MapperManager {
          * @return updated builder instance
          */
         public <S, T> Builder addMapper(Mapper<S, T> mapper, GenericType<S> sourceType, GenericType<T> targetType) {
-            return addMapper(mapper, sourceType, targetType, Prioritized.DEFAULT_PRIORITY);
+            return addMapper(mapper, sourceType, targetType, Weighted.DEFAULT_WEIGHT);
         }
 
         /**
@@ -226,12 +229,15 @@ public interface MapperManager {
          * @param mapper     the mapper to map source instances to target instances
          * @param sourceType generic type of the source instance
          * @param targetType generic type of the target instance
-         * @param priority   order of the mapper usage
+         * @param weight     weight of the mapper
          * @param <S>        type of source
          * @param <T>        type of target
          * @return updated builder instance
          */
-        public <S, T> Builder addMapper(Mapper<S, T> mapper, GenericType<S> sourceType, GenericType<T> targetType, int priority) {
+        public <S, T> Builder addMapper(Mapper<S, T> mapper,
+                                        GenericType<S> sourceType,
+                                        GenericType<T> targetType,
+                                        double weight) {
             this.providers.addService(new MapperProvider() {
                 @Override
                 public <FROM, TO> Optional<Mapper<?, ?>> mapper(Class<FROM> sourceClass, Class<TO> targetClass) {
@@ -247,7 +253,7 @@ public interface MapperManager {
                     }
                     return Optional.empty();
                 }
-            }, priority);
+            }, weight);
             return this;
         }
 

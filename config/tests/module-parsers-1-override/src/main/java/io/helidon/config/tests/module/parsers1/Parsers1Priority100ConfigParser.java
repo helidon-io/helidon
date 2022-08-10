@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,16 @@
 
 package io.helidon.config.tests.module.parsers1;
 
+import io.helidon.common.Weight;
+import io.helidon.common.Weighted;
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigNode.ValueNode;
 
-import jakarta.annotation.Priority;
-
 /**
  * Testing implementation of {@code text/x-java-properties} media type
- * with Priority {@code 100}.
+ * with Weight {@code 100}.
  */
-@Priority(100)
+@Weight(Weighted.DEFAULT_WEIGHT)
 public class Parsers1Priority100ConfigParser extends AbstractParsers1ConfigParser {
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,8 @@ package io.helidon.integrations.vault.auths.token;
 import java.util.Optional;
 import java.util.logging.Logger;
 
+import io.helidon.common.Weight;
+import io.helidon.common.Weighted;
 import io.helidon.config.Config;
 import io.helidon.integrations.common.rest.RestApi;
 import io.helidon.integrations.vault.Vault;
@@ -26,14 +28,12 @@ import io.helidon.integrations.vault.VaultApiException;
 import io.helidon.integrations.vault.auths.common.VaultRestApi;
 import io.helidon.integrations.vault.spi.VaultAuth;
 
-import jakarta.annotation.Priority;
-
 /**
  * Java Service Loader implementation for authenticating using a token.
  * You can create a new instance using {@link #builder()}.
  * To use a custom built instance, use {@link Vault.Builder#addVaultAuth(io.helidon.integrations.vault.spi.VaultAuth)}.
  */
-@Priority(5000)
+@Weight(Weighted.DEFAULT_WEIGHT)
 public class TokenVaultAuth implements VaultAuth {
     private static final Logger LOGGER = Logger.getLogger(TokenVaultAuth.class.getName());
     private final String token;

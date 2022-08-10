@@ -25,7 +25,6 @@ module io.helidon.security.integration.jersey {
     requires transitive io.helidon.security.annotations;
     requires transitive io.helidon.security.providers.common;
     requires transitive io.helidon.security.util;
-    requires transitive io.helidon.common.serviceloader;
     requires transitive jakarta.ws.rs;
 
     requires io.helidon.common.context;

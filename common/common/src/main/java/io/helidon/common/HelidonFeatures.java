@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.common;
 
+import java.lang.System.Logger.Level;
 import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.HashMap;
@@ -28,7 +29,6 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
@@ -56,8 +56,8 @@ import java.util.stream.Collectors;
  * </pre>
  */
 public final class HelidonFeatures {
-    private static final Logger LOGGER = Logger.getLogger(HelidonFeatures.class.getName());
-    private static final Logger EXPERIMENTAL = Logger.getLogger(HelidonFeatures.class.getName() + ".experimental");
+    private static final System.Logger LOGGER = System.getLogger(HelidonFeatures.class.getName());
+    private static final System.Logger EXPERIMENTAL = System.getLogger(HelidonFeatures.class.getName() + ".experimental");
     private static final AtomicBoolean PRINTED = new AtomicBoolean();
     private static final AtomicBoolean SCANNED = new AtomicBoolean();
     private static final AtomicReference<HelidonFlavor> CURRENT_FLAVOR = new AtomicReference<>();
@@ -145,16 +145,16 @@ public final class HelidonFeatures {
 
         Set<FeatureDescriptor> features = FEATURES.get(currentFlavor);
         if (null == features) {
-            LOGGER.info("Helidon " + currentFlavor + " " + version + " has no registered features");
+            LOGGER.log(Level.INFO, "Helidon " + currentFlavor + " " + version + " has no registered features");
         } else {
             String featureString = "[" + features.stream()
                     .map(FeatureDescriptor::name)
                     .collect(Collectors.joining(", "))
                     + "]";
-            LOGGER.info("Helidon " + currentFlavor + " " + version + " features: " + featureString);
+            LOGGER.log(Level.INFO, "Helidon " + currentFlavor + " " + version + " features: " + featureString);
         }
         if (details) {
-            LOGGER.info("Detailed feature tree:");
+            LOGGER.log(Level.INFO, "Detailed feature tree:");
             FEATURES.get(currentFlavor)
                     .forEach(feature -> printDetails(feature.name(),
                                                      ROOT_FEATURE_NODES.get(currentFlavor).get(feature.path()[0]),
@@ -166,9 +166,11 @@ public final class HelidonFeatures {
                                                            ROOT_FEATURE_NODES.get(currentFlavor).get(feature.path()[0])));
 
             if (!allExperimental.isEmpty()) {
-                EXPERIMENTAL.info("You are using experimental features. These APIs may change, please follow changelog!");
+                EXPERIMENTAL.log(Level.INFO,
+                                 "You are using experimental features. These APIs may change, please follow changelog!");
                 allExperimental
-                        .forEach(it -> EXPERIMENTAL.info("\tExperimental feature: " + it.name() + " (" + it.stringPath() + ")"));
+                        .forEach(it -> EXPERIMENTAL.log(Level.INFO,
+                                                        "\tExperimental feature: " + it.name() + " (" + it.stringPath() + ")"));
             }
         }
     }
@@ -184,20 +186,21 @@ public final class HelidonFeatures {
      * Will scan all features and log errors and warnings for features that have a
      * native image limitation.
      * This method is automatically called when building a native image with Helidon.
+     *
      * @param classLoader to look for features in
      */
     public static void nativeBuildTime(ClassLoader classLoader) {
         scan(classLoader);
         for (FeatureDescriptor feat : ALL_FEATURES) {
             if (!feat.nativeSupported()) {
-                LOGGER.severe("Feature '" + feat.name()
-                                      + "' for path '" + feat.stringPath()
-                                      + "' IS NOT SUPPORTED in native image. Image may still build and run.");
+                LOGGER.log(Level.ERROR, "Feature '" + feat.name()
+                        + "' for path '" + feat.stringPath()
+                        + "' IS NOT SUPPORTED in native image. Image may still build and run.");
             } else {
                 if (!feat.nativeDescription().isBlank()) {
-                    LOGGER.warning("Feature '" + feat.name()
-                                           + "' for path '" + feat.stringPath()
-                                           + "' has limited support in native image: " + feat.nativeDescription());
+                    LOGGER.log(Level.WARNING, "Feature '" + feat.name()
+                            + "' for path '" + feat.stringPath()
+                            + "' has limited support in native image: " + feat.nativeDescription());
                 }
             }
         }
@@ -230,7 +233,7 @@ public final class HelidonFeatures {
             Set<FeatureDescriptor> featureDescriptors = FeatureCatalog.get(packageName);
             if (featureDescriptors == null) {
                 if (packageName.startsWith("io.helidon.")) {
-                    LOGGER.fine("No catalog entry for package " + packageName);
+                    LOGGER.log(Level.TRACE, "No catalog entry for package " + packageName);
                 }
             } else {
                 featureDescriptors.forEach(HelidonFeatures::register);
@@ -244,7 +247,7 @@ public final class HelidonFeatures {
                 if (feature.nativeSupported()) {
                     String desc = feature.nativeDescription();
                     if (desc != null && !desc.isBlank()) {
-                        LOGGER.warning("Native image for feature "
+                        LOGGER.log(Level.WARNING, "Native image for feature "
                                                + feature.name()
                                                + "("
                                                + feature.stringPath()
@@ -252,7 +255,7 @@ public final class HelidonFeatures {
                                                + desc);
                     }
                 } else {
-                    LOGGER.severe("You are using a feature not supported in native image: "
+                    LOGGER.log(Level.ERROR, "You are using a feature not supported in native image: "
                                           + feature.name()
                                           + "("
                                           + feature.stringPath()

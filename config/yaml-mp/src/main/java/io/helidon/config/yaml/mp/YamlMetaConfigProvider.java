@@ -19,9 +19,9 @@ package io.helidon.config.yaml.mp;
 import java.util.List;
 import java.util.Set;
 
-import io.helidon.common.Prioritized;
 import io.helidon.config.Config;
 import io.helidon.config.mp.MpMetaConfigUtils;
+import io.helidon.config.mp.Prioritized;
 import io.helidon.config.mp.spi.MpMetaConfigProvider;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;

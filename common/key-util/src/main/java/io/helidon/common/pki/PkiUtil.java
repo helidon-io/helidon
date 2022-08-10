@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.common.pki;
 
 import java.io.InputStream;
+import java.lang.System.Logger.Level;
 import java.security.Key;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -29,7 +30,6 @@ import java.util.Enumeration;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -37,7 +37,7 @@ import java.util.stream.Stream;
  * Utilities to handle PKI keystores, certificates and keys.
  */
 final class PkiUtil {
-    private static final Logger LOGGER = Logger.getLogger(PkiUtil.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(PkiUtil.class.getName());
 
     private PkiUtil() {
     }
@@ -105,7 +105,7 @@ final class PkiUtil {
                     X509Certificate cert = (X509Certificate) keyStore.getCertificate(alias);
                     certs.add(cert);
 
-                    LOGGER.finest(() -> "Added certificate under alis " + alias + " for " + cert
+                    LOGGER.log(Level.DEBUG, () -> "Added certificate under alis " + alias + " for " + cert
                             .getSubjectDN() + " to list of certificates");
                 }
             }

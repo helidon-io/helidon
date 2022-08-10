@@ -20,19 +20,19 @@ import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
 
-import io.helidon.common.Prioritized;
+import io.helidon.common.Weight;
+import io.helidon.common.Weighted;
 import io.helidon.tracing.HeaderConsumer;
 import io.helidon.tracing.HeaderProvider;
 import io.helidon.tracing.opentracing.spi.OpenTracingProvider;
 
 import io.opentracing.SpanContext;
 import io.opentracing.Tracer;
-import jakarta.annotation.Priority;
 
 /**
  * Zipkin java service.
  */
-@Priority(Prioritized.DEFAULT_PRIORITY)
+@Weight(Weighted.DEFAULT_WEIGHT)
 public class ZipkinTracerProvider implements OpenTracingProvider {
     // original Zipkin headers (comes from old name of Zipkin - "BigBrotherBird", or "B3")
     static final String X_B3_TRACE_ID = "x-b3-traceid";

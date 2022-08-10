@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,6 @@ module io.helidon.integrations.vault {
     requires io.helidon.webclient;
     requires io.helidon.media.jsonp;
     requires io.helidon.faulttolerance;
-    requires io.helidon.common.serviceloader;
     requires io.helidon.integrations.common.rest;
 
     exports io.helidon.integrations.vault;

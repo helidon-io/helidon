@@ -17,7 +17,8 @@ package io.helidon.tracing.jaeger;
 
 import java.util.Optional;
 
-import io.helidon.common.Prioritized;
+import io.helidon.common.Weight;
+import io.helidon.common.Weighted;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.Tracer;
 import io.helidon.tracing.opentelemetry.HelidonOpenTelemetry;
@@ -25,12 +26,11 @@ import io.helidon.tracing.opentelemetry.OpenTelemetryTracerProvider;
 import io.helidon.tracing.spi.TracerProvider;
 
 import io.opentelemetry.context.Context;
-import jakarta.annotation.Priority;
 
 /**
  * Jaeger java service.
  */
-@Priority(Prioritized.DEFAULT_PRIORITY)
+@Weight(Weighted.DEFAULT_WEIGHT)
 public class JaegerTracerProvider implements TracerProvider {
     @Override
     public Tracer global() {

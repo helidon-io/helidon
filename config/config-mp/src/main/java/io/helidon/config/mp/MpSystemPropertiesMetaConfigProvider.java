@@ -19,7 +19,6 @@ package io.helidon.config.mp;
 import java.util.List;
 import java.util.Set;
 
-import io.helidon.common.Prioritized;
 import io.helidon.config.Config;
 import io.helidon.config.mp.spi.MpMetaConfigProvider;
 

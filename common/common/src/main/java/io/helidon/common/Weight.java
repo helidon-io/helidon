@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,17 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.common.serviceloader;
 
-import jakarta.annotation.Priority;
+package io.helidon.common;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * A service implementation.
+ * Annotation that can define a type weight.
+ * The higher the weight, the more important this type is.
+ *
+ * @see Weighted
+ * @see Weights
  */
-@Priority(47)
-public class ServiceImpl1 implements ServiceInterface {
-    @Override
-    public String message() {
-        return getClass().getName();
-    }
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface Weight {
+    /**
+     * Weight of this type.
+     *
+     * @return weight
+     */
+    double value();
 }

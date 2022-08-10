@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,9 +23,9 @@
  * The parser implementation supports {@link java.util.ServiceLoader}, i.e. {@link io.helidon.config.Config.Builder}
  * can automatically load and register HOCON ConfigParser instance,
  * if not {@link io.helidon.config.Config.Builder#disableParserServices() disabled}.
- * Priority of the parser to be used by {@link io.helidon.config.Config.Builder},
+ * Weight of the parser to be used by {@link io.helidon.config.Config.Builder},
  * if loaded automatically as a {@link java.util.ServiceLoader service},
- * is {@value io.helidon.config.hocon.HoconConfigParser#PRIORITY}.
+ * is {@value io.helidon.config.hocon.HoconConfigParser#WEIGHT}.
  * And of course it can be {@link io.helidon.config.Config.Builder#addParser(io.helidon.config.spi.ConfigParser)
  * registered programmatically} using {@link io.helidon.config.hocon.HoconConfigParserBuilder builder API}.
  * <p>

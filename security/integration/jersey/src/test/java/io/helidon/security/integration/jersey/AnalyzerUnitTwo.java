@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,14 +15,13 @@
  */
 package io.helidon.security.integration.jersey;
 
+import io.helidon.common.Weight;
 import io.helidon.security.providers.common.spi.AnnotationAnalyzer;
-
-import jakarta.annotation.Priority;
 
 /**
  * Second annotation analyzer.
  */
-@Priority(100)
+@Weight(10)
 public class AnalyzerUnitTwo implements AnnotationAnalyzer {
 
     @Override

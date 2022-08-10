@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,8 @@ import java.nio.file.Paths;
 import java.util.Optional;
 import java.util.logging.Logger;
 
+import io.helidon.common.Weight;
+import io.helidon.common.Weighted;
 import io.helidon.config.Config;
 import io.helidon.integrations.common.rest.RestApi;
 import io.helidon.integrations.vault.Vault;
@@ -30,12 +32,10 @@ import io.helidon.integrations.vault.VaultApiException;
 import io.helidon.integrations.vault.auths.common.NoVaultAuth;
 import io.helidon.integrations.vault.spi.VaultAuth;
 
-import jakarta.annotation.Priority;
-
 /**
  * Vault authentication for Kubernetes (k8s).
  */
-@Priority(2000)
+@Weight(Weighted.DEFAULT_WEIGHT + 50)
 public class K8sVaultAuth implements VaultAuth {
     private static final Logger LOGGER = Logger.getLogger(K8sVaultAuth.class.getName());
 

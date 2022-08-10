@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,11 @@
 
 package io.helidon.common.configurable;
 
+import java.lang.System.Logger.Level;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.common.LazyValue;
 
@@ -29,7 +28,7 @@ import io.helidon.common.LazyValue;
  * A utility class to handle virtual threads (project Loom).
  */
 final class VirtualExecutorUtil {
-    private static final Logger LOGGER = Logger.getLogger(VirtualExecutorUtil.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(VirtualExecutorUtil.class.getName());
     private static final LazyValue<Boolean> SUPPORTED = LazyValue.create(VirtualExecutorUtil::findSupported);
     private static final LazyValue<ExecutorService> EXECUTOR_SERVICE = LazyValue.create(VirtualExecutorUtil::findExecutor);
     // newer and older builds
@@ -58,7 +57,7 @@ final class VirtualExecutorUtil {
             findMethod();
             return true;
         } catch (final ReflectiveOperationException e) {
-            LOGGER.log(Level.FINEST, "Loom virtual executor service not available", e);
+            LOGGER.log(Level.DEBUG, "Loom virtual executor service not available", e);
         }
 
         return false;
@@ -70,7 +69,7 @@ final class VirtualExecutorUtil {
             // and runtime environments (support for GraalVM native image)
             return (ExecutorService) findMethod().invoke(null);
         } catch (final ReflectiveOperationException e) {
-            LOGGER.log(Level.FINEST, "Loom virtual executor service not available", e);
+            LOGGER.log(Level.DEBUG, "Loom virtual executor service not available", e);
         }
 
         return null;
@@ -81,8 +80,8 @@ final class VirtualExecutorUtil {
 
         for (String methodName : SUPPORTED_METHOD_NAMES) {
             try {
-                if (LOGGER.isLoggable(Level.FINEST)) {
-                    LOGGER.finest("Trying Loom executor method Executors." + methodName + "()");
+                if (LOGGER.isLoggable(Level.DEBUG)) {
+                    LOGGER.log(Level.DEBUG, "Trying Loom executor method Executors." + methodName + "()");
                 }
                 return Executors.class.getDeclaredMethod(methodName);
             } catch (ReflectiveOperationException e) {

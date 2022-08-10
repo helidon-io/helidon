@@ -15,6 +15,7 @@
  */
 package io.helidon.common.configurable;
 
+import java.lang.System.Logger.Level;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
@@ -23,8 +24,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import io.helidon.common.LazyValue;
@@ -46,7 +45,7 @@ import io.helidon.common.configurable.spi.ExecutorServiceSupplierObserver;
  */
 class ObserverManager {
 
-    private static final Logger LOGGER = Logger.getLogger(ObserverManager.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(ObserverManager.class.getName());
 
     private static final LazyValue<List<ExecutorServiceSupplierObserver>> OBSERVERS = LazyValue
             .create(ObserverManager::loadObservers);

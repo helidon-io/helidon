@@ -23,7 +23,7 @@ import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.function.Function;
 
-import io.helidon.common.serviceloader.HelidonServiceLoader;
+import io.helidon.common.HelidonServiceLoader;
 import io.helidon.webserver.spi.UpgradeCodecProvider;
 
 import io.netty.channel.ChannelHandler;

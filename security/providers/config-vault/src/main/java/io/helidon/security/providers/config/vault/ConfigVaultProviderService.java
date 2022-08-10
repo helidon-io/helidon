@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,17 @@
 
 package io.helidon.security.providers.config.vault;
 
+import io.helidon.common.Weight;
+import io.helidon.common.Weighted;
 import io.helidon.config.Config;
 import io.helidon.security.spi.SecurityProvider;
 import io.helidon.security.spi.SecurityProviderService;
 
-import jakarta.annotation.Priority;
-
 /**
- * Java Service Loader implementation of a {@link io.helidon.security.Security} provider service.
+ * Java Service Loader implementation of a {@link io.helidon.security.spi.SecurityProviderService} provider service.
  * Do not instantiate directly.
  */
-@Priority(5000)
+@Weight(Weighted.DEFAULT_WEIGHT - 20)
 public class ConfigVaultProviderService implements SecurityProviderService {
     /**
      * @deprecated do not use, this should only be invoked by Java Service Loader

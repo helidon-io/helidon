@@ -21,7 +21,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.logging.Logger;
 
 import io.helidon.common.Errors;
 import io.helidon.config.Config;
@@ -43,7 +42,7 @@ import org.eclipse.microprofile.reactive.messaging.spi.OutgoingConnectorFactory;
  * Orchestrator for all found channels, methods and connectors.
  */
 class ChannelRouter {
-    private static final Logger LOGGER = Logger.getLogger(ChannelRouter.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(ChannelRouter.class.getName());
 
     private final Errors.Collector errors = Errors.collector();
     private final Config config = (Config) ConfigProvider.getConfig();

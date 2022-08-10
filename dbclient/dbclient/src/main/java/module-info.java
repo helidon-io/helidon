@@ -26,7 +26,6 @@ module io.helidon.dbclient {
     requires transitive io.helidon.common.context;
     requires transitive io.helidon.common.mapper;
     requires transitive io.helidon.common.reactive;
-    requires transitive io.helidon.common.serviceloader;
 
     exports io.helidon.dbclient;
     exports io.helidon.dbclient.spi;

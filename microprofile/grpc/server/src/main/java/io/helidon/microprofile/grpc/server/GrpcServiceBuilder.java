@@ -30,7 +30,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import io.helidon.common.Builder;
-import io.helidon.common.serviceloader.HelidonServiceLoader;
+import io.helidon.common.HelidonServiceLoader;
 import io.helidon.grpc.core.ContextKeys;
 import io.helidon.grpc.core.MethodHandler;
 import io.helidon.grpc.server.MethodDescriptor;

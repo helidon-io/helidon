@@ -31,9 +31,9 @@ module io.helidon.microprofile.metrics {
     requires io.helidon.servicecommon.restcdi;
     requires io.helidon.microprofile.server;
     requires io.helidon.microprofile.config;
-    requires io.helidon.common.serviceloader;
     requires transitive io.helidon.metrics.api;
     requires transitive io.helidon.metrics.serviceapi;
+    requires io.helidon.webserver;
 
     requires transitive microprofile.config.api;
     requires microprofile.metrics.api;

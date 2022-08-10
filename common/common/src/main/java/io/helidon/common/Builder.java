@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ public interface Builder<B extends Builder<B, T>, T> extends Supplier<T> {
     T build();
 
     /**
-     * Update the builder in a fluen API way.
+     * Update the builder in a fluent API way.
      *
      * @param consumer consumer of the builder instance
      * @return updated builder instance

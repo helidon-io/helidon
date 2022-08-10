@@ -33,7 +33,6 @@ module io.helidon.microprofile.lra {
     requires jakarta.interceptor.api;
     requires jersey.common;
     requires io.helidon.lra.coordinator.client;
-    requires io.helidon.common.serviceloader;
 
     uses io.helidon.lra.coordinator.client.CoordinatorClient;
 

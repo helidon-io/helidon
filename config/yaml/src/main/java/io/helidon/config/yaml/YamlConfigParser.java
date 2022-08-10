@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,13 +22,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import io.helidon.common.Weight;
+import io.helidon.common.Weighted;
 import io.helidon.config.ConfigException;
 import io.helidon.config.spi.ConfigNode.ListNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigParserException;
 
-import jakarta.annotation.Priority;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 
@@ -40,13 +41,13 @@ import org.yaml.snakeyaml.constructor.SafeConstructor;
  * if not {@link io.helidon.config.Config.Builder#disableParserServices() disabled}.
  * And of course it can be {@link io.helidon.config.Config.Builder#addParser(ConfigParser) registered programmatically}.
  * <p>
- * Priority of the {@code YamlConfigParser} to be used by {@link io.helidon.config.Config.Builder},
- * if loaded automatically as a {@link java.util.ServiceLoader service}, is {@value PRIORITY}.
+ * Weight of the {@code YamlConfigParser} to be used by {@link io.helidon.config.Config.Builder},
+ * if loaded automatically as a {@link java.util.ServiceLoader service}, is {@value WEIGHT}.
  *
  * @see io.helidon.config.Config.Builder#addParser(ConfigParser)
  * @see io.helidon.config.Config.Builder#disableParserServices()
  */
-@Priority(YamlConfigParser.PRIORITY)
+@Weight(YamlConfigParser.WEIGHT)
 public class YamlConfigParser implements ConfigParser {
 
     /**
@@ -56,7 +57,7 @@ public class YamlConfigParser implements ConfigParser {
     /**
      * Priority of the parser used if registered by {@link io.helidon.config.Config.Builder} automatically.
      */
-    public static final int PRIORITY = ConfigParser.PRIORITY + 100;
+    public static final double WEIGHT = Weighted.DEFAULT_WEIGHT - 10;
 
     private static final Set<String> SUPPORTED_MEDIA_TYPES = Set.of(MEDIA_TYPE_APPLICATION_YAML);
     private static final List<String> SUPPORTED_SUFFIXES = List.of("yml", "yaml");

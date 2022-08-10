@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,8 @@ package io.helidon.integrations.vault.auths.approle;
 import java.util.Optional;
 import java.util.logging.Logger;
 
+import io.helidon.common.Weight;
+import io.helidon.common.Weighted;
 import io.helidon.config.Config;
 import io.helidon.integrations.common.rest.RestApi;
 import io.helidon.integrations.vault.Vault;
@@ -26,12 +28,10 @@ import io.helidon.integrations.vault.VaultApiException;
 import io.helidon.integrations.vault.auths.common.NoVaultAuth;
 import io.helidon.integrations.vault.spi.VaultAuth;
 
-import jakarta.annotation.Priority;
-
 /**
  * Vault authentication for AppRole.
  */
-@Priority(1000)
+@Weight(Weighted.DEFAULT_WEIGHT + 100)
 public class AppRoleVaultAuth implements VaultAuth {
     private static final Logger LOGGER = Logger.getLogger(AppRoleVaultAuth.class.getName());
 

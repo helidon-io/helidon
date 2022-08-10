@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,11 @@ package io.helidon.common.media.type;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.System.Logger.Level;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.common.media.type.spi.MediaTypeDetector;
 
@@ -30,7 +29,8 @@ import io.helidon.common.media.type.spi.MediaTypeDetector;
  * Detector for built-in media type mappings.
  */
 class BuiltInsDetector implements MediaTypeDetector {
-    private static final Logger LOGGER = Logger.getLogger(BuiltInsDetector.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(BuiltInsDetector.class.getName());
+
     private static final Map<String, String> MAPPINGS = new HashMap<>();
     static {
         try (InputStream builtIns = MediaTypes.class.getResourceAsStream("default-media-types.properties")) {
@@ -41,10 +41,10 @@ class BuiltInsDetector implements MediaTypeDetector {
                     MAPPINGS.put(name, properties.getProperty(name));
                 }
             } else {
-                LOGGER.log(Level.SEVERE, "Failed to find default media type mapping resource");
+                LOGGER.log(Level.ERROR, "Failed to find default media type mapping resource");
             }
         } catch (IOException e) {
-            LOGGER.log(Level.SEVERE, "Failed to load default media types mapping", e);
+            LOGGER.log(Level.ERROR, "Failed to load default media types mapping", e);
         }
     }
 

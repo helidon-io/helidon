@@ -25,7 +25,7 @@ import io.helidon.grpc.server.ServiceDescriptor;
  * Implementations of this class are called by the {@link GrpcServiceBuilder} when
  * it builds a {@link ServiceDescriptor} from an annotated class. Instances of
  * {@link AnnotatedServiceConfigurer} are discovered using the
- * {@link io.helidon.common.serviceloader.HelidonServiceLoader}. This service
+ * {@link io.helidon.common.HelidonServiceLoader}. This service
  * loader supports ordering of configurers.
  */
 @FunctionalInterface

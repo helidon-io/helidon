@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.common.serviceloader;
+package io.helidon.common;
 
 import java.util.List;
 import java.util.ServiceLoader;
@@ -28,7 +28,7 @@ import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
- * Unit test for {@link io.helidon.common.serviceloader.HelidonServiceLoader}.
+ * Unit test for {@link HelidonServiceLoader}.
  */
 class HelidonServiceLoaderTest {
     private static ServiceLoader<ServiceInterface> javaLoader;
@@ -63,7 +63,7 @@ class HelidonServiceLoaderTest {
     @Test
     void testCustomServiceWithCustomPrio() {
         List<ServiceInterface> loaded = HelidonServiceLoader.builder(javaLoader)
-                .addService(new ServiceImpl3(), 0)
+                .addService(new ServiceImpl3(), 1024)
                 .build()
                 .asList();
 
@@ -132,7 +132,7 @@ class HelidonServiceLoaderTest {
         String TEST_STRING = "custom messsage";
 
         List<ServiceInterface> loaded = HelidonServiceLoader.builder(javaLoader)
-                .addService(new ServiceImpl2(TEST_STRING), 11)
+                .addService(new ServiceImpl2(TEST_STRING), 1024)
                 .replaceImplementations(false)
                 .build()
                 .asList();
