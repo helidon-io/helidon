@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,13 +24,12 @@ import io.helidon.common.media.type.spi.MediaTypeDetector;
  * Example implementing a base name handling.
  */
 public class DockerfileTypeDetector implements MediaTypeDetector {
-    static String MEDIA_TYPE = "application/dockerfile";
-
     private static final Pattern DOCKERFILE_PATTERN =
             Pattern.compile(".*Dockerfile(\\.\\w+)?$");
+    static MediaType MEDIA_TYPE = MediaTypes.create("application/dockerfile");
 
     @Override
-    public Optional<String> detectType(String fileString) {
+    public Optional<MediaType> detectType(String fileString) {
         if (DOCKERFILE_PATTERN.matcher(fileString).matches()) {
             return Optional.of(MEDIA_TYPE);
         }
@@ -38,7 +37,7 @@ public class DockerfileTypeDetector implements MediaTypeDetector {
     }
 
     @Override
-    public Optional<String> detectExtensionType(String fileSuffix) {
+    public Optional<MediaType> detectExtensionType(String fileSuffix) {
         return Optional.empty();
     }
 }

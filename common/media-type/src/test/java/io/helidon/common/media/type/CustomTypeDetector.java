@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,11 +25,11 @@ import io.helidon.common.media.type.spi.MediaTypeDetector;
  */
 public class CustomTypeDetector implements MediaTypeDetector {
     static final String SUFFIX = "mine";
-    static final String MEDIA_TYPE = "application/mine";
-    static final String MEDIA_TYPE_HTTP = "application/http-mine";
+    static final MediaType MEDIA_TYPE = MediaTypes.create("application/mine");
+    static final MediaType MEDIA_TYPE_HTTP = MediaTypes.create("application/http-mine");
 
     @Override
-    public Optional<String> detectType(URL url) {
+    public Optional<MediaType> detectType(URL url) {
         if (url.getPath().endsWith("." + SUFFIX)) {
             if (url.getProtocol().equals("http")) {
                 return Optional.of(MEDIA_TYPE_HTTP);
@@ -41,7 +41,7 @@ public class CustomTypeDetector implements MediaTypeDetector {
     }
 
     @Override
-    public Optional<String> detectExtensionType(String fileSuffix) {
+    public Optional<MediaType> detectExtensionType(String fileSuffix) {
         if (SUFFIX.equals(fileSuffix)) {
             return Optional.of(MEDIA_TYPE);
         }

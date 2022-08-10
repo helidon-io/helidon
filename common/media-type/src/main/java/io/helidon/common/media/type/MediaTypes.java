@@ -18,13 +18,7 @@ package io.helidon.common.media.type;
 import java.net.URI;
 import java.net.URL;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Optional;
-import java.util.ServiceLoader;
-import java.util.concurrent.ConcurrentHashMap;
-
-import io.helidon.common.HelidonServiceLoader;
-import io.helidon.common.media.type.spi.MediaTypeDetector;
 
 /**
  * Media type detection based on a resource.
@@ -36,20 +30,134 @@ import io.helidon.common.media.type.spi.MediaTypeDetector;
  * </ul>
  */
 public final class MediaTypes {
-    private static final List<MediaTypeDetector> DETECTORS;
-    private static final ConcurrentHashMap<String, Optional<String>> CACHE = new ConcurrentHashMap<>();
-
-    static {
-        // and load media type detectors
-        DETECTORS = HelidonServiceLoader.builder(ServiceLoader.load(MediaTypeDetector.class))
-                .addService(new BuiltInsDetector(), 10)
-                .addService(new CustomDetector(), 50)
-                .build()
-                .asList();
-    }
+    /**
+     * Wildcard media type.
+     */
+    public static final MediaType WILDCARD = MediaTypeEnum.WILDCARD;
+    /**
+     * {@code application/xml} media type.
+     */
+    public static final MediaType APPLICATION_XML = MediaTypeEnum.APPLICATION_XML;
+    /**
+     * {@code application/atom+xml} media type.
+     */
+    public static final MediaType APPLICATION_ATOM_XML = MediaTypeEnum.APPLICATION_ATOM_XML;
+    /**
+     * {@code application/xhtml+xml} media type.
+     */
+    public static final MediaType APPLICATION_XHTML_XML = MediaTypeEnum.APPLICATION_XHTML_XML;
+    /**
+     * {@code application/svg+xml} media type.
+     */
+    public static final MediaType APPLICATION_SVG_XML = MediaTypeEnum.APPLICATION_SVG_XML;
+    /**
+     * {@code application/json} media type.
+     */
+    public static final MediaType APPLICATION_JSON = MediaTypeEnum.APPLICATION_JSON;
+    /**
+     * {@code application/stream+json} media type.
+     */
+    public static final MediaType APPLICATION_STREAM_JSON = MediaTypeEnum.APPLICATION_STREAM_JSON;
+    /**
+     * {@code application/x-www-form-urlencoded} media type.
+     */
+    public static final MediaType APPLICATION_FORM_URLENCODED = MediaTypeEnum.APPLICATION_FORM_URLENCODED;
+    /**
+     * {@code multipart/form-data} media type.
+     */
+    public static final MediaType MULTIPART_FORM_DATA = MediaTypeEnum.MULTIPART_FORM_DATA;
+    /**
+     * {@code multipart/byte-ranges} media type.
+     */
+    public static final MediaType MULTIPART_BYTERANGES = MediaTypeEnum.MULTIPART_BYTERANGES;
+    /**
+     * {@code application/octet-stream} media type.
+     */
+    public static final MediaType APPLICATION_OCTET_STREAM = MediaTypeEnum.APPLICATION_OCTET_STREAM;
+    /**
+     * {@code tet/plain} media type.
+     */
+    public static final MediaType TEXT_PLAIN = MediaTypeEnum.TEXT_PLAIN;
+    /**
+     * {@code text/xml} media type.
+     */
+    public static final MediaType TEXT_XML = MediaTypeEnum.TEXT_XML;
+    /**
+     * {@code text/html} media type.
+     */
+    public static final MediaType TEXT_HTML = MediaTypeEnum.TEXT_HTML;
+    /**
+     * {@code application/vnd.oai.openapi} media type.
+     */
+    public static final MediaType APPLICATION_OPENAPI_YAML = MediaTypeEnum.APPLICATION_OPENAPI_YAML;
+    /**
+     * {@code application/vnd.oai.openapi+json} media type.
+     */
+    public static final MediaType APPLICATION_OPENAPI_JSON = MediaTypeEnum.APPLICATION_OPENAPI_JSON;
+    /**
+     * {@code application/x-yaml} media type.
+     */
+    public static final MediaType APPLICATION_X_YAML = MediaTypeEnum.APPLICATION_X_YAML;
+    /**
+     * {@code application/yaml} media type.
+     */
+    public static final MediaType APPLICATION_YAML = MediaTypeEnum.APPLICATION_YAML;
+    /**
+     * {@code text/x-yaml} media type.
+     */
+    public static final MediaType TEXT_X_YAML = MediaTypeEnum.TEXT_X_YAML;
+    /**
+     * {@code text/yaml} media type.
+     */
+    public static final MediaType TEXT_YAML = MediaTypeEnum.TEXT_YAML;
+    /**
+     * {@code application/javascript} media type.
+     */
+    public static final MediaType APPLICATION_JAVASCRIPT = MediaTypeEnum.APPLICATION_JAVASCRIPT;
+    /**
+     * {@code text/event-stream} media type.
+     */
+    public static final MediaType TEXT_EVENT_STREAM = MediaTypeEnum.TEXT_EVENT_STREAM;
+    /**
+     * {@code application/x-ndjson} media type.
+     */
+    public static final MediaType APPLICATION_X_NDJSON = MediaTypeEnum.APPLICATION_X_NDJSON;
+    /**
+     * {@code application/hocon} media type.
+     */
+    public static final MediaType APPLICATION_HOCON = MediaTypeEnum.APPLICATION_HOCON;
 
     // prevent instantiation of utility class
     private MediaTypes() {
+    }
+
+    /**
+     * Create media type from the type and subtype.
+     *
+     * @param type    type
+     * @param subtype subtype
+     * @return media type for the instance
+     */
+    public static MediaType create(String type, String subtype) {
+        MediaTypeEnum mediaTypeEnum = MediaTypeEnum.find(type + "/" + subtype);
+        if (mediaTypeEnum == null) {
+            return new MediaTypeImpl(type,
+                                     subtype,
+                                     type + "/" + subtype);
+        } else {
+            return mediaTypeEnum;
+        }
+    }
+
+    /**
+     * Create a new media type from the full media type string.
+     *
+     * @param fullType media type string, such as {@code application/json}
+     * @return media type for the string
+     */
+    public static MediaType create(String fullType) {
+        MediaTypeEnum types = MediaTypeEnum.find(fullType);
+        return types == null ? MediaTypeImpl.parse(fullType) : types;
     }
 
     /**
@@ -59,11 +167,8 @@ public final class MediaTypes {
      * @param url to determine media type for
      * @return media type or empty if none found
      */
-    public static Optional<String> detectType(URL url) {
-        return DETECTORS.stream()
-                .map(mtd -> mtd.detectType(url))
-                .flatMap(Optional::stream)
-                .findFirst();
+    public static Optional<MediaType> detectType(URL url) {
+        return Detectors.detectType(url);
     }
 
     /**
@@ -73,11 +178,8 @@ public final class MediaTypes {
      * @param uri to determine media type for
      * @return media type or empty if none found
      */
-    public static Optional<String> detectType(URI uri) {
-        return DETECTORS.stream()
-                .map(mtd -> mtd.detectType(uri))
-                .flatMap(Optional::stream)
-                .findFirst();
+    public static Optional<MediaType> detectType(URI uri) {
+        return Detectors.detectType(uri);
     }
 
     /**
@@ -87,11 +189,8 @@ public final class MediaTypes {
      * @param file file on a file system
      * @return media type or empty if none found
      */
-    public static Optional<String> detectType(Path file) {
-        return DETECTORS.stream()
-                .map(mtd -> mtd.detectType(file))
-                .flatMap(Optional::stream)
-                .findFirst();
+    public static Optional<MediaType> detectType(Path file) {
+        return Detectors.detectType(file);
     }
 
     /**
@@ -105,11 +204,8 @@ public final class MediaTypes {
      * @see #detectType(java.net.URL)
      * @see #detectType(java.nio.file.Path)
      */
-    public static Optional<String> detectType(String fileName) {
-        return DETECTORS.stream()
-                .map(mtd -> mtd.detectType(fileName))
-                .flatMap(Optional::stream)
-                .findFirst();
+    public static Optional<MediaType> detectType(String fileName) {
+        return Detectors.detectType(fileName);
     }
 
     /**
@@ -119,11 +215,7 @@ public final class MediaTypes {
      * @param fileSuffix suffix of a file, such as {@code txt}, {@code properties}, or {@code jpeg}. Without the leading dot.
      * @return media type for the file suffix or empty if none found
      */
-    public static Optional<String> detectExtensionType(String fileSuffix) {
-        return CACHE.computeIfAbsent(fileSuffix, it ->
-                DETECTORS.stream()
-                        .map(mtd -> mtd.detectExtensionType(fileSuffix))
-                        .flatMap(Optional::stream)
-                        .findFirst());
+    public static Optional<MediaType> detectExtensionType(String fileSuffix) {
+        return Detectors.detectExtensionType(fileSuffix);
     }
 }

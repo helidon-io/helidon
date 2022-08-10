@@ -30,15 +30,15 @@ import io.helidon.common.media.type.spi.MediaTypeDetector;
  */
 class BuiltInsDetector implements MediaTypeDetector {
     private static final System.Logger LOGGER = System.getLogger(BuiltInsDetector.class.getName());
+    private static final Map<String, MediaType> MAPPINGS = new HashMap<>();
 
-    private static final Map<String, String> MAPPINGS = new HashMap<>();
     static {
         try (InputStream builtIns = MediaTypes.class.getResourceAsStream("default-media-types.properties")) {
             if (null != builtIns) {
                 Properties properties = new Properties();
                 properties.load(builtIns);
                 for (String name : properties.stringPropertyNames()) {
-                    MAPPINGS.put(name, properties.getProperty(name));
+                    MAPPINGS.put(name, MediaTypes.create(properties.getProperty(name)));
                 }
             } else {
                 LOGGER.log(Level.ERROR, "Failed to find default media type mapping resource");
@@ -49,7 +49,7 @@ class BuiltInsDetector implements MediaTypeDetector {
     }
 
     @Override
-    public Optional<String> detectExtensionType(String fileSuffix) {
+    public Optional<MediaType> detectExtensionType(String fileSuffix) {
         return Optional.ofNullable(MAPPINGS.get(fileSuffix));
     }
 }

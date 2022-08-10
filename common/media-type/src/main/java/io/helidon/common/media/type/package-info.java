@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,5 +16,6 @@
 /**
  * Support for mapping resources to media types, be it files, URIs or URLs.
  * @see io.helidon.common.media.type.MediaTypes
+ * @see io.helidon.common.media.type.MediaType
  */
 package io.helidon.common.media.type;

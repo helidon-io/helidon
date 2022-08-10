@@ -17,7 +17,6 @@ package io.helidon.common.media.type;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.System.Logger.Level;
 import java.net.URL;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -27,13 +26,16 @@ import java.util.Properties;
 
 import io.helidon.common.media.type.spi.MediaTypeDetector;
 
+import static java.lang.System.Logger.Level.ERROR;
+import static java.lang.System.Logger.Level.TRACE;
+
 /**
  * Detector for custom media type mappings.
  */
 class CustomDetector implements MediaTypeDetector {
     private static final String MEDIA_TYPE_RESOURCE = "META-INF/helidon/media-types.properties";
     private static final System.Logger LOGGER = System.getLogger(CustomDetector.class.getName());
-    private static final Map<String, String> MAPPINGS = new HashMap<>();
+    private static final Map<String, MediaType> MAPPINGS = new HashMap<>();
 
     static {
         // look for configured mapping by a user
@@ -44,22 +46,24 @@ class CustomDetector implements MediaTypeDetector {
             Enumeration<URL> resources = classLoader.getResources(MEDIA_TYPE_RESOURCE);
             while (resources.hasMoreElements()) {
                 URL url = resources.nextElement();
-                LOGGER.log(Level.DEBUG, () -> "Loading custom media type mapping from: " + url);
+                if (LOGGER.isLoggable(TRACE)) {
+                    LOGGER.log(TRACE, "Loading custom media type mapping from: " + url);
+                }
                 try (InputStream is = url.openStream()) {
                     Properties properties = new Properties();
                     properties.load(is);
                     for (String name : properties.stringPropertyNames()) {
-                        MAPPINGS.put(name, properties.getProperty(name));
+                        MAPPINGS.put(name, MediaTypes.create(properties.getProperty(name)));
                     }
                 }
             }
         } catch (IOException e) {
-            LOGGER.log(Level.ERROR, "Failed to load custom media types mapping", e);
+            LOGGER.log(ERROR, "Failed to load custom media types mapping", e);
         }
     }
 
     @Override
-    public Optional<String> detectExtensionType(String fileSuffix) {
+    public Optional<MediaType> detectExtensionType(String fileSuffix) {
         return Optional.ofNullable(MAPPINGS.get(fileSuffix));
     }
 }
