@@ -18,9 +18,11 @@
  * Helidon Common classes for HTTP server and client.
  */
 module io.helidon.common.http {
-    requires io.helidon.common;
-    requires io.helidon.common.context;
-    requires io.helidon.common.reactive;
+    requires transitive io.helidon.common;
+    requires transitive io.helidon.common.mapper;
+    requires transitive io.helidon.common.buffers;
+    requires transitive io.helidon.common.media.type;
+    requires transitive io.helidon.common.uri;
 
     exports io.helidon.common.http;
 }

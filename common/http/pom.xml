@@ -27,19 +27,28 @@
     <modelVersion>4.0.0</modelVersion>
     <artifactId>helidon-common-http</artifactId>
     <name>Helidon Common HTTP</name>
+    <description>Common HTTP primitives used by both blocking and reactive servers</description>
 
     <dependencies>
-        <dependency>
-            <groupId>io.helidon.common</groupId>
-            <artifactId>helidon-common-reactive</artifactId>
-        </dependency>
         <dependency>
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.common</groupId>
-            <artifactId>helidon-common-context</artifactId>
+            <artifactId>helidon-common-buffers</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-mapper</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-media-type</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-uri</artifactId>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
