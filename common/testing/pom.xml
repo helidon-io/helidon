@@ -33,5 +33,6 @@
 
     <modules>
         <module>junit5</module>
+        <module>http-junit5</module>
     </modules>
 </project>
