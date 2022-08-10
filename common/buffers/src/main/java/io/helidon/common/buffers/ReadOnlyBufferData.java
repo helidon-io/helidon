@@ -1,0 +1,54 @@
+/*
+ * Copyright (c) 2022 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package io.helidon.common.buffers;
+
+abstract class ReadOnlyBufferData implements BufferData {
+    @Override
+    public BufferData reset() {
+        throw new UnsupportedOperationException("Reset not supported for " + getClass().getSimpleName() + " buffer");
+    }
+
+    @Override
+    public BufferData clear() {
+        throw new UnsupportedOperationException("Clear not supported for " + getClass().getSimpleName() + " buffer");
+    }
+
+    @Override
+    public BufferData write(int value) {
+        throw new UnsupportedOperationException("Write not supported for " + getClass().getSimpleName() + " buffer");
+    }
+
+    @Override
+    public void write(byte[] bytes, int offset, int length) {
+        throw new UnsupportedOperationException("Write not supported for " + getClass().getSimpleName() + " buffer");
+    }
+
+    @Override
+    public void write(BufferData toWrite) {
+        throw new UnsupportedOperationException("Write not supported for " + getClass().getSimpleName() + " buffer");
+    }
+
+    @Override
+    public void write(BufferData toWrite, int length) {
+        throw new UnsupportedOperationException("Write not supported for " + getClass().getSimpleName() + " buffer");
+    }
+
+    @Override
+    public int capacity() {
+        throw new UnsupportedOperationException("Write not supported for " + getClass().getSimpleName() + " buffer");
+    }
+}

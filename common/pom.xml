@@ -41,6 +41,7 @@
         <module>media-type</module>
         <module>crypto</module>
         <module>parameters</module>
+        <module>buffers</module>
         <module>testing</module>
     </modules>
 </project>
