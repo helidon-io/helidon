@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.config.testing;
+package io.helidon.common.testing.junit5;
 
 import java.util.Optional;
 
@@ -24,7 +24,7 @@ import org.hamcrest.TypeSafeMatcher;
 import static org.hamcrest.Matchers.any;
 
 /**
- * Matchers for {@link java.util.Optional}.
+ * Hamcrest matchers for {@link java.util.Optional}.
  */
 public final class OptionalMatcher {
     private OptionalMatcher() {
@@ -36,13 +36,13 @@ public final class OptionalMatcher {
      * <p>
      * Usage example:
      * <pre>
-     *     assertThat(myOptional, value(is("expected")));
+     *     assertThat(myOptional, present(is("expected")));
      * </pre>
      * @param matcher matcher to validate the content of the optional
      * @param <T> type of the value
      * @return matcher validating the {@link java.util.Optional} is present and matches the provided matcher
      */
-    public static <T> Matcher<Optional<T>> value(Matcher<T> matcher) {
+    public static <T> Matcher<Optional<T>> optionalValue(Matcher<? super T> matcher) {
         return new WithValue<>(matcher);
     }
 
@@ -56,7 +56,7 @@ public final class OptionalMatcher {
      * @param <T> type of the optional
      * @return matcher validating the {@link java.util.Optional} is empty
      */
-    public static <T> Matcher<Optional<T>> empty() {
+    public static <T> Matcher<Optional<T>> optionalEmpty() {
         return new Empty<>();
     }
 
@@ -71,7 +71,7 @@ public final class OptionalMatcher {
      * @param <T> type of the value
      * @return matcher validating the {@link java.util.Optional} is present
      */
-    public static <T> Matcher<Optional<T>> present() {
+    public static <T> Matcher<Optional<T>> optionalPresent() {
         return new WithValue<>(any(Object.class));
     }
 

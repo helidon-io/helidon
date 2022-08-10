@@ -37,7 +37,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.config.testing.OptionalMatcher.present;
+import static io.helidon.common.testing.junit5.OptionalMatcher.optionalPresent;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
@@ -58,7 +58,7 @@ class MicronautDataCdiExtensionTest {
     @Test
     void testPet() {
         Optional<Pet> dinoOptional = petRepository.findByName("Dino");
-        assertThat(dinoOptional, is(present()));
+        assertThat(dinoOptional, is(optionalPresent()));
 
         Pet pet = dinoOptional.get();
         assertThat(pet.getName(), is("Dino"));
@@ -70,7 +70,7 @@ class MicronautDataCdiExtensionTest {
     @Test
     void testOwner() {
         Optional<Owner> maybeBarney = ownerRepository.findByName("Barney");
-        assertThat(maybeBarney, is(present()));
+        assertThat(maybeBarney, is(optionalPresent()));
 
         Owner barney = maybeBarney.get();
         assertThat(barney.getName(), is("Barney"));

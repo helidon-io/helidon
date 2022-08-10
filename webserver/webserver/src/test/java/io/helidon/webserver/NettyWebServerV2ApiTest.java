@@ -37,7 +37,7 @@ import org.hamcrest.collection.IsCollectionWithSize;
 import org.hamcrest.core.Is;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.config.testing.OptionalMatcher.present;
+import static io.helidon.common.testing.junit5.OptionalMatcher.optionalPresent;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -272,6 +272,6 @@ public class NettyWebServerV2ApiTest {
                            Routing.builder().build())
                 .build();
 
-        assertThat(webServer.configuration().namedSocket("matched"), present());
+        assertThat(webServer.configuration().namedSocket("matched"), optionalPresent());
     }
 }

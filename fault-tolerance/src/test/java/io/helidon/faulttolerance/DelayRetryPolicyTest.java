@@ -21,8 +21,8 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.config.testing.OptionalMatcher.empty;
-import static io.helidon.config.testing.OptionalMatcher.value;
+import static io.helidon.common.testing.junit5.OptionalMatcher.optionalEmpty;
+import static io.helidon.common.testing.junit5.OptionalMatcher.optionalValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
@@ -38,13 +38,13 @@ public class DelayRetryPolicyTest {
         long firstCall = System.nanoTime();
 
         Optional<Long> delay = policy.nextDelayMillis(firstCall, 0, 0);
-        assertThat(delay, value(is(0L)));
+        assertThat(delay, optionalValue(is(0L)));
         delay = policy.nextDelayMillis(firstCall, delay.orElseThrow(), 1);
-        assertThat(delay, value(is(100L)));
+        assertThat(delay, optionalValue(is(100L)));
         delay = policy.nextDelayMillis(firstCall, delay.orElseThrow(), 2); // should just apply factor on last delay
-        assertThat(delay, value(is(300L)));
+        assertThat(delay, optionalValue(is(300L)));
         delay = policy.nextDelayMillis(firstCall, delay.orElseThrow(), 3); // limit of calls
-        assertThat(delay, is(empty()));
+        assertThat(delay, is(optionalEmpty()));
     }
 
     @Test
@@ -58,12 +58,12 @@ public class DelayRetryPolicyTest {
         long firstCall = System.nanoTime();
 
         Optional<Long> delay = policy.nextDelayMillis(firstCall, 0, 0);
-        assertThat(delay, value(is(0L)));
+        assertThat(delay, optionalValue(is(0L)));
         delay = policy.nextDelayMillis(firstCall, delay.orElseThrow(), 1);
-        assertThat(delay, value(is(0L)));
+        assertThat(delay, optionalValue(is(0L)));
         delay = policy.nextDelayMillis(firstCall, delay.orElseThrow(), 2); // should just apply factor on last delay
-        assertThat(delay, value(is(0L)));
+        assertThat(delay, optionalValue(is(0L)));
         delay = policy.nextDelayMillis(firstCall, delay.orElseThrow(), 3); // limit of calls
-        assertThat(delay, is(empty()));
+        assertThat(delay, is(optionalEmpty()));
     }
 }

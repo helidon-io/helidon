@@ -28,7 +28,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.config.testing.OptionalMatcher.present;
+import static io.helidon.common.testing.junit5.OptionalMatcher.optionalPresent;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -87,14 +87,14 @@ public class SocketConfigurationTest {
             Optional<SocketConfiguration> maybeConfig = configuration.namedSocket("admin");
             assertThat(ERROR_PREFIX + " runnable admin socket must be configured",
                        maybeConfig,
-                       present());
+                       optionalPresent());
             validateRunnableSocket("admin", maybeConfig.get(), true);
             validateRunnablePort("admin", server, true);
 
             maybeConfig = configuration.namedSocket("static");
             assertThat(ERROR_PREFIX + " runnable static socket must be configured",
                        maybeConfig,
-                       present());
+                       optionalPresent());
             validateRunnableSocket("static", maybeConfig.get(), false);
             validateRunnablePort("static", server, false);
         } finally {
@@ -144,7 +144,7 @@ public class SocketConfigurationTest {
         Optional<SocketConfiguration> socketConfiguration = configuration.namedSocket(name);
         assertThat(ERROR_PREFIX + type + " " + name + " socket must be configured",
                 socketConfiguration,
-                   present());
+                   optionalPresent());
 
         SocketConfiguration socket = socketConfiguration.get();
         assertThat(ERROR_PREFIX + type + " " + name + " socket port",
