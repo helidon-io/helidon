@@ -150,13 +150,13 @@ public interface DbMapperManager {
          * Add a mapper provider with custom priority.
          *
          * @param provider provider
-         * @param priority priority to use
+         * @param weight weight to use
          * @return updated builder instance
-         * @see io.helidon.common.Prioritized
-         * @see jakarta.annotation.Priority
+         * @see io.helidon.common.Weighted
+         * @see io.helidon.common.Weight
          */
-        public Builder addMapperProvider(DbMapperProvider provider, int priority) {
-            this.providers.addService(provider, priority);
+        public Builder addMapperProvider(DbMapperProvider provider, int weight) {
+            this.providers.addService(provider, weight);
             return this;
         }
 
