@@ -48,16 +48,12 @@ include::{rootdir}/includes/dependencies.adoc[]
 ----
 
 == Usage
-A test can be annotated with `io.helidon.microprofile.tests.junit5.HelidonTest` annotation to mark it as a
-CDI test. This annotation will start the CDI container before any test method is invoked, and stop it after
+A test can be annotated with `io.helidon.microprofile.tests.junit5.HelidonTest` to mark it as a CDI test. This annotation will start the CDI container before any test method is invoked, and stop it after
 the last method is invoked. This annotation also enables injection into the test class itself.
 
 === Usage - per method CDI container
-A test can be annotated as follows:
 
-`@HelidonTest(resetPerTest = true)`
-
-This will change the behavior as follows:
+When a test is annotated with `@HelidonTest(resetPerTest = true)`, the behavior will change as follows:
 
 - A new CDI container is created for each test method invocation
 - annotations to add config, beans and extension can be added for each method in addition to the class
@@ -66,11 +62,11 @@ This will change the behavior as follows:
 
 === Usage - configuration
 In addition to the `@AddConfig` annotation, you can also use
-`@Configuration` to configure additional classpath properties config sources using `configSources`, and to
-mark that a custom configuration is desired.
-If `@Configuration(useExisting=true)`, the existing (or default) MicroProfile configuration would be used. In this case
-it is important to set property `mp.initializer.allow=true` in order CDI container to start, when used with
+`@Configuration` to configure additional classpath properties and `configSources` to mark that a custom configuration is desired.
+
+If `@Configuration(useExisting=true)`, the existing (or default) MicroProfile configuration would be used. it is important to set property `mp.initializer.allow=true` in order for the CDI container to start, when used with
 `@HelidonTest`.
+
 You can set up config in `@BeforeAll` method and register it with `ConfigProviderResolver` using MP Config APIs, and declare
 `@Configuration(useExisting=true)`.
 Note that this is not compatible with repeatable tests that use method sources that access CDI, as we must delay the CDI
@@ -117,7 +113,7 @@ In addition to this simplification, the following annotations are supported:
 
 == Examples
 
-In current example Helidon container will be launched prior test. The _Bean Discovery_ will be disabled. _MyBean_ will be added to the test, so that it can be injected. _ConfigCdiExtension_ will be enabled for this test. And finally, a configuration property will be added using `@AddConfig` annotation.
+In this example, the Helidon container will be launched before the test. The _Bean Discovery_ will be disabled. _MyBean_ will be added to the test, so that it can be injected. _ConfigCdiExtension_ will be enabled for this test. And finally, a configuration property will be added using `@AddConfig` annotation.
 
 [source,java]
 .Code sample

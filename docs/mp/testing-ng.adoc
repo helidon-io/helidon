@@ -16,7 +16,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Testing with Test NG
+= Testing with TestNG
 :description: Helidon Testing with TestNG
 :keywords: helidon, mp, test, testing, testng
 :feature-name: Testing with TestNG
@@ -46,14 +46,14 @@ include::{rootdir}/includes/dependencies.adoc[]
 </dependency>
 ----
 
-== Usage - default
-A test can be annotated with `io.helidon.microprofile.tests.testng.HelidonTest` annotation to mark it as a
+== Usage
+By default, a test can be annotated with `io.helidon.microprofile.tests.testng.HelidonTest` annotation to mark it as a
 CDI test. This annotation will start the CDI container before any test method is invoked, and stop it after
 the last method is invoked. This annotation also enables injection into the test class itself.
 
-== Usage
 
-A test can be annotated with `io.helidon.microprofile.tests.testng.HelidonTest` annotation to mark it as a
+
+A test can also be annotated with `io.helidon.microprofile.tests.testng.HelidonTest` annotation to mark it as a
 CDI test. This annotation will start the CDI container before any test method is invoked, and stop it after
 the last method is invoked. This annotation also enables injection into the test class itself.
 
