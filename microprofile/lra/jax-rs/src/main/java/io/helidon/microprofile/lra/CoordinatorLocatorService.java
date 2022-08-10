@@ -24,8 +24,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import io.helidon.common.Reflected;
 import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.Reflected;
 import io.helidon.lra.coordinator.client.CoordinatorClient;
 
 import jakarta.enterprise.context.ApplicationScoped;

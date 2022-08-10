@@ -21,10 +21,10 @@ import java.util.ServiceLoader;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.mapper.MapperManager;
 import io.helidon.common.reactive.Single;
 import io.helidon.common.reactive.Subscribable;
-import io.helidon.common.HelidonServiceLoader;
 import io.helidon.config.Config;
 import io.helidon.dbclient.spi.DbClientProvider;
 import io.helidon.dbclient.spi.DbClientProviderBuilder;

@@ -22,8 +22,8 @@ import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.logging.Logger;
 
-import io.helidon.common.LazyValue;
 import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
 import io.helidon.integrations.common.rest.RestApi;
 import io.helidon.integrations.vault.spi.AuthMethodProvider;

@@ -21,8 +21,8 @@ import java.util.ServiceLoader;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
 
-import io.helidon.common.http.Http;
 import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.faulttolerance.FaultTolerance;
 import io.helidon.faulttolerance.FtHandler;

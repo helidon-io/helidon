@@ -24,8 +24,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.ServiceLoader;
 
-import io.helidon.common.context.Contexts;
 import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.context.Contexts;
 import io.helidon.tracing.HeaderConsumer;
 import io.helidon.tracing.HeaderProvider;
 import io.helidon.tracing.Scope;
