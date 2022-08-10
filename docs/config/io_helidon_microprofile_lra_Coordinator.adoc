@@ -18,11 +18,9 @@
 
 //MANUALLY CREATED DOCUMENT
 
-ifndef::rootdir[:rootdir: {docdir}/..]
 :description: Configuration of io_helidon_microprofile_lra_Coordinator
 :keywords: helidon, io_helidon_microprofile_lra_Coordinator
 :basic-table-intro: The table below lists the configuration keys that configure io_helidon_microprofile_lra_Coordinator
-include::{rootdir}/includes/attributes.adoc[]
 
 = LRA Configuration
 
@@ -34,14 +32,14 @@ include::{rootdir}/includes/attributes.adoc[]
 io.helidon.microprofile.lra
 ----
 
-.Optional configuration options
-[cols="3,3,2,5a"]
+Optional configuration options:
+[cols="3,3,2,5"]
 
 |===
 |Key |Type |Default value |Description
 
-|`mp.lra.coordinator.url` |string |`\http://localhost:8070/lra-coordinator` |Url of coordinator.
-|`mp.lra.coordinator.propagation.active` |boolean |{nbsp} |Propagate LRA headers `LRA_HTTP_CONTEXT_HEADER` and `LRA_HTTP_PARENT_CONTEXT_HEADER` through non-LRA endpoints.
+|`mp.lra.coordinator.url` |string |`http://localhost:8070/lra-coordinator` |Url of coordinator.
+|`mp.lra.coordinator.propagation.active` |boolean |{nbsp} |Propagate LRA headers LRA_HTTP_CONTEXT_HEADER and LRA_HTTP_PARENT_CONTEXT_HEADER through non-LRA endpoints.
 |`mp.lara.participant.url` |string |{nbsp} |Url of the LRA enabled service overrides standard base uri, so coordinator can call load-balancer instead of the service.
 |`mp.lra.coordinator.timeout` |string |{nbsp} |Timeout for synchronous communication with coordinator.
 |`mp.lra.coordinator.timeout-unit` |string |{nbsp} |Timeout unit for synchronous communication with coordinator.
