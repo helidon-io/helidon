@@ -16,8 +16,8 @@
 package io.helidon.common.mapper;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.ServiceLoader;
+import java.util.Set;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.HelidonServiceLoader;
@@ -30,10 +30,10 @@ import io.helidon.common.mapper.spi.MapperProvider;
  * To map a source to target, you can use either of the {@code map} methods defined in this interface,
  * as they make sure that the mapping exists in either space.
  * <ul>
- * <li>If you call {@link #map(Object, Class, Class)} and no mapper is found for the class pair,
- * the implementation calls the {@link #map(Object, io.helidon.common.GenericType, io.helidon.common.GenericType)} with
- * {@link io.helidon.common.GenericType}s created for each parameters</li>
- * <li>If you call {@link #map(Object, io.helidon.common.GenericType, io.helidon.common.GenericType)} and no mapper is
+ * <li>If you call {@link #map(Object, Class, Class, String...)} and no mapper is found for the class pair,
+ * the implementation calls the {@link #map(Object, io.helidon.common.GenericType, io.helidon.common.GenericType, String...)}
+ * with {@link io.helidon.common.GenericType}s created for each parameters</li>
+ * <li>If you call {@link #map(Object, io.helidon.common.GenericType, io.helidon.common.GenericType, String...)} and no mapper is
  * found for the {@link io.helidon.common.GenericType} pair, an attempt is to locate a mapper for
  * the underlying class *IF* the generic type represents a simple class (e.g. not a generic type declaration)</li>
  * </ul>
@@ -88,12 +88,16 @@ public interface MapperManager {
      * @param source     object to map
      * @param sourceType type of the source object (to locate the mapper)
      * @param targetType type of the target object (to locate the mapper)
+     * @param qualifiers qualifiers of the usage (such as {@code http-headers, http}, most specific one first)
      * @param <SOURCE>   type of the source
      * @param <TARGET>   type of the target
      * @return result of the mapping
      * @throws MapperException in case the mapper was not found or failed
      */
-    <SOURCE, TARGET> TARGET map(SOURCE source, GenericType<SOURCE> sourceType, GenericType<TARGET> targetType)
+    <SOURCE, TARGET> TARGET map(SOURCE source,
+                                GenericType<SOURCE> sourceType,
+                                GenericType<TARGET> targetType,
+                                String... qualifiers)
             throws MapperException;
 
     /**
@@ -102,12 +106,14 @@ public interface MapperManager {
      * @param source     object to map
      * @param sourceType class of the source object (to locate the mapper)
      * @param targetType class of the target object (to locate the mapper)
+     * @param qualifiers qualifiers of the usage (such as {@code http-headers, http}, most specific one first)
      * @param <SOURCE>   type of the source
      * @param <TARGET>   type of the target
      * @return result of the mapping
      * @throws MapperException in case the mapper was not found or failed
      */
-    <SOURCE, TARGET> TARGET map(SOURCE source, Class<SOURCE> sourceType, Class<TARGET> targetType) throws MapperException;
+    <SOURCE, TARGET> TARGET map(SOURCE source, Class<SOURCE> sourceType, Class<TARGET> targetType, String... qualifiers)
+            throws MapperException;
 
     /**
      * Fluent API builder for {@link io.helidon.common.mapper.MapperManager}.
@@ -121,15 +127,8 @@ public interface MapperManager {
 
         @Override
         public MapperManager build() {
+            providers.addService(new DefaultMapperProvider(), 0);
             return new MapperManagerImpl(this);
-        }
-
-        private Builder mapperProviders(HelidonServiceLoader<MapperProvider> serviceLoader) {
-            providers = HelidonServiceLoader.builder(ServiceLoader.load(MapperProvider.class))
-                    .useSystemServiceLoader(false);
-
-            serviceLoader.forEach(providers::addService);
-            return this;
         }
 
         /**
@@ -172,12 +171,13 @@ public interface MapperManager {
          * @param mapper     the mapper to map source instances to target instances
          * @param sourceType class of the source instance
          * @param targetType class of the target instance
+         * @param qualifiers supported qualifiers of this mapper (if none provided, will return a compatible response)
          * @param <S>        type of source
          * @param <T>        type of target
          * @return updated builder instance
          */
-        public <S, T> Builder addMapper(Mapper<S, T> mapper, Class<S> sourceType, Class<T> targetType) {
-            return addMapper(mapper, sourceType, targetType, Weighted.DEFAULT_WEIGHT);
+        public <S, T> Builder addMapper(Mapper<S, T> mapper, Class<S> sourceType, Class<T> targetType, String... qualifiers) {
+            return addMapper(mapper, sourceType, targetType, Weighted.DEFAULT_WEIGHT, qualifiers);
         }
 
         /**
@@ -187,6 +187,7 @@ public interface MapperManager {
          * @param sourceType class of the source instance
          * @param targetType class of the target instance
          * @param weight     weight of the mapper
+         * @param qualifiers supported qualifiers of this mapper (if none provided, will return a compatible response)
          * @param <S>        type of source
          * @param <T>        type of target
          * @return updated builder instance
@@ -194,17 +195,19 @@ public interface MapperManager {
         public <S, T> Builder addMapper(Mapper<S, T> mapper,
                                         Class<S> sourceType,
                                         Class<T> targetType,
-                                        double weight) {
-            this.providers.addService(new MapperProvider() {
-                @SuppressWarnings({"unchecked", "ObjectEquality"})
-                @Override
-                public <FROM, TO> Optional<Mapper<?, ?>> mapper(Class<FROM> sourceClass,
-                                                                    Class<TO> targetClass) {
-                    if ((sourceType == sourceClass) && (targetType == targetClass)) {
-                        return Optional.of((Mapper<FROM, TO>) mapper);
+                                        double weight,
+                                        String... qualifiers) {
+            Set<String> qualifierSet = Set.of(qualifiers);
+
+            this.providers.addService((sourceClass, targetClass, qualifier) -> {
+                if ((sourceType == sourceClass) && (targetType == targetClass)) {
+                    if (qualifierSet.contains(qualifier)) {
+                        return new MapperProvider.ProviderResponse(MapperProvider.Support.SUPPORTED, mapper);
+                    } else {
+                        return new MapperProvider.ProviderResponse(MapperProvider.Support.COMPATIBLE, mapper);
                     }
-                    return Optional.empty();
                 }
+                return MapperProvider.ProviderResponse.unsupported();
             }, weight);
             return this;
         }
@@ -215,12 +218,16 @@ public interface MapperManager {
          * @param mapper     the mapper to map source instances to target instances
          * @param sourceType generic type of the source instance
          * @param targetType generic type of the target instance
+         * @param qualifiers qualifiers of this mapper, if empty, will be a compatible mapper
          * @param <S>        type of source
          * @param <T>        type of target
          * @return updated builder instance
          */
-        public <S, T> Builder addMapper(Mapper<S, T> mapper, GenericType<S> sourceType, GenericType<T> targetType) {
-            return addMapper(mapper, sourceType, targetType, Weighted.DEFAULT_WEIGHT);
+        public <S, T> Builder addMapper(Mapper<S, T> mapper,
+                                        GenericType<S> sourceType,
+                                        GenericType<T> targetType,
+                                        String... qualifiers) {
+            return addMapper(mapper, sourceType, targetType, Weighted.DEFAULT_WEIGHT, qualifiers);
         }
 
         /**
@@ -237,21 +244,27 @@ public interface MapperManager {
         public <S, T> Builder addMapper(Mapper<S, T> mapper,
                                         GenericType<S> sourceType,
                                         GenericType<T> targetType,
-                                        double weight) {
+                                        double weight,
+                                        String... qualifiers) {
+            Set<String> qualifierSet = Set.of(qualifiers);
+
             this.providers.addService(new MapperProvider() {
                 @Override
-                public <FROM, TO> Optional<Mapper<?, ?>> mapper(Class<FROM> sourceClass, Class<TO> targetClass) {
-                    return Optional.empty();
+                public ProviderResponse mapper(Class<?> sourceClass, Class<?> targetClass, String qualifier) {
+                    return ProviderResponse.unsupported();
                 }
 
-                @SuppressWarnings({"unchecked"})
                 @Override
-                public <FROM, TO> Optional<Mapper<?, ?>> mapper(GenericType<FROM> sourceClass,
-                                                                    GenericType<TO> targetClass) {
-                    if ((sourceType.equals(sourceClass)) && (targetType.equals(targetClass))) {
-                        return Optional.of((Mapper<FROM, TO>) mapper);
+                public ProviderResponse mapper(GenericType<?> source, GenericType<?> target, String qualifier) {
+                    if ((sourceType.equals(source)) && (targetType.equals(target))) {
+                        if (qualifierSet.contains(qualifier)) {
+                            return new ProviderResponse(Support.SUPPORTED, mapper);
+                        } else {
+                            return new ProviderResponse(Support.COMPATIBLE, mapper);
+                        }
+
                     }
-                    return Optional.empty();
+                    return ProviderResponse.unsupported();
                 }
             }, weight);
             return this;
@@ -260,6 +273,14 @@ public interface MapperManager {
         // used by the implementation
         List<MapperProvider> mapperProviders() {
             return providers.build().asList();
+        }
+
+        private Builder mapperProviders(HelidonServiceLoader<MapperProvider> serviceLoader) {
+            providers = HelidonServiceLoader.builder(ServiceLoader.load(MapperProvider.class))
+                    .useSystemServiceLoader(false);
+
+            serviceLoader.forEach(providers::addService);
+            return this;
         }
     }
 }

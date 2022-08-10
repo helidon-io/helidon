@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,26 +15,31 @@
  */
 package io.helidon.common.mapper.spi;
 
-import java.util.Optional;
-
 import io.helidon.common.GenericType;
 import io.helidon.common.mapper.Mapper;
 
 /**
  * Java Service loader service to get mappers.
+ *
+ * Mapper provider provides mappers based on the source and target types and a qualifier.
+ * Generic mappers should always return {@link io.helidon.common.mapper.spi.MapperProvider.Support#COMPATIBLE}, so specific mappers
+ * can be created for qualified usages. This is to support a different date/time mapper depending on usage. For this
+ * case we may have the following qualifiers (example, not normative): {@code config,jdbc-oracle,http-header,http-query}.
+ * Qualifiers should be defined by a constant in each component using mapping.
  */
 @FunctionalInterface
 public interface MapperProvider {
     /**
      * Find a mapper that is capable of mapping from source to target classes.
+     * Qualifiers are defined by each component using mapping. In case of clashing qualifiers, the first mapper
+     * that returns {@link io.helidon.common.mapper.spi.MapperProvider.Support#SUPPORTED} will be chosen.
      *
      * @param sourceClass class of the source
      * @param targetClass class of the target
-     * @param <SOURCE> type of the source
-     * @param <TARGET> type of the target
+     * @param qualifier   qualifiers of this mapping (such as {@code config} or {@code http-headers}
      * @return a mapper that is capable of mapping (or converting) sources to targets
      */
-    <SOURCE, TARGET> Optional<Mapper<?, ?>> mapper(Class<SOURCE> sourceClass, Class<TARGET> targetClass);
+    ProviderResponse mapper(Class<?> sourceClass, Class<?> targetClass, String qualifier);
 
     /**
      * Find a mapper that is capable of mapping from source to target types.
@@ -42,12 +47,55 @@ public interface MapperProvider {
      *
      * @param sourceType generic type of the source
      * @param targetType generic type of the target
-     * @param <SOURCE> type of the source
-     * @param <TARGET> type of the target
-     * @return a mapper that is capable of mapping (or converting) sources to targets
+     * @param qualifier qualifier of the mapping - this is to allow multiple mappings for the same type depending on context
+     *                  such as HTTP Headers may use a different date mapping than database operations
+     * @return a mapper that is capable of mapping (or converting) sources to targets, default implementation
+     *      calls {@link #mapper(Class, Class, java.lang.String)} for types that are not generic,
+     *      {@link io.helidon.common.mapper.spi.MapperProvider.ProviderResponse#unsupported()} otherwise.
      */
-    default <SOURCE, TARGET> Optional<Mapper<?, ?>> mapper(GenericType<SOURCE> sourceType,
-                                                           GenericType<TARGET> targetType) {
-        return Optional.empty();
+    default ProviderResponse mapper(GenericType<?> sourceType, GenericType<?> targetType, String qualifier) {
+        if (sourceType.isClass() && targetType.isClass()) {
+            ProviderResponse resp = mapper(sourceType.rawType(), targetType.rawType(), qualifier);
+            if (resp.support() == Support.SUPPORTED) {
+                return new ProviderResponse(Support.COMPATIBLE, resp.mapper());
+            }
+        }
+        return ProviderResponse.unsupported();
+    }
+
+    /**
+     * How does this provider support the type.
+     */
+    enum Support {
+        /**
+         * Correct type(s) and expected qualifier.
+         */
+        SUPPORTED,
+        /**
+         * Correct type(s), unexpected qualifier.
+         */
+        COMPATIBLE,
+        /**
+         * Incorrect type(s).
+         */
+        UNSUPPORTED
+    }
+
+    /**
+     * Response of a provider.
+     *
+     * @param support how is this supported
+     * @param mapper mapper to map the type, or null if support is {@link Support#UNSUPPORTED}
+     */
+    record ProviderResponse(Support support, Mapper<?, ?> mapper) {
+        private static final ProviderResponse UNSUPPORTED = new ProviderResponse(Support.UNSUPPORTED, null);
+
+        /**
+         * Unsupported provider response.
+         * @return constant - unsupported response
+         */
+        public static ProviderResponse unsupported() {
+            return UNSUPPORTED;
+        }
     }
 }
