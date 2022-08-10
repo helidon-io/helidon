@@ -105,8 +105,14 @@ final class PkiUtil {
                     X509Certificate cert = (X509Certificate) keyStore.getCertificate(alias);
                     certs.add(cert);
 
-                    LOGGER.log(Level.DEBUG, () -> "Added certificate under alis " + alias + " for " + cert
-                            .getSubjectDN() + " to list of certificates");
+                    if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                        LOGGER.log(System.Logger.Level.DEBUG, "Added certificate under alis "
+                                + alias
+                                + " for "
+                                + cert
+                                .getIssuerX500Principal().getName()
+                                + " to list of certificates");
+                    }
                 }
             }
         } catch (KeyStoreException e) {
