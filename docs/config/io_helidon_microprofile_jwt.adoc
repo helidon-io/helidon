@@ -26,11 +26,11 @@
 
 // tag::config[]
 
-== Configuration options
+== Configuration Options
 
 
-.MicroProfile configuration options:
-[cols="3,3,2,5a"]
+MicroProfile configuration options:
+[cols="3,3,2,5"]
 
 |===
 |key |type |default value |description
@@ -41,8 +41,8 @@
 
 |===
 
-.Optional configuration options:
-[cols="3,3,2,5a"]
+Optional configuration options:
+[cols="3,3,2,5"]
 
 |===
 |key |type |default value |description
@@ -52,7 +52,7 @@ an important distinction when more than one provider is used
 |`authenticate` |boolean |`true` |Whether to attempt authentication
 |`propagate`|boolean |`true` |Whether to attempt identity propagation/JWT creation
 |`principal-type`|string |`USER` |Whether we authenticate a user or a service (other option is SERVICE)
-|`atn-token` |string |{nbsp} |A group for configuring authentication of the request
+|`atn-token` |string ||A group for configuring authentication of the request
 |`atn-token.verify-signature`|boolean |`true` |Whether to verify signature in incoming JWT. If disabled, _ANY_ JWT will be accepted
 |`atn-token.jwt-audience`|string |{nbsp} |Expected audience of the JWT. If not defined, any audience is accepted (and we may accept JWT not inteded for us)
 |`atn-token.jwk.resource.*`|string |{nbsp} |Configuration of the JWK to obtain key(s) to validate signatures of inbound token. The JWK should contain public keys. This may be: jwk.resource.path, jwk.resource.resource-path, jwk.resource.url, jwk.resource.content-plain (actual JSON string), jwk.resource.content (base64)
