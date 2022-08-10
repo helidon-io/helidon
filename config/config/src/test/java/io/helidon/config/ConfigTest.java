@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.config;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -24,6 +25,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import io.helidon.common.GenericType;
 import io.helidon.config.Config.Key;
 import io.helidon.config.spi.ConfigNode.ListNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
@@ -528,6 +530,8 @@ public class ConfigTest {
                                      .addObject("oracle", ObjectNode.builder()
                                              .addValue("com", "1")
                                              .addValue("cz", "2")
+                                             // escaped key on a leaf node
+                                             .addValue(Key.escapeName("test.com"), "test")
                                              .build())
                                      .build()))
                 .disableEnvironmentVariablesSource()
@@ -542,6 +546,7 @@ public class ConfigTest {
         assertThat(config.get("oracle~1com.prop2").asString(), is(ConfigValues.simpleValue("val2")));
         assertThat(config.get("oracle.com").asString(), is(ConfigValues.simpleValue("1")));
         assertThat(config.get("oracle.cz").asString(), is(ConfigValues.simpleValue("2")));
+        assertThat(config.get("oracle.test~1com").asString(), is(ConfigValues.simpleValue("test")));
 
         //name
         assertThat(config.get("oracle~1com").name(), is("oracle.com"));
@@ -550,6 +555,7 @@ public class ConfigTest {
         assertThat(config.get("oracle").name(), is("oracle"));
         assertThat(config.get("oracle.com").name(), is("com"));
         assertThat(config.get("oracle.cz").name(), is("cz"));
+        assertThat(config.get("oracle.test~1com").name(), is("test.com"));
 
         //child nodes
         List<Config> children = config.asNodeList().get();
@@ -559,17 +565,33 @@ public class ConfigTest {
 
         //traverse
         Set<String> keys = config.traverse().map(Config::key).map(Key::toString).collect(Collectors.toSet());
-        assertThat(keys, hasSize(6));
+        assertThat(keys, hasSize(7));
         assertThat(keys, containsInAnyOrder("oracle~1com", "oracle~1com.prop1", "oracle~1com.prop2",
-                                            "oracle", "oracle.com", "oracle.cz"));
+                                            "oracle", "oracle.com", "oracle.cz", "oracle.test~1com"));
 
-        //map
-        Map<String, String> map = config.asMap().get();
-        assertThat(map.keySet(), hasSize(4));
-        assertThat(map.get("oracle~1com.prop1"), is("val1"));
-        assertThat(map.get("oracle~1com.prop2"), is("val2"));
-        assertThat(map.get("oracle.com"), is("1"));
-        assertThat(map.get("oracle.cz"), is("2"));
+        //return config as map using different methods and expect keys to be unescaped
+        for (Map<String, String> map : Arrays.asList(
+                config.asMap().get(),
+                config.as(Map.class).get(),
+                config.as(new GenericType<Map>(){}).get())
+        ) {
+            assertThat(map.keySet(), hasSize(5));
+            assertThat(map.get("oracle.com.prop1"), is("val1"));
+            assertThat(map.get("oracle.com.prop2"), is("val2"));
+            assertThat(map.get("oracle.com"), is("1"));
+            assertThat(map.get("oracle.cz"), is("2"));
+            assertThat(map.get("oracle.test.com"), is("test"));
+        }
+        //escaped leaf node key returned as a map should expect key to be unescaped
+        String escapedLeafNode = "oracle.test~1com";
+        for (Map<String, String> map : Arrays.asList(
+                config.get(escapedLeafNode).asMap().get(),
+                config.get(escapedLeafNode).as(Map.class).get(),
+                config.get(escapedLeafNode).as(new GenericType<Map>(){}).get())
+        ) {
+            assertThat(map.keySet(), hasSize(1));
+            assertThat(map.get("oracle.test.com"), is("test"));
+        }
     }
 
     @ExtendWith(RestoreSystemPropertiesExt.class)
