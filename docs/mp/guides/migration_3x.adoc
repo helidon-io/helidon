@@ -33,7 +33,7 @@ will help you upgrade a Helidon MP 2.x application to 3.x.
 Java 11 is no longer supported in Helidon 3. Java 17 or newer is required. Please follow the instructions in xref:{rootdir}/about/prerequisites.adoc[Prerequisites] for proper installation.
 
 
-== javax.* namespace to jakarta.* namespace
+== `javax` namespace to `jakarta` namespace
 
 Helidon 3 supports MicroProfile 5.0  and _selected_ Jakarta EE 9.1 APIs. In Jakarta EE 9.1 the Java package namespace was changed from `javax` to `jakarta`. Therefore, you must change your application to use `jakarta` instead of corresponding `javax` for Jakarta EE packages.
 
@@ -42,7 +42,7 @@ In version 3.x Helidon supports MicroProfile 5.0  specification, which now is fu
 As a result, `javax` module is no longer in dependency management of Helidon parent pom files.
 
 
-== MicroProfile 5.0  support
+== MicroProfile 5.0 Support
 
 MicroProfile 5.0  enables MicroProfile APIs to be used together with Jakarta EE 9.1 (Jakarta EE namespace). This release was mainly focused on updating dependencies from `javax` to `jakarta`, as well as overall stability and usability improvements.
 
@@ -71,13 +71,13 @@ Helidon 3.x supports the following Jakarta EE specifications:
 * Jakarta WebSocket API {version-lib-jakarta-websockets-api}
 * Jakarta Bean Validation {version-lib-jakarta-bean-validation}
 
-Corresponding changes to Helidon code were made to support the corresponding specifications' versions.
+Helidon code was modified to support the corresponding specification's versions.
 
 === Incompatible changes for each specification
 
-Migration from `javax` to `jakarta` namespace is making this release backward incompatible with previous version of MicroProfile. For each specification there are also API and functional changes, described below.
+The migration from `javax` to `jakarta` namespace makes this release backward incompatible with previous versions of MicroProfile. For each specification there are also API and functional changes that are described below.
 
-==== MicroProfile specifications
+=== MicroProfile specifications
 
 * *MicroProfile Config {version-lib-microprofile-config}*:
 +
@@ -150,26 +150,45 @@ Moved to `jakarta` namespace. Changes described in link:https://jakarta.ee/speci
 +
 Moved to `jakarta` namespace. Changes described in link:https://jakarta.ee/specifications/bean-validation/2.0/bean-validation_2.0.html#changelog[Jakarta Bean Validation {version-lib-jakarta-bean-validation} Specification]
 
-NOTE: Please, read each specification carefully for incompatible changes!
+NOTE:  Before you migrate to Helidon 3.x, make sure that you have read each specification for a complete list of incompatible changes.
 
 
-== Deprecations
+== Deprecations and API Changes
 
 - The custom Helidon OCI clients have been deprecated. Use the OCI Java SDK instead. If you use Helidon MP you can inject OCI SDK clients by adding the dependency `io.helidon.integrations.oci.sdk:helidon-integrations-oci-sdk-cdi`.
 
-NOTE: See xref:{rootdir}/mp/integrations/oci.adoc#oci-compatibility[Resolving compatibility issue with OCI SDK] for detailed information on how to work around this issue.
+NOTE: See xref:{rootdir}/se/integrations/oci.adoc#oci-compatibility[Resolving compatibility issue with OCI SDK] for detailed information on how to work around this issue.
 
-
-- The `MultiPart buffered readers` have been deprecated. Use the `MultiPart stream readers` instead.
+- The MultiPart buffered readers have been deprecated. Use the MultiPart stream readers instead.
 
 === Helidon Common
 
 Deprecations in the following classes:
 
 * `Resource` - old configuration approach (since 2.0)
+** Method `Optional<Resource> create(Config, String)` is removed. Use `create(Config)` instead;
 * `ThreadPoolSupplier` - Named thread pools (since 2.4.2)
+** Method `ThreadPoolSupplier create(Config)` is removed. Use `create(Config, String)` instead;
+** Method `ThreadPoolSupplier create()` is removed. Use `create(String)` instead;
 
-More information in the following link:https://github.com/oracle/helidon/issues/4363[Task].
+Configuration changes:
+
+[source, yaml]
+----
+# old (deprecated approach) - kept so existing applications may work
+resources-prefix:
+  test-1.resource-path: "src/test/resources/sample.txt"
+  test-2.resource-resource-path: "sample.txt"
+  test-3.resource-url: "file:./src/test/resources/sample.txt"
+  test-4.resource-content-plain: "content"
+  test-5.resource-content: "YWJjZGVmZ8SNxZnFvsO6xa8="
+
+# new approach that does not use a prefix
+resources:
+  test-1.resource.path: "src/test/resources/sample.txt"
+  test-2.resource.resource-path: "sample.txt"
+----
+
 
 === Media Common
 
@@ -182,53 +201,62 @@ Deprecations in the following classes:
 * `MessageBodyWriterContext` - Methods with alternatives (since 2.0)
 * `ReadableByteChannelPublisher` - Class with alternative (since 2.0)
 
-More information in the following link:https://github.com/oracle/helidon/issues/4364[Task].
-
 === Metrics
 
 Deprecations in the following classes:
 
 * `MetricsSupport` - 3 methods, replacing Config with metrics settings
-* `KeyPerformanceIndicatorMetricsSettings` - New class in metrics API, for backward compatibility only
+** Method `MetricsSupport create(MetricsSettings, RestServiceSettings)` has new parameter;
+** New method `MetricsSupport create(MetricsSettings)`;
+** New method `MetricsSupport.Builder<?> builder()`;
+* `KeyPerformanceIndicatorMetricsSettings` - new class in metrics API, for backward compatibility only
+** Interface `KeyPerformanceIndicatorMetricsSettings` - marked `for removal`;
+** Interface `KeyPerformanceIndicatorMetricsSettingsCompatibility` - marked `for removal`;
 * `RegistryFactory` - New class in metrics API, for backward compatibility only
-
-More information in the following link:https://github.com/oracle/helidon/issues/4365[Task].
+** Method `RegistryFactory create()` - marked `for removal`;
+** Method `RegistryFactory create(Config config)` - marked `for removal`;
+** Method `RegistryFactory getInstance()` - marked `for removal`;
+** Method `RegistryFactory getInstance(Config config)` - marked `for removal`;
 
 === Common Context
 
 Deprecations in the following class:
 
 * `DataPropagationProvider` - clearData should use new method
+** Method `void clearData()` - marked for removal, use `void clearData(T data)` instead;
 
-More information in the following link:https://github.com/oracle/helidon/issues/4366[Task].
 
-
-=== GRPC core
+=== GRPC Core
 
 Deprecations:
 
 * `JavaMarshaller` - removed support for JavaMarshaller
-
-More information in the following link:https://github.com/oracle/helidon/issues/4367[Task].
+** New default marshaller supplier will throw an exception if the code falls to where the `JavaMarshaller` was returned before to inform developer of the change
 
 
 === LRA
 
 Deprecations in the following class:
 
-* `CoordinatorClient` - multiple methods
-* `Headers`
-
-More information in the following link:https://github.com/oracle/helidon/issues/4368[Task].
+* `CoordinatorClient` - multiple methods removed
+** Method `Single<URI> start(String, long)` - removed;
+** Method `Single<URI> start(URI, String, long)` - removed;
+** Method `Single<Optional<URI>> join(URI, long, Participant)` - removed;
+** Method `Single<Void> cancel(URI)` - removed;
+** Method `Single<Void> close(URI)` - removed;
+** Method `Single<Void> leave(URI, Participant)` - removed;
+** Method `Single<LRAStatus> status(URI)` - removed;
+* `Headers` - class removed
 
 
 === MP Messaging
 
 Deprecations in the following class:
 
+* `FormerHealthProbe` - class marked for removal
 * `MessagingCdiExtension` - Alternative methods used
-
-More information in the following link:https://github.com/oracle/helidon/issues/4369[Task].
+** Method `Map<String, Boolean> channelsLiveness()` - marked for removal;
+** Method `Map<String, Boolean> channelsReadiness()` - marked for removal;
 
 
 === JWT
@@ -236,39 +264,40 @@ More information in the following link:https://github.com/oracle/helidon/issues/
 Deprecations in the following class:
 
 * `Jwt` - Audience can be a list (since 2.4.0)
-
-More information in the following link:https://github.com/oracle/helidon/issues/4370[Task].
+** Method `Builder audience(String)` - removed, use `addAudience(String)` instead;
 
 
 === MP Metrics
 
 Deprecations in the following class:
 
-* `MetricUtil` - multiple methods
-* `MetricsCdiExtension` - multiple methods
-
-More information in the following link:https://github.com/oracle/helidon/issues/4371[Task].
+* `MetricUtil` - multiple methods removed
+** Method `public static <E extends Member & AnnotatedElement, A extends Annotation> LookupResult<A> lookupAnnotation(E, Class<? extends Annotation>, Class<?>)` - removed;
+** Method `<A extends Annotation> LookupResult<A> lookupAnnotation(AnnotatedType<?>, AnnotatedMethod<?>, Class<A>)` - removed;
+** Method `<E extends Member & AnnotatedElement> void registerMetric(MetricRegistry, E, Class<?>, Annotation, MatchingType)` - removed;
+** Method `<E extends Member & AnnotatedElement> void registerMetric(E, Class<?>, LookupResult<? extends Annotation>)` - removed;
+** Method `<E extends Member & AnnotatedElement> void registerMetric(E, Class<?>, Annotation, MatchingType)` - removed;
+* Method `MetricsCdiExtension` - multiple methods removed
+** Method `<E extends Member & AnnotatedElement> void registerMetric(E, Class<?>, LookupResult<? extends Annotation>)` - removed;
+** Method `<E extends Member & AnnotatedElement> void registerMetricInternal(List<RegistrationPrep>, E, Class<?>, LookupResult<? extends Annotation>, Executable)` - removed;
+** Method `void registerMetricsForAnnotatedSitesFromGrpcTest()` - removed;
+** Method `recordMetricAnnotatedClass(@Observes
+@WithAnnotations({Counted.class, Metered.class, Timed.class, ConcurrentGauge.class, SimplyTimed.class, Gauge.class}) ProcessAnnotatedType<?>)` - removed;
+** Method `<T extends org.eclipse.microprofile.metrics.Metric> MetricType getMetricType(T)` - removed;
 
 
 === HTTP Signature Security Provider
 
 * `backwardCompatibleEol` - set to false
 
-More information in the following link:https://github.com/oracle/helidon/issues/4372[Task].
-
 
 === Service Common
 
 Deprecations in the following class:
 
-* `HelidonRestServiceSupport` - method _configureEndpoint(Rules)_
-
-More information in the following link:https://github.com/oracle/helidon/issues/4371[Task].
+* `HelidonRestServiceSupport` - method _configureEndpoint(Rules)_ deprecated.
 
 
 === WebServer
 
-* `Static content support` in `WebServer` - moved to a separate module. Fully removed from `WebServer` module.
-
-More information in the following link:https://github.com/oracle/helidon/issues/4374[Task].
-
+* `io.helidon.webserver.staticcontent.*` in `WebServer` - moved to a separate module. Fully removed from `WebServer` module.

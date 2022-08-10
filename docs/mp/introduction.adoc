@@ -25,7 +25,8 @@ include::{rootdir}/includes/mp.adoc[]
 
 == Introduction
 
-Helidon MP is an Eclipse MicroProfile {version-lib-microprofile-api} runtime that allows the Jakarta EE community to run microservices in a portable way. It designed for ease of use and provides Spring Boot like development experience with heavily usage of dependency injection and annotations. 
+
+Helidon MP includes a compatible implementation of Eclipse MicroProfile {version-lib-microprofile-api} . MicroProfile is a set of specifications created by the Eclipse Foundation, MicroProfile Community that support application portability between different compatible implementation providers. Additionally, MicroProfile requires compatible implementations of certain component specifications from the Eclipse Jakarta EE community as well.
 
 == Supported Jakarta EE Specifications
 
@@ -146,13 +147,13 @@ Helidon MP is an Eclipse MicroProfile {version-lib-microprofile-api} runtime tha
 
 == Migration
 
-In case you need to upgrade the version of Helidon, follow the `Migration Guides`.
+Use the following migration guides to upgrade your current Helidon version.
 
-For migration from Helidon 1.x to 2.x:
+To migrate from Helidon 1.x to 2.x:
 
 * xref:{rootdir}/mp/guides/migration.adoc[Helidon MP 2x Migration Guide]
 
-For migration from Helidon 2.x to 3.x:
+To migrate from Helidon 2.x to 3.x:
 
 * xref:{rootdir}/mp/guides/migration_3x.adoc[Helidon MP 3x Migration Guide]
 

@@ -21,7 +21,7 @@ ifndef::rootdir[:rootdir: {docdir}/..]
 == Resolving javax and jakarta package compatibility issue with OCI SDK
 [[oci-compatibility]]
 
-With Helidon 3, we are now implementing the MicroProfile 5 Platform and selected Jakarta EE 9.1 specifications. We are also going away from javax.* packages and fully embracing jakarta.* package.
+With Helidon 3.x, we are now implementing the MicroProfile 5.0 Platform and selected Jakarta EE 9.1 specifications. We are also going away from javax.* packages and fully embracing jakarta.* package.
 
 However, the current release 2.37.0 of OCI Java SDK is still using javax.* packages which created compatibility issues e.g. Helidon 3 uses JAX-RS 3.0.0 (jakarta package names) and the corresponding Jersey implementation. OCI SDK 2.37.0 uses JAX-RS Client 2.1.6 (javax package names) and the corresponding Jersey implementation. Therefore, the OCI SDK is incompatible with Helidon 3 applications and any application that uses JAX-RS 3. We have filed an issue with OCI SDK team, see https://github.com/oracle/oci-java-sdk/issues/371 for details on this.
 

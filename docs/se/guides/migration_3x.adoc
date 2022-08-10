@@ -36,11 +36,11 @@ on routing builder.
 
 For further information check xref:../webserver.adoc[WebServer Documentation]
 
-== Http/2 Support
+== HTTP/2 Support
 
-Helidon support of Http/2 is no longer experimental.
+Helidon support of HTTP/2 is no longer experimental.
 
-Http/2 needed to be explicitly enabled by configuration in Helidon 2:
+HTTP/2 had to be explicitly enabled by configuration in Helidon 2.x:
 
 .Enabling Http/2 support in Helidon 2
 [source,yaml]
@@ -53,10 +53,9 @@ server:
     http2-max-content-length: 16384
 ----
 
-In Helidon 3 Http/2 is automatically enabled when artifact with Http/2 support is
-available on the classpath.
+In Helidon 3.x, HTTP/2 is automatically enabled when an artifact with HTTP/2 support is available in the classpath.
 
-.Enabling Http/2 support in Helidon 3 by adding dependency
+.Enabling HTTP/2 support in Helidon 3 by adding dependency
 [source,xml]
 ----
 <dependency>
@@ -65,10 +64,9 @@ available on the classpath.
 </dependency>
 ----
 
-With above dependency Helidon 3 supports Http/2 upgrade from Http/1,
-cleartext Http/2 without prior knowledge and Http/2 with ALPN over TLS.
+By adding the Helidon WebServer dependency in Helidon 3.x, you can upgrade HTTP/1 to HTTP/2, use without prior knowledge the HTTP/2 Cleartext (H2C) client, and extend HTTP/2 with Application-Layer Protocol Negotiation (ALPN) over TLS.
 
-In Helidon 2, max content length was configurable with `server.experimental.http2-max-content-length`, in Helidon 3 can be configured with `server.max-upgrade-content-length` globally or per socket with the same `max-upgrade-content-length` key.
+In Helidon 2.x, max content length was configurable with `server.experimental.http2-max-content-length`. In Helidon 3.x max content length can be configured with `server.max-upgrade-content-length` globally or per socket with the same `max-upgrade-content-length` key.
 
 .Max upgrade content length in Helidon 3
 [source,yaml]
@@ -79,15 +77,15 @@ server:
   max-upgrade-content-length: 16384
 ----
 
-For further information check xref:../webserver.adoc[WebServer Documentation]
+For more information, see xref:../webserver.adoc[WebServer Documentation]
 
 == WebSocket
 
 Helidon SE support is now based on the `WebSocketRouting` class which enables Helidon application to
 configure routing for both annotated and programmatic WebSocket endpoints.
-`TyrusSupport` is now deprecated. Websocket support in now placed in different artifact.
+`TyrusSupport` is now deprecated. Websocket support in now placed in a different artifact.
 
-.Helidon 2 WebSocket support dependency
+.Helidon 2.x WebSocket support dependency
 [source,xml]
 ----
 <dependency>
@@ -96,7 +94,7 @@ configure routing for both annotated and programmatic WebSocket endpoints.
 </dependency>
 ----
 
-.Helidon 3 WebSocket support dependency
+.Helidon 3.x WebSocket support dependency
 [source,xml]
 ----
 <dependency>
@@ -105,7 +103,7 @@ configure routing for both annotated and programmatic WebSocket endpoints.
 </dependency>
 ----
 
-In Helidon 2, WebSocket routing is defined by registering `TyrusSupport` as additional service:
+In Helidon 2.x, WebSocket routing is defined by registering `TyrusSupport` as an additional service:
 
 .Helidon 2 WebSocket route registering
 [source, java]
@@ -146,22 +144,42 @@ WebServer.builder()
 <2> WebSocket routing setup
 
 
-== Deprecations
+== Deprecations and API Changes
 
-- The custom Helidon OCI clients have been deprecated (link:https://github.com/oracle/helidon/pull/4015[See PR]). Use the OCI Java SDK instead. If you use Helidon MP you can inject OCI SDK clients by adding the dependency `io.helidon.integrations.oci.sdk:helidon-integrations-oci-sdk-cdi`.
+- The custom Helidon OCI clients have been deprecated. Use the OCI Java SDK instead. If you use Helidon MP you can inject OCI SDK clients by adding the dependency `io.helidon.integrations.oci.sdk:helidon-integrations-oci-sdk-cdi`.
 
 NOTE: See xref:{rootdir}/se/integrations/oci.adoc#oci-compatibility[Resolving compatibility issue with OCI SDK] for detailed information on how to work around this issue.
 
-- The MultiPart buffered readers have been deprecated (link:https://github.com/oracle/helidon/pull/4096[See PR]). Use the MultiPart stream readers instead.
+- The MultiPart buffered readers have been deprecated. Use the MultiPart stream readers instead.
 
 === Helidon Common
 
 Deprecations in the following classes:
 
 * `Resource` - old configuration approach (since 2.0)
+** Method `Optional<Resource> create(Config, String)` is removed. Use `create(Config)` instead;
 * `ThreadPoolSupplier` - Named thread pools (since 2.4.2)
+** Method `ThreadPoolSupplier create(Config)` is removed. Use `create(Config, String)` instead;
+** Method `ThreadPoolSupplier create()` is removed. Use `create(String)` instead;
 
-More information in the following link:https://github.com/oracle/helidon/issues/4363[Task].
+Configuration changes:
+
+[source, yaml]
+----
+# old (deprecated approach) - kept so existing applications may work
+resources-prefix:
+  test-1.resource-path: "src/test/resources/sample.txt"
+  test-2.resource-resource-path: "sample.txt"
+  test-3.resource-url: "file:./src/test/resources/sample.txt"
+  test-4.resource-content-plain: "content"
+  test-5.resource-content: "YWJjZGVmZ8SNxZnFvsO6xa8="
+
+# new approach that does not use a prefix
+resources:
+  test-1.resource.path: "src/test/resources/sample.txt"
+  test-2.resource.resource-path: "sample.txt"
+----
+
 
 === Media Common
 
@@ -174,53 +192,62 @@ Deprecations in the following classes:
 * `MessageBodyWriterContext` - Methods with alternatives (since 2.0)
 * `ReadableByteChannelPublisher` - Class with alternative (since 2.0)
 
-More information in the following link:https://github.com/oracle/helidon/issues/4364[Task].
-
 === Metrics
 
 Deprecations in the following classes:
 
 * `MetricsSupport` - 3 methods, replacing Config with metrics settings
-* `KeyPerformanceIndicatorMetricsSettings` - New class in metrics API, for backward compatibility only
+** Method `MetricsSupport create(MetricsSettings, RestServiceSettings)` has new parameter;
+** New method `MetricsSupport create(MetricsSettings)`;
+** New method `MetricsSupport.Builder<?> builder()`;
+* `KeyPerformanceIndicatorMetricsSettings` - new class in metrics API, for backward compatibility only
+** Interface `KeyPerformanceIndicatorMetricsSettings` - marked `for removal`;
+** Interface `KeyPerformanceIndicatorMetricsSettingsCompatibility` - marked `for removal`;
 * `RegistryFactory` - New class in metrics API, for backward compatibility only
-
-More information in the following link:https://github.com/oracle/helidon/issues/4365[Task].
+** Method `RegistryFactory create()` - marked `for removal`;
+** Method `RegistryFactory create(Config config)` - marked `for removal`;
+** Method `RegistryFactory getInstance()` - marked `for removal`;
+** Method `RegistryFactory getInstance(Config config)` - marked `for removal`;
 
 === Common Context
 
 Deprecations in the following class:
 
 * `DataPropagationProvider` - clearData should use new method
+** Method `void clearData()` - marked for removal, use `void clearData(T data)` instead;
 
-More information in the following link:https://github.com/oracle/helidon/issues/4366[Task].
 
-
-=== GRPC core
+=== GRPC Core
 
 Deprecations:
 
 * `JavaMarshaller` - removed support for JavaMarshaller
-
-More information in the following link:https://github.com/oracle/helidon/issues/4367[Task].
+** New default marshaller supplier will throw an exception if the code falls to where the `JavaMarshaller` was returned before to inform developer of the change
 
 
 === LRA
 
 Deprecations in the following class:
 
-* `CoordinatorClient` - multiple methods
-* `Headers`
-
-More information in the following link:https://github.com/oracle/helidon/issues/4368[Task].
+* `CoordinatorClient` - multiple methods removed
+** Method `Single<URI> start(String, long)` - removed;
+** Method `Single<URI> start(URI, String, long)` - removed;
+** Method `Single<Optional<URI>> join(URI, long, Participant)` - removed;
+** Method `Single<Void> cancel(URI)` - removed;
+** Method `Single<Void> close(URI)` - removed;
+** Method `Single<Void> leave(URI, Participant)` - removed;
+** Method `Single<LRAStatus> status(URI)` - removed;
+* `Headers` - class removed
 
 
 === MP Messaging
 
 Deprecations in the following class:
 
+* `FormerHealthProbe` - class marked for removal
 * `MessagingCdiExtension` - Alternative methods used
-
-More information in the following link:https://github.com/oracle/helidon/issues/4369[Task].
+** Method `Map<String, Boolean> channelsLiveness()` - marked for removal;
+** Method `Map<String, Boolean> channelsReadiness()` - marked for removal;
 
 
 === JWT
@@ -228,39 +255,40 @@ More information in the following link:https://github.com/oracle/helidon/issues/
 Deprecations in the following class:
 
 * `Jwt` - Audience can be a list (since 2.4.0)
-
-More information in the following link:https://github.com/oracle/helidon/issues/4370[Task].
+** Method `Builder audience(String)` - removed, use `addAudience(String)` instead;
 
 
 === MP Metrics
 
 Deprecations in the following class:
 
-* `MetricUtil` - multiple methods
-* `MetricsCdiExtension` - multiple methods
-
-More information in the following link:https://github.com/oracle/helidon/issues/4371[Task].
+* `MetricUtil` - multiple methods removed
+** Method `public static <E extends Member & AnnotatedElement, A extends Annotation> LookupResult<A> lookupAnnotation(E, Class<? extends Annotation>, Class<?>)` - removed;
+** Method `<A extends Annotation> LookupResult<A> lookupAnnotation(AnnotatedType<?>, AnnotatedMethod<?>, Class<A>)` - removed;
+** Method `<E extends Member & AnnotatedElement> void registerMetric(MetricRegistry, E, Class<?>, Annotation, MatchingType)` - removed;
+** Method `<E extends Member & AnnotatedElement> void registerMetric(E, Class<?>, LookupResult<? extends Annotation>)` - removed;
+** Method `<E extends Member & AnnotatedElement> void registerMetric(E, Class<?>, Annotation, MatchingType)` - removed;
+* Method `MetricsCdiExtension` - multiple methods removed
+** Method `<E extends Member & AnnotatedElement> void registerMetric(E, Class<?>, LookupResult<? extends Annotation>)` - removed;
+** Method `<E extends Member & AnnotatedElement> void registerMetricInternal(List<RegistrationPrep>, E, Class<?>, LookupResult<? extends Annotation>, Executable)` - removed;
+** Method `void registerMetricsForAnnotatedSitesFromGrpcTest()` - removed;
+** Method `recordMetricAnnotatedClass(@Observes
+@WithAnnotations({Counted.class, Metered.class, Timed.class, ConcurrentGauge.class, SimplyTimed.class, Gauge.class}) ProcessAnnotatedType<?>)` - removed;
+** Method `<T extends org.eclipse.microprofile.metrics.Metric> MetricType getMetricType(T)` - removed;
 
 
 === HTTP Signature Security Provider
 
 * `backwardCompatibleEol` - set to false
 
-More information in the following link:https://github.com/oracle/helidon/issues/4372[Task].
-
 
 === Service Common
 
 Deprecations in the following class:
 
-* `HelidonRestServiceSupport` - method _configureEndpoint(Rules)_
-
-More information in the following link:https://github.com/oracle/helidon/issues/4371[Task].
+* `HelidonRestServiceSupport` - method _configureEndpoint(Rules)_ deprecated.
 
 
 === WebServer
 
-* `Static content support` in `WebServer` - moved to a separate module. Fully removed from `WebServer` module.
-
-More information in the following link:https://github.com/oracle/helidon/issues/4374[Task].
-
+* `io.helidon.webserver.staticcontent.*` in `WebServer` - moved to a separate module. Fully removed from `WebServer` module.
