@@ -22,6 +22,9 @@ import java.util.List;
  * Weight utilities.
  */
 public final class Weights {
+    // used to identify components that do not have a weight
+    private static final double INVALID_WEIGHT = -101;
+
     private Weights() {
     }
 
@@ -117,10 +120,10 @@ public final class Weights {
                 return -1;
             }
 
-            double firstWeight = find(o1, -101);
-            double secondWeight = find(o2, -101);
+            double firstWeight = find(o1, INVALID_WEIGHT);
+            double secondWeight = find(o2, INVALID_WEIGHT);
 
-            if (firstWeight != -101 && secondWeight != -101) {
+            if (firstWeight != INVALID_WEIGHT && secondWeight != INVALID_WEIGHT) {
                 // both are weighted
                 if (firstWeight != secondWeight) {
                     // only return if they differ
@@ -128,15 +131,16 @@ public final class Weights {
                 }
             }
 
-            if (firstWeight != -101 && secondWeight != -101) {
+            if (firstWeight != INVALID_WEIGHT && secondWeight != INVALID_WEIGHT) {
+                // same weight, compare based on class name
                 return o1.getClass().getName().compareTo(o2.getClass().getName());
             }
 
             // both are non-null and at least one of them is NOT weighted
-            if (firstWeight != -101) {
+            if (firstWeight != INVALID_WEIGHT) {
                 return -1;
             }
-            if (secondWeight != -101) {
+            if (secondWeight != INVALID_WEIGHT) {
                 return 1;
             }
 
