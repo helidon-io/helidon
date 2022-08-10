@@ -29,8 +29,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
-import io.helidon.common.context.spi.DataPropagationProvider;
 import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.context.spi.DataPropagationProvider;
 
 class ContextAwareExecutorImpl implements ContextAwareExecutorService {
 

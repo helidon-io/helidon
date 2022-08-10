@@ -18,11 +18,11 @@ package io.helidon.microprofile.jwt.auth;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 
-import io.helidon.common.Prioritized;
+import io.helidon.common.Weight;
+import io.helidon.common.Weighted;
 import io.helidon.config.Config;
 import io.helidon.security.providers.common.spi.AnnotationAnalyzer;
 
-import jakarta.annotation.Priority;
 import jakarta.annotation.security.RolesAllowed;
 import org.eclipse.microprofile.auth.LoginConfig;
 
@@ -32,8 +32,8 @@ import static io.helidon.microprofile.jwt.auth.JwtAuthProviderService.PROVIDER_N
  * Implementation of {@link AnnotationAnalyzer} which checks for {@link LoginConfig} annotation if
  * JWT Authentication should be enabled.
  */
-// prioritized to run before RoleAnnotationAnalyzer, so we do not have to handle PermitAll
-@Priority(Prioritized.DEFAULT_PRIORITY - 100)
+// weighted to run before RoleAnnotationAnalyzer, so we do not have to handle PermitAll
+@Weight(Weighted.DEFAULT_WEIGHT + 100) // Helidon service loader loaded and ordered
 public class JwtAuthAnnotationAnalyzer implements AnnotationAnalyzer {
     static final String LOGIN_CONFIG_METHOD = "MP-JWT";
 

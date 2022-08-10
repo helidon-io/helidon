@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,17 +17,17 @@ package io.helidon.security.abac.role;
 
 import java.lang.reflect.Method;
 
-import io.helidon.common.Prioritized;
+import io.helidon.common.Weight;
+import io.helidon.common.Weighted;
 import io.helidon.security.providers.common.spi.AnnotationAnalyzer;
 
-import jakarta.annotation.Priority;
 import jakarta.annotation.security.PermitAll;
 
 /**
  * Implementation of {@link AnnotationAnalyzer} which checks for {@link PermitAll} annotation if
  * authentication is needed or not.
  */
-@Priority(Prioritized.DEFAULT_PRIORITY)
+@Weight(Weighted.DEFAULT_WEIGHT) // Helidon service loader loaded and ordered
 public class RoleAnnotationAnalyzer implements AnnotationAnalyzer {
 
     @Override

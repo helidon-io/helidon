@@ -21,7 +21,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.LazyValue;
-import io.helidon.common.Prioritized;
+import io.helidon.common.Weight;
+import io.helidon.common.Weighted;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.tracing.Span;
@@ -31,12 +32,11 @@ import io.helidon.tracing.spi.TracerProvider;
 
 import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.OpenTelemetry;
-import jakarta.annotation.Priority;
 
 /**
  * Service loader provider implementation for {@link io.helidon.tracing.spi.TracerProvider}.
  */
-@Priority(Prioritized.DEFAULT_PRIORITY + 1000)
+@Weight(Weighted.DEFAULT_WEIGHT - 50)
 public class OpenTelemetryTracerProvider implements TracerProvider {
     private static final System.Logger LOGGER = System.getLogger(OpenTelemetryTracerProvider.class.getName());
 

@@ -28,12 +28,12 @@
     <artifactId>helidon-common</artifactId>
     <name>Helidon Common</name>
 
+    <properties>
+        <!-- Helidon common should be backward compatible with Java 11 -->
+        <version.java>11</version.java>
+    </properties>
+
     <dependencies>
-        <dependency>
-            <!-- temporary, until we remove Priorities and Prioritized from common -->
-            <groupId>jakarta.annotation</groupId>
-            <artifactId>jakarta.annotation-api</artifactId>
-        </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.common;
+package io.helidon.config.mp;
 
 import java.util.ArrayList;
 import java.util.List;

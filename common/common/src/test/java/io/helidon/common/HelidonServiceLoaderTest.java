@@ -63,7 +63,7 @@ class HelidonServiceLoaderTest {
     @Test
     void testCustomServiceWithCustomPrio() {
         List<ServiceInterface> loaded = HelidonServiceLoader.builder(javaLoader)
-                .addService(new ServiceImpl3(), 0)
+                .addService(new ServiceImpl3(), 1024)
                 .build()
                 .asList();
 
@@ -132,7 +132,7 @@ class HelidonServiceLoaderTest {
         String TEST_STRING = "custom messsage";
 
         List<ServiceInterface> loaded = HelidonServiceLoader.builder(javaLoader)
-                .addService(new ServiceImpl2(TEST_STRING), 11)
+                .addService(new ServiceImpl2(TEST_STRING), 1024)
                 .replaceImplementations(false)
                 .build()
                 .asList();

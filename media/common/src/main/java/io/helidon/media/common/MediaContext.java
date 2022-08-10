@@ -109,9 +109,9 @@ public final class MediaContext {
         private static final String SERVICE_NAME = "name";
         private static final String DEFAULTS_NAME = "defaults";
 
-        private static final int DEFAULTS_PRIORITY = 100;
-        private static final int BUILDER_PRIORITY = 200;
-        private static final int LOADER_PRIORITY = 300;
+        private static final int DEFAULTS_WEIGHT = 300;
+        private static final int BUILDER_WEIGHT = 200;
+        private static final int LOADER_WEIGHT = 100;
 
         private final HelidonServiceLoader.Builder<MediaSupportProvider> services = HelidonServiceLoader
                 .builder(ServiceLoader.load(MediaSupportProvider.class));
@@ -279,9 +279,9 @@ public final class MediaContext {
                 this.services.useSystemServiceLoader(discoverServices);
             }
             if (registerDefaults) {
-                this.services.addService(new DefaultsProvider(), DEFAULTS_PRIORITY);
+                this.services.addService(new DefaultsProvider(), DEFAULTS_WEIGHT);
             }
-            this.services.defaultPriority(LOADER_PRIORITY)
+            this.services.defaultWeight(LOADER_WEIGHT)
                     .addService(config -> new MediaSupport() {
                         @Override
                         public void register(MessageBodyReaderContext readerContext, MessageBodyWriterContext writerContext) {
@@ -290,13 +290,13 @@ public final class MediaContext {
                             builderWriters.forEach(writerContext::registerWriter);
                             builderStreamWriter.forEach(writerContext::registerWriter);
                         }
-                    }, BUILDER_PRIORITY)
+                    }, BUILDER_WEIGHT)
                     .addService(config -> new MediaSupport() {
                         @Override
                         public void register(MessageBodyReaderContext readerContext, MessageBodyWriterContext writerContext) {
                             mediaSupports.forEach(it -> it.register(readerContext, writerContext));
                         }
-                    }, BUILDER_PRIORITY)
+                    }, BUILDER_WEIGHT)
                     .build()
                     .asList()
                     .stream()
@@ -311,7 +311,7 @@ public final class MediaContext {
 
         private void filterServices() {
             HelidonServiceLoader.builder(ServiceLoader.load(MediaSupportProvider.class))
-                    .defaultPriority(LOADER_PRIORITY)
+                    .defaultWeight(LOADER_WEIGHT)
                     .build()
                     .asList()
                     .stream()

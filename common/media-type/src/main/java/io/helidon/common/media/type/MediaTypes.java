@@ -42,8 +42,8 @@ public final class MediaTypes {
     static {
         // and load media type detectors
         DETECTORS = HelidonServiceLoader.builder(ServiceLoader.load(MediaTypeDetector.class))
-                .addService(new BuiltInsDetector(), 100100)
-                .addService(new CustomDetector(), 100000)
+                .addService(new BuiltInsDetector(), 10)
+                .addService(new CustomDetector(), 50)
                 .build()
                 .asList();
     }

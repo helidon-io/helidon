@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,15 +21,15 @@ import java.util.Map;
 import java.util.OptionalInt;
 import java.util.function.Function;
 
+import io.helidon.common.Weight;
+import io.helidon.common.Weighted;
 import io.helidon.config.Config;
 import io.helidon.config.spi.ConfigMapperProvider;
-
-import jakarta.annotation.Priority;
 
 /**
  * Registers config mapper for {@link OptionalInt}, {@link Integer} and {@link java.math.BigInteger}.
  */
-@Priority(150) // lower than default priority
+@Weight(Weighted.DEFAULT_WEIGHT - 50) // lower than default priority
 public class Mappers2Priority150ConfigMapperProvider implements ConfigMapperProvider {
 
     @Override

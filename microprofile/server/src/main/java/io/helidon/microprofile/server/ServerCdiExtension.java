@@ -39,10 +39,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import io.helidon.common.Prioritized;
 import io.helidon.common.configurable.ServerThreadPoolSupplier;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
+import io.helidon.config.mp.Prioritized;
 import io.helidon.microprofile.cdi.BuildTimeStart;
 import io.helidon.microprofile.cdi.RuntimeStart;
 import io.helidon.webserver.KeyPerformanceIndicatorSupport;

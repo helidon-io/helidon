@@ -18,7 +18,7 @@ package io.helidon.common;
 /**
  * A service implementation.
  */
-public class ServiceImpl2 implements ServiceInterface, Prioritized {
+public class ServiceImpl2 implements ServiceInterface, Weighted {
     private final String message;
 
     public ServiceImpl2() {
@@ -35,7 +35,7 @@ public class ServiceImpl2 implements ServiceInterface, Prioritized {
     }
 
     @Override
-    public int priority() {
-        return 12;
+    public double weight() {
+        return 417;
     }
 }

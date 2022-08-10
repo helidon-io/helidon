@@ -17,7 +17,8 @@ package io.helidon.tracing.opentracing;
 
 import java.util.Optional;
 
-import io.helidon.common.Prioritized;
+import io.helidon.common.Weight;
+import io.helidon.common.Weighted;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.Tracer;
 import io.helidon.tracing.TracerBuilder;
@@ -25,13 +26,12 @@ import io.helidon.tracing.spi.TracerProvider;
 
 import io.opentracing.noop.NoopSpan;
 import io.opentracing.util.GlobalTracer;
-import jakarta.annotation.Priority;
 
 /**
  * {@link java.util.ServiceLoader} service implementation of {@link io.helidon.tracing.spi.TracerProvider} for Open Tracing
  * tracers.
  */
-@Priority(Prioritized.DEFAULT_PRIORITY + 2000)
+@Weight(Weighted.DEFAULT_WEIGHT - 50) // low weight, so it is easy to override
 public class OpenTracingTracerProvider implements TracerProvider {
     @Override
     public TracerBuilder<?> createBuilder() {

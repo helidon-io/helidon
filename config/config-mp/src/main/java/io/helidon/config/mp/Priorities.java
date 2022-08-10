@@ -13,12 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.common;
+package io.helidon.config.mp;
 
 import java.util.Comparator;
 import java.util.List;
-
-import io.helidon.common.Prioritized;
 
 import jakarta.annotation.Priority;
 
@@ -47,7 +45,7 @@ public final class Priorities {
 
     /**
      * Find priority for an instance.
-     * First checks if instance is {@link io.helidon.common.Prioritized}. If so,
+     * First checks if instance is {@link Prioritized}. If so,
      * uses the value from it.
      * Then checks for {@link Priority} annotation.
      * If none of the above is found, returns the default priority.
@@ -81,7 +79,7 @@ public final class Priorities {
     /**
      * Sort the list based on priorities.
      * <ul>
-     * <li>If element implements {@link io.helidon.common.Prioritized}, uses its priority.</li>
+     * <li>If element implements {@link Prioritized}, uses its priority.</li>
      * <li>If element is a class and has annotation {@link jakarta.annotation.Priority}, uses its priority</li>
      * <li>If element is any object and its class has annotation {@link jakarta.annotation.Priority}, uses its priority</li>
      * </ul>
@@ -94,7 +92,7 @@ public final class Priorities {
 
     /**
      * Returns a comparator for two objects, the classes for which are implementations of
-     * {@link io.helidon.common.Prioritized}, and/or optionally annotated with {@link jakarta.annotation.Priority}
+     * {@link Prioritized}, and/or optionally annotated with {@link jakarta.annotation.Priority}
      * and which applies a specified default priority if either or both classes lack the annotation.
      *
      * @param <S> type of object being compared

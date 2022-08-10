@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,6 @@
 package io.helidon.grpc.core;
 
 import java.util.Arrays;
-
-import io.helidon.common.Prioritized;
 
 import jakarta.annotation.Priority;
 import org.junit.jupiter.api.Test;
@@ -145,21 +143,12 @@ public class PriorityBagTest {
     }
 
 
-    public static class PrioritizedValue
-            implements Prioritized {
-        @Override
-        public int priority() {
-            return 2;
-        }
+    @Priority(2)
+    public static class PrioritizedValue {
     }
 
 
-    @Priority(0)
-    public static class AnnotatedPrioritizedValue
-            implements Prioritized {
-        @Override
-        public int priority() {
-            return 2;
-        }
+    @Priority(2)
+    public static class AnnotatedPrioritizedValue {
     }
 }

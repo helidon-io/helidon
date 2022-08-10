@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +19,11 @@ package io.helidon.config;
 import java.util.Properties;
 import java.util.Set;
 
+import io.helidon.common.Weight;
+import io.helidon.common.Weighted;
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigParserException;
-
-import jakarta.annotation.Priority;
 
 /**
  * {@link ConfigParser} implementation that parses Java Properties content.
@@ -33,13 +33,13 @@ import jakarta.annotation.Priority;
  * if not {@link io.helidon.config.Config.Builder#disableParserServices() disabled}.
  * And of course it can be {@link io.helidon.config.Config.Builder#addParser(ConfigParser) registered programmatically}.
  * <p>
- * Priority of the {@code PropertiesConfigParser} to be used by {@link io.helidon.config.Config.Builder},
- * if loaded automatically as a {@link java.util.ServiceLoader service}, is {@value PRIORITY}.
+ * Weight of the {@code PropertiesConfigParser} to be used by {@link io.helidon.config.Config.Builder},
+ * if loaded automatically as a {@link java.util.ServiceLoader service}, is {@value #WEIGHT}.
  *
  * @see io.helidon.config.Config.Builder#addParser(ConfigParser)
  * @see io.helidon.config.Config.Builder#disableParserServices()
  */
-@Priority(PropertiesConfigParser.PRIORITY)
+@Weight(PropertiesConfigParser.WEIGHT)
 public class PropertiesConfigParser implements ConfigParser {
 
     /**
@@ -50,9 +50,15 @@ public class PropertiesConfigParser implements ConfigParser {
     /**
      * Priority of the parser used if registered by {@link io.helidon.config.Config.Builder} automatically.
      */
-    public static final int PRIORITY = ConfigParser.PRIORITY + 100;
+    public static final double WEIGHT = Weighted.DEFAULT_WEIGHT - 10;
 
     private static final Set<String> SUPPORTED_MEDIA_TYPES = Set.of(MEDIA_TYPE_TEXT_JAVA_PROPERTIES);
+
+    /**
+     * Required public constructor for {@link java.util.ServiceLoader}.
+     */
+    public PropertiesConfigParser() {
+    }
 
     @Override
     public Set<String> supportedMediaTypes() {

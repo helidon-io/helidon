@@ -24,6 +24,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 
+import io.helidon.common.Weight;
+import io.helidon.common.Weighted;
 import io.helidon.config.ConfigException;
 import io.helidon.config.spi.ConfigNode.ListNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
@@ -36,7 +38,6 @@ import com.typesafe.config.ConfigList;
 import com.typesafe.config.ConfigObject;
 import com.typesafe.config.ConfigParseOptions;
 import com.typesafe.config.ConfigResolveOptions;
-import jakarta.annotation.Priority;
 
 /**
  * Typesafe (Lightbend) Config (HOCON) {@link ConfigParser} implementation that supports following media types:
@@ -49,12 +50,12 @@ import jakarta.annotation.Priority;
  * And of course it can be {@link io.helidon.config.Config.Builder#addParser(ConfigParser) registered programmatically}.
  * <p>
  * Priority of the {@code HoconConfigParser} to be used by {@link io.helidon.config.Config.Builder},
- * if loaded automatically as a {@link java.util.ServiceLoader service}, is {@value PRIORITY}.
+ * if loaded automatically as a {@link java.util.ServiceLoader service}, is {@value WEIGHT}.
  *
  * @see io.helidon.config.Config.Builder#addParser(ConfigParser)
  * @see io.helidon.config.Config.Builder#disableParserServices()
  */
-@Priority(HoconConfigParser.PRIORITY)
+@Weight(HoconConfigParser.WEIGHT)
 public class HoconConfigParser implements ConfigParser {
 
     /**
@@ -68,7 +69,8 @@ public class HoconConfigParser implements ConfigParser {
     /**
      * Priority of the parser used if registered by {@link io.helidon.config.Config.Builder} automatically.
      */
-    public static final int PRIORITY = ConfigParser.PRIORITY + 100;
+    public static final double WEIGHT = Weighted.DEFAULT_WEIGHT - 10;
+
     private static final List<String> SUPPORTED_SUFFIXES = List.of("json", "conf");
     private static final Set<String> SUPPORTED_MEDIA_TYPES =
             Set.of(MEDIA_TYPE_APPLICATION_HOCON, MEDIA_TYPE_APPLICATION_JSON);

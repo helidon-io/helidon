@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,15 +21,15 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.logging.Logger;
 
+import io.helidon.common.Weight;
+import io.helidon.common.Weighted;
 import io.helidon.config.Config;
 import io.helidon.config.spi.ConfigMapperProvider;
-
-import jakarta.annotation.Priority;
 
 /**
  * Registers Config mappers for {@link Logger} and {@link Locale}.
  */
-@Priority(90) // higher than default
+@Weight(Weighted.DEFAULT_WEIGHT + 10) // higher than default
 public class Mappers1ConfigMapperProvider implements ConfigMapperProvider {
 
     @Override

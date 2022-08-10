@@ -19,8 +19,8 @@ import java.util.ServiceLoader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.common.LazyValue;
 import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.LazyValue;
 import io.helidon.metrics.api.MetricsSettings;
 import io.helidon.metrics.serviceapi.spi.MetricsSupportProvider;
 import io.helidon.servicecommon.rest.RestServiceSettings;
@@ -46,7 +46,7 @@ class MetricsSupportManager {
 
     private static MetricsSupportProvider<?, ?> loadMetricsSupportProvider() {
         MetricsSupportProvider<?, ?> provider = HelidonServiceLoader.builder(ServiceLoader.load(MetricsSupportProvider.class))
-                .addService(new MinimalMetricsSupportProviderImpl(), Integer.MAX_VALUE)
+                .addService(new MinimalMetricsSupportProviderImpl(), 0)
                 .build()
                 .asList()
                 .get(0);

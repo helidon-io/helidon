@@ -33,7 +33,7 @@ final class TracerProviderHelper {
         TracerProvider provider = null;
         try {
             List<TracerProvider> allProviders = HelidonServiceLoader.builder(ServiceLoader.load(TracerProvider.class))
-                    .addService(new NoOpTracerProvider(), 100000)
+                    .addService(new NoOpTracerProvider(), 0)
                     .build()
                     .asList();
 

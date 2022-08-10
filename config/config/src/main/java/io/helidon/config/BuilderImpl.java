@@ -32,9 +32,9 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import io.helidon.common.GenericType;
-import io.helidon.common.Prioritized;
 import io.helidon.common.HelidonServiceLoader;
-import io.helidon.common.Priorities;
+import io.helidon.common.Weighted;
+import io.helidon.common.Weights;
 import io.helidon.config.ConfigMapperManager.MapperProviders;
 import io.helidon.config.spi.ConfigContext;
 import io.helidon.config.spi.ConfigFilter;
@@ -338,10 +338,10 @@ class BuilderImpl implements Config.Builder {
         // and yet we can still define a service that is only used after these (such as config beans)
         prioritizedMappers
                 .add(new HelidonMapperWrapper(new InternalMapperProvider(ConfigMappers.essentialMappers(),
-                                                                         "essential"), 200));
+                                                                         "essential"), 1));
         prioritizedMappers
                 .add(new HelidonMapperWrapper(new InternalMapperProvider(ConfigMappers.builtInMappers(),
-                                                                         "built-in"), 200));
+                                                                         "built-in"), 1));
     }
 
     @Override
@@ -475,7 +475,7 @@ class BuilderImpl implements Config.Builder {
             loadMapperServices(prioritizedMappers);
         }
         addBuiltInMapperServices(prioritizedMappers);
-        Priorities.sort(prioritizedMappers);
+        Collections.sort(prioritizedMappers);
 
         // as the mapperProviders.add adds the last as first, we need to reverse order
         Collections.reverse(prioritizedMappers);
@@ -492,14 +492,12 @@ class BuilderImpl implements Config.Builder {
 
     private static void loadMapperServices(List<PrioritizedMapperProvider> providers) {
         HelidonServiceLoader.builder(ServiceLoader.load(ConfigMapperProvider.class))
-                .defaultPriority(ConfigMapperProvider.PRIORITY)
                 .build()
-                .forEach(mapper -> providers.add(new HelidonMapperWrapper(mapper, Priorities.find(mapper, 100))));
+                .forEach(mapper -> providers.add(new HelidonMapperWrapper(mapper, Weights.find(mapper, 100))));
     }
 
     private static List<ConfigParser> loadParserServices() {
         return HelidonServiceLoader.builder(ServiceLoader.load(ConfigParser.class))
-                .defaultPriority(ConfigParser.PRIORITY)
                 .build()
                 .asList();
     }
@@ -523,12 +521,15 @@ class BuilderImpl implements Config.Builder {
          * Map each autoloaded ConfigFilter to a filter-providing function.
          */
         HelidonServiceLoader.builder(ServiceLoader.load(ConfigFilter.class))
-                .defaultPriority(ConfigFilter.PRIORITY)
                 .build()
                 .asList()
                 .stream()
                 .map(LoadedFilterProvider::new)
                 .forEach(this::addFilter);
+    }
+
+    private interface PrioritizedMapperProvider extends Weighted,
+                                                        ConfigMapperProvider {
     }
 
     /**
@@ -619,22 +620,18 @@ class BuilderImpl implements Config.Builder {
         }
     }
 
-    private interface PrioritizedMapperProvider extends Prioritized,
-                                                        ConfigMapperProvider {
-    }
-
     private static final class HelidonMapperWrapper implements PrioritizedMapperProvider {
         private final ConfigMapperProvider delegate;
-        private final int priority;
+        private final double weight;
 
-        private HelidonMapperWrapper(ConfigMapperProvider delegate, int priority) {
+        private HelidonMapperWrapper(ConfigMapperProvider delegate, double weight) {
             this.delegate = delegate;
-            this.priority = priority;
+            this.weight = weight;
         }
 
         @Override
-        public int priority() {
-            return priority;
+        public double weight() {
+            return weight;
         }
 
         @Override
@@ -659,56 +656,56 @@ class BuilderImpl implements Config.Builder {
 
         @Override
         public String toString() {
-            return priority + ": " + delegate;
+            return weight + ": " + delegate;
         }
     }
 
-    private static final class PrioritizedConfigSource implements Prioritized {
+    private static final class WeightedConfigSource implements Weighted {
         private final HelidonSourceWithPriority source;
         private final ConfigContext context;
 
-        private PrioritizedConfigSource(HelidonSourceWithPriority source, ConfigContext context) {
+        private WeightedConfigSource(HelidonSourceWithPriority source, ConfigContext context) {
             this.source = source;
             this.context = context;
+        }
+
+        @Override
+        public double weight() {
+            return source.weight(context);
         }
 
         private ConfigSourceRuntimeImpl runtime(ConfigContextImpl context) {
             return context.sourceRuntimeBase(source.unwrap());
         }
-
-        @Override
-        public int priority() {
-            return source.priority(context);
-        }
     }
 
     private static final class HelidonSourceWithPriority {
         private final ConfigSource configSource;
-        private final Integer explicitPriority;
+        private final Double explicitWeight;
 
-        private HelidonSourceWithPriority(ConfigSource configSource, Integer explicitPriority) {
+        private HelidonSourceWithPriority(ConfigSource configSource, Double explicitWeight) {
             this.configSource = configSource;
-            this.explicitPriority = explicitPriority;
+            this.explicitWeight = explicitWeight;
         }
 
         ConfigSource unwrap() {
             return configSource;
         }
 
-        int priority(ConfigContext context) {
+        double weight(ConfigContext context) {
             // first - explicit priority. If configured by user, return it
-            if (null != explicitPriority) {
-                return explicitPriority;
+            if (null != explicitWeight) {
+                return explicitWeight;
             }
 
             // ordinal from data
             return context.sourceRuntime(configSource)
                     .node("config_priority")
                     .flatMap(node -> node.value()
-                            .map(Integer::parseInt))
+                            .map(Double::parseDouble))
                     .orElseGet(() -> {
                         // the config source does not have an ordinal configured, I need to get it from other places
-                        return Priorities.find(configSource, 100);
+                        return Weights.find(configSource, Weighted.DEFAULT_WEIGHT);
                     });
         }
     }

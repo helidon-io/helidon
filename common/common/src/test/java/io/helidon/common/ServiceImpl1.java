@@ -15,12 +15,10 @@
  */
 package io.helidon.common;
 
-import jakarta.annotation.Priority;
-
 /**
  * A service implementation.
  */
-@Priority(47)
+@Weight(12)
 public class ServiceImpl1 implements ServiceInterface {
     @Override
     public String message() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,15 +20,15 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.function.Function;
 
+import io.helidon.common.Weight;
+import io.helidon.common.Weighted;
 import io.helidon.config.Config;
 import io.helidon.config.spi.ConfigMapperProvider;
-
-import jakarta.annotation.Priority;
 
 /**
  * Registers Config mappers for {@link Locale}.
  */
-@Priority(50) // higher than default priority
+@Weight(Weighted.DEFAULT_WEIGHT + 50) // higher than default priority
 public class Mappers2Priority50ConfigMapperProvider implements ConfigMapperProvider {
 
     @Override
