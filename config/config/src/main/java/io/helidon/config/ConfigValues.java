@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -173,6 +173,11 @@ public final class ConfigValues {
         Supplier<Optional<Map<String, String>>> valueSupplier = () -> {
             Map<?, ?> map = mapperManager.map(config, Map.class);
 
+            map = map.entrySet().stream().collect(
+                    Collectors.toMap(
+                            entry -> Config.Key.unescapeName(entry.getKey().toString()), entry -> entry.getValue()
+                    )
+            );
             if (map instanceof ConfigMappers.StringMap) {
                 return Optional.of((ConfigMappers.StringMap) map);
             }
