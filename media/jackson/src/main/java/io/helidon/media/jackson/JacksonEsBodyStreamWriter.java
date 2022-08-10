@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,9 @@ import java.util.concurrent.Flow;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
-import io.helidon.common.http.MediaType;
+import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.media.type.MediaType;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.reactive.Multi;
 import io.helidon.media.common.MessageBodyStreamWriter;
 import io.helidon.media.common.MessageBodyWriterContext;
@@ -31,12 +33,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Message body stream writer supporting object binding with Jackson.
- * This writer is for {@link MediaType#TEXT_EVENT_STREAM} with no element-type parameter or element-type="application/json".
+ * This writer is for {@link io.helidon.common.media.type.MediaTypes#TEXT_EVENT_STREAM} with no element-type parameter
+ * or element-type="application/json".
  */
 class JacksonEsBodyStreamWriter implements MessageBodyStreamWriter<Object> {
 
-    private static final MediaType TEXT_EVENT_STREAM_JSON = MediaType
-            .parse("text/event-stream;element-type=\"application/json\"");
+    private static final HttpMediaType TEXT_EVENT_STREAM_JSON = HttpMediaType
+            .create("text/event-stream;element-type=\"application/json\"");
     private static final byte[] DATA = "data: ".getBytes(StandardCharsets.UTF_8);
     private static final byte[] NL = "\n\n".getBytes(StandardCharsets.UTF_8);
 
@@ -57,7 +60,7 @@ class JacksonEsBodyStreamWriter implements MessageBodyStreamWriter<Object> {
         }
         return context.contentType()
                 .or(() -> findMediaType(context))
-                .filter(mediaType -> mediaType.equals(TEXT_EVENT_STREAM_JSON) || mediaType.equals(MediaType.TEXT_EVENT_STREAM))
+                .filter(mediaType -> mediaType.equals(TEXT_EVENT_STREAM_JSON) || mediaType.equals(MediaTypes.TEXT_EVENT_STREAM))
                 .map(it -> PredicateResult.COMPATIBLE)
                 .orElse(PredicateResult.NOT_SUPPORTED);
     }
@@ -78,9 +81,9 @@ class JacksonEsBodyStreamWriter implements MessageBodyStreamWriter<Object> {
                 );
     }
 
-    private Optional<MediaType> findMediaType(MessageBodyWriterContext context) {
+    private Optional<HttpMediaType> findMediaType(MessageBodyWriterContext context) {
         try {
-            return Optional.of(context.findAccepted(MediaType.JSON_EVENT_STREAM_PREDICATE, TEXT_EVENT_STREAM_JSON));
+            return Optional.of(context.findAccepted(HttpMediaType.JSON_EVENT_STREAM_PREDICATE, TEXT_EVENT_STREAM_JSON));
         } catch (IllegalStateException ignore) {
             //Not supported. Ignore exception.
             return Optional.empty();

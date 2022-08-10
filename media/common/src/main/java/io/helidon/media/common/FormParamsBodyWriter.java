@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,30 +19,31 @@ import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Flow;
 import java.util.function.Function;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
-import io.helidon.common.http.FormParams;
-import io.helidon.common.http.MediaType;
+import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.mapper.Mapper;
+import io.helidon.common.media.type.MediaType;
+import io.helidon.common.media.type.MediaTypes;
+import io.helidon.common.parameters.Parameters;
 import io.helidon.common.reactive.Single;
 
 /**
- * Message body writer for {@link FormParams}.
+ * Message body writer for {@link Parameters} (Form parameters).
  */
-class FormParamsBodyWriter implements MessageBodyWriter<FormParams> {
+class FormParamsBodyWriter implements MessageBodyWriter<Parameters> {
 
     private static final FormParamsBodyWriter DEFAULT = new FormParamsBodyWriter();
-    private static final MediaType DEFAULT_FORM_MEDIA_TYPE = MediaType.APPLICATION_FORM_URLENCODED;
+    private static final HttpMediaType DEFAULT_FORM_MEDIA_TYPE = HttpMediaType.create(MediaTypes.APPLICATION_FORM_URLENCODED);
 
     private FormParamsBodyWriter() {
     }
 
-    static MessageBodyWriter<FormParams> create() {
+    static MessageBodyWriter<Parameters> create() {
         return DEFAULT;
     }
 
@@ -51,26 +52,27 @@ class FormParamsBodyWriter implements MessageBodyWriter<FormParams> {
         //User didn't have to set explicit content type. In that case set default and class filters out unsupported types.
         return context.contentType()
                 .or(() -> Optional.of(DEFAULT_FORM_MEDIA_TYPE))
-                .filter(mediaType -> mediaType == MediaType.APPLICATION_FORM_URLENCODED
-                        || mediaType == MediaType.TEXT_PLAIN)
-                .map(it -> PredicateResult.supports(FormParams.class, type))
+                .map(HttpMediaType::mediaType)
+                .filter(mediaType -> mediaType == MediaTypes.APPLICATION_FORM_URLENCODED
+                        || mediaType == MediaTypes.TEXT_PLAIN)
+                .map(it -> PredicateResult.supports(Parameters.class, type))
                 .orElse(PredicateResult.NOT_SUPPORTED);
     }
 
     @Override
-    public Flow.Publisher<DataChunk> write(Single<? extends FormParams> single,
-                                           GenericType<? extends FormParams> type,
+    public Flow.Publisher<DataChunk> write(Single<? extends Parameters> single,
+                                           GenericType<? extends Parameters> type,
                                            MessageBodyWriterContext context) {
-        MediaType mediaType = context.contentType().orElseGet(() -> {
+        HttpMediaType mediaType = context.contentType().orElseGet(() -> {
             context.contentType(DEFAULT_FORM_MEDIA_TYPE);
             return DEFAULT_FORM_MEDIA_TYPE;
         });
         Charset charset = mediaType.charset().map(Charset::forName).orElse(StandardCharsets.UTF_8);
 
-        return single.flatMap(new FormParamsToChunks(mediaType, charset));
+        return single.flatMap(new FormParamsToChunks(mediaType.mediaType(), charset));
     }
 
-    static final class FormParamsToChunks implements Mapper<FormParams, Flow.Publisher<DataChunk>> {
+    static final class FormParamsToChunks implements Mapper<Parameters, Flow.Publisher<DataChunk>> {
 
         private final MediaType mediaType;
         private final Charset charset;
@@ -81,27 +83,27 @@ class FormParamsBodyWriter implements MessageBodyWriter<FormParams> {
         }
 
         @Override
-        public Flow.Publisher<DataChunk> map(FormParams formParams) {
+        public Flow.Publisher<DataChunk> map(Parameters formParams) {
             return ContentWriters.writeCharSequence(transform(formParams), charset);
         }
 
-        private String transform(FormParams formParams) {
+        private String transform(Parameters formParams) {
             char separator = separator();
             Function<String, String> encoder = encoder();
             StringBuilder result = new StringBuilder();
-            for (Map.Entry<String, List<String>> entry : formParams.toMap().entrySet()) {
-                List<String> values = entry.getValue();
+            for (String name : formParams.names()) {
+                List<String> values = formParams.all(name);
                 if (values.size() == 0) {
                     if (result.length() > 0) {
                         result.append(separator);
                     }
-                    result.append(encoder.apply(entry.getKey()));
+                    result.append(encoder.apply(name));
                 } else {
                     for (String value : values) {
                         if (result.length() > 0) {
                             result.append(separator);
                         }
-                        result.append(encoder.apply(entry.getKey()));
+                        result.append(encoder.apply(name));
                         result.append("=");
                         result.append(encoder.apply(value));
                     }
@@ -111,7 +113,7 @@ class FormParamsBodyWriter implements MessageBodyWriter<FormParams> {
         }
 
         private char separator() {
-            if (mediaType == MediaType.TEXT_PLAIN) {
+            if (mediaType == MediaTypes.TEXT_PLAIN) {
                 return '\n';
             } else {
                 return '&';
@@ -119,7 +121,7 @@ class FormParamsBodyWriter implements MessageBodyWriter<FormParams> {
         }
 
         private Function<String, String> encoder() {
-            if (mediaType == MediaType.TEXT_PLAIN) {
+            if (mediaType == MediaTypes.TEXT_PLAIN) {
                 return (s) -> s;
             } else {
                 return (s) -> URLEncoder.encode(s, charset);

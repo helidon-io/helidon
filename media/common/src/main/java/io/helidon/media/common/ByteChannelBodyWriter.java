@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,8 @@ import java.util.function.Function;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
-import io.helidon.common.http.MediaType;
 import io.helidon.common.mapper.Mapper;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.reactive.IoMulti;
 import io.helidon.common.reactive.RetrySchema;
 import io.helidon.common.reactive.Single;
@@ -59,7 +59,7 @@ final class ByteChannelBodyWriter implements MessageBodyWriter<ReadableByteChann
                                       GenericType<? extends ReadableByteChannel> type,
                                       MessageBodyWriterContext context) {
 
-        context.contentType(MediaType.APPLICATION_OCTET_STREAM);
+        context.contentType(MediaTypes.APPLICATION_OCTET_STREAM);
         return content.flatMap(mapper);
     }
 

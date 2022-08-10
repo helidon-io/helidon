@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@ import java.nio.charset.Charset;
 import java.nio.charset.UnsupportedCharsetException;
 import java.util.Optional;
 
-import io.helidon.common.http.MediaType;
-import io.helidon.common.http.ReadOnlyParameters;
+import io.helidon.common.http.HeadersWritable;
+import io.helidon.common.http.HttpMediaType;
 
 import org.junit.jupiter.api.Test;
 
@@ -72,13 +72,13 @@ public class ContentCharsetTest {
      * @return MessageBodyReaderContext
      */
     private MessageBodyReaderContext readerContext(String contentTypeValue) {
-        Optional<MediaType> contentType;
+        Optional<HttpMediaType> contentType;
         if (contentTypeValue == null) {
             contentType = Optional.empty();
         } else {
-            contentType = Optional.of(MediaType.parse(contentTypeValue));
+            contentType = Optional.of(HttpMediaType.create(contentTypeValue));
         }
         return MessageBodyReaderContext.create((MediaContext) null, null,
-                                               ReadOnlyParameters.empty(), contentType);
+                                               HeadersWritable.create(), contentType);
     }
 }

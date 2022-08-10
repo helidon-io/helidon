@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 
-import io.helidon.common.http.FormParams;
+import io.helidon.common.parameters.Parameters;
 import io.helidon.common.reactive.RetrySchema;
 import io.helidon.config.Config;
 
@@ -136,20 +136,20 @@ public class DefaultMediaSupport implements MediaSupport {
     }
 
     /**
-     * Return {@link FormParams} writer instance.
+     * Return {@link Parameters} writer instance.
      *
-     * @return {@link FormParams} writer
+     * @return {@link Parameters} writer
      */
-    public static MessageBodyWriter<FormParams> formParamWriter() {
+    public static MessageBodyWriter<Parameters> formParamWriter() {
         return FormParamsBodyWriter.create();
     }
 
     /**
-     * Return {@link FormParams} reader instance.
+     * Return {@link Parameters} reader instance.
      *
-     * @return {@link FormParams} reader
+     * @return {@link Parameters} reader
      */
-    public static MessageBodyReader<FormParams> formParamReader() {
+    public static MessageBodyReader<Parameters> formParamReader() {
         return FormParamsBodyReader.create();
     }
 
