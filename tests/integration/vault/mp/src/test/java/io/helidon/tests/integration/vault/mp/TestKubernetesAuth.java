@@ -58,8 +58,8 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
-import static io.helidon.config.testing.OptionalMatcher.empty;
-import static io.helidon.config.testing.OptionalMatcher.present;
+import static io.helidon.common.testing.junit5.OptionalMatcher.optionalEmpty;
+import static io.helidon.common.testing.junit5.OptionalMatcher.optionalPresent;
 import static io.helidon.common.testing.junit5.OptionalMatcher.optionalValue;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -136,13 +136,13 @@ class TestKubernetesAuth {
 
         try {
             Optional<Kv2Secret> maybeSecret = secrets.get("nested/path/secret");
-            assertThat(maybeSecret, is(present()));
+            assertThat(maybeSecret, is(optionalPresent()));
             Kv2Secret theSecret = maybeSecret.get();
-            assertThat(theSecret.value("first"), value(is("a value")));
+            assertThat(theSecret.value("first"), optionalValue(is("a value")));
             assertThat(theSecret.metadata().version(), is(1));
             assertThat(theSecret.metadata().deleted(), is(false));
             assertThat(theSecret.metadata().destroyed(), is(false));
-            assertThat(theSecret.metadata().deletedTime(), is(empty()));
+            assertThat(theSecret.metadata().deletedTime(), is(optionalEmpty()));
             assertThat(theSecret.metadata().createdTime(), notNullValue());
         } finally {
             // we want to remote the secret even if validation fails
