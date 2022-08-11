@@ -25,9 +25,24 @@ import io.helidon.common.http.Http;
  */
 public class Http1Route extends HandlerRoute implements HttpRoute {
 
+    /**
+     * Create a new route.
+     *
+     * @param method supported method
+     * @param path request path (exact)
+     * @param handler handle the request
+     */
     protected Http1Route(Http.Method method, String path, Handler handler) {
         super(List.of(), PathMatcher.create(path), handler, method);
     }
+
+    /**
+     * Create a new route.
+     *
+     * @param pathMatcher match path of the request
+     * @param handler handle the request
+     * @param methods supported methods
+     */
     protected Http1Route(PathMatcher pathMatcher, Handler handler, Http.Method... methods) {
         super(List.of(), pathMatcher, handler, methods);
     }
@@ -57,7 +72,7 @@ public class Http1Route extends HandlerRoute implements HttpRoute {
      *
      * @param pathMatcher URI Path Matcher
      * @param handler handler
-     * @param methods HTTP {@link io.helidon.common.http.Http.RequestMethod methods} handled by this route
+     * @param methods HTTP {@link io.helidon.common.http.Http.Method methods} handled by this route
      * @return a new HTTP/1.1 specific route
      */
     public static Http1Route route(PathMatcher pathMatcher, Handler handler, Http.Method... methods) {

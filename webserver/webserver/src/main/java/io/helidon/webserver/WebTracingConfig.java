@@ -42,6 +42,12 @@ import io.helidon.tracing.config.TracingConfigUtil;
  */
 public abstract class WebTracingConfig {
     /**
+     * No side effects.
+     */
+    protected WebTracingConfig() {
+    }
+
+    /**
      * Tracing configuration.
      * This is the configuration set up for the whole server. There can also be a path specific configuration available
      * through {@link #pathConfigs()}.

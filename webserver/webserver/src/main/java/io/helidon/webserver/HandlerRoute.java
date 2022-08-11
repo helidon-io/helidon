@@ -135,7 +135,7 @@ class HandlerRoute implements HttpRoute {
         return handler;
     }
 
-    public Map<String, String> diagnosticEvent() {
+    Map<String, String> diagnosticEvent() {
         return diagnosticEvent;
     }
 
@@ -146,7 +146,7 @@ class HandlerRoute implements HttpRoute {
      * @return a {@link PathMatcher.Result} of the test.
      * @throws NullPointerException in case that {@code path} parameter is {@code null}.
      */
-    public PathMatcher.Result match(CharSequence path) {
+    PathMatcher.Result match(CharSequence path) {
         return pathMatcher.match(extractPathParams(path.toString()));
     }
 

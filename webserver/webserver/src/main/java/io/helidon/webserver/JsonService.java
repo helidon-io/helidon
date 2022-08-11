@@ -28,6 +28,11 @@ import io.helidon.common.media.type.MediaTypes;
  * @see Routing.Rules
  */
 public abstract class JsonService implements Service, Handler {
+    /**
+     * No side effects.
+     */
+    protected JsonService() {
+    }
 
     /**
      * Registers this handler for any HTTP method.
