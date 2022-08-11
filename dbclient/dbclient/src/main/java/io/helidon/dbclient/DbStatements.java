@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,6 +62,9 @@ public interface DbStatements {
      */
     class Builder implements io.helidon.common.Builder<Builder, DbStatements> {
         private final Map<String, String> configuredStatements = new HashMap<>();
+
+        private Builder() {
+        }
 
         /**
          * Add named database statement to database configuration..

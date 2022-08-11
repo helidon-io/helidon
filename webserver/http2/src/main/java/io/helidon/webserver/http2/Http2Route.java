@@ -57,7 +57,7 @@ public class Http2Route extends Http1Route {
      *
      * @param pathMatcher URI Path Matcher
      * @param handler handler
-     * @param methods HTTP {@link io.helidon.common.http.Http.RequestMethod methods} handled by this route
+     * @param methods HTTP {@link io.helidon.common.http.Http.Method methods} handled by this route
      * @return a new HTTP/2 specific route
      */
     public static Http2Route route(PathMatcher pathMatcher, Handler handler, Http.Method... methods) {
