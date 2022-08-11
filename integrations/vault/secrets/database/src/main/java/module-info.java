@@ -23,7 +23,6 @@ module io.helidon.integrations.vault.secrets.database {
     requires transitive io.helidon.common.reactive;
     requires io.helidon.integrations.vault;
     requires io.helidon.integrations.common.rest;
-    requires transitive io.helidon.common.reactive;
 
     exports io.helidon.integrations.vault.secrets.database;
 

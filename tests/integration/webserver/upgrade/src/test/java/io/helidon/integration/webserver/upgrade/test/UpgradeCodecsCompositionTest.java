@@ -197,17 +197,17 @@ class UpgradeCodecsCompositionTest {
         String expectedResponse = version + " route " + method + "\n";
 
         Assertions.assertEquals(expectedResponse,
-                httpClient(Http.RequestMethod.create(method),
+                httpClient(Http.Method.create(method),
                         url,
                         version.contains("2") ? HttpClient.Version.HTTP_2 : HttpClient.Version.HTTP_1_1).body());
         Assertions.assertEquals(expectedResponse,
-                webClient(Http.RequestMethod.create(method),
+                webClient(Http.Method.create(method),
                         url,
                         Http.Version.create(version)).content().as(String.class).await(TIMEOUT));
     }
 
 
-    private HttpResponse<String> httpClient(Http.RequestMethod method,
+    private HttpResponse<String> httpClient(Http.Method method,
                                             String url,
                                             HttpClient.Version version) throws IOException, InterruptedException {
         return httpClient.send(HttpRequest.newBuilder()
@@ -217,7 +217,7 @@ class UpgradeCodecsCompositionTest {
                 .build(), HttpResponse.BodyHandlers.ofString());
     }
 
-    private WebClientResponse webClient(Http.RequestMethod method, String url, Http.Version version) {
+    private WebClientResponse webClient(Http.Method method, String url, Http.Version version) {
         return webClient.method(method)
                 .uri(resolveUri(url))
                 .httpVersion(version)
