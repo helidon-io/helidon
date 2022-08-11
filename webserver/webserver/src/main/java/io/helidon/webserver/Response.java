@@ -173,6 +173,7 @@ abstract class Response implements ServerResponse {
     @Override
     public <T> Single<ServerResponse> send(T content) {
         try {
+            bareResponse.backpressureStrategy(BackpressureStrategy.UNBOUNDED);
             sendLockSupport.execute(() -> {
                 Publisher<DataChunk> sendPublisher = writerContext.marshall(
                         Single.just(content), GenericType.create(content));
