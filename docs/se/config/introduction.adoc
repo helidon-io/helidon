@@ -32,7 +32,7 @@ include::{rootdir}/includes/se.adoc[]
 - <<Usage, Usage>>
 - <<Configuration, Configuration>>
 - <<Reference, Reference>>
-- <<Additional Information>>
+- <<Additional Information, Additional Information>>
 
 == Overview
 

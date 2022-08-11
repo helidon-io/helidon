@@ -35,8 +35,6 @@ include::{rootdir}/includes/mp.adoc[]
 - <<Usage, Usage>>
 - <<Configuration, Configuration>>
 - <<Reference, Reference>>
-- <<Additional Information, Additional Information>>
-
 
 == Overview
 
