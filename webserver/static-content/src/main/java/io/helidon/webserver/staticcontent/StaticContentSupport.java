@@ -23,7 +23,6 @@ import java.util.Objects;
 import java.util.TreeMap;
 import java.util.function.Function;
 
-import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.webserver.Service;
 
@@ -204,7 +203,7 @@ public interface StaticContentSupport extends Service {
          * @throws NullPointerException if any parameter is {@code null}
          * @throws IllegalArgumentException if {@code filenameExtension} is empty
          */
-        public T contentType(String filenameExtension, HttpMediaType contentType) {
+        public T contentType(String filenameExtension, MediaType contentType) {
             Objects.requireNonNull(filenameExtension, "Parameter 'filenameExtension' is null!");
             Objects.requireNonNull(contentType, "Parameter 'contentType' is null!");
             filenameExtension = filenameExtension.trim();

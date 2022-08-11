@@ -32,7 +32,6 @@ module io.helidon.webserver {
     requires transitive io.helidon.tracing;
     requires io.helidon.logging.common;
     requires static io.helidon.config.metadata;
-    requires io.helidon.common.features;
 
     requires java.logging;
     requires io.netty.handler;

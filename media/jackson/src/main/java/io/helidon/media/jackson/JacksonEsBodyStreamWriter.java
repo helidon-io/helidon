@@ -60,7 +60,7 @@ class JacksonEsBodyStreamWriter implements MessageBodyStreamWriter<Object> {
         }
         return context.contentType()
                 .or(() -> findMediaType(context))
-                .filter(mediaType -> mediaType.equals(TEXT_EVENT_STREAM_JSON) || mediaType.equals(MediaTypes.TEXT_EVENT_STREAM))
+                .filter(mediaType -> mediaType.test(TEXT_EVENT_STREAM_JSON) || mediaType.test(MediaTypes.TEXT_EVENT_STREAM))
                 .map(it -> PredicateResult.COMPATIBLE)
                 .orElse(PredicateResult.NOT_SUPPORTED);
     }

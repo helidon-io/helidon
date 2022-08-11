@@ -31,13 +31,13 @@ import java.util.logging.LogManager;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
+import io.helidon.common.HelidonFeatures;
+import io.helidon.common.HelidonFlavor;
 import io.helidon.common.LogConfig;
 import io.helidon.common.SerializationConfig;
 import io.helidon.common.Version;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
-import io.helidon.common.features.HelidonFeatures;
-import io.helidon.common.features.HelidonFlavor;
 import io.helidon.config.mp.MpConfig;
 import io.helidon.config.mp.MpConfigProviderResolver;
 

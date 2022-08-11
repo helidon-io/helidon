@@ -58,7 +58,7 @@ class JacksonNdBodyStreamWriter implements MessageBodyStreamWriter<Object> {
         }
         return context.contentType()
                 .or(() -> findMediaType(context))
-                .filter(mediaType -> mediaType.equals(MediaTypes.APPLICATION_X_NDJSON))
+                .filter(mediaType -> mediaType.test(MediaTypes.APPLICATION_X_NDJSON))
                 .map(it -> PredicateResult.COMPATIBLE)
                 .orElse(PredicateResult.NOT_SUPPORTED);
     }

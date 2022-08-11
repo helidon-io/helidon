@@ -24,7 +24,7 @@ import io.helidon.config.ConfigSources;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.common.testing.OptionalMatcher.optionalPresent;
+import static io.helidon.common.testing.junit5.OptionalMatcher.optionalPresent;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;

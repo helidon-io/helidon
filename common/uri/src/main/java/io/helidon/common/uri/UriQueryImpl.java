@@ -136,7 +136,7 @@ final class UriQueryImpl implements UriQuery {
         if (decodedQueryParams == null) {
             Map<String, List<String>> newQueryParams = new HashMap<>();
 
-            if (query == null) {
+            if (query == null || query.isEmpty()) {
                 decodedQueryParams = newQueryParams;
                 return;
             }

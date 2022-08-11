@@ -184,12 +184,12 @@ public class ResponseTest {
     public void writerByPredicate() throws Exception {
         StringBuilder sb = new StringBuilder();
         Response response = new ResponseImpl(new NoOpBareResponse(null));
-        response.registerWriter(o -> Integer.class.isAssignableFrom((Class<?>)o),
+        response.registerWriter(Integer.class::isAssignableFrom,
                                 o -> {
                                     sb.append("1");
                                     return Single.empty();
                                 });
-        response.registerWriter(o -> Long.class.isAssignableFrom((Class<?>)o),
+        response.registerWriter(Long.class::isAssignableFrom,
                                 o -> {
                                     sb.append("2");
                                     return Single.empty();

@@ -442,7 +442,8 @@ public final class SecurityHandler implements Handler {
 
         clientBuilder.explicitProvider(explicitAuthenticator.orElse(null)).submit().thenAccept(response -> {
             // copy headers to be returned with the current response
-            response.responseHeaders().forEach(res.headers()::put);
+            response.responseHeaders()
+                    .forEach((key, value) -> res.headers().set(Http.HeaderValue.create(Http.Header.create(key), value)));
 
             switch (response.status()) {
             case SUCCESS:

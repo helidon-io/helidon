@@ -17,7 +17,6 @@
 package io.helidon.common.pki;
 
 import java.io.InputStream;
-import java.lang.System.Logger.Level;
 import java.security.Key;
 import java.security.KeyStore;
 import java.security.KeyStoreException;

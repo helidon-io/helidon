@@ -46,18 +46,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import jakarta.websocket.server.ServerEndpointConfig;
 
-public class WSTest {
+class WSTest {
 
     private static WebServer webServer;
 
     @BeforeAll
-    public static void startServer() throws Exception {
+    static void startServer() {
         LogConfig.configureRuntime();
         webServer = WebServer.builder()
-                .defaultSocket(s -> s
-                                .bindAddress("localhost")
-                                .port(8080)
-                )
+                .defaultSocket(s -> s.bindAddress("localhost"))
                 .routing(r -> r
                         .get("/http-ctx", (req, res) -> res.send("Hello http!/http-ctx"))
                         .get((req, res) -> res.send("Hello http!"))

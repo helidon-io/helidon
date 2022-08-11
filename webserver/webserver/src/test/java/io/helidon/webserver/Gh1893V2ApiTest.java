@@ -122,7 +122,7 @@ class Gh1893V2ApiTest {
         String response = SocketHttpClient.sendAndReceive("/",
                                                           Http.Method.GET,
                                                           null,
-                                                          List.of(Http.Header.CONTENT_LENGTH + ": 47a"),
+                                                          List.of(Http.Header.CONTENT_LENGTH.defaultCase() + ": 47a"),
                                                           webServer);
 
         assertThat(response, containsString("400 " + CUSTOM_REASON_PHRASE));
@@ -135,7 +135,7 @@ class Gh1893V2ApiTest {
         String response = SocketHttpClient.sendAndReceive("/redirect",
                                                           Http.Method.GET,
                                                           null,
-                                                          List.of(Http.Header.CONTENT_LENGTH + ": 47a"),
+                                                          List.of(Http.Header.CONTENT_LENGTH.defaultCase() + ": 47a"),
                                                           webServer);
 
         assertThat(SocketHttpClient.statusFromResponse(response), is(Http.Status.TEMPORARY_REDIRECT_307));

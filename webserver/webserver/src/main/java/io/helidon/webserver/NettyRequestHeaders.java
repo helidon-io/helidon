@@ -30,8 +30,6 @@ import io.netty.handler.codec.http.HttpHeaders;
 class NettyRequestHeaders implements RequestHeaders {
     private final HeadersServerRequest delegate;
 
-    private volatile List<HttpMediaType> cachedAccepted;
-
     NettyRequestHeaders(HttpHeaders nettyHeaders) {
         HeadersWritable<?> hw = HeadersWritable.create();
         for (String name : nettyHeaders.names()) {

@@ -27,10 +27,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import io.helidon.common.http.Parameters;
-import io.helidon.common.http.UriComponent;
 import io.helidon.common.reactive.BufferedEmittingPublisher;
 import io.helidon.common.reactive.Multi;
+import io.helidon.common.uri.UriQuery;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -179,8 +178,10 @@ class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
 
         // Create Tyrus request context, copy request headers and query params
         Map<String, String[]> paramsMap = new HashMap<>();
-        Parameters params = UriComponent.decodeQuery(queryString, true);
-        params.toMap().forEach((key, value) -> paramsMap.put(key, value.toArray(new String[0])));
+        UriQuery uriQuery = UriQuery.create(queryString);
+        for (String name : uriQuery.names()) {
+            paramsMap.put(name, uriQuery.all(name).toArray(new String[0]));
+        }
         RequestContext requestContext = RequestContext.Builder.create()
                 .requestURI(URI.create(path))      // excludes context path
                 .queryString(queryString)

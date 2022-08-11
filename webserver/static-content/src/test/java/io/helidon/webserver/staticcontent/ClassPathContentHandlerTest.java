@@ -25,7 +25,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 import io.helidon.common.http.Http;
-import io.helidon.common.http.MediaType;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.testsupport.TestClient;
 import io.helidon.webserver.testsupport.TestResponse;
@@ -90,14 +90,14 @@ public class ClassPathContentHandlerTest {
                 .get();
         assertThat(response.status(), is(Http.Status.OK_200));
         assertThat(filterResponse(response), is("- root A TXT"));
-        assertThat(response.headers().first(Http.Header.CONTENT_TYPE), is(Optional.of(MediaType.TEXT_PLAIN.toString())));
+        assertThat(response.headers().first(Http.Header.CONTENT_TYPE), is(Optional.of(MediaTypes.TEXT_PLAIN.text())));
         // /some/bar/root-a.txt
         response = TestClient.create(routing)
                 .path("/some/bar/root-b.txt")
                 .get();
         assertThat(response.status(), is(Http.Status.OK_200));
         assertThat(filterResponse(response), is("- root B TXT"));
-        assertThat(response.headers().first(Http.Header.CONTENT_TYPE), is(Optional.of(MediaType.TEXT_PLAIN.toString())));
+        assertThat(response.headers().first(Http.Header.CONTENT_TYPE), is(Optional.of(MediaTypes.TEXT_PLAIN.text())));
         // /some/bar/not.exist
         response = TestClient.create(routing)
                 .path("/some/bar/not.exist")
@@ -117,7 +117,7 @@ public class ClassPathContentHandlerTest {
                 .get();
         assertThat(response.status(), is(Http.Status.OK_200));
         assertThat(filterResponse(response), is("- index TXT"));
-        assertThat(response.headers().first(Http.Header.CONTENT_TYPE), is(Optional.of(MediaType.TEXT_PLAIN.toString())));
+        assertThat(response.headers().first(Http.Header.CONTENT_TYPE), is(Optional.of(MediaTypes.TEXT_PLAIN.text())));
         // /bar/
         response = TestClient.create(routing)
                 .path("/bar/")
@@ -136,14 +136,14 @@ public class ClassPathContentHandlerTest {
                 .get();
         assertThat(response.status(), is(Http.Status.OK_200));
         assertThat(filterResponse(response), is("Example A TXT"));
-        assertThat(response.headers().first(Http.Header.CONTENT_TYPE), is(Optional.of(MediaType.TEXT_PLAIN.toString())));
+        assertThat(response.headers().first(Http.Header.CONTENT_TYPE), is(Optional.of(MediaTypes.TEXT_PLAIN.text())));
         // /some/example-a.txt
         response = TestClient.create(routing)
                 .path("/some/a/example-a.txt")
                 .get();
         assertThat(response.status(), is(Http.Status.OK_200));
         assertThat(filterResponse(response), is("A / Example A TXT"));
-        assertThat(response.headers().first(Http.Header.CONTENT_TYPE), is(Optional.of(MediaType.TEXT_PLAIN.toString())));
+        assertThat(response.headers().first(Http.Header.CONTENT_TYPE), is(Optional.of(MediaTypes.TEXT_PLAIN.text())));
         // /some/a/not.exist
         response = TestClient.create(routing)
                 .path("/some/a/not.exist")
@@ -163,7 +163,7 @@ public class ClassPathContentHandlerTest {
                 .get();
         assertThat(response.status(), is(Http.Status.OK_200));
         assertThat(filterResponse(response), is("Example A TXT"));
-        assertThat(response.headers().first(Http.Header.CONTENT_TYPE), is(Optional.of(MediaType.TEXT_PLAIN.toString())));
+        assertThat(response.headers().first(Http.Header.CONTENT_TYPE), is(Optional.of(MediaTypes.TEXT_PLAIN.text())));
         // /a
         response = TestClient.create(routing)
                 .path("/a/")
@@ -175,7 +175,7 @@ public class ClassPathContentHandlerTest {
                 .path("/a")
                 .get();
         assertThat(response.status(), is(Http.Status.MOVED_PERMANENTLY_301));
-        assertThat(response.headers().first("Location"), is(Optional.of("/a/")));
+        assertThat(response.headers().first(Http.Header.LOCATION), is(Optional.of("/a/")));
 
         // another index
         routing = Routing.builder()

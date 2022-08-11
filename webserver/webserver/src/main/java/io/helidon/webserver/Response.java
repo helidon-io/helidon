@@ -40,8 +40,6 @@ import io.helidon.tracing.SpanContext;
 import io.helidon.tracing.config.SpanTracingConfig;
 import io.helidon.tracing.config.TracingConfigUtil;
 
-import io.netty.handler.codec.http.HttpHeaderNames;
-
 /**
  * The basic implementation of {@link ServerResponse}.
  */
@@ -66,7 +64,7 @@ abstract class Response implements ServerResponse {
     /**
      * Creates new instance.
      *
-     * @param webServer a web server.
+     * @param webServer    a web server.
      * @param bareResponse an implementation of the response SPI.
      */
     Response(WebServer webServer, BareResponse bareResponse, List<HttpMediaType> acceptedTypes) {
@@ -93,17 +91,6 @@ abstract class Response implements ServerResponse {
         this.writerContext = response.writerContext;
         this.eventListener = response.eventListener;
     }
-
-    /**
-     * Returns a span context related to the current request.
-     * <p>
-     * {@code SpanContext} is a tracing component from
-     * <a href="http://opentracing.io">opentracing.io</a> standard.
-     * </p>
-     *
-     * @return the related span context or empty if not enabled
-     */
-    abstract Optional<SpanContext> spanContext();
 
     @Override
     public WebServer webServer() {
@@ -133,31 +120,6 @@ abstract class Response implements ServerResponse {
         return writerContext;
     }
 
-    private Span createWriteSpan(GenericType<?> type) {
-        Optional<SpanContext> parentSpan = spanContext();
-        if (!parentSpan.isPresent()) {
-            // we only trace write span if there is a parent
-            // (parent is either webserver HTTP Request span, or inherited span
-            // from request
-            return null;
-        }
-
-        SpanTracingConfig spanConfig = TracingConfigUtil.spanConfig(
-                NettyWebServer.TRACING_COMPONENT, TRACING_CONTENT_WRITE);
-
-        if (spanConfig.enabled()) {
-            String spanName = spanConfig.newName().orElse(TRACING_CONTENT_WRITE);
-            Span.Builder spanBuilder = WebTracingConfig.tracer(webServer())
-                    .spanBuilder(spanName)
-                    .parent(parentSpan.get());
-            if (type != null) {
-                spanBuilder.tag("response.type", type.getTypeName());
-            }
-            return spanBuilder.start();
-        }
-        return null;
-    }
-
     @Override
     public Void send(Throwable content) {
         if (headers.httpStatus() == null) {
@@ -177,6 +139,22 @@ abstract class Response implements ServerResponse {
             sendLockSupport.execute(() -> {
                 Publisher<DataChunk> sendPublisher = writerContext.marshall(
                         Single.just(content), GenericType.create(content));
+                sendLockSupport.contentSend = true;
+                sendPublisher.subscribe(bareResponse);
+            }, content == null);
+            return whenSent();
+        } catch (RuntimeException | Error e) {
+            eventListener.finish();
+            throw e;
+        }
+    }
+
+    @Override
+    public <T> Single<ServerResponse> send(Publisher<T> content, Class<T> itemClass) {
+        try {
+            sendLockSupport.execute(() -> {
+                GenericType<T> type = GenericType.create(itemClass);
+                Publisher<DataChunk> sendPublisher = writerContext.marshallStream(content, type);
                 sendLockSupport.contentSend = true;
                 sendPublisher.subscribe(bareResponse);
             }, content == null);
@@ -213,29 +191,19 @@ abstract class Response implements ServerResponse {
     }
 
     @Override
+    public Single<ServerResponse> send(Function<MessageBodyWriterContext, Publisher<DataChunk>> function) {
+        return send(function.apply(writerContext), false);
+    }
+
+    @Override
     public Single<ServerResponse> send() {
         return send((Publisher<DataChunk>) null);
     }
 
     @Override
-    public <T> Single<ServerResponse> send(Publisher<T> content, Class<T> itemClass) {
-        try {
-            sendLockSupport.execute(() -> {
-                GenericType<T> type = GenericType.create(itemClass);
-                Publisher<DataChunk> sendPublisher = writerContext.marshallStream(content, type);
-                sendLockSupport.contentSend = true;
-                sendPublisher.subscribe(bareResponse);
-            }, content == null);
-            return whenSent();
-        } catch (RuntimeException | Error e) {
-            eventListener.finish();
-            throw e;
-        }
-    }
-
-    @Override
-    public Single<ServerResponse> send(Function<MessageBodyWriterContext, Publisher<DataChunk>> function) {
-        return send(function.apply(writerContext), false);
+    public Response registerFilter(MessageBodyFilter filter) {
+        writerContext.registerFilter(filter);
+        return this;
     }
 
     @Override
@@ -251,46 +219,6 @@ abstract class Response implements ServerResponse {
     }
 
     @Override
-    public Response registerFilter(MessageBodyFilter filter) {
-        writerContext.registerFilter(filter);
-        return this;
-    }
-
-    @Override
-    public Response registerFilter(Function<Publisher<DataChunk>, Publisher<DataChunk>> function) {
-        writerContext.registerFilter(function::apply);
-        return this;
-    }
-
-    @Override
-    public <T> Response registerWriter(Class<T> type, Function<T, Publisher<DataChunk>> function) {
-        writerContext.registerWriter(type, function);
-        return this;
-    }
-
-    @Override
-    public <T> Response registerWriter(Predicate<?> accept, Function<T, Publisher<DataChunk>> function) {
-        writerContext.registerWriter(accept, function);
-        return this;
-    }
-
-    @Override
-    public <T> Response registerWriter(Class<T> type, MediaType contentType,
-            Function<? extends T, Publisher<DataChunk>> function) {
-
-        writerContext.registerWriter(type, contentType, function);
-        return this;
-    }
-
-    @Override
-    public <T> Response registerWriter(Predicate<?> accept, MediaType contentType,
-            Function<T, Publisher<DataChunk>> function) {
-
-        writerContext.registerWriter(accept, contentType, function);
-        return this;
-    }
-
-    @Override
     public Single<ServerResponse> whenSent() {
         return Single.create(completionStage);
     }
@@ -300,62 +228,133 @@ abstract class Response implements ServerResponse {
         return bareResponse.requestId();
     }
 
-    private final class MessageBodyEventListener implements MessageBodyContext.EventListener {
-
-        private Span span;
-        private volatile boolean sent;
-
-        private synchronized void sendErrorHeadersIfNeeded() {
-            if (headers != null && !sent) {
-                status(500);
-                //We are not using CombinedHttpHeaders
-                headers().add(Http.HeaderValue.create(Http.Header.TRAILER, STREAM_STATUS + "," + STREAM_RESULT));
-                sent = true;
-                headers.send();
+    /**
+     * Backward compatibility.
+     *
+     * @param type     type to support
+     * @param function writer
+     * @param <T>      type to support
+     * @return updated response
+     * @deprecated use {@link #registerWriter(io.helidon.media.common.MessageBodyWriter)} instead
+     */
+    @Deprecated
+    public <T> Response registerWriter(Class<T> type, Function<T, Publisher<DataChunk>> function) {
+        return registerWriter(new MessageBodyWriter<T>() {
+            @Override
+            public Publisher<DataChunk> write(Single<? extends T> single,
+                                              GenericType<? extends T> type,
+                                              MessageBodyWriterContext context) {
+                return single.flatMap(function);
             }
+
+            @Override
+            public PredicateResult accept(GenericType<?> gType, MessageBodyWriterContext context) {
+                if (type.isAssignableFrom(gType.rawType())) {
+                    return PredicateResult.SUPPORTED;
+                }
+                return PredicateResult.NOT_SUPPORTED;
+            }
+        });
+    }
+
+    /**
+     * Backward compatibility.
+     *
+     * @param accept   predicate for type to support
+     * @param function writer
+     * @param <T>      type to support
+     * @return updated response
+     * @deprecated use {@link #registerWriter(io.helidon.media.common.MessageBodyWriter)} instead
+     */
+    @Deprecated
+    public <T> Response registerWriter(Predicate<Class<?>> accept, Function<T, Publisher<DataChunk>> function) {
+        return registerWriter(new MessageBodyWriter<T>() {
+            @Override
+            public Publisher<DataChunk> write(Single<? extends T> single,
+                                              GenericType<? extends T> type,
+                                              MessageBodyWriterContext context) {
+                return single.flatMap(function);
+            }
+
+            @Override
+            public PredicateResult accept(GenericType<?> gType, MessageBodyWriterContext context) {
+                if (accept.test(gType.rawType())) {
+                    return PredicateResult.SUPPORTED;
+                }
+                return PredicateResult.NOT_SUPPORTED;
+            }
+        });
+    }
+
+    /**
+     * Backward compatibility.
+     *
+     * @param type      type to support
+     * @param mediaType media type expected
+     * @param function  writer
+     * @param <T>       type to support
+     * @return updated response
+     * @deprecated use {@link #registerWriter(io.helidon.media.common.MessageBodyWriter)} instead
+     */
+    @Deprecated
+    public <T> Response registerWriter(Class<?> type, MediaType mediaType, Function<T, Publisher<DataChunk>> function) {
+        return registerWriter(new MessageBodyWriter<T>() {
+            @Override
+            public Publisher<DataChunk> write(Single<? extends T> single,
+                                              GenericType<? extends T> type,
+                                              MessageBodyWriterContext context) {
+                context.contentType(mediaType);
+                return single.flatMap(function);
+            }
+
+            @Override
+            public PredicateResult accept(GenericType<?> gType, MessageBodyWriterContext context) {
+                if (type.isAssignableFrom(gType.rawType())) {
+                    return context.contentType()
+                            .map(it -> it.test(mediaType))
+                            .filter(it -> !it)
+                            .map(it -> PredicateResult.NOT_SUPPORTED)
+                            .orElse(PredicateResult.SUPPORTED);
+                }
+                return PredicateResult.NOT_SUPPORTED;
+            }
+        });
+    }
+
+    /**
+     * Returns a span context related to the current request.
+     * <p>
+     * {@code SpanContext} is a tracing component from
+     * <a href="http://opentracing.io">opentracing.io</a> standard.
+     * </p>
+     *
+     * @return the related span context or empty if not enabled
+     */
+    abstract Optional<SpanContext> spanContext();
+
+    private Span createWriteSpan(GenericType<?> type) {
+        Optional<SpanContext> parentSpan = spanContext();
+        if (!parentSpan.isPresent()) {
+            // we only trace write span if there is a parent
+            // (parent is either webserver HTTP Request span, or inherited span
+            // from request
+            return null;
         }
 
-        private synchronized void sendHeadersIfNeeded() {
-            if (headers != null && !sent) {
-                sent = true;
-                headers.send();
-            }
-        }
+        SpanTracingConfig spanConfig = TracingConfigUtil.spanConfig(
+                NettyWebServer.TRACING_COMPONENT, TRACING_CONTENT_WRITE);
 
-        void finish() {
-            if (span != null) {
-                span.end();
+        if (spanConfig.enabled()) {
+            String spanName = spanConfig.newName().orElse(TRACING_CONTENT_WRITE);
+            Span.Builder spanBuilder = WebTracingConfig.tracer(webServer())
+                    .spanBuilder(spanName)
+                    .parent(parentSpan.get());
+            if (type != null) {
+                spanBuilder.tag("response.type", type.getTypeName());
             }
+            return spanBuilder.start();
         }
-
-        @Override
-        public void onEvent(MessageBodyContext.Event event) {
-            switch (event.eventType()) {
-                case BEFORE_ONSUBSCRIBE:
-                    GenericType<?> type = event.entityType().orElse(null);
-                    span = createWriteSpan(type);
-                    break;
-                case BEFORE_ONNEXT:
-                    sendHeadersIfNeeded();
-                    break;
-                case BEFORE_ONERROR:
-                    sendErrorHeadersIfNeeded();
-                    break;
-                case AFTER_ONERROR:
-                    if (span != null) {
-                        span.end();
-                    }
-                    break;
-                case BEFORE_ONCOMPLETE:
-                    sendHeadersIfNeeded();
-                    break;
-                case AFTER_ONCOMPLETE:
-                    finish();
-                    break;
-                default:
-                    // do nothing
-            }
-        }
+        return null;
     }
 
     private static class SendLockSupport {
@@ -372,6 +371,64 @@ abstract class Response implements ServerResponse {
                 }
             }
             runnable.run();
+        }
+    }
+
+    private final class MessageBodyEventListener implements MessageBodyContext.EventListener {
+
+        private Span span;
+        private volatile boolean sent;
+
+        @Override
+        public void onEvent(MessageBodyContext.Event event) {
+            switch (event.eventType()) {
+            case BEFORE_ONSUBSCRIBE:
+                GenericType<?> type = event.entityType().orElse(null);
+                span = createWriteSpan(type);
+                break;
+            case BEFORE_ONNEXT:
+                sendHeadersIfNeeded();
+                break;
+            case BEFORE_ONERROR:
+                sendErrorHeadersIfNeeded();
+                break;
+            case AFTER_ONERROR:
+                if (span != null) {
+                    span.end();
+                }
+                break;
+            case BEFORE_ONCOMPLETE:
+                sendHeadersIfNeeded();
+                break;
+            case AFTER_ONCOMPLETE:
+                finish();
+                break;
+            default:
+                // do nothing
+            }
+        }
+
+        void finish() {
+            if (span != null) {
+                span.end();
+            }
+        }
+
+        private synchronized void sendErrorHeadersIfNeeded() {
+            if (headers != null && !sent) {
+                status(500);
+                //We are not using CombinedHttpHeaders
+                headers().add(Http.HeaderValue.create(Http.Header.TRAILER, STREAM_STATUS + "," + STREAM_RESULT));
+                sent = true;
+                headers.send();
+            }
+        }
+
+        private synchronized void sendHeadersIfNeeded() {
+            if (headers != null && !sent) {
+                sent = true;
+                headers.send();
+            }
         }
     }
 }

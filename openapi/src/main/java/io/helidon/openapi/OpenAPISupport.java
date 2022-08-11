@@ -384,7 +384,7 @@ public abstract class OpenAPISupport implements Service {
         final Path staticFileNamePath = path.getFileName();
         if (staticFileNamePath == null) {
             throw new IllegalArgumentException("File path "
-                    + path.toAbsolutePath().toString()
+                    + path.toAbsolutePath()
                     + " does not seem to have a file name value but one is expected");
         }
         final String pathText = staticFileNamePath.toString();
@@ -398,7 +398,7 @@ public abstract class OpenAPISupport implements Service {
             final MediaType resultMediaType = chooseResponseMediaType(req);
             final String openAPIDocument = prepareDocument(resultMediaType);
             resp.status(Http.Status.OK_200);
-            resp.headers().add(Http.Header.CONTENT_TYPE, resultMediaType.toString());
+            resp.headers().add(Http.Header.CONTENT_TYPE, resultMediaType.text());
             resp.send(openAPIDocument);
         } catch (Exception ex) {
             resp.status(Http.Status.INTERNAL_SERVER_ERROR_500);
@@ -422,7 +422,7 @@ public abstract class OpenAPISupport implements Service {
                     LOGGER.log(Level.FINER,
                             () -> String.format(
                                     "Requested media type %s not supported; using default",
-                                    resultMediaType.toString()));
+                                    resultMediaType.text()));
                     return OpenAPIMediaType.DEFAULT_TYPE;
                 });
 
@@ -478,7 +478,7 @@ public abstract class OpenAPISupport implements Service {
                     LOGGER.log(Level.FINER,
                             () -> String.format("Did not recognize requested media type %s; responding with default %s",
                                     req.headers().acceptedTypes(),
-                                    DEFAULT_RESPONSE_MEDIA_TYPE.toString()));
+                                    DEFAULT_RESPONSE_MEDIA_TYPE.text()));
                     return DEFAULT_RESPONSE_MEDIA_TYPE;
                 });
         return resultMediaType;
@@ -863,7 +863,7 @@ public abstract class OpenAPISupport implements Service {
 
             if (specifiedMediaType == null) {
                 throw new IllegalArgumentException("OpenAPI file path "
-                        + path.toAbsolutePath().toString()
+                        + path.toAbsolutePath()
                         + " is not one of recognized types: "
                         + OpenAPIMediaType.recognizedFileTypes());
             }
@@ -872,7 +872,7 @@ public abstract class OpenAPISupport implements Service {
                 is = new BufferedInputStream(Files.newInputStream(path));
             } catch (IOException ex) {
                 throw new IllegalArgumentException("OpenAPI file "
-                        + path.toAbsolutePath().toString()
+                        + path.toAbsolutePath()
                         + " was specified but was not found", ex);
             }
 
@@ -880,7 +880,7 @@ public abstract class OpenAPISupport implements Service {
                 LOGGER.log(Level.FINE,
                         () -> String.format(
                                 OPENAPI_EXPLICIT_STATIC_FILE_LOG_MESSAGE_FORMAT,
-                                path.toAbsolutePath().toString()));
+                                path.toAbsolutePath()));
                 return new OpenApiStaticFile(is, specifiedMediaType.format());
             } catch (Exception ex) {
                 try {
@@ -904,7 +904,7 @@ public abstract class OpenAPISupport implements Service {
                             Path path = Paths.get(candidatePath);
                             LOGGER.log(Level.FINE, () -> String.format(
                                     OPENAPI_DEFAULTED_STATIC_FILE_LOG_MESSAGE_FORMAT,
-                                    path.toAbsolutePath().toString()));
+                                    path.toAbsolutePath()));
                             return new OpenApiStaticFile(is, candidate.format());
                         }
                         if (candidatePaths != null) {

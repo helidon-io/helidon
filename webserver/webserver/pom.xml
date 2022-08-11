@@ -45,10 +45,6 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.common</groupId>
-            <artifactId>helidon-common-features</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common-http</artifactId>
         </dependency>
         <dependency>
@@ -157,7 +153,7 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.common.testing</groupId>
-            <artifactId>helidon-common-testing-http</artifactId>
+            <artifactId>helidon-common-testing-http-junit5</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

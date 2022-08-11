@@ -530,7 +530,9 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
             }
             HttpMediaType ct = context.contentType().orElse(null);
             if (!(contentType != null && ct != null && !ct.test(contentType))) {
-                context.contentType(contentType);
+                if (contentType != null) {
+                    context.contentType(contentType);
+                }
                 return PredicateResult.SUPPORTED;
             }
             return PredicateResult.NOT_SUPPORTED;

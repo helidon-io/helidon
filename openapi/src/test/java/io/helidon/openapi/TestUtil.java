@@ -300,7 +300,7 @@ public class TestUtil {
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestMethod(method);
         if (mediaType != null) {
-            conn.setRequestProperty("Accept", mediaType.toString());
+            conn.setRequestProperty("Accept", mediaType.text());
         }
         System.out.println("Connecting: " + method + " " + url);
         return conn;

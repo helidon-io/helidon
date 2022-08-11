@@ -213,8 +213,8 @@ public class MultiPortTest {
                                             .headers()
                                             .add(Http.Header.LOCATION,
                                                     String.format("https://%s:%d%s",
-                                                            req.headers()
-                                                                    .first(Http.Header.HOST)
+                                                            Optional.of(req.headers()
+                                                                    .get(Http.Header.HOST))
                                                                     .map(Http.HeaderValue::value)
                                                                     .map(s -> s.contains(":") ? s
                                                                             .subSequence(0, s.indexOf(":")) : s)

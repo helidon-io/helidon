@@ -17,8 +17,8 @@
 /**
  * Hamcrest matchers for HTTP.
  */
-module io.helidon.common.testing.http {
-    requires transitive io.helidon.common.testing;
+module io.helidon.common.testing.http.junit5 {
+    requires transitive io.helidon.common.testing.junit5;
     requires io.helidon.common.http;
     requires hamcrest.all;
     requires org.junit.jupiter.api;

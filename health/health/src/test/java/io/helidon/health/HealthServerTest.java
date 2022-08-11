@@ -25,6 +25,7 @@ import java.util.logging.Logger;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.media.common.MessageBodyReadableContent;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.webclient.WebClient;
@@ -120,7 +121,7 @@ class HealthServerTest {
         try {
             response = webClient.get()
                     .path(requestPath)
-                    .accept(MediaType.APPLICATION_JSON)
+                    .accept(MediaTypes.APPLICATION_JSON)
                     .request()
                     .await();
             assertThat("Header cache settings for /health" + pathSuffix + ": " + response.headers().toMap(),

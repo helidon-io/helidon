@@ -30,7 +30,6 @@ module io.helidon.microprofile.cdi {
     requires io.helidon.common;
     requires io.helidon.config;
     requires io.helidon.config.mp;
-    requires io.helidon.common.features;
 
     requires weld.core.impl;
     requires weld.spi;

@@ -132,14 +132,23 @@ public interface HeadersServerRequest extends Headers {
         if (accepted.isEmpty()) {
             return Optional.of(mediaTypes[0]);
         }
-        for (HttpMediaType acceptedType : accepted) {
-            for (MediaType mediaType : mediaTypes) {
-                if (acceptedType.test(mediaType)) {
-                    return Optional.of(mediaType);
+        double best = 0;
+        MediaType result = null;
+        for (MediaType mt : mediaTypes) {
+            for (HttpMediaType acc : accepted) {
+                double q = acc.qualityFactor();
+                if (q > best && acc.test(mt)) {
+                    if (q == 1) {
+                        return Optional.of(mt);
+                    } else {
+                        best = q;
+                        result = mt;
+                    }
                 }
             }
         }
-        return Optional.empty();
+
+        return Optional.ofNullable(result);
     }
 
     /**
