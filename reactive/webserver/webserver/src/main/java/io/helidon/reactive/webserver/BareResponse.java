@@ -59,6 +59,13 @@ public interface BareResponse extends Flow.Subscriber<DataChunk> {
     Single<BareResponse> whenCompleted();
 
     /**
+     * Set the backpressure strategy used for requesting response data.
+     *
+     * @param backpressureStrategy strategy used for requesting response data
+     */
+    void backpressureStrategy(BackpressureStrategy backpressureStrategy);
+
+    /**
      * Each response is subscribed up to a single publisher and AFTER {@link #writeStatusAndHeaders(Http.Status, Map)}
      * method is called and returned.
      *
