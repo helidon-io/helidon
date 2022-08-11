@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,13 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 package io.helidon.webserver.cors;
 
 import java.util.AbstractMap;
-import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
@@ -174,7 +173,7 @@ public class MappedCrossOriginConfig implements Iterable<Map.Entry<String, Cross
 
         private Optional<String> nameOpt = Optional.empty();
         private Optional<Boolean> enabledOpt = Optional.empty();
-        private final Map<String, Buildable> builders = new HashMap<>();
+        private final Map<String, Buildable> builders = new LinkedHashMap<>(); // use LinkedHashMap to preserve order from config
 
         private Builder() {
         }

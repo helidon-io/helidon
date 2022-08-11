@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,9 @@ import java.time.Duration;
 import java.util.concurrent.ScheduledExecutorService;
 
 import io.helidon.common.LazyValue;
+import io.helidon.config.Config;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * Timeout attempts to terminate execution after a duration time passes.
@@ -49,11 +52,13 @@ public interface Timeout extends FtHandler {
     /**
      * Fluent API builder for {@link io.helidon.faulttolerance.Timeout}.
      */
+    @Configured
     class Builder implements io.helidon.common.Builder<Timeout> {
         private Duration timeout = Duration.ofSeconds(10);
         private LazyValue<? extends ScheduledExecutorService> executor = FaultTolerance.scheduledExecutor();
         private boolean currentThread = false;
         private String name = "Timeout-" + System.identityHashCode(this);
+        private boolean cancelSource = true;
 
         private Builder() {
         }
@@ -69,6 +74,7 @@ public interface Timeout extends FtHandler {
          * @param timeout duration of the timeout of operations handled by the new Timeout instance
          * @return updated builder instance
          */
+        @ConfiguredOption("PT10S")
         public Builder timeout(Duration timeout) {
             this.timeout = timeout;
             return this;
@@ -81,6 +87,7 @@ public interface Timeout extends FtHandler {
          * @param currentThread setting for this timeout
          * @return updated builder instance
          */
+        @ConfiguredOption("false")
         public Builder currentThread(boolean currentThread) {
             this.currentThread = currentThread;
             return this;
@@ -103,8 +110,65 @@ public interface Timeout extends FtHandler {
          * @param name the name
          * @return updated builder instance
          */
+        @ConfiguredOption("Timeout-")
         public Builder name(String name) {
             this.name = name;
+            return this;
+        }
+
+        /**
+         * Cancel source if destination stage is cancelled.
+         *
+         * @param cancelSource setting for cancel source, defaults (@code true}
+         * @return updated builder instance
+         */
+        @ConfiguredOption("true")
+        public Builder cancelSource(boolean cancelSource) {
+            this.cancelSource = cancelSource;
+            return this;
+        }
+
+        /**
+         * <p>
+         * Load all properties for this circuit breaker from configuration.
+         * </p>
+         * <table class="config">
+         * <caption>Configuration</caption>
+         * <tr>
+         *     <th>key</th>
+         *     <th>default value</th>
+         *     <th>description</th>
+         * </tr>
+         * <tr>
+         *     <td>timeout</td>
+         *     <td>10 seconds</td>
+         *     <td>Length of timeout</td>
+         * </tr>
+         * <tr>
+         *     <td>current-thread</td>
+         *     <td>false</td>
+         *     <td>Control that task is executed in calling thread</td>
+         * </tr>
+         * <tr>
+         *     <td>name</td>
+         *     <td>Timeout-N</td>
+         *     <td>Name used for debugging</td>
+         * </tr>
+         * <tr>
+         *     <td>cancel-source</td>
+         *     <td>true</td>
+         *     <td>Cancel task source if task is cancelled</td>
+         * </tr>
+         * </table>
+         *
+         * @param config the config node to use
+         * @return updated builder instance
+         */
+        public Builder config(Config config) {
+            config.get("timeout").as(Duration.class).ifPresent(this::timeout);
+            config.get("current-thread").asBoolean().ifPresent(this::currentThread);
+            config.get("name").asString().ifPresent(this::name);
+            config.get("cancel-source").asBoolean().ifPresent(this::cancelSource);
             return this;
         }
 
@@ -122,6 +186,10 @@ public interface Timeout extends FtHandler {
 
         String name() {
             return name;
+        }
+
+        boolean cancelSource() {
+            return cancelSource;
         }
     }
 }

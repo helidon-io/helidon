@@ -63,6 +63,7 @@ import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
 import io.netty.handler.codec.http2.Http2Error;
 import io.netty.handler.codec.http2.Http2Exception;
 
+import static io.helidon.webserver.HttpInitializer.CLIENT_CERTIFICATE;
 import static io.helidon.webserver.HttpInitializer.CLIENT_CERTIFICATE_NAME;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
@@ -310,6 +311,10 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
         request.headers().remove(Http.Header.X_HELIDON_CN);
         Optional.ofNullable(ctx.channel().attr(CLIENT_CERTIFICATE_NAME).get())
                 .ifPresent(name -> request.headers().set(Http.Header.X_HELIDON_CN, name));
+        // If the client x509 certificate is present on the channel, add it to the context scope of the ongoing
+        // request so that helidon handlers can inspect and react to this.
+        Optional.ofNullable(ctx.channel().attr(CLIENT_CERTIFICATE).get())
+                .ifPresent(cert -> requestScope.register(WebServerTls.CLIENT_X509_CERTIFICATE, cert));
 
         // Context, publisher and DataChunk queue for this request/response
         DataChunkHoldingQueue queue = new DataChunkHoldingQueue();
@@ -367,7 +372,9 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
 
         String contentLength = request.headers().get(HttpHeaderNames.CONTENT_LENGTH);
 
+        // HTTP WebSocket client sends a content length of 0 together with Connection: Upgrade
         if ("0".equals(contentLength)
+                               && !"upgrade".equalsIgnoreCase(request.headers().get(HttpHeaderNames.CONNECTION))
                 || (contentLength == null
                              && !"upgrade".equalsIgnoreCase(request.headers().get(HttpHeaderNames.CONNECTION))
                              && !"chunked".equalsIgnoreCase(request.headers().get(HttpHeaderNames.TRANSFER_ENCODING))

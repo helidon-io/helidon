@@ -93,7 +93,7 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
      * @return a new thread pool supplier configured from config
      * @deprecated since 2.4.2, please use {@link #create(Config, String)}
      */
-    @Deprecated
+    @Deprecated(since = "2.4.2", forRemoval = true)
     public static ThreadPoolSupplier create(Config config) {
         return builder().config(config)
                 .build();
@@ -118,7 +118,7 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
      * @return a new thread pool supplier with default configuration
      * @deprecated since 2.4.2, please use {@link #create(String)}
      */
-    @Deprecated
+    @Deprecated(since = "2.4.2", forRemoval = true)
     public static ThreadPoolSupplier create() {
         return builder().build();
     }
@@ -183,7 +183,7 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
         private int keepAliveMinutes = DEFAULT_KEEP_ALIVE_MINUTES;
         private int queueCapacity = DEFAULT_QUEUE_CAPACITY;
         private boolean isDaemon = DEFAULT_IS_DAEMON;
-        private String threadNamePrefix = DEFAULT_THREAD_NAME_PREFIX;
+        private String threadNamePrefix = null;
         private boolean prestart = DEFAULT_PRESTART;
         private int growthThreshold = DEFAULT_GROWTH_THRESHOLD;
         private int growthRate = DEFAULT_GROWTH_RATE;
@@ -198,11 +198,15 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
         @Override
         public ThreadPoolSupplier build() {
             if (name == null) {
-                if (DEFAULT_THREAD_NAME_PREFIX.equals(threadNamePrefix)) {
+                if (threadNamePrefix == null) {
                     LOGGER.warning("Neither a thread name prefix nor a pool name specified");
+                    threadNamePrefix = DEFAULT_THREAD_NAME_PREFIX;
                 }
                 name = threadNamePrefix + "thread-pool-" + DEFAULT_NAME_COUNTER.incrementAndGet();
+            } else if (threadNamePrefix == null) {
+                threadNamePrefix = DEFAULT_THREAD_NAME_PREFIX + name + "-";
             }
+
             if (rejectionHandler == null) {
                 rejectionHandler = DEFAULT_REJECTION_POLICY;
             }

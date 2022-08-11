@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,6 @@ import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Settings;
 import io.netty.handler.codec.http2.HttpToHttp2ConnectionHandler;
 import io.netty.handler.codec.http2.InboundHttp2ToHttpAdapter;
-import io.netty.handler.codec.http2.InboundHttp2ToHttpAdapterBuilder;
 
 import static io.netty.handler.logging.LogLevel.DEBUG;
 
@@ -49,11 +48,9 @@ class HelidonConnectionHandler extends HttpToHttp2ConnectionHandler implements H
     HelidonConnectionHandler(Http2ConnectionDecoder decoder, Http2ConnectionEncoder encoder,
                              Http2Settings initialSettings, int maxContentLength) {
         super(decoder, encoder, initialSettings, true);
-        inboundAdapter = new InboundHttp2ToHttpAdapterBuilder(decoder.connection())
-                .maxContentLength(maxContentLength)
-                .propagateSettings(true)
-                .validateHttpHeaders(true)
-                .build();
+
+        // Wrapper fixes the http version issue for adapted FullHttpMessage
+        inboundAdapter = InboundHttp2ToHttpAdapterWrapper.create(decoder.connection(), maxContentLength, true, true);
     }
 
     @Override

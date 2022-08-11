@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-bom</artifactId>
-        <version>2.4.3-SNAPSHOT</version>
+        <version>2.5.2-SNAPSHOT</version>
         <relativePath>../bom/pom.xml</relativePath>
     </parent>
     <artifactId>helidon-dependencies</artifactId>
@@ -48,20 +48,20 @@
         <version.lib.commons-logging>1.2</version.lib.commons-logging>
         <version.lib.cron-utils>9.1.6</version.lib.cron-utils>
         <version.lib.dropwizard.metrics>4.1.2</version.lib.dropwizard.metrics>
-        <version.lib.eclipselink>2.7.9</version.lib.eclipselink>
+        <version.lib.eclipselink>2.7.10</version.lib.eclipselink>
         <version.lib.el-api>3.0.3</version.lib.el-api>
         <version.lib.el-impl>3.0.4</version.lib.el-impl>
         <version.lib.etcd4j>2.18.0</version.lib.etcd4j>
         <version.lib.failsafe>2.3.1</version.lib.failsafe>
-        <version.lib.google-api-client>1.32.2</version.lib.google-api-client>
-        <version.lib.google-oauth-client>1.32.1</version.lib.google-oauth-client>
+        <version.lib.google-api-client>1.34.1</version.lib.google-api-client>
+        <version.lib.google-oauth-client>1.33.3</version.lib.google-oauth-client>
         <version.lib.google-error-prone>2.3.3</version.lib.google-error-prone>
-        <version.lib.google-protobuf>3.19.2</version.lib.google-protobuf>
+        <version.lib.google-protobuf>3.21.4</version.lib.google-protobuf>
         <version.lib.graalvm>21.3.0</version.lib.graalvm>
         <version.lib.graphql-java>15.0</version.lib.graphql-java>
         <version.lib.graphql-java.extended.scalars>15.0.0</version.lib.graphql-java.extended.scalars>
         <version.lib.gson>2.8.9</version.lib.gson>
-        <version.lib.grpc>1.44.0</version.lib.grpc>
+        <version.lib.grpc>1.45.1</version.lib.grpc>
         <version.lib.guava>30.0-jre</version.lib.guava>
         <version.lib.h2>1.4.200</version.lib.h2>
         <version.lib.hamcrest>1.3</version.lib.hamcrest>
@@ -70,7 +70,8 @@
         <version.lib.hystrix>1.5.18</version.lib.hystrix>
         <version.lib.inject>1.0</version.lib.inject>
         <version.lib.interceptor-api>1.2.5</version.lib.interceptor-api>
-        <version.lib.jackson>2.12.1</version.lib.jackson>
+        <!-- This is the BOM version for Jackson Databind 2.13.2.2 -->
+        <version.lib.jackson>2.13.2.20220328</version.lib.jackson>
         <version.lib.jaegertracing>1.6.0</version.lib.jaegertracing>
         <version.lib.jandex>2.3.1.Final</version.lib.jandex>
         <version.lib.jaxb-api>2.3.3</version.lib.jaxb-api>
@@ -90,7 +91,6 @@
         <version.lib.jsonb-api>1.0.2</version.lib.jsonb-api>
         <version.lib.jsonp-api>1.1.6</version.lib.jsonp-api>
         <version.lib.jsonp-impl>1.1.6</version.lib.jsonp-impl>
-        <version.lib.junit4>4.13.1</version.lib.junit4>
         <version.lib.junit>5.7.0</version.lib.junit>
         <version.lib.kafka>2.8.1</version.lib.kafka>
         <version.lib.log4j>2.17.1</version.lib.log4j>
@@ -115,15 +115,16 @@
         <version.lib.microprofile-tracing>1.3.3</version.lib.microprofile-tracing>
         <version.lib.microprofile-lra-api>1.0</version.lib.microprofile-lra-api>
         <version.lib.microstream>05.00.02-MS-GA</version.lib.microstream>
-        <version.lib.mockito>2.23.4</version.lib.mockito>
         <version.lib.mongodb.reactivestreams>1.11.0</version.lib.mongodb.reactivestreams>
         <version.lib.mssql-jdbc>8.4.1.jre8</version.lib.mssql-jdbc>
         <version.lib.neo4j>4.4.3</version.lib.neo4j>
-        <version.lib.mysql-connector-java>8.0.22</version.lib.mysql-connector-java>
+        <version.lib.hibernate-validator>6.2.1.Final</version.lib.hibernate-validator>
+        <version.lib.mysql-connector-java>8.0.28</version.lib.mysql-connector-java>
         <version.lib.narayana>5.12.0.Final</version.lib.narayana>
-        <version.lib.netty>4.1.73.Final</version.lib.netty>
+        <version.lib.netty>4.1.77.Final</version.lib.netty>
         <version.lib.netty-io_uring>0.0.8.Final</version.lib.netty-io_uring>
-        <version.lib.oci-java-sdk-objectstorage>2.3.0</version.lib.oci-java-sdk-objectstorage>
+        <version.lib.oci>2.19.0</version.lib.oci>
+        <version.lib.oci-java-sdk-objectstorage>${version.lib.oci}</version.lib.oci-java-sdk-objectstorage>
         <version.lib.ojdbc8>21.3.0.0</version.lib.ojdbc8>
         <version.lib.database.messaging>19.3.0.0</version.lib.database.messaging>
         <version.lib.okhttp3>3.14.9</version.lib.okhttp3>
@@ -131,20 +132,21 @@
         <version.lib.opentracing>0.33.0</version.lib.opentracing>
         <version.lib.opentracing.grpc>0.2.1</version.lib.opentracing.grpc>
         <version.lib.opentracing.tracerresolver>0.1.8</version.lib.opentracing.tracerresolver>
+        <version.lib.perfmark-api>0.23.0</version.lib.perfmark-api>
         <version.lib.persistence-api>2.2.3</version.lib.persistence-api>
-        <version.lib.postgresql>42.2.18</version.lib.postgresql>
+        <version.lib.postgresql>42.3.3</version.lib.postgresql>
         <version.lib.prometheus>0.9.0</version.lib.prometheus>
         <version.lib.slf4j>1.7.32</version.lib.slf4j>
         <version.lib.smallrye-openapi>2.0.26</version.lib.smallrye-openapi>
-        <version.lib.snakeyaml>1.27</version.lib.snakeyaml>
+        <version.lib.snakeyaml>1.30</version.lib.snakeyaml>
         <version.lib.transaction-api>1.3.3</version.lib.transaction-api>
-        <version.lib.typesafe-config>1.4.1</version.lib.typesafe-config>
+        <version.lib.typesafe-config>1.4.2</version.lib.typesafe-config>
         <version.lib.tyrus>1.17</version.lib.tyrus>
         <version.lib.validation-api>2.0.2</version.lib.validation-api>
         <version.lib.websockets-api>1.1.2</version.lib.websockets-api>
         <version.lib.weld-api>3.1.SP2</version.lib.weld-api>
         <version.lib.weld>3.1.6.Final</version.lib.weld>
-        <version.lib.yasson>1.0.8</version.lib.yasson>
+        <version.lib.yasson>1.0.11</version.lib.yasson>
         <version.lib.zipkin.sender-urlconnection>2.12.0</version.lib.zipkin.sender-urlconnection>
         <version.lib.zipkin>2.12.5</version.lib.zipkin>
         <version.lib.zookeeper>3.5.7</version.lib.zookeeper>
@@ -465,6 +467,12 @@
                 <artifactId>gson</artifactId>
                 <version>${version.lib.gson}</version>
             </dependency>
+            <!-- Dependency convergence. Should align with version used by io.grpc -->
+            <dependency>
+              <groupId>io.perfmark</groupId>
+              <artifactId>perfmark-api</artifactId>
+              <version>${version.lib.perfmark-api}</version>
+            </dependency>
 
             <dependency>
               <groupId>io.opentracing.contrib</groupId>
@@ -568,15 +576,20 @@
                     </exclusion>
                 </exclusions>
             </dependency>
-            <!-- For dependency converge only -->
+            <!-- For dependency converge and force uppgrade of oauth-client -->
             <dependency>
                 <groupId>com.google.oauth-client</groupId>
                 <artifactId>google-oauth-client</artifactId>
                 <version>${version.lib.google-oauth-client}</version>
+                <!-- Defer to versions from google-api-client -->
                 <exclusions>
                     <exclusion>
                         <groupId>com.google.http-client</groupId>
                         <artifactId>google-http-client</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.google.http-client</groupId>
+                        <artifactId>google-http-client-gson</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -773,9 +786,13 @@
             </dependency>
             <dependency>
                 <groupId>io.smallrye</groupId>
-                <artifactId>smallrye-open-api</artifactId>
+                <artifactId>smallrye-open-api-core</artifactId>
                 <version>${version.lib.smallrye-openapi}</version>
-                <type>pom</type>
+            </dependency>
+            <dependency>
+                <groupId>io.smallrye</groupId>
+                <artifactId>smallrye-open-api-jaxrs</artifactId>
+                <version>${version.lib.smallrye-openapi}</version>
             </dependency>
 
             <!-- Microstream related -->
@@ -835,7 +852,6 @@
                 <groupId>com.oracle.oci.sdk</groupId>
                 <artifactId>oci-java-sdk-objectstorage</artifactId>
                 <version>${version.lib.oci-java-sdk-objectstorage}</version>
-                <type>pom</type>
                 <exclusions>
                     <exclusion>
                         <groupId>org.glassfish.hk2.external</groupId>
@@ -1128,6 +1144,17 @@
                 <artifactId>neo4j-java-driver</artifactId>
                 <version>${version.lib.neo4j}</version>
             </dependency>
+            <!-- Bean Validation -->
+            <dependency>
+                <groupId>org.hibernate.validator</groupId>
+                <artifactId>hibernate-validator</artifactId>
+                <version>${version.lib.hibernate-validator}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.hibernate.validator</groupId>
+                <artifactId>hibernate-validator-cdi</artifactId>
+                <version>${version.lib.hibernate-validator}</version>
+            </dependency>
             <!-- Cron utils -->
             <dependency>
                 <groupId>com.cronutils</groupId>
@@ -1254,18 +1281,6 @@
             <!-- END OF Section 2: third party dependencies used by examples -->
 
             <!-- Section 3: transitive dependencies we manage the version of for convergence/upgrade -->
-            <dependency>
-                <!-- Explicitly force jackson-annotations to use proper version; bom doesn't -->
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-annotations</artifactId>
-                <version>${version.lib.jackson}</version>
-            </dependency>
-            <dependency>
-                <!-- Jackson BOM manages Junit version. It shouldn't. So we are forced to manage it -->
-                <groupId>junit</groupId>
-                <artifactId>junit</artifactId>
-                <version>${version.lib.junit4}</version>
-            </dependency>
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-codec-dns</artifactId>
@@ -1404,11 +1419,6 @@
 
             <!-- Section 4: Testing -->
             <dependency>
-                <groupId>org.mockito</groupId>
-                <artifactId>mockito-core</artifactId>
-                <version>${version.lib.mockito}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-api</artifactId>
                 <version>${version.lib.junit}</version>
@@ -1517,6 +1527,13 @@
                 <groupId>com.fasterxml.jackson</groupId>
                 <artifactId>jackson-bom</artifactId>
                 <version>${version.lib.jackson}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.oracle.oci.sdk</groupId>
+                <artifactId>oci-java-sdk-bom</artifactId>
+                <version>${version.lib.oci}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>

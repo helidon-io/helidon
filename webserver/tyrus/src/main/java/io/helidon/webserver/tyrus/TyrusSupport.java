@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,9 @@ package io.helidon.webserver.tyrus;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -31,6 +33,8 @@ import javax.websocket.Extension;
 import javax.websocket.server.HandshakeRequest;
 import javax.websocket.server.ServerEndpointConfig;
 
+import io.helidon.common.http.Parameters;
+import io.helidon.common.http.UriComponent;
 import io.helidon.webserver.Handler;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
@@ -265,9 +269,14 @@ public class TyrusSupport implements Service {
 
             LOGGER.fine("Initiating WebSocket handshake ...");
 
-            // Create Tyrus request context and copy request headers
+            // Create Tyrus request context, copying headers and query params
+            Map<String, String[]> paramsMap = new HashMap<>();
+            Parameters params = UriComponent.decodeQuery(req.uri().getRawQuery(), true);
+            params.toMap().forEach((key, value) -> paramsMap.put(key, value.toArray(new String[0])));
             RequestContext requestContext = RequestContext.Builder.create()
                     .requestURI(URI.create(req.path().toString()))      // excludes context path
+                    .queryString(req.query())
+                    .parameterMap(paramsMap)
                     .build();
             req.headers().toMap().forEach((key, value) -> requestContext.getHeaders().put(key, value));
 

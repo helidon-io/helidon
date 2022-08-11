@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,10 +41,11 @@ public interface DataPropagationProvider<T> {
     void propagateData(T data);
 
     /**
-     * Clears the propagated data from the new thread when it finishes. This
-     * method is deprecated in favor of {@link #clearData(Object)}.
+     * Clears the propagated data from the new thread when it finishes.
+     *
+     * @deprecated since 2.3.2, please use {@link #clearData(Object)}
      */
-    @Deprecated
+    @Deprecated(since = "2.3.2", forRemoval = true)
     default void clearData() {
     }
 

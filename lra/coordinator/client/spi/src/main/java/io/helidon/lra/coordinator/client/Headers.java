@@ -21,8 +21,10 @@ import java.util.List;
 
 /**
  * Abstraction over the structure used for sending LRA id by coordinatior.
+ *
+ * @deprecated Never used on LRA api, going to be removed without replacement.
  */
-@Deprecated
+@Deprecated(since = "2.5.2", forRemoval = true)
 public interface Headers {
 
     /**

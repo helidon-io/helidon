@@ -16,26 +16,23 @@
 
 package io.helidon.microprofile.faulttolerance;
 
-import java.lang.reflect.Method;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Future;
+
+import javax.enterprise.inject.spi.AnnotatedMethod;
 
 import org.eclipse.microprofile.faulttolerance.Asynchronous;
 import org.eclipse.microprofile.faulttolerance.exceptions.FaultToleranceDefinitionException;
 
-/**
- * Class AsynchronousAntn.
- */
 class AsynchronousAntn extends MethodAntn implements Asynchronous {
 
     /**
      * Constructor.
      *
-     * @param beanClass Bean class.
-     * @param method The method.
+     * @param annotatedMethod The annotated method.
      */
-    AsynchronousAntn(Class<?> beanClass, Method method) {
-        super(beanClass, method);
+    AsynchronousAntn(AnnotatedMethod<?> annotatedMethod) {
+        super(annotatedMethod);
     }
 
     @Override

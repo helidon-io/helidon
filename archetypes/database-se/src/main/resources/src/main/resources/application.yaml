@@ -6,7 +6,7 @@ server:
 db:
   source: jdbc
   connection:
-    url: jdbc:h2:mem:test;DB_CLOSE_DELAY=-1
+    url: jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE
     # url: jdbc:h2:tcp://localhost:1521/test
     username: sa
     password:

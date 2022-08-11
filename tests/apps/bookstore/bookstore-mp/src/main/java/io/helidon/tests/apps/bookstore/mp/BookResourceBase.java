@@ -16,13 +16,30 @@
 
 package io.helidon.tests.apps.bookstore.mp;
 
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+
+import io.helidon.tests.apps.bookstore.common.Book;
 
 /**
- * This class exists only to verify inheritance of {@link Path} to subclass
- * in this application. This is an extension to the JAX-RS spec supported
+ * This class exists only to verify inheritance of {@link Path} in
+ * this application. This is an extension to the JAX-RS spec supported
  * by Jersey.
  */
 @Path("/books")
 public abstract class BookResourceBase {
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    abstract public Response getBooks();
+
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    abstract public Response postBook(Book book);
+
 }

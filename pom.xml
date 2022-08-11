@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-dependencies</artifactId>
-        <version>2.4.3-SNAPSHOT</version>
+        <version>2.5.2-SNAPSHOT</version>
         <relativePath>./dependencies/pom.xml</relativePath>
     </parent>
     <artifactId>helidon-project</artifactId>
@@ -60,8 +60,10 @@
         <version.lib.groovy-all>2.4.14</version.lib.groovy-all>
         <!-- Silence javadoc error org.jboss.logging.annotations.Message$Format not found -->
         <version.lib.jboss-logging-annotations>2.2.1.Final</version.lib.jboss-logging-annotations>
+        <version.lib.junit4>4.13.1</version.lib.junit4>
         <version.lib.kafka-junit5>3.2.3</version.lib.kafka-junit5>
-        <version.lib.netty.tcnative>2.0.46.Final</version.lib.netty.tcnative>
+        <version.lib.mockito>2.23.4</version.lib.mockito>
+        <version.lib.netty.tcnative>2.0.52.Final</version.lib.netty.tcnative>
         <version.lib.restito>0.9.1</version.lib.restito>
         <version.lib.rxjava2-jdk9-interop>0.1.0</version.lib.rxjava2-jdk9-interop>
         <version.lib.rxjava>2.2.10</version.lib.rxjava>
@@ -91,8 +93,8 @@
         <version.plugin.checkstyle>3.1.0</version.plugin.checkstyle>
         <version.plugin.compiler>3.8.1</version.plugin.compiler>
         <version.plugin.dependency>3.1.2</version.plugin.dependency>
-        <version.plugin.directory>0.3.1</version.plugin.directory>
-        <version.plugin.eclipselink>2.7.5.1</version.plugin.eclipselink>
+        <version.plugin.directory>1.0</version.plugin.directory>
+        <version.plugin.eclipselink>2.7.9.1</version.plugin.eclipselink>
         <version.plugin.enforcer>3.0.0-M1</version.plugin.enforcer>
         <version.plugin.exec>1.6.0</version.plugin.exec>
         <version.plugin.failsafe>3.0.0-M5</version.plugin.failsafe>
@@ -159,6 +161,7 @@
         <javadoc.link.jersey>https://eclipse-ee4j.github.io/jersey.github.io/apidocs/${version.lib.jersey}/jersey</javadoc.link.jersey>
         <javadoc.link.typesafe-config>https://static.javadoc.io/com.typesafe/config/${version.lib.typesafe-config}</javadoc.link.typesafe-config>
         <javadoc.link.netty-transport>https://static.javadoc.io/io.netty/netty-transport/${version.lib.netty}</javadoc.link.netty-transport>
+        <javadoc.link.oci>https://docs.oracle.com/en-us/iaas/tools/java/${version.lib.oci}</javadoc.link.oci>
         <javadoc.link.opentracing>https://static.javadoc.io/io.opentracing/opentracing-api/${version.lib.opentracing}</javadoc.link.opentracing>
         <javadoc.link.prometheus>https://static.javadoc.io/io.prometheus/simpleclient/${version.lib.prometheus}</javadoc.link.prometheus>
         <javadoc.link.zipkin>https://static.javadoc.io/io.zipkin.reporter2/zipkin-reporter/2.12.3</javadoc.link.zipkin>
@@ -276,6 +279,10 @@
                             <offlineLink>
                                 <url>${javadoc.link.netty-transport}</url>
                                 <location>${javadoc.packagelist.dir}/netty-transport</location>
+                            </offlineLink>
+                            <offlineLink>
+                                <url>${javadoc.link.oci}</url>
+                                <location>${javadoc.packagelist.dir}/oci</location>
                             </offlineLink>
                             <offlineLink>
                                 <url>${javadoc.link.opentracing}</url>
@@ -578,7 +585,7 @@
                     <version>${version.plugin.protobuf}</version>
                     <configuration>
                         <!--suppress UnresolvedMavenProperty -->
-                        <protocArtifact>com.google.protobuf:protoc:3.5.1-1:exe:${os.detected.classifier}</protocArtifact>
+                        <protocArtifact>com.google.protobuf:protoc:${version.lib.google-protobuf}:exe:${os.detected.classifier}</protocArtifact>
                         <pluginId>grpc-java</pluginId>
                         <!--suppress UnresolvedMavenProperty -->
                         <pluginArtifact>
@@ -927,6 +934,11 @@
                 <groupId>io.netty</groupId>
                 <artifactId>netty-tcnative-boringssl-static</artifactId>
                 <version>${version.lib.netty.tcnative}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-core</artifactId>
+                <version>${version.lib.mockito}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jgit</groupId>

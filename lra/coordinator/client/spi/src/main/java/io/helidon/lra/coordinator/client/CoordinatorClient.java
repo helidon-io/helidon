@@ -71,7 +71,7 @@ public interface CoordinatorClient {
      * @return id of the new LRA
      * @deprecated Use {@link io.helidon.lra.coordinator.client.CoordinatorClient#start(String, PropagatedHeaders, long)} instead
      */
-    @Deprecated
+    @Deprecated(since = "2.4.2", forRemoval = true)
     default Single<URI> start(String clientID, long timeout) {
         return start(clientID, PropagatedHeaders.noop(), timeout);
     }
@@ -96,7 +96,7 @@ public interface CoordinatorClient {
      * @deprecated Use
      * {@link io.helidon.lra.coordinator.client.CoordinatorClient#start(java.net.URI, String, PropagatedHeaders, long)} instead
      */
-    @Deprecated
+    @Deprecated(since = "2.4.2", forRemoval = true)
     default Single<URI> start(URI parentLRA, String clientID, long timeout) {
         return start(parentLRA, clientID, PropagatedHeaders.noop(), timeout);
     }
@@ -122,7 +122,7 @@ public interface CoordinatorClient {
      * @deprecated Use
      * {@link io.helidon.lra.coordinator.client.CoordinatorClient#join(java.net.URI, PropagatedHeaders, long, Participant)} instead
      */
-    @Deprecated
+    @Deprecated(since = "2.4.2", forRemoval = true)
     default Single<Optional<URI>> join(URI lraId, long timeLimit, Participant participant) {
         return join(lraId, PropagatedHeaders.noop(), timeLimit, participant);
     }
@@ -146,7 +146,7 @@ public interface CoordinatorClient {
      * @deprecated Use
      * {@link io.helidon.lra.coordinator.client.CoordinatorClient#cancel(java.net.URI, PropagatedHeaders)} instead
      */
-    @Deprecated
+    @Deprecated(since = "2.4.2", forRemoval = true)
     default Single<Void> cancel(URI lraId) {
         return cancel(lraId, PropagatedHeaders.noop());
     }
@@ -168,7 +168,7 @@ public interface CoordinatorClient {
      * @deprecated Use
      * {@link io.helidon.lra.coordinator.client.CoordinatorClient#close(java.net.URI, PropagatedHeaders)} instead
      */
-    @Deprecated
+    @Deprecated(since = "2.4.2", forRemoval = true)
     default Single<Void> close(URI lraId) {
         return close(lraId, PropagatedHeaders.noop());
     }
@@ -192,7 +192,7 @@ public interface CoordinatorClient {
      * @deprecated Use
      * {@link io.helidon.lra.coordinator.client.CoordinatorClient#leave(java.net.URI, PropagatedHeaders, Participant)} instead
      */
-    @Deprecated
+    @Deprecated(since = "2.4.2", forRemoval = true)
     default Single<Void> leave(URI lraId, Participant participant) {
         return leave(lraId, PropagatedHeaders.noop(), participant);
     }
@@ -216,7 +216,7 @@ public interface CoordinatorClient {
      * @deprecated Use
      * {@link io.helidon.lra.coordinator.client.CoordinatorClient#status(java.net.URI, PropagatedHeaders)} instead
      */
-    @Deprecated
+    @Deprecated(since = "2.4.2", forRemoval = true)
     default Single<LRAStatus> status(URI lraId) {
         return status(lraId, PropagatedHeaders.noop());
     }

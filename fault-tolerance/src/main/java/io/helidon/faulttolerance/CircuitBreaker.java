@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,9 @@ import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
 
 import io.helidon.common.LazyValue;
+import io.helidon.config.Config;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * CircuitBreaker protects a potentially failing endpoint from overloading and the application
@@ -89,6 +92,7 @@ public interface CircuitBreaker extends FtHandler {
     /**
      * Fluent API builder for {@link io.helidon.faulttolerance.CircuitBreaker}.
      */
+    @Configured
     class Builder implements io.helidon.common.Builder<CircuitBreaker> {
         private final Set<Class<? extends Throwable>> skipOn = new HashSet<>();
         private final Set<Class<? extends Throwable>> applyOn = new HashSet<>();
@@ -102,6 +106,7 @@ public interface CircuitBreaker extends FtHandler {
         private int volume = 10;
         private LazyValue<? extends ScheduledExecutorService> executor = FaultTolerance.scheduledExecutor();
         private String name = "CircuitBreaker-" + System.identityHashCode(this);
+        private boolean cancelSource = true;
 
         private Builder() {
         }
@@ -117,6 +122,7 @@ public interface CircuitBreaker extends FtHandler {
          * @param delay to wait
          * @return updated builder instance
          */
+        @ConfiguredOption("PT5S")
         public Builder delay(Duration delay) {
             this.delay = delay;
             return this;
@@ -131,6 +137,7 @@ public interface CircuitBreaker extends FtHandler {
          * @return updated builder instance
          * @see #volume(int)
          */
+        @ConfiguredOption("60")
         public Builder errorRatio(int ratio) {
             this.ratio = ratio;
             return this;
@@ -143,6 +150,7 @@ public interface CircuitBreaker extends FtHandler {
          * @param successThreshold number of calls
          * @return updated builder instance
          */
+        @ConfiguredOption("1")
         public Builder successThreshold(int successThreshold) {
             this.successThreshold = successThreshold;
             return this;
@@ -155,6 +163,7 @@ public interface CircuitBreaker extends FtHandler {
          * @return updated builder instance
          * @see #errorRatio(int)
          */
+        @ConfiguredOption("10")
         public Builder volume(int volume) {
             this.volume = volume;
             return this;
@@ -237,8 +246,78 @@ public interface CircuitBreaker extends FtHandler {
          * @param name the name
          * @return updated builder instance
          */
+        @ConfiguredOption("CircuitBreaker-")
         public Builder name(String name) {
             this.name = name;
+            return this;
+        }
+
+        /**
+         * Policy to cancel any source stage if the value return by {@link CircuitBreaker#invoke}
+         * is cancelled. Default is {@code true}; mostly used by FT MP to change default.
+         *
+         * @param cancelSource cancel source policy
+         * @return updated builder instance
+         */
+        @ConfiguredOption("true")
+        public Builder cancelSource(boolean cancelSource) {
+            this.cancelSource = cancelSource;
+            return this;
+        }
+
+        /**
+         * <p>
+         * Load all properties for this circuit breaker from configuration.
+         * </p>
+         * <table class="config">
+         * <caption>Configuration</caption>
+         * <tr>
+         *     <th>key</th>
+         *     <th>default value</th>
+         *     <th>description</th>
+         * </tr>
+         * <tr>
+         *     <td>delay</td>
+         *     <td>5 seconds</td>
+         *     <td>Delay to transition from open to half-open</td>
+         * </tr>
+         * <tr>
+         *     <td>name</td>
+         *     <td>CircuitBreaker-N</td>
+         *     <td>Name used for debugging</td>
+         * </tr>
+         * <tr>
+         *     <td>error-ratio</td>
+         *     <td>60</td>
+         *     <td>Failure percentage that will open the breaker</td>
+         * </tr>
+         * <tr>
+         *     <td>success-threshold</td>
+         *     <td>1</td>
+         *     <td>Number of successful calls will close a half-open breaker</td>
+         * </tr>
+         * <tr>
+         *     <td>volume</td>
+         *     <td>10</td>
+         *     <td>Rolling window size</td>
+         * </tr>
+         * <tr>
+         *     <td>cancel-source</td>
+         *     <td>true</td>
+         *     <td>Cancel task source if task is cancelled</td>
+         * </tr>
+         * </table>
+         *
+         * @param config the config node to use
+         * @return updated builder instance
+         */
+        public Builder config(Config config) {
+            config.get("delay").as(Duration.class).ifPresent(this::delay);
+            config.get("error-ratio").asInt().ifPresent(this::errorRatio);
+            config.get("success-threshold").asInt().ifPresent(this::successThreshold);
+            config.get("volume").asInt().ifPresent(this::volume);
+            config.get("name").asString().ifPresent(this::name);
+            config.get("cancel-source").asBoolean().ifPresent(this::cancelSource);
             return this;
         }
 
@@ -272,6 +351,10 @@ public interface CircuitBreaker extends FtHandler {
 
         String name() {
             return name;
+        }
+
+        boolean cancelSource() {
+            return cancelSource;
         }
     }
 }

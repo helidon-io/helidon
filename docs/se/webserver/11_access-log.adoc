@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -71,6 +71,9 @@ The following configuration options can be defined:
 |`format`       |`helidon`          |`helidonLogFormat()`, `commonLogFormat()`, `add(AccessLogEntry entry)` |Configuration of access log output,
                                                         when `helidon` is defined, the Helidon log format (see below) is used.
                                                         Can be configured to explicitly define log entries (see below as well)
+|`exclude-paths`|N/A|`excludePaths(List<String>)` | List of path patterns to exclude from access log. Path pattern syntax is as
+                                                defined in `io.helidon.webserver.PathMatcher`. Can be used to exclude
+                                                paths such as `/health` or `/metrics` to avoid cluttering log.
 
 |===
 

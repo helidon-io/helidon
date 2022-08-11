@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -209,7 +209,7 @@ public final class FileSystemWatcher implements ChangeWatcher<Path> {
             this.watchServiceModifiers = watchServiceModifiers;
             this.fileExists = Files.exists(target);
             this.watchingFile = !Files.isDirectory(target);
-            this.watchedDir = watchingFile ? target.getParent() : target;
+            this.watchedDir = watchingFile ? parentDir(target) : target;
         }
 
         @SuppressWarnings("unchecked")
@@ -342,7 +342,7 @@ public final class FileSystemWatcher implements ChangeWatcher<Path> {
         }
 
         private Path parentDir(Path path) {
-            Path parent = path.getParent();
+            Path parent = path.toAbsolutePath().getParent();
             if (parent == null) {
                 throw new ConfigException(
                         String.format("Cannot find parent directory for '%s' to register watch service.", path));

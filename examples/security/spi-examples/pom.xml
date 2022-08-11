@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.applications</groupId>
         <artifactId>helidon-se</artifactId>
-        <version>2.4.3-SNAPSHOT</version>
+        <version>2.5.2-SNAPSHOT</version>
         <relativePath>../../../applications/se/pom.xml</relativePath>
     </parent>
     <groupId>io.helidon.examples.security</groupId>
@@ -34,6 +34,10 @@
     <description>
         Example of implementation of custom providers and other SPI implementations
     </description>
+
+    <properties>
+        <version.lib.mockito>2.23.4</version.lib.mockito>
+    </properties>
 
     <dependencies>
         <dependency>
@@ -57,6 +61,7 @@
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
+            <version>${version.lib.mockito}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

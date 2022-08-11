@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,18 +19,19 @@
  */
 module io.helidon.examples.integrations.oci.atp.reactive {
     requires java.logging;
-    requires java.json;
     requires java.sql;
 
     requires io.helidon.common.http;
     requires io.helidon.common.reactive;
     requires io.helidon.dbclient;
     requires io.helidon.dbclient.jdbc;
-    requires io.helidon.integrations.oci.atp;
     requires io.helidon.webserver;
 
+    requires oci.java.sdk.common;
+    requires oci.java.sdk.database;
     requires com.oracle.database.jdbc;
     requires com.oracle.database.ucp;
+    requires oraclepki;
 
     exports io.helidon.examples.integrations.oci.atp.reactive;
 }

@@ -309,6 +309,12 @@ import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
  *     <td>&nbsp;</td>
  *     <td>Cross-origin resource sharing settings. See {@link io.helidon.webserver.cors.CrossOriginConfig}.</td>
  * </tr>
+ * <tr>
+ *     <td>{@code force-https-redirects}</td>
+ *     <td>&nbsp;</td>
+ *     <td>Force https for redirects to identity provider.
+ *     This is helpful if you have a frontend SSL or cloud load balancer in front and Helidon is serving plain http.</td>
+ * </tr>
  * </table>
  */
 public final class OidcConfig {
@@ -333,6 +339,7 @@ public final class OidcConfig {
     static final String DEFAULT_ATTEMPT_PARAM = "h_ra";
     static final int DEFAULT_MAX_REDIRECTS = 5;
     static final int DEFAULT_TIMEOUT_SECONDS = 30;
+    static final boolean DEFAULT_FORCE_HTTPS_REDIRECTS = false;
 
     private static final Logger LOGGER = Logger.getLogger(OidcConfig.class.getName());
     private static final JsonReaderFactory JSON = Json.createReaderFactory(Collections.emptyMap());
@@ -375,6 +382,7 @@ public final class OidcConfig {
     private final URI postLogoutUri;
     private final URI logoutEndpointUri;
     private final CrossOriginConfig crossOriginConfig;
+    private final boolean forceHttpsRedirects;
 
     private OidcConfig(Builder builder) {
         this.clientId = builder.clientId;
@@ -407,6 +415,7 @@ public final class OidcConfig {
         this.generalClient = builder.generalClient;
         this.tokenEndpointAuthentication = builder.tokenEndpointAuthentication;
         this.clientTimeout = builder.clientTimeout;
+        this.forceHttpsRedirects = builder.forceHttpsRedirects;
 
         if (tokenEndpointAuthentication == ClientAuthentication.CLIENT_SECRET_POST) {
             // we should only store this if required
@@ -535,6 +544,15 @@ public final class OidcConfig {
      */
     public String redirectUri() {
         return redirectUri;
+    }
+
+    /**
+     * Whether to force https when redirecting to identity provider.
+     *
+     * @return {@code true} to force use of https
+     */
+    public boolean forceHttpsRedirects() {
+        return forceHttpsRedirects;
     }
 
     /**
@@ -1091,6 +1109,7 @@ public final class OidcConfig {
         private Duration clientTimeout = Duration.ofSeconds(DEFAULT_TIMEOUT_SECONDS);
         private URI postLogoutUri;
         private CrossOriginConfig crossOriginConfig;
+        private boolean forceHttpsRedirects = DEFAULT_FORCE_HTTPS_REDIRECTS;
 
         @Override
         public OidcConfig build() {
@@ -1264,7 +1283,9 @@ public final class OidcConfig {
             config.get("header-token").as(TokenHandler.class).ifPresent(this::headerTokenHandler);
             // encryption of cookies
             config.get("cookie-encryption-enabled").asBoolean().ifPresent(this::cookieEncryptionEnabled);
-            config.get("cookie-encryption-password").as(char[].class).ifPresent(this::cookieEncryptionPassword);
+            config.get("cookie-encryption-password").as(String.class)
+                    .map(String::toCharArray)
+                    .ifPresent(this::cookieEncryptionPassword);
             config.get("cookie-encryption-name").asString().ifPresent(this::cookieEncryptionName);
 
             // OIDC server configuration
@@ -1293,6 +1314,7 @@ public final class OidcConfig {
             config.get("redirect").asBoolean().ifPresent(this::redirect);
             config.get("redirect-attempt-param").asString().ifPresent(this::redirectAttemptParam);
             config.get("max-redirects").asInt().ifPresent(this::maxRedirects);
+            config.get("force-https-redirects").asBoolean().ifPresent(this::forceHttpsRedirects);
 
             // type of the identity server
             // now uses hardcoded switch - should change to service loader eventually
@@ -1803,6 +1825,19 @@ public final class OidcConfig {
         @ConfiguredOption(key = "cookie-use", value = "true")
         public Builder useCookie(Boolean useCookie) {
             this.useCookie = useCookie;
+            return this;
+        }
+
+        /**
+         * Force HTTPS for redirects to identity provider.
+         * Defaults to {@code false}.
+         *
+         * @param forceHttpsRedirects flag to redirect with https
+         * @return updated builder instance
+         */
+        @ConfiguredOption("false")
+        public Builder forceHttpsRedirects(boolean forceHttpsRedirects) {
+            this.forceHttpsRedirects = forceHttpsRedirects;
             return this;
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ module io.helidon.examples.dbclient.jdbc {
     requires io.helidon.health;
     requires io.helidon.media.jsonb;
     requires io.helidon.media.jsonp;
-    requires io.helidon.metrics;
+    requires io.helidon.metrics.serviceapi;
     requires io.helidon.tracing;
     requires io.helidon.examples.dbclient.common;
 }

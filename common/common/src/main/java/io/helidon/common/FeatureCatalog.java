@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +39,10 @@ final class FeatureCatalog {
               "Config",
               "Configuration module",
               "Config");
+        addSe("io.helidon.faulttolerance",
+                "Fault Tolerance",
+                "Reactive Fault Tolerance module",
+                "FT");
         add("io.helidon.grpc.server",
             FeatureDescriptor.builder()
                     .name("gRPC Server")

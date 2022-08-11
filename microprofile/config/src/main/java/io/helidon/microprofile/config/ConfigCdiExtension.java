@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -256,7 +256,11 @@ public class ConfigCdiExtension implements Extension {
             config = ((MpConfigProviderResolver.ConfigDelegate) config).delegate();
         }
         String defaultValue = defaultValue(annotation);
-        Object value = configValue(config, fieldTypes, configKey, defaultValue);
+        Object value = configValue(config,
+                                   fieldTypes,
+                                   configKey,
+                                   defaultValue,
+                                   configKey.equals(fullPath.replace('$', '.')));
 
         if (null == value) {
             throw new NoSuchElementException("Cannot find value for key: " + configKey);
@@ -264,7 +268,11 @@ public class ConfigCdiExtension implements Extension {
         return value;
     }
 
-    private Object configValue(Config config, FieldTypes fieldTypes, String configKey, String defaultValue) {
+    private Object configValue(Config config,
+                               FieldTypes fieldTypes,
+                               String configKey,
+                               String defaultValue,
+                               boolean defaultConfigKey) {
         Class<?> type0 = fieldTypes.field0().rawType();
         Class<?> type1 = fieldTypes.field1().rawType();
         Class<?> type2 = fieldTypes.field2().rawType();
@@ -276,6 +284,7 @@ public class ConfigCdiExtension implements Extension {
         // generic declaration
         return parameterizedConfigValue(config,
                                         configKey,
+                                        defaultConfigKey,
                                         defaultValue,
                                         type0,
                                         type1,
@@ -332,6 +341,7 @@ public class ConfigCdiExtension implements Extension {
 
     private static Object parameterizedConfigValue(Config config,
                                                    String configKey,
+                                                   boolean defaultConfigKey,
                                                    String defaultValue,
                                                    Class<?> rawType,
                                                    Class<?> typeArg,
@@ -343,6 +353,7 @@ public class ConfigCdiExtension implements Extension {
                 return Optional
                         .ofNullable(parameterizedConfigValue(config,
                                                              configKey,
+                                                             defaultConfigKey,
                                                              defaultValue,
                                                              typeArg,
                                                              typeArg2,
@@ -356,17 +367,23 @@ public class ConfigCdiExtension implements Extension {
             } else {
                 return (Supplier<?>) () -> parameterizedConfigValue(config,
                                                                     configKey,
+                                                                    defaultConfigKey,
                                                                     defaultValue,
                                                                     typeArg,
                                                                     typeArg2,
                                                                     typeArg2);
             }
         } else if (Map.class.isAssignableFrom(rawType)) {
+            // config key we have should serve as a prefix, and the properties should have it removed
+            // similar to what the original io.helidon.config.Config.get(configKey).detach()
             Map<String, String> result = new HashMap<>();
             config.getPropertyNames()
                     .forEach(name -> {
-                        // workaround for race condition (if key disappears from source after we call getPropertyNames
-                        config.getOptionalValue(name, String.class).ifPresent(value -> result.put(name, value));
+                        if (defaultConfigKey || name.startsWith(configKey)) {
+                            String key = removePrefix(configKey, defaultConfigKey, name);
+                            // workaround for race condition (if key disappears from source after we call getPropertyNames)
+                            config.getOptionalValue(name, String.class).ifPresent(value -> result.put(key, value));
+                        }
                     });
             return result;
         } else if (Set.class.isAssignableFrom(rawType)) {
@@ -375,6 +392,18 @@ public class ConfigCdiExtension implements Extension {
             throw new IllegalArgumentException("Cannot create config property for " + rawType + "<" + typeArg + ">, key: "
                                                        + configKey);
         }
+    }
+
+    private static String removePrefix(String prefix, boolean defaultConfigKey, String key) {
+        if (defaultConfigKey) {
+            return key;
+        }
+
+        String intermediate = key.substring(prefix.length());
+        if (intermediate.startsWith(".")) {
+            return intermediate.substring(1);
+        }
+        return intermediate;
     }
 
     static String[] toArray(String stringValue) {

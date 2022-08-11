@@ -16,24 +16,20 @@
 
 package io.helidon.microprofile.faulttolerance;
 
-import java.lang.reflect.Method;
+import javax.enterprise.inject.spi.AnnotatedMethod;
 
 import org.eclipse.microprofile.faulttolerance.Bulkhead;
 import org.eclipse.microprofile.faulttolerance.exceptions.FaultToleranceDefinitionException;
 
-/**
- * Class BulkheadAntn.
- */
 class BulkheadAntn extends MethodAntn implements Bulkhead {
 
     /**
      * Constructor.
      *
-     * @param beanClass Bean class.
-     * @param method The method.
+     * @param annotatedMethod The annotated method.
      */
-    BulkheadAntn(Class<?> beanClass, Method method) {
-        super(beanClass, method);
+    BulkheadAntn(AnnotatedMethod<?> annotatedMethod) {
+        super(annotatedMethod);
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
+import io.helidon.config.Config;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * Bulkhead protects a resource that cannot serve unlimited parallel
@@ -44,6 +47,7 @@ public interface Bulkhead extends FtHandler {
     /**
      * Fluent API builder for {@link io.helidon.faulttolerance.Bulkhead}.
      */
+    @Configured
     class Builder implements io.helidon.common.Builder<Bulkhead> {
         private static final int DEFAULT_LIMIT = 10;
         private static final int DEFAULT_QUEUE_LENGTH = 10;
@@ -52,6 +56,7 @@ public interface Bulkhead extends FtHandler {
         private int limit = DEFAULT_LIMIT;
         private int queueLength = DEFAULT_QUEUE_LENGTH;
         private String name = "Bulkhead-" + System.identityHashCode(this);
+        private boolean cancelSource = true;
 
         private Builder() {
         }
@@ -79,6 +84,7 @@ public interface Bulkhead extends FtHandler {
          * @param limit maximal number of parallel calls, defaults is {@value DEFAULT_LIMIT}
          * @return updated builder instance
          */
+        @ConfiguredOption("10")
         public Builder limit(int limit) {
             this.limit = limit;
             return this;
@@ -92,6 +98,7 @@ public interface Bulkhead extends FtHandler {
          * @param queueLength length of queue
          * @return updated builder instance
          */
+        @ConfiguredOption("10")
         public Builder queueLength(int queueLength) {
             this.queueLength = queueLength;
             return this;
@@ -103,8 +110,66 @@ public interface Bulkhead extends FtHandler {
          * @param name the name
          * @return updated builder instance
          */
+        @ConfiguredOption("Bulkhead-")
         public Builder name(String name) {
             this.name = name;
+            return this;
+        }
+
+        /**
+         * Policy to cancel any source stage if the value return by {@link Bulkhead#invoke}
+         * is cancelled. Default is {@code true}; mostly used by FT MP to change default.
+         *
+         * @param cancelSource cancel source policy
+         * @return updated builder instance
+         */
+        @ConfiguredOption("true")
+        public Builder cancelSource(boolean cancelSource) {
+            this.cancelSource = cancelSource;
+            return this;
+        }
+
+        /**
+         * <p>
+         * Load all properties for this bulkhead from configuration.
+         * </p>
+         * <table class="config">
+         * <caption>Configuration</caption>
+         * <tr>
+         *     <th>key</th>
+         *     <th>default value</th>
+         *     <th>description</th>
+         * </tr>
+         * <tr>
+         *     <td>name</td>
+         *     <td>Bulkhead-N</td>
+         *     <td>Name used for debugging</td>
+         * </tr>
+         * <tr>
+         *     <td>limit</td>
+         *     <td>{@value DEFAULT_LIMIT}</td>
+         *     <td>Max number of parallel calls</td>
+         * </tr>
+         * <tr>
+         *     <td>queue-length</td>
+         *     <td>{@value DEFAULT_QUEUE_LENGTH}</td>
+         *     <td>Max number of queued calls</td>
+         * </tr>
+         * <tr>
+         *     <td>cancel-source</td>
+         *     <td>true</td>
+         *     <td>Cancel task source if task is cancelled</td>
+         * </tr>
+         * </table>
+         *
+         * @param config the config node to use
+         * @return updated builder instance
+         */
+        public Builder config(Config config) {
+            config.get("limit").asInt().ifPresent(this::limit);
+            config.get("queue-length").asInt().ifPresent(this::queueLength);
+            config.get("name").asString().ifPresent(this::name);
+            config.get("cancel-source").asBoolean().ifPresent(this::cancelSource);
             return this;
         }
 
@@ -122,6 +187,10 @@ public interface Bulkhead extends FtHandler {
 
         String name() {
             return name;
+        }
+
+        boolean cancelSource() {
+            return cancelSource;
         }
     }
 

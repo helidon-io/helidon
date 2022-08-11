@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,23 @@
 
 package io.helidon.examples.integrations.oci.vault.reactive;
 
+import java.io.IOException;
+
 import io.helidon.common.LogConfig;
 import io.helidon.config.Config;
-import io.helidon.health.HealthSupport;
-import io.helidon.integrations.oci.vault.OciVaultRx;
-import io.helidon.integrations.oci.vault.health.OciVaultHealthCheck;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
+
+import com.oracle.bmc.ConfigFileReader;
+import com.oracle.bmc.auth.AuthenticationDetailsProvider;
+import com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider;
+import com.oracle.bmc.keymanagement.KmsCryptoAsync;
+import com.oracle.bmc.keymanagement.KmsCryptoAsyncClient;
+import com.oracle.bmc.model.BmcException;
+import com.oracle.bmc.secrets.SecretsAsync;
+import com.oracle.bmc.secrets.SecretsAsyncClient;
+import com.oracle.bmc.vault.VaultsAsync;
+import com.oracle.bmc.vault.VaultsAsyncClient;
 
 import static io.helidon.config.ConfigSources.classpath;
 import static io.helidon.config.ConfigSources.file;
@@ -39,7 +49,7 @@ public final class OciVaultMain {
      * Main method.
      * @param args ignored
      */
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         LogConfig.configureRuntime();
 
         // as I cannot share my configuration of OCI, let's combine the configuration
@@ -54,28 +64,31 @@ public final class OciVaultMain {
         String compartmentOcid = vaultConfig.get("compartment-ocid").asString().get();
         String encryptionKey = vaultConfig.get("encryption-key-ocid").asString().get();
         String signatureKey = vaultConfig.get("signature-key-ocid").asString().get();
+        String cryptoEndpoint = vaultConfig.get("cryptographic-endpoint").asString().get();
 
         // this requires OCI configuration in the usual place
         // ~/.oci/config
-        OciVaultRx ociVault = OciVaultRx.create(config.get("oci"));
+        AuthenticationDetailsProvider authProvider = new ConfigFileAuthenticationDetailsProvider(ConfigFileReader.parseDefault());
 
-        // setup vault health check
-        HealthSupport health = HealthSupport.builder()
-                .addLiveness(OciVaultHealthCheck.builder()
-                        .addVaultId(vaultOcid)
-                        .ociVault(ociVault)
-                        .build())
-                .build();
+        SecretsAsync secrets = SecretsAsyncClient.builder().build(authProvider);
+        KmsCryptoAsync crypto = KmsCryptoAsyncClient.builder()
+                .endpoint(cryptoEndpoint)
+                .build(authProvider);
+        VaultsAsync vaults = VaultsAsyncClient.builder().build(authProvider);
 
         WebServer.builder()
                 .config(config.get("server"))
                 .routing(Routing.builder()
-                                 .register(health)
-                                 .register("/vault", new VaultService(ociVault,
+                                 .register("/vault", new VaultService(secrets,
+                                                                      vaults,
+                                                                      crypto,
                                                                       vaultOcid,
                                                                       compartmentOcid,
                                                                       encryptionKey,
-                                                                      signatureKey)))
+                                                                      signatureKey))
+                                 // OCI SDK error handling
+                                 .error(BmcException.class, (req, res, ex) -> res.status(ex.getStatusCode())
+                                         .send(ex.getMessage())))
                 .build()
                 .start()
                 .await();

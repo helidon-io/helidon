@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-parent</artifactId>
-        <version>2.4.3-SNAPSHOT</version>
+        <version>2.5.2-SNAPSHOT</version>
         <relativePath>../parent/pom.xml</relativePath>
     </parent>
     <groupId>io.helidon</groupId>
@@ -32,7 +32,7 @@
     <name>Helidon BOM POM</name>
 
     <properties>
-        <helidon.version>2.4.3-SNAPSHOT</helidon.version>
+        <helidon.version>2.5.2-SNAPSHOT</helidon.version>
     </properties>
 
     <dependencyManagement>
@@ -56,6 +56,11 @@
             <dependency>
                 <groupId>io.helidon.webserver</groupId>
                 <artifactId>helidon-webserver-static-content</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.webserver</groupId>
+                <artifactId>helidon-webserver-context-propagation</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
@@ -128,6 +133,11 @@
             <dependency>
                 <groupId>io.helidon.webclient</groupId>
                 <artifactId>helidon-webclient-security</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.webclient</groupId>
+                <artifactId>helidon-webclient-context-propagation</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <!-- Fault tolerance -->
@@ -254,6 +264,11 @@
             <dependency>
                 <groupId>io.helidon.config</groupId>
                 <artifactId>helidon-config-yaml-mp</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.config</groupId>
+                <artifactId>helidon-config-hocon-mp</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
@@ -985,6 +1000,11 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.helidon.integrations.oci.sdk</groupId>
+                <artifactId>helidon-integrations-oci-sdk-cdi</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.helidon.integrations.oci</groupId>
                 <artifactId>helidon-integrations-oci-telemetry</artifactId>
                 <version>${helidon.version}</version>
@@ -997,6 +1017,16 @@
             <dependency>
                 <groupId>io.helidon.integrations.oci</groupId>
                 <artifactId>helidon-integrations-oci-vault-health</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.oci.metrics</groupId>
+                <artifactId>helidon-integrations-oci-metrics</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.oci.metrics</groupId>
+                <artifactId>helidon-integrations-oci-metrics-cdi</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
@@ -1144,6 +1174,12 @@
             <dependency>
                 <groupId>io.helidon.integrations.neo4j</groupId>
                 <artifactId>helidon-integrations-neo4j-metrics</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <!-- Bean Validation -->
+            <dependency>
+                <groupId>io.helidon.microprofile.bean-validation</groupId>
+                <artifactId>helidon-microprofile-bean-validation</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <!-- Helidon tests tools -->
