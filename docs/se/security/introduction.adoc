@@ -40,7 +40,7 @@ Helidon Security provides the following features
  security Subject with Principal and Grants. Principal represents current user/service.
  Grant may represent a Role, Scope etc.
  Responsibility to create Principals and Grants lies with with AuthenticationProvider
- SPI. The following Principals are expected and supported out of the box:
+ SPI. The following Principals are expected and supported by default:
 .. UserPrincipal - the party is an end-user (e.g. a person) - there can be zero to
  one user principals in a subject
 .. ServicePrincipal - the party is a service (e.g. a computer program) - there can
