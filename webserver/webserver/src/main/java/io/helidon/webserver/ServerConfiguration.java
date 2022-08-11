@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -545,6 +545,37 @@ public interface ServerConfiguration extends SocketConfiguration {
         @Override
         public Builder maxPayloadSize(long size) {
             this.defaultSocketBuilder.maxPayloadSize(size);
+            return this;
+        }
+
+        /**
+         * Maximum length of the response data sending buffer can keep without flushing.
+         * Depends on `backpressure-policy` what happens if max buffer size is reached.
+         *
+         * @param size maximum non-flushed data Netty can buffer until backpressure is applied
+         * @return an updated builder
+         */
+        @Override
+        public Builder backpressureBufferSize(long size) {
+            defaultSocketBuilder().backpressureBufferSize(size);
+            return this;
+        }
+
+        /**
+         * Sets a backpressure strategy for the server to apply against user provided response upstream.
+         *
+         * <ul>
+         * <li>LINEAR - Data are requested one-by-one, in case buffer reaches watermark, no other data is requested.</li>
+         * <li>AUTO_FLUSH - Data are requested one-by-one, in case buffer reaches watermark, no other data is requested.</li>
+         * <li>PREFETCH - After first data chunk arrives, probable number of chunks needed to fill the buffer up to watermark is calculated and requested.</li>
+         * <li>NONE - No backpressure is applied, Long.MAX_VALUE(unbounded) is requested from upstream.</li>
+         * </ul>
+         * @param backpressureStrategy One of NONE, PREFETCH or LINEAR, default is LINEAR
+         * @return an updated builder
+         */
+        @Override
+        public Builder backpressureStrategy(BackpressureStrategy backpressureStrategy) {
+            defaultSocketBuilder().backpressureStrategy(backpressureStrategy);
             return this;
         }
 
