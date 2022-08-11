@@ -166,7 +166,7 @@ public class CommentService implements Service {
 
         @Override
         public PredicateResult accept(GenericType<?> type, MessageBodyWriterContext context) {
-            if(List.class.isAssignableFrom(type.rawType())) {
+            if (List.class.isAssignableFrom(type.rawType())) {
                 if (context.headers().isAccepted(MediaTypes.TEXT_PLAIN)) {
                     return PredicateResult.SUPPORTED;
                 } else {
