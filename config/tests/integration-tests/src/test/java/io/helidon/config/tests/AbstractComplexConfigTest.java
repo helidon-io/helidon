@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -565,8 +565,8 @@ public abstract class AbstractComplexConfigTest {
         //map
         Map<String, String> map = config.asMap().get();
         assertThat(map.keySet(), hasSize(4));
-        assertThat(map.get("oracle~1com.prop1"), is("val1"));
-        assertThat(map.get("oracle~1com.prop2"), is("val2"));
+        assertThat(map.get("oracle.com.prop1"), is("val1"));
+        assertThat(map.get("oracle.com.prop2"), is("val2"));
         assertThat(map.get("oracle.com"), is("1"));
         assertThat(map.get("oracle.cz"), is("2"));
     }
