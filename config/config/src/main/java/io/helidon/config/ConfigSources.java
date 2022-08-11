@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.function.Supplier;
 
+import io.helidon.common.media.type.MediaType;
 import io.helidon.config.spi.ConfigContent;
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigParser;
@@ -100,7 +101,7 @@ public final class ConfigSources {
      * @param mediaType a configuration media type
      * @return a config source
      */
-    public static ConfigSource create(InputStream data, String mediaType) {
+    public static ConfigSource create(InputStream data, MediaType mediaType) {
         return InMemoryConfigSource.create("Readable", ConfigParser.Content.builder()
                 .data(data)
                 .mediaType(mediaType)
@@ -117,7 +118,7 @@ public final class ConfigSources {
      * @param mediaType a configuration media type
      * @return a config source
      */
-    public static ConfigSource create(String content, String mediaType) {
+    public static ConfigSource create(String content, MediaType mediaType) {
         return InMemoryConfigSource.create("String", ConfigParser.Content.builder()
                 .data(new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8)))
                 .mediaType(mediaType)

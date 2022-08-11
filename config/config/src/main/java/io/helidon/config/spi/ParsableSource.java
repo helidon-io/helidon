@@ -20,6 +20,7 @@ import java.io.InputStream;
 import java.util.Optional;
 import java.util.function.Function;
 
+import io.helidon.common.media.type.MediaType;
 import io.helidon.config.ConfigException;
 
 /**
@@ -53,7 +54,7 @@ public interface ParsableSource extends Source {
      *
      * @return media type if configured or detected from content
      */
-    Optional<String> mediaType();
+    Optional<MediaType> mediaType();
 
     /**
      * Resolve relative resource to the current resource.
@@ -87,6 +88,6 @@ public interface ParsableSource extends Source {
          * @param mediaType media type to use
          * @return updated builder instance
          */
-        B mediaType(String mediaType);
+        B mediaType(MediaType mediaType);
     }
 }

@@ -22,6 +22,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import java.util.function.Function;
 
+import io.helidon.common.media.type.MediaType;
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.config.spi.ConfigParser;
@@ -45,9 +46,9 @@ import io.helidon.config.spi.ConfigSource;
  * @see io.helidon.config.spi.ParsableSource
  */
 public abstract class AbstractConfigSource extends AbstractSource implements ConfigSource {
-    private final Optional<String> mediaType;
+    private final Optional<MediaType> mediaType;
     private final Optional<ConfigParser> parser;
-    private final Optional<Function<Config.Key, Optional<String>>> mediaTypeMapping;
+    private final Optional<Function<Config.Key, Optional<MediaType>>> mediaTypeMapping;
     private final Optional<Function<Config.Key, Optional<ConfigParser>>> parserMapping;
     private final boolean mediaMappingSupported;
 
@@ -76,7 +77,7 @@ public abstract class AbstractConfigSource extends AbstractSource implements Con
      *
      * @return configured media type or empty if none configured
      */
-    protected Optional<String> mediaType() {
+    protected Optional<MediaType> mediaType() {
         return mediaType;
     }
 
@@ -95,7 +96,7 @@ public abstract class AbstractConfigSource extends AbstractSource implements Con
         return description();
     }
 
-    ObjectNode processNodeMapping(Function<String, Optional<ConfigParser>> mediaToParser,
+    ObjectNode processNodeMapping(Function<MediaType, Optional<ConfigParser>> mediaToParser,
                                   ConfigKeyImpl configKey,
                                   ObjectNode loaded) {
 
@@ -106,7 +107,7 @@ public abstract class AbstractConfigSource extends AbstractSource implements Con
         return processObject(mediaToParser, configKey, loaded);
     }
 
-    private ObjectNode processObject(Function<String, Optional<ConfigParser>> mediaToParser,
+    private ObjectNode processObject(Function<MediaType, Optional<ConfigParser>> mediaToParser,
                                      ConfigKeyImpl key,
                                      ObjectNode objectNode) {
         ObjectNode.Builder builder = ObjectNode.builder();
@@ -116,7 +117,7 @@ public abstract class AbstractConfigSource extends AbstractSource implements Con
         return builder.build();
     }
 
-    private ConfigNode processNode(Function<String, Optional<ConfigParser>> mediaToParser,
+    private ConfigNode processNode(Function<MediaType, Optional<ConfigParser>> mediaToParser,
                                    ConfigKeyImpl key,
                                    ConfigNode node) {
         switch (node.nodeType()) {
@@ -131,7 +132,7 @@ public abstract class AbstractConfigSource extends AbstractSource implements Con
         }
     }
 
-    private ConfigNode.ListNode processList(Function<String, Optional<ConfigParser>> mediaToParser,
+    private ConfigNode.ListNode processList(Function<MediaType, Optional<ConfigParser>> mediaToParser,
                                             ConfigKeyImpl key,
                                             ConfigNode.ListNode listNode) {
         ListNodeBuilderImpl builder = (ListNodeBuilderImpl) ConfigNode.ListNode.builder();
@@ -143,7 +144,7 @@ public abstract class AbstractConfigSource extends AbstractSource implements Con
         return builder.build();
     }
 
-    private ConfigNode processValue(Function<String, Optional<ConfigParser>> mediaToParser,
+    private ConfigNode processValue(Function<MediaType, Optional<ConfigParser>> mediaToParser,
                                     Config.Key key,
                                     ConfigNode.ValueNode valueNode) {
 
@@ -167,7 +168,7 @@ public abstract class AbstractConfigSource extends AbstractSource implements Con
         return new ByteArrayInputStream(string.getBytes(StandardCharsets.UTF_8));
     }
 
-    private Optional<ConfigParser> findParserForKey(Function<String, Optional<ConfigParser>> mediaToParser,
+    private Optional<ConfigParser> findParserForKey(Function<MediaType, Optional<ConfigParser>> mediaToParser,
                                                     Config.Key key) {
 
         // try to find it in parser mapping (explicit parser for a key)
@@ -178,14 +179,14 @@ public abstract class AbstractConfigSource extends AbstractSource implements Con
         }
 
         // now based on media type
-        Optional<String> maybeMedia = mediaTypeMapping.flatMap(it -> it.apply(key));
+        Optional<MediaType> maybeMedia = mediaTypeMapping.flatMap(it -> it.apply(key));
 
         if (maybeMedia.isEmpty()) {
             // no media type configured, return empty
             return Optional.empty();
         }
 
-        String mediaType = maybeMedia.get();
+        MediaType mediaType = maybeMedia.get();
 
         // if media is explicit, parser is required
         return Optional.of(mediaToParser.apply(mediaType)

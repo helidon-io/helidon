@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.nio.file.Files;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.config.etcd.EtcdConfigSourceBuilder.EtcdApi;
 import io.helidon.config.etcd.internal.client.EtcdClient;
@@ -31,7 +32,6 @@ import io.helidon.config.hocon.HoconConfigParser;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
-import static io.helidon.config.etcd.EtcdConfigSourceTest.MEDIA_TYPE_APPLICATION_HOCON;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.core.Is.is;
@@ -52,7 +52,7 @@ public class EtcdConfigSourceIT {
                                  .uri(DEFAULT_URI)
                                  .key("configuration")
                                  .api(version)
-                                 .mediaType(MEDIA_TYPE_APPLICATION_HOCON)
+                                 .mediaType(MediaTypes.APPLICATION_HOCON)
                                  .build())
                 .addParser(HoconConfigParser.create())
                 .build();
@@ -69,7 +69,7 @@ public class EtcdConfigSourceIT {
                                  .uri(DEFAULT_URI)
                                  .key("configuration")
                                  .api(version)
-                                 .mediaType(MEDIA_TYPE_APPLICATION_HOCON)
+                                 .mediaType(MediaTypes.APPLICATION_HOCON)
                                  .changeWatcher(EtcdWatcher.create())
                                  .build())
                 .addParser(HoconConfigParser.create())

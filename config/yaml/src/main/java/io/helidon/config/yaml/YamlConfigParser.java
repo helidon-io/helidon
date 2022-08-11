@@ -24,6 +24,8 @@ import java.util.Set;
 
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
+import io.helidon.common.media.type.MediaType;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.ConfigException;
 import io.helidon.config.spi.ConfigNode.ListNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
@@ -34,7 +36,7 @@ import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 
 /**
- * YAML {@link ConfigParser} implementation that supports {@value #MEDIA_TYPE_APPLICATION_YAML}.
+ * YAML {@link ConfigParser} implementation that supports {@link io.helidon.common.media.type.MediaTypes#APPLICATION_YAML}.
  * <p>
  * The parser implementation supports {@link java.util.ServiceLoader}, i.e. {@link io.helidon.config.Config.Builder}
  * can automatically load and register {@code YamlConfigParser} instance,
@@ -51,15 +53,12 @@ import org.yaml.snakeyaml.constructor.SafeConstructor;
 public class YamlConfigParser implements ConfigParser {
 
     /**
-     * A String constant representing {@value} media type.
-     */
-    public static final String MEDIA_TYPE_APPLICATION_YAML = "application/x-yaml";
-    /**
      * Priority of the parser used if registered by {@link io.helidon.config.Config.Builder} automatically.
      */
     public static final double WEIGHT = Weighted.DEFAULT_WEIGHT - 10;
 
-    private static final Set<String> SUPPORTED_MEDIA_TYPES = Set.of(MEDIA_TYPE_APPLICATION_YAML);
+    private static final Set<MediaType> SUPPORTED_MEDIA_TYPES = Set.of(MediaTypes.APPLICATION_YAML,
+                                                                       MediaTypes.APPLICATION_X_YAML);
     private static final List<String> SUPPORTED_SUFFIXES = List.of("yml", "yaml");
 
     /**
@@ -86,7 +85,7 @@ public class YamlConfigParser implements ConfigParser {
     }
 
     @Override
-    public Set<String> supportedMediaTypes() {
+    public Set<MediaType> supportedMediaTypes() {
         return SUPPORTED_MEDIA_TYPES;
     }
 

@@ -36,7 +36,7 @@
     <dependencies>
         <!--
         This module should not have any dependencies, so we can configure it easily by
-        adding a dependency, rather then defining a proper annotation processor path in
+        adding a dependency, rather than defining a proper annotation processor path in
         maven compiler plugin
         -->
         <dependency>

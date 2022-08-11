@@ -17,6 +17,7 @@
 package io.helidon.config;
 
 import java.io.IOException;
+import java.lang.System.Logger.Level;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -32,8 +33,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.config.spi.ChangeEventType;
 import io.helidon.config.spi.ChangeWatcher;
@@ -66,7 +65,7 @@ import static java.nio.file.StandardWatchEventKinds.OVERFLOW;
  */
 public final class FileSystemWatcher implements ChangeWatcher<Path> {
 
-    private static final Logger LOGGER = Logger.getLogger(FileSystemWatcher.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(FileSystemWatcher.class.getName());
 
     /*
      * Configurable options through builder.
@@ -209,7 +208,7 @@ public final class FileSystemWatcher implements ChangeWatcher<Path> {
             this.watchServiceModifiers = watchServiceModifiers;
             this.fileExists = Files.exists(target);
             this.watchingFile = !Files.isDirectory(target);
-            this.watchedDir = watchingFile ? parentDir(target) : target;
+            this.watchedDir = watchingFile ? target.getParent() : target;
         }
 
         @SuppressWarnings("unchecked")
@@ -257,24 +256,24 @@ public final class FileSystemWatcher implements ChangeWatcher<Path> {
                 eventPath = watchedDir.resolve(eventPath);
                 WatchEvent.Kind<Path> kind = event.kind();
                 if (kind.equals(OVERFLOW)) {
-                    LOGGER.finest("Overflow event on path: " + eventPath);
+                    LOGGER.log(Level.DEBUG, "Overflow event on path: " + eventPath);
                     continue;
                 }
 
                 if (kind.equals(ENTRY_CREATE)) {
-                    LOGGER.finest("Entry created. Path: " + eventPath);
+                    LOGGER.log(Level.DEBUG, "Entry created. Path: " + eventPath);
                     listener.accept(ChangeEvent.create(eventPath, ChangeEventType.CREATED));
                 } else if (kind == ENTRY_DELETE) {
-                    LOGGER.finest("Entry deleted. Path: " + eventPath);
+                    LOGGER.log(Level.DEBUG, "Entry deleted. Path: " + eventPath);
                     listener.accept(ChangeEvent.create(eventPath, ChangeEventType.DELETED));
                 } else if (kind == ENTRY_MODIFY) {
-                    LOGGER.finest("Entry changed. Path: " + eventPath);
+                    LOGGER.log(Level.DEBUG, "Entry changed. Path: " + eventPath);
                     listener.accept(ChangeEvent.create(eventPath, ChangeEventType.CHANGED));
                 }
             }
 
             if (!key.reset()) {
-                LOGGER.log(Level.FINE, () -> "Directory of '" + target + "' is no more valid to be watched.");
+                LOGGER.log(Level.TRACE, "Directory of '" + target + "' is no more valid to be watched.");
                 failed = true;
             }
         }
@@ -305,7 +304,7 @@ public final class FileSystemWatcher implements ChangeWatcher<Path> {
                     oldWatchKey.cancel();
                 }
             } catch (IOException e) {
-                LOGGER.log(Level.FINEST, "Failed to register watch service", e);
+                LOGGER.log(Level.TRACE, "Failed to register watch service", e);
                 this.failed = true;
             }
 
@@ -329,7 +328,7 @@ public final class FileSystemWatcher implements ChangeWatcher<Path> {
             try {
                 watchService.close();
             } catch (IOException e) {
-                LOGGER.log(Level.FINE, "Failed to close watch service", e);
+                LOGGER.log(Level.TRACE, "Failed to close watch service", e);
             }
         }
 

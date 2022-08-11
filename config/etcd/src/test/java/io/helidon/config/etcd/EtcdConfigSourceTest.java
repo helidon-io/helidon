@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,8 @@ import java.nio.file.Files;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 
+import io.helidon.common.media.type.MediaType;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 import io.helidon.config.etcd.EtcdConfigSourceBuilder.EtcdApi;
@@ -49,9 +51,6 @@ import static org.mockito.Mockito.when;
  * Tests {@link EtcdConfigSource} with {@link MockEtcdClient}.
  */
 public class EtcdConfigSourceTest {
-
-    static final String MEDIA_TYPE_APPLICATION_HOCON = "application/hocon";
-
     private static final URI DEFAULT_URI = URI.create("http://localhost:2379");
 
     private EtcdClient etcdClient;
@@ -67,7 +66,7 @@ public class EtcdConfigSourceTest {
         EtcdConfigSource etcdConfigSource = EtcdConfigSource.builder()
                 .key("key")
                 .api(EtcdApi.v2)
-                .mediaType(MEDIA_TYPE_APPLICATION_HOCON)
+                .mediaType(MediaTypes.APPLICATION_HOCON)
                 .build();
 
         assertThat(etcdConfigSource, notNullValue());
@@ -80,7 +79,7 @@ public class EtcdConfigSourceTest {
                     .uri(URI.create("http://localhost:1111"))
                     .key("configuration")
                     .api(EtcdApi.v2)
-                    .mediaType(MEDIA_TYPE_APPLICATION_HOCON)
+                    .mediaType(MediaTypes.APPLICATION_HOCON)
                     .build();
 
             etcdConfigSource.load();
@@ -94,7 +93,7 @@ public class EtcdConfigSourceTest {
                     .uri(DEFAULT_URI)
                     .key("non-existing-key-23323423424234")
                     .api(EtcdApi.v2)
-                    .mediaType(MEDIA_TYPE_APPLICATION_HOCON)
+                    .mediaType(MediaTypes.APPLICATION_HOCON)
                     .build();
 
             etcdConfigSource.load();
@@ -109,15 +108,15 @@ public class EtcdConfigSourceTest {
                 .uri(DEFAULT_URI)
                 .key("configuration")
                 .api(EtcdApi.v2)
-                .mediaType(MEDIA_TYPE_APPLICATION_HOCON)
+                .mediaType(MediaTypes.APPLICATION_HOCON)
                 .build();
 
         EtcdConfigSource mockedConfigSource = spy(configSource);
         when(mockedConfigSource.etcdClient()).thenReturn(etcdClient);
         when(mockedConfigSource.load()).thenReturn(Optional.of(new ConfigParser.Content() {
             @Override
-            public Optional<String> mediaType() {
-                return Optional.of(MEDIA_TYPE_APPLICATION_HOCON);
+            public Optional<MediaType> mediaType() {
+                return Optional.of(MediaTypes.APPLICATION_HOCON);
             }
 
             @Override

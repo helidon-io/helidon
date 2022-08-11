@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,42 +18,56 @@ package io.helidon.config.testing;
 
 import io.helidon.config.spi.ConfigNode;
 
-import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
+import org.hamcrest.TypeSafeMatcher;
 
 /**
- * Hamcrest {@link org.hamcrest.Matcher} implementation that matches {@link ConfigNode.ValueNode} value.
+ * Hamcrest {@link org.hamcrest.Matcher} implementation that matches {@link io.helidon.config.spi.ConfigNode.ValueNode} value.
  */
-public final class ValueNodeMatcher extends BaseMatcher<ConfigNode> {
+public final class ValueNodeMatcher extends TypeSafeMatcher<ConfigNode> {
 
-    private String expectedValue;
+    private final String expectedValue;
 
     private ValueNodeMatcher(String expectedValue) {
         this.expectedValue = expectedValue;
     }
 
-    @Override
-    public void describeTo(Description description) {
-        description.appendValue(this.expectedValue);
+    /**
+     * Creates new instance of {@link io.helidon.config.testing.ValueNodeMatcher} that matches
+     * {@link io.helidon.config.spi.ConfigNode.ValueNode}
+     * with spacified {@code expectedValue}.
+     *
+     * @param expectedValue expected value holded by {@link io.helidon.config.spi.ConfigNode.ValueNode}
+     * @return new instance of {@link io.helidon.config.testing.ValueNodeMatcher}
+     */
+    public static ValueNodeMatcher valueNode(String expectedValue) {
+        return new ValueNodeMatcher(expectedValue);
     }
 
     @Override
-    public boolean matches(Object actualValue) {
-        if (actualValue instanceof ConfigNode.ValueNode) {
-            return expectedValue.equals(((ConfigNode.ValueNode) actualValue).get());
+    public void describeTo(Description description) {
+        description.appendText("ValueNode with value ").appendValue(this.expectedValue);
+    }
+
+    @Override
+    public boolean matchesSafely(ConfigNode actualValue) {
+        if (actualValue instanceof ConfigNode.ValueNode valueNode) {
+            return expectedValue.equals(valueNode.get());
         }
         return false;
     }
 
-    /**
-     * Creates new instance of {@link ValueNodeMatcher} that matches {@link ConfigNode.ValueNode}
-     * with spacified {@code expectedValue}.
-     *
-     * @param expectedValue expected value holded by {@link ConfigNode.ValueNode}
-     * @return new instance of {@link ValueNodeMatcher}
-     */
-    public static ValueNodeMatcher valueNode(String expectedValue) {
-        return new ValueNodeMatcher(expectedValue);
+    @Override
+    public void describeMismatchSafely(ConfigNode item, Description description) {
+        if (item instanceof ConfigNode.ValueNode valueNode) {
+            description.appendText("got ")
+                    .appendValue(valueNode.get());
+        } else {
+            description.appendText("got ")
+                    .appendValue(item.getClass().getName())
+                    .appendText(" ")
+                    .appendValue(item);
+        }
     }
 
 }

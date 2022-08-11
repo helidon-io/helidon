@@ -35,6 +35,7 @@ import io.helidon.common.GenericType;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.Weighted;
 import io.helidon.common.Weights;
+import io.helidon.common.media.type.MediaType;
 import io.helidon.config.ConfigMapperManager.MapperProviders;
 import io.helidon.config.spi.ConfigContext;
 import io.helidon.config.spi.ConfigFilter;
@@ -555,7 +556,7 @@ class BuilderImpl implements Config.Builder {
             return runtimes.computeIfAbsent(source, it -> new ConfigSourceRuntimeImpl(this, source));
         }
 
-        Optional<ConfigParser> findParser(String mediaType) {
+        Optional<ConfigParser> findParser(MediaType mediaType) {
             Objects.requireNonNull(mediaType, "Unknown media type of resource.");
 
             return configParsers.stream()

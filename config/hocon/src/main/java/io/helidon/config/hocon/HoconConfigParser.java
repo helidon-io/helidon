@@ -26,6 +26,8 @@ import java.util.function.Function;
 
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
+import io.helidon.common.media.type.MediaType;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.ConfigException;
 import io.helidon.config.spi.ConfigNode.ListNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
@@ -41,8 +43,8 @@ import com.typesafe.config.ConfigResolveOptions;
 
 /**
  * Typesafe (Lightbend) Config (HOCON) {@link ConfigParser} implementation that supports following media types:
- * {@value #MEDIA_TYPE_APPLICATION_HOCON} and
- * {@value #MEDIA_TYPE_APPLICATION_JSON}.
+ * {@link io.helidon.common.media.type.MediaTypes#APPLICATION_HOCON} and
+ * {@link io.helidon.common.media.type.MediaTypes#APPLICATION_JSON}.
  * <p>
  * The parser implementation supports {@link java.util.ServiceLoader}, i.e. {@link io.helidon.config.Config.Builder}
  * can automatically load and register {@code HoconConfigParser} instance,
@@ -59,21 +61,13 @@ import com.typesafe.config.ConfigResolveOptions;
 public class HoconConfigParser implements ConfigParser {
 
     /**
-     * A String constant representing {@value} media type.
-     */
-    public static final String MEDIA_TYPE_APPLICATION_HOCON = "application/hocon";
-    /**
-     * A String constant representing {@value} media type.
-     */
-    public static final String MEDIA_TYPE_APPLICATION_JSON = "application/json";
-    /**
      * Priority of the parser used if registered by {@link io.helidon.config.Config.Builder} automatically.
      */
     public static final double WEIGHT = Weighted.DEFAULT_WEIGHT - 10;
 
     private static final List<String> SUPPORTED_SUFFIXES = List.of("json", "conf");
-    private static final Set<String> SUPPORTED_MEDIA_TYPES =
-            Set.of(MEDIA_TYPE_APPLICATION_HOCON, MEDIA_TYPE_APPLICATION_JSON);
+    private static final Set<MediaType> SUPPORTED_MEDIA_TYPES =
+            Set.of(MediaTypes.APPLICATION_HOCON, MediaTypes.APPLICATION_JSON);
 
     private final boolean resolvingEnabled;
     private final ConfigResolveOptions resolveOptions;
@@ -122,7 +116,7 @@ public class HoconConfigParser implements ConfigParser {
     }
 
     @Override
-    public Set<String> supportedMediaTypes() {
+    public Set<MediaType> supportedMediaTypes() {
         return SUPPORTED_MEDIA_TYPES;
     }
 

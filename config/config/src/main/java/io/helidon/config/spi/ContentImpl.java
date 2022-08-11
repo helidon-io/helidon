@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +18,14 @@ package io.helidon.config.spi;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.System.Logger.Level;
 import java.nio.charset.Charset;
 import java.util.Optional;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import io.helidon.common.media.type.MediaType;
 
 abstract class ContentImpl implements ConfigContent {
-    private static final Logger LOGGER = Logger.getLogger(ContentImpl.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(ContentImpl.class.getName());
 
     private final Object stamp;
 
@@ -38,7 +39,7 @@ abstract class ContentImpl implements ConfigContent {
     }
 
     static class ParsableContentImpl extends ContentImpl implements ConfigParser.Content {
-        private final String mediaType;
+        private final MediaType mediaType;
         private final InputStream data;
         private final Charset charset;
 
@@ -54,12 +55,12 @@ abstract class ContentImpl implements ConfigContent {
             try {
                 data.close();
             } catch (IOException e) {
-                LOGGER.log(Level.FINE, "Failed to close input stream", e);
+                LOGGER.log(Level.TRACE, "Failed to close input stream", e);
             }
         }
 
         @Override
-        public Optional<String> mediaType() {
+        public Optional<MediaType> mediaType() {
             return Optional.ofNullable(mediaType);
         }
 

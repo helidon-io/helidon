@@ -15,6 +15,7 @@
  */
 package io.helidon.config;
 
+import java.lang.System.Logger.Level;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -22,9 +23,9 @@ import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.logging.Logger;
 
 import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.media.type.MediaType;
 import io.helidon.config.spi.ChangeWatcher;
 import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigSource;
@@ -69,12 +70,12 @@ import io.helidon.config.spi.RetryPolicy;
  * </ul>
  */
 public final class MetaConfig {
-    private static final Logger LOGGER = Logger.getLogger(MetaConfig.class.getName());
-    private static final Set<String> SUPPORTED_MEDIA_TYPES;
+    private static final System.Logger LOGGER = System.getLogger(MetaConfig.class.getName());
+    private static final Set<MediaType> SUPPORTED_MEDIA_TYPES;
     private static final List<String> SUPPORTED_SUFFIXES;
 
     static {
-        Set<String> supportedMediaTypes = new HashSet<>();
+        Set<MediaType> supportedMediaTypes = new HashSet<>();
         List<String> supportedSuffixes = new LinkedList<>();
 
         HelidonServiceLoader.create(ServiceLoader.load(ConfigParser.class))
@@ -144,7 +145,10 @@ public final class MetaConfig {
         String type = metaConfig.get("type").asString().get();
         ChangeWatcher<?> changeWatcher = MetaProviders.changeWatcher(type, metaConfig.get("properties"));
 
-        LOGGER.fine(() -> "Loaded change watcher of type \"" + type + "\", class: " + changeWatcher.getClass().getName());
+        if (LOGGER.isLoggable(Level.TRACE)) {
+            LOGGER.log(Level.TRACE,
+                       "Loaded change watcher of type \"" + type + "\", class: " + changeWatcher.getClass().getName());
+        }
 
         return changeWatcher;
     }
@@ -159,7 +163,9 @@ public final class MetaConfig {
         String type = metaConfig.get("type").asString().get();
         RetryPolicy retryPolicy = MetaProviders.retryPolicy(type, metaConfig.get("properties"));
 
-        LOGGER.fine(() -> "Loaded retry policy of type \"" + type + "\", class: " + retryPolicy.getClass().getName());
+        if (LOGGER.isLoggable(Level.TRACE)) {
+            LOGGER.log(Level.TRACE, "Loaded retry policy of type \"" + type + "\", class: " + retryPolicy.getClass().getName());
+        }
 
         return retryPolicy;
     }
@@ -181,13 +187,17 @@ public final class MetaConfig {
         if (multiSource) {
             List<ConfigSource> sources = MetaProviders.configSources(type, sourceProperties);
 
-            LOGGER.fine(() -> "Loaded sources of type \"" + type + "\", values: " + sources);
+            if (LOGGER.isLoggable(Level.TRACE)) {
+                LOGGER.log(Level.TRACE, "Loaded sources of type \"" + type + "\", values: " + sources);
+            }
 
             return sources;
         } else {
             ConfigSource source = MetaProviders.configSource(type, sourceProperties);
 
-            LOGGER.fine(() -> "Loaded source of type \"" + type + "\", class: " + source.getClass().getName());
+            if (LOGGER.isLoggable(Level.TRACE)) {
+                LOGGER.log(Level.TRACE, "Loaded source of type \"" + type + "\", class: " + source.getClass().getName());
+            }
 
             return List.of(source);
         }
@@ -200,7 +210,10 @@ public final class MetaConfig {
         OverrideSource source = MetaProviders.overrideSource(type,
                                                              sourceMetaConfig.get("properties"));
 
-        LOGGER.fine(() -> "Loaded override source of type \"" + type + "\", class: " + source.getClass().getName());
+        if (LOGGER.isLoggable(Level.TRACE)) {
+            LOGGER.log(Level.TRACE,
+                       "Loaded override source of type \"" + type + "\", class: " + source.getClass().getName());
+        }
 
         return source;
     }
@@ -216,7 +229,7 @@ public final class MetaConfig {
     }
 
     // only interested in config source
-    static List<ConfigSource> configSources(Function<String, Boolean> supportedMediaType, List<String> supportedSuffixes) {
+    static List<ConfigSource> configSources(Function<MediaType, Boolean> supportedMediaType, List<String> supportedSuffixes) {
         Optional<Config> metaConfigOpt = metaConfig();
 
         return metaConfigOpt

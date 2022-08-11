@@ -23,8 +23,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.function.Function;
-import java.util.logging.Logger;
 
+import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.FileSourceHelper.DataAndDigest;
 import io.helidon.config.spi.ChangeWatcher;
@@ -43,7 +43,7 @@ import io.helidon.config.spi.WatchableSource;
 public class FileConfigSource extends AbstractConfigSource
         implements WatchableSource<Path>, ParsableSource, PollableSource<byte[]> {
 
-    private static final Logger LOGGER = Logger.getLogger(FileConfigSource.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(FileConfigSource.class.getName());
     private static final String PATH_KEY = "path";
 
     private final Path filePath;
@@ -108,7 +108,7 @@ public class FileConfigSource extends AbstractConfigSource
 
     @Override
     public Optional<ConfigParser.Content> load() throws ConfigException {
-        LOGGER.fine(() -> String.format("Getting content from '%s'", filePath));
+        LOGGER.log(System.Logger.Level.TRACE, String.format("Getting content from '%s'", filePath));
 
         // now we need to create all the necessary steps in one go, to make sure the digest matches the file
         Optional<DataAndDigest> dataAndDigest = FileSourceHelper.readDataAndDigest(filePath);
@@ -154,7 +154,7 @@ public class FileConfigSource extends AbstractConfigSource
     }
 
     @Override
-    public Optional<String> mediaType() {
+    public Optional<MediaType> mediaType() {
         return super.mediaType();
     }
 
@@ -229,7 +229,7 @@ public class FileConfigSource extends AbstractConfigSource
         }
 
         @Override
-        public Builder mediaType(String mediaType) {
+        public Builder mediaType(MediaType mediaType) {
             return super.mediaType(mediaType);
         }
 

@@ -29,6 +29,8 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import io.helidon.common.media.type.MediaType;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigMappingException;
 import io.helidon.config.ConfigSources;
@@ -38,6 +40,7 @@ import io.helidon.config.spi.ConfigNode.ListNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigParser.Content;
+
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.config.ConfigValues.simpleValue;
@@ -167,7 +170,7 @@ public class HoconConfigParserTest {
                 + "}\n";
 
         Config config = Config
-                .builder(ConfigSources.create(JSON, HoconConfigParser.MEDIA_TYPE_APPLICATION_JSON))
+                .builder(ConfigSources.create(JSON, MediaTypes.APPLICATION_JSON))
                 .addParser(HoconConfigParser.create())
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
@@ -221,7 +224,7 @@ public class HoconConfigParserTest {
     @Test
     public void testCustomTypeMapping() {
         Config config = Config
-                .builder(ConfigSources.create(AppType.DEF, HoconConfigParser.MEDIA_TYPE_APPLICATION_JSON))
+                .builder(ConfigSources.create(AppType.DEF, MediaTypes.APPLICATION_JSON))
                 .addParser(HoconConfigParser.create())
                 .addMapper(AppType.class, new AppTypeMapper())
                 .disableEnvironmentVariablesSource()
@@ -265,8 +268,8 @@ public class HoconConfigParserTest {
     @FunctionalInterface
     private interface StringContent extends Content {
         @Override
-        default Optional<String> mediaType() {
-            return Optional.of(HoconConfigParser.MEDIA_TYPE_APPLICATION_HOCON);
+        default Optional<MediaType> mediaType() {
+            return Optional.of(MediaTypes.APPLICATION_HOCON);
         }
 
         @Override
