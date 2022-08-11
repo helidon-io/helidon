@@ -26,9 +26,9 @@ include::{rootdir}/includes/se.adoc[]
 
 == Contents
 
-- <<Overview>>
-- <<Additional Config Formats and Parsers>>
-- <<Additional Config Source Types>>
+- <<Overview, Overview>>
+- <<Additional Config Formats and Parsers, Additional Config Formats and Parsers>>
+- <<Additional Config Source Types, Additional Config Source Types>>
 
 == Overview
 Helidon Config provides several extension modules that support other configuration

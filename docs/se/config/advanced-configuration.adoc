@@ -30,7 +30,7 @@ include::{rootdir}/includes/se.adoc[]
 - <<Advanced Config Sources, Advanced Config Sources>>
 - <<Advanced Config Parsers, Advanced Config Parsers>>
 - <<Config Keys with . in name, Config Keys with . in name>>
-- <<filters-and-overrides, Filter Overrides and Token Substitution,>>
+- <<filters-and-overrides, Filter, Overrides, and Token Substitution>>
 - <<Executors for Asynchronous Config Activity, Executors for Asynchronous Config Activity>>
 
 == Overview
