@@ -27,7 +27,6 @@ module io.helidon.integrations.vault.sys {
     requires io.helidon.integrations.vault;
     requires io.helidon.integrations.common.rest;
     requires io.helidon.integrations.vault.auths.common;
-    requires transitive io.helidon.common.reactive;
 
     exports io.helidon.integrations.vault.sys;
 
