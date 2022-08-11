@@ -25,11 +25,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.logging.Logger;
 
-import jakarta.json.JsonValue;
-
 import io.helidon.common.context.Context;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.media.jsonb.JsonbSupport;
@@ -40,6 +38,8 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
+
+import jakarta.json.JsonValue;
 
 public class WebClientService implements Service {
 
@@ -54,7 +54,7 @@ public class WebClientService implements Service {
         client = WebClient.builder()
                 .baseUri(context)
                 .addReader(JsonbSupport.reader())
-                .addHeader(Http.Header.ACCEPT, MediaType.APPLICATION_JSON.toString())
+                .addHeader(Http.Header.ACCEPT, MediaTypes.APPLICATION_JSON.toString())
                 .config(config.get("client"))
                 .build();
     }
