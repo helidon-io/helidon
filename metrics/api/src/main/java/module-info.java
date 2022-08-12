@@ -27,7 +27,7 @@ module io.helidon.metrics.api {
     requires transitive io.helidon.config;
 
     requires transitive microprofile.metrics.api;
-    requires io.helidon.config.metadata;
+    requires static io.helidon.config.metadata;
 
     exports io.helidon.metrics.api;
     exports io.helidon.metrics.api.spi;
