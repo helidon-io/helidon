@@ -25,13 +25,14 @@
 :microprofile-bundle: false
 :rootdir: {docdir}/../..
 
+include::{rootdir}/includes/mp.adoc[]
+
 == Contents
 
 - <<Overview, Overview>>
-- <<Emitting data, Emitting data>>
-- <<Asserting data, Asserting data>>
+- <<Usage, Usage>>
 - <<Configuration, Configuration>>
-- <<Helidon test with Mock Connector, Helidon Test>>
+- <<Helidon Test with Mock Connector, Helidon Test>>
 
 == Overview
 Mock connector is a simple application scoped bean that can be used for emitting to a channel
@@ -58,7 +59,11 @@ For injecting Mock Connector use `@TestConnector` qualifier:
 MockConnector mockConnector;
 ----
 
-=== Emitting data
+== Usage
+- <<Emitting Data, Emitting Data>>
+- <<Asserting Data, Asserting Data>>
+
+=== Emitting Data
 
 .Emitting String values `a`, `b`, `c`
 [source,java]
@@ -69,7 +74,7 @@ mockConnector
 ----
 <1> Get incoming channel of given name and payload type
 
-=== Asserting data
+=== Asserting Data
 
 .Awaiting and asserting payloads with custom mapper
 [source,java]
@@ -88,11 +93,11 @@ mockConnector
 |mock-data-type |java.lang.String| Type of the emitted initial data to be emitted
 |===
 
-== Helidon test with Mock Connector
+== Helidon Test with Mock Connector
 Mock connector works great with built-in Helidon test support for
-link:/{rootdir}/testing/testing.adoc[JUnit 5] or link:/{rootdir}/testing/testing-ng.adoc[Test NG].
+link:/{rootdir}/testing/testing.adoc[JUnit 5] or link:/{rootdir}/testing/testing-ng.adoc[TestNG].
 
-As Helidon test support makes a bean out of your test, you can inject MockConnector right in to it.
+As Helidon test support makes a bean out of your test, you can inject MockConnector directly into it.
 
 [source,java]
 ----
