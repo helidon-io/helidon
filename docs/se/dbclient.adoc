@@ -24,7 +24,7 @@
 
 include::{rootdir}/includes/se.adoc[]
 
-==Contents
+== Contents
 
 -  <<Overview, Overview>>
 -  <<Maven Coordinates, Maven Coordinates>>
