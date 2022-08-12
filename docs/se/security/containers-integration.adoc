@@ -95,7 +95,7 @@ include::{rootdir}/includes/security/helidon-endpoints.adoc[]
 
 == Jersey
 
-Jersey (JAX-RS implementation) can be configured for both and inbound and outbound security.
+Jersey (JAX-RS implementation) can be configured for both inbound and outbound security.
 
 [source,xml]
 .Maven Dependency
