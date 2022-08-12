@@ -1,0 +1,2 @@
+# don't let GIT do end of line mapping on these files
+enum-test*.txt -text
