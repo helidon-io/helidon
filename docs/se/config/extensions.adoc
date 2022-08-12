@@ -26,16 +26,15 @@ include::{rootdir}/includes/se.adoc[]
 
 == Contents
 
-- <<Overview,>>
-- <<Introduction>>
-- <<Setting up an extension>>
-- <<Config-SPI-ConfigSource>>
-- <<Config-SPI-ConfigParser>>
-- <<Config-SPI-OverrideSource>>
-- <<Config-SPI-ConfigFilter>>
-- <<Config-SPI-ConfigMapperProvider>>
-- <<Change support SPI>>
-- <<Config-SPI-RetryPolicy>>
+- <<Overview, Overview>>
+- <<Configuring an Extension, Configuring an Extension>>
+- <<Config-SPI-ConfigSource, Config-SPI-ConfigSource>>
+- <<Config-SPI-ConfigParser, Config-SPI-ConfigParser>>
+- <<Config-SPI-OverrideSource, Config-SPI-OverrideSource>>
+- <<Config-SPI-ConfigFilter, Config-SPI-ConfigFilter>>
+- <<Config-SPI-ConfigMapperProvider, Config-SPI-ConfigMapperProvider>>
+- <<Change Support SPI, Change Support SPI>>
+- <<Config-SPI-RetryPolicy, Config-SPI-RetryPolicy>>
 
 == Overview
 
@@ -47,7 +46,7 @@ to Java types, fine-tune the look-up of config data, and reload and
 reprocess data when it changes. _Config extensions_ provided by the application
 modify and expand the way the config system performs these steps.
 
-== Introduction
+
 Each config extension implements one of the interfaces defined in the Configuration SPI:
 
 //Once our asciidoc processing handles labeled lists, uncomment the following
@@ -90,14 +89,14 @@ Service providers:
 
 The config system itself implements several of these SPIs, as noted in the sections below.
 
-== Setting up an extension
+== Configuring an Extension
 
 You can configure a custom extension in two ways:
 
 1. Manual configuration with builder
 2. Automatic configuration using a Java service loader
 
-=== Manual configuration with builder
+=== Manual Configuration with Builder
 
 The following example shows configuration of all possible extensions with `Config` (all custom extension have a name prefix `My`):
 
@@ -115,7 +114,7 @@ Config config = Config.builder()
                 .build()
 ----
 
-=== Automatic configuration using a service loader
+=== Automatic Configuration Using a Service Loader
 
 The following extensions are loaded using a service loader for any configuration instance, and do not require an explicit setup:
 
@@ -369,9 +368,9 @@ module my.module {
 }
 ----
 
-== Change support SPI [[Config-SPI-PollingStrategy]]
+== Change Support SPI [[Config-SPI-PollingStrategy]]
 
-Once it loads a `Config` tree from ``ConfigSource``s the config system does not itself change the in-memory `Config`
+Once it loads a `Config` tree from ``ConfigSource``, the config system does not itself change the in-memory `Config`
  tree. Even so, the underlying data available via the tree's ``ConfigSource``s can change.
 Implementations of link:{config-javadoc-base-url}/io/helidon/config/spi/PollingStrategy.html[`PollingStrategy`]
 may trigger regular check whether a source has new data.

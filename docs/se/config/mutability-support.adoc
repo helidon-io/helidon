@@ -26,10 +26,10 @@ include::{rootdir}/includes/se.adoc[]
 
 == Contents
 
-- <<Overview>>
-- <<Using Config Metadata>>
-- <<Responding to Changes in Config Sources>>
-- <<Accessing Always-current Values>>
+- <<Overview, Overview>>
+- <<Using Config Metadata, Using Config Metadata>>
+- <<Responding to Changes in Config Sources, Responding to Changes in Config Sources>>
+- <<Accessing Always-current Values, Accessing Always-current Values>>
 
 == Overview
 An in-memory config tree, once loaded, is immutable, even though the data in the underlying

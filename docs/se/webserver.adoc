@@ -28,22 +28,11 @@ include::{rootdir}/includes/se.adoc[]
 
 - <<Overview, Overview>>
 - <<Maven Coordinates, Maven Coordinates>>
+- <<Usage, Usage>>
 - <<Configuration, Configuration>>
-- <<Routing, Routing>>
-- <<Request Handling, Request Handling>>
-- <<Protocol Specific Routing, Protocol Specific Routing>>
-- <<Error Handling, Error Handling>>
-- <<Http/2 Support, Http/2 Support>>
-- <<Static Content Support, Static Content Support>>
-- <<Jersey (JAX-RS) Support, Jersey (JAX-RS) Support>>
-- <<JSON Support, JSON Support>>
-- <<JSON-B Support, JSON-B Support>>
-- <<Jackson Support, Jackson Support>>
-- <<Access Log, Access Log>>
-- <<TLS configuration, TLS configuration>>
-- <<HTTP Compression, HTTP Compression>>
-- <<Quick Start, Quick Start>>
 - <<Reference, Reference>>
+- <<Additional Information, Additional Information>>
+
 
 == Overview
 
@@ -60,11 +49,14 @@ include::{rootdir}/includes/dependencies.adoc[]
 </dependency>
 ----
 
+== Usage
+The following sections describe how to use WebServer. 
+
 == Configuration
 
 Configure the WebServer either programmatically, or by the Helidon configuration framework.
 
-=== Configuring the WebServer in your code
+=== Configuring the WebServer in Your Code
 
 The easiest way to configure the WebServer is in your
 application code.
@@ -102,7 +94,7 @@ WebServer webServer = WebServer.create(routing, config.get("server")); // <2>
 just use `Config.create()`
 <2> Server expects the configuration tree located on the node of `server`
 
-=== Configuration options
+=== Configuration Options
 
 include::{rootdir}/config/io_helidon_webserver_WebServer.adoc[leveloffset=+2,tag=config]
 
@@ -316,7 +308,7 @@ on routing builder.
 ----
 
 While `Http1Route` for Http/1 is always available with Helidon webserver,
-other routes like `Http2Route` for <<Http/2 Support, Http/2>> needs to be added as additional dependency.
+other routes like `Http2Route` for <<HTTP/2 Support, HTTP/2>> needs to be added as additional dependency.
 
 == Error Handling
 
@@ -395,11 +387,11 @@ exception called `req.next()`, then the exception is translated to an HTTP respo
 * Otherwise, the exceptions are translated to an Internal Server Error HTTP
 error code `500`.
 
-== Http/2 Support
+== HTTP/2 Support
 
-Helidon supports Http/2 upgrade from Http/1, Http/2 without prior knowledge
-and Http/2 with ALPN over TLS.
-Http/2 support is enabled in webserver by default when it's artefact is available on classpath.
+Helidon supports HTTP/2 upgrade from HTTP/1, HTTP/2 without prior knowledge
+and HTTP/2 with ALPN over TLS.
+HTTP/2 support is enabled in webserver by default when it's artifact is available on classpath.
 
 === Maven Coordinates
 To enable Http/2 support add the following dependency to your project's `pom.xml`.
@@ -851,7 +843,7 @@ server:
 
 All options shown above are also available programmatically when using builder.
 
-=== Configuration options
+=== Configuration Options
 
 The following configuration options can be defined:
 
@@ -967,7 +959,7 @@ io.helidon.webserver.AccessLog.useParentHandlers=false
 io.helidon.webserver.AccessLog.handlers=io.helidon.webserver.accesslog.AccessLogHandler
 ----
 
-== TLS configuration
+== TLS Configuration
 
 Configure TLS either programmatically, or by the Helidon configuration framework.
 
@@ -1118,7 +1110,7 @@ For example, if the request includes `Accept-Encoding: gzip, deflate`, and HTTP 
 has been enabled as shown above, the response shall include the header `Content-Encoding: gzip`
 and a compressed payload.
 
-== Quick Start
+== Additional Information
 
 Here is the code for a minimalist web application that runs on a random free port:
 
