@@ -24,6 +24,7 @@
 :feature-name: Mock Connector
 :microprofile-bundle: false
 :rootdir: {docdir}/../..
+:h1-prefix: MP
 
 == Contents
 
