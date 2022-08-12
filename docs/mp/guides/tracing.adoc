@@ -122,13 +122,17 @@ curl http://localhost:9411/health // <1>
 
 === Enable Tracing in the Helidon Application
 
-Update the pom.xml file and add the following Zipkin dependency to the `<dependencies>`
+Update the pom.xml file and add the following Helidon and Zipkin dependencies to the `<dependencies>`
 section (*not* `<dependencyManagement>`).  This will enable Helidon to use Zipkin at the
 default host and port, `localhost:9411`.
 
 [source,xml]
-.Add the following dependency to `pom.xml`:
+.Add the following dependencies to `pom.xml`:
 ----
+<dependency>
+    <groupId>io.helidon.microprofile.tracing</groupId>
+    <artifactId>helidon-microprofile-tracing</artifactId>
+</dependency>
 <dependency>
   <groupId>io.helidon.tracing</groupId>
   <artifactId>helidon-tracing-zipkin</artifactId>

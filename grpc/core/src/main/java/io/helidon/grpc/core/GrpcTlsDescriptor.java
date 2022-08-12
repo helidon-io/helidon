@@ -138,7 +138,7 @@ public class GrpcTlsDescriptor {
         }
 
         /**
-         * Enable or disable TLS. If enabled is false then the rest of the TLS configuration properties are ignored.
+         * Enable or disable TLS. If enabled is false, then the rest of the TLS configuration properties are ignored.
          * @param enabled true to enable, false otherwise
          * @return this instance for fluent API
          */

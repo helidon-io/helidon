@@ -27,12 +27,12 @@ include::{rootdir}/includes/se.adoc[]
 
 == Contents
 
-- <<Overview>>
-- <<Maven Coordinates>>
-- <<Getting Started>>
-- <<Usage>>
-- <<Guides>>
-- <<Additional Information>>
+- <<Overview, Overview>>
+- <<Maven Coordinates, Maven Coordinates>>
+- <<Usage, Usage>>
+- <<Configuration, Configuration>>
+- <<Reference, Reference>>
+- <<Additional Information, Additional Information>>
 
 == Overview
 
@@ -51,7 +51,7 @@ include::{rootdir}/includes/dependencies.adoc[]
 </dependencies>
 ----
 
-== Getting Started
+== Usage
 A brief overview of the config system helps clarify its different parts and how they work together. Most applications will typically deal with more than one of these parts.
 
 image::config/overview.png["Configuration Overview",align="center"]
@@ -95,9 +95,8 @@ You can extend the system with custom parsers of your own. Implement the link:{c
 
 See the xref:advanced-configuration.adoc#_advanced_config_parsers[advanced topics'] page for further information on some more involved aspects of config parsers.
 
-== Usage
 
-=== Default Configuration
+== Configuration
 
 Helidon has an internal configuration, so you are not required to provide any configuration data for your application, though in practice you most likely would.
 
@@ -305,7 +304,7 @@ to handle other types of sources by implementing the
 link:{config-javadoc-base-url}/io/helidon/config/spi/ConfigSource.html[`ConfigSource`] interface. See
 the xref:extensions.adoc[extensions'] documentation for complete information.
 
-== Guides
+== Reference
 
 [PILLARS]
 ====

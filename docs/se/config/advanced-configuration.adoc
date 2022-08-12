@@ -30,7 +30,7 @@ include::{rootdir}/includes/se.adoc[]
 - <<Advanced Config Sources, Advanced Config Sources>>
 - <<Advanced Config Parsers, Advanced Config Parsers>>
 - <<Config Keys with . in name, Config Keys with . in name>>
-- <<filters-and-overrides, Filter Overrides and Token Substitution,>>
+- <<filters-and-overrides, Filters, Overrides and Token Substitution>>
 - <<Executors for Asynchronous Config Activity, Executors for Asynchronous Config Activity>>
 
 == Overview
@@ -532,7 +532,7 @@ that might be in the node's name, in this example in `oracle.com`.
 <6> The config node `"oracle.com"` has type `OBJECT`...
 <7> ...and name `"oracle.com"`.
 
-== Filter, Overrides, and Token Substitution [[filters-and-overrides]]
+== Filters, Overrides, and Token Substitution [[filters-and-overrides]]
 When your application retrieves a config value, the config system can transform it
 before returning the value, according to _filters_, _overrides_, and
 _tokens_. The config system provides some built-in instances of these

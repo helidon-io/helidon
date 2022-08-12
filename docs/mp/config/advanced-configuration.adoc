@@ -26,12 +26,12 @@ include::{rootdir}/includes/mp.adoc[]
 
 == Contents
 
-- <<Creating MicroProfile Config Sources for Manual Setup of Config>>
-- <<Creating Custom Config Sources>>
-- <<Creating MicroProfile Config Sources from meta-config>>
-- <<Extending Meta-Config to Create a Custom Config Source Type>>
-- <<Creating MicroProfile Config Source from Helidon SE Config Source>>
-- <<Creating MicroProfile Config Source from Helidon SE Config Instance>>
+- <<Creating MicroProfile Config Sources for Manual Setup of Config, Creating MicroProfile Config Sources for Manual Setup of Config>>
+- <<Creating Custom Config Sources, Creating Custom Config Sources>>
+- <<Creating MicroProfile Config Sources from meta-config, Creating MicroProfile Config Sources from meta-config>>
+- <<Extending Meta-Config to Create a Custom Config Source Type, Extending Meta-Config to Create a Custom Config Source Type>>
+- <<Creating MicroProfile Config Source from Helidon SE Config Source, Creating MicroProfile Config Source from Helidon SE Config Source>>
+- <<Creating MicroProfile Config Source from Helidon SE Config Instance, Creating MicroProfile Config Source from Helidon SE Config Instance>>
 
 == Creating MicroProfile Config Sources for Manual Setup of Config
 

@@ -24,6 +24,16 @@
 
 include::{rootdir}/includes/se.adoc[]
 
+== Contents
+
+-  <<Overview, Overview>>
+-  <<Maven Coordinates, Maven Coordinates>>
+-  <<Usage, Usage>>
+-  <<API, API>>
+-  <<Configuration, Configuration>>
+-  <<Additional Information, Additional Information>>
+
+== Overview
 The Helidon SE DB Client provides a unified, reactive API for working with databases in non-blocking way.
 
 include::{rootdir}/includes/dependencies.adoc[]
@@ -54,12 +64,12 @@ Or to use with MongoDB client add the following dependency:
 </dependency>
 ----
 
-== Helidon DB Client Features Overview
+== Usage
 
 The DB Client simplifies how you work with databases by abstracting the type of the database.
 The API can be used both for relational and non-relational databases.
 
-The API provides:
+== API
 
 * Database configuration abstraction
 +
@@ -89,7 +99,7 @@ for backpressure (result set is processed as requested by the query subscriber)
 The API offers support for health checks, metrics and tracing.
 
 
-== Getting Started
+== Configuration
 
 Before you begin you must add the DB Client dependencies and configure the client.
 
@@ -292,7 +302,7 @@ Execution of a query statement will always return `Multi<DbRow>>`. `Multi` has s
 * `Single<List<DbRow>> collectList()` to collect all rows and return them as a promise of `List<DbRow>`
 * `<U> Multi<U> map(…)` to map returned result using provided mapper
 
-== Next Steps
+== Additional Information
 
 Now that you understand how to build and execute statements, try it for yourself.
 link:{helidon-github-tree-url}/examples/dbclient[DB Client Examples].

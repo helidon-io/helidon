@@ -26,11 +26,11 @@ include::{rootdir}/includes/se.adoc[]
 
 == Contents
 
-- <<Overview>>
-- <<Converting Configuration to Simple Types>>
-- <<Converting Configuration to Complex Types>>
-- <<Advanced Conversions using Explicit Mapping Logic>>
-- <<Conversions using JavaBean Deserialization>>
+- <<Overview, Overview>>
+- <<Converting Configuration to Simple Types, Converting Configuration to Simple Types>>
+- <<Converting Configuration to Complex Types, Converting Configuration to Complex Types>>
+- <<Advanced Conversions using Explicit Mapping Logic, Advanced Conversions using Explicit Mapping Logic>>
+- <<Conversions using JavaBean Deserialization, Conversions using JavaBean Deserialization>>
 
 == Overview
 
