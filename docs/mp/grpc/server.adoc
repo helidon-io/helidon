@@ -39,7 +39,7 @@ The gRPC Microprofile APIs are an extension to xref:{rootdir}/mp/introduction.ad
 of gRPC services and clients that integrate with the Microprofile APIs. Using Helidon gRPC MP makes building gRPC services
 and clients an easier process compared to the traditional approach using Protobuf files and code generation. Services can be built
 using POJOs that are then discovered and deployed at runtime in the same way the Helidon MP discovers and deploys web resources
-in the MP http server.
+in the MP HTTP server.
 
 Building gRPC services using Helidon gRPC MP is very simple and allows the developer to concentrate on their
 application logic without needing to write a lot of boilerplate gRPC code.
@@ -72,8 +72,8 @@ gRPC method types:
 == Usage
 === Defining a Service
 
-The traditional approach to building Java gRPC services is to write Protobuf files describing the service and then
-use these to generate service stubs and finally implementing the service methods by extending the generated stub classes.
+The traditional approach to building Java gRPC services is to write Protobuf files describing the service,
+use these files to generate service stubs, and then implement the service methods by extending the generated stub classes.
 Using Helidon gRPC MP, all you need to do is write an annotated service implementation class that is just a normal POJO.
 
 For example:
@@ -155,7 +155,7 @@ can be marshalled by the built-in marshallers or custom supplied marshaller may 
 
 ==== Unary Methods
 A unary gRPC method is the simplest type of service method. Typically a unary method takes a request value and returns a
-response value but this does not have to be the case. A unary method could just as easily take no request parameter and/or
+response value, but this is not always the case. A unary method could just as easily take no request parameter and/or
 return no response.
 
 All of the signatures below are valid unary methods in Helidon gRPC MP.
@@ -262,7 +262,7 @@ public StreamObserver<RequestType> invoke(CompletableFuture<ResponseType> observ
 
 ==== Bi-Directional Streaming Methods
 A bidirectional streaming method is a method that is a constant stream of client requests and server responses. Other than
-the standard gRPC Java `StreamObserver`, there are not any other built-in types that make sense to use to implement
+the standard gRPC Java `StreamObserver`, there are no other built-in types that make sense to use to implement
 different method signatures for a bidirectional method so the only supported signature is the standard gRPC Java method.
 
 [source,java]
@@ -272,7 +272,7 @@ public StreamObserver<RequestType> invoke(StreamObserver<ResponseType> observer)
 ----
 
 === Deploying Protobuf Services
-Whilst the examples above show how simple it is to write gRPC services with basic POJOs, there may be cases where there is a
+The examples above show how simple it is to write gRPC services with basic POJOs. There may be cases, however, where there is a
 requirement to deploy services built the traditional way using gRPC Java generated classes or built as
 xref:{rootdir}/se/grpc/server.adoc#_service_implementation[non-microprofile Helidon gRPC services].
 
