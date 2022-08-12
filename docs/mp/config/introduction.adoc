@@ -30,12 +30,11 @@ include::{rootdir}/includes/mp.adoc[]
 
 == Contents
 
-- <<Overview>>
-- <<Maven Coordinates>>
-- <<Usage>>
-- <<Configuration>>
-- <<Guides>>
-- <<Reference>>
+- <<Overview, Overview>>
+- <<Maven Coordinates, Maven Coordinates>>
+- <<Usage, Usage>>
+- <<Configuration, Configuration>>
+- <<Reference, Reference>>
 
 == Overview
 
@@ -230,7 +229,7 @@ Current properties may be set in `application.yaml` or in `microprofile-config.p
 
 See xref:#Config-Profiles[Config Profiles] for more information.
 
-== Guides
+== Additional Information
 
 [PILLARS]
 ====

@@ -26,15 +26,11 @@ include::{rootdir}/includes/se.adoc[]
 
 Helidon Security provides authentication, authorization and auditing for your Helidon application.
 
-include::{rootdir}/includes/dependencies.adoc[]
+== Contents
 
-[source,xml]
-----
-<dependency>
-    <groupId>io.helidon.security</groupId>
-    <artifactId>helidon-security</artifactId>
-</dependency>
-----
+- <<Overview, Overview>>
+- <<Maven Coordinates, Maven Coordinates>>
+- <<Usage, Usage>>
 
 == Overview
 
@@ -44,7 +40,7 @@ Helidon Security provides the following features
  security Subject with Principal and Grants. Principal represents current user/service.
  Grant may represent a Role, Scope etc.
  Responsibility to create Principals and Grants lies with with AuthenticationProvider
- SPI. The following Principals are expected and supported out of the box:
+ SPI. The following Principals are expected and supported by default:
 .. UserPrincipal - the party is an end-user (e.g. a person) - there can be zero to
  one user principals in a subject
 .. ServicePrincipal - the party is a service (e.g. a computer program) - there can
@@ -69,7 +65,19 @@ Security module is quite HTTP centric (as most common use cases are related to
  protocol). Nevertheless there may be security providers that only make sense with
  HTTP (such as HTTP digest authentication).
 
-== How to use
+
+include::{rootdir}/includes/dependencies.adoc[]
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.security</groupId>
+    <artifactId>helidon-security</artifactId>
+</dependency>
+----
+
+
+== Usage
 
 To integrate with a container, or to use Security standalone, we must
  create an instance of security.
@@ -114,7 +122,7 @@ context.atnClientBuilder()
                 });
 ----
 
-=== Builder pattern
+=== Builder Pattern
 
 [source,java]
 .Security through a builder
@@ -125,7 +133,7 @@ Security security = Security.builder()
         .build();
 ----
 
-=== Configuration pattern
+=== Configuration Pattern
 
 See xref:tools.adoc[Secure config] for details about encrypting passwords in
  configuration files.
@@ -155,7 +163,7 @@ security:
         roles: ["user"]
 ----
 
-==== Overriding configuration
+==== Overriding Configuration
 
 When a configuration needs to be overridden, we may have problems with the list
 type of the `providers` configuration. To simplify overrides using properties,
@@ -171,7 +179,7 @@ security.providers.1.header-atn.authenticate=false
 Would explicitly override the second provider (`http-basic-auth` in example above) with
 `header-atn` provider. Note that the `type` and the key of the provider must match.
 
-=== Hybrid pattern (Builder & Configuration)
+=== Hybrid Pattern (Builder with Configuration)
 
 [source,java]
 .Security from configuration and builder

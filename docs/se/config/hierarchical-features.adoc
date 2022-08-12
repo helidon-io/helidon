@@ -27,13 +27,14 @@ include::{rootdir}/includes/se.adoc[]
 
 == Contents
 
-- <<Overview>>
-- <<Configuration Node Types>>
-- <<Configuration Key>>
-- <<In-memory Representation of Configuration>>
-- <<Access by Key>>
-- <<Access by General Navigation>>
-- <<Detaching a Config Subtree>>
+- <<Overview, Overview>>
+- <<Configuration Node Types, Configuration Node Types>>
+- <<Configuration Key, Configuration Key>>
+- <<In-memory Representation of Configuration, In-memory Representation of Configuration>>
+- <<Access by Key, Access by Key>>
+- <<Access by General Navigation, Access by General Navigation>>
+- <<Detaching a Config Subtree, Detaching a Config Subtree>>
+
 
 == Overview
 

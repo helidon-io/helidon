@@ -18,7 +18,7 @@
 
 ifndef::rootdir[:rootdir: {docdir}/../..]
 
-=== Protecting Helidon endpoints
+=== Protecting Helidon Endpoints
 :description: Helidon Security Endpoints
 :keywords: helidon, security, static, content, health, openapi, metrics
 
@@ -35,12 +35,12 @@ can be protected only through Security integration with WebServer.
 The following section describes configuration of such protection using configuration files,
  in this case using a `yaml` file, as it provides a tree structure.
 
-==== Configuring endpoint protection
+==== Configuring Endpoint Protection
 
 The configuration is usually placed under `security.web-server` (this can be
 customized in Helidon SE).
 
-The following shows an example we will explain in detail:
+The following example shows how to configure the application.yaml using customized setting:
 
 [source,yaml]
 .application.yaml

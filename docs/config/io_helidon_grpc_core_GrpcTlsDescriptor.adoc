@@ -42,7 +42,7 @@ Type: link:{javadoc-base-url}/io.helidon.grpc.core/io/helidon/grpc/core/GrpcTlsD
 |===
 |key |type |default value |description
 
-|`enabled` |boolean |`true` |Enable or disable TLS. If enabled is false then the rest of the TLS configuration properties are ignored.
+|`enabled` |boolean |`true` |Enable or disable TLS. If enabled is false, then the rest of the TLS configuration properties are ignored.
 |`jdk-ssl` |boolean |`false` |Sets the type of SSL implementation to be used.
 |`tls-ca-cert` |xref:{rootdir}/config/io_helidon_common_configurable_Resource.adoc[Resource] |{nbsp} |Set the CA (certificate authority) certificate path.
 |`tls-cert` |xref:{rootdir}/config/io_helidon_common_configurable_Resource.adoc[Resource] |{nbsp} |Set the client tlsCert path. Required only if mutual auth is desired.
