@@ -34,9 +34,6 @@
     <modules>
         <module>cdi-processor</module>
         <module>cdi</module>
-        <!--
-        unusual errors during compilation (complaining about files not found that should not exist)
-        -->
-<!--        <module>data</module>-->
+        <module>data</module>
     </modules>
 </project>
