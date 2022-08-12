@@ -82,16 +82,16 @@ Each channel needs to have both ends connected otherwise the container cannot su
 
 image::msg/channel.svg[Messaging Channel]
 
-Channels can be connected either to <<Emitter, emitter>> (1), <<Producing method, producing method>> (2) or <<Connector, connector>> (3) on the upstream side. And <<Injected publisher, injected publisher>> (4), <<Consuming method, consuming method>> (5) or <<Connector, connector>> (6)
+Channels can be connected either to <<Emitter, emitter>> (1), <<Producing Method, producing method>> (2) or <<Connector, connector>> (3) on the upstream side. And <<Injected Publisher, injected publisher>> (4), <<Consuming Method, consuming method>> (5) or <<Connector, connector>> (6)
 on the downstream.
 
-==== Consuming method
+==== Consuming Method
 Consuming methods can be connected to the channel's downstream to consume the message coming through the channel.
 The incoming annotation has one required attribute `value` that defines the channel name.
 
 Consuming method can function in two ways:
 
-* consume every message coming from the stream connected to the <<Channel, channel>> - invoked per each message
+* consume every message coming from the stream connected to the <<Channels, channels>> - invoked per each message
 * prepare reactive stream's subscriber and connect it to the channel - invoked only once during the channel construction
 
 [source,java]
@@ -114,7 +114,7 @@ public Subscriber<String> printMessage() {
 }
 ----
 
-==== Injected publisher
+==== Injected Publisher
 Directly injected publisher can be connected as a channel downstream,
 you can consume the data from the channel by subscribing to it.
 
@@ -140,7 +140,7 @@ public MyBean(@Channel("example-channel-1") Multi<String> multiChannel) {
 }
 ----
 
-==== Producing method
+==== Producing Method
 
 The annotation has one required attribute `value` that defines the
 link:{microprofile-reactive-messaging-spec-url}#_channel[channel] name.
@@ -204,7 +204,7 @@ of the channel. In case there is not enough demand from the downstream, you can 
 |NONE                |Messages are sent to downstream even if there is no demand. Backpressure is effectively ignored.
 |===
 
-==== Processing method
+==== Processing Method
 
 Such link:{microprofile-reactive-messaging-spec-url}#_method_consuming_and_producing[methods]
 acts as processors, consuming messages from one channel and producing to another.
