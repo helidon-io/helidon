@@ -21,9 +21,11 @@
 :keywords: helidon, security
 :rootdir: {docdir}/../..
 
+include::{rootdir}/includes/se.adoc[]
+
 == Tools
 
-=== Secure configuration
+=== Secure Configuration
 
 Support for encrypting secrets in configuration files.
 [source,xml]
@@ -35,7 +37,7 @@ Support for encrypting secrets in configuration files.
 </dependency>
 ----
 
-=== Key and certificate configuration
+=== Key and Certificate Configuration
 
 Configuration support for accessing private keys, public keys, certificates and
  certificate chains including runtime access to instances of such.

@@ -26,16 +26,16 @@ ifndef::rootdir[:rootdir: {docdir}/../..]
 == Contents
 
 - <<Overview, Overview>>
-- <<Deserialization setup, Deserialization setup>>
-- <<System property configuration, System property configuration>>
-- <<Programmatic configuration, Programmatic configuration>>
+- <<Deserialization Setup, Deserialization Setup>>
+- <<System Property Configuration, System Property Configuration>>
+- <<Programmatic Configuration, Programmatic Configuration>>
 
 == Overview
 
 link:https://openjdk.org/jeps/290[JEP-290] brought support for deserialization filters to Java programming language.
 Such filtering allows us to control which classes may be deserialized using Java serialization.
 
-== Deserialization setup
+== Deserialization Setup
 
 Helidon default settings forbids any deserialization except for patterns defined in a `pattern`
 property of any `{metainf}` on classpath. The patterns are semicolon delimited strings, such as `io.myapp.&#42;&#42;;java.util.HashMap` (any subpackage of `io.myapp` and class `java.util.HashMap`).
@@ -43,7 +43,7 @@ Helidon will *always* add a deny-all filter pattern to the end of the pattern st
 
 These defaults can be modified either through system properties, or programmatically.
 
-== System property configuration
+== System Property Configuration
 The following system properties can be used to control deserialization in Helidon:
 
 .System properties
@@ -81,7 +81,7 @@ Options:
 
 |===
 
-== Programmatic configuration
+== Programmatic Configuration
 
 Custom `SerializationConfig` may be registered, but it *must* be done before Helidon server is started.
 
