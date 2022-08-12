@@ -24,8 +24,8 @@
 :feature-name: MicroProfile Reactive Messaging
 :microprofile-bundle: false
 :rootdir: {docdir}/../..
-:h1-prefix: MP
 
+include::{rootdir}/includes/mp.adoc[]
 
 == Contents
 
@@ -37,7 +37,8 @@
 - <<Additional Information, Additional Information>>
 
 == Overview
-Reactive messaging is vastly different from the older method of using message-driven beans. One significant difference is that blocking is no longer the only way to apply backpressure to the message source.
+Reactive messaging offers a new way of processing messages that is different from the older method of using message-driven beans. One significant difference is that blocking is no longer the only way to apply backpressure to the message source.
+
 Reactive messaging uses reactive streams as message channels so you can construct very effective pipelines for working
 with the messages or, if you prefer, you can continue to use older messaging methods. Like the message-driven beans, 
 link:{microprofile-reactive-messaging-spec-url}[MicroProfile Reactive Messaging]
@@ -68,6 +69,11 @@ To include health checks for Messaging add the following dependency:
 ----
 
 == Usage
+
+- <<Channels, Channels>>
+- <<Emitter, Emitter>>
+- <<Connector, Connector>>
+
 
 === Channels
 
@@ -162,10 +168,10 @@ public Publisher<String> printMessage() {
 }
 ----
 
-**Caution**: Messaging methods are not meant to be invoked directly!
+WARNING: Messaging methods are not meant to be invoked directly!
 
 === Emitter
-To send messages from imperative code, we can inject a special channel source called an emitter.
+To send messages from imperative code, you can inject a special channel source called an emitter.
 Emitter can serve only as an upstream, source of the messages, for messaging channel.
 
 [source,java]
@@ -198,7 +204,7 @@ of the channel. In case there is not enough demand from the downstream, you can 
 |NONE                |Messages are sent to downstream even if there is no demand. Backpressure is effectively ignored.
 |===
 
-=== Processing method
+==== Processing method
 
 Such link:{microprofile-reactive-messaging-spec-url}#_method_consuming_and_producing[methods]
 acts as processors, consuming messages from one channel and producing to another.
@@ -276,7 +282,7 @@ public class ExampleConnector implements IncomingConnectorFactory, OutgoingConne
 
 == Configuration
 
-Channel needs to be instructed to use connector as its upstream or downstream by configuration.
+The channel must be configured to use connector as its upstream or downstream.
 
 [source,yaml]
 .Example of channel to connector mapping config:

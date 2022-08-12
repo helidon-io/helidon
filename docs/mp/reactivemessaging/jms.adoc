@@ -24,7 +24,6 @@
 :feature-name: JMS Connector
 :microprofile-bundle: false
 :rootdir: {docdir}/../..
-:h1-prefix: MP
 
 include::{rootdir}/includes/mp.adoc[]
 include::{rootdir}/includes/dependencies.adoc[]
