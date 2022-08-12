@@ -18,6 +18,7 @@ package io.helidon.metrics.prometheus;
 
 import java.util.Enumeration;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import io.helidon.common.http.HttpMediaType;
@@ -64,7 +65,7 @@ public final class PrometheusSupport implements Service {
     }
 
     private void process(ServerRequest req, ServerResponse res) {
-        Set<String> filters = new HashSet<>(req.queryParams().all("name[]"));
+        Set<String> filters = new HashSet<>(req.queryParams().all("name[]", List::of));
         Enumeration<Collector.MetricFamilySamples> mfs = collectorRegistry.filteredMetricFamilySamples(filters);
         res.headers().contentType(CONTENT_TYPE);
         res.send(compose(mfs));
