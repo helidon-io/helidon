@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * Tests {@link io.helidon.webserver.FileSystemContentHandler}.
  */
 @ExtendWith(TemporaryFolderExtension.class)
-public class FileSystemContentHandlerTest {
+class FileSystemContentHandlerTest {
 
     private TemporaryFolder folder;
 
@@ -48,15 +48,15 @@ public class FileSystemContentHandlerTest {
     public void createContent() throws IOException {
         // root
         Path root = folder.root().toPath();
-        Files.write(root.resolve("index.html"), "Index HTML".getBytes(StandardCharsets.UTF_8));
-        Files.write(root.resolve("foo.txt"), "Foo TXT".getBytes(StandardCharsets.UTF_8));
+        Files.writeString(root.resolve("index.html"), "Index HTML");
+        Files.writeString(root.resolve("foo.txt"), "Foo TXT");
         // css
         Path cssDir = folder.newFolder("css").toPath();
-        Files.write(cssDir.resolve("a.css"), "A CSS".getBytes(StandardCharsets.UTF_8));
-        Files.write(cssDir.resolve("b.css"), "B CSS".getBytes(StandardCharsets.UTF_8));
+        Files.writeString(cssDir.resolve("a.css"), "A CSS");
+        Files.writeString(cssDir.resolve("b.css"), "B CSS");
         // bar
         Path other = folder.newFolder("other").toPath();
-        Files.write(other.resolve("index.html"), "Index HTML".getBytes(StandardCharsets.UTF_8));
+        Files.writeString(other.resolve("index.html"), "Index HTML");
     }
 
     static String responseToString(TestResponse response)
@@ -68,8 +68,7 @@ public class FileSystemContentHandlerTest {
     }
 
     @Test
-    public void serveFile() throws Exception {
-        try {
+    void serveFile() throws Exception {
         Routing routing = Routing.builder()
                                  .register("/some", StaticContentSupport.create(folder.root().toPath()))
                                  .build();
@@ -102,13 +101,10 @@ public class FileSystemContentHandlerTest {
                 .path("/some/css/")
                 .get();
         assertThat(response.status(), is(Http.Status.NOT_FOUND_404));
-        } catch(Throwable ex){
-            ex.printStackTrace();
-        }
     }
 
     @Test
-    public void serveIndex() throws Exception {
+    void serveIndex() throws Exception {
         Routing routing = Routing.builder()
                 .register(StaticContentSupport.builder(folder.root().toPath())
                                               .welcomeFileName("index.html")
