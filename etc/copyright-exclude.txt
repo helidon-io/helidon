@@ -24,7 +24,6 @@
 .MD
 .p12
 .txt
-.sql
 jaxb.index
 /MANIFEST.MF
 /README
@@ -35,6 +34,7 @@ jaxb.index
 .p12
 .bin
 .vm
+.sql
 src/main/proto/
 src/test/resources/keystore/
 etc/javadoc/
@@ -55,3 +55,5 @@ target/
 META-INF/services/
 persistence_3_0.xjb
 persistence_3_0.xsd
+# excluded as this is a test file and we need to validate its content
+src/test/resources/static/classpath/index.html
