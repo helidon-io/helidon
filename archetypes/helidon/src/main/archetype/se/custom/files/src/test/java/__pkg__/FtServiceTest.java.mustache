@@ -1,5 +1,6 @@
 package {{package}};
 
+import java.time.Duration;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -174,7 +175,7 @@ public class FtServiceTest {
         WebClientResponse clientResponse = client.get()
                 .path("/timeout/10000")
                 .request()
-                .await(11, TimeUnit.SECONDS);
+                .await(Duration.ofSeconds(11));
 
         response = clientResponse.content().as(String.class).await(1, TimeUnit.SECONDS);
         // error handler specified in Main
