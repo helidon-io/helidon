@@ -66,8 +66,8 @@ class UpgradeCodecsCompositionTest {
 
     @BeforeAll
     static void beforeAll() {
-        webServer = Main.startServer(0, false).await(Duration.ofSeconds(15));
-        webServerTls = Main.startServer(0, true).await(Duration.ofSeconds(15));
+        webServer = Main.startServer(0, false).await(TIMEOUT);
+        webServerTls = Main.startServer(0, true).await(TIMEOUT);
         httpClient = HttpClient.newBuilder().sslContext(insecureContext()).build();
         webClient = WebClient.builder()
                 .tls(WebClientTls.builder()

@@ -57,17 +57,17 @@ public final class Main {
      * @param args command line arguments.
      */
     public static void main(final String[] args) {
-        startServer();
+        startServer(8080);
     }
 
     /**
      * Start the server.
      * @return the created {@link WebServer} instance
      */
-    static Single<WebServer> startServer() {
+    static Single<WebServer> startServer(int port) {
         LogConfig.configureRuntime();
         WebServer server = WebServer.builder(createRouting())
-                .port(8080)
+                .port(port)
                 .addMediaSupport(MultiPartSupport.create())
                 .addMediaSupport(JsonpSupport.create())
                 .build();
