@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -288,9 +288,10 @@ public class ServerCdiExtension implements Extension {
         StaticContentSupport.FileSystemBuilder pBuilder = StaticContentSupport.builder(config.get("location")
                                                                                                .as(Path.class)
                                                                                                .get());
-        config.get("welcome")
+        pBuilder.welcomeFileName(config.get("welcome")
                 .asString()
-                .ifPresent(pBuilder::welcomeFileName);
+                .orElse("index.html"));
+
         StaticContentSupport staticContent = pBuilder.build();
 
         if (context.exists()) {
