@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,10 +32,10 @@ import io.helidon.common.http.Http;
 import io.helidon.webserver.cors.CorsSupportBase.RequestAdapter;
 import io.helidon.webserver.cors.CorsSupportHelper.RequestType;
 
+import static io.helidon.common.http.Http.Header.ACCESS_CONTROL_REQUEST_METHOD;
 import static io.helidon.common.http.Http.Header.HOST;
 import static io.helidon.common.http.Http.Header.ORIGIN;
 import static io.helidon.webserver.cors.CorsSupportHelper.LOGGER;
-import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_REQUEST_METHOD;
 
 class LogHelper {
 
@@ -49,15 +49,15 @@ class LogHelper {
      * Collects headers for assignment to a request or response and logging during assignment.
      */
     static class Headers {
-        private final List<Map.Entry<String, Object>> headers = new ArrayList<>();
+        private final List<Map.Entry<Http.HeaderName, Object>> headers = new ArrayList<>();
         private final List<String> notes = LOGGER.isLoggable(DECISION_LEVEL) ? new ArrayList<>() : null;
 
-        Headers add(String key, Object value) {
+        Headers add(Http.HeaderName key, Object value) {
             headers.add(new AbstractMap.SimpleEntry<>(key, value));
             return this;
         }
 
-        Headers add(String key, Object value, String note) {
+        Headers add(Http.HeaderName key, Object value, String note) {
             add(key, value);
             if (notes != null) {
                 notes.add(note);
@@ -65,7 +65,7 @@ class LogHelper {
             return this;
         }
 
-        void setAndLog(BiConsumer<String, Object> consumer, String note) {
+        void setAndLog(BiConsumer<Http.HeaderName, Object> consumer, String note) {
             headers.forEach(entry -> consumer.accept(entry.getKey(), entry.getValue()));
             LOGGER.log(DECISION_LEVEL, () -> note + ": " + headers + (notes == null ? "" : notes));
         }
@@ -129,9 +129,9 @@ class LogHelper {
         }
 
         if (!requestContainsAccessControlRequestMethodHeader) {
-            reasonsWhyCORS.add(String.format("header %s is absent", ACCESS_CONTROL_REQUEST_METHOD));
+            reasonsWhyCORS.add(String.format("header %s is absent", ACCESS_CONTROL_REQUEST_METHOD.defaultCase()));
         } else {
-            factorsWhyPreflight.add(String.format("header %s is present(%s)", ACCESS_CONTROL_REQUEST_METHOD,
+            factorsWhyPreflight.add(String.format("header %s is present(%s)", ACCESS_CONTROL_REQUEST_METHOD.defaultCase(),
                     requestAdapter.firstHeader(ACCESS_CONTROL_REQUEST_METHOD)));
         }
 

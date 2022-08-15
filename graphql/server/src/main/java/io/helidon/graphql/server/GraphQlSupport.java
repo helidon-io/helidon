@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import java.util.logging.Logger;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.configurable.ServerThreadPoolSupplier;
-import io.helidon.common.http.Parameters;
+import io.helidon.common.uri.UriQuery;
 import io.helidon.config.Config;
 import io.helidon.media.common.MessageBodyReader;
 import io.helidon.media.common.MessageBodyWriter;
@@ -119,7 +119,7 @@ public class GraphQlSupport implements Service {
 
     // handle GET request for GraphQL endpoint
     private void graphQlGet(ServerRequest req, ServerResponse res) {
-        Parameters queryParams = req.queryParams();
+        UriQuery queryParams = req.queryParams();
         String query = queryParams.first("query").orElseThrow(() -> new IllegalStateException("Query must be defined"));
         String operationName = queryParams.first("operationName").orElse(null);
         Map<String, Object> variables = queryParams.first("variables")

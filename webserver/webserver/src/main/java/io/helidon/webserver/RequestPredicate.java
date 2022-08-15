@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,15 @@
 
 package io.helidon.webserver;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
+import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Method;
-import io.helidon.common.http.MediaType;
+import io.helidon.common.http.HttpMediaType;
 
 /**
  * Fluent API that allows to create chains of request conditions for composing
@@ -110,7 +112,7 @@ public final class RequestPredicate {
     /**
      * Create a composed predicate with the given condition.
      * @param first the first predicate in the chain
-     * @param expr the condition for the new predicate
+     * @param cond the condition for the new predicate
      */
     private RequestPredicate(final RequestPredicate first,
             final Condition cond){
@@ -226,7 +228,7 @@ public final class RequestPredicate {
      * this predicate <b>AND</b> the provided predicate
      * @throws NullPointerException if the specified name is null
      */
-    public RequestPredicate containsHeader(final String name) {
+    public RequestPredicate containsHeader(final Http.HeaderName name) {
         return containsHeader(name, (c) -> true);
     }
 
@@ -242,7 +244,7 @@ public final class RequestPredicate {
      * this predicate <b>AND</b> the provided predicate
      * @throws NullPointerException if the specified name or value is null
      */
-    public RequestPredicate containsHeader(final String name,
+    public RequestPredicate containsHeader(final Http.HeaderName name,
             final String value) {
 
         Objects.requireNonNull(value, "header value");
@@ -262,7 +264,7 @@ public final class RequestPredicate {
      * this predicate <b>AND</b> the provided predicate
      * @throws NullPointerException if the specified name or predicate is null
      */
-    public RequestPredicate containsHeader(final String name,
+    public RequestPredicate containsHeader(final Http.HeaderName name,
             final Predicate<String> predicate) {
 
         Objects.requireNonNull(name, "header name");
@@ -317,7 +319,7 @@ public final class RequestPredicate {
         Objects.requireNonNull(name, "query param name");
         Objects.requireNonNull(predicate, "query param predicate");
         return and((req) -> req.queryParams()
-                .all(name)
+                .all(name, List::of)
                 .stream()
                 .anyMatch(predicate));
     }
@@ -366,7 +368,7 @@ public final class RequestPredicate {
         Objects.requireNonNull(predicate, "cookie predicate");
         return and((req) -> req.headers()
                 .cookies()
-                .all(name)
+                .all(name, List::of)
                 .stream()
                 .anyMatch(predicate));
     }
@@ -383,7 +385,7 @@ public final class RequestPredicate {
         Objects.requireNonNull(contentType, "content types");
         return and((req) ->
                 Stream.of(contentType).anyMatch((mt) ->
-                        req.headers().isAccepted(MediaType.parse(mt))));
+                        req.headers().isAccepted(HttpMediaType.create(mt))));
     }
 
     /**
@@ -394,7 +396,7 @@ public final class RequestPredicate {
      * this predicate <b>AND</b> the provided predicate
      * @throws NullPointerException if the specified content type array is null
      */
-    public RequestPredicate accepts(final MediaType... contentType) {
+    public RequestPredicate accepts(final HttpMediaType... contentType) {
         Objects.requireNonNull(contentType, "accepted media types");
         return and((req) ->
                 Stream.of(contentType).anyMatch((mt) ->
@@ -412,11 +414,11 @@ public final class RequestPredicate {
     public RequestPredicate hasContentType(final String... contentType) {
         Objects.requireNonNull(contentType, "accepted media types");
         return and((req) -> {
-            Optional<MediaType> actualContentType = req.headers().contentType();
+            Optional<HttpMediaType> actualContentType = req.headers().contentType();
             return actualContentType.isPresent()
                     && Stream.of(contentType)
                         .anyMatch((mt) -> actualContentType.get()
-                                .equals(MediaType.parse(mt)));
+                                .equals(HttpMediaType.create(mt)));
                 });
     }
 
@@ -428,10 +430,10 @@ public final class RequestPredicate {
      * this predicate <b>AND</b> the provided predicate
      * @throws NullPointerException if the specified content type array is null
      */
-    public RequestPredicate hasContentType(final MediaType... contentType) {
+    public RequestPredicate hasContentType(final HttpMediaType... contentType) {
         Objects.requireNonNull(contentType, "content types");
         return and((req) -> {
-            Optional<MediaType> actualContentType = req.headers().contentType();
+            Optional<HttpMediaType> actualContentType = req.headers().contentType();
             return actualContentType.isPresent()
                     && Stream.of(contentType)
                         .anyMatch((mt) -> actualContentType.get()

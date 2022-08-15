@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,13 +30,13 @@ public class StatusTypeTest {
 
     @Test
     public void adHocStatusTypeObjectPropertiesTest() throws Exception {
-        assertThat(Http.ResponseStatus.create(200) == Http.Status.OK_200, is(true));
-        assertThat(Http.ResponseStatus.create(200).hashCode() == Http.Status.OK_200.hashCode(), is(true));
-        assertThat(Http.ResponseStatus.create(200).equals(Http.Status.OK_200), is(true));
+        assertThat(Http.Status.create(200) == Http.Status.OK_200, is(true));
+        assertThat(Http.Status.create(200).hashCode() == Http.Status.OK_200.hashCode(), is(true));
+        assertThat(Http.Status.create(200).equals(Http.Status.OK_200), is(true));
 
-        assertThat(Http.ResponseStatus.create(999).equals(Http.ResponseStatus.create(999)), is(true));
+        assertThat(Http.Status.create(999).equals(Http.Status.create(999)), is(true));
         // TODO if we were able to maintain even the '==' property, it would be awesome (cache the created ones?)
-        assertThat(Http.ResponseStatus.create(999) != Http.ResponseStatus.create(999), is(true));
-        assertThat(Http.ResponseStatus.create(999).hashCode() == Http.ResponseStatus.create(999).hashCode(), is(true));
+        assertThat(Http.Status.create(999) != Http.Status.create(999), is(true));
+        assertThat(Http.Status.create(999).hashCode() == Http.Status.create(999).hashCode(), is(true));
     }
 }

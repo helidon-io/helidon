@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,9 @@ import java.util.concurrent.Flow.Publisher;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
-import io.helidon.common.http.Http;
-import io.helidon.common.http.MediaType;
+import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.mapper.Mapper;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
 import io.helidon.media.common.MessageBodyWriter;
@@ -37,6 +37,7 @@ public final class MultiPartBodyWriter implements MessageBodyWriter<WriteableMul
      * The default boundary used for encoding multipart messages.
      */
     public static final String DEFAULT_BOUNDARY = "[^._.^]==>boundary<==[^._.^]";
+    private static final HttpMediaType MULTIPART_FORM_DATA = HttpMediaType.create(MediaTypes.MULTIPART_FORM_DATA);
 
     private final String boundary;
 
@@ -47,8 +48,8 @@ public final class MultiPartBodyWriter implements MessageBodyWriter<WriteableMul
     @Override
     public PredicateResult accept(GenericType<?> type, MessageBodyWriterContext context) {
         return context.contentType()
-                .or(() -> Optional.of(MediaType.MULTIPART_FORM_DATA))
-                .filter(mediaType -> mediaType == MediaType.MULTIPART_FORM_DATA)
+                .or(() -> Optional.of(HttpMediaType.create(MULTIPART_FORM_DATA)))
+                .filter(mediaType -> mediaType.test(MULTIPART_FORM_DATA))
                 .map(it -> PredicateResult.supports(WriteableMultiPart.class, type))
                 .orElse(PredicateResult.NOT_SUPPORTED);
     }
@@ -57,13 +58,12 @@ public final class MultiPartBodyWriter implements MessageBodyWriter<WriteableMul
     public Publisher<DataChunk> write(Single<? extends WriteableMultiPart> content,
                                       GenericType<? extends WriteableMultiPart> type,
                                       MessageBodyWriterContext context) {
-        MediaType mediaType = MediaType.MULTIPART_FORM_DATA;
-        MediaType mediaWithBoundary = MediaType.builder()
-                .type(mediaType.type())
-                .subtype(mediaType.subtype())
+
+        HttpMediaType mediaWithBoundary = HttpMediaType.builder()
+                .mediaType(MULTIPART_FORM_DATA.mediaType())
                 .addParameter("boundary", "\"" + boundary + "\"")
                 .build();
-        context.headers().put(Http.Header.CONTENT_TYPE, mediaWithBoundary.toString());
+        context.headers().contentType(mediaWithBoundary);
         return content.flatMap(new MultiPartToChunks(boundary, context));
     }
 

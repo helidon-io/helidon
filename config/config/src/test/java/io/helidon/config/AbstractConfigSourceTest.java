@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 
+import io.helidon.common.media.type.MediaType;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.spi.ChangeWatcher;
 import io.helidon.config.spi.ConfigContent;
 import io.helidon.config.spi.ConfigNode;
@@ -39,6 +41,8 @@ import io.helidon.config.spi.WatchableSource;
 
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.common.testing.junit5.OptionalMatcher.optionalEmpty;
+import static io.helidon.common.testing.junit5.OptionalMatcher.optionalValue;
 import static io.helidon.config.PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES;
 import static io.helidon.config.ValueNodeMatcher.valueNode;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -175,7 +179,7 @@ public class AbstractConfigSourceTest {
         when(context.findParser(MEDIA_TYPE_TEXT_JAVA_PROPERTIES))
                 .thenReturn(Optional.of(new ConfigParser() { //NOT used parser
                     @Override
-                    public Set<String> supportedMediaTypes() {
+                    public Set<MediaType> supportedMediaTypes() {
                         return Set.of(MEDIA_TYPE_TEXT_JAVA_PROPERTIES);
                     }
 
@@ -208,10 +212,10 @@ public class AbstractConfigSourceTest {
                        "media-type-mapping.password", "application/base64"))));
 
         //media-type-mapping
-        Function<Config.Key, Optional<String>> mapping = builder.mediaTypeMapping().get();
-        assertThat(mapping.apply(Config.Key.create("yaml")), is(Optional.of("application/x-yaml")));
-        assertThat(mapping.apply(Config.Key.create("password")), is(Optional.of("application/base64")));
-        assertThat(mapping.apply(Config.Key.create("unknown")), is(Optional.empty()));
+        Function<Config.Key, Optional<MediaType>> mapping = builder.mediaTypeMapping().get();
+        assertThat(mapping.apply(Config.Key.create("yaml")), optionalValue(is(MediaTypes.APPLICATION_X_YAML)));
+        assertThat(mapping.apply(Config.Key.create("password")), optionalValue(is(MediaTypes.create("application/base64"))));
+        assertThat(mapping.apply(Config.Key.create("unknown")), is(optionalEmpty()));
     }
 
     @Test
@@ -267,7 +271,7 @@ public class AbstractConfigSourceTest {
         }
 
         @Override
-        public Optional<String> mediaType() {
+        public Optional<MediaType> mediaType() {
             return super.mediaType();
         }
 

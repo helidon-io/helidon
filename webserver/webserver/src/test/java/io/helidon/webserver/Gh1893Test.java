@@ -57,11 +57,13 @@ import static org.hamcrest.collection.IsMapContaining.hasEntry;
  * Sample request: curl -g "http://hostname/tnt/page2{
  */
 class Gh1893Test {
-    public static final Duration TIMEOUT = Duration.ofSeconds(10);
-    public static final String CUSTOM_REASON_PHRASE = "Custom-bad-request";
-    public static final String CUSTOM_ENTITY = "There we go";
+    private static final Duration TIMEOUT = Duration.ofSeconds(10);
+    private static final String CUSTOM_REASON_PHRASE = "Custom-bad-request";
+    private static final String CUSTOM_ENTITY = "There we go";
+
     private static WebServer webServer;
     private static WebClient webClient;
+
 
     @BeforeAll
     static void startServer() {
@@ -82,16 +84,16 @@ class Gh1893Test {
 
     private static TransportResponse badRequestHandler(DirectHandler.TransportRequest request,
                                                        DirectHandler.EventType eventType,
-                                                       Http.ResponseStatus defaultStatus,
+                                                       Http.Status defaultStatus,
                                                        String message) {
         if (request.uri().equals("/redirect")) {
             return TransportResponse.builder()
                     .status(Http.Status.TEMPORARY_REDIRECT_307)
-                    .header(Http.Header.LOCATION, "/errorPage")
+                    .header(Http.Header.LOCATION.defaultCase(), "/errorPage")
                     .build();
         }
         return TransportResponse.builder()
-                .status(Http.ResponseStatus.create(Http.Status.BAD_REQUEST_400.code(),
+                .status(Http.Status.create(Http.Status.BAD_REQUEST_400.code(),
                                                    CUSTOM_REASON_PHRASE))
                 .entity(CUSTOM_ENTITY)
                 .build();
@@ -122,7 +124,7 @@ class Gh1893Test {
         String response = SocketHttpClient.sendAndReceive("/",
                                                           Http.Method.GET,
                                                           null,
-                                                          List.of(Http.Header.CONTENT_LENGTH + ": 47a"),
+                                                          List.of(Http.Header.CONTENT_LENGTH.defaultCase() + ": 47a"),
                                                           webServer);
 
         assertThat(response, containsString("400 " + CUSTOM_REASON_PHRASE));
@@ -135,7 +137,7 @@ class Gh1893Test {
         String response = SocketHttpClient.sendAndReceive("/redirect",
                                                           Http.Method.GET,
                                                           null,
-                                                          List.of(Http.Header.CONTENT_LENGTH + ": 47a"),
+                                                          List.of(Http.Header.CONTENT_LENGTH.defaultCase() + ": 47a"),
                                                           webServer);
 
         assertThat(SocketHttpClient.statusFromResponse(response), is(Http.Status.TEMPORARY_REDIRECT_307));

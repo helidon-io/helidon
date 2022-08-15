@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,6 @@
 package io.helidon.media.multipart;
 
 import java.nio.file.Path;
-
-import io.helidon.common.http.FormBuilder;
 
 /**
  * Form object which simplifies sending of multipart forms.
@@ -36,7 +34,7 @@ public interface FileFormParams {
     /**
      * Fluent API builder of {@link FileFormParams}.
      */
-    class Builder implements FormBuilder<Builder, FileFormParams> {
+    class Builder implements io.helidon.common.Builder<Builder, FileFormParams> {
 
         private final WriteableMultiPart.Builder builder = WriteableMultiPart.builder();
 
@@ -48,7 +46,13 @@ public interface FileFormParams {
             return new FileFormParamsImpl(builder.build().bodyParts());
         }
 
-        @Override
+        /**
+         * Add a parameter.
+         *
+         * @param name parameter name
+         * @param values parameter value
+         * @return updated builder
+         */
         public Builder add(String name, String... values) {
             for (String value : values) {
                 builder.bodyPart(name, value);

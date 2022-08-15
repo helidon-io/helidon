@@ -42,14 +42,14 @@ import io.helidon.webclient.WebClientRequestHeaders;
 import io.helidon.webclient.WebClientResponse;
 
 import org.eclipse.microprofile.lra.annotation.LRAStatus;
-
-import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_CONTEXT_HEADER;
-import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_RECOVERY_HEADER;
+import org.eclipse.microprofile.lra.annotation.ws.rs.LRA;
 
 /**
  * Narayana LRA coordinator client.
  */
 public class NarayanaClient implements CoordinatorClient {
+    private static final Http.HeaderName LRA_HTTP_CONTEXT_HEADER = Http.Header.create(LRA.LRA_HTTP_CONTEXT_HEADER);
+    private static final Http.HeaderName LRA_HTTP_RECOVERY_HEADER = Http.Header.create(LRA.LRA_HTTP_RECOVERY_HEADER);
 
     private static final Logger LOGGER = Logger.getLogger(NarayanaClient.class.getName());
 
@@ -103,7 +103,7 @@ public class NarayanaClient implements CoordinatorClient {
                 .queryParam(QUERY_PARAM_PARENT_LRA, parentLRA == null ? "" : parentLRA.toASCIIString())
                 .submit()
                 .flatMap(res -> {
-                    Http.ResponseStatus status = res.status();
+                    Http.Status status = res.status();
                     if (status.code() != 201) {
                         return res.content().as(String.class).flatMap(cont ->
                                 connectionError("Unexpected response " + status + " from coordinator "
@@ -200,7 +200,7 @@ public class NarayanaClient implements CoordinatorClient {
                 .queryParam(QUERY_PARAM_TIME_LIMIT, String.valueOf(timeLimit))
                 .headers(h -> {
                     h.add(HEADER_LINK, links); // links are expected either in header
-                    headers.toMap().forEach(h::add); // header propagation
+                    headers.toMap().forEach((name, value) -> h.set(Http.Header.create(name), value)); // header propagation
                     return h;
                 })
                 .submit(links) // or as a body
@@ -343,7 +343,7 @@ public class NarayanaClient implements CoordinatorClient {
 
     private Function<WebClientRequestHeaders, Headers> copyHeaders(PropagatedHeaders headers) {
         return wcHeaders -> {
-            headers.toMap().forEach(wcHeaders::add);
+            headers.toMap().forEach((key, value) -> wcHeaders.set(Http.Header.create(key), value));
             return wcHeaders;
         };
     }

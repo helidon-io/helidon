@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@ package io.helidon.openapi;
 
 import java.net.HttpURLConnection;
 
-import io.helidon.common.http.MediaType;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.openapi.test.MyModelReader;
@@ -65,8 +65,8 @@ public class ServerModelReaderTest {
                 webServer.port(),
                 "GET",
                 SIMPLE_PROPS_PATH,
-                MediaType.APPLICATION_OPENAPI_JSON);
-        TestUtil.validateResponseMediaType(cnx, MediaType.APPLICATION_OPENAPI_JSON);
+                MediaTypes.APPLICATION_OPENAPI_JSON);
+        TestUtil.validateResponseMediaType(cnx, MediaTypes.APPLICATION_OPENAPI_JSON);
         JsonStructure json = TestUtil.jsonFromResponse(cnx);
         // The model reader adds the following key/value (among others) to the model.
         JsonValue v = json.getValue(String.format("/paths/%s/get/summary",
@@ -84,8 +84,8 @@ public class ServerModelReaderTest {
                 webServer.port(),
                 "GET",
                 SIMPLE_PROPS_PATH,
-                MediaType.APPLICATION_OPENAPI_JSON);
-        TestUtil.validateResponseMediaType(cnx, MediaType.APPLICATION_OPENAPI_JSON);
+                MediaTypes.APPLICATION_OPENAPI_JSON);
+        TestUtil.validateResponseMediaType(cnx, MediaTypes.APPLICATION_OPENAPI_JSON);
         JsonStructure json = TestUtil.jsonFromResponse(cnx);
         /*
          * Although the model reader adds this path, the filter should have

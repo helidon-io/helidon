@@ -34,6 +34,7 @@ import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.AbstractConfigSource;
 import io.helidon.config.Config;
@@ -207,7 +208,7 @@ public class GitConfigSource extends AbstractConfigSource
     }
 
     @Override
-    public Optional<String> mediaType() {
+    public Optional<MediaType> mediaType() {
         return super.mediaType();
     }
 

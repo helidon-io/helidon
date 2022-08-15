@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import io.helidon.common.LazyValue;
+import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Single;
 import io.helidon.tracing.HeaderConsumer;
 import io.helidon.tracing.HeaderProvider;
@@ -114,12 +115,12 @@ public final class WebClientTracing implements WebClientService {
 
         @Override
         public void setIfAbsent(String key, String... values) {
-            headers.putIfAbsent(key, values);
+            headers.setIfAbsent(Http.HeaderValue.create(Http.Header.create(key), values));
         }
 
         @Override
         public void set(String key, String... values) {
-            headers.put(key, values);
+            headers.set(Http.HeaderValue.create(Http.Header.create(key), values));
         }
 
         @Override
@@ -129,7 +130,7 @@ public final class WebClientTracing implements WebClientService {
 
         @Override
         public Optional<String> get(String key) {
-            return headers.first(key);
+            return headers.first(Http.Header.create(key));
         }
 
         @Override

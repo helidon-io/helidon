@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,31 +15,22 @@
  */
 package io.helidon.metrics.api;
 
-import io.helidon.common.http.MediaType;
-import io.helidon.common.media.type.MediaTypes;
+import java.io.IOException;
+import java.util.Set;
+
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-
-import io.helidon.config.yaml.YamlConfigParser;
 
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.StringReader;
-import java.util.Set;
-
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.Matchers.nullValue;
 
 public class TestMetricsSettings {
 

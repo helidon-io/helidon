@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import io.helidon.common.Builder;
+import io.helidon.common.media.type.MediaType;
 import io.helidon.config.AbstractConfigSourceBuilder;
 import io.helidon.config.Config;
 import io.helidon.config.etcd.EtcdConfigSourceBuilder.EtcdEndpoint;
@@ -120,7 +121,7 @@ public final class EtcdConfigSourceBuilder extends AbstractConfigSourceBuilder<E
     }
 
     @Override
-    public EtcdConfigSourceBuilder mediaType(String mediaType) {
+    public EtcdConfigSourceBuilder mediaType(MediaType mediaType) {
         return super.mediaType(mediaType);
     }
 

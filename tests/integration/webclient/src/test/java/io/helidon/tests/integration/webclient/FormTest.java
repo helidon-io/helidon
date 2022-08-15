@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,8 @@
  */
 package io.helidon.tests.integration.webclient;
 
-import io.helidon.common.http.FormParams;
-import io.helidon.common.http.MediaType;
+import io.helidon.common.media.type.MediaTypes;
+import io.helidon.common.parameters.Parameters;
 
 import org.junit.jupiter.api.Test;
 
@@ -30,7 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  */
 public class FormTest extends TestParent {
 
-    private static final FormParams TEST_FORM = FormParams.builder()
+    private static final Parameters TEST_FORM = Parameters.builder("webclient-form")
             .add("name", "David Tester")
             .build();
 
@@ -39,7 +39,7 @@ public class FormTest extends TestParent {
     private static final String NO_VALUE = "noValue";
     private static final String SPECIAL_VALUE = "some &@#/ special value";
 
-    private static final FormParams ADVANCED_TEST_FORM = FormParams.builder()
+    private static final Parameters ADVANCED_TEST_FORM = Parameters.builder("webclient-form")
             .add(SPECIAL, SPECIAL_VALUE)
             .add(MULTIPLE, "value1", "value2")
             .add(NO_VALUE)
@@ -58,7 +58,7 @@ public class FormTest extends TestParent {
     public void testSpecificContentType() {
         webClient.post()
                 .path("/form")
-                .contentType(MediaType.TEXT_PLAIN)
+                .contentType(MediaTypes.TEXT_PLAIN)
                 .submit(TEST_FORM, String.class)
                 .thenAccept(resp -> assertThat(resp, is("Hi David Tester")))
                 .await();
@@ -68,18 +68,18 @@ public class FormTest extends TestParent {
     public void testSpecificContentTypeIncorrect() {
         Exception ex = assertThrows(IllegalStateException.class, () -> webClient.post()
                 .path("/form")
-                .contentType(MediaType.APPLICATION_ATOM_XML)
+                .contentType(MediaTypes.APPLICATION_ATOM_XML)
                 .submit(TEST_FORM).await());
 
         assertThat(ex.getCause().getMessage(),
-                   startsWith("No writer found for type: class io.helidon.common.http.FormParamsImpl"));
+                   startsWith("No writer found for type: class "));
     }
 
     @Test
     public void testFormContent() {
-        FormParams received = webClient.post()
+        Parameters received = webClient.post()
                 .path("/form/content")
-                .submit(ADVANCED_TEST_FORM, FormParams.class)
+                .submit(ADVANCED_TEST_FORM, Parameters.class)
                 .await();
 
         assertThat(received.all(SPECIAL), is(ADVANCED_TEST_FORM.all(SPECIAL)));

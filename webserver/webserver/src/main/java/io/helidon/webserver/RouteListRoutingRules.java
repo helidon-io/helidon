@@ -188,7 +188,7 @@ class RouteListRoutingRules implements Routing.Rules {
         return this;
     }
 
-    private RouteListRoutingRules addSingle(Http.RequestMethod method, PathMatcher pathMatcher, Handler... requestHandlers) {
+    private RouteListRoutingRules addSingle(Http.Method method, PathMatcher pathMatcher, Handler... requestHandlers) {
         if (requestHandlers != null) {
             for (Handler requestHandler : requestHandlers) {
                 if (pathMatcher == null) {
@@ -201,7 +201,7 @@ class RouteListRoutingRules implements Routing.Rules {
         return this;
     }
 
-    private RouteListRoutingRules addSingle(Http.RequestMethod method, String pathPattern, Handler... requestHandlers) {
+    private RouteListRoutingRules addSingle(Http.Method method, String pathPattern, Handler... requestHandlers) {
         if (pathPattern != null) {
             return addSingle(method, PathPattern.compile(pathPattern), requestHandlers);
         } else {
@@ -209,7 +209,7 @@ class RouteListRoutingRules implements Routing.Rules {
         }
     }
 
-    private RouteListRoutingRules addSingle(Http.RequestMethod method, Handler... requestHandlers) {
+    private RouteListRoutingRules addSingle(Http.Method method, Handler... requestHandlers) {
         return addSingle(method, (PathMatcher) null, requestHandlers);
 
     }
@@ -363,12 +363,12 @@ class RouteListRoutingRules implements Routing.Rules {
     }
 
     @Override
-    public RouteListRoutingRules anyOf(Iterable<Http.RequestMethod> methods, Handler... requestHandlers) {
+    public RouteListRoutingRules anyOf(Iterable<Http.Method> methods, Handler... requestHandlers) {
         return anyOf(methods, (PathMatcher) null, requestHandlers);
     }
 
     @Override
-    public RouteListRoutingRules anyOf(Iterable<Http.RequestMethod> methods, String pathPattern, Handler... requestHandlers) {
+    public RouteListRoutingRules anyOf(Iterable<Http.Method> methods, String pathPattern, Handler... requestHandlers) {
         if (pathPattern == null) {
             return anyOf(methods, (PathMatcher) null, requestHandlers);
         } else {
@@ -378,7 +378,7 @@ class RouteListRoutingRules implements Routing.Rules {
 
     @Override
     public RouteListRoutingRules anyOf(
-            Iterable<Http.RequestMethod> methods, PathMatcher pathMatcher, Handler... requestHandlers) {
+            Iterable<Http.Method> methods, PathMatcher pathMatcher, Handler... requestHandlers) {
         if (requestHandlers != null) {
             for (Handler requestHandler : requestHandlers) {
                 if (pathMatcher == null) {

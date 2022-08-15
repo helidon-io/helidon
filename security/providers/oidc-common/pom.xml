@@ -34,6 +34,10 @@
             <artifactId>helidon-security-providers-common</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-parameters</artifactId>
+        </dependency>
+        <dependency>
             <!-- JWK -->
             <groupId>io.helidon.security</groupId>
             <artifactId>helidon-security-jwt</artifactId>

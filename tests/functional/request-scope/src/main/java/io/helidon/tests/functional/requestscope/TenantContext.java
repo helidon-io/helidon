@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package io.helidon.tests.functional.requestscope;
 
+import io.helidon.common.http.Http;
 import io.helidon.webserver.ServerRequest;
 
 import jakarta.annotation.PostConstruct;
@@ -23,6 +24,7 @@ import jakarta.ws.rs.core.Context;
 
 @RequestScoped
 public class TenantContext {
+    private static final Http.HeaderName TENANT_ID = Http.Header.create("x-tenant-id");
 
     @Context
     private ServerRequest request;
@@ -38,6 +40,6 @@ public class TenantContext {
      */
     @PostConstruct
     public void init() {
-        tenantId = request.headers().value("x-tenant-id").orElse(null);
+        tenantId = request.headers().value(TENANT_ID).orElse(null);
     }
 }

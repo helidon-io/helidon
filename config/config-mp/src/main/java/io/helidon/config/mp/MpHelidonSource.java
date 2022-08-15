@@ -24,6 +24,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.media.type.MediaType;
 import io.helidon.config.ConfigException;
 import io.helidon.config.ConfigHelper;
 import io.helidon.config.spi.ConfigContent;
@@ -79,7 +80,7 @@ final class MpHelidonSource {
             }
             ConfigParser.Content content = load.get();
 
-            String mediaType = content.mediaType()
+            MediaType mediaType = content.mediaType()
                     .or(source::mediaType)
                     .orElseThrow(() -> new ConfigException("Source " + source + " does not provide media type, cannot use it."));
 
@@ -94,7 +95,7 @@ final class MpHelidonSource {
 
         }
 
-        private static Optional<ConfigParser> findParser(String mediaType) {
+        private static Optional<ConfigParser> findParser(MediaType mediaType) {
             return HelidonServiceLoader.create(ServiceLoader.load(ConfigParser.class))
                     .asList()
                     .stream()

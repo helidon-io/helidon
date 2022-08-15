@@ -15,8 +15,6 @@
  */
 package io.helidon.common.mapper;
 
-import java.util.Optional;
-
 import io.helidon.common.GenericType;
 import io.helidon.common.mapper.spi.MapperProvider;
 
@@ -24,23 +22,24 @@ import io.helidon.common.mapper.spi.MapperProvider;
  * Maps String to Integer, and String to Short using type.
  */
 public class ServiceLoaderMapper2 implements MapperProvider {
+    static final GenericType<String> STRING_TYPE = GenericType.create(String.class);
     static final GenericType<Integer> INTEGER_TYPE = GenericType.create(Integer.class);
     static final GenericType<Short> SHORT_TYPE = GenericType.create(Short.class);
 
     @Override
-    public <SOURCE, TARGET> Optional<Mapper<?, ?>> mapper(Class<SOURCE> sourceClass, Class<TARGET> targetClass) {
-        return Optional.empty();
+    public ProviderResponse mapper(Class<?> sourceClass, Class<?> targetClass, String qualifier) {
+        return ProviderResponse.unsupported();
     }
 
     @Override
-    public <SOURCE, TARGET> Optional<Mapper<?, ?>> mapper(GenericType<SOURCE> sourceType, GenericType<TARGET> targetType) {
-        if (sourceType.equals(GenericType.STRING) && targetType.equals(INTEGER_TYPE)) {
-            return Optional.of(string -> Integer.parseInt((String)string) + 1);
+    public ProviderResponse mapper(GenericType<?> sourceType, GenericType<?> targetType, String qualifier) {
+        if (sourceType.equals(STRING_TYPE) && targetType.equals(INTEGER_TYPE)) {
+            return new ProviderResponse(Support.SUPPORTED, string -> Integer.parseInt((String) string) + 1);
         }
 
-        if (sourceType.equals(GenericType.STRING) && targetType.equals(SHORT_TYPE)) {
-            return Optional.of(string -> Short.parseShort((String)string));
+        if (sourceType.equals(STRING_TYPE) && targetType.equals(SHORT_TYPE)) {
+            return new ProviderResponse(Support.SUPPORTED, string -> Short.parseShort((String) string));
         }
-        return Optional.empty();
+        return ProviderResponse.unsupported();
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,21 +29,21 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 class HttpTest {
     @Test
-    void testResponseStatusIsStatus() {
-        Http.ResponseStatus rs = Http.ResponseStatus.create(TEMPORARY_REDIRECT_307.code());
+    void testStatusIsStatus() {
+        Http.Status rs = Http.Status.create(TEMPORARY_REDIRECT_307.code());
         assertThat(rs, sameInstance(TEMPORARY_REDIRECT_307));
     }
 
     @Test
-    void testResponseStatusWithReasonIsStatus() {
-        Http.ResponseStatus rs = Http.ResponseStatus
+    void testStatusWithReasonIsStatus() {
+        Http.Status rs = Http.Status
                 .create(TEMPORARY_REDIRECT_307.code(), TEMPORARY_REDIRECT_307.reasonPhrase().toUpperCase());
         assertThat(rs, sameInstance(TEMPORARY_REDIRECT_307));
     }
 
     @Test
     void testResposneStatusCustomReason() {
-        Http.ResponseStatus rs = Http.ResponseStatus
+        Http.Status rs = Http.Status
                 .create(TEMPORARY_REDIRECT_307.code(), "Custom reason phrase");
         assertThat(rs, not(TEMPORARY_REDIRECT_307));
         assertThat(rs.reasonPhrase(), is("Custom reason phrase"));

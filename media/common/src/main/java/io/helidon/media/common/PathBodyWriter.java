@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +24,8 @@ import java.util.concurrent.Flow.Publisher;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
-import io.helidon.common.http.MediaType;
 import io.helidon.common.mapper.Mapper;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.reactive.Single;
 
 /**
@@ -76,7 +76,7 @@ final class PathBodyWriter implements MessageBodyWriter<Path> {
         @Override
         public Publisher<DataChunk> map(Path path) {
             try {
-                context.contentType(MediaType.APPLICATION_OCTET_STREAM);
+                context.contentType(MediaTypes.APPLICATION_OCTET_STREAM);
                 context.contentLength(Files.size(path));
                 FileChannel fc = FileChannel.open(path, StandardOpenOption.READ);
                 return ContentWriters.byteChannelWriter().apply(fc);

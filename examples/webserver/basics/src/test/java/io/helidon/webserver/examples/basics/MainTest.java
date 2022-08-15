@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,8 @@ package io.helidon.webserver.examples.basics;
 import java.util.function.Consumer;
 
 import io.helidon.common.http.Http;
-import io.helidon.common.http.MediaType;
+import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.media.common.MediaContext;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.testsupport.MediaPublisher;
@@ -33,6 +34,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class MainTest {
+
+    private static final Http.HeaderName FOO_HEADER = Http.Header.create("foo");
 
     @Test
     public void firstRouting() throws Exception {
@@ -59,7 +62,7 @@ public class MainTest {
     public void parametersAndHeaders() throws Exception {
         TestResponse response = createClient(Main::parametersAndHeaders).path("/context/aaa")
                                                                        .queryParameter("bar", "bbb")
-                                                                       .header("foo", "ccc")
+                                                                       .header(FOO_HEADER, "ccc")
                                                                        .get();
         assertEquals(200, response.status().code());
         String s = response.asString().get();
@@ -85,12 +88,12 @@ public class MainTest {
         // foo
         TestResponse response
                 = createClient(Main::readContentEntity).path("/foo")
-                                                       .post(MediaPublisher.create(MediaType.TEXT_PLAIN, "aaa"));
+                                                       .post(MediaPublisher.create(HttpMediaType.TEXT_PLAIN, "aaa"));
         assertEquals(200, response.status().code());
         assertEquals("aaa", response.asString().get());
         // bar
         response = createClient(Main::readContentEntity).path("/bar")
-                                                        .post(MediaPublisher.create(MediaType.TEXT_PLAIN, "aaa"));
+                                                        .post(MediaPublisher.create(HttpMediaType.TEXT_PLAIN, "aaa"));
         assertEquals(200, response.status().code());
         assertEquals("aaa", response.asString().get());
     }
@@ -99,13 +102,13 @@ public class MainTest {
     public void mediaReader() throws Exception {
         TestResponse response = createClient(Main::mediaReader)
                 .path("/create-record")
-                .post(MediaPublisher.create(MediaType.parse("application/name"), "John Smith"));
+                .post(MediaPublisher.create(NameReader.APP_NAME, "John Smith"));
         assertEquals(201, response.status().code());
         assertEquals("John Smith", response.asString().get());
         // Unsupported Content-Type
         response = createClient(Main::mediaReader)
                 .path("/create-record")
-                .post(MediaPublisher.create(MediaType.TEXT_PLAIN, "John Smith"));
+                .post(MediaPublisher.create(HttpMediaType.TEXT_PLAIN, "John Smith"));
         assertEquals(500, response.status().code());
     }
 
@@ -118,7 +121,7 @@ public class MainTest {
         // Static content
         response = createClient(Main::supports).path("/index.html").get();
         assertEquals(200, response.status().code());
-        assertEquals(MediaType.TEXT_HTML.toString(), response.headers().first(Http.Header.CONTENT_TYPE).orElse(null));
+        assertEquals(MediaTypes.TEXT_HTML.text(), response.headers().first(Http.Header.CONTENT_TYPE).orElse(null));
         // JSON
         response = createClient(Main::supports).path("/hello/Europe").get();
         assertEquals(200, response.status().code());
@@ -130,18 +133,18 @@ public class MainTest {
         // Valid
         TestResponse response = createClient(Main::errorHandling)
                 .path("/compute")
-                .post(MediaPublisher.create(MediaType.TEXT_PLAIN, "2"));
+                .post(MediaPublisher.create(HttpMediaType.TEXT_PLAIN, "2"));
         assertEquals(200, response.status().code());
         assertEquals("100 / 2 = 50", response.asString().get());
         // Zero
         response = createClient(Main::errorHandling)
                 .path("/compute")
-                .post(MediaPublisher.create(MediaType.TEXT_PLAIN, "0"));
+                .post(MediaPublisher.create(HttpMediaType.TEXT_PLAIN, "0"));
         assertEquals(412, response.status().code());
         // NaN
         response = createClient(Main::errorHandling)
                 .path("/compute")
-                .post(MediaPublisher.create(MediaType.TEXT_PLAIN, "aaa"));
+                .post(MediaPublisher.create(HttpMediaType.TEXT_PLAIN, "aaa"));
         assertEquals(400, response.status().code());
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,9 @@ import java.util.concurrent.CompletableFuture;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.Parameters;
 import io.helidon.common.reactive.Single;
+import io.helidon.common.uri.UriPath;
+import io.helidon.common.uri.UriQueryWriteable;
 
 /**
  * Implementation of the {@link WebClientServiceRequest} interface.
@@ -30,7 +31,7 @@ import io.helidon.common.reactive.Single;
 class WebClientServiceRequestImpl implements WebClientServiceRequest {
 
     private final WebClientRequestHeaders headers;
-    private final Http.RequestMethod method;
+    private final Http.Method method;
     private final Http.Version version;
     private final Map<String, String> parameters;
     private final CompletableFuture<WebClientServiceRequest> sent;
@@ -125,7 +126,7 @@ class WebClientServiceRequestImpl implements WebClientServiceRequest {
     }
 
     @Override
-    public Http.RequestMethod method() {
+    public Http.Method method() {
         return method;
     }
 
@@ -145,12 +146,12 @@ class WebClientServiceRequestImpl implements WebClientServiceRequest {
     }
 
     @Override
-    public Parameters queryParams() {
+    public UriQueryWriteable queryParams() {
         return requestBuilder.queryParams();
     }
 
     @Override
-    public Path path() {
+    public UriPath path() {
         return requestBuilder.path();
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import java.util.List;
 /**
  * Internal utility methods.
  */
-public final class Utils {
+final class Utils {
     static final Runnable EMPTY_RUNNABLE = () -> {
     };
 
@@ -43,7 +43,7 @@ public final class Utils {
      * @param text               a text to be tokenized.
      * @return A list of tokens without separator characters.
      */
-    public static List<String> tokenize(char separator, String quoteChars, boolean includeEmptyTokens, String text) {
+    static List<String> tokenize(char separator, String quoteChars, boolean includeEmptyTokens, String text) {
         char[] quotes = quoteChars == null ? new char[0] : quoteChars.toCharArray();
         StringBuilder token = new StringBuilder();
         List<String> result = new ArrayList<>();
@@ -86,7 +86,7 @@ public final class Utils {
      * @param str string to unwrap.
      * @return unwrapped string.
      */
-    public static String unwrap(String str) {
+    static String unwrap(String str) {
         if (str.length() >= 2 && '"' == str.charAt(0) && '"' == str.charAt(str.length() - 1)) {
             return str.substring(1, str.length() - 1);
         }
@@ -98,9 +98,9 @@ public final class Utils {
      *
      * @param out        the stream where to append the byte buffer
      * @param byteBuffer the byte buffer to append to the stream
-     * @throws IOException in case of an IO problem
+     * @throws java.io.IOException in case of an IO problem
      */
-    public static void write(ByteBuffer byteBuffer, OutputStream out) throws IOException {
+    static void write(ByteBuffer byteBuffer, OutputStream out) throws IOException {
         if (byteBuffer.hasArray()) {
             out.write(byteBuffer.array(), byteBuffer.arrayOffset() + byteBuffer.position(), byteBuffer.remaining());
         } else {
@@ -115,7 +115,7 @@ public final class Utils {
      * @param byteBuffer byte buffer
      * @return byte array
      */
-    public static byte[] toByteArray(ByteBuffer byteBuffer) {
+    static byte[] toByteArray(ByteBuffer byteBuffer) {
         byte[] buff = new byte[byteBuffer.remaining()];
         return toByteArray(byteBuffer, buff, 0);
     }

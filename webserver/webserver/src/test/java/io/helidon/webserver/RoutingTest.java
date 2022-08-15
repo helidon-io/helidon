@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import io.helidon.common.context.Context;
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Single;
 
+import io.netty.handler.codec.http.DefaultHttpHeaders;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
@@ -130,6 +131,7 @@ public class RoutingTest {
         WebServer webServerMock = mock(WebServer.class);
         when(webServerMock.context()).thenReturn(Context.create());
         doReturn(webServerMock).when(bareRequestMock).webServer();
+        doReturn(new NettyRequestHeaders(new DefaultHttpHeaders())).when(bareRequestMock).headers();
         return bareRequestMock;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,8 @@ package io.helidon.webserver;
 
 import java.util.List;
 
-import io.helidon.common.http.MediaType;
+import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.media.type.MediaTypes;
 
 /**
  * A {@link Service} and abstract {@link Handler} that provides support for JSON content.
@@ -27,6 +28,11 @@ import io.helidon.common.http.MediaType;
  * @see Routing.Rules
  */
 public abstract class JsonService implements Service, Handler {
+    /**
+     * No side effects.
+     */
+    protected JsonService() {
+    }
 
     /**
      * Registers this handler for any HTTP method.
@@ -49,10 +55,10 @@ public abstract class JsonService implements Service, Handler {
      * @return {@code true} if JSON is accepted.
      */
     protected boolean acceptsJson(ServerRequest request, ServerResponse response) {
-        final MediaType responseType = response.headers().contentType().orElse(null);
+        final HttpMediaType responseType = response.headers().contentType().orElse(null);
         if (responseType == null) {
             // No response type set yet. See if one of the accepted types is JSON.
-            final MediaType jsonResponseType = toJsonResponseType(request.headers().acceptedTypes());
+            final HttpMediaType jsonResponseType = toJsonResponseType(request.headers().acceptedTypes());
             if (jsonResponseType == null) {
                 // Nope
                 return false;
@@ -62,17 +68,17 @@ public abstract class JsonService implements Service, Handler {
                 return true;
             }
         } else {
-            return MediaType.JSON_PREDICATE.test(responseType);
+            return HttpMediaType.JSON_PREDICATE.test(responseType);
         }
     }
 
-    private MediaType toJsonResponseType(List<MediaType> acceptedTypes) {
+    private HttpMediaType toJsonResponseType(List<HttpMediaType> acceptedTypes) {
         if (acceptedTypes == null || acceptedTypes.isEmpty()) {
             // None provided, so go ahead and return JSON.
-            return MediaType.APPLICATION_JSON;
+            return HttpMediaType.JSON_UTF_8;
         } else {
-            for (final MediaType type : acceptedTypes) {
-                final MediaType responseType = toJsonResponseType(type);
+            for (final HttpMediaType type : acceptedTypes) {
+                final HttpMediaType responseType = toJsonResponseType(type);
                 if (responseType != null) {
                     return responseType;
                 }
@@ -87,11 +93,11 @@ public abstract class JsonService implements Service, Handler {
      * @param acceptedType The accepted type.
      * @return The response type or {@code null} if not an accepted JSON type.
      */
-    protected MediaType toJsonResponseType(MediaType acceptedType) {
-        if (acceptedType.test(MediaType.APPLICATION_JSON)) {
-            return MediaType.APPLICATION_JSON;
+    protected HttpMediaType toJsonResponseType(HttpMediaType acceptedType) {
+        if (acceptedType.test(MediaTypes.APPLICATION_JSON)) {
+            return HttpMediaType.JSON_UTF_8;
         } else if (acceptedType.hasSuffix("json")) {
-            return MediaType.create(acceptedType.type(), acceptedType.subtype());
+            return HttpMediaType.create(MediaTypes.create(acceptedType.type(), acceptedType.subtype()));
         } else {
             return null;
         }

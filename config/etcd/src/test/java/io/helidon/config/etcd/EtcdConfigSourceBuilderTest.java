@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,8 @@ import java.net.URI;
 import java.util.Map;
 import java.util.Set;
 
+import io.helidon.common.media.type.MediaType;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigParsers;
 import io.helidon.config.ConfigSources;
@@ -42,6 +44,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * Tests {@link EtcdConfigSourceBuilder}.
  */
 public class EtcdConfigSourceBuilderTest {
+    private static final MediaType MY_MEDIA_TYPE = MediaTypes.create("my/media/type");
 
     @Test
     public void testBuilderSuccessful() {
@@ -49,7 +52,7 @@ public class EtcdConfigSourceBuilderTest {
                 .uri(URI.create("http://localhost:2379"))
                 .key("/registry")
                 .api(EtcdApi.v2)
-                .mediaType("my/media/type")
+                .mediaType(MY_MEDIA_TYPE)
                 .build();
 
         assertThat(etcdConfigSource, notNullValue());
@@ -62,7 +65,7 @@ public class EtcdConfigSourceBuilderTest {
                     .uri()
                     .key("/registry")
                     .api(EtcdApi.v2)
-                    .mediaType("my/media/type")
+                    .mediaType(MY_MEDIA_TYPE)
                     .parser(ConfigParsers.properties())
                     .build();
         });
@@ -75,7 +78,7 @@ public class EtcdConfigSourceBuilderTest {
                     .uri(URI.create("http://localhost:2379"))
                     .key(null)
                     .api(EtcdApi.v2)
-                    .mediaType("my/media/type")
+                    .mediaType(MY_MEDIA_TYPE)
                     .parser(ConfigParsers.properties())
                     .build();
         });
@@ -88,7 +91,7 @@ public class EtcdConfigSourceBuilderTest {
                     .uri(URI.create("http://localhost:2379"))
                     .key("/registry")
                     .api(null)
-                    .mediaType("my/media/type")
+                    .mediaType(MY_MEDIA_TYPE)
                     .parser(ConfigParsers.properties())
                     .build();
         });
@@ -100,7 +103,7 @@ public class EtcdConfigSourceBuilderTest {
                            .uri(URI.create("http://localhost:2379"))
                            .key("/registry")
                            .api(EtcdApi.v2)
-                           .mediaType("my/media/type")
+                           .mediaType(MY_MEDIA_TYPE)
                            .parser(ConfigParsers.properties())
                            .build().description(),
                    is("EtcdConfig[http://localhost:2379#/registry]"));

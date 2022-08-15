@@ -89,7 +89,7 @@ public class PlainV2ApiTest {
                                      res.send("In trace!");
                                  })
                                  .get("/force-chunked", (req, res) -> {
-                                     res.headers().put(Http.Header.TRANSFER_ENCODING, "chunked");
+                                     res.headers().set(Http.HeaderValues.TRANSFER_ENCODING_CHUNKED);
                                      res.send("abcd");
                                  })
                                  .get("/multi", (req, res) -> {
@@ -407,7 +407,7 @@ public class PlainV2ApiTest {
                                                    webServer);
         Map<String, String> headers = headersFromResponse(s);
         assertThat(headers, not(hasKey(equalToIgnoringCase("connection"))));
-        assertThat(headers, hasEntry(equalToIgnoringCase(Http.Header.TRANSFER_ENCODING), is("chunked")));
+        assertThat(headers, hasEntry(equalToIgnoringCase(Http.Header.TRANSFER_ENCODING.defaultCase()), is("chunked")));
 
         assertThat(entityFromResponse(s, false), is("4\nabcd\n0\n\n"));
     }
@@ -496,7 +496,7 @@ public class PlainV2ApiTest {
         System.out.println(s);
 
         assertThat(s, startsWith("HTTP/1.1 500 Internal Server Error\n"));
-        assertThat(headersFromResponse(s), hasKey(equalToIgnoringCase(Http.Header.TRAILER)));
+        assertThat(headersFromResponse(s), hasKey(equalToIgnoringCase(Http.Header.TRAILER.defaultCase())));
         Map<String, String> trailerHeaders = cutTrailerHeaders(s);
         assertThat(trailerHeaders, hasEntry(equalToIgnoringCase("stream-status"), is("500")));
         assertThat(trailerHeaders, hasEntry(equalToIgnoringCase("stream-result"), is(TEST_EXCEPTION.toString())));

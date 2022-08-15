@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.util.Map;
 
 import io.helidon.common.reactive.Single;
 
+import io.netty.handler.codec.http.DefaultHttpHeaders;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -39,7 +40,7 @@ import static org.mockito.Mockito.when;
 public class RequestTest {
 
     @Test
-    public void createPathTest() throws Exception {
+    public void createPathTest() {
         Request.Path path = Request.Path.create(null,
                                                 "/foo/bar/baz",
                                                 Map.of("a", "va", "b", "vb", "var", "1"));
@@ -81,6 +82,7 @@ public class RequestTest {
         BareRequest mock = mock(BareRequest.class);
         when(mock.uri()).thenReturn(new URI("http://localhost:123/one/two?a=b%26c=d&e=f&e=g&h=x%63%23e%3c#a%20frag%23ment"));
         when(mock.bodyPublisher()).thenReturn(Single.empty());
+        when(mock.headers()).thenReturn(new NettyRequestHeaders(new DefaultHttpHeaders()));
         WebServer webServer = mock(WebServer.class);
         Request request = new RequestTestStub(mock, webServer);
 

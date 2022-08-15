@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import java.util.Objects;
 import java.util.TreeMap;
 import java.util.function.Function;
 
-import io.helidon.common.http.MediaType;
+import io.helidon.common.media.type.MediaType;
 import io.helidon.webserver.Service;
 
 /**

@@ -23,6 +23,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import io.helidon.common.media.type.MediaType;
 import io.helidon.config.ConfigException;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.PropertiesConfigParser;
@@ -199,7 +200,7 @@ public class MpConfigSourcesTest {
         }
 
         @Override
-        public Optional<String> mediaType() {
+        public Optional<MediaType> mediaType() {
             return Optional.empty();
         }
 

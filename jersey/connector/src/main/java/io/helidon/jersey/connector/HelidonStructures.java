@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,8 +27,8 @@ import java.util.Optional;
 import javax.net.ssl.SSLContext;
 
 import io.helidon.common.http.Headers;
+import io.helidon.common.http.HeadersWritable;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.ReadOnlyParameters;
 import io.helidon.config.Config;
 import io.helidon.media.common.DefaultMediaSupport;
 import io.helidon.media.common.MessageBodyReader;
@@ -51,7 +51,9 @@ class HelidonStructures {
     }
 
     static Headers createHeaders(Map<String, List<String>> data) {
-        return new ReadOnlyHeaders(data);
+        HeadersWritable<?> headers = HeadersWritable.create();
+        data.forEach((key, value) -> headers.set(Http.Header.create(key), value));
+        return headers;
     }
 
     static MessageBodyReader<InputStream> createInputStreamBodyReader() {
@@ -87,18 +89,12 @@ class HelidonStructures {
     }
 
     static boolean hasEntity(WebClientResponse webClientResponse) {
-        final ReadOnlyParameters headers = webClientResponse.content().readerContext().headers();
+        final Headers headers = webClientResponse.content().readerContext().headers();
         final Optional<String> contentLenth = headers.first(Http.Header.CONTENT_LENGTH);
         final Optional<String> encoding = headers.first(Http.Header.TRANSFER_ENCODING);
 
         return ((contentLenth.isPresent() && !contentLenth.get().equals("0"))
                 || (encoding.isPresent() && encoding.get().equals(HttpHeaderValues.CHUNKED.toString())));
-    }
-
-    private static class ReadOnlyHeaders extends ReadOnlyParameters implements Headers {
-        ReadOnlyHeaders(Map<String, List<String>> data) {
-            super(data);
-        }
     }
 
     private static class ProxyBuilder {

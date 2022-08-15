@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import java.util.concurrent.Flow.Publisher;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
-import io.helidon.common.http.MediaType;
+import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.mapper.Mapper;
 import io.helidon.common.reactive.Single;
 import io.helidon.media.common.CharBuffer;
@@ -56,7 +56,7 @@ final class JacksonBodyWriter implements MessageBodyWriter<Object> {
     public Publisher<DataChunk> write(Single<? extends Object> content, GenericType<? extends Object> type,
             MessageBodyWriterContext context) {
 
-        MediaType contentType = context.findAccepted(MediaType.JSON_PREDICATE, MediaType.APPLICATION_JSON);
+        HttpMediaType contentType = context.findAccepted(HttpMediaType.JSON_PREDICATE, HttpMediaType.JSON_UTF_8);
         context.contentType(contentType);
         return content.flatMap(new ObjectToChunks(objectMapper, context.charset()));
     }

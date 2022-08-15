@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,11 +28,12 @@ import java.util.function.Predicate;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
+import io.helidon.common.http.HeadersWritable;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.MediaType;
-import io.helidon.common.http.Parameters;
-import io.helidon.common.http.ReadOnlyParameters;
+import io.helidon.common.http.Http.HeaderValue;
+import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.mapper.Mapper;
+import io.helidon.common.media.type.MediaType;
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
 
@@ -51,20 +52,22 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
      */
     private static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
 
-    private final Parameters headers;
-    private final List<MediaType> acceptedTypes;
+    private final HeadersWritable<?> headers;
+    private final List<HttpMediaType> acceptedTypes;
     private final MessageBodyOperators<MessageBodyWriter<?>> writers;
     private final MessageBodyOperators<MessageBodyStreamWriter<?>> swriters;
     private boolean contentTypeCached;
-    private Optional<MediaType> contentTypeCache;
+    private Optional<HttpMediaType> contentTypeCache;
     private boolean charsetCached;
     private Charset charsetCache;
 
     /**
      * Private to enforce the use of the static factory methods.
      */
-    private MessageBodyWriterContext(MessageBodyWriterContext parent, EventListener eventListener, Parameters headers,
-                                     List<MediaType> acceptedTypes) {
+    private MessageBodyWriterContext(MessageBodyWriterContext parent,
+                                     EventListener eventListener,
+                                     HeadersWritable<?> headers,
+                                     List<HttpMediaType> acceptedTypes) {
 
         super(parent, eventListener);
         Objects.requireNonNull(headers, "headers cannot be null!");
@@ -87,7 +90,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
      * Create a new standalone (non parented) context.
      * @param headers backing headers, may not be {@code null}
      */
-    private MessageBodyWriterContext(Parameters headers) {
+    private MessageBodyWriterContext(HeadersWritable<?> headers) {
         super(null, null);
         Objects.requireNonNull(headers, "headers cannot be null!");
         this.headers = headers;
@@ -101,7 +104,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
      */
     private MessageBodyWriterContext() {
         super(null, null);
-        this.headers = ReadOnlyParameters.empty();
+        this.headers = HeadersWritable.create();
         this.writers = new MessageBodyOperators<>();
         this.swriters = new MessageBodyOperators<>();
         this.acceptedTypes = List.of();
@@ -111,7 +114,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
         this.charsetCached = true;
     }
 
-    private MessageBodyWriterContext(MessageBodyWriterContext writerContext, Parameters headers) {
+    private MessageBodyWriterContext(MessageBodyWriterContext writerContext, HeadersWritable<?> headers) {
         super(writerContext);
         Objects.requireNonNull(headers, "headers cannot be null!");
         this.headers = headers;
@@ -135,8 +138,10 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
      * @param acceptedTypes accepted types, may be {@code null}
      * @return MessageBodyWriterContext
      */
-    public static MessageBodyWriterContext create(MediaContext mediaContext, EventListener eventListener, Parameters headers,
-                                                  List<MediaType> acceptedTypes) {
+    public static MessageBodyWriterContext create(MediaContext mediaContext,
+                                                  EventListener eventListener,
+                                                  HeadersWritable<?> headers,
+                                                  List<HttpMediaType> acceptedTypes) {
 
         if (mediaContext == null) {
             return new MessageBodyWriterContext(null, eventListener, headers, acceptedTypes);
@@ -155,7 +160,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
      * @return MessageBodyWriterContext
      */
     public static MessageBodyWriterContext create(MessageBodyWriterContext parent, EventListener eventListener,
-            Parameters headers, List<MediaType> acceptedTypes) {
+                                                  HeadersWritable<?> headers, List<HttpMediaType> acceptedTypes) {
 
         return new MessageBodyWriterContext(parent, eventListener, headers, acceptedTypes);
     }
@@ -165,7 +170,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
      * @param headers headers
      * @return MessageBodyWriterContext
      */
-    public static MessageBodyWriterContext create(Parameters headers) {
+    public static MessageBodyWriterContext create(HeadersWritable<?> headers) {
         return new MessageBodyWriterContext(headers);
     }
 
@@ -186,7 +191,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
      * @param headers headers
      * @return MessageBodyWriterContext
      */
-    public static MessageBodyWriterContext create(MessageBodyWriterContext parent, Parameters headers) {
+    public static MessageBodyWriterContext create(MessageBodyWriterContext parent, HeadersWritable<?> headers) {
         return new MessageBodyWriterContext(parent, headers);
     }
 
@@ -197,7 +202,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
      * @return MessageBodyWriterContext
      */
     public static MessageBodyWriterContext create() {
-        return new MessageBodyWriterContext(ReadOnlyParameters.empty());
+        return new MessageBodyWriterContext(HeadersWritable.create());
     }
 
     @Override
@@ -209,71 +214,6 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
     @Override
     public MessageBodyWriterContext registerWriter(MessageBodyStreamWriter<?> writer) {
         swriters.registerFirst(writer);
-        return this;
-    }
-    /**
-     * Registers a writer function with a given type.
-     *
-     * @param <T> entity type
-     * @param type class representing the type supported by this writer
-     * @param function writer function
-     * @return this {@code MessageBodyWriteableContent} instance
-     * @deprecated since 2.0.0, use {@link #registerWriter(MessageBodyWriter) } instead
-     */
-    @Deprecated
-    public <T> MessageBodyWriterContext registerWriter(Class<T> type, Function<T, Publisher<DataChunk>> function) {
-        writers.registerFirst(new WriterAdapter<>(function, type, null));
-        return this;
-    }
-
-    /**
-     * Registers a writer function with a given type and media type.
-     *
-     * @param <T> entity type
-     * @param type class representing the type supported by this writer
-     * @param contentType the media type
-     * @param function writer function
-     * @return this {@code MessageBodyWriteableContent} instance
-     * @deprecated since 2.0.0, use {@link #registerWriter(MessageBodyWriter) } instead
-     */
-    @Deprecated
-    public <T> MessageBodyWriterContext registerWriter(Class<T> type, MediaType contentType,
-            Function<? extends T, Publisher<DataChunk>> function) {
-
-        writers.registerFirst(new WriterAdapter<>(function, type, contentType));
-        return this;
-    }
-
-    /**
-     * Registers a writer function with a given predicate.
-     *
-     * @param <T> entity type
-     * @param accept the object predicate
-     * @param function writer function
-     * @return this {@code MessageBodyWriteableContent} instance
-     * @deprecated since 2.0.0 use {@link #registerWriter(MessageBodyWriter) } instead
-     */
-    @Deprecated
-    public <T> MessageBodyWriterContext registerWriter(Predicate<?> accept, Function<T, Publisher<DataChunk>> function) {
-        writers.registerFirst(new WriterAdapter<>(function, accept, null));
-        return this;
-    }
-
-    /**
-     * Registers a writer function with a given predicate and media type.
-     *
-     * @param <T> entity type
-     * @param accept the object predicate
-     * @param contentType the media type
-     * @param function writer function
-     * @return this {@code MessageBodyWriteableContent} instance
-     * @deprecated since 2.0.0, use {@link #registerWriter(MessageBodyWriter) } instead
-     */
-    @Deprecated
-    public <T> MessageBodyWriterContext registerWriter(Predicate<?> accept, MediaType contentType,
-            Function<T, Publisher<DataChunk>> function) {
-
-        writers.registerFirst(new WriterAdapter<>(function, accept, contentType));
         return this;
     }
 
@@ -390,7 +330,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
      *
      * @return Parameters, never {@code null}
      */
-    public Parameters headers() {
+    public HeadersWritable<?> headers() {
         return headers;
     }
 
@@ -399,14 +339,12 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
      *
      * @return Optional, never {@code null}
      */
-    public Optional<MediaType> contentType() {
+    public Optional<HttpMediaType> contentType() {
         if (contentTypeCached) {
             return contentTypeCache;
         }
-        contentTypeCache = Optional.ofNullable(headers
-                .first(Http.Header.CONTENT_TYPE)
-                .map(MediaType::parse)
-                .orElse(null));
+        contentTypeCache = headers.contentType();
+
         contentTypeCached = true;
         return contentTypeCache;
     }
@@ -416,8 +354,8 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
      *
      * @return List never {@code null}
      */
-    public List<MediaType> acceptedTypes() {
-        return acceptedTypes;
+    public List<HttpMediaType> acceptedTypes() {
+        return headers.acceptedTypes();
     }
 
     /**
@@ -427,10 +365,21 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
      * @param contentType {@code Content-Type} value to set, must not be
      * {@code null}
      */
-    public void contentType(MediaType contentType) {
-        if (contentType != null) {
-            headers.putIfAbsent(Http.Header.CONTENT_TYPE, contentType.toString());
-        }
+    public void contentType(HttpMediaType contentType) {
+        Objects.requireNonNull(contentType);
+        headers.setIfAbsent(HeaderValue.create(Http.Header.CONTENT_TYPE, false, false, contentType.text()));
+    }
+
+    /**
+     * Set the {@code Content-Type} header value in the underlying headers if
+     * not present.
+     *
+     * @param mediaType {@code Content-Type} value to set, must not be
+     * {@code null}
+     */
+    public void contentType(MediaType mediaType) {
+        Objects.requireNonNull(mediaType);
+        headers.setIfAbsent(HeaderValue.create(Http.Header.CONTENT_TYPE, false, false, mediaType.fullType()));
     }
 
     /**
@@ -442,7 +391,8 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
      */
     public void contentLength(long contentLength) {
         if (contentLength >= 0) {
-            headers.putIfAbsent(Http.Header.CONTENT_LENGTH, String.valueOf(contentLength));
+            headers.setIfAbsent(HeaderValue.create(Http.Header.CONTENT_LENGTH, true, false,
+                                                   String.valueOf(contentLength)));
         }
     }
 
@@ -464,20 +414,28 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
      * @return MediaType, never {@code null}
      * @throws IllegalStateException if no media type can be returned
      */
-    public MediaType findAccepted(Predicate<MediaType> predicate, MediaType defaultType) throws IllegalStateException {
+    public HttpMediaType findAccepted(Predicate<HttpMediaType> predicate, HttpMediaType defaultType)
+            throws IllegalStateException {
         Objects.requireNonNull(predicate, "predicate cannot be null");
         Objects.requireNonNull(defaultType, "defaultType cannot be null");
-        MediaType contentType = contentType().orElse(null);
+
+        HttpMediaType contentType = contentType().orElse(null);
         if (contentType == null) {
             if (acceptedTypes.isEmpty()) {
                 return defaultType;
             } else {
-                for (final MediaType acceptedType : acceptedTypes) {
+                for (HttpMediaType acceptedType : acceptedTypes) {
                     if (predicate.test(acceptedType)) {
-                        if (acceptedType.isWildcardType() || acceptedType.isWildcardSubtype()) {
+                        MediaType mt = acceptedType.mediaType();
+                        if (mt.isWildcardType() || mt.isWildcardSubtype()) {
                             return defaultType;
                         }
-                        return MediaType.create(acceptedType.type(), acceptedType.subtype());
+                        if (acceptedType.test(defaultType)) {
+                            // if application/json; q=0.4 and default is application/json; charset="UTF-8" I want to use default
+                            return defaultType;
+                        }
+                        // return a type without quality factor and other parameters
+                        return HttpMediaType.create(acceptedType.mediaType());
                     }
                 }
             }
@@ -496,10 +454,10 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
      * @return MediaType, never {@code null}
      * @throws IllegalStateException if the media type is not found
      */
-    public MediaType findAccepted(MediaType mediaType) throws IllegalStateException {
+    public HttpMediaType findAccepted(HttpMediaType mediaType) throws IllegalStateException {
         Objects.requireNonNull(mediaType, "mediaType cannot be null");
-        for (MediaType acceptedType : acceptedTypes) {
-            if (mediaType.equals(acceptedType)) {
+        for (HttpMediaType acceptedType : acceptedTypes) {
+            if (mediaType.test(acceptedType)) {
                 return acceptedType;
             }
         }
@@ -511,7 +469,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
         if (charsetCached) {
             return charsetCache;
         }
-        MediaType contentType = contentType().orElse(null);
+        HttpMediaType contentType = contentType().orElse(null);
         if (contentType != null) {
             try {
                 charsetCache = contentType.charset().map(Charset::forName).orElse(DEFAULT_CHARSET);
@@ -536,10 +494,10 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
         private final Function<T, Publisher<DataChunk>> function;
         private final Predicate predicate;
         private final Class<T> type;
-        private final MediaType contentType;
+        private final HttpMediaType contentType;
 
         @SuppressWarnings("unchecked")
-        WriterAdapter(Function<T, Publisher<DataChunk>> function, Predicate<?> predicate, MediaType contentType) {
+        WriterAdapter(Function<T, Publisher<DataChunk>> function, Predicate<?> predicate, HttpMediaType contentType) {
             Objects.requireNonNull(function, "function cannot be null!");
             Objects.requireNonNull(predicate, "predicate cannot be null!");
             this.function = function;
@@ -549,7 +507,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
         }
 
         @SuppressWarnings("unchecked")
-        WriterAdapter(Function<? extends T, Publisher<DataChunk>> function, Class<T> type, MediaType contentType) {
+        WriterAdapter(Function<? extends T, Publisher<DataChunk>> function, Class<T> type, HttpMediaType contentType) {
             Objects.requireNonNull(function, "function cannot be null!");
             Objects.requireNonNull(type, "type cannot be null!");
             this.function = (Function<T, Publisher<DataChunk>>) function;
@@ -570,9 +528,11 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
                     return PredicateResult.NOT_SUPPORTED;
                 }
             }
-            MediaType ct = context.contentType().orElse(null);
+            HttpMediaType ct = context.contentType().orElse(null);
             if (!(contentType != null && ct != null && !ct.test(contentType))) {
-                context.contentType(contentType);
+                if (contentType != null) {
+                    context.contentType(contentType);
+                }
                 return PredicateResult.SUPPORTED;
             }
             return PredicateResult.NOT_SUPPORTED;

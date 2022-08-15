@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,16 +19,17 @@ import java.net.URI;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalLong;
 
-import io.helidon.common.http.Headers;
+import io.helidon.common.http.HeadersClientResponse;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.MediaType;
+import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.http.SetCookie;
 
 /**
  * Headers that may be available on response from server.
  */
-public interface WebClientResponseHeaders extends Headers {
+public interface WebClientResponseHeaders extends HeadersClientResponse {
 
     /**
      * Returns {@link SetCookie} header of the response.
@@ -38,28 +39,28 @@ public interface WebClientResponseHeaders extends Headers {
     List<SetCookie> setCookies();
 
     /**
-     * Returns {@link URI} representation of {@value Http.Header#LOCATION} header from the response.
+     * Returns {@link URI} representation of {@link Http.Header#LOCATION} header from the response.
      *
      * @return location header uri
      */
     Optional<URI> location();
 
     /**
-     * Returns value of header {@value Http.Header#LAST_MODIFIED} of the response.
+     * Returns value of header {@link Http.Header#LAST_MODIFIED} of the response.
      *
      * @return LAST_MODIFIED header value.
      */
     Optional<ZonedDateTime> lastModified();
 
     /**
-     * Returns value of header {@value Http.Header#EXPIRES} of the response.
+     * Returns value of header {@link Http.Header#EXPIRES} of the response.
      *
      * @return EXPIRES header value.
      */
     Optional<ZonedDateTime> expires();
 
     /**
-     * Returns value of header {@value Http.Header#DATE} of the response.
+     * Returns value of header {@link Http.Header#DATE} of the response.
      *
      * @return DATE header value.
      */
@@ -70,10 +71,10 @@ public interface WebClientResponseHeaders extends Headers {
      *
      * @return content type of the response
      */
-    Optional<MediaType> contentType();
+    Optional<HttpMediaType> contentType();
 
     /**
-     * Returns value of header {@value Http.Header#ETAG} of the response.
+     * Returns value of header {@link Http.Header#ETAG} of the response.
      *
      * @return ETAG header value.
      */
@@ -84,7 +85,7 @@ public interface WebClientResponseHeaders extends Headers {
      *
      * @return content length
      */
-    Optional<Long> contentLength();
+    OptionalLong contentLength();
 
     /**
      * Transfer encoding of the response.

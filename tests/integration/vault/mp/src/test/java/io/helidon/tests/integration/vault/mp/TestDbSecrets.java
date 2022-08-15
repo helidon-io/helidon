@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,7 +50,7 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
-import static io.helidon.config.testing.OptionalMatcher.present;
+import static io.helidon.common.testing.junit5.OptionalMatcher.optionalPresent;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -116,7 +116,7 @@ class TestDbSecrets {
     void testGetSecrets() throws SQLException {
         Optional<DbCredentials> maybeCreds = db.get("readonly");
 
-        assertThat(maybeCreds, is(present()));
+        assertThat(maybeCreds, is(optionalPresent()));
 
         DbCredentials mysql = maybeCreds.get();
 

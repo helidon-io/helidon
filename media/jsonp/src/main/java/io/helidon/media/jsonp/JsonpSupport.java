@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -142,7 +142,7 @@ public final class JsonpSupport implements MediaSupport {
 
     /**
      * Return a default JSON-P entity event stream writer.
-     * This writer is for {@link io.helidon.common.http.MediaType#TEXT_EVENT_STREAM} content type.
+     * This writer is for {@link io.helidon.common.media.type.MediaTypes#TEXT_EVENT_STREAM} content type.
      *
      * @return new JSON-P body stream writer instance
      */
@@ -152,7 +152,7 @@ public final class JsonpSupport implements MediaSupport {
 
     /**
      * Create a new JSON-P entity stream writer based on {@link JsonWriterFactory} instance.
-     * This writer is for {@link io.helidon.common.http.MediaType#TEXT_EVENT_STREAM} content type.
+     * This writer is for {@link io.helidon.common.media.type.MediaTypes#TEXT_EVENT_STREAM} content type.
      *
      * @param writerFactory json writer factory
      * @return new JSON-P body stream writer instance
@@ -163,7 +163,7 @@ public final class JsonpSupport implements MediaSupport {
 
     /**
      * Return a default JSON-P entity event stream writer.
-     * This writer is for {@link io.helidon.common.http.MediaType#APPLICATION_X_NDJSON} content type.
+     * This writer is for {@link io.helidon.common.media.type.MediaTypes#APPLICATION_X_NDJSON} content type.
      *
      * @return new JSON-P body stream writer instance
      */
@@ -173,7 +173,7 @@ public final class JsonpSupport implements MediaSupport {
 
     /**
      * Create a new JSON-P entity stream writer based on {@link JsonWriterFactory} instance.
-     * This writer is for {@link io.helidon.common.http.MediaType#APPLICATION_X_NDJSON} content type.
+     * This writer is for {@link io.helidon.common.media.type.MediaTypes#APPLICATION_X_NDJSON} content type.
      *
      * @param writerFactory json writer factory
      * @return new JSON-P body stream writer instance
@@ -226,7 +226,7 @@ public final class JsonpSupport implements MediaSupport {
      * \n
      * </code></pre>
      *
-     * This writer is for {@link io.helidon.common.http.MediaType#TEXT_EVENT_STREAM} content type.
+     * This writer is for {@link io.helidon.common.media.type.MediaTypes#TEXT_EVENT_STREAM} content type.
      *
      * @return JSON processing stream writer.
      */
@@ -245,7 +245,7 @@ public final class JsonpSupport implements MediaSupport {
      * {"json2":"data2"}
      * </code></pre>
      *
-     * This writer is for {@link io.helidon.common.http.MediaType#APPLICATION_X_NDJSON} content type.
+     * This writer is for {@link io.helidon.common.media.type.MediaTypes#APPLICATION_X_NDJSON} content type.
      *
      * @return JSON processing stream writer.
      */

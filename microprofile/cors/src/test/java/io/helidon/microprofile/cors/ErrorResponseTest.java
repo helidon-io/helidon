@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,19 +40,18 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @AddConfig(key = "cors.paths.0.allow-origins", value = "http://foo.bar, http://bar.foo")
 @AddConfig(key = "cors.paths.0.allow-methods", value = "DELETE, PUT")
 class ErrorResponseTest {
-
-    @Inject
-    private WebTarget target;
-
     static {
         System.setProperty("sun.net.http.allowRestrictedHeaders", "true");
     }
+
+    @Inject
+    private WebTarget target;
 
     @Test
     void testErrorResponse() {
         Response res = target.path("/notfound")
                 .request()
-                .header(ORIGIN, "http://foo.bar")
+                .header(ORIGIN.defaultCase(), "http://foo.bar")
                 .header(ACCESS_CONTROL_REQUEST_METHOD, "GET")
                 .get();
         assertThat("Status from missing endpoint request", res.getStatusInfo(), is(Response.Status.NOT_FOUND));

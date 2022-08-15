@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +18,15 @@ package io.helidon.webserver.examples.tutorial;
 
 import java.nio.charset.StandardCharsets;
 
+import io.helidon.common.LogConfig;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.MediaType;
+import io.helidon.common.http.HttpMediaType;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.testsupport.MediaPublisher;
 import io.helidon.webserver.testsupport.TestClient;
 import io.helidon.webserver.testsupport.TestResponse;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -33,10 +35,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 /**
  * Tests {@link CommentService}.
  */
-public class CommentServiceTest {
+class CommentServiceTest {
+
+    @BeforeAll
+    static void setup() {
+        LogConfig.configureRuntime();
+    }
 
     @Test
-    public void addAndGetComments() throws Exception {
+    void addAndGetComments() throws Exception {
         CommentService service = new CommentService();
         assertEquals(0, service.getComments("one").size());
         assertEquals(0, service.getComments("two").size());
@@ -52,7 +59,7 @@ public class CommentServiceTest {
     }
 
     @Test
-    public void testRouting() throws Exception {
+    void testRouting() throws Exception {
         Routing routing = Routing.builder()
                 .register(new CommentService())
                 .build();
@@ -64,7 +71,7 @@ public class CommentServiceTest {
         // Add first comment
         response = TestClient.create(routing)
                 .path("one")
-                .post(MediaPublisher.create(MediaType.TEXT_PLAIN, "aaa"));
+                .post(MediaPublisher.create(HttpMediaType.TEXT_PLAIN, "aaa"));
         assertEquals(Http.Status.OK_200, response.status());
         response = TestClient.create(routing)
                 .path("one")
@@ -76,7 +83,7 @@ public class CommentServiceTest {
         // Add second comment
         response = TestClient.create(routing)
                 .path("one")
-                .post(MediaPublisher.create(MediaType.TEXT_PLAIN, "bbb"));
+                .post(MediaPublisher.create(HttpMediaType.TEXT_PLAIN, "bbb"));
         assertEquals(Http.Status.OK_200, response.status());
         response = TestClient.create(routing)
                 .path("one")

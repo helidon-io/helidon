@@ -35,7 +35,10 @@
         <module>micronaut</module>
         <module>neo4j</module>
         <module>micrometer</module>
+        <!--
+        needs refactoring to OCI SDK
         <module>oci</module>
+        -->
         <module>vault</module>
         <module>microstream</module>
     </modules>

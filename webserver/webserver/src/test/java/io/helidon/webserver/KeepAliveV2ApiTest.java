@@ -35,6 +35,8 @@ import org.junit.jupiter.api.RepeatedTest;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.equalToIgnoringCase;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.not;
@@ -121,7 +123,8 @@ public class KeepAliveV2ApiTest {
             assertThat(res.status().code(), is(expectedStatus));
             if (expectedConnectionHeader != null) {
                 assertThat(res.headers().toMap(),
-                           hasEntry(HttpHeaderNames.CONNECTION.toString(), List.of(expectedConnectionHeader.toString())));
+                           hasEntry(equalToIgnoringCase(HttpHeaderNames.CONNECTION.toString()),
+                                    contains(expectedConnectionHeader.toString())));
             } else {
                 assertThat(res.headers().toMap(), not(hasKey(HttpHeaderNames.CONNECTION.toString())));
             }

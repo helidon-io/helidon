@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,8 +33,8 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class TestHttpParsingDefaults {
-    static final String GOOD_HEADER_NAME = "X_HEADER";
-    static final String BAD_HEADER_NAME = "X\tHEADER";
+    static final Http.HeaderName GOOD_HEADER_NAME = Http.Header.create("X_HEADER");
+    static final Http.HeaderName BAD_HEADER_NAME = Http.Header.create("X\tHEADER");
 
     private static WebServer webServer;
     private static WebClient client;
@@ -103,13 +103,13 @@ class TestHttpParsingDefaults {
 
     static void handleRequest(ServerRequest request, ServerResponse response) {
         RequestHeaders headers = request.headers();
-        String value = headers.value(GOOD_HEADER_NAME)
+        String value = headers.first(GOOD_HEADER_NAME)
                 .or(() -> headers.value(BAD_HEADER_NAME))
                 .orElse("any");
         response.send(value);
     }
 
-    static void testHeaderName(String headerName, boolean success) {
+    static void testHeaderName(Http.HeaderName headerName, boolean success) {
         String value = "some random value";
 
         WebClientResponse response = client.get()
@@ -123,14 +123,14 @@ class TestHttpParsingDefaults {
 
         try {
             if (success) {
-                assertThat("Header '" + headerName + "' should have passed",
+                assertThat("Header '" + headerName.defaultCase() + "' should have passed",
                            response.status(),
                            is(Http.Status.OK_200));
                 assertThat("This request should return content of the provided header",
                            response.content().as(String.class).await(10, TimeUnit.SECONDS),
                            is(value));
             } else {
-                assertThat("Header '" + headerName + "' should have failed",
+                assertThat("Header '" + headerName.defaultCase() + "' should have failed",
                            response.status(),
                            is(Http.Status.BAD_REQUEST_400));
             }

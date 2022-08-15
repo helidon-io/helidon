@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,8 @@ import java.net.URL;
 import java.time.Duration;
 import java.util.Optional;
 
+import io.helidon.common.media.type.MediaType;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.spi.ConfigSource;
 
 import org.junit.jupiter.api.Test;
@@ -36,7 +38,7 @@ import static org.mockito.Mockito.mock;
  */
 public class UrlConfigSourceTest {
 
-    private static final String TEST_MEDIA_TYPE = "my/media/type";
+    private static final MediaType TEST_MEDIA_TYPE = MediaTypes.create("my/media/type");
 
     @Test
     public void testDescriptionMandatory() throws MalformedURLException {
@@ -56,7 +58,7 @@ public class UrlConfigSourceTest {
 
     @Test
     public void testGetMediaTypeSet() throws MalformedURLException {
-        UrlConfigSource configSource = (UrlConfigSource) ConfigSources
+        UrlConfigSource configSource = ConfigSources
                 .url(new URL("http://config-service/application.json"))
                 .optional()
                 .mediaType(TEST_MEDIA_TYPE)
@@ -67,7 +69,7 @@ public class UrlConfigSourceTest {
 
     @Test
     public void testGetMediaTypeGuessed() throws MalformedURLException {
-        UrlConfigSource configSource = (UrlConfigSource) ConfigSources
+        UrlConfigSource configSource = ConfigSources
                 .url(new URL("http://config-service/application.json"))
                 .optional()
                 .build();
@@ -77,7 +79,7 @@ public class UrlConfigSourceTest {
 
     @Test
     public void testGetMediaTypeUnknown() throws MalformedURLException {
-        UrlConfigSource configSource = (UrlConfigSource) ConfigSources
+        UrlConfigSource configSource = ConfigSources
                 .url(new URL("http://config-service/application.unknown"))
                 .optional()
                 .build();
@@ -87,7 +89,7 @@ public class UrlConfigSourceTest {
 
     @Test
     public void testLoadNotExists() throws MalformedURLException {
-        UrlConfigSource configSource = (UrlConfigSource) ConfigSources
+        UrlConfigSource configSource = ConfigSources
                 .url(new URL("http://config-service/application.unknown"))
                 .build();
 

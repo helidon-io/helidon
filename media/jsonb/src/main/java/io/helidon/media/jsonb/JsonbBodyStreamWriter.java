@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
-import io.helidon.common.http.MediaType;
+import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.reactive.Multi;
 import io.helidon.media.common.MessageBodyStreamWriter;
 import io.helidon.media.common.MessageBodyWriterContext;
@@ -60,7 +60,7 @@ class JsonbBodyStreamWriter implements MessageBodyStreamWriter<Object> {
     @Override
     public Multi<DataChunk> write(Flow.Publisher<?> publisher, GenericType<?> type, MessageBodyWriterContext context) {
 
-        MediaType contentType = context.findAccepted(MediaType.JSON_PREDICATE, MediaType.APPLICATION_JSON);
+        HttpMediaType contentType = context.findAccepted(HttpMediaType.JSON_PREDICATE, HttpMediaType.APPLICATION_JSON);
         context.contentType(contentType);
 
         AtomicBoolean first = new AtomicBoolean(true);

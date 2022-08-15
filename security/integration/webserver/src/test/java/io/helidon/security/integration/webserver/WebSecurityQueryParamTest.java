@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package io.helidon.security.integration.webserver;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import io.helidon.common.http.Parameters;
+import io.helidon.common.uri.UriQuery;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.SecurityEnvironment;
 import io.helidon.security.util.TokenHandler;
@@ -55,8 +55,10 @@ public class WebSecurityQueryParamTest {
 
         ServerRequest req = Mockito.mock(ServerRequest.class);
 
-        Parameters params = Mockito.mock(Parameters.class);
+        UriQuery params = Mockito.mock(UriQuery.class);
+        when(params.contains("jwt")).thenReturn(true);
         when(params.all("jwt")).thenReturn(List.of("bearer jwt_content"));
+        when(params.contains("name")).thenReturn(true);
         when(params.all("name")).thenReturn(List.of("name_content"));
         when(req.queryParams()).thenReturn(params);
 

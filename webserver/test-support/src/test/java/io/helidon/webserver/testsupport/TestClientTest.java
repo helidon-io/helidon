@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -288,7 +288,7 @@ public class TestClientTest {
     @Test
     public void advancingToDefaultErrorHandler() throws Exception {
         StringBuffer sb = new StringBuffer();
-        HttpException exception = new HttpException("test-exception", Http.ResponseStatus.create(777));
+        HttpException exception = new HttpException("test-exception", Http.Status.create(777));
 
         Routing routing = Routing.builder()
                 .any((req, res) -> {
@@ -325,12 +325,12 @@ public class TestClientTest {
     @Test
     public void throwingExceptionInErrorHandler() throws Exception {
         StringBuffer sb = new StringBuffer();
-        Http.ResponseStatus expected = Http.ResponseStatus.create(888);
+        Http.Status expected = Http.Status.create(888);
 
         Routing routing = Routing.builder()
                 .any((req, res) -> {
                     sb.append("any-");
-                    throw new HttpException("original-exception", Http.ResponseStatus.create(777));
+                    throw new HttpException("original-exception", Http.Status.create(777));
                 })
                 .error(HttpException.class, (req, res, ex) -> {
                     sb.append("httpExceptionHandler-");
@@ -365,7 +365,7 @@ public class TestClientTest {
                     } catch (Exception e) {
                         fail("Should not have gotten an exception.");
                     }
-                    throw new HttpException("test-exception", Http.ResponseStatus.create(400));
+                    throw new HttpException("test-exception", Http.Status.create(400));
                 })
                 .error(Throwable.class, (req, res, ex) -> {
                     sb.append("throwableHandler");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import java.util.logging.Logger;
 import java.util.stream.Stream;
 
 import io.helidon.common.LazyValue;
+import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.media.common.MessageBodyWriter;
@@ -50,9 +51,7 @@ import jakarta.json.JsonObject;
 import jakarta.json.JsonStructure;
 import jakarta.json.JsonValue;
 import org.eclipse.microprofile.lra.annotation.LRAStatus;
-
-import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_CONTEXT_HEADER;
-import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_RECOVERY_HEADER;
+import org.eclipse.microprofile.lra.annotation.ws.rs.LRA;
 
 /**
  * LRA coordinator with Narayana like rest api.
@@ -70,6 +69,9 @@ public class CoordinatorService implements Service {
     static final String DEFAULT_COORDINATOR_URL = "http://localhost:8070/lra-coordinator";
 
     private static final Logger LOGGER = Logger.getLogger(CoordinatorService.class.getName());
+    private static final Http.HeaderName LRA_HTTP_CONTEXT_HEADER = Http.Header.create(LRA.LRA_HTTP_CONTEXT_HEADER);
+    private static final Http.HeaderName LRA_HTTP_RECOVERY_HEADER = Http.Header.create(LRA.LRA_HTTP_RECOVERY_HEADER);
+
     private static final Set<LRAStatus> RECOVERABLE_STATUSES = Set.of(LRAStatus.Cancelling, LRAStatus.Closing, LRAStatus.Active);
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
     private static final MessageBodyWriter<JsonStructure> JSON_WRITER = JsonpSupport.create().writerInstance();
@@ -223,7 +225,7 @@ public class CoordinatorService implements Service {
     private void join(ServerRequest req, ServerResponse res) {
 
         String lraId = req.path().param("LraId");
-        String compensatorLink = req.headers().first("Link").orElse("");
+        String compensatorLink = req.headers().first(Http.Header.LINK).orElse("");
 
         Lra lra = lraPersistentRegistry.get(lraId);
         if (lra == null) {
@@ -237,8 +239,8 @@ public class CoordinatorService implements Service {
         lra.addParticipant(compensatorLink);
         String recoveryUrl = coordinatorUriWithPath("/" + lraId + "/recovery").toASCIIString();
 
-        res.headers().put(LRA_HTTP_RECOVERY_HEADER, recoveryUrl);
-        res.headers().put("Location", recoveryUrl);
+        res.headers().set(LRA_HTTP_RECOVERY_HEADER, recoveryUrl);
+        res.headers().set(Http.Header.LOCATION, recoveryUrl);
         res.status(200)
                 .send(recoveryUrl);
     }

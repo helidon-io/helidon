@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.LongStream;
 
 import io.helidon.common.http.DataChunk;
-import io.helidon.common.http.MediaType;
+import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.reactive.Multi;
 import io.helidon.media.common.ContentReaders;
 import io.helidon.media.multipart.MultiPartDecoderTest.DataChunkSubscriber;
@@ -68,7 +68,7 @@ public class MultiPartEncoderTest {
         String message = encodeParts(boundary,
                 WriteableBodyPart.builder()
                         .headers(WriteableBodyPartHeaders.builder()
-                                .contentType(MediaType.TEXT_PLAIN)
+                                .contentType(HttpMediaType.TEXT_PLAIN)
                                 .build())
                         .entity("part1")
                         .build());

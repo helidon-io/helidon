@@ -72,7 +72,7 @@ class ResponseWriter implements ContainerResponseWriter {
             throws ContainerException {
         // Even in 404 responses with empty content, the CORS component might have added headers. Always copy any headers.
         for (Map.Entry<String, List<String>> entry : context.getStringHeaders().entrySet()) {
-            res.headers().put(entry.getKey(), entry.getValue());
+            res.headers().set(Http.Header.create(entry.getKey()), entry.getValue());
         }
         if (context.getStatus() == 404
                 && contentLength == 0
@@ -90,10 +90,10 @@ class ResponseWriter implements ContainerResponseWriter {
             };
         }
 
-        res.status(Http.ResponseStatus.create(context.getStatus(), context.getStatusInfo().getReasonPhrase()));
+        res.status(Http.Status.create(context.getStatus(), context.getStatusInfo().getReasonPhrase()));
 
         if (contentLength >= 0) {
-            res.headers().put(Http.Header.CONTENT_LENGTH, String.valueOf(contentLength));
+            res.headers().set(Http.Header.CONTENT_LENGTH, String.valueOf(contentLength));
         }
 
         //

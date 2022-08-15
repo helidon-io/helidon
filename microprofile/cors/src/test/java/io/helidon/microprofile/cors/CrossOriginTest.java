@@ -151,7 +151,7 @@ class CrossOriginTest extends BaseCrossOriginTest {
     void test1PreFlightAllowedOrigin() {
         Response res = target.path("/cors1")
                 .request()
-                .header(ORIGIN, "http://foo.bar")
+                .header(ORIGIN.defaultCase(), "http://foo.bar")
                 .header(ACCESS_CONTROL_REQUEST_METHOD, "PUT")
                 .options();
         assertThat(res.getStatusInfo(), is(Response.Status.OK));
@@ -165,7 +165,7 @@ class CrossOriginTest extends BaseCrossOriginTest {
     void test1PreFlightAllowedHeaders1() {
         Response res = target.path("/cors1")
                 .request()
-                .header(ORIGIN, "http://foo.bar")
+                .header(ORIGIN.defaultCase(), "http://foo.bar")
                 .header(ACCESS_CONTROL_REQUEST_METHOD, "PUT")
                 .header(ACCESS_CONTROL_REQUEST_HEADERS, "X-foo")
                 .options();
@@ -180,7 +180,7 @@ class CrossOriginTest extends BaseCrossOriginTest {
     void test1PreFlightAllowedHeaders2() {
         Response res = target.path("/cors1")
                 .request()
-                .header(ORIGIN, "http://foo.bar")
+                .header(ORIGIN.defaultCase(), "http://foo.bar")
                 .header(ACCESS_CONTROL_REQUEST_METHOD, "PUT")
                 .header(ACCESS_CONTROL_REQUEST_HEADERS, "X-foo, X-bar")
                 .options();
@@ -198,7 +198,7 @@ class CrossOriginTest extends BaseCrossOriginTest {
     void test2PreFlightForbiddenOrigin() {
         Response res = target.path("/cors2")
                 .request()
-                .header(ORIGIN, "http://not.allowed")
+                .header(ORIGIN.defaultCase(), "http://not.allowed")
                 .header(ACCESS_CONTROL_REQUEST_METHOD, "PUT")
                 .options();
         assertThat(res.getStatusInfo(), is(Response.Status.FORBIDDEN));
@@ -208,7 +208,7 @@ class CrossOriginTest extends BaseCrossOriginTest {
     void test2PreFlightAllowedOrigin() {
         Response res = target.path("/cors2")
                 .request()
-                .header(ORIGIN, "http://foo.bar")
+                .header(ORIGIN.defaultCase(), "http://foo.bar")
                 .header(ACCESS_CONTROL_REQUEST_METHOD, "PUT")
                 .options();
         assertThat(res.getStatusInfo(), is(Response.Status.OK));
@@ -223,7 +223,7 @@ class CrossOriginTest extends BaseCrossOriginTest {
     void test2PreFlightForbiddenMethod() {
         Response res = target.path("/cors2")
                 .request()
-                .header(ORIGIN, "http://foo.bar")
+                .header(ORIGIN.defaultCase(), "http://foo.bar")
                 .header(ACCESS_CONTROL_REQUEST_METHOD, "POST")
                 .options();
         assertThat(res.getStatusInfo(), is(Response.Status.FORBIDDEN));
@@ -233,7 +233,7 @@ class CrossOriginTest extends BaseCrossOriginTest {
     void test2PreFlightForbiddenHeader() {
         Response res = target.path("/cors2")
                 .request()
-                .header(ORIGIN, "http://foo.bar")
+                .header(ORIGIN.defaultCase(), "http://foo.bar")
                 .header(ACCESS_CONTROL_REQUEST_METHOD, "PUT")
                 .header(ACCESS_CONTROL_REQUEST_HEADERS, "X-foo, X-bar, X-oops")
                 .options();
@@ -244,7 +244,7 @@ class CrossOriginTest extends BaseCrossOriginTest {
     void test2PreFlightAllowedHeaders1() {
         Response res = target.path("/cors2")
                 .request()
-                .header(ORIGIN, "http://foo.bar")
+                .header(ORIGIN.defaultCase(), "http://foo.bar")
                 .header(ACCESS_CONTROL_REQUEST_METHOD, "PUT")
                 .header(ACCESS_CONTROL_REQUEST_HEADERS, "X-foo")
                 .options();
@@ -261,7 +261,7 @@ class CrossOriginTest extends BaseCrossOriginTest {
     void test2PreFlightAllowedHeaders2() {
         Response res = target.path("/cors2")
                 .request()
-                .header(ORIGIN, "http://foo.bar")
+                .header(ORIGIN.defaultCase(), "http://foo.bar")
                 .header(ACCESS_CONTROL_REQUEST_METHOD, "PUT")
                 .header(ACCESS_CONTROL_REQUEST_HEADERS, "X-foo, X-bar")
                 .options();
@@ -280,7 +280,7 @@ class CrossOriginTest extends BaseCrossOriginTest {
     void test2PreFlightAllowedHeaders3() {
         Response res = target.path("/cors2")
                 .request()
-                .header(ORIGIN, "http://foo.bar")
+                .header(ORIGIN.defaultCase(), "http://foo.bar")
                 .header(ACCESS_CONTROL_REQUEST_METHOD, "PUT")
                 .header(ACCESS_CONTROL_REQUEST_HEADERS, "X-foo, X-bar")
                 .header(ACCESS_CONTROL_REQUEST_HEADERS, "X-foo, X-bar")
@@ -300,7 +300,7 @@ class CrossOriginTest extends BaseCrossOriginTest {
     void test1ActualAllowedOrigin() {
         Response res = target.path("/cors1")
                 .request()
-                .header(ORIGIN, "http://foo.bar")
+                .header(ORIGIN.defaultCase(), "http://foo.bar")
                 .header(ACCESS_CONTROL_REQUEST_METHOD, "PUT")
                 .put(Entity.entity("", MediaType.TEXT_PLAIN_TYPE));
         assertThat(res.getStatusInfo(), is(Response.Status.OK));
@@ -311,7 +311,7 @@ class CrossOriginTest extends BaseCrossOriginTest {
     void test2ActualAllowedOrigin() {
         Response res = target.path("/cors2")
                 .request()
-                .header(ORIGIN, "http://foo.bar")
+                .header(ORIGIN.defaultCase(), "http://foo.bar")
                 .put(Entity.entity("", MediaType.TEXT_PLAIN_TYPE));
         assertThat(res.getStatusInfo(), is(Response.Status.OK));
         assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_ORIGIN), is("http://foo.bar"));
@@ -322,7 +322,7 @@ class CrossOriginTest extends BaseCrossOriginTest {
     void test3PreFlightAllowedOrigin() {
         Response res = target.path("/cors3")
                 .request()
-                .header(ORIGIN, "http://foo.bar")
+                .header(ORIGIN.defaultCase(), "http://foo.bar")
                 .header(ACCESS_CONTROL_REQUEST_METHOD, "PUT")
                 .options();
         assertThat(res.getStatusInfo(), is(Response.Status.OK));
@@ -336,7 +336,7 @@ class CrossOriginTest extends BaseCrossOriginTest {
     void test3ActualAllowedOrigin() {
         Response res = target.path("/cors3")
                 .request()
-                .header(ORIGIN, "http://foo.bar")
+                .header(ORIGIN.defaultCase(), "http://foo.bar")
                 .header(ACCESS_CONTROL_REQUEST_METHOD, "PUT")
                 .put(Entity.entity("", MediaType.TEXT_PLAIN_TYPE));
         assertThat(res.getStatusInfo(), is(Response.Status.OK));
@@ -347,7 +347,7 @@ class CrossOriginTest extends BaseCrossOriginTest {
     void testMainPathInPresenceOfSubpath() {
         Response res = target.path("/cors0")
                 .request()
-                .header(ORIGIN, "http://foo.bar")
+                .header(ORIGIN.defaultCase(), "http://foo.bar")
                 .get();
         assertThat(res.getStatusInfo(), is(Response.Status.OK));
         assertThat(res.getHeaders().containsKey(ACCESS_CONTROL_ALLOW_ORIGIN), is(true));
@@ -358,7 +358,7 @@ class CrossOriginTest extends BaseCrossOriginTest {
     void testSubPathPreflightAllowed() {
         Response res = target.path("/cors0/subpath")
                 .request()
-                .header(ORIGIN, "http://foo.bar")
+                .header(ORIGIN.defaultCase(), "http://foo.bar")
                 .header(ACCESS_CONTROL_REQUEST_METHOD, "PUT")
                 .options();
         assertThat(res.getStatusInfo(), is(Response.Status.OK));
@@ -372,7 +372,7 @@ class CrossOriginTest extends BaseCrossOriginTest {
     void testSubPathActualAllowed() {
         Response res = target.path("/cors0/subpath")
                 .request()
-                .header(ORIGIN, "http://foo.bar")
+                .header(ORIGIN.defaultCase(), "http://foo.bar")
                 .header(ACCESS_CONTROL_REQUEST_METHOD, "PUT")
                 .put(Entity.entity("", MediaType.TEXT_PLAIN_TYPE));
         assertThat(res.getStatusInfo(), is(Response.Status.OK));

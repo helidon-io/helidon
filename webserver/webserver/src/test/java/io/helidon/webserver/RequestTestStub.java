@@ -48,7 +48,7 @@ public class RequestTestStub extends Request {
     }
 
     RequestTestStub(BareRequest req, WebServer webServer, Span span) {
-        super(req, webServer, new HashRequestHeaders(req.headers()));
+        super(req, webServer, req.headers());
         this.span = span == null ? mock(Span.class) : span;
     }
 

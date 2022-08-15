@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,7 +69,7 @@ public class TestNettyRejectRequest {
                                         server);
 
         Map<String, String> headers = SocketHttpClient.headersFromResponse(response);
-        Http.ResponseStatus status = SocketHttpClient.statusFromResponse(response);
+        Http.Status status = SocketHttpClient.statusFromResponse(response);
         String entity = SocketHttpClient.entityFromResponse(response, false);
 
         assertThat(headers, hasKey(equalToIgnoringCase("content-length")));

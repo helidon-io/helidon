@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,14 @@
 package io.helidon.webclient;
 
 import java.net.URI;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Flow;
-import java.util.logging.Logger;
 
 import io.helidon.common.http.DataChunk;
+import io.helidon.common.http.HeadersWritable;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.MediaType;
+import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.reactive.Single;
 import io.helidon.media.common.MessageBodyReadableContent;
 import io.helidon.media.common.MessageBodyReaderContext;
@@ -35,11 +33,9 @@ import io.helidon.media.common.MessageBodyReaderContext;
  */
 final class WebClientResponseImpl implements WebClientResponse {
 
-    private static final Logger LOGGER = Logger.getLogger(NettyClientHandler.class.getName());
-
     private final WebClientResponseHeadersImpl headers;
     private final Flow.Publisher<DataChunk> publisher;
-    private final Http.ResponseStatus status;
+    private final Http.Status status;
     private final Http.Version version;
     private final MessageBodyReaderContext readerContext;
     private final NettyClientHandler.ResponseCloser responseCloser;
@@ -65,7 +61,7 @@ final class WebClientResponseImpl implements WebClientResponse {
     }
 
     @Override
-    public Http.ResponseStatus status() {
+    public Http.Status status() {
         return status;
     }
 
@@ -86,7 +82,7 @@ final class WebClientResponseImpl implements WebClientResponse {
 
     @Override
     public MessageBodyReadableContent content() {
-        Optional<MediaType> mediaType = headers.contentType();
+        Optional<HttpMediaType> mediaType = headers.contentType();
         MessageBodyReaderContext readerContext = MessageBodyReaderContext.create(this.readerContext, null, headers, mediaType);
         return MessageBodyReadableContent.create(publisher, readerContext);
     }
@@ -101,10 +97,10 @@ final class WebClientResponseImpl implements WebClientResponse {
      */
     static class Builder implements io.helidon.common.Builder<Builder, WebClientResponseImpl> {
 
-        private final Map<String, List<String>> headers = new HashMap<>();
+        private final HeadersWritable<?> headers = HeadersWritable.create();
 
         private Flow.Publisher<DataChunk> publisher;
-        private Http.ResponseStatus status = Http.Status.INTERNAL_SERVER_ERROR_500;
+        private Http.Status status = Http.Status.INTERNAL_SERVER_ERROR_500;
         private Http.Version version = Http.Version.V1_1;
         private NettyClientHandler.ResponseCloser responseCloser;
         private MessageBodyReaderContext readerContext;
@@ -143,7 +139,7 @@ final class WebClientResponseImpl implements WebClientResponse {
          * @param status response status code
          * @return updated builder instance
          */
-        Builder status(Http.ResponseStatus status) {
+        Builder status(Http.Status status) {
             this.status = status;
             return this;
         }
@@ -167,7 +163,7 @@ final class WebClientResponseImpl implements WebClientResponse {
          * @return updated builder instance
          */
         Builder addHeader(String name, List<String> values) {
-            this.headers.put(name, values);
+            this.headers.set(Http.HeaderValue.create(Http.Header.create(name), values));
             return this;
         }
 

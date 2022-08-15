@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,8 @@ import java.util.concurrent.Flow.Publisher;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
-import io.helidon.common.http.MediaType;
 import io.helidon.common.mapper.Mapper;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.reactive.Single;
 
 /**
@@ -52,7 +52,7 @@ class ThrowableBodyWriter implements MessageBodyWriter<Throwable> {
     public Publisher<DataChunk> write(Single<? extends Throwable> content,
                                       GenericType<? extends Throwable> type,
                                       MessageBodyWriterContext context) {
-        context.contentType(MediaType.TEXT_PLAIN);
+        context.contentType(MediaTypes.TEXT_PLAIN);
         if (includeStackTraces) {
             return content.flatMap(new ThrowableToChunks(context.charset()));
         } else {

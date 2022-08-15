@@ -27,6 +27,7 @@ import java.util.Optional;
 import java.util.function.Function;
 
 import io.helidon.common.LazyValue;
+import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigParser.Content;
@@ -34,14 +35,14 @@ import io.helidon.config.spi.ConfigSource;
 import io.helidon.config.spi.ParsableSource;
 
 /**
- * {@link ConfigSource} implementation that loads configuration content from a resource on a classpath.
+ * {@link io.helidon.config.spi.ConfigSource} implementation that loads configuration content from a resource on a classpath.
  * Classpath config source does not support changes (neither through polling nor through change notifications).
  */
 public class ClasspathConfigSource extends AbstractConfigSource implements ConfigSource,
                                                                            ParsableSource {
     private final String resource;
     private final URL resourceUrl;
-    private final LazyValue<Optional<String>> mediaType;
+    private final LazyValue<Optional<MediaType>> mediaType;
 
     ClasspathConfigSource(Builder builder) {
         super(builder);
@@ -210,7 +211,7 @@ public class ClasspathConfigSource extends AbstractConfigSource implements Confi
     }
 
     @Override
-    public Optional<String> mediaType() {
+    public Optional<MediaType> mediaType() {
         return super.mediaType();
     }
 
@@ -291,7 +292,7 @@ public class ClasspathConfigSource extends AbstractConfigSource implements Confi
         }
 
         @Override
-        public Builder mediaType(String mediaType) {
+        public Builder mediaType(MediaType mediaType) {
             return super.mediaType(mediaType);
         }
 

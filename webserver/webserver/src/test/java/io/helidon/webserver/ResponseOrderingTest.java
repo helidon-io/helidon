@@ -27,7 +27,7 @@ import java.util.concurrent.TimeoutException;
 
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.MediaType;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.reactive.Multi;
 import io.helidon.webclient.WebClient;
 
@@ -147,7 +147,7 @@ public class ResponseOrderingTest {
         }
 
         webClient.post()
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .contentType(MediaTypes.APPLICATION_OCTET_STREAM)
                 .submit(sb.toString().getBytes(), String.class)
                 .thenAccept(it -> assertThat(it, is(sb.toString())));
     }

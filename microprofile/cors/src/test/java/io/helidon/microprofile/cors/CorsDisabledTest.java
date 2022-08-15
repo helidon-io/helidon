@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,18 +44,18 @@ import static org.hamcrest.Matchers.not;
 @AddConfig(key = "cors.enabled", value="false")
 class CorsDisabledTest {
 
-    @Inject
-    private WebTarget target;
-
     static {
         System.setProperty("sun.net.http.allowRestrictedHeaders", "true");
     }
+
+    @Inject
+    private WebTarget target;
 
     @Test
     void testCorsIsDisabled() {
         Response res = target.path("/cors2")
                 .request()
-                .header(ORIGIN, "http://foo.bar")
+                .header(ORIGIN.defaultCase(), "http://foo.bar")
                 .put(Entity.entity("", MediaType.TEXT_PLAIN_TYPE));
         assertThat(res.getStatusInfo(), is(Response.Status.OK));
         assertThat("Headers from successful response", res.getHeaders().keySet(), not(hasItem(ACCESS_CONTROL_ALLOW_ORIGIN)));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ import java.util.concurrent.Flow.Publisher;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
-import io.helidon.common.http.MediaType;
+import io.helidon.common.http.HttpMediaType;
 import io.helidon.media.common.MessageBodyReaderContext;
 import io.helidon.media.common.MessageBodyStreamReader;
 
@@ -42,12 +42,12 @@ public final class BodyPartBodyStreamReader implements MessageBodyStreamReader<R
             MessageBodyReaderContext context) {
 
         String boundary = null;
-        MediaType contentType = context.contentType().orElse(null);
+        HttpMediaType contentType = context.contentType().orElse(null);
         if (contentType != null) {
             boundary = contentType.parameters().get("boundary");
         }
         if (boundary == null) {
-            throw new IllegalStateException("boudary header is missing");
+            throw new IllegalStateException("boundary header is missing");
         }
         MultiPartDecoder decoder = MultiPartDecoder.create(boundary, context);
         publisher.subscribe(decoder);

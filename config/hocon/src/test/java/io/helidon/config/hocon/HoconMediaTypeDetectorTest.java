@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,9 @@ import io.helidon.common.media.type.MediaTypes;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.config.testing.OptionalMatcher.value;
+import static io.helidon.common.media.type.MediaTypes.APPLICATION_HOCON;
+import static io.helidon.common.media.type.MediaTypes.APPLICATION_JSON;
+import static io.helidon.common.testing.junit5.OptionalMatcher.optionalValue;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -34,11 +36,11 @@ public class HoconMediaTypeDetectorTest {
 
     @Test
     public void testProbeContentTypeHocon() {
-        assertThat(MediaTypes.detectType(Paths.get("config.conf")), value(is("application/hocon")));
+        assertThat(MediaTypes.detectType(Paths.get("config.conf")), optionalValue(is(APPLICATION_HOCON)));
     }
 
     @Test
     public void testProbeContentTypeJson() {
-        assertThat(MediaTypes.detectType(Paths.get("config.json")), value(is("application/json")));
+        assertThat(MediaTypes.detectType(Paths.get("config.json")), optionalValue(is(APPLICATION_JSON)));
     }
 }

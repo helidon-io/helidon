@@ -23,6 +23,7 @@ import java.util.logging.Logger;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
+import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Single;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.OutboundSecurityClientBuilder;
@@ -174,10 +175,8 @@ public class WebClientSecurity implements WebClientService {
                 LOGGER.finest(() -> "    + Header: " + entry.getKey() + ": " + entry.getValue());
 
                 //replace existing
-                clientHeaders.remove(entry.getKey());
-                for (String value : entry.getValue()) {
-                    clientHeaders.put(entry.getKey(), value);
-                }
+                Http.HeaderName headerName = Http.Header.create(entry.getKey());
+                clientHeaders.set(headerName, entry.getValue().toArray(new String[0]));
             }
             span.end();
             return request;

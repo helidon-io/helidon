@@ -40,5 +40,10 @@
         <module>mapper</module>
         <module>media-type</module>
         <module>crypto</module>
+        <module>parameters</module>
+        <module>buffers</module>
+        <module>socket</module>
+        <module>uri</module>
+        <module>testing</module>
     </modules>
 </project>

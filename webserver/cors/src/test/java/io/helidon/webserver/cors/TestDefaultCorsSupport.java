@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,9 @@ package io.helidon.webserver.cors;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
-import io.helidon.common.http.Headers;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientRequestBuilder;
+import io.helidon.webclient.WebClientRequestHeaders;
 import io.helidon.webclient.WebClientResponse;
 import io.helidon.webclient.WebClientResponseHeaders;
 import io.helidon.webserver.Routing;
@@ -28,6 +28,9 @@ import io.helidon.webserver.WebServer;
 
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.common.http.Http.Header.ACCESS_CONTROL_ALLOW_ORIGIN;
+import static io.helidon.common.http.Http.Header.HOST;
+import static io.helidon.common.http.Http.Header.ORIGIN;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
@@ -75,16 +78,16 @@ public class TestDefaultCorsSupport {
             WebClientRequestBuilder reqBuilder = client.options()
                     .path("/greet");
 
-            Headers h = reqBuilder.headers();
-            h.add("Origin", "http://foo.com");
-            h.add("Host", "bar.com");
+            WebClientRequestHeaders h = reqBuilder.headers();
+            h.add(ORIGIN, "http://foo.com");
+            h.add(HOST, "bar.com");
             WebClientResponse response = reqBuilder
                     .submit()
                     .toCompletableFuture()
                     .get();
 
             WebClientResponseHeaders headers = response.headers();
-            List<String> allowOrigins = headers.values(CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN);
+            List<String> allowOrigins = headers.values(ACCESS_CONTROL_ALLOW_ORIGIN);
             assertThat(allowOrigins, contains("*"));
         } finally {
             if (server != null) {
@@ -106,16 +109,16 @@ public class TestDefaultCorsSupport {
             WebClientRequestBuilder reqBuilder = client.options()
                     .path("/greet");
 
-            Headers h = reqBuilder.headers();
-            h.add("Origin", "http://foo.com");
-            h.add("Host", "bar.com");
+            WebClientRequestHeaders h = reqBuilder.headers();
+            h.add(ORIGIN, "http://foo.com");
+            h.add(HOST, "bar.com");
             WebClientResponse response = reqBuilder
                     .submit()
                     .toCompletableFuture()
                     .get();
 
             WebClientResponseHeaders headers = response.headers();
-            List<String> allowOrigins = headers.values(CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN);
+            List<String> allowOrigins = headers.values(ACCESS_CONTROL_ALLOW_ORIGIN);
             assertThat(allowOrigins.size(), is(0));
         } finally {
             if (server != null) {

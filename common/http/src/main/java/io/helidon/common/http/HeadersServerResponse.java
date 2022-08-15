@@ -1,0 +1,195 @@
+/*
+ * Copyright (c) 2022 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package io.helidon.common.http;
+
+import java.net.URI;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+
+import io.helidon.common.http.Http.Header;
+import io.helidon.common.http.Http.HeaderValue;
+import io.helidon.common.media.type.MediaType;
+
+import static io.helidon.common.http.Http.Header.EXPIRES;
+import static io.helidon.common.http.Http.Header.LAST_MODIFIED;
+import static io.helidon.common.http.Http.Header.LOCATION;
+
+/**
+ * Mutable headers of a server response.
+ */
+public interface HeadersServerResponse extends HeadersClientResponse,
+                                               HeadersWritable<HeadersServerResponse> {
+
+    /**
+     * Create a new instance of mutable server response headers.
+     *
+     * @return new server response headers
+     */
+    static HeadersServerResponse create() {
+        return new HeadersServerResponseImpl();
+    }
+
+    /**
+     * Create a new instance of mutable server response headers.
+     *
+     * @param existing headers to add to these response headers
+     * @return new server response headers
+     */
+    static HeadersServerResponse create(Headers existing) {
+        return new HeadersServerResponseImpl(existing);
+    }
+
+    /**
+     * Adds one or more acceptedTypes path document formats
+     * (header {@link Header#ACCEPT_PATCH}).
+     *
+     * @param acceptableMediaTypes media types to add.
+     * @return this instance
+     */
+    default HeadersServerResponse addAcceptPatches(HttpMediaType... acceptableMediaTypes) {
+        String[] values = new String[acceptableMediaTypes.length];
+        for (int i = 0; i < acceptableMediaTypes.length; i++) {
+            HttpMediaType acceptableMediaType = acceptableMediaTypes[i];
+            values[i] = acceptableMediaType.text();
+        }
+        return add(HeaderValue.create(Header.ACCEPT_PATCH,
+                                      values));
+    }
+
+    /**
+     * Adds one or more acceptedTypes path document formats
+     * (header {@link Header#ACCEPT_PATCH}).
+     *
+     * @param acceptableMediaTypes media types to add.
+     * @return this instance
+     */
+    default HeadersServerResponse addAcceptPatches(MediaType... acceptableMediaTypes) {
+        String[] values = new String[acceptableMediaTypes.length];
+        for (int i = 0; i < acceptableMediaTypes.length; i++) {
+            MediaType acceptableMediaType = acceptableMediaTypes[i];
+            values[i] = acceptableMediaType.text();
+        }
+        return add(HeaderValue.create(Header.ACCEPT_PATCH,
+                                      values));
+    }
+
+    /**
+     * Adds {@code Set-Cookie} header specified in <a href="https://tools.ietf.org/html/rfc6265">RFC6265</a>.
+     *
+     * @param cookie a cookie definition
+     * @return this instance
+     */
+    HeadersServerResponse addCookie(SetCookie cookie);
+
+    /**
+     * Adds {@code Set-Cookie} header based on <a href="https://tools.ietf.org/html/rfc6265">RFC6265</a> with {@code Max-Age}
+     * parameter.
+     *
+     * @param name   name of the cookie
+     * @param value  value of the cookie
+     * @param maxAge {@code Max-Age} cookie parameter
+     * @return this instance
+     */
+    default HeadersServerResponse addCookie(String name, String value, Duration maxAge) {
+        return addCookie(SetCookie.builder(name, value)
+                                 .maxAge(maxAge)
+                                 .build());
+    }
+
+    /**
+     * Adds {@code Set-Cookie} header based on <a href="https://tools.ietf.org/html/rfc2616">RFC2616</a>.
+     *
+     * @param name  name of the cookie
+     * @param value value of the cookie
+     * @return this instance
+     */
+    default HeadersServerResponse addCookie(String name, String value) {
+        return addCookie(SetCookie.create(name, value));
+    }
+
+    /**
+     * Clears a cookie by adding a {@code Set-Cookie} header with an expiration date in the past.
+     *
+     * @param name name of the cookie.
+     * @return this instance
+     */
+    HeadersServerResponse clearCookie(String name);
+
+    /**
+     * Sets the value of {@link Header#LAST_MODIFIED} header.
+     * <p>
+     * The last modified date for the requested object
+     *
+     * @param modified Last modified date/time.
+     * @return this instance
+     */
+    default HeadersServerResponse lastModified(Instant modified) {
+        ZonedDateTime dt = ZonedDateTime.ofInstant(modified, ZoneId.systemDefault());
+        return set(HeaderValue.create(LAST_MODIFIED, true, false, dt.format(Http.DateTime.RFC_1123_DATE_TIME)));
+    }
+
+    /**
+     * Sets the value of {@link Header#LAST_MODIFIED} header.
+     * <p>
+     * The last modified date for the requested object
+     *
+     * @param modified Last modified date/time.
+     * @return this instance
+     */
+    default HeadersServerResponse lastModified(ZonedDateTime modified) {
+        return set(HeaderValue.create(LAST_MODIFIED, true, false, modified.format(Http.DateTime.RFC_1123_DATE_TIME)));
+    }
+
+    /**
+     * Sets the value of {@link Header#LOCATION} header.
+     * <p>
+     * Used in redirection, or when a new resource has been created.
+     *
+     * @param location Location header value.
+     * @return updated headers
+     */
+    default HeadersServerResponse location(URI location) {
+        return set(HeaderValue.create(LOCATION, true, false, location.toASCIIString()));
+    }
+
+    /**
+     * Sets the value of {@link io.helidon.common.http.Http.Header#EXPIRES} header.
+     * <p>
+     * The date/time after which the response is considered stale.
+     *
+     * @param dateTime Expires date/time.
+     * @return updated headers
+     */
+    default HeadersServerResponse expires(ZonedDateTime dateTime) {
+        return set(HeaderValue.create(EXPIRES, dateTime.format(Http.DateTime.RFC_1123_DATE_TIME)));
+    }
+
+    /**
+     * Sets the value of {@link io.helidon.common.http.Http.Header#EXPIRES} header.
+     * <p>
+     * The date/time after which the response is considered stale.
+     *
+     * @param dateTime Expires date/time.
+     * @return updated headers
+     */
+    default HeadersServerResponse expires(Instant dateTime) {
+        return set(HeaderValue.create(EXPIRES, ZonedDateTime.ofInstant(dateTime, ZoneId.systemDefault())
+                .format(Http.DateTime.RFC_1123_DATE_TIME)));
+    }
+}

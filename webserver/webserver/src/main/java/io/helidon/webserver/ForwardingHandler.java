@@ -286,10 +286,10 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
         }
 
         // Certificate management
-        request.headers().remove(Http.Header.X_HELIDON_CN);
+        request.headers().remove(Http.Header.X_HELIDON_CN.defaultCase());
         String cn = ctx.channel().attr(CLIENT_CERTIFICATE_NAME).get();
         if (cn != null) {
-            request.headers().set(Http.Header.X_HELIDON_CN, cn);
+            request.headers().set(Http.Header.X_HELIDON_CN.defaultCase(), cn);
         }
 
         // If the client x509 certificate is present on the channel, add it to the context scope of the ongoing
@@ -353,7 +353,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
             LOGGER.finest(log("Request id: %s", ctx, bareRequest.requestId()));
         }
 
-        String contentLength = request.headers().get(HttpHeaderNames.CONTENT_LENGTH);
+        String contentLength = request.headers().get(Http.Header.CONTENT_LENGTH.defaultCase());
 
         // HTTP WebSocket client sends a content length of 0 together with Connection: Upgrade
         if ("0".equals(contentLength)
@@ -547,7 +547,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
 
     private FullHttpResponse toNettyResponse(TransportResponse handlerResponse) {
         Optional<byte[]> entity = handlerResponse.entity();
-        Http.ResponseStatus status = handlerResponse.status();
+        Http.Status status = handlerResponse.status();
         Map<String, List<String>> headers = handlerResponse.headers();
 
         HttpResponseStatus nettyStatus = HttpResponseStatus.valueOf(status.code(), status.reasonPhrase());

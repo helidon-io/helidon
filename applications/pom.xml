@@ -40,7 +40,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.source>19</maven.compiler.source>
         <maven.compiler.target>${maven.compiler.source}</maven.compiler.target>
         <maven.compiler.release>${maven.compiler.source}</maven.compiler.release>
         <version.plugin.compiler>3.8.1</version.plugin.compiler>
@@ -81,6 +81,7 @@
                         <systemPropertyVariables>
                             <java.util.logging.config.file>${project.build.outputDirectory}/logging.properties</java.util.logging.config.file>
                         </systemPropertyVariables>
+                        <argLine>--enable-preview</argLine>
                     </configuration>
                 </plugin>
                 <plugin>

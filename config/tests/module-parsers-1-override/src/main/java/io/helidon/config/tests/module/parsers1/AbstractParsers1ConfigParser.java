@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,8 @@ import java.io.InputStreamReader;
 import java.util.Properties;
 import java.util.Set;
 
+import io.helidon.common.media.type.MediaType;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigNode.ValueNode;
 import io.helidon.config.spi.ConfigParser;
@@ -31,10 +33,10 @@ import io.helidon.config.spi.ConfigParserException;
  */
 public abstract class AbstractParsers1ConfigParser implements ConfigParser {
 
-    private static final String MEDIA_TYPE_TEXT_JAVA_PROPERTIES = "text/x-java-properties";
+    private static final MediaType MEDIA_TYPE_TEXT_JAVA_PROPERTIES = MediaTypes.create("text/x-java-properties");
 
     @Override
-    public Set<String> supportedMediaTypes() {
+    public Set<MediaType> supportedMediaTypes() {
         return Set.of(MEDIA_TYPE_TEXT_JAVA_PROPERTIES);
     }
 

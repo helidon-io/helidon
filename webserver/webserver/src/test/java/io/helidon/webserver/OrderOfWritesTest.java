@@ -78,7 +78,7 @@ public class OrderOfWritesTest {
                     response = client.get()
                             .request()
                             .await(TIME_OUT);
-                    Assertions.assertEquals(Http.ResponseStatus.Family.SUCCESSFUL, response.status().family());
+                    Assertions.assertEquals(Http.Status.Family.SUCCESSFUL, response.status().family());
                     String content = response.content().as(String.class).await(TIME_OUT);
                     Assertions.assertEquals(expected, content, "Failed at " + i.get() + " " + content);
                 } finally {

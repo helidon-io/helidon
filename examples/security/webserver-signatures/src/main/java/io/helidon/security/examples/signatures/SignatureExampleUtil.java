@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.http.Http;
-import io.helidon.common.http.MediaType;
+import io.helidon.common.http.HttpMediaType;
 import io.helidon.security.SecurityContext;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.security.WebClientSecurity;
@@ -79,7 +79,7 @@ final class SignatureExampleUtil {
     static void processService1Request(ServerRequest req, ServerResponse res, String path, int svc2port) {
         Optional<SecurityContext> securityContext = req.context().get(SecurityContext.class);
 
-        res.headers().contentType(MediaType.TEXT_PLAIN.withCharset("UTF-8"));
+        res.headers().contentType(HttpMediaType.PLAINTEXT_UTF_8);
 
         securityContext.ifPresentOrElse(context -> {
             CLIENT.get()

@@ -19,6 +19,8 @@ package io.helidon.webserver;
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicLong;
 
+import java.util.Optional;
+
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.http.Http;
 import io.helidon.common.pki.KeyConfig;
@@ -35,6 +37,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.common.testing.http.HttpHeaderMatcher.hasHeaderValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -210,8 +213,9 @@ public class MultiPortTest {
                                             .headers()
                                             .add(Http.Header.LOCATION,
                                                     String.format("https://%s:%d%s",
-                                                            req.headers()
-                                                                    .first(Http.Header.HOST)
+                                                            Optional.of(req.headers()
+                                                                    .get(Http.Header.HOST))
+                                                                    .map(Http.HeaderValue::value)
                                                                     .map(s -> s.contains(":") ? s
                                                                             .subSequence(0, s.indexOf(":")) : s)
                                                                     .orElseThrow(() -> new IllegalStateException(
@@ -236,14 +240,14 @@ public class MultiPortTest {
                 .request()
                 .thenApply(it -> {
                     assertThat("Unexpected response: " + it,
-                               it.headers().first(Http.Header.LOCATION).get(),
+                               it.headers(), hasHeaderValue(Http.Header.LOCATION,
                                AllOf.allOf(StringContains.containsString("https://localhost:"),
-                                           StringContains.containsString("/foo")));
+                                           StringContains.containsString("/foo"))));
                     assertThat("Unexpected response: " + it, it.status(), is(Http.Status.MOVED_PERMANENTLY_301));
                     return it;
                 })
                 .thenCompose(it -> webClient.get()
-                        .uri(it.headers().first(Http.Header.LOCATION).get())
+                        .uri(it.headers().get(Http.Header.LOCATION).value())
                         .request(String.class))
                 .thenAccept(it -> assertThat("Unexpected response: " + it, it, is("Root! 2")))
                 .await(TIMEOUT);

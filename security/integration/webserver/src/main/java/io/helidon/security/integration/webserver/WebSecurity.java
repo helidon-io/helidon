@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -374,11 +374,11 @@ public final class WebSecurity implements Service {
 
         wsConfig.get("paths").asNodeList().ifPresent(configs -> {
             for (Config pathConfig : configs) {
-                List<Http.RequestMethod> methods = pathConfig.get("methods").asNodeList().orElse(List.of())
+                List<Http.Method> methods = pathConfig.get("methods").asNodeList().orElse(List.of())
                         .stream()
                         .map(Config::asString)
                         .map(ConfigValue::get)
-                        .map(Http.RequestMethod::create)
+                        .map(Http.Method::create)
                         .collect(Collectors.toList());
 
                 String path = pathConfig.get("path")

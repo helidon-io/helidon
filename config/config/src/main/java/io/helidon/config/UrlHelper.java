@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,21 +16,20 @@
 package io.helidon.config;
 
 import java.io.IOException;
+import java.lang.System.Logger.Level;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.time.Instant;
 import java.util.Optional;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Utility for URL sources.
  */
 final class UrlHelper {
-    private static final Logger LOGGER = Logger.getLogger(UrlHelper.class.getName());
-    private static final String HEAD_METHOD = "HEAD";
     static final int STATUS_NOT_FOUND = 404;
+    private static final System.Logger LOGGER = System.getLogger(UrlHelper.class.getName());
+    private static final String HEAD_METHOD = "HEAD";
 
     private UrlHelper() {
     }
@@ -60,12 +59,12 @@ final class UrlHelper {
                 }
             }
         } catch (IOException ex) {
-            LOGGER.log(Level.FINE, ex, () -> "Configuration at url '" + url + "' HEAD is not accessible.");
+            LOGGER.log(Level.TRACE, () -> "Configuration at url '" + url + "' HEAD is not accessible.", ex);
             return Optional.empty();
         }
 
         Instant timestamp = Instant.MIN;
-        LOGGER.finer("Missing HEAD '" + url + "' response header 'Last-Modified'. Used time '"
+        LOGGER.log(Level.TRACE, "Missing HEAD '" + url + "' response header 'Last-Modified'. Used time '"
                              + timestamp + "' as a content timestamp.");
         return Optional.of(timestamp);
     }

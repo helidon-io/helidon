@@ -17,7 +17,8 @@
 /**
  * YAML format ConfigParser implementation.
  * <p>
- * It supports {@value io.helidon.config.yaml.YamlConfigParser#MEDIA_TYPE_APPLICATION_YAML} format.
+ * It supports {@link io.helidon.common.media.type.MediaTypes#APPLICATION_YAML}
+ * adn {@link io.helidon.common.media.type.MediaTypes#APPLICATION_X_YAML} media types.
  * <p>
  * The parser implementation supports {@link java.util.ServiceLoader}, i.e. {@link io.helidon.config.Config.Builder}
  * can automatically load and register YAML ConfigParser instance,

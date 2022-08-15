@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import io.helidon.common.http.Http;
  */
 public class HttpException extends RuntimeException {
 
-    private final Http.ResponseStatus status;
+    private final Http.Status status;
 
     /**
      * Creates {@link HttpException} associated with {@link Http.Status#INTERNAL_SERVER_ERROR_500}.
@@ -54,7 +54,7 @@ public class HttpException extends RuntimeException {
      * @param message the message
      * @param status the http status
      */
-    public HttpException(String message, Http.ResponseStatus status) {
+    public HttpException(String message, Http.Status status) {
         super(message);
 
         this.status = status;
@@ -67,7 +67,7 @@ public class HttpException extends RuntimeException {
      * @param status the http status
      * @param cause the cause of this exception
      */
-    public HttpException(String message, Http.ResponseStatus status, Throwable cause) {
+    public HttpException(String message, Http.Status status, Throwable cause) {
         super(message, cause);
 
         this.status = status;
@@ -78,7 +78,7 @@ public class HttpException extends RuntimeException {
      *
      * @return the http status
      */
-    public final Http.ResponseStatus status() {
+    public final Http.Status status() {
         return status;
     }
 }

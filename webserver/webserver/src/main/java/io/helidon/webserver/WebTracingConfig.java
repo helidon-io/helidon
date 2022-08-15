@@ -42,6 +42,12 @@ import io.helidon.tracing.config.TracingConfigUtil;
  */
 public abstract class WebTracingConfig {
     /**
+     * No side effects.
+     */
+    protected WebTracingConfig() {
+    }
+
+    /**
      * Tracing configuration.
      * This is the configuration set up for the whole server. There can also be a path specific configuration available
      * through {@link #pathConfigs()}.
@@ -111,9 +117,9 @@ public abstract class WebTracingConfig {
     Service service() {
         return rules -> {
             pathConfigs().forEach(path -> {
-                List<Http.RequestMethod> methods = path.methods()
+                List<Http.Method> methods = path.methods()
                         .stream()
-                        .map(Http.RequestMethod::create)
+                        .map(Http.Method::create)
                         .collect(Collectors.toList());
 
                 TracingConfig wrappedPath = path.tracedConfig();
@@ -319,7 +325,7 @@ public abstract class WebTracingConfig {
 
             res.whenSent()
                     .thenRun(() -> {
-                        Http.ResponseStatus httpStatus = res.status();
+                        Http.Status httpStatus = res.status();
                         if (httpStatus != null) {
                             int statusCode = httpStatus.code();
                             span.tag(Tag.HTTP_STATUS.create(statusCode));

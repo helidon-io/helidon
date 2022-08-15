@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,40 +16,31 @@
 
 package io.helidon.webserver;
 
-import java.net.URI;
-import java.time.Duration;
-import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
-import java.util.OptionalLong;
+import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import io.helidon.common.LazyValue;
-import io.helidon.common.http.AlreadyCompletedException;
-import io.helidon.common.http.HashParameters;
+import io.helidon.common.http.HeadersServerResponse;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.MediaType;
-import io.helidon.common.http.Parameters;
+import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.http.SetCookie;
-import io.helidon.common.http.Utils;
 import io.helidon.common.reactive.Single;
 
 /**
- * A {@link ResponseHeaders} implementation on top of {@link HashParameters}.
+ * A {@link ResponseHeaders} implementation.
  */
-class HashResponseHeaders extends HashParameters implements ResponseHeaders {
+class HashResponseHeaders implements ResponseHeaders {
 
     private static final String COMPLETED_EXCEPTION_MESSAGE = "Response headers are already completed (sent to the client)!";
 
@@ -57,9 +48,10 @@ class HashResponseHeaders extends HashParameters implements ResponseHeaders {
             () -> ZonedDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneId.of("GMT+0")));
 
     // status is by default null, so we can check if it was explicitly set
-    private volatile Http.ResponseStatus httpStatus;
+    private volatile Http.Status httpStatus;
     private final CompletionSupport completable;
     private final CompletableFuture<ResponseHeaders> completionStage = new CompletableFuture<>();
+    private final HeadersServerResponse headers = HeadersServerResponse.create();
 
     /**
      * Creates a new instance.
@@ -77,153 +69,11 @@ class HashResponseHeaders extends HashParameters implements ResponseHeaders {
                     });
         }
         // Set standard headers
-        this.put(Http.Header.DATE, ZonedDateTime.now().format(Http.DateTime.RFC_1123_DATE_TIME));
+        this.set(Http.Header.DATE, ZonedDateTime.now().format(Http.DateTime.RFC_1123_DATE_TIME));
     }
 
-    @Override
-    public List<MediaType> acceptPatches() {
-        List<MediaType> result = all(Http.Header.ACCEPT_PATCH).stream()
-                .flatMap(h -> Utils.tokenize(',', "\"", false, h).stream())
-                .map(String::trim)
-                .map(MediaType::parse)
-                .collect(Collectors.toList());
-        return Collections.unmodifiableList(result);
-    }
 
-    @Override
-    public void addAcceptPatches(MediaType... acceptableMediaTypes) {
-        if (acceptableMediaTypes == null) {
-            return;
-        }
-        for (MediaType mt : acceptableMediaTypes) {
-            add(Http.Header.ACCEPT_PATCH, mt.toString());
-        }
-    }
 
-    @Override
-    public Optional<MediaType> contentType() {
-        return first(Http.Header.CONTENT_TYPE).map(MediaType::parse);
-    }
-
-    @Override
-    public void contentType(MediaType contentType) {
-        if (contentType == null) {
-            remove(Http.Header.CONTENT_TYPE);
-        } else {
-            put(Http.Header.CONTENT_TYPE, contentType.toString());
-        }
-    }
-
-    @Override
-    public OptionalLong contentLength() {
-        return first(Http.Header.CONTENT_LENGTH).stream()
-                .mapToLong(Long::parseLong).findFirst();
-    }
-
-    @Override
-    public void contentLength(long contentLength) {
-        put(Http.Header.CONTENT_LENGTH, String.valueOf(contentLength));
-    }
-
-    @Override
-    public Optional<ZonedDateTime> expires() {
-        return first(Http.Header.EXPIRES).map(Http.DateTime::parse);
-    }
-
-    @Override
-    public void expires(ZonedDateTime dateTime) {
-        if (dateTime == null) {
-            remove(Http.Header.EXPIRES);
-        } else {
-            put(Http.Header.EXPIRES, dateTime.format(Http.DateTime.RFC_1123_DATE_TIME));
-        }
-    }
-
-    @Override
-    public void expires(Instant dateTime) {
-        if (dateTime == null) {
-            remove(Http.Header.EXPIRES);
-        } else {
-            ZonedDateTime dt = ZonedDateTime.ofInstant(dateTime, ZoneId.systemDefault());
-            put(Http.Header.EXPIRES, dt.format(Http.DateTime.RFC_1123_DATE_TIME));
-        }
-    }
-
-    @Override
-    public Optional<ZonedDateTime> lastModified() {
-        return first(Http.Header.LAST_MODIFIED).map(Http.DateTime::parse);
-    }
-
-    @Override
-    public void lastModified(ZonedDateTime dateTime) {
-        if (dateTime == null) {
-            remove(Http.Header.LAST_MODIFIED);
-        } else {
-            put(Http.Header.LAST_MODIFIED, dateTime.format(Http.DateTime.RFC_1123_DATE_TIME));
-        }
-    }
-
-    @Override
-    public void lastModified(Instant dateTime) {
-        if (dateTime == null) {
-            remove(Http.Header.LAST_MODIFIED);
-        } else {
-            ZonedDateTime dt = ZonedDateTime.ofInstant(dateTime, ZoneId.systemDefault());
-            put(Http.Header.LAST_MODIFIED, dt.format(Http.DateTime.RFC_1123_DATE_TIME));
-        }
-    }
-
-    @Override
-    public Optional<URI> location() {
-        return first(Http.Header.LOCATION).map(URI::create);
-    }
-
-    @Override
-    public void location(URI location) {
-        if (location == null) {
-            remove(Http.Header.LOCATION);
-        } else {
-            put(Http.Header.LOCATION, location.toASCIIString());
-        }
-    }
-
-    @Override
-    public void addCookie(String name, String value) {
-        add(Http.Header.SET_COOKIE, SetCookie.create(name, value).toString());
-    }
-
-    @Override
-    public void addCookie(String name, String value, Duration maxAge) {
-        add(Http.Header.SET_COOKIE,
-            SetCookie.builder(name, value)
-                    .maxAge(maxAge)
-                    .build()
-                    .toString());
-    }
-
-    @Override
-    public void addCookie(SetCookie cookie) {
-        Objects.requireNonNull(cookie, "Parameter 'cookie' is null!");
-        add(Http.Header.SET_COOKIE, cookie.toString());
-    }
-
-    @Override
-    public void clearCookie(String name) {
-        SetCookie expiredCookie = SetCookie.builder(name, "deleted")
-                .path("/")
-                .expires(START_OF_YEAR_1970.get())
-                .build();
-
-        List<String> values = remove(Http.Header.SET_COOKIE);
-        if (values.size() == 0) {
-            addCookie(expiredCookie);
-        } else {
-            List<String> newValues = values.stream().map(v ->
-                SetCookie.parse(v).name().equals(name) ? expiredCookie.toString() : v)
-                    .collect(Collectors.toList());
-            put(Http.Header.SET_COOKIE, newValues);
-        }
-    }
 
     @Override
     public boolean equals(Object o) {
@@ -259,7 +109,7 @@ class HashResponseHeaders extends HashParameters implements ResponseHeaders {
      *
      * @return an HTTP status code.
      */
-    Http.ResponseStatus httpStatus() {
+    Http.Status httpStatus() {
         return httpStatus;
     }
 
@@ -268,7 +118,7 @@ class HashResponseHeaders extends HashParameters implements ResponseHeaders {
      *
      * @param httpStatusCode an HTTP status code.
      */
-    void httpStatus(Http.ResponseStatus httpStatusCode) {
+    void httpStatus(Http.Status httpStatusCode) {
         Objects.requireNonNull(httpStatusCode, "Parameter 'httpStatus' is null!");
         completable.runIfNotCompleted(() -> this.httpStatus = httpStatusCode,
                                       "Response status code and headers are already completed (sent to the client)!");
@@ -279,62 +129,86 @@ class HashResponseHeaders extends HashParameters implements ResponseHeaders {
     // ---------------------------------------------------------------------
 
     @Override
-    public List<String> put(String key, String... values) {
-        return completable.supplyIfNotCompleted(() -> super.put(key, values), COMPLETED_EXCEPTION_MESSAGE);
+    public List<String> all(Http.HeaderName name, Supplier<List<String>> defaultSupplier) {
+        return headers.all(name, defaultSupplier);
     }
 
     @Override
-    public List<String> put(String key, Iterable<String> values) {
-        return completable.supplyIfNotCompleted(() -> super.put(key, values), COMPLETED_EXCEPTION_MESSAGE);
+    public boolean contains(Http.HeaderName name) {
+        return headers.contains(name);
     }
 
     @Override
-    public List<String> putIfAbsent(String key, String... values) {
-        return completable.supplyIfNotCompleted(() -> super.putIfAbsent(key, values), COMPLETED_EXCEPTION_MESSAGE);
+    public boolean contains(Http.HeaderValue value) {
+        return headers.contains(value);
     }
 
     @Override
-    public List<String> putIfAbsent(String key, Iterable<String> values) {
-        return completable.supplyIfNotCompleted(() -> super.putIfAbsent(key, values), COMPLETED_EXCEPTION_MESSAGE);
+    public Http.HeaderValue get(Http.HeaderName name) {
+        return headers.get(name);
     }
 
     @Override
-    public List<String> computeIfAbsent(String key, Function<String, Iterable<String>> values) {
-        return completable.supplyIfNotCompleted(() -> super.computeIfAbsent(key, values), COMPLETED_EXCEPTION_MESSAGE);
+    public int size() {
+        return headers.size();
     }
 
     @Override
-    public List<String> computeSingleIfAbsent(String key, Function<String, String> value) {
-        return completable.supplyIfNotCompleted(() -> super.computeSingleIfAbsent(key, value), COMPLETED_EXCEPTION_MESSAGE);
-    }
-
-    @Override
-    public HashResponseHeaders putAll(Parameters parameters) {
-        completable.runIfNotCompleted(() -> super.putAll(parameters), COMPLETED_EXCEPTION_MESSAGE);
+    public HeadersServerResponse addCookie(SetCookie cookie) {
+        completable.runIfNotCompleted(() -> headers.addCookie(cookie), COMPLETED_EXCEPTION_MESSAGE);
         return this;
     }
 
     @Override
-    public HashResponseHeaders add(String key, String... values) {
-        completable.runIfNotCompleted(() -> super.add(key, values), COMPLETED_EXCEPTION_MESSAGE);
+    public HeadersServerResponse clearCookie(String name) {
+        completable.runIfNotCompleted(() -> headers.clearCookie(name), COMPLETED_EXCEPTION_MESSAGE);
         return this;
     }
 
     @Override
-    public HashResponseHeaders add(String key, Iterable<String> values) {
-        completable.runIfNotCompleted(() -> super.add(key, values), COMPLETED_EXCEPTION_MESSAGE);
+    public HeadersServerResponse setIfAbsent(Http.HeaderValue header) {
+        completable.runIfNotCompleted(() -> headers.setIfAbsent(header), COMPLETED_EXCEPTION_MESSAGE);
         return this;
     }
 
     @Override
-    public HashResponseHeaders addAll(Parameters parameters) {
-        completable.runIfNotCompleted(() -> super.addAll(parameters), COMPLETED_EXCEPTION_MESSAGE);
+    public HeadersServerResponse add(Http.HeaderValue header) {
+        completable.runIfNotCompleted(() -> headers.add(header), COMPLETED_EXCEPTION_MESSAGE);
         return this;
     }
 
     @Override
-    public List<String> remove(String key) {
-        return completable.supplyIfNotCompleted(() -> super.remove(key), COMPLETED_EXCEPTION_MESSAGE);
+    public HeadersServerResponse remove(Http.HeaderName name) {
+        completable.runIfNotCompleted(() -> headers.remove(name), COMPLETED_EXCEPTION_MESSAGE);
+        return this;
+    }
+
+    @Override
+    public HeadersServerResponse remove(Http.HeaderName name, Consumer<Http.HeaderValue> removedConsumer) {
+        completable.runIfNotCompleted(() -> headers.remove(name, removedConsumer), COMPLETED_EXCEPTION_MESSAGE);
+        return this;
+    }
+
+    @Override
+    public HeadersServerResponse set(Http.HeaderValue header) {
+        completable.runIfNotCompleted(() -> headers.set(header), COMPLETED_EXCEPTION_MESSAGE);
+        return this;
+    }
+
+    @Override
+    public ResponseHeaders clear() {
+        completable.runIfNotCompleted(headers::clear, COMPLETED_EXCEPTION_MESSAGE);
+        return this;
+    }
+
+    @Override
+    public Iterator<Http.HeaderValue> iterator() {
+        return headers.iterator();
+    }
+
+    @Override
+    public List<HttpMediaType> acceptedTypes() {
+        return List.of();
     }
 
     // ----------------------------------
@@ -482,9 +356,9 @@ class HashResponseHeaders extends HashParameters implements ResponseHeaders {
                 rwLock.writeLock().lock();
                 try {
                     state = State.COMPLETED;
-                    Http.ResponseStatus status = (null == headers.httpStatus) ? Http.Status.OK_200 : headers.httpStatus;
+                    Http.Status status = (null == headers.httpStatus) ? Http.Status.OK_200 : headers.httpStatus;
                     status = (null == status) ?  Http.Status.OK_200 : status;
-                    Map<String, List<String>> rawHeaders = filterSpecificHeaders(headers.toMap(), status);
+                    Map<String, List<String>> rawHeaders = filterSpecificHeaders(headers, status);
                     bareResponse.writeStatusAndHeaders(status, rawHeaders);
                 } finally {
                     rwLock.writeLock().unlock();
@@ -498,23 +372,25 @@ class HashResponseHeaders extends HashParameters implements ResponseHeaders {
         /**
          * Specific status codes requires or omits specific headers.
          *
-         * @param data   mutable headers data
-         * @param status response status code
+         * @param headers
+         * @param status  response status code
          * @return filtered headers
          */
-        private Map<String, List<String>> filterSpecificHeaders(Map<String, List<String>> data, Http.ResponseStatus status) {
-            if (data == null) {
-                return null;
-            }
+        private Map<String, List<String>> filterSpecificHeaders(HashResponseHeaders headers, Http.Status status) {
+            Map<String, List<String>> data = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+
+            headers.headers.iterator()
+                    .forEachRemaining(it -> data.put(it.name(), it.allValues()));
+
             if (status.code() == Http.Status.NO_CONTENT_204.code()) {
-                data.remove(Http.Header.TRANSFER_ENCODING);
-                data.remove(Http.Header.CONTENT_DISPOSITION);
-                data.remove(Http.Header.CONTENT_ENCODING);
-                data.remove(Http.Header.CONTENT_LANGUAGE);
-                data.remove(Http.Header.CONTENT_LENGTH);
-                data.remove(Http.Header.CONTENT_LOCATION);
-                data.remove(Http.Header.CONTENT_RANGE);
-                data.remove(Http.Header.CONTENT_TYPE);
+                data.remove(Http.Header.TRANSFER_ENCODING.defaultCase());
+                data.remove(Http.Header.CONTENT_DISPOSITION.defaultCase());
+                data.remove(Http.Header.CONTENT_ENCODING.defaultCase());
+                data.remove(Http.Header.CONTENT_LANGUAGE.defaultCase());
+                data.remove(Http.Header.CONTENT_LENGTH.defaultCase());
+                data.remove(Http.Header.CONTENT_LOCATION.defaultCase());
+                data.remove(Http.Header.CONTENT_RANGE.defaultCase());
+                data.remove(Http.Header.CONTENT_TYPE.defaultCase());
             }
             return data;
         }

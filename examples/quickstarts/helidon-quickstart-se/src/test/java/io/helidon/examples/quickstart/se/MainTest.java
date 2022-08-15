@@ -19,6 +19,8 @@ package io.helidon.examples.quickstart.se;
 import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
+import io.helidon.common.LogConfig;
+import io.helidon.common.http.Http;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientResponse;
@@ -41,6 +43,7 @@ class MainTest {
     private static final JsonObject TEST_JSON_OBJECT;
 
     static {
+        LogConfig.configureRuntime();
         TEST_JSON_OBJECT = JSON_BUILDER.createObjectBuilder()
                 .add("greeting", "Hola")
                 .build();
@@ -92,18 +95,24 @@ class MainTest {
                 .request(JsonObject.class)
                 .await();
         assertEquals("Hola Joe!", jsonObject.getString("message"));
+    }
 
-        response = webClient.get()
+    @Test
+    void testHealth() {
+        WebClientResponse response = webClient.get()
                 .path("/health")
                 .request()
                 .await();
         assertEquals(200, response.status().code());
+    }
 
-        response = webClient.get()
+    @Test
+    void testMetrics() {
+        WebClientResponse response = webClient.get()
                 .path("/metrics")
                 .request()
                 .await();
-        assertEquals(200, response.status().code());
+        assertEquals(Http.Status.OK_200, response.status());
     }
 
 }

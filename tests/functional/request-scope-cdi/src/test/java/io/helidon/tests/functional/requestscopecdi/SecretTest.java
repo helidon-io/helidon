@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package io.helidon.tests.functional.requestscopecdi;
 
-import io.helidon.common.http.MediaType;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 
 import io.netty.handler.codec.http.HttpResponseStatus;
@@ -40,7 +40,7 @@ class SecretTest {
     public void testSecrets() {
         Response r = baseTarget.path("greet")
                 .request()
-                .accept(MediaType.APPLICATION_JSON.toString())
+                .accept(MediaTypes.APPLICATION_JSON.text())
                 .get();
         assertThat(r.getStatus(), is(HttpResponseStatus.OK.code()));
         JsonObject o = r.readEntity(JsonObject.class);

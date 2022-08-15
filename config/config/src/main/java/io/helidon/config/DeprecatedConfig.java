@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package io.helidon.config;
 
-import java.util.logging.Logger;
+import java.lang.System.Logger.Level;
 
 /**
  * A utility class to handle configuration properties that should no longer be used.
@@ -25,7 +25,7 @@ import java.util.logging.Logger;
  * In next major release, the deprecated property is removed (as is use of this class).
  */
 public final class DeprecatedConfig {
-    private static final Logger LOGGER = Logger.getLogger(DeprecatedConfig.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(DeprecatedConfig.class.getName());
 
     private DeprecatedConfig() {
     }
@@ -46,13 +46,13 @@ public final class DeprecatedConfig {
 
         if (deprecatedConfig.exists()) {
             if (currentConfig.exists()) {
-                LOGGER.warning("You are using both a deprecated configuration and a current one. "
+                LOGGER.log(Level.WARNING, "You are using both a deprecated configuration and a current one. "
                                        + "Deprecated key: \"" + deprecatedConfig.key() + "\", "
                                        + "current key: \"" + currentConfig.key() + "\", "
                                        + "only the current key will be used, and deprecated will be ignored.");
                 return currentConfig;
             } else {
-                LOGGER.warning("You are using a deprecated configuration key. "
+                LOGGER.log(Level.WARNING, "You are using a deprecated configuration key. "
                                        + "Deprecated key: \"" + deprecatedConfig.key() + "\", "
                                        + "current key: \"" + currentConfig.key() + "\".");
                 return deprecatedConfig;

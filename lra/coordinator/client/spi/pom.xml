@@ -40,5 +40,9 @@
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common-reactive</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-http</artifactId>
+        </dependency>
     </dependencies>
 </project>

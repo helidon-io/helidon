@@ -17,18 +17,19 @@
 package io.helidon.webserver;
 
 import java.net.InetAddress;
+import java.util.Optional;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.common.testing.junit5.OptionalMatcher.optionalPresent;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.hasSize;
 
 /**
  * Tests {@link ServerConfiguration.Builder}.
@@ -90,8 +91,6 @@ public class ServerConfigurationTest {
         assertThat(sc.receiveBufferSize(), is(30));
         assertThat(sc.timeoutMillis(), is(40));
         assertThat(sc.bindAddress(), is(InetAddress.getByName("127.0.0.1")));
-        assertThat(sc.enabledSslProtocols(), hasSize(0));
-        assertThat(sc.ssl(), nullValue());
 
         assertThat(sc.workersCount(), is(50));
 
@@ -100,16 +99,12 @@ public class ServerConfigurationTest {
         assertThat(sc.socket("secure").receiveBufferSize(), is(31));
         assertThat(sc.socket("secure").timeoutMillis(), is(41));
         assertThat(sc.socket("secure").bindAddress(), is(InetAddress.getByName("127.0.0.2")));
-        assertThat(sc.socket("secure").enabledSslProtocols(), hasSize(0));
-        assertThat(sc.socket("secure").ssl(), nullValue());
 
         assertThat(sc.socket("other").port(), is(12));
         assertThat(sc.socket("other").backlog(), is(22));
         assertThat(sc.socket("other").receiveBufferSize(), is(32));
         assertThat(sc.socket("other").timeoutMillis(), is(42));
         assertThat(sc.socket("other").bindAddress(), is(InetAddress.getByName("127.0.0.3")));
-        assertThat(sc.socket("other").enabledSslProtocols(), hasSize(0));
-        assertThat(sc.socket("other").ssl(), nullValue());
     }
 
     @Test
@@ -118,10 +113,11 @@ public class ServerConfigurationTest {
         ServerConfiguration sc = config.get("webserver").as(ServerConfiguration::create).get();
         assertThat(sc, notNullValue());
         assertThat(sc.port(), is(10));
-        assertThat(sc.ssl(), notNullValue());
 
         assertThat(sc.socket("secure").port(), is(11));
-        assertThat(sc.socket("secure").enabledSslProtocols(), contains("TLSv1.2"));
-        assertThat(sc.socket("secure").ssl(), notNullValue());
+        Optional<WebServerTls> tls = sc.socket("secure").tls();
+        assertThat(tls, optionalPresent());
+        WebServerTls ssl = tls.get();
+        assertThat(ssl.enabledTlsProtocols(), contains("TLSv1.2"));
     }
 }

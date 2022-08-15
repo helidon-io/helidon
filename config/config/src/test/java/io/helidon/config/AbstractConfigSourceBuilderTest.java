@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,8 @@ import java.nio.file.Path;
 import java.util.Optional;
 import java.util.function.Function;
 
+import io.helidon.common.media.type.MediaType;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.spi.ChangeWatcher;
 import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ParsableSource;
@@ -50,11 +52,11 @@ public class AbstractConfigSourceBuilderTest {
 
     @Test
     void testConfigured() {
-        String mediaType = "application/json";
+        MediaType mediaType = MediaTypes.APPLICATION_JSON;
         FileSystemWatcher watcher = FileSystemWatcher.create();
         PollingStrategy pollingStrategy = PollingStrategies.nop();
         ConfigParser parser = ConfigParsers.properties();
-        Function<Config.Key, Optional<String>> mediaTypeMapping = key -> Optional.empty();
+        Function<Config.Key, Optional<MediaType>> mediaTypeMapping = key -> Optional.empty();
         Function<Config.Key, Optional<ConfigParser>> parserMapping = key -> Optional.empty();
         RetryPolicy retryPolicy = RetryPolicies.justCall();
 
@@ -90,7 +92,7 @@ public class AbstractConfigSourceBuilderTest {
         }
 
         @Override
-        public FullSourceBuilder mediaType(String mediaType) {
+        public FullSourceBuilder mediaType(MediaType mediaType) {
             return super.mediaType(mediaType);
         }
 

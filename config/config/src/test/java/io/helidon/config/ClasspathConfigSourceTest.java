@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,13 @@ package io.helidon.config;
 
 import java.util.Optional;
 
+import io.helidon.common.media.type.MediaType;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.spi.ConfigSource;
 
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.common.testing.junit5.OptionalMatcher.optionalValue;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -31,7 +34,7 @@ import static org.hamcrest.Matchers.is;
  */
 public class ClasspathConfigSourceTest {
 
-    private static final String TEST_MEDIA_TYPE = "my/media/type";
+    private static final MediaType TEST_MEDIA_TYPE = MediaTypes.create("my/media/type");
 
     @Test
     public void testDescriptionMandatory() {
@@ -63,12 +66,13 @@ public class ClasspathConfigSourceTest {
                 .optional()
                 .build();
 
-        assertThat(configSource.load().get().mediaType(), is(Optional.of("text/x-java-properties")));
+              assertThat(configSource.load().get().mediaType(),
+                         optionalValue(is(PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES)));
     }
 
     @Test
     public void testGetMediaTypeUnknown() {
-        ClasspathConfigSource configSource = (ClasspathConfigSource) ConfigSources.classpath("application.unknown")
+        ClasspathConfigSource configSource = ConfigSources.classpath("application.unknown")
                 .optional()
                 .build();
 
@@ -77,7 +81,7 @@ public class ClasspathConfigSourceTest {
 
     @Test
     public void testLoadNotExists() {
-        ClasspathConfigSource configSource = (ClasspathConfigSource) ConfigSources.classpath("application.unknown")
+        ClasspathConfigSource configSource = ConfigSources.classpath("application.unknown")
                 .build();
 
         assertThat(configSource.load(), is(Optional.empty()));
@@ -86,7 +90,7 @@ public class ClasspathConfigSourceTest {
     @Test
     public void testLoadExists() {
         ConfigSource configSource = ConfigSources.classpath("io/helidon/config/application.conf")
-                .mediaType("application/hocon")
+                .mediaType(MediaTypes.APPLICATION_HOCON)
                 .build();
     }
 
@@ -100,7 +104,7 @@ public class ClasspathConfigSourceTest {
     @Test
     public void testBuilderWithMediaType() {
         ConfigSource configSource = ConfigSources.classpath("io/helidon/config/application.conf")
-                .mediaType("application/hocon")
+                .mediaType(MediaTypes.APPLICATION_HOCON)
                 .build();
 
         assertThat(configSource, notNullValue());

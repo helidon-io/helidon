@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,13 @@
 
 package io.helidon.media.common;
 
-import java.io.InputStream;
 import java.net.URLEncoder;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.reactive.Multi;
+import io.helidon.common.reactive.Single;
 
 import org.junit.jupiter.api.Test;
 
@@ -34,60 +32,28 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * Unit test for {@link ContentReaders}.
  */
-@SuppressWarnings("deprecation")
 class ContentReadersTest {
     @Test
-    void testStringReader() throws Exception {
-        Multi<DataChunk> chunks = Multi.singleton(DataChunk.create(new byte[] {(byte) 225, (byte) 226, (byte) 227}));
-
-        CompletableFuture<? extends String> future =
-                ContentReaders.stringReader(Charset.forName("cp1250"))
-                        .apply(chunks)
-                        .toCompletableFuture();
-
-        String s = future.get(10, TimeUnit.SECONDS);
-        assertThat(s, is("áâă"));
-    }
-
-    @Test
-    void testByteArrayReader() throws Exception {
+    void testByteArrayReader() {
         String original = "Popokatepetl";
         byte[] bytes = original.getBytes(StandardCharsets.UTF_8);
 
-        CompletableFuture<? extends byte[]> future = ContentReaders.byteArrayReader()
-                .apply(Multi.singleton(DataChunk.create(bytes)))
-                .toCompletableFuture();
+        Single<? extends byte[]> future = ContentReaders.readBytes(Multi.singleton(DataChunk.create(bytes)));
 
-        byte[] actualBytes = future.get(10, TimeUnit.SECONDS);
+        byte[] actualBytes = future.await(Duration.ofSeconds(10));
         assertThat(actualBytes, is(bytes));
     }
 
     @Test
-    void test() throws Exception {
-        String original = "Popokatepetl";
-        byte[] bytes = original.getBytes(StandardCharsets.UTF_8);
-
-        CompletableFuture<? extends InputStream> future = ContentReaders.inputStreamReader()
-                .apply(Multi.singleton(DataChunk.create(bytes)))
-                .toCompletableFuture();
-
-        InputStream inputStream = future.get(10, TimeUnit.SECONDS);
-        byte[] actualBytes = inputStream.readAllBytes();
-        assertThat(actualBytes, is(bytes));
-    }
-
-    @Test
-    void testURLDecodingReader() throws Exception {
+    void testURLDecodingReader() {
         String original = "myParam=\"Now@is'the/time";
-        String encoded = URLEncoder.encode(original, "UTF-8");
+        String encoded = URLEncoder.encode(original, StandardCharsets.UTF_8);
         Multi<DataChunk> chunks = Multi.singleton(DataChunk.create(encoded.getBytes(StandardCharsets.UTF_8)));
 
-        CompletableFuture<? extends String> future =
-                ContentReaders.urlEncodedStringReader(StandardCharsets.UTF_8)
-                        .apply(chunks)
-                        .toCompletableFuture();
+        Single<? extends String> future =
+                ContentReaders.readURLEncodedString(chunks, StandardCharsets.UTF_8);
 
-        String s = future.get(10, TimeUnit.SECONDS);
+        String s = future.await(Duration.ofSeconds(10));
         assertThat(s, is(original));
     }
 }

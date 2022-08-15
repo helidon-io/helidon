@@ -21,7 +21,7 @@ module io.helidon.metrics.serviceapi {
     requires java.logging;
 
     requires io.helidon.webserver;
-    requires io.helidon.config.metadata;
+    requires static io.helidon.config.metadata;
     requires io.helidon.servicecommon.rest;
     requires io.helidon.metrics.api;
 

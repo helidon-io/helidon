@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,6 @@
  */
 package io.helidon.common.mapper;
 
-import java.util.Optional;
-
 import io.helidon.common.mapper.spi.MapperProvider;
 
 /**
@@ -24,15 +22,15 @@ import io.helidon.common.mapper.spi.MapperProvider;
  */
 public class ServiceLoaderMapper1 implements MapperProvider {
     @Override
-    public <SOURCE, TARGET> Optional<Mapper<?, ?>> mapper(Class<SOURCE> sourceClass, Class<TARGET> targetClass) {
+    public ProviderResponse mapper(Class<?> sourceClass, Class<?> targetClass, String qualifier) {
         if ((sourceClass.equals(String.class)) && (targetClass.equals(Integer.class))) {
-            return Optional.of(source -> Integer.parseInt((String) source));
+            return new ProviderResponse(Support.SUPPORTED, source -> Integer.parseInt((String) source));
         }
 
         if ((sourceClass.equals(String.class)) && (targetClass.equals(Long.class))) {
-            return Optional.of(source -> Long.parseLong((String) source));
+            return new ProviderResponse(Support.SUPPORTED, source -> Long.parseLong((String) source));
         }
 
-        return Optional.empty();
+        return ProviderResponse.unsupported();
     }
 }

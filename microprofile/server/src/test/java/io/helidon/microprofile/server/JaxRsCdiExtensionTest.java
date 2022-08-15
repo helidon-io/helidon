@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,8 +25,8 @@ import io.helidon.config.ConfigSources;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.config.testing.OptionalMatcher.empty;
-import static io.helidon.config.testing.OptionalMatcher.value;
+import static io.helidon.common.testing.junit5.OptionalMatcher.optionalEmpty;
+import static io.helidon.common.testing.junit5.OptionalMatcher.optionalValue;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -78,7 +78,7 @@ public class JaxRsCdiExtensionTest {
         JaxRsApplication app = JaxRsApplication.create(TestApp.class);
 
         Optional<String> namedRouting = extension.findNamedRouting(EMPTY_CONFIG, app);
-        assertThat(namedRouting, value(is("admin")));
+        assertThat(namedRouting, optionalValue(is("admin")));
     }
 
     @Test
@@ -89,7 +89,7 @@ public class JaxRsCdiExtensionTest {
                 .build();
 
         Optional<String> namedRouting = extension.findNamedRouting(EMPTY_CONFIG, app);
-        assertThat(namedRouting, empty());
+        assertThat(namedRouting, optionalEmpty());
     }
 
     @Test
@@ -99,13 +99,13 @@ public class JaxRsCdiExtensionTest {
         Config config = Config
                 .create(ConfigSources.create(Map.of(TestApp.class.getName() + "." + RoutingName.CONFIG_KEY_NAME, "config")));
         Optional<String> namedRouting = extension.findNamedRouting(config, app);
-        assertThat(namedRouting, value(is("config")));
+        assertThat(namedRouting, optionalValue(is("config")));
 
         config = Config
                 .create(ConfigSources.create(Map.of(TestApp.class.getName() + "." + RoutingName.CONFIG_KEY_NAME,
                                                     RoutingName.DEFAULT_NAME)));
         namedRouting = extension.findNamedRouting(config, app);
-        assertThat(namedRouting, empty());
+        assertThat(namedRouting, optionalEmpty());
     }
 
     @Test
@@ -113,12 +113,12 @@ public class JaxRsCdiExtensionTest {
         JaxRsApplication app = JaxRsApplication.create(TestApp.class);
 
         Optional<String> contextRoot = extension.findContextRoot(EMPTY_CONFIG, app);
-        assertThat(contextRoot, value(is("/wrong")));
+        assertThat(contextRoot, optionalValue(is("/wrong")));
 
         Config config = Config
                 .create(ConfigSources.create(Map.of(TestApp.class.getName() + "." + RoutingPath.CONFIG_KEY_PATH, "config")));
         contextRoot = extension.findContextRoot(config, app);
-        assertThat(contextRoot, value(is("/config")));
+        assertThat(contextRoot, optionalValue(is("/config")));
     }
 
     @Test
@@ -128,7 +128,7 @@ public class JaxRsCdiExtensionTest {
                 .build();
 
         Optional<String> contextRoot = extension.findContextRoot(EMPTY_CONFIG, app);
-        assertThat(contextRoot, value(is("/myApp")));
+        assertThat(contextRoot, optionalValue(is("/myApp")));
     }
 
     @Test
@@ -137,7 +137,7 @@ public class JaxRsCdiExtensionTest {
                 .build();
 
         Optional<String> contextRoot = extension.findContextRoot(EMPTY_CONFIG, app);
-        assertThat(contextRoot, empty());
+        assertThat(contextRoot, optionalEmpty());
     }
 
     @Test
@@ -147,7 +147,7 @@ public class JaxRsCdiExtensionTest {
                 .build();
 
         Optional<String> contextRoot = extension.findContextRoot(EMPTY_CONFIG, app);
-        assertThat(contextRoot, value(is("/myApp")));
+        assertThat(contextRoot, optionalValue(is("/myApp")));
     }
 
     @Test
@@ -157,7 +157,7 @@ public class JaxRsCdiExtensionTest {
                 .build();
 
         Optional<String> contextRoot = extension.findContextRoot(EMPTY_CONFIG, app);
-        assertThat(contextRoot, value(is("/myApp")));
+        assertThat(contextRoot, optionalValue(is("/myApp")));
     }
 
     @Test

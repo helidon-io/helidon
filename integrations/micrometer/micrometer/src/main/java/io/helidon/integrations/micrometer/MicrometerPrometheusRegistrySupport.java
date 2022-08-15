@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import java.util.Optional;
 import java.util.function.Function;
 
 import io.helidon.common.http.Http;
-import io.helidon.common.http.MediaType;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
 import io.helidon.webserver.Handler;
@@ -75,7 +75,7 @@ class MicrometerPrometheusRegistrySupport extends MicrometerBuiltInRegistrySuppo
          */
         return (ServerRequest req) -> {
             if (req.headers()
-                    .bestAccepted(MediaType.TEXT_PLAIN).isPresent()
+                    .bestAccepted(MediaTypes.TEXT_PLAIN).isPresent()
                     || req.queryParams()
                     .first("type")
                     .orElse("")
@@ -104,25 +104,21 @@ class MicrometerPrometheusRegistrySupport extends MicrometerBuiltInRegistrySuppo
 
         @Override
         public void accept(ServerRequest req, ServerResponse res) {
-            res.headers().contentType(MediaType.TEXT_PLAIN);
-            switch (Http.Method.valueOf(req.method()
-                    .name())) {
-                case GET:
-                    res.send(registry.scrape());
-                    break;
-                case OPTIONS:
-                    StringWriter writer = new StringWriter();
-                    try {
-                        metadata(writer, registry);
-                        res.send(writer.toString());
-                    } catch (IOException e) {
-                        res.status(Http.Status.INTERNAL_SERVER_ERROR_500)
-                                .send(e);
-                    }
-                    break;
-                default:
-                    res.status(Http.Status.NOT_IMPLEMENTED_501)
-                            .send();
+            res.headers().contentType(MediaTypes.TEXT_PLAIN);
+            if (req.method() == Http.Method.GET) {
+                res.send(registry.scrape());
+            } else if (req.method() == Http.Method.OPTIONS) {
+                StringWriter writer = new StringWriter();
+                try {
+                    metadata(writer, registry);
+                    res.send(writer.toString());
+                } catch (IOException e) {
+                    res.status(Http.Status.INTERNAL_SERVER_ERROR_500)
+                            .send(e);
+                }
+            } else {
+                res.status(Http.Status.NOT_IMPLEMENTED_501)
+                        .send();
             }
         }
     }

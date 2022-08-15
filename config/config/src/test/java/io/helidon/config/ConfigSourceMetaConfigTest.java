@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,12 +22,13 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
 
+import io.helidon.common.testing.junit5.RestoreSystemPropertiesExt;
+import io.helidon.common.testing.junit5.TemporaryFolderExt;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.config.spi.ConfigSource;
-import io.helidon.config.test.infra.RestoreSystemPropertiesExt;
-import io.helidon.config.test.infra.TemporaryFolderExt;
 
 import com.xebialabs.restito.server.StubServer;
+import org.glassfish.grizzly.http.util.HttpStatus;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -36,7 +37,6 @@ import static com.xebialabs.restito.builder.stub.StubHttp.whenHttp;
 import static com.xebialabs.restito.semantics.Action.status;
 import static com.xebialabs.restito.semantics.Action.stringContent;
 import static com.xebialabs.restito.semantics.Condition.get;
-import static org.glassfish.grizzly.http.util.HttpStatus.OK_200;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
@@ -162,7 +162,7 @@ public class ConfigSourceMetaConfigTest {
         try {
             whenHttp(server)
                     .match(get("/application.properties"))
-                    .then(status(OK_200),
+                    .then(status(HttpStatus.OK_200),
                           stringContent("greeting = Hello"));
 
             Config metaConfig = builderFrom(ConfigSources.create(

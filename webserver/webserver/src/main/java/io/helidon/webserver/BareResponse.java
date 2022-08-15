@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ public interface BareResponse extends Flow.Subscriber<DataChunk> {
      * @throws SocketClosedException if headers were already send or response is closed
      * @throws NullPointerException if {@code status} is {@code null}
      */
-    void writeStatusAndHeaders(Http.ResponseStatus status, Map<String, List<String>> headers)
+    void writeStatusAndHeaders(Http.Status status, Map<String, List<String>> headers)
             throws SocketClosedException, NullPointerException;
 
     /**
@@ -59,7 +59,7 @@ public interface BareResponse extends Flow.Subscriber<DataChunk> {
     Single<BareResponse> whenCompleted();
 
     /**
-     * Each response is subscribed up to a single publisher and AFTER {@link #writeStatusAndHeaders(Http.ResponseStatus, Map)}
+     * Each response is subscribed up to a single publisher and AFTER {@link #writeStatusAndHeaders(Http.Status, Map)}
      * method is called and returned.
      *
      * @param subscription a subscription.

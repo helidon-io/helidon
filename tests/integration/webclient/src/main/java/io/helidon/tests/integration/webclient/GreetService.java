@@ -29,8 +29,8 @@ import java.util.logging.Logger;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.http.DataChunk;
-import io.helidon.common.http.FormParams;
 import io.helidon.common.http.Http;
+import io.helidon.common.parameters.Parameters;
 import io.helidon.common.reactive.Multi;
 import io.helidon.config.Config;
 import io.helidon.security.SecurityContext;
@@ -188,13 +188,13 @@ public class GreetService implements Service {
     }
 
     private void form(ServerRequest req, ServerResponse res) {
-        req.content().as(FormParams.class)
+        req.content().as(Parameters.class)
                 .thenApply(form -> "Hi " + form.first("name").orElse("unknown"))
                 .thenAccept(res::send);
     }
 
     private void formContent(ServerRequest req, ServerResponse res) {
-        req.content().as(FormParams.class)
+        req.content().as(Parameters.class)
                 .thenAccept(res::send);
     }
 

@@ -24,7 +24,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.common.http.Http;
-import io.helidon.common.http.MediaType;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientRequestBuilder;
@@ -48,7 +48,6 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.not;
 
 public class TestServer {
@@ -110,7 +109,7 @@ public class TestServer {
         WebClientResponse response = webClientBuilder
                 .build()
                 .get()
-                .accept(MediaType.APPLICATION_JSON)
+                .accept(MediaTypes.APPLICATION_JSON)
                 .path("metrics")
                 .submit()
                 .await(CLIENT_TIMEOUT);
@@ -126,7 +125,7 @@ public class TestServer {
         WebClientResponse response = webClientBuilder
                 .build()
                 .get()
-                .accept(MediaType.APPLICATION_JSON)
+                .accept(MediaTypes.APPLICATION_JSON)
                 .path("metrics/vendor")
                 .submit()
                 .await(CLIENT_TIMEOUT);
@@ -176,7 +175,7 @@ public class TestServer {
         WebClientRequestBuilder metricsRequestBuilder = webClientBuilder
                 .build()
                 .get()
-                .accept(MediaType.APPLICATION_JSON)
+                .accept(MediaTypes.APPLICATION_JSON)
                 .path("metrics/vendor");
 
         WebClientResponse response = metricsRequestBuilder
@@ -197,7 +196,7 @@ public class TestServer {
         WebClientResponse slowGreetResponse = webClientBuilder
                 .build()
                 .get()
-                .accept(MediaType.TEXT_PLAIN)
+                .accept(MediaTypes.TEXT_PLAIN)
                 .path("greet/slow")
                 .submit()
                 .await(CLIENT_TIMEOUT);
@@ -230,7 +229,7 @@ public class TestServer {
         WebClientResponse response = webClientBuilder
                 .build()
                 .get()
-                .accept(MediaType.APPLICATION_JSON)
+                .accept(MediaTypes.APPLICATION_JSON)
                 .path(requestPath)
                 .submit()
                 .await();
@@ -242,7 +241,7 @@ public class TestServer {
         response = webClientBuilder
                 .build()
                 .options()
-                .accept(MediaType.APPLICATION_JSON)
+                .accept(MediaTypes.APPLICATION_JSON)
                 .path(requestPath)
                 .submit()
                 .await();

@@ -36,7 +36,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import io.helidon.common.http.Http;
-import io.helidon.common.http.MediaType;
+import io.helidon.common.media.type.MediaType;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.config.DeprecatedConfig;
 import io.helidon.media.common.MessageBodyWriter;
@@ -196,7 +197,7 @@ public final class MetricsSupport extends HelidonRestServiceSupport
     }
 
     private static MediaType findBestAccepted(RequestHeaders headers) {
-        Optional<MediaType> mediaType = headers.bestAccepted(MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON);
+        Optional<MediaType> mediaType = headers.bestAccepted(MediaTypes.TEXT_PLAIN, MediaTypes.APPLICATION_JSON);
         return mediaType.orElse(null);
     }
 
@@ -219,9 +220,9 @@ public final class MetricsSupport extends HelidonRestServiceSupport
         }
 
         MediaType mediaType = findBestAccepted(req.headers());
-        if (mediaType == MediaType.APPLICATION_JSON) {
+        if (mediaType == MediaTypes.APPLICATION_JSON) {
             sendJson(res, toJsonData(registry));
-        } else if (mediaType == MediaType.TEXT_PLAIN) {
+        } else if (mediaType == MediaTypes.TEXT_PLAIN) {
             res.send(toPrometheusData(registry));
         } else {
             res.status(Http.Status.NOT_ACCEPTABLE_406);
@@ -237,7 +238,7 @@ public final class MetricsSupport extends HelidonRestServiceSupport
         }
 
         // Options returns only the metadata, so it's OK to allow caching.
-        if (req.headers().isAccepted(MediaType.APPLICATION_JSON)) {
+        if (req.headers().isAccepted(MediaTypes.APPLICATION_JSON)) {
             sendJson(res, toJsonMeta(registry));
         } else {
             res.status(Http.Status.NOT_ACCEPTABLE_406);
@@ -524,9 +525,9 @@ public final class MetricsSupport extends HelidonRestServiceSupport
         registry.getOptionalMetricEntry(metricName)
                 .ifPresentOrElse(entry -> {
                     MediaType mediaType = findBestAccepted(req.headers());
-                    if (mediaType == MediaType.APPLICATION_JSON) {
+                    if (mediaType == MediaTypes.APPLICATION_JSON) {
                         sendJson(res, jsonDataByName(registry, metricName));
-                    } else if (mediaType == MediaType.TEXT_PLAIN) {
+                    } else if (mediaType == MediaTypes.TEXT_PLAIN) {
                         res.send(prometheusDataByName(registry, metricName));
                     } else {
                         res.status(Http.Status.NOT_ACCEPTABLE_406);
@@ -569,9 +570,9 @@ public final class MetricsSupport extends HelidonRestServiceSupport
     private void getMultiple(ServerRequest req, ServerResponse res, Registry... registries) {
         MediaType mediaType = findBestAccepted(req.headers());
         res.cachingStrategy(ServerResponse.CachingStrategy.NO_CACHING);
-        if (mediaType == MediaType.APPLICATION_JSON) {
+        if (mediaType == MediaTypes.APPLICATION_JSON) {
             sendJson(res, toJsonData(registries));
-        } else if (mediaType == MediaType.TEXT_PLAIN) {
+        } else if (mediaType == MediaTypes.TEXT_PLAIN) {
             res.send(toPrometheusData(registries));
         } else {
             res.status(Http.Status.NOT_ACCEPTABLE_406);
@@ -581,7 +582,7 @@ public final class MetricsSupport extends HelidonRestServiceSupport
 
     private void optionsMultiple(ServerRequest req, ServerResponse res, Registry... registries) {
         // Options returns metadata only, so do not discourage caching.
-        if (req.headers().isAccepted(MediaType.APPLICATION_JSON)) {
+        if (req.headers().isAccepted(MediaTypes.APPLICATION_JSON)) {
             sendJson(res, toJsonMeta(registries));
         } else {
             res.status(Http.Status.NOT_ACCEPTABLE_406);
@@ -595,7 +596,7 @@ public final class MetricsSupport extends HelidonRestServiceSupport
         Optional.ofNullable(registry.metadataWithIDs(metricName))
                 .ifPresentOrElse(entry -> {
                     // Options returns only metadata, so do not discourage caching.
-                    if (req.headers().isAccepted(MediaType.APPLICATION_JSON)) {
+                    if (req.headers().isAccepted(MediaTypes.APPLICATION_JSON)) {
                         JsonObjectBuilder builder = JSON.createObjectBuilder();
                         // The returned list of metric IDs is guaranteed to have at least one element at this point.
                         // Use the first to find a metric which will know how to create the metadata output.

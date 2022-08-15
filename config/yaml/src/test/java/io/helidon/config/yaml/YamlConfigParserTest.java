@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigParser.Content;
@@ -31,7 +32,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 
 /**
- * Tests {@link ConfigParser}.
+ * Tests {@link io.helidon.config.spi.ConfigParser}.
  */
 public class YamlConfigParserTest {
 
@@ -103,7 +104,7 @@ public class YamlConfigParserTest {
     private Content toContent(String yaml) {
         return Content.builder()
                 .data(new ByteArrayInputStream(yaml.getBytes(StandardCharsets.UTF_8)))
-                .mediaType(YamlConfigParser.MEDIA_TYPE_APPLICATION_YAML)
+                .mediaType(MediaTypes.APPLICATION_X_YAML)
                 .build();
     }
 }

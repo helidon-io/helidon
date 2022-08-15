@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,8 @@ import io.helidon.webserver.WebServer;
  */
 public final class Main {
 
+    private static final Http.HeaderName USER_IDENTITY_HEADER = Http.Header.create("user-identity");
+
     private Main() {
     }
 
@@ -66,7 +68,7 @@ public final class Main {
         return Routing.builder()
                 // Filter that translates user identity header into the contextual "user" information
                 .any((req, res) -> {
-                    String user = req.headers().first("user-identity")
+                    String user = req.headers().first(USER_IDENTITY_HEADER)
                             .or(() -> acceptAnonymousUsers ? Optional.of("anonymous") : Optional.empty())
                             .orElseThrow(() -> new HttpException("Anonymous access is forbidden!", Http.Status.FORBIDDEN_403));
 

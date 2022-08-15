@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,6 @@ package io.helidon.webserver.testsupport;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeoutException;
 
@@ -36,7 +32,7 @@ public class TestRequest {
     private final TestClient testClient;
     private final String path;
     private final StringBuilder query = new StringBuilder();
-    private final Map<String, List<String>> headers = new HashMap<>();
+    private final TestRequestHeaders headers = new TestRequestHeaders();
     private volatile Http.Version version = Http.Version.V1_1;
 
     /**
@@ -92,10 +88,10 @@ public class TestRequest {
      * @return Updated instance.
      * @throws NullPointerException If {@code name} or {@code value} parameter is {@code null}.
      */
-    public TestRequest header(String name, String value) {
+    public TestRequest header(Http.HeaderName name, String value) {
         Objects.requireNonNull(name, "Parameter 'name' is null!");
         Objects.requireNonNull(name, "Parameter 'value' is null!");
-        headers.computeIfAbsent(name, k -> new ArrayList<>()).add(value);
+        headers.setIfAbsent(Http.HeaderValue.create(name, value));
         return this;
     }
 
@@ -288,10 +284,10 @@ public class TestRequest {
      * @throws InterruptedException if thread is interrupted.
      * @throws TimeoutException if request timeout is reached.
      */
-    public TestResponse call(Http.RequestMethod method, MediaPublisher mediaPublisher)
+    public TestResponse call(Http.Method method, MediaPublisher mediaPublisher)
             throws InterruptedException, TimeoutException {
-        if (mediaPublisher != null && !headers.containsKey(Http.Header.CONTENT_TYPE) && mediaPublisher.mediaType() != null) {
-            header(Http.Header.CONTENT_TYPE, mediaPublisher.mediaType().toString());
+        if (mediaPublisher != null && !headers.contains(Http.Header.CONTENT_TYPE) && mediaPublisher.mediaType() != null) {
+            header(Http.Header.CONTENT_TYPE, mediaPublisher.mediaType().text());
         }
         return testClient.call(method, version, uri(), headers, mediaPublisher);
     }
@@ -304,7 +300,7 @@ public class TestRequest {
      * @throws InterruptedException if thread is interrupted.
      * @throws TimeoutException if request timeout is reached.
      */
-    public TestResponse call(Http.RequestMethod method) throws InterruptedException, TimeoutException {
+    public TestResponse call(Http.Method method) throws InterruptedException, TimeoutException {
         return testClient.call(method, version, uri(), headers, null);
     }
 

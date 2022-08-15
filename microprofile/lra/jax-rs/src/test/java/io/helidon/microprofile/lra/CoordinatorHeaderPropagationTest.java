@@ -29,24 +29,6 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Stream;
 
-import jakarta.annotation.Priority;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.context.Initialized;
-import jakarta.enterprise.event.Observes;
-import jakarta.enterprise.inject.Produces;
-import jakarta.enterprise.inject.spi.BeanManager;
-import jakarta.inject.Inject;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.HeaderParam;
-import jakarta.ws.rs.PUT;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.client.ClientBuilder;
-import jakarta.ws.rs.client.Entity;
-import jakarta.ws.rs.client.WebTarget;
-import jakarta.ws.rs.core.Context;
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.Response;
-
 import io.helidon.common.context.Contexts;
 import io.helidon.common.reactive.Multi;
 import io.helidon.lra.coordinator.client.CoordinatorClient;
@@ -64,6 +46,23 @@ import io.helidon.microprofile.tests.junit5.HelidonTest;
 import io.helidon.webclient.WebClient;
 import io.helidon.webserver.Service;
 
+import jakarta.annotation.Priority;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.Initialized;
+import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.Produces;
+import jakarta.enterprise.inject.spi.BeanManager;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.HeaderParam;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.client.ClientBuilder;
+import jakarta.ws.rs.client.Entity;
+import jakarta.ws.rs.client.WebTarget;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.lra.annotation.AfterLRA;
 import org.eclipse.microprofile.lra.annotation.Compensate;
 import org.eclipse.microprofile.lra.annotation.Complete;
@@ -166,7 +165,7 @@ class CoordinatorHeaderPropagationTest {
                                     .addHeader(LRA_HTTP_CONTEXT_HEADER, lraId)
                                     .headers(reqHeaders -> {
                                         // relay all incoming headers
-                                        req.headers().toMap().forEach(reqHeaders::add);
+                                        req.headers().forEach(reqHeaders::add);
                                         return reqHeaders;
                                     })
                                     .submit(LRAStatus.Closing.name())
@@ -188,7 +187,7 @@ class CoordinatorHeaderPropagationTest {
                             .addHeader(LRA_HTTP_CONTEXT_HEADER, lraId)
                             .headers(reqHeaders -> {
                                 // relay all incoming headers
-                                req.headers().toMap().forEach(reqHeaders::add);
+                                req.headers().forEach(reqHeaders::add);
                                 return reqHeaders;
                             })
                             .submit()
@@ -205,7 +204,7 @@ class CoordinatorHeaderPropagationTest {
                             .addHeader(LRA_HTTP_CONTEXT_HEADER, lraId)
                             .headers(reqHeaders -> {
                                 // relay all incoming headers
-                                req.headers().toMap().forEach(reqHeaders::add);
+                                req.headers().forEach(reqHeaders::add);
                                 return reqHeaders;
                             })
                             .submit()

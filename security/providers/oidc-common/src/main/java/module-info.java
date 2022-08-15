@@ -26,6 +26,7 @@ module io.helidon.security.providers.oidc.common {
     requires transitive io.helidon.security.util;
     // WebClient is part of API
     requires transitive io.helidon.webclient;
+    requires io.helidon.common.parameters;
 
     requires io.helidon.security.providers.common;
     requires io.helidon.security.jwt;

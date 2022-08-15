@@ -94,7 +94,7 @@ public class SocketHttpClient implements AutoCloseable {
      * @return the exact string returned by webserver (including {@code HTTP/1.1 200 OK} line for instance)
      * @throws Exception in case of an error
      */
-    public static String sendAndReceive(String path, Http.RequestMethod method, String payload, WebServer webServer)
+    public static String sendAndReceive(String path, Http.Method method, String payload, WebServer webServer)
             throws Exception {
         return sendAndReceive(path, method, payload, Collections.emptyList(), webServer);
     }
@@ -112,7 +112,7 @@ public class SocketHttpClient implements AutoCloseable {
      * @throws Exception in case of an error
      */
     public static String sendAndReceive(String path,
-                                        Http.RequestMethod method,
+                                        Http.Method method,
                                         String payload,
                                         Iterable<String> headers,
                                         WebServer webServer) throws Exception {
@@ -212,7 +212,7 @@ public class SocketHttpClient implements AutoCloseable {
      * @param response full HTTP response
      * @return status
      */
-    public static Http.ResponseStatus statusFromResponse(String response) {
+    public static Http.Status statusFromResponse(String response) {
         // response should start with HTTP/1.1 000 reasonPhrase\n
         int eol = response.indexOf('\n');
         assertThat("There must be at least a line end after first line: " + response, eol > -1);
@@ -225,7 +225,7 @@ public class SocketHttpClient implements AutoCloseable {
         int statusCode = Integer.parseInt(matcher.group(1));
         String phrase = matcher.group(2);
 
-        return Http.ResponseStatus.create(statusCode, phrase);
+        return Http.Status.create(statusCode, phrase);
     }
 
     /**
@@ -298,7 +298,7 @@ public class SocketHttpClient implements AutoCloseable {
      * @param method the http method
      * @throws IOException in case of an IO error
      */
-    public void request(Http.RequestMethod method) throws IOException {
+    public void request(Http.Method method) throws IOException {
         request(method, null);
     }
 
@@ -310,7 +310,7 @@ public class SocketHttpClient implements AutoCloseable {
      *                otherwise it's not a valid payload)
      * @throws IOException in case of an IO error
      */
-    public void request(Http.RequestMethod method, String payload) throws IOException {
+    public void request(Http.Method method, String payload) throws IOException {
         request(method, "/", payload);
     }
 
@@ -323,7 +323,7 @@ public class SocketHttpClient implements AutoCloseable {
      *                otherwise it's not a valid payload)
      * @throws IOException in case of an IO error
      */
-    public void request(Http.RequestMethod method, String path, String payload) throws IOException {
+    public void request(Http.Method method, String path, String payload) throws IOException {
         request(method, path, payload, List.of("Content-Type: application/x-www-form-urlencoded"));
     }
 
@@ -337,7 +337,7 @@ public class SocketHttpClient implements AutoCloseable {
      * @param headers the headers (e.g., {@code Content-Type: application/json})
      * @throws IOException in case of an IO error
      */
-    public void request(Http.RequestMethod method, String path, String payload, Iterable<String> headers) throws IOException {
+    public void request(Http.Method method, String path, String payload, Iterable<String> headers) throws IOException {
         request(method.name(), path, "HTTP/1.1", "127.0.0.1", headers, payload);
     }
 

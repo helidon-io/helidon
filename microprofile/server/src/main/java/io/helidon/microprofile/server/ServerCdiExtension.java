@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -266,7 +266,7 @@ public class ServerCdiExtension implements Extension {
                 .or(() -> config.get("server.base-path").asString().asOptional())
                 .ifPresent(basePath -> routingBuilder.any("/", (req, res) -> {
                     res.status(Http.Status.MOVED_PERMANENTLY_301);
-                    res.headers().put(Http.Header.LOCATION, basePath);
+                    res.headers().set(Http.Header.LOCATION, basePath);
                     res.send();
                 }));
         STARTUP_LOGGER.finest("Builders ready");

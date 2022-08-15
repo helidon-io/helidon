@@ -25,7 +25,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 
-import io.helidon.config.ConfigParsers;
+import io.helidon.common.media.type.MediaType;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 
 /**
@@ -47,7 +47,7 @@ import io.helidon.config.spi.ConfigNode.ObjectNode;
  *
  * @see io.helidon.config.Config.Builder#addParser(ConfigParser)
  * @see io.helidon.config.spi.ParsableSource
- * @see ConfigParsers ConfigParsers - access built-in implementations.
+ * @see io.helidon.config.ConfigParsers ConfigParsers - access built-in implementations.
  */
 public interface ConfigParser {
     /**
@@ -58,11 +58,11 @@ public interface ConfigParser {
      * <p>
      * {@link io.helidon.config.spi.ParsableSource} implementations can use {@link io.helidon.common.media.type.MediaTypes}
      * to probe for media type of content to provide it to config system through
-     * {@link io.helidon.config.spi.ConfigParser.Content.Builder#mediaType(String)}.
+     * {@link io.helidon.config.spi.ConfigParser.Content.Builder#mediaType(io.helidon.common.media.type.MediaType)}.
      *
      * @return supported media types by the parser
      */
-    Set<String> supportedMediaTypes();
+    Set<MediaType> supportedMediaTypes();
 
     /**
      * Parses a specified {@link ConfigContent} into a {@link ObjectNode hierarchical configuration representation}.
@@ -117,7 +117,7 @@ public interface ConfigParser {
          *
          * @return content media type if known, {@code empty} otherwise
          */
-        Optional<String> mediaType();
+        Optional<MediaType> mediaType();
 
         /**
          * Data of this config source.
@@ -151,7 +151,7 @@ public interface ConfigParser {
          * @param stamp stamp of the content
          * @return content built from provided information
          */
-        static Content create(InputStream data, String mediaType, Object stamp) {
+        static Content create(InputStream data, MediaType mediaType, Object stamp) {
             return builder().data(data)
                     .mediaType(mediaType)
                     .stamp(stamp)
@@ -163,7 +163,7 @@ public interface ConfigParser {
          */
         class Builder extends ConfigContent.Builder<Builder> implements io.helidon.common.Builder<Builder, Content> {
             private InputStream data;
-            private String mediaType;
+            private MediaType mediaType;
             private Charset charset = StandardCharsets.UTF_8;
 
             private Builder() {
@@ -189,7 +189,7 @@ public interface ConfigParser {
              * @param mediaType media type of the content as understood by the config source
              * @return updated builder instance
              */
-            public Builder mediaType(String mediaType) {
+            public Builder mediaType(MediaType mediaType) {
                 Objects.requireNonNull(mediaType, "Media type must be provided, or this method should not be called");
                 this.mediaType = mediaType;
                 return this;
@@ -202,7 +202,7 @@ public interface ConfigParser {
              * @param mediaType optional of media type
              * @return updated builder instance
              */
-            public Builder mediaType(Optional<String> mediaType) {
+            public Builder mediaType(Optional<MediaType> mediaType) {
                 mediaType.ifPresent(this::mediaType);
                 return this;
             }
@@ -223,7 +223,7 @@ public interface ConfigParser {
                 return data;
             }
 
-            String mediaType() {
+            MediaType mediaType() {
                 return mediaType;
             }
 

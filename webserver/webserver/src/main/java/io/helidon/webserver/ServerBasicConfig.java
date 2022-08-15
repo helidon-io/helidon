@@ -22,9 +22,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
-
-import javax.net.ssl.SSLContext;
 
 import io.helidon.common.context.Context;
 import io.helidon.tracing.Tracer;
@@ -61,26 +58,6 @@ class ServerBasicConfig implements ServerConfiguration {
         HashMap<String, SocketConfiguration> map = new HashMap<>(builder.sockets());
         map.put(WebServer.DEFAULT_SOCKET_NAME, this.socketConfig);
         this.socketConfigs = Collections.unmodifiableMap(map);
-    }
-
-    @Override
-    public SSLContext ssl() {
-        return socketConfig.ssl();
-    }
-
-    @Override
-    public Set<String> enabledSslProtocols() {
-        return socketConfig.enabledSslProtocols();
-    }
-
-    @Override
-    public Set<String> allowedCipherSuite() {
-        return socketConfig.allowedCipherSuite();
-    }
-
-    @Override
-    public ClientAuthentication clientAuth() {
-        return socketConfig.clientAuth();
     }
 
     @Override
@@ -255,26 +232,6 @@ class ServerBasicConfig implements ServerConfiguration {
         @Override
         public Optional<WebServerTls> tls() {
             return Optional.ofNullable(webServerTls);
-        }
-
-        @Override
-        public SSLContext ssl() {
-            return tls().map(WebServerTls::sslContext).orElse(null);
-        }
-
-        @Override
-        public Set<String> enabledSslProtocols() {
-            return tls().map(WebServerTls::enabledTlsProtocols).map(Set::copyOf).orElseGet(Set::of);
-        }
-
-        @Override
-        public Set<String> allowedCipherSuite() {
-            return tls().map(WebServerTls::cipherSuite).orElseGet(Set::of);
-        }
-
-        @Override
-        public ClientAuthentication clientAuth() {
-            return tls().map(WebServerTls::clientAuth).orElse(ClientAuthentication.NONE);
         }
 
         @Override

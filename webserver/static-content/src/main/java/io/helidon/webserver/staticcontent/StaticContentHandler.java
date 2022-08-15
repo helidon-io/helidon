@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,9 @@ import io.helidon.webserver.ResponseHeaders;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
+
+import static io.helidon.common.http.Http.Header.IF_MATCH;
+import static io.helidon.common.http.Http.Header.IF_NONE_MATCH;
 
 /**
  * Base implementation of static content support.
@@ -85,7 +88,7 @@ abstract class StaticContentHandler implements StaticContentSupport {
      * @param request  an HTTP request
      * @param response an HTTP response
      */
-    void handle(Http.RequestMethod method, ServerRequest request, ServerResponse response) {
+    void handle(Http.Method method, ServerRequest request, ServerResponse response) {
         // Check method
         if ((method != Http.Method.GET) && (method != Http.Method.HEAD)) {
             request.next();
@@ -127,7 +130,7 @@ abstract class StaticContentHandler implements StaticContentSupport {
      * @throws java.io.IOException   if resource is not acceptable
      * @throws io.helidon.webserver.HttpException if some known WEB error
      */
-    abstract boolean doHandle(Http.RequestMethod method, String requestedPath, ServerRequest request, ServerResponse response)
+    abstract boolean doHandle(Http.Method method, String requestedPath, ServerRequest request, ServerResponse response)
             throws IOException, URISyntaxException;
 
     /**
@@ -145,18 +148,22 @@ abstract class StaticContentHandler implements StaticContentSupport {
         }
         etag = unquoteETag(etag);
         // Put ETag into the response
-        responseHeaders.put(Http.Header.ETAG, '"' + etag + '"');
+        responseHeaders.set(Http.Header.ETAG, '"' + etag + '"');
+
         // Process If-None-Match header
-        List<String> ifNoneMatches = requestHeaders.values(Http.Header.IF_NONE_MATCH);
-        for (String ifNoneMatch : ifNoneMatches) {
-            ifNoneMatch = unquoteETag(ifNoneMatch);
-            if ("*".equals(ifNoneMatch) || ifNoneMatch.equals(etag)) {
-                throw new HttpException("Accepted by If-None-Match header!", Http.Status.NOT_MODIFIED_304);
+        if (requestHeaders.contains(IF_NONE_MATCH)) {
+            List<String> ifNoneMatches = requestHeaders.values(IF_NONE_MATCH);
+            for (String ifNoneMatch : ifNoneMatches) {
+                ifNoneMatch = unquoteETag(ifNoneMatch);
+                if ("*".equals(ifNoneMatch) || ifNoneMatch.equals(etag)) {
+                    throw new HttpException("Accepted by If-None-Match header!", Http.Status.NOT_MODIFIED_304);
+                }
             }
         }
         // Process If-Match header
-        List<String> ifMatches = requestHeaders.values(Http.Header.IF_MATCH);
-        if (!ifMatches.isEmpty()) {
+        if (requestHeaders.contains(IF_MATCH)) {
+            List<String> ifMatches = requestHeaders.values(Http.Header.IF_MATCH);
+
             boolean ifMatchChecked = false;
             for (String ifMatch : ifMatches) {
                 ifMatch = unquoteETag(ifMatch);
@@ -244,7 +251,7 @@ abstract class StaticContentHandler implements StaticContentSupport {
         }
 
         response.status(Http.Status.MOVED_PERMANENTLY_301);
-        response.headers().put(Http.Header.LOCATION, locationWithQuery);
+        response.headers().set(Http.Header.LOCATION, locationWithQuery);
         response.send();
     }
 

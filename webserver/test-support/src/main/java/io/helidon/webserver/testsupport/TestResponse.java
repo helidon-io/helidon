@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,10 +22,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
+import io.helidon.common.http.Headers;
+import io.helidon.common.http.HeadersWritable;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.MediaType;
-import io.helidon.common.http.Parameters;
-import io.helidon.common.http.ReadOnlyParameters;
+import io.helidon.common.http.HttpMediaType;
 import io.helidon.webserver.WebServer;
 
 /**
@@ -33,8 +33,8 @@ import io.helidon.webserver.WebServer;
  */
 public class TestResponse {
 
-    private final Http.ResponseStatus status;
-    private final Parameters headers;
+    private final Http.Status status;
+    private final HeadersWritable<?> headers;
     // todo Needs much better solution.
     private final TestClient.TestBareResponse bareResponse;
 
@@ -45,11 +45,12 @@ public class TestResponse {
      * @param headers HTTP headers
      * @param bareResponse the test bare response
      */
-    TestResponse(Http.ResponseStatus status,
+    TestResponse(Http.Status status,
                  Map<String, List<String>> headers,
                  TestClient.TestBareResponse bareResponse) {
         this.status = status;
-        this.headers = new ReadOnlyParameters(headers);
+        this.headers = HeadersWritable.create();
+        headers.forEach((key, value) -> this.headers.set(Http.Header.create(key), value));
         this.bareResponse = bareResponse;
     }
 
@@ -58,7 +59,7 @@ public class TestResponse {
      *
      * @return an HTTP status code.
      */
-    public Http.ResponseStatus status() {
+    public Http.Status status() {
         return status;
     }
 
@@ -67,7 +68,7 @@ public class TestResponse {
      *
      * @return response headers.
      */
-    public Parameters headers() {
+    public Headers headers() {
         return headers;
     }
 
@@ -90,8 +91,8 @@ public class TestResponse {
      */
     public CompletableFuture<String> asString() {
         Charset charset = headers.first(Http.Header.CONTENT_TYPE)
-                                 .map(MediaType::parse)
-                .flatMap(MediaType::charset)
+                                 .map(HttpMediaType::create)
+                .flatMap(HttpMediaType::charset)
                                  .map(s -> {
                                      try {
                                          return Charset.forName(s);

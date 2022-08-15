@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import java.util.concurrent.Flow;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
-import io.helidon.common.http.MediaType;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.reactive.Multi;
 
 final class CharSequenceBodyStreamWriter implements MessageBodyStreamWriter<CharSequence> {
@@ -38,7 +38,7 @@ final class CharSequenceBodyStreamWriter implements MessageBodyStreamWriter<Char
     public Flow.Publisher<DataChunk> write(final Flow.Publisher<? extends CharSequence> publisher,
                                            final GenericType<? extends CharSequence> type,
                                            final MessageBodyWriterContext context) {
-        context.contentType(MediaType.TEXT_PLAIN);
+        context.contentType(MediaTypes.TEXT_PLAIN);
         return Multi.create(publisher).map(s -> DataChunk.create(true, context.charset().encode(s.toString())));
     }
 

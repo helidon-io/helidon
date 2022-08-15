@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,17 +15,82 @@
  */
 package io.helidon.webclient;
 
+import java.net.URI;
 import java.util.Map;
 
 import io.helidon.common.context.Context;
-import io.helidon.common.http.HttpRequest;
+import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Single;
+import io.helidon.common.uri.UriPath;
+import io.helidon.common.uri.UriQueryWriteable;
 import io.helidon.webclient.spi.WebClientService;
 
 /**
  * Request to SPI {@link WebClientService} that supports modification of the outgoing request.
  */
-public interface WebClientServiceRequest extends HttpRequest {
+public interface WebClientServiceRequest {
+    /**
+     * Returns an HTTP request method. See also {@link io.helidon.common.http.Http.Method HTTP standard methods} utility class.
+     *
+     * @return an HTTP method
+     * @see io.helidon.common.http.Http.Method
+     */
+    Http.Method method();
+
+    /**
+     * Returns an HTTP version from the request line.
+     * <p>
+     * See {@link Http.Version HTTP Version} enumeration for supported versions.
+     * <p>
+     * If communication starts as a {@code HTTP/1.1} with {@code h2c} upgrade, then it will be automatically
+     * upgraded and this method returns {@code HTTP/2.0}.
+     *
+     * @return an HTTP version
+     */
+    Http.Version version();
+
+    /**
+     * Returns a Request-URI (or alternatively path) as defined in request line.
+     *
+     * @return a request URI
+     */
+    URI uri();
+
+    /**
+     * Returns an encoded query string without leading '?' character.
+     *
+     * @return an encoded query string
+     */
+    String query();
+
+    /**
+     * Returns query parameters.
+     *
+     * @return an parameters representing query parameters
+     */
+    UriQueryWriteable queryParams();
+
+    /**
+     * Returns a path which was accepted by matcher in actual routing. It is path without a context root
+     * of the routing.
+     * <p>
+     * Use {@link io.helidon.common.uri.UriPath#absolute()} method to obtain absolute request URI path representation.
+     * <p>
+     * Returned {@link io.helidon.common.uri.UriPath} also provides access to path template parameters.
+     * An absolute path then provides access to
+     * all (including) context parameters if any. In case of conflict between parameter names, most recent value is returned.
+     *
+     * @return a path
+     */
+    UriPath path();
+
+    /**
+     * Returns a decoded request URI fragment without leading hash '#' character.
+     *
+     * @return a decoded URI fragment
+     */
+    String fragment();
+
     /**
      * Configured request headers.
      *

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package io.helidon.webserver.examples.comments;
 
 import io.helidon.common.http.Http;
-import io.helidon.common.http.MediaType;
+import io.helidon.common.http.HttpMediaType;
 import io.helidon.webserver.testsupport.MediaPublisher;
 import io.helidon.webserver.testsupport.TestClient;
 import io.helidon.webserver.testsupport.TestResponse;
@@ -35,7 +35,7 @@ public class MainTest {
     public void argot() throws Exception {
         TestResponse response = TestClient.create(Main.createRouting(true))
                 .path("/comments/one")
-                .post(MediaPublisher.create(MediaType.TEXT_PLAIN, "Spring framework is the BEST!"));
+                .post(MediaPublisher.create(HttpMediaType.TEXT_PLAIN, "Spring framework is the BEST!"));
         assertEquals(Http.Status.NOT_ACCEPTABLE_406, response.status());
     }
 

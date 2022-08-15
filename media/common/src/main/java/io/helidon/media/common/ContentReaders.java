@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,16 +18,13 @@ package io.helidon.media.common;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URLDecoder;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Flow.Publisher;
 
 import io.helidon.common.http.DataChunk;
-import io.helidon.common.http.Reader;
-import io.helidon.common.http.Utils;
 import io.helidon.common.mapper.Mapper;
 import io.helidon.common.reactive.Collector;
 import io.helidon.common.reactive.Multi;
@@ -81,62 +78,6 @@ public final class ContentReaders {
     }
 
     /**
-     * Get a reader that converts a {@link DataChunk} publisher to a
-     * {@link String}.
-     *
-     * @param charset the charset to use with the returned string content reader
-     * @return a string content reader
-     * @deprecated since 2.0.0, use {@link #readString(Publisher, Charset)}}
-     *  or {@link DefaultMediaSupport#stringReader()} instead
-     */
-    @Deprecated(since = "2.0.0")
-    public static Reader<String> stringReader(Charset charset) {
-        return (chunks, type) -> readString(chunks, charset).toStage();
-    }
-
-    /**
-     * Gets a reader that converts a {@link DataChunk} publisher to a {@link String} processed
-     * through URL decoding.
-     *
-     * @param charset the charset to use with the returned string content reader
-     * @return the URL-decoded string content reader
-     * @deprecated since 2.0.0, use {@link #readURLEncodedString(Publisher, Charset)} instead
-     */
-    @Deprecated(since = "2.0.0")
-    public static Reader<String> urlEncodedStringReader(Charset charset) {
-        return (chunks, type) -> readURLEncodedString(chunks, charset).toStage();
-    }
-
-    /**
-     * Get a reader that converts a {@link DataChunk} publisher to an array of
-     * bytes.
-     *
-     * @return reader that transforms a publisher of byte buffers to a
-     * completion stage that might end exceptionally with
-     * @deprecated since 2.0.0, use {@link #readBytes(Publisher)} instead
-     */
-    @Deprecated(since = "2.0.0")
-    public static Reader<byte[]> byteArrayReader() {
-        return (publisher, clazz) -> readBytes(publisher).toStage();
-    }
-
-    /**
-     * Get a reader that converts a {@link DataChunk} publisher to a blocking
-     * Java {@link InputStream}. The resulting
-     * {@link java.util.concurrent.CompletionStage} is already completed;
-     * however, the referenced {@link InputStream} in it may not already have
-     * all the data available; in such case, the read method (e.g.,
-     * {@link InputStream#read()}) block.
-     *
-     * @return a input stream content reader
-     * @deprecated since 2.0.0, use {@link DefaultMediaSupport#inputStreamReader()}
-     */
-    @Deprecated(since = "2.0.0")
-    public static Reader<InputStream> inputStreamReader() {
-        return (publisher, clazz) -> CompletableFuture.completedFuture(new DataChunkInputStream(publisher));
-    }
-
-    /**
      * Implementation of {@link Mapper} that converts a {@code byte[]} into
      * a {@link String} using a given {@link Charset}.
      */
@@ -186,7 +127,7 @@ public final class ContentReaders {
         public void collect(DataChunk chunk) {
             try {
                 for (ByteBuffer byteBuffer : chunk.data()) {
-                    Utils.write(byteBuffer, baos);
+                    write(byteBuffer, baos);
                 }
             } catch (IOException e) {
                 throw new IllegalArgumentException("Cannot convert byte buffer to a byte array!", e);
@@ -198,6 +139,16 @@ public final class ContentReaders {
         @Override
         public byte[] value() {
             return baos.toByteArray();
+        }
+    }
+
+    private static void write(ByteBuffer byteBuffer, OutputStream out) throws IOException {
+        if (byteBuffer.hasArray()) {
+            out.write(byteBuffer.array(), byteBuffer.arrayOffset() + byteBuffer.position(), byteBuffer.remaining());
+        } else {
+            byte[] buff = new byte[byteBuffer.remaining()];
+            byteBuffer.get(buff);
+            out.write(buff);
         }
     }
 }

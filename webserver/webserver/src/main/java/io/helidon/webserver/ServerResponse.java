@@ -17,17 +17,14 @@
 package io.helidon.webserver;
 
 import java.nio.ByteBuffer;
+import java.util.List;
 import java.util.concurrent.Flow.Publisher;
 import java.util.concurrent.Flow.Subscriber;
 import java.util.concurrent.Flow.Subscription;
 import java.util.function.Function;
-import java.util.function.Predicate;
 
-import io.helidon.common.http.AlreadyCompletedException;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.MediaType;
-import io.helidon.common.http.Parameters;
 import io.helidon.common.reactive.Single;
 import io.helidon.media.common.MessageBodyFilter;
 import io.helidon.media.common.MessageBodyFilters;
@@ -92,7 +89,7 @@ public interface ServerResponse extends MessageBodyFilters, MessageBodyWriters {
      *
      * @return an HTTP status code
      */
-    Http.ResponseStatus status();
+    Http.Status status();
 
     /**
      * Sets new HTTP status code. Can be done before headers are completed - see {@link ResponseHeaders} documentation.
@@ -102,7 +99,7 @@ public interface ServerResponse extends MessageBodyFilters, MessageBodyWriters {
      * @return this instance of {@link ServerResponse}
      */
     default ServerResponse status(int statusCode) throws AlreadyCompletedException {
-        return status(Http.ResponseStatus.create(statusCode));
+        return status(Http.Status.create(statusCode));
     }
 
     /**
@@ -113,7 +110,7 @@ public interface ServerResponse extends MessageBodyFilters, MessageBodyWriters {
      * @throws AlreadyCompletedException if headers were completed (sent to the client)
      * @throws NullPointerException      if status parameter is {@code null}
      */
-    ServerResponse status(Http.ResponseStatus status) throws AlreadyCompletedException, NullPointerException;
+    ServerResponse status(Http.Status status) throws AlreadyCompletedException, NullPointerException;
 
     /**
      * Returns response headers. It can be modified before headers are sent to the client.
@@ -130,11 +127,28 @@ public interface ServerResponse extends MessageBodyFilters, MessageBodyWriters {
      * @return this instance of {@link ServerResponse}
      * @throws NullPointerException if the specified name is null.
      * @see #headers()
-     * @see Parameters#add(String, String...)
      * @see Http.Header header names constants
+     * @deprecated use {@link #addHeader(io.helidon.common.http.Http.HeaderName, String...)}
      */
+    @Deprecated
     default ServerResponse addHeader(String name, String... values) {
-        headers().add(name, values);
+        return addHeader(Http.Header.create(name), values);
+    }
+
+    /**
+     * Adds header values for a specified name.
+     *
+     * @param name   header name
+     * @param values header values
+     * @return this instance of {@link ServerResponse}
+     * @throws NullPointerException if the specified name is null.
+     * @see #headers()
+     * @see Http.Header header names constants
+     * @deprecated use {@link #addHeader(io.helidon.common.http.Http.HeaderName, String...)}
+     */
+    @Deprecated
+    default ServerResponse addHeader(String name, List<String> values) {
+        headers().add(Http.HeaderValue.create(Http.Header.create(name), values));
         return this;
     }
 
@@ -146,25 +160,24 @@ public interface ServerResponse extends MessageBodyFilters, MessageBodyWriters {
      * @return this instance of {@link ServerResponse}
      * @throws NullPointerException if the specified name is null.
      * @see #headers()
-     * @see Parameters#add(String, Iterable)
      * @see Http.Header header names constants
      */
-    default ServerResponse addHeader(String name, Iterable<String> values) {
-        headers().add(name, values);
+    default ServerResponse addHeader(Http.HeaderName name, String... values) {
+        headers().add(Http.HeaderValue.create(name, values));
         return this;
     }
 
     /**
-     * Copies all of the mappings from the specified {@code parameters} to this response headers instance.
+     * Adds header values for a specified name.
      *
-     * @param parameters to copy.
+     * @param value header value
      * @return this instance of {@link ServerResponse}
-     * @throws NullPointerException if the specified {@code parameters} are null.
+     * @throws NullPointerException if the specified name is null.
      * @see #headers()
-     * @see Parameters#addAll(Parameters)
+     * @see Http.Header header names constants
      */
-    default ServerResponse addHeaders(Parameters parameters){
-        headers().addAll(parameters);
+    default ServerResponse addHeader(Http.HeaderValue value) {
+        headers().add(value);
         return this;
     }
 
@@ -201,7 +214,8 @@ public interface ServerResponse extends MessageBodyFilters, MessageBodyWriters {
      * Send a message and close the response.
      *
      * <h4>Marshalling</h4>
-     * Data are marshaled using default or {@link #registerWriter(Class, Function) registered} {@code writer} to the format
+     * Data are marshaled using default or {@link #registerWriter(io.helidon.media.common.MessageBodyWriter) registered}
+     * {@code writer} to the format
      * of {@link ByteBuffer} {@link Publisher Publisher}. The last registered compatible writer is used.
      * <p>
      * Default writers supports:
@@ -285,102 +299,6 @@ public interface ServerResponse extends MessageBodyFilters, MessageBodyWriters {
      * @return a completion stage of the response - completed when response is transferred
      */
     Single<ServerResponse> send();
-
-    /**
-     * Registers a content writer for a given type.
-     * <p>
-     * Registered writer is used to marshal response content of given type to the {@link Publisher Publisher}
-     * of {@link DataChunk response chunks}.
-     *
-     * @param type     a type of the content. If {@code null} then accepts any type.
-     * @param function a writer function
-     * @param <T>      a type of the content
-     * @return this instance of {@link ServerResponse}
-     * @throws NullPointerException if {@code function} parameter is {@code null}
-     * @deprecated Since 2.0.0, use {@link #registerWriter(io.helidon.media.common.MessageBodyWriter)} instead
-     */
-    @Deprecated(since = "2.0.0")
-    <T> ServerResponse registerWriter(Class<T> type, Function<T, Publisher<DataChunk>> function);
-
-    /**
-     * Registers a content writer for a given type and media type.
-     * <p>
-     * Registered writer is used to marshal response content of given type to the {@link Publisher Publisher}
-     * of {@link DataChunk response chunks}. It is used only if {@code Content-Type} header is compatible with a given
-     * content type or if it is {@code null}. If {@code Content-Type} is {@code null} and it is still possible to modify
-     * headers (headers were not send yet), the provided content type will be set.
-     *
-     * @param type        a type of the content. If {@code null} then accepts any type.
-     * @param contentType a {@code Content-Type} of the entity
-     * @param function    a writer function
-     * @param <T>         a type of the content
-     * @return this instance of {@link ServerResponse}
-     * @throws NullPointerException if {@code function} parameter is {@code null}
-     * @deprecated since 2.0.0, use {@link #registerWriter(io.helidon.media.common.MessageBodyWriter)} instead
-     */
-    @Deprecated(since = "2.0.0")
-    <T> ServerResponse registerWriter(Class<T> type,
-                                      MediaType contentType,
-                                      Function<? extends T, Publisher<DataChunk>> function);
-
-    /**
-     * Registers a content writer for all accepted contents.
-     * <p>
-     * Registered writer is used to marshal response content of given type to the {@link Publisher Publisher}
-     * of {@link DataChunk response chunks}.
-     *
-     * @param accept   a predicate to test if content is marshallable by the writer. If {@code null} then accepts any type.
-     * @param function a writer function
-     * @param <T>      a type of the content
-     * @return this instance of {@link ServerResponse}
-     * @throws NullPointerException if {@code function} parameter is {@code null}
-     * @deprecated since 2.0.0, use {@link #registerWriter(io.helidon.media.common.MessageBodyWriter)} instead
-     */
-    @Deprecated
-    <T> ServerResponse registerWriter(Predicate<?> accept, Function<T, Publisher<DataChunk>> function);
-
-    /**
-     * Registers a content writer for all accepted contents.
-     * <p>
-     * Registered writer is used to marshal response content of given type to the {@link Publisher Publisher}
-     * of {@link DataChunk response chunks}. It is used only if {@code Content-Type} header is compatible with a given
-     * content type or if it is {@code null}. If {@code Content-Type} is {@code null} and it is still possible to modify
-     * headers (headers were not send yet), the provided content type will be set.
-     *
-     * @param accept      a predicate to test if content is marshallable by the writer. If {@code null} then accepts any type.
-     * @param contentType a {@code Content-Type} of the entity
-     * @param function    a writer function
-     * @param <T>         a type of the content
-     * @return this instance of {@link ServerResponse}
-     * @throws NullPointerException if {@code function} parameter is {@code null}
-     * @deprecated since 2.0.0, use {@link #registerWriter(io.helidon.media.common.MessageBodyWriter)} instead
-     */
-    @Deprecated
-    <T> ServerResponse registerWriter(Predicate<?> accept,
-                                      MediaType contentType,
-                                      Function<T, Publisher<DataChunk>> function);
-
-    /**
-     * Registers a provider of the new response content publisher - typically a filter.
-     * <p>
-     * All response content is always represented by a single {@link Publisher Publisher}
-     * of {@link DataChunk response chunks}. This method can be used to filter or completely replace original publisher by
-     * a new one with different contract. For example data coding, logging, filtering, caching, etc.
-     * <p>
-     * New publisher is created at the moment of content write by any {@link #send(Object) send(...)} method including the empty
-     * one.
-     * <p>
-     * All registered filters are used as a chain from original content {@code Publisher}, first registered to the last
-     * registered.
-     *
-     * @param function a function to map previously registered or original {@code Publisher} to the new one. If returns
-     *                 {@code null} then the result will be ignored.
-     * @return this instance of {@link ServerResponse}
-     * @throws NullPointerException if parameter {@code function} is {@code null}
-     * @deprecated since 2.0.0, use {@link #registerFilter(io.helidon.media.common.MessageBodyFilter)} instead
-     */
-    @Deprecated
-    ServerResponse registerFilter(Function<Publisher<DataChunk>, Publisher<DataChunk>> function);
 
     @Override
     ServerResponse registerFilter(MessageBodyFilter filter);

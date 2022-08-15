@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
-import io.helidon.common.http.MediaType;
+import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.media.type.MediaType;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
 import io.helidon.media.common.MessageBodyStreamWriter;
@@ -33,10 +35,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Message body stream writer supporting object binding with Jackson.
- * This writer is for {@link MediaType#APPLICATION_X_NDJSON} media type.
+ * This writer is for {@link io.helidon.common.media.type.MediaTypes#APPLICATION_X_NDJSON} media type.
  */
 class JacksonNdBodyStreamWriter implements MessageBodyStreamWriter<Object> {
-
+    private static final HttpMediaType X_ND_JSON = HttpMediaType.create(MediaTypes.APPLICATION_X_NDJSON);
     private static final byte[] NL = "\n".getBytes(StandardCharsets.UTF_8);
 
     private final ObjectMapper objectMapper;
@@ -56,14 +58,14 @@ class JacksonNdBodyStreamWriter implements MessageBodyStreamWriter<Object> {
         }
         return context.contentType()
                 .or(() -> findMediaType(context))
-                .filter(mediaType -> mediaType.equals(MediaType.APPLICATION_X_NDJSON))
+                .filter(mediaType -> mediaType.test(MediaTypes.APPLICATION_X_NDJSON))
                 .map(it -> PredicateResult.COMPATIBLE)
                 .orElse(PredicateResult.NOT_SUPPORTED);
     }
 
     @Override
     public Multi<DataChunk> write(Flow.Publisher<?> publisher, GenericType<?> type, MessageBodyWriterContext context) {
-        MediaType contentType = MediaType.APPLICATION_X_NDJSON;
+        MediaType contentType = MediaTypes.APPLICATION_X_NDJSON;
         context.contentType(contentType);
         JacksonBodyWriter.ObjectToChunks objectToChunks = new JacksonBodyWriter.ObjectToChunks(objectMapper, context.charset());
         AtomicBoolean first = new AtomicBoolean(true);
@@ -79,9 +81,9 @@ class JacksonNdBodyStreamWriter implements MessageBodyStreamWriter<Object> {
                 });
     }
 
-    private Optional<MediaType> findMediaType(MessageBodyWriterContext context) {
+    private Optional<HttpMediaType> findMediaType(MessageBodyWriterContext context) {
         try {
-            return Optional.of(context.findAccepted(MediaType.APPLICATION_X_NDJSON));
+            return Optional.of(context.findAccepted(X_ND_JSON));
         } catch (IllegalStateException ignore) {
             //Not supported. Ignore exception.
             return Optional.empty();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,13 +23,16 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
 
+import io.helidon.common.media.type.MediaType;
+import io.helidon.common.media.type.MediaTypes;
+import io.helidon.common.testing.junit5.TemporaryFolderExt;
 import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigSource;
-import io.helidon.config.test.infra.TemporaryFolderExt;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
+import static io.helidon.common.testing.junit5.OptionalMatcher.optionalValue;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -42,7 +45,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 public class FileConfigSourceTest {
 
-    private static final String TEST_MEDIA_TYPE = "my/media/type";
+    private static final MediaType TEST_MEDIA_TYPE = MediaTypes.create("my/media/type");
     private static final String RELATIVE_PATH_TO_RESOURCE = "/src/test/resources/";
 
     @RegisterExtension
@@ -94,10 +97,10 @@ public class FileConfigSourceTest {
     public void testLoadExists() throws IOException {
         Path path = Paths.get(getDir() + "io/helidon/config/application.conf");
         FileConfigSource configSource = ConfigSources.file(path)
-                .mediaType("application/hocon")
+                .mediaType(MediaTypes.APPLICATION_HOCON)
                 .build();
 
-        assertThat(configSource.mediaType(), is(Optional.of("application/hocon")));
+        assertThat(configSource.mediaType(), optionalValue(is(MediaTypes.APPLICATION_HOCON)));
         assertThat(configSource.target(), is(path));
         assertThat(configSource.targetType(), is(typeCompatibleWith(Path.class)));
         assertThat(configSource.exists(), is(true));
@@ -132,7 +135,7 @@ public class FileConfigSourceTest {
     @Test
     public void testBuilderWithMediaType() {
         ConfigSource configSource = ConfigSources.file("application.conf")
-                .mediaType("application/hocon")
+                .mediaType(MediaTypes.APPLICATION_HOCON)
                 .build();
 
         assertThat(configSource, notNullValue());

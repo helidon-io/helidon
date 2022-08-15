@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ class FileSystemContentHandler extends FileBasedContentHandler {
     }
 
     @Override
-    boolean doHandle(Http.RequestMethod method, String requestedPath, ServerRequest request, ServerResponse response)
+    boolean doHandle(Http.Method method, String requestedPath, ServerRequest request, ServerResponse response)
             throws IOException {
         Path resolved;
         if (requestedPath.isEmpty()) {
@@ -56,7 +56,7 @@ class FileSystemContentHandler extends FileBasedContentHandler {
         return doHandle(method, resolved, request, response);
     }
 
-    boolean doHandle(Http.RequestMethod method, Path path, ServerRequest request, ServerResponse response) throws IOException {
+    boolean doHandle(Http.Method method, Path path, ServerRequest request, ServerResponse response) throws IOException {
         // Check existence
         if (!Files.exists(path)) {
             return false;

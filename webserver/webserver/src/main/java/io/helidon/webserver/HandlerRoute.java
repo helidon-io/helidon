@@ -38,7 +38,7 @@ class HandlerRoute implements HttpRoute {
     private final PathMatcher pathMatcher;
     private final Handler handler;
     private final List<Service> serviceContext;
-    private final HttpMethodPredicate methodPredicate;
+    private final Http.MethodPredicate methodPredicate;
 
     private final Map<String, String> diagnosticEvent;
 
@@ -50,22 +50,22 @@ class HandlerRoute implements HttpRoute {
      * @param handler        an effective handler for the matcher
      * @param methods        accepted methods. If empty then all methods are accepted
      */
-    HandlerRoute(List<Service> serviceContext, PathMatcher pathMatcher, Handler handler, Iterable<Http.RequestMethod> methods) {
+    HandlerRoute(List<Service> serviceContext, PathMatcher pathMatcher, Handler handler, Iterable<Http.Method> methods) {
         if (serviceContext == null || serviceContext.isEmpty()) {
             this.serviceContext = Collections.emptyList();
         } else {
             this.serviceContext = new ArrayList<>(serviceContext);
         }
         if (methods == null) {
-            this.methodPredicate = new HttpMethodPredicate(null);
+            this.methodPredicate = Http.Method.predicate();
         } else if (methods instanceof Collection) {
-            this.methodPredicate = new HttpMethodPredicate((Collection<Http.RequestMethod>) methods);
+            this.methodPredicate = Http.Method.predicate((Collection<Http.Method>) methods);
         } else {
-            Collection<Http.RequestMethod> mtds = new ArrayList<>();
-            for (Http.RequestMethod method : methods) {
+            Collection<Http.Method> mtds = new ArrayList<>();
+            for (Http.Method method : methods) {
                 mtds.add(method);
             }
-            this.methodPredicate = new HttpMethodPredicate(mtds);
+            this.methodPredicate = Http.Method.predicate(mtds);
         }
         this.pathMatcher = pathMatcher == null ? EMPTY_PATH_MATCHER : pathMatcher;
         this.handler = handler;
@@ -90,7 +90,7 @@ class HandlerRoute implements HttpRoute {
      * @param handler an effective handler for the matcher
      * @param methods accepted methods. If empty then all methods are accepted
      */
-    HandlerRoute(List<Service> serviceContext, PathMatcher pathMatcher, Handler handler, Http.RequestMethod... methods) {
+    HandlerRoute(List<Service> serviceContext, PathMatcher pathMatcher, Handler handler, Http.Method... methods) {
         this(serviceContext, pathMatcher, handler, Arrays.asList(methods));
     }
 
@@ -101,7 +101,7 @@ class HandlerRoute implements HttpRoute {
      * @param handler an effective handler for the matcher.
      * @param methods accepted methods. If empty then all methods are accepted.
      */
-    HandlerRoute(List<Service> serviceContext, Handler handler, Http.RequestMethod... methods) {
+    HandlerRoute(List<Service> serviceContext, Handler handler, Http.Method... methods) {
         this(serviceContext, EMPTY_PATH_MATCHER, handler, methods);
     }
 
@@ -112,17 +112,17 @@ class HandlerRoute implements HttpRoute {
      * @param handler an effective handler for the matcher.
      * @param methods accepted methods. If empty then all methods are accepted.
      */
-    HandlerRoute(List<Service> serviceContext, Handler handler, Iterable<Http.RequestMethod> methods) {
+    HandlerRoute(List<Service> serviceContext, Handler handler, Iterable<Http.Method> methods) {
         this(serviceContext, EMPTY_PATH_MATCHER, handler, methods);
     }
 
     @Override
-    public Set<Http.RequestMethod> acceptedMethods() {
+    public Set<Http.Method> acceptedMethods() {
         return methodPredicate.acceptedMethods();
     }
 
     @Override
-    public boolean accepts(Http.RequestMethod method) {
+    public boolean accepts(Http.Method method) {
         return methodPredicate.test(method);
     }
 
@@ -135,7 +135,7 @@ class HandlerRoute implements HttpRoute {
         return handler;
     }
 
-    public Map<String, String> diagnosticEvent() {
+    Map<String, String> diagnosticEvent() {
         return diagnosticEvent;
     }
 
@@ -146,7 +146,7 @@ class HandlerRoute implements HttpRoute {
      * @return a {@link PathMatcher.Result} of the test.
      * @throws NullPointerException in case that {@code path} parameter is {@code null}.
      */
-    public PathMatcher.Result match(CharSequence path) {
+    PathMatcher.Result match(CharSequence path) {
         return pathMatcher.match(extractPathParams(path.toString()));
     }
 

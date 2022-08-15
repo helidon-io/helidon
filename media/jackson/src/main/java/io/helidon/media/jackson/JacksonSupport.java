@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -139,7 +139,7 @@ public final class JacksonSupport implements MediaSupport {
 
     /**
      * Return a default Jackson entity event stream writer.
-     * This writer is for {@link io.helidon.common.http.MediaType#TEXT_EVENT_STREAM} content type.
+     * This writer is for {@link io.helidon.common.media.type.MediaTypes#TEXT_EVENT_STREAM} content type.
      *
      * @return new Jackson body stream writer instance
      */
@@ -149,7 +149,7 @@ public final class JacksonSupport implements MediaSupport {
 
     /**
      * Create a new Jackson entity stream writer based on {@link ObjectMapper} instance.
-     * This writer is for {@link io.helidon.common.http.MediaType#TEXT_EVENT_STREAM} content type.
+     * This writer is for {@link io.helidon.common.media.type.MediaTypes#TEXT_EVENT_STREAM} content type.
      *
      * @param objectMapper object mapper instance
      * @return new Jackson body stream writer instance
@@ -161,7 +161,7 @@ public final class JacksonSupport implements MediaSupport {
 
     /**
      * Return a default Jackson entity event stream writer.
-     * This writer is for {@link io.helidon.common.http.MediaType#APPLICATION_X_NDJSON} content type.
+     * This writer is for {@link io.helidon.common.media.type.MediaTypes#APPLICATION_X_NDJSON} content type.
      *
      * @return new Jackson body stream writer instance
      */
@@ -171,7 +171,7 @@ public final class JacksonSupport implements MediaSupport {
 
     /**
      * Create a new Jackson entity stream writer based on {@link ObjectMapper} instance.
-     * This writer is for {@link io.helidon.common.http.MediaType#APPLICATION_X_NDJSON} content type.
+     * This writer is for {@link io.helidon.common.media.type.MediaTypes#APPLICATION_X_NDJSON} content type.
      *
      * @param objectMapper object mapper instance
      * @return new Jackson body stream writer instance
@@ -209,7 +209,7 @@ public final class JacksonSupport implements MediaSupport {
     }
 
     /**
-     * Return Jackson stream writer instance for {@link io.helidon.common.http.MediaType#TEXT_EVENT_STREAM} content type.
+     * Return Jackson stream writer instance for {@link io.helidon.common.media.type.MediaTypes#TEXT_EVENT_STREAM} content type.
      *
      * @return Jackson event stream writer instance
      */
@@ -218,7 +218,8 @@ public final class JacksonSupport implements MediaSupport {
     }
 
     /**
-     * Return Jackson stream writer instance for {@link io.helidon.common.http.MediaType#APPLICATION_X_NDJSON} content type.
+     * Return Jackson stream writer instance for {@link io.helidon.common.media.type.MediaTypes#APPLICATION_X_NDJSON} content
+     * type.
      *
      * @return Jackson event stream writer instance
      */

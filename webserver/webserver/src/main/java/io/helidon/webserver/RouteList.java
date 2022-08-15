@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ class RouteList extends ArrayList<Route> implements Route {
     private static final long serialVersionUID = 1L;
     // must declare transient, as ArrayList is Serializable (and we are not)
     private final transient PathMatcher pathContext;
-    private final transient HttpMethodPredicate methodPredicate;
+    private final transient Http.MethodPredicate methodPredicate;
 
     /**
      * Creates new instance.
@@ -46,10 +46,10 @@ class RouteList extends ArrayList<Route> implements Route {
         super(records);
 
         boolean acceptSomeMethods = false;
-        Set<Http.RequestMethod> acceptedMethods = new HashSet<>();
+        Set<Http.Method> acceptedMethods = new HashSet<>();
 
         for (Route record : records) {
-            Set<Http.RequestMethod> mtds = record.acceptedMethods();
+            Set<Http.Method> mtds = record.acceptedMethods();
             if (mtds != null) {
                 acceptSomeMethods = true;
                 if (mtds.isEmpty()) {
@@ -61,7 +61,7 @@ class RouteList extends ArrayList<Route> implements Route {
             }
         }
         if (acceptSomeMethods) {
-            this.methodPredicate = new HttpMethodPredicate(acceptedMethods);
+            this.methodPredicate = Http.Method.predicate(acceptedMethods);
         } else {
             this.methodPredicate = null;
         }
@@ -82,12 +82,12 @@ class RouteList extends ArrayList<Route> implements Route {
     }
 
     @Override
-    public Set<Http.RequestMethod> acceptedMethods() {
+    public Set<Http.Method> acceptedMethods() {
         return methodPredicate == null ? null : methodPredicate.acceptedMethods();
     }
 
     @Override
-    public boolean accepts(Http.RequestMethod method) {
+    public boolean accepts(Http.Method method) {
         return methodPredicate != null && methodPredicate.test(method);
     }
 

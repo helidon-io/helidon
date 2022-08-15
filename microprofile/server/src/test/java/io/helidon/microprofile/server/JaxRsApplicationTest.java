@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import jakarta.ws.rs.ApplicationPath;
 import jakarta.ws.rs.core.Application;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.config.testing.OptionalMatcher.value;
+import static io.helidon.common.testing.junit5.OptionalMatcher.optionalValue;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -36,14 +36,14 @@ public class JaxRsApplicationTest {
     @Test
     public void testContextRootNormalization() {
         JaxRsApplication app1 = JaxRsApplication.builder().contextRoot("/").build();
-        assertThat(app1.contextRoot(), value(is("/")));
+        assertThat(app1.contextRoot(), optionalValue(is("/")));
         JaxRsApplication app2 = JaxRsApplication.builder().contextRoot("/foo").build();
-        assertThat(app2.contextRoot(), value(is("/foo")));
+        assertThat(app2.contextRoot(), optionalValue(is("/foo")));
         JaxRsApplication app3 = JaxRsApplication.builder().contextRoot("/foo/").build();
-        assertThat(app3.contextRoot(), value(is("/foo")));
+        assertThat(app3.contextRoot(), optionalValue(is("/foo")));
         JaxRsApplication app4 = JaxRsApplication.builder().contextRoot("/foo/bar/").build();
-        assertThat(app4.contextRoot(), value(is("/foo/bar")));
+        assertThat(app4.contextRoot(), optionalValue(is("/foo/bar")));
         JaxRsApplication app5 = JaxRsApplication.builder().application(MyApplication.class).build();
-        assertThat(app5.contextRoot(), value(is("/foo/bar")));
+        assertThat(app5.contextRoot(), optionalValue(is("/foo/bar")));
     }
 }

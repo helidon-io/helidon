@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,8 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.util.Optional;
 
+import io.helidon.common.media.type.MediaType;
+
 /**
  * Detect media type.
  * Minimal implementation checks result based on file suffix.
@@ -36,7 +38,7 @@ public interface MediaTypeDetector {
      * @param url to find media type from
      * @return media type if detected
      */
-    default Optional<String> detectType(URL url) {
+    default Optional<MediaType> detectType(URL url) {
         return detectType(url.getPath());
     }
 
@@ -47,7 +49,7 @@ public interface MediaTypeDetector {
      * @param uri to find media type from
      * @return media type if detected
      */
-    default Optional<String> detectType(URI uri) {
+    default Optional<MediaType> detectType(URI uri) {
         return detectType(uri.getPath());
     }
 
@@ -59,7 +61,7 @@ public interface MediaTypeDetector {
      * @param file to find media type from
      * @return media type if detected
      */
-    default Optional<String> detectType(Path file) {
+    default Optional<MediaType> detectType(Path file) {
         Path fileName = file.getFileName();
         if (null == fileName) {
             return Optional.empty();
@@ -76,7 +78,7 @@ public interface MediaTypeDetector {
      * @param fileString path, or name of the file to analyze
      * @return media type if detected
      */
-    default Optional<String> detectType(String fileString) {
+    default Optional<MediaType> detectType(String fileString) {
         // file string - we are interested in last . index
         int index = fileString.lastIndexOf('.');
 
@@ -100,5 +102,5 @@ public interface MediaTypeDetector {
      * @param fileSuffix suffix (extension) of a file, without the leading dot
      * @return media type if detected
      */
-    Optional<String> detectExtensionType(String fileSuffix);
+    Optional<MediaType> detectExtensionType(String fileSuffix);
 }

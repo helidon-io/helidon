@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,8 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import io.helidon.common.http.MediaType;
+import io.helidon.common.http.Http;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.media.multipart.FileFormParams;
 import io.helidon.media.multipart.MultiPartSupport;
@@ -77,10 +78,10 @@ public class FileServiceTest {
     @Test
     @Order(1)
     public void testUpload() throws IOException {
-        Path file = Files.write( Files.createTempFile(null, null), "bar\n".getBytes(StandardCharsets.UTF_8));
+        Path file = Files.writeString(Files.createTempFile(null, null), "bar\n");
         WebClientResponse response = webClient
                 .post()
-                .contentType(MediaType.MULTIPART_FORM_DATA)
+                .contentType(MediaTypes.MULTIPART_FORM_DATA)
                 .submit(FileFormParams.builder()
                                       .addFile("file[]", "foo.txt", file)
                                       .build())
@@ -91,12 +92,12 @@ public class FileServiceTest {
     @Test
     @Order(2)
     public void testStreamUpload() throws IOException {
-        Path file = Files.write( Files.createTempFile(null, null), "stream bar\n".getBytes(StandardCharsets.UTF_8));
-        Path file2 = Files.write( Files.createTempFile(null, null), "stream foo\n".getBytes(StandardCharsets.UTF_8));
+        Path file = Files.writeString(Files.createTempFile(null, null), "stream bar\n");
+        Path file2 = Files.writeString(Files.createTempFile(null, null), "stream foo\n");
         WebClientResponse response = webClient
                 .post()
                 .queryParam("stream", "true")
-                .contentType(MediaType.MULTIPART_FORM_DATA)
+                .contentType(MediaTypes.MULTIPART_FORM_DATA)
                 .submit(FileFormParams.builder()
                                       .addFile("file[]", "streamed-foo.txt", file)
                                       .addFile("otherPart", "streamed-foo2.txt", file2)
@@ -110,7 +111,7 @@ public class FileServiceTest {
     public void testList() {
         WebClientResponse response = webClient
                 .get()
-                .contentType(MediaType.APPLICATION_JSON)
+                .contentType(MediaTypes.APPLICATION_JSON)
                 .request()
                 .await();
         assertThat(response.status().code(), Matchers.is(200));
@@ -126,11 +127,11 @@ public class FileServiceTest {
         WebClientResponse response = webClient
                 .get()
                 .path("foo.txt")
-                .accept(MediaType.APPLICATION_OCTET_STREAM)
+                .accept(MediaTypes.APPLICATION_OCTET_STREAM)
                 .request()
                 .await();
         assertThat(response.status().code(), is(200));
-        assertThat(response.headers().first("Content-Disposition").orElse(null),
+        assertThat(response.headers().first(Http.Header.CONTENT_DISPOSITION).orElse(null),
                 containsString("filename=\"foo.txt\""));
         byte[] bytes = response.content().as(byte[].class).await();
         assertThat(new String(bytes, StandardCharsets.UTF_8), Matchers.is("bar\n"));

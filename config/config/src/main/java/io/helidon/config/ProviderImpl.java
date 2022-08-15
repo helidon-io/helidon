@@ -16,6 +16,7 @@
 
 package io.helidon.config;
 
+import java.lang.System.Logger.Level;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -29,8 +30,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -42,7 +41,7 @@ import io.helidon.config.spi.ConfigNode.ObjectNode;
  */
 class ProviderImpl implements Config.Context {
 
-    private static final Logger LOGGER = Logger.getLogger(ConfigFactory.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(ConfigFactory.class.getName());
 
     private final List<Consumer<ConfigDiff>> listeners = new LinkedList<>();
 
@@ -215,7 +214,7 @@ class ProviderImpl implements Config.Context {
                 lastConfig = newConfig;
             }
 
-            LOGGER.log(Level.FINER, "Change event is not fired, there is no change from the last load.");
+            LOGGER.log(Level.TRACE, "Change event is not fired, there is no change from the last load.");
         }
     }
 
@@ -227,7 +226,7 @@ class ProviderImpl implements Config.Context {
         }
 
         if (configDiffs != null) {
-            LOGGER.log(Level.FINER, String.format("Firing last event %s (again)", configDiffs));
+            LOGGER.log(Level.TRACE, String.format("Firing last event %s (again)", configDiffs));
 
             changesExecutor.execute(() -> {
                 for (Consumer<ConfigDiff> listener : listeners) {

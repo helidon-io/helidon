@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,8 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import io.helidon.common.media.type.MediaType;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigParserException;
@@ -53,8 +55,8 @@ class TestCustomDefaultFile {
         private static final Pattern PROPERTY_PATTERN = Pattern.compile("(.*?): (.*)");
 
         @Override
-        public Set<String> supportedMediaTypes() {
-            return Set.of("application/x-yaml");
+        public Set<MediaType> supportedMediaTypes() {
+            return Set.of(MediaTypes.APPLICATION_X_YAML);
         }
 
         @Override

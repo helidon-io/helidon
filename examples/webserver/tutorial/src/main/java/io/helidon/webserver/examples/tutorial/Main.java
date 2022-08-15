@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package io.helidon.webserver.examples.tutorial;
 
-import io.helidon.common.http.MediaType;
+import io.helidon.common.http.HttpMediaType;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.examples.tutorial.user.UserFilter;
@@ -42,7 +42,7 @@ public final class Main {
                     })
                     .register("/article", new CommentService())
                     .post("/mgmt/shutdown", (req, res) -> {
-                        res.headers().contentType(MediaType.TEXT_PLAIN.withCharset("UTF-8"));
+                        res.headers().contentType(HttpMediaType.PLAINTEXT_UTF_8);
                         res.send("Shutting down TUTORIAL server. Good bye!\n");
                         // Use reactive API nature to stop the server AFTER the response was sent.
                         res.whenSent().thenRun(() -> req.webServer().shutdown());

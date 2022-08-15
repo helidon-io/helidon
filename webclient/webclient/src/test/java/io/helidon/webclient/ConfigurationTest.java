@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,11 +21,14 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 import io.helidon.common.http.Http;
-import io.helidon.common.http.MediaType;
+import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.common.media.type.MediaTypes.APPLICATION_JSON;
+import static io.helidon.common.media.type.MediaTypes.TEXT_PLAIN;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
@@ -33,10 +36,10 @@ import static org.hamcrest.Matchers.is;
 /**
  * Unit test for {@link WebClientConfiguration}.
  */
-public class ConfigurationTest {
+class ConfigurationTest {
 
     @Test
-    public void testWebClientConfigurationFromConfig() {
+    void testWebClientConfigurationFromConfig() {
         Config config = Config.create();
         WebClientConfiguration wcc = WebClientConfiguration.builder()
                 .config(config.get("test-client"))
@@ -45,7 +48,7 @@ public class ConfigurationTest {
     }
 
     @Test
-    public void testWebClientConfigurationFromBuilder() {
+    void testWebClientConfigurationFromBuilder() {
         WebClientConfiguration wcc = WebClientConfiguration.builder()
                 .uri(URI.create("http://some.address:80"))
                 .connectTimeout(Duration.of(4000, ChronoUnit.MILLIS))
@@ -53,7 +56,7 @@ public class ConfigurationTest {
                 .followRedirects(true)
                 .maxRedirects(10)
                 .userAgent("HelidonTest")
-                .defaultHeader(Http.Header.ACCEPT, List.of("application/json", "text/plain"))
+                .defaultHeader(Http.HeaderValue.create(Http.Header.ACCEPT, List.of("application/json", "text/plain")))
                 .build();
         validateConfiguration(wcc);
     }
@@ -65,7 +68,8 @@ public class ConfigurationTest {
         assertThat(wcc.followRedirects(), is(true));
         assertThat(wcc.maxRedirects(), is(10));
         assertThat(wcc.userAgent(), is("HelidonTest"));
-        assertThat(wcc.headers().acceptedTypes(), containsInAnyOrder(MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN));
+        assertThat(wcc.headers().acceptedTypes(), containsInAnyOrder(HttpMediaType.create(APPLICATION_JSON),
+                                                                     HttpMediaType.create(TEXT_PLAIN)));
     }
 
 }

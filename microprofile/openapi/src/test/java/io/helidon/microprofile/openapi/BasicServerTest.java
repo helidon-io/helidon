@@ -49,7 +49,7 @@ public class BasicServerTest {
     private static Map<String, Object> retrieveYaml(WebTarget webTarget) {
         try (Response response = webTarget
                 .path(OpenAPISupport.DEFAULT_WEB_CONTEXT)
-                .request(OpenAPISupport.DEFAULT_RESPONSE_MEDIA_TYPE.toString())
+                .request(OpenAPISupport.DEFAULT_RESPONSE_MEDIA_TYPE.text())
                 .get()) {
             assertThat("Fetch of OpenAPI document from server status", response.getStatus(),
                     is(equalTo(Http.Status.OK_200.code())));

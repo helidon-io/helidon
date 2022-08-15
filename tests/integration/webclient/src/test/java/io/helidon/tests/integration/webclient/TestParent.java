@@ -31,7 +31,6 @@ import io.helidon.webclient.spi.WebClientService;
 import io.helidon.webserver.WebServer;
 
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 
 /**
@@ -46,24 +45,13 @@ class TestParent {
     protected static WebClient webClient;
 
     @BeforeAll
-    public static void startTheServer() throws Exception {
+    public static void startTheServer() {
         webServer = Main.startServer().await(TIMEOUT);
-
-        long timeout = 2000; // 2 seconds should be enough to start the server
-        long now = System.currentTimeMillis();
-
-        while (!webServer.isRunning()) {
-            Thread.sleep(100);
-            if ((System.currentTimeMillis() - now) > timeout) {
-                Assertions.fail("Failed to start webserver");
-            }
-        }
-
         webClient = createNewClient();
     }
 
     @AfterAll
-    public static void stopServer() throws Exception {
+    static void stopServer() throws Exception {
         if (webServer != null) {
             webServer.shutdown()
                     .toCompletableFuture()

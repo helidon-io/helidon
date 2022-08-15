@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,8 +33,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 class ReasonPhraseTest {
     public static final String CUSTOM_ERROR = "Custom error";
-    private static final Http.ResponseStatus CUSTOM_BAD_REQUEST = Http.ResponseStatus.create(BAD_REQUEST_400.code(),
-                                                                                             CUSTOM_ERROR);
+    private static final Http.Status CUSTOM_BAD_REQUEST = Http.Status.create(BAD_REQUEST_400.code(),
+                                                                             CUSTOM_ERROR);
     private static WebServer server;
     private static WebClient client;
 
@@ -70,7 +70,7 @@ class ReasonPhraseTest {
                 .request()
                 .await(10, TimeUnit.SECONDS);
 
-        Http.ResponseStatus status = response.status();
+        Http.Status status = response.status();
         assertThat(status.code(), is(400));
         assertThat(status.reasonPhrase(), is(BAD_REQUEST_400.reasonPhrase()));
 
@@ -84,7 +84,7 @@ class ReasonPhraseTest {
                 .request()
                 .await(10, TimeUnit.SECONDS);
 
-        Http.ResponseStatus status = response.status();
+        Http.Status status = response.status();
         assertThat(status.code(), is(400));
         assertThat(status.reasonPhrase(), is(CUSTOM_ERROR));
 

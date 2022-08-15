@@ -19,7 +19,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.http.Http;
-import io.helidon.common.http.MediaType;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.metrics.api.RegistryFactory;
@@ -97,7 +97,7 @@ public class StatusTest {
         }
         WebClientResponse response = webClient.get()
                 .path("/greet")
-                .accept(MediaType.APPLICATION_JSON)
+                .accept(MediaTypes.APPLICATION_JSON)
                 .request()
                 .get();
         assertThat("Status of /greet", response.status().code(), is(Http.Status.OK_200.code()));
@@ -111,7 +111,7 @@ public class StatusTest {
         }
         WebClientResponse response = webClient.get()
                 .path("/status/" + status)
-                .accept(MediaType.APPLICATION_JSON)
+                .accept(MediaTypes.APPLICATION_JSON)
                 .request()
                 .get();
         assertThat("Response status", response.status().code(), is(status));

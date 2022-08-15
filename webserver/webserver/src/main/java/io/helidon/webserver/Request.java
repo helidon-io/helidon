@@ -31,10 +31,9 @@ import io.helidon.common.GenericType;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.MediaType;
-import io.helidon.common.http.Parameters;
-import io.helidon.common.http.UriComponent;
+import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.reactive.Single;
+import io.helidon.common.uri.UriQuery;
 import io.helidon.media.common.MessageBodyContext;
 import io.helidon.media.common.MessageBodyReadableContent;
 import io.helidon.media.common.MessageBodyReaderContext;
@@ -60,8 +59,8 @@ abstract class Request implements ServerRequest {
     private final BareRequest bareRequest;
     private final WebServer webServer;
     private final Context context;
-    private final Parameters queryParams;
-    private final HashRequestHeaders headers;
+    private final UriQuery queryParams;
+    private final RequestHeaders headers;
     private final MessageBodyReadableContent content;
     private final MessageBodyEventListener eventListener;
 
@@ -71,12 +70,12 @@ abstract class Request implements ServerRequest {
      * @param req bare request from HTTP SPI implementation.
      * @param webServer relevant server.
      */
-    Request(BareRequest req, WebServer webServer, HashRequestHeaders headers) {
+    Request(BareRequest req, WebServer webServer, RequestHeaders headers) {
         this.bareRequest = req;
         this.webServer = webServer;
         this.headers = headers;
         this.context = Contexts.context().orElseGet(() -> Context.create(webServer.context()));
-        this.queryParams = UriComponent.decodeQuery(req.uri().getRawQuery(), true);
+        this.queryParams = UriQuery.create(req.uri().getRawQuery());
         this.eventListener = new MessageBodyEventListener();
         MessageBodyReaderContext readerContext = MessageBodyReaderContext
                 .create(webServer.readerContext(), eventListener, headers, headers.contentType());
@@ -107,7 +106,7 @@ abstract class Request implements ServerRequest {
     static Charset contentCharset(ServerRequest request) {
         return request.headers()
                 .contentType()
-                .flatMap(MediaType::charset)
+                .flatMap(HttpMediaType::charset)
                 .map(Charset::forName)
                 .orElse(DEFAULT_CHARSET);
     }
@@ -123,7 +122,7 @@ abstract class Request implements ServerRequest {
     }
 
     @Override
-    public Http.RequestMethod method() {
+    public Http.Method method() {
         return bareRequest.method();
     }
 
@@ -143,7 +142,7 @@ abstract class Request implements ServerRequest {
     }
 
     @Override
-    public Parameters queryParams() {
+    public UriQuery queryParams() {
         return queryParams;
     }
 

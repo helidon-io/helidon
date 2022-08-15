@@ -7,8 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import jakarta.annotation.Priority;
-
+import io.helidon.common.Weight;
 import io.helidon.dbclient.DbColumn;
 import io.helidon.dbclient.DbMapper;
 import io.helidon.dbclient.DbRow;
@@ -19,7 +18,7 @@ import io.helidon.dbclient.spi.DbMapperProvider;
  *
  * Pokemon, and Pokemon character names are trademarks of Nintendo.
  */
-@Priority(1000)
+@Weight(50)
 public class PokemonMapperProvider implements DbMapperProvider {
     private static final PokemonMapper MAPPER = new PokemonMapper();
 

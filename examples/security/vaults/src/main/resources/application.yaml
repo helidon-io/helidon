@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2021 Oracle and/or its affiliates.
+# Copyright (c) 2021, 2022 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ security:
     - vault-transit:
         address: "${vault.address}"
         token: "${vault.token}"
-    - oci-vault:
+    # - oci-vault:
         # We need either the cryptographic endpoint (recommended), or management-endpoint configured
         # Also ~/.oci/config must be correctly set up, otherwise all information is required here
         # The crypto endpoint may be configured per digest/encryption, as we may use more than one
@@ -51,10 +51,10 @@ security:
       config:
         path: "app/secret"
         key: "username"
-    - name: "password"
-      provider: "oci-vault"
-      config:
-        ocid: "${oci.properties.secret-ocid}"
+#    - name: "password"
+#      provider: "oci-vault"
+#      config:
+#        ocid: "${oci.properties.secret-ocid}"
     - name: "token"
       provider: "config-vault"
       config:
@@ -71,22 +71,22 @@ security:
       config:
         type: "hmac"
         key-name: "encryption-key"
-    - name: "sig-1"
-      provider: "oci-vault"
-      config:
-        cryptographic-endpoint: "${oci.properties.cryptographic-endpoint}"
-        key-ocid: "${oci.properties.vault-rsa-key-ocid}"
-        algorithm: "SHA_256_RSA_PKCS_PSS"
+#    - name: "sig-1"
+#      provider: "oci-vault"
+#      config:
+#        cryptographic-endpoint: "${oci.properties.cryptographic-endpoint}"
+#        key-ocid: "${oci.properties.vault-rsa-key-ocid}"
+#        algorithm: "SHA_256_RSA_PKCS_PSS"
   encryption:
     # encryption and decryption
     - name: "crypto-3"
       provider: "vault-transit"
       config:
         key-name: "encryption-key"
-    - name: "crypto-1"
-      provider: "oci-vault"
-      config:
-        cryptographic-endpoint: "${oci.properties.cryptographic-endpoint}"
-        key-ocid: "${oci.properties.vault-key-ocid}"
+#    - name: "crypto-1"
+#      provider: "oci-vault"
+#      config:
+#        cryptographic-endpoint: "${oci.properties.cryptographic-endpoint}"
+#        key-ocid: "${oci.properties.vault-key-ocid}"
     - name: "crypto-2"
       provider: "config-vault"

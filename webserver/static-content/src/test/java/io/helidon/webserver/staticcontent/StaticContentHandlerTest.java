@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,8 @@ import io.helidon.webserver.ServerResponse;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+import static io.helidon.common.http.Http.Header.IF_MATCH;
+import static io.helidon.common.http.Http.Header.IF_NONE_MATCH;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.mock;
@@ -63,41 +65,43 @@ class StaticContentHandlerTest {
     @Test
     void etag_InNonMatch_NotAccept() {
         RequestHeaders req = mock(RequestHeaders.class);
-        when(req.values(Http.Header.IF_NONE_MATCH)).thenReturn(List.of("\"ccc\"", "\"ddd\""));
-        when(req.values(Http.Header.IF_MATCH)).thenReturn(Collections.emptyList());
+        when(req.values(IF_NONE_MATCH)).thenReturn(List.of("\"ccc\"", "\"ddd\""));
+        when(req.values(IF_MATCH)).thenReturn(Collections.emptyList());
         ResponseHeaders res = mock(ResponseHeaders.class);
         StaticContentHandler.processEtag("aaa", req, res);
-        verify(res).put(Http.Header.ETAG, "\"aaa\"");
+        verify(res).set(Http.Header.ETAG, "\"aaa\"");
     }
 
     @Test
     void etag_InNonMatch_Accept() {
         RequestHeaders req = mock(RequestHeaders.class);
-        when(req.values(Http.Header.IF_NONE_MATCH)).thenReturn(List.of("\"ccc\"", "W/\"aaa\""));
-        when(req.values(Http.Header.IF_MATCH)).thenReturn(Collections.emptyList());
+        when(req.contains(IF_NONE_MATCH)).thenReturn(true);
+        when(req.values(IF_NONE_MATCH)).thenReturn(List.of("\"ccc\"", "W/\"aaa\""));
+        when(req.contains(IF_MATCH)).thenReturn(false);
         ResponseHeaders res = mock(ResponseHeaders.class);
         assertHttpException(() -> StaticContentHandler.processEtag("aaa", req, res), Http.Status.NOT_MODIFIED_304);
-        verify(res).put(Http.Header.ETAG, "\"aaa\"");
+        verify(res).set(Http.Header.ETAG, "\"aaa\"");
     }
 
     @Test
     void etag_InMatch_NotAccept() {
         RequestHeaders req = mock(RequestHeaders.class);
-        when(req.values(Http.Header.IF_MATCH)).thenReturn(List.of("\"ccc\"", "\"ddd\""));
-        when(req.values(Http.Header.IF_NONE_MATCH)).thenReturn(Collections.emptyList());
+        when(req.contains(IF_MATCH)).thenReturn(true);
+        when(req.values(IF_MATCH)).thenReturn(List.of("\"ccc\"", "\"ddd\""));
+        when(req.contains(IF_NONE_MATCH)).thenReturn(false);
         ResponseHeaders res = mock(ResponseHeaders.class);
         assertHttpException(() -> StaticContentHandler.processEtag("aaa", req, res), Http.Status.PRECONDITION_FAILED_412);
-        verify(res).put(Http.Header.ETAG, "\"aaa\"");
+        verify(res).set(Http.Header.ETAG, "\"aaa\"");
     }
 
     @Test
     void etag_InMatch_Accept() {
         RequestHeaders req = mock(RequestHeaders.class);
-        when(req.values(Http.Header.IF_MATCH)).thenReturn(List.of("\"ccc\"", "\"aaa\""));
-        when(req.values(Http.Header.IF_NONE_MATCH)).thenReturn(Collections.emptyList());
+        when(req.values(IF_MATCH)).thenReturn(List.of("\"ccc\"", "\"aaa\""));
+        when(req.values(IF_NONE_MATCH)).thenReturn(Collections.emptyList());
         ResponseHeaders res = mock(ResponseHeaders.class);
         StaticContentHandler.processEtag("aaa", req, res);
-        verify(res).put(Http.Header.ETAG, "\"aaa\"");
+        verify(res).set(Http.Header.ETAG, "\"aaa\"");
     }
 
     @Test
@@ -150,7 +154,7 @@ class StaticContentHandlerTest {
         Mockito.doReturn(resh).when(res).headers();
         StaticContentHandler.redirect(req, res, "/foo/");
         verify(res).status(Http.Status.MOVED_PERMANENTLY_301);
-        verify(resh).put(Http.Header.LOCATION, "/foo/");
+        verify(resh).set(Http.Header.LOCATION, "/foo/");
         verify(res).send();
     }
 
@@ -239,7 +243,7 @@ class StaticContentHandlerTest {
         }
         
         @Override
-        boolean doHandle(Http.RequestMethod method, Path path, ServerRequest request, ServerResponse response) {
+        boolean doHandle(Http.Method method, Path path, ServerRequest request, ServerResponse response) {
             this.counter.incrementAndGet();
             this.path = path;
             return returnValue;
@@ -261,7 +265,7 @@ class StaticContentHandlerTest {
         }
         
         @Override
-        boolean doHandle(Http.RequestMethod method, String path, ServerRequest request, ServerResponse response)
+        boolean doHandle(Http.Method method, String path, ServerRequest request, ServerResponse response)
                 throws IOException, URISyntaxException {
             super.doHandle(method, path, request, response);
             this.counter.incrementAndGet();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,25 +18,26 @@ package io.helidon.webserver.cors;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
-import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.MediaType;
+import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientRequestBuilder;
+import io.helidon.webclient.WebClientRequestHeaders;
 import io.helidon.webclient.WebClientResponse;
 
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.common.http.Http.Header.ACCESS_CONTROL_ALLOW_CREDENTIALS;
+import static io.helidon.common.http.Http.Header.ACCESS_CONTROL_ALLOW_HEADERS;
+import static io.helidon.common.http.Http.Header.ACCESS_CONTROL_ALLOW_METHODS;
+import static io.helidon.common.http.Http.Header.ACCESS_CONTROL_ALLOW_ORIGIN;
+import static io.helidon.common.http.Http.Header.ACCESS_CONTROL_MAX_AGE;
+import static io.helidon.common.http.Http.Header.ACCESS_CONTROL_REQUEST_HEADERS;
+import static io.helidon.common.http.Http.Header.ACCESS_CONTROL_REQUEST_METHOD;
 import static io.helidon.common.http.Http.Header.ORIGIN;
 import static io.helidon.webserver.cors.CorsTestServices.SERVICE_1;
 import static io.helidon.webserver.cors.CorsTestServices.SERVICE_2;
-import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_ALLOW_CREDENTIALS;
-import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_ALLOW_HEADERS;
-import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_ALLOW_METHODS;
-import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN;
-import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_MAX_AGE;
-import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_REQUEST_HEADERS;
-import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_REQUEST_METHOD;
 import static io.helidon.webserver.cors.CustomMatchers.notPresent;
 import static io.helidon.webserver.cors.CustomMatchers.present;
 import static io.helidon.webserver.cors.TestUtil.path;
@@ -60,12 +61,12 @@ public abstract class AbstractCorsTest {
 
         WebClientResponse response = client().get()
                 .path(contextRoot())
-                .accept(MediaType.TEXT_PLAIN)
+                .accept(HttpMediaType.TEXT_PLAIN)
                 .request()
                 .toCompletableFuture()
                 .get();
 
-        Http.ResponseStatus result = response.status();
+        Http.Status result = response.status();
 
         assertThat(result.code(), is(Http.Status.OK_200.code()));
     }
@@ -75,7 +76,7 @@ public abstract class AbstractCorsTest {
                 .options()
                 .path(path(SERVICE_1));
 
-        Headers headers = reqBuilder.headers();
+        WebClientRequestHeaders headers = reqBuilder.headers();
         headers.add(ORIGIN, "http://foo.bar");
         headers.add(ACCESS_CONTROL_REQUEST_METHOD, "PUT");
         headers.add(ACCESS_CONTROL_REQUEST_HEADERS, "X-foo");
@@ -98,7 +99,7 @@ public abstract class AbstractCorsTest {
                 .options()
                 .path(path(SERVICE_1));
 
-        Headers headers = reqBuilder.headers();
+        WebClientRequestHeaders headers = reqBuilder.headers();
         headers.add(ORIGIN, "http://foo.bar");
         headers.add(ACCESS_CONTROL_REQUEST_METHOD, "PUT");
         headers.add(ACCESS_CONTROL_REQUEST_HEADERS, "X-foo, X-bar");
@@ -122,7 +123,7 @@ public abstract class AbstractCorsTest {
                 .options()
                 .path(path(SERVICE_2));
 
-        Headers headers = reqBuilder.headers();
+        WebClientRequestHeaders headers = reqBuilder.headers();
         headers.add(ORIGIN, "http://not.allowed");
         headers.add(ACCESS_CONTROL_REQUEST_METHOD, "PUT");
 
@@ -131,7 +132,7 @@ public abstract class AbstractCorsTest {
                 .toCompletableFuture()
                 .get();
 
-        Http.ResponseStatus status = res.status();
+        Http.Status status = res.status();
         assertThat(status.code(), is(Http.Status.FORBIDDEN_403.code()));
         assertThat(status.reasonPhrase(), is("CORS origin is not in allowed list"));
     }
@@ -142,7 +143,7 @@ public abstract class AbstractCorsTest {
                 .options()
                 .path(path(SERVICE_2));
 
-        Headers headers = reqBuilder.headers();
+        WebClientRequestHeaders headers = reqBuilder.headers();
         headers.add(ORIGIN, "http://foo.bar");
         headers.add(ACCESS_CONTROL_REQUEST_METHOD, "PUT");
 
@@ -166,7 +167,7 @@ public abstract class AbstractCorsTest {
                 .options()
                 .path(path(SERVICE_2));
 
-        Headers headers = reqBuilder.headers();
+        WebClientRequestHeaders headers = reqBuilder.headers();
         headers.add(ORIGIN, "http://foo.bar");
         headers.add(ACCESS_CONTROL_REQUEST_METHOD, "POST");
 
@@ -175,7 +176,7 @@ public abstract class AbstractCorsTest {
                 .toCompletableFuture()
                 .get();
 
-        Http.ResponseStatus status = res.status();
+        Http.Status status = res.status();
         assertThat(status.code(), is(Http.Status.FORBIDDEN_403.code()));
         assertThat(status.reasonPhrase(), is("CORS origin is denied"));
     }
@@ -186,7 +187,7 @@ public abstract class AbstractCorsTest {
                 .options()
                 .path(path(SERVICE_2));
 
-        Headers headers = reqBuilder.headers();
+        WebClientRequestHeaders headers = reqBuilder.headers();
         headers.add(ORIGIN, "http://foo.bar");
         headers.add(ACCESS_CONTROL_REQUEST_METHOD, "PUT");
         headers.add(ACCESS_CONTROL_REQUEST_HEADERS, "X-foo, X-bar, X-oops");
@@ -196,7 +197,7 @@ public abstract class AbstractCorsTest {
                 .toCompletableFuture()
                 .get();
 
-        Http.ResponseStatus status = res.status();
+        Http.Status status = res.status();
         assertThat(status.code(), is(Http.Status.FORBIDDEN_403.code()));
         assertThat(status.reasonPhrase(), is("CORS headers not in allowed list"));
     }
@@ -207,7 +208,7 @@ public abstract class AbstractCorsTest {
                 .options()
                 .path(path(contextRoot(), SERVICE_2));
 
-        Headers headers = reqBuilder.headers();
+        WebClientRequestHeaders headers = reqBuilder.headers();
         headers.add(ORIGIN, fooOrigin());
         headers.add(ACCESS_CONTROL_REQUEST_METHOD, "PUT");
         headers.add(ACCESS_CONTROL_REQUEST_HEADERS, fooHeader());
@@ -236,7 +237,7 @@ public abstract class AbstractCorsTest {
                 .options()
                 .path(path(SERVICE_2));
 
-        Headers headers = reqBuilder.headers();
+        WebClientRequestHeaders headers = reqBuilder.headers();
         headers.add(ORIGIN, "http://foo.bar");
         headers.add(ACCESS_CONTROL_REQUEST_METHOD, "PUT");
         headers.add(ACCESS_CONTROL_REQUEST_HEADERS, "X-foo, X-bar");
@@ -261,7 +262,7 @@ public abstract class AbstractCorsTest {
                 .options()
                 .path(path(SERVICE_2));
 
-        Headers headers = reqBuilder.headers();
+        WebClientRequestHeaders headers = reqBuilder.headers();
         headers.add(ORIGIN, "http://foo.bar");
         headers.add(ACCESS_CONTROL_REQUEST_METHOD, "PUT");
         headers.add(ACCESS_CONTROL_REQUEST_HEADERS, "X-foo, X-bar");
@@ -286,9 +287,9 @@ public abstract class AbstractCorsTest {
         WebClientRequestBuilder reqBuilder = client()
                 .put()
                 .path(path(SERVICE_1))
-                .contentType(MediaType.TEXT_PLAIN);
+                .contentType(MediaTypes.TEXT_PLAIN);
 
-        Headers headers = reqBuilder.headers();
+        WebClientRequestHeaders headers = reqBuilder.headers();
         headers.add(ORIGIN, "http://foo.bar");
         headers.add(ACCESS_CONTROL_REQUEST_METHOD, "PUT");
 
@@ -306,9 +307,9 @@ public abstract class AbstractCorsTest {
         WebClientRequestBuilder reqBuilder = client()
                 .put()
                 .path(path(SERVICE_2))
-                .contentType(MediaType.TEXT_PLAIN);
+                .contentType(MediaTypes.TEXT_PLAIN);
 
-        Headers headers = reqBuilder.headers();
+        WebClientRequestHeaders headers = reqBuilder.headers();
         headers.add(ORIGIN, "http://foo.bar");
 
         WebClientResponse res = reqBuilder
@@ -327,9 +328,9 @@ public abstract class AbstractCorsTest {
         WebClientRequestBuilder reqBuilder = client()
                 .get()
                 .path(path(SERVICE_2) + "/notfound")
-                .contentType(MediaType.TEXT_PLAIN);
+                .contentType(MediaTypes.TEXT_PLAIN);
 
-        Headers headers = reqBuilder.headers();
+        WebClientRequestHeaders headers = reqBuilder.headers();
         headers.add(ORIGIN, "http://foo.bar");
 
         WebClientResponse res = reqBuilder
@@ -347,7 +348,7 @@ public abstract class AbstractCorsTest {
                 .options()
                 .path(path(contextRoot(), SERVICE_1));
 
-        Headers headers = reqBuilder.headers();
+        WebClientRequestHeaders headers = reqBuilder.headers();
         headers.add(ORIGIN, fooOrigin());
         headers.add(ACCESS_CONTROL_REQUEST_METHOD, "PUT");
 

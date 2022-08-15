@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import io.helidon.common.http.Http;
  */
 public abstract class ApiResponse extends ApiJsonParser {
     private final Headers headers;
-    private final Http.ResponseStatus status;
+    private final Http.Status status;
     private final String requestId;
 
     /**
@@ -57,7 +57,7 @@ public abstract class ApiResponse extends ApiJsonParser {
      *
      * @return status of the response (only if successful)
      */
-    public Http.ResponseStatus status() {
+    public Http.Status status() {
         return status;
     }
 
@@ -80,7 +80,7 @@ public abstract class ApiResponse extends ApiJsonParser {
     public abstract static class Builder<B extends Builder<B, T>, T extends ApiResponse>
             implements io.helidon.common.Builder<B, T> {
         private Headers headers;
-        private Http.ResponseStatus status;
+        private Http.Status status;
         private String requestId;
 
         /**
@@ -106,7 +106,7 @@ public abstract class ApiResponse extends ApiJsonParser {
          * @param status HTTP status
          * @return updated builder
          */
-        public B status(Http.ResponseStatus status) {
+        public B status(Http.Status status) {
             this.status = status;
             return me();
         }
@@ -136,7 +136,7 @@ public abstract class ApiResponse extends ApiJsonParser {
          *
          * @return status
          */
-        public Http.ResponseStatus status() {
+        public Http.Status status() {
             return status;
         }
 

@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import io.helidon.common.http.Http;
-import io.helidon.common.http.MediaType;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.testsupport.TemporaryFolder;
 import io.helidon.webserver.testsupport.TemporaryFolderExtension;
@@ -82,7 +82,7 @@ public class FileSystemContentHandlerTest {
                                           .get();
         assertThat(response.status(), is(Http.Status.OK_200));
         assertThat(responseToString(response), is("Foo TXT"));
-        assertThat(response.headers().first(Http.Header.CONTENT_TYPE).orElse(null), is(MediaType.TEXT_PLAIN.toString()));
+        assertThat(response.headers().first(Http.Header.CONTENT_TYPE).orElse(null), is(MediaTypes.TEXT_PLAIN.text()));
         // /some/css/b.css
         response = TestClient.create(routing)
                 .path("/some/css/b.css")
@@ -115,7 +115,7 @@ public class FileSystemContentHandlerTest {
         Routing routing = Routing.builder()
                 .register(StaticContentSupport.builder(folder.root().toPath())
                                               .welcomeFileName("index.html")
-                                              .contentType("css", MediaType.TEXT_PLAIN)
+                                              .contentType("css", MediaTypes.TEXT_PLAIN)
                                               .build())
                 .build();
         // /
@@ -124,7 +124,7 @@ public class FileSystemContentHandlerTest {
                 .get();
         assertThat(response.status(), is(Http.Status.OK_200));
         assertThat(responseToString(response), is("Index HTML"));
-        assertThat(response.headers().first(Http.Header.CONTENT_TYPE).orElse(null), is(MediaType.TEXT_HTML.toString()));
+        assertThat(response.headers().first(Http.Header.CONTENT_TYPE).orElse(null), is(MediaTypes.TEXT_HTML.text()));
         // /other
         response = TestClient.create(routing)
                 .path("/other")
@@ -137,7 +137,7 @@ public class FileSystemContentHandlerTest {
                 .get();
         assertThat(response.status(), is(Http.Status.OK_200));
         assertThat(responseToString(response), is("Index HTML"));
-        assertThat(response.headers().first(Http.Header.CONTENT_TYPE).orElse(null), is(MediaType.TEXT_HTML.toString()));
+        assertThat(response.headers().first(Http.Header.CONTENT_TYPE).orElse(null), is(MediaTypes.TEXT_HTML.text()));
         // /css/
         response = TestClient.create(routing)
                 .path("/css/")
@@ -149,6 +149,6 @@ public class FileSystemContentHandlerTest {
                 .get();
         assertThat(response.status(), is(Http.Status.OK_200));
         assertThat(responseToString(response), is("A CSS"));
-        assertThat(response.headers().first(Http.Header.CONTENT_TYPE).orElse(null), is(MediaType.TEXT_PLAIN.toString()));
+        assertThat(response.headers().first(Http.Header.CONTENT_TYPE).orElse(null), is(MediaTypes.TEXT_PLAIN.text()));
     }
 }

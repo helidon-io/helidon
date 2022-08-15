@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ import java.util.concurrent.Flow;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
-import io.helidon.common.http.MediaType;
+import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.reactive.Single;
 import io.helidon.media.common.ContentReaders;
 import io.helidon.media.common.MessageBodyReader;
@@ -30,7 +30,7 @@ import io.helidon.media.common.MessageBodyReaderContext;
  */
 public class NameReader implements MessageBodyReader<Name> {
 
-    private static final MediaType TYPE = MediaType.parse("application/name");
+    static final HttpMediaType APP_NAME = HttpMediaType.create("application/name");
 
     private NameReader() {
     }
@@ -48,7 +48,7 @@ public class NameReader implements MessageBodyReader<Name> {
     @Override
     public PredicateResult accept(GenericType<?> type, MessageBodyReaderContext context) {
         return context.contentType()
-                .filter(TYPE::equals)
+                .filter(APP_NAME::equals)
                 .map(it -> PredicateResult.supports(Name.class, type))
                 .orElse(PredicateResult.NOT_SUPPORTED);
     }

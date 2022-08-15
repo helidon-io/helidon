@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,10 @@
  */
 package io.helidon.media.multipart;
 
+import io.helidon.common.http.ContentDisposition;
 import io.helidon.common.http.Headers;
-import io.helidon.common.http.MediaType;
+import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.media.type.MediaTypes;
 
 /**
  * Body part headers.
@@ -28,9 +30,9 @@ public interface BodyPartHeaders extends Headers {
      * is not present, the default value is retrieved using
      * {@link #defaultContentType()}.
      *
-     * @return MediaType, never {@code null}
+     * @return HttpMediaType, never {@code null}
      */
-    MediaType contentType();
+    HttpMediaType partContentType();
 
     /**
      * Get the {@code Content-Disposition} header.
@@ -41,17 +43,17 @@ public interface BodyPartHeaders extends Headers {
 
     /**
      * Returns the default {@code Content-Type} header value:
-     * {@link MediaType#APPLICATION_OCTET_STREAM} if the
+     * {@link MediaTypes#APPLICATION_OCTET_STREAM} if the
      * {@code Content-Disposition} header is present with a non empty value,
-     * otherwise {@link MediaType#TEXT_PLAIN}.
+     * otherwise {@link MediaTypes#TEXT_PLAIN}.
      *
      * @see
      * <a href="https://tools.ietf.org/html/rfc7578#section-4.4">RFC-7578</a>
      * @return MediaType, never {@code null}
      */
-    default MediaType defaultContentType() {
+    default HttpMediaType defaultContentType() {
         return contentDisposition().filename()
-                .map(fname -> MediaType.APPLICATION_OCTET_STREAM)
-                .orElse(MediaType.TEXT_PLAIN);
+                .map(fname -> HttpMediaType.create(MediaTypes.APPLICATION_OCTET_STREAM))
+                .orElse(HttpMediaType.TEXT_PLAIN);
     }
 }

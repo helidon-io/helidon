@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,14 @@
 
 package io.helidon.config;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 
+import io.helidon.common.media.type.MediaType;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.Source;
 
@@ -36,12 +39,18 @@ public abstract class AbstractConfigSourceBuilder<B extends AbstractConfigSource
         implements Source.Builder<B> {
 
     private ConfigParser parser;
-    private String mediaType;
-    private Function<Config.Key, Optional<String>> mediaTypeMapping;
+    private MediaType mediaType;
+    private Function<Config.Key, Optional<MediaType>> mediaTypeMapping;
     private Function<Config.Key, Optional<ConfigParser>> parserMapping;
 
     @SuppressWarnings("unchecked")
     private final B me = (B) this;
+
+    /**
+     * There is no side effect.
+     */
+    protected AbstractConfigSourceBuilder() {
+    }
 
     /**
      * {@inheritDoc}
@@ -69,13 +78,17 @@ public abstract class AbstractConfigSourceBuilder<B extends AbstractConfigSource
     protected B config(Config metaConfig) {
         super.config(metaConfig);
 
-        metaConfig.get("media-type").asString().ifPresent(this::mediaType);
+        metaConfig.get("media-type").asString().map(MediaTypes::create).ifPresent(this::mediaType);
         metaConfig.get("media-type-mapping").detach().asMap()
-                .ifPresent(this::mediaTypeMappingConfig);
+                .ifPresent(it -> {
+                    Map<String, MediaType> mapping = new HashMap<>();
+                    it.forEach((key, mediaType) -> mapping.put(key, MediaTypes.create(mediaType)));
+                    this.mediaTypeMappingConfig(mapping);
+                });
         return me;
     }
 
-    private void mediaTypeMappingConfig(Map<String, String> mappingMap) {
+    private void mediaTypeMappingConfig(Map<String, MediaType> mappingMap) {
         mediaTypeMapping(key -> Optional.ofNullable(mappingMap.get(key.toString())));
     }
 
@@ -87,7 +100,7 @@ public abstract class AbstractConfigSourceBuilder<B extends AbstractConfigSource
      * @param mediaTypeMapping a mapping function
      * @return a modified builder
      */
-    public B mediaTypeMapping(Function<Config.Key, Optional<String>> mediaTypeMapping) {
+    public B mediaTypeMapping(Function<Config.Key, Optional<MediaType>> mediaTypeMapping) {
         Objects.requireNonNull(mediaTypeMapping, "mediaTypeMapping cannot be null");
 
         this.mediaTypeMapping = mediaTypeMapping;
@@ -120,7 +133,7 @@ public abstract class AbstractConfigSourceBuilder<B extends AbstractConfigSource
         return me;
     }
 
-    Optional<Function<Config.Key, Optional<String>>> mediaTypeMapping() {
+    Optional<Function<Config.Key, Optional<MediaType>>> mediaTypeMapping() {
         return Optional.ofNullable(mediaTypeMapping);
     }
 
@@ -139,7 +152,7 @@ public abstract class AbstractConfigSourceBuilder<B extends AbstractConfigSource
      * @param mediaType media type configured for this source
      * @return updated builder instance
      */
-    protected B mediaType(String mediaType) {
+    protected B mediaType(MediaType mediaType) {
         this.mediaType = mediaType;
         return me;
     }
@@ -148,7 +161,7 @@ public abstract class AbstractConfigSourceBuilder<B extends AbstractConfigSource
         return Optional.ofNullable(parser);
     }
 
-    Optional<String> mediaType() {
+    Optional<MediaType> mediaType() {
         return Optional.ofNullable(mediaType);
     }
 }

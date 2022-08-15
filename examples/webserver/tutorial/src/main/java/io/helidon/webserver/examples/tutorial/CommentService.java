@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,9 +24,15 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Flow;
 import java.util.stream.Collectors;
 
+import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
-import io.helidon.common.http.MediaType;
+import io.helidon.common.http.Http;
+import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.media.type.MediaTypes;
+import io.helidon.common.reactive.Single;
 import io.helidon.media.common.ContentWriters;
+import io.helidon.media.common.MessageBodyWriter;
+import io.helidon.media.common.MessageBodyWriterContext;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
@@ -47,24 +53,16 @@ public class CommentService implements Service {
     public void update(Routing.Rules routingRules) {
         routingRules.get((req, res) -> {
                     // Register a publisher for comment
-                    res.registerWriter(List.class, MediaType.TEXT_PLAIN.withCharset("UTF-8"), this::publish);
+                    res.registerWriter(new CommentWriter());
                     req.next();
                 })
                     .get("/{" + ROOM_PATH_ID + "}", this::getComments)
                     .post("/{" + ROOM_PATH_ID + "}", this::addComment);
     }
 
-    Flow.Publisher<DataChunk> publish(List<Comment> comments) {
-        String str = comments.stream()
-                .map(Comment::toString)
-                .collect(Collectors.joining("\n"));
-        return ContentWriters.charSequenceWriter(StandardCharsets.UTF_8)
-                             .apply(str + "\n");
-    }
-
     private void getComments(ServerRequest req, ServerResponse resp) {
         String roomId = req.path().param(ROOM_PATH_ID);
-        //resp.headers().contentType(MediaType.TEXT_PLAIN.withCharset("UTF-8"));
+        //resp.headers().contentType(HttpMediaType.PLAINTEXT_UTF_8);
         List<Comment> comments = getComments(roomId);
         resp.send(comments);
     }
@@ -160,5 +158,39 @@ public class CommentService implements Service {
             result = 31 * result + (message != null ? message.hashCode() : 0);
             return result;
         }
+    }
+
+    private static final class CommentWriter implements MessageBodyWriter<List<Comment>> {
+        private static final Http.HeaderValue CONTENT_TYPE_UTF_8 = Http.HeaderValue.createCached(Http.Header.CONTENT_TYPE,
+                                                                                           HttpMediaType.PLAINTEXT_UTF_8.text());
+
+        @Override
+        public PredicateResult accept(GenericType<?> type, MessageBodyWriterContext context) {
+            if (List.class.isAssignableFrom(type.rawType())) {
+                if (context.headers().isAccepted(MediaTypes.TEXT_PLAIN)) {
+                    return PredicateResult.SUPPORTED;
+                } else {
+                    return PredicateResult.COMPATIBLE;
+                }
+            }
+            return PredicateResult.NOT_SUPPORTED;
+        }
+
+        @Override
+        public Flow.Publisher<DataChunk> write(Single<? extends List<Comment>> single,
+                                               GenericType<? extends List<Comment>> type,
+                                               MessageBodyWriterContext context) {
+            context.headers().setIfAbsent(CONTENT_TYPE_UTF_8);
+            return single.flatMap(this::publish);
+        }
+
+        Flow.Publisher<DataChunk> publish(List<Comment> comments) {
+            String str = comments.stream()
+                    .map(Comment::toString)
+                    .collect(Collectors.joining("\n"));
+            return ContentWriters.charSequenceWriter(StandardCharsets.UTF_8)
+                    .apply(str + "\n");
+        }
+
     }
 }

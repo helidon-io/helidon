@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,70 +73,70 @@ public final class GrpcHelper {
     }
 
     /**
-     * Convert a gRPC {@link StatusException} to a {@link Http.ResponseStatus}.
+     * Convert a gRPC {@link StatusException} to a {@link Http.Status}.
      *
      * @param ex  the gRPC {@link StatusException} to convert
      *
-     * @return  the gRPC {@link StatusException} converted to a {@link Http.ResponseStatus}
+     * @return  the gRPC {@link StatusException} converted to a {@link Http.Status}
      */
-    public static Http.ResponseStatus toHttpResponseStatus(StatusException ex) {
+    public static Http.Status toHttpResponseStatus(StatusException ex) {
         return toHttpResponseStatus(ex.getStatus());
     }
 
     /**
-     * Convert a gRPC {@link StatusRuntimeException} to a {@link Http.ResponseStatus}.
+     * Convert a gRPC {@link StatusRuntimeException} to a {@link Http.Status}.
      *
      * @param ex  the gRPC {@link StatusRuntimeException} to convert
      *
-     * @return  the gRPC {@link StatusRuntimeException} converted to a {@link Http.ResponseStatus}
+     * @return  the gRPC {@link StatusRuntimeException} converted to a {@link Http.Status}
      */
-    public static Http.ResponseStatus toHttpResponseStatus(StatusRuntimeException ex) {
+    public static Http.Status toHttpResponseStatus(StatusRuntimeException ex) {
         return toHttpResponseStatus(ex.getStatus());
     }
 
     /**
-     * Convert a gRPC {@link Status} to a {@link Http.ResponseStatus}.
+     * Convert a gRPC {@link Status} to a {@link Http.Status}.
      *
      * @param status  the gRPC {@link Status} to convert
      *
-     * @return  the gRPC {@link Status} converted to a {@link Http.ResponseStatus}
+     * @return  the gRPC {@link Status} converted to a {@link Http.Status}
      */
-    public static Http.ResponseStatus toHttpResponseStatus(Status status) {
-        Http.ResponseStatus httpStatus;
+    public static Http.Status toHttpResponseStatus(Status status) {
+        Http.Status httpStatus;
 
         switch (status.getCode()) {
         case OK:
-            httpStatus = Http.ResponseStatus.create(200, status.getDescription());
+            httpStatus = Http.Status.create(200, status.getDescription());
             break;
         case INVALID_ARGUMENT:
-            httpStatus = Http.ResponseStatus.create(400, status.getDescription());
+            httpStatus = Http.Status.create(400, status.getDescription());
             break;
         case DEADLINE_EXCEEDED:
-            httpStatus = Http.ResponseStatus.create(408, status.getDescription());
+            httpStatus = Http.Status.create(408, status.getDescription());
             break;
         case NOT_FOUND:
-            httpStatus = Http.ResponseStatus.create(404, status.getDescription());
+            httpStatus = Http.Status.create(404, status.getDescription());
             break;
         case ALREADY_EXISTS:
-            httpStatus = Http.ResponseStatus.create(412, status.getDescription());
+            httpStatus = Http.Status.create(412, status.getDescription());
             break;
         case PERMISSION_DENIED:
-            httpStatus = Http.ResponseStatus.create(403, status.getDescription());
+            httpStatus = Http.Status.create(403, status.getDescription());
             break;
         case FAILED_PRECONDITION:
-            httpStatus = Http.ResponseStatus.create(412, status.getDescription());
+            httpStatus = Http.Status.create(412, status.getDescription());
             break;
         case OUT_OF_RANGE:
-            httpStatus = Http.ResponseStatus.create(400, status.getDescription());
+            httpStatus = Http.Status.create(400, status.getDescription());
             break;
         case UNIMPLEMENTED:
-            httpStatus = Http.ResponseStatus.create(501, status.getDescription());
+            httpStatus = Http.Status.create(501, status.getDescription());
             break;
         case UNAVAILABLE:
-            httpStatus = Http.ResponseStatus.create(503, status.getDescription());
+            httpStatus = Http.Status.create(503, status.getDescription());
             break;
         case UNAUTHENTICATED:
-            httpStatus = Http.ResponseStatus.create(401, status.getDescription());
+            httpStatus = Http.Status.create(401, status.getDescription());
             break;
         case ABORTED:
         case CANCELLED:
@@ -145,7 +145,7 @@ public final class GrpcHelper {
         case RESOURCE_EXHAUSTED:
         case UNKNOWN:
         default:
-            httpStatus = Http.ResponseStatus.create(500, status.getDescription());
+            httpStatus = Http.Status.create(500, status.getDescription());
         }
 
         return httpStatus;

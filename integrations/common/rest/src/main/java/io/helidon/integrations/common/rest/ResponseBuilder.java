@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ public interface ResponseBuilder<B extends ResponseBuilder<B, T, X>, T, X> exten
      * @param status HTTP status
      * @return updated builder
      */
-    B status(Http.ResponseStatus status);
+    B status(Http.Status status);
 
     /**
      * Configure the HTTP headers returned by the API call.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,15 +20,27 @@ import java.util.List;
 import java.util.Optional;
 
 import io.helidon.common.http.Headers;
+import io.helidon.common.http.HeadersClientRequest;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.MediaType;
-import io.helidon.common.http.Parameters;
+import io.helidon.common.http.HttpMediaType;
 
 /**
  * Headers that can be modified (until request is sent) for
  * outbound request.
  */
-public interface WebClientRequestHeaders extends Headers {
+public interface WebClientRequestHeaders extends HeadersClientRequest {
+
+    /**
+     * Remove a header if set.
+     *
+     * @param name header name
+     * @return updated headers instance
+     * @deprecated use {@link #unsetHeader(io.helidon.common.http.Http.HeaderName)}
+     */
+    @Deprecated
+    default WebClientRequestHeaders unsetHeader(String name) {
+        return unsetHeader(Http.Header.create(name));
+    }
 
     /**
      * Remove a header if set.
@@ -36,7 +48,7 @@ public interface WebClientRequestHeaders extends Headers {
      * @param name header name
      * @return updated headers instance
      */
-    WebClientRequestHeaders unsetHeader(String name);
+    WebClientRequestHeaders unsetHeader(Http.HeaderName name);
 
     /**
      * Add a cookie to the request.
@@ -55,7 +67,7 @@ public interface WebClientRequestHeaders extends Headers {
      * @param contentType content type of the request
      * @return updated headers instance
      */
-    WebClientRequestHeaders contentType(MediaType contentType);
+    WebClientRequestHeaders contentType(HttpMediaType contentType);
 
     /**
      * Set a content length. This method is optional.
@@ -67,13 +79,13 @@ public interface WebClientRequestHeaders extends Headers {
     WebClientRequestHeaders contentLength(long length);
 
     /**
-     * Add accepted {@link MediaType}. Supports quality factor and wildcards.
+     * Add accepted {@link io.helidon.common.http.HttpMediaType}. Supports quality factor and wildcards.
      * Ordered by invocation order.
      *
      * @param mediaType media type to accept, with optional quality factor
      * @return updated headers instance
      */
-    WebClientRequestHeaders addAccept(MediaType mediaType);
+    WebClientRequestHeaders addAccept(HttpMediaType mediaType);
 
     /**
      * Sets {@link Http.Header#IF_MODIFIED_SINCE} header to specific time.
@@ -124,46 +136,7 @@ public interface WebClientRequestHeaders extends Headers {
     WebClientRequestHeaders ifRange(String etag);
 
     /**
-     * Returns a list of acceptedTypes ({@value io.helidon.common.http.Http.Header#ACCEPT} header) content types in quality
-     * factor order.
-     * Never {@code null}.
-     *
-     * @return A list of acceptedTypes media types.
-     */
-    List<MediaType> acceptedTypes();
-
-    /**
-     * Returns content type of the request.
-     *
-     * If there is no explicit content set, then {@link MediaType#WILDCARD} is returned.
-     *
-     * @return content type of the request
-     */
-    MediaType contentType();
-
-    /**
-     * Returns content length if known.
-     *
-     * @return content length
-     */
-    Optional<Long> contentLength();
-
-    /**
-     * Returns value of header {@value Http.Header#IF_MODIFIED_SINCE}.
-     *
-     * @return IF_MODIFIED_SINCE header value.
-     */
-    Optional<ZonedDateTime> ifModifiedSince();
-
-    /**
-     * Returns value of header {@value Http.Header#IF_UNMODIFIED_SINCE}.
-     *
-     * @return IF_UNMODIFIED_SINCE header value.
-     */
-    Optional<ZonedDateTime> ifUnmodifiedSince();
-
-    /**
-     * Returns value of header {@value Http.Header#IF_NONE_MATCH}.
+     * Returns value of header {@link Http.Header#IF_NONE_MATCH}.
      *
      * Empty {@link List} is returned if this header is not set.
      *
@@ -172,7 +145,7 @@ public interface WebClientRequestHeaders extends Headers {
     List<String> ifNoneMatch();
 
     /**
-     * Returns value of header {@value Http.Header#IF_MATCH}.
+     * Returns value of header {@link Http.Header#IF_MATCH}.
      *
      * Empty {@link List} is returned if this header is not set.
      *
@@ -181,33 +154,55 @@ public interface WebClientRequestHeaders extends Headers {
     List<String> ifMatch();
 
     /**
-     * Returns value of header {@value Http.Header#IF_RANGE} as a {@link ZonedDateTime}.
+     * Returns value of header {@link Http.Header#IF_RANGE} as a {@link ZonedDateTime}.
      *
      * @return formatted header IF_RANGE as ZonedDateTime
      */
     Optional<ZonedDateTime> ifRangeDate();
 
     /**
-     * Returns value of header {@value Http.Header#IF_RANGE} as a {@link String}.
+     * Returns value of header {@link Http.Header#IF_RANGE} as a {@link String}.
      *
      * @return formatted header IF_RANGE as String
      */
     Optional<String> ifRangeString();
 
     /**
-     * Clears all currently set headers.
+     * Add each header, replacing values if header already exists.
+     *
+     * @param parameters headers
+     * @return updated headers
      */
-    void clear();
+    WebClientRequestHeaders putAll(Headers parameters);
 
-    @Override
-    WebClientRequestHeaders putAll(Parameters parameters);
-
-    @Override
+    /**
+     * Add header values.
+     *
+     * @param key header name
+     * @param values header values
+     * @return updated headers
+     * @deprecated use {@link #add(io.helidon.common.http.Http.HeaderName, String...)}
+     */
+    @Deprecated
     WebClientRequestHeaders add(String key, String... values);
 
-    @Override
-    WebClientRequestHeaders add(String key, Iterable<String> values);
+    /**
+     * Add header values.
+     *
+     * @param key header name
+     * @param values header values
+     * @return updated headers
+     */
+    default WebClientRequestHeaders add(Http.HeaderName key, String... values) {
+        add(Http.HeaderValue.create(key, values));
+        return this;
+    }
 
-    @Override
-    WebClientRequestHeaders addAll(Parameters parameters);
+    /**
+     * Add each header, combining values if header already exists.
+     *
+     * @param parameters headers
+     * @return updated headers
+     */
+    WebClientRequestHeaders addAll(Headers parameters);
 }

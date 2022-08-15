@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,10 @@
 
 package io.helidon.config;
 
+import java.lang.System.Logger.Level;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -92,7 +91,7 @@ import io.helidon.config.spi.ConfigFilter;
  */
 public class ValueResolvingFilter implements ConfigFilter {
 
-    private static final Logger LOGGER = Logger.getLogger(ValueResolvingFilter.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(ValueResolvingFilter.class.getName());
 
     private static final boolean DEFAULT_FAIL_ON_MISSING_REFERENCE_BEHAVIOR = false;
 
@@ -163,7 +162,9 @@ public class ValueResolvingFilter implements ConfigFilter {
             if (failOnMissingReference) {
                 throw new ConfigException(String.format(MISSING_REFERENCE_ERROR, key.name()), e);
             } else {
-                LOGGER.log(Level.FINER, e, () -> String.format(MISSING_REFERENCE_ERROR, key.name()));
+                if (LOGGER.isLoggable(Level.TRACE)) {
+                    LOGGER.log(Level.TRACE, String.format(MISSING_REFERENCE_ERROR, key.name()), e);
+                }
                 return stringValue;
             }
         } finally {

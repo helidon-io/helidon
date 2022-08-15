@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import io.helidon.webserver.WebServer;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.config.testing.OptionalMatcher.value;
+import static io.helidon.common.testing.junit5.OptionalMatcher.optionalValue;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -66,7 +66,7 @@ public abstract class GoogleMainTest {
                 .thenAccept(it -> {
                     assertThat(it.status(), is(Http.Status.UNAUTHORIZED_401));
                     assertThat(it.headers().first(Http.Header.WWW_AUTHENTICATE),
-                               value(is("Bearer realm=\"helidon\",scope=\"openid profile email\"")));
+                               optionalValue(is("Bearer realm=\"helidon\",scope=\"openid profile email\"")));
                 })
                 .await();
     }

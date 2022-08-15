@@ -89,7 +89,7 @@ public class BytesReuseV2ApiTest {
                                                  }
                                                  return chunk;
                                              }));
-                                     res.headers().add("Transfer-Encoding", "chunked");
+                                     res.headers().add(Http.HeaderValues.TRANSFER_ENCODING_CHUNKED);
                                      req.next();
                                  })
                                  .post("/subscriber", (req, res) -> {

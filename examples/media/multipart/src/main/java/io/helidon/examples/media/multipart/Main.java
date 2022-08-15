@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package io.helidon.examples.media.multipart;
 
+import io.helidon.common.LogConfig;
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Single;
 import io.helidon.media.jsonp.JsonpSupport;
@@ -27,6 +28,7 @@ import io.helidon.webserver.staticcontent.StaticContentSupport;
  * This application provides a simple file upload service with a UI to exercise multipart.
  */
 public final class Main {
+    private static final Http.HeaderValue REDIRECT_LOCATION = Http.HeaderValue.createCached(Http.Header.LOCATION, "/ui");
 
     private Main() {
     }
@@ -40,7 +42,7 @@ public final class Main {
         return Routing.builder()
                 .any("/", (req, res) -> {
                     res.status(Http.Status.MOVED_PERMANENTLY_301);
-                    res.headers().put(Http.Header.LOCATION, "/ui");
+                    res.headers().set(REDIRECT_LOCATION);
                     res.send();
                 })
                 .register("/ui", StaticContentSupport.builder("WEB")
@@ -63,6 +65,7 @@ public final class Main {
      * @return the created {@link WebServer} instance
      */
     static Single<WebServer> startServer() {
+        LogConfig.configureRuntime();
         WebServer server = WebServer.builder(createRouting())
                 .port(8080)
                 .addMediaSupport(MultiPartSupport.create())

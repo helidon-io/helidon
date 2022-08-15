@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.lang.System.Logger.Level;
 import java.nio.channels.FileLock;
 import java.nio.channels.NonWritableChannelException;
 import java.nio.charset.StandardCharsets;
@@ -32,8 +33,6 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Optional;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
@@ -45,7 +44,7 @@ import java.util.stream.Collectors;
  */
 public final class FileSourceHelper {
 
-    private static final Logger LOGGER = Logger.getLogger(FileSourceHelper.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(FileSourceHelper.class.getName());
     private static final int FILE_BUFFER_SIZE = 4096;
 
     private FileSourceHelper() {
@@ -64,10 +63,10 @@ public final class FileSourceHelper {
         } catch (FileNotFoundException e) {
             return Optional.empty();
         } catch (IOException e) {
-            LOGGER.log(Level.FINE, e, () -> "Cannot obtain the last modified time of '" + path + "'.");
+            LOGGER.log(Level.TRACE, () -> "Cannot obtain the last modified time of '" + path + "'.", e);
         }
         Instant timestamp = Instant.MIN;
-        LOGGER.finer("Cannot obtain the last modified time. Used time '" + timestamp + "' as a content timestamp.");
+        LOGGER.log(Level.DEBUG, "Cannot obtain the last modified time. Used time '" + timestamp + "' as a content timestamp.");
         return Optional.of(timestamp);
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,12 +23,12 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Publisher;
-import java.util.function.Predicate;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
-import io.helidon.common.http.MediaType;
-import io.helidon.common.http.ReadOnlyParameters;
+import io.helidon.common.http.Headers;
+import io.helidon.common.http.HeadersWritable;
+import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
 
@@ -44,16 +44,18 @@ public final class MessageBodyReaderContext extends MessageBodyContext implement
      */
     static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
 
-    private final ReadOnlyParameters headers;
-    private final Optional<MediaType> contentType;
+    private final Headers headers;
+    private final Optional<HttpMediaType> contentType;
     private final MessageBodyOperators<MessageBodyReader<?>> readers;
     private final MessageBodyOperators<MessageBodyStreamReader<?>> sreaders;
 
     /**
      * Private to enforce the use of the static factory methods.
      */
-    private MessageBodyReaderContext(MessageBodyReaderContext parent, EventListener eventListener, ReadOnlyParameters headers,
-            Optional<MediaType> contentType) {
+    private MessageBodyReaderContext(MessageBodyReaderContext parent,
+                                     EventListener eventListener,
+                                     Headers headers,
+                                     Optional<HttpMediaType> contentType) {
 
         super(parent, eventListener);
         Objects.requireNonNull(headers, "headers cannot be null!");
@@ -75,7 +77,7 @@ public final class MessageBodyReaderContext extends MessageBodyContext implement
      */
     private MessageBodyReaderContext() {
         super(null, null);
-        this.headers = ReadOnlyParameters.empty();
+        this.headers = HeadersWritable.create();
         this.contentType = Optional.empty();
         this.readers = new MessageBodyOperators<>();
         this.sreaders = new MessageBodyOperators<>();
@@ -110,30 +112,6 @@ public final class MessageBodyReaderContext extends MessageBodyContext implement
     public MessageBodyReaderContext registerReader(MessageBodyStreamReader<?> reader) {
         sreaders.registerFirst(reader);
         return this;
-    }
-
-    /**
-     * Register a reader function with the given type.
-     * @param <T> supported type
-     * @param type class representing the supported type
-     * @param reader reader function
-     * @deprecated since 2.0.0 use {@link #registerReader(MessageBodyReader) } instead
-     */
-    @Deprecated
-    public <T> void registerReader(Class<T> type, io.helidon.common.http.Reader<T> reader) {
-        readers.registerFirst(new ReaderAdapter<>(type, reader));
-    }
-
-    /**
-     * Register a reader function with the type predicate.
-     * @param <T> supported type
-     * @param predicate class predicate
-     * @param reader reader function
-     * @deprecated since 2.0.0 use {@link #registerReader(MessageBodyReader) } instead
-     */
-    @Deprecated
-    public <T> void registerReader(Predicate<Class<?>> predicate, io.helidon.common.http.Reader<T> reader) {
-        readers.registerFirst(new ReaderAdapter<>(predicate, reader));
     }
 
     /**
@@ -258,7 +236,7 @@ public final class MessageBodyReaderContext extends MessageBodyContext implement
      *
      * @return Parameters, never {@code null}
      */
-    public ReadOnlyParameters headers() {
+    public Headers headers() {
         return headers;
     }
 
@@ -267,7 +245,7 @@ public final class MessageBodyReaderContext extends MessageBodyContext implement
      *
      * @return Optional, never {@code null}
      */
-    public Optional<MediaType> contentType() {
+    public Optional<HttpMediaType> contentType() {
         return contentType;
     }
 
@@ -304,7 +282,7 @@ public final class MessageBodyReaderContext extends MessageBodyContext implement
      * @return MessageBodyReaderContext
      */
     public static MessageBodyReaderContext create(MediaContext mediaContext, EventListener eventListener,
-                                                  ReadOnlyParameters headers, Optional<MediaType> contentType) {
+                                                  Headers headers, Optional<HttpMediaType> contentType) {
 
         if (mediaContext == null) {
             return new MessageBodyReaderContext(null, eventListener, headers, contentType);
@@ -322,7 +300,7 @@ public final class MessageBodyReaderContext extends MessageBodyContext implement
      * @return MessageBodyReaderContext
      */
     public static MessageBodyReaderContext create(MessageBodyReaderContext parent, EventListener eventListener,
-            ReadOnlyParameters headers, Optional<MediaType> contentType) {
+            Headers headers, Optional<HttpMediaType> contentType) {
 
         return new MessageBodyReaderContext(parent, eventListener, headers, contentType);
     }
@@ -348,51 +326,5 @@ public final class MessageBodyReaderContext extends MessageBodyContext implement
      */
     private static <T> Single<T> transformationFailed(Throwable ex) {
         return Single.<T>error(new IllegalStateException("Transformation failed!", ex));
-    }
-
-    /**
-     * Message body reader adapter for the old deprecated reader.
-     * @param <T> reader type
-     */
-    @SuppressWarnings("deprecation")
-    private static final class ReaderAdapter<T> implements MessageBodyReader<T> {
-
-        private final io.helidon.common.http.Reader<T> reader;
-        private final Predicate<Class<?>> predicate;
-        private final Class<T> clazz;
-
-        ReaderAdapter(Predicate<Class<?>> predicate, io.helidon.common.http.Reader<T> reader) {
-            Objects.requireNonNull(predicate, "predicate cannot be null!");
-            Objects.requireNonNull(reader, "reader cannot be null!");
-            this.reader = reader;
-            this.predicate = predicate;
-            this.clazz = null;
-        }
-
-        ReaderAdapter(Class<T> clazz, io.helidon.common.http.Reader<T> reader) {
-            Objects.requireNonNull(clazz, "clazz cannot be null!");
-            Objects.requireNonNull(reader, "reader cannot be null!");
-            this.reader = reader;
-            this.clazz = clazz;
-            this.predicate = null;
-        }
-
-        @SuppressWarnings("unchecked")
-        @Override
-        public <U extends T> Single<U> read(Publisher<DataChunk> publisher, GenericType<U> type,
-                MessageBodyReaderContext context) {
-
-            return Single.create(reader.applyAndCast(publisher, (Class<U>) type.rawType()));
-        }
-
-        @Override
-        public PredicateResult accept(GenericType<?> type, MessageBodyReaderContext context) {
-            if (predicate != null) {
-                return predicate.test(type.rawType())
-                        ? PredicateResult.SUPPORTED
-                        : PredicateResult.NOT_SUPPORTED;
-            }
-            return PredicateResult.supports(clazz, type);
-        }
     }
 }

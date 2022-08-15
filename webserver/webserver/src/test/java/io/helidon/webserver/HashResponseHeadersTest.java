@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,16 +22,17 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-import io.helidon.common.http.AlreadyCompletedException;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.MediaType;
+import io.helidon.common.http.Http.Header;
+import io.helidon.common.http.Http.HeaderValue;
+import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.http.SetCookie;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.reactive.Single;
 
-import org.hamcrest.collection.IsIterableContainingInOrder;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.webserver.utils.TestUtils.assertException;
@@ -48,31 +49,33 @@ import static org.mockito.Mockito.when;
 /**
  * Tests {@link HashResponseHeaders}.
  */
-public class HashResponseHeadersTest {
+class HashResponseHeadersTest {
+
+    public static final Http.HeaderName HEADER_A = Header.create("a");
 
     @Test
-    public void acceptPatches() throws Exception {
+    void acceptPatches() {
         HashResponseHeaders h = new HashResponseHeaders(null);
-        h.addAcceptPatches(MediaType.APPLICATION_JSON, MediaType.TEXT_XML);
-        assertThat(h.acceptPatches(), IsIterableContainingInOrder.contains(MediaType.APPLICATION_JSON, MediaType.TEXT_XML));
+        h.addAcceptPatches(MediaTypes.APPLICATION_JSON, MediaTypes.TEXT_XML);
+        assertThat(h.acceptPatches(), contains(HttpMediaType.APPLICATION_JSON, HttpMediaType.create(MediaTypes.TEXT_XML)));
     }
 
     @Test
-    public void contentType() throws Exception {
+    void contentType() {
         HashResponseHeaders h = new HashResponseHeaders(null);
-        h.contentType(MediaType.APPLICATION_JSON);
-        assertThat(h.contentType().orElse(null), is(MediaType.APPLICATION_JSON));
-        h.contentType(null);
+        h.contentType(MediaTypes.APPLICATION_JSON);
+        assertThat(h.contentType().orElse(null), is(HttpMediaType.APPLICATION_JSON));
+        h.remove(Header.CONTENT_TYPE);
         assertThat(h.contentType().isPresent(), is(false));
     }
 
     @Test
-    public void expires() throws Exception {
+    void expires() {
         HashResponseHeaders h = new HashResponseHeaders(null);
         ZonedDateTime now = ZonedDateTime.now();
         h.expires(now);
         assertThat(h.expires().orElse(null), is(now.truncatedTo(ChronoUnit.SECONDS).withFixedOffsetZone()));
-        h.expires((ZonedDateTime) null);
+        h.remove(Header.EXPIRES);
         assertThat(h.expires().isPresent(), is(false));
         Instant instant = Instant.now();
         h.expires(instant);
@@ -80,12 +83,12 @@ public class HashResponseHeadersTest {
     }
 
     @Test
-    public void lastModified() throws Exception {
+    void lastModified() {
         HashResponseHeaders h = new HashResponseHeaders(null);
         ZonedDateTime now = ZonedDateTime.now();
         h.lastModified(now);
         assertThat(h.lastModified().orElse(null), is(now.truncatedTo(ChronoUnit.SECONDS).withFixedOffsetZone()));
-        h.lastModified((ZonedDateTime) null);
+        h.remove(Header.LAST_MODIFIED);
         assertThat(h.lastModified().isPresent(), is(false));
         Instant instant = Instant.now();
         h.lastModified(instant);
@@ -93,17 +96,17 @@ public class HashResponseHeadersTest {
     }
 
     @Test
-    public void location() throws Exception {
+    void location() {
         HashResponseHeaders h = new HashResponseHeaders(null);
         URI uri = URI.create("http://www.oracle.com");
         h.location(uri);
         assertThat(h.location().orElse(null), is(uri));
-        h.location(null);
+        h.remove(Header.LOCATION);
         assertThat(h.location().isPresent(), is(false));
     }
 
     @Test
-    public void addCookie() {
+    void addCookie() {
         HashResponseHeaders h = new HashResponseHeaders(null);
         h.addCookie("foo", "bar");
 
@@ -116,66 +119,52 @@ public class HashResponseHeadersTest {
                             .secure(true)
                             .build());
 
-        assertThat(h.all(Http.Header.SET_COOKIE), contains("foo=bar",
-                                                           "aaa=bbbb; Max-Age=600",
-                                                           "who=me",
-                                                           "itis=cool; Expires=Mon, 1 Jan 2080 00:00:00 GMT; Domain=oracle.com;"
+        assertThat(h.all(Header.SET_COOKIE, List::of), contains("foo=bar",
+                                                                "aaa=bbbb; Max-Age=600",
+                                                                "who=me",
+                                                                "itis=cool; Expires=Mon, 1 Jan 2080 00:00:00 GMT; Domain=oracle.com;"
                                                                    + " Path=/foo; Secure"));
     }
 
     @Test
-    public void addAndClearCookies() {
+    void addAndClearCookies() {
         HashResponseHeaders h = new HashResponseHeaders(null);
         h.addCookie("foo1", "bar1");
         h.addCookie("foo2", "bar2");
-        assertThat(h.all(Http.Header.SET_COOKIE), contains(
+        assertThat(h.all(Header.SET_COOKIE, List::of), contains(
                 "foo1=bar1",
                 "foo2=bar2"));
         h.clearCookie("foo1");
-        assertThat(h.all(Http.Header.SET_COOKIE), contains(
+        assertThat(h.all(Header.SET_COOKIE, List::of), contains(
                 "foo1=deleted; Expires=Thu, 1 Jan 1970 00:00:00 GMT; Path=/",
                 "foo2=bar2"));
     }
 
     @Test
-    public void clearCookie() {
+    void clearCookie() {
         HashResponseHeaders h = new HashResponseHeaders(null);
         h.clearCookie("foo1");
-        assertThat(h.all(Http.Header.SET_COOKIE), contains(
+        assertThat(h.all(Header.SET_COOKIE, List::of), contains(
                 "foo1=deleted; Expires=Thu, 1 Jan 1970 00:00:00 GMT; Path=/"));
     }
 
     @Test
-    public void immutableWhenCompleted() throws Exception {
+    void immutableWhenCompleted() throws Exception {
         HashResponseHeaders h = new HashResponseHeaders(mockBareResponse());
-        h.put("a", "b");
-        h.put("a", Arrays.asList("b"));
-        h.add("a", "b");
-        h.add("a", Arrays.asList("b"));
-        h.putIfAbsent("a", "b");
-        h.putIfAbsent("a", Arrays.asList("b"));
-        h.computeIfAbsent("a", k -> Arrays.asList("b"));
-        h.computeSingleIfAbsent("a", k -> "b");
-        h.putAll(h);
-        h.addAll(h);
-        h.remove("a");
+        h.set(HEADER_A, "b");
+        h.add(HeaderValue.create(HEADER_A, "b"));
+        h.setIfAbsent(HeaderValue.create(HEADER_A, "b"));
+        h.remove(HEADER_A);
 
         h.send().toCompletableFuture().get();
-        assertException(() -> h.put("a", "b"), AlreadyCompletedException.class);
-        assertException(() -> h.put("a", Arrays.asList("b")), AlreadyCompletedException.class);
-        assertException(() -> h.add("a", "b"), AlreadyCompletedException.class);
-        assertException(() -> h.add("a", Arrays.asList("b")), AlreadyCompletedException.class);
-        assertException(() -> h.putIfAbsent("a", "b"), AlreadyCompletedException.class);
-        assertException(() -> h.putIfAbsent("a", Arrays.asList("b")), AlreadyCompletedException.class);
-        assertException(() -> h.computeIfAbsent("a", k -> Arrays.asList("b")), AlreadyCompletedException.class);
-        assertException(() -> h.computeSingleIfAbsent("a", k -> "b"), AlreadyCompletedException.class);
-        assertException(() -> h.putAll(h), AlreadyCompletedException.class);
-        assertException(() -> h.addAll(h), AlreadyCompletedException.class);
-        assertException(() -> h.remove("a"), AlreadyCompletedException.class);
+        assertException(() -> h.set(HEADER_A, "b"), AlreadyCompletedException.class);
+        assertException(() -> h.add(HeaderValue.create(HEADER_A, "b")), AlreadyCompletedException.class);
+        assertException(() -> h.setIfAbsent(HeaderValue.create(HEADER_A, "b")), AlreadyCompletedException.class);
+        assertException(() -> h.remove(HEADER_A), AlreadyCompletedException.class);
     }
 
     @Test
-    public void beforeSent() throws Exception {
+    void beforeSent() throws Exception {
         StringBuffer sb = new StringBuffer();
         HashResponseHeaders h = new HashResponseHeaders(mockBareResponse());
         h.beforeSend(headers -> sb.append("B:" + (h == headers)));
@@ -188,17 +177,17 @@ public class HashResponseHeadersTest {
     }
 
     @Test
-    public void headersFiltrationFor204() throws Exception {
+    void headersFiltrationFor204() throws Exception {
         BareResponse bareResponse = mockBareResponse();
         HashResponseHeaders h = new HashResponseHeaders(bareResponse);
-        h.put(Http.Header.CONTENT_TYPE, "text/plain");
-        h.put("some", "some_value");
-        h.put(Http.Header.TRANSFER_ENCODING, "custom");
+        h.set(Header.CONTENT_TYPE, "text/plain");
+        h.set(Header.create("some"), "some_value");
+        h.set(Header.TRANSFER_ENCODING, "custom");
         h.httpStatus(Http.Status.NO_CONTENT_204);
         h.send().toCompletableFuture().get();
         verify(bareResponse).writeStatusAndHeaders(any(), argThat(m -> m.containsKey("some")
-                && !m.containsKey(Http.Header.CONTENT_TYPE)
-                && !m.containsKey(Http.Header.TRANSFER_ENCODING)));
+                && !m.containsKey(Header.CONTENT_TYPE.defaultCase())
+                && !m.containsKey(Header.TRANSFER_ENCODING.defaultCase())));
     }
 
     private BareResponse mockBareResponse() {

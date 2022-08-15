@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package io.helidon.webserver.examples.comments;
 import java.nio.charset.StandardCharsets;
 
 import io.helidon.common.http.Http;
-import io.helidon.common.http.MediaType;
+import io.helidon.common.http.HttpMediaType;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.testsupport.MediaPublisher;
 import io.helidon.webserver.testsupport.TestClient;
@@ -66,7 +66,7 @@ public class CommentsServiceTest {
 
         response = TestClient.create(routing)
                 .path("one")
-                .post(MediaPublisher.create(MediaType.TEXT_PLAIN, "aaa"));
+                .post(MediaPublisher.create(HttpMediaType.TEXT_PLAIN, "aaa"));
         assertEquals(Http.Status.OK_200, response.status());
 
         response = TestClient.create(routing)

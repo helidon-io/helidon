@@ -17,7 +17,6 @@ package io.helidon.webserver;
 
 import java.nio.ByteBuffer;
 import java.time.Duration;
-import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.Executors;
@@ -25,22 +24,21 @@ import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.LogConfig;
 import io.helidon.common.http.DataChunk;
+import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Multi;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientResponse;
 
-import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.util.AsciiString;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.RepeatedTest;
 
+import static io.helidon.common.testing.http.HttpHeaderMatcher.hasHeader;
+import static io.helidon.common.testing.http.HttpHeaderMatcher.noHeader;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasEntry;
-import static org.hamcrest.Matchers.hasKey;
-import static org.hamcrest.Matchers.not;
 
 public class KeepAliveTest {
 
@@ -120,10 +118,10 @@ public class KeepAliveTest {
 
             assertThat(res.status().code(), is(expectedStatus));
             if (expectedConnectionHeader != null) {
-                assertThat(res.headers().toMap(),
-                           hasEntry(HttpHeaderNames.CONNECTION.toString(), List.of(expectedConnectionHeader.toString())));
+                assertThat(res.headers(),
+                           hasHeader(Http.HeaderValue.create(Http.Header.CONNECTION, expectedConnectionHeader.toString())));
             } else {
-                assertThat(res.headers().toMap(), not(hasKey(HttpHeaderNames.CONNECTION.toString())));
+                assertThat(res.headers(), noHeader(Http.Header.CONNECTION));
             }
             res.content().forEach(DataChunk::release);
         } catch (CompletionException e) {

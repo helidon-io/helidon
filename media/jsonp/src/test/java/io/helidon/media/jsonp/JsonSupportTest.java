@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ import java.io.ByteArrayInputStream;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.http.Http;
-import io.helidon.common.http.MediaType;
+import io.helidon.common.http.HttpMediaType;
 import io.helidon.webserver.Handler;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.testsupport.MediaPublisher;
@@ -30,6 +30,7 @@ import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.common.http.Http.Header.ACCEPT;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.sameInstance;
@@ -62,11 +63,11 @@ class JsonSupportTest {
         TestResponse response = TestClient.create(routing, JsonpSupport.create())
                 .path("/foo")
                 .post(MediaPublisher.create(
-                        MediaType.APPLICATION_JSON.withCharset("UTF-8"),
+                        HttpMediaType.APPLICATION_JSON.withCharset("UTF-8"),
                         json.toString()));
 
         assertThat(response.headers().first(Http.Header.CONTENT_TYPE).orElse(null),
-                is(equalTo(MediaType.APPLICATION_JSON.toString())));
+                is(equalTo(HttpMediaType.APPLICATION_JSON.toString())));
 
         byte[] bytes = response.asBytes().toCompletableFuture()
                 .get(10, TimeUnit.SECONDS);
@@ -84,11 +85,11 @@ class JsonSupportTest {
         JsonObject json = createJson();
         TestResponse response = TestClient.create(routing, JsonpSupport.create())
                 .path("/foo")
-                .post(MediaPublisher.create(MediaType.APPLICATION_JSON,
+                .post(MediaPublisher.create(HttpMediaType.APPLICATION_JSON,
                         json.toString()));
 
         assertThat(response.headers().first(Http.Header.CONTENT_TYPE).orElse(null),
-                is(equalTo(MediaType.APPLICATION_JSON.toString())));
+                is(equalTo(HttpMediaType.APPLICATION_JSON.text())));
         byte[] bytes = response.asBytes().toCompletableFuture()
                 .get(10, TimeUnit.SECONDS);
         JsonObject json2 = Json.createReader(new ByteArrayInputStream(bytes))
@@ -105,7 +106,7 @@ class JsonSupportTest {
         TestResponse response = TestClient.create(routing, JsonpSupport.create())
                 .path("/foo")
                 .post(MediaPublisher.create(
-                        MediaType.APPLICATION_JSON.withCharset("UTF-8"),
+                        HttpMediaType.APPLICATION_JSON.withCharset("UTF-8"),
                         "{ ... invalid ... }"));
 
         assertThat(response.status(), is(equalTo(Http.Status.INTERNAL_SERVER_ERROR_500)));
@@ -123,7 +124,7 @@ class JsonSupportTest {
         TestResponse response = TestClient.create(routing)
                 .path("/foo")
                 .post(MediaPublisher.create(
-                        MediaType.APPLICATION_JSON.withCharset("UTF-8"),
+                        HttpMediaType.APPLICATION_JSON.withCharset("UTF-8"),
                         json.toString()));
 
         assertThat(response.status(), is(equalTo(Http.Status.INTERNAL_SERVER_ERROR_500)));
@@ -140,42 +141,42 @@ class JsonSupportTest {
         // Has accept
         TestResponse response = TestClient.create(routing, JsonpSupport.create())
                 .path("/foo")
-                .header("Accept", "text/plain; q=.8, application/json; q=.1")
+                .header(ACCEPT, "text/plain; q=.8, application/json; q=.1")
                 .post(MediaPublisher.create(
-                        MediaType.APPLICATION_JSON.withCharset("UTF-8"),
+                        HttpMediaType.APPLICATION_JSON.withCharset("UTF-8"),
                         json.toString()));
         assertThat(response.status(), is(equalTo(Http.Status.OK_200)));
         assertThat(response.headers().first(Http.Header.CONTENT_TYPE).orElse(null),
-                is(equalTo(MediaType.APPLICATION_JSON.toString())));
+                is(equalTo(HttpMediaType.APPLICATION_JSON.text())));
 
         // Has accept with +json
         response = TestClient.create(routing, JsonpSupport.create())
                 .path("/foo")
-                .header("Accept", "text/plain; q=.8, application/specific+json; q=.1")
+                .header(ACCEPT, "text/plain; q=.8, application/specific+json; q=.1")
                 .post(MediaPublisher.create(
-                        MediaType.APPLICATION_JSON.withCharset("UTF-8"),
+                        HttpMediaType.APPLICATION_JSON.withCharset("UTF-8"),
                         json.toString()));
         assertThat(response.status(), is(equalTo(Http.Status.OK_200)));
         assertThat(response.headers().first(Http.Header.CONTENT_TYPE).orElse(null),
-                is(equalTo(MediaType.parse("application/specific+json").toString())));
+                is(equalTo(HttpMediaType.create("application/specific+json").toString())));
 
         // With start
         response = TestClient.create(routing, JsonpSupport.create())
                 .path("/foo")
-                .header("Accept", "text/plain; q=.8, application/*; q=.1")
+                .header(ACCEPT, "text/plain; q=.8, application/*; q=.1")
                 .post(MediaPublisher.create(
-                        MediaType.APPLICATION_JSON.withCharset("UTF-8"),
+                        HttpMediaType.APPLICATION_JSON.withCharset("UTF-8"),
                         json.toString()));
         assertThat(response.status(), is(equalTo(Http.Status.OK_200)));
         assertThat(response.headers().first(Http.Header.CONTENT_TYPE).orElse(null),
-                is(equalTo(MediaType.APPLICATION_JSON.toString())));
+                is(equalTo(HttpMediaType.APPLICATION_JSON.text())));
 
         // With JSONP standard application/javascript
         response = TestClient.create(routing, JsonpSupport.create())
                 .path("/foo")
-                .header("Accept", "application/javascript")
+                .header(ACCEPT, "application/javascript")
                 .post(MediaPublisher.create(
-                        MediaType.APPLICATION_JSON.withCharset("UTF-8"),
+                        HttpMediaType.APPLICATION_JSON.withCharset("UTF-8"),
                         json.toString()));
         assertThat(response.status(),
                 is(equalTo(Http.Status.INTERNAL_SERVER_ERROR_500)));
@@ -183,9 +184,9 @@ class JsonSupportTest {
         // Without start
         response = TestClient.create(routing, JsonpSupport.create())
                 .path("/foo")
-                .header("Accept", "text/plain; q=.8, application/specific; q=.1")
+                .header(ACCEPT, "text/plain; q=.8, application/specific; q=.1")
                 .post(MediaPublisher.create(
-                        MediaType.APPLICATION_JSON.withCharset("UTF-8"),
+                        HttpMediaType.APPLICATION_JSON.withCharset("UTF-8"),
                         json.toString()));
         assertThat(response.status(),
                 is(equalTo(Http.Status.INTERNAL_SERVER_ERROR_500)));

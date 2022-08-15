@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
+import io.helidon.common.media.type.MediaType;
 import io.helidon.config.spi.ConfigParser;
 
 /**
@@ -50,7 +51,7 @@ public final class TestHelper {
         return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
     }
 
-    public static ConfigParser.Content parsableContent(String data, String mediaType, Object stamp) {
+    public static ConfigParser.Content parsableContent(String data, MediaType mediaType, Object stamp) {
         return ConfigParser.Content.builder()
                 .data(toInputStream(data))
                 .mediaType(mediaType)

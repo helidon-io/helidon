@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.config;
 
+import java.lang.System.Logger.Level;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.charset.UnsupportedCharsetException;
@@ -24,8 +25,6 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import io.helidon.config.spi.ConfigNode;
@@ -35,7 +34,7 @@ import io.helidon.config.spi.ConfigNode;
  */
 final class ConfigUtils {
 
-    private static final Logger LOGGER = Logger.getLogger(ConfigUtils.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(ConfigUtils.class.getName());
 
     private ConfigUtils() {
         throw new AssertionError("Instantiation not allowed.");
@@ -59,9 +58,7 @@ final class ConfigUtils {
                 if (strict) {
                     throw ex;
                 } else {
-                    LOGGER.log(Level.CONFIG, "Tree-structure failure on key '" + entry.getKey() + "', reason: "
-                            + ex.getLocalizedMessage());
-                    LOGGER.log(Level.FINEST, "Detailed reason of failure of adding key '" + entry.getKey()
+                    LOGGER.log(Level.TRACE, "Tree-structure failure on key '" + entry.getKey()
                             + "' = '" + entry.getValue() + "'.", ex);
                 }
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,7 +58,7 @@ public class VaultRestApi extends RestApiBase {
     @Override
     protected <T> Single<T> emptyResponse(String path,
                                           ApiRequest<?> request,
-                                          Http.RequestMethod method,
+                                          Http.Method method,
                                           String requestId,
                                           WebClientResponse response,
                                           ResponseBuilder<?, T, ?> responseBuilder) {
@@ -93,7 +93,7 @@ public class VaultRestApi extends RestApiBase {
     @Override
     protected Throwable readError(String path,
                                   ApiRequest<?> request,
-                                  Http.RequestMethod method,
+                                  Http.Method method,
                                   String requestId,
                                   WebClientResponse response,
                                   JsonObject entity) {

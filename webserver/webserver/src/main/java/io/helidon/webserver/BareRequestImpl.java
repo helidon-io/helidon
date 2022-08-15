@@ -19,10 +19,6 @@ package io.helidon.webserver;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Flow;
 
@@ -70,8 +66,8 @@ class BareRequestImpl implements BareRequest {
     }
 
     @Override
-    public Http.RequestMethod method() {
-        return Http.RequestMethod.create(nettyRequest.method().name());
+    public Http.Method method() {
+        return Http.Method.create(nettyRequest.method().name());
     }
 
     @Override
@@ -121,14 +117,8 @@ class BareRequestImpl implements BareRequest {
     }
 
     @Override
-    public Map<String, List<String>> headers() {
-        HashMap<String, List<String>> map = new HashMap<>();
-
-        for (Map.Entry<String, String> entry : nettyRequest.headers().entries()) {
-            map.computeIfAbsent(entry.getKey(), s -> new ArrayList<>()).add(entry.getValue());
-        }
-
-        return map;
+    public RequestHeaders headers() {
+        return new NettyRequestHeaders(nettyRequest.headers());
     }
 
     @Override

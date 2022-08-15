@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,10 @@ package io.helidon.metrics.prometheus;
 
 import java.util.Enumeration;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
-import io.helidon.common.http.MediaType;
+import io.helidon.common.http.HttpMediaType;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
@@ -48,7 +49,7 @@ public final class PrometheusSupport implements Service {
      */
     private static final String DEFAULT_PATH = "/metrics";
 
-    private static final MediaType CONTENT_TYPE = MediaType.parse("text/plain; version=0.0.4; charset=utf-8");
+    private static final HttpMediaType CONTENT_TYPE = HttpMediaType.create("text/plain; version=0.0.4; charset=utf-8");
 
     private final CollectorRegistry collectorRegistry;
     private final String path;
@@ -64,7 +65,7 @@ public final class PrometheusSupport implements Service {
     }
 
     private void process(ServerRequest req, ServerResponse res) {
-        Set<String> filters = new HashSet<>(req.queryParams().all("name[]"));
+        Set<String> filters = new HashSet<>(req.queryParams().all("name[]", List::of));
         Enumeration<Collector.MetricFamilySamples> mfs = collectorRegistry.filteredMetricFamilySamples(filters);
         res.headers().contentType(CONTENT_TYPE);
         res.send(compose(mfs));

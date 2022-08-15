@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.nio.file.attribute.FileAttribute;
 import java.util.Objects;
 
 import io.helidon.common.Builder;
+import io.helidon.common.media.type.MediaType;
 import io.helidon.config.AbstractConfigSourceBuilder;
 import io.helidon.config.Config;
 import io.helidon.config.spi.ConfigParser;
@@ -145,7 +146,7 @@ public final class GitConfigSourceBuilder
     }
 
     @Override
-    public GitConfigSourceBuilder mediaType(String mediaType) {
+    public GitConfigSourceBuilder mediaType(MediaType mediaType) {
         return super.mediaType(mediaType);
     }
 

@@ -24,7 +24,7 @@ import java.util.logging.Logger;
 
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.MediaType;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientRequestBuilder;
 import io.helidon.webclient.WebClientResponse;
@@ -125,7 +125,7 @@ public class MaxPayloadSizeTest {
         WebClientRequestBuilder builder = webClient.post();
         builder.headers().add("Content-Length", "512");        // over max
         WebClientResponse response = builder.path("/maxpayload")
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .contentType(MediaTypes.APPLICATION_OCTET_STREAM)
                 .request()
                 .await(5, TimeUnit.SECONDS);
         assertThat(response.status().code(), is(Http.Status.REQUEST_ENTITY_TOO_LARGE_413.code()));
@@ -138,7 +138,7 @@ public class MaxPayloadSizeTest {
     public void testContentLengthExceededWithPayload() {
         WebClientRequestBuilder builder = webClient.post();
         WebClientResponse response = builder.path("/maxpayload")
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .contentType(MediaTypes.APPLICATION_OCTET_STREAM)
                 .submit(PAYLOAD)
                 .await(5, TimeUnit.SECONDS);
         assertThat(response.status().code(), is(Http.Status.REQUEST_ENTITY_TOO_LARGE_413.code()));
@@ -154,7 +154,7 @@ public class MaxPayloadSizeTest {
         try {
             WebClientRequestBuilder builder = webClient.post();
             WebClientResponse response = builder.path("/maxpayload")
-                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                    .contentType(MediaTypes.APPLICATION_OCTET_STREAM)
                     .submit(new PayloadPublisher(PAYLOAD, 3))
                     .await(5, TimeUnit.SECONDS);
             assertThat(response.status().code(), is(Http.Status.REQUEST_ENTITY_TOO_LARGE_413.code()));
@@ -170,21 +170,21 @@ public class MaxPayloadSizeTest {
     public void testMixedGoodAndBadPayloads() {
         WebClientRequestBuilder builder = webClient.post();
         WebClientResponse response = builder.path("/maxpayload")
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .contentType(MediaTypes.APPLICATION_OCTET_STREAM)
                 .submit(PAYLOAD.substring(0, 100))
                 .await(5, TimeUnit.SECONDS);
         assertThat(response.status().code(), is(Http.Status.OK_200.code()));
 
         builder = webClient.post();
         response = builder.path("/maxpayload")
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .contentType(MediaTypes.APPLICATION_OCTET_STREAM)
                 .submit(new PayloadPublisher(PAYLOAD, 1))
                 .await(5, TimeUnit.SECONDS);
         assertThat(response.status().code(), is(Http.Status.REQUEST_ENTITY_TOO_LARGE_413.code()));
 
         builder = webClient.post();
         response = builder.path("/maxpayload")
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .contentType(MediaTypes.APPLICATION_OCTET_STREAM)
                 .submit(PAYLOAD.substring(0, (int) MAX_PAYLOAD_SIZE))
                 .await(5, TimeUnit.SECONDS);
         assertThat(response.status().code(), is(Http.Status.OK_200.code()));

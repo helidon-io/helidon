@@ -26,10 +26,10 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import io.helidon.common.GenericType;
+import io.helidon.common.testing.junit5.RestoreSystemPropertiesExt;
 import io.helidon.config.Config.Key;
 import io.helidon.config.spi.ConfigNode.ListNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
-import io.helidon.config.test.infra.RestoreSystemPropertiesExt;
 
 import org.hamcrest.Matcher;
 import org.junit.jupiter.api.Test;
