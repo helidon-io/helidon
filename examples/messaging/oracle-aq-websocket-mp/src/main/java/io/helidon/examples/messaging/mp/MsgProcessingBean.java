@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,7 +63,7 @@ public class MsgProcessingBean {
      * Example of resending message from one queue to another and logging the payload to DB in the process.
      *
      * @param msg received message
-     * @return message to be sent
+     * @return future of the sent message
      */
     @Incoming("from-queue-1")
     @Outgoing("to-queue-2")
@@ -88,11 +88,13 @@ public class MsgProcessingBean {
      * Broadcasts an event.
      *
      * @param msg Message to broadcast
+     * @return completed completion stage
      */
     @Incoming("from-queue-2")
-    public void fromSecondQueue(AqMessage<String> msg) {
+    public CompletionStage<Void> fromSecondQueue(AqMessage<String> msg) {
         // Broadcast to all subscribers
         broadCaster.submit(msg.getPayload());
+        return CompletableFuture.completedFuture(null);
     }
 
     /**
