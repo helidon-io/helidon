@@ -288,9 +288,10 @@ public class ServerCdiExtension implements Extension {
         StaticContentSupport.FileSystemBuilder pBuilder = StaticContentSupport.builder(config.get("location")
                                                                                                .as(Path.class)
                                                                                                .get());
-        config.get("welcome")
+        pBuilder.welcomeFileName(config.get("welcome")
                 .asString()
-                .ifPresent(pBuilder::welcomeFileName);
+                .orElse("index.html"));
+
         StaticContentSupport staticContent = pBuilder.build();
 
         if (context.exists()) {
