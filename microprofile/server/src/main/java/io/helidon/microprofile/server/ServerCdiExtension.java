@@ -264,15 +264,11 @@ public class ServerCdiExtension implements Extension {
                 // to be used by JAX-RS features and other startup code
                 Application app = it.applicationClass()
                         .map(appClass -> CDI.current().select(appClass).get())
-                        .orElse(null);
-                if (app != null) {
-                    Context parent = Contexts.context().orElse(null);
-                    Context startupContext = Context.create(parent);
-                    startupContext.register(app);
-                    Contexts.runInContext(startupContext, () -> addApplication(jaxRs, it, shared));
-                } else {
-                    addApplication(jaxRs, it, shared);
-                }
+                        .orElseThrow();
+                Context parent = Contexts.context().orElse(null);
+                Context startupContext = Context.create(parent);
+                startupContext.register(app);
+                Contexts.runInContext(startupContext, () -> addApplication(jaxRs, it, shared));
             });
         }
         STARTUP_LOGGER.finest("Registered jersey application(s)");
