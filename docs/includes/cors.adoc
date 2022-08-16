@@ -356,7 +356,7 @@ The following code shows this change in the the QuickStart SE example.
 ----
 HealthSupport health = HealthSupport.builder()
         .config(config.get("health")) // <1>
-        .addLiveness(HealthChecks.healthChecks())   // Adds a convenient set of checks
+        .add(HealthChecks.healthChecks())   // Adds a convenient set of checks
         .build();
 ----
 <1> Use the `health` config section (if present) to configure the health service.

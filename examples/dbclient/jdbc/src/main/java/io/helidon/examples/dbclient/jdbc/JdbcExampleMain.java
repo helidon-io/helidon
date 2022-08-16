@@ -16,11 +16,13 @@
 
 package io.helidon.examples.dbclient.jdbc;
 
+import java.util.List;
+
 import io.helidon.common.LogConfig;
 import io.helidon.config.Config;
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.health.DbClientHealthCheck;
-import io.helidon.health.HealthSupport;
+import io.helidon.reactive.health.HealthSupport;
 import io.helidon.media.jsonb.JsonbSupport;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.metrics.serviceapi.MetricsSupport;
@@ -98,8 +100,7 @@ public final class JdbcExampleMain {
 
         // Some relational databases do not support DML statement as ping so using query which works for all of them
         HealthSupport health = HealthSupport.builder()
-                .addLiveness(
-                        DbClientHealthCheck.create(dbClient, dbConfig.get("health-check")))
+                .add(List.of(DbClientHealthCheck.create(dbClient, dbConfig.get("health-check"))))
                 .build();
 
         return Routing.builder()

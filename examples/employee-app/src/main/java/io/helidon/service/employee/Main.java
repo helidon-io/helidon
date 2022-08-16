@@ -19,7 +19,7 @@ package io.helidon.service.employee;
 import io.helidon.common.LogConfig;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
-import io.helidon.health.HealthSupport;
+import io.helidon.reactive.health.HealthSupport;
 import io.helidon.health.checks.HealthChecks;
 import io.helidon.media.jsonb.JsonbSupport;
 import io.helidon.metrics.serviceapi.MetricsSupport;
@@ -91,7 +91,7 @@ public final class Main {
 
         MetricsSupport metrics = MetricsSupport.create();
         EmployeeService employeeService = new EmployeeService(config);
-        HealthSupport health = HealthSupport.builder().addLiveness(HealthChecks.healthChecks())
+        HealthSupport health = HealthSupport.builder().add(HealthChecks.healthChecks())
                 .build(); // Adds a convenient set of checks
 
         return Routing.builder()

@@ -120,7 +120,7 @@ private static Routing createRouting(Config config) {
     MetricsSupport metrics = MetricsSupport.create();
     GreetService greetService = new GreetService(config);
     HealthSupport health = HealthSupport.builder()
-            .addLiveness(HealthChecks.healthChecks())   // Adds a convenient set of checks
+            .add(HealthChecks.healthChecks())   // Adds a convenient set of checks
             .build();
     CorsSupport corsSupport = CorsSupport.builder()  // <1>
             .addCrossOriginConfig(CrossOriginConfig.builder() // <2>
@@ -202,7 +202,7 @@ private static Routing createRouting(Config config) {
     MetricsSupport metrics = MetricsSupport.create();
     GreetService greetService = new GreetService(config);
     HealthSupport health = HealthSupport.builder()
-            .addLiveness(HealthChecks.healthChecks())   // Adds a convenient set of checks
+            .add(HealthChecks.healthChecks())   // Adds a convenient set of checks
             .build();
     CorsSupport.Builder builder = CorsSupport.builder();
 
@@ -283,7 +283,7 @@ private static Routing createRouting(Config config) {
             .build();
     GreetService greetService = new GreetService(config);
     HealthSupport health = HealthSupport.builder()
-            .addLiveness(HealthChecks.healthChecks())   // Adds a convenient set of checks
+            .add(HealthChecks.healthChecks())   // Adds a convenient set of checks
             .build();
 
     return Routing.builder()

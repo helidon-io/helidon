@@ -16,40 +16,34 @@
 
 package io.helidon.health.checks;
 
+import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.common.NativeImageHelper;
-import io.helidon.health.common.BuiltInHealthCheck;
-
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import org.eclipse.microprofile.health.HealthCheck;
-import org.eclipse.microprofile.health.HealthCheckResponse;
-import org.eclipse.microprofile.health.Liveness;
+import io.helidon.health.HealthCheck;
+import io.helidon.health.HealthCheckResponse;
+import io.helidon.health.HealthCheckResponse.Status;
+import io.helidon.health.HealthCheckType;
 
 /**
  * A health check that looks for thread deadlocks. Automatically created and registered via CDI.
  * <p>
  * This health check can be referred to in properties as {@code deadlock}. So for example, to exclude this
  * health check from being exposed, use {@code helidon.health.exclude: deadlock}.
- * </p>
  */
-@Liveness
-@ApplicationScoped // this will be ignored if not within CDI
-@BuiltInHealthCheck
 public class DeadlockHealthCheck implements HealthCheck {
     private static final Logger LOGGER = Logger.getLogger(DeadlockHealthCheck.class.getName());
     private static final String NAME = "deadlock";
+    private static final String PATH = "deadlock";
 
     /**
-     * Used for detecting deadlocks. Injected in the constructor.
+     * Used for detecting deadlocks.
      */
     private final ThreadMXBean threadBean;
     private final boolean disabled;
 
-    @Inject
         // this will be ignored if not within CDI
     DeadlockHealthCheck(ThreadMXBean threadBean) {
         this.threadBean = threadBean;
@@ -61,11 +55,34 @@ public class DeadlockHealthCheck implements HealthCheck {
      * Create a new deadlock health check to use.
      *
      * @param threadBean thread mx bean to get thread monitoring data from
-     * @return a new health check to register with
-     *         {@link io.helidon.health.HealthSupport.Builder#addLiveness(org.eclipse.microprofile.health.HealthCheck...)}
+     * @return a new health check
      */
     public static DeadlockHealthCheck create(ThreadMXBean threadBean) {
         return new DeadlockHealthCheck(threadBean);
+    }
+
+    /**
+     * Create a new deadlock health check to use.
+     *
+     * @return a new health check
+     */
+    public static DeadlockHealthCheck create() {
+        return create(ManagementFactory.getThreadMXBean());
+    }
+
+    @Override
+    public HealthCheckType type() {
+        return HealthCheckType.LIVENESS;
+    }
+
+    @Override
+    public String name() {
+        return NAME;
+    }
+
+    @Override
+    public String path() {
+        return PATH;
     }
 
     @Override
@@ -73,10 +90,9 @@ public class DeadlockHealthCheck implements HealthCheck {
         if (disabled) {
             LOGGER.log(Level.FINEST, "Running in graal native image, this health-check always returns up.");
             return HealthCheckResponse.builder()
-                    .name(NAME)
-                    .withData("enabled", "false")
-                    .withData("description", "in native image")
-                    .up()
+                    .detail("enabled", "false")
+                    .detail("description", "in native image")
+                    .status(Status.UP)
                     .build();
         }
 
@@ -88,8 +104,8 @@ public class DeadlockHealthCheck implements HealthCheck {
             // ThreadBean does not work - probably in native image
             LOGGER.log(Level.FINEST, "Failed to find deadlocks in ThreadMXBean, ignoring this healthcheck", e);
         }
-        return HealthCheckResponse.named(NAME)
-                .status(noDeadLock)
+        return HealthCheckResponse.builder()
+                .status(noDeadLock ? Status.UP : Status.DOWN)
                 .build();
     }
 }

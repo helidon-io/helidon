@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package io.helidon.dbclient.health;
 
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -24,10 +25,8 @@ import java.util.logging.Logger;
 import io.helidon.common.reactive.Awaitable;
 import io.helidon.config.Config;
 import io.helidon.dbclient.DbClient;
-
-import org.eclipse.microprofile.health.HealthCheck;
-import org.eclipse.microprofile.health.HealthCheckResponse;
-import org.eclipse.microprofile.health.HealthCheckResponseBuilder;
+import io.helidon.health.HealthCheck;
+import io.helidon.health.HealthCheckResponse;
 
 /**
  * Database health check.
@@ -39,6 +38,7 @@ public abstract class DbClientHealthCheck implements HealthCheck {
 
     /* Default hHealth check timeout in seconds (to wait for statement execution response). */
     private static final int DEFAULT_TIMEOUT_SECONDS = 10;
+    private final Duration timeout;
 
     /**
      * Create a health check with configured settings for the database.
@@ -46,9 +46,7 @@ public abstract class DbClientHealthCheck implements HealthCheck {
      *
      * @param dbClient database client used to execute health check statement
      * @param config {@link Config} node with health check configuration
-     * @return health check that can be used with
-     * {@link io.helidon.health.HealthSupport.Builder#addReadiness(org.eclipse.microprofile.health.HealthCheck...)}
-     * or {@link io.helidon.health.HealthSupport.Builder#addLiveness(org.eclipse.microprofile.health.HealthCheck...)}
+     * @return health check that can be used with health services
      */
     public static DbClientHealthCheck create(final DbClient dbClient, final Config config) {
         return builder(dbClient).config(config).build();
@@ -68,16 +66,11 @@ public abstract class DbClientHealthCheck implements HealthCheck {
     private final DbClient dbClient;
     /* Health check name. */
     private final String name;
-    /* Health check timeout length (to wait for statement execution response). */
-    private final long timeoutDuration;
-    /* Health check timeout units (to wait for statement execution response). */
-    private final TimeUnit timeoutUnit;
 
     private DbClientHealthCheck(Builder builder) {
         this.dbClient = builder.database;
         this.name = builder.name();
-        this.timeoutDuration = builder.timeoutDuration();
-        this.timeoutUnit = builder.timeoutUnit();
+        this.timeout = Duration.of(builder.timeoutDuration, builder.timeoutUnit.toChronoUnit());
     }
 
     /**
@@ -87,17 +80,18 @@ public abstract class DbClientHealthCheck implements HealthCheck {
      */
     protected abstract Awaitable<?> execPing();
 
+
     @Override
     public HealthCheckResponse call() {
-        HealthCheckResponseBuilder builder = HealthCheckResponse.builder().name(name);
+        HealthCheckResponse.Builder builder = HealthCheckResponse.builder();
 
         try {
-            execPing().await(timeoutDuration, timeoutUnit);
-            builder.up();
+            execPing().await(timeout);
+            builder.status(HealthCheckResponse.Status.UP);
         } catch (Throwable e) {
-            builder.down();
-            builder.withData("ErrorMessage", e.getMessage());
-            builder.withData("ErrorClass", e.getClass().getName());
+            builder.status(HealthCheckResponse.Status.DOWN);
+            builder.detail("ErrorMessage", e.getMessage());
+            builder.detail("ErrorClass", e.getClass().getName());
             LOGGER.log(Level.FINER, e, () -> String.format(
                     "Database %s is not responding: %s", dbClient.dbType(), e.getMessage()));
         }
@@ -111,16 +105,13 @@ public abstract class DbClientHealthCheck implements HealthCheck {
 
     // Getters for local usage and jUnit tests
 
-    String name() {
+    @Override
+    public String name() {
         return name;
     }
 
-    long timeoutDuration() {
-        return timeoutDuration;
-    }
-
-    TimeUnit timeoutUnit() {
-        return timeoutUnit;
+    Duration timeout() {
+        return timeout;
     }
 
     /**

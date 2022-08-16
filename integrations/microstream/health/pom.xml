@@ -39,10 +39,14 @@
             <artifactId>helidon-integrations-microstream</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.health</groupId>
-            <artifactId>helidon-health</artifactId>
+            <groupId>org.eclipse.microprofile.health</groupId>
+            <artifactId>microprofile-health-api</artifactId>
         </dependency>
-
+        <dependency>
+            <groupId>io.helidon.reactive.health</groupId>
+            <artifactId>helidon-reactive-health</artifactId>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>

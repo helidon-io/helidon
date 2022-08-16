@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +18,15 @@ package io.helidon.health.checks;
 
 import java.lang.management.ThreadMXBean;
 
-import org.eclipse.microprofile.health.HealthCheckResponse;
-import org.hamcrest.MatcherAssert;
+import io.helidon.health.HealthCheckResponse;
+import io.helidon.health.HealthCheckType;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 class DeadlockHealthCheckTest {
     private ThreadMXBean threadBean;
@@ -38,7 +40,11 @@ class DeadlockHealthCheckTest {
     void testThatHealthCheckNameDoesNotChange() {
         DeadlockHealthCheck check = new DeadlockHealthCheck(threadBean);
         HealthCheckResponse response = check.call();
-        MatcherAssert.assertThat("deadlock", is(response.getName()));
+
+        assertThat(check.type(), is(HealthCheckType.LIVENESS));
+        assertThat(check.name(), is("deadlock"));
+        assertThat(check.path(), is("deadlock"));
+        assertThat(response.status(), is(HealthCheckResponse.Status.UP));
     }
 
     @Test
@@ -46,8 +52,8 @@ class DeadlockHealthCheckTest {
         Mockito.when(threadBean.findDeadlockedThreads()).thenReturn(new long[] {123, 456}); // Deadlocked!
         DeadlockHealthCheck check = new DeadlockHealthCheck(threadBean);
         HealthCheckResponse response = check.call();
-        MatcherAssert.assertThat(HealthCheckResponse.Status.DOWN, is(response.getStatus()));
-        MatcherAssert.assertThat(response.getData().isPresent(), is(false));
+
+        assertThat(response.status(), is(HealthCheckResponse.Status.DOWN));
     }
 
     @Test
@@ -55,7 +61,6 @@ class DeadlockHealthCheckTest {
         Mockito.when(threadBean.findDeadlockedThreads()).thenReturn(null); // no deadlock
         DeadlockHealthCheck check = new DeadlockHealthCheck(threadBean);
         HealthCheckResponse response = check.call();
-        MatcherAssert.assertThat(HealthCheckResponse.Status.UP, is(response.getStatus()));
-        MatcherAssert.assertThat(response.getData().isPresent(), is(false));
+        assertThat(response.status(), is(HealthCheckResponse.Status.UP));
     }
 }

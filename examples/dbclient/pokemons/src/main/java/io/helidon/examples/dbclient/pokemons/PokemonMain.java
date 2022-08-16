@@ -16,15 +16,17 @@
 
 package io.helidon.examples.dbclient.pokemons;
 
+import java.util.List;
+
 import io.helidon.common.LogConfig;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.health.DbClientHealthCheck;
-import io.helidon.health.HealthSupport;
 import io.helidon.media.jsonb.JsonbSupport;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.metrics.serviceapi.MetricsSupport;
+import io.helidon.reactive.health.HealthSupport;
 import io.helidon.tracing.TracerBuilder;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
@@ -114,8 +116,7 @@ public final class PokemonMain {
                 .build();
         // Some relational databases do not support DML statement as ping so using query which works for all of them
         HealthSupport health = HealthSupport.builder()
-                .addLiveness(
-                        DbClientHealthCheck.create(dbClient, dbConfig.get("health-check")))
+                .add(List.of(DbClientHealthCheck.create(dbClient, dbConfig.get("health-check"))))
                 .build();
 
         // Initialize database schema

@@ -20,12 +20,12 @@ import io.helidon.common.LogConfig;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.pki.KeyConfig;
 import io.helidon.config.Config;
-import io.helidon.health.HealthSupport;
 import io.helidon.health.checks.HealthChecks;
 import io.helidon.media.jackson.JacksonSupport;
 import io.helidon.media.jsonb.JsonbSupport;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.metrics.MetricsSupport;
+import io.helidon.reactive.health.HealthSupport;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerTls;
@@ -142,7 +142,7 @@ public final class Main {
      */
     private static Routing createRouting(Config config) {
         HealthSupport health = HealthSupport.builder()
-                .addLiveness(HealthChecks.healthChecks())   // Adds a convenient set of checks
+                .add(HealthChecks.healthChecks())   // Adds a convenient set of checks
                 .build();
 
         return Routing.builder()

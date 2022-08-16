@@ -24,8 +24,7 @@ module io.helidon.microprofile.health {
     requires java.management;
 
     requires io.helidon.common;
-    requires io.helidon.health;
-    requires io.helidon.health.common;
+    requires io.helidon.reactive.health;
     requires io.helidon.servicecommon.restcdi;
     requires io.helidon.microprofile.server;
 
@@ -35,7 +34,7 @@ module io.helidon.microprofile.health {
     requires jakarta.json;
     requires jakarta.interceptor.api;
     requires microprofile.config.api;
-    requires microprofile.health.api;
+    requires transitive microprofile.health.api;
     requires io.helidon.config.mp;
 
     exports io.helidon.microprofile.health;

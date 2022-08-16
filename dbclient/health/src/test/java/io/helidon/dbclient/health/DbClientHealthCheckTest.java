@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package io.helidon.dbclient.health;
 
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.logging.Logger;
@@ -29,6 +30,7 @@ import io.helidon.dbclient.DbTransaction;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.nullValue;
@@ -119,17 +121,14 @@ public class DbClientHealthCheckTest {
         DbClientHealthCheck check = builder.build();
 
         // Health check instance content
-        final String checkName = check.name();
-        final long checkTimeoutDuration = check.timeoutDuration();
-        final TimeUnit checkTimeoutUnit = check.timeoutUnit();
+        String checkName = check.name();
+        Duration checkTimeoutDuration = check.timeout();
 
         // Verify health check class and internal content
         assertThat(check.getClass().getSimpleName(), equalTo("DbClientHealthCheckAsDml"));
         assertThat(checkName, equalTo(configName));
         assertThat(((DbClientHealthCheck.DbClientHealthCheckAsDml)check).statement(), equalTo(configStatement));
-        assertThat(checkTimeoutDuration, equalTo(configTimeout));
-        assertThat(checkTimeoutUnit.name().toLowerCase(), equalTo(configTimeUnit.toLowerCase()));
-
+        assertThat(checkTimeoutDuration.toMillis(), is(timeoutUnit.toMillis(configTimeout)));
 
     }
 
@@ -178,17 +177,14 @@ public class DbClientHealthCheckTest {
 
 
         // Health check instance content
-        final String checkName = check.name();
-        final long checkTimeoutDuration = check.timeoutDuration();
-        final TimeUnit checkTimeoutUnit = check.timeoutUnit();
+        String checkName = check.name();
+        Duration checkTimeout = check.timeout();
 
         // Verify health check class and internal content
         assertThat(check.getClass().getSimpleName(), equalTo("DbClientHealthCheckAsNamedDml"));
         assertThat(checkName, equalTo(configName));
         assertThat(((DbClientHealthCheck.DbClientHealthCheckAsNamedDml)check).statementName(), equalTo(configStatementName));
-        assertThat(checkTimeoutDuration, equalTo(configTimeout));
-        assertThat(checkTimeoutUnit.name().toLowerCase(), equalTo(configTimeUnit.toLowerCase()));
-
+        assertThat(checkTimeout.toMillis(), is(timeoutUnit.toMillis(configTimeout)));
     }
 
 
@@ -236,17 +232,14 @@ public class DbClientHealthCheckTest {
         DbClientHealthCheck check = builder.build();
 
         // Health check instance content
-        final String checkName = check.name();
-        final long checkTimeoutDuration = check.timeoutDuration();
-        final TimeUnit checkTimeoutUnit = check.timeoutUnit();
+        String checkName = check.name();
+        Duration checkTimeout = check.timeout();
 
         // Verify health check class and internal content
         assertThat(check.getClass().getSimpleName(), equalTo("DbClientHealthCheckAsQuery"));
         assertThat(checkName, equalTo(configName));
         assertThat(((DbClientHealthCheck.DbClientHealthCheckAsQuery)check).statement(), equalTo(configStatement));
-        assertThat(checkTimeoutDuration, equalTo(configTimeout));
-        assertThat(checkTimeoutUnit.name().toLowerCase(), equalTo(configTimeUnit.toLowerCase()));
-
+        assertThat(checkTimeout.toMillis(), is(timeoutUnit.toMillis(configTimeout)));
     }
 
     /**
@@ -293,17 +286,14 @@ public class DbClientHealthCheckTest {
         DbClientHealthCheck check = builder.build();
 
         // Health check instance content
-        final String checkName = check.name();
-        final long checkTimeoutDuration = check.timeoutDuration();
-        final TimeUnit checkTimeoutUnit = check.timeoutUnit();
+        String checkName = check.name();
+        Duration checkTimeout = check.timeout();
 
         // Verify health check class and internal content
         assertThat(check.getClass().getSimpleName(), equalTo("DbClientHealthCheckAsNamedQuery"));
         assertThat(checkName, equalTo(configName));
         assertThat(((DbClientHealthCheck.DbClientHealthCheckAsNamedQuery)check).statementName(), equalTo(configStatementName));
-        assertThat(checkTimeoutDuration, equalTo(configTimeout));
-        assertThat(checkTimeoutUnit.name().toLowerCase(), equalTo(configTimeUnit.toLowerCase()));
-
+        assertThat(checkTimeout.toMillis(), is(timeoutUnit.toMillis(configTimeout)));
     }
 
 }

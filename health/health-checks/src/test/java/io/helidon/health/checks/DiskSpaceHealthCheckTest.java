@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,9 @@ import java.io.IOException;
 import java.nio.file.FileStore;
 import java.util.stream.Stream;
 
-import org.eclipse.microprofile.health.HealthCheckResponse;
+import io.helidon.health.HealthCheckResponse;
+import io.helidon.health.HealthCheckType;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -45,6 +47,59 @@ class DiskSpaceHealthCheckTest {
     private static final long PB = 1024 * TB;
 
     private FileStore fileStore;
+
+    @BeforeEach
+    void init() throws IOException {
+        fileStore = Mockito.mock(FileStore.class);
+        Mockito.when(fileStore.getUsableSpace()).thenReturn(TOTAL_DISK - USED_DISK_START);
+        Mockito.when(fileStore.getTotalSpace()).thenReturn(TOTAL_DISK);
+    }
+
+    @Test
+    void testNameAndPath() {
+        DiskSpaceHealthCheck check = new DiskSpaceHealthCheck(fileStore, THRESHOLD_PERCENT);
+        HealthCheckResponse response = check.call();
+
+        assertThat(check.type(), is(HealthCheckType.LIVENESS));
+        assertThat(check.name(), is("diskSpace"));
+        assertThat(check.path(), is("diskspace"));
+    }
+
+    @ParameterizedTest
+    @MethodSource("belowThresholdParams")
+    void belowThreshold(long used, String text) throws IOException {
+        setDiskUsage(used);
+        DiskSpaceHealthCheck check = new DiskSpaceHealthCheck(fileStore, THRESHOLD_PERCENT);
+        HealthCheckResponse response = check.call();
+        assertThat(response.status(), is(HealthCheckResponse.Status.UP));
+
+        // Another test will make sure DiskSpaceHealthCheck returns the right stuff, so skipping
+        // the textual return values
+        assertThat(response.details(), hasEntry("freeBytes", TOTAL_DISK - used));
+        assertThat(response.details(), hasEntry("percentFree", text));
+        assertThat(response.details(), hasEntry("totalBytes", TOTAL_DISK));
+    }
+
+    @ParameterizedTest
+    @MethodSource("aboveThresholdParams")
+    void aboveThreshold(long used, String text) throws IOException {
+        setDiskUsage(used);
+        DiskSpaceHealthCheck check = new DiskSpaceHealthCheck(fileStore, THRESHOLD_PERCENT);
+        HealthCheckResponse response = check.call();
+        assertThat(response.status(), is(HealthCheckResponse.Status.DOWN));
+
+        // Another test will make sure DiskSpaceHealthCheck returns the right stuff, so skipping
+        // the textual return values
+        assertThat(response.details(), hasEntry("freeBytes", TOTAL_DISK - used));
+        assertThat(response.details(), hasEntry("percentFree", text));
+        assertThat(response.details(), hasEntry("totalBytes", TOTAL_DISK));
+    }
+
+    @ParameterizedTest
+    @MethodSource("bytesToUnitsParams")
+    void testBytesToUnits(long bytes, String text) {
+        assertThat(text, is(DiskSpaceHealthCheck.format(bytes)));
+    }
 
     private static Stream<Arguments> belowThresholdParams() {
         return Stream.of(
@@ -81,57 +136,7 @@ class DiskSpaceHealthCheckTest {
         );
     }
 
-    @BeforeEach
-    void init() throws IOException {
-        fileStore = Mockito.mock(FileStore.class);
-        Mockito.when(fileStore.getUsableSpace()).thenReturn(TOTAL_DISK - USED_DISK_START);
-        Mockito.when(fileStore.getTotalSpace()).thenReturn(TOTAL_DISK);
-    }
-
     private void setDiskUsage(long used) throws IOException {
         Mockito.when(fileStore.getUsableSpace()).thenReturn(TOTAL_DISK - used);
-    }
-
-    @Test
-    void testThatHealthCheckNameDoesNotChange() {
-        DiskSpaceHealthCheck check = new DiskSpaceHealthCheck(fileStore, THRESHOLD_PERCENT);
-        HealthCheckResponse response = check.call();
-        assertThat("diskSpace", is(response.getName()));
-    }
-
-    @ParameterizedTest
-    @MethodSource("belowThresholdParams")
-    void belowThreshold(long used, String text) throws IOException {
-        setDiskUsage(used);
-        DiskSpaceHealthCheck check = new DiskSpaceHealthCheck(fileStore, THRESHOLD_PERCENT);
-        HealthCheckResponse response = check.call();
-        assertThat(HealthCheckResponse.Status.UP, is(response.getStatus()));
-        assertThat(response.getData().isPresent(), is(true));
-        // Another test will make sure DiskSpaceHealthCheck returns the right stuff, so skipping
-        // the textual return values
-        assertThat(response.getData().get(), hasEntry("freeBytes", TOTAL_DISK - used));
-        assertThat(response.getData().get(), hasEntry("percentFree", text));
-        assertThat(response.getData().get(), hasEntry("totalBytes", TOTAL_DISK));
-    }
-
-    @ParameterizedTest
-    @MethodSource("aboveThresholdParams")
-    void aboveThreshold(long used, String text) throws IOException {
-        setDiskUsage(used);
-        DiskSpaceHealthCheck check = new DiskSpaceHealthCheck(fileStore, THRESHOLD_PERCENT);
-        HealthCheckResponse response = check.call();
-        assertThat(HealthCheckResponse.Status.DOWN, is(response.getStatus()));
-        assertThat(response.getData().isPresent(), is(true));
-        // Another test will make sure DiskSpaceHealthCheck returns the right stuff, so skipping
-        // the textual return values
-        assertThat(response.getData().get(), hasEntry("freeBytes", TOTAL_DISK - used));
-        assertThat(response.getData().get(), hasEntry("percentFree", text));
-        assertThat(response.getData().get(), hasEntry("totalBytes", TOTAL_DISK));
-    }
-
-    @ParameterizedTest
-    @MethodSource("bytesToUnitsParams")
-    void testBytesToUnits(long bytes, String text) {
-        assertThat(text, is(DiskSpaceHealthCheck.format(bytes)));
     }
 }

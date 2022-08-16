@@ -19,7 +19,7 @@ package io.helidon.examples.webserver.threadpool;
 import io.helidon.common.LogConfig;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
-import io.helidon.health.HealthSupport;
+import io.helidon.reactive.health.HealthSupport;
 import io.helidon.health.checks.HealthChecks;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.metrics.serviceapi.MetricsSupport;
@@ -93,7 +93,7 @@ public final class Main {
     private static Routing createPublicRouting(Config config) {
         MetricsSupport metrics = MetricsSupport.create();
         HealthSupport health = HealthSupport.builder()
-                .addLiveness(HealthChecks.healthChecks())   // Adds a convenient set of checks
+                .add(HealthChecks.healthChecks())   // Adds a convenient set of checks
                 .build();
         GreetService greetService = new GreetService(config);
         return Routing.builder()

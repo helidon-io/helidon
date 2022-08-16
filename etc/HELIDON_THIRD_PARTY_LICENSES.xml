@@ -1916,7 +1916,6 @@ Fourth Party Dependencies
             <licenseName>Eclipse Public License 2.0 + GPL v.2 with CPE</licenseName>
             <consumers>
                 <consumer>helidon-health-checks</consumer>
-                <consumer>helidon-health-common</consumer>
                 <consumer>helidon-integrations-cdi-datasource</consumer>
                 <consumer>helidon-integrations-cdi-datasource-hikaricp</consumer>
                 <consumer>helidon-integrations-cdi-datasource-ucp</consumer>

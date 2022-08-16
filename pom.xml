@@ -203,6 +203,7 @@
         <module>scheduling</module>
         <module>service-common</module>
         <module>nima</module>
+        <module>reactive</module>
     </modules>
 
 

@@ -45,8 +45,9 @@
             <artifactId>microprofile-health-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.health</groupId>
-            <artifactId>helidon-health-common</artifactId>
+            <groupId>io.helidon.microprofile.health</groupId>
+            <artifactId>helidon-microprofile-health</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <!-- only needed for compilation, not required in runtime -->

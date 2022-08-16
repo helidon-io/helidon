@@ -277,7 +277,7 @@ the application.
         MetricsSupport metrics = MetricsSupport.create();
         GreetService greetService = new GreetService(config);
         HealthSupport health = HealthSupport.builder()
-                .addLiveness(HealthChecks.healthChecks())   // Adds a convenient set of checks
+                .add(HealthChecks.healthChecks())   // Adds a convenient set of checks
                 .build();
 
         return Routing.builder()

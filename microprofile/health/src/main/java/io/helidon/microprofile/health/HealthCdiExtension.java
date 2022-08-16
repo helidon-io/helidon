@@ -26,9 +26,8 @@ import java.util.stream.Collectors;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.config.Config;
-import io.helidon.health.HealthSupport;
-import io.helidon.health.common.BuiltInHealthCheck;
 import io.helidon.microprofile.server.ServerCdiExtension;
+import io.helidon.reactive.health.HealthSupport;
 import io.helidon.servicecommon.restcdi.HelidonRestCdiExtension;
 import io.helidon.webserver.Routing;
 

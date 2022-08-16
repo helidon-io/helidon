@@ -559,17 +559,12 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.health</groupId>
-                <artifactId>helidon-health-api</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.health</groupId>
                 <artifactId>helidon-health-checks</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.health</groupId>
-                <artifactId>helidon-health-common</artifactId>
+                <groupId>io.helidon.reactive.health</groupId>
+                <artifactId>helidon-reactive-health</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
 

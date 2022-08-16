@@ -220,7 +220,7 @@ private static Routing createRouting(Config config) {
         MovieService movieService = new MovieService(new MovieRepository(neo4jDriver)); // <4>
 
         HealthSupport health = HealthSupport.builder()
-                .addLiveness(HealthChecks.healthChecks())   // Adds a convenient set of checks
+                .add(HealthChecks.healthChecks())   // Adds a convenient set of checks
                 .addReadiness(healthCheck)
                 .build();
 

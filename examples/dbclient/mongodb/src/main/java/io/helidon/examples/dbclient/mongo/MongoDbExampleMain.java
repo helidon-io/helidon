@@ -16,6 +16,8 @@
 
 package io.helidon.examples.dbclient.mongo;
 
+import java.util.List;
+
 import io.helidon.common.LogConfig;
 import io.helidon.config.Config;
 import io.helidon.dbclient.DbClient;
@@ -23,10 +25,10 @@ import io.helidon.dbclient.DbStatementType;
 import io.helidon.dbclient.health.DbClientHealthCheck;
 import io.helidon.dbclient.metrics.DbClientMetrics;
 import io.helidon.dbclient.tracing.DbClientTracing;
-import io.helidon.health.HealthSupport;
 import io.helidon.media.jsonb.JsonbSupport;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.metrics.serviceapi.MetricsSupport;
+import io.helidon.reactive.health.HealthSupport;
 import io.helidon.tracing.TracerBuilder;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
@@ -103,8 +105,7 @@ public final class MongoDbExampleMain {
                 .build();
 
         HealthSupport health = HealthSupport.builder()
-                .addLiveness(
-                        DbClientHealthCheck.create(dbClient, dbConfig.get("health-check")))
+                .add(List.of(DbClientHealthCheck.create(dbClient, dbConfig.get("health-check"))))
                 .build();
 
         return Routing.builder()

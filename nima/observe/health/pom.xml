@@ -42,7 +42,7 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.health</groupId>
-            <artifactId>helidon-health-api</artifactId>
+            <artifactId>helidon-health</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.nima.service-common</groupId>

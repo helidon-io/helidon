@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@ package io.helidon.examples.health.basics;
 
 import java.time.Duration;
 
-import io.helidon.health.HealthSupport;
+import io.helidon.reactive.health.HealthSupport;
 import io.helidon.health.checks.HealthChecks;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
@@ -42,7 +42,7 @@ public final class Main {
     public static void main(String[] args) {
         serverStartTime = System.currentTimeMillis();
         HealthSupport health = HealthSupport.builder()
-                .addLiveness(HealthChecks.healthChecks())
+                .add(HealthChecks.healthChecks())
                 .addReadiness(() -> HealthCheckResponse.named("exampleHealthCheck")
                         .up()
                         .withData("time", System.currentTimeMillis())

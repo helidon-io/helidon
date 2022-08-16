@@ -17,12 +17,12 @@
 package io.helidon.examples.nima.quickstart;
 
 import io.helidon.common.LogConfig;
+import io.helidon.health.checks.DeadlockHealthCheck;
+import io.helidon.health.checks.DiskSpaceHealthCheck;
+import io.helidon.health.checks.HeapMemoryHealthCheck;
 import io.helidon.nima.observe.ObserveSupport;
-import io.helidon.nima.observe.health.DeadlockHealthCheck;
-import io.helidon.nima.observe.health.DiskSpaceHealthCheck;
 import io.helidon.nima.observe.health.HealthObserveProvider;
-import io.helidon.nima.observe.health.HealthObserver;
-import io.helidon.nima.observe.health.HeapMemoryHealthCheck;
+import io.helidon.nima.observe.health.HealthService;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http.HttpRouting;
 
@@ -58,10 +58,10 @@ public class QuickstartMain {
     static void routing(HttpRouting.Builder routing) {
         ObserveSupport observe = ObserveSupport.builder()
                 .useSystemServices(true)
-                .addProvider(HealthObserveProvider.create(HealthObserver.builder()
-                                                                  .addHealthCheck(HeapMemoryHealthCheck.create())
-                                                                  .addHealthCheck(DiskSpaceHealthCheck.create())
-                                                                  .addHealthCheck(DeadlockHealthCheck.create())
+                .addProvider(HealthObserveProvider.create(HealthService.builder()
+                                                                  .addCheck(HeapMemoryHealthCheck.create())
+                                                                  .addCheck(DiskSpaceHealthCheck.create())
+                                                                  .addCheck(DeadlockHealthCheck.create())
                                                                   .build()))
                 .build();
 

@@ -16,7 +16,6 @@
 
 package io.helidon.health.checks;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileStore;
 import java.nio.file.Files;
@@ -26,15 +25,10 @@ import java.util.Formatter;
 import java.util.Locale;
 
 import io.helidon.config.Config;
+import io.helidon.health.HealthCheck;
 import io.helidon.health.HealthCheckException;
-import io.helidon.health.common.BuiltInHealthCheck;
-
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.eclipse.microprofile.health.HealthCheck;
-import org.eclipse.microprofile.health.HealthCheckResponse;
-import org.eclipse.microprofile.health.Liveness;
+import io.helidon.health.HealthCheckResponse;
+import io.helidon.health.HealthCheckType;
 
 /**
  * A health check that verifies whether the server is running out of disk space. This health check will
@@ -57,17 +51,13 @@ import org.eclipse.microprofile.health.Liveness;
  * <p>
  * This health check can be referred to in properties as {@code diskSpace}. So for example, to exclude this
  * health check from being exposed, use {@code helidon.health.exclude: diskSpace}.
- * </p>
  */
-@Liveness
-@ApplicationScoped // this will be ignored if not within CDI
-@BuiltInHealthCheck
 public class DiskSpaceHealthCheck implements HealthCheck {
     /**
      * Default path on the file system the health check will be executed for.
      * If you need to check a different path (e.g. application runtime disks are not mounted the same
      * directory as application path), use
-     * {@link io.helidon.health.checks.DiskSpaceHealthCheck.Builder#path(java.nio.file.Path)}.
+     * {@link DiskSpaceHealthCheck.Builder#path(java.nio.file.Path)}.
      * When running within a MicroProfile server, you can configure path using a configuration key
      * {@value #CONFIG_KEY_PATH}
      * Defaults to {@value}
@@ -75,7 +65,7 @@ public class DiskSpaceHealthCheck implements HealthCheck {
     public static final String DEFAULT_PATH = ".";
     /**
      * Default threshold percent, when this check starts reporting
-     * {@link org.eclipse.microprofile.health.HealthCheckResponse.Status#DOWN}.
+     * {@link io.helidon.health.HealthCheckResponse.Status#DOWN}.
      */
     public static final double DEFAULT_THRESHOLD = 99.999;
 
@@ -110,19 +100,6 @@ public class DiskSpaceHealthCheck implements HealthCheck {
     // unit tests
     DiskSpaceHealthCheck(FileStore fileStore, double thresholdPercent) {
         this.fileStore = fileStore;
-        this.thresholdPercent = thresholdPercent;
-    }
-
-    @Inject
-    DiskSpaceHealthCheck(
-            @ConfigProperty(name = CONFIG_KEY_PATH, defaultValue = DEFAULT_PATH) File path,
-            @ConfigProperty(name = CONFIG_KEY_THRESHOLD_PERCENT, defaultValue = "99.999") double thresholdPercent
-    ) {
-        try {
-            this.fileStore = Files.getFileStore(path.toPath());
-        } catch (IOException e) {
-            throw new HealthCheckException("Failed to obtain file store for path " + path.getAbsolutePath(), e);
-        }
         this.thresholdPercent = thresholdPercent;
     }
 
@@ -165,13 +142,27 @@ public class DiskSpaceHealthCheck implements HealthCheck {
     /**
      * Create a new disk space health check to use, using defaults for all configurable values.
      *
-     * @return a new health check to register with
-     *         {@link io.helidon.health.HealthSupport.Builder#addLiveness(org.eclipse.microprofile.health.HealthCheck...)}
+     * @return a new health check
      * @see #DEFAULT_PATH
      * @see #DEFAULT_THRESHOLD
      */
     public static DiskSpaceHealthCheck create() {
         return builder().build();
+    }
+
+    @Override
+    public HealthCheckType type() {
+        return HealthCheckType.LIVENESS;
+    }
+
+    @Override
+    public String name() {
+        return "diskSpace";
+    }
+
+    @Override
+    public String path() {
+        return "diskspace";
     }
 
     @Override
@@ -191,13 +182,13 @@ public class DiskSpaceHealthCheck implements HealthCheck {
         //Formatter ensures that returned delimiter will be always the same
         Formatter formatter = new Formatter(Locale.US);
 
-        return HealthCheckResponse.named("diskSpace")
+        return HealthCheckResponse.builder()
                 .status(threshold >= usedInBytes)
-                .withData("percentFree", formatter.format("%.2f%%", 100 * ((double) diskFreeInBytes / totalInBytes)).toString())
-                .withData("free", DiskSpaceHealthCheck.format(diskFreeInBytes))
-                .withData("freeBytes", diskFreeInBytes)
-                .withData("total", DiskSpaceHealthCheck.format(totalInBytes))
-                .withData("totalBytes", totalInBytes)
+                .detail("percentFree", formatter.format("%.2f%%", 100 * ((double) diskFreeInBytes / totalInBytes)).toString())
+                .detail("free", DiskSpaceHealthCheck.format(diskFreeInBytes))
+                .detail("freeBytes", diskFreeInBytes)
+                .detail("total", DiskSpaceHealthCheck.format(totalInBytes))
+                .detail("totalBytes", totalInBytes)
                 .build();
     }
 
@@ -280,11 +271,11 @@ public class DiskSpaceHealthCheck implements HealthCheck {
          * @return updated builder instance
          */
         public Builder config(Config config) {
-            config.get(CONFIG_KEY_PATH_SUFFIX)
+            config.get(CONFIG_KEY_PATH)
                     .as(Path.class)
                     .ifPresent(this::path);
 
-            config.get(CONFIG_KEY_THRESHOLD_PERCENT_SUFFIX)
+            config.get(CONFIG_KEY_THRESHOLD_PERCENT)
                     .asDouble()
                     .ifPresent(this::thresholdPercent);
 

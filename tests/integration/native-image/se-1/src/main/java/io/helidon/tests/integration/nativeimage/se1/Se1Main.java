@@ -18,16 +18,14 @@ package io.helidon.tests.integration.nativeimage.se1;
 import java.nio.file.Paths;
 import java.util.Set;
 
-import jakarta.websocket.server.ServerEndpointConfig;
-
 import io.helidon.common.LogConfig;
 import io.helidon.config.Config;
 import io.helidon.config.FileSystemWatcher;
-import io.helidon.health.HealthSupport;
 import io.helidon.health.checks.HealthChecks;
 import io.helidon.media.jsonb.JsonbSupport;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.metrics.MetricsSupport;
+import io.helidon.reactive.health.HealthSupport;
 import io.helidon.security.integration.webserver.WebSecurity;
 import io.helidon.tracing.TracerBuilder;
 import io.helidon.webserver.Routing;
@@ -35,6 +33,7 @@ import io.helidon.webserver.WebServer;
 import io.helidon.webserver.staticcontent.StaticContentSupport;
 import io.helidon.webserver.websocket.WebSocketRouting;
 
+import jakarta.websocket.server.ServerEndpointConfig;
 import org.eclipse.microprofile.health.HealthCheckResponse;
 
 import static io.helidon.config.ConfigSources.classpath;
@@ -128,7 +127,7 @@ public final class Se1Main {
         MockZipkinService zipkinService = new MockZipkinService(Set.of("helidon-webclient"));
         WebClientService webClientService = new WebClientService(config, zipkinService);
         HealthSupport health = HealthSupport.builder()
-                .addLiveness(HealthChecks.healthChecks())   // Adds a convenient set of checks
+                .add(HealthChecks.healthChecks())   // Adds a convenient set of checks
                 .addLiveness(() -> HealthCheckResponse.named("custom") // a custom health check
                         .up()
                         .withData("timestamp", System.currentTimeMillis())

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,13 +26,9 @@ module io.helidon.health.checks {
 
     requires io.helidon.common;
     requires io.helidon.config;
-    requires io.helidon.health;
-    requires io.helidon.health.common;
-    requires static microprofile.config.api;
-    requires microprofile.health.api;
+    requires transitive io.helidon.health;
 
     exports io.helidon.health.checks;
 
-    // required for CDI
-    opens io.helidon.health.checks to weld.core.impl, io.helidon.microprofile.cdi;
+    provides io.helidon.health.spi.HealthCheckProvider with io.helidon.health.checks.BuiltInHealthCheckProvider;
 }

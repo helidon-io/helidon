@@ -42,10 +42,6 @@
             <artifactId>helidon-health</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.health</groupId>
-            <artifactId>helidon-health-common</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config</artifactId>
         </dependency>
@@ -82,11 +78,6 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-params</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.webclient</groupId>
-            <artifactId>helidon-webclient</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

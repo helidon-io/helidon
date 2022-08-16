@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,9 @@ package io.helidon.health.checks;
 
 import java.util.stream.Stream;
 
-import org.eclipse.microprofile.health.HealthCheckResponse;
+import io.helidon.health.HealthCheckResponse;
+import io.helidon.health.HealthCheckType;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -38,6 +40,54 @@ class MemoryHealthCheckTest {
 
     private Runtime runtime;
 
+    @BeforeEach
+    void init() {
+        runtime = Mockito.mock(Runtime.class);
+        Mockito.when(runtime.freeMemory()).thenReturn(TOTAL_MEMORY_START);  // Current free memory
+        Mockito.when(runtime.maxMemory()).thenReturn(MAX_MEMORY);           // Max VM space that can be allocated
+        Mockito.when(runtime.totalMemory()).thenReturn(TOTAL_MEMORY_START); // Total VM space currently allocated
+    }
+
+    @Test
+    void testNameAndPath() {
+        HeapMemoryHealthCheck check = new HeapMemoryHealthCheck(runtime, THRESHOLD_PERCENT);
+        assertThat(check.type(), is(HealthCheckType.LIVENESS));
+        assertThat(check.name(), is("heapMemory"));
+        assertThat(check.path(), is("heapmemory"));
+    }
+
+    @ParameterizedTest
+    @MethodSource("belowThresholdParams")
+    void belowThreshold(long used, long total, String text) {
+        setMemoryUsage(used, total);
+        HeapMemoryHealthCheck check = new HeapMemoryHealthCheck(runtime, THRESHOLD_PERCENT);
+        HealthCheckResponse response = check.call();
+        assertThat(response.status(), is(HealthCheckResponse.Status.UP));
+
+        // Another test will make sure DiskSpaceHealthCheck returns the right stuff, so skipping
+        // the textual return values
+        assertThat(response.details(), hasEntry("freeBytes", total - used));
+        assertThat(response.details(), hasEntry("maxBytes", MAX_MEMORY));
+        assertThat(response.details(), hasEntry("percentFree", text));
+        assertThat(response.details(), hasEntry("totalBytes", total));
+    }
+
+    @ParameterizedTest
+    @MethodSource("aboveThresholdParams")
+    void aboveThreshold(long used, long total, String text) {
+        setMemoryUsage(used, total);
+        HeapMemoryHealthCheck check = new HeapMemoryHealthCheck(runtime, THRESHOLD_PERCENT);
+        HealthCheckResponse response = check.call();
+        assertThat(response.status(), is(HealthCheckResponse.Status.DOWN));
+
+        // Another test will make sure DiskSpaceHealthCheck returns the right stuff, so skipping
+        // the textual return values
+        assertThat(response.details(), hasEntry("freeBytes", total - used));
+        assertThat(response.details(), hasEntry("maxBytes", MAX_MEMORY));
+        assertThat(response.details(), hasEntry("percentFree", text));
+        assertThat(response.details(), hasEntry("totalBytes", total));
+    }
+
     private static Stream<Arguments> belowThresholdParams() {
         return Stream.of(
                 Arguments.of(0L, TOTAL_MEMORY_START, "100.00%"),
@@ -56,55 +106,8 @@ class MemoryHealthCheckTest {
         );
     }
 
-    @BeforeEach
-    void init() {
-        runtime = Mockito.mock(Runtime.class);
-        Mockito.when(runtime.freeMemory()).thenReturn(TOTAL_MEMORY_START);  // Current free memory
-        Mockito.when(runtime.maxMemory()).thenReturn(MAX_MEMORY);           // Max VM space that can be allocated
-        Mockito.when(runtime.totalMemory()).thenReturn(TOTAL_MEMORY_START); // Total VM space currently allocated
-    }
-
     private void setMemoryUsage(long used, long total) {
         Mockito.when(runtime.freeMemory()).thenReturn(total - used);
         Mockito.when(runtime.totalMemory()).thenReturn(total);
-    }
-
-    @Test
-    void testThatHealthCheckNameDoesNotChange() {
-        HeapMemoryHealthCheck check = new HeapMemoryHealthCheck(runtime, THRESHOLD_PERCENT);
-        HealthCheckResponse response = check.call();
-        assertThat(response.getName(), is("heapMemory")); // Just verify it never changes accidentally
-    }
-
-    @ParameterizedTest
-    @MethodSource("belowThresholdParams")
-    void belowThreshold(long used, long total, String text) {
-        setMemoryUsage(used, total);
-        HeapMemoryHealthCheck check = new HeapMemoryHealthCheck(runtime, THRESHOLD_PERCENT);
-        HealthCheckResponse response = check.call();
-        assertThat(response.getStatus(), is(HealthCheckResponse.Status.UP));
-        assertThat(response.getData().isPresent(), is(true));
-        // Another test will make sure DiskSpaceHealthCheck returns the right stuff, so skipping
-        // the textual return values
-        assertThat(response.getData().get(), hasEntry("freeBytes", total - used));
-        assertThat(response.getData().get(), hasEntry("maxBytes", MAX_MEMORY));
-        assertThat(response.getData().get(), hasEntry("percentFree", text));
-        assertThat(response.getData().get(), hasEntry("totalBytes", total));
-    }
-
-    @ParameterizedTest
-    @MethodSource("aboveThresholdParams")
-    void aboveThreshold(long used, long total, String text) {
-        setMemoryUsage(used, total);
-        HeapMemoryHealthCheck check = new HeapMemoryHealthCheck(runtime, THRESHOLD_PERCENT);
-        HealthCheckResponse response = check.call();
-        assertThat(response.getStatus(), is(HealthCheckResponse.Status.DOWN));
-        assertThat(response.getData().isPresent(), is(true));
-        // Another test will make sure DiskSpaceHealthCheck returns the right stuff, so skipping
-        // the textual return values
-        assertThat(response.getData().get(), hasEntry("freeBytes", total - used));
-        assertThat(response.getData().get(), hasEntry("maxBytes", MAX_MEMORY));
-        assertThat(response.getData().get(), hasEntry("percentFree", text));
-        assertThat(response.getData().get(), hasEntry("totalBytes", total));
     }
 }

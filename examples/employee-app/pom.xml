@@ -59,6 +59,10 @@
             <artifactId>helidon-config-yaml</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.reactive.health</groupId>
+            <artifactId>helidon-reactive-health</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.health</groupId>
             <artifactId>helidon-health-checks</artifactId>
         </dependency>

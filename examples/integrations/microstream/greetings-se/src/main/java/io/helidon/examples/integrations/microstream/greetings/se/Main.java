@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
 import io.helidon.common.LogConfig;
 import io.helidon.config.ClasspathConfigSource;
 import io.helidon.config.Config;
-import io.helidon.health.HealthSupport;
+import io.helidon.reactive.health.HealthSupport;
 import io.helidon.health.checks.HealthChecks;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.metrics.serviceapi.MetricsSupport;
@@ -91,7 +91,7 @@ public class Main {
 
         MetricsSupport metrics = MetricsSupport.create();
         HealthSupport health = HealthSupport.builder()
-                .addLiveness(HealthChecks.healthChecks())   // Adds a convenient set of checks
+                .add(HealthChecks.healthChecks())   // Adds a convenient set of checks
                 .build();
 
         GreetingService greetService = new GreetingService(config);
