@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,35 @@
 
 package io.helidon.tests.functional.multipleapps;
 
+import javax.enterprise.context.ApplicationScoped;
 import javax.ws.rs.ConstrainedTo;
 import javax.ws.rs.RuntimeType;
 import javax.ws.rs.container.DynamicFeature;
 import javax.ws.rs.container.ResourceInfo;
+import javax.ws.rs.core.Application;
 import javax.ws.rs.core.FeatureContext;
+import java.util.HashSet;
+import java.util.Set;
+
+import io.helidon.common.context.Contexts;
 
 @ConstrainedTo(RuntimeType.SERVER)
-public class MyFeature implements DynamicFeature {
+@ApplicationScoped
+public class SharedFeature implements DynamicFeature {
+
+    private static final Set<Class<? extends Application>> applications = new HashSet<>();
+
+    static Set<Class<? extends Application>> applications() {
+        return applications;
+    }
 
     @Override
+    @SuppressWarnings("unchecked")
     public void configure(ResourceInfo resourceInfo, FeatureContext featureContext) {
-        featureContext.register(Filter3.class);
+        // Collect all application subclasses started
+        Application app = Contexts.context().flatMap(c -> c.get(Application.class)).orElse(null);
+        assert app != null;
+        applications.add(!app.getClass().isSynthetic() ? app.getClass()
+                : (Class<? extends Application>) app.getClass().getSuperclass());
     }
 }

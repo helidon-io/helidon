@@ -58,6 +58,8 @@ import javax.ws.rs.ext.ParamConverterProvider;
 
 import io.helidon.common.Prioritized;
 import io.helidon.common.configurable.ServerThreadPoolSupplier;
+import io.helidon.common.context.Context;
+import io.helidon.common.context.Contexts;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.microprofile.cdi.BuildTimeStart;
@@ -257,7 +259,21 @@ public class ServerCdiExtension implements Extension {
             }
 
             // Add all applications
-            jaxRsApplications.forEach(it -> addApplication(jaxRs, it, shared));
+            jaxRsApplications.forEach(it -> {
+                // Make Application subclass instance available in our context
+                // to be used by JAX-RS features and other startup code
+                Application app = it.applicationClass()
+                        .map(appClass -> CDI.current().select(appClass).get())
+                        .orElse(null);
+                if (app != null) {
+                    Context parent = Contexts.context().orElse(null);
+                    Context startupContext = Context.create(parent);
+                    startupContext.register(app);
+                    Contexts.runInContext(startupContext, () -> addApplication(jaxRs, it, shared));
+                } else {
+                    addApplication(jaxRs, it, shared);
+                }
+            });
         }
         STARTUP_LOGGER.finest("Registered jersey application(s)");
     }
