@@ -574,6 +574,16 @@ public final class HealthSupport extends HelidonRestServiceSupport {
         /**
          * Add health check(s).
          *
+         * @param healthCheck health check to add
+         * @return updated builder instance
+         */
+        public Builder add(io.helidon.health.HealthCheck healthCheck) {
+            return add(List.of(healthCheck));
+        }
+
+        /**
+         * Add health check.
+         *
          * @param healthChecks health checks to add
          * @return updated builder instance
          */

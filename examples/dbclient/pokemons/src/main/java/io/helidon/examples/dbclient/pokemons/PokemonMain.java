@@ -116,7 +116,7 @@ public final class PokemonMain {
                 .build();
         // Some relational databases do not support DML statement as ping so using query which works for all of them
         HealthSupport health = HealthSupport.builder()
-                .add(List.of(DbClientHealthCheck.create(dbClient, dbConfig.get("health-check"))))
+                .add(DbClientHealthCheck.create(dbClient, dbConfig.get("health-check")))
                 .build();
 
         // Initialize database schema

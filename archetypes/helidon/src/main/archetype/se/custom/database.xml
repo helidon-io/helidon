@@ -356,7 +356,7 @@ docker run --rm --name mongo -p 27017:27017 mongo
         InitializeDb.init(dbClient);]]></value>
                         </list>
                         <list key="Main-healthBuilder" if="${health}">
-                            <value><![CDATA[                .addLiveness(DbClientHealthCheck.create(dbClient, dbConfig.get("health-check")))]]></value>
+                            <value><![CDATA[                .add(DbClientHealthCheck.create(dbClient, dbConfig.get("health-check")))]]></value>
                         </list>
                         <list key="Main-routingBuilder">
                             <value><![CDATA[                .register("/", new PokemonService(dbClient))]]></value>
