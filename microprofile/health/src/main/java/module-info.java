@@ -44,6 +44,7 @@ module io.helidon.microprofile.health {
     opens io.helidon.microprofile.health to weld.core.impl, io.helidon.microprofile.cdi;
 
     uses io.helidon.microprofile.health.HealthCheckProvider;
+    uses io.helidon.health.spi.HealthCheckProvider;
 
     provides jakarta.enterprise.inject.spi.Extension with io.helidon.microprofile.health.HealthCdiExtension;
 }
