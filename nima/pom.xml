@@ -44,7 +44,6 @@
         <module>http2</module>
         <module>websocket</module>
         <module>grpc</module>
-        <module>tracing</module>
         <module>observe</module>
         <module>fault-tolerance</module>
         <module>testing</module>

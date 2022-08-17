@@ -28,7 +28,7 @@ import io.helidon.nima.common.tls.Tls;
  * Base class for HTTP implementations of {@link io.helidon.nima.webclient.WebClient}.
  */
 public class LoomClient implements WebClient {
-    private static final Tls EMPTY_TLS = Tls.builder().build();
+    private static final LazyValue<Tls> EMPTY_TLS = LazyValue.create(() -> Tls.builder().build());
     private static final SocketOptions EMPTY_OPTIONS = SocketOptions.builder().build();
     private static final LazyValue<ExecutorService> EXECUTOR = LazyValue.create(() -> {
         return Executors.newThreadPerTaskExecutor(Thread.ofVirtual()
@@ -46,7 +46,7 @@ public class LoomClient implements WebClient {
      */
     protected LoomClient(WebClient.Builder<?, ?> builder) {
         this.uri = builder.baseUri();
-        this.tls = builder.tls() == null ? EMPTY_TLS : builder.tls();
+        this.tls = builder.tls() == null ? EMPTY_TLS.get() : builder.tls();
         this.channelOptions = builder.channelOptions() == null ? EMPTY_OPTIONS : builder.channelOptions();
     }
 

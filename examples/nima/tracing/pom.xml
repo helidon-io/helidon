@@ -19,10 +19,10 @@
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.helidon.nima</groupId>
-        <artifactId>helidon-nima-application</artifactId>
+        <groupId>io.helidon.applications</groupId>
+        <artifactId>helidon-se</artifactId>
         <version>4.0.0-SNAPSHOT</version>
-        <relativePath>../../../nima/application/pom.xml</relativePath>
+        <relativePath>../../../applications/se/pom.xml</relativePath>
     </parent>
 
     <groupId>io.helidon.examples.nima</groupId>
@@ -43,20 +43,12 @@
             <artifactId>helidon-nima-http2-webserver</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.nima.tracing</groupId>
-            <artifactId>helidon-nima-tracing-opentelemetry</artifactId>
+            <groupId>io.helidon.nima.webserver</groupId>
+            <artifactId>helidon-nima-webserver-tracing</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-exporter-zipkin</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-sdk-trace</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-extension-trace-propagators</artifactId>
+            <groupId>io.helidon.tracing</groupId>
+            <artifactId>helidon-tracing-jaeger</artifactId>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>

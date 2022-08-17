@@ -1336,8 +1336,8 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.nima.tracing</groupId>
-                <artifactId>helidon-nima-tracing-opentelemetry</artifactId>
+                <groupId>io.helidon.nima.webserver</groupId>
+                <artifactId>helidon-nima-webserver-tracing</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>

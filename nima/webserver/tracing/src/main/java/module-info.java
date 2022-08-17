@@ -15,6 +15,12 @@
  */
 
 /**
- * OpenTelemetry Tracing support.
+ * Níma WebServer Tracing support.
  */
-package io.helidon.nima.tracing.opentelemetry;
+module io.helidon.nima.webserver.tracing {
+    requires io.helidon.common.http;
+    requires io.helidon.nima.webserver;
+    requires io.helidon.tracing;
+
+    exports io.helidon.nima.webserver.tracing;
+}

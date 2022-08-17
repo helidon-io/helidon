@@ -16,32 +16,23 @@
 
 package io.helidon.examples.nima.tracing;
 
+import java.util.Optional;
+
 import io.helidon.common.LogConfig;
 import io.helidon.nima.http2.webserver.Http2Route;
-import io.helidon.nima.tracing.opentelemetry.OpenTelemetryTracingSupport;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http.Handler;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
 import io.helidon.nima.webserver.http1.Http1Route;
-
-import io.opentelemetry.api.OpenTelemetry;
-import io.opentelemetry.api.common.AttributeKey;
-import io.opentelemetry.api.common.Attributes;
-import io.opentelemetry.api.trace.Span;
-import io.opentelemetry.api.trace.Tracer;
-import io.opentelemetry.context.propagation.ContextPropagators;
-import io.opentelemetry.exporter.zipkin.ZipkinSpanExporter;
-import io.opentelemetry.extension.trace.propagation.B3Propagator;
-import io.opentelemetry.sdk.OpenTelemetrySdk;
-import io.opentelemetry.sdk.resources.Resource;
-import io.opentelemetry.sdk.trace.SdkTracerProvider;
-import io.opentelemetry.sdk.trace.export.BatchSpanProcessor;
+import io.helidon.nima.webserver.tracing.TracingSupport;
+import io.helidon.tracing.Span;
+import io.helidon.tracing.Tracer;
+import io.helidon.tracing.TracerBuilder;
 
 import static io.helidon.common.http.Http.Method.GET;
 
 public class TracingMain {
-    public static final AttributeKey<String> SERVICE = AttributeKey.stringKey("service.name");
 
     /**
      * @param args ignored
@@ -49,23 +40,14 @@ public class TracingMain {
     public static void main(String[] args) {
         LogConfig.configureRuntime();
 
-        // the following section can be done through autoconfiguration as well
-        OpenTelemetry openTelemetry = OpenTelemetrySdk.builder()
-                .setTracerProvider(SdkTracerProvider.builder()
-                                           .addSpanProcessor(BatchSpanProcessor.builder(ZipkinSpanExporter.builder()
-                                                                                                .build()).build())
-                                           .setResource(Resource.create(Attributes.of(SERVICE, "helidon-service")))
-                                           .build())
-                .setPropagators(ContextPropagators.create(B3Propagator.injectingMultiHeaders()))
-                .buildAndRegisterGlobal();
-
-        Tracer tracer = openTelemetry.getTracer("helidon-example");
+        Tracer tracer = TracerBuilder.create("nima")
+                .build();
 
         WebServer.builder()
                 .port(8080)
                 .host("127.0.0.1")
                 .routing(router -> router
-                        .update(OpenTelemetryTracingSupport.create(openTelemetry, tracer)::register)
+                        .update(TracingSupport.create(tracer)::register)
                         .route(Http1Route.route(GET, "/versionspecific", new TracedHandler(tracer, "HTTP/1.1 route")))
                         .route(Http2Route.route(GET, "/versionspecific", new TracedHandler(tracer, "HTTP/2 route")))
                 )
@@ -85,7 +67,7 @@ public class TracingMain {
         @Override
         public void handle(ServerRequest req, ServerResponse res) {
             Span span = tracer.spanBuilder("custom-span")
-                    .startSpan();
+                    .start();
             try {
                 span.addEvent("my nice log");
                 res.send(message);

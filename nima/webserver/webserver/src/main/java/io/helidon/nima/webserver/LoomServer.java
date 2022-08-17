@@ -36,6 +36,7 @@ import io.helidon.nima.webserver.spi.ServerConnectionProvider;
 
 class LoomServer implements WebServer {
     private static final System.Logger LOGGER = System.getLogger(LoomServer.class.getName());
+    private static final String EXIT_ON_STARTED_KEY = "exit.on.started";
 
     private final Map<String, ServerListener> listeners;
 
@@ -178,10 +179,16 @@ class LoomServer implements WebServer {
                 }, "shutdown-hook"));
         now = System.currentTimeMillis() - now;
         long uptime = ManagementFactory.getRuntimeMXBean().getUptime();
+
         LOGGER.log(System.Logger.Level.INFO, "Níma server started all channels in "
                 + now + " milliseconds. "
                 + uptime + " milliseconds since JVM startup. "
                 + "Java " + Runtime.version());
+
+        if ("!".equals(System.getProperty(EXIT_ON_STARTED_KEY))) {
+            LOGGER.log(System.Logger.Level.INFO, String.format("Exiting, -D%s set.", EXIT_ON_STARTED_KEY));
+            System.exit(0);
+        }
     }
 
     // return false if anything fails

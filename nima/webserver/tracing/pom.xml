@@ -19,13 +19,14 @@
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.helidon.nima.tracing</groupId>
-        <artifactId>helidon-nima-tracing-project</artifactId>
+        <groupId>io.helidon.nima.webserver</groupId>
+        <artifactId>helidon-nima-webserver-project</artifactId>
         <version>4.0.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>helidon-nima-tracing-opentelemetry</artifactId>
-    <name>Helidon Níma Tracing Open Telemetry</name>
+    <artifactId>helidon-nima-webserver-tracing</artifactId>
+    <name>Helidon Níma WebServer Tracing</name>
+    <description>Tracing support for Níma server</description>
 
     <dependencies>
         <dependency>
@@ -33,12 +34,17 @@
             <artifactId>helidon-nima-webserver</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-api</artifactId>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-semconv</artifactId>
+            <groupId>io.helidon.tracing</groupId>
+            <artifactId>helidon-tracing</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.nima.testing.junit5</groupId>
+            <artifactId>helidon-nima-testing-junit5-webserver</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
