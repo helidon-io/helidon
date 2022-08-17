@@ -283,6 +283,7 @@ public class Http2Stream implements Runnable, io.helidon.nima.http2.Http2Stream 
             SimpleHandler.SimpleResponse response = handler.handle(e.request(),
                                                                    e.eventType(),
                                                                    e.status(),
+                                                                   e.responseHeaders(),
                                                                    e);
 
             Optional<ServerResponse> fullResponse = e.fullResponse();
