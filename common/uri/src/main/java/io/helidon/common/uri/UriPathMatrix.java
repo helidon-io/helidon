@@ -20,11 +20,11 @@ import java.net.URI;
 
 import io.helidon.common.parameters.Parameters;
 
-class UriPathParam extends UriPathNoParam {
+class UriPathMatrix extends UriPathNoParam {
     private final String rawPath;
     private Parameters pathParams;
 
-    UriPathParam(String rawPath, String noParamPath) {
+    UriPathMatrix(String rawPath, String noParamPath) {
         super(noParamPath);
         this.rawPath = rawPath;
     }
@@ -35,9 +35,9 @@ class UriPathParam extends UriPathNoParam {
     }
 
     @Override
-    public Parameters pathParameters() {
+    public Parameters matrixParameters() {
         if (pathParams == null) {
-            pathParams = UriPathParameters.create(rawPath);
+            pathParams = UriMatrixParameters.create(rawPath);
         }
         return pathParams;
     }

@@ -228,7 +228,7 @@ class StaticContentHandlerTest {
         when(request.prologue()).thenReturn(prologue);
         when(request.path()).thenReturn(new RoutedPath() {
             @Override
-            public Parameters templateParameters() {
+            public Parameters pathParameters() {
                 return Parameters.empty("unit-template-params");
             }
 
@@ -253,7 +253,7 @@ class StaticContentHandlerTest {
             }
 
             @Override
-            public Parameters pathParameters() {
+            public Parameters matrixParameters() {
                 return Parameters.empty("unit-routed-path");
             }
 

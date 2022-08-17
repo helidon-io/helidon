@@ -117,8 +117,8 @@ public class Filters {
         }
 
         @Override
-        public Parameters pathParameters() {
-            return uriPath.pathParameters();
+        public Parameters matrixParameters() {
+            return uriPath.matrixParameters();
         }
 
         @Override
@@ -127,7 +127,7 @@ public class Filters {
         }
 
         @Override
-        public Parameters templateParameters() {
+        public Parameters pathParameters() {
             return EMPTY_PARAMS;
         }
 

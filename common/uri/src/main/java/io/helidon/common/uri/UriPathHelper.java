@@ -28,7 +28,7 @@ final class UriPathHelper {
      * @param path raw path (may include path parameters)
      * @return raw path without path parameters
      */
-    static String stripPathParams(String path) {
+    static String stripMatrixParams(String path) {
         int i = path.indexOf(';');
 
         if (i == -1) {

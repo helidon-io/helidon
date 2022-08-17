@@ -132,11 +132,11 @@ class RouteCrawler {
         public CrawlerItem parent(RoutedPath parent) {
             Map<String, List<String>> newParams = new HashMap<>();
 
-            Parameters params = parent.templateParameters();
+            Parameters params = parent.pathParameters();
             for (String paramName : params.names()) {
                 newParams.put(paramName, params.all(paramName));
             }
-            params = path.templateParameters();
+            params = path.pathParameters();
             for (String paramName : params.names()) {
                 newParams.put(paramName, params.all(paramName));
             }
@@ -171,8 +171,8 @@ class RouteCrawler {
             }
 
             @Override
-            public Parameters pathParameters() {
-                return path.pathParameters();
+            public Parameters matrixParameters() {
+                return path.matrixParameters();
             }
 
             @Override
@@ -181,7 +181,7 @@ class RouteCrawler {
             }
 
             @Override
-            public Parameters templateParameters() {
+            public Parameters pathParameters() {
                 return templateParams;
             }
 

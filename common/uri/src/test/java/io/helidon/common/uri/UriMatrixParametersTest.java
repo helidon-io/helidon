@@ -24,12 +24,12 @@ import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 
-class UriPathParametersTest {
+class UriMatrixParametersTest {
     @Test
     void testPathParams() {
         String path = "/user;domain=abc;u=a/john;u=b";
 
-        Parameters parameters = UriPathParameters.create(path);
+        Parameters parameters = UriMatrixParameters.create(path);
         assertThat(parameters.names(), containsInAnyOrder("domain", "u"));
         assertThat(parameters.all("domain"), hasItems("abc"));
         assertThat(parameters.all("u"), hasItems("a", "b"));

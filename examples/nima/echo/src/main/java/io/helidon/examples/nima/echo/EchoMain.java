@@ -60,8 +60,8 @@ public class EchoMain {
         UriQuery query = req.query();
         Headers headers = req.headers();
 
-        Parameters pathParams = path.pathParameters();
-        Parameters templateParams = path.templateParameters();
+        Parameters pathParams = path.matrixParameters();
+        Parameters templateParams = path.pathParameters();
         Set<String> queryNames = query.names();
 
         for (String pathParamName : pathParams.names()) {

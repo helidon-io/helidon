@@ -27,12 +27,12 @@ public interface RoutedPath extends UriPath {
      * Resolved parameters from path template.
      * Path templates do not support multi-valued parameters.
      * <p>
-     * Example of path with template parameter: {@code /users/{user}}.
+     * Example of path with path parameter: {@code /users/{user}}.
      * {@code user} is the name of the parameter.
      *
      * @return resolved parameters
      */
-    Parameters templateParameters();
+    Parameters pathParameters();
 
     /**
      * If this instance represents a path relative to some context root then returns absolute requested path otherwise

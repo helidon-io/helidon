@@ -91,7 +91,7 @@ class ConfigService implements HttpService {
     }
 
     private void value(ServerRequest req, ServerResponse res) {
-        String name = req.path().templateParameters().value("name");
+        String name = req.path().pathParameters().value("name");
 
         ConfigValue<String> value = Nima.config().get(name).asString();
         if (value.isPresent()) {

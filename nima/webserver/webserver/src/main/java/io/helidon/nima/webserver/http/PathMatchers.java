@@ -499,7 +499,7 @@ public final class PathMatchers {
         }
 
         @Override
-        public Parameters templateParameters() {
+        public Parameters pathParameters() {
             return pathTemplateParams;
         }
 
@@ -539,8 +539,8 @@ public final class PathMatchers {
         }
 
         @Override
-        public Parameters pathParameters() {
-            return path.pathParameters();
+        public Parameters matrixParameters() {
+            return path.matrixParameters();
         }
 
         @Override
@@ -549,7 +549,7 @@ public final class PathMatchers {
         }
 
         @Override
-        public Parameters templateParameters() {
+        public Parameters pathParameters() {
             return EMPTY_PARAMS;
         }
 

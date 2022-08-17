@@ -27,11 +27,11 @@ import io.helidon.common.parameters.Parameters;
 
 import static io.helidon.common.uri.UriEncoding.decodeUri;
 
-class UriPathParameters implements Parameters {
-    private final Map<String, List<String>> pathParams;
+class UriMatrixParameters implements Parameters {
+    private final Map<String, List<String>> matrixPatams;
 
-    private UriPathParameters(Map<String, List<String>> pathParams) {
-        this.pathParams = pathParams;
+    private UriMatrixParameters(Map<String, List<String>> matrixPatams) {
+        this.matrixPatams = matrixPatams;
     }
 
     static Parameters create(String rawPath) {
@@ -90,12 +90,12 @@ class UriPathParameters implements Parameters {
         }
 
         pathParams.replaceAll((name, values) -> List.copyOf(values));
-        return new UriPathParameters(pathParams);
+        return new UriMatrixParameters(pathParams);
     }
 
     @Override
     public List<String> all(String name) throws NoSuchElementException {
-        List<String> value = pathParams.get(name);
+        List<String> value = matrixPatams.get(name);
         if (value == null) {
             throw new NoSuchElementException("This path does not contain parameter named \"" + name + "\"");
         }
@@ -104,7 +104,7 @@ class UriPathParameters implements Parameters {
 
     @Override
     public String value(String name) throws NoSuchElementException {
-        List<String> value = pathParams.get(name);
+        List<String> value = matrixPatams.get(name);
         if (value == null) {
             throw new NoSuchElementException("This path does not contain parameter named \"" + name + "\"");
         }
@@ -113,22 +113,22 @@ class UriPathParameters implements Parameters {
 
     @Override
     public boolean contains(String name) {
-        return pathParams.containsKey(name);
+        return matrixPatams.containsKey(name);
     }
 
     @Override
     public boolean isEmpty() {
-        return pathParams.isEmpty();
+        return matrixPatams.isEmpty();
     }
 
     @Override
     public int size() {
-        return pathParams.size();
+        return matrixPatams.size();
     }
 
     @Override
     public Set<String> names() {
-        return pathParams.keySet();
+        return matrixPatams.keySet();
     }
 
     @Override
@@ -138,6 +138,6 @@ class UriPathParameters implements Parameters {
 
     @Override
     public String toString() {
-        return component() + ": " + pathParams;
+        return component() + ": " + matrixPatams;
     }
 }

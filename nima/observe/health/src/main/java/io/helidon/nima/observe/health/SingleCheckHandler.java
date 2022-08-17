@@ -51,7 +51,7 @@ class SingleCheckHandler implements Handler {
 
     @Override
     public void handle(ServerRequest req, ServerResponse res) {
-        String name = req.path().templateParameters().value("name");
+        String name = req.path().pathParameters().value("name");
         HealthCheck check = checks.get(name);
         if (check == null) {
             throw HttpException.builder()

@@ -59,7 +59,7 @@ class UriPathNoParam implements UriPath {
     }
 
     @Override
-    public Parameters pathParameters() {
+    public Parameters matrixParameters() {
         return EMPTY_PARAMS;
     }
 

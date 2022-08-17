@@ -42,7 +42,7 @@ class UriEncodingTest {
     @SetUpRoute
     static void routing(HttpRules rules) {
         rules.get("/foo", (req, res) -> res.send("It works!"))
-                .get("/foo/{bar}", (req, res) -> res.send(req.path().templateParameters().value("bar")));
+                .get("/foo/{bar}", (req, res) -> res.send(req.path().pathParameters().value("bar")));
     }
 
     /**

@@ -88,7 +88,7 @@ class GreetService implements HttpService {
      */
     private void getMessageHandler(ServerRequest request,
                                    ServerResponse response) {
-        String name = request.path().templateParameters().value("name");
+        String name = request.path().pathParameters().value("name");
         sendResponse(response, name);
     }
 
