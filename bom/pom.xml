@@ -1231,11 +1231,6 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.nima.http.encoding</groupId>
-                <artifactId>helidon-nima-http-encoding-brotli</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>io.helidon.nima.http.media</groupId>
                 <artifactId>helidon-nima-http-media</artifactId>
                 <version>${helidon.version}</version>
