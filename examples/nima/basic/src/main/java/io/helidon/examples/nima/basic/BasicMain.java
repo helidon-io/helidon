@@ -23,6 +23,14 @@ import io.helidon.nima.webserver.http.HttpRouting;
  * As simple as possible with a fixed port.
  */
 public class BasicMain {
+    private BasicMain() {
+    }
+
+    /**
+     * Main method.
+     *
+     * @param args ignored
+     */
     public static void main(String[] args) {
         /*
          This would be the simplest possible server

@@ -16,8 +16,6 @@
 
 package io.helidon.examples.dbclient.pokemons;
 
-import java.util.List;
-
 import io.helidon.common.LogConfig;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;

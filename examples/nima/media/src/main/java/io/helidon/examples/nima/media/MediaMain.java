@@ -27,6 +27,9 @@ import io.helidon.nima.webserver.staticcontent.StaticContentSupport;
 public class MediaMain {
     private static final Http.HeaderValue UI_LOCATION = Http.Header.LOCATION.withValue("/ui");
 
+    private MediaMain() {
+    }
+
     /**
      * Executes the example.
      *

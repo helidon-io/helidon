@@ -16,8 +16,6 @@
 
 package io.helidon.examples.nima.tracing;
 
-import java.util.Optional;
-
 import io.helidon.common.LogConfig;
 import io.helidon.nima.http2.webserver.Http2Route;
 import io.helidon.nima.webserver.WebServer;
@@ -32,9 +30,15 @@ import io.helidon.tracing.TracerBuilder;
 
 import static io.helidon.common.http.Http.Method.GET;
 
+/**
+ * Tracing example.
+ */
 public class TracingMain {
+    private TracingMain() {
+    }
 
     /**
+     * Main method.
      * @param args ignored
      */
     public static void main(String[] args) {

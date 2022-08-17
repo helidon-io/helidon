@@ -41,7 +41,7 @@ public class QuickstartMain {
      *
      * @param args command line arguments.
      */
-    public static void main(final String[] args) {
+    public static void main(String[] args) {
         // load logging configuration
         LogConfig.configureRuntime();
 

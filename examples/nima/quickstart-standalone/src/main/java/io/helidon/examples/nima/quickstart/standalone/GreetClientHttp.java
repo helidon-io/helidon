@@ -20,7 +20,15 @@ import io.helidon.common.http.Http;
 import io.helidon.nima.webclient.WebClient;
 import io.helidon.nima.webclient.http1.Http1Client;
 
+/**
+ * Executable class that invokes HTTP/1 requests against the server.
+ */
 public class GreetClientHttp {
+    /**
+     * Main method.
+     *
+     * @param args ignored
+     */
     public static void main(String[] args) {
         Http1Client client = WebClient.builder()
                 .baseUri("http://localhost:8080/greet")
@@ -32,7 +40,7 @@ public class GreetClientHttp {
 
         System.out.println(response);
 
-        response = client.get("Warp")
+        response = client.get("Nima")
                 .request()
                 .as(String.class);
 

@@ -37,9 +37,20 @@ import io.grpc.stub.StreamObserver;
 import static io.helidon.common.http.Http.Method.GET;
 import static io.helidon.nima.grpc.webserver.ResponseHelper.complete;
 
+/**
+ * Example showing supported protocols.
+ */
 public class ProtocolsMain {
     private static final byte[] RESPONSE = "Hello from WARP!".getBytes(StandardCharsets.UTF_8);
 
+    private ProtocolsMain() {
+    }
+
+    /**
+     * Main method.
+     *
+     * @param args ignored
+     */
     public static void main(String[] args) {
         LogConfig.configureRuntime();
 

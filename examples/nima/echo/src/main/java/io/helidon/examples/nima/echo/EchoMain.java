@@ -30,7 +30,15 @@ import io.helidon.nima.webserver.http.RoutedPath;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
 
+/**
+ * Echo example.
+ */
 public class EchoMain {
+    /**
+     * Main method.
+     *
+     * @param args ignored
+     */
     public static void main(String[] args) {
         LogConfig.configureRuntime();
 

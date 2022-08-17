@@ -31,16 +31,16 @@ import jakarta.json.JsonObject;
 
 /**
  * A simple service to greet you. Examples:
- *
+ * <p>
  * Get default greeting message:
- * curl -X GET http://localhost:8080/greet
- *
+ * {@code curl -X GET http://localhost:8080/greet}
+ * <p>
  * Get greeting message for Joe:
- * curl -X GET http://localhost:8080/greet/Joe
- *
+ * {@code curl -X GET http://localhost:8080/greet/Joe}
+ * <p>
  * Change greeting
- * curl -X PUT -H "Content-Type: application/json" -d '{"greeting" : "Howdy"}' http://localhost:8080/greet/greeting
- *
+ * {@code curl -X PUT -H "Content-Type: application/json" -d '{"greeting" : "Howdy"}' http://localhost:8080/greet/greeting}
+ * <p>
  * The message is returned as a JSON object
  */
 class GreetService implements HttpService {

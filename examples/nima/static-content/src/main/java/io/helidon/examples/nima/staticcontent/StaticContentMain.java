@@ -20,7 +20,18 @@ import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.nima.webserver.staticcontent.StaticContentSupport;
 
+/**
+ * Static content example.
+ */
 public class StaticContentMain {
+    private StaticContentMain() {
+    }
+
+    /**
+     * Main methods.
+     *
+     * @param args ignored
+     */
     public static void main(String[] args) {
         WebServer.builder()
                 .host("127.0.0.1")

@@ -16,8 +16,6 @@
 
 package io.helidon.examples.dbclient.mongo;
 
-import java.util.List;
-
 import io.helidon.common.LogConfig;
 import io.helidon.config.Config;
 import io.helidon.dbclient.DbClient;

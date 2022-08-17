@@ -24,10 +24,17 @@ import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientRequest;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
 
+/**
+ * A client that invokes the echo server.
+ */
 public class EchoClient {
     private static final HeaderValue HEADER = Http.Header.create("MY-HEADER").withValue("header-value");
     private static final HeaderValue HEADERS = Http.Header.create("MY-HEADERS").withValue("ha", "hb", "hc");
 
+    /**
+     * Main method.
+     * @param args ignored
+     */
     public static void main(String[] args) {
         Http1Client client = WebClient.builder()
                 .build();

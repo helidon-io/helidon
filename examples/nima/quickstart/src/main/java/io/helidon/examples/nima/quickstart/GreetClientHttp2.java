@@ -16,11 +16,20 @@
 
 package io.helidon.examples.nima.quickstart;
 
+/**
+ * Executable class that invokes server using HTTP/2 client.
+ */
 public class GreetClientHttp2 {
+    /**
+     * Main method.
+     *
+     * @param args ignored
+     */
     public static void main(String[] args) {
+        // TODO finish HTTP/2 client
         throw new UnsupportedOperationException("HTTP/2 client is not yet implemented");
         /*
-        Http2Client client = Client.builder()
+        Http2Client client = WebClient.builder()
                 .build()
                 .protocol(Http2.PROTOCOL)
                 .baseUri("http://localhost:8080/greet")
@@ -32,7 +41,7 @@ public class GreetClientHttp2 {
 
         System.out.println(response);
 
-        response = client.get("Warp")
+        response = client.get("Nima")
                 .request()
                 .as(String.class);
 

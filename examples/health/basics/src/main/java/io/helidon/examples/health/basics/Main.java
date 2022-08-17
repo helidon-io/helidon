@@ -17,8 +17,8 @@ package io.helidon.examples.health.basics;
 
 import java.time.Duration;
 
-import io.helidon.reactive.health.HealthSupport;
 import io.helidon.health.checks.HealthChecks;
+import io.helidon.reactive.health.HealthSupport;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 

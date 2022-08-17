@@ -26,6 +26,13 @@ import io.helidon.nima.webserver.http.HttpRouting;
  * Some observers may disclose secret or private information and should be protected, use with care (and security).
  */
 public class ObserveMain {
+    private ObserveMain() {
+    }
+
+    /**
+     * Main method.
+     * @param args ignored
+     */
     public static void main(String[] args) {
         // load logging
         LogConfig.configureRuntime();
