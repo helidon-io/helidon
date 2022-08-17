@@ -34,6 +34,9 @@ import io.helidon.nima.webserver.http.ServerResponse;
  * Echo example.
  */
 public class EchoMain {
+    private EchoMain() {
+    }
+
     /**
      * Main method.
      *

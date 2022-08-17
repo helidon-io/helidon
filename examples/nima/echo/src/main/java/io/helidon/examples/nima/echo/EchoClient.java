@@ -31,8 +31,12 @@ public class EchoClient {
     private static final HeaderValue HEADER = Http.Header.create("MY-HEADER").withValue("header-value");
     private static final HeaderValue HEADERS = Http.Header.create("MY-HEADERS").withValue("ha", "hb", "hc");
 
+    private EchoClient() {
+    }
+
     /**
      * Main method.
+     *
      * @param args ignored
      */
     public static void main(String[] args) {

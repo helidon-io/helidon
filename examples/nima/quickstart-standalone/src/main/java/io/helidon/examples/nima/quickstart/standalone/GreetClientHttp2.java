@@ -20,6 +20,9 @@ package io.helidon.examples.nima.quickstart.standalone;
  * Executable class that invokes server using HTTP/2 client.
  */
 public class GreetClientHttp2 {
+    private GreetClientHttp2() {
+    }
+
     /**
      * Main method.
      *

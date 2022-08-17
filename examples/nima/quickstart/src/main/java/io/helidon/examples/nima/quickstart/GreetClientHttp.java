@@ -24,6 +24,9 @@ import io.helidon.nima.webclient.http1.Http1Client;
  * Executable class that invokes HTTP/1 requests against the server.
  */
 public class GreetClientHttp {
+    private GreetClientHttp() {
+    }
+
     /**
      * Main method.
      *

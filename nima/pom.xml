@@ -47,10 +47,17 @@
         <module>observe</module>
         <module>fault-tolerance</module>
         <module>testing</module>
-        <module>tests</module>
         <module>service-common</module>
     </modules>
 
+    <profiles>
+        <profile>
+            <id>tests</id>
+            <modules>
+                <module>tests</module>
+            </modules>
+        </profile>
+    </profiles>
     <build>
         <pluginManagement>
             <plugins>
