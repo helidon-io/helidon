@@ -49,6 +49,7 @@
         <module>mp-gh-3246</module>
         <module>mp-gh-3974</module>
         <module>mp-gh-4123</module>
+        <module>mp-gh-4654</module>
         <module>kafka</module>
         <module>jms</module>
         <module>config</module>

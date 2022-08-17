@@ -53,3 +53,5 @@ target/
 /archetypes/
 .git/
 META-INF/services/
+# excluded as this is a test file and we need to validate its content
+src/test/resources/static/classpath/index.html
