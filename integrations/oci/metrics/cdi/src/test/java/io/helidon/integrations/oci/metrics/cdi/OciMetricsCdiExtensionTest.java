@@ -97,6 +97,10 @@ public class OciMetricsCdiExtensionTest {
     @Alternative
     @Priority(APPLICATION + 1)
     static class MockMonitoring implements Monitoring {
+
+        @Override
+        public void refreshClient() {}
+
         @Override
         public void setEndpoint(String s) {}
 

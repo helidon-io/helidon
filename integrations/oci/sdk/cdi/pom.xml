@@ -81,12 +81,14 @@
         <dependency>
             <groupId>com.oracle.oci.sdk</groupId>
             <artifactId>oci-java-sdk-ailanguage</artifactId>
+            <version>${version.lib.oci}</version>
             <scope>test</scope>
         </dependency>
         <!-- Streaming OCI library because it is the only OCI service that doesn't quite match the other OCI services' design patterns. -->
         <dependency>
             <groupId>com.oracle.oci.sdk</groupId>
             <artifactId>oci-java-sdk-streaming</artifactId>
+            <version>${version.lib.oci}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
