@@ -27,6 +27,7 @@ import java.util.Set;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.http.HeadersWritable;
+import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderName;
 import io.helidon.common.http.HttpPrologue;
@@ -37,7 +38,7 @@ import io.helidon.nima.webserver.http1.spi.Http1UpgradeProvider;
 import io.helidon.nima.webserver.spi.ServerConnection;
 
 /**
- * {@link java.util.ServiceLoader} provider implementation for ugprade from HTTP/1.1 to WebSocket.
+ * {@link java.util.ServiceLoader} provider implementation for upgrade from HTTP/1.1 to WebSocket.
  */
 public class WsUpgradeProvider implements Http1UpgradeProvider {
     private static final System.Logger LOGGER = System.getLogger(WsUpgradeProvider.class.getName());
@@ -53,6 +54,8 @@ public class WsUpgradeProvider implements Http1UpgradeProvider {
             + "Upgrade: websocket\r\n"
             + "Sec-WebSocket-Accept: ";
     private static final String SWITCHING_PROTOCOLS_SUFFIX = "\r\n\r\n";
+    private static final String SUPPORTED_VERSION = "13";
+    private static final Http.HeaderValue SUPPORTED_VERSION_HEADER = Http.HeaderValue.create(WS_VERSION, SUPPORTED_VERSION);
 
     private final Set<String> origins;
     private final boolean anyOrigin;
@@ -98,7 +101,15 @@ public class WsUpgradeProvider implements Http1UpgradeProvider {
         if (headers.contains(WS_VERSION)) {
             version = headers.get(WS_VERSION).value();
         } else {
-            version = "13";
+            version = SUPPORTED_VERSION;
+        }
+
+        if (!SUPPORTED_VERSION.equals(version)) {
+            throw HttpException.builder()
+                    .type(SimpleHandler.EventType.BAD_REQUEST)
+                    .message("Unsupported WebSocket Version")
+                    .header(SUPPORTED_VERSION_HEADER)
+                    .build();
         }
 
         WebSocket route = ctx.router().routing(WebSocketRouting.class, WebSocketRouting.empty())
@@ -134,15 +145,23 @@ public class WsUpgradeProvider implements Http1UpgradeProvider {
     }
 
     private String hash(ConnectionContext ctx, String wsKey) {
-        //byte[] wsKeyBytes = B64_DECODER.decode(wsKey);
-        byte[] wsKeyBytes = wsKey.getBytes(StandardCharsets.US_ASCII);
-        int wsKeyBytesLength = wsKeyBytes.length;
-        if (wsKeyBytesLength != 24) {
+        byte[] decodedBytes = B64_DECODER.decode(wsKey);
+        if (decodedBytes.length != 16) {
+            // this is required by the specification (RFC-6455)
+            /*
+            The request MUST include a header field with the name
+            |Sec-WebSocket-Key|.  The value of this header field MUST be a
+            nonce consisting of a randomly selected 16-byte value that has
+            been base64-encoded (see Section 4 of [RFC4648]).  The nonce
+            MUST be selected randomly for each connection.
+             */
             throw HttpException.builder()
                     .type(SimpleHandler.EventType.BAD_REQUEST)
                     .message("Invalid Sec-WebSocket-Key header")
                     .build();
         }
+        byte[] wsKeyBytes = wsKey.getBytes(StandardCharsets.US_ASCII);
+        int wsKeyBytesLength = wsKeyBytes.length;
         byte[] toHash = new byte[wsKeyBytesLength + KEY_SUFFIX_LENGTH];
         System.arraycopy(wsKeyBytes, 0, toHash, 0, wsKeyBytesLength);
         System.arraycopy(KEY_SUFFIX, 0, toHash, wsKeyBytesLength, KEY_SUFFIX_LENGTH);

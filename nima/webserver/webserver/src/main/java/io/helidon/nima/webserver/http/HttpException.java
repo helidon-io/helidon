@@ -18,6 +18,7 @@ package io.helidon.nima.webserver.http;
 
 import java.util.Optional;
 
+import io.helidon.common.http.HeadersServerResponse;
 import io.helidon.common.http.Http;
 import io.helidon.nima.webserver.SimpleHandler;
 
@@ -30,6 +31,7 @@ public class HttpException extends RuntimeException {
     private final SimpleHandler.SimpleRequest simpleRequest;
     private final ServerResponse fullResponse;
     private final boolean keepAlive;
+    private final HeadersServerResponse responseHeaders;
 
     private HttpException(Builder builder) {
         super(builder.message, builder.cause);
@@ -38,6 +40,7 @@ public class HttpException extends RuntimeException {
         this.simpleRequest = builder.request;
         this.fullResponse = builder.fullResponse;
         this.keepAlive = builder.keepAlive;
+        this.responseHeaders = builder.responseHeaders;
     }
 
     /**
@@ -96,6 +99,15 @@ public class HttpException extends RuntimeException {
     }
 
     /**
+     * Response headers that should be added to response.
+     *
+     * @return response headers
+     */
+    public HeadersServerResponse responseHeaders() {
+        return responseHeaders;
+    }
+
+    /**
      * Fluent API builder for {@link io.helidon.nima.webserver.http.HttpException}.
      */
     public static class Builder implements io.helidon.common.Builder<Builder, HttpException> {
@@ -106,6 +118,7 @@ public class HttpException extends RuntimeException {
         private Http.Status status;
         private ServerResponse fullResponse;
         private Boolean keepAlive;
+        private HeadersServerResponse responseHeaders = HeadersServerResponse.create();
 
         private Builder() {
         }
@@ -216,6 +229,17 @@ public class HttpException extends RuntimeException {
          */
         public Builder setKeepAlive(boolean keepAlive) {
             this.keepAlive = keepAlive;
+            return this;
+        }
+
+        /**
+         * Response header to be added to error response.
+         *
+         * @param header header to add
+         * @return updated builder
+         */
+        public Builder header(Http.HeaderValue header) {
+            this.responseHeaders.set(header);
             return this;
         }
     }

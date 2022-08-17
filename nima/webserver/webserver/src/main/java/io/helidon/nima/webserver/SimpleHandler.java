@@ -58,14 +58,16 @@ public interface SimpleHandler {
      * @param request       request as received with as much known information as possible
      * @param eventType     type of the event
      * @param defaultStatus default status expected to be returned
+     * @param responseHeaders headers to be added to response
      * @param thrown        throwable caught as part of processing with possible additional details about the reason of failure
      * @return response to use to return to original request
      */
     default SimpleResponse handle(SimpleRequest request,
                                   EventType eventType,
                                   Http.Status defaultStatus,
+                                  HeadersServerResponse responseHeaders,
                                   Throwable thrown) {
-        return handle(request, eventType, defaultStatus, thrown.getMessage());
+        return handle(request, eventType, defaultStatus, responseHeaders, thrown.getMessage());
     }
 
     /**
@@ -77,6 +79,7 @@ public interface SimpleHandler {
      * @param request       request as received with as much known information as possible
      * @param eventType     type of the event
      * @param defaultStatus default status expected to be returned
+     * @param responseHeaders headers to be added to response
      * @param message       informative message for cases that are not triggered by an exception, by default this will be called
      *                      also
      *                      for exceptional cases with the exception message
@@ -85,6 +88,7 @@ public interface SimpleHandler {
     SimpleResponse handle(SimpleRequest request,
                           EventType eventType,
                           Http.Status defaultStatus,
+                          HeadersServerResponse responseHeaders,
                           String message);
 
     /**

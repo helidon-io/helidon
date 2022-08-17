@@ -35,6 +35,7 @@ package io.helidon.nima.webserver;
 import java.util.EnumMap;
 import java.util.Map;
 
+import io.helidon.common.http.HeadersServerResponse;
 import io.helidon.common.http.Http;
 import io.helidon.nima.webserver.SimpleHandler.EventType;
 
@@ -101,9 +102,14 @@ public class SimpleHandlers {
 
     private static class DefaultHandler implements SimpleHandler {
         @Override
-        public SimpleResponse handle(SimpleRequest request, EventType eventType, Http.Status defaultStatus, String message) {
+        public SimpleResponse handle(SimpleRequest request,
+                                     EventType eventType,
+                                     Http.Status defaultStatus,
+                                     HeadersServerResponse headers,
+                                     String message) {
             return SimpleResponse.builder()
                     .status(defaultStatus)
+                    .headers(headers)
                     .update(it -> {
                         if (!message.isEmpty()) {
                             it.message(HtmlEncoder.encode(message));

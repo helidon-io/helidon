@@ -125,6 +125,7 @@ public class Http1Connection implements ServerConnection {
             SimpleHandler.SimpleResponse response = handler.handle(e.request(),
                                                                    e.eventType(),
                                                                    e.status(),
+                                                                   e.responseHeaders(),
                                                                    e);
 
             Http.Status usedStatus;

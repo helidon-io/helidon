@@ -19,6 +19,7 @@ package io.helidon.nima.tests.integration.server;
 import java.util.List;
 import java.util.Map;
 
+import io.helidon.common.http.HeadersServerResponse;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
@@ -144,6 +145,7 @@ class BadRequestTest {
     private static SimpleHandler.SimpleResponse badRequestHandler(SimpleHandler.SimpleRequest request,
                                                                   SimpleHandler.EventType eventType,
                                                                   Http.Status httpStatus,
+                                                                  HeadersServerResponse responseHeaders,
                                                                   String message) {
         if (request.path().equals("/redirect")) {
             return SimpleHandler.SimpleResponse.builder()
@@ -154,6 +156,7 @@ class BadRequestTest {
         return SimpleHandler.SimpleResponse.builder()
                 .status(Http.Status.create(Http.Status.BAD_REQUEST_400.code(),
                                            CUSTOM_REASON_PHRASE))
+                .headers(responseHeaders)
                 .message(CUSTOM_ENTITY)
                 .build();
     }
