@@ -97,7 +97,7 @@ public class WebSocketRouting implements Routing {
          * Add endpoint.
          *
          * @param path     path of the endpoint
-         * @param listener listener to use
+         * @param listener listener to use, the same instance will be used for all connections
          * @return updated builder
          */
         public Builder endpoint(String path, WsListener listener) {
@@ -108,7 +108,7 @@ public class WebSocketRouting implements Routing {
          * Add endpoint.
          *
          * @param path     path of the endpoint
-         * @param listener listener supplier
+         * @param listener listener supplier, a new instance will be used for each connection
          * @return updated builder
          */
         public Builder endpoint(String path, Supplier<WsListener> listener) {

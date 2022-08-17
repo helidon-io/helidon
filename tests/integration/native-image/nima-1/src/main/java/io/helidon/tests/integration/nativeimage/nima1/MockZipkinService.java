@@ -33,7 +33,7 @@ import jakarta.json.JsonPointer;
 import jakarta.json.JsonString;
 import jakarta.json.JsonValue;
 
-public class MockZipkinService implements HttpService {
+class MockZipkinService implements HttpService {
 
     private static final Logger LOGGER = Logger.getLogger(MockZipkinService.class.getName());
 

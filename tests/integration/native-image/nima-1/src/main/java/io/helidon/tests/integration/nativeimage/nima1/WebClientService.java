@@ -35,7 +35,7 @@ import io.helidon.nima.webserver.http.ServerResponse;
 
 import jakarta.json.JsonValue;
 
-public class WebClientService implements HttpService {
+class WebClientService implements HttpService {
     private static final Duration TRACE_TIMEOUT = Duration.ofSeconds(15);
     private static final Logger LOGGER = Logger.getLogger(WebClientService.class.getName());
     private final Http1Client client;

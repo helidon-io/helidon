@@ -46,7 +46,7 @@ import jakarta.json.JsonObject;
  * The message is returned as a JSON object
  */
 
-public class GreetService implements HttpService {
+class GreetService implements HttpService {
 
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
     /**

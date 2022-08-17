@@ -30,4 +30,10 @@
         <Bug pattern="UNENCRYPTED_SERVER_SOCKET"/>
     </Match>
 
+    <Match>
+        <!-- Desired behavior -->
+        <Class name="io.helidon.nima.webserver.LoomServer"/>
+        <Method name="startIt"/>
+        <Bug pattern="DM_EXIT"/>
+    </Match>
 </FindBugsFilter>

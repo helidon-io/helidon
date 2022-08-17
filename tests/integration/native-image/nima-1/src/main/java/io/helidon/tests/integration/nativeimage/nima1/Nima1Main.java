@@ -69,7 +69,7 @@ public final class Nima1Main {
                 .port(7076)
                 .addRouting(createRouting(config))
                 .addRouting(WebSocketRouting.builder()
-                                    .endpoint("/ws/messages", new WebSocketEndpoint())
+                                    .endpoint("/ws/messages", WebSocketEndpoint::new)
                                     .build())
                 .start();
 

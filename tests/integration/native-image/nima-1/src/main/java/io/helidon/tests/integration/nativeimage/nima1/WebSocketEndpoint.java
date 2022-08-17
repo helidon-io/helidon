@@ -22,10 +22,9 @@ import java.util.logging.Logger;
 import io.helidon.nima.websocket.WsListener;
 import io.helidon.nima.websocket.WsSession;
 
-public class WebSocketEndpoint implements WsListener {
+class WebSocketEndpoint implements WsListener {
 
     private static final Logger LOGGER = Logger.getLogger(WebSocketEndpoint.class.getName());
-    // TODO improvement - the string builder should be session specific
     private final StringBuilder sb = new StringBuilder();
 
     @Override
