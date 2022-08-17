@@ -36,6 +36,7 @@ module io.helidon.microprofile.health {
     requires microprofile.config.api;
     requires transitive microprofile.health.api;
     requires io.helidon.config.mp;
+    requires io.helidon.health;
 
     exports io.helidon.microprofile.health;
 

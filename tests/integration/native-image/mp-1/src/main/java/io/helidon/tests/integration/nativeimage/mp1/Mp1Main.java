@@ -108,18 +108,6 @@ public final class Mp1Main {
         long time = System.currentTimeMillis() - now;
         System.out.println("Tests finished in " + time + " millis");
 
-        //        Config config = ConfigProvider.getConfig();
-        //        List<String> names = new ArrayList<>();
-        //        config.getPropertyNames()
-        //                .forEach(names::add);
-        //        names.sort(String::compareTo);
-
-        //        System.out.println("All configuration options:");
-        //        names.forEach(it -> {
-        //            config.getOptionalValue(it, String.class)
-        //                    .ifPresent(value -> System.out.println(it + "=" + value));
-        //        });
-
         server.stop();
 
         if (failed) {
@@ -539,7 +527,7 @@ public final class Mp1Main {
                                                 String name) {
         JsonObject healthCheck = checkMap.get(name);
         if (null == healthCheck) {
-            collector.fatal("\"" + name + "\" health check is not available");
+            collector.fatal("\"" + name + "\" health check is not available. Available names: " + checkMap.keySet());
         } else {
             String status = healthCheck.getString("status");
             if (!"UP".equals(status)) {

@@ -99,6 +99,15 @@ public class HealthCdiExtension extends HelidonRestCdiExtension<HealthSupport> {
         Optional<Boolean> disableDefaults = config.getOptionalValue("mp.health.disable-default-procedures",
                                                                     Boolean.class);
 
+        if (!disableDefaults.orElse(false)) {
+            // defaults are enabled
+            HelidonServiceLoader.create(ServiceLoader.load(io.helidon.health.spi.HealthCheckProvider.class))
+                    .asList()
+                    .stream()
+                    .flatMap(it -> it.healthChecks(helidonConfig).stream())
+                    .forEach(builder::add);
+        }
+
         List<HealthCheck> builtInHealthChecks = disableDefaults.map(
                 b -> b ? cdi.select(HealthCheck.class, BUILT_IN_HEALTH_CHECK_LITERAL)
                         .stream()
