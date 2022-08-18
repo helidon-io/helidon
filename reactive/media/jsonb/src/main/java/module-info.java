@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-import io.helidon.media.common.spi.MediaSupportProvider;
-import io.helidon.media.jsonb.JsonbProvider;
-import io.helidon.media.jsonb.JsonbSupport;
+import io.helidon.reactive.media.common.spi.MediaSupportProvider;
+import io.helidon.reactive.media.jsonb.JsonbProvider;
+import io.helidon.reactive.media.jsonb.JsonbSupport;
 
 /**
  * JSON-B support common classes.
@@ -33,7 +33,7 @@ module io.helidon.reactive.media.jsonb {
     requires io.helidon.reactive.media.common;
     requires transitive jakarta.json.bind;
 
-    exports io.helidon.media.jsonb;
+    exports io.helidon.reactive.media.jsonb;
 
     provides MediaSupportProvider with JsonbProvider;
 }

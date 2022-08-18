@@ -25,8 +25,8 @@ import io.helidon.common.http.HeadersWritable;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.reactive.Single;
-import io.helidon.media.common.MessageBodyReadableContent;
-import io.helidon.media.common.MessageBodyReaderContext;
+import io.helidon.reactive.media.common.MessageBodyReadableContent;
+import io.helidon.reactive.media.common.MessageBodyReaderContext;
 
 /**
  * Immutable implementation of the {@link WebClientResponse}.

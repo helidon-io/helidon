@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-import io.helidon.media.common.spi.MediaSupportProvider;
-import io.helidon.media.jackson.JacksonProvider;
-import io.helidon.media.jackson.JacksonSupport;
+import io.helidon.reactive.media.common.spi.MediaSupportProvider;
+import io.helidon.reactive.media.jackson.JacksonProvider;
+import io.helidon.reactive.media.jackson.JacksonSupport;
 
 /**
  * Jackson support common classes.
@@ -37,7 +37,7 @@ module io.helidon.reactive.media.jackson {
     requires io.helidon.reactive.media.common;
     requires io.helidon.config;
 
-    exports io.helidon.media.jackson;
+    exports io.helidon.reactive.media.jackson;
 
     provides MediaSupportProvider with JacksonProvider;
 }

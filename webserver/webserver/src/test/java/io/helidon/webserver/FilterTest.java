@@ -18,7 +18,6 @@ package io.helidon.webserver;
 
 import java.time.Duration;
 import java.util.concurrent.Flow;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
@@ -27,8 +26,8 @@ import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
-import io.helidon.media.common.MessageBodyWriter;
-import io.helidon.media.common.MessageBodyWriterContext;
+import io.helidon.reactive.media.common.MessageBodyWriter;
+import io.helidon.reactive.media.common.MessageBodyWriterContext;
 import io.helidon.webserver.utils.SocketHttpClient;
 
 import org.junit.jupiter.api.AfterAll;

@@ -52,7 +52,7 @@ This is a standalone configuration type, prefix from configuration root: `client
 |`follow-redirects` |boolean |`false` |Whether to follow any response redirections or not.
 |`headers` |Map |{nbsp} |Default headers to be used in each request. Each list entry has to have "name" and "value" node
 |`max-redirects` |int |`5` |Sets max number of followed redirects.
-|`media-support` |xref:{rootdir}/config/io_helidon_media_common_MediaContext.adoc[MediaContext] |{nbsp} |
+|`media-support` |xref:{rootdir}/config/io_helidon_reactive_media_common_MediaContext.adoc[MediaContext] |{nbsp} |
 |`proxy` |xref:{rootdir}/config/io_helidon_webclient_Proxy.adoc[Proxy] |{nbsp} |Sets new request proxy.
 |`read-timeout-millis` |long |`600000` |Sets new read timeout of the response.
 |`relative-uris` |boolean |`false` |Can be set to `true` to force the use of relative URIs in all requests,

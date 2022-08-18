@@ -24,9 +24,9 @@ import java.util.List;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.media.type.MediaTypes;
-import io.helidon.media.jsonp.JsonpSupport;
-import io.helidon.media.multipart.FileFormParams;
-import io.helidon.media.multipart.MultiPartSupport;
+import io.helidon.reactive.media.jsonp.JsonpSupport;
+import io.helidon.reactive.media.multipart.FileFormParams;
+import io.helidon.reactive.media.multipart.MultiPartSupport;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientResponse;
 import io.helidon.webserver.WebServer;

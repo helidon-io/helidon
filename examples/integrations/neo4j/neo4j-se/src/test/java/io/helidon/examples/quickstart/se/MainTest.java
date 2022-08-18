@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.http.Http;
 import io.helidon.examples.integrations.neo4j.se.Main;
-import io.helidon.media.jsonp.JsonpSupport;
+import io.helidon.reactive.media.jsonp.JsonpSupport;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientResponse;
 import io.helidon.webserver.WebServer;

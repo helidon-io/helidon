@@ -23,7 +23,7 @@ import io.helidon.common.LazyValue;
 import io.helidon.common.reactive.Multi;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.media.jsonp.JsonpSupport;
+import io.helidon.reactive.media.jsonp.JsonpSupport;
 import io.helidon.webclient.WebClient;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.SocketConfiguration;

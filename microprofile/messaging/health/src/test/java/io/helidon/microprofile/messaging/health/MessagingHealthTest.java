@@ -19,7 +19,7 @@ package io.helidon.microprofile.messaging.health;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import io.helidon.media.jsonp.JsonpSupport;
+import io.helidon.reactive.media.jsonp.JsonpSupport;
 import io.helidon.microprofile.config.ConfigCdiExtension;
 import io.helidon.microprofile.health.HealthCdiExtension;
 import io.helidon.microprofile.messaging.MessagingCdiExtension;

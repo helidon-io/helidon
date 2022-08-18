@@ -24,7 +24,7 @@ import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
 import io.helidon.common.http.Http;
-import io.helidon.media.common.DefaultMediaSupport;
+import io.helidon.reactive.media.common.DefaultMediaSupport;
 import io.helidon.webserver.utils.SocketHttpClient;
 
 import io.netty.buffer.ByteBuf;

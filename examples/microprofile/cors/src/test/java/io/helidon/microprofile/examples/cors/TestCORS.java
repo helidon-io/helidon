@@ -23,7 +23,7 @@ import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http.Header;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
-import io.helidon.media.jsonp.JsonpSupport;
+import io.helidon.reactive.media.jsonp.JsonpSupport;
 import io.helidon.microprofile.server.Server;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientRequestBuilder;

@@ -23,7 +23,7 @@ import java.util.concurrent.Flow.Publisher;
 
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.reactive.Multi;
-import io.helidon.media.common.MessageBodyFilter;
+import io.helidon.reactive.media.common.MessageBodyFilter;
 
 /**
  * All 'x' must be upper case.

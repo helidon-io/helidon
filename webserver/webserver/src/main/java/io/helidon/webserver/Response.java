@@ -30,11 +30,11 @@ import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.reactive.Single;
-import io.helidon.media.common.MessageBodyContext;
-import io.helidon.media.common.MessageBodyFilter;
-import io.helidon.media.common.MessageBodyStreamWriter;
-import io.helidon.media.common.MessageBodyWriter;
-import io.helidon.media.common.MessageBodyWriterContext;
+import io.helidon.reactive.media.common.MessageBodyContext;
+import io.helidon.reactive.media.common.MessageBodyFilter;
+import io.helidon.reactive.media.common.MessageBodyStreamWriter;
+import io.helidon.reactive.media.common.MessageBodyWriter;
+import io.helidon.reactive.media.common.MessageBodyWriterContext;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanContext;
 import io.helidon.tracing.config.SpanTracingConfig;
@@ -235,7 +235,7 @@ abstract class Response implements ServerResponse {
      * @param function writer
      * @param <T>      type to support
      * @return updated response
-     * @deprecated use {@link #registerWriter(io.helidon.media.common.MessageBodyWriter)} instead
+     * @deprecated use {@link #registerWriter(io.helidon.reactive.media.common.MessageBodyWriter)} instead
      */
     @Deprecated
     public <T> Response registerWriter(Class<T> type, Function<T, Publisher<DataChunk>> function) {
@@ -264,7 +264,7 @@ abstract class Response implements ServerResponse {
      * @param function writer
      * @param <T>      type to support
      * @return updated response
-     * @deprecated use {@link #registerWriter(io.helidon.media.common.MessageBodyWriter)} instead
+     * @deprecated use {@link #registerWriter(io.helidon.reactive.media.common.MessageBodyWriter)} instead
      */
     @Deprecated
     public <T> Response registerWriter(Predicate<Class<?>> accept, Function<T, Publisher<DataChunk>> function) {
@@ -294,7 +294,7 @@ abstract class Response implements ServerResponse {
      * @param function  writer
      * @param <T>       type to support
      * @return updated response
-     * @deprecated use {@link #registerWriter(io.helidon.media.common.MessageBodyWriter)} instead
+     * @deprecated use {@link #registerWriter(io.helidon.reactive.media.common.MessageBodyWriter)} instead
      */
     @Deprecated
     public <T> Response registerWriter(Class<?> type, MediaType mediaType, Function<T, Publisher<DataChunk>> function) {

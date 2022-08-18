@@ -19,7 +19,7 @@ package io.helidon.examples.metrics.exemplar;
 import io.helidon.common.LogConfig;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
-import io.helidon.media.jsonp.JsonpSupport;
+import io.helidon.reactive.media.jsonp.JsonpSupport;
 import io.helidon.metrics.serviceapi.MetricsSupport;
 import io.helidon.tracing.TracerBuilder;
 import io.helidon.webserver.Routing;

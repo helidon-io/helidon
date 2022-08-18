@@ -24,7 +24,7 @@
 
     <Match>
         <!-- Utility method to get stack trace as a single -->
-        <Class name="io.helidon.media.common.ContentWriters"/>
+        <Class name="io.helidon.reactive.media.common.ContentWriters"/>
         <Method name="writeStackTrace"/>
         <Bug pattern="INFORMATION_EXPOSURE_THROUGH_AN_ERROR_MESSAGE"/>
     </Match>

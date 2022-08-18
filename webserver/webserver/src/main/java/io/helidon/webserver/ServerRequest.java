@@ -27,7 +27,7 @@ import io.helidon.common.context.Context;
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Single;
 import io.helidon.common.uri.UriQuery;
-import io.helidon.media.common.MessageBodyReadableContent;
+import io.helidon.reactive.media.common.MessageBodyReadableContent;
 import io.helidon.tracing.SpanContext;
 import io.helidon.tracing.Tracer;
 

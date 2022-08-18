@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.examples.openapi.internal.SimpleAPIModelReader;
-import io.helidon.media.jsonp.JsonpSupport;
+import io.helidon.reactive.media.jsonp.JsonpSupport;
 import io.helidon.webclient.WebClient;
 import io.helidon.webserver.WebServer;
 

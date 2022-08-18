@@ -26,12 +26,12 @@ import java.util.function.Function;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Single;
-import io.helidon.media.common.MessageBodyFilter;
-import io.helidon.media.common.MessageBodyFilters;
-import io.helidon.media.common.MessageBodyStreamWriter;
-import io.helidon.media.common.MessageBodyWriter;
-import io.helidon.media.common.MessageBodyWriterContext;
-import io.helidon.media.common.MessageBodyWriters;
+import io.helidon.reactive.media.common.MessageBodyFilter;
+import io.helidon.reactive.media.common.MessageBodyFilters;
+import io.helidon.reactive.media.common.MessageBodyStreamWriter;
+import io.helidon.reactive.media.common.MessageBodyWriter;
+import io.helidon.reactive.media.common.MessageBodyWriterContext;
+import io.helidon.reactive.media.common.MessageBodyWriters;
 
 /**
  * Represents HTTP Response.
@@ -214,7 +214,7 @@ public interface ServerResponse extends MessageBodyFilters, MessageBodyWriters {
      * Send a message and close the response.
      *
      * <h4>Marshalling</h4>
-     * Data are marshaled using default or {@link #registerWriter(io.helidon.media.common.MessageBodyWriter) registered}
+     * Data are marshaled using default or {@link #registerWriter(io.helidon.reactive.media.common.MessageBodyWriter) registered}
      * {@code writer} to the format
      * of {@link ByteBuffer} {@link Publisher Publisher}. The last registered compatible writer is used.
      * <p>

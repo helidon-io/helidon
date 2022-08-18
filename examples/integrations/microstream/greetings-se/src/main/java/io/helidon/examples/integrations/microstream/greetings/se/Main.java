@@ -22,7 +22,7 @@ import io.helidon.common.LogConfig;
 import io.helidon.config.ClasspathConfigSource;
 import io.helidon.config.Config;
 import io.helidon.health.checks.HealthChecks;
-import io.helidon.media.jsonp.JsonpSupport;
+import io.helidon.reactive.media.jsonp.JsonpSupport;
 import io.helidon.metrics.serviceapi.MetricsSupport;
 import io.helidon.reactive.health.HealthSupport;
 import io.helidon.webserver.Routing;

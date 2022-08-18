@@ -30,7 +30,7 @@ import io.helidon.common.http.Http;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
-import io.helidon.media.jsonb.JsonbSupport;
+import io.helidon.reactive.media.jsonb.JsonbSupport;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientException;
 import io.helidon.webclient.WebClientResponse;

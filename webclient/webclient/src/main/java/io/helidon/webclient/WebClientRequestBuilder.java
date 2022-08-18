@@ -34,8 +34,8 @@ import io.helidon.common.media.type.MediaType;
 import io.helidon.common.reactive.Single;
 import io.helidon.common.uri.UriPath;
 import io.helidon.common.uri.UriQuery;
-import io.helidon.media.common.MessageBodyReaderContext;
-import io.helidon.media.common.MessageBodyWriterContext;
+import io.helidon.reactive.media.common.MessageBodyReaderContext;
+import io.helidon.reactive.media.common.MessageBodyWriterContext;
 import io.helidon.webclient.spi.WebClientService;
 
 /**

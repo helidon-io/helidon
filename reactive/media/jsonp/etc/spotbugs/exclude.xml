@@ -27,7 +27,7 @@
          try-with-resource blocks).
     -->
     <Match>
-        <Class name="io.helidon.media.jsonp.JsonpBodyWriter$JsonStructureToChunks"/>
+        <Class name="jsonp.io.helidon.reactive.media.JsonpBodyWriter$JsonStructureToChunks"/>
         <Method name="map" />
         <Bug pattern="RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE" />
     </Match>

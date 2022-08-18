@@ -1,4 +1,4 @@
-# io.helidon.media.multipart.MultiPartDecoder
+# multipart.io.helidon.reactive.media.MultiPartDecoder
 
 This document provides additional details about the implementation of `MultiPartDecoder`.
 

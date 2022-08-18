@@ -71,35 +71,35 @@ final class FeatureCatalog {
               "Health",
               "Health checks support",
               "Health");
-        addSe("io.helidon.media.jsonp",
+        addSe("io.helidon.reactive.media.jsonp",
               "JSON-P",
               "Media support for Jakarta JSON Processing",
               "WebServer", "Jsonp");
-        addSe("io.helidon.media.jsonp",
+        addSe("io.helidon.reactive.media.jsonp",
               "JSON-P",
               "Media support for Jakarta JSON Processing",
               "WebClient", "Jsonp");
-        addSe("io.helidon.media.jsonb",
+        addSe("io.helidon.reactive.media.jsonb",
               "JSON-B",
               "Media support for Jakarta JSON Binding",
               "WebServer", "Jsonb");
-        addSe("io.helidon.media.jsonb",
+        addSe("io.helidon.reactive.media.jsonb",
               "JSON-B",
               "Media support for Jakarta JSON Binding",
               "WebClient", "Jsonb");
-        addSe("io.helidon.media.jackson",
+        addSe("io.helidon.reactive.media.jackson",
               "Jackson",
               "Media support for Jackson",
               "WebServer", "Jackson");
-        addSe("io.helidon.media.jackson",
+        addSe("io.helidon.reactive.media.jackson",
               "Jackson",
               "Media support for Jackson",
               "WebClient", "Jackson");
-        addSe("io.helidon.media.multipart",
+        addSe("io.helidon.reactive.media.multipart",
               "Multi-part",
               "Media support for Multi-part entities",
               "WebServer", "Multipart");
-        addSe("io.helidon.media.multipart",
+        addSe("io.helidon.reactive.media.multipart",
               "Multi-part",
               "Media support for Multi-part entities",
               "WebClient", "Multipart");
@@ -695,8 +695,8 @@ final class FeatureCatalog {
         exclude("io.helidon.jersey.common");
         exclude("io.helidon.logging.common");
         exclude("io.helidon.logging.jul");
-        exclude("io.helidon.media.common");
-        exclude("io.helidon.media.common.spi");
+        exclude("io.helidon.reactive.media.common");
+        exclude("io.helidon.reactive.media.common.spi");
         exclude("io.helidon.openapi.internal");
         exclude("io.helidon.security.abac.policy");
         exclude("io.helidon.security.abac.policy.spi");

@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 import io.helidon.common.context.Context;
-import io.helidon.media.jsonp.JsonpSupport;
+import io.helidon.reactive.media.jsonp.JsonpSupport;
 import io.helidon.tracing.opentracing.OpenTracing;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientResponse;

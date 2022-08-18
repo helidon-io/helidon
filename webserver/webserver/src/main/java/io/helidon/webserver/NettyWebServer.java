@@ -46,8 +46,8 @@ import io.helidon.common.SerializationConfig;
 import io.helidon.common.Version;
 import io.helidon.common.context.Context;
 import io.helidon.common.reactive.Single;
-import io.helidon.media.common.MessageBodyReaderContext;
-import io.helidon.media.common.MessageBodyWriterContext;
+import io.helidon.reactive.media.common.MessageBodyReaderContext;
+import io.helidon.reactive.media.common.MessageBodyWriterContext;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;

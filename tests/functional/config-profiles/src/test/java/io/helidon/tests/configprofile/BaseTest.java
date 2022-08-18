@@ -18,7 +18,7 @@ package io.helidon.tests.configprofile;
 
 import java.util.concurrent.TimeUnit;
 
-import io.helidon.media.jsonp.JsonpSupport;
+import io.helidon.reactive.media.jsonp.JsonpSupport;
 import io.helidon.webclient.WebClient;
 import io.helidon.webserver.WebServer;
 import org.junit.jupiter.api.AfterAll;

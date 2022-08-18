@@ -26,7 +26,7 @@ import io.helidon.common.Version;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
-import io.helidon.media.common.MediaContext;
+import io.helidon.reactive.media.common.MediaContext;
 
 import io.netty.channel.nio.NioEventLoopGroup;
 

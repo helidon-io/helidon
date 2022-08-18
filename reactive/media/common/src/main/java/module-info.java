@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-import io.helidon.media.common.spi.MediaSupportProvider;
+import io.helidon.reactive.media.common.spi.MediaSupportProvider;
 
 /**
  * Media type support common classes.
  *
- * @see io.helidon.media.common.ContentReaders
- * @see io.helidon.media.common.ContentWriters
+ * @see io.helidon.reactive.media.common.ContentReaders
+ * @see io.helidon.reactive.media.common.ContentWriters
  */
 module io.helidon.reactive.media.common {
     requires java.logging;
@@ -31,8 +31,8 @@ module io.helidon.reactive.media.common {
 
     requires static io.helidon.config.metadata;
 
-    exports io.helidon.media.common;
-    exports io.helidon.media.common.spi;
+    exports io.helidon.reactive.media.common;
+    exports io.helidon.reactive.media.common.spi;
 
     uses MediaSupportProvider;
 }

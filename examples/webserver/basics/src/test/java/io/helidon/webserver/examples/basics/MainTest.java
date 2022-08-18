@@ -21,7 +21,7 @@ import java.util.function.Consumer;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.media.type.MediaTypes;
-import io.helidon.media.common.MediaContext;
+import io.helidon.reactive.media.common.MediaContext;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.testsupport.MediaPublisher;
 import io.helidon.webserver.testsupport.TestClient;

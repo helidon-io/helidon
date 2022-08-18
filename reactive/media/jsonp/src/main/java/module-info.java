@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-import io.helidon.media.common.spi.MediaSupportProvider;
-import io.helidon.media.jsonp.JsonpProvider;
-import io.helidon.media.jsonp.JsonpSupport;
+import io.helidon.reactive.media.common.spi.MediaSupportProvider;
+import io.helidon.reactive.media.jsonp.JsonpProvider;
+import io.helidon.reactive.media.jsonp.JsonpSupport;
 
 /**
  * JSON-P support common classes.
@@ -33,7 +33,7 @@ module io.helidon.reactive.media.jsonp {
     requires io.helidon.reactive.media.common;
     requires transitive jakarta.json;
 
-    exports io.helidon.media.jsonp;
+    exports io.helidon.reactive.media.jsonp;
 
     provides MediaSupportProvider with JsonpProvider;
 }

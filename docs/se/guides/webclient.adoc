@@ -129,7 +129,7 @@ specific settings and improves the readability and simplicity of the code.
 [source,java]
 .Add WebClient instance to the main method:
 ----
-import io.helidon.media.jsonp.JsonpSupport;
+import io.helidon.reactive.media.jsonp.JsonpSupport;
 import io.helidon.webclient.WebClient;
 
 WebClient webClient = WebClient.builder()

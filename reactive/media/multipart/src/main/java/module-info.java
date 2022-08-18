@@ -24,5 +24,5 @@ module io.helidon.reactive.media.multipart {
     requires io.helidon.common.reactive;
     requires io.helidon.reactive.media.common;
     requires java.logging;
-    exports io.helidon.media.multipart;
+    exports io.helidon.reactive.media.multipart;
 }

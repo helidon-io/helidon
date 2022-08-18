@@ -23,7 +23,7 @@ import java.util.logging.Logger;
 import io.helidon.common.LogConfig;
 import io.helidon.config.Config;
 import io.helidon.config.FileSystemWatcher;
-import io.helidon.media.jsonp.JsonpSupport;
+import io.helidon.reactive.media.jsonp.JsonpSupport;
 import io.helidon.metrics.serviceapi.MetricsSupport;
 import io.helidon.security.Security;
 import io.helidon.security.integration.webserver.WebSecurity;

@@ -638,7 +638,7 @@ To enable JSON-B Support add the following dependency to your project's `pom.xml
 
 === Usage
 To enable JSON-B support, first create and register a
-link:{media-jsonb-javadoc-base-url}/io/helidon/media/jsonb/JsonbSupport.html[`JsonbSupport`] instance with a
+link:{media-jsonb-javadoc-base-url}/io/helidon/reactive/media/jsonb/JsonbSupport.html[`JsonbSupport`] instance with a
 link:{webserver-javadoc-base-url}/io/helidon/webserver/WebServer.Builder.html[`WebServer.Builder`].
 
 [source,java]
@@ -732,7 +732,7 @@ To enable Jackson Support add the following dependency to your project's `pom.xm
 
 === Usage
 To enable Jackson support, first create and register a
-link:{media-jackson-javadoc-base-url}/io/helidon/media/jackson/JacksonSupport.html[`JacksonSupport`]
+link:{media-jackson-javadoc-base-url}/io/helidon/reactive/media/jackson/JacksonSupport.html[`JacksonSupport`]
 instance with a
 link:{webserver-javadoc-base-url}/io/helidon/webserver/WebServer.Builder.html[`WebServer.Builder`].
 

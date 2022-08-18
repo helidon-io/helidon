@@ -37,11 +37,11 @@ import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
-import io.helidon.media.common.ContentReaders;
-import io.helidon.media.common.MediaContext;
-import io.helidon.media.common.MessageBodyFilter;
-import io.helidon.media.common.MessageBodyReader;
-import io.helidon.media.common.MessageBodyReaderContext;
+import io.helidon.reactive.media.common.ContentReaders;
+import io.helidon.reactive.media.common.MediaContext;
+import io.helidon.reactive.media.common.MessageBodyFilter;
+import io.helidon.reactive.media.common.MessageBodyReader;
+import io.helidon.reactive.media.common.MessageBodyReaderContext;
 import io.helidon.webserver.utils.TestUtils;
 
 import io.netty.handler.codec.http.DefaultHttpHeaders;
