@@ -246,7 +246,6 @@
                         <failOnError>true</failOnError>
                         <!-- we are not interested in each file that is generated -->
                         <quiet>true</quiet>
-                        <!--<verbose>true</verbose>-->
                         <isOffline>true</isOffline>
                         <offlineLinks>
                             <offlineLink>
@@ -394,9 +393,8 @@
                             <additionalJOption>--add-exports=java.base/sun.security.util=io.helidon.common.pki</additionalJOption>
                         </additionalJOptions>
                         <additionalOptions>
-                            <!--<additionalOption> - -add-stylesheet ${top.parent.basedir}/etc/helidon-javadoc.css</additionalOption>-->
+                            <additionalOption>--enable-preview</additionalOption>
                         </additionalOptions>
-                        <!-- <excludePackageNames>io.helidon.config.tests.*:io.helidon.config.testing.*:io.helidon.config.test.*</excludePackageNames> -->
                         <sourceFileExcludes>
                             <sourceFileExclude>**/target/**/*.java</sourceFileExclude>
                             <sourceFileExclude>**/*_.java</sourceFileExclude>

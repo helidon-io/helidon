@@ -26,7 +26,7 @@ module io.helidon.nima.grpc.server {
 
     requires transitive grpc.stub;
     requires transitive com.google.protobuf;
-    requires transitive grpc.api;
+    requires transitive io.grpc;
     requires grpc.protobuf.lite;
 
     exports io.helidon.nima.grpc.webserver;

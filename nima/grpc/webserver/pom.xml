@@ -45,6 +45,10 @@
             <artifactId>helidon-nima-http2-webserver</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.grpc</groupId>
+            <artifactId>io.grpc</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.grpc</groupId>
             <artifactId>grpc-stub</artifactId>
         </dependency>
