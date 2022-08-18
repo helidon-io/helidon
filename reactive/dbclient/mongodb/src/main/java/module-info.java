@@ -14,10 +14,13 @@
  * limitations under the License.
  */
 
+import io.helidon.reactive.dbclient.mongodb.MongoDbClientProvider;
+import io.helidon.reactive.dbclient.spi.DbClientProvider;
+
 /**
  * Helidon Common Mapper.
  */
-module io.helidon.dbclient.mongodb {
+module io.helidon.reactive.dbclient.mongodb {
     requires java.logging;
     requires java.sql;
 
@@ -27,10 +30,10 @@ module io.helidon.dbclient.mongodb {
     requires org.mongodb.bson;
     requires org.mongodb.driver.async.client;
     requires transitive io.helidon.common.configurable;
-    requires transitive io.helidon.dbclient;
-    requires transitive io.helidon.dbclient.common;
+    requires transitive io.helidon.reactive.dbclient;
+    requires transitive io.helidon.reactive.dbclient.common;
     requires org.reactivestreams;
 
-    exports io.helidon.dbclient.mongodb;
-    provides io.helidon.dbclient.spi.DbClientProvider with io.helidon.dbclient.mongodb.MongoDbClientProvider;
+    exports io.helidon.reactive.dbclient.mongodb;
+    provides DbClientProvider with MongoDbClientProvider;
 }

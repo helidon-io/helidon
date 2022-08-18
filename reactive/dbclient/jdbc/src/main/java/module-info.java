@@ -14,12 +14,14 @@
  * limitations under the License.
  */
 
-import io.helidon.dbclient.jdbc.spi.HikariCpExtensionProvider;
+import io.helidon.reactive.dbclient.jdbc.JdbcDbClientProvider;
+import io.helidon.reactive.dbclient.jdbc.spi.HikariCpExtensionProvider;
+import io.helidon.reactive.dbclient.spi.DbClientProvider;
 
 /**
  * Helidon Common Mapper.
  */
-module io.helidon.dbclient.jdbc {
+module io.helidon.reactive.dbclient.jdbc {
     uses HikariCpExtensionProvider;
     requires java.logging;
     requires java.sql;
@@ -27,11 +29,11 @@ module io.helidon.dbclient.jdbc {
 
     requires transitive io.helidon.common;
     requires transitive io.helidon.common.configurable;
-    requires transitive io.helidon.dbclient;
-    requires transitive io.helidon.dbclient.common;
+    requires transitive io.helidon.reactive.dbclient;
+    requires transitive io.helidon.reactive.dbclient.common;
 
-    exports io.helidon.dbclient.jdbc;
-    exports io.helidon.dbclient.jdbc.spi;
+    exports io.helidon.reactive.dbclient.jdbc;
+    exports io.helidon.reactive.dbclient.jdbc.spi;
 
-    provides io.helidon.dbclient.spi.DbClientProvider with io.helidon.dbclient.jdbc.JdbcDbClientProvider;
+    provides DbClientProvider with JdbcDbClientProvider;
 }

@@ -14,19 +14,19 @@
  * limitations under the License.
  */
 
-import io.helidon.dbclient.metrics.DbClientMetricsProvider;
-import io.helidon.dbclient.spi.DbClientServiceProvider;
+import io.helidon.reactive.dbclient.metrics.DbClientMetricsProvider;
+import io.helidon.reactive.dbclient.spi.DbClientServiceProvider;
 
 /**
  * Helidon reactive DB Client Metrics.
  */
-module io.helidon.dbclient.metrics {
+module io.helidon.reactive.dbclient.metrics {
     requires java.logging;
-    requires io.helidon.dbclient;
+    requires io.helidon.reactive.dbclient;
     requires io.helidon.metrics.api;
-    requires io.helidon.dbclient.common;
+    requires io.helidon.reactive.dbclient.common;
 
-    exports io.helidon.dbclient.metrics;
+    exports io.helidon.reactive.dbclient.metrics;
     provides DbClientServiceProvider with DbClientMetricsProvider;
 }
 

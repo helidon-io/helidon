@@ -19,7 +19,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.common.media.type.MediaTypes;
-import io.helidon.dbclient.DbClient;
+import io.helidon.reactive.dbclient.DbClient;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;

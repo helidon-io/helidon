@@ -18,9 +18,9 @@ package io.helidon.examples.dbclient.jdbc;
 
 import io.helidon.common.LogConfig;
 import io.helidon.config.Config;
-import io.helidon.dbclient.DbClient;
-import io.helidon.dbclient.health.DbClientHealthCheck;
 import io.helidon.metrics.serviceapi.MetricsSupport;
+import io.helidon.reactive.dbclient.DbClient;
+import io.helidon.reactive.dbclient.health.DbClientHealthCheck;
 import io.helidon.reactive.health.HealthSupport;
 import io.helidon.reactive.media.jsonb.JsonbSupport;
 import io.helidon.reactive.media.jsonp.JsonpSupport;

@@ -14,20 +14,23 @@
  * limitations under the License.
  */
 
+import io.helidon.reactive.dbclient.jdbc.spi.HikariCpExtensionProvider;
+import io.helidon.reactive.dbclient.metrics.jdbc.JdbcMetricsExtensionProvider;
+
 /**
  * Helidon JDBC DB Client Metrics.
  */
-module io.helidon.dbclient.metrics.jdbc {
+module io.helidon.reactive.dbclient.metrics.jdbc {
     requires java.logging;
-    requires io.helidon.dbclient;
-    requires io.helidon.dbclient.jdbc;
+    requires io.helidon.reactive.dbclient;
+    requires io.helidon.reactive.dbclient.jdbc;
     requires io.helidon.metrics;
-    requires io.helidon.dbclient.metrics;
+    requires io.helidon.reactive.dbclient.metrics;
     requires com.zaxxer.hikari;
     requires com.codahale.metrics;
 
-    exports io.helidon.dbclient.metrics.jdbc;
+    exports io.helidon.reactive.dbclient.metrics.jdbc;
 
-    provides io.helidon.dbclient.jdbc.spi.HikariCpExtensionProvider
-            with io.helidon.dbclient.metrics.jdbc.JdbcMetricsExtensionProvider;
+    provides HikariCpExtensionProvider
+            with JdbcMetricsExtensionProvider;
 }

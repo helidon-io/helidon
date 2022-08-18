@@ -17,10 +17,10 @@
 /**
  * Helidon reactive DB Client Health Check.
  */
-module io.helidon.dbclient.health {
+module io.helidon.reactive.dbclient.health {
     requires java.logging;
-    requires io.helidon.dbclient;
+    requires io.helidon.reactive.dbclient;
     requires io.helidon.health;
 
-    exports io.helidon.dbclient.health;
+    exports io.helidon.reactive.dbclient.health;
 }

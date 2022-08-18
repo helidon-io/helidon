@@ -336,10 +336,10 @@ docker run --rm --name mongo -p 27017:27017 mongo
                             </map>
                         </list>
                         <list key="Main-helidon-imports">
-                            <value>io.helidon.dbclient.DbClient</value>
+                            <value>io.helidon.reactive.dbclient.DbClient</value>
                             <value>io.helidon.reactive.media.jsonp.JsonpSupport</value>
                             <value>io.helidon.reactive.media.jsonb.JsonbSupport</value>
-                            <value if="${health}">io.helidon.dbclient.health.DbClientHealthCheck</value>
+                            <value if="${health}">io.helidon.reactive.dbclient.health.DbClientHealthCheck</value>
                         </list>
                         <list key="Main-serverBuilder">
                             <value><![CDATA[                .addMediaSupport(JsonbSupport.create())]]></value>

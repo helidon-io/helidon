@@ -14,16 +14,19 @@
  * limitations under the License.
  */
 
+import io.helidon.reactive.dbclient.jsonp.JsonProcessingMapperProvider;
+import io.helidon.reactive.dbclient.spi.DbMapperProvider;
+
 /**
  * Helidon DB JSON-P Mapper.
  */
-module io.helidon.dbclient.jsonp {
+module io.helidon.reactive.dbclient.jsonp {
     requires java.logging;
-    requires io.helidon.dbclient;
+    requires io.helidon.reactive.dbclient;
     requires jakarta.json;
 
-    exports io.helidon.dbclient.jsonp;
+    exports io.helidon.reactive.dbclient.jsonp;
 
-    provides io.helidon.dbclient.spi.DbMapperProvider with io.helidon.dbclient.jsonp.JsonProcessingMapperProvider;
+    provides DbMapperProvider with JsonProcessingMapperProvider;
 }
 

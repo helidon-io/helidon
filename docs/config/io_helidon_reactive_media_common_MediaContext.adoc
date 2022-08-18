@@ -39,7 +39,7 @@ Type: link:{javadoc-base-url}/io.helidon.reactive.media.common/io/helidon/reacti
 |===
 |key |type |default value |description
 
-|`services` |spi.io.helidon.reactive.media.common.MediaSupportProvider[&#93; (service provider interface) |{nbsp} |Configures this Builder from the supplied Config.
+|`services` |io.helidon.reactive.media.common.spi.MediaSupportProvider[&#93; (service provider interface) |{nbsp} |Configures this Builder from the supplied Config.
  <table class="config">
  <caption>Optional configuration parameters</caption>
  <tr>

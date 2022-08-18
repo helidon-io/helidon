@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import io.helidon.reactive.dbclient.spi.DbMapperProvider;
+
 /**
  * JDBC example.
  */
@@ -22,16 +24,16 @@ module io.helidon.examples.dbclient.pokemons.jdbc {
     requires jakarta.json;
 
     requires io.helidon.config;
-    requires io.helidon.dbclient.health;
+    requires io.helidon.reactive.dbclient.health;
     requires io.helidon.reactive.health;
     requires io.helidon.reactive.media.jsonb;
     requires io.helidon.reactive.media.jsonp;
     requires io.helidon.metrics.serviceapi;
     requires io.helidon.tracing;
-    requires io.helidon.dbclient;
+    requires io.helidon.reactive.dbclient;
     requires io.helidon.webserver;
 
-    provides io.helidon.dbclient.spi.DbMapperProvider with io.helidon.examples.dbclient.pokemons.PokemonMapperProvider;
+    provides DbMapperProvider with io.helidon.examples.dbclient.pokemons.PokemonMapperProvider;
 
     // so Yasson can set private fields
     opens io.helidon.examples.dbclient.pokemons to org.eclipse.yasson;

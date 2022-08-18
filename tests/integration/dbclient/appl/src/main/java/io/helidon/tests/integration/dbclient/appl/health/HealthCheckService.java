@@ -22,8 +22,8 @@ import jakarta.json.Json;
 import jakarta.json.JsonObjectBuilder;
 
 import io.helidon.config.Config;
-import io.helidon.dbclient.DbClient;
-import io.helidon.dbclient.health.DbClientHealthCheck;
+import io.helidon.reactive.dbclient.DbClient;
+import io.helidon.reactive.dbclient.health.DbClientHealthCheck;
 import io.helidon.tests.integration.dbclient.appl.AbstractService;
 import io.helidon.tests.integration.tools.service.AppResponse;
 import io.helidon.tests.integration.tools.service.RemoteTestException;

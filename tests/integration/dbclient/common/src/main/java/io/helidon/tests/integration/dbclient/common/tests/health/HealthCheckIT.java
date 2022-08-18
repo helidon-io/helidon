@@ -19,7 +19,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.config.Config;
-import io.helidon.dbclient.health.DbClientHealthCheck;
+import io.helidon.reactive.dbclient.health.DbClientHealthCheck;
 
 import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;

@@ -14,18 +14,20 @@
  * limitations under the License.
  */
 
+import io.helidon.reactive.dbclient.common.DbClientMapperProvider;
+
 /**
  * Helidon reactive DB Client Common.
  */
-module io.helidon.dbclient.common {
+module io.helidon.reactive.dbclient.common {
     requires java.logging;
     requires java.sql;
 
     requires transitive io.helidon.common;
     requires transitive io.helidon.common.configurable;
-    requires transitive io.helidon.dbclient;
+    requires transitive io.helidon.reactive.dbclient;
 
-    exports io.helidon.dbclient.common;
+    exports io.helidon.reactive.dbclient.common;
 
-    provides io.helidon.common.mapper.spi.MapperProvider with io.helidon.dbclient.common.DbClientMapperProvider;
+    provides io.helidon.common.mapper.spi.MapperProvider with DbClientMapperProvider;
 }

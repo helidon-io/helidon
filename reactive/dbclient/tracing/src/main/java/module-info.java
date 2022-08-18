@@ -14,22 +14,23 @@
  * limitations under the License.
  */
 
-import io.helidon.dbclient.spi.DbClientServiceProvider;
+import io.helidon.reactive.dbclient.spi.DbClientServiceProvider;
+import io.helidon.reactive.dbclient.tracing.DbClientTracingProvider;
 
 /**
  * Helidon reactive DB Client Tracing.
  */
-module io.helidon.dbclient.tracing {
+module io.helidon.reactive.dbclient.tracing {
     requires java.logging;
 
-    requires io.helidon.dbclient;
+    requires io.helidon.reactive.dbclient;
     requires io.helidon.tracing.config;
 
     requires io.opentracing.api;
     requires io.opentracing.util;
-    requires io.helidon.dbclient.common;
+    requires io.helidon.reactive.dbclient.common;
 
-    exports io.helidon.dbclient.tracing;
+    exports io.helidon.reactive.dbclient.tracing;
 
-    provides DbClientServiceProvider with io.helidon.dbclient.tracing.DbClientTracingProvider;
+    provides DbClientServiceProvider with DbClientTracingProvider;
 }

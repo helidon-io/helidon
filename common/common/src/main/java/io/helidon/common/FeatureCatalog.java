@@ -428,34 +428,34 @@ final class FeatureCatalog {
             "YAML",
             "YAML media type support for config",
             "Config", "YAML");
-        add("io.helidon.dbclient",
+        add("io.helidon.reactive.dbclient",
             FeatureDescriptor.builder()
                     .name("Db Client")
                     .description("Reactive database client")
                     .path("DbClient"));
-        add("io.helidon.dbclient.health",
+        add("io.helidon.reactive.dbclient.health",
             "Health Check",
             "Reactive database client health check support",
             "DbClient", "Health");
-        add("io.helidon.dbclient.jsonp",
+        add("io.helidon.reactive.dbclient.jsonp",
             "JSON-P",
             "JSON Processing mapping DbRow",
             "DbClient", "JSON-P");
-        add("io.helidon.dbclient.jdbc",
+        add("io.helidon.reactive.dbclient.jdbc",
             FeatureDescriptor.builder()
                     .name("JDBC")
                     .description("Reactive database client over JDBC")
                     .path("DbClient", "JDBC")
                     .nativeDescription("Tested with Helidon Oracle and H2 drivers (see examples)"));
-        add("io.helidon.dbclient.metrics",
+        add("io.helidon.reactive.dbclient.metrics",
             "Metrics",
             "Reactive database client metrics support",
             "DbClient", "Metrics");
-        add("io.helidon.dbclient.mongodb",
+        add("io.helidon.reactive.dbclient.mongodb",
             "mongo",
             "Reactive database client with reactive mongo driver",
             "DbClient", "mongo");
-        add("io.helidon.dbclient.tracing",
+        add("io.helidon.reactive.dbclient.tracing",
             "Tracing",
             "Reactive database client tracing support",
             "DbClient", "Tracing");
@@ -678,10 +678,10 @@ final class FeatureCatalog {
         exclude("io.helidon.config.spi");
         exclude("io.helidon.config.mp");
         exclude("io.helidon.config.mp.spi");
-        exclude("io.helidon.dbclient.common");
-        exclude("io.helidon.dbclient.jdbc.spi");
-        exclude("io.helidon.dbclient.metrics.jdbc");
-        exclude("io.helidon.dbclient.spi");
+        exclude("io.helidon.reactive.dbclient.common");
+        exclude("io.helidon.reactive.dbclient.jdbc.spi");
+        exclude("io.helidon.reactive.dbclient.metrics.jdbc");
+        exclude("io.helidon.reactive.dbclient.spi");
         exclude("io.helidon.health.common");
         exclude("io.helidon.integrations.cdi.delegates");
         exclude("io.helidon.integrations.cdi.referencecountedcontext");

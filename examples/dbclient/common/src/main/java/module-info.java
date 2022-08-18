@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+import io.helidon.reactive.dbclient.spi.DbMapperProvider;
+
 /**
  * Common classes for Pokemon examples for DB Client.
  */
@@ -20,11 +23,11 @@ module io.helidon.examples.dbclient.common {
     requires java.logging;
 
     requires jakarta.json;
-    requires transitive io.helidon.dbclient;
+    requires transitive io.helidon.reactive.dbclient;
     requires io.helidon.common.http;
     requires transitive io.helidon.webserver;
 
     exports io.helidon.examples.dbclient.common;
 
-    provides io.helidon.dbclient.spi.DbMapperProvider with io.helidon.examples.dbclient.common.PokemonMapperProvider;
+    provides DbMapperProvider with io.helidon.examples.dbclient.common.PokemonMapperProvider;
 }

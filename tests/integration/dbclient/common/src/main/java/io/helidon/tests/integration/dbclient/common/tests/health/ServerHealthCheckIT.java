@@ -35,8 +35,8 @@ import jakarta.json.stream.JsonParsingException;
 
 import io.helidon.common.reactive.Multi;
 import io.helidon.config.Config;
-import io.helidon.dbclient.DbRow;
-import io.helidon.dbclient.health.DbClientHealthCheck;
+import io.helidon.reactive.dbclient.DbRow;
+import io.helidon.reactive.dbclient.health.DbClientHealthCheck;
 import io.helidon.reactive.health.HealthSupport;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;

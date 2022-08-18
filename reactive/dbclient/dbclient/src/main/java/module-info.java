@@ -14,12 +14,16 @@
  * limitations under the License.
  */
 
+import io.helidon.reactive.dbclient.spi.DbClientProvider;
+import io.helidon.reactive.dbclient.spi.DbClientServiceProvider;
+import io.helidon.reactive.dbclient.spi.DbMapperProvider;
+
 /**
  * Helidon reactive DB Client.
  *
- * @see io.helidon.dbclient.DbClient
+ * @see io.helidon.reactive.dbclient.DbClient
  */
-module io.helidon.dbclient {
+module io.helidon.reactive.dbclient {
     requires java.logging;
     requires transitive io.helidon.config;
     requires transitive io.helidon.common;
@@ -27,10 +31,10 @@ module io.helidon.dbclient {
     requires transitive io.helidon.common.mapper;
     requires transitive io.helidon.common.reactive;
 
-    exports io.helidon.dbclient;
-    exports io.helidon.dbclient.spi;
+    exports io.helidon.reactive.dbclient;
+    exports io.helidon.reactive.dbclient.spi;
 
-    uses io.helidon.dbclient.spi.DbClientProvider;
-    uses io.helidon.dbclient.spi.DbMapperProvider;
-    uses io.helidon.dbclient.spi.DbClientServiceProvider;
+    uses DbClientProvider;
+    uses DbMapperProvider;
+    uses DbClientServiceProvider;
 }

@@ -25,8 +25,8 @@ import jakarta.json.JsonObjectBuilder;
 
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
-import io.helidon.dbclient.DbClient;
-import io.helidon.dbclient.health.DbClientHealthCheck;
+import io.helidon.reactive.dbclient.DbClient;
+import io.helidon.reactive.dbclient.health.DbClientHealthCheck;
 import io.helidon.tests.integration.dbclient.appl.model.Pokemon;
 import io.helidon.tests.integration.dbclient.appl.model.Type;
 import io.helidon.webserver.Routing;

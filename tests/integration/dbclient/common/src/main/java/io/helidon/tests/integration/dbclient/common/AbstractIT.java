@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,9 +24,9 @@ import java.util.logging.Logger;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.dbclient.DbClient;
-import io.helidon.dbclient.DbMapper;
-import io.helidon.dbclient.DbRow;
+import io.helidon.reactive.dbclient.DbClient;
+import io.helidon.reactive.dbclient.DbMapper;
+import io.helidon.reactive.dbclient.DbRow;
 
 /**
  * Common testing code.
