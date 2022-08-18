@@ -19,12 +19,12 @@ package io.helidon.examples.metrics.filtering.se;
 import io.helidon.common.LogConfig;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
-import io.helidon.reactive.media.jsonp.JsonpSupport;
 import io.helidon.metrics.api.MetricsSettings;
 import io.helidon.metrics.api.RegistryFactory;
 import io.helidon.metrics.api.RegistryFilterSettings;
 import io.helidon.metrics.api.RegistrySettings;
 import io.helidon.metrics.serviceapi.MetricsSupport;
+import io.helidon.reactive.media.jsonp.JsonpSupport;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 

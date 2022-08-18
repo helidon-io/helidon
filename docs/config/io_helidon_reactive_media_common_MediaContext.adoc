@@ -17,9 +17,9 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 ifndef::rootdir[:rootdir: {docdir}/..]
-:description: Configuration of common.io.helidon.reactive.media.MediaContext
-:keywords: helidon, config, common.io.helidon.reactive.media.MediaContext
-:basic-table-intro: The table below lists the configuration keys that configure common.io.helidon.reactive.media.MediaContext
+:description: Configuration of io.helidon.reactive.media.common.MediaContext
+:keywords: helidon, config, io.helidon.reactive.media.common.MediaContext
+:basic-table-intro: The table below lists the configuration keys that configure io.helidon.reactive.media.common.MediaContext
 include::{rootdir}/includes/attributes.adoc[]
 
 = MediaContext (media.common) Configuration
@@ -27,7 +27,7 @@ include::{rootdir}/includes/attributes.adoc[]
 // tag::config[]
 
 
-Type: link:{javadoc-base-url}/io.helidon.reactive.media.common/io/helidon/reactive/media/common/MediaContext.html[common.io.helidon.reactive.media.MediaContext]
+Type: link:{javadoc-base-url}/io.helidon.reactive.media.common/io/helidon/reactive/media/common/MediaContext.html[io.helidon.reactive.media.common.MediaContext]
 
 
 
@@ -39,7 +39,7 @@ Type: link:{javadoc-base-url}/io.helidon.reactive.media.common/io/helidon/reacti
 |===
 |key |type |default value |description
 
-|`services` |spi.common.io.helidon.reactive.media.MediaSupportProvider[&#93; (service provider interface) |{nbsp} |Configures this Builder from the supplied Config.
+|`services` |spi.io.helidon.reactive.media.common.MediaSupportProvider[&#93; (service provider interface) |{nbsp} |Configures this Builder from the supplied Config.
  <table class="config">
  <caption>Optional configuration parameters</caption>
  <tr>

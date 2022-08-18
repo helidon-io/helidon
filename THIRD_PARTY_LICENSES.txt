@@ -73,7 +73,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 Eclipse Parsson  Eclipse Foundation
 Eclipse Public License 2.0 + GPL v.2 with CPE
-Used by: [helidon-dbclient-jsonp, helidon-dbclient-mongodb, helidon-graal-native-image-extension, helidon-lra-coordinator-server, helidon-media-jsonb, helidon-media-jsonp, helidon-microprofile-server, helidon-mp-graal-native-image-extension, helidon-openapi, helidon-security-jwt]
+Used by: [helidon-dbclient-jsonp, helidon-dbclient-mongodb, helidon-graal-native-image-extension, helidon-lra-coordinator-server, helidon-reactive-media-jsonb, helidon-reactive-media-jsonp, helidon-microprofile-server, helidon-mp-graal-native-image-extension, helidon-openapi, helidon-security-jwt]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 Eclipse Parsson (org.eclipse.parsson:parsson)
   Copyright (c) 2011,2022 Oracle and/or its affiliates. All rights reserved.
@@ -215,7 +215,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 Eclipse Yasson  Eclipse Foundation
 Multiple Licenses
-Used by: [helidon-media-jsonb, helidon-microprofile, helidon-openapi]
+Used by: [helidon-reactive-media-jsonb, helidon-microprofile, helidon-openapi]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 Eclipse Yasson
 org.eclipse.yasson (org.eclipse:yasson)
@@ -1666,7 +1666,7 @@ Jakarta JSON Processing API (JSON-P) (jakarta.json:jakarta.json-api)
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 Jakarta Json Processing API (JSON-P)  Eclipse Foundation
 Eclipse Public License 2.0 + GPL v.2 with CPE
-Used by: [helidon-media-jsonp, helidon-microprofile-server, helidon-openapi, helidon-security-jwt]
+Used by: [helidon-reactive-media-jsonp, helidon-microprofile-server, helidon-openapi, helidon-security-jwt]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 1.  The follow files are available in source code form under the Eclipse Public License at:
     https://github.com/eclipse-ee4j/jsonp/api (The EPL license is reproduced below).
@@ -4583,7 +4583,7 @@ source code repository logs.
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 jackson-databind  FasterXML, LLC
 Apache 2.0
-Used by: [helidon-media-jackson]
+Used by: [helidon-reactive-media-jackson]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 ------------------------------- Top-level license --------------------------
 License Identifier: Apache-2.0

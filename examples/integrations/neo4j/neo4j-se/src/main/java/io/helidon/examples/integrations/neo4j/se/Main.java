@@ -28,10 +28,10 @@ import io.helidon.health.checks.HealthChecks;
 import io.helidon.integrations.neo4j.Neo4j;
 import io.helidon.integrations.neo4j.health.Neo4jHealthCheck;
 import io.helidon.integrations.neo4j.metrics.Neo4jMetricsSupport;
-import io.helidon.reactive.media.jsonb.JsonbSupport;
-import io.helidon.reactive.media.jsonp.JsonpSupport;
 import io.helidon.metrics.serviceapi.MetricsSupport;
 import io.helidon.reactive.health.HealthSupport;
+import io.helidon.reactive.media.jsonb.JsonbSupport;
+import io.helidon.reactive.media.jsonp.JsonpSupport;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 

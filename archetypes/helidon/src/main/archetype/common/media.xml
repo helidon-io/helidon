@@ -37,17 +37,17 @@
                                         <list key="dependencies">
                                             <map order="500">
                                                 <value key="groupId">io.helidon.reactive.media</value>
-                                                <value key="artifactId">helidon-media-jsonp</value>
+                                                <value key="artifactId">helidon-reactive-media-jsonp</value>
                                             </map>
                                         </list>
                                         <list key="Main-helidon-imports">
-                                            <value>jsonp.io.helidon.reactive.media.JsonpSupport</value>
+                                            <value>io.helidon.reactive.media.jsonp.JsonpSupport</value>
                                         </list>
                                         <list key="MainTest-helidon-imports">
-                                            <value>jsonp.io.helidon.reactive.media.JsonpSupport</value>
+                                            <value>io.helidon.reactive.media.jsonp.JsonpSupport</value>
                                         </list>
                                         <list key="WebClient-media-imports">
-                                            <value>jsonp.io.helidon.reactive.media.JsonpSupport</value>
+                                            <value>io.helidon.reactive.media.jsonp.JsonpSupport</value>
                                         </list>
                                         <list key="Main-serverBuilder">
                                             <value><![CDATA[                .addMediaSupport(JsonpSupport.create())]]></value>
@@ -76,17 +76,17 @@
                                             </map>
                                             <map order="500" if="${flavor} == 'se'">
                                                 <value key="groupId">io.helidon.reactive.media</value>
-                                                <value key="artifactId">helidon-media-jackson</value>
+                                                <value key="artifactId">helidon-reactive-media-jackson</value>
                                             </map>
                                         </list>
                                         <list key="Main-helidon-imports" if="${flavor} == 'se'">
-                                            <value>jackson.io.helidon.reactive.media.JacksonSupport</value>
+                                            <value>io.helidon.reactive.media.jackson.JacksonSupport</value>
                                         </list>
                                         <list key="MainTest-helidon-imports" if="${flavor} == 'se'">
-                                            <value>jackson.io.helidon.reactive.media.JacksonSupport</value>
+                                            <value>io.helidon.reactive.media.jackson.JacksonSupport</value>
                                         </list>
                                         <list key="WebClient-media-imports" if="${flavor} == 'se'">
-                                            <value>jackson.io.helidon.reactive.media.JacksonSupport</value>
+                                            <value>io.helidon.reactive.media.jackson.JacksonSupport</value>
                                         </list>
                                         <list key="Main-serverBuilder" if="${flavor} == 'se'">
                                             <value><![CDATA[                .addMediaSupport(JacksonSupport.create())]]></value>
@@ -115,17 +115,17 @@
                                             </map>
                                             <map order="500" if="${flavor} == 'se'">
                                                 <value key="groupId">io.helidon.reactive.media</value>
-                                                <value key="artifactId">helidon-media-jsonb</value>
+                                                <value key="artifactId">helidon-reactive-media-jsonb</value>
                                             </map>
                                         </list>
                                         <list key="Main-helidon-imports" if="${flavor} == 'se'">
-                                            <value>jsonb.io.helidon.reactive.media.JsonbSupport</value>
+                                            <value>io.helidon.reactive.media.jsonb.JsonbSupport</value>
                                         </list>
                                         <list key="MainTest-helidon-imports" if="${flavor} == 'se'">
-                                            <value>jsonb.io.helidon.reactive.media.JsonbSupport</value>
+                                            <value>io.helidon.reactive.media.jsonb.JsonbSupport</value>
                                         </list>
                                         <list key="WebClient-media-imports" if="${flavor} == 'se'">
-                                            <value>jsonb.io.helidon.reactive.media.JsonbSupport</value>
+                                            <value>io.helidon.reactive.media.jsonb.JsonbSupport</value>
                                         </list>
                                         <list key="Main-serverBuilder" if="${flavor} == 'se'">
                                             <value><![CDATA[                .addMediaSupport(JsonbSupport.create())]]></value>
@@ -152,21 +152,21 @@
                                 </map>
                                 <map order="500" if="${flavor} == 'se'">
                                     <value key="groupId">io.helidon.reactive.media</value>
-                                    <value key="artifactId">helidon-media-multipart</value>
+                                    <value key="artifactId">helidon-reactive-media-multipart</value>
                                 </map>
                                 <map order="500" if="${flavor} == 'se'">
                                     <value key="groupId">io.helidon.reactive.media</value>
-                                    <value key="artifactId">helidon-media-jsonp</value>
+                                    <value key="artifactId">helidon-reactive-media-jsonp</value>
                                 </map>
                             </list>
                             <list key="MainTest-helidon-imports" if="${flavor} == 'se'">
-                                <value>jsonp.io.helidon.reactive.media.JsonpSupport</value>
+                                <value>io.helidon.reactive.media.jsonp.JsonpSupport</value>
                             </list>
                             <list key="Main-helidon-imports" if="${flavor} == 'se'">
-                                <value>jsonp.io.helidon.reactive.media.JsonpSupport</value>
+                                <value>io.helidon.reactive.media.jsonp.JsonpSupport</value>
                             </list>
                             <list key="Main-helidon-imports" if="${flavor} == 'se'">
-                                <value>multipart.io.helidon.reactive.media.MultiPartSupport</value>
+                                <value>io.helidon.reactive.media.multipart.MultiPartSupport</value>
                             </list>
                             <list key="Main-serverBuilder" if="${flavor} == 'se'">
                                 <value><![CDATA[                .addMediaSupport(JsonpSupport.create())]]></value>

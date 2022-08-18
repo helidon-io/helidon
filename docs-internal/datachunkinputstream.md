@@ -1,4 +1,4 @@
-# common.io.helidon.reactive.media.DataChunkInputStream
+# io.helidon.reactive.media.common.DataChunkInputStream
 
 This document provides additional details about the implementation of `DataChunkInputStream`.
 

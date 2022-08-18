@@ -26,9 +26,9 @@ import io.helidon.common.http.Http.Method;
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
-import io.helidon.reactive.media.jsonp.JsonpSupport;
 import io.helidon.reactive.faulttolerance.FaultTolerance;
 import io.helidon.reactive.faulttolerance.FtHandler;
+import io.helidon.reactive.media.jsonp.JsonpSupport;
 import io.helidon.webclient.WebClient;
 
 import jakarta.json.Json;

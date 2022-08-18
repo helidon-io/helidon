@@ -128,9 +128,9 @@ This replaces `Routing.builder().register(JsonSupport.create())...`
 
 The new JSON MediaSupport classes are:
 
-* `io.helidon.reactive.media.jsonp.JsonpSupport` in module `io.helidon.reactive.media:helidon-media-jsonp`
-* `io.helidon.reactive.media.jsonb.JsonbSupport` in module `io.helidon.reactive.media:helidon-media-jsonb`
-* `io.helidon.reactive.media.jackson.JacksonSupport` in module `io.helidon.reactive.media:helidon-media-jackson`
+* `io.helidon.reactive.media.jsonp.JsonpSupport` in module `io.helidon.reactive.media:helidon-reactive-media-jsonp`
+* `io.helidon.reactive.media.jsonb.JsonbSupport` in module `io.helidon.reactive.media:helidon-reactive-media-jsonb`
+* `io.helidon.reactive.media.jackson.JacksonSupport` in module `io.helidon.reactive.media:helidon-reactive-media-jackson`
 
 
 == Reactive

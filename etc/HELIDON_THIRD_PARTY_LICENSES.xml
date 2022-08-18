@@ -89,8 +89,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</attr
                 <consumer>helidon-dbclient-mongodb</consumer>
                 <consumer>helidon-graal-native-image-extension</consumer>
                 <consumer>helidon-lra-coordinator-server</consumer>
-                <consumer>helidon-media-jsonb</consumer>
-                <consumer>helidon-media-jsonp</consumer>
+                <consumer>helidon-reactive-media-jsonb</consumer>
+                <consumer>helidon-reactive-media-jsonp</consumer>
                 <consumer>helidon-microprofile-server</consumer>
                 <consumer>helidon-mp-graal-native-image-extension</consumer>
                 <consumer>helidon-openapi</consumer>
@@ -247,7 +247,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <licensor>Eclipse Foundation</licensor>
             <licenseName>Multiple Licenses</licenseName>
             <consumers>
-                <consumer>helidon-media-jsonb</consumer>
+                <consumer>helidon-reactive-media-jsonb</consumer>
                 <consumer>helidon-microprofile</consumer>
                 <consumer>helidon-openapi</consumer>
             </consumers>
@@ -1821,7 +1821,7 @@ Jakarta JSON Processing API (JSON-P) (jakarta.json:jakarta.json-api)
             <licensor>Eclipse Foundation</licensor>
             <licenseName>Eclipse Public License 2.0 + GPL v.2 with CPE</licenseName>
             <consumers>
-                <consumer>helidon-media-jsonp</consumer>
+                <consumer>helidon-reactive-media-jsonp</consumer>
                 <consumer>helidon-microprofile-server</consumer>
                 <consumer>helidon-openapi</consumer>
                 <consumer>helidon-security-jwt</consumer>
@@ -5018,7 +5018,7 @@ source code repository logs.
             <licensor>FasterXML, LLC</licensor>
             <licenseName>Apache 2.0</licenseName>
             <consumers>
-                <consumer>helidon-media-jackson</consumer>
+                <consumer>helidon-reactive-media-jackson</consumer>
             </consumers>
             <attribution>------------------------------- Top-level license --------------------------
 License Identifier: Apache-2.0
