@@ -102,7 +102,7 @@ providing a supplier in the example above.
 
 Asynchronous tasks are executed in a thread pool managed by the Helidon SE
 Fault Tolerance module. Thread pools are created during the initialization
-phase of class `io.helidon.faulttolerance.FaultTolerance` and can be
+phase of class `io.helidon.reactive.faulttolerance.FaultTolerance` and can be
 configured for your application.
 
 === Retries
@@ -230,7 +230,7 @@ transition back to open state, waiting for another 200 milliseconds
 before attempting to transition to half-open again.
 
 A circuit breaker will throw a
-`io.helidon.faulttolerance.CircuitBreakerOpenException`
+`io.helidon.reactive.faulttolerance.CircuitBreakerOpenException`
 if an attempt to make an invocation takes place while it is in open state.
 
 === Bulkheads
@@ -262,7 +262,7 @@ Single<T> single = bulkhead.invoke(this::usesResources);
 
 This example creates a bulkhead that limits concurrent execution
 to `this:usesResources` to at most 3, and with a queue of size 5. The
-bulkhead will report a `io.helidon.faulttolerance.BulkheadException` if unable to proceed
+bulkhead will report a `io.helidon.reactive.faulttolerance.BulkheadException` if unable to proceed
 with the call: either due to the limit being reached or the queue
 being at maximum capacity.
 

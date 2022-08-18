@@ -39,7 +39,7 @@ final class FeatureCatalog {
               "Config",
               "Configuration module",
               "Config");
-        addSe("io.helidon.faulttolerance",
+        addSe("io.helidon.reactive.faulttolerance",
                 "Fault Tolerance",
                 "Reactive Fault Tolerance module",
                 "FT");

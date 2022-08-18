@@ -19,6 +19,8 @@ package io.helidon.microprofile.faulttolerance;
 import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 
+import io.helidon.reactive.faulttolerance.RetryTimeoutException;
+
 import org.eclipse.microprofile.faulttolerance.exceptions.BulkheadException;
 import org.eclipse.microprofile.faulttolerance.exceptions.CircuitBreakerOpenException;
 import org.eclipse.microprofile.faulttolerance.exceptions.TimeoutException;
@@ -42,13 +44,13 @@ class ThrowableMapper {
         if (t instanceof ExecutionException) {
             t = t.getCause();
         }
-        if (t instanceof io.helidon.faulttolerance.CircuitBreakerOpenException) {
+        if (t instanceof io.helidon.reactive.faulttolerance.CircuitBreakerOpenException) {
             return new CircuitBreakerOpenException(t.getMessage(), t.getCause());
         }
-        if (t instanceof io.helidon.faulttolerance.BulkheadException) {
+        if (t instanceof io.helidon.reactive.faulttolerance.BulkheadException) {
             return new BulkheadException(t.getMessage(), t.getCause());
         }
-        if (t instanceof io.helidon.faulttolerance.RetryTimeoutException) {
+        if (t instanceof RetryTimeoutException) {
             return t;       // the cause is handled elsewhere
         }
         if (t instanceof java.util.concurrent.TimeoutException) {
@@ -75,9 +77,9 @@ class ThrowableMapper {
         for (int i = 0; i < types.length; i++) {
             Class<? extends Throwable> t = types[i];
             if (t == BulkheadException.class) {
-                result[i] = io.helidon.faulttolerance.BulkheadException.class;
+                result[i] = io.helidon.reactive.faulttolerance.BulkheadException.class;
             } else if (t == CircuitBreakerOpenException.class) {
-                result[i] = io.helidon.faulttolerance.CircuitBreakerOpenException.class;
+                result[i] = io.helidon.reactive.faulttolerance.CircuitBreakerOpenException.class;
             } else if (t == TimeoutException.class) {
                 result[i] = java.util.concurrent.TimeoutException.class;
             } else {

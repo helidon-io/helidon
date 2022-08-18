@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,12 +20,12 @@ import java.time.Duration;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.common.reactive.Single;
-import io.helidon.faulttolerance.Async;
-import io.helidon.faulttolerance.Bulkhead;
-import io.helidon.faulttolerance.CircuitBreaker;
-import io.helidon.faulttolerance.Fallback;
-import io.helidon.faulttolerance.Retry;
-import io.helidon.faulttolerance.Timeout;
+import io.helidon.reactive.faulttolerance.Async;
+import io.helidon.reactive.faulttolerance.Bulkhead;
+import io.helidon.reactive.faulttolerance.CircuitBreaker;
+import io.helidon.reactive.faulttolerance.Fallback;
+import io.helidon.reactive.faulttolerance.Retry;
+import io.helidon.reactive.faulttolerance.Timeout;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;

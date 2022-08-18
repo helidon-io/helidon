@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package io.helidon.tests.integration.tools.example;
 
+import java.time.Duration;
 import java.util.logging.Logger;
 
 import io.helidon.common.LogConfig;
@@ -33,7 +34,7 @@ public class ServerMain {
 
     private static final Logger LOGGER = Logger.getLogger(ServerMain.class.getName());
     // Default configuration file name
-    private static final String DEFAULT_CONFIG_FILE="test.yaml";
+    private static final String DEFAULT_CONFIG_FILE = "test.yaml";
 
     /**
      * Main method.
@@ -76,10 +77,10 @@ public class ServerMain {
         // Set server instance to exit resource.
         lcResource.setServer(server);
         // Start the server and print some info.
-        server.start().thenAccept(
-                ws -> {
-                    System.out.println(String.format("WEB server is up! http://localhost:%d/", ws.port()));
-                });
+        server.start()
+                .await(Duration.ofSeconds(10));
+
+        System.out.println(String.format("WEB server is up! http://localhost:%d/", server.port()));
 
         // Server threads are not daemon. NO need to block. Just react.
         server.whenShutdown().thenRun(

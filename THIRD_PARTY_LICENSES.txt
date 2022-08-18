@@ -2323,7 +2323,7 @@ License Identifier: Apache-2.0
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 MicroProfile Health API  Eclipse Foundation
 Apache 2.0
-Used by: [helidon-health, helidon-integrations-neo4j-health, helidon-microprofile-health]
+Used by: [helidon-reactive-health, helidon-integrations-neo4j-health, helidon-microprofile-health]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 MicroProfile Health API (org.eclipse.microprofile.health:microprofile-health-api)
   Copyright (c) 2017-2021 Contributors to the Eclipse Foundation

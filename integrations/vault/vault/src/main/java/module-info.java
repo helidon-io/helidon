@@ -26,7 +26,7 @@ module io.helidon.integrations.vault {
     requires io.helidon.common;
     requires io.helidon.webclient;
     requires io.helidon.media.jsonp;
-    requires io.helidon.faulttolerance;
+    requires io.helidon.reactive.faulttolerance;
     requires io.helidon.integrations.common.rest;
 
     exports io.helidon.integrations.vault;

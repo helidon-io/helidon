@@ -29,7 +29,7 @@ module io.helidon.reactive.health {
     requires io.helidon.webserver.cors;
     requires io.helidon.media.jsonp;
     requires jakarta.json;
-    requires io.helidon.faulttolerance;
+    requires io.helidon.reactive.faulttolerance;
 
     exports io.helidon.reactive.health;
     provides org.eclipse.microprofile.health.spi.HealthCheckResponseProvider

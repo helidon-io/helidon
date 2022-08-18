@@ -17,12 +17,12 @@
 /**
  * Fault tolerance module for Helidon reactive implementation.
  */
-module io.helidon.faulttolerance {
+module io.helidon.reactive.faulttolerance {
     requires io.helidon.config;
     requires io.helidon.common.configurable;
     requires transitive io.helidon.common.reactive;
     requires java.logging;
     requires static io.helidon.config.metadata;
 
-    exports io.helidon.faulttolerance;
+    exports io.helidon.reactive.faulttolerance;
 }

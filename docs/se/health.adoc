@@ -55,8 +55,8 @@ include::{rootdir}/includes/dependencies.adoc[]
 [source,xml]
 ----
 <dependency>
-    <groupId>io.helidon.health</groupId>
-    <artifactId>helidon-health</artifactId>
+    <groupId>io.helidon.reactive.health</groupId>
+    <artifactId>helidon-reactive-health</artifactId>
 </dependency>
 ----
 
@@ -184,11 +184,11 @@ The following table provides a summary of the Health Check API classes.
 | `org.eclipse.microprofile.health.HealthCheckResponseBuilder`
 | Builder class to create `HealthCheckResponse` instances
 
-| `io.helidon.health.HealthSupport`
+| `io.helidon.reactive.health.HealthSupport`
 | WebServer service that exposes `/health` and invokes the registered health
 checks
 
-| `io.helidon.health.HealthSupport.Builder`
+| `io.helidon.reactive.health.HealthSupport.Builder`
 | Builder class to create `HealthSupport` instances
 |=======
 

@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 import io.helidon.common.configurable.ScheduledThreadPoolSupplier;
 import io.helidon.common.configurable.ThreadPoolSupplier;
 import io.helidon.config.mp.MpConfig;
-import io.helidon.faulttolerance.FaultTolerance;
+import io.helidon.reactive.faulttolerance.FaultTolerance;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;

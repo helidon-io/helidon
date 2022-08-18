@@ -24,10 +24,10 @@ import java.util.logging.Logger;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
-import io.helidon.faulttolerance.FaultTolerance;
-import io.helidon.faulttolerance.FtHandler;
 import io.helidon.integrations.common.rest.RestApi;
 import io.helidon.integrations.vault.spi.VaultAuth;
+import io.helidon.reactive.faulttolerance.FaultTolerance;
+import io.helidon.reactive.faulttolerance.FtHandler;
 import io.helidon.webclient.WebClient;
 
 /**
@@ -193,7 +193,7 @@ public interface Vault {
         }
 
         /**
-         * An {@link io.helidon.faulttolerance.FtHandler} can be configured to be used by all calls to the
+         * An {@link io.helidon.reactive.faulttolerance.FtHandler} can be configured to be used by all calls to the
          * Vault, to add support for retries, circuit breakers, bulkhead etc.
          *
          * @param faultTolerance fault tolerance handler to use

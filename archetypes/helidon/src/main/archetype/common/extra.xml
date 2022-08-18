@@ -48,8 +48,8 @@
                         <model>
                             <list key="dependencies" if="${flavor} == 'se'">
                                 <map>
-                                    <value key="groupId">io.helidon.fault-tolerance</value>
-                                    <value key="artifactId">helidon-fault-tolerance</value>
+                                    <value key="groupId">io.helidon.reactive.fault-tolerance</value>
+                                    <value key="artifactId">helidon-reactive-fault-tolerance</value>
                                 </map>
                             </list>
                             <list key="dependencies" if="${flavor} == 'mp'">
@@ -60,8 +60,8 @@
                             </list>
                             <list key="Main-helidon-imports">
                                 <value>io.helidon.common.http.Http</value>
-                                <value>io.helidon.faulttolerance.BulkheadException</value>
-                                <value>io.helidon.faulttolerance.CircuitBreakerOpenException</value>
+                                <value>io.helidon.reactive.faulttolerance.BulkheadException</value>
+                                <value>io.helidon.reactive.faulttolerance.CircuitBreakerOpenException</value>
                             </list>
                             <list key="Main-other-imports">
                                 <value>java.util.concurrent.TimeoutException</value>

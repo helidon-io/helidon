@@ -24,7 +24,7 @@
 
     <Match>
         <!-- Random is used for retry Jitter, not cryptology -->
-        <Class name="io.helidon.faulttolerance.Retry$JitterRetryPolicy"/>
+        <Class name="io.helidon.reactive.faulttolerance.Retry$JitterRetryPolicy"/>
         <Bug pattern="PREDICTABLE_RANDOM"/>
     </Match>
 

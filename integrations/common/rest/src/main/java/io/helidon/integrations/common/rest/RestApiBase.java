@@ -32,7 +32,7 @@ import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.reactive.Collector;
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
-import io.helidon.faulttolerance.FtHandler;
+import io.helidon.reactive.faulttolerance.FtHandler;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientRequestBuilder;
 import io.helidon.webclient.WebClientRequestHeaders;
