@@ -104,12 +104,12 @@
             <artifactId>helidon-webserver</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.media</groupId>
-            <artifactId>helidon-media-jsonp</artifactId>
+            <groupId>io.helidon.reactive.media</groupId>
+            <artifactId>helidon-reactive-media-jsonp</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.media</groupId>
-            <artifactId>helidon-media-jsonb</artifactId>
+            <groupId>io.helidon.reactive.media</groupId>
+            <artifactId>helidon-reactive-media-jsonb</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>

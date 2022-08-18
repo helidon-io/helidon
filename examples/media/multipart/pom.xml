@@ -49,12 +49,12 @@
             <artifactId>helidon-webserver-static-content</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.media</groupId>
-            <artifactId>helidon-media-multipart</artifactId>
+            <groupId>io.helidon.reactive.media</groupId>
+            <artifactId>helidon-reactive-media-multipart</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.media</groupId>
-            <artifactId>helidon-media-jsonp</artifactId>
+            <groupId>io.helidon.reactive.media</groupId>
+            <artifactId>helidon-reactive-media-jsonp</artifactId>
         </dependency>
         <dependency>
             <groupId>org.eclipse.parsson</groupId>

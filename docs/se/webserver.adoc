@@ -554,8 +554,8 @@ To enable JSON Support add the following dependency to your project's `pom.xml`.
 [source,xml]
 ----
 <dependency>
-    <groupId>io.helidon.media</groupId>
-    <artifactId>helidon-media-jsonp</artifactId>
+    <groupId>io.helidon.reactive.media</groupId>
+    <artifactId>helidon-reactive-media-jsonp</artifactId>
 </dependency>
 ----
 
@@ -631,8 +631,8 @@ To enable JSON-B Support add the following dependency to your project's `pom.xml
 [source,xml]
 ----
 <dependency>
-    <groupId>io.helidon.media</groupId>
-    <artifactId>helidon-media-jsonp</artifactId>
+    <groupId>io.helidon.reactive.media</groupId>
+    <artifactId>helidon-reactive-media-jsonp</artifactId>
 </dependency>
 ----
 
@@ -725,8 +725,8 @@ To enable Jackson Support add the following dependency to your project's `pom.xm
 [source,xml]
 ----
 <dependency>
-    <groupId>io.helidon.media</groupId>
-    <artifactId>helidon-media-jackson</artifactId>
+    <groupId>io.helidon.reactive.media</groupId>
+    <artifactId>helidon-reactive-media-jackson</artifactId>
 </dependency>
 ----
 

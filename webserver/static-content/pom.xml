@@ -50,8 +50,8 @@
             <artifactId>helidon-common-media-type</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.media</groupId>
-            <artifactId>helidon-media-common</artifactId>
+            <groupId>io.helidon.reactive.media</groupId>
+            <artifactId>helidon-reactive-media-common</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.webserver</groupId>

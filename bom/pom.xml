@@ -221,28 +221,28 @@
             </dependency>
             <!-- media -->
             <dependency>
-                <groupId>io.helidon.media</groupId>
-                <artifactId>helidon-media-common</artifactId>
+                <groupId>io.helidon.reactive.media</groupId>
+                <artifactId>helidon-reactive-media-common</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.media</groupId>
-                <artifactId>helidon-media-jackson</artifactId>
+                <groupId>io.helidon.reactive.media</groupId>
+                <artifactId>helidon-reactive-media-jackson</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.media</groupId>
-                <artifactId>helidon-media-jsonb</artifactId>
+                <groupId>io.helidon.reactive.media</groupId>
+                <artifactId>helidon-reactive-media-jsonb</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.media</groupId>
-                <artifactId>helidon-media-jsonp</artifactId>
+                <groupId>io.helidon.reactive.media</groupId>
+                <artifactId>helidon-reactive-media-jsonp</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.media</groupId>
-                <artifactId>helidon-media-multipart</artifactId>
+                <groupId>io.helidon.reactive.media</groupId>
+                <artifactId>helidon-reactive-media-multipart</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <!-- config -->

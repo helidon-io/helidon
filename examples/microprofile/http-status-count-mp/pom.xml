@@ -43,8 +43,8 @@
             <artifactId>jackson-databind</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.media</groupId>
-            <artifactId>helidon-media-jackson</artifactId>
+            <groupId>io.helidon.reactive.media</groupId>
+            <artifactId>helidon-reactive-media-jackson</artifactId>
         </dependency>
         <dependency>
             <groupId>org.eclipse.microprofile.metrics</groupId>
