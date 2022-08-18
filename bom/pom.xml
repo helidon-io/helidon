@@ -137,8 +137,8 @@
             </dependency>
             <!-- Fault tolerance -->
             <dependency>
-                <groupId>io.helidon.fault-tolerance</groupId>
-                <artifactId>helidon-fault-tolerance</artifactId>
+                <groupId>io.helidon.reactive.fault-tolerance</groupId>
+                <artifactId>helidon-reactive-fault-tolerance</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <!-- gRPC -->

@@ -41,8 +41,8 @@
             <artifactId>helidon-webclient</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.fault-tolerance</groupId>
-            <artifactId>helidon-fault-tolerance</artifactId>
+            <groupId>io.helidon.reactive.fault-tolerance</groupId>
+            <artifactId>helidon-reactive-fault-tolerance</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.config</groupId>

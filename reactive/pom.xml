@@ -37,6 +37,7 @@
 
     <modules>
         <module>health</module>
+        <module>fault-tolerance</module>
     </modules>
 
 </project>

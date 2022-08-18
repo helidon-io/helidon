@@ -36,7 +36,7 @@
 
     <profiles>
         <profile>
-            <id>example</id>
+            <id>examples</id>
             <modules>
                 <module>example</module>
             </modules>

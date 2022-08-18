@@ -44,8 +44,8 @@
             <artifactId>helidon-webserver</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.fault-tolerance</groupId>
-            <artifactId>helidon-fault-tolerance</artifactId>
+            <groupId>io.helidon.reactive.fault-tolerance</groupId>
+            <artifactId>helidon-reactive-fault-tolerance</artifactId>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
