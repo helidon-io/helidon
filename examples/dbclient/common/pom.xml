@@ -30,8 +30,8 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.dbclient</groupId>
-            <artifactId>helidon-dbclient</artifactId>
+            <groupId>io.helidon.reactive.dbclient</groupId>
+            <artifactId>helidon-reactive-dbclient</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.webserver</groupId>

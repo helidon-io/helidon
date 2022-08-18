@@ -43,24 +43,24 @@
             <artifactId>helidon-common-mapper</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.dbclient</groupId>
-            <artifactId>helidon-dbclient-mongodb</artifactId>
+            <groupId>io.helidon.reactive.dbclient</groupId>
+            <artifactId>helidon-reactive-dbclient-mongodb</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.dbclient</groupId>
-            <artifactId>helidon-dbclient-tracing</artifactId>
+            <groupId>io.helidon.reactive.dbclient</groupId>
+            <artifactId>helidon-reactive-dbclient-tracing</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.dbclient</groupId>
-            <artifactId>helidon-dbclient-metrics</artifactId>
+            <groupId>io.helidon.reactive.dbclient</groupId>
+            <artifactId>helidon-reactive-dbclient-metrics</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.dbclient</groupId>
-            <artifactId>helidon-dbclient-health</artifactId>
+            <groupId>io.helidon.reactive.dbclient</groupId>
+            <artifactId>helidon-reactive-dbclient-health</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.dbclient</groupId>
-            <artifactId>helidon-dbclient-jsonp</artifactId>
+            <groupId>io.helidon.reactive.dbclient</groupId>
+            <artifactId>helidon-reactive-dbclient-jsonp</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.reactive.health</groupId>

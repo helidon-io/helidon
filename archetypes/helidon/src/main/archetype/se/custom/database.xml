@@ -262,8 +262,8 @@ docker run --rm --name mongo -p 27017:27017 mongo
                                     </list>
                                     <list key="dependencies">
                                         <map>
-                                            <value key="groupId">io.helidon.dbclient</value>
-                                            <value key="artifactId">helidon-dbclient-mongodb</value>
+                                            <value key="groupId">io.helidon.reactive.dbclient</value>
+                                            <value key="artifactId">helidon-reactive-dbclient-mongodb</value>
                                         </map>
                                         <map>
                                             <value key="groupId">com.h2database</value>
@@ -295,12 +295,12 @@ docker run --rm --name mongo -p 27017:27017 mongo
                         </list>
                         <list key="dependencies">
                             <map>
-                                <value key="groupId">io.helidon.dbclient</value>
-                                <value key="artifactId">helidon-dbclient</value>
+                                <value key="groupId">io.helidon.reactive.dbclient</value>
+                                <value key="artifactId">helidon-reactive-dbclient</value>
                             </map>
                             <map>
-                                <value key="groupId">io.helidon.dbclient</value>
-                                <value key="artifactId">helidon-dbclient-jsonp</value>
+                                <value key="groupId">io.helidon.reactive.dbclient</value>
+                                <value key="artifactId">helidon-reactive-dbclient-jsonp</value>
                             </map>
                             <map if="${media.json-lib} != 'jsonb'">
                                 <value key="groupId">io.helidon.reactive.media</value>
@@ -311,24 +311,24 @@ docker run --rm --name mongo -p 27017:27017 mongo
                                 <value key="artifactId">helidon-reactive-media-jsonp</value>
                             </map>
                             <map if="${server} != 'mongodb'">
-                                <value key="groupId">io.helidon.dbclient</value>
-                                <value key="artifactId">helidon-dbclient-jdbc</value>
+                                <value key="groupId">io.helidon.reactive.dbclient</value>
+                                <value key="artifactId">helidon-reactive-dbclient-jdbc</value>
                             </map>
                             <map if="${health}">
-                                <value key="groupId">io.helidon.dbclient</value>
-                                <value key="artifactId">helidon-dbclient-health</value>
+                                <value key="groupId">io.helidon.reactive.dbclient</value>
+                                <value key="artifactId">helidon-reactive-dbclient-health</value>
                             </map>
                             <map if="${metrics}">
-                                <value key="groupId">io.helidon.dbclient</value>
-                                <value key="artifactId">helidon-dbclient-metrics-jdbc</value>
+                                <value key="groupId">io.helidon.reactive.dbclient</value>
+                                <value key="artifactId">helidon-reactive-dbclient-metrics-jdbc</value>
                             </map>
                             <map if="${metrics}">
-                                <value key="groupId">io.helidon.dbclient</value>
-                                <value key="artifactId">helidon-dbclient-metrics</value>
+                                <value key="groupId">io.helidon.reactive.dbclient</value>
+                                <value key="artifactId">helidon-reactive-dbclient-metrics</value>
                             </map>
                             <map if="${tracing}">
-                                <value key="groupId">io.helidon.dbclient</value>
-                                <value key="artifactId">helidon-dbclient-tracing</value>
+                                <value key="groupId">io.helidon.reactive.dbclient</value>
+                                <value key="artifactId">helidon-reactive-dbclient-tracing</value>
                             </map>
                             <map>
                                 <value key="groupId">org.slf4j</value>

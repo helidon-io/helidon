@@ -38,7 +38,7 @@ Fourth Party Runtime Dependencies
             <licensor>Coda Hale and Yammer, Inc.</licensor>
             <licenseName>Apache 2.0</licenseName>
             <consumers>
-                <consumer>helidon-dbclient-metrics-jdbc</consumer>
+                <consumer>helidon-reactive-dbclient-metrics-jdbc</consumer>
             </consumers>
             <attribution>Copyright 2010-2013 Coda Hale and Yammer, Inc., 2014-2017 Dropwizard Team
 
@@ -85,8 +85,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</attr
             <licensor>Eclipse Foundation</licensor>
             <licenseName>Eclipse Public License 2.0 + GPL v.2 with CPE</licenseName>
             <consumers>
-                <consumer>helidon-dbclient-jsonp</consumer>
-                <consumer>helidon-dbclient-mongodb</consumer>
+                <consumer>helidon-reactive-dbclient-jsonp</consumer>
+                <consumer>helidon-reactive-dbclient-mongodb</consumer>
                 <consumer>helidon-graal-native-image-extension</consumer>
                 <consumer>helidon-lra-coordinator-server</consumer>
                 <consumer>helidon-reactive-media-jsonb</consumer>
@@ -1055,8 +1055,8 @@ failureaccess, v1.0.1, Apache 2.0
             <licensor>Brett Woolridge</licensor>
             <licenseName>Apache 2.0</licenseName>
             <consumers>
-                <consumer>helidon-dbclient-jdbc</consumer>
-                <consumer>helidon-dbclient-metrics-jdbc</consumer>
+                <consumer>helidon-reactive-dbclient-jdbc</consumer>
+                <consumer>helidon-reactive-dbclient-metrics-jdbc</consumer>
                 <consumer>helidon-integrations-cdi-datasource-hikaricp</consumer>
             </consumers>
             <attribution>HikariCP (com.zaxxer:HikariCP)
@@ -2784,7 +2784,7 @@ License Identifier: Apache-2.0
             <licensor>MongoDB, Inc.</licensor>
             <licenseName>Apache 2.0</licenseName>
             <consumers>
-                <consumer>helidon-dbclient-mongodb</consumer>
+                <consumer>helidon-reactive-dbclient-mongodb</consumer>
             </consumers>
             <attribution>MongoDB Reactive Streams Driver (org.mongodb:mongodb-driver-reactivestreams)
   Copyright 2014,2017 MongoDB, Inc.
@@ -3084,7 +3084,7 @@ Fourth Party Runtime Dependencies
             <licensor>Opentracing.Io</licensor>
             <licenseName>Apache 2.0</licenseName>
             <consumers>
-                <consumer>helidon-dbclient-tracing</consumer>
+                <consumer>helidon-reactive-dbclient-tracing</consumer>
                 <consumer>helidon-integrations-common-rest</consumer>
                 <consumer>helidon-security-integration-jersey</consumer>
                 <consumer>helidon-tracing-opentracing</consumer>
@@ -3132,7 +3132,7 @@ License Identifier: Apache-2.0
             <licensor>Public Domain</licensor>
             <licenseName>Other FOSS License</licenseName>
             <consumers>
-                <consumer>helidon-dbclient-mongodb</consumer>
+                <consumer>helidon-reactive-dbclient-mongodb</consumer>
                 <consumer>helidon-microprofile-reactive-streams</consumer>
             </consumers>
             <attribution>

@@ -194,7 +194,6 @@
         <module>jersey</module>
         <module>webclient</module>
         <module>integrations</module>
-        <module>dbclient</module>
         <module>messaging</module>
         <module>graphql</module>
         <module>logging</module>

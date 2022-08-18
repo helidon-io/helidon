@@ -31,7 +31,7 @@ Fourth Party Runtime Dependencies
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 Dropwizard Metrics  Coda Hale and Yammer, Inc.
 Apache 2.0
-Used by: [helidon-dbclient-metrics-jdbc]
+Used by: [helidon-reactive-dbclient-metrics-jdbc]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 Copyright 2010-2013 Coda Hale and Yammer, Inc., 2014-2017 Dropwizard Team
 
@@ -73,7 +73,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 Eclipse Parsson  Eclipse Foundation
 Eclipse Public License 2.0 + GPL v.2 with CPE
-Used by: [helidon-dbclient-jsonp, helidon-dbclient-mongodb, helidon-graal-native-image-extension, helidon-lra-coordinator-server, helidon-reactive-media-jsonb, helidon-reactive-media-jsonp, helidon-microprofile-server, helidon-mp-graal-native-image-extension, helidon-openapi, helidon-security-jwt]
+Used by: [helidon-reactive-dbclient-jsonp, helidon-reactive-dbclient-mongodb, helidon-graal-native-image-extension, helidon-lra-coordinator-server, helidon-reactive-media-jsonb, helidon-reactive-media-jsonp, helidon-microprofile-server, helidon-mp-graal-native-image-extension, helidon-openapi, helidon-security-jwt]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 Eclipse Parsson (org.eclipse.parsson:parsson)
   Copyright (c) 2011,2022 Oracle and/or its affiliates. All rights reserved.
@@ -996,7 +996,7 @@ failureaccess, v1.0.1, Apache 2.0
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 HikariCP  Brett Woolridge
 Apache 2.0
-Used by: [helidon-dbclient-jdbc, helidon-dbclient-metrics-jdbc, helidon-integrations-cdi-datasource-hikaricp]
+Used by: [helidon-reactive-dbclient-jdbc, helidon-reactive-dbclient-metrics-jdbc, helidon-integrations-cdi-datasource-hikaricp]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 HikariCP (com.zaxxer:HikariCP)
   Copyright (C) 2013,2019 Brett Wooldridge
@@ -2463,7 +2463,7 @@ License Identifier: Apache-2.0
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 MongoDB ReactiveStreams Driver  MongoDB, Inc.
 Apache 2.0
-Used by: [helidon-dbclient-mongodb]
+Used by: [helidon-reactive-dbclient-mongodb]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 MongoDB Reactive Streams Driver (org.mongodb:mongodb-driver-reactivestreams)
   Copyright 2014,2017 MongoDB, Inc.
@@ -2752,7 +2752,7 @@ Fourth Party Runtime Dependencies
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 OpenTracing API for Java  Opentracing.Io
 Apache 2.0
-Used by: [helidon-dbclient-tracing, helidon-integrations-common-rest, helidon-security-integration-jersey, helidon-tracing-opentracing, helidon-tracing-tracer-resolver, helidon-tracing-zipkin]
+Used by: [helidon-reactive-dbclient-tracing, helidon-integrations-common-rest, helidon-security-integration-jersey, helidon-tracing-opentracing, helidon-tracing-tracer-resolver, helidon-tracing-zipkin]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 opentracing-util: 0.33.0, Apache 2.0
 opentracing-mock: 0.33.0, Apache 2.0
@@ -2783,7 +2783,7 @@ License Identifier: Apache-2.0
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 Reactive Streams  Public Domain
 Other FOSS License
-Used by: [helidon-dbclient-mongodb, helidon-microprofile-reactive-streams]
+Used by: [helidon-reactive-dbclient-mongodb, helidon-microprofile-reactive-streams]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 /************************************************************************

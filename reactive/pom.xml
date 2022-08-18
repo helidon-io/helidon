@@ -39,6 +39,7 @@
         <module>health</module>
         <module>fault-tolerance</module>
         <module>media</module>
+        <module>dbclient</module>
     </modules>
 
 </project>
