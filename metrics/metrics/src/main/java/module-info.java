@@ -27,7 +27,7 @@ module io.helidon.metrics {
     requires transitive microprofile.metrics.api;
     requires java.management;
     requires transitive io.helidon.webserver; // webserver/webserver/Context is a public return value
-    requires io.helidon.media.jsonp;
+    requires io.helidon.reactive.media.jsonp;
     requires jakarta.json;
     requires io.helidon.servicecommon.rest;
 

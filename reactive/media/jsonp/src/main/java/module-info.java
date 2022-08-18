@@ -23,14 +23,14 @@ import io.helidon.media.jsonp.JsonpSupport;
  *
  * @see JsonpSupport
  */
-module io.helidon.media.jsonp {
+module io.helidon.reactive.media.jsonp {
 
     requires io.helidon.common;
     requires io.helidon.common.http;
     requires io.helidon.common.mapper;
     requires io.helidon.common.reactive;
     requires io.helidon.config;
-    requires io.helidon.media.common;
+    requires io.helidon.reactive.media.common;
     requires transitive jakarta.json;
 
     exports io.helidon.media.jsonp;

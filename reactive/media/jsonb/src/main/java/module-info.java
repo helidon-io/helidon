@@ -23,14 +23,14 @@ import io.helidon.media.jsonb.JsonbSupport;
  *
  * @see JsonbSupport
  */
-module io.helidon.media.jsonb {
+module io.helidon.reactive.media.jsonb {
 
     requires io.helidon.common;
     requires io.helidon.common.http;
     requires io.helidon.common.mapper;
     requires io.helidon.common.reactive;
     requires io.helidon.config;
-    requires io.helidon.media.common;
+    requires io.helidon.reactive.media.common;
     requires transitive jakarta.json.bind;
 
     exports io.helidon.media.jsonb;

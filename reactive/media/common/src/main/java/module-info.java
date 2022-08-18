@@ -22,7 +22,7 @@ import io.helidon.media.common.spi.MediaSupportProvider;
  * @see io.helidon.media.common.ContentReaders
  * @see io.helidon.media.common.ContentWriters
  */
-module io.helidon.media.common {
+module io.helidon.reactive.media.common {
     requires java.logging;
     requires io.helidon.common.mapper;
     requires io.helidon.common.reactive;

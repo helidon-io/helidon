@@ -21,7 +21,7 @@ import io.helidon.webserver.spi.UpgradeCodecProvider;
  */
 module io.helidon.webserver {
     requires io.helidon.common;
-    requires transitive io.helidon.media.common;
+    requires transitive io.helidon.reactive.media.common;
     requires transitive io.helidon.common.http;
     requires io.helidon.common.mapper;
     requires transitive io.helidon.common.pki;

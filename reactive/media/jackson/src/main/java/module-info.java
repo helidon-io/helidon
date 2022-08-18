@@ -23,7 +23,7 @@ import io.helidon.media.jackson.JacksonSupport;
  *
  * @see JacksonSupport
  */
-module io.helidon.media.jackson {
+module io.helidon.reactive.media.jackson {
 
     requires com.fasterxml.jackson.databind;
     requires com.fasterxml.jackson.core;
@@ -34,7 +34,7 @@ module io.helidon.media.jackson {
     requires io.helidon.common.http;
     requires io.helidon.common.mapper;
     requires io.helidon.common.reactive;
-    requires io.helidon.media.common;
+    requires io.helidon.reactive.media.common;
     requires io.helidon.config;
 
     exports io.helidon.media.jackson;

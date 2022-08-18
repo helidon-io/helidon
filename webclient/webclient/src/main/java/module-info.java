@@ -26,7 +26,7 @@ module io.helidon.webclient {
     requires transitive io.helidon.common.http;
     requires transitive io.helidon.common.reactive;
     requires transitive io.helidon.config;
-    requires transitive io.helidon.media.common;
+    requires transitive io.helidon.reactive.media.common;
     requires transitive io.helidon.common.parameters;
 
     requires io.helidon.common.pki;

@@ -17,12 +17,12 @@
 /**
  * Media MultiPart support classes.
  */
-module io.helidon.media.multipart {
+module io.helidon.reactive.media.multipart {
     requires io.helidon.common;
     requires io.helidon.common.http;
     requires io.helidon.common.mapper;
     requires io.helidon.common.reactive;
-    requires io.helidon.media.common;
+    requires io.helidon.reactive.media.common;
     requires java.logging;
     exports io.helidon.media.multipart;
 }

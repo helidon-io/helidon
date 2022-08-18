@@ -27,9 +27,9 @@ module io.helidon.tests.apps.bookstore.se {
     requires io.helidon.reactive.health;
     requires io.helidon.health.checks;
     requires io.helidon.metrics;
-    requires io.helidon.media.jsonp;
-    requires io.helidon.media.jsonb;
-    requires io.helidon.media.jackson;
+    requires io.helidon.reactive.media.jsonp;
+    requires io.helidon.reactive.media.jsonb;
+    requires io.helidon.reactive.media.jackson;
     requires io.helidon.tests.apps.bookstore.common;
 
     exports io.helidon.tests.apps.bookstore.se;
