@@ -44,7 +44,7 @@ public class FtService implements Service {
         this.retry = Retry.builder()
                 .retryPolicy(Retry.DelayingRetryPolicy.noDelay(3))
                 .build();
-        this.timeout = Timeout.create(Duration.ofMillis(100));
+        this.timeout = Timeout.create(Duration.ofSeconds(5));
     }
 
     @Override
