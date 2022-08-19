@@ -543,7 +543,7 @@ apiVersion: apps/v1
 metadata:
   name: helidon-config
 spec:
-  replicas: 1 # <2>
+  replicas: 1 // <2>
   selector:
     matchLabels:
       app: helidon-config
