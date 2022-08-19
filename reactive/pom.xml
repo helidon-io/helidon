@@ -40,6 +40,7 @@
         <module>fault-tolerance</module>
         <module>media</module>
         <module>dbclient</module>
+        <module>webclient</module>
     </modules>
 
 </project>
