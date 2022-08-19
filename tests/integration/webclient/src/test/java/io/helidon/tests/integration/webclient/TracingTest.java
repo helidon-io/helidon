@@ -80,7 +80,7 @@ class TracingTest extends TestParent {
         assertThat(tags.get(Tags.HTTP_STATUS.getKey()), is(200));
         assertThat(tags.get(Tags.HTTP_METHOD.getKey()), is("GET"));
         assertThat(tags.get(Tags.HTTP_URL.getKey()), is(uri));
-        assertThat(tags.get(Tags.COMPONENT.getKey()), is("helidon-webclient"));
+        assertThat(tags.get(Tags.COMPONENT.getKey()), is("helidon-reactive-webclient"));
     }
 
     @Test

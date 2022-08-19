@@ -86,16 +86,16 @@
             <artifactId>helidon-metrics</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.webclient</groupId>
-            <artifactId>helidon-webclient</artifactId>
+            <groupId>io.helidon.reactive.webclient</groupId>
+            <artifactId>helidon-reactive-webclient</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.webclient</groupId>
-            <artifactId>helidon-webclient-metrics</artifactId>
+            <groupId>io.helidon.reactive.webclient</groupId>
+            <artifactId>helidon-reactive-webclient-metrics</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.webclient</groupId>
-            <artifactId>helidon-webclient-tracing</artifactId>
+            <groupId>io.helidon.reactive.webclient</groupId>
+            <artifactId>helidon-reactive-webclient-tracing</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.security.integration</groupId>

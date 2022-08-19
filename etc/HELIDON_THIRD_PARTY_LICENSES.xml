@@ -6945,7 +6945,7 @@ under the License.
             <licensor>The Netty Project</licensor>
             <licenseName>Apache 2.0</licenseName>
             <consumers>
-                <consumer>helidon-webclient</consumer>
+                <consumer>helidon-reactive-webclient</consumer>
                 <consumer>helidon-webserver</consumer>
                 <consumer>helidon-webserver-http2</consumer>
                 <consumer>helidon-webserver-jersey</consumer>

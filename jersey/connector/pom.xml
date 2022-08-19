@@ -47,8 +47,8 @@
             <artifactId>jakarta.inject-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.webclient</groupId>
-            <artifactId>helidon-webclient</artifactId>
+            <groupId>io.helidon.reactive.webclient</groupId>
+            <artifactId>helidon-reactive-webclient</artifactId>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>

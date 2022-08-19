@@ -62,7 +62,7 @@ public final class WebClientTracing implements WebClientService {
         request.context().get(SpanContext.class).ifPresent(spanBuilder::parent);
 
         spanBuilder.kind(Span.Kind.CLIENT);
-        spanBuilder.tag(Tag.COMPONENT.create("helidon-webclient"));
+        spanBuilder.tag(Tag.COMPONENT.create("helidon-reactive-webclient"));
         spanBuilder.tag(Tag.HTTP_METHOD.create(method));
         spanBuilder.tag(Tag.HTTP_URL.create(request.uri().toString()));
         Span span = spanBuilder.start();

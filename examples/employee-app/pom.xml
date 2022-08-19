@@ -84,8 +84,8 @@
             <scope>runtime</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.webclient</groupId>
-            <artifactId>helidon-webclient</artifactId>
+            <groupId>io.helidon.reactive.webclient</groupId>
+            <artifactId>helidon-reactive-webclient</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

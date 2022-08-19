@@ -124,7 +124,7 @@ public final class Se1Main {
 
         MetricsSupport metrics = MetricsSupport.create();
         GreetService greetService = new GreetService(config);
-        MockZipkinService zipkinService = new MockZipkinService(Set.of("helidon-webclient"));
+        MockZipkinService zipkinService = new MockZipkinService(Set.of("helidon-reactive-webclient"));
         WebClientService webClientService = new WebClientService(config, zipkinService);
         HealthSupport health = HealthSupport.builder()
                 .add(HealthChecks.healthChecks())   // Adds a convenient set of checks

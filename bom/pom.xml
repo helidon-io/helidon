@@ -111,28 +111,28 @@
             </dependency>
             <!-- WebClient -->
             <dependency>
-                <groupId>io.helidon.webclient</groupId>
-                <artifactId>helidon-webclient-jaxrs</artifactId>
+                <groupId>io.helidon.reactive.webclient</groupId>
+                <artifactId>helidon-reactive-webclient-jaxrs</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.webclient</groupId>
-                <artifactId>helidon-webclient</artifactId>
+                <groupId>io.helidon.reactive.webclient</groupId>
+                <artifactId>helidon-reactive-webclient</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.webclient</groupId>
-                <artifactId>helidon-webclient-metrics</artifactId>
+                <groupId>io.helidon.reactive.webclient</groupId>
+                <artifactId>helidon-reactive-webclient-metrics</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.webclient</groupId>
-                <artifactId>helidon-webclient-tracing</artifactId>
+                <groupId>io.helidon.reactive.webclient</groupId>
+                <artifactId>helidon-reactive-webclient-tracing</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.webclient</groupId>
-                <artifactId>helidon-webclient-security</artifactId>
+                <groupId>io.helidon.reactive.webclient</groupId>
+                <artifactId>helidon-reactive-webclient-security</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <!-- Fault tolerance -->

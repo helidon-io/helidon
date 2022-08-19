@@ -47,20 +47,20 @@
             <artifactId>helidon-security-providers-http-auth</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.webclient</groupId>
-            <artifactId>helidon-webclient</artifactId>
+            <groupId>io.helidon.reactive.webclient</groupId>
+            <artifactId>helidon-reactive-webclient</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.webclient</groupId>
-            <artifactId>helidon-webclient-security</artifactId>
+            <groupId>io.helidon.reactive.webclient</groupId>
+            <artifactId>helidon-reactive-webclient-security</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.webclient</groupId>
-            <artifactId>helidon-webclient-tracing</artifactId>
+            <groupId>io.helidon.reactive.webclient</groupId>
+            <artifactId>helidon-reactive-webclient-tracing</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.webclient</groupId>
-            <artifactId>helidon-webclient-jaxrs</artifactId>
+            <groupId>io.helidon.reactive.webclient</groupId>
+            <artifactId>helidon-reactive-webclient-jaxrs</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.webserver</groupId>

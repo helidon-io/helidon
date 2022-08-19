@@ -27,8 +27,8 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <groupId>io.helidon.webclient</groupId>
-    <artifactId>helidon-webclient-project</artifactId>
+    <groupId>io.helidon.reactive.webclient</groupId>
+    <artifactId>helidon-reactive-webclient-project</artifactId>
     <name>Helidon WebClient Project</name>
 
     <packaging>pom</packaging>

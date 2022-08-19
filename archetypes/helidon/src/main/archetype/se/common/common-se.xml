@@ -47,7 +47,7 @@
                 </map>
                 <map order="0">
                     <value key="groupId">io.helidon.webclient</value>
-                    <value key="artifactId">helidon-webclient</value>
+                    <value key="artifactId">helidon-reactive-webclient</value>
                 </map>
             </list>
             <list key="Main-helidon-imports">

@@ -21,13 +21,13 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <artifactId>helidon-webclient-project</artifactId>
-        <groupId>io.helidon.webclient</groupId>
+        <artifactId>helidon-reactive-webclient-project</artifactId>
+        <groupId>io.helidon.reactive.webclient</groupId>
         <version>4.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>helidon-webclient-metrics</artifactId>
+    <artifactId>helidon-reactive-webclient-metrics</artifactId>
     <name>Helidon WebClient Metrics</name>
 
     <description>Metrics support for Helidon WebClient</description>
@@ -38,8 +38,8 @@
             <artifactId>helidon-metrics</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.webclient</groupId>
-            <artifactId>helidon-webclient</artifactId>
+            <groupId>io.helidon.reactive.webclient</groupId>
+            <artifactId>helidon-reactive-webclient</artifactId>
         </dependency>
 
         <dependency>
