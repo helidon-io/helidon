@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package io.helidon.webserver;
 
 import io.helidon.common.http.Http;
-import io.helidon.webclient.WebClient;
+import io.helidon.reactive.webclient.WebClient;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,7 +27,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
- * Tests specific header expectation from 204 NO CONTENT status code together with {@link io.helidon.webclient.WebClient}.
+ * Tests specific header expectation from 204 NO CONTENT status code together with {@link io.helidon.reactive.webclient.WebClient}.
  */
 public class Status204Test {
 

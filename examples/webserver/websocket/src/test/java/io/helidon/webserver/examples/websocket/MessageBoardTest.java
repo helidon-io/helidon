@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 import io.helidon.common.http.Http;
-import io.helidon.webclient.WebClient;
+import io.helidon.reactive.webclient.WebClient;
 import io.helidon.webserver.WebServer;
 
 import jakarta.websocket.ClientEndpointConfig;

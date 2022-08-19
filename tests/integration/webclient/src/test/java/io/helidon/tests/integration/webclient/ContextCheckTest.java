@@ -17,9 +17,9 @@
 package io.helidon.tests.integration.webclient;
 
 import io.helidon.common.http.Http;
+import io.helidon.reactive.webclient.WebClient;
+import io.helidon.reactive.webclient.WebClientResponse;
 import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
-import io.helidon.webclient.WebClient;
-import io.helidon.webclient.WebClientResponse;
 
 import org.junit.jupiter.api.Test;
 

@@ -22,10 +22,10 @@ import java.util.logging.Logger;
 
 import io.helidon.common.Errors;
 import io.helidon.reactive.media.jsonp.JsonpSupport;
+import io.helidon.reactive.webclient.Proxy;
+import io.helidon.reactive.webclient.WebClient;
+import io.helidon.reactive.webclient.tracing.WebClientTracing;
 import io.helidon.security.providers.common.OutboundConfig;
-import io.helidon.webclient.Proxy;
-import io.helidon.webclient.WebClient;
-import io.helidon.webclient.tracing.WebClientTracing;
 
 import jakarta.ws.rs.client.ClientBuilder;
 import org.glassfish.jersey.client.ClientProperties;

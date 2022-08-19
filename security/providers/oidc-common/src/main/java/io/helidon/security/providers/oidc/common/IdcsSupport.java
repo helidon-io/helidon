@@ -25,8 +25,8 @@ import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.parameters.Parameters;
 import io.helidon.security.SecurityException;
 import io.helidon.security.jwt.jwk.JwkKeys;
-import io.helidon.webclient.WebClient;
-import io.helidon.webclient.WebClientResponse;
+import io.helidon.reactive.webclient.WebClient;
+import io.helidon.reactive.webclient.WebClientResponse;
 
 import jakarta.json.JsonObject;
 

@@ -21,8 +21,8 @@ import io.helidon.common.http.Http;
 import io.helidon.common.pki.KeyConfig;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.webclient.WebClient;
-import io.helidon.webclient.WebClientTls;
+import io.helidon.reactive.webclient.WebClient;
+import io.helidon.reactive.webclient.WebClientTls;
 
 import org.hamcrest.Matcher;
 import org.hamcrest.core.AllOf;

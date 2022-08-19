@@ -20,7 +20,7 @@ import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.reactive.media.jsonp.JsonpSupport;
-import io.helidon.webclient.WebClient;
+import io.helidon.reactive.webclient.WebClient;
 import io.helidon.webserver.WebServer;
 
 import jakarta.json.JsonArray;

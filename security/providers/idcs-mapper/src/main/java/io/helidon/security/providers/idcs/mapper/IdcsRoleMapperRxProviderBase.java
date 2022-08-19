@@ -36,6 +36,8 @@ import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
+import io.helidon.reactive.webclient.WebClient;
+import io.helidon.reactive.webclient.WebClientRequestBuilder;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.Grant;
 import io.helidon.security.ProviderRequest;
@@ -48,8 +50,6 @@ import io.helidon.security.jwt.SignedJwt;
 import io.helidon.security.jwt.Validator;
 import io.helidon.security.providers.oidc.common.OidcConfig;
 import io.helidon.security.spi.SubjectMappingProvider;
-import io.helidon.webclient.WebClient;
-import io.helidon.webclient.WebClientRequestBuilder;
 
 import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;
@@ -57,7 +57,7 @@ import jakarta.json.JsonObject;
 import static io.helidon.security.providers.oidc.common.OidcConfig.postJsonResponse;
 
 /**
- * Common functionality for IDCS role mapping using reactive {@link io.helidon.webclient.WebClient}.
+ * Common functionality for IDCS role mapping using reactive {@link io.helidon.reactive.webclient.WebClient}.
  */
 public abstract class IdcsRoleMapperRxProviderBase implements SubjectMappingProvider {
     /**

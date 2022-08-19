@@ -26,8 +26,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Multi;
-import io.helidon.webclient.WebClient;
-import io.helidon.webclient.WebClientResponse;
+import io.helidon.reactive.webclient.WebClient;
+import io.helidon.reactive.webclient.WebClientResponse;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;

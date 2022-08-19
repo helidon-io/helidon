@@ -20,8 +20,8 @@ import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.reactive.media.jsonp.JsonpSupport;
-import io.helidon.webclient.WebClient;
-import io.helidon.webclient.WebClientResponse;
+import io.helidon.reactive.webclient.WebClient;
+import io.helidon.reactive.webclient.WebClientResponse;
 import io.helidon.webserver.WebServer;
 
 import jakarta.json.Json;

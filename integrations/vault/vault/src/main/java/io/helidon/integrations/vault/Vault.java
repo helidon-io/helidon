@@ -28,7 +28,7 @@ import io.helidon.integrations.common.rest.RestApi;
 import io.helidon.integrations.vault.spi.VaultAuth;
 import io.helidon.reactive.faulttolerance.FaultTolerance;
 import io.helidon.reactive.faulttolerance.FtHandler;
-import io.helidon.webclient.WebClient;
+import io.helidon.reactive.webclient.WebClient;
 
 /**
  * Main entry point to Vault operations.

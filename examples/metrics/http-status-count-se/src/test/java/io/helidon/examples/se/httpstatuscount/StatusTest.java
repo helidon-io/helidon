@@ -23,8 +23,8 @@ import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.reactive.media.jsonp.JsonpSupport;
 import io.helidon.metrics.api.RegistryFactory;
-import io.helidon.webclient.WebClient;
-import io.helidon.webclient.WebClientResponse;
+import io.helidon.reactive.webclient.WebClient;
+import io.helidon.reactive.webclient.WebClientResponse;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 

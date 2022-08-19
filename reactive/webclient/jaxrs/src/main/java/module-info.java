@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +14,14 @@
  * limitations under the License.
  */
 
+import io.helidon.reactive.webclient.jaxrs.JerseyClientAutoDiscoverable;
+
 import org.glassfish.jersey.internal.spi.AutoDiscoverable;
 
 /**
  * Basic integration with JAX-RS client.
  */
-module io.helidon.webclient.jaxrs {
+module io.helidon.reactive.webclient.jaxrs {
     requires java.logging;
     requires jakarta.annotation;
 
@@ -31,7 +33,7 @@ module io.helidon.webclient.jaxrs {
     requires io.helidon.common.configurable;
     requires io.helidon.common.context;
 
-    exports io.helidon.webclient.jaxrs;
+    exports io.helidon.reactive.webclient.jaxrs;
 
-    provides AutoDiscoverable with io.helidon.webclient.jaxrs.JerseyClientAutoDiscoverable;
+    provides AutoDiscoverable with JerseyClientAutoDiscoverable;
 }

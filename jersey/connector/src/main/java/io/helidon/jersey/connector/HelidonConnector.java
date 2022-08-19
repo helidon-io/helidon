@@ -33,9 +33,9 @@ import java.util.function.BiConsumer;
 import java.util.logging.Logger;
 
 import io.helidon.common.Version;
-import io.helidon.webclient.WebClient;
-import io.helidon.webclient.WebClientRequestBuilder;
-import io.helidon.webclient.WebClientResponse;
+import io.helidon.reactive.webclient.WebClient;
+import io.helidon.reactive.webclient.WebClientRequestBuilder;
+import io.helidon.reactive.webclient.WebClientResponse;
 
 import jakarta.ws.rs.ProcessingException;
 import jakarta.ws.rs.client.Client;

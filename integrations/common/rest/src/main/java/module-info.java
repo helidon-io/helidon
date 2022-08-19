@@ -34,7 +34,7 @@ module io.helidon.integrations.common.rest {
     requires io.helidon.common.reactive;
     requires io.helidon.reactive.faulttolerance;
     requires io.helidon.config;
-    requires io.helidon.webclient;
+    requires io.helidon.reactive.webclient;
     requires io.helidon.reactive.media.jsonp;
 
     exports io.helidon.integrations.common.rest;

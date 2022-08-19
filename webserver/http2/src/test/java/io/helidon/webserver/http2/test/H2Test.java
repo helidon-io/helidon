@@ -24,8 +24,8 @@ import java.time.Duration;
 
 import io.helidon.common.LogConfig;
 import io.helidon.common.http.Http;
-import io.helidon.webclient.WebClient;
-import io.helidon.webclient.WebClientResponse;
+import io.helidon.reactive.webclient.WebClient;
+import io.helidon.reactive.webclient.WebClientResponse;
 import io.helidon.webserver.Http1Route;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http2.Http2Route;

@@ -30,10 +30,10 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
 import io.helidon.metrics.api.RegistryFactory;
 import io.helidon.reactive.media.jsonp.JsonpSupport;
-import io.helidon.webclient.WebClient;
-import io.helidon.webclient.WebClientResponse;
-import io.helidon.webclient.metrics.WebClientMetrics;
-import io.helidon.webclient.spi.WebClientService;
+import io.helidon.reactive.webclient.WebClient;
+import io.helidon.reactive.webclient.WebClientResponse;
+import io.helidon.reactive.webclient.metrics.WebClientMetrics;
+import io.helidon.reactive.webclient.spi.WebClientService;
 
 import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;

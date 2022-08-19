@@ -21,5 +21,5 @@ open module helidon.webserver.http2.test {
     requires hamcrest.all;
     requires org.junit.jupiter.api;
     requires io.helidon.webserver.http2;
-    requires io.helidon.webclient;
+    requires io.helidon.reactive.webclient;
 }

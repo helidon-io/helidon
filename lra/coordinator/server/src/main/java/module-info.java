@@ -22,7 +22,7 @@ module io.helidon.lra.coordinator {
     requires jakarta.json;
     requires microprofile.lra.api;
     requires io.helidon.common.reactive;
-    requires io.helidon.webclient;
+    requires io.helidon.reactive.webclient;
     requires io.helidon.metrics;
     requires io.helidon.scheduling;
     requires io.helidon.reactive.dbclient;

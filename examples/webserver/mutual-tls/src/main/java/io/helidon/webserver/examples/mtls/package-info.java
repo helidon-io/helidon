@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 
 /**
- * Example of mutual TLS configuration for {@link io.helidon.webserver.WebServer} and {@link io.helidon.webclient.WebClient},
+ * Example of mutual TLS configuration for {@link io.helidon.webserver.WebServer} and {@link io.helidon.reactive.webclient.WebClient},
  * using both {@link io.helidon.config.Config} and builder based approach.
  */
 package io.helidon.webserver.examples.mtls;

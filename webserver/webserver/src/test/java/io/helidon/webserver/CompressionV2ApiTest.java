@@ -23,9 +23,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 import io.helidon.common.http.Http;
-import io.helidon.webclient.WebClient;
-import io.helidon.webclient.WebClientRequestBuilder;
-import io.helidon.webclient.WebClientResponse;
+import io.helidon.reactive.webclient.WebClient;
+import io.helidon.reactive.webclient.WebClientRequestBuilder;
+import io.helidon.reactive.webclient.WebClientResponse;
 import io.helidon.webserver.utils.SocketHttpClient;
 
 import org.junit.jupiter.api.AfterAll;

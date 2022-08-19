@@ -19,7 +19,7 @@ package io.helidon.webserver;
 import java.time.Duration;
 import java.util.logging.Logger;
 
-import io.helidon.webclient.WebClient;
+import io.helidon.reactive.webclient.WebClient;
 
 import org.junit.jupiter.api.AfterAll;
 

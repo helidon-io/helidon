@@ -24,9 +24,9 @@ import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.context.Context;
 import io.helidon.config.Config;
+import io.helidon.reactive.webclient.WebClient;
+import io.helidon.reactive.webclient.WebClientResponse;
 import io.helidon.tracing.opentracing.OpenTracing;
-import io.helidon.webclient.WebClient;
-import io.helidon.webclient.WebClientResponse;
 import io.helidon.webserver.WebServer;
 
 import io.opentracing.mock.MockSpan;

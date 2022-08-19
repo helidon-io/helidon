@@ -20,8 +20,8 @@ import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.LogConfig;
 import io.helidon.common.http.Http;
-import io.helidon.webclient.WebClient;
-import io.helidon.webclient.WebClientResponse;
+import io.helidon.reactive.webclient.WebClient;
+import io.helidon.reactive.webclient.WebClientResponse;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;

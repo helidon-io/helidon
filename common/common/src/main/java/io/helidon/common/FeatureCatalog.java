@@ -591,20 +591,20 @@ final class FeatureCatalog {
                         .name("Neo4j Metrics")
                         .description("Metrics for Neo4j integration")
                         .path("Neo4j", "Metrics"));
-        add("io.helidon.webclient",
+        add("io.helidon.reactive.webclient",
             FeatureDescriptor.builder()
                     .name("Web Client")
                     .description("Reactive web client")
                     .path("WebClient"));
-        add("io.helidon.webclient.metrics",
+        add("io.helidon.reactive.webclient.metrics",
             "Metrics",
             "Reactive web client support for metrics",
             "WebClient", "Metrics");
-        add("io.helidon.webclient.security",
+        add("io.helidon.reactive.webclient.security",
             "Security",
             "Reactive web client support for security",
             "WebClient", "Security");
-        add("io.helidon.webclient.tracing",
+        add("io.helidon.reactive.webclient.tracing",
             "Tracing",
             "Reactive web client support for tracing",
             "WebClient", "Tracing");
@@ -717,8 +717,8 @@ final class FeatureCatalog {
         exclude("io.helidon.tracing.jersey.client.internal");
         exclude("io.helidon.tracing.spi");
         exclude("io.helidon.tracing.tracerresolver");
-        exclude("io.helidon.webclient.jaxrs");
-        exclude("io.helidon.webclient.spi");
+        exclude("io.helidon.reactive.webclient.jaxrs");
+        exclude("io.helidon.reactive.webclient.spi");
         exclude("io.helidon.common.context.spi");
         exclude("io.helidon.grpc.core");
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@ package io.helidon.webserver.examples.mtls;
 
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.pki.KeyConfig;
-import io.helidon.webclient.WebClient;
-import io.helidon.webclient.WebClientTls;
+import io.helidon.reactive.webclient.WebClient;
+import io.helidon.reactive.webclient.WebClientTls;
 
 /**
  * Setting up {@link WebClient} to support mutual TLS via builder.

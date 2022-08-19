@@ -23,7 +23,7 @@ module io.helidon.integrations.vault.secrets.pki {
     requires io.helidon.integrations.common.rest;
     requires io.helidon.integrations.vault;
     requires io.helidon.reactive.faulttolerance;
-    requires io.helidon.webclient;
+    requires io.helidon.reactive.webclient;
 
     exports io.helidon.integrations.vault.secrets.pki;
 

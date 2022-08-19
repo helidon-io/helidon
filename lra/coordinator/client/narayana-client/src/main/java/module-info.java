@@ -23,7 +23,7 @@ module io.helidon.lra.coordinator.client.narayana {
     requires microprofile.lra.api;
     requires io.helidon.microprofile.config;
     requires io.helidon.lra.coordinator.client;
-    requires io.helidon.webclient;
+    requires io.helidon.reactive.webclient;
     requires io.helidon.reactive.faulttolerance;
 
     provides io.helidon.lra.coordinator.client.CoordinatorClient

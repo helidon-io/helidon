@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,9 +21,9 @@ import java.util.logging.Logger;
 
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.pki.KeyConfig;
-import io.helidon.webclient.WebClient;
-import io.helidon.webclient.WebClientRequestBuilder;
-import io.helidon.webclient.WebClientTls;
+import io.helidon.reactive.webclient.WebClient;
+import io.helidon.reactive.webclient.WebClientRequestBuilder;
+import io.helidon.reactive.webclient.WebClientTls;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;

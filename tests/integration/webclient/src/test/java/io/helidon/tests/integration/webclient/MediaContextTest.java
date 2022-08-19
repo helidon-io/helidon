@@ -22,8 +22,8 @@ import java.util.concurrent.ExecutionException;
 
 import io.helidon.reactive.media.common.MediaContext;
 import io.helidon.reactive.media.jsonp.JsonpSupport;
-import io.helidon.webclient.WebClient;
-import io.helidon.webclient.WebClientRequestBuilder;
+import io.helidon.reactive.webclient.WebClient;
+import io.helidon.reactive.webclient.WebClientRequestBuilder;
 
 import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;

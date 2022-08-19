@@ -55,7 +55,7 @@ dependencies {
     implementation 'io.helidon.metrics:helidon-metrics'
 
     testImplementation 'org.junit.jupiter:junit-jupiter-api'
-    testImplementation 'io.helidon.webclient:helidon-reactive-webclient'
+    testImplementation 'io.helidon.reactive.webclient:helidon-reactive-webclient'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
 }
 

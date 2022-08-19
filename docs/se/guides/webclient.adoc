@@ -130,7 +130,7 @@ specific settings and improves the readability and simplicity of the code.
 .Add WebClient instance to the main method:
 ----
 import io.helidon.reactive.media.jsonp.JsonpSupport;
-import io.helidon.webclient.WebClient;
+import io.helidon.reactive.webclient.WebClient;
 
 WebClient webClient = WebClient.builder()
                 .baseUri("http://localhost:8080")   // <1>
@@ -292,8 +292,8 @@ that can be used with any metric.
 ----
 import io.helidon.common.http.Http;
 import io.helidon.metrics.RegistryFactory;
-import io.helidon.webclient.metrics.WebClientMetrics;
-import io.helidon.webclient.spi.WebClientService;
+import io.helidon.reactive.webclient.metrics.WebClientMetrics;
+import io.helidon.reactive.webclient.spi.WebClientService;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics|.Counter;
                                        |.Meter;

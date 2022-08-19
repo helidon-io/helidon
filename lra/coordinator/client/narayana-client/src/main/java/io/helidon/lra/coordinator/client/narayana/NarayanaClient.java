@@ -37,9 +37,9 @@ import io.helidon.lra.coordinator.client.CoordinatorConnectionException;
 import io.helidon.lra.coordinator.client.Participant;
 import io.helidon.lra.coordinator.client.PropagatedHeaders;
 import io.helidon.reactive.faulttolerance.Retry;
-import io.helidon.webclient.WebClient;
-import io.helidon.webclient.WebClientRequestHeaders;
-import io.helidon.webclient.WebClientResponse;
+import io.helidon.reactive.webclient.WebClient;
+import io.helidon.reactive.webclient.WebClientRequestHeaders;
+import io.helidon.reactive.webclient.WebClientResponse;
 
 import org.eclipse.microprofile.lra.annotation.LRAStatus;
 import org.eclipse.microprofile.lra.annotation.ws.rs.LRA;

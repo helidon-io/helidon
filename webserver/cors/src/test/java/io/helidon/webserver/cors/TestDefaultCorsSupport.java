@@ -18,11 +18,11 @@ package io.helidon.webserver.cors;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
-import io.helidon.webclient.WebClient;
-import io.helidon.webclient.WebClientRequestBuilder;
-import io.helidon.webclient.WebClientRequestHeaders;
-import io.helidon.webclient.WebClientResponse;
-import io.helidon.webclient.WebClientResponseHeaders;
+import io.helidon.reactive.webclient.WebClient;
+import io.helidon.reactive.webclient.WebClientRequestBuilder;
+import io.helidon.reactive.webclient.WebClientRequestHeaders;
+import io.helidon.reactive.webclient.WebClientResponse;
+import io.helidon.reactive.webclient.WebClientResponseHeaders;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 

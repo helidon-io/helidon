@@ -20,8 +20,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 import io.helidon.reactive.media.common.MessageBodyReadableContent;
-import io.helidon.webclient.WebClient;
-import io.helidon.webclient.WebClientRequestBuilder;
+import io.helidon.reactive.webclient.WebClient;
+import io.helidon.reactive.webclient.WebClientRequestBuilder;
 
 import jakarta.json.JsonObject;
 import jakarta.json.JsonValue;

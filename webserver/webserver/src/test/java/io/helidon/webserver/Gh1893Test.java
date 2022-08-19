@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import io.helidon.common.http.Http;
-import io.helidon.webclient.WebClient;
+import io.helidon.reactive.webclient.WebClient;
 import io.helidon.webserver.DirectHandler.TransportResponse;
 import io.helidon.webserver.utils.SocketHttpClient;
 

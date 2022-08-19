@@ -21,7 +21,7 @@ import java.util.concurrent.TimeoutException;
 
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.parameters.Parameters;
-import io.helidon.webclient.WebClient;
+import io.helidon.reactive.webclient.WebClient;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;

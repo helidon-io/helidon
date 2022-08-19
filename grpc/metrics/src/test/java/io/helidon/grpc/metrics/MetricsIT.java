@@ -29,7 +29,7 @@ import io.helidon.grpc.server.test.Echo;
 import io.helidon.grpc.server.test.EchoServiceGrpc;
 import io.helidon.reactive.media.jsonp.JsonpSupport;
 import io.helidon.metrics.MetricsSupport;
-import io.helidon.webclient.WebClient;
+import io.helidon.reactive.webclient.WebClient;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 

@@ -17,7 +17,6 @@ package io.helidon.webserver;
 
 import java.nio.ByteBuffer;
 import java.time.Duration;
-import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.Executors;
@@ -26,8 +25,8 @@ import java.util.concurrent.TimeUnit;
 import io.helidon.common.LogConfig;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.reactive.Multi;
-import io.helidon.webclient.WebClient;
-import io.helidon.webclient.WebClientResponse;
+import io.helidon.reactive.webclient.WebClient;
+import io.helidon.reactive.webclient.WebClientResponse;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;

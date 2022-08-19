@@ -46,7 +46,7 @@
                     <value key="scope">test</value>
                 </map>
                 <map order="0">
-                    <value key="groupId">io.helidon.webclient</value>
+                    <value key="groupId">io.helidon.reactive.webclient</value>
                     <value key="artifactId">helidon-reactive-webclient</value>
                 </map>
             </list>
@@ -63,8 +63,8 @@
             </list>
             <list key="MainTest-helidon-imports">
                 <value>io.helidon.common.http.Http</value>
-                <value>io.helidon.webclient.WebClient</value>
-                <value>io.helidon.webclient.WebClientResponse</value>
+                <value>io.helidon.reactive.webclient.WebClient</value>
+                <value>io.helidon.reactive.webclient.WebClientResponse</value>
                 <value>io.helidon.webserver.WebServer</value>
             </list>
             <list key="MainTest-other-imports">

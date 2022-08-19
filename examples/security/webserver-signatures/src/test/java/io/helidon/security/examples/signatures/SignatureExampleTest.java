@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,10 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import io.helidon.reactive.webclient.WebClient;
+import io.helidon.reactive.webclient.security.WebClientSecurity;
 import io.helidon.security.Security;
 import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
-import io.helidon.webclient.WebClient;
-import io.helidon.webclient.security.WebClientSecurity;
 import io.helidon.webserver.WebServer;
 
 import org.junit.jupiter.api.BeforeAll;

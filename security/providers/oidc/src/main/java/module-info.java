@@ -29,7 +29,7 @@ module io.helidon.security.providers.oidc {
     requires io.helidon.security.util;
     requires io.helidon.security.abac.scope;
     requires io.helidon.security.jwt;
-    requires io.helidon.webclient;
+    requires io.helidon.reactive.webclient;
     requires io.helidon.webserver;
     requires io.helidon.webserver.cors;
     requires io.helidon.security.integration.webserver;

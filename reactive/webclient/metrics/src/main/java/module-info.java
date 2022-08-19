@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-import io.helidon.webclient.metrics.WebClientMetricsProvider;
-import io.helidon.webclient.spi.WebClientServiceProvider;
+import io.helidon.reactive.webclient.metrics.WebClientMetricsProvider;
+import io.helidon.reactive.webclient.spi.WebClientServiceProvider;
 
 /**
  * Helidon WebClient Metrics.
  */
-module io.helidon.webclient.metrics {
+module io.helidon.reactive.webclient.metrics {
 
     requires io.helidon.metrics;
-    requires io.helidon.webclient;
+    requires io.helidon.reactive.webclient;
 
-    exports io.helidon.webclient.metrics;
+    exports io.helidon.reactive.webclient.metrics;
 
     provides WebClientServiceProvider with WebClientMetricsProvider;
 

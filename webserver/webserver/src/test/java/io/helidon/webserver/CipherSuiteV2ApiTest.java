@@ -25,8 +25,8 @@ import javax.net.ssl.SSLHandshakeException;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.webclient.WebClient;
-import io.helidon.webclient.WebClientTls;
+import io.helidon.reactive.webclient.WebClient;
+import io.helidon.reactive.webclient.WebClientTls;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;

@@ -29,7 +29,7 @@ import io.helidon.lra.coordinator.CoordinatorService;
 import io.helidon.microprofile.server.RoutingName;
 import io.helidon.microprofile.server.RoutingPath;
 import io.helidon.microprofile.server.ServerCdiExtension;
-import io.helidon.webclient.WebClient;
+import io.helidon.reactive.webclient.WebClient;
 import io.helidon.webserver.Service;
 
 import jakarta.annotation.Priority;

@@ -21,9 +21,9 @@ import java.util.concurrent.TimeoutException;
 
 import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.reactive.Single;
-import io.helidon.reactive.media.jsonp.JsonpSupport;
 import io.helidon.metrics.api.KeyPerformanceIndicatorMetricsSettings;
-import io.helidon.webclient.WebClient;
+import io.helidon.reactive.media.jsonp.JsonpSupport;
+import io.helidon.reactive.webclient.WebClient;
 import io.helidon.webserver.WebServer;
 
 import org.eclipse.microprofile.metrics.ConcurrentGauge;

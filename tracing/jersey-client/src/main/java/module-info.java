@@ -31,7 +31,7 @@ module io.helidon.tracing.jersey.client {
     requires io.helidon.tracing.config;
     requires io.helidon.common;
     requires io.helidon.common.context;
-    requires io.helidon.webclient.jaxrs;
+    requires io.helidon.reactive.webclient.jaxrs;
 
     exports io.helidon.tracing.jersey.client;
 

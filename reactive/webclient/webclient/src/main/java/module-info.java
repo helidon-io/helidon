@@ -17,7 +17,7 @@
 /**
  * Helidon WebClient.
  */
-module io.helidon.webclient {
+module io.helidon.reactive.webclient {
 
     requires java.logging;
     
@@ -41,10 +41,10 @@ module io.helidon.webclient {
 
     requires static io.helidon.config.metadata;
 
-    exports io.helidon.webclient;
-    exports io.helidon.webclient.spi;
+    exports io.helidon.reactive.webclient;
+    exports io.helidon.reactive.webclient.spi;
 
-    uses io.helidon.webclient.spi.WebClientServiceProvider;
+    uses io.helidon.reactive.webclient.spi.WebClientServiceProvider;
     uses io.helidon.common.context.spi.DataPropagationProvider;
 
 }

@@ -40,9 +40,9 @@ import io.helidon.common.configurable.Resource;
 import io.helidon.common.http.Http;
 import io.helidon.common.pki.KeyConfig;
 import io.helidon.integration.webserver.upgrade.Main;
-import io.helidon.webclient.WebClient;
-import io.helidon.webclient.WebClientResponse;
-import io.helidon.webclient.WebClientTls;
+import io.helidon.reactive.webclient.WebClient;
+import io.helidon.reactive.webclient.WebClientResponse;
+import io.helidon.reactive.webclient.WebClientTls;
 import io.helidon.webserver.WebServer;
 
 import org.hamcrest.MatcherAssert;

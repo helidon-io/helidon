@@ -24,8 +24,8 @@ import java.util.concurrent.ExecutionException;
 import io.helidon.common.context.Context;
 import io.helidon.reactive.media.jsonp.JsonpSupport;
 import io.helidon.tracing.opentracing.OpenTracing;
-import io.helidon.webclient.WebClient;
-import io.helidon.webclient.WebClientResponse;
+import io.helidon.reactive.webclient.WebClient;
+import io.helidon.reactive.webclient.WebClientResponse;
 
 import io.opentracing.mock.MockSpan;
 import io.opentracing.mock.MockTracer;

@@ -21,7 +21,7 @@ module io.helidon.integrations.vault.auths.approle {
     requires java.logging;
 
     requires io.helidon.integrations.vault;
-    requires io.helidon.webclient;
+    requires io.helidon.reactive.webclient;
     requires io.helidon.reactive.faulttolerance;
     requires io.helidon.integrations.vault.auths.common;
     requires io.helidon.integrations.common.rest;

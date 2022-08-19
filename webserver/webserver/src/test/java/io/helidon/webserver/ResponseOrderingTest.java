@@ -29,7 +29,7 @@ import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.reactive.Multi;
-import io.helidon.webclient.WebClient;
+import io.helidon.reactive.webclient.WebClient;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;

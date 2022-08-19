@@ -39,7 +39,7 @@ import io.helidon.security.providers.common.EvictableCache;
 import io.helidon.security.providers.oidc.common.OidcConfig;
 import io.helidon.security.spi.SecurityProvider;
 import io.helidon.security.spi.SubjectMappingProvider;
-import io.helidon.webclient.WebClientRequestBuilder;
+import io.helidon.reactive.webclient.WebClientRequestBuilder;
 
 import jakarta.json.Json;
 import jakarta.json.JsonArrayBuilder;
