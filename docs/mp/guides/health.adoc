@@ -570,11 +570,14 @@ spec:
       name: http
 ---
 kind: Deployment
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 metadata:
   name: helidon-health // <2>
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      app: helidon-health
   template:
     metadata:
       labels:
