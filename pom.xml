@@ -181,7 +181,6 @@
         <module>licensing</module>
         <module>common</module>
         <module>config</module>
-        <module>webserver</module>
         <module>security</module>
         <module>lra</module>
         <module>microprofile</module>
